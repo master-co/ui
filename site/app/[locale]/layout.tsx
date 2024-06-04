@@ -1,18 +1,9 @@
-import RootLayout from 'internal/layouts/root'
-import i18n from '~/internal/common/i18n.config.mjs'
-import { importTranslations } from '~/internal/utils/i18n'
+import RootLayout, { Body } from 'internal/layouts/root'
+import i18n from 'internal/common/i18n.config.mjs'
+import { importTranslations } from 'internal/utils/i18n'
 import app from '~/site/app'
 import redirects from '~/site/redirects.mjs'
 import cssConfig from '~/site/master.css'
-
-export { viewport } from 'internal/layouts/root'
-export const metadata = {
-    title: {
-        template: '%s - Master CSS',
-        default: 'Master CSS'
-    },
-    metadataBase: new URL(process.env.HOST as string)
-}
 
 export default function Layout({ children, params }: {
     children: JSX.Element,
@@ -26,7 +17,9 @@ export default function Layout({ children, params }: {
             translations={importTranslations(params.locale)}
             redirects={redirects}
         >
-            {children}
+            <Body className="bg:base">
+                {children}
+            </Body>
         </RootLayout>
     )
 }

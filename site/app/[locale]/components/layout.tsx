@@ -13,7 +13,7 @@ export default async function Layout({ children }: {
     return (
         <>
             <DocHeader contained />
-            <DocSidebar pageCategories={getUnitCategories('guide')} />
+            <DocSidebar pageCategories={getUnitCategories('components')} />
             {children}
         </>
     )
