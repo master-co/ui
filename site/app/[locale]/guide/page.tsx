@@ -1,5 +1,4 @@
-import Layout from 'internal/layouts/reference'
-import pageCategories from '~/site/categories/guide.json'
+import Layout from 'internal/layouts/doc'
 import metadata from './metadata'
 import Content from './content.mdx'
 import generate from 'internal/utils/generate-metadata'

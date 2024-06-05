@@ -8,8 +8,8 @@ import { getUnitCategories } from '~/site/metadata'
 
 export const categories = getUnitCategories('components')
 
-export default () => {
-    const $= useTranslation()
+export default function Overview() {
+    const $ = useTranslation()
     return (
         categories
             .filter(({ name }) => name !== 'Overview')

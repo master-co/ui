@@ -13,7 +13,7 @@ export async function generateMetadata(props: any, parent: any) {
 
 export default async function Page(props: any) {
     return (
-        <Layout {...props} pageCategories={getUnitCategories('components')} pageDirname={__dirname} metadata={metadata}>
+        <Layout {...props} $type="prose" pageCategories={getUnitCategories('components')} pageDirname={__dirname} metadata={metadata}>
             <Content />
         </Layout >
     )

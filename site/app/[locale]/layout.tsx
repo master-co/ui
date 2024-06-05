@@ -4,6 +4,7 @@ import { importTranslations } from 'internal/utils/i18n'
 import app from '~/site/app'
 import redirects from '~/site/redirects.mjs'
 import cssConfig from '~/site/master.css'
+import Image from 'next/image'
 
 export default function Layout({ children, params }: {
     children: JSX.Element,
