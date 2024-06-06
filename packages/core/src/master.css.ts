@@ -1,13 +1,10 @@
 import type { Config } from '@master/css'
-import { styles as button } from './button'
-import { styles as segments } from './segments'
-import { styles as toggle } from './toggle'
 
-export default {
+const ui = {
     styles: {
-        ...button,
-        ...segments,
-        ...toggle,
+        ...require('./button').styles,
+        ...require('./segments').styles,
+        ...require('./toggle').styles,
         primary: 'bg:primary fg:primary-contrast outline:1|primary-ring',
         touch: {
             primary: 'bg:touch-primary:hover'
@@ -34,3 +31,5 @@ export default {
         }
     }
 } as Config
+
+export default ui

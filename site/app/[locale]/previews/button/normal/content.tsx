@@ -1,11 +1,9 @@
-export default function Preview() {
-    return (
-        <>
-            <div className='btn btn-xs btn-primary'>Submit</div>
-            <div className='btn btn-sm btn-primary'>Submit</div>
-            <div className='btn btn-md btn-primary'>Submit</div>
-            <div className='btn btn-lg btn-primary'>Submit</div>
-            <div className='btn btn-xl btn-primary'>Submit</div>
-        </>
-    )
-}
+import { Button } from '@master/ui.react'
+
+export default () => <>
+    <Button className='btn-xs btn-primary'>Submit</Button>
+    <Button className='btn-sm btn-primary'>Submit</Button>
+    <Button>Submit</Button>
+    <Button className='btn-lg btn-primary'>Submit</Button>
+    <Button className='btn-xl btn-primary'>Submit</Button>
+</>
