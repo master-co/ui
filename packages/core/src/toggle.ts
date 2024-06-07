@@ -4,7 +4,7 @@ import type { Config } from '@master/css'
 export const styles = {
     toggle: {
         '': `
-            inline-flex $size:1.5rem:where(*) hidden>input
+            inline-flex hidden>input
             filter:none:has([disabled])_.toggle-button
             opacity:.7:has([disabled])>.toggle-body
             w:calc(($(size)*1.625-4)*.75):active:not(:has([disabled]))_.toggle-button
