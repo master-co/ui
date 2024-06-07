@@ -1,6 +1,5 @@
 export { default } from './master.css'
 
-// styles
-export { default as button } from './button'
+export { default as button, buttonSizes, buttonColors } from './button'
 export { default as segments } from './segments'
-export { default as toggle } from './toggle'
+export { default as toggle, toggleSizes, toggleColors } from './toggle'

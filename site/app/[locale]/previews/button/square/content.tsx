@@ -1,11 +1,9 @@
-export default function Preview() {
-    return (
-        <>
-            <div className='btn btn-xs btn-primary square!'>+</div>
-            <div className='btn btn-sm btn-primary square!'>+</div>
-            <div className='btn btn-md btn-primary square!'>+</div>
-            <div className='btn btn-lg btn-primary square!'>+</div>
-            <div className='btn btn-xl btn-primary square!'>+</div>
-        </>
-    )
-}
+import { Button } from '@master/ui.react'
+
+export default () => <>
+    <Button square size="xs">+</Button>
+    <Button square size="sm">+</Button>
+    <Button square>+</Button>
+    <Button square size="lg">+</Button>
+    <Button square size="xl">+</Button>
+</>

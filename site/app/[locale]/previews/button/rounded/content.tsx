@@ -1,11 +1,9 @@
-export default function Preview() {
-    return (
-        <>
-            <div className='btn btn-xs btn-primary rounded!'>Submit</div>
-            <div className='btn btn-sm btn-primary rounded!'>Submit</div>
-            <div className='btn btn-md btn-primary rounded!'>Submit</div>
-            <div className='btn btn-lg btn-primary rounded!'>Submit</div>
-            <div className='btn btn-xl btn-primary rounded!'>Submit</div>
-        </>
-    )
-}
+import { Button } from '@master/ui.react'
+
+export default () => <>
+    <Button rounded size="xs">Submit</Button>
+    <Button rounded size="sm">Submit</Button>
+    <Button rounded>Submit</Button>
+    <Button rounded size="lg">Submit</Button>
+    <Button rounded size="xl">Submit</Button>
+</>
