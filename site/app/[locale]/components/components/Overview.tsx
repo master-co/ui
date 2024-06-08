@@ -20,7 +20,7 @@ export default function Overview() {
                         {
                             category.definedMetadataList.map((definedMetadata, index) => (
                                 <Link href={definedMetadata.pathname} key={index}>
-                                    <div className='r:2x b:1|frame overflow:hidden a:hover_{b:text-lightest} ~transform|.15s,border-color|.15s'>
+                                    <div className='r:2x b:1|line-lightest overflow:hidden a:hover_{b:text-lightest} ~transform|.15s,border-color|.15s'>
                                         <Image src={definedMetadata.openGraph?.images as string}
                                             className='a:hover_{scale(1.1)} ~transform|.15s'
                                             width={600}

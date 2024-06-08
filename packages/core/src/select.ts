@@ -11,7 +11,7 @@ export default {
         select: {
             '': 'rel fg:strong fg:lightest:has(:disabled)',
             control: 'fg:current font-family:inherit appearance:none outline:0 opacity:1 full pr:2em',
-            outlined: 'b:1|frame b:text-lightest:has(:hover:not(:disabled),:focus:not(:disabled))',
+            outlined: 'b:1|line-light b:text-lightest:has(:hover:not(:disabled),:focus:not(:disabled))',
             indicator: 'abs right:.25em middle size:1.5em untouchable',
             ...selectSizes,
         }
