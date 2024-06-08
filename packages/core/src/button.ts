@@ -12,14 +12,12 @@ export const buttonColors = {
     primary: 'primary touch-primary'
 }
 
-export const styles = {
-    btn: {
-        '': 'center-content inline-flex font:semibold outline-offset:-1 user-select:none square.round px:0:where(.round,square) {bg:transparent;fg:lightest;outline:0}:disabled',
-        ...buttonSizes,
-        ...buttonColors,
-    }
-}
-
 export default {
-    styles
+    styles: {
+        btn: {
+            '': 'center-content inline-flex font:semibold outline-offset:-1 user-select:none square.round px:0:where(.round,square) {bg:transparent;fg:lightest;outline:0;cursor:not-allowed}:disabled',
+            ...buttonSizes,
+            ...buttonColors,
+        }
+    }
 } as Config

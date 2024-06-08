@@ -1,10 +1,13 @@
 import type { Config } from '@master/css'
 
 const ui = {
+    extends: [
+        require('./button').default,
+        require('./segments').default,
+        require('./switch').default,
+        require('./select').default,
+    ],
     styles: {
-        ...require('./button').styles,
-        ...require('./segments').styles,
-        ...require('./toggle').styles,
         primary: 'bg:primary fg:primary-contrast outline:1|primary-ring',
         touch: {
             primary: 'bg:touch-primary:hover'
