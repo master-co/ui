@@ -3,3 +3,10 @@ export { default as Switch } from './Switch'
 export { default as Select } from './Select'
 export { default as SelectIndicator } from './SelectIndicator'
 export { default as SelectChevronIndicator } from './SelectChevronIndicator'
+export { default as Segments } from './Segments'
+export { default as Segment } from './Segment'
+export { default as TabView } from './TabView'
+export { default as TabControl } from './TabControl'
+export { default as TabPane } from './TabPane'
+
+

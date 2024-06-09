@@ -1,8 +1,8 @@
 import define from 'internal/utils/metadata'
 
 const metadata = define({
-    title: 'Select',
-    description: 'Beautiful select components crafted with care in every size, color and interaction.',
+    title: 'Segments',
+    description: 'A set of segment controls, each of which functions as a button.',
     category: 'Control',
     openGraph: {
         images: new URL('~/site/public/images/components/select.jpg', import.meta.url).toString()

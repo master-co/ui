@@ -1,9 +1,9 @@
 import define from 'internal/utils/metadata'
 
 const metadata = define({
-    title: 'Select',
-    description: 'Beautiful select components crafted with care in every size, color and interaction.',
-    category: 'Control',
+    title: 'Tab View',
+    description: 'A tab view presents multiple mutually exclusive content panes in the same context area, which users can switch between.',
+    category: 'View Organizing',
     openGraph: {
         images: new URL('~/site/public/images/components/select.jpg', import.meta.url).toString()
     },

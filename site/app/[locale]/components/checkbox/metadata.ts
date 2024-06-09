@@ -3,7 +3,7 @@ import define from 'internal/utils/metadata'
 const metadata = define({
     title: 'Checkbox',
     description: 'Beautiful checkbox components crafted with care in every size, color and interaction.',
-    category: 'Element',
+    category: 'Control',
     openGraph: {
         images: new URL('~/site/public/images/components/checkbox.jpg', import.meta.url).toString()
     },

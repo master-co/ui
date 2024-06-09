@@ -15,7 +15,8 @@ export default function Overview() {
             .filter(({ name }) => name !== 'Overview')
             .map((category, index) => (
                 <Fragment key={index}>
-                    <h2>{category.name}</h2>
+                    <hr />
+                    <h3 id={category.name}>{category.name}</h3>
                     <div className="grid-cols:2 grid-cols:4@sm mt:5x gap:5x">
                         {
                             category.definedMetadataList.map((definedMetadata, index) => (
