@@ -9,7 +9,7 @@ export default {
     navs: [
         { name: 'Guide', href: '/guide', Icon: IconCompass },
         { name: 'Components', href: '/components', Icon: IconComponents },
-        { name: 'Layouts', href: '/layouts', Icon: IconLayout, disabled: true },
+        // { name: 'Layouts', href: '/layouts', Icon: IconLayout, disabled: true },
         // { name: 'Sections', href: '/sections', disabled: true },
         // { name: 'Templates', href: '/templates', disabled: true },
     ],

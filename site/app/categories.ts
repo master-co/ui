@@ -5,8 +5,9 @@ export default [
 
     // components
     'Control',
+    'Navigation',
+    'Status Indicators',
     'View Organizing',
-    'Navigation'
 
     // layouts
 ]
