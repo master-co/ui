@@ -4,7 +4,9 @@ export default [
     'Getting Started',
 
     // components
-    'Element'
+    'Control',
+    'View Organizing',
+    'Navigation'
 
     // layouts
 ]

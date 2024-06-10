@@ -6,6 +6,8 @@ const ui = {
         require('./segments').default,
         require('./switch').default,
         require('./select').default,
+        require('./tabs').default,
+        require('./badge').default,
     ],
     styles: {
         primary: 'bg:primary fg:primary-contrast outline:1|primary-ring',

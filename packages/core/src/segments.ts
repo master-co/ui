@@ -1,9 +1,9 @@
 import type { Config } from '@master/css'
 
 export const segmentsSizes = {
-    sm: 'p:1 r:4 h:24 {font:12;px:10;r:4}>.segment',
-    md: 'p:5 r:8 h:32 {font:12;px:10;r:4}>.segment',
-    lg: 'p:6 r:10 h:40 {font:14;px:12;r:5}>.segment'
+    sm: 'p:1 r:4 h:24 {font:12;px:10;r:4}_.segment',
+    md: 'p:5 r:8 h:32 {font:12;px:10;r:4}_.segment',
+    lg: 'p:6 r:10 h:40 {font:14;px:12;r:5}_.segment'
 }
 
 export default {
@@ -18,6 +18,3 @@ export default {
         }
     }
 } as Config
-
-// <div class="segment-tab">
-// <div class="segment-tab">
