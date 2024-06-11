@@ -7,7 +7,7 @@ type SelectProps = {
     outlined?: boolean
     // eslint-disable-next-line @typescript-eslint/ban-types
     size?: (keyof typeof selectSizes) | string
-    indicator?: React.ReactNode
+    indicator?: JSX.Element
 } & SelectHTMLAttributes<HTMLSelectElement>
 
 const Select = ({

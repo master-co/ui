@@ -14,7 +14,7 @@ export default function TabControl<T extends ElementType = 'button'>({ as, class
     const tabView = useTabView()
     const Component = as || 'button'
     return <Component  {...props}
-        className={clsx(!Component && 'tab', className, tabView.activeTab === props.name && 'active')}
+        className={clsx(!as && 'tab', className, tabView.activeTab === props.name && 'active')}
         onClick={() => tabView.setActiveTab(props.name)}
         disabled={Component === 'button' ? disabled : undefined}
     />
