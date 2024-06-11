@@ -5,14 +5,14 @@ import clsx from 'clsx'
 type BadgeProps = {
     rounded?: boolean
     // eslint-disable-next-line @typescript-eslint/ban-types
-    size?: (keyof typeof badgeSizes) | string
+    size?: (keyof typeof badgeSizes) | (string & {})
     // eslint-disable-next-line @typescript-eslint/ban-types
-    color?: (keyof typeof badgeColors) | string
+    color?: (keyof typeof badgeColors) | (string & {})
 } & InputHTMLAttributes<HTMLSpanElement>
 
 const Badge = ({
     className,
-    size = 'md',
+    size = 'md' as never,
     color = 'primary',
     rounded,
     ...props

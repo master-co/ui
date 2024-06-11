@@ -15,7 +15,8 @@ export const buttonColors = {
 export default {
     styles: {
         btn: {
-            '': 'center-content inline-flex font:semibold outline-offset:-1 user-select:none square.round px:0:where(.round,square) {bg:transparent;fg:lightest;outline:0;cursor:not-allowed}:disabled',
+            '': 'center-content inline-flex font:semibold outline-offset:-1 user-select:none square.round px:0:where(.round,square) {bg:transparent;fg:lightest;outline:0;cursor:not-allowed}:disabled:not(.loading) {cursor:wait;text:transparent}.loading',
+            loading: 'size:1.125em abs',
             ...buttonSizes,
             ...buttonColors,
         }

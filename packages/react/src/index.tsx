@@ -11,5 +11,5 @@ export { default as TabView } from './TabView'
 export { default as TabControl } from './TabControl'
 export { default as TabPane } from './TabPane'
 export { default as Badge } from './Badge'
-
+export { default as Spinner } from './Spinner'
 

@@ -5,14 +5,14 @@ import clsx from 'clsx'
 type SwitchProps = {
     disabled?: boolean
     // eslint-disable-next-line @typescript-eslint/ban-types
-    size?: (keyof typeof switchSizes) | string
+    size?: (keyof typeof switchSizes) | (string & {})
     // eslint-disable-next-line @typescript-eslint/ban-types
-    color?: (keyof typeof switchColors) | string
+    color?: (keyof typeof switchColors) | (string & {})
 } & InputHTMLAttributes<HTMLInputElement>
 
 const Switch = ({
     className,
-    size = 'md',
+    size = 'md' as never,
     color = 'primary',
     ...props
 }: SwitchProps) => {
