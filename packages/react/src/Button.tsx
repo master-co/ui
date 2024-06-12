@@ -36,7 +36,7 @@ const Button = <T extends ElementType = 'button'>({
                 'btn',
                 size && `btn-${size}`,
                 color && `btn-${color}`,
-                round && 'round',
+                round && 'round square',
                 rounded && 'rounded',
                 square && 'square',
                 loading && 'loading',
