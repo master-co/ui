@@ -48,10 +48,7 @@ const ui = {
             }
         },
         text: {
-            'primary-contrast': {
-                '@light': '$(primary-90)',
-                '@dark': '$(primary-95)'
-            },
+            'primary-contrast': '$(white)',
             'red-contrast': '$(white)',
             'purple-contrast': '$(white)'
         }

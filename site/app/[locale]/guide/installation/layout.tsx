@@ -1,0 +1,18 @@
+import Tabs, { Tab } from 'internal/components/Tabs'
+import { createTranslation } from 'internal/utils/i18n'
+import DocLayout from 'internal/layouts/doc'
+import { getUnitCategories } from '~/site/metadata'
+import metadata from './metadata'
+
+export default async function Layout(props: any) {
+    const $ = await createTranslation(props.params.locale)
+    return (
+        <DocLayout {...props} pageCategories={getUnitCategories('guide')} pageDirname={__dirname} metadata={metadata}>
+            <Tabs className="mb:8x">
+                <Tab href='/guide/installation'>{$('General')}</Tab>
+                <Tab href='/guide/installation/cdn'>{$('CDN')}</Tab>
+            </Tabs>
+            {props.children}
+        </DocLayout >
+    )
+}
