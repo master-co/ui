@@ -4,7 +4,7 @@ const metadata = define({
     title: {
         absolute: 'Introduction to Master UI'
     },
-    description: 'Get a quick overview of Master UI and its benefits.',
+    description: 'A beautiful and universal UI library that you can copy-paste, install, or split semantic CSS into atomic CSS.',
     category: 'Getting Started',
     other: {
         subject: 'Introduction'

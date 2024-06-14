@@ -9,7 +9,7 @@ export const buttonSizes = {
 }
 
 export const buttonColors = {
-    primary: 'primary touch-primary'
+    primary: 'primary bg:touch-primary:active:not(.loading)'
 }
 
 export default {

@@ -10,7 +10,8 @@ export const badgeSizes = {
 
 export const badgeColors = {
     primary: 'primary',
-    red: 'red'
+    red: 'red',
+    purple: 'purple'
 }
 
 export default {
