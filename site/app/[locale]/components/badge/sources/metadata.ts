@@ -4,7 +4,7 @@ import common from '../metadata'
 const metadata = define({
     ...common,
     openGraph: {
-        title: 'Button Properties'
+        title: 'Badge Sources'
     }
 })
 

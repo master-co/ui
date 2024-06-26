@@ -1,7 +1,7 @@
 import define from 'internal/utils/metadata'
 
 const metadata = define({
-    title: 'Switch',
+    title: 'Toggle Switch',
     description: 'Beautiful toggle switch components crafted with care in every size, color and interaction.',
     category: 'Control',
     openGraph: {

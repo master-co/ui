@@ -9,9 +9,26 @@ export const BADGE_SIZES = {
 } as const
 
 export const BADGE_COLORS = {
-    primary: 'primary',
-    red: 'red',
-    purple: 'purple'
+    primary: 'strong-primary',
+    gray: 'strong-gray',
+    slate: 'strong-slate',
+    brown: 'strong-brown',
+    orange: 'strong-orange',
+    amber: 'strong-amber',
+    yellow: 'strong-yellow',
+    lime: 'strong-lime',
+    green: 'strong-green',
+    teal: 'strong-teal',
+    cyan: 'strong-cyan',
+    sky: 'strong-sky',
+    blue: 'strong-blue',
+    indigo: 'strong-indigo',
+    violet: 'strong-violet',
+    purple: 'strong-purple',
+    fuchsia: 'strong-fuchsia',
+    pink: 'strong-pink',
+    crimson: 'strong-crimson',
+    red: 'strong-red',
 } as const
 
 export default {

@@ -4,7 +4,7 @@ import metadata from './metadata'
 import Content, { toc } from './content.mdx'
 import generate from 'internal/utils/generate-metadata'
 import { getUnitCategories } from '~/site/metadata'
-import AppTabs from '~/internal/components/AppTabs'
+import { tabs } from '../page'
 
 export const dynamic = 'force-static'
 export const revalidate = false
@@ -13,16 +13,9 @@ export async function generateMetadata(props: any, parent: any) {
     return await generate(metadata, props, parent)
 }
 
-export const tabs = (
-    <AppTabs tabs={[
-        { label: 'Examples', href: '/components/switch' },
-        { label: 'Properties', href: '/components/switch/properties' }
-    ]} />
-)
-
 export default async function Page(props: any) {
     return (
-        <Layout {...props} $type="preview" pageCategories={getUnitCategories('components')} pageDirname={__dirname} metadata={metadata} toc={toc} >
+        <Layout {...props} pageCategories={getUnitCategories('components')} pageDirname={__dirname} metadata={metadata} toc={toc} >
             {tabs}
             <Content />
         </Layout >

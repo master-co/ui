@@ -15,9 +15,9 @@ export async function generateMetadata(props: any, parent: any) {
 
 export const tabs = (
     <AppTabs tabs={[
-        { label: 'Examples', href: '/components/badge' },
-        { label: 'Properties', href: '/components/badge/properties' },
-        { label: 'Sources', href: '/components/badge/sources' }
+        { label: 'Examples', href: '/components/toggle' },
+        { label: 'Properties', href: '/components/toggle/properties' },
+        { label: 'Sources', href: '/components/toggle/sources' }
     ]} />
 )
 

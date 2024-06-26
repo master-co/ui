@@ -10,8 +10,8 @@ type ButtonProps<T extends ElementType> = {
     rounded?: boolean
     square?: boolean
     loading?: boolean
-    size?: keyof typeof BUTTON_SIZES | string & object
-    color?: keyof typeof BUTTON_COLORS | string & object
+    size?: keyof typeof BUTTON_SIZES | string
+    color?: keyof typeof BUTTON_COLORS | string
 } & ComponentPropsWithoutRef<T>
 
 const Button = <T extends ElementType = 'button'>({

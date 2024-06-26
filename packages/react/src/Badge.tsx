@@ -4,8 +4,8 @@ import clsx from 'clsx'
 
 type BadgeProps = {
     rounded?: boolean
-    size?: keyof typeof BADGE_SIZES | (string & object)
-    color?: keyof typeof BADGE_COLORS | (string & object)
+    size?: keyof typeof BADGE_SIZES | string
+    color?: keyof typeof BADGE_COLORS | string
 } & InputHTMLAttributes<HTMLSpanElement>
 
 const Badge = ({

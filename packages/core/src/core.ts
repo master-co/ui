@@ -2,7 +2,7 @@ import { type Config, variables } from '@master/css'
 
 // extends
 import button from './button'
-import toggle from './switch'
+import toggle from './toggle'
 import segments from './segments'
 import select from './select'
 import tabs from './tabs'
