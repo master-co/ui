@@ -1,12 +1,11 @@
 import type { SelectHTMLAttributes } from 'react'
-import type { selectSizes } from '@master/ui'
+import type { SELECT_SIZES } from '@master/ui'
 import clsx from 'clsx'
 import SelectIndicator from './SelectIndicator'
 
 type SelectProps = {
     outlined?: boolean
-    // eslint-disable-next-line @typescript-eslint/ban-types
-    size?: (keyof typeof selectSizes) | string
+    size?: keyof typeof SELECT_SIZES | string & object
     indicator?: JSX.Element
 } & SelectHTMLAttributes<HTMLSelectElement>
 

@@ -1,13 +1,11 @@
 import type { InputHTMLAttributes } from 'react'
-import type { switchSizes, switchColors } from '@master/ui'
+import type { SWITCH_SIZES, SWITCH_COLORS } from '@master/ui'
 import clsx from 'clsx'
 
 type SwitchProps = {
     disabled?: boolean
-    // eslint-disable-next-line @typescript-eslint/ban-types
-    size?: (keyof typeof switchSizes) | (string & {})
-    // eslint-disable-next-line @typescript-eslint/ban-types
-    color?: (keyof typeof switchColors) | (string & {})
+    size?: keyof typeof SWITCH_SIZES | string & object
+    color?: keyof typeof SWITCH_COLORS | string & object
 } & InputHTMLAttributes<HTMLInputElement>
 
 const Switch = ({

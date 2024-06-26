@@ -1,13 +1,11 @@
 import type { InputHTMLAttributes } from 'react'
-import type { badgeSizes, badgeColors } from '@master/ui'
+import type { BADGE_SIZES, BADGE_COLORS } from '@master/ui'
 import clsx from 'clsx'
 
 type BadgeProps = {
     rounded?: boolean
-    // eslint-disable-next-line @typescript-eslint/ban-types
-    size?: (keyof typeof badgeSizes) | (string & {})
-    // eslint-disable-next-line @typescript-eslint/ban-types
-    color?: (keyof typeof badgeColors) | (string & {})
+    size?: keyof typeof BADGE_SIZES | (string & object)
+    color?: keyof typeof BADGE_COLORS | (string & object)
 } & InputHTMLAttributes<HTMLSpanElement>
 
 const Badge = ({

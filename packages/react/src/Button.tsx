@@ -1,5 +1,5 @@
 import type { ElementType, ComponentPropsWithoutRef } from 'react'
-import type { buttonSizes, buttonColors } from '@master/ui'
+import type { BUTTON_SIZES, BUTTON_COLORS } from '@master/ui'
 import clsx from 'clsx'
 import Spinner from './Spinner'
 
@@ -10,10 +10,8 @@ type ButtonProps<T extends ElementType> = {
     rounded?: boolean
     square?: boolean
     loading?: boolean
-    // eslint-disable-next-line @typescript-eslint/ban-types
-    size?: (keyof typeof buttonSizes) | (string & {})
-    // eslint-disable-next-line @typescript-eslint/ban-types
-    color?: (keyof typeof buttonColors) | (string & {})
+    size?: keyof typeof BUTTON_SIZES | string & object
+    color?: keyof typeof BUTTON_COLORS | string & object
 } & ComponentPropsWithoutRef<T>
 
 const Button = <T extends ElementType = 'button'>({

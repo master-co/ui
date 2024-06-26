@@ -1,10 +1,9 @@
 import type { HTMLAttributes } from 'react'
-import type { segmentsSizes } from '@master/ui'
+import type { SEGMENTS_SIZES } from '@master/ui'
 import clsx from 'clsx'
 
 type SegmentsProps = {
-    // eslint-disable-next-line @typescript-eslint/ban-types
-    size?: (keyof typeof segmentsSizes) | (string & {})
+    size?: keyof typeof SEGMENTS_SIZES | string & object
 } & HTMLAttributes<HTMLDivElement>
 
 const Segments = ({ className, size = 'md', ...props }: SegmentsProps) => {

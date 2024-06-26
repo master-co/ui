@@ -2,6 +2,7 @@ export default [
     'Overview',
 
     'Getting Started',
+    'Start Building',
 
     // components
     'Control',
