@@ -5,7 +5,10 @@ const metadata = define({
     description: 'Spinner indicators inform users that your app isn\'t installed while it loads content or performs lengthy operations.',
     category: 'Status Indicators',
     openGraph: {
-        images: new URL('~/site/public/images/components/select.jpg', import.meta.url).toString()
+        images: [
+            new URL('~/site/public/images/components/spinner.jpg', import.meta.url).toString(),
+            new URL('~/site/public/images/components/spinner@dark.jpg', import.meta.url).toString()
+        ]
     },
     filename: import.meta.url
 })

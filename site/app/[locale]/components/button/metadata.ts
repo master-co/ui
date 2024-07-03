@@ -5,7 +5,10 @@ const metadata = define({
     description: 'Beautiful button components crafted with care in every size, color and shape.',
     category: 'Control',
     openGraph: {
-        images: new URL('~/site/public/images/components/button.jpg', import.meta.url).toString()
+        images: [
+            new URL('~/site/public/images/components/button.jpg', import.meta.url).toString(),
+            new URL('~/site/public/images/components/button@dark.jpg', import.meta.url).toString()
+        ]
     },
     filename: import.meta.url
 })

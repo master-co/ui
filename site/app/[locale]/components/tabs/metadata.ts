@@ -5,7 +5,10 @@ const metadata = define({
     description: 'Navigation tabs are used to navigate between mutually exclusive panes of content in the same page layout.',
     category: 'Navigation',
     openGraph: {
-        images: new URL('~/site/public/images/components/select.jpg', import.meta.url).toString()
+        images: [
+            new URL('~/site/public/images/components/tabs.jpg', import.meta.url).toString(),
+            new URL('~/site/public/images/components/tabs@dark.jpg', import.meta.url).toString()
+        ]
     },
     filename: import.meta.url
 })

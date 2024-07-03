@@ -5,7 +5,10 @@ const metadata = define({
     description: 'A set of segment controls, each of which functions as a button.',
     category: 'Control',
     openGraph: {
-        images: new URL('~/site/public/images/components/select.jpg', import.meta.url).toString()
+        images: [
+            new URL('~/site/public/images/components/segments.jpg', import.meta.url).toString(),
+            new URL('~/site/public/images/components/segments@dark.jpg', import.meta.url).toString()
+        ]
     },
     filename: import.meta.url
 })
