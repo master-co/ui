@@ -1,4 +1,4 @@
-import { type Config, variables } from '@master/css'
+import { type Config } from '@master/css'
 
 // extends
 import button from './button'
@@ -20,9 +20,6 @@ const ui = {
         tabs,
         badge
     ],
-    variables: {
-        primary: variables.indigo
-    },
     styles: {
         strong
     }
