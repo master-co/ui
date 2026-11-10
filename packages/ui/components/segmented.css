@@ -1,101 +1,120 @@
 /*
  * Segmented control: a well holding a few options; the current one rises as a sheet.
- * Options are direct children: buttons with aria-pressed, links with aria-current,
- * or labels wrapping native radios. Radii nest: track 9 = thumb 6 + 3px padding.
+ * The track's padding is the inset around each option, and its radius is the option's radius plus
+ * that inset, so the corners stay concentric. Total heights match buttons: 32, 38 and 44px.
  */
 @layer components {
   .segmented {
-    --segment-height: 1.875rem;
-    --segment-padding: 3px;
-    --segment-font-size: .78125rem;
+    --segmented-inset: 4px;
+    --segmented-item-height: 1.875rem;
+    --segmented-item-radius: var(--radius-md);
+    --segmented-font-size: .8125rem;
+    --icon-size: .875rem;
     display: inline-flex;
     flex-wrap: wrap;
     gap: 2px;
     max-width: 100%;
-    padding: var(--segment-padding);
-    border-radius: calc(var(--radius-md) + var(--segment-padding));
+    padding: var(--segmented-inset);
+    border-radius: calc(var(--segmented-item-radius) + var(--segmented-inset));
     background: var(--color-surface-inset);
     box-shadow: var(--shadow-pressed);
 
-    & > :is(button, a, label) {
-      position: relative;
-      display: inline-flex;
-      flex: 1 0 auto;
-      align-items: center;
-      justify-content: center;
-      gap: var(--spacing-2xs);
-      min-width: 3.5rem;
-      min-height: var(--segment-height);
-      padding: 0 .75rem;
-      border: 0;
-      border-radius: var(--radius-md);
-      background: transparent;
-      color: var(--color-text-muted);
-      font: var(--font-weight-control) var(--segment-font-size)/1 var(--font-family-sans);
-      text-decoration: none;
-      white-space: nowrap;
-      appearance: none;
-      user-select: none;
-      cursor: pointer;
-      transition: color var(--duration-quick), background-color var(--duration-quick), box-shadow var(--duration-quick);
-
-      & > input {
-        position: absolute;
-        inset: 0;
-        margin: 0;
-        opacity: 0;
-        appearance: none;
-        cursor: inherit;
-      }
-
-      & > svg {
-        flex: none;
-        width: .875rem;
-        height: .875rem;
-      }
-
-      &:hover {
-        color: var(--color-text-strong);
-      }
-
-      &:is([aria-pressed="true"], [aria-selected="true"], [aria-checked="true"], [aria-current="page"], :has(> input:checked)) {
-        @apply --surface-sheet;
-        color: var(--color-text-strong);
-        box-shadow: var(--shadow-raised);
-      }
-
-      &:is(:focus-visible, :has(> input:focus-visible)) {
-        @apply --focus-ring;
-      }
-
-      &:is(:disabled, :has(> input:disabled)) {
-        color: var(--color-text-disabled);
-        cursor: not-allowed;
-      }
-    }
-
     &.segmented-sm {
-      --segment-height: 1.5rem;
-      --segment-padding: 2px;
-      --segment-font-size: .71875rem;
-
-      & > :is(button, a, label) {
-        min-width: 3rem;
-        padding-inline: .5625rem;
-        border-radius: var(--radius-sm);
-      }
+      --segmented-inset: 3px;
+      --segmented-item-height: 1.625rem;
+      --segmented-item-radius: var(--radius-sm);
+      --segmented-font-size: .75rem;
+      --icon-size: .75rem;
     }
 
     &.segmented-lg {
-      --segment-height: 2.25rem;
-      --segment-padding: 4px;
-      --segment-font-size: .8125rem;
+      --segmented-item-height: 2.25rem;
+      --segmented-font-size: .875rem;
+      --icon-size: 1rem;
+    }
+
+    @media (forced-colors: active) {
+      outline: 1px solid CanvasText;
+      outline-offset: -1px;
+    }
+  }
+
+  /* An option: a button with aria-pressed, a link with aria-current, or a label around a .segmented-input radio. */
+  .segmented-item {
+    position: relative;
+    display: inline-flex;
+    flex: 1 0 auto;
+    align-items: center;
+    justify-content: center;
+    gap: .375rem;
+    min-width: 3.5rem;
+    min-height: var(--segmented-item-height);
+    margin: 0;
+    padding: 0 .75rem;
+    border: 0;
+    border-radius: var(--segmented-item-radius);
+    background: transparent;
+    color: var(--color-text-muted);
+    font: var(--font-weight-control) var(--segmented-font-size)/1 var(--font-family-sans);
+    font-feature-settings: inherit;
+    text-decoration: none;
+    white-space: nowrap;
+    appearance: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    cursor: pointer;
+    /* The raised face swaps instantly; only ink and depth ease, so no frame shows a half-transparent face. */
+    transition-property: color, box-shadow;
+    transition-duration: var(--duration-quick);
+    transition-timing-function: var(--easing-glide);
+
+    @media (hover: hover) {
+      &:hover {
+        color: var(--color-text-strong);
+      }
+    }
+
+    &:is([aria-pressed="true"], [aria-selected="true"], [aria-current="page"], :has(.segmented-input:checked)) {
+      @apply --surface-sheet;
+      color: var(--color-text-strong);
+      box-shadow: var(--shadow-raised);
+    }
+
+    &:is(:focus-visible, :has(.segmented-input:focus-visible)) {
+      @apply --focus-ring;
+      z-index: 1;
+    }
+
+    &:is(:disabled, [aria-disabled="true"], :has(.segmented-input:disabled)) {
+      color: var(--color-text-disabled);
+      cursor: not-allowed;
     }
 
     @media (pointer: coarse) {
-      & > :is(button, a, label) {
-        min-height: max(var(--segment-height), 2.5rem);
+      min-height: max(var(--segmented-item-height), 2.5rem);
+    }
+
+    @media (forced-colors: active) {
+      &:is([aria-pressed="true"], [aria-selected="true"], [aria-current="page"], :has(.segmented-input:checked)) {
+        outline: 2px solid Highlight;
+        outline-offset: -2px;
       }
     }
+  }
+
+  /* The radio inside an option covers it invisibly, so the label is the target and the radio keeps its semantics. */
+  .segmented-input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: inherit;
+    opacity: 0;
+    appearance: none;
+    cursor: inherit;
   }
 }

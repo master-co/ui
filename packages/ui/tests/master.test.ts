@@ -31,7 +31,7 @@ test('every imported file is published', () => {
 
 test('the complete library compiles against the Master CSS preset', () => {
   const { nativeClassNames } = compile(imports)
-  for (const name of ['sheet', 'well', 'tray', 'btn', 'btn-primary', 'btn-icon', 'input', 'field', 'select', 'check', 'checkbox', 'radio', 'switch', 'segmented', 'tabs', 'badge', 'badge-corner', 'kbd', 'spinner']) {
+  for (const name of ['sheet', 'well', 'tray', 'icon', 'btn', 'btn-primary', 'btn-square', 'input', 'field', 'field-hint', 'select', 'check', 'checkbox', 'radio', 'switch', 'segmented', 'segmented-item', 'segmented-input', 'tabs', 'tabs-item', 'badge', 'badge-corner', 'kbd', 'spinner']) {
     assert.ok(nativeClassNames.includes(name), `missing native class .${name}`)
   }
 })
@@ -40,5 +40,24 @@ for (const component of components) {
   test(`components/${component}.css compiles on its own with theme.css`, () => {
     const { nativeClassNames } = compile(['theme.css', `components/${component}.css`])
     assert.ok(nativeClassNames.length > 0)
+  })
+}
+
+/** Selectors of component rules: every line that opens a block, except at-rules and keyframe steps. */
+function selectors(file: string) {
+  return read(file).replace(/\/\*[\s\S]*?\*\//g, '').split('\n')
+    .map(line => line.trim())
+    .filter(line => line.endsWith('{') && !line.startsWith('@') && !/^(from|to|\d+%)/.test(line))
+    .map(line => line.slice(0, -1).trim())
+}
+
+const elementTypes = /(^|[\s,(>+~&])(a|button|input|label|select|textarea|svg|img|span|div|p|ul|ol|li|nav)(?=$|[\s,:.)[>+~])/
+
+for (const component of components) {
+  test(`components/${component}.css reaches parts by class, never by element type or child combinator`, () => {
+    for (const selector of selectors(`components/${component}.css`)) {
+      assert.ok(!selector.includes('>'), `${component}: child combinator in "${selector}"`)
+      assert.ok(!elementTypes.test(selector), `${component}: element type in "${selector}"`)
+    }
   })
 }

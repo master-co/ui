@@ -1,22 +1,28 @@
 /*
- * Button: one material and one state order.
+ * Button: a small raised sheet with one state order.
  * pressed (sinks into the well) < rest (raised) < hover (raised-hover, lifted by half a pixel).
- * State is expressed by light and depth, never by changing hue.
+ * State reads through light and depth, never through hue.
  */
 @layer components {
   .btn {
     --btn-height: 2.375rem;
-    --btn-padding-x: var(--spacing-md);
+    --btn-padding-x: 1rem;
+    --btn-gap: .5rem;
     --btn-font-size: .84375rem;
     --btn-radius: var(--radius-md);
+    --btn-lift: .5px;
+    --icon-size: 1rem;
+    /* A 24px-grid icon has about 3px of air inside its box; pull 2px of it into the padding and gap. */
+    --icon-offset: -.125rem;
     position: relative;
     display: inline-flex;
     flex-shrink: 0;
     align-items: center;
     justify-content: center;
-    gap: var(--spacing-xs);
+    gap: var(--btn-gap);
     min-height: var(--btn-height);
     max-width: 100%;
+    margin: 0;
     padding: 0 var(--btn-padding-x);
     border: 0;
     border-radius: var(--btn-radius);
@@ -24,6 +30,7 @@
     color: var(--color-text-strong);
     box-shadow: var(--shadow-raised);
     font: var(--font-weight-control) var(--btn-font-size)/1.2 var(--font-family-sans);
+    font-feature-settings: inherit;
     letter-spacing: 0;
     text-align: center;
     text-decoration: none;
@@ -31,26 +38,25 @@
     appearance: none;
     user-select: none;
     -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
     cursor: pointer;
-    transition:
-      box-shadow var(--duration-quick) var(--easing-glide),
-      background var(--duration-quick) var(--easing-glide),
-      translate var(--duration-quick) var(--easing-glide),
-      color var(--duration-quick);
+    /*
+     * Backgrounds swap instantly. A gradient cannot interpolate, so transitioning background from a
+     * gradient face to a pressed color would fade from a transparent background-color and flash.
+     */
+    transition-property: box-shadow, translate, color;
+    transition-duration: var(--duration-quick);
+    transition-timing-function: var(--easing-glide);
 
-    & > svg {
-      flex: none;
-      width: 1rem;
-      height: 1rem;
-    }
-
-    &:hover:not(:disabled, [aria-disabled="true"], [aria-busy="true"]) {
-      translate: 0 -.5px;
-      box-shadow: var(--shadow-raised-hover);
+    @media (hover: hover) {
+      &:hover:not(:disabled, [aria-disabled="true"], [aria-busy="true"]) {
+        translate: 0 calc(-1 * var(--btn-lift));
+        box-shadow: var(--shadow-raised-hover);
+      }
     }
 
     &:active:not(:disabled, [aria-disabled="true"], [aria-busy="true"]) {
-      translate: 0 .5px;
+      translate: 0 var(--btn-lift);
       background: var(--color-surface-inset);
       box-shadow: var(--shadow-pressed);
       transition-duration: var(--duration-press);
@@ -67,65 +73,64 @@
       cursor: not-allowed;
     }
 
-    /* A busy button keeps its width; the spinner takes the label's place. */
+    /* Busy keeps the label and shows a spinner beside it; the button stops responding. */
     &[aria-busy="true"] {
-      color: transparent;
       cursor: progress;
-
-      & > .spinner {
-        position: absolute;
-        inset: 0;
-        margin: auto;
-        color: var(--color-text-strong);
-      }
     }
 
     &.btn-sm {
       --btn-height: 2rem;
-      --btn-padding-x: var(--spacing-sm);
+      --btn-padding-x: .75rem;
+      --btn-gap: .375rem;
       --btn-font-size: .78125rem;
       --btn-radius: 5px;
-      gap: var(--spacing-2xs);
-
-      & > svg {
-        width: .875rem;
-        height: .875rem;
-      }
+      --icon-size: .875rem;
+      --icon-offset: -.0625rem;
     }
 
     &.btn-lg {
       --btn-height: 2.75rem;
       --btn-padding-x: 1.25rem;
+      --btn-gap: .5rem;
       --btn-font-size: .9375rem;
+      --icon-size: 1.125rem;
     }
 
-    &.btn-icon {
+    /* A square button for one icon; give it an accessible name. */
+    &.btn-square {
       width: var(--btn-height);
       padding: 0;
     }
 
+    /* A round end reads tighter than a flat one, so the pill takes 2px more inline space. */
     &.btn-pill {
       --btn-radius: 999px;
       padding-inline: calc(var(--btn-padding-x) + 2px);
+
+      &.btn-square {
+        padding: 0;
+      }
     }
 
     /* Primary: ink on moonstone, pearl on obsidian. */
     &.btn-primary {
       color: var(--color-text-inverse);
-      background: linear-gradient(180deg, light-dark(oklch(32% .0026 265), oklch(98.8% 0 none)), light-dark(oklch(19.5% .003 265), oklch(91.6% .0032 265)));
+      background: linear-gradient(180deg, light-dark(oklch(32% .0026 265), oklch(98.8% 0 none)), light-dark(oklch(19.5% .003 265), oklch(91.6% .0032 265))) light-dark(oklch(19.5% .003 265), oklch(91.6% .0032 265));
       box-shadow:
         inset 0 1px 0 light-dark(oklch(100% 0 none / .17), oklch(100% 0 none)),
         inset 0 -1px 0 light-dark(oklch(0% 0 none / .3), oklch(0% 0 none / .13)),
         0 0 0 1px light-dark(oklch(14% .003 265), oklch(0% 0 none / .6)),
         0 1px 1px -.5px var(--color-shade-1), 0 3px 3px -1.5px var(--color-shade-2), 0 6px 6px -3px var(--color-shade-3);
 
-      &:hover:not(:disabled, [aria-disabled="true"], [aria-busy="true"]) {
-        background: linear-gradient(180deg, light-dark(oklch(36% .0028 265), oklch(100% 0 none)), light-dark(oklch(22% .0034 265), oklch(94% .003 265)));
-        box-shadow:
-          inset 0 1px 0 light-dark(oklch(100% 0 none / .19), oklch(100% 0 none)),
-          inset 0 -1px 0 light-dark(oklch(0% 0 none / .3), oklch(0% 0 none / .13)),
-          0 0 0 1px light-dark(oklch(14% .003 265), oklch(0% 0 none / .6)),
-          0 1px 1px -.5px var(--color-shade-1), 0 3px 3px -1.5px var(--color-shade-2), 0 6px 6px -3px var(--color-shade-3), 0 10px 10px -5px var(--color-shade-4);
+      @media (hover: hover) {
+        &:hover:not(:disabled, [aria-disabled="true"], [aria-busy="true"]) {
+          background: linear-gradient(180deg, light-dark(oklch(36% .0028 265), oklch(100% 0 none)), light-dark(oklch(22% .0034 265), oklch(94% .003 265))) light-dark(oklch(22% .0034 265), oklch(94% .003 265));
+          box-shadow:
+            inset 0 1px 0 light-dark(oklch(100% 0 none / .19), oklch(100% 0 none)),
+            inset 0 -1px 0 light-dark(oklch(0% 0 none / .3), oklch(0% 0 none / .13)),
+            0 0 0 1px light-dark(oklch(14% .003 265), oklch(0% 0 none / .6)),
+            0 1px 1px -.5px var(--color-shade-1), 0 3px 3px -1.5px var(--color-shade-2), 0 6px 6px -3px var(--color-shade-3), 0 10px 10px -5px var(--color-shade-4);
+        }
       }
 
       &:active:not(:disabled, [aria-disabled="true"], [aria-busy="true"]) {
@@ -135,8 +140,10 @@
           0 0 0 1px light-dark(oklch(14% .003 265), oklch(0% 0 none / .6));
       }
 
-      &[aria-busy="true"] > .spinner {
-        color: var(--color-text-inverse);
+      &:is(:disabled, [aria-disabled="true"]) {
+        background: var(--color-surface-inset);
+        color: var(--color-text-disabled);
+        box-shadow: var(--shadow-flat);
       }
     }
 
@@ -146,11 +153,13 @@
       color: var(--color-text-muted);
       box-shadow: none;
 
-      &:hover:not(:disabled, [aria-disabled="true"], [aria-busy="true"]) {
-        translate: none;
-        @apply --surface-sheet;
-        color: var(--color-text-strong);
-        box-shadow: var(--shadow-raised);
+      @media (hover: hover) {
+        &:hover:not(:disabled, [aria-disabled="true"], [aria-busy="true"]) {
+          translate: none;
+          @apply --surface-sheet;
+          color: var(--color-text-strong);
+          box-shadow: var(--shadow-raised);
+        }
       }
 
       &[aria-pressed="true"] {
@@ -166,18 +175,14 @@
     }
 
     /* Danger: the same raised material, with the status ink on its label. */
-    &.btn-danger {
+    &.btn-danger:not(:disabled, [aria-disabled="true"]) {
       color: var(--color-danger);
-
-      &[aria-busy="true"] > .spinner {
-        color: var(--color-danger);
-      }
     }
 
     /* Gold: a brand moment, at most one per view. */
     &.btn-gold {
       color: var(--color-gold-ink);
-      background: linear-gradient(180deg, oklch(92.4% .085 88) 0%, oklch(86.5% .128 82) 46%, oklch(79% .142 75) 100%);
+      background: linear-gradient(180deg, oklch(92.4% .085 88) 0%, oklch(86.5% .128 82) 46%, oklch(79% .142 75) 100%) oklch(79% .142 75);
       text-shadow: 0 1px 0 oklch(100% 0 none / .35);
       box-shadow:
         inset 0 1px 0 oklch(100% 0 none / .65),
@@ -186,27 +191,56 @@
         0 1px 1px -.5px var(--color-shade-1), 0 3px 3px -1.5px var(--color-shade-2),
         0 10px 18px -8px light-dark(oklch(72% .16 72 / .42), oklch(82% .16 80 / .3));
 
-      &:hover:not(:disabled, [aria-disabled="true"], [aria-busy="true"]) {
-        box-shadow:
-          inset 0 1px 0 oklch(100% 0 none / .7),
-          inset 0 -1px 0 oklch(52% .12 58 / .28),
-          0 0 0 1px light-dark(oklch(58% .12 66 / .8), oklch(82% .14 82 / .65)),
-          0 1px 1px -.5px var(--color-shade-1), 0 3px 3px -1.5px var(--color-shade-2),
-          0 14px 24px -10px light-dark(oklch(72% .16 72 / .5), oklch(82% .16 80 / .36));
+      @media (hover: hover) {
+        &:hover:not(:disabled, [aria-disabled="true"], [aria-busy="true"]) {
+          box-shadow:
+            inset 0 1px 0 oklch(100% 0 none / .7),
+            inset 0 -1px 0 oklch(52% .12 58 / .28),
+            0 0 0 1px light-dark(oklch(58% .12 66 / .8), oklch(82% .14 82 / .65)),
+            0 1px 1px -.5px var(--color-shade-1), 0 3px 3px -1.5px var(--color-shade-2),
+            0 14px 24px -10px light-dark(oklch(72% .16 72 / .5), oklch(82% .16 80 / .36));
+        }
       }
 
       &:active:not(:disabled, [aria-disabled="true"], [aria-busy="true"]) {
-        background: linear-gradient(180deg, oklch(84% .12 80), oklch(80% .135 76));
+        background: linear-gradient(180deg, oklch(84% .12 80), oklch(80% .135 76)) oklch(80% .135 76);
         box-shadow: inset 0 1px 3px oklch(45% .1 55 / .45), 0 0 0 1px light-dark(oklch(58% .12 66 / .7), oklch(82% .14 82 / .55));
       }
 
-      &[aria-busy="true"] > .spinner {
-        color: var(--color-gold-ink);
+      &:is(:disabled, [aria-disabled="true"]) {
+        background: var(--color-surface-inset);
+        color: var(--color-text-disabled);
+        text-shadow: none;
+        box-shadow: var(--shadow-flat);
       }
     }
 
     @media (pointer: coarse) {
       min-height: max(var(--btn-height), 2.75rem);
+
+      &.btn-square {
+        min-width: max(var(--btn-height), 2.75rem);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      --btn-lift: 0px;
+    }
+
+    /* Shadows disappear in forced colors; an outline keeps the edge without moving layout. */
+    @media (forced-colors: active) {
+      outline: 1px solid ButtonText;
+      outline-offset: -1px;
+
+      &:focus-visible {
+        outline: 2px solid Highlight;
+        outline-offset: 2px;
+      }
+
+      &:is(:disabled, [aria-disabled="true"]) {
+        outline-color: GrayText;
+        color: GrayText;
+      }
     }
   }
 }

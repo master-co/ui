@@ -33,16 +33,17 @@ Or import only the theme and the components you use:
 | Component | Classes |
 | --- | --- |
 | Surface | `tray`, `sheet`, `sheet-{flat,raised,floating}`, `well` |
-| Button | `btn`, `btn-{primary,quiet,danger,gold}`, `btn-{sm,lg}`, `btn-{icon,pill}` |
+| Icon | `icon` |
+| Button | `btn`, `btn-{primary,quiet,danger,gold}`, `btn-{sm,lg}`, `btn-{square,pill}` |
 | Input | `input`, `input-{sm,lg}`, `field`, `field-hint`, `field-error` |
 | Select | `select`, `select-raised`, `select-{sm,lg}` |
 | Checkbox and radio | `checkbox`, `radio`, `check` |
 | Switch | `switch`, `switch-{sm,lg}` |
-| Segmented control | `segmented`, `segmented-{sm,lg}` |
-| Tabs | `tabs`, `tabs-sm` |
+| Segmented control | `segmented`, `segmented-{sm,lg}`, `segmented-item`, `segmented-input` |
+| Tabs | `tabs`, `tabs-sm`, `tabs-item` |
 | Badge | `badge`, `badge-{outline,raised,ink}`, `badge-{info,success,warning,danger}`, `badge-dot`, `badge-{sm,lg,pill}`, `badge-corner` |
 | Kbd | `kbd`, `kbd-raised` |
-| Spinner | `spinner`, `spinner-{sm,lg,xl}` |
+| Spinner | `spinner`, `spinner-{sm,lg,xl,inline}` |
 
 Documentation: [ui.master.co](https://ui.master.co)
 
