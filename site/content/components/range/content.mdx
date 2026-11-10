@@ -1,0 +1,76 @@
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+
+A range picks two values on one scale: the lowest and the highest price, the start and the end of a clip. It is two native [sliders](/components/slider) in one group. The group draws a single track and fills it with ink between the thumbs; each input keeps its own keys, its own label and its own value in the form.
+
+<ComponentPreview name="default" title="Range" bodyClass="p-lg" html={`<div class="flex flex-col gap-sm max-w(360) mx-auto">
+  <div class="flex items-baseline justify-between text-sm">
+    <span class="fg-text-strong" id="price">Price</span>
+    <output class="fg-text-muted" id="price-output">$120 to $380</output>
+  </div>
+  <div class="range" role="group" aria-labelledby="price">
+    <input type="range" class="slider range-start" min="0" max="500" step="10" value="120" aria-label="Lowest price">
+    <input type="range" class="slider range-end" min="0" max="500" step="10" value="380" aria-label="Highest price">
+  </div>
+</div>
+<script>
+(function () {
+  var range = document.querySelector('.range')
+  var output = document.getElementById('price-output')
+  range.addEventListener('input', function () {
+    var values = Array.from(range.querySelectorAll('.slider'), function (slider) { return Number(slider.value) })
+    output.textContent = '$' + Math.min.apply(null, values) + ' to $' + Math.max.apply(null, values)
+  })
+})()
+</script>`} caption="Drag either thumb, or focus one and use the arrow keys. The script only writes the two numbers above the track." />
+
+## No script for the fill \{#no-script-for-the-fill\}
+
+Each thumb is a view timeline inside its own input, the way a single slider reads its fill. The group takes both timelines with `timeline-scope`, runs one animation on each and so knows two percentages. It paints from the lesser to the greater, which means the thumbs may cross: the fill is still between them, and the lower of the two values is still the start of the range.
+
+Read the pair the same way in your form handler: the smaller value is the lower bound. If the two must keep a distance, clamp them on `input`; nothing in the drawing depends on it.
+
+Where the browser has no scroll-driven animations the track is a plain well under the two thumbs, and both inputs work as they always have. Chromium and Safari 26 draw the fill.
+
+## How the thumbs share a track \{#how-the-thumbs-share-a-track\}
+
+The two inputs lie in the same grid cell. Each gives up its own track and takes the pointer only on its thumb, so a press between the thumbs reaches neither and a thumb is never hidden behind the other input's empty track. The one being moved comes to the front. A press on the bare track does nothing: with two thumbs it could not say which one it meant.
+
+## Disabled \{#disabled\}
+
+Disable both inputs. The thumbs and the fill fade together.
+
+<ComponentPreview name="disabled" title="Disabled" bodyClass="p-lg" html={`<div class="range max-w(360) mx-auto" role="group" aria-label="Seats, set by your plan">
+  <input type="range" class="slider range-start" value="20" aria-label="Fewest seats" disabled>
+  <input type="range" class="slider range-end" value="60" aria-label="Most seats" disabled>
+</div>`} />
+
+## Accessibility \{#accessibility\}
+
+- Give the group `role="group"` and a name, and give each input its own `aria-label`: "Lowest price" and "Highest price", not "Start" and "End".
+- Print the two values near the track. A thumb does not show its number.
+- Each thumb is a tab stop with the keys of a native slider. On touch screens a thumb is 24px.
+- When the exact numbers matter more than the feel of the scale, offer two [steppers](/components/stepper) or two number fields as well.
+
+## Classes \{#classes\}
+
+| Class | Description |
+| --- | --- |
+| `range` | The group: one track, filled between its two thumbs |
+| `range-start`, `range-end` | On the two `slider` inputs: names each thumb for the fill |
+
+## Custom properties \{#custom-properties\}
+
+| Property | Default | Description |
+| --- | --- | --- |
+| `--range-track` | `.375rem` | Track thickness |
+| `--range-color` | `var(--color-surface-inverse)` | The fill |
+
+## Related \{#related\}
+
+<ComponentLinks slugs={['slider', 'stepper', 'calendar']} />
+
+## Source \{#source\}
+
+<ComponentSource name="range" />
