@@ -1,0 +1,107 @@
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+
+A toast is a brief message over the page about something that just happened: saved, deployed, copied. Each toast is a non-modal `<dialog>` inside a fixed `toast-region`. Being a dialog, it can be dismissed without script, and it enters and leaves with motion the stylesheet writes in CSS.
+
+<ComponentPreview name="default" title="Toast" bodyClass="p-lg min-h(240)" html={`<div class="toast-region" role="region" aria-label="Notifications" aria-live="polite">
+  <dialog open class="toast toast-success" aria-labelledby="toast-deployed">
+    <svg class="icon toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 4.5-5.5"/></svg>
+    <div class="toast-body">
+      <p class="toast-title" id="toast-deployed">Deployed to production</p>
+      <p class="toast-description">atlas.dev is live in 14 regions.</p>
+    </div>
+    <form method="dialog" class="toast-close">
+      <button class="btn btn-quiet btn-square btn-sm" aria-label="Dismiss">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </form>
+  </dialog>
+</div>`} caption="Dismiss the toast with its button. No script is involved." />
+
+## Showing and dismissing \{#showing-and-dismissing\}
+
+- A toast with the `open` attribute is shown when the page loads, which suits a message rendered by the server after a form post.
+- From script, call `toast.show()` on a toast in the region, or append a new `<dialog open class="toast">` to it. `@starting-style` gives the toast the frame it arrives from in both cases.
+- A `<form method="dialog">` around a button dismisses the toast, as does a button with `commandfor` and `command="close"`. `display` transitions with `allow-discrete`, so the exit plays before the toast stops taking space.
+
+## Timed \{#timed\}
+
+`toast-timed` makes a toast leave by itself after six seconds. The clock is a CSS animation that ends in `display: none`, and it pauses while the pointer or the keyboard is on the toast, so a reader is never raced. Set `--toast-duration` to change the time. Keep a timed toast free of actions a reader might still need: anything important belongs in an [alert](/components/alert) that stays.
+
+<ComponentPreview name="timed" title="Timed" bodyClass="p-lg min-h(200)" html={`<div class="toast-region" role="region" aria-label="Notifications" aria-live="polite">
+  <dialog open class="toast toast-timed" aria-label="Link copied">
+    <div class="toast-body">
+      <p class="toast-description">Link copied to the clipboard.</p>
+    </div>
+  </dialog>
+</div>`} caption="This toast leaves after six seconds. Reload the page to see it again." />
+
+## With an action \{#with-an-action\}
+
+A [button](/components/button) after the body sits at the end of the row. A status modifier colors the icon only; the words stay in ink.
+
+<ComponentPreview name="action" title="With an action" bodyClass="p-lg min-h(300)" html={`<div class="toast-region" role="region" aria-label="Notifications" aria-live="polite">
+  <dialog open class="toast" aria-labelledby="toast-archived">
+    <div class="toast-body">
+      <p class="toast-title" id="toast-archived">Project archived</p>
+      <p class="toast-description">Atlas is hidden from the dashboard.</p>
+    </div>
+    <form method="dialog"><button class="btn btn-sm">Undo</button></form>
+  </dialog>
+  <dialog open class="toast toast-danger" aria-labelledby="toast-failed">
+    <svg class="icon toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16v.01"/></svg>
+    <div class="toast-body">
+      <p class="toast-title" id="toast-failed">The build failed</p>
+      <p class="toast-description">The install step exited with code 1.</p>
+    </div>
+    <form method="dialog" class="toast-close">
+      <button class="btn btn-quiet btn-square btn-sm" aria-label="Dismiss">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </form>
+  </dialog>
+</div>`} />
+
+## The region \{#the-region\}
+
+`toast-region` is fixed to the bottom end corner and stacks toasts with the newest at the bottom. It takes no pointer events itself, so the page under its empty space stays usable. On a narrow screen it spans the width.
+
+| Class | Placement |
+| --- | --- |
+| `toast-region` | Bottom, at the end edge |
+| `toast-region-top` | Top; toasts arrive downward and the newest is on top |
+| `toast-region-center` | Centered instead of at the end edge |
+
+The region is an ordinary fixed element with a `z-index`. To show toasts above an open modal [dialog](/components/dialog), give the region `popover="manual"` and call `showPopover()` on it once: it then joins the top layer.
+
+## Accessibility \{#accessibility\}
+
+- Make the region a live region with `aria-live="polite"`, so a toast is announced when it appears, and name the region with `aria-label`.
+- Name each toast with `aria-labelledby` pointing at its title, or with `aria-label`.
+- A toast is for confirmation. A reader must be able to miss it without losing anything, so do not put the only way to an action in one.
+- With reduced motion a toast fades in place.
+
+## Classes \{#classes\}
+
+| Class | Description |
+| --- | --- |
+| `toast-region` | The fixed stack |
+| `toast-region-top`, `toast-region-center` | Placement of the stack |
+| `toast` | A message, on a `<dialog>` |
+| `toast-timed` | Leaves by itself after `--toast-duration` |
+| `toast-info`, `toast-success`, `toast-warning`, `toast-danger` | Status color for the icon |
+| `toast-icon` | Centers an `icon` on the first line |
+| `toast-body`, `toast-title`, `toast-description` | The words |
+| `toast-close` | The dismiss form or button, pulled into the padding |
+
+## Custom properties \{#custom-properties\}
+
+| Property | Default | Description |
+| --- | --- | --- |
+| `--toast-duration` | `6s` | How long a timed toast stays |
+| `--toast-inset` | `1rem` | Distance of the region from the viewport edge |
+| `--toast-gap` | `.5rem` | Space between toasts |
+
+## Source \{#source\}
+
+<ComponentSource name="toast" />

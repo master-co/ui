@@ -20,13 +20,14 @@ The character is restrained: ink rather than color, half-pixel contours, corners
 
 ## Principles \{#principles\}
 
-1. **Monochrome interface.** Controls use ink and pearl only. Hue marks status, always beside words that say the same thing; gold is kept for one brand moment per view.
+1. **Monochrome interface.** Controls use ink and pearl only. Hue marks status, always beside words that say the same thing; the brand color is kept for one moment per view.
 2. **Zinc neutrals.** Every neutral is the preset's zinc, with a hue of 265 at almost no chroma. Lines and shadows carry no hue of their own.
 3. **One material ladder.** Base, tray, raised, floating; an inset sits below its surroundings. Never invent a surface color.
 4. **State is depth.** A control lifts by half a pixel on hover and sinks into a well when pressed. Do not express state by changing hue.
 5. **Soft edges.** A contour is a half-pixel ring: one device pixel on a dense screen, finer than any border. An edge is found by its light and its shadow before its line.
-6. **Concentric radii.** Radii nest by the inset between surfaces, so an outer corner is the inner one plus the space between them: an 8px control, 4px inside a 12px sheet, 4px inside a 16px tray.
-7. **Short shadows.** Every shadow layer doubles its offset, blurs by twice that offset and pulls its spread in by the offset. A shadow stays under its object and fades out; there is no single large blur and no hard lower edge.
+6. **Continuous corners.** A circular arc meets a straight edge with a sudden change of curvature, which reads as a hard shoulder. Where the browser can draw them, corners are squircles: the curve starts earlier and turns gradually, like a polished stone.
+7. **Concentric radii.** Radii nest by the inset between surfaces, so an outer corner is the inner one plus the space between them: a 10px control, a 16px sheet, a 20px tray 4px around it.
+8. **Short shadows.** Every shadow layer doubles its offset, blurs by twice that offset and pulls its spread in by the offset. A shadow stays under its object and fades out; there is no single large blur and no hard lower edge.
 
 ## Surfaces \{#surfaces\}
 
@@ -62,9 +63,9 @@ Lines are neutral ink alphas on moonstone and white alphas on obsidian. Two of t
 | --- | --- | --- | --- | --- |
 | `--color-line-hair` | 6.5% | 7.5% | 1px | Quiet separators inside a surface |
 | `--color-line-divider` | 12% | 13% | 1px | Rules between sections, tab rows |
-| `--color-line-contour` | 15% | 15% | .5px | The outline of every surface |
-| `--color-line-strong` | 24% | 25% | .5px | Hovered contours, switch tracks, keycaps |
-| `--color-line-mark` | 36% | 38% | .5px | Checkboxes, a focused field's contour |
+| `--color-line-contour` | 12% | 14% | .5px | The outline of every surface |
+| `--color-line-strong` | 20% | 23% | .5px | Hovered contours, switch tracks, keycaps |
+| `--color-line-mark` | 32% | 36% | .5px | Checkboxes, a focused field's contour |
 
 A control that must be found at a glance takes a firmer contour than a surface does: a field stacks two contour rings, and a checkbox uses the mark.
 
@@ -106,19 +107,50 @@ Each layer doubles the previous offset, blurs by twice its offset and pulls its 
 
 ## Shape \{#shape\}
 
-Radii nest by the inset between surfaces: a 16px tray around a 12px sheet, an 11px segmented track around a 7px thumb, a 12px menu around 8px rows. An outer corner is always the inner corner plus the space between them, so the gap keeps one width around the bend.
+Radii are roles, like surfaces. A chip is a small mark, a control is something pressed or typed in, and a surface is a sheet. Because the tokens are in `@theme`, they are utilities too: `r-control` gives a custom element the corner of a button.
 
-| Radius | Used by |
-| --- | --- |
-| 5px | Checkboxes, keycaps, small badges |
-| 6px (`--radius-md`) | Badges, skeletons |
-| 7px | Small controls, tooltips, segmented thumbs |
-| 8px (`--radius-lg`) | Buttons, fields, wells, menu items |
-| 10px | Large controls, alerts |
-| 12px (`--radius-xl`) | Sheets, cards, popovers, menus |
-| 16px (`--radius-2xl`) | Trays, dialogs |
+| Token | Value | Used by |
+| --- | --- | --- |
+| `--radius-chip` | 6px | Badges, keycaps, checkboxes, skeletons |
+| `--radius-control-sm` | 8px | Small buttons and fields, menu rows, options, segmented thumbs |
+| `--radius-control` | 10px | Buttons, fields, wells |
+| `--radius-control-lg` | 12px | Large buttons and fields, alerts, choices, toasts |
+| `--radius-surface` | 16px | Sheets, cards |
 
-Only pills, dots and avatars are rounder.
+A holder has no radius of its own. It derives its corner from what it holds: the inner radius plus the inset between them. A tray is a sheet's corner plus 4px, a menu is a row's corner plus 4px, a segmented track is its thumb's corner plus its inset, and a button inside a field is the field's corner minus 4px. The gap therefore keeps one width around the bend. Only pills, dots and avatars are rounder.
+
+<ComponentPreview name="nesting" title="Nested corners" bodyClass="p-lg" html={`<div class="tray max-w(360) mx-auto">
+  <div class="sheet flex flex-col gap-md p-lg">
+    <div class="input-group">
+      <input class="input-group-field" value="atlas.dev" aria-label="Domain">
+      <button type="button" class="btn">Verify</button>
+    </div>
+    <div class="segmented" role="radiogroup" aria-label="Environment">
+      <label class="segmented-item"><input type="radio" class="segmented-input" name="environment" checked>Production</label>
+      <label class="segmented-item"><input type="radio" class="segmented-input" name="environment">Preview</label>
+    </div>
+  </div>
+</div>`} />
+
+### Continuous corners \{#continuous-corners\}
+
+`border-radius` draws a quarter circle. Where a quarter circle meets a straight edge, the curvature jumps from zero to its full value at once, and the eye reads that joint as a shoulder. A squircle, drawn with `corner-shape: squircle`, starts turning earlier and tightens gradually, so the edge flows into the corner.
+
+Components draw squircles where the browser supports `corner-shape`, and quarter circles elsewhere. A squircle hugs its corner more closely than a circle of the same radius, so a component multiplies its radius by `--corner-scale` to keep the same apparent roundness: 1.6 with squircles, 1 without. Both values are set once in the theme, and every component reads them.
+
+| Property | With `corner-shape` | Without |
+| --- | --- | --- |
+| `--corner-shape` | `squircle` | `round` |
+| `--corner-scale` | `1.6` | `1` |
+
+Pills, dots, avatars and thumbs stay true circles. To keep circular corners everywhere, set both properties back:
+
+```css name=app.css
+:root {
+  --corner-shape: round;
+  --corner-scale: 1;
+}
+```
 
 ## Type \{#type\}
 
@@ -150,15 +182,25 @@ One easing family keeps interaction quick and explanation calm.
 
 Overlays write both directions in CSS. `@starting-style` gives the frame an element arrives from, and `display` and `overlay` transition with `allow-discrete`, so the exit plays before the element leaves the top layer. An exit is shorter than its entrance. With reduced motion, travel and scale are removed and the fade stays.
 
-## Status and gold \{#status-and-gold\}
+## Status and brand \{#status-and-brand\}
 
-`--color-info`, `--color-success`, `--color-warning` and `--color-danger` are the only hues in the interface. Each is tuned to read as text on its theme. Brand gold appears on [`btn-gold`](/components/button#variants), once per view.
+`--color-info`, `--color-success`, `--color-warning` and `--color-danger` are the only hues the interface uses to speak. Each is tuned to read as text on its theme.
 
-<ComponentPreview name="status" title="Status and gold" html={`<span class="badge badge-info badge-dot">Info</span>
+The brand color is the one hue that is not a status. It appears on [`btn-brand`](/components/button#variants), once per view.
+
+| Token | Value | Use for |
+| --- | --- | --- |
+| `--color-brand` | `var(--color-indigo-50)` | The face of a brand surface |
+| `--color-brand-ink` | near white | Text on a brand surface |
+| `--color-brand-text` | indigo-60 on moonstone, indigo-30 on obsidian | Brand-colored text on the page |
+
+A brand surface mixes its edge, its light and its glow from `--color-brand`, so overriding that one token retunes it. Set `--color-brand-ink` to a dark ink if your brand color is light.
+
+<ComponentPreview name="status" title="Status and brand" html={`<span class="badge badge-info badge-dot">Info</span>
 <span class="badge badge-success badge-dot">Success</span>
 <span class="badge badge-warning badge-dot">Warning</span>
 <span class="badge badge-danger badge-dot">Danger</span>
-<button type="button" class="btn btn-gold btn-sm">Upgrade</button>`} />
+<button type="button" class="btn btn-brand btn-sm">Upgrade</button>`} />
 
 ## Color schemes \{#color-schemes\}
 
@@ -183,7 +225,7 @@ Override tokens after importing Master UI. Components read them through `var()`,
 
 @theme {
   /* Rounder controls */
-  --radius-lg: .625rem;
+  --radius-control: .75rem;
   /* A warmer canvas */
   --color-surface-base: light-dark(oklch(98.4% .004 80), oklch(19.4% .004 60));
 }
