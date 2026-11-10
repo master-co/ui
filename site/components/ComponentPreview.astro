@@ -1,0 +1,33 @@
+---
+import Code from '@master/internal-site/components/Code.astro'
+import Demo from '@master/internal-site/demo/Demo.svelte'
+import DemoViewport from '@master/internal-site/demo/DemoViewport.svelte'
+import { demoDocument } from '@master/internal-site/demo/reference/document.ts'
+import { uiSource } from '~/site/utils/ui-source'
+
+interface Props {
+  /** A stable id, unique within the page. */
+  name: string
+  title: string
+  /** Trusted site-authored markup; never pass user-provided HTML. */
+  html: string
+  caption?: string
+  /** Utilities for the preview body, such as layout around the specimen. */
+  bodyClass?: string
+  responsive?: boolean
+  height?: number
+}
+
+/**
+ * One tray: an isolated preview compiled from the published @master/ui source with the Master CSS preset,
+ * and the markup a reader copies. Light and dark previews come from the same CSS.
+ */
+const { name, title, html, caption = '', bodyClass = 'flex flex-wrap items-center justify-center gap-md p-lg', responsive, height } = Astro.props
+const section = { page: 'components', id: name, title, html: [html], css: uiSource(), classes: [], classLists: [], highlighted: [] }
+const document = demoDocument(section as Parameters<typeof demoDocument>[0], { html, caption, bodyClass } as Parameters<typeof demoDocument>[1])
+---
+
+<Demo title={title} caption={caption} frame="none" data-component-preview={name}>
+  <Fragment slot="source"><Code lang="html" beautify code={html} /></Fragment>
+  <DemoViewport client:idle={{ timeout: 500 }} title={title} document={document} theme responsive={responsive} height={height} sizing="content" />
+</Demo>
