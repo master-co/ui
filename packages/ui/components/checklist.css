@@ -1,0 +1,139 @@
+/*
+ * Checklist: a short list of things to do, each a native checkbox with a title and a line of help.
+ * A row is a label, so the whole of it checks the box. A step that is done steps back: its title turns to
+ * the muted ink and a hairline is drawn through it from its start, the way a pen would.
+ * The list counts itself. CSS counters add up the rows and, with :has(), the checked ones; checklist-count
+ * writes the two numbers after the rows, so "2 / 5" is always true without a script.
+ * Rows part on hairlines that start at the text, as a list's do. A checklist has no surface of its own.
+ */
+@layer components {
+  .checklist {
+    --checklist-gap: .75rem;
+    --checklist-padding-y: .6875rem;
+    /* What stands between the two numbers of the count. */
+    --checklist-of: ' / ';
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    color: var(--color-text-body);
+    font-size: .875rem;
+    line-height: 1.45;
+    list-style: none;
+    counter-reset: checklist-total checklist-done;
+  }
+
+  /* A step. It counts itself, and counts itself done while its checkbox is checked. */
+  .checklist-item {
+    position: relative;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    counter-increment: checklist-total;
+
+    &:has(.checkbox:checked) {
+      counter-increment: checklist-total checklist-done;
+    }
+
+    /* The hairline under a step that another follows; it starts where the words do. */
+    &:has(+ .checklist-item)::after {
+      content: '';
+      position: absolute;
+      inset-inline: calc(1rem + var(--checklist-gap)) 0;
+      bottom: 0;
+      height: 1px;
+      background: var(--color-line-hair);
+      pointer-events: none;
+    }
+  }
+
+  /* The label: the checkbox, then the words. The box is level with the first line of the title. */
+  .checklist-label {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--checklist-gap);
+    min-width: 0;
+    padding: var(--checklist-padding-y) 0;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+
+    &:has(.checkbox:disabled) {
+      cursor: not-allowed;
+    }
+
+    .checkbox {
+      flex: none;
+      margin-top: calc((1lh - 1rem) / 2);
+    }
+  }
+
+  .checklist-body {
+    display: grid;
+    flex: 1 1 0;
+    gap: .125rem;
+    min-width: 0;
+  }
+
+  /*
+   * The title is inline, so the stroke through it is one line however the title wraps: it is a background
+   * that grows from nothing to the title's whole length.
+   */
+  .checklist-title {
+    justify-self: start;
+    background: linear-gradient(currentColor, currentColor) 0 calc(50% + .0625em) / 0 1px no-repeat;
+    color: var(--color-text-strong);
+    font-weight: var(--font-weight-control);
+    transition-property: background-size, color;
+    transition-duration: var(--duration-base), var(--duration-quick);
+    transition-timing-function: var(--easing-glide);
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: none;
+    }
+  }
+
+  .checklist-item:has(.checkbox:checked) .checklist-title {
+    background-size: 100% 1px;
+    color: var(--color-text-muted);
+  }
+
+  .checklist-item:has(.checkbox:disabled) .checklist-title {
+    color: var(--color-text-disabled);
+  }
+
+  .checklist-description {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: .8125rem;
+    text-wrap: pretty;
+  }
+
+  /* Something at the end of a step: a link to where it is done, a badge, a time. */
+  .checklist-end {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    align-self: center;
+    gap: .5rem;
+    color: var(--color-text-muted);
+    font-size: .8125rem;
+  }
+
+  /*
+   * The count: how many steps are done, of how many. It comes after the steps in the markup, where the
+   * counters have their final values; its own words follow the numbers.
+   */
+  .checklist-count {
+    margin: .625rem 0 0;
+    color: var(--color-text-muted);
+    font-size: .8125rem;
+    font-variant-numeric: tabular-nums;
+
+    &::before {
+      content: counter(checklist-done) var(--checklist-of) counter(checklist-total) ' ';
+      color: var(--color-text-strong);
+      font-weight: var(--font-weight-control);
+    }
+  }
+}

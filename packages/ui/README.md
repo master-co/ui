@@ -67,10 +67,12 @@ Or import only the theme and the components you use:
 | Radio | `radio` |
 | Switch | `switch`, `switch-{sm,lg}` |
 | Slider | `slider` |
+| Range | `range`, `range-start`, `range-end` |
 | Segmented control | `segmented`, `segmented-{sm,lg}`, `segmented-item`, `segmented-input` |
 | Chip | `chip`, `chip-input`, `chip-remove` |
 | Swatch | `swatch`, `swatch-{sm,lg}`, `swatch-square`, `swatch-input` |
 | Choice | `choice`, `choice-body`, `choice-title`, `choice-description`, `choice-end` |
+| Checklist | `checklist`, `checklist-item`, `checklist-label`, `checklist-body`, `checklist-title`, `checklist-description`, `checklist-end`, `checklist-count` |
 | Rating | `rating`, `rating-{sm,lg}`, `rating-input` |
 | Dropzone | `dropzone`, `dropzone-input`, `dropzone-title`, `dropzone-description` |
 | OTP | `otp`, `otp-slot`, `otp-separator` |
@@ -113,6 +115,7 @@ Or import only the theme and the components you use:
 | Timeline | `timeline`, `timeline-item`, `timeline-marker`, `timeline-body`, `timeline-title`, `timeline-description`, `timeline-time` |
 | Carousel | `carousel`, `carousel-{2,3}`, `carousel-slide` |
 | Marquee | `marquee`, `marquee-reverse`, `marquee-track` |
+| Compare | `compare`, `compare-before`, `compare-after`, `compare-range` |
 | Heading | `heading`, `heading-{xs,sm,lg,xl,2xl,display}`, `eyebrow`, `lead`, `lead-{sm,lg}` |
 | Figure | `figure`, `figure-{framed,center}`, `figure-media`, `figure-caption` |
 | Quote | `quote`, `quote-lg`, `quote-text`, `quote-source`, `quote-name` |
@@ -123,6 +126,8 @@ Or import only the theme and the components you use:
 | Icon | `icon` |
 | Kbd | `kbd`, `kbd-raised` |
 | Mark | `mark`, `mark-{brand,underline}` |
+| Mention | `mention`, `mention-self` |
+| Citation | `citation` |
 
 ## Layout classes
 

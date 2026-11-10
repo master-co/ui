@@ -1,0 +1,174 @@
+/*
+ * Range: two values on one track: a lowest and a highest price, the start and the end of a clip.
+ * It is two native range inputs, each a slider, laid over each other in one group. The group draws the track
+ * and fills it with ink between the two thumbs; the inputs keep only their thumbs, and only the thumbs take
+ * the pointer, so either one can be reached where they stand close. Each input keeps its own keys, its own
+ * label and its own value in the form.
+ * The fill needs no script. Each thumb is a view timeline in its own input, and the group reads both: it
+ * paints from the lesser reading to the greater, so the thumbs may cross and the fill is still between them.
+ * Without scroll-driven animations the track stays a plain well under the two thumbs.
+ */
+@property --range-from {
+  syntax: '<percentage>';
+  inherits: true;
+  initial-value: 0%;
+}
+
+@property --range-to {
+  syntax: '<percentage>';
+  inherits: true;
+  initial-value: 100%;
+}
+
+@layer components {
+  .range {
+    --range-track: .375rem;
+    --range-color: var(--color-surface-inverse);
+    /* Until a timeline says otherwise the fill is empty: both ends stand at the start. */
+    --range-fill-from: 0%;
+    --range-fill-to: 0%;
+    position: relative;
+    display: grid;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+
+    /* The track: one well for both thumbs, filled between them. */
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 50% 0 auto;
+      height: var(--range-track);
+      translate: 0 -50%;
+      border-radius: 999px;
+      background:
+        linear-gradient(90deg, transparent var(--range-fill-from), var(--range-color) 0, var(--range-color) var(--range-fill-to), transparent 0)
+        var(--color-surface-inset);
+      box-shadow: var(--shadow-pressed);
+      pointer-events: none;
+    }
+
+    &:dir(rtl)::before {
+      background:
+        linear-gradient(270deg, transparent var(--range-fill-from), var(--range-color) 0, var(--range-color) var(--range-fill-to), transparent 0)
+        var(--color-surface-inset);
+    }
+
+    &:has(.slider:disabled)::before {
+      opacity: .5;
+    }
+
+    /*
+     * The two sliders share one cell. Each gives up its own track and takes the pointer only on its thumb.
+     * The one being moved comes to the front, so a thumb that was under the other can be picked up again.
+     */
+    .slider {
+      --slider-color: transparent;
+      /* Positioned, so the thumbs stand over the group's track. */
+      position: relative;
+      grid-area: 1 / 1;
+      pointer-events: none;
+
+      &:is(:active, :focus-visible) {
+        z-index: 1;
+      }
+
+      &::-webkit-slider-runnable-track {
+        background: transparent;
+        box-shadow: none;
+      }
+
+      &::-webkit-slider-thumb {
+        pointer-events: auto;
+      }
+
+      &::-moz-range-track {
+        background: transparent;
+        box-shadow: none;
+      }
+
+      &::-moz-range-progress {
+        background: transparent;
+      }
+
+      &::-moz-range-thumb {
+        pointer-events: auto;
+      }
+    }
+
+    @media (forced-colors: active) {
+      --range-color: Highlight;
+
+      &::before {
+        forced-color-adjust: none;
+        background:
+          linear-gradient(90deg, transparent var(--range-fill-from), Highlight 0, Highlight var(--range-fill-to), transparent 0)
+          Canvas;
+        box-shadow: inset 0 0 0 1px CanvasText;
+      }
+    }
+  }
+
+  /*
+   * The fill. Each thumb names a view timeline in its input, as a slider's does, and the group makes both
+   * names its own, runs one animation on each and reads two percentages.
+   */
+  @supports (view-timeline: --range-start inline) and (timeline-scope: --range-start) {
+    .range {
+      --range-fill-from: min(var(--range-from), var(--range-to));
+      --range-fill-to: max(var(--range-from), var(--range-to));
+      timeline-scope: --range-start, --range-end;
+      animation-name: range-from, range-to;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-timeline: --range-start, --range-end;
+      animation-range: contain;
+
+      &:dir(rtl) {
+        animation-direction: reverse;
+      }
+
+      /* A slider inside a range hands its timeline to the group and runs no fill of its own. */
+      .slider {
+        timeline-scope: none;
+        animation-name: none;
+      }
+
+      .range-start::-webkit-slider-thumb {
+        view-timeline: --range-start inline;
+        view-timeline-inset: var(--slider-bleed);
+      }
+
+      .range-end::-webkit-slider-thumb {
+        view-timeline: --range-end inline;
+        view-timeline-inset: var(--slider-bleed);
+      }
+    }
+  }
+
+  /* The two ends. The classes only name the thumbs for the fill; which value is the lower is the form's to read. */
+  .range-start, .range-end {
+    min-width: 0;
+  }
+}
+
+@keyframes range-from {
+  from {
+    --range-from: 100%;
+  }
+
+  to {
+    --range-from: 0%;
+  }
+}
+
+@keyframes range-to {
+  from {
+    --range-to: 100%;
+  }
+
+  to {
+    --range-to: 0%;
+  }
+}

@@ -1,0 +1,217 @@
+/*
+ * Compare: two pictures of the same thing, one over the other, and a handle that draws the line between them.
+ * The handle is a native range input: it has the keys, the value and the name of a slider. Its thumb is a
+ * pearl grip on a fine line; the picture on top is clipped at the line.
+ * Where scroll-driven animations exist the thumb's own place in the input sets --compare-position, so the
+ * picture follows the handle with no script. Elsewhere a script copies the input's value into the same
+ * property, and without either the pictures stay parted where --compare-position puts them.
+ * The input is one grip wider than the frame, so the middle of the grip runs from one edge to the other.
+ */
+@property --compare-position {
+  syntax: '<percentage>';
+  inherits: true;
+  initial-value: 50%;
+}
+
+@layer components {
+  .compare {
+    --compare-radius: var(--radius-surface);
+    --compare-grip: 2rem;
+    position: relative;
+    display: grid;
+    min-width: 0;
+    margin: 0;
+    border-radius: calc(var(--compare-radius) * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    overflow: clip;
+    background: var(--color-surface-chip);
+    user-select: none;
+    -webkit-user-select: none;
+    isolation: isolate;
+
+    /* The line between the two pictures: pearl, with a faint dark edge so it holds on a pale picture. */
+    &::before {
+      content: '';
+      position: absolute;
+      inset-block: 0;
+      inset-inline-start: var(--compare-position);
+      z-index: 1;
+      width: 1.5px;
+      translate: -50% 0;
+      background: oklch(100% 0 none);
+      box-shadow: 0 0 0 .5px oklch(0% 0 none / .22), 0 0 6px oklch(0% 0 none / .2);
+      pointer-events: none;
+    }
+
+    &:dir(rtl)::before {
+      translate: 50% 0;
+    }
+
+    /* The inward edge every picture gets, drawn over both of them. */
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      border-radius: inherit;
+      corner-shape: inherit;
+      box-shadow: inset 0 0 0 1px light-dark(oklch(0% 0 none / .08), oklch(100% 0 none / .08));
+      pointer-events: none;
+    }
+
+    @media (forced-colors: active) {
+      outline: 1px solid CanvasText;
+      outline-offset: -1px;
+
+      &::before {
+        background: CanvasText;
+      }
+    }
+  }
+
+  /* The two pictures share one cell and one size. */
+  .compare-before, .compare-after {
+    display: block;
+    grid-area: 1 / 1;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    margin: 0;
+    object-fit: cover;
+    pointer-events: none;
+  }
+
+  /* The one on top shows from the line to the end. */
+  .compare-after {
+    clip-path: inset(0 0 0 var(--compare-position));
+
+    &:dir(rtl) {
+      clip-path: inset(0 var(--compare-position) 0 0);
+    }
+  }
+
+  /* The handle: a range input across the middle of the frame, with no track and a grip for a thumb. */
+  .compare-range {
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline: calc(var(--compare-grip) / -2);
+    z-index: 3;
+    width: calc(100% + var(--compare-grip));
+    height: var(--compare-grip);
+    margin: 0;
+    padding: 0;
+    border: 0;
+    translate: 0 -50%;
+    background: transparent;
+    appearance: none;
+    cursor: ew-resize;
+    touch-action: pan-y;
+    -webkit-tap-highlight-color: transparent;
+
+    &:focus-visible {
+      outline: none;
+    }
+
+    &::-webkit-slider-runnable-track {
+      height: var(--compare-grip);
+      background: transparent;
+    }
+
+    /* The grip: the pearl thumb of a slider, larger, with a pair of chevrons to say which way it goes. */
+    &::-webkit-slider-thumb {
+      width: var(--compare-grip);
+      height: var(--compare-grip);
+      border: 0;
+      border-radius: 999px;
+      background:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' fill='none' stroke='%2334353a' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m13 12-4 4 4 4M19 12l4 4-4 4'/%3E%3C/svg%3E") center / contain no-repeat,
+        linear-gradient(180deg, oklch(100% 0 none), oklch(96.5% .0011 265));
+      box-shadow: 0 0 0 .5px oklch(0% 0 none / .2), 0 1px 2px -.5px oklch(0% 0 none / .2), 0 3px 6px -2px oklch(0% 0 none / .2), 0 8px 16px -8px oklch(0% 0 none / .25);
+      appearance: none;
+      transition: scale var(--duration-quick) var(--easing-glide);
+    }
+
+    &::-moz-range-track {
+      height: var(--compare-grip);
+      background: transparent;
+    }
+
+    &::-moz-range-thumb {
+      width: var(--compare-grip);
+      height: var(--compare-grip);
+      border: 0;
+      border-radius: 999px;
+      background:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' fill='none' stroke='%2334353a' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m13 12-4 4 4 4M19 12l4 4-4 4'/%3E%3C/svg%3E") center / contain no-repeat,
+        linear-gradient(180deg, oklch(100% 0 none), oklch(96.5% .0011 265));
+      box-shadow: 0 0 0 .5px oklch(0% 0 none / .2), 0 1px 2px -.5px oklch(0% 0 none / .2), 0 3px 6px -2px oklch(0% 0 none / .2), 0 8px 16px -8px oklch(0% 0 none / .25);
+    }
+
+    &:active::-webkit-slider-thumb {
+      scale: 1.06;
+    }
+
+    &:focus-visible::-webkit-slider-thumb {
+      outline: 2px solid oklch(100% 0 none);
+      outline-offset: 2px;
+      box-shadow: 0 0 0 2px var(--color-focus), 0 0 0 .5px oklch(0% 0 none / .2), 0 3px 6px -2px oklch(0% 0 none / .2);
+    }
+
+    &:focus-visible::-moz-range-thumb {
+      outline: 2px solid oklch(100% 0 none);
+      outline-offset: 2px;
+    }
+
+    @media (pointer: coarse) {
+      --compare-grip: 2.75rem;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      &:active::-webkit-slider-thumb {
+        scale: none;
+      }
+    }
+
+    @media (forced-colors: active) {
+      &::-webkit-slider-thumb {
+        forced-color-adjust: none;
+        background: ButtonText;
+        box-shadow: none;
+      }
+    }
+  }
+
+  /* The handle moves the picture: the grip is a view timeline in its input and the frame reads it. */
+  @supports (view-timeline: --compare-grip inline) and (timeline-scope: --compare-grip) {
+    .compare {
+      timeline-scope: --compare-grip;
+      animation-name: compare-position;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-timeline: --compare-grip;
+      animation-range: contain;
+
+      &:dir(rtl) {
+        animation-direction: reverse;
+      }
+    }
+
+    .compare-range {
+      overflow: hidden;
+
+      &::-webkit-slider-thumb {
+        view-timeline: --compare-grip inline;
+      }
+    }
+  }
+}
+
+@keyframes compare-position {
+  from {
+    --compare-position: 100%;
+  }
+
+  to {
+    --compare-position: 0%;
+  }
+}
