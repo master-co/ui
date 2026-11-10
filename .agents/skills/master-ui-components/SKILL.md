@@ -4,18 +4,30 @@ description: Author, review and document Master UI components, the native HTML a
 license: MIT
 metadata:
   author: master-co
-  version: "0.1.0"
+  version: "0.2.0"
 ---
 
 # Master UI components
 
-A Master UI component is one native element with the right semantics, one stylesheet in `@layer components`, and markup a reader can copy into any stack. It must work without JavaScript and read the Moonstone / Obsidian theme only through tokens.
+A Master UI component is one native element with the right semantics, one stylesheet in `@layer components`, and markup a reader can copy into any stack. It must work without JavaScript, use the web platform's own feature for its job, and read the Moonstone / Obsidian theme only through tokens.
 
 Use `$master-design` for craft judgment (surfaces, geometry, type, states, motion). This skill supplies the contracts that make components consistent with each other.
 
 ## Before changing a component
 
 Read `packages/ui/theme.css`, the component's stylesheet, a neighboring component of the same kind, its page in `site/content/components/<slug>/`, and `site/content/guide/theme/content.mdx`. Keep the public vocabulary small: a new class or custom property is a public API.
+
+## Platform first
+
+Before writing a class, a wrapper or a script, ask what the browser already does. A component uses the platform feature for its job and treats it as an enhancement over a working baseline. Read [platform](references/platform.md) for the patterns and the traps; in short:
+
+- **Overlays are native.** `<dialog>` with `command` / `commandfor` for modals, the `popover` attribute for floating surfaces, `popover="hint"` with `interestfor` for tooltips. The browser owns the top layer, focus, <kbd>Esc</kbd> and light dismiss.
+- **Placement is CSS.** Anchor positioning places popovers, menus, tooltips and the select's list (`@apply --anchored`), and moves a single indicator between options (`anchor-scope`). No positioning script, no measured coordinates.
+- **The select is still a `<select>`.** `appearance: base-select` restyles its list; older browsers keep the platform's.
+- **Components adapt to context.** `@container` for the space a component is given, `:has()` for a state in a descendant, a custom property for a single inherited value and a style query only when one flag switches several declarations.
+- **Fields size and validate themselves.** `field-sizing: content` grows a textarea; `:user-invalid` reports native constraints.
+- **Motion in and out is CSS.** `@starting-style` with `transition-behavior: allow-discrete`, and `interpolate-size` for an unknown height.
+- **Every upgrade has a stated fallback.** Gate it with `@supports` or a forgiving selector, keep the baseline rule first, and write what happens without the feature in the header comment and on the component page.
 
 ## Selector contract
 
@@ -25,7 +37,8 @@ These rules are enforced by `packages/ui/tests/master.test.ts`.
 - **Never select by element type or child combinator.** No `> svg`, `> input`, `button`, `a`, `label`, `*`. Markup changes (a framework wraps an icon in a `<span>`, an `<img>` replaces an `<svg>`) must not break a component, and a component must not restyle content it does not own.
 - **Pass values down with custom properties.** A component sets `--icon-size`, `--icon-offset` or `--spinner-size`; the child's own class reads them. Put `icon` on the icon itself.
 - **Nest modifiers as compound selectors** inside the base rule (`&.btn-primary`), so they do not depend on file order.
-- **No data attributes for variants.** States use native pseudo-classes and ARIA on the element itself: `:checked`, `:disabled`, `:focus-visible`, `aria-pressed`, `aria-current`, `aria-selected`, `aria-busy`, `aria-invalid`. A descendant state may be queried by class: `:has(.segmented-input:checked)`.
+- **No data attributes for variants.** States use native pseudo-classes, native state attributes and ARIA on the element itself: `:checked`, `:disabled`, `:focus-visible`, `:open`, `:popover-open`, `:user-invalid`, `[open]`, `aria-pressed`, `aria-current`, `aria-selected`, `aria-busy`, `aria-invalid`. A descendant state may be queried by class: `:has(.segmented-input:checked)`.
+- **A container may tune a whole component it holds, by class.** `.btn-group .btn` and `.input-group .btn` set that component's custom properties and the corners that meet. This is for joining, never for restyling content.
 - Never use `!important`, IDs or anything that would beat a consumer's utilities: the `utilities` layer must keep winning.
 
 ## Material and tokens
@@ -33,11 +46,14 @@ These rules are enforced by `packages/ui/tests/master.test.ts`.
 - Read tokens only: `--color-surface-*`, `--color-line-*`, `--color-text-*`, `--color-focus`, status `--color-info|success|warning|danger`, `--shadow-pressed|flat|raised|raised-hover|lifted|floating|overlay`, `--radius-*`, `--easing-glide`, `--duration-press|quick|base`, `--font-weight-control`. Never raw palette steps in component rules; new public tokens go in `theme.css` `@theme`.
 - Monochrome chrome: ink and pearl. Hue only for status, always with words; gold only on `btn-gold`.
 - State is depth, not hue: rest raised → hover lifts 0.5px to raised-hover → press sinks into the well. Disabled drops to a flat well with disabled ink.
+- **Edges are soft.** A contour is a half-pixel ring drawn with a zero-blur `box-shadow` (`0 0 0 .5px`, or `inset` for a well), never a 1px border. Use `--color-line-contour` for a surface, `--color-line-strong` for a hovered contour and a small track, `--color-line-mark` for a checkbox and a focused field: a control that must be found at a glance takes a firmer contour than a surface. `--color-line-hair` and `--color-line-divider` are the only 1px rules. A shadow layer blurs by twice its offset and pulls its spread in by the offset, so it fades out and never ends in a line; do not add a hard `inset 0 -1px 0` under a face.
+- **Shared recipes are mixins in `theme.css`:** `--surface-sheet` (a raised face), `--focus-ring`, `--anchored` (a popover placed against its invoker) and `--pop` (how a popover enters and leaves).
+- **A surface publishes `--surface-color`.** A ring that cuts a shape out of the surface behind it (a corner badge, stacked avatars, a status dot) reads it, with the base canvas as its fallback.
 - `light-dark()` accepts colors only: put it in gradient stops, never around a gradient.
 
 ## Geometry and type
 
-See [sizes and geometry](references/geometry.md) for the scale. In short: controls are 32 / 38 / 44px (fields 40px), radii nest by the inset between surfaces, icons are 14 / 16 / 18px at a 1.5 stroke, labels use `--font-weight-control` and never change weight between states.
+See [sizes and geometry](references/geometry.md) for the scale. In short: controls are 32 / 38 / 44px (fields 40px) with 7 / 8 / 10px corners, radii nest by the inset between surfaces (control 8 → sheet 12 → tray 16), icons are 14 / 16 / 18px at a 1.5 stroke, labels use `--font-weight-control` and never change weight between states.
 
 ## States and platforms
 
@@ -49,12 +65,13 @@ Every interactive component covers, in this order of checks: rest, hover, active
 - `@media (forced-colors: active)`: shadows vanish, so draw the edge with a system-color `outline` (never a layout-changing border) and keep checked marks visible with `forced-color-adjust: none` plus system colors.
 - Restyled native inputs reset `margin`, `padding` and `border` so host styles cannot distort them.
 - Name transitioned properties; never `transition: all`.
+- A row in a list (a menu item, an option) answers the pointer at once, with no fade: the highlight has to keep up with a moving pointer. Keyboard focus on a row adds an ink outline inside it, so focus and hover stay different facts.
 - Never transition `background` across a gradient. A gradient cannot interpolate, so it swaps instantly while `background-color` fades from transparent and the control flashes for a frame. Swap faces instantly, ease only depth (`box-shadow`), travel and ink, and put a solid color under every gradient face (`@apply --surface-sheet` does). Solid-to-solid fills, such as a checkbox filling with ink, may fade.
 
 ## Add or change a component
 
 1. Write `packages/ui/components/<slug>.css` with a header comment that states its material and geometry.
-2. Import it in `packages/ui/master.css` and add its classes to the native-class list in `packages/ui/tests/master.test.ts`.
+2. Import it in `packages/ui/master.css` and add its classes to the native-class list in `packages/ui/tests/master.test.ts`. Stylesheets that tune another component (`input.css` after `button.css`) come later in the import order.
 3. Add it to `site/components/catalog.ts` and write `site/content/components/<slug>/{metadata.ts,content.mdx}` following [the documentation pattern](references/documentation.md).
 4. Update the class table in `packages/ui/README.md`.
 5. Verify as in [verification](references/verification.md).
