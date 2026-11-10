@@ -1,9 +1,10 @@
 # Master UI
 
-Native HTML and CSS interface components crafted with [Master CSS](https://css.master.co).
+Native HTML and CSS interface components crafted with [Master CSS](https://css.master.co), in the Moonstone / Obsidian material: a zinc pearl in light mode, a matte obsidian in dark mode, lit from above with layered shadows.
 
 - **Native elements first.** Components style `<button>`, `<select>` and `<input role="switch">`, keeping their keyboard, form and accessibility behavior.
 - **One stylesheet per component.** Rules live in `@layer components` and read Master CSS theme tokens, so utilities in markup always win.
+- **Light, not decoration.** One material ladder of trays, sheets and wells; state reads through depth, not hue.
 - **Light and dark from one source.** Semantic tokens resolve with `light-dark()`.
 
 ```css

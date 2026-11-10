@@ -10,11 +10,18 @@ Master UI publishes native HTML and CSS components for Master CSS v2. Keep share
 
 ## Component Contracts
 
+The visual language is Master's Moonstone / Obsidian system (`@master/internal-site` `styles/system/DESIGN.md` is the reference). `site/content/guide/theme` documents it publicly; keep both in agreement.
+
 - Style the native element with the right semantics; components must work without JavaScript.
-- Write rules as native CSS in `@layer components` with class selectors. Read Master CSS tokens (`--color-*`, `--spacing-*`, `--radius-*`, `--font-size-*`, `--duration-*`, `--easing-*`, `--shadow-*`) instead of hard-coded values; public library tokens go in `theme.css` `@theme`.
-- Name classes `<component>` and `<component>-<modifier>`. Expose tunable values as `--<component>-*` custom properties on the base class; modifiers set those properties.
-- Never add utilities or `!important` that would beat a consumer's utilities; the `utilities` layer must keep winning.
-- Keep states inside the component rule (`&:hover`, `&:focus-visible { @apply --focus-ring; }`, `:disabled`, ARIA states).
+- Write rules as native CSS in `@layer components` with class selectors. Read theme tokens only (`--color-surface-*`, `--color-line-*`, `--color-text-*`, `--shadow-{pressed,flat,raised,raised-hover,lifted,floating,overlay}`, `--radius-*`, `--easing-glide`, `--duration-*`); never raw palette steps in component rules. Public tokens go in `theme.css` `@theme`.
+- Monochrome: chrome is ink and pearl. Hue only for status (`--color-info|success|warning|danger`); gold only on `btn-gold`.
+- State is depth: rest is raised, hover lifts 0.5px to raised-hover, press sinks into the well. Do not change hue for state.
+- Radii are small and nest by a 4px inset (tray 14 → sheet 10 → control 6). Shadows converge (offset and blur double, spread pulls in by half).
+- Name classes `<component>` and `<component>-<modifier>` (`btn btn-primary btn-sm`). Never use data attributes for variants. Nest modifiers as `&.btn-primary` inside the base rule so they do not depend on source order. States use native pseudo-classes and ARIA (`aria-pressed`, `aria-current`, `aria-selected`, `aria-busy`, `aria-invalid`).
+- Expose tunable values as `--<component>-*` custom properties on the base class.
+- Reset `padding` and `border` on restyled native inputs so host styles cannot distort them.
+- Never add `!important` or anything that would beat a consumer's utilities; the `utilities` layer must keep winning.
+- `light-dark()` accepts colors only; put it inside gradient stops, never around a gradient.
 - Framework bindings (React, Svelte, Vue) and a copy-in registry are planned on top of these stylesheets; do not add them without a design discussion.
 
 ## Validation
