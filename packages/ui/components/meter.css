@@ -1,0 +1,82 @@
+/*
+ * Meter: a native <meter> for a measurement within a known range: storage used, a score, a password's strength.
+ * A thin well with an ink fill, the same shape as a progress bar. The element's own low, high and optimum
+ * attributes decide the tone: ink while the value is where it should be, the warning ink when it is not, and
+ * the danger ink when it is far from it. Say the reading in words beside it.
+ * Chromium and Firefox draw this; Safari keeps the platform's own meter.
+ */
+@layer components {
+  .meter {
+    --meter-height: .375rem;
+    display: block;
+    width: 100%;
+    height: var(--meter-height);
+    margin: 0;
+    border: 0;
+    border-radius: 999px;
+    background: var(--color-surface-inset);
+    box-shadow: var(--shadow-pressed);
+    vertical-align: middle;
+
+    /*
+     * Chromium draws a meter from a bar and a value inside an inner element that it lays out itself.
+     * Leave that inner element alone: giving it a display of its own moves the bar off the track.
+     */
+    &::-webkit-meter-bar {
+      height: var(--meter-height);
+      border: 0;
+      border-radius: 999px;
+      background: transparent;
+    }
+
+    &::-webkit-meter-optimum-value, &::-webkit-meter-suboptimum-value, &::-webkit-meter-even-less-good-value {
+      border-radius: 999px;
+      transition: inline-size var(--duration-base) var(--easing-glide);
+    }
+
+    &::-webkit-meter-optimum-value {
+      background: var(--color-surface-inverse);
+    }
+
+    &::-webkit-meter-suboptimum-value {
+      background: var(--color-warning);
+    }
+
+    &::-webkit-meter-even-less-good-value {
+      background: var(--color-danger);
+    }
+
+    /* Firefox paints the platform's meter until appearance is none, then draws its one bar. */
+    @supports (-moz-appearance: none) {
+      overflow: hidden;
+      appearance: none;
+
+      &::-moz-meter-bar {
+        border-radius: 999px;
+        background: var(--color-surface-inverse);
+      }
+
+      &:-moz-meter-sub-optimum::-moz-meter-bar {
+        background: var(--color-warning);
+      }
+
+      &:-moz-meter-sub-sub-optimum::-moz-meter-bar {
+        background: var(--color-danger);
+      }
+    }
+
+    &.meter-sm { --meter-height: .25rem; }
+    &.meter-lg { --meter-height: .5rem; }
+
+    @media (prefers-reduced-motion: reduce) {
+      &::-webkit-meter-optimum-value, &::-webkit-meter-suboptimum-value, &::-webkit-meter-even-less-good-value {
+        transition: none;
+      }
+    }
+
+    @media (forced-colors: active) {
+      outline: 1px solid CanvasText;
+      outline-offset: -1px;
+    }
+  }
+}

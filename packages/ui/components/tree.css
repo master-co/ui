@@ -1,0 +1,155 @@
+/*
+ * Tree: nested rows for things that contain things: folders, outlines, categories.
+ * Without script a branch is a native <details> whose <summary> is the row, so it folds and unfolds with the
+ * keys the browser already gives it. With a script that provides the tree pattern, the same classes read
+ * aria-expanded instead. Rows are dense and quiet; the current one takes a chip tone, and each level is set
+ * in on a hairline guide.
+ */
+@layer components {
+  .tree {
+    --tree-item-height: 1.75rem;
+    --tree-indent: 1rem;
+    --icon-size: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    color: var(--color-text-body);
+    font: 400 .8125rem/1.2 var(--font-family-sans);
+    font-feature-settings: inherit;
+    list-style: none;
+  }
+
+  /* A row: a link, a button, the <summary> of a branch, or an element with role="treeitem". */
+  .tree-item {
+    --icon-offset: -.0625rem;
+    --icon-color: var(--color-text-muted);
+    display: flex;
+    align-items: center;
+    gap: .375rem;
+    min-width: 0;
+    min-height: var(--tree-item-height);
+    margin: 0;
+    padding: 0 .5rem 0 .25rem;
+    border: 0;
+    border-radius: calc(var(--radius-chip) * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    outline: none;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-feature-settings: inherit;
+    text-align: start;
+    text-decoration: none;
+    white-space: nowrap;
+    list-style: none;
+    appearance: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    cursor: pointer;
+
+    &::-webkit-details-marker {
+      display: none;
+    }
+
+    /* Every row keeps the chevron's column, so a leaf lines up with the branches beside it. */
+    &::before {
+      content: '';
+      flex: none;
+      width: .875rem;
+      height: .875rem;
+    }
+
+    @media (hover: hover) {
+      &:hover:not([aria-disabled="true"]) {
+        background: var(--color-surface-chip);
+        color: var(--color-text-strong);
+      }
+    }
+
+    &:is([aria-current="page"], [aria-current="true"], [aria-selected="true"]) {
+      --icon-color: currentColor;
+      background: var(--color-surface-chip);
+      color: var(--color-text-strong);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--color-focus);
+      outline-offset: -2px;
+    }
+
+    &[aria-disabled="true"] {
+      --icon-color: currentColor;
+      color: var(--color-text-disabled);
+      cursor: not-allowed;
+    }
+
+    @media (pointer: coarse) {
+      min-height: max(var(--tree-item-height), 2.5rem);
+    }
+
+    @media (forced-colors: active) {
+      &:is([aria-current="page"], [aria-current="true"], [aria-selected="true"]) {
+        outline: 2px solid Highlight;
+        outline-offset: -2px;
+      }
+    }
+  }
+
+  /* The row of a branch: its column holds a chevron that turns down when the branch is open. */
+  .tree-toggle::before {
+    background: var(--color-text-muted);
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6.5 4.5 3.5 3.5-3.5 3.5'/%3E%3C/svg%3E") center / contain no-repeat;
+    transition: rotate var(--duration-quick) var(--easing-glide);
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: none;
+    }
+
+    @media (forced-colors: active) {
+      background: CanvasText;
+    }
+  }
+
+  .tree-toggle:dir(rtl)::before {
+    scale: -1 1;
+  }
+
+  /* Open: by its <details>, or by aria-expanded. A closed branch inside an open one keeps its own chevron. */
+  .tree-group[open] .tree-toggle::before, .tree-toggle[aria-expanded="true"]::before {
+    rotate: 90deg;
+  }
+
+  .tree-group[open] .tree-group:not([open]) .tree-toggle::before {
+    rotate: none;
+  }
+
+  /* A <details> that holds a branch. */
+  .tree-group {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+  }
+
+  /* The rows under a branch, one level in, on a hairline that runs down from the chevron. */
+  .tree-sub {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    margin: 0;
+    margin-inline-start: calc(.25rem + .4375rem - .5px);
+    padding: 0;
+    padding-inline-start: calc(var(--tree-indent) - .25rem - .4375rem - .5px);
+    border-inline-start: 1px solid var(--color-line-hair);
+    list-style: none;
+  }
+
+  /* Driven by script: a row that says it is collapsed hides the rows that follow it. */
+  .tree-item[aria-expanded="false"] + .tree-sub {
+    display: none;
+  }
+}

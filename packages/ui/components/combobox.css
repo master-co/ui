@@ -1,0 +1,79 @@
+/*
+ * Combobox: a text field that opens a listbox of matches.
+ * The wrapper names itself as an anchor and scopes that name, so its listbox opens against the whole field
+ * and takes at least its width, with no measuring. Filtering, the active option and the popover's open state
+ * belong to the script; the stylesheet reads aria-expanded to turn the chevron.
+ */
+@layer components {
+  .combobox {
+    display: block;
+    min-width: 0;
+    anchor-name: --combobox;
+    anchor-scope: --combobox;
+
+    /*
+     * The list. Without anchor positioning it stays where it is in the flow, directly under the field,
+     * which is why it is written after the field in the markup.
+     */
+    .listbox[popover] {
+      position-anchor: --combobox;
+      inset: auto;
+      margin: 6px 0;
+      min-inline-size: anchor-size(--combobox inline);
+    }
+  }
+
+  /* The button that opens the list from the field's end: a chevron that turns over while the list is open. */
+  .combobox-toggle {
+    position: relative;
+    display: inline-grid;
+    flex: none;
+    place-items: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    margin: 0 -.25rem 0 0;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-text-muted);
+    appearance: none;
+    cursor: pointer;
+
+    &::before {
+      content: '';
+      width: .875rem;
+      height: .875rem;
+      background: currentColor;
+      mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4.5 6.5 3.5 3.5 3.5-3.5'/%3E%3C/svg%3E") center / contain no-repeat;
+      transition: rotate var(--duration-base) var(--easing-glide);
+    }
+
+    @media (hover: hover) {
+      &:hover {
+        color: var(--color-text-strong);
+      }
+    }
+
+    &:focus-visible {
+      @apply --focus-ring;
+      outline-offset: 0;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      &::before {
+        transition: none;
+      }
+    }
+
+    @media (forced-colors: active) {
+      &::before {
+        background: ButtonText;
+      }
+    }
+  }
+
+  .combobox:has([aria-expanded="true"]) .combobox-toggle::before {
+    rotate: x 180deg;
+  }
+}

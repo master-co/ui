@@ -1,0 +1,148 @@
+/*
+ * List: rows of things, each with something to recognize it by, its words, and something at its end:
+ * members, files, settings. Rows sit on hairlines that start at the text, not under the media, so the
+ * column of avatars or icons reads as one edge. A list has no surface of its own.
+ */
+@layer components {
+  .list {
+    --list-padding-y: .75rem;
+    --list-gap: .75rem;
+    --icon-size: 1.125rem;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    color: var(--color-text-body);
+    font-size: .875rem;
+    line-height: 1.45;
+    list-style: none;
+  }
+
+  /* A row: a list item, or a link or a button when the whole row goes somewhere. */
+  .list-row {
+    --icon-color: var(--color-text-muted);
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: var(--list-gap);
+    min-width: 0;
+    margin: 0;
+    padding: var(--list-padding-y) 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-feature-settings: inherit;
+    text-align: start;
+    text-decoration: none;
+    appearance: none;
+  }
+
+  /* What the row is recognized by: an avatar, an icon or a thumbnail. */
+  .list-media {
+    flex: none;
+  }
+
+  /* The words. */
+  .list-body {
+    display: grid;
+    flex: 1 1 0;
+    gap: .0625rem;
+    min-width: 0;
+  }
+
+  /*
+   * The hairline under a row. It spans the row, and where anchor positioning exists it starts at the body's
+   * edge instead: the body names itself as an anchor, scoped to its own row.
+   */
+  .list-row:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    height: 1px;
+    background: var(--color-line-hair);
+    pointer-events: none;
+  }
+
+  @supports (anchor-scope: --list-body) {
+    .list-row {
+      anchor-scope: --list-body;
+    }
+
+    .list-body {
+      anchor-name: --list-body;
+    }
+
+    .list-row:not(:last-child)::after {
+      inset-inline-start: anchor(--list-body start);
+    }
+  }
+
+  .list-title {
+    margin: 0;
+    overflow: hidden;
+    color: var(--color-text-strong);
+    font-weight: var(--font-weight-control);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .list-description {
+    margin: 0;
+    overflow: hidden;
+    color: var(--color-text-muted);
+    font-size: .8125rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* A value, a status or a control at the end of the row. */
+  .list-end {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: .5rem;
+    color: var(--color-text-muted);
+    font-size: .8125rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /*
+   * Interactive: rows that open or select. Each is a rounded target with room at its sides, and answers the
+   * pointer at once; the hairlines step aside, since the rows now part themselves.
+   */
+  .list-interactive {
+    gap: 2px;
+
+    .list-row {
+      padding-inline: .625rem;
+      border-radius: calc(var(--radius-control) * var(--corner-scale));
+      corner-shape: var(--corner-shape);
+      -webkit-tap-highlight-color: transparent;
+      cursor: pointer;
+
+      @media (hover: hover) {
+        &:hover {
+          --icon-color: currentColor;
+          background: var(--color-surface-chip);
+        }
+      }
+
+      &:is([aria-current="page"], [aria-current="true"], [aria-selected="true"]) {
+        --icon-color: currentColor;
+        background: var(--color-surface-chip);
+      }
+
+      &:focus-visible {
+        outline: 2px solid var(--color-focus);
+        outline-offset: -2px;
+      }
+    }
+
+    .list-row::after {
+      display: none;
+    }
+  }
+}

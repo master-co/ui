@@ -2,6 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readdirSync, readFileSync } from 'node:fs'
 import { compileManifestSync } from '@master/css-compiler/node'
+import { createRenderSessionSync } from '@master/css/node'
 import preset from '@master/css-preset/default-manifest.json' with { type: 'json' }
 
 const root = new URL('../', import.meta.url)
@@ -47,9 +48,30 @@ test('the complete library compiles against the Master CSS preset', () => {
     'nav', 'nav-item', 'nav-end', 'nav-label', 'nav-group', 'nav-toggle', 'nav-sub', 'pagination', 'pagination-gap', 'steps', 'steps-item', 'steps-title', 'steps-description', 'steps-body',
     'toast-region', 'toast', 'toast-icon', 'toast-body', 'toast-title', 'toast-description', 'toast-close', 'empty', 'empty-media', 'empty-title', 'empty-description', 'empty-actions',
     'table', 'table-row', 'table-heading', 'table-cell', 'carousel', 'carousel-slide',
+    'listbox', 'listbox-option', 'listbox-body', 'listbox-description', 'listbox-end', 'listbox-group', 'listbox-label', 'listbox-separator', 'listbox-empty',
+    'combobox', 'combobox-toggle', 'command', 'command-search', 'command-input', 'command-list', 'command-footer', 'command-hint',
+    'calendar', 'calendar-header', 'calendar-title', 'calendar-grid', 'calendar-week', 'calendar-weekday', 'calendar-day',
+    'tree', 'tree-item', 'tree-toggle', 'tree-group', 'tree-sub', 'otp', 'otp-slot', 'otp-separator', 'meter',
+    'timeline', 'timeline-item', 'timeline-marker', 'timeline-body', 'timeline-title', 'timeline-description', 'timeline-time',
+    'stat', 'stat-label', 'stat-row', 'stat-value', 'stat-delta', 'stat-description',
+    'data-list', 'data-list-item', 'data-list-term', 'data-list-value', 'list', 'list-row', 'list-media', 'list-body', 'list-title', 'list-description', 'list-end',
   ]) {
     assert.ok(nativeClassNames.includes(name), `missing native class .${name}`)
   }
+})
+
+/**
+ * A component class that is also a preset utility is painted twice, and the utility wins. `list-item` would
+ * turn a flex row into `display: list-item`. The table parts are the exception on purpose: their utilities
+ * set the display those parts have, so the same classes lay out a table built from roles.
+ */
+test('component classes do not collide with preset utilities', () => {
+  const { nativeClassNames } = compile(imports)
+  const engine = createRenderSessionSync({ manifest: preset as never })
+  try {
+    const collisions = nativeClassNames.filter(name => !engine.ensureClassRules([name]).invalidClassNames.includes(name))
+    assert.deepEqual(collisions.sort(), ['table', 'table-cell', 'table-row'])
+  } finally { engine.dispose() }
 })
 
 for (const component of components) {

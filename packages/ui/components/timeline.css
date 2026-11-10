@@ -1,0 +1,121 @@
+/*
+ * Timeline: events in the order they happened, as a list on one line.
+ * Each event has a marker on a column and its words beside it; a hairline joins the markers. A bare marker
+ * is a small dot, and a marker that holds an icon becomes a small well around it.
+ */
+@layer components {
+  .timeline {
+    --timeline-marker: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    color: var(--color-text-body);
+    font-size: .875rem;
+    line-height: 1.5;
+    list-style: none;
+  }
+
+  .timeline-item {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: .75rem;
+    min-width: 0;
+    padding-bottom: 1.25rem;
+
+    &:last-child {
+      padding-bottom: 0;
+    }
+
+    /* The line runs from under this marker to the next one. */
+    &:not(:last-child)::before {
+      content: '';
+      position: absolute;
+      top: calc(var(--timeline-marker) + .125rem);
+      bottom: .125rem;
+      inset-inline-start: calc(var(--timeline-marker) / 2 - .5px);
+      width: 1px;
+      background: var(--color-line-divider);
+    }
+
+    @media (forced-colors: active) {
+      &::before {
+        background: CanvasText;
+      }
+    }
+  }
+
+  /* The marker's column is as tall as the first line of text, so the dot sits on that line. */
+  .timeline-marker {
+    --icon-size: .875rem;
+    --icon-color: var(--color-text-muted);
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: var(--timeline-marker);
+    height: var(--timeline-marker);
+    margin-block: calc((1lh - var(--timeline-marker)) / 2);
+    border-radius: 999px;
+
+    /* Bare: a dot. */
+    &:empty::before {
+      content: '';
+      width: .4375rem;
+      height: .4375rem;
+      border-radius: 999px;
+      background: var(--color-line-mark);
+    }
+
+    /* With an icon: a small well around it. */
+    &:has(.icon) {
+      background: var(--color-surface-inset);
+      box-shadow: var(--shadow-pressed);
+    }
+
+    @media (forced-colors: active) {
+      &:empty::before {
+        background: CanvasText;
+      }
+
+      &:has(.icon) {
+        outline: 1px solid CanvasText;
+        outline-offset: -1px;
+      }
+    }
+  }
+
+  /* The newest or current event: its dot takes ink. */
+  .timeline-item[aria-current] .timeline-marker:empty::before {
+    background: var(--color-text-strong);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-text-strong) 12%, transparent);
+  }
+
+  .timeline-body {
+    display: grid;
+    flex: 1 1 0;
+    gap: .125rem;
+    min-width: 0;
+  }
+
+  .timeline-title {
+    margin: 0;
+    color: var(--color-text-strong);
+    font-weight: var(--font-weight-control);
+  }
+
+  .timeline-description {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: .8125rem;
+    text-wrap: pretty;
+  }
+
+  /* When it happened: a quiet line in tabular figures. */
+  .timeline-time {
+    color: var(--color-text-muted);
+    font-size: .75rem;
+    font-variant-numeric: tabular-nums;
+  }
+}

@@ -4,6 +4,8 @@ Native HTML and CSS components crafted with [Master CSS](https://css.master.co),
 
 Components use the platform before script: `<dialog>`, `popover` and invoker commands for overlays, CSS anchor positioning for placement, `appearance: base-select` for the option list, container queries for layout, scroll-driven animations for edge fades, `::scroll-button()` and `::scroll-marker` for carousels, `corner-shape` for corners, and `@starting-style` for motion in and out. Each feature is an enhancement over a working baseline.
 
+A few patterns need behavior the platform does not have yet: a combobox, a command palette, a calendar, a tree with arrow keys, a context menu. For those the stylesheets draw every state from ARIA attributes and leave the behavior to your script or framework; each page shows the smallest script that drives it.
+
 ## Install
 
 ```sh
@@ -46,6 +48,8 @@ Or import only the theme and the components you use:
 | Link | `link`, `link-quiet` |
 | Input | `input`, `input-{sm,lg}`, `input-auto`, `input-group`, `input-group-{sm,lg}`, `input-group-field`, `input-group-addon`, `field`, `field-hint`, `field-error`, `fieldset`, `fieldset-legend` |
 | Select | `select`, `select-raised`, `select-{sm,lg}`, `select-option` |
+| Combobox | `combobox`, `combobox-toggle` |
+| Listbox | `listbox`, `listbox-option`, `listbox-body`, `listbox-description`, `listbox-end`, `listbox-group`, `listbox-label`, `listbox-separator`, `listbox-empty` |
 | Checkbox | `checkbox`, `check` |
 | Radio | `radio` |
 | Switch | `switch`, `switch-{sm,lg}` |
@@ -55,23 +59,32 @@ Or import only the theme and the components you use:
 | Choice | `choice`, `choice-body`, `choice-title`, `choice-description`, `choice-end` |
 | Rating | `rating`, `rating-{sm,lg}`, `rating-input` |
 | Dropzone | `dropzone`, `dropzone-input`, `dropzone-title`, `dropzone-description` |
+| OTP | `otp`, `otp-slot`, `otp-separator` |
+| Calendar | `calendar`, `calendar-header`, `calendar-title`, `calendar-grid`, `calendar-week`, `calendar-weekday`, `calendar-day`, `calendar-day-outside`, `calendar-day-range{,-start,-end}` |
 | Tabs | `tabs`, `tabs-sm`, `tabs-item` |
 | Nav | `nav`, `nav-item`, `nav-end`, `nav-label`, `nav-group`, `nav-toggle`, `nav-sub` |
+| Tree | `tree`, `tree-item`, `tree-toggle`, `tree-group`, `tree-sub` |
 | Breadcrumb | `breadcrumb`, `breadcrumb-item`, `breadcrumb-link` |
 | Pagination | `pagination`, `pagination-gap` |
 | Steps | `steps`, `steps-{vertical,complete}`, `steps-item`, `steps-body`, `steps-title`, `steps-description` |
 | Dialog | `dialog`, `dialog-{sm,lg,drawer,sheet}`, `dialog-header`, `dialog-title`, `dialog-description`, `dialog-body`, `dialog-footer`, `dialog-close` |
 | Popover | `popover`, `popover-{end,center,top}` |
-| Menu | `menu`, `menu-{end,top}`, `menu-item`, `menu-item-danger`, `menu-input`, `menu-shortcut`, `menu-label`, `menu-separator` |
+| Menu | `menu`, `menu-{end,top,sub,context}`, `menu-item`, `menu-item-danger`, `menu-input`, `menu-shortcut`, `menu-label`, `menu-separator` |
+| Command palette | `command`, `command-search`, `command-input`, `command-list`, `command-footer`, `command-hint` |
 | Tooltip | `tooltip`, `tooltip-bottom` |
 | Toast | `toast-region`, `toast-region-{top,center}`, `toast`, `toast-timed`, `toast-{info,success,warning,danger}`, `toast-icon`, `toast-body`, `toast-title`, `toast-description`, `toast-close` |
 | Alert | `alert`, `alert-{info,success,warning,danger}`, `alert-icon`, `alert-body`, `alert-title`, `alert-description` |
 | Progress | `progress`, `progress-{sm,lg}` |
+| Meter | `meter`, `meter-{sm,lg}` |
 | Skeleton | `skeleton`, `skeleton-{text,circle}` |
 | Spinner | `spinner`, `spinner-{sm,lg,xl,inline}` |
 | Empty | `empty`, `empty-media`, `empty-title`, `empty-description`, `empty-actions` |
 | Accordion | `accordion`, `accordion-item`, `accordion-trigger`, `accordion-content` |
 | Table | `table`, `table-{compact,interactive,sticky}`, `table-row`, `table-heading`, `table-cell`, `table-{primary,numeric}` |
+| List | `list`, `list-interactive`, `list-row`, `list-media`, `list-body`, `list-title`, `list-description`, `list-end` |
+| Data list | `data-list`, `data-list-item`, `data-list-term`, `data-list-value` |
+| Stat | `stat`, `stat-label`, `stat-row`, `stat-value`, `stat-delta`, `stat-delta-{up,down}`, `stat-description` |
+| Timeline | `timeline`, `timeline-item`, `timeline-marker`, `timeline-body`, `timeline-title`, `timeline-description`, `timeline-time` |
 | Carousel | `carousel`, `carousel-{2,3}`, `carousel-slide` |
 | Avatar | `avatar`, `avatar-{xs,sm,lg,xl}`, `avatar-square`, `avatar-image`, `avatar-status`, `avatar-group` |
 | Badge | `badge`, `badge-{outline,raised,ink}`, `badge-{info,success,warning,danger}`, `badge-dot`, `badge-{sm,lg,pill}`, `badge-corner` |

@@ -1,7 +1,8 @@
 /*
  * Menu: a popover holding a list of actions, placed against its button with anchor positioning.
  * Items are native buttons, links, or labels around a checkbox or radio; the row under the pointer or the keys
- * takes a chip tone. The 4px inset nests an 8px row inside a 12px corner.
+ * takes a chip tone. The menu's corner is a row's corner plus its 4px inset. A menu can also open beside an
+ * item as a submenu, or at the pointer as a context menu.
  */
 @layer components {
   .menu {
@@ -33,6 +34,33 @@
     &.menu-top {
       --anchored-block: block-start;
       transform-origin: bottom;
+    }
+
+    /*
+     * Beside its item: a submenu, opened by an item inside another menu. It lines up with the item's top,
+     * 4px up so its first row meets the item, and flips to the other side when there is no room.
+     */
+    &.menu-sub {
+      --anchored-block: span-block-end;
+      --anchored-inline: inline-end;
+      transform-origin: top left;
+
+      @supports (position-area: block-end) {
+        margin: calc(-1 * var(--menu-inset)) 2px;
+      }
+    }
+
+    /*
+     * At the pointer: a context menu. The script sets --menu-x and --menu-y from the event and calls
+     * showPopover(). The menu opens down and to the end of that point, and @position-try turns it back
+     * toward the middle when it would cross an edge of the viewport.
+     */
+    &.menu-context {
+      inset: var(--menu-y, 0px) auto auto var(--menu-x, 0px);
+      margin: 0;
+      position-area: none;
+      position-try-fallbacks: --menu-context-start, --menu-context-up, --menu-context-up-start;
+      transform-origin: top left;
     }
 
     @media (forced-colors: active) {
@@ -113,6 +141,26 @@
       }
     }
 
+    /* An item that opens a submenu points to it, and stays lit while that submenu is open. */
+    &[aria-haspopup="menu"]::after {
+      content: '';
+      flex: none;
+      width: .875rem;
+      height: .875rem;
+      margin-inline: auto -.125rem;
+      background: var(--color-text-muted);
+      mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6.5 4.5 3.5 3.5-3.5 3.5'/%3E%3C/svg%3E") center / contain no-repeat;
+    }
+
+    &[aria-haspopup="menu"]:dir(rtl)::after {
+      scale: -1 1;
+    }
+
+    &:has(+ .menu:popover-open) {
+      --icon-color: currentColor;
+      background: var(--color-surface-chip);
+    }
+
     /* A checkable item keeps room for its mark at the end, so labels do not move when it is checked. */
     &:is([aria-checked], :has(.menu-input))::after {
       content: '';
@@ -186,4 +234,22 @@
     border: 0;
     background: var(--color-line-hair);
   }
+}
+
+/* The other three corners a context menu can open toward, measured from the same point. */
+@position-try --menu-context-start {
+  right: calc(100vw - var(--menu-x, 0px));
+  left: auto;
+}
+
+@position-try --menu-context-up {
+  top: auto;
+  bottom: calc(100vh - var(--menu-y, 0px));
+}
+
+@position-try --menu-context-up-start {
+  top: auto;
+  right: calc(100vw - var(--menu-x, 0px));
+  bottom: calc(100vh - var(--menu-y, 0px));
+  left: auto;
 }

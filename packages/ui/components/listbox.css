@@ -1,0 +1,203 @@
+/*
+ * Listbox: a list of options to choose from, the surface a combobox and a command palette open.
+ * The stylesheet draws every state from ARIA and leaves the behavior to the script that drives it:
+ * aria-selected marks the active option, the one the arrow keys are on; aria-checked marks a chosen value
+ * with a check. In the flow of the page it is a plain list; with the popover attribute it is a floating
+ * sheet placed against its anchor, whose corner is a row's corner plus its 4px inset.
+ */
+@layer components {
+  .listbox {
+    --listbox-inset: 4px;
+    --listbox-option-radius: var(--radius-control-sm);
+    min-width: 0;
+    margin: 0;
+    padding: var(--listbox-inset);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    color: var(--color-text-strong);
+    font: 400 .84375rem/1.2 var(--font-family-sans);
+    font-feature-settings: inherit;
+    list-style: none;
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-line-strong) transparent;
+
+    /* The list holds focus while aria-activedescendant moves through it: the active row shows where. */
+    &:focus-visible {
+      outline: none;
+    }
+
+    /* Floating: opened with showPopover() by the script that owns the field. */
+    &[popover] {
+      --surface-color: var(--color-surface-floating);
+      min-width: 11rem;
+      max-width: min(24rem, calc(100vw - 1rem));
+      max-height: min(20rem, 60vh);
+      border: 0;
+      border-radius: calc(var(--listbox-option-radius) * var(--corner-scale) + var(--listbox-inset));
+      corner-shape: var(--corner-shape);
+      background: var(--color-surface-floating);
+      box-shadow: var(--shadow-floating);
+      transform-origin: top;
+      @apply --anchored;
+      @apply --pop;
+    }
+
+    @media (forced-colors: active) {
+      &[popover] {
+        outline: 1px solid CanvasText;
+        outline-offset: -1px;
+      }
+    }
+  }
+
+  /* An option: role="option" on any element. */
+  .listbox-option {
+    --icon-size: 1rem;
+    --icon-offset: -.0625rem;
+    --icon-color: var(--color-text-muted);
+    display: flex;
+    align-items: center;
+    gap: .625rem;
+    min-height: 2rem;
+    padding: .25rem .5rem;
+    border-radius: calc(var(--listbox-option-radius) * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    outline: none;
+    color: var(--color-text-strong);
+    scroll-margin: var(--listbox-inset);
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    cursor: pointer;
+
+    /* A script filters by setting hidden; a display on this rule would otherwise bring the option back. */
+    &[hidden] {
+      display: none;
+    }
+
+    /* A row answers at once: no fade between rows as the pointer or the keys travel. */
+    @media (hover: hover) {
+      &:hover:not([aria-disabled="true"]) {
+        --icon-color: currentColor;
+        background: var(--color-surface-chip);
+      }
+    }
+
+    &[aria-selected="true"] {
+      --icon-color: currentColor;
+      background: var(--color-surface-chip);
+    }
+
+    /* With real focus on the option, the ink outline says so. */
+    &:focus-visible {
+      --icon-color: currentColor;
+      background: var(--color-surface-chip);
+      outline: 2px solid var(--color-focus);
+      outline-offset: -2px;
+    }
+
+    &[aria-disabled="true"] {
+      --icon-color: currentColor;
+      color: var(--color-text-disabled);
+      cursor: not-allowed;
+    }
+
+    /* A checkable option keeps room for its mark at the end, so nothing moves when it is chosen. */
+    &[aria-checked]::after {
+      content: '';
+      flex: none;
+      width: 14px;
+      height: 14px;
+      margin-inline-start: auto;
+      opacity: 0;
+      background: currentColor;
+      mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m3.5 8.5 3 3 6-7'/%3E%3C/svg%3E") center / contain no-repeat;
+    }
+
+    &[aria-checked="true"]::after {
+      opacity: 1;
+    }
+
+    @media (pointer: coarse) {
+      min-height: 2.75rem;
+    }
+
+    @media (forced-colors: active) {
+      &:is(:hover, :focus-visible, [aria-selected="true"]) {
+        background: Highlight;
+        color: HighlightText;
+        forced-color-adjust: none;
+      }
+
+      &::after {
+        background: CanvasText;
+      }
+    }
+  }
+
+  /* A title with a line under it, for an option that needs a sentence. */
+  .listbox-body {
+    display: grid;
+    flex: 1 1 0;
+    gap: .125rem;
+    min-width: 0;
+    padding-block: .125rem;
+  }
+
+  .listbox-description {
+    color: var(--color-text-muted);
+    font-size: .75rem;
+    line-height: 1.4;
+  }
+
+  /* A shortcut or a hint at the end of an option. */
+  .listbox-end {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: .25rem;
+    margin-inline-start: auto;
+    padding-inline-start: 1rem;
+    color: var(--color-text-muted);
+    font-size: .71875rem;
+  }
+
+  /* A group: role="group" around a caption and its options. With every option filtered out, it steps aside. */
+  .listbox-group:not(:has(.listbox-option:not([hidden]))) {
+    display: none;
+  }
+
+  /* A quiet caption over a group of options. */
+  .listbox-label {
+    padding: .4375rem .5rem .3125rem;
+    color: var(--color-text-muted);
+    font-size: .71875rem;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  /* A hairline between groups, running to the list's edges. */
+  .listbox-separator {
+    height: 1px;
+    margin: var(--listbox-inset) calc(-1 * var(--listbox-inset));
+    border: 0;
+    background: var(--color-line-hair);
+  }
+
+  /* What the list says when nothing matches. It shows by itself once every option is hidden. */
+  .listbox-empty {
+    padding: 1.5rem .75rem;
+    color: var(--color-text-muted);
+    text-align: center;
+    text-wrap: balance;
+  }
+
+  .listbox:has(.listbox-option:not([hidden])) .listbox-empty {
+    display: none;
+  }
+
+  /* A caption or a rule with no visible option left under its list has nothing to introduce. */
+  .listbox:not(:has(.listbox-option:not([hidden]))) :is(.listbox-label, .listbox-separator) {
+    display: none;
+  }
+}
