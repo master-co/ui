@@ -6,13 +6,14 @@ Master UI publishes native HTML and CSS components for Master CSS v2. Keep share
 
 - `packages/ui` is `@master/ui`: CSS source only, no build step. `master.css` imports `theme.css` first, then every `components/<name>.css`. Consumers import it after `@import '@master/css'`.
 - `site` is the documentation site on `@master/internal-site` (Astro 7, Svelte 5, Master CSS 2). Pages live in `site/content/<section>/<slug>/content.mdx` with a sibling `metadata.ts` (`define()` from `@master/internal-site/utils/metadata`). `scripts/prepare.ts` writes the sidebar (`.categories/docs.json`) and search index before dev, build and type checks.
-- Component docs use `site/components/ComponentPreview.astro` (isolated preview compiled from the published `@master/ui` source) and `ComponentSource.astro`. Add a new component to `site/components/catalog.ts` and `packages/ui/master.css`.
+- Component docs use `site/components/ComponentPreview.astro` (isolated preview compiled from the published `@master/ui` source) and `ComponentSource.astro`. Add a new component to `site/components/catalog.ts` and `packages/ui/master.css`. Each component has a cover, `site/components/cover/art/<slug>.astro`, shown on the `/components` overview, which has no sidebar.
 
 ## Skills
 
 Repository skills live in `.agents/skills/` (linked as `.claude/skills/`).
 
 - `master-ui-components` (owned here): the component contracts, size scale, documentation pattern and verification. Use it for any change to `packages/ui` or a component page.
+- `master-ui-covers` (owned here): the cover drawings in `site/components/cover`: the stage, the drawing rules, the vocabulary and verification. Use it when a component needs a cover or a cover is redrawn or placed on a page.
 - `master-design` (managed by `@master/internal-skills`; run `bun run skills:sync`, never edit it here): craft judgment for surfaces, geometry, type, states and motion.
 
 ## Component Contracts

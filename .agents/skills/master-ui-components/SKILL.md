@@ -33,10 +33,10 @@ Before writing a class, a wrapper or a script, ask what the browser already does
 
 ## Patterns that need a script
 
-A combobox, a command palette, a calendar, a tree with arrow keys, a context menu and an OTP field have no native element. Style them anyway, by this division of work:
+A combobox, a command palette, a calendar, a tree with arrow keys, a context menu, an OTP field and a splitter have no native element. Style them anyway, by this division of work:
 
 - **The stylesheet reads ARIA and native attributes, never a state class.** `aria-selected` is the active option, `aria-checked` a chosen one, `aria-expanded` an open branch or list, `aria-current="date"` today, `hidden` a filtered-out option. A class is used only for what ARIA cannot say, such as a day outside the month or the middle of a range.
-- **A script moves attributes and nothing else.** It never sets a style, a size or a position. A position that only an event knows, like a pointer's, is passed as a custom property (`--menu-x`) and the stylesheet does the placing.
+- **A script moves attributes and nothing else.** It never sets a style, a size or a position. A position or a size that only an event knows, like a pointer's, is passed as a custom property (`--menu-x`, `--splitter-size`) and the stylesheet does the placing, including its limits.
 - **Use the native container.** A palette is a `<dialog>`, a picker's calendar sits in a `popover`, a tree without script is nested `<details>`. Compose existing components (`input-group`, `listbox`, `dialog`) instead of drawing a second field or a second list.
 - **Derive in CSS what a script would otherwise compute:** an empty state with `:has(.listbox-option:not([hidden]))`, a list's width with `anchor-size()`, a flip with `@position-try`.
 - **A rule that sets `display` on a part a script hides must restore `[hidden]`**, since a class in `@layer components` beats the browser's own `[hidden]` rule.
@@ -99,4 +99,5 @@ Every interactive component covers, in this order of checks: rest, hover, active
 2. Import it in `packages/ui/master.css` and add its classes to the native-class list in `packages/ui/tests/master.test.ts`. Stylesheets that tune another component (`input.css` after `button.css`) come later in the import order.
 3. Add it to `site/components/catalog.ts` and write `site/content/components/<slug>/{metadata.ts,content.mdx}` following [the documentation pattern](references/documentation.md).
 4. Update the class table in `packages/ui/README.md`.
-5. Verify as in [verification](references/verification.md).
+5. Draw its cover in `site/components/cover/art/<slug>.astro` with `$master-ui-covers`.
+6. Verify as in [verification](references/verification.md).

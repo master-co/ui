@@ -24,7 +24,7 @@ Radii are role tokens, stated as circular values:
 | `--radius-control-lg` | 12px | Large buttons and fields, alerts, choices, toasts, dropzones |
 | `--radius-surface` | 16px | Sheets, cards |
 
-A holder derives its corner: inner radius plus the inset between them. Tray = surface + 4 (20); card media = card − 4 (12); menu, popover, select list and toolbar = small control + 4 (12); segmented track = thumb + inset (9 / 12 / 14 for sm / md / lg); a button inside a field = field − 4 (6). A dialog is 20. Only pills, dots, avatars and thumbs are rounder, and they are true circles.
+A holder derives its corner: inner radius plus the inset between them. Tray = surface + 4 (20); card media = card − 4 (12); menu, popover, select list and toolbar = small control + 4 (12); segmented track = thumb + inset (9 / 12 / 14 for sm / md / lg); a button inside a field = field − 4 (6); a chip inside a wrapping field = field − 6 (4); a button inside a composer = sheet − 8 (8); a framed figure = media + 4 (20). A dialog is 20. A message bubble is 18 with a 6px corner toward its author. Only pills, dots, avatars and thumbs are rounder, and they are true circles.
 
 ## Continuous corners
 

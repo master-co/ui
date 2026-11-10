@@ -25,6 +25,13 @@ Use what the browser already does before writing a class, a wrapper or a script 
 | A surface at a point a script supplies | `inset` from custom properties, `@position-try` rules that mirror it | It opens one way |
 | Rows that share columns without a table | `grid-template-columns: subgrid` | Baseline everywhere |
 | A measurement with thresholds | `<meter>` and its `::-webkit-meter-*` / `::-moz-meter-bar` parts | The platform's meter |
+| A drawing that reads a value from an attribute | Typed `attr()` into a registered custom property, inside `@supports (x: attr(x type(*)))` | The same custom property set in `style` |
+| Material only while a sticky element is stuck | `container-type: scroll-state`, `@container scroll-state(stuck: top)` on a pseudo-element of the container | The material is always drawn |
+| The link of the section in view | `scroll-target-group: auto` on the list, `:target-current` on the link, beside `[aria-current]` | `aria-current` from a script |
+| A closed state that is a preview | `::details-content` with `content-visibility: visible` and a block size in `lh` | Hidden while closed |
+| Progress of the page | `animation-timeline: scroll(root block)`, longhands only | Not drawn |
+| A delay by position among siblings | `sibling-index()` inside `@supports` | No delay |
+| A color the page supplies | A custom property (`--swatch`) read by `background` | Baseline everywhere |
 
 Do not add a dependency or a script for placement, focus trapping, dismissal, auto-growing fields, or enter and exit animation.
 
@@ -90,6 +97,19 @@ Do not add a dependency or a script for placement, focus trapping, dismissal, au
 - `<meter>`: Chromium draws it from `::-webkit-meter-bar` and the three `-value` parts, inside `::-webkit-meter-inner-element`, which it lays out itself. Style the bar and the values only: a `display` on the inner element shifts the bar off the track by a couple of pixels, which a screenshot at normal size hides. Firefox paints the platform meter until `appearance: none`, so set that inside `@supports (-moz-appearance: none)`. Safari keeps its own meter. Compare variants of a native part side by side on a static page at high zoom; `getComputedStyle()` with these pseudo-elements returns the host's values, not the part's.
 - A context menu has no implicit anchor. Reset what `--anchored` sets (`position-area: none`, `margin: 0`) and place it with `inset` from `--menu-x` / `--menu-y`; each `@position-try` rule swaps one or both insets for the opposite edge measured with `100vw` / `100vh`.
 - A submenu is a popover nested in its parent menu, right after the item that opens it: the item is its implicit anchor, `position-area: inline-end span-block-end` puts it beside the item, and `:has(+ .menu:popover-open)` keeps the item lit.
+
+## Glass and scroll state
+
+- A pane of glass is a pseudo-element of the bar, not the bar: the bar's content must not fade when the pane does, and a container cannot be styled by its own scroll-state query while its pseudo-elements can.
+- Write `backdrop-filter` without a prefix, once. With both spellings in one rule the compiler keeps only the prefixed one.
+- A glass tint is `color-mix()` of the surface behind it with `transparent`; publish that surface as a custom property (`--navbar-color`) so a bar over a tray is tinted with the tray. Remove the blur under `prefers-reduced-transparency: reduce`.
+- Relative color syntax (`oklch(from …)`) is rejected by the compiler's validator. Derive tones with `color-mix()`.
+- The validator also rejects `clamp()` written directly as a grid track. Put the expression in a custom property and use that as the track.
+
+## Elements that are both native and optional
+
+- When a component works as a plain element and, for a no-script upgrade, as a `<dialog open>` (a banner), reset what the dialog brings (`position`, `inset`, `width`, `height`, `margin`, `border`) on the base rule, keep `display` there, and write the closed state under the modifier that asks for the dialog: `&.banner-dismissible:not([open]) { display: none; … }`. A bare `:not([open])` would hide the plain element.
+- A `<details>` can be a flex column, so its summary can be drawn after its content with `order`. The summary stays first in the markup.
 
 ## Checking support
 
