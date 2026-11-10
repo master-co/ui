@@ -1,0 +1,126 @@
+/*
+ * Shell: the frame of an app. A sidebar stays in place while the main region moves. An optional header
+ * runs across the top, an optional aside stands at the end, and an optional footer closes the frame.
+ *
+ * By default the document scrolls. The sidebar sticks under the header and is exactly as tall as the room
+ * left in the viewport, measured in dvh, with a scroll of its own; a sticky navbar, anchor links and the
+ * browser's scroll restoration keep working because nothing replaces the page's scroll.
+ * `shell-fixed` takes the viewport itself: only the regions scroll, for an inbox, an editor or a chat.
+ *
+ * The shell is a size container. Below 48rem of shell the sidebar leaves the layout and `shell-toggle`
+ * appears: put the same navigation in a drawer that the toggle opens. The aside leaves first, below 64rem.
+ *
+ * A shell draws nothing. Its surfaces and lines come from components and utilities.
+ */
+@layer components {
+  .shell {
+    --shell-sidebar: 16rem;
+    --shell-aside: 14rem;
+    --shell-header: 3.5rem;
+    /* The room a header takes at the top; the sticky regions start under it. */
+    --shell-top: 0px;
+    /* The columns' row is at least the viewport under the header, so a footer starts below the fold. */
+    --shell-room: calc(100vh - var(--shell-top));
+    display: grid;
+    grid-template-rows: auto minmax(var(--shell-room), 1fr) auto;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: start;
+    min-width: 0;
+    container: shell / inline-size;
+
+    @supports (height: 100dvh) {
+      --shell-room: calc(100dvh - var(--shell-top));
+    }
+
+    &:has(.shell-header) {
+      --shell-top: var(--shell-header);
+    }
+
+    /* Fixed: the shell is the viewport. Each region scrolls by itself and the page never moves. */
+    &.shell-fixed {
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      align-items: stretch;
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
+
+      .shell-sidebar, .shell-aside {
+        position: static;
+        height: auto;
+        max-height: none;
+      }
+
+      .shell-main {
+        min-height: 0;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+      }
+    }
+  }
+
+  /* The header spans the shell. A navbar is already sticky; any other header stays in the flow. */
+  .shell-header {
+    grid-row: 1;
+    grid-column: 1 / -1;
+    min-width: 0;
+  }
+
+  /*
+   * The sidebar and the aside: columns that stay while the page scrolls. Each is as tall as the viewport
+   * under the header and scrolls by itself, so a long navigation never moves the page.
+   * The foot keeps clear of the home indicator.
+   */
+  .shell-sidebar, .shell-aside {
+    position: sticky;
+    top: var(--shell-top);
+    grid-row: 2;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    height: var(--shell-room);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+
+  .shell-sidebar {
+    grid-column: 1;
+    width: var(--shell-sidebar);
+
+    @container shell (inline-size < 48rem) {
+      display: none;
+    }
+  }
+
+  .shell-aside {
+    grid-column: 3;
+    width: var(--shell-aside);
+
+    @container shell (inline-size < 64rem) {
+      display: none;
+    }
+  }
+
+  /* The main region takes the column that is left, and never grows past it. */
+  .shell-main {
+    grid-row: 2;
+    grid-column: 2;
+    align-self: stretch;
+    min-width: 0;
+  }
+
+  /* The footer spans the shell under the columns. It comes into view after them. */
+  .shell-footer {
+    grid-row: 3;
+    grid-column: 1 / -1;
+    min-width: 0;
+  }
+
+  /* A control that exists only while the sidebar is away, such as the button that opens it as a drawer. */
+  .shell-toggle {
+    @container shell (inline-size >= 48rem) {
+      display: none;
+    }
+  }
+}

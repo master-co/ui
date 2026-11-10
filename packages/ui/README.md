@@ -1,10 +1,20 @@
 # @master/ui
 
-Native HTML and CSS components crafted with [Master CSS](https://css.master.co), in the Moonstone / Obsidian material: a zinc pearl in light mode, a matte obsidian in dark mode, lit from above, with half-pixel contours, short shadows that fade and corners that turn with continuous curvature.
+Native HTML and CSS components crafted with [Master CSS](https://css.master.co), and the layouts and blocks built from them, in the Moonstone / Obsidian material: a zinc pearl in light mode, a matte obsidian in dark mode, lit from above, with half-pixel contours, short shadows that fade and corners that turn with continuous curvature.
 
 Components use the platform before script: `<dialog>`, `popover` and invoker commands for overlays, CSS anchor positioning for placement, `appearance: base-select` for the option list, container queries for layout, scroll-driven animations for edge fades, `::scroll-button()` and `::scroll-marker` for carousels, `corner-shape` for corners, and `@starting-style` for motion in and out. Each feature is an enhancement over a working baseline.
 
 A few patterns need behavior the platform does not have yet: a combobox, a command palette, a calendar, a tree with arrow keys, a context menu. For those the stylesheets draw every state from ARIA attributes and leave the behavior to your script or framework; each page shows the smallest script that drives it.
+
+## Three tiers
+
+| Tier | What it is | How it is published |
+| --- | --- | --- |
+| Components | A part with a material, a state, a platform behavior or a geometry its pieces share | Semantic classes in this package |
+| [Layouts](https://ui.master.co/layouts) | Where the regions of a page go, and what scrolls | Markup to copy, written with utilities, and the four layout classes below |
+| [Blocks](https://ui.master.co/blocks) | One stretch of a page with a purpose: a hero, a pricing table, a footer | Markup to copy: components and utilities, composed |
+
+A thing is a class only when there is knowledge to put behind it. A footer is links in columns, so it is markup. A component never positions itself on the page unless standing there is its behavior, and a layout never draws a surface.
 
 ## Install
 
@@ -25,6 +35,7 @@ Or import only the theme and the components you use:
 @import '@master/css';
 @import '@master/ui/theme.css';
 @import '@master/ui/components/button.css';
+@import '@master/ui/layouts/shell.css';
 ```
 
 ## Use
@@ -39,7 +50,7 @@ Or import only the theme and the components you use:
 
 | Component | Classes |
 | --- | --- |
-| Surface | `tray`, `sheet`, `sheet-{flat,raised,floating}`, `well` |
+| Surface | `tray`, `sheet`, `sheet-{flat,raised,floating,inverse}`, `well` |
 | Card | `card`, `card-{flat,interactive,split}`, `card-media`, `card-header`, `card-title`, `card-description`, `card-action`, `card-body`, `card-footer` |
 | Window | `window`, `window-flat`, `window-bar`, `window-controls`, `window-title`, `window-address`, `window-end`, `window-body` |
 | Divider | `divider`, `divider-{label,vertical}` |
@@ -49,7 +60,6 @@ Or import only the theme and the components you use:
 | Toolbar | `toolbar`, `toolbar-floating`, `toolbar-separator` |
 | Link | `link`, `link-quiet` |
 | Input | `input`, `input-{sm,lg}`, `input-auto`, `input-group`, `input-group-{sm,lg}`, `input-group-field`, `input-group-addon`, `input-group-wrap`, `field`, `field-hint`, `field-error`, `fieldset`, `fieldset-legend` |
-| Form | `form`, `form-row`, `form-section`, `form-heading`, `form-title`, `form-description`, `form-fields`, `form-actions` |
 | Select | `select`, `select-raised`, `select-{sm,lg}`, `select-option` |
 | Combobox | `combobox`, `combobox-toggle` |
 | Listbox | `listbox`, `listbox-option`, `listbox-body`, `listbox-description`, `listbox-end`, `listbox-group`, `listbox-label`, `listbox-separator`, `listbox-empty` |
@@ -77,7 +87,7 @@ Or import only the theme and the components you use:
 | Breadcrumb | `breadcrumb`, `breadcrumb-item`, `breadcrumb-link` |
 | Pagination | `pagination`, `pagination-gap` |
 | Steps | `steps`, `steps-{vertical,complete}`, `steps-item`, `steps-body`, `steps-title`, `steps-description` |
-| Dialog | `dialog`, `dialog-{sm,lg,drawer,sheet}`, `dialog-header`, `dialog-title`, `dialog-description`, `dialog-body`, `dialog-footer`, `dialog-close` |
+| Dialog | `dialog`, `dialog-{sm,lg,drawer,sheet}`, `dialog-drawer-start`, `dialog-header`, `dialog-title`, `dialog-description`, `dialog-body`, `dialog-footer`, `dialog-close` |
 | Popover | `popover`, `popover-{end,center,top}` |
 | Menu | `menu`, `menu-{end,top,sub,context}`, `menu-item`, `menu-item-danger`, `menu-input`, `menu-shortcut`, `menu-label`, `menu-separator` |
 | Command palette | `command`, `command-search`, `command-input`, `command-list`, `command-footer`, `command-hint` |
@@ -103,15 +113,27 @@ Or import only the theme and the components you use:
 | Timeline | `timeline`, `timeline-item`, `timeline-marker`, `timeline-body`, `timeline-title`, `timeline-description`, `timeline-time` |
 | Carousel | `carousel`, `carousel-{2,3}`, `carousel-slide` |
 | Marquee | `marquee`, `marquee-reverse`, `marquee-track` |
+| Heading | `heading`, `heading-{xs,sm,lg,xl,2xl,display}`, `eyebrow`, `lead`, `lead-{sm,lg}` |
 | Figure | `figure`, `figure-{framed,center}`, `figure-media`, `figure-caption` |
 | Quote | `quote`, `quote-lg`, `quote-text`, `quote-source`, `quote-name` |
-| Message | `message-list`, `message`, `message-sent`, `message-avatar`, `message-bubble`, `message-meta`, `message-typing` |
+| Message | `message`, `message-sent`, `message-avatar`, `message-bubble`, `message-meta`, `message-typing` |
 | Avatar | `avatar`, `avatar-{xs,sm,lg,xl}`, `avatar-square`, `avatar-image`, `avatar-status`, `avatar-group` |
 | Badge | `badge`, `badge-{outline,raised,ink}`, `badge-{info,success,warning,danger}`, `badge-dot`, `badge-live`, `badge-{sm,lg,pill}`, `badge-corner` |
 | Code | `code`, `code-block`, `code-numbered`, `code-line`, `code-line-{highlight,added,removed}`, `code-panel`, `code-header`, `code-title` |
 | Icon | `icon` |
 | Kbd | `kbd`, `kbd-raised` |
 | Mark | `mark`, `mark-{brand,underline}` |
+
+## Layout classes
+
+Most layouts are utilities. These four hold what utilities cannot say: a height in `dvh`, a phone's safe area, a container threshold, a grid that counts its own columns. They draw no surface.
+
+| Layout | Classes |
+| --- | --- |
+| [Page](https://ui.master.co/layouts/page) | `page` |
+| [App shell](https://ui.master.co/layouts/app-shell) | `shell`, `shell-fixed`, `shell-header`, `shell-sidebar`, `shell-main`, `shell-aside`, `shell-footer`, `shell-toggle` |
+| [Auto grid](https://ui.master.co/layouts/auto-grid) | `auto-grid`, `auto-grid-fit` |
+| [Form](https://ui.master.co/layouts/form) | `form`, `form-row`, `form-section`, `form-heading`, `form-title`, `form-description`, `form-fields`, `form-actions` |
 
 Documentation: [ui.master.co](https://ui.master.co)
 

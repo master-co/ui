@@ -8,7 +8,10 @@ import preset from '@master/css-preset/default-manifest.json' with { type: 'json
 const root = new URL('../', import.meta.url)
 const read = (file: string) => readFileSync(new URL(file, root), 'utf8')
 const imports = [...read('master.css').matchAll(/@import\s+['"]\.\/([^'"]+)['"]/g)].map(match => match[1])
-const components = readdirSync(new URL('components/', root)).filter(file => file.endsWith('.css')).map(file => file.slice(0, -4)).sort()
+const stylesheets = (directory: string) => readdirSync(new URL(`${directory}/`, root)).filter(file => file.endsWith('.css')).map(file => `${directory}/${file}`).sort()
+/** Components have a material, a state or a platform behavior. Layouts only place regions, in the few cases utilities cannot. */
+const components = stylesheets('components')
+const layouts = stylesheets('layouts')
 const pkg = JSON.parse(read('package.json'))
 
 function compile(files: string[]) {
@@ -18,15 +21,19 @@ function compile(files: string[]) {
   return result
 }
 
-test('master.css imports the theme first and every component stylesheet', () => {
+test('master.css imports the theme first, then every component and every layout', () => {
   assert.equal(imports[0], 'theme.css')
-  assert.deepEqual(imports.slice(1).map(file => file.replace(/^components\/(.+)\.css$/, '$1')).sort(), components)
+  assert.deepEqual(imports.slice(1).sort(), [...components, ...layouts].sort())
+  // A layout may be tuned by nothing and tunes nothing; it follows the components so its few rules read last.
+  assert.ok(imports.findIndex(file => file.startsWith('layouts/')) > imports.findLastIndex(file => file.startsWith('components/')))
 })
 
 test('every imported file is published', () => {
   assert.ok(pkg.files.includes('master.css'))
   assert.ok(pkg.files.includes('theme.css'))
   assert.ok(pkg.files.includes('components/*.css'))
+  assert.ok(pkg.files.includes('layouts/*.css'))
+  assert.equal(pkg.exports['./layouts/*.css'], './layouts/*.css')
   assert.equal(pkg.exports['.'].style, './master.css')
 })
 
@@ -35,13 +42,13 @@ test('the complete library compiles against the Master CSS preset', () => {
   for (const name of [
     'sheet', 'well', 'tray', 'card', 'card-media', 'card-header', 'card-title', 'card-description', 'card-action', 'card-body', 'card-footer', 'card-split', 'divider',
     'icon', 'btn', 'btn-primary', 'btn-square', 'btn-group', 'link',
-    'input', 'input-auto', 'input-group', 'input-group-field', 'input-group-addon', 'field', 'field-hint', 'field-error', 'input-group-wrap', 'form', 'form-row', 'form-section', 'form-heading', 'form-title', 'form-description', 'form-fields', 'form-actions', 'progress-ring', 'progress-ring-sm', 'progress-ring-lg', 'progress-ring-xl', 'badge-live',
+    'input', 'input-auto', 'input-group', 'input-group-field', 'input-group-addon', 'field', 'field-hint', 'field-error', 'input-group-wrap', 'heading', 'heading-xs', 'heading-sm', 'heading-lg', 'heading-xl', 'heading-2xl', 'heading-display', 'eyebrow', 'lead', 'lead-sm', 'lead-lg', 'sheet-inverse', 'dialog-drawer-start', 'page', 'shell', 'shell-fixed', 'shell-header', 'shell-sidebar', 'shell-main', 'shell-aside', 'shell-footer', 'shell-toggle', 'auto-grid', 'auto-grid-fit', 'form', 'form-row', 'form-section', 'form-heading', 'form-title', 'form-description', 'form-fields', 'form-actions', 'progress-ring', 'progress-ring-sm', 'progress-ring-lg', 'progress-ring-xl', 'badge-live',
     'navbar', 'navbar-floating', 'navbar-brand', 'navbar-nav', 'navbar-link', 'navbar-end', 'navbar-toggle', 'navbar-progress',
     'tabbar', 'tabbar-floating', 'tabbar-item', 'tabbar-label', 'toc', 'toc-title', 'toc-list', 'toc-link',
     'banner', 'banner-info', 'banner-success', 'banner-warning', 'banner-danger', 'banner-inverse', 'banner-brand', 'banner-dismissible', 'banner-content', 'banner-title', 'banner-action', 'banner-close',
     'figure', 'figure-framed', 'figure-center', 'figure-media', 'figure-caption', 'quote', 'quote-lg', 'quote-text', 'quote-source', 'quote-name',
     'mark', 'mark-brand', 'mark-underline', 'swatch', 'swatch-square', 'swatch-sm', 'swatch-lg', 'swatch-input',
-    'splitter', 'splitter-pane', 'splitter-handle', 'message-list', 'message', 'message-sent', 'message-avatar', 'message-bubble', 'message-meta', 'message-typing',
+    'splitter', 'splitter-pane', 'splitter-handle', 'message', 'message-sent', 'message-avatar', 'message-bubble', 'message-meta', 'message-typing',
     'composer', 'composer-field', 'composer-attachments', 'composer-toolbar', 'composer-end', 'composer-hint', 'expand', 'expand-toggle', 'expand-more', 'expand-less', 'select', 'select-option',
     'check', 'checkbox', 'radio', 'switch', 'slider', 'segmented', 'segmented-item', 'segmented-input',
     'tabs', 'tabs-item', 'breadcrumb', 'breadcrumb-item', 'breadcrumb-link',
@@ -88,9 +95,9 @@ test('component classes do not collide with preset utilities', () => {
   } finally { engine.dispose() }
 })
 
-for (const component of components) {
-  test(`components/${component}.css compiles on its own with theme.css`, () => {
-    const { nativeClassNames } = compile(['theme.css', `components/${component}.css`])
+for (const file of [...components, ...layouts]) {
+  test(`${file} compiles on its own with theme.css`, () => {
+    const { nativeClassNames } = compile(['theme.css', file])
     assert.ok(nativeClassNames.length > 0)
   })
 }
@@ -108,11 +115,24 @@ function selectors(file: string) {
 
 const elementTypes = /(^|[\s,(>+~&])(a|button|input|label|select|textarea|svg|img|span|div|p|ul|ol|li|nav)(?=$|[\s,:.)[>+~])/
 
-for (const component of components) {
-  test(`components/${component}.css reaches parts by class, never by element type or child combinator`, () => {
-    for (const selector of selectors(`components/${component}.css`)) {
-      assert.ok(!selector.includes('>'), `${component}: child combinator in "${selector}"`)
-      assert.ok(!elementTypes.test(selector), `${component}: element type in "${selector}"`)
+for (const file of [...components, ...layouts]) {
+  test(`${file} reaches parts by class, never by element type or child combinator`, () => {
+    for (const selector of selectors(file)) {
+      assert.ok(!selector.includes('>'), `${file}: child combinator in "${selector}"`)
+      assert.ok(!elementTypes.test(selector), `${file}: element type in "${selector}"`)
+    }
+  })
+}
+
+/**
+ * A layout places regions and decides what scrolls. It owns no material: a face, an edge, a shadow or a corner
+ * comes from a component standing in the region, so a layout never has to be matched to the material ladder.
+ */
+for (const file of layouts) {
+  test(`${file} draws no material`, () => {
+    const source = read(file).replace(/\/\*[\s\S]*?\*\//g, '')
+    for (const property of ['background', 'background-color', 'background-image', 'box-shadow', 'border-radius', 'corner-shape', 'backdrop-filter', 'filter']) {
+      assert.ok(!new RegExp(`(^|[\\s;{])${property}\\s*:`).test(source), `${file}: a layout declares ${property}`)
     }
   })
 }
