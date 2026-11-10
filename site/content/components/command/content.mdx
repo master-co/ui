@@ -1,0 +1,122 @@
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+
+A command palette is one search field over a list of commands, opened from anywhere with a shortcut. It is a [dialog](/components/dialog) with a different interior: add `command` beside `dialog`, and put a `command-search` row, a [listbox](/components/listbox) and an optional `command-footer` inside. Because it is a native `<dialog>`, a button opens it with `command="show-modal"`, and the browser supplies the scrim, the focus trap and <kbd>Esc</kbd>.
+
+<ComponentPreview name="default" title="Command palette" bodyClass="flex items-start justify-center p-lg min-h(560)" html={`<button type="button" class="btn" commandfor="palette" command="show-modal">
+  Search commands
+  <kbd class="kbd">⌘K</kbd>
+</button>
+
+<dialog id="palette" class="dialog command" closedby="any" aria-label="Command palette">
+  <label class="command-search">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.35-4.35"/></svg>
+    <input class="command-input" id="palette-input" type="search" role="combobox" aria-expanded="true" aria-controls="palette-list" aria-autocomplete="list" autocomplete="off" placeholder="Type a command or search" autofocus>
+    <kbd class="kbd">Esc</kbd>
+  </label>
+  <div class="listbox command-list" id="palette-list" role="listbox" aria-label="Commands">
+    <div class="listbox-group" role="group" aria-labelledby="group-suggestions">
+    <div class="listbox-label" id="group-suggestions">Suggestions</div>
+    <div class="listbox-option" role="option" id="cmd-new" aria-selected="true">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      New project
+      <span class="listbox-end"><kbd class="kbd">⌘</kbd><kbd class="kbd">N</kbd></span>
+    </div>
+    <div class="listbox-option" role="option" id="cmd-deploy">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M5 20h14"/></svg>
+      Deploy to production
+    </div>
+    <div class="listbox-option" role="option" id="cmd-invite">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M3 20a6 6 0 0 1 12 0M18 8v6M15 11h6"/></svg>
+      Invite a member
+    </div>
+    </div>
+    <div class="listbox-group" role="group" aria-labelledby="group-go">
+    <div class="listbox-label" id="group-go">Go to</div>
+    <div class="listbox-option" role="option" id="cmd-settings">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h2M10 12h10M4 18h10M18 18h2"/><circle cx="16" cy="6" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="16" cy="18" r="2"/></svg>
+      Settings
+      <span class="listbox-end"><kbd class="kbd">G</kbd><kbd class="kbd">S</kbd></span>
+    </div>
+    <div class="listbox-option" role="option" id="cmd-billing">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/></svg>
+      Billing
+    </div>
+    </div>
+    <div class="listbox-empty">No commands match.</div>
+  </div>
+  <footer class="command-footer">
+    <span class="command-hint"><kbd class="kbd">↑</kbd><kbd class="kbd">↓</kbd> to move</span>
+    <span class="command-hint"><kbd class="kbd">↵</kbd> to run</span>
+    <span class="command-hint"><kbd class="kbd">Esc</kbd> to close</span>
+  </footer>
+</dialog>
+<script>
+(function () {
+  var dialog = document.getElementById('palette')
+  var input = document.getElementById('palette-input')
+  var options = Array.from(dialog.querySelectorAll('[role=option]'))
+  var active = 0
+  function shown() { return options.filter(function (o) { return !o.hidden }) }
+  function move(to) {
+    var rows = shown()
+    options.forEach(function (o) { o.removeAttribute('aria-selected') })
+    if (!rows.length) return input.removeAttribute('aria-activedescendant')
+    active = (to + rows.length) % rows.length
+    rows[active].setAttribute('aria-selected', 'true')
+    rows[active].scrollIntoView({ block: 'nearest' })
+    input.setAttribute('aria-activedescendant', rows[active].id)
+  }
+  input.addEventListener('input', function () {
+    var query = input.value.trim().toLowerCase()
+    options.forEach(function (o) { o.hidden = o.textContent.toLowerCase().indexOf(query) < 0 })
+    move(0)
+  })
+  input.addEventListener('keydown', function (event) {
+    if (event.key === 'ArrowDown') { event.preventDefault(); move(active + 1) }
+    else if (event.key === 'ArrowUp') { event.preventDefault(); move(active - 1) }
+    else if (event.key === 'Enter') { event.preventDefault(); dialog.close() }
+  })
+  dialog.addEventListener('click', function (event) { if (event.target.closest('[role=option]')) dialog.close() })
+  document.addEventListener('keydown', function (event) {
+    if ((event.metaKey || event.ctrlKey) && event.key === 'k') { event.preventDefault(); dialog.open ? dialog.close() : dialog.showModal() }
+  })
+})()
+</script>`} caption="Open the palette, type to filter, and move with the arrow keys." />
+
+## Parts \{#parts\}
+
+- `command-search` is a `<label>`, so the whole row focuses the input. It holds an [`icon`](/components/icon), the `command-input` and an optional hint.
+- `command-input` has no material of its own: the dialog is its surface, and a hairline parts it from the results.
+- `command-list` goes on the listbox. It takes the remaining height and scrolls inside the dialog.
+- `command-footer` holds `command-hint` groups: keys in [`kbd`](/components/kbd), then what they do.
+
+The palette opens near the top of the viewport and grows downward, so the field stays where it is while the list under it changes length.
+
+## What you supply \{#what-you-supply\}
+
+The dialog opens and closes without script. A script adds three things, shown in the example:
+
+1. A shortcut, usually <kbd>⌘K</kbd>, that calls `showModal()`.
+2. Filtering: set `hidden` on the options that do not match. The [listbox](/components/listbox#filtering) shows its empty state, and hides a group whose commands are all filtered out, by itself.
+3. The arrow keys and <kbd>Enter</kbd>, moving `aria-selected` and running the active command.
+
+## Accessibility \{#accessibility\}
+
+- Name the dialog with `aria-label`. Put `autofocus` on the input so typing starts at once.
+- The input is a combobox that controls the listbox, as in a [combobox](/components/combobox#accessibility); here the list is always expanded.
+- Every command in the palette must be reachable some other way. A palette is a shortcut, not the only door.
+
+## Classes \{#classes\}
+
+| Class | Description |
+| --- | --- |
+| `command` | Beside `dialog`: the palette's interior and position |
+| `command-search` | The field row, on a `<label>` |
+| `command-input` | The bare search input |
+| `command-list` | On the `listbox` of results |
+| `command-footer`, `command-hint` | Key hints under the list |
+
+## Source \{#source\}
+
+<ComponentSource name="command" />

@@ -18,7 +18,7 @@ Component classes live in the `components` layer and utilities in the later `uti
 
 ## Principles \{#principles\}
 
-- **Native elements first.** Components style the element that already has the right semantics, so they work without JavaScript.
+- **Native elements first.** Components style the element that already has the right semantics, so they work without JavaScript. Where a pattern has no native element, the stylesheet draws its states from ARIA and [the behavior is yours](#patterns-that-need-a-script).
 - **The platform before script.** What a browser can now do by itself, a component does not reimplement. See [the platform](#the-platform) below.
 - **Light, not decoration.** Raised faces catch a line of light and settle on short shadows that fade; wells sink below their surroundings. State is depth, not color, and edges are soft. See the [theme](/guide/theme).
 - **Tokens, not hard-coded values.** Surfaces, lines, elevation, radii and motion come from theme tokens; override them once to retune every component.
@@ -48,6 +48,21 @@ Each component uses the web platform's own feature for its job and treats it as 
 | Dismiss a message, or let it leave | `<dialog>`, `display` in keyframes | [Toast](/components/toast) | It stays until dismissed |
 | Fill stars and complete steps | `:has()` with a sibling | [Rating](/components/rating), [steps](/components/steps) | Not needed: it is supported everywhere |
 | Turn a corner with continuous curvature | `corner-shape` | Every component | Circular corners at the same apparent size |
+| Open a list under a whole field, at its width | `anchor-scope`, `anchor-size()` | [Combobox](/components/combobox) | Centered, as the browser places a popover |
+| Keep a menu on screen at the pointer | `@position-try` | [Context menu](/components/menu#context-menu) | It opens down and to the end |
+| Share columns between rows without a table | `subgrid` | [Calendar](/components/calendar), [data list](/components/data-list) | Not needed: it is supported everywhere |
+| Show an empty state when a filter hides every option | `:has()` with `:not([hidden])` | [Listbox](/components/listbox#filtering) | Not needed: it is supported everywhere |
+| Color a reading by its thresholds | `<meter>` with `low`, `high`, `optimum` | [Meter](/components/meter) | The platform's own meter |
+
+## Patterns that need a script \{#patterns-that-need-a-script\}
+
+A few patterns have no native element yet: a [combobox](/components/combobox), a [command palette](/components/command), a [calendar](/components/calendar), a [tree](/components/tree) walked with the arrow keys, a [context menu](/components/menu#context-menu), an [OTP field](/components/otp) that moves on by itself. Master UI still gives them one stylesheet each. The division of work is the same every time:
+
+- **The stylesheet draws every state from ARIA**: `aria-selected` for the active option, `aria-checked` for a chosen one, `aria-expanded` for an open branch, `aria-current="date"` for today. It also places and animates the surface, and derives what it can, such as an empty state, with `:has()`.
+- **Your script or framework moves the attributes.** It never sets a style or measures a position. Each page shows the smallest script that drives the component, so the behavior is yours to keep or replace.
+- **The container is native wherever one exists.** A command palette is a `<dialog>` opened by `command="show-modal"`; a date picker's calendar sits in a `popover`; a tree without script is nested `<details>`.
+
+Markup written against these attributes is what the framework bindings will render, so it keeps working when they arrive.
 
 ## What comes next \{#what-comes-next\}
 

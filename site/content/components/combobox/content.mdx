@@ -1,0 +1,111 @@
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+
+A combobox is a text field that opens a [listbox](/components/listbox) of matches: a select you can type into. It is made of parts you already have, an [input group](/components/input#input-group) and a floating listbox, inside a `combobox` wrapper that ties the two together. The stylesheet places and draws it; filtering and the keys belong to a script.
+
+<ComponentPreview name="default" title="Combobox" bodyClass="p-lg min-h(320)" html={`<div class="field max-w(320) mx-auto">
+  <label for="region">Region</label>
+  <div class="combobox">
+    <div class="input-group">
+      <input class="input-group-field" id="region" role="combobox" aria-expanded="false" aria-controls="region-list" aria-autocomplete="list" autocomplete="off" placeholder="Search regions">
+      <button type="button" class="combobox-toggle" tabindex="-1" aria-label="Show regions"></button>
+    </div>
+    <div id="region-list" popover="manual" class="listbox" role="listbox" aria-label="Regions">
+      <div class="listbox-option" role="option" id="region-hnd" aria-checked="false">Tokyo</div>
+      <div class="listbox-option" role="option" id="region-sin" aria-checked="false">Singapore</div>
+      <div class="listbox-option" role="option" id="region-fra" aria-checked="false">Frankfurt</div>
+      <div class="listbox-option" role="option" id="region-lhr" aria-checked="false">London</div>
+      <div class="listbox-option" role="option" id="region-iad" aria-checked="false">Virginia</div>
+      <div class="listbox-option" role="option" id="region-pdx" aria-checked="false" aria-disabled="true">Oregon</div>
+      <div class="listbox-empty">No regions match.</div>
+    </div>
+  </div>
+</div>
+<script>
+(function () {
+  var input = document.getElementById('region')
+  var list = document.getElementById('region-list')
+  var toggle = input.parentNode.querySelector('.combobox-toggle')
+  var options = Array.from(list.querySelectorAll('[role=option]'))
+  var active = -1
+  function shown() { return options.filter(function (o) { return !o.hidden && o.getAttribute('aria-disabled') !== 'true' }) }
+  function move(to) {
+    var rows = shown()
+    options.forEach(function (o) { o.removeAttribute('aria-selected') })
+    active = rows.length ? (to + rows.length) % rows.length : -1
+    if (active < 0) return input.removeAttribute('aria-activedescendant')
+    rows[active].setAttribute('aria-selected', 'true')
+    rows[active].scrollIntoView({ block: 'nearest' })
+    input.setAttribute('aria-activedescendant', rows[active].id)
+  }
+  function open() { if (!list.matches(':popover-open')) list.showPopover(); input.setAttribute('aria-expanded', 'true') }
+  function close() { if (list.matches(':popover-open')) list.hidePopover(); input.setAttribute('aria-expanded', 'false') }
+  function choose(option) {
+    input.value = option.textContent.trim()
+    options.forEach(function (o) { o.setAttribute('aria-checked', String(o === option)) })
+    close()
+  }
+  input.addEventListener('input', function () {
+    var query = input.value.trim().toLowerCase()
+    options.forEach(function (o) { o.hidden = o.textContent.toLowerCase().indexOf(query) < 0 })
+    open(); move(0)
+  })
+  input.addEventListener('keydown', function (event) {
+    if (event.key === 'ArrowDown') { event.preventDefault(); open(); move(active + 1) }
+    else if (event.key === 'ArrowUp') { event.preventDefault(); open(); move(active - 1) }
+    else if (event.key === 'Enter' && active > -1) { event.preventDefault(); choose(shown()[active]) }
+    else if (event.key === 'Escape') close()
+  })
+  input.addEventListener('click', open)
+  input.addEventListener('blur', function () { setTimeout(close, 120) })
+  toggle.addEventListener('click', function () { list.matches(':popover-open') ? close() : open(); input.focus() })
+  list.addEventListener('pointerdown', function (event) {
+    var option = event.target.closest('[role=option]')
+    if (option && option.getAttribute('aria-disabled') !== 'true') choose(option)
+  })
+})()
+</script>`} caption="Type to filter, move with the arrow keys and choose with Enter. The script in this example is the whole behavior." />
+
+## What the stylesheet does \{#what-the-stylesheet-does\}
+
+- **Placement.** The `combobox` wrapper names itself as an anchor and scopes the name to itself. Its listbox opens 6px under the whole field, not under the caret or the button, and takes at least the field's width through `anchor-size()`. Nothing is measured, and several comboboxes on a page do not interfere.
+- **The chevron.** `combobox-toggle` is a small button at the field's end. Its chevron turns over while the field says `aria-expanded="true"`.
+- **The empty state.** `listbox-empty` appears by itself once every option is `hidden`.
+- **The field's states.** Hover, focus, invalid and disabled come from the input group.
+
+In a browser without anchor positioning the listbox still opens, centered in the viewport as any popover is.
+
+## What the script does \{#what-the-script-does\}
+
+The example above is about forty lines and is the complete pattern:
+
+1. On input, set `hidden` on the options that do not match, open the list and make the first match active.
+2. On the arrow keys, move `aria-selected` and point `aria-activedescendant` at it.
+3. On <kbd>Enter</kbd> or a click, write the option's text into the field, mark it `aria-checked="true"` and close.
+4. Keep `aria-expanded` in step with the popover.
+
+The listbox is `popover="manual"`, so typing and clicking in the field do not dismiss it; the script closes it on blur and <kbd>Esc</kbd>.
+
+## Choosing a control \{#choosing-a-control\}
+
+For up to a dozen plain options, a [select](/components/select) does this with no script and the platform's own type-ahead. Reach for a combobox when the list is long enough to search, loads as the reader types, or has rich rows.
+
+## Accessibility \{#accessibility\}
+
+- The input has `role="combobox"`, `aria-controls` pointing at the listbox, `aria-autocomplete="list"` and `aria-expanded`.
+- Focus stays in the input; the active option is announced through `aria-activedescendant`.
+- Take the toggle button out of the tab order with `tabindex="-1"`: the arrow keys already open the list from the field.
+- Set `autocomplete="off"` so the browser's own suggestions do not cover the list.
+
+## Classes \{#classes\}
+
+| Class | Description |
+| --- | --- |
+| `combobox` | The wrapper that anchors the listbox to the field |
+| `combobox-toggle` | A chevron button at the field's end |
+
+It is used with [`input-group`](/components/input#input-group), `input-group-field` and a [`listbox`](/components/listbox) that has the `popover` attribute.
+
+## Source \{#source\}
+
+<ComponentSource name="combobox" />

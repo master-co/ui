@@ -1,0 +1,79 @@
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+
+An OTP field takes a short code, one character to a slot: the six digits from a text message or an authenticator. Each slot is a native input drawn as a small well, the same material as a [text field](/components/input), so it rises to the sheet with an ink contour while it has focus.
+
+<ComponentPreview name="default" title="OTP" html={`<fieldset class="otp" aria-label="Verification code">
+  <input class="otp-slot" inputmode="numeric" pattern="[0-9]" maxlength="1" autocomplete="one-time-code" aria-label="Digit 1" value="4">
+  <input class="otp-slot" inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="Digit 2" value="2">
+  <input class="otp-slot" inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="Digit 3">
+  <span class="otp-separator" aria-hidden="true"></span>
+  <input class="otp-slot" inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="Digit 4">
+  <input class="otp-slot" inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="Digit 5">
+  <input class="otp-slot" inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="Digit 6">
+</fieldset>
+<script>
+(function () {
+  var slots = Array.from(document.querySelectorAll('.otp-slot'))
+  slots.forEach(function (slot, index) {
+    slot.addEventListener('input', function () { if (slot.value && slots[index + 1]) slots[index + 1].focus() })
+    slot.addEventListener('keydown', function (event) { if (event.key === 'Backspace' && !slot.value && index) slots[index - 1].focus() })
+    slot.addEventListener('paste', function (event) {
+      event.preventDefault()
+      var text = event.clipboardData.getData('text').replace(/[^0-9]/g, '')
+      slots.slice(index).forEach(function (target, offset) { if (text[offset]) target.value = text[offset] })
+      slots[Math.min(index + text.length, slots.length - 1)].focus()
+    })
+  })
+})()
+</script>`} caption="Type a digit and focus moves on; paste a code into any slot." />
+
+## What a script adds \{#what-a-script-adds\}
+
+Without script every slot is an ordinary input: the reader types a character and presses <kbd>Tab</kbd>. The ten lines in the example make it one field to the hand:
+
+- After a character, focus moves to the next slot; <kbd>Backspace</kbd> in an empty slot moves back.
+- A pasted code is spread across the slots from where it lands.
+
+A phone that offers the code from a text message fills one field with all of it. Separate slots cannot take that fill reliably, which is the main reason to prefer [one field](#one-field-is-enough) when codes arrive by message.
+
+## Invalid \{#invalid\}
+
+Mark the slots `aria-invalid="true"` when the code is wrong, and say why under the group.
+
+<ComponentPreview name="invalid" title="Invalid" bodyClass="flex flex-col items-center gap-xs p-lg" html={`<fieldset class="otp" aria-label="Verification code" aria-describedby="otp-error">
+  <input class="otp-slot" inputmode="numeric" maxlength="1" aria-label="Digit 1" aria-invalid="true" value="4">
+  <input class="otp-slot" inputmode="numeric" maxlength="1" aria-label="Digit 2" aria-invalid="true" value="2">
+  <input class="otp-slot" inputmode="numeric" maxlength="1" aria-label="Digit 3" aria-invalid="true" value="0">
+  <input class="otp-slot" inputmode="numeric" maxlength="1" aria-label="Digit 4" aria-invalid="true" value="9">
+</fieldset>
+<p class="m(0) text-xs fg-danger" id="otp-error">That code has expired. Request a new one.</p>`} />
+
+## One field is enough \{#one-field-is-enough\}
+
+Slots are a visual convention, not a requirement. A single [input](/components/input) with `autocomplete="one-time-code"`, `inputmode="numeric"` and `maxlength="6"` takes the same code with no script, pastes naturally and is easier for a screen reader. Use slots when the product's voice calls for them.
+
+## Accessibility \{#accessibility\}
+
+- Group the slots in a `<fieldset>` with a label, and name each slot, since a slot has no visible label.
+- `inputmode="numeric"` brings up the number pad without making the slot a number field.
+- Do not clear the slots on an error. Mark them invalid and let the reader correct or paste again.
+
+## Classes \{#classes\}
+
+| Class | Description |
+| --- | --- |
+| `otp` | The group |
+| `otp-slot` | One character, on an `<input>` |
+| `otp-separator` | A dash between groups of slots |
+
+## Custom properties \{#custom-properties\}
+
+| Property | Default | Description |
+| --- | --- | --- |
+| `--otp-width` | `2.5rem` | Slot width |
+| `--otp-height` | `2.75rem` | Slot height |
+
+## Source \{#source\}
+
+<ComponentSource name="otp" />

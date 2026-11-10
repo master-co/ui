@@ -88,6 +88,76 @@ A menu opens below its button, lined up with the start edge. `menu-end` lines it
   <button type="button" class="menu-item" popovertarget="row-menu" popovertargetaction="hide">Archive</button>
 </div>`} />
 
+## Submenu \{#submenu\}
+
+An item can open another menu. Give the item `popovertarget` and `aria-haspopup="menu"`, and put a `menu menu-sub` right after it, inside the parent menu. The item gains a chevron and stays lit while its submenu is open. The submenu opens beside the item, lined up with it, and flips to the other side when there is no room. Popovers nest, so the parent stays open, and <kbd>Esc</kbd> closes one level at a time.
+
+<ComponentPreview name="submenu" title="Submenu" bodyClass="flex items-start justify-center p-lg min-h(300)" html={`<button type="button" class="btn" popovertarget="file-menu">File</button>
+
+<div id="file-menu" popover class="menu">
+  <button type="button" class="menu-item">New project<span class="menu-shortcut">⌘N</span></button>
+  <button type="button" class="menu-item" popovertarget="recent-menu" aria-haspopup="menu">Open recent</button>
+  <div id="recent-menu" popover class="menu menu-sub">
+    <button type="button" class="menu-item">atlas</button>
+    <button type="button" class="menu-item">borealis</button>
+    <button type="button" class="menu-item">cirrus</button>
+  </div>
+  <hr class="menu-separator">
+  <button type="button" class="menu-item">Export<span class="menu-shortcut">⌘E</span></button>
+</div>`} />
+
+A submenu opens on a click, which works the same for a pointer, a finger and the keys. Opening it on hover as well is a script's choice.
+
+## Context menu \{#context-menu\}
+
+`menu-context` opens a menu at the pointer instead of against a button. The platform has no declarative way to open a popover from a right click, so this takes three lines of script: on `contextmenu`, write the pointer's position into `--menu-x` and `--menu-y` and call `showPopover()`. The stylesheet does the rest. The menu opens down and to the end of that point, and `@position-try` turns it toward the middle when it would cross an edge of the viewport, with no measuring.
+
+<ComponentPreview name="context" title="Context menu" bodyClass="p-lg min-h(300)" html={`<div class="well flex items-center justify-center h(200) text-sm fg-text-muted" id="canvas" tabindex="0">Right-click, or press the menu key</div>
+
+<div id="canvas-menu" popover class="menu menu-context">
+  <button type="button" class="menu-item" popovertarget="canvas-menu" popovertargetaction="hide">Copy<span class="menu-shortcut">⌘C</span></button>
+  <button type="button" class="menu-item" popovertarget="canvas-menu" popovertargetaction="hide">Paste<span class="menu-shortcut">⌘V</span></button>
+  <button type="button" class="menu-item" popovertarget="canvas-menu" popovertargetaction="hide">Duplicate</button>
+  <hr class="menu-separator">
+  <button type="button" class="menu-item menu-item-danger" popovertarget="canvas-menu" popovertargetaction="hide">Delete</button>
+</div>
+<script>
+document.getElementById('canvas').addEventListener('contextmenu', function (event) {
+  event.preventDefault()
+  var menu = document.getElementById('canvas-menu')
+  var box = this.getBoundingClientRect()
+  menu.style.setProperty('--menu-x', (event.clientX || box.left + 16) + 'px')
+  menu.style.setProperty('--menu-y', (event.clientY || box.top + 16) + 'px')
+  menu.hidePopover()
+  menu.showPopover()
+})
+</script>`} />
+
+The `contextmenu` event also fires for the keyboard's menu key and for a long press on a touch screen, so one listener covers all three. When the event has no pointer position, as from the keyboard, the example falls back to the element's corner.
+
+## Menubar \{#menubar\}
+
+A row of menus is a [toolbar](/components/toolbar) of quiet buttons, each with its own menu. A quiet button stays sunk into a well while the menu or popover right after it is open, so the open menu's title is marked without script.
+
+<ComponentPreview name="menubar" title="Menubar" bodyClass="flex items-start justify-center p-lg min-h(260)" html={`<div class="toolbar" role="toolbar" aria-label="Application">
+  <button type="button" class="btn btn-quiet btn-sm" popovertarget="bar-file">File</button>
+  <div id="bar-file" popover class="menu">
+    <button type="button" class="menu-item">New<span class="menu-shortcut">⌘N</span></button>
+    <button type="button" class="menu-item">Open<span class="menu-shortcut">⌘O</span></button>
+    <button type="button" class="menu-item">Save<span class="menu-shortcut">⌘S</span></button>
+  </div>
+  <button type="button" class="btn btn-quiet btn-sm" popovertarget="bar-edit">Edit</button>
+  <div id="bar-edit" popover class="menu">
+    <button type="button" class="menu-item">Undo<span class="menu-shortcut">⌘Z</span></button>
+    <button type="button" class="menu-item">Redo<span class="menu-shortcut">⇧⌘Z</span></button>
+  </div>
+  <button type="button" class="btn btn-quiet btn-sm" popovertarget="bar-view">View</button>
+  <div id="bar-view" popover class="menu">
+    <label class="menu-item"><input type="checkbox" class="menu-input" checked>Sidebar</label>
+    <label class="menu-item"><input type="checkbox" class="menu-input">Minimap</label>
+  </div>
+</div>`} />
+
 ## Accessibility \{#accessibility\}
 
 - Without script, a menu is a popover of buttons and links: <kbd>Tab</kbd> moves through the items, <kbd>Esc</kbd> closes it and focus returns to the button. That is complete and correct as it stands, so do not add `role="menu"`.
@@ -105,6 +175,8 @@ A menu opens below its button, lined up with the start edge. `menu-end` lines it
 | `menu-shortcut` | A shortcut at the end of an item |
 | `menu-label`, `menu-separator` | A group caption and a hairline between groups |
 | `menu-end`, `menu-top` | Line up with the button's end edge; open above it |
+| `menu-sub` | A submenu, beside the item that opens it |
+| `menu-context` | Opens at `--menu-x` and `--menu-y` |
 
 ## Custom properties \{#custom-properties\}
 
@@ -113,6 +185,7 @@ A menu opens below its button, lined up with the start edge. `menu-end` lines it
 | `--menu-inset` | `4px` | Padding around the items |
 | `--menu-item-radius` | `var(--radius-control-sm)` | Row corner; the menu's corner is this plus the inset |
 | `--anchored-gap` | `6px` | Distance from the button |
+| `--menu-x`, `--menu-y` | `0px` | Where a context menu opens, set by script |
 
 ## Source \{#source\}
 

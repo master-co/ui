@@ -1,0 +1,112 @@
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+
+A listbox is a list of options to choose from. It is the surface a [combobox](/components/combobox) and a [command palette](/components/command) open, and it can stand in the page on its own. The stylesheet draws every state from ARIA and leaves the behavior to the script that drives it: which option is active, what a key does, when the list opens.
+
+<ComponentPreview name="default" title="Listbox" bodyClass="p-lg" html={`<div class="sheet sheet-flat max-w(320) mx-auto">
+  <div class="listbox" role="listbox" aria-label="Framework" tabindex="0" aria-activedescendant="fw-astro">
+    <div class="listbox-option" role="option" id="fw-astro" aria-selected="true" aria-checked="true">Astro</div>
+    <div class="listbox-option" role="option" id="fw-next" aria-checked="false">Next.js</div>
+    <div class="listbox-option" role="option" id="fw-svelte" aria-checked="false">SvelteKit</div>
+    <div class="listbox-option" role="option" id="fw-nuxt" aria-checked="false" aria-disabled="true">Nuxt</div>
+  </div>
+</div>`} />
+
+## Two states, two attributes \{#two-states\}
+
+A listbox tells apart where the keys are and what has been chosen.
+
+- **Active** is `aria-selected="true"`: the option the arrow keys are on, the one <kbd>Enter</kbd> would take. It takes a chip tone. The pointer gives the same tone to the row under it, at once and without a fade.
+- **Chosen** is `aria-checked="true"`: a value that is set. It carries a check at its end. An option with `aria-checked` in either state keeps room for the check, so labels do not move.
+
+Focus usually stays on the list or on a text field, and `aria-activedescendant` names the active option. When an option takes real focus instead, it also draws an ink outline.
+
+## Rich options \{#rich-options\}
+
+Put [`icon`](/components/icon) on a leading icon. `listbox-body` stacks a title over a `listbox-description`, and `listbox-end` sets a shortcut or a hint at the end of the row. `listbox-group` wraps a set of options with its `listbox-label`, and `listbox-separator` rules between groups.
+
+<ComponentPreview name="rich" title="Rich options" bodyClass="p-lg" html={`<div class="sheet sheet-flat max-w(360) mx-auto">
+  <div class="listbox" role="listbox" aria-label="Commands">
+    <div class="listbox-group" role="group" aria-labelledby="rich-suggestions">
+    <div class="listbox-label" id="rich-suggestions">Suggestions</div>
+    <div class="listbox-option" role="option" aria-selected="true">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      New project
+      <span class="listbox-end"><kbd class="kbd">⌘</kbd><kbd class="kbd">N</kbd></span>
+    </div>
+    <div class="listbox-option" role="option">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.35-4.35"/></svg>
+      <span class="listbox-body">
+        <span>Search deployments</span>
+        <span class="listbox-description">By branch, commit or author</span>
+      </span>
+    </div>
+    </div>
+    <hr class="listbox-separator">
+    <div class="listbox-group" role="group" aria-labelledby="rich-team">
+    <div class="listbox-label" id="rich-team">Team</div>
+    <div class="listbox-option" role="option">
+      <span class="avatar avatar-xs"><img class="avatar-image" src="/demo/portrait-1.svg" alt=""></span>
+      Ada Lovelace
+    </div>
+    <div class="listbox-option" role="option">
+      <span class="avatar avatar-xs"><img class="avatar-image" src="/demo/portrait-2.svg" alt=""></span>
+      Alan Turing
+    </div>
+    </div>
+  </div>
+</div>`} />
+
+## Filtering \{#filtering\}
+
+A script filters by setting the `hidden` attribute on the options that do not match. Two things then happen without more script, through `:has()`:
+
+- `listbox-empty` shows once every option is hidden, and hides again when one returns.
+- A `listbox-group`, a `role="group"` element around a caption and its options, hides while all of its options are hidden, so a caption never stands over nothing.
+
+<ComponentPreview name="empty" title="Nothing matches" bodyClass="p-lg" html={`<div class="sheet sheet-flat max-w(320) mx-auto">
+  <div class="listbox" role="listbox" aria-label="Regions">
+    <div class="listbox-option" role="option" hidden>Tokyo</div>
+    <div class="listbox-option" role="option" hidden>Frankfurt</div>
+    <div class="listbox-empty">No regions match "zz".</div>
+  </div>
+</div>`} />
+
+## Floating \{#floating\}
+
+With the `popover` attribute a listbox is a floating sheet: a 12px corner around 8px rows, placed against its anchor and flipped at the viewport edge, with the same motion in and out as a [menu](/components/menu). Use `popover="manual"` when a text field owns it, so typing does not dismiss it. The [combobox](/components/combobox) shows this.
+
+## Listbox, menu or select \{#listbox-menu-or-select\}
+
+- A [select](/components/select) is the native control for one value from a list. Use it when the options are plain text; it needs no script.
+- A [menu](/components/menu) holds actions, as native buttons and links.
+- A listbox holds values or results that a script filters, groups or loads: a combobox, a command palette, a multi-select.
+
+## Accessibility \{#accessibility\}
+
+- Give the container `role="listbox"` and a label, and each option `role="option"`. A `listbox-group` is `role="group"`, labelled by its caption with `aria-labelledby`.
+- The script moves `aria-selected` and `aria-activedescendant` together and scrolls the active option into view; options keep a scroll margin so it clears the list's edge.
+- A disabled option has `aria-disabled="true"` and is skipped by the keys.
+
+## Classes \{#classes\}
+
+| Class | Description |
+| --- | --- |
+| `listbox` | The list; a floating sheet when it has the `popover` attribute |
+| `listbox-option` | An option, on an element with `role="option"` |
+| `listbox-body`, `listbox-description` | A title with a line under it |
+| `listbox-end` | A shortcut or a hint at the end of an option |
+| `listbox-group`, `listbox-label` | A group of options and its caption |
+| `listbox-separator` | A hairline between groups |
+| `listbox-empty` | What the list says when nothing matches |
+
+## Custom properties \{#custom-properties\}
+
+| Property | Default | Description |
+| --- | --- | --- |
+| `--listbox-inset` | `4px` | Padding around the options |
+| `--listbox-option-radius` | `var(--radius-control-sm)` | Row corner; a floating list's corner is this plus the inset |
+
+## Source \{#source\}
+
+<ComponentSource name="listbox" />
