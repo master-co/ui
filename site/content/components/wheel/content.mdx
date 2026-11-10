@@ -1,0 +1,163 @@
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+
+A wheel picks a value by turning a column until the value rests under a mark: an hour, a minute, a unit. It is the picker of a phone, made of what the platform already has: each column is a scroll container that snaps one option to its center. The wheel is a well, and one small sheet lies across its middle to say which row is the value.
+
+<ComponentPreview name="default" title="Wheel" bodyClass="flex items-center justify-center p-lg" html={`<div class="wheel" role="group" aria-label="Reminder time">
+  <div class="wheel-column" role="listbox" aria-label="Hour" tabindex="0">
+    <div class="wheel-option" role="option" aria-selected="false">01</div>
+    <div class="wheel-option" role="option" aria-selected="false">02</div>
+    <div class="wheel-option" role="option" aria-selected="false">03</div>
+    <div class="wheel-option" role="option" aria-selected="false">04</div>
+    <div class="wheel-option" role="option" aria-selected="false">05</div>
+    <div class="wheel-option" role="option" aria-selected="false">06</div>
+    <div class="wheel-option" role="option" aria-selected="false">07</div>
+    <div class="wheel-option" role="option" aria-selected="false">08</div>
+    <div class="wheel-option" role="option" aria-selected="true">09</div>
+    <div class="wheel-option" role="option" aria-selected="false">10</div>
+    <div class="wheel-option" role="option" aria-selected="false">11</div>
+    <div class="wheel-option" role="option" aria-selected="false">12</div>
+  </div>
+  <span class="wheel-separator" aria-hidden="true">:</span>
+  <div class="wheel-column" role="listbox" aria-label="Minute" tabindex="0">
+    <div class="wheel-option" role="option" aria-selected="false">00</div>
+    <div class="wheel-option" role="option" aria-selected="false">05</div>
+    <div class="wheel-option" role="option" aria-selected="false">10</div>
+    <div class="wheel-option" role="option" aria-selected="false">15</div>
+    <div class="wheel-option" role="option" aria-selected="false">20</div>
+    <div class="wheel-option" role="option" aria-selected="false">25</div>
+    <div class="wheel-option" role="option" aria-selected="true">30</div>
+    <div class="wheel-option" role="option" aria-selected="false">35</div>
+    <div class="wheel-option" role="option" aria-selected="false">40</div>
+    <div class="wheel-option" role="option" aria-selected="false">45</div>
+    <div class="wheel-option" role="option" aria-selected="false">50</div>
+    <div class="wheel-option" role="option" aria-selected="false">55</div>
+  </div>
+  <div class="wheel-column" role="listbox" aria-label="Period" tabindex="0">
+    <div class="wheel-option" role="option" aria-selected="true">AM</div>
+    <div class="wheel-option" role="option" aria-selected="false">PM</div>
+  </div>
+</div>
+<script>
+document.querySelectorAll('.wheel-column').forEach(function (column) {
+  var options = Array.from(column.querySelectorAll('.wheel-option'))
+  var chosen = column.querySelector('[aria-selected=true]')
+  if (chosen) column.scrollTop = chosen.offsetTop - options[0].offsetTop
+  column.addEventListener('scroll', function () {
+    var index = Math.round(column.scrollTop / options[0].offsetHeight)
+    options.forEach(function (option, i) { option.setAttribute('aria-selected', String(i === index)) })
+  })
+  column.addEventListener('click', function (event) {
+    var option = event.target.closest('.wheel-option')
+    if (option) column.scrollTo({ top: option.offsetTop - options[0].offsetTop, behavior: 'smooth' })
+  })
+})
+</script>`} caption="Scroll a column, drag it on a touch screen, click an option, or focus a column and use the arrow keys." />
+
+## What the platform does \{#what-the-platform-does\}
+
+- **Turning** is scrolling. A wheel, a finger, a trackpad and the arrow keys all work as they do in any scroll container.
+- **Coming to rest** is scroll snapping: `scroll-snap-type: y mandatory` on the column and `scroll-snap-align: center` on each option. A column never stops between two values.
+- **The look of a wheel** is a scroll-driven animation. Each option is its own view timeline over the column: it is full ink at the middle of its pass, and quieter and turned slightly away the further it has gone. No script reads a scroll position to draw this.
+
+Where the browser has no view timelines, all options are drawn flat and the one marked `aria-selected="true"` takes the strong ink. Chromium and Safari 26 have them; Firefox draws the fallback.
+
+## What the script adds \{#what-the-script-adds\}
+
+The stylesheet cannot tell your form which value is under the mark. A script reads it from how far the column has scrolled and moves `aria-selected`:
+
+```js
+column.addEventListener('scroll', () => {
+  const index = Math.round(column.scrollTop / options[0].offsetHeight)
+  options.forEach((option, i) => option.setAttribute('aria-selected', String(i === index)))
+})
+```
+
+The script in the preview adds two conveniences: it scrolls each column to its chosen option when the page loads, and it brings an option to the mark when it is clicked. To submit the value with a form, copy it into a hidden input in the same handler.
+
+## One column \{#one-column\}
+
+A wheel may hold a single column. `wheel-sm` shows three rows instead of five, for a wheel inside a [popover](/components/popover) or a row of settings.
+
+<ComponentPreview name="single" title="One column" bodyClass="flex items-center justify-center gap-lg p-lg" html={`<div class="wheel" role="group" aria-label="Repeat every">
+  <div class="wheel-column" role="listbox" aria-label="Interval" tabindex="0">
+    <div class="wheel-option" role="option" aria-selected="false">Hour</div>
+    <div class="wheel-option" role="option" aria-selected="false">Day</div>
+    <div class="wheel-option" role="option" aria-selected="true">Week</div>
+    <div class="wheel-option" role="option" aria-selected="false">Fortnight</div>
+    <div class="wheel-option" role="option" aria-selected="false">Month</div>
+    <div class="wheel-option" role="option" aria-selected="false">Quarter</div>
+    <div class="wheel-option" role="option" aria-selected="false">Year</div>
+  </div>
+</div>
+<div class="wheel wheel-sm" role="group" aria-label="Font size">
+  <div class="wheel-column" role="listbox" aria-label="Size" tabindex="0">
+    <div class="wheel-option" role="option" aria-selected="false">12</div>
+    <div class="wheel-option" role="option" aria-selected="false">13</div>
+    <div class="wheel-option" role="option" aria-selected="true">14</div>
+    <div class="wheel-option" role="option" aria-selected="false">15</div>
+    <div class="wheel-option" role="option" aria-selected="false">16</div>
+    <div class="wheel-option" role="option" aria-selected="false">18</div>
+    <div class="wheel-option" role="option" aria-selected="false">20</div>
+    <div class="wheel-option" role="option" aria-selected="false">24</div>
+  </div>
+  <span class="wheel-separator" aria-hidden="true">px</span>
+</div>
+<script>
+document.querySelectorAll('.wheel-column').forEach(function (column) {
+  var options = Array.from(column.querySelectorAll('.wheel-option'))
+  var chosen = column.querySelector('[aria-selected=true]')
+  if (chosen) column.scrollTop = chosen.offsetTop - options[0].offsetTop
+  column.addEventListener('scroll', function () {
+    var index = Math.round(column.scrollTop / options[0].offsetHeight)
+    options.forEach(function (option, i) { option.setAttribute('aria-selected', String(i === index)) })
+  })
+  column.addEventListener('click', function (event) {
+    var option = event.target.closest('.wheel-option')
+    if (option) column.scrollTo({ top: option.offsetTop - options[0].offsetTop, behavior: 'smooth' })
+  })
+})
+</script>`} />
+
+## The mark \{#the-mark\}
+
+The sheet across the middle belongs to the wheel, not to a column, so the hours and the minutes of one time share it. It sits 4px inside the well and takes the concentric corner. `wheel-separator` is fixed text that rests on it between two columns: the colon of a time, a unit after a number.
+
+Rows are 36px, and 44px on a touch screen. Set `--wheel-rows` to an odd number to show more of the column.
+
+## When to use something else \{#when-to-use-something-else\}
+
+A wheel suits a short, ordered set that a reader knows by heart, on a device they touch. With a keyboard and a pointer, a [select](/components/select) or a [stepper](/components/stepper) is quicker, and for a date the [calendar](/components/calendar) shows the week a reader is choosing in. A native `<input type="time">` already opens the platform's own wheel on a phone; reach for this one when the picker has to live in the page.
+
+## Accessibility \{#accessibility\}
+
+- Each column is a `role="listbox"` with an `aria-label` and `tabindex="0"`; each option is a `role="option"`. The script keeps `aria-selected` on the option under the mark.
+- The arrow keys, <kbd>Page Up</kbd>, <kbd>Page Down</kbd>, <kbd>Home</kbd> and <kbd>End</kbd> scroll a focused column, and snapping finishes the move.
+- The turn and the fade follow the reader's own scrolling. With reduced motion the options keep the fade and lose the turn.
+
+## Classes \{#classes\}
+
+| Class | Description |
+| --- | --- |
+| `wheel` | The well and the mark across its middle |
+| `wheel-sm` | Three 32px rows |
+| `wheel-column` | A column that scrolls and snaps |
+| `wheel-option` | One value. `aria-selected="true"` is the one under the mark |
+| `wheel-separator` | Fixed text between columns |
+
+## Custom properties \{#custom-properties\}
+
+| Property | Default | Description |
+| --- | --- | --- |
+| `--wheel-row` | `2.25rem` | Height of a row and of the mark |
+| `--wheel-rows` | `5` | Rows in view; keep it odd |
+| `--wheel-radius` | `var(--radius-control-lg)` | Corner of the well |
+
+## Related \{#related\}
+
+<ComponentLinks slugs={['select', 'stepper', 'calendar']} />
+
+## Source \{#source\}
+
+<ComponentSource name="wheel" />

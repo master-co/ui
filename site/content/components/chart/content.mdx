@@ -1,0 +1,231 @@
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+
+A chart shows a few numbers as bars. It is a list: every item carries its number once for the drawing and once as text, and the stylesheet draws the bar, the scale behind it and the value under the pointer. Bars are ink, the way a [progress bar](/components/progress) fills with ink. There is no script and no SVG.
+
+<ComponentPreview name="default" title="Chart" bodyClass="p-lg" html={`<div class="card max-w(420) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Deployments</h3>
+    <p class="card-description">311 this week</p>
+  </div>
+  <ol class="chart" aria-label="Deployments per day, this week">
+    <li class="chart-item" style="--value: 42"><span class="chart-label">Mon</span><span class="chart-value">42</span></li>
+    <li class="chart-item" style="--value: 58"><span class="chart-label">Tue</span><span class="chart-value">58</span></li>
+    <li class="chart-item" style="--value: 36"><span class="chart-label">Wed</span><span class="chart-value">36</span></li>
+    <li class="chart-item" style="--value: 71"><span class="chart-label">Thu</span><span class="chart-value">71</span></li>
+    <li class="chart-item" style="--value: 64"><span class="chart-label">Fri</span><span class="chart-value">64</span></li>
+    <li class="chart-item" style="--value: 22"><span class="chart-label">Sat</span><span class="chart-value">22</span></li>
+    <li class="chart-item" style="--value: 18"><span class="chart-label">Sun</span><span class="chart-value">18</span></li>
+  </ol>
+</div>`} caption="Point at a column: the other bars step back and the value appears." />
+
+## How a bar gets its height \{#how-a-bar-gets-its-height\}
+
+Each `chart-item` sets `--value` in its `style`. The chart sets the top of the scale with `--chart-max`, 100 unless you say otherwise, and the plot's height with `--chart-height`. A bar is its share of the maximum; a value above the maximum fills the plot, and a value of nothing leaves a one-pixel tick on the baseline, so an empty day is still a day.
+
+The number is written twice on purpose. `--value` is for the drawing. `chart-value` is the same number as text, formatted the way a person reads it: the tip under the pointer shows it, and so does a screen reader, a search and a copy.
+
+Four hairlines mark even steps of the scale. Set `--chart-lines` to match your maximum: five lines for a scale of 100 put one at every 20.
+
+## One bar that matters \{#quiet\}
+
+`chart-quiet` turns the bars into a tint and keeps the ink for the item marked `aria-current`: today in a week, the plan a reader is on, the release being discussed.
+
+<ComponentPreview name="quiet" title="Quiet" bodyClass="p-lg" html={`<div class="card max-w(420) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Build minutes</h3>
+    <p class="card-description">Thursday so far</p>
+  </div>
+  <ol class="chart chart-quiet" aria-label="Build minutes per day, this week">
+    <li class="chart-item" style="--value: 42"><span class="chart-label">Mon</span><span class="chart-value">42</span></li>
+    <li class="chart-item" style="--value: 58"><span class="chart-label">Tue</span><span class="chart-value">58</span></li>
+    <li class="chart-item" style="--value: 36"><span class="chart-label">Wed</span><span class="chart-value">36</span></li>
+    <li class="chart-item" style="--value: 71" aria-current="true"><span class="chart-label">Thu</span><span class="chart-value">71</span></li>
+    <li class="chart-item" style="--value: 64"><span class="chart-label">Fri</span><span class="chart-value">64</span></li>
+    <li class="chart-item" style="--value: 22"><span class="chart-label">Sat</span><span class="chart-value">22</span></li>
+    <li class="chart-item" style="--value: 18"><span class="chart-label">Sun</span><span class="chart-value">18</span></li>
+  </ol>
+</div>`} />
+
+## Values in view \{#values\}
+
+`chart-values` writes every value over its bar as plain figures. Use it when there are few bars and the exact numbers are the point, or on a touch screen, where nothing hovers.
+
+<ComponentPreview name="values" title="Values" bodyClass="p-lg" html={`<div class="card max-w(420) mx-auto">
+  <ol class="chart chart-values" style="--chart-height: 8rem" aria-label="Signups per day, this week">
+    <li class="chart-item" style="--value: 42"><span class="chart-label">Mon</span><span class="chart-value">42</span></li>
+    <li class="chart-item" style="--value: 58"><span class="chart-label">Tue</span><span class="chart-value">58</span></li>
+    <li class="chart-item" style="--value: 36"><span class="chart-label">Wed</span><span class="chart-value">36</span></li>
+    <li class="chart-item" style="--value: 71"><span class="chart-label">Thu</span><span class="chart-value">71</span></li>
+    <li class="chart-item" style="--value: 64"><span class="chart-label">Fri</span><span class="chart-value">64</span></li>
+    <li class="chart-item" style="--value: 22"><span class="chart-label">Sat</span><span class="chart-value">22</span></li>
+    <li class="chart-item" style="--value: 18"><span class="chart-label">Sun</span><span class="chart-value">18</span></li>
+  </ol>
+</div>`} />
+
+## Many bars \{#many-bars\}
+
+Columns share the width equally, so a month fits where a week did. Narrow the space between bars with `--chart-gap`. A name is centered on its bar and may be wider than its column: name every seventh item and leave the others empty. An item with an empty name takes an `aria-label` instead, so its value still has something to belong to.
+
+<ComponentPreview name="dense" title="Thirty days" bodyClass="p-lg" responsive html={`<div class="card max-w(520) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Requests</h3>
+    <p class="card-description">Thousands per day, November</p>
+  </div>
+  <ol class="chart" style="--chart-gap: 3px; --chart-height: 7rem" aria-label="Requests per day in November, in thousands">
+    <li class="chart-item" style="--value: 49"><span class="chart-label">Nov 1</span><span class="chart-value">49</span></li>
+    <li class="chart-item" style="--value: 27" aria-label="Nov 2"><span class="chart-label"></span><span class="chart-value">27</span></li>
+    <li class="chart-item" style="--value: 58" aria-label="Nov 3"><span class="chart-label"></span><span class="chart-value">58</span></li>
+    <li class="chart-item" style="--value: 91" aria-label="Nov 4"><span class="chart-label"></span><span class="chart-value">91</span></li>
+    <li class="chart-item" style="--value: 14" aria-label="Nov 5"><span class="chart-label"></span><span class="chart-value">14</span></li>
+    <li class="chart-item" style="--value: 17" aria-label="Nov 6"><span class="chart-label"></span><span class="chart-value">17</span></li>
+    <li class="chart-item" style="--value: 76" aria-label="Nov 7"><span class="chart-label"></span><span class="chart-value">76</span></li>
+    <li class="chart-item" style="--value: 20"><span class="chart-label">Nov 8</span><span class="chart-value">20</span></li>
+    <li class="chart-item" style="--value: 54" aria-label="Nov 9"><span class="chart-label"></span><span class="chart-value">54</span></li>
+    <li class="chart-item" style="--value: 82" aria-label="Nov 10"><span class="chart-label"></span><span class="chart-value">82</span></li>
+    <li class="chart-item" style="--value: 15" aria-label="Nov 11"><span class="chart-label"></span><span class="chart-value">15</span></li>
+    <li class="chart-item" style="--value: 72" aria-label="Nov 12"><span class="chart-label"></span><span class="chart-value">72</span></li>
+    <li class="chart-item" style="--value: 35" aria-label="Nov 13"><span class="chart-label"></span><span class="chart-value">35</span></li>
+    <li class="chart-item" style="--value: 12" aria-label="Nov 14"><span class="chart-label"></span><span class="chart-value">12</span></li>
+    <li class="chart-item" style="--value: 19"><span class="chart-label">Nov 15</span><span class="chart-value">19</span></li>
+    <li class="chart-item" style="--value: 63" aria-label="Nov 16"><span class="chart-label"></span><span class="chart-value">63</span></li>
+    <li class="chart-item" style="--value: 61" aria-label="Nov 17"><span class="chart-label"></span><span class="chart-value">61</span></li>
+    <li class="chart-item" style="--value: 16" aria-label="Nov 18"><span class="chart-label"></span><span class="chart-value">16</span></li>
+    <li class="chart-item" style="--value: 38" aria-label="Nov 19"><span class="chart-label"></span><span class="chart-value">38</span></li>
+    <li class="chart-item" style="--value: 19" aria-label="Nov 20"><span class="chart-label"></span><span class="chart-value">19</span></li>
+    <li class="chart-item" style="--value: 78" aria-label="Nov 21"><span class="chart-label"></span><span class="chart-value">78</span></li>
+    <li class="chart-item" style="--value: 62"><span class="chart-label">Nov 22</span><span class="chart-value">62</span></li>
+    <li class="chart-item" style="--value: 15" aria-label="Nov 23"><span class="chart-label"></span><span class="chart-value">15</span></li>
+    <li class="chart-item" style="--value: 80" aria-label="Nov 24"><span class="chart-label"></span><span class="chart-value">80</span></li>
+    <li class="chart-item" style="--value: 23" aria-label="Nov 25"><span class="chart-label"></span><span class="chart-value">23</span></li>
+    <li class="chart-item" style="--value: 36" aria-label="Nov 26"><span class="chart-label"></span><span class="chart-value">36</span></li>
+    <li class="chart-item" style="--value: 88" aria-label="Nov 27"><span class="chart-label"></span><span class="chart-value">88</span></li>
+    <li class="chart-item" style="--value: 88" aria-label="Nov 28"><span class="chart-label"></span><span class="chart-value">88</span></li>
+    <li class="chart-item" style="--value: 82"><span class="chart-label">Nov 29</span><span class="chart-value">82</span></li>
+    <li class="chart-item" style="--value: 15" aria-label="Nov 30"><span class="chart-label"></span><span class="chart-value">15</span></li>
+  </ol>
+</div>`} />
+
+## Horizontal \{#horizontal\}
+
+`chart-horizontal` is a ranking: one row to an item. The name lies on a tint as long as the item's share and the figure stands at the end of the row, so both are read without a pointer. Set `--chart-max` to the largest value so the first row spans the column.
+
+<ComponentPreview name="horizontal" title="Horizontal" bodyClass="p-lg" html={`<div class="card max-w(420) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Top pages</h3>
+    <p class="card-description">Visitors in the last 7 days</p>
+  </div>
+  <ol class="chart chart-horizontal" style="--chart-max: 4820" aria-label="Pages by visitors">
+    <li class="chart-item" style="--value: 4820"><span class="chart-label">/guide/installation</span><span class="chart-value">4,820</span></li>
+    <li class="chart-item" style="--value: 3112"><span class="chart-label">/components/button</span><span class="chart-value">3,112</span></li>
+    <li class="chart-item" style="--value: 2240"><span class="chart-label">/components/dialog</span><span class="chart-value">2,240</span></li>
+    <li class="chart-item" style="--value: 1360"><span class="chart-label">/guide/theme</span><span class="chart-value">1,360</span></li>
+    <li class="chart-item" style="--value: 412"><span class="chart-label">/components/command</span><span class="chart-value">412</span></li>
+  </ol>
+</div>`} />
+
+## Spark \{#spark\}
+
+`chart-spark` keeps only the bars: 32px tall, 6px wide, with no scale. It is as wide as its bars, so it sits at the end of a [stat](/components/stat) or in a table cell. The names and the values stay in the list, hidden from sight and still read aloud.
+
+<ComponentPreview name="spark" title="Spark" bodyClass="p-lg" html={`<div class="tray grid grid-cols(2) gap(4) max-w(560) mx-auto">
+  <div class="card card-flat">
+    <div class="stat">
+      <p class="stat-label">Requests</p>
+      <div class="stat-row">
+        <p class="stat-value">1.28M</p>
+        <p class="stat-delta stat-delta-up">12.4%</p>
+        <ol class="chart chart-spark ml-auto" style="--chart-max: 71" aria-label="Requests per day, last 14 days">
+          <li class="chart-item" style="--value: 18"><span class="chart-label">Day 1</span><span class="chart-value">18</span></li>
+          <li class="chart-item" style="--value: 24"><span class="chart-label">Day 2</span><span class="chart-value">24</span></li>
+          <li class="chart-item" style="--value: 22"><span class="chart-label">Day 3</span><span class="chart-value">22</span></li>
+          <li class="chart-item" style="--value: 31"><span class="chart-label">Day 4</span><span class="chart-value">31</span></li>
+          <li class="chart-item" style="--value: 28"><span class="chart-label">Day 5</span><span class="chart-value">28</span></li>
+          <li class="chart-item" style="--value: 36"><span class="chart-label">Day 6</span><span class="chart-value">36</span></li>
+          <li class="chart-item" style="--value: 33"><span class="chart-label">Day 7</span><span class="chart-value">33</span></li>
+          <li class="chart-item" style="--value: 41"><span class="chart-label">Day 8</span><span class="chart-value">41</span></li>
+          <li class="chart-item" style="--value: 38"><span class="chart-label">Day 9</span><span class="chart-value">38</span></li>
+          <li class="chart-item" style="--value: 52"><span class="chart-label">Day 10</span><span class="chart-value">52</span></li>
+          <li class="chart-item" style="--value: 47"><span class="chart-label">Day 11</span><span class="chart-value">47</span></li>
+          <li class="chart-item" style="--value: 58"><span class="chart-label">Day 12</span><span class="chart-value">58</span></li>
+          <li class="chart-item" style="--value: 63"><span class="chart-label">Day 13</span><span class="chart-value">63</span></li>
+          <li class="chart-item" style="--value: 71"><span class="chart-label">Day 14</span><span class="chart-value">71</span></li>
+        </ol>
+      </div>
+    </div>
+  </div>
+  <div class="card card-flat">
+    <div class="stat">
+      <p class="stat-label">Error rate</p>
+      <div class="stat-row">
+        <p class="stat-value">0.02%</p>
+        <p class="stat-delta stat-delta-down">0.4%</p>
+        <ol class="chart chart-spark ml-auto" style="--chart-max: 62" aria-label="Errors per day, last 14 days">
+          <li class="chart-item" style="--value: 62"><span class="chart-label">Day 1</span><span class="chart-value">62</span></li>
+          <li class="chart-item" style="--value: 58"><span class="chart-label">Day 2</span><span class="chart-value">58</span></li>
+          <li class="chart-item" style="--value: 60"><span class="chart-label">Day 3</span><span class="chart-value">60</span></li>
+          <li class="chart-item" style="--value: 51"><span class="chart-label">Day 4</span><span class="chart-value">51</span></li>
+          <li class="chart-item" style="--value: 49"><span class="chart-label">Day 5</span><span class="chart-value">49</span></li>
+          <li class="chart-item" style="--value: 44"><span class="chart-label">Day 6</span><span class="chart-value">44</span></li>
+          <li class="chart-item" style="--value: 46"><span class="chart-label">Day 7</span><span class="chart-value">46</span></li>
+          <li class="chart-item" style="--value: 38"><span class="chart-label">Day 8</span><span class="chart-value">38</span></li>
+          <li class="chart-item" style="--value: 35"><span class="chart-label">Day 9</span><span class="chart-value">35</span></li>
+          <li class="chart-item" style="--value: 31"><span class="chart-label">Day 10</span><span class="chart-value">31</span></li>
+          <li class="chart-item" style="--value: 33"><span class="chart-label">Day 11</span><span class="chart-value">33</span></li>
+          <li class="chart-item" style="--value: 26"><span class="chart-label">Day 12</span><span class="chart-value">26</span></li>
+          <li class="chart-item" style="--value: 22"><span class="chart-label">Day 13</span><span class="chart-value">22</span></li>
+          <li class="chart-item" style="--value: 19"><span class="chart-label">Day 14</span><span class="chart-value">19</span></li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>`} />
+
+## Motion \{#motion\}
+
+A bar rises from the baseline when it first appears, with `@starting-style`, and eases to a new height when `--value` changes. With reduced motion it does neither. A bar under the pointer answers at once, with no fade, because the highlight has to keep up with a hand moving along the columns.
+
+## When a list of bars is not enough \{#limits\}
+
+This is a chart for a handful of numbers on one scale. A line, an area, two series side by side, a zoom or a time axis with gaps need a charting library, and a single reading within a range is a [meter](/components/meter).
+
+## Accessibility \{#accessibility\}
+
+- Use `<ol>` when the order means something, such as days, and `<ul>` for a ranking you have already sorted. Give the list an `aria-label` that says what is measured and in what unit.
+- Each item reads as its name and its value. Do not rely on the tip: it appears only under a pointer.
+- Bars are told apart by position and length, never by hue. If you set `--chart-color` to a status color, say the status in words nearby.
+- In forced colors the bars take the system text color.
+
+## Classes \{#classes\}
+
+| Class | Description |
+| --- | --- |
+| `chart` | The list and its plot |
+| `chart-quiet` | Tinted bars; the item with `aria-current` is ink |
+| `chart-values` | Every value written over its bar |
+| `chart-horizontal` | Rows: a name on a tint, the figure at the end |
+| `chart-spark` | Bars alone, 32px tall |
+| `chart-item` | One bar; set `--value` in its `style` |
+| `chart-label` | The item's name |
+| `chart-value` | The item's number as text |
+
+## Custom properties \{#custom-properties\}
+
+| Property | Default | Description |
+| --- | --- | --- |
+| `--value` | `0` | On an item: its number |
+| `--chart-max` | `100` | The top of the scale |
+| `--chart-height` | `10rem` | Height of the plot |
+| `--chart-gap` | `.375rem` | Space between bars |
+| `--chart-lines` | `4` | Steps of the scale marked by a hairline |
+| `--chart-bar-width` | `2.5rem` | The widest a bar gets |
+| `--chart-color` | `var(--color-surface-inverse)` | The ink of the bars |
+
+## Related \{#related\}
+
+<ComponentLinks slugs={['stat', 'meter', 'progress']} />
+
+## Source \{#source\}
+
+<ComponentSource name="chart" />

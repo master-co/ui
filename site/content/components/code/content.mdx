@@ -16,6 +16,57 @@ Put `code-block` on the `<pre>` and keep a `<code>` inside it for semantics. Lin
   --color-brand: var(--color-indigo-50);
 }</code></pre>`} />
 
+## Lines \{#lines\}
+
+To say something about one line, make each line a `code-line`. The block then lays its lines out as a grid: every line is as wide as the longest one, so a band on a line runs the whole scrolling width, and the line breaks between the elements cost nothing, because white space between grid items is not drawn. Write one element per line of code.
+
+`code-line-highlight` is the line being talked about: a tint, and a rule of ink at its start. `code-numbered` on the block numbers the lines with a CSS counter, in a gutter that is not selected or copied with the code.
+
+<ComponentPreview name="lines" title="Numbered lines and a highlight" bodyClass="p-lg" html={`<pre class="code-block code-numbered" tabindex="0"><code class="code-line">.btn {</code>
+<code class="code-line">  --btn-height: 2.375rem;</code>
+<code class="code-line code-line-highlight">  --btn-radius: var(--radius-control);</code>
+<code class="code-line">  border-radius: calc(var(--btn-radius) * var(--corner-scale));</code>
+<code class="code-line">  corner-shape: var(--corner-shape);</code>
+<code class="code-line">}</code></pre>`} />
+
+## A diff \{#diff\}
+
+`code-line-added` and `code-line-removed` mark the lines of a change. The hue agrees with the sign the line already starts with: keep the `+` and the `-` in the text, as a patch has them, so the change reads without color and copies as a patch.
+
+<ComponentPreview name="diff" title="A diff" bodyClass="p-lg" html={`<pre class="code-block" tabindex="0"><code class="code-line">  @theme {</code>
+<code class="code-line code-line-removed">-   --radius-control: .5rem;</code>
+<code class="code-line code-line-added">+   --radius-control: .625rem;</code>
+<code class="code-line">    --radius-surface: 1rem;</code>
+<code class="code-line">  }</code></pre>`} />
+
+## Panel \{#panel\}
+
+`code-panel` puts a header over the block, in one well: the file's name in `code-title` and a control at the end, which sits 4px in with the concentric corner. The block inside gives up its own well.
+
+Copying needs a script, and three lines are enough: read the block's text and hand it to the clipboard.
+
+<ComponentPreview name="panel" title="Panel" bodyClass="p-lg" html={`<div class="code-panel">
+  <div class="code-header">
+    <span class="code-title">app.css</span>
+    <button type="button" class="btn btn-quiet btn-sm" id="copy-app-css"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 9h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V10a1 1 0 0 1 1-1M16 9V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>Copy</button>
+  </div>
+  <pre class="code-block" tabindex="0"><code>@import '@master/css';
+@import '@master/ui';
+
+@theme {
+  --color-brand: var(--color-indigo-50);
+}</code></pre>
+</div>
+<script>
+document.getElementById('copy-app-css').addEventListener('click', function (event) {
+  var button = event.currentTarget
+  navigator.clipboard.writeText(button.closest('.code-panel').querySelector('.code-block').textContent).then(function () {
+    button.lastChild.textContent = 'Copied'
+    setTimeout(function () { button.lastChild.textContent = 'Copy' }, 1600)
+  })
+})
+</script>`} />
+
 ## Code or kbd \{#code-or-kbd\}
 
 Use `code` for what a reader types as text or reads from a program, and [`kbd`](/components/kbd) for a key to press. The stylesheet does not highlight syntax; a highlighter's spans keep their own colors inside a block.
@@ -26,6 +77,18 @@ Use `code` for what a reader types as text or reads from a program, and [`kbd`](
 | --- | --- |
 | `code` | Inline code, on a `<code>` |
 | `code-block` | A block of code, on a `<pre>` |
+| `code-line` | One line of a block, on a `<code>` or a `<span>` |
+| `code-line-highlight` | The line being talked about |
+| `code-line-added`, `code-line-removed` | The lines of a diff |
+| `code-numbered` | On the block: numbers its lines |
+| `code-panel` | One well around a header and a block |
+| `code-header`, `code-title` | The strip over the block and the name in it |
+
+## Accessibility \{#accessibility\}
+
+- Give a block `tabindex="0"` when a line can be longer than the block, so the keys can scroll it.
+- Line numbers are generated content: they are not read aloud, selected or copied.
+- A highlight is visual. When the text around the block refers to a line, name what is on it rather than its color or its number.
 
 ## Source \{#source\}
 

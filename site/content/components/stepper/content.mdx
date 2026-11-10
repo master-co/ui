@@ -1,0 +1,167 @@
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+
+A stepper is a small number a reader nudges more often than types: seats, a quantity, a font size. It is an [input group](/components/input#input-group) around a native `<input type="number">`, with a [button](/components/button) at each end of the well. Add `stepper` to the group and `stepper-field` to the field.
+
+<ComponentPreview name="default" title="Stepper" bodyClass="flex items-center justify-center p-lg" html={`<div class="sheet flex items-center gap-lg p-md pl-lg">
+  <label class="text-sm fg-text-strong" for="seats">Seats</label>
+  <div class="input-group stepper">
+    <button type="button" class="btn btn-square" value="-1" tabindex="-1" aria-label="Fewer seats"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+    <input class="input-group-field stepper-field" id="seats" type="number" min="1" max="12" value="4">
+    <button type="button" class="btn btn-square" value="1" tabindex="-1" aria-label="More seats"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+  </div>
+</div>
+<script>
+(function () {
+  function sync(stepper) {
+    var field = stepper.querySelector('.stepper-field')
+    stepper.querySelectorAll('.btn').forEach(function (button) {
+      var down = button.value < 0
+      var limit = down ? field.min : field.max
+      button.disabled = limit !== '' && (down ? +field.value <= +limit : +field.value >= +limit)
+    })
+  }
+  document.addEventListener('click', function (event) {
+    var button = event.target.closest('.stepper .btn')
+    if (!button) return
+    var field = button.closest('.stepper').querySelector('.stepper-field')
+    if (button.value < 0) field.stepDown()
+    else field.stepUp()
+    field.dispatchEvent(new Event('input', { bubbles: true }))
+  })
+  document.addEventListener('input', function (event) {
+    var stepper = event.target.closest('.stepper')
+    if (stepper) sync(stepper)
+  })
+  document.querySelectorAll('.stepper').forEach(sync)
+})()
+</script>`} caption="Press a button, type a number, or use the arrow keys in the field. At 1 and at 12 a button lies flat." />
+
+## What the field already does \{#what-the-field-already-does\}
+
+The field is a number input, so the platform supplies most of a stepper before any script runs:
+
+- <kbd>↑</kbd> and <kbd>↓</kbd> step the value by `step`, and stop at `min` and `max`.
+- The field is announced as a spin button with its value and its limits.
+- A phone shows its number keys.
+- `:user-invalid` reports a typed value outside the range, and the well takes the danger contour.
+
+The stylesheet removes the browser's own spin buttons, because the two buttons replace them.
+
+## What the script adds \{#what-the-script-adds\}
+
+The buttons call `stepDown()` and `stepUp()`, the same methods the arrow keys use, so `min`, `max` and `step` are written once, on the field. The second half of the script disables a button when the value has reached its limit; a disabled step lies flat in the well.
+
+```js
+document.addEventListener('click', event => {
+  const button = event.target.closest('.stepper .btn')
+  if (!button) return
+  const field = button.closest('.stepper').querySelector('.stepper-field')
+  if (button.value < 0) field.stepDown()
+  else field.stepUp()
+  field.dispatchEvent(new Event('input', { bubbles: true }))
+})
+```
+
+Each button says which way it steps in its `value`. The buttons carry `tabindex="-1"`: the field is the one stop in the tab order, and the keys already do what the buttons do.
+
+## Sizes \{#sizes\}
+
+A stepper takes the group's sizes: `input-group-sm` is 32px and `input-group-lg` is 44px, matching a button of the same size. The buttons follow the well: each is 8px shorter, with the concentric corner.
+
+<ComponentPreview name="sizes" title="Sizes" html={`<div class="input-group input-group-sm stepper">
+  <button type="button" class="btn btn-square" value="-1" tabindex="-1" aria-label="Decrease"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+  <input class="input-group-field stepper-field" type="number" value="2" aria-label="Small">
+  <button type="button" class="btn btn-square" value="1" tabindex="-1" aria-label="Increase"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+</div>
+<div class="input-group stepper">
+  <button type="button" class="btn btn-square" value="-1" tabindex="-1" aria-label="Decrease"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+  <input class="input-group-field stepper-field" type="number" value="16" aria-label="Medium">
+  <button type="button" class="btn btn-square" value="1" tabindex="-1" aria-label="Increase"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+</div>
+<div class="input-group input-group-lg stepper">
+  <button type="button" class="btn btn-square" value="-1" tabindex="-1" aria-label="Decrease"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+  <input class="input-group-field stepper-field" type="number" value="128" aria-label="Large">
+  <button type="button" class="btn btn-square" value="1" tabindex="-1" aria-label="Increase"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+</div>
+<script>
+document.addEventListener('click', function (event) {
+  var button = event.target.closest('.stepper .btn')
+  if (!button) return
+  var field = button.closest('.stepper').querySelector('.stepper-field')
+  if (button.value < 0) field.stepDown()
+  else field.stepUp()
+})
+</script>`} />
+
+## Width \{#width\}
+
+The well is as wide as its figure. Where the browser has `field-sizing: content`, the field follows the digits typed, from three digits to nine; elsewhere it keeps the width of three. Set `--stepper-min` and `--stepper-max` for a figure of another length, or give the stepper a width and the field takes what the buttons leave.
+
+A unit is an `input-group-addon` after the field, and a larger `step` moves a larger figure.
+
+<ComponentPreview name="unit" title="A unit and a step" bodyClass="flex flex-col items-center gap-md p-lg" html={`<div class="input-group stepper" style="--stepper-min: 5ch">
+  <button type="button" class="btn btn-square" value="-1" tabindex="-1" aria-label="Lower the budget"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+  <input class="input-group-field stepper-field" type="number" min="0" step="250" value="1250" aria-label="Monthly budget">
+  <span class="input-group-addon">USD</span>
+  <button type="button" class="btn btn-square" value="1" tabindex="-1" aria-label="Raise the budget"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+</div>
+<div class="input-group stepper w(280)">
+  <button type="button" class="btn btn-square" value="-1" tabindex="-1" aria-label="Fewer replicas"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+  <input class="input-group-field stepper-field" type="number" min="1" max="64" value="8" aria-label="Replicas">
+  <button type="button" class="btn btn-square" value="1" tabindex="-1" aria-label="More replicas"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+</div>
+<script>
+document.addEventListener('click', function (event) {
+  var button = event.target.closest('.stepper .btn')
+  if (!button) return
+  var field = button.closest('.stepper').querySelector('.stepper-field')
+  if (button.value < 0) field.stepDown()
+  else field.stepUp()
+})
+</script>`} />
+
+## Disabled \{#disabled\}
+
+Disable the field and both buttons. The well keeps its place and its figure takes the disabled ink.
+
+<ComponentPreview name="disabled" title="Disabled" html={`<div class="input-group stepper">
+  <button type="button" class="btn btn-square" tabindex="-1" aria-label="Decrease" disabled><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+  <input class="input-group-field stepper-field" type="number" value="3" aria-label="Seats included in your plan" disabled>
+  <button type="button" class="btn btn-square" tabindex="-1" aria-label="Increase" disabled><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+</div>`} />
+
+## When to use something else \{#when-to-use-something-else\}
+
+- A number that is typed once and rarely adjusted, such as a port or a price, is a plain [input](/components/input) with `type="number"`.
+- A position in a wide range, where the exact figure matters less than the feel, is a [slider](/components/slider).
+- A choice among a few named amounts is a [segmented control](/components/segmented).
+
+## Accessibility \{#accessibility\}
+
+- Label the field with a `<label>`, a [field](/components/input#field) or `aria-label`. Each button needs its own name that says what it changes: "More seats", not "Plus".
+- Keep `min`, `max` and `step` on the field. They are what the keys, the buttons and assistive technology all read.
+- The buttons stay out of the tab order. A reader on a keyboard steps with the arrow keys in the field; a reader with a pointer or a finger has targets of 32px, and 44px on touch screens.
+
+## Classes \{#classes\}
+
+| Class | Description |
+| --- | --- |
+| `stepper` | On an `input-group`: a well as wide as its figure, with a button at each end |
+| `stepper-field` | On the group's `input-group-field`, a native number input: centered tabular figures, no spin buttons |
+
+## Custom properties \{#custom-properties\}
+
+| Property | Default | Description |
+| --- | --- | --- |
+| `--stepper-min` | `3ch` | The narrowest the figure's box gets |
+| `--stepper-max` | `9ch` | The widest it grows with `field-sizing` |
+
+## Related \{#related\}
+
+<ComponentLinks slugs={['input', 'slider', 'button']} />
+
+## Source \{#source\}
+
+<ComponentSource name="stepper" />
