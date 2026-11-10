@@ -4,27 +4,36 @@
 
 | Size | Height | Inline padding | Label | Icon | Radius |
 | --- | --- | --- | --- | --- | --- |
-| `-sm` | 32px | 12px | 12.5px | 14px | 7px |
-| default | 38px | 16px | 13.5px | 16px | 8px (`--radius-lg`) |
-| `-lg` | 44px | 20px | 15px | 18px | 10px |
+| `-sm` | 32px | 12px | 12.5px | 14px | 8px (`--radius-control-sm`) |
+| default | 38px | 16px | 13.5px | 16px | 10px (`--radius-control`) |
+| `-lg` | 44px | 20px | 15px | 18px | 12px (`--radius-control-lg`) |
 
 Text fields and selects default to 40px for reading comfort; their `-sm` and `-lg` match 32 and 44px, and a raised select matches the button's 38px. In a row, flex stretch keeps a field and a button equal.
 
 A segmented control's track is exactly a button's height: item height plus twice the inset (26 + 2×3, 30 + 2×4, 36 + 2×4).
 
-## Nesting radii
+## Radii
 
-Outer radius = inner radius + the inset between them. Tray 16 → sheet 12 (4px inset); card 12 → media 8 (4px); menu, popover and select list 12 → row 8 (4px); field 8 → a button inside it 4 (4px); segmented track 11 → item 7 (4px), small track 8 → item 5 (3px), large track 12 → item 8; switch track is a pill around a circular thumb with an even 3px inset. A dialog is 16. Only pills, dots and avatars are rounder than 16px.
+Radii are role tokens, stated as circular values:
 
-| Radius | Used by |
-| --- | --- |
-| 5px | Checkboxes, keycaps, small badges |
-| 6px (`--radius-md`) | Badges, skeletons |
-| 7px | Small controls, tooltips, segmented thumbs |
-| 8px (`--radius-lg`) | Buttons, fields, wells, menu items, options |
-| 10px | Large controls, alerts |
-| 12px (`--radius-xl`) | Sheets, cards, popovers, menus |
-| 16px (`--radius-2xl`) | Trays, dialogs |
+| Token | Value | Used by |
+| --- | --- | --- |
+| `--radius-chip` | 6px | Badges, keycaps, checkboxes (chip − 1), skeletons, tooltips (chip + 1) |
+| `--radius-control-sm` | 8px | Small buttons and fields, menu rows, options, nav rows, segmented thumbs |
+| `--radius-control` | 10px | Buttons, fields, wells, code blocks |
+| `--radius-control-lg` | 12px | Large buttons and fields, alerts, choices, toasts, dropzones |
+| `--radius-surface` | 16px | Sheets, cards |
+
+A holder derives its corner: inner radius plus the inset between them. Tray = surface + 4 (20); card media = card − 4 (12); menu, popover, select list and toolbar = small control + 4 (12); segmented track = thumb + inset (9 / 12 / 14 for sm / md / lg); a button inside a field = field − 4 (6). A dialog is 20. Only pills, dots, avatars and thumbs are rounder, and they are true circles.
+
+## Continuous corners
+
+Where `corner-shape` is supported the theme sets `--corner-shape: squircle` and `--corner-scale: 1.6`; elsewhere `round` and `1`. Components write `border-radius: calc(<circular radius> * var(--corner-scale))` with `corner-shape: var(--corner-shape)`.
+
+- A squircle of radius r curves inside an r × r box but hugs the corner more closely than a circle: at 45° it stands .16r from the corner against a circle's .29r. Multiplying by 1.6 keeps the apparent roundness and lets the curve begin earlier.
+- Nesting still adds: the box in which an offset curve turns grows by the offset. So the inset is added after the scale, never multiplied by it. When a child multiplies its own radius, pass it a pre-divided inset: `--btn-radius: calc(var(--input-radius) - 4px / var(--corner-scale))`.
+- A scaled radius above half the height makes the short side one continuous curve. That is intended for a checkbox (an app-icon shape) and acceptable for chips of 18 to 26px; check it by eye for anything new.
+- `corner-shape` is not inherited. Box-shadow, outline, overflow clipping and dashed borders all follow it.
 
 ## Painted edges
 

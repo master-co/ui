@@ -17,6 +17,10 @@ Use what the browser already does before writing a class, a wrapper or a script 
 | Open to an unknown height | `interpolate-size: allow-keywords`, `::details-content` | It opens at once |
 | Validation states | `:user-invalid` beside `aria-invalid` | `aria-invalid` alone |
 | A value read from scroll or position | Scroll-driven animations with a registered custom property | The plain state |
+| Buttons and dots for a scroller | `::scroll-button()`, `::scroll-marker`, `::scroll-marker-group`, `:target-current` | A scrollable, snapping row |
+| A message that leaves by itself | A keyframe animation that ends in `display: none`, paused on `:hover` and `:focus-within` | It stays until dismissed |
+| A softer corner | `corner-shape: squircle` through `--corner-shape` and `--corner-scale` | A circular corner |
+| Counting and ordering | CSS counters; `:has(~ .item[aria-current])` for "everything before the current one" | Baseline everywhere |
 
 Do not add a dependency or a script for placement, focus trapping, dismissal, auto-growing fields, or enter and exit animation.
 
@@ -64,6 +68,18 @@ Do not add a dependency or a script for placement, focus trapping, dismissal, au
 - `@property` and `@keyframes` go outside `@layer components`, at the top level of the file.
 - The compiler unwraps a single-argument `:is()`, so `:not(:is(:open))` is written out as `:not(:open)` and loses its forgiveness. Do not exclude a newer pseudo-class from a baseline rule; let a later rule of equal weight, with the pseudo-class inside a multi-argument `:is()`, override it (see the hover and open states in `select.css`).
 - Diagnostics for new properties are reported as `information` ("Unverified CSS value"). The tests fail on warnings and errors only.
+
+## Scroll
+
+- A scroll-driven fade is a mask whose stops are registered `<length>` properties, each driven by its own animation on `scroll(self)` with an `animation-range` at one end of the scroll range. An inactive timeline (nothing overflows) leaves the properties at their initial value, so the edges stay clean without a query.
+- A view timeline needs a scroll container around its subject. For a range input the input itself becomes one (`overflow: hidden`), with padding and a negative margin as bleed so the thumb's shadow and focus ring are not cut, and `view-timeline-inset` equal to that bleed.
+- Generated carousel controls are positioned with anchor positioning against their scroller. Give the scroller both `anchor-name` and `anchor-scope`, or the controls of every carousel land on the last one.
+- `::scroll-button()` and `::scroll-marker` take `content` with an alternative text: `content: '' / 'Next slide'`. Draw their glyph as a background image, since a mask would cut the surface and the shadow.
+
+## Elements that open themselves
+
+- A non-modal `<dialog open>` is shown at load and closes with `<form method="dialog">` or `command="close"`. That makes a dismissible message with no script. It is not in the top layer, so it needs a `z-index`.
+- `display` can end a keyframe animation: the element is shown for the whole run and `display: none` applies at the end with `animation-fill-mode: forwards`. Add `visibility: hidden` in the same keyframe for engines that do not animate `display`.
 
 ## Checking support
 

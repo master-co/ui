@@ -4,7 +4,7 @@ description: Author, review and document Master UI components, the native HTML a
 license: MIT
 metadata:
   author: master-co
-  version: "0.2.0"
+  version: "0.3.0"
 ---
 
 # Master UI components
@@ -27,6 +27,8 @@ Before writing a class, a wrapper or a script, ask what the browser already does
 - **Components adapt to context.** `@container` for the space a component is given, `:has()` for a state in a descendant, a custom property for a single inherited value and a style query only when one flag switches several declarations.
 - **Fields size and validate themselves.** `field-sizing: content` grows a textarea; `:user-invalid` reports native constraints.
 - **Motion in and out is CSS.** `@starting-style` with `transition-behavior: allow-discrete`, and `interpolate-size` for an unknown height.
+- **Scroll position is CSS.** Scroll-driven animations read it (edge fades, a slider's fill); `::scroll-button()` and `::scroll-marker` give a carousel its controls.
+- **Corners are continuous.** Every radius is drawn with `corner-shape` where the browser has it.
 - **Every upgrade has a stated fallback.** Gate it with `@supports` or a forgiving selector, keep the baseline rule first, and write what happens without the feature in the header comment and on the component page.
 
 ## Selector contract
@@ -43,8 +45,8 @@ These rules are enforced by `packages/ui/tests/master.test.ts`.
 
 ## Material and tokens
 
-- Read tokens only: `--color-surface-*`, `--color-line-*`, `--color-text-*`, `--color-focus`, status `--color-info|success|warning|danger`, `--shadow-pressed|flat|raised|raised-hover|lifted|floating|overlay`, `--radius-*`, `--easing-glide`, `--duration-press|quick|base`, `--font-weight-control`. Never raw palette steps in component rules; new public tokens go in `theme.css` `@theme`.
-- Monochrome chrome: ink and pearl. Hue only for status, always with words; gold only on `btn-gold`.
+- Read tokens only: `--color-surface-*`, `--color-line-*`, `--color-text-*`, `--color-focus`, status `--color-info|success|warning|danger`, `--color-brand*`, `--shadow-pressed|flat|raised|raised-hover|lifted|floating|overlay`, `--radius-chip|control-sm|control|control-lg|surface`, `--easing-glide`, `--duration-press|quick|base`, `--font-weight-control`. Never raw palette steps in component rules; new public tokens go in `theme.css` `@theme`.
+- Monochrome chrome: ink and pearl. Hue only for status, always with words; the brand color only on `btn-brand`, mixed from `--color-brand` and never written as a palette step.
 - State is depth, not hue: rest raised → hover lifts 0.5px to raised-hover → press sinks into the well. Disabled drops to a flat well with disabled ink.
 - **Edges are soft.** A contour is a half-pixel ring drawn with a zero-blur `box-shadow` (`0 0 0 .5px`, or `inset` for a well), never a 1px border. Use `--color-line-contour` for a surface, `--color-line-strong` for a hovered contour and a small track, `--color-line-mark` for a checkbox and a focused field: a control that must be found at a glance takes a firmer contour than a surface. `--color-line-hair` and `--color-line-divider` are the only 1px rules. A shadow layer blurs by twice its offset and pulls its spread in by the offset, so it fades out and never ends in a line; do not add a hard `inset 0 -1px 0` under a face.
 - **Shared recipes are mixins in `theme.css`:** `--surface-sheet` (a raised face), `--focus-ring`, `--anchored` (a popover placed against its invoker) and `--pop` (how a popover enters and leaves).
@@ -53,7 +55,16 @@ These rules are enforced by `packages/ui/tests/master.test.ts`.
 
 ## Geometry and type
 
-See [sizes and geometry](references/geometry.md) for the scale. In short: controls are 32 / 38 / 44px (fields 40px) with 7 / 8 / 10px corners, radii nest by the inset between surfaces (control 8 → sheet 12 → tray 16), icons are 14 / 16 / 18px at a 1.5 stroke, labels use `--font-weight-control` and never change weight between states.
+See [sizes and geometry](references/geometry.md) for the scale. In short: controls are 32 / 38 / 44px (fields 40px) with 8 / 10 / 12px corners from the role tokens, a holder's corner is what it holds plus the inset (sheet 16 → tray 20), icons are 14 / 16 / 18px at a 1.5 stroke, labels use `--font-weight-control` and never change weight between states.
+
+**Every radius is written the same way**, so it turns into a squircle where the browser can draw one:
+
+```css
+border-radius: calc(var(--btn-radius) * var(--corner-scale));
+corner-shape: var(--corner-shape);
+```
+
+The component's own property holds the circular value (a role token, or a derivation from one). `--corner-scale` is 1.6 with squircles and 1 without. A nested radius adds or subtracts its inset after the scale: `calc(var(--item-radius) * var(--corner-scale) + var(--inset))`. Pills, dots, avatars and thumbs set `corner-shape: round`, and an element with `border-radius: inherit` also needs `corner-shape: inherit`.
 
 ## States and platforms
 
@@ -65,6 +76,8 @@ Every interactive component covers, in this order of checks: rest, hover, active
 - `@media (forced-colors: active)`: shadows vanish, so draw the edge with a system-color `outline` (never a layout-changing border) and keep checked marks visible with `forced-color-adjust: none` plus system colors.
 - Restyled native inputs reset `margin`, `padding` and `border` so host styles cannot distort them.
 - Name transitioned properties; never `transition: all`.
+- A selected or current state is an ink hairline and one step of depth (`0 0 0 .5px var(--color-text-strong)` with a faint 1px echo), not a heavy outline.
+- `mask` and `clip-path` cut an element's own focus ring and outer shadow. When a part is drawn with a mask (a star, a cut-out check), put the focus ring on its container with `:has(:focus-visible)`.
 - A row in a list (a menu item, an option) answers the pointer at once, with no fade: the highlight has to keep up with a moving pointer. Keyboard focus on a row adds an ink outline inside it, so focus and hover stay different facts.
 - Never transition `background` across a gradient. A gradient cannot interpolate, so it swaps instantly while `background-color` fades from transparent and the control flashes for a frame. Swap faces instantly, ease only depth (`box-shadow`), travel and ink, and put a solid color under every gradient face (`@apply --surface-sheet` does). Solid-to-solid fills, such as a checkbox filling with ink, may fade.
 
