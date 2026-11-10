@@ -97,8 +97,8 @@ Or import only the theme and the components you use:
 | Toast | `toast-region`, `toast-region-{top,center}`, `toast`, `toast-timed`, `toast-{info,success,warning,danger}`, `toast-icon`, `toast-body`, `toast-title`, `toast-description`, `toast-close` |
 | Alert | `alert`, `alert-{info,success,warning,danger}`, `alert-icon`, `alert-body`, `alert-title`, `alert-description` |
 | Banner | `banner`, `banner-dismissible`, `banner-{info,success,warning,danger}`, `banner-{inverse,brand}`, `banner-content`, `banner-title`, `banner-action`, `banner-close` |
-| Progress | `progress`, `progress-{sm,lg}`, `progress-ring`, `progress-ring-{sm,lg,xl}` |
-| Meter | `meter`, `meter-{sm,lg}` |
+| Progress | `progress`, `progress-{sm,lg,segmented}`, `progress-ring`, `progress-ring-{sm,lg,xl}` |
+| Meter | `meter`, `meter-{sm,lg,segmented}` |
 | Skeleton | `skeleton`, `skeleton-{text,circle}` |
 | Shimmer | `shimmer` |
 | Spinner | `spinner`, `spinner-{sm,lg,xl,inline}` |

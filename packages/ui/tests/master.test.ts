@@ -70,6 +70,7 @@ test('the complete library compiles against the Master CSS preset', () => {
     'range', 'range-start', 'range-end', 'compare', 'compare-before', 'compare-after', 'compare-range',
     'checklist', 'checklist-item', 'checklist-label', 'checklist-body', 'checklist-title', 'checklist-description', 'checklist-end', 'checklist-count',
     'citation', 'mention', 'mention-self',
+    'progress-segmented', 'meter-segmented',
     'heatmap', 'heatmap-lg', 'heatmap-cell',
     'code-numbered', 'code-line', 'code-line-highlight', 'code-line-added', 'code-line-removed', 'code-panel', 'code-header', 'code-title',
     'marquee', 'marquee-reverse', 'marquee-track', 'window', 'window-flat', 'window-bar', 'window-controls', 'window-title', 'window-address', 'window-end', 'window-body',
