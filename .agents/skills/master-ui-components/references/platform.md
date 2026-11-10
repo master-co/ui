@@ -32,6 +32,11 @@ Use what the browser already does before writing a class, a wrapper or a script 
 | Progress of the page | `animation-timeline: scroll(root block)`, longhands only | Not drawn |
 | A delay by position among siblings | `sibling-index()` inside `@supports` | No delay |
 | A color the page supplies | A custom property (`--swatch`) read by `background` | Baseline everywhere |
+| A number the page supplies | A custom property on the item (`--value`) and one on the container for the scale (`--chart-max`); lengths derived with `calc()` | Baseline everywhere |
+| An item that reads its own place in a scroller | `animation-timeline: view(block)` on the item, `animation-range: cover`, longhands only | The item is drawn flat; a script marks the chosen one |
+| A corner cut straight | `corner-start-end-shape: bevel` with that corner's radius as the size of the cut, inside `@supports (corner-shape: bevel)` | A round corner |
+| A band across one line of a `<pre>` | `display: grid` on the block when it `:has()` line elements | Lines without bands |
+| Text with light passing over it | A gradient with `background-clip: text` over a solid layer of the resting ink, `color: transparent` | Plain text under reduced motion and forced colors |
 
 Do not add a dependency or a script for placement, focus trapping, dismissal, auto-growing fields, or enter and exit animation.
 
@@ -110,6 +115,19 @@ Do not add a dependency or a script for placement, focus trapping, dismissal, au
 
 - When a component works as a plain element and, for a no-script upgrade, as a `<dialog open>` (a banner), reset what the dialog brings (`position`, `inset`, `width`, `height`, `margin`, `border`) on the base rule, keep `display` there, and write the closed state under the modifier that asks for the dialog: `&.banner-dismissible:not([open]) { display: none; … }`. A bare `:not([open])` would hide the plain element.
 - A `<details>` can be a flex column, so its summary can be drawn after its content with `order`. The summary stays first in the markup.
+
+## Lessons from the wheel, the chart and the native fields
+
+- `scrollsnapchange` reports the wrong target after a scroll made from script (`scrollIntoView`, `scrollTop`). A wheel's script reads the chosen option from `scrollTop` divided by a row's height on `scroll`, which is also what works without the event.
+- A grid item's pseudo-element and its children are auto-placed like any other items. When a bar (`::before`), a name and a value share one column, give each an explicit `grid-column`, or the third lands in a second column and squeezes the first to nothing.
+- Subgrid carries rows from the chart to each item (`grid-row: 1 / span 2; grid-template-rows: subgrid`), so the plot and the names line up across items without a wrapper.
+- A percentage margin resolves against the inline size. To place a value over a bar of unknown height, give the plot an explicit height (`--chart-height`) and compute both the bar and the offset from it.
+- Mix a tint with the surface behind it (`color-mix(in oklab, var(--chart-color) 15%, var(--surface-color, …))`) when something drawn underneath must not show through; a transparent tint or `opacity` lets a scale line cross the bar.
+- `background-clip: text` paints the element's whole box. On a block, set `width: fit-content` so the light crosses the words and not the empty line beside them.
+- `::-webkit-calendar-picker-indicator` needs `box-sizing: border-box` with an explicit size, or the engine's own padding makes the field taller. The parts of a date are padded by a pixel each: `::-webkit-datetime-edit { margin-block: -1px }` brings a date field back to the height of a text field.
+- `::-webkit-inner-spin-button` with `appearance: none` keeps stepping and can be drawn with a `mask`; it is as tall as the line, the upper half steps up. The Browser pane scales pointer coordinates, so which half was hit cannot be verified there, for a restyled or a native spin button alike: check it in a real window.
+- A whitespace-only text node between block children of a `<pre>` renders as an empty line; between grid items it is not rendered at all. That is why a block with line elements becomes a grid.
+- A transition that starts from `@starting-style` advances only when frames are produced. In the Browser pane each screenshot is a frame, so bars look half risen in the first one: take two before judging a height.
 
 ## Checking support
 

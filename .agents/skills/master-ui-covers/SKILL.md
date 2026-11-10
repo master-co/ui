@@ -73,6 +73,7 @@ A component without a drawing shows a dashed outline on the overview, so a missi
 | `cover-mark`, `cover-quote`, `cover-band` | A wash of highlighter behind a phrase, a quotation's rail, and a banner's band. |
 | `cover-rail`, `cover-rail-current`, `cover-pill`, `cover-pill-current`, `cover-grip` | A contents rail and its mark, a tab bar's pill, and a splitter's grip on an ink rule. |
 | `cover-caret`, `cover-tab`, `cover-link`, `cover-fade`, `cover-fade-foot`, `cover-thumb`, `cover-scrim` | Shapes that belong to one component family. |
+| `cover-page`, `cover-column`, `cover-marks`, `cover-wheel`, `cover-cell` | A file's folded page, a chart's bar (`--h` tall; `cover-ink` for the one that matters), a window's three marks, a wheel's column of values that fade away from the middle, and a heatmap's cell at `--tone` of ink. |
 | `<Glyph name="…" />` | An icon on the 24px grid at a 1.5 stroke, sized by the control that holds it (`--glyph`). |
 
 Extend the vocabulary before working around it. A new primitive copies its recipe from the component's stylesheet in `packages/ui/components`, reads tokens only, and is named for what it draws. Add a glyph's path to `Glyph.astro` first; keep the 24px grid and round caps. A nested corner is written as the component writes it: `--r: calc(var(--radius-control-sm) + 4px / var(--corner-scale))` is a small control's corner plus a 4px inset.
