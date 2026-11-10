@@ -8,25 +8,27 @@ Master UI publishes native HTML and CSS components for Master CSS v2. Keep share
 - `site` is the documentation site on `@master/internal-site` (Astro 7, Svelte 5, Master CSS 2). Pages live in `site/content/<section>/<slug>/content.mdx` with a sibling `metadata.ts` (`define()` from `@master/internal-site/utils/metadata`). `scripts/prepare.ts` writes the sidebar (`.categories/docs.json`) and search index before dev, build and type checks.
 - Component docs use `site/components/ComponentPreview.astro` (isolated preview compiled from the published `@master/ui` source) and `ComponentSource.astro`. Add a new component to `site/components/catalog.ts` and `packages/ui/master.css`.
 
+## Skills
+
+Repository skills live in `.agents/skills/` (linked as `.claude/skills/`).
+
+- `master-ui-components` (owned here): the component contracts, size scale, documentation pattern and verification. Use it for any change to `packages/ui` or a component page.
+- `master-design` (managed by `@master/internal-skills`; run `bun run skills:sync`, never edit it here): craft judgment for surfaces, geometry, type, states and motion.
+
 ## Component Contracts
 
-The visual language is Master's Moonstone / Obsidian system (`@master/internal-site` `styles/system/DESIGN.md` is the reference). `site/content/guide/theme` documents it publicly; keep both in agreement.
+The visual language is Master's Moonstone / Obsidian system. `site/content/guide/theme` documents it publicly and `master-ui-components` holds the full rules. The essentials:
 
-- Style the native element with the right semantics; components must work without JavaScript.
-- Write rules as native CSS in `@layer components` with class selectors. Read theme tokens only (`--color-surface-*`, `--color-line-*`, `--color-text-*`, `--shadow-{pressed,flat,raised,raised-hover,lifted,floating,overlay}`, `--radius-*`, `--easing-glide`, `--duration-*`); never raw palette steps in component rules. Public tokens go in `theme.css` `@theme`.
-- Monochrome: chrome is ink and pearl. Hue only for status (`--color-info|success|warning|danger`); gold only on `btn-gold`.
-- State is depth: rest is raised, hover lifts 0.5px to raised-hover, press sinks into the well. Do not change hue for state.
-- Radii are small and nest by a 4px inset (tray 14 → sheet 10 → control 6). Shadows converge (offset and blur double, spread pulls in by half).
-- Name classes `<component>` and `<component>-<modifier>` (`btn btn-primary btn-sm`). Never use data attributes for variants. Nest modifiers as `&.btn-primary` inside the base rule so they do not depend on source order. States use native pseudo-classes and ARIA (`aria-pressed`, `aria-current`, `aria-selected`, `aria-busy`, `aria-invalid`).
-- Expose tunable values as `--<component>-*` custom properties on the base class.
-- Reset `padding` and `border` on restyled native inputs so host styles cannot distort them.
-- Never add `!important` or anything that would beat a consumer's utilities; the `utilities` layer must keep winning.
-- `light-dark()` accepts colors only; put it inside gradient stops, never around a gradient.
+- Native element and semantics first; components work without JavaScript.
+- Class selectors only: `.<component>`, parts `.<component>-<part>`, modifiers `.<component>-<modifier>` nested as `&.<component>-<modifier>`. Never element types or child combinators (`> svg`); pass values to children through custom properties such as `--icon-size`. No data attributes for variants. Tests enforce this.
+- Tokens only, monochrome chrome, state as depth (raised → hover lift → pressed well), concentric radii, controls 32 / 38 / 44px.
+- Gate hover with `(hover: hover)`, grow targets on `(pointer: coarse)`, remove travel under reduced motion, draw system-color outlines in forced colors.
+- Never `!important`; the `utilities` layer must keep winning.
 - Framework bindings (React, Svelte, Vue) and a copy-in registry are planned on top of these stylesheets; do not add them without a design discussion.
 
 ## Validation
 
-Run `bun run test` (compiles every stylesheet against the preset), `bun run type-check` and `bun run build`. Preview markup is validated during the build: an invalid utility class fails it. Check visual changes in light and dark previews.
+Run `bun run test` (compiles every stylesheet against the preset and checks selectors), `bun run skills:check`, `bun run type-check` and `bun run build`. Preview markup is validated during the build: an invalid utility class fails it. Check visual changes in light and dark previews.
 
 ## Commit Format
 
