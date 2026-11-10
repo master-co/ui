@@ -1,0 +1,105 @@
+/*
+ * Swatch: a color as a thing to look at or to pick. Set the color with --swatch.
+ * A swatch is a small disc with a hairline inside its edge, so white reads on white and black on black.
+ * As a label around a radio or a checkbox it is a choice: the chosen one stands in a ring of ink,
+ * a gap away, cut from the surface it sits on.
+ */
+@layer components {
+  .swatch {
+    --swatch: currentColor;
+    --swatch-size: 1.5rem;
+    position: relative;
+    display: inline-block;
+    flex: none;
+    width: var(--swatch-size);
+    height: var(--swatch-size);
+    margin: 0;
+    border-radius: 999px;
+    background: var(--swatch);
+    /* An edge inside the disc and a line of light on its top, whatever the color. */
+    box-shadow: inset 0 0 0 .5px light-dark(oklch(0% 0 none / .16), oklch(100% 0 none / .2)), inset 0 1px 0 oklch(100% 0 none / .18);
+    vertical-align: middle;
+    -webkit-tap-highlight-color: transparent;
+
+    &:has(.swatch-input) {
+      cursor: pointer;
+      transition-property: box-shadow, scale;
+      transition-duration: var(--duration-quick);
+      transition-timing-function: var(--easing-glide);
+    }
+
+    @media (hover: hover) {
+      &:has(.swatch-input:not(:disabled, :checked)):hover {
+        scale: 1.08;
+      }
+    }
+
+    &:has(.swatch-input:not(:disabled)):active {
+      scale: .94;
+      transition-duration: var(--duration-press);
+    }
+
+    /* Chosen: a 2px gap in the surface's own color, then a ring of ink. */
+    &:has(.swatch-input:checked) {
+      box-shadow:
+        inset 0 0 0 .5px light-dark(oklch(0% 0 none / .16), oklch(100% 0 none / .2)), inset 0 1px 0 oklch(100% 0 none / .18),
+        0 0 0 2px var(--surface-color, var(--color-surface-base)), 0 0 0 3.5px var(--color-text-strong);
+    }
+
+    &:has(.swatch-input:focus-visible) {
+      @apply --focus-ring;
+      outline-offset: 5px;
+    }
+
+    &:has(.swatch-input:disabled) {
+      opacity: .4;
+      cursor: not-allowed;
+    }
+
+    /* Square: a tile with a chip's corner, for a palette or a token table. */
+    &.swatch-square {
+      border-radius: calc(var(--radius-chip) * var(--corner-scale));
+      corner-shape: var(--corner-shape);
+    }
+
+    &.swatch-sm { --swatch-size: 1rem; }
+    &.swatch-lg { --swatch-size: 2rem; }
+
+    @media (pointer: coarse) {
+      /* The disc keeps its size; the target around it grows to 44px. */
+      &:has(.swatch-input)::after {
+        content: '';
+        position: absolute;
+        inset: calc((var(--swatch-size) - 2.75rem) / 2);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      &:has(.swatch-input) {
+        scale: none;
+      }
+    }
+
+    @media (forced-colors: active) {
+      outline: 1px solid CanvasText;
+      forced-color-adjust: none;
+
+      &:has(.swatch-input:checked) {
+        outline: 3px solid Highlight;
+        outline-offset: 2px;
+      }
+    }
+  }
+
+  /* The radio or checkbox covers the swatch invisibly: the label is the target, the input keeps the state. */
+  .swatch-input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    opacity: 0;
+    cursor: inherit;
+    appearance: none;
+  }
+}

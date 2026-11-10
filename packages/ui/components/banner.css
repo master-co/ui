@@ -1,0 +1,172 @@
+/*
+ * Banner: one line across the top of a page or a panel, for something everyone on it should know.
+ * It is a band of the tray tone with a hairline under it, quieter than an alert, which belongs to one task.
+ * As a <dialog open> it can be dismissed without script: its close button submits a dialog form, and the band
+ * folds away to nothing where the browser can interpolate to an automatic height.
+ */
+@layer components {
+  .banner {
+    --banner-tone: var(--color-text-strong);
+    --banner-color: var(--color-surface-tray);
+    --icon-size: 1rem;
+    --icon-color: var(--banner-tone);
+    position: relative;
+    inset: auto;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, auto) minmax(0, 1fr);
+    align-items: center;
+    width: auto;
+    max-width: none;
+    height: auto;
+    max-height: none;
+    min-height: 2.5rem;
+    margin: 0;
+    padding: .5rem .75rem;
+    border: 0;
+    background: var(--banner-color);
+    color: var(--color-text-body);
+    box-shadow: inset 0 -.5px 0 var(--color-line-contour);
+    font-size: .8125rem;
+    line-height: 1.5;
+
+    /* Status tones tint the band and color its icon; the words stay in ink and say what the hue means. */
+    &.banner-info { --banner-tone: var(--color-info); }
+    &.banner-success { --banner-tone: var(--color-success); }
+    &.banner-warning { --banner-tone: var(--color-warning); }
+    &.banner-danger { --banner-tone: var(--color-danger); }
+
+    &:is(.banner-info, .banner-success, .banner-warning, .banner-danger) {
+      --banner-color: color-mix(in oklab, var(--banner-tone) 8%, var(--color-surface-base));
+      box-shadow: inset 0 -.5px 0 color-mix(in oklab, var(--banner-tone) 28%, transparent);
+    }
+
+    /* Inverse: a band of ink, for the one announcement of a release. */
+    &.banner-inverse {
+      --banner-tone: var(--color-text-inverse);
+      --banner-color: var(--color-surface-inverse);
+      color: var(--color-text-inverse);
+      box-shadow: none;
+    }
+
+    /* Brand: the brand's face, kept for the moment the brand speaks. */
+    &.banner-brand {
+      --banner-tone: var(--color-brand-ink);
+      --banner-color: var(--color-brand);
+      background: linear-gradient(180deg, color-mix(in oklab, var(--color-brand), white 10%), var(--color-brand)) var(--color-brand);
+      color: var(--color-brand-ink);
+      box-shadow: inset 0 -.5px 0 color-mix(in oklab, var(--color-brand), black 30%);
+    }
+
+    /*
+     * A dismissible banner is a <dialog open>. Closing it folds the band: height and padding run to zero while
+     * display waits for them. Without interpolate-size it leaves at once.
+     */
+    &.banner-dismissible {
+      overflow: clip;
+      interpolate-size: allow-keywords;
+      transition-property: height, min-height, padding-block, opacity, display;
+      transition-duration: var(--duration-base);
+      transition-timing-function: var(--easing-glide);
+      transition-behavior: allow-discrete;
+
+      &:not([open]) {
+        display: none;
+        height: 0;
+        min-height: 0;
+        padding-block: 0;
+        opacity: 0;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        transition-property: opacity, display;
+        transition-duration: var(--duration-quick);
+      }
+    }
+
+    @media (forced-colors: active) {
+      border-bottom: 1px solid CanvasText;
+    }
+  }
+
+  /* The message, centered in the band: an icon, the words and one action, wrapping as a group. */
+  .banner-content {
+    grid-row: 1;
+    grid-column: 2;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: .25rem .625rem;
+    min-width: 0;
+    margin: 0;
+    text-align: center;
+    text-wrap: balance;
+  }
+
+  /* The few words that carry the news. */
+  .banner-title {
+    color: var(--color-text-strong);
+    font-weight: var(--font-weight-control);
+  }
+
+  .banner-inverse .banner-title {
+    color: var(--color-text-inverse);
+  }
+
+  .banner-brand .banner-title {
+    color: var(--color-brand-ink);
+  }
+
+  /* One link out. It takes the band's text color and keeps a fine underline, so it reads on every tone. */
+  .banner-action {
+    border-radius: var(--radius-chip);
+    color: inherit;
+    font-weight: var(--font-weight-control);
+    white-space: nowrap;
+    text-decoration: underline;
+    text-decoration-thickness: .5px;
+    text-decoration-color: color-mix(in oklab, currentColor 45%, transparent);
+    text-underline-offset: .22em;
+    transition: text-decoration-color var(--duration-quick) var(--easing-glide);
+
+    @media (hover: hover) {
+      &:hover {
+        text-decoration-color: currentColor;
+      }
+    }
+
+    &:focus-visible {
+      outline: 2px solid currentColor;
+      outline-offset: 2px;
+    }
+  }
+
+  .banner:not(.banner-inverse, .banner-brand) .banner-action {
+    color: var(--color-text-strong);
+  }
+
+  /* The dismiss form or button, at the far end of the band. Its button takes the band's ink. */
+  .banner-close {
+    --icon-color: currentColor;
+    grid-row: 1;
+    grid-column: 3;
+    justify-self: end;
+    display: flex;
+    margin: -.25rem -.25rem -.25rem .5rem;
+    color: inherit;
+  }
+
+  .banner:is(.banner-inverse, .banner-brand) .banner-close .btn {
+    color: inherit;
+
+    @media (hover: hover) {
+      &:hover:not(:disabled) {
+        background: color-mix(in oklab, currentColor 14%, transparent);
+      }
+    }
+
+    &:focus-visible {
+      outline-color: currentColor;
+    }
+  }
+}

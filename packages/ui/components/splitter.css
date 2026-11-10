@@ -1,0 +1,168 @@
+/*
+ * Splitter: two panes and the handle between them that sets how they share the space.
+ * The stylesheet draws it and lays it out; a script moves it. The script writes the first pane's size to
+ * --splitter-size and the same number to the handle's aria-valuenow, on pointer drag and on the arrow keys.
+ * The handle is a role="separator" that can take focus. Its aria-orientation says which way the line runs:
+ * vertical (the default) between panes side by side, horizontal between panes stacked.
+ * The line is a hairline until it is touched; then a grip appears on it and the line takes ink.
+ */
+@layer components {
+  .splitter {
+    --splitter-size: 50%;
+    --splitter-min: 4rem;
+    /* The first pane's track: the size asked for, kept --splitter-min away from both ends. */
+    --splitter-track: clamp(var(--splitter-min), var(--splitter-size), calc(100% - var(--splitter-min) - 1px));
+    display: grid;
+    grid-template-columns: var(--splitter-track) auto minmax(0, 1fr);
+    min-width: 0;
+    min-height: 0;
+
+    &:has(.splitter-handle[aria-orientation="horizontal"]) {
+      grid-template-rows: var(--splitter-track) auto minmax(0, 1fr);
+      grid-template-columns: none;
+    }
+
+    /* While the handle is held, nothing in the panes is selected by the drag. */
+    &:has(.splitter-handle:active) {
+      user-select: none;
+      -webkit-user-select: none;
+    }
+  }
+
+  /* A pane scrolls by itself, so a long one never moves its neighbor. */
+  .splitter-pane {
+    min-width: 0;
+    min-height: 0;
+    overflow: auto;
+  }
+
+  /*
+   * The handle is one pixel of line in the layout, with a target of 9px across it, so the panes meet at
+   * a hairline and the hand still finds it.
+   */
+  .splitter-handle {
+    position: relative;
+    z-index: 1;
+    width: 1px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    outline: none;
+    background: var(--color-line-divider);
+    cursor: col-resize;
+    touch-action: none;
+    transition: background-color var(--duration-quick) var(--easing-glide);
+
+    /* The target, wider than the line. */
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0 -4px;
+    }
+
+    /* The grip: a small pill of sheet on the line, shown when the handle is touched or focused. */
+    &::after {
+      content: '';
+      position: absolute;
+      top: calc(50% - .75rem);
+      left: -2.5px;
+      width: 6px;
+      height: 1.5rem;
+      border-radius: 999px;
+      @apply --surface-sheet;
+      box-shadow: var(--shadow-raised);
+      opacity: 0;
+      scale: .6 .8;
+      transition-property: opacity, scale;
+      transition-duration: var(--duration-quick);
+      transition-timing-function: var(--easing-glide);
+    }
+
+    @media (hover: hover) {
+      &:hover {
+        background: var(--color-line-mark);
+      }
+
+      &:hover::after {
+        opacity: 1;
+        scale: 1;
+      }
+    }
+
+    &:is(:focus-visible, :active) {
+      background: var(--color-focus);
+    }
+
+    &:is(:focus-visible, :active)::after {
+      opacity: 1;
+      scale: 1;
+    }
+
+    &:focus-visible::after {
+      @apply --focus-ring;
+    }
+
+    &[aria-orientation="horizontal"] {
+      width: auto;
+      height: 1px;
+      cursor: row-resize;
+
+      &::before {
+        inset: -4px 0;
+      }
+
+      &::after {
+        top: -2.5px;
+        left: calc(50% - .75rem);
+        width: 1.5rem;
+        height: 6px;
+        scale: .8 .6;
+      }
+
+      &:is(:hover, :focus-visible, :active)::after {
+        scale: 1;
+      }
+    }
+
+    &[aria-disabled="true"] {
+      background: var(--color-line-divider);
+      cursor: default;
+      pointer-events: none;
+    }
+
+    @media (pointer: coarse) {
+      &::before {
+        inset: 0 -12px;
+      }
+
+      &[aria-orientation="horizontal"]::before {
+        inset: -12px 0;
+      }
+
+      /* Without a pointer to hover, the grip is always there to be found. */
+      &::after {
+        opacity: 1;
+        scale: 1;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      &::after {
+        scale: none;
+      }
+    }
+
+    @media (forced-colors: active) {
+      background: CanvasText;
+
+      &:is(:focus-visible, :active) {
+        background: Highlight;
+      }
+
+      &::after {
+        border: 1px solid CanvasText;
+        background: Canvas;
+      }
+    }
+  }
+}

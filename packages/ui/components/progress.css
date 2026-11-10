@@ -1,7 +1,14 @@
 /*
  * Progress: a native <progress> drawn as a thin well that fills with ink.
  * Without a value it is indeterminate: a band of ink travels along the track.
+ * A ring draws the same amount around a circle, for a tile, a row or the corner of a card.
  */
+@property --progress-ring-value {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+
 @layer components {
   .progress {
     --progress-height: .375rem;
@@ -72,6 +79,108 @@
       forced-color-adjust: none;
       background: Canvas;
     }
+  }
+
+  /*
+   * Ring: an element with role="progressbar". Where the browser supports typed attr(), the ring reads
+   * aria-valuenow and aria-valuemax itself, so the amount is written once, for people and for the drawing;
+   * elsewhere set --progress-ring-value. Both ends of the arc are round, and the arc eases to each new value.
+   * Without aria-valuenow the amount is unknown: a quarter arc travels the track.
+   * The element's own content is the label in the middle.
+   */
+  .progress-ring {
+    --progress-ring-size: 2.5rem;
+    --progress-ring-width: max(2px, calc(var(--progress-ring-size) / 10));
+    --progress-ring-color: var(--color-surface-inverse);
+    --progress-ring-track: color-mix(in oklab, var(--progress-ring-color) 11%, transparent);
+    --progress-ring-max: 100;
+    --progress-ring-turn: calc(var(--progress-ring-value) / var(--progress-ring-max));
+    position: relative;
+    display: inline-grid;
+    flex: none;
+    place-items: center;
+    width: var(--progress-ring-size);
+    height: var(--progress-ring-size);
+    color: var(--color-text-strong);
+    font: var(--font-weight-control) calc(var(--progress-ring-size) * .27)/1 var(--font-family-sans);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -.01em;
+    vertical-align: middle;
+    transition: --progress-ring-value var(--duration-base) var(--easing-glide);
+
+    @supports (x: attr(x type(*))) {
+      &[aria-valuenow] {
+        --progress-ring-value: attr(aria-valuenow type(<number>), 0);
+      }
+
+      &[aria-valuemax] {
+        --progress-ring-max: attr(aria-valuemax type(<number>), 100);
+      }
+    }
+
+    /*
+     * The drawing: an arc from a conic gradient, a dot at each end to round it, and a mask that keeps the ring.
+     * The dots have no radius at zero, so an empty ring is an empty track.
+     */
+    &::before {
+      --progress-ring-radius: calc((var(--progress-ring-size) - var(--progress-ring-width)) / 2);
+      --progress-ring-cap: calc(var(--progress-ring-width) / 2 * min(1, var(--progress-ring-turn) * 200));
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 999px;
+      background:
+        radial-gradient(circle at 50% calc(var(--progress-ring-width) / 2), var(--progress-ring-color) calc(var(--progress-ring-cap) - .5px), transparent var(--progress-ring-cap)),
+        radial-gradient(circle at calc(50% + var(--progress-ring-radius) * sin(var(--progress-ring-turn) * 360deg)) calc(50% - var(--progress-ring-radius) * cos(var(--progress-ring-turn) * 360deg)), var(--progress-ring-color) calc(var(--progress-ring-cap) - .5px), transparent var(--progress-ring-cap)),
+        conic-gradient(var(--progress-ring-color) calc(var(--progress-ring-turn) * 360deg), var(--progress-ring-track) 0);
+      mask: radial-gradient(farthest-side, transparent calc(100% - var(--progress-ring-width) - .5px), black calc(100% - var(--progress-ring-width)), black calc(100% - .5px), transparent);
+    }
+
+    &:not([aria-valuenow]) {
+      --progress-ring-value: 25;
+      --progress-ring-max: 100;
+
+      &::before {
+        animation: progress-ring-travel .9s linear infinite;
+      }
+    }
+
+    &.progress-ring-sm {
+      --progress-ring-size: 1.25rem;
+      --progress-ring-width: 2.5px;
+    }
+
+    &.progress-ring-lg {
+      --progress-ring-size: 4rem;
+      --progress-ring-width: 5px;
+    }
+
+    &.progress-ring-xl {
+      --progress-ring-size: 6rem;
+      --progress-ring-width: 6px;
+      font-size: 1.375rem;
+      letter-spacing: -.02em;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: none;
+
+      &:not([aria-valuenow])::before {
+        animation-duration: 2.4s;
+      }
+    }
+
+    @media (forced-colors: active) {
+      --progress-ring-color: Highlight;
+      --progress-ring-track: GrayText;
+      forced-color-adjust: none;
+    }
+  }
+}
+
+@keyframes progress-ring-travel {
+  to {
+    rotate: 360deg;
   }
 }
 

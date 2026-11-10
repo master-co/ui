@@ -1,0 +1,142 @@
+/*
+ * Table of contents: the headings of a page as a quiet column of links on a hairline rail.
+ * The link of the section in view is in ink, with a mark on the rail. Where the browser supports
+ * scroll-target-group the page marks it by itself: the list watches the scroll and the link whose target is
+ * in view matches :target-current. A script or a server can set aria-current instead; both draw the same.
+ * With anchor positioning the mark is one piece that glides along the rail.
+ */
+@layer components {
+  .toc {
+    --toc-indent: .875rem;
+    position: relative;
+    display: grid;
+    min-width: 0;
+    font-size: .8125rem;
+    line-height: 1.4;
+    scroll-target-group: auto;
+  }
+
+  /* A caption over the list. */
+  .toc-title {
+    margin: 0 0 .625rem;
+    color: var(--color-text-strong);
+    font-size: .75rem;
+    font-weight: var(--font-weight-control);
+    line-height: 1.4;
+  }
+
+  /* The list draws the rail; a list inside a list is a deeper level and shares the same rail. */
+  .toc-list {
+    display: grid;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    box-shadow: inset 1px 0 0 var(--color-line-divider);
+    list-style: none;
+
+    &:dir(rtl) {
+      box-shadow: inset -1px 0 0 var(--color-line-divider);
+    }
+
+    .toc-list {
+      box-shadow: none;
+    }
+
+    .toc-list .toc-link {
+      padding-inline-start: calc(var(--toc-indent) * 2);
+    }
+  }
+
+  .toc-link {
+    position: relative;
+    display: block;
+    padding: .3125rem .5rem .3125rem var(--toc-indent);
+    color: var(--color-text-muted);
+    text-decoration: none;
+    text-wrap: pretty;
+    transition: color var(--duration-quick) var(--easing-glide);
+
+    &:dir(rtl) {
+      padding: .3125rem var(--toc-indent) .3125rem .5rem;
+    }
+
+    @media (hover: hover) {
+      &:hover {
+        color: var(--color-text-strong);
+      }
+    }
+
+    &:is(:target-current, [aria-current]) {
+      color: var(--color-text-strong);
+    }
+
+    /* The mark: a short piece of ink on the rail, with round ends, a few pixels in from the row's edges. */
+    &:is(:target-current, [aria-current])::before {
+      content: '';
+      position: absolute;
+      inset-block: .3125rem;
+      inset-inline-start: 0;
+      width: 1.5px;
+      border-radius: 999px;
+      background: var(--color-text-strong);
+    }
+
+    &:focus-visible {
+      @apply --focus-ring;
+      outline-offset: -2px;
+      border-radius: var(--radius-chip);
+    }
+
+    @media (forced-colors: active) {
+      &:is(:target-current, [aria-current]) {
+        color: Highlight;
+      }
+
+      &:is(:target-current, [aria-current])::before {
+        background: Highlight;
+      }
+    }
+  }
+
+  @supports (anchor-scope: --toc-mark) {
+    .toc {
+      anchor-scope: --toc-mark;
+
+      &:has(.toc-link:is(:target-current, [aria-current]))::before {
+        content: '';
+        position: absolute;
+        position-anchor: --toc-mark;
+        top: calc(anchor(top) + .3125rem);
+        bottom: calc(anchor(bottom) + .3125rem);
+        inset-inline-start: 0;
+        width: 1.5px;
+        border-radius: 999px;
+        background: var(--color-text-strong);
+        pointer-events: none;
+        transition-property: top, bottom;
+        transition-duration: var(--duration-base);
+        transition-timing-function: var(--easing-glide);
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        &::before {
+          transition: none;
+        }
+      }
+
+      @media (forced-colors: active) {
+        &::before {
+          background: Highlight;
+        }
+      }
+    }
+
+    .toc-link:is(:target-current, [aria-current]) {
+      anchor-name: --toc-mark;
+    }
+
+    .toc-link:is(:target-current, [aria-current])::before {
+      content: none;
+    }
+  }
+}

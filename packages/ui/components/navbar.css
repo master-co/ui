@@ -1,0 +1,225 @@
+/*
+ * Navbar: the bar at the top of a page or an app, holding the brand, the main links and a few actions.
+ * At the top of the page it has no material at all. Once content scrolls under it, it becomes a pane of
+ * frosted glass with a hairline and a short shadow: a scroll-state container query knows when the sticky
+ * bar is stuck. Without that query the pane is always drawn.
+ * The bar is also a size container: below 36rem the links step aside for the toggle that opens them elsewhere.
+ */
+@layer components {
+  .navbar {
+    --navbar-height: 3.5rem;
+    --navbar-padding-x: 1rem;
+    --navbar-color: var(--color-surface-base);
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    min-width: 0;
+    min-height: var(--navbar-height);
+    padding: 0 var(--navbar-padding-x);
+    color: var(--color-text-strong);
+    font-size: .875rem;
+    line-height: 1.4;
+    container: navbar / inline-size;
+
+    /* The pane. It is a layer of its own so that the bar's content never fades with it. */
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      border-radius: inherit;
+      corner-shape: inherit;
+      background: color-mix(in oklab, var(--navbar-color) 76%, transparent);
+      box-shadow: inset 0 -.5px 0 var(--color-line-strong), 0 1px 2px -1px var(--color-shade-1), 0 6px 12px -6px var(--color-shade-2);
+      backdrop-filter: blur(16px) saturate(1.7);
+      pointer-events: none;
+      transition: opacity var(--duration-base) var(--easing-glide);
+    }
+
+    @supports (container-type: scroll-state) {
+      container-type: inline-size scroll-state;
+
+      &::before {
+        opacity: 0;
+      }
+
+      @container navbar scroll-state(stuck: top) {
+        &::before {
+          opacity: 1;
+        }
+      }
+    }
+
+    /* Floating: a bar that hovers over the page with a margin around it, always in its material. */
+    &.navbar-floating {
+      --navbar-height: 3rem;
+      --navbar-padding-x: .625rem;
+      --navbar-color: var(--color-surface-floating);
+      top: .75rem;
+      margin: .75rem;
+      border-radius: calc(var(--radius-surface) * var(--corner-scale));
+      corner-shape: var(--corner-shape);
+
+      &::before {
+        box-shadow: var(--shadow-lifted);
+        opacity: 1;
+      }
+    }
+
+    @media (prefers-reduced-transparency: reduce) {
+      &::before {
+        background: var(--navbar-color);
+        backdrop-filter: none;
+      }
+    }
+
+    @media (forced-colors: active) {
+      &::before {
+        border-bottom: 1px solid CanvasText;
+        background: Canvas;
+        opacity: 1;
+      }
+    }
+  }
+
+  /* The mark and the name, as one link home. */
+  .navbar-brand {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: .5rem;
+    border-radius: var(--radius-chip);
+    color: var(--color-text-strong);
+    font-size: .9375rem;
+    font-weight: 560;
+    letter-spacing: -.01em;
+    text-decoration: none;
+
+    &:focus-visible {
+      @apply --focus-ring;
+    }
+  }
+
+  /* The main links, as a row. Below 36rem of bar they leave; the toggle takes over. */
+  .navbar-nav {
+    display: flex;
+    align-items: center;
+    gap: .125rem;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    @container navbar (inline-size < 36rem) {
+      display: none;
+    }
+  }
+
+  /* A link is a word at rest; under the pointer it sits on a chip. The current page is in ink. */
+  .navbar-link {
+    display: inline-flex;
+    align-items: center;
+    gap: .375rem;
+    min-height: 2rem;
+    padding: 0 .625rem;
+    border: 0;
+    border-radius: calc(var(--radius-control-sm) * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    background: transparent;
+    color: var(--color-text-muted);
+    font: inherit;
+    font-weight: var(--font-weight-control);
+    white-space: nowrap;
+    text-decoration: none;
+    cursor: pointer;
+    transition-property: color, background-color;
+    transition-duration: var(--duration-quick);
+    transition-timing-function: var(--easing-glide);
+
+    @media (hover: hover) {
+      &:hover {
+        background: var(--color-surface-chip);
+        color: var(--color-text-strong);
+      }
+    }
+
+    &:is([aria-current="page"], [aria-expanded="true"]) {
+      color: var(--color-text-strong);
+    }
+
+    &:focus-visible {
+      @apply --focus-ring;
+      outline-offset: 0;
+    }
+
+    @media (pointer: coarse) {
+      min-height: 2.75rem;
+    }
+
+    @media (forced-colors: active) {
+      &[aria-current="page"] {
+        text-decoration: underline;
+      }
+    }
+  }
+
+  /* The actions at the far end. */
+  .navbar-end {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: .5rem;
+    margin-inline-start: auto;
+  }
+
+  /* The button that opens the links in a drawer or a menu. It exists only while the links are away. */
+  .navbar-toggle {
+    @container navbar (inline-size >= 36rem) {
+      display: none;
+    }
+  }
+
+  /*
+   * Reading progress: a hairline of ink along the foot of the bar that fills as the page scrolls.
+   * It is drawn only where a scroll timeline can drive it.
+   */
+  .navbar-progress {
+    display: none;
+
+    @supports (animation-timeline: scroll()) {
+      position: absolute;
+      inset-inline: 0;
+      bottom: 0;
+      display: block;
+      height: 1.5px;
+      background: var(--color-text-strong);
+      transform-origin: 0 50%;
+      pointer-events: none;
+      animation-name: navbar-progress;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-timeline: scroll(root block);
+
+      &:dir(rtl) {
+        transform-origin: 100% 50%;
+      }
+    }
+
+    @media (forced-colors: active) {
+      background: Highlight;
+    }
+  }
+}
+
+@keyframes navbar-progress {
+  from {
+    scale: 0 1;
+  }
+
+  to {
+    scale: 1 1;
+  }
+}

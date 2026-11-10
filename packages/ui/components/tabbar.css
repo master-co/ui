@@ -1,0 +1,137 @@
+/*
+ * Tab bar: the few main destinations of a small-screen app, along the bottom edge under the thumb.
+ * Each item is an icon over a short label. The current one is in ink and its icon rests on a soft pill.
+ * The bar is a pane of frosted glass with a hairline above it, and it keeps clear of the home indicator.
+ */
+@layer components {
+  .tabbar {
+    --tabbar-height: 3.5rem;
+    --tabbar-color: var(--color-surface-base);
+    position: sticky;
+    bottom: 0;
+    z-index: 20;
+    display: grid;
+    grid-auto-columns: minmax(0, 1fr);
+    grid-auto-flow: column;
+    min-width: 0;
+    margin: 0;
+    padding: 0 .25rem env(safe-area-inset-bottom, 0px);
+    background: color-mix(in oklab, var(--tabbar-color) 78%, transparent);
+    box-shadow: inset 0 .5px 0 var(--color-line-strong);
+    backdrop-filter: blur(16px) saturate(1.7);
+    list-style: none;
+
+    /* Floating: a bar lifted off the edge, with the corner of a surface. */
+    &.tabbar-floating {
+      --tabbar-color: var(--color-surface-floating);
+      bottom: max(.75rem, env(safe-area-inset-bottom, 0px));
+      margin: .75rem;
+      padding: 0 .25rem;
+      border-radius: calc(var(--radius-surface) * var(--corner-scale) + 4px);
+      corner-shape: var(--corner-shape);
+      box-shadow: var(--shadow-floating);
+    }
+
+    @media (prefers-reduced-transparency: reduce) {
+      background: var(--tabbar-color);
+      backdrop-filter: none;
+    }
+
+    @media (forced-colors: active) {
+      border-top: 1px solid CanvasText;
+      background: Canvas;
+    }
+  }
+
+  .tabbar-item {
+    --icon-size: 1.25rem;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: .25rem;
+    min-width: 0;
+    min-height: var(--tabbar-height);
+    margin: 0;
+    padding: .375rem .25rem;
+    border: 0;
+    background: transparent;
+    color: var(--color-text-muted);
+    font: var(--font-weight-control) .6875rem/1 var(--font-family-sans);
+    font-feature-settings: inherit;
+    letter-spacing: .005em;
+    text-decoration: none;
+    cursor: pointer;
+    isolation: isolate;
+    -webkit-tap-highlight-color: transparent;
+    transition: color var(--duration-quick) var(--easing-glide);
+
+    /* The pill behind the icon: 56 by 28, centered on the icon's row. It grows in from a little smaller. */
+    &::before {
+      content: '';
+      position: absolute;
+      top: calc(50% - .5rem - 14px);
+      left: calc(50% - 1.75rem);
+      z-index: -1;
+      width: 3.5rem;
+      height: 1.75rem;
+      border-radius: 999px;
+      background: var(--color-surface-chip);
+      box-shadow: inset 0 0 0 .5px var(--color-line-hair);
+      opacity: 0;
+      scale: .8 .9;
+      transition-property: opacity, scale;
+      transition-duration: var(--duration-base);
+      transition-timing-function: var(--easing-glide);
+    }
+
+    @media (hover: hover) {
+      &:hover {
+        color: var(--color-text-strong);
+      }
+    }
+
+    &:is([aria-current="page"], [aria-selected="true"]) {
+      color: var(--color-text-strong);
+
+      &::before {
+        opacity: 1;
+        scale: 1;
+      }
+    }
+
+    &:active::before {
+      opacity: 1;
+      scale: .94;
+      transition-duration: var(--duration-press);
+    }
+
+    &:focus-visible {
+      @apply --focus-ring;
+      outline-offset: -4px;
+      border-radius: calc(var(--radius-control) * var(--corner-scale));
+      corner-shape: var(--corner-shape);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      &::before {
+        scale: none;
+      }
+    }
+
+    @media (forced-colors: active) {
+      &:is([aria-current="page"], [aria-selected="true"]) {
+        color: Highlight;
+      }
+    }
+  }
+
+  /* The word under the icon: one line, cut with an ellipsis before it pushes its neighbors. */
+  .tabbar-label {
+    overflow: hidden;
+    max-width: 100%;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}

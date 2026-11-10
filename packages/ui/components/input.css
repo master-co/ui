@@ -60,6 +60,18 @@
       }
     }
 
+    /*
+     * Filled in by the browser: the engine paints its own background and does not let a page replace it, so the
+     * well is laid over it as an inset shadow, tinted just enough to say the value was not typed.
+     */
+    &:autofill {
+      box-shadow: var(--shadow-pressed), inset 0 0 0 100vmax color-mix(in oklab, var(--color-info) 7%, var(--color-surface-inset));
+
+      &:focus {
+        box-shadow: inset 0 0 0 .5px var(--color-line-mark), 0 0 0 .5px var(--color-line-mark), 0 0 0 3.5px light-dark(oklch(22% .002 265 / .09), oklch(100% 0 none / .11)), inset 0 0 0 100vmax color-mix(in oklab, var(--color-info) 7%, var(--color-surface-raised));
+      }
+    }
+
     &:disabled {
       color: var(--color-text-disabled);
       cursor: not-allowed;
@@ -67,6 +79,17 @@
       &::placeholder {
         color: var(--color-text-disabled);
       }
+    }
+
+    /* A search field's clear button, redrawn as a fine cross in the ink of an icon. */
+    &::-webkit-search-cancel-button {
+      width: 14px;
+      height: 14px;
+      margin-inline: .5rem -.125rem;
+      background: var(--color-text-muted);
+      mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round'%3E%3Cpath d='m4.5 4.5 7 7m0-7-7 7'/%3E%3C/svg%3E") center / contain no-repeat;
+      appearance: none;
+      cursor: pointer;
     }
 
     &.input-sm {
@@ -249,6 +272,48 @@
       --icon-size: 1.125rem;
     }
 
+    /* The browser filled the field in: the whole well takes the tint, not a box inside it. */
+    &:has(.input-group-field:autofill) {
+      background: color-mix(in oklab, var(--color-info) 7%, var(--color-surface-inset));
+    }
+
+    /*
+     * Wrap: a field that collects several values. Each value is a chip in the well, the field takes what is
+     * left of the last line, and the well grows by a line when the values need one. A chip sits --input-inset
+     * in from the well's edge and takes the concentric corner.
+     */
+    &.input-group-wrap {
+      --input-inset: 6px;
+      flex-wrap: wrap;
+      gap: 4px;
+      padding-block: var(--input-inset);
+
+      &:has(.chip:first-child) {
+        padding-inline-start: var(--input-inset);
+      }
+
+      &.input-group-sm {
+        --input-inset: 4px;
+      }
+
+      .chip {
+        --chip-height: calc(var(--input-height) - var(--input-inset) * 2);
+        --chip-padding-x: .5rem;
+        border-radius: calc(var(--input-radius) * var(--corner-scale) - var(--input-inset));
+        corner-shape: var(--corner-shape);
+      }
+
+      .input-group-field {
+        flex: 1 1 5rem;
+        align-self: auto;
+        min-height: calc(var(--input-height) - var(--input-inset) * 2);
+      }
+
+      .chip + .input-group-field {
+        margin-inline-start: .25rem;
+      }
+    }
+
     /* A button in the well sits 4px in, so its corner is the well's corner minus that inset. */
     .btn {
       --btn-height: calc(var(--input-height) - 8px);
@@ -307,6 +372,21 @@
     &::placeholder {
       color: var(--color-text-muted);
       opacity: 1;
+    }
+
+    /* The engine's autofill color never arrives, so the well under the field keeps drawing it. */
+    &:autofill {
+      transition: background-color 0s 600000s;
+    }
+
+    &::-webkit-search-cancel-button {
+      width: 14px;
+      height: 14px;
+      margin-inline-start: .5rem;
+      background: var(--color-text-muted);
+      mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round'%3E%3Cpath d='m4.5 4.5 7 7m0-7-7 7'/%3E%3C/svg%3E") center / contain no-repeat;
+      appearance: none;
+      cursor: pointer;
     }
 
     &:disabled {

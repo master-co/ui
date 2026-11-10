@@ -1,0 +1,140 @@
+/*
+ * Composer: where a message or a prompt is written. A raised sheet holds a bare field that grows with its
+ * text, and under it a row of quiet tools with the send button at the end.
+ * The sheet draws the field's focus: one ink contour and a soft halo, as an input does.
+ * Buttons sit 8px in from the sheet's edge and take the concentric corner.
+ */
+@layer components {
+  .composer {
+    --composer-radius: var(--radius-surface);
+    --composer-inset: .5rem;
+    --composer-rows: 1;
+    --composer-max-rows: 10;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    margin: 0;
+    padding: var(--composer-inset);
+    border: 0;
+    border-radius: calc(var(--composer-radius) * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    @apply --surface-sheet;
+    color: var(--color-text-strong);
+    box-shadow: var(--shadow-lifted);
+    cursor: text;
+    transition: box-shadow var(--duration-quick) var(--easing-glide);
+
+    &:has(.composer-field:focus) {
+      box-shadow: var(--shadow-lifted), 0 0 0 .5px var(--color-line-mark), 0 0 0 3.5px light-dark(oklch(22% .002 265 / .08), oklch(100% 0 none / .1));
+    }
+
+    &:has(.composer-field:disabled) {
+      background: var(--color-surface-inset);
+      box-shadow: var(--shadow-flat);
+      cursor: not-allowed;
+    }
+
+    /* A button's corner is the sheet's corner minus the inset. The button applies the corner scale itself. */
+    .btn {
+      --btn-radius: calc(var(--composer-radius) - var(--composer-inset) / var(--corner-scale));
+    }
+
+    @media (forced-colors: active) {
+      outline: 1px solid FieldText;
+      outline-offset: -1px;
+
+      &:has(.composer-field:focus) {
+        outline: 2px solid Highlight;
+        outline-offset: -2px;
+      }
+    }
+  }
+
+  /*
+   * The field: a <textarea> with no material of its own. It starts at --composer-rows lines and grows to
+   * --composer-max-rows, then scrolls. Without field-sizing it keeps three lines and scrolls from there.
+   */
+  .composer-field {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    min-height: calc(3lh + .75rem);
+    margin: 0;
+    padding: .375rem .5rem;
+    border: 0;
+    border-radius: 0;
+    outline: none;
+    background: transparent;
+    color: var(--color-text-strong);
+    box-shadow: none;
+    font: 400 .9375rem/1.5 var(--font-family-sans);
+    font-feature-settings: inherit;
+    caret-color: var(--color-text-strong);
+    resize: none;
+    scrollbar-width: thin;
+    appearance: none;
+
+    @supports (field-sizing: content) {
+      min-height: calc(var(--composer-rows) * 1lh + .75rem);
+      max-height: calc(var(--composer-max-rows) * 1lh + .75rem);
+      field-sizing: content;
+    }
+
+    &::placeholder {
+      color: var(--color-text-muted);
+      opacity: 1;
+    }
+
+    &:disabled {
+      color: var(--color-text-disabled);
+      cursor: not-allowed;
+
+      &::placeholder {
+        color: var(--color-text-disabled);
+      }
+    }
+
+    @media (pointer: coarse) {
+      /* Below 16px iOS zooms the page on focus. */
+      font-size: 1rem;
+    }
+  }
+
+  /* What is attached to the message: chips or thumbnails in a wrapping row above the field. */
+  .composer-attachments {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .375rem;
+    min-width: 0;
+    padding: .125rem .125rem .375rem;
+    cursor: default;
+  }
+
+  /* The tools under the field. The last group is pushed to the end with .composer-end. */
+  .composer-toolbar {
+    display: flex;
+    align-items: center;
+    gap: .25rem;
+    min-width: 0;
+    margin-top: .25rem;
+    cursor: default;
+  }
+
+  .composer-end {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    margin-inline-start: auto;
+  }
+
+  /* A quiet note beside the tools: a model's name, a character count, a shortcut. */
+  .composer-hint {
+    overflow: hidden;
+    color: var(--color-text-muted);
+    font-size: .75rem;
+    line-height: 1.4;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+}
