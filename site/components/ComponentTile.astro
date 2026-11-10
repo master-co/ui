@@ -1,11 +1,13 @@
 ---
 import Cover from '~/site/components/cover/Cover.astro'
-import { components } from '~/site/components/catalog'
+import { library, type LibraryKind } from '~/site/components/catalog'
 import { siteOf } from '@master/internal-site/astro/site-context'
 
 interface Props {
-  /** A component slug; the tile links to its page. */
+  /** A slug in the catalog; the tile links to its page. */
   slug: string
+  /** The tier the slug belongs to: a component by default, or a layout or a block. */
+  kind?: LibraryKind
   /** A caption over the name, such as Previous or Next. */
   label?: string
   /** The name to show when the component is not in the catalog. */
@@ -16,14 +18,14 @@ interface Props {
   class?: string
 }
 
-/** A component as a link: its cover, its name and, on request, what it is. */
-const { slug, label, name, description = false, rel, class: className } = Astro.props
+/** A component, a layout or a block as a link: its cover, its name and, on request, what it is. */
+const { slug, kind = 'components', label, name, description = false, rel, class: className } = Astro.props
 const { t } = siteOf(Astro)
-const component = components.find(component => component.slug === slug)
+const component = (library[kind] as readonly { slug: string, name: string, description: string }[]).find(component => component.slug === slug)
 ---
 
-<a class:list={['component-tile', className]} href={`/components/${slug}`} rel={rel}>
-  <Cover slug={slug} />
+<a class:list={['component-tile', className]} href={`/${kind}/${slug}`} rel={rel}>
+  <Cover slug={slug} kind={kind} />
   {label && <span class="component-tile-label">{label}</span>}
   <span class="component-tile-name">{t(name ?? component?.name ?? slug)}</span>
   {description && component && <span class="component-tile-description">{t(component.description)}</span>}

@@ -1,16 +1,22 @@
-/** The published components, in reading order. Each slug matches `content/components/<slug>` and `@master/ui/components/<slug>.css`. */
+/**
+ * The library in three tiers, each in reading order.
+ *
+ * Components are the parts with a material, a state or a platform behavior; each slug matches
+ * `content/components/<slug>` and `@master/ui/components/<slug>.css`.
+ * Layouts say where regions go and what scrolls; blocks are one stretch of a page with a purpose. Both are
+ * published as markup to copy, in `content/layouts/<slug>` and `content/blocks/<slug>`.
+ */
 export const components = [
   { slug: 'surface', name: 'Surface', category: 'Materials', description: 'Trays, sheets and wells: the material ladder every component is built on.' },
   { slug: 'card', name: 'Card', category: 'Materials', description: 'A raised sheet whose parts follow the room the card is given.' },
   { slug: 'window', name: 'Window', category: 'Materials', description: 'The frame of an application around a screenshot, a demo or a terminal.' },
   { slug: 'divider', name: 'Divider', category: 'Materials', description: 'One hairline between sections, with an optional label.' },
-  { slug: 'scroll-area', name: 'Scroll area', category: 'Materials', description: 'A scrolling region whose edges fade where content continues.' },
-  { slug: 'splitter', name: 'Splitter', category: 'Materials', description: 'Two panes and the handle between them that sets how they share the space.' },
+  { slug: 'scroll-area', name: 'Scroll area', category: 'Structure', description: 'A scrolling region whose edges fade where content continues.' },
+  { slug: 'splitter', name: 'Splitter', category: 'Structure', description: 'Two panes and the handle between them that sets how they share the space.' },
   { slug: 'button', name: 'Button', category: 'Actions', description: 'A raised control that lifts on hover and sinks when pressed.' },
   { slug: 'toolbar', name: 'Toolbar', category: 'Actions', description: 'A small raised sheet that holds a row of quiet controls.' },
   { slug: 'link', name: 'Link', category: 'Actions', description: 'Text that goes somewhere, in the ink of its sentence.' },
   { slug: 'input', name: 'Input', category: 'Forms', description: 'Text fields cut into the surface, with labels, hints, errors and groups.' },
-  { slug: 'form', name: 'Form', category: 'Forms', description: 'The rhythm of a form: fields, rows, sections and actions that follow their column.' },
   { slug: 'select', name: 'Select', category: 'Forms', description: 'A native select whose option list is drawn in the same material.' },
   { slug: 'combobox', name: 'Combobox', category: 'Forms', description: 'A text field that opens a listbox of matches.' },
   { slug: 'listbox', name: 'Listbox', category: 'Forms', description: 'A list of options, the surface a combobox and a command palette open.' },
@@ -64,13 +70,51 @@ export const components = [
   { slug: 'timeline', name: 'Timeline', category: 'Display', description: 'Events in the order they happened.' },
   { slug: 'carousel', name: 'Carousel', category: 'Display', description: 'A row of slides that scrolls and snaps, built from CSS alone.' },
   { slug: 'marquee', name: 'Marquee', category: 'Display', description: 'A row that passes by without end, and stops when you look closely.' },
-  { slug: 'figure', name: 'Figure', category: 'Display', description: 'An image or a video with its caption, finished at the edge.' },
-  { slug: 'quote', name: 'Quote', category: 'Display', description: 'Words that belong to someone else, set apart from yours.' },
   { slug: 'message', name: 'Message', category: 'Display', description: 'One turn of a conversation, as a bubble that points at its author.' },
   { slug: 'avatar', name: 'Avatar', category: 'Display', description: 'A person or a team as a photo or initials, alone or stacked.' },
   { slug: 'badge', name: 'Badge', category: 'Display', description: 'A small chip for a status, a category or a count.' },
-  { slug: 'code', name: 'Code', category: 'Display', description: 'Literal text in the mono face, inline or as a block.' },
   { slug: 'icon', name: 'Icon', category: 'Display', description: 'Size inline icons through the component that holds them.' },
-  { slug: 'kbd', name: 'Kbd', category: 'Display', description: 'A keycap for shortcuts in text and menus.' },
-  { slug: 'mark', name: 'Mark', category: 'Display', description: 'A stroke of highlighter over the words that matter.' },
+  { slug: 'heading', name: 'Heading', category: 'Typography', description: 'A title in the ink of the page, with the line over it and the paragraph under it.' },
+  { slug: 'quote', name: 'Quote', category: 'Typography', description: 'Words that belong to someone else, set apart from yours.' },
+  { slug: 'figure', name: 'Figure', category: 'Typography', description: 'An image or a video with its caption, finished at the edge.' },
+  { slug: 'mark', name: 'Mark', category: 'Typography', description: 'A stroke of highlighter over the words that matter.' },
+  { slug: 'code', name: 'Code', category: 'Typography', description: 'Literal text in the mono face, inline or as a block.' },
+  { slug: 'kbd', name: 'Kbd', category: 'Typography', description: 'A keycap for shortcuts in text and menus.' },
 ] as const
+
+export const layouts = [
+  { slug: 'arrangements', name: 'Arrangements', category: 'Layout basics', description: 'Stack, cluster, split and center: the four moves most layouts are made of.' },
+  { slug: 'auto-grid', name: 'Auto grid', category: 'Layout basics', description: 'As many equal columns as fit, counted by the grid itself.' },
+  { slug: 'form', name: 'Form', category: 'Layout basics', description: 'The rhythm of a form: rows, sections and actions that follow their column.' },
+  { slug: 'page', name: 'Page', category: 'Page layouts', description: 'A header, the main region and a footer in a frame as tall as the viewport.' },
+  { slug: 'app-shell', name: 'App shell', category: 'Page layouts', description: 'A sidebar that stays while the main region scrolls, and a drawer when it is narrow.' },
+  { slug: 'docs', name: 'Documentation', category: 'Page layouts', description: 'Navigation, an article at a reading measure, and the contents of the page.' },
+  { slug: 'holy-grail', name: 'Holy grail', category: 'Page layouts', description: 'A header, three columns and a footer, with the middle one first in the source.' },
+  { slug: 'master-detail', name: 'Master-detail', category: 'Page layouts', description: 'A list beside what is chosen in it, each scrolling by itself.' },
+  { slug: 'dashboard', name: 'Dashboard', category: 'Page layouts', description: 'Figures across the top and panels in a grid that reflows without queries.' },
+  { slug: 'settings', name: 'Settings', category: 'Page layouts', description: 'A short navigation beside the sections of a long form.' },
+  { slug: 'centered', name: 'Centered', category: 'Page layouts', description: 'One task in the middle of the viewport, alone or beside a panel.' },
+] as const
+
+export const blocks = [
+  { slug: 'header', name: 'Header', category: 'Marketing blocks', description: 'A site header: the brand, the links, the actions and a drawer for narrow screens.' },
+  { slug: 'hero', name: 'Hero', category: 'Marketing blocks', description: 'The first screen: what it is, why it matters and one thing to do.' },
+  { slug: 'logo-cloud', name: 'Logo cloud', category: 'Marketing blocks', description: 'A quiet row of the names that already trust you.' },
+  { slug: 'features', name: 'Features', category: 'Marketing blocks', description: 'What the product does, as a grid of short claims.' },
+  { slug: 'stats', name: 'Stats', category: 'Marketing blocks', description: 'A few figures that make the case in numbers.' },
+  { slug: 'testimonials', name: 'Testimonials', category: 'Marketing blocks', description: 'What customers say, in their words and under their names.' },
+  { slug: 'pricing', name: 'Pricing', category: 'Marketing blocks', description: 'Plans side by side, with one recommended.' },
+  { slug: 'faq', name: 'FAQ', category: 'Marketing blocks', description: 'The questions people ask before they decide, answered in place.' },
+  { slug: 'cta', name: 'Call to action', category: 'Marketing blocks', description: 'The last ask of a page, on a surface of its own.' },
+  { slug: 'footer', name: 'Footer', category: 'Marketing blocks', description: 'Where a site ends: columns of quiet links and the small print.' },
+  { slug: 'page-header', name: 'Page header', category: 'Application blocks', description: 'The top of an app page: where you are, what it is and what you can do.' },
+  { slug: 'sidebar', name: 'Sidebar', category: 'Application blocks', description: 'An app sidebar: the workspace, the navigation and the account.' },
+  { slug: 'sign-in', name: 'Sign in', category: 'Application blocks', description: 'Sign in and sign up cards with providers, fields and a way back.' },
+  { slug: 'table-view', name: 'Table view', category: 'Application blocks', description: 'A table with its search, filters, selection and pages.' },
+  { slug: 'empty-state', name: 'Empty state', category: 'Application blocks', description: 'What a view shows before it has anything, and how to begin.' },
+] as const
+
+/** The tiers by the first segment of their URL. */
+export const library = { components, layouts, blocks } as const
+export type LibraryKind = keyof typeof library
+export const kindOf = (pathname: string) => /^\/(components|layouts|blocks)\/([^/]+)$/.exec(pathname) as [string, LibraryKind, string] | null

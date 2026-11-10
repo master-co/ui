@@ -3,15 +3,10 @@ import Code from '@master/internal-site/components/Code.astro'
 import Demo from '@master/internal-site/demo/Demo.svelte'
 import DemoViewport from '@master/internal-site/demo/DemoViewport.svelte'
 import { demoDocument } from '@master/internal-site/demo/reference/document.ts'
+import PreviewGuard from '~/site/components/PreviewGuard.astro'
+import PreviewSwitch from '~/site/components/PreviewSwitch.astro'
+import { previewHead as head } from '~/site/utils/preview'
 import { uiSource } from '~/site/utils/ui-source'
-
-/** Previews render in the typography the theme guide recommends: Geist with its stylistic sets, light regular text. */
-const head = `<style>
-@font-face { font-family: Geist; font-style: normal; font-weight: 100 900; font-display: block; src: url("/fonts/GeistVariable.woff2") format("woff2"); }
-@font-face { font-family: "IBM Plex Mono"; font-style: normal; font-weight: 400; font-display: block; src: url("/fonts/IBMPlexMono-Regular.woff2") format("woff2"); }
-:root { --font-sans: Geist; --font-mono: "IBM Plex Mono"; --font-feature-sans: "ss02", "ss03", "ss04", "ss06", "ss07", "ss08"; }
-body { font-family: var(--font-family-sans); font-feature-settings: var(--font-feature-sans); font-weight: 350; -webkit-font-smoothing: antialiased; }
-</style>`
 
 interface Props {
   /** A stable id, unique within the page. */
@@ -26,18 +21,29 @@ interface Props {
   theme?: boolean
   responsive?: boolean
   height?: number
+  /**
+   * The stage's material. Dots, the default, give a specimen a field to be seen against. Use `plain` for
+   * running text, which a pattern only makes harder to read, and `hatch` for a specimen about empty room.
+   */
+  background?: 'dots' | 'hatch' | 'plain'
 }
 
 /**
  * One tray: an isolated preview compiled from the published @master/ui source with the Master CSS preset,
- * and the markup a reader copies. Previews follow the site theme; light and dark come from the same CSS.
+ * and the markup a reader copies, behind a second view of the same tray: Preview, the default, or Code.
+ * Previews follow the site theme; light and dark come from the same CSS.
  */
-const { name, title, html, caption = '', bodyClass = 'flex flex-wrap items-center justify-center gap-md p-lg', theme = false, responsive, height } = Astro.props
+const { name, title, html, caption = '', bodyClass = 'flex flex-wrap items-center justify-center gap-md p-lg', theme = false, responsive, height, background = 'dots' } = Astro.props
+const views = [['preview', 'Preview'], ['code', 'Code']] as const
 const section = { page: 'components', id: name, title, html: [html], css: uiSource(), classes: [], classLists: [], highlighted: [] }
 const document = demoDocument(section as Parameters<typeof demoDocument>[0], { html, caption, bodyClass, head } as Parameters<typeof demoDocument>[1])
 ---
 
-<Demo title={title} caption={caption} frame="none" data-component-preview={name}>
+<PreviewGuard />
+<Demo title={title} caption={caption} frame="none" data-component-preview={name} data-preview-background={background}>
+  <Fragment slot="controls">
+    <PreviewSwitch name={`preview-view-${name}`} label="View" kind="view" options={views} value="preview" />
+  </Fragment>
   <Fragment slot="source"><Code lang="html" beautify code={html} /></Fragment>
   <DemoViewport client:idle={{ timeout: 500 }} title={title} document={document} theme={theme} responsive={responsive} height={height} sizing="content" />
 </Demo>

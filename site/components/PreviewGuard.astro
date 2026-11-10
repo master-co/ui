@@ -1,0 +1,150 @@
+---
+/**
+ * A guard for previews that scroll.
+ *
+ * A reader scrolling the page should pass over a preview, not get caught in it. So a preview whose document
+ * scrolls, or that holds a large or tall scrolling region, starts idle: the pointer goes through its frame to the page,
+ * and a small pill says how to use it. One click makes it live. It goes back to idle when the pointer leaves it,
+ * on Escape, on a press anywhere else, and when it scrolls out of view.
+ *
+ * Only the pointer is guarded. The frame stays in the tab order, so the keyboard reaches it either way, and a
+ * preview that does not scroll is never guarded.
+ *
+ * The state is `data-preview-guard="idle" | "active"` on the tray. This component renders nothing; include it
+ * once in a preview component and the script watches every tray on the page.
+ */
+---
+
+<script>
+  /** A scrolling region counts when it takes at least this share of the preview's viewport, */
+  const SHARE = .5
+  /** or when it is at least this tall: a pane of a page, where a passing wheel would be caught. */
+  const TALL = 320
+  /** Overflow smaller than this many pixels is rounding or a stray margin, not something to scroll. */
+  const SLACK = 16
+  const watched = new WeakSet<Element>()
+
+  function scrolls(frame: HTMLIFrameElement) {
+    const doc = frame.contentDocument
+    const view = frame.contentWindow
+    if (!doc?.body?.childElementCount || !view) return false
+    // The document itself is taller than its viewport: a page.
+    if (doc.documentElement.scrollHeight > view.innerHeight + SLACK) return true
+    // Or it holds a scroller a passing wheel would be caught in: most of the viewport, or a tall pane.
+    const area = view.innerWidth * view.innerHeight
+    for (const element of doc.body.querySelectorAll<HTMLElement>('*')) {
+      if (element.scrollHeight <= element.clientHeight + SLACK) continue
+      if (element.clientHeight < TALL && element.clientWidth * element.clientHeight < area * SHARE) continue
+      const overflow = view.getComputedStyle(element).overflowY
+      if (overflow === 'auto' || overflow === 'scroll') return true
+    }
+    return false
+  }
+
+  function release(tray: HTMLElement) {
+    if (tray.dataset.previewGuard === 'active') tray.dataset.previewGuard = 'idle'
+  }
+
+  function watch(tray: HTMLElement) {
+    const frame = tray.querySelector('iframe')
+    const viewport = frame?.parentElement
+    if (!frame || !viewport || watched.has(tray)) return
+    watched.add(tray)
+
+    const check = () => {
+      if (tray.dataset.previewGuard === 'active') return
+      if (scrolls(frame)) tray.dataset.previewGuard = 'idle'
+      else delete tray.dataset.previewGuard
+    }
+    let timer: ReturnType<typeof setTimeout> | undefined
+    const later = () => { clearTimeout(timer); timer = setTimeout(check, 80) }
+
+    frame.addEventListener('load', () => {
+      later()
+      // Escape inside the frame releases it too; keys there never reach this document.
+      frame.contentDocument?.addEventListener('keydown', event => { if (event.key === 'Escape') release(tray) })
+    })
+    // A new width or a late font changes what overflows.
+    new ResizeObserver(later).observe(frame)
+    tray.addEventListener('change', later)
+    check()
+
+    viewport.addEventListener('click', event => {
+      if (tray.dataset.previewGuard !== 'idle' || (event.target as Element).closest('.ui-resize')) return
+      tray.dataset.previewGuard = 'active'
+      frame.focus({ preventScroll: true })
+    })
+    viewport.addEventListener('pointerleave', event => { if (event.pointerType === 'mouse') release(tray) })
+    new IntersectionObserver(entries => { if (!entries.some(entry => entry.isIntersecting)) release(tray) }).observe(viewport)
+  }
+
+  function start() {
+    document.querySelectorAll<HTMLElement>('[data-component-preview]').forEach(watch)
+  }
+
+  document.addEventListener('pointerdown', event => {
+    const tray = (event.target as Element).closest?.('.ui-browser-viewport')?.closest('[data-component-preview]')
+    document.querySelectorAll<HTMLElement>('[data-preview-guard="active"]').forEach(active => { if (active !== tray) release(active) })
+  })
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape') document.querySelectorAll<HTMLElement>('[data-preview-guard="active"]').forEach(release)
+  })
+  document.addEventListener('astro:page-load', start)
+  start()
+</script>
+
+<style is:global>
+  @layer components {
+    /* Idle: the frame lets the pointer through, so a wheel or a swipe over it moves the page. */
+    [data-preview-guard="idle"] .ui-browser-viewport {
+      cursor: pointer;
+
+      & > iframe {
+        pointer-events: none;
+      }
+    }
+
+    /*
+     * The pill: a small sheet at the foot of the viewport. It says what one click does and leaves when it is
+     * done. Set --preview-guard-hint on the root to translate it.
+     */
+    [data-preview-guard] .ui-browser-viewport::after {
+      content: var(--preview-guard-hint, 'Click to interact');
+      position: absolute;
+      inset-inline: 0;
+      bottom: .75rem;
+      z-index: 1;
+      width: fit-content;
+      margin-inline: auto;
+      padding: .4375rem .75rem;
+      border-radius: 999px;
+      background: var(--ui-surface-sheet);
+      color: var(--ui-text-body);
+      box-shadow: var(--ui-elevation-rise-2);
+      font: var(--ui-weight-medium) .75rem/1 var(--font-family-sans);
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      translate: 0 .25rem;
+      transition: opacity var(--ui-duration-quick), translate var(--ui-duration-quick), color var(--ui-duration-quick);
+    }
+
+    [data-preview-guard="idle"] .ui-browser-viewport::after {
+      opacity: 1;
+      translate: 0 0;
+    }
+
+    @media (hover: hover) {
+      [data-preview-guard="idle"] .ui-browser-viewport:hover::after {
+        color: var(--ui-text-strong);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      [data-preview-guard] .ui-browser-viewport::after {
+        translate: none;
+        transition: opacity var(--ui-duration-quick);
+      }
+    }
+  }
+</style>

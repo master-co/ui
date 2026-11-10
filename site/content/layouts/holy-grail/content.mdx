@@ -1,0 +1,84 @@
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import PagePreview from '~/site/components/PagePreview.astro'
+
+The holy grail is the oldest page layout with a name: a header, three columns and a footer, where the middle column takes what the side columns leave, all three are as tall as the tallest, and the main content comes first in the source. It was hard for fifteen years. It is the [app shell](/layouts/app-shell) with every optional region in use.
+
+<PagePreview name="default" title="Holy grail" caption="The footer comes into view after the columns. At Tablet the end column leaves; at Phone the start column moves into a drawer." html={`<div class="shell bg-surface-base fg-text-body text-sm" style="--shell-sidebar: 13rem; --shell-aside: 15rem">
+  <header class="navbar shell-header bb(1) bb-solid b-line-hair">
+    <button type="button" class="btn btn-quiet btn-square btn-sm shell-toggle" commandfor="hg-nav" command="show-modal" aria-label="Open navigation"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h16M4 16h16"/></svg></button>
+    <a class="navbar-brand" href="#"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18a9 9 0 0 0 0-18M12 3a9 9 0 0 0 0 18"/></svg>Atlas</a>
+    <div class="navbar-end">
+      <button type="button" class="btn btn-primary btn-sm">Subscribe</button>
+    </div>
+  </header>
+  <main class="shell-main">
+    <article class="flex flex-col gap-md max-w(640) mx-auto px-lg py-xl">
+      <p class="eyebrow">Engineering</p>
+      <h1 class="heading heading-2xl">How we cut cold builds by forty seconds</h1>
+      <p class="lead">Most of a cold build was spent fetching what the last build had already fetched. We stopped throwing it away.</p>
+      <p class="m(0) leading-md">A build starts from an empty machine. For years that was a feature: nothing left over from last time could break this time. It also meant every build downloaded the same two hundred megabytes of dependencies before doing any work of its own.</p>
+      <p class="m(0) leading-md">The fix was not a faster download. It was to key a cache by the lockfile, restore it before the install step, and let the package manager find that it had nothing to do. The install step now takes about three seconds when nothing changed, which is most of the time.</p>
+      <p class="m(0) leading-md">The main column is first in the source, before both side columns. The grid places each region by its class, so the order a screen reader meets them in is the order of importance, not the order on screen.</p>
+      <p class="m(0) leading-md">We measured for a month before turning it on for everyone. Median cold build time went from 96 seconds to 55, and the slowest tenth improved the most, because they had the most to download.</p>
+    </article>
+  </main>
+  <aside class="shell-sidebar p-sm bxe(1) bxe-solid b-line-hair" aria-label="Sections">
+    <nav class="nav" aria-label="Sections">
+      <a class="nav-item" href="#">Latest</a>
+      <a class="nav-item" href="#" aria-current="page">Engineering</a>
+      <a class="nav-item" href="#">Product</a>
+      <a class="nav-item" href="#">Company</a>
+      <a class="nav-item" href="#">Customers</a>
+    </nav>
+  </aside>
+  <aside class="shell-aside gap-md p-lg bxs(1) bxs-solid b-line-hair" aria-label="Related">
+    <p class="eyebrow">More from engineering</p>
+    <a class="link link-quiet fg-text-strong" href="#">Preview comments, pinned to elements</a>
+    <a class="link link-quiet fg-text-strong" href="#">A dashboard you can drive from the keyboard</a>
+    <a class="link link-quiet fg-text-strong" href="#">Why a deployment is immutable</a>
+  </aside>
+  <footer class="shell-footer bt(1) bt-solid b-line-hair">
+    <div class="flex flex-wrap items-center justify-between gap-sm px-lg py-lg text-xs fg-text-muted">
+      <span>© 2026 Atlas Labs</span>
+      <nav class="flex gap-lg" aria-label="Footer">
+        <a class="link link-quiet" href="#">Privacy</a>
+        <a class="link link-quiet" href="#">Terms</a>
+        <a class="link link-quiet" href="#">RSS</a>
+      </nav>
+    </div>
+  </footer>
+  <dialog class="dialog dialog-drawer dialog-drawer-start" id="hg-nav" closedby="any" aria-label="Sections">
+    <div class="dialog-body">
+      <nav class="nav" aria-label="Sections, in the drawer">
+        <a class="nav-item" href="#">Latest</a>
+        <a class="nav-item" href="#" aria-current="page">Engineering</a>
+        <a class="nav-item" href="#">Product</a>
+        <a class="nav-item" href="#">Company</a>
+        <a class="nav-item" href="#">Customers</a>
+      </nav>
+    </div>
+  </dialog>
+</div>`} />
+
+## How it is built \{#how-it-is-built\}
+
+- **`shell-header` and `shell-footer` span the frame**; `shell-sidebar`, `shell-main` and `shell-aside` share the row between them.
+- **The source order is yours.** Each region is placed by its class, not by its position in the markup. Here `<main>` comes right after the header, before both side columns, so it is first for a screen reader, for a search engine and for the tab order.
+- **The side columns are fixed and the middle is fluid.** Set the widths with `--shell-sidebar` and `--shell-aside`; the main region takes the rest and never grows past it.
+- **The row of columns is at least as tall as the viewport**, so the side columns can stay in view for the whole read, and the footer starts below the fold.
+- **The hairlines are utilities.** `bxe(1) bxe-solid b-line-hair` draws a line at the end of the start column, and `bxs(…)` at the start of the end column; both follow the writing direction.
+
+## When to use \{#when-to-use\}
+
+Use three columns when the two side columns do different jobs for the same content: where else to go, and what else relates. When one of them is only the contents of the page, the [documentation](/layouts/docs) layout says the same thing with less. When there is no second side column, it is an [app shell](/layouts/app-shell).
+
+## Accessibility \{#accessibility\}
+
+- Two `<aside>` regions need labels that tell them apart ("Sections", "Related").
+- With the main region first in the source, the tab order goes header, main, then the side columns. That is the point: check that it matches what your readers expect, and move `<main>` after the navigation if it does not.
+
+## Related \{#related\}
+
+<ComponentLinks kind="layouts" slugs={['app-shell', 'docs', 'page']} />

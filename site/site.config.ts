@@ -2,11 +2,14 @@ import { defineSite } from '@master/internal-site/config'
 import translations from './i18n/translations'
 
 const section = (name: string) => new URL(import.meta.resolve(`@master/internal-site/sections/${name}.astro`))
-const document = {
+const library = new URL('./sections/library.astro', import.meta.url)
+/** A section's own sidebar and pager order, written by `scripts/prepare.ts`. */
+const categories = (name: string) => new URL(`./.categories/${name}.json`, import.meta.url)
+const document = (name: string) => ({
   layout: new URL('./layouts/Doc.astro', import.meta.url),
   dictionaries: new URL('./dictionaries.ts', import.meta.url),
-  categories: new URL('./.categories/docs.json', import.meta.url)
-}
+  categories: categories(name)
+})
 
 export default defineSite({
   id: 'ui',
@@ -21,12 +24,13 @@ export default defineSite({
     locales: ['en'],
     hreflangOfLocale: { en: 'en' },
     nameOfLocale: { en: 'English' },
-    localizablePathnameRoots: ['guide', 'components'],
+    localizablePathnameRoots: ['guide', 'components', 'layouts', 'blocks'],
     translations
   },
-  // The guide and components share one documentation shell and sidebar; the components overview leaves the sidebar out.
-  sections: { home: section('home'), page: section('page'), guide: section('guide'), components: new URL('./sections/components.astro', import.meta.url) },
-  navigation: { guide: new URL('./.categories/docs.json', import.meta.url) },
-  documents: { guide: document, components: document },
+  // The guide and the three tiers of the library share one documentation shell, and each has a sidebar of its own.
+  // A tier's overview leaves the sidebar out, and so does every page of the blocks, which are shown at full width.
+  sections: { home: section('home'), page: section('page'), guide: section('guide'), components: library, layouts: library, blocks: library },
+  navigation: { guide: categories('guide'), components: categories('components'), layouts: categories('layouts'), blocks: categories('blocks') },
+  documents: { guide: document('guide'), components: document('components'), layouts: document('layouts'), blocks: document('blocks') },
   styles: { site: new URL('./styles/site.ts', import.meta.url) }
 })

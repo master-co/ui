@@ -1,16 +1,25 @@
 /**
- * Generate the documentation sidebar and the search index from content metadata.
- * Runs before `astro dev`, `astro build` and type checks.
+ * Generate the documentation sidebars and the search index from content metadata.
+ * Each section of the site (the guide, components, layouts, blocks) has a sidebar of its own, so a reader
+ * of one tier is not handed the list of another. Runs before `astro dev`, `astro build` and type checks.
  */
 import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
-import { dirname, join } from 'node:path'
+import { dirname, join, relative, sep } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { generateSearchPages } from '@master/internal-site/utils/search-pages'
 import type { DefinedMetadata } from '@master/internal-site/types/Metadata'
 
 /** Sidebar category order; unknown categories follow alphabetically. */
-const categoryOrder = ['Getting started', 'Overview', 'Materials', 'Actions', 'Forms', 'Navigation', 'Overlays', 'Feedback', 'Display']
+const categoryOrder = [
+  'Getting started', 'Overview',
+  // Components: parts with a material, a state or a platform behavior.
+  'Materials', 'Structure', 'Actions', 'Forms', 'Navigation', 'Overlays', 'Feedback', 'Display', 'Typography',
+  // Layouts: where regions go and what scrolls.
+  'Layout basics', 'Page layouts',
+  // Blocks: one stretch of a page with a purpose.
+  'Marketing blocks', 'Application blocks'
+]
 
 const site = fileURLToPath(new URL('../', import.meta.url))
 const content = join(site, 'content')
@@ -27,10 +36,14 @@ const metadataFiles = (await readdir(content, { recursive: true }))
   .filter(file => existsSync(join(dirname(file), 'content.mdx')) || existsSync(join(dirname(file), 'page.astro')))
   .sort()
 
-const pages: (DefinedMetadata & { order?: number })[] = []
+type Page = DefinedMetadata & { order?: number }
+/** Pages by section: the first folder under `content`. */
+const sections = new Map<string, Page[]>()
 for (const file of metadataFiles) {
   const { default: metadata } = await import(pathToFileURL(file).href)
-  if (!metadata.draft && metadata.category) pages.push(metadata)
+  if (metadata.draft || !metadata.category) continue
+  const section = relative(content, file).split(sep)[0]
+  sections.set(section, [...sections.get(section) ?? [], metadata])
 }
 
 const titleOf = (page: DefinedMetadata) => {
@@ -42,7 +55,7 @@ const rank = (name: string) => {
   return index === -1 ? categoryOrder.length : index
 }
 
-const categories = [...new Set(pages.map(page => page.category!))]
+const categoriesOf = (pages: Page[]) => [...new Set(pages.map(page => page.category!))]
   .sort((a, b) => rank(a) - rank(b) || a.localeCompare(b))
   .map(name => ({
     name,
@@ -51,7 +64,10 @@ const categories = [...new Set(pages.map(page => page.category!))]
       .sort((a, b) => (a.order ?? Infinity) - (b.order ?? Infinity) || titleOf(a).localeCompare(titleOf(b)))
   }))
 
-await writeIfChanged(join(site, '.categories/docs.json'), JSON.stringify(categories, null, 2) + '\n')
-console.log(`Generated .categories/docs.json (${categories.length} categories, ${pages.length} pages)`)
+for (const [section, pages] of sections) {
+  const categories = categoriesOf(pages)
+  await writeIfChanged(join(site, `.categories/${section}.json`), JSON.stringify(categories, null, 2) + '\n')
+  console.log(`Generated .categories/${section}.json (${categories.length} categories, ${pages.length} pages)`)
+}
 
 await generateSearchPages({ cwd: site, defaultLocale: 'en', locales: ['en'], dictionariesDir: join(site, 'i18n'), write: true })

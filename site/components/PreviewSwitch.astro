@@ -1,0 +1,143 @@
+---
+import { siteOf } from '@master/internal-site/astro/site-context'
+
+interface Props {
+  /** The radio group's name, unique on the page. */
+  name: string
+  /** What the choice is of, for assistive technology: View, Viewport. */
+  label: string
+  /** What the stylesheet reads the choice from: `data-view` or `data-size` on the checked radio. */
+  kind: 'view' | 'size'
+  /** Values and their words, in order. */
+  options: readonly (readonly [string, string])[]
+  /** The value chosen at first. */
+  value: string
+}
+
+/**
+ * A choice in a preview's head, drawn as the site's segmented control. It is a group of native radios that the
+ * stylesheet reads with `:has()`, so a preview changes its view or its width without a script.
+ */
+const { name, label, kind, options, value } = Astro.props
+const { t } = siteOf(Astro)
+---
+
+<div class="preview-switch" data-switch={kind} role="radiogroup" aria-label={t(label)}>
+  {options.map(([option, words]) => (
+    <label><input type="radio" name={name} {...{ [`data-${kind}`]: option }} checked={option === value} /><span>{t(words)}</span></label>
+  ))}
+</div>
+
+<style is:global>
+  @layer components {
+    .preview-switch {
+      display: inline-flex;
+      gap: 2px;
+      padding: 3px;
+      border-radius: calc(var(--ui-radius-md) + 3px);
+      background: var(--ui-surface-well);
+      box-shadow: var(--ui-elevation-sink);
+
+      & > label {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 1.625rem;
+        padding: 0 .625rem;
+        border-radius: var(--ui-radius-md);
+        color: var(--ui-text-muted);
+        font: var(--ui-weight-medium) .75rem/1 var(--font-family-sans);
+        white-space: nowrap;
+        cursor: pointer;
+        transition: color var(--ui-duration-quick), background-color var(--ui-duration-quick), box-shadow var(--ui-duration-quick);
+      }
+
+      & > label > input {
+        position: absolute;
+        inset: 0;
+        margin: 0;
+        opacity: 0;
+        cursor: inherit;
+        appearance: none;
+      }
+
+      @media (hover: hover) {
+        & > label:hover {
+          color: var(--ui-text-strong);
+        }
+      }
+
+      & > label:has(:checked) {
+        background: var(--ui-surface-sheet);
+        color: var(--ui-text-strong);
+        box-shadow: var(--ui-elevation-rise-1);
+      }
+
+      & > label:has(:focus-visible) {
+        outline: 2px solid var(--ui-focus);
+        outline-offset: 2px;
+      }
+
+      @media (pointer: coarse) {
+        & > label {
+          min-height: 2.5rem;
+        }
+      }
+    }
+
+    /*
+     * The stage's material. A preview's document is transparent, so what stands on the stage is seen against it.
+     * Dots are a field for an object: the edge of a well, a tray or a quiet control is found against them where
+     * a flat tone would swallow it. Hatch is room that belongs to nothing: the space around a page.
+     * Both are the site's own recipes, from its stage.
+     */
+    [data-preview-background="dots"] .ui-browser {
+      background: radial-gradient(var(--ui-line-divider) .8px, transparent 1.1px) 0 0 / 14px 14px, var(--ui-stage-light), var(--ui-surface-stage);
+    }
+
+    [data-preview-background="hatch"] .ui-browser {
+      background: var(--ui-hatch), var(--ui-surface-stage);
+    }
+
+    /*
+     * One tray, two views. Preview is the default and hides the source. Code hides the viewport, the tools
+     * that act on it and the widths that size it. The source stays in the page either way, for search and
+     * for copying, and it scrolls inside the tray so a long listing does not push the page away.
+     */
+    .ui-tray:has([data-view]) {
+      &:not(:has([data-view="code"]:checked)) > .ui-code {
+        display: none;
+      }
+
+      /*
+       * The viewport is folded away, not removed: it keeps its width and its height inside a box of no
+       * height, so a preview sized by its content does not measure itself again, and coming back to it
+       * does not make the page jump.
+       */
+      &:has([data-view="code"]:checked) {
+        & .ui-browser {
+          height: 0;
+          min-height: 0;
+          margin-block: 0;
+          overflow: hidden;
+          visibility: hidden;
+        }
+
+        & .ui-browser-tools {
+          display: none;
+        }
+
+        & .preview-switch[data-switch="size"] {
+          visibility: hidden;
+        }
+      }
+
+      & > .ui-code pre {
+        max-height: min(45rem, 80dvh);
+        overflow: auto;
+        overscroll-behavior: contain;
+      }
+    }
+  }
+</style>

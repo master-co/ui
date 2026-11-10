@@ -3,6 +3,7 @@ import '@master/internal-site/styles/system/pager.css'
 import Link from '@master/internal-site/components/Link.svelte'
 import ComponentTile from '~/site/components/ComponentTile.astro'
 import { createTranslation } from '@master/internal-site/utils/i18n'
+import { kindOf } from '~/site/components/catalog'
 
 interface Props {
   pageCategories?: { pages: any[] }[]
@@ -12,8 +13,8 @@ interface Props {
 }
 
 /**
- * The previous and next documents in the sidebar's order. A neighbor that is a component shows its cover;
- * any other document keeps the plain link.
+ * The previous and next documents in the sidebar's order. A neighbor in the library (a component, a layout
+ * or a block) shows its cover; any other document keeps the plain link.
  */
 const { pageCategories, metadata, locale, dictionaries } = Astro.props
 const $ = await createTranslation(locale, dictionaries)
@@ -24,7 +25,8 @@ const navs = (index === -1 ? [] : [['prev', pages[index - 1]], ['next', pages[in
   .map(([rel, page]) => ({
     rel,
     href: page.pathname as string,
-    slug: /^\/components\/([^/]+)$/.exec(page.pathname)?.[1],
+    kind: kindOf(page.pathname)?.[1],
+    slug: kindOf(page.pathname)?.[2],
     label: rel === 'prev' ? $('Previous') : $('Next'),
     title: $(page.title.absolute || page.title)
   }))
@@ -32,8 +34,8 @@ const navs = (index === -1 ? [] : [['prev', pages[index - 1]], ['next', pages[in
 
 {navs.length > 0 && (
   <nav class="ui-pager component-pager" aria-label={$('Previous and next documents')}>
-    {navs.map(({ rel, href, slug, label, title }) => slug
-      ? <ComponentTile slug={slug} name={title} label={label} rel={rel} />
+    {navs.map(({ rel, href, kind, slug, label, title }) => slug
+      ? <ComponentTile slug={slug} kind={kind} name={title} label={label} rel={rel} />
       : <Link {href} rel={rel} aria-label={`${label}: ${title}`}><small>{label}</small><b>{title}</b></Link>)}
   </nav>
 )}

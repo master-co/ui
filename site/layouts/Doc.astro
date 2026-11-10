@@ -7,6 +7,7 @@ import PageContentBootstrap from '@master/internal-site/components/PageContentBo
 import PageNavs from '@master/internal-site/components/PageNavs.astro'
 import ComponentPager from '~/site/components/ComponentPager.astro'
 import Cover from '~/site/components/cover/Cover.astro'
+import { kindOf } from '~/site/components/catalog'
 import { footerProps } from '~/site/navigation'
 
 interface Props {
@@ -22,20 +23,23 @@ interface Props {
 
 /**
  * The documentation layout, as `@master/internal-site/layouts/Doc.astro` composes it, with two additions for a
- * component page: its cover stands at the end of the page head, and the pager shows its neighbors as covers.
+ * page of the library (a component, a layout or a block): its cover stands at the end of the page head, and the
+ * pager shows its neighbors as covers.
  */
 const { params, toc, pageCategories, metadata, dictionaries, ...props } = Astro.props
 const { locale } = params
-const pageContent = Array.isArray(toc) && toc.length > 0 ? toc : null
-const slug = /^\/components\/([^/]+)$/.exec(metadata.pathname ?? '')?.[1]
+const [, kind, slug] = kindOf(metadata.pathname ?? '') ?? []
+// A layout or a block is shown as a page: it has no sidebar and no contents rail, so its previews can leave the column.
+const showcase = kind === 'layouts' || kind === 'blocks'
+const pageContent = !showcase && Array.isArray(toc) && toc.length > 0 ? toc : null
 const Pager = slug ? ComponentPager : PageNavs
 ---
 
-<DocMain class={props.class} footerProps={footerProps}>
+<DocMain class:list={[props.class, showcase && 'showcase-page']} footerProps={footerProps}>
   {/* Stream the rail before the article so both columns are present when its title first paints. */}
   {pageContent && <PageContent client:load items={pageContent.map(({ id, title, level }) => ({ id, title, level }))} metadata={{ sourcePath: metadata.sourcePath, title: metadata.title }} />}
   <DocArticle aside={Boolean(pageContent)} class={slug && 'component-page'}>
-    <ArticleHeader {...props} end={slug ? <Cover slug={slug} class="component-page-cover" /> : props.end} locale={locale} metadata={metadata} dictionaries={dictionaries} toc={pageContent} />
+    <ArticleHeader {...props} categoryLink={showcase ? `/${kind}` : props.categoryLink} end={slug ? <Cover slug={slug} kind={kind} class="component-page-cover" /> : props.end} locale={locale} metadata={metadata} dictionaries={dictionaries} toc={pageContent} />
     <slot />
     <Pager locale={locale} metadata={metadata} pageCategories={pageCategories} dictionaries={dictionaries} />
   </DocArticle>
@@ -48,6 +52,22 @@ const Pager = slug ? ComponentPager : PageNavs
    * Where the column cannot hold both, the cover leads the title at the column's width.
    */
   @layer components {
+    /*
+     * A layout's or a block's page reads like a component's: its head, its words, its tables and its pager keep
+     * the text column, 41rem, centred in the window, as a component's page keeps it beside its contents rail.
+     * Only a page preview leaves that column. It is centred on the same axis and runs to the page's own gutters,
+     * up to 96rem; a desktop preview is drawn at the width it is given.
+     */
+    .showcase-page .ui-docs-article {
+      max-width: calc(var(--docs-text) + var(--docs-gutter) * 2);
+    }
+
+    .showcase-page .page-preview {
+      --page-preview-wide: min(96rem, 100cqw - var(--docs-gutter) * 2);
+      width: var(--page-preview-wide);
+      margin-inline: calc((100% - var(--page-preview-wide)) / 2);
+    }
+
     .component-page .ui-pagehead-title {
       flex-direction: column-reverse;
       align-items: stretch;

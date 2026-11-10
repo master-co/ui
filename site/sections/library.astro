@@ -1,0 +1,37 @@
+---
+import DocumentShell from '@master/internal-site/sections/document.astro'
+import DocHeader from '@master/internal-site/components/DocHeader.svelte'
+import DocSidebar from '@master/internal-site/components/DocSidebar.svelte'
+import DocWrapper from '@master/internal-site/components/DocWrapper.astro'
+import navigation from 'virtual:master-site/navigation'
+import { resolveNavigation } from '@master/internal-site/factories/create-page'
+import { siteOf } from '@master/internal-site/astro/site-context'
+import type { MetadataTitle } from '@master/internal-site/types/Metadata'
+
+/**
+ * The library's three tiers: components, layouts and blocks. A component reads in the documentation shell, beside
+ * the components' sidebar. Two kinds of page leave the sidebar out and take the full width: a tier's overview,
+ * which is itself the list of its pages, and every layout and block, which is shown as a page.
+ */
+export const bodyClass = 'bg-surface-base'
+
+// A static build names the overview `components.html`; the dev server serves `/components`.
+const [, kind, rest] = /^\/(components|layouts|blocks)(\/[^/.]+)?/.exec(Astro.url.pathname) ?? []
+const sidebar = Boolean(rest) && kind === 'components'
+
+// The sidebar is a client island; serialize only the fields it renders on every page.
+const sidebarCategories = sidebar
+  ? resolveNavigation(siteOf(Astro).locale, (navigation as Record<string, any[]>)[kind] ?? []).map(({ name, pages }: { name: string, pages: any[] }) => ({
+      name,
+      pages: pages.map(({ title, pathname, other }: { title: MetadataTitle, pathname: string, other?: { subject: string } }) => other ? { title, pathname, other } : { title, pathname })
+    }))
+  : []
+---
+
+<DocumentShell>
+  <DocHeader client:load contained />
+  <DocWrapper>
+    {sidebar && <DocSidebar client:load pageCategories={sidebarCategories} />}
+    <slot />
+  </DocWrapper>
+</DocumentShell>

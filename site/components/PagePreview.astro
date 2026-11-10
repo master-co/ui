@@ -1,0 +1,107 @@
+---
+import Code from '@master/internal-site/components/Code.astro'
+import Demo from '@master/internal-site/demo/Demo.svelte'
+import DemoViewport from '@master/internal-site/demo/DemoViewport.svelte'
+import { demoDocument } from '@master/internal-site/demo/reference/document.ts'
+import PreviewGuard from '~/site/components/PreviewGuard.astro'
+import PreviewSwitch from '~/site/components/PreviewSwitch.astro'
+import { previewHead as head } from '~/site/utils/preview'
+import { uiSource } from '~/site/utils/ui-source'
+
+interface Props {
+  /** A stable id, unique within the page. */
+  name: string
+  title: string
+  /** Trusted site-authored markup; never pass user-provided HTML. */
+  html: string
+  caption?: string
+  /** Utilities for the preview's body. A page starts at the viewport's edge, so the default removes the body's padding. */
+  bodyClass?: string
+  /** The viewport's height in its own pixels; `100dvh` in the markup resolves to it. */
+  height?: number
+  /**
+   * Size the viewport to its content, so the whole block shows and nothing scrolls inside it.
+   * Leave it off for a page whose height comes from the viewport (`page`, `shell`, anything in `dvh`)
+   * or whose scrolling is the point.
+   */
+  fit?: boolean
+  /** The width the preview opens at. */
+  size?: 'desktop' | 'tablet' | 'phone'
+}
+
+/**
+ * A layout or a block as a page: a real viewport at a desktop, tablet or phone width, scaled to the column
+ * that holds it. The viewport is a window on a hatched stage, a margin away from the tray's edge, so where the
+ * page ends is plain at every width. The document inside is laid out at the chosen width, so queries, `dvh` and sticky regions
+ * behave as they would in a window of that size; only the drawing is scaled.
+ * The source sits behind a second view of the same tray: Preview, the default, or Code.
+ * Both choices are radios read by the stylesheet: the preview needs no script of its own.
+ */
+const { name, title, html, caption = '', bodyClass = 'p(0)', height = 720, fit = false, size = 'desktop' } = Astro.props
+const section = { page: 'library', id: name, title, html: [html], css: uiSource(), classes: [], classLists: [], highlighted: [] }
+const document = demoDocument(section as Parameters<typeof demoDocument>[0], { html, caption, bodyClass, head } as Parameters<typeof demoDocument>[1])
+const views = [['preview', 'Preview'], ['code', 'Code']] as const
+const sizes = [['desktop', 'Desktop'], ['tablet', 'Tablet'], ['phone', 'Phone']] as const
+---
+
+<PreviewGuard />
+{/* The wrapper owns the preview's place in the column, so a page can widen it without touching the tray. */}
+<div class="page-preview">
+<Demo title={title} caption={caption} frame="none" data-component-preview={name} data-page-preview data-preview-background="hatch">
+  <Fragment slot="controls">
+    <PreviewSwitch name={`preview-size-${name}`} label="Viewport" kind="size" options={sizes} value={size} />
+    <PreviewSwitch name={`preview-view-${name}`} label="View" kind="view" options={views} value="preview" />
+  </Fragment>
+  <Fragment slot="source"><Code lang="html" beautify code={html} /></Fragment>
+  <DemoViewport client:idle={{ timeout: 500 }} title={title} document={document} height={height} sizing={fit ? 'content' : 'viewport'} />
+</Demo>
+</div>
+
+<style is:global>
+  @layer components {
+    /* In an article the preview hangs past the text column by the prose bleed, as every framed surface does. */
+    .page-preview {
+      margin-block: var(--line, 1.75rem);
+      margin-inline: calc(var(--prose-bleed, 0rem) * -1);
+    }
+
+    /*
+     * The viewport is laid out at --page-preview-width and drawn at the width of its column: `zoom` scales
+     * the frame together with its document, so the page inside still measures the chosen width.
+     * A length divided by a length is written with the trigonometry every engine has.
+     */
+    [data-page-preview] {
+      /* A desktop is at least 1280px; a tray wider than that is the desktop, so nothing is left empty beside it. */
+      --page-preview-width: max(1280px, 100cqw);
+
+      &:has([data-size="tablet"]:checked) {
+        --page-preview-width: 768px;
+      }
+
+      &:has([data-size="phone"]:checked) {
+        --page-preview-width: 390px;
+      }
+
+      /* The stage keeps a margin around the window; the container's width, and so the zoom, is what is inside it. */
+      & .ui-browser-body {
+        container-type: inline-size;
+        padding: var(--ui-space-sm);
+        overflow: hidden;
+
+        @media (width >= 48rem) {
+          padding: var(--ui-space-md);
+        }
+      }
+
+      /* The window: the page's own canvas, a corner, a contour and a short shadow that says it is on top. */
+      & .ui-browser-viewport > iframe {
+        width: var(--page-preview-width);
+        margin-inline: auto;
+        border-radius: var(--ui-radius-lg);
+        background: var(--ui-surface-canvas, var(--ui-surface-stage));
+        box-shadow: var(--ui-elevation-rise-1);
+        zoom: min(1, tan(atan2(100cqw, var(--page-preview-width))));
+      }
+    }
+  }
+</style>

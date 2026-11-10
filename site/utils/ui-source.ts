@@ -18,7 +18,7 @@ export function uiSource() {
   return uiFiles().map(read).join('\n\n')
 }
 
-/** The stylesheet of one component, such as `button`. */
-export function componentSource(name: string) {
-  return read(`components/${name}.css`)
+/** One published stylesheet: a component such as `button`, or a layout such as `shell` with `directory: 'layouts'`. */
+export function componentSource(name: string, directory: 'components' | 'layouts' = 'components') {
+  return read(`${directory}/${name}.css`)
 }

@@ -1,19 +1,28 @@
 ---
 import ComponentTile from '~/site/components/ComponentTile.astro'
-import { components } from '~/site/components/catalog'
+import { library, type LibraryKind } from '~/site/components/catalog'
 import { siteOf } from '@master/internal-site/astro/site-context'
 
-/** Every component as a cover with its name and what it is, grouped by category in reading order. */
+interface Props {
+  /** The tier to list: components by default, or layouts or blocks. */
+  kind?: LibraryKind
+}
+
+/** Every page of one tier as a cover with its name and what it is, grouped by category in reading order. */
+const { kind = 'components' } = Astro.props
 const { t } = siteOf(Astro)
+const components: readonly { slug: string, name: string, category: string, description: string }[] = library[kind]
 const categories = [...new Set(components.map(component => component.category))]
-  .map(name => ({ name, id: name.toLowerCase(), components: components.filter(component => component.category === name) }))
+  .map(name => ({ name, id: name.toLowerCase().replaceAll(' ', '-'), components: components.filter(component => component.category === name) }))
 ---
 
-<nav class="component-index-nav" aria-label={t('Categories')}>
-  {categories.map(category => (
-    <a href={`#${category.id}`}>{t(category.name)}<span>{category.components.length}</span></a>
-  ))}
-</nav>
+{categories.length > 2 && (
+  <nav class="component-index-nav" aria-label={t('Categories')}>
+    {categories.map(category => (
+      <a href={`#${category.id}`}>{t(category.name)}<span>{category.components.length}</span></a>
+    ))}
+  </nav>
+)}
 
 <div class="component-index">
   {categories.map(category => (
@@ -22,7 +31,7 @@ const categories = [...new Set(components.map(component => component.category))]
       <ul class="component-index-grid">
         {category.components.map(component => (
           <li>
-            <ComponentTile slug={component.slug} description />
+            <ComponentTile slug={component.slug} kind={kind} description />
           </li>
         ))}
       </ul>

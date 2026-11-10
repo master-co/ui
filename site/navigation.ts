@@ -3,6 +3,8 @@ import IconBrandGithub from '@tabler/icons-svelte-runes/icons/brand-github'
 import IconBrandX from '@tabler/icons-svelte-runes/icons/brand-x'
 import IconCompass from '@tabler/icons-svelte-runes/icons/compass'
 import IconComponents from '@tabler/icons-svelte-runes/icons/components'
+import IconLayoutSidebar from '@tabler/icons-svelte-runes/icons/layout-sidebar'
+import IconStack2 from '@tabler/icons-svelte-runes/icons/stack-2'
 import IconMessages from '@tabler/icons-svelte-runes/icons/messages'
 
 export interface FooterNavGroup {
@@ -15,6 +17,8 @@ const repositoryURL = 'https://github.com/master-co/ui'
 export const primaryNavs = [
   { name: 'Guide', href: '/guide/introduction', Icon: IconCompass },
   { name: 'Components', href: '/components', Icon: IconComponents },
+  { name: 'Layouts', href: '/layouts', Icon: IconLayoutSidebar },
+  { name: 'Blocks', href: '/blocks', Icon: IconStack2 },
 ] satisfies AppNavItem[]
 
 export const communityNavs = [
@@ -30,6 +34,8 @@ export const footerNavGroups = [
       { name: 'Introduction', href: '/guide/introduction' },
       { name: 'Installation', href: '/guide/installation' },
       { name: 'Components', href: '/components' },
+      { name: 'Layouts', href: '/layouts' },
+      { name: 'Blocks', href: '/blocks' },
     ]
   },
   {
