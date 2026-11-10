@@ -1,23 +1,26 @@
 /*
- * Input and field: a text field is a well cut into its surface.
+ * Input and field: a text field is a well cut into its surface, edged by a half-pixel contour.
  * On focus the well rises to the sheet and takes one ink contour with a soft halo.
+ * A textarea can grow with its content, and an input group holds an icon, an addon or a button in the same well.
  */
 @layer components {
   .input {
     --input-height: 2.5rem;
     --input-padding-x: .75rem;
+    --input-padding-y: .5625rem;
     --input-font-size: .875rem;
-    --input-radius: var(--radius-md);
+    --input-radius: var(--radius-lg);
     width: 100%;
     min-width: 0;
     min-height: var(--input-height);
     margin: 0;
-    padding: .5625rem var(--input-padding-x);
+    padding: var(--input-padding-y) var(--input-padding-x);
     border: 0;
     border-radius: var(--input-radius);
     background: var(--color-surface-inset);
     color: var(--color-text-strong);
-    box-shadow: var(--shadow-pressed);
+    /* A field must be found at a glance, so its contour is a step firmer than a surface's. */
+    box-shadow: var(--shadow-pressed), inset 0 0 0 .5px var(--color-line-contour);
     font: 400 var(--input-font-size)/1.45 var(--font-family-sans);
     font-feature-settings: inherit;
     caret-color: var(--color-text-strong);
@@ -41,15 +44,18 @@
     &:focus {
       outline: none;
       background: var(--color-surface-raised);
-      box-shadow: inset 0 0 0 1px var(--color-line-mark), 0 0 0 3px light-dark(oklch(22% .002 265 / .1), oklch(100% 0 none / .12));
+      box-shadow: inset 0 0 0 .5px var(--color-line-mark), 0 0 0 .5px var(--color-line-mark), 0 0 0 3.5px light-dark(oklch(22% .002 265 / .09), oklch(100% 0 none / .11));
     }
 
-    /* An error keeps its boundary while focused; the focus halo takes the danger tone. */
-    &[aria-invalid="true"] {
-      box-shadow: var(--shadow-pressed), inset 0 0 0 1px color-mix(in oklab, var(--color-danger) 55%, transparent);
+    /*
+     * An error keeps its boundary while focused; the focus halo takes the danger tone.
+     * :user-invalid reports native constraints (required, type, pattern) once the reader has tried, without script.
+     */
+    &:is([aria-invalid="true"], :user-invalid) {
+      box-shadow: var(--shadow-pressed), inset 0 0 0 .5px var(--color-danger), 0 0 0 .5px color-mix(in oklab, var(--color-danger) 45%, transparent);
 
       &:focus {
-        box-shadow: inset 0 0 0 1px var(--color-danger), 0 0 0 3px color-mix(in oklab, var(--color-danger) 16%, transparent);
+        box-shadow: inset 0 0 0 .5px var(--color-danger), 0 0 0 .5px var(--color-danger), 0 0 0 3.5px color-mix(in oklab, var(--color-danger) 15%, transparent);
       }
     }
 
@@ -65,16 +71,61 @@
     &.input-sm {
       --input-height: 2rem;
       --input-padding-x: .625rem;
+      --input-padding-y: .3125rem;
       --input-font-size: .8125rem;
-      --input-radius: 5px;
-      padding-block: .3125rem;
+      --input-radius: 7px;
     }
 
     &.input-lg {
       --input-height: 2.75rem;
       --input-padding-x: .875rem;
+      --input-padding-y: .625rem;
       --input-font-size: 1rem;
-      padding-block: .625rem;
+      --input-radius: 10px;
+    }
+
+    /*
+     * A textarea that grows with its content, from --input-rows to --input-max-rows lines, then scrolls.
+     * Without field-sizing it keeps its minimum height and the resize handle.
+     */
+    &.input-auto {
+      --input-rows: 3;
+      --input-max-rows: 12;
+      min-height: max(var(--input-height), calc(var(--input-rows) * 1lh + var(--input-padding-y) * 2));
+
+      @supports (field-sizing: content) {
+        max-height: calc(var(--input-max-rows) * 1lh + var(--input-padding-y) * 2);
+        field-sizing: content;
+        resize: none;
+      }
+    }
+
+    /* A file input holds its button like a segmented track holds an option: 4px in, with a concentric corner. */
+    &[type="file"] {
+      padding: 4px var(--input-padding-x) 4px 4px;
+      color: var(--color-text-muted);
+      line-height: calc(var(--input-height) - 8px);
+      cursor: pointer;
+
+      &::file-selector-button {
+        height: calc(var(--input-height) - 8px);
+        margin: 0 .75rem 0 0;
+        padding: 0 .625rem;
+        border: 0;
+        border-radius: calc(var(--input-radius) - 4px);
+        @apply --surface-sheet;
+        color: var(--color-text-strong);
+        box-shadow: var(--shadow-raised);
+        font: var(--font-weight-control) .78125rem/1 var(--font-family-sans);
+        cursor: pointer;
+      }
+
+      &:disabled::file-selector-button {
+        background: transparent;
+        color: var(--color-text-disabled);
+        box-shadow: var(--shadow-flat);
+        cursor: not-allowed;
+      }
     }
 
     @media (pointer: coarse) {
@@ -92,6 +143,153 @@
         outline-offset: -2px;
       }
     }
+  }
+
+  /*
+   * Input group: one well around a bare field and what belongs to it: an icon, a unit, a shortcut or a button.
+   * The group draws the field's states; the field inside keeps the semantics and the caret.
+   */
+  .input-group {
+    --input-height: 2.5rem;
+    --input-padding-x: .75rem;
+    --input-font-size: .875rem;
+    --input-radius: var(--radius-lg);
+    --icon-size: 1rem;
+    --icon-offset: -.125rem;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    min-width: 0;
+    min-height: var(--input-height);
+    padding: 0 var(--input-padding-x);
+    border-radius: var(--input-radius);
+    background: var(--color-surface-inset);
+    color: var(--color-text-muted);
+    box-shadow: var(--shadow-pressed), inset 0 0 0 .5px var(--color-line-contour);
+    font: 400 var(--input-font-size)/1.45 var(--font-family-sans);
+    cursor: text;
+    transition-property: box-shadow, background-color;
+    transition-duration: var(--duration-quick);
+    transition-timing-function: var(--easing-glide);
+
+    @media (hover: hover) {
+      &:hover:not(:has(.input-group-field:is(:focus, :disabled, [readonly]))) {
+        background: var(--color-surface-inset-hover);
+      }
+    }
+
+    &:has(.input-group-field:focus) {
+      background: var(--color-surface-raised);
+      box-shadow: inset 0 0 0 .5px var(--color-line-mark), 0 0 0 .5px var(--color-line-mark), 0 0 0 3.5px light-dark(oklch(22% .002 265 / .09), oklch(100% 0 none / .11));
+    }
+
+    &:has(.input-group-field:is([aria-invalid="true"], :user-invalid)) {
+      box-shadow: var(--shadow-pressed), inset 0 0 0 .5px var(--color-danger), 0 0 0 .5px color-mix(in oklab, var(--color-danger) 45%, transparent);
+
+      &:has(.input-group-field:focus) {
+        box-shadow: inset 0 0 0 .5px var(--color-danger), 0 0 0 .5px var(--color-danger), 0 0 0 3.5px color-mix(in oklab, var(--color-danger) 15%, transparent);
+      }
+    }
+
+    &:has(.input-group-field:disabled) {
+      color: var(--color-text-disabled);
+      cursor: not-allowed;
+    }
+
+    &.input-group-sm {
+      --input-height: 2rem;
+      --input-padding-x: .625rem;
+      --input-font-size: .8125rem;
+      --input-radius: 7px;
+      --icon-size: .875rem;
+      --icon-offset: -.0625rem;
+      gap: .375rem;
+    }
+
+    &.input-group-lg {
+      --input-height: 2.75rem;
+      --input-padding-x: .875rem;
+      --input-font-size: 1rem;
+      --input-radius: 10px;
+      --icon-size: 1.125rem;
+    }
+
+    /* A button in the well sits 4px in, so its corner is the well's corner minus that inset. */
+    .btn {
+      --btn-height: calc(var(--input-height) - 8px);
+      --btn-padding-x: .625rem;
+      --btn-font-size: .78125rem;
+      --btn-radius: calc(var(--input-radius) - 4px);
+      --btn-lift: 0px;
+      --icon-size: .875rem;
+      --icon-offset: -.0625rem;
+      min-height: var(--btn-height);
+
+      &:first-child {
+        margin-inline-start: calc(4px - var(--input-padding-x));
+      }
+
+      &:last-child {
+        margin-inline-end: calc(4px - var(--input-padding-x));
+      }
+    }
+
+    @media (pointer: coarse) {
+      min-height: max(var(--input-height), 2.75rem);
+      font-size: max(var(--input-font-size), 1rem);
+    }
+
+    @media (forced-colors: active) {
+      outline: 1px solid FieldText;
+      outline-offset: -1px;
+
+      &:has(.input-group-field:focus) {
+        outline: 2px solid Highlight;
+        outline-offset: -2px;
+      }
+    }
+  }
+
+  /* The native field inside a group: no material of its own, it fills the well. */
+  .input-group-field {
+    flex: 1 1 0;
+    align-self: stretch;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    outline: none;
+    background: transparent;
+    color: var(--color-text-strong);
+    box-shadow: none;
+    font: inherit;
+    font-feature-settings: inherit;
+    caret-color: var(--color-text-strong);
+    appearance: none;
+
+    &::placeholder {
+      color: var(--color-text-muted);
+      opacity: 1;
+    }
+
+    &:disabled {
+      color: var(--color-text-disabled);
+      cursor: not-allowed;
+
+      &::placeholder {
+        color: var(--color-text-disabled);
+      }
+    }
+  }
+
+  /* Fixed text beside the value, such as a protocol, a unit or a domain. */
+  .input-group-addon {
+    flex: none;
+    color: var(--color-text-muted);
+    white-space: nowrap;
+    user-select: none;
+    -webkit-user-select: none;
   }
 
   /* A label stacked over its control, with optional guidance below, all on one edge. */
@@ -118,7 +316,17 @@
     color: var(--color-text-muted);
   }
 
+  /* The error appears with the invalid state it explains, and steps aside while the value is valid. */
   .field-error {
     color: var(--color-danger);
+  }
+
+  .field:not(:has([aria-invalid="true"], :user-invalid)) .field-error {
+    display: none;
+  }
+
+  /* While an error shows, it replaces the hint instead of stacking under it. */
+  .field:has([aria-invalid="true"], :user-invalid):has(.field-error) .field-hint {
+    display: none;
   }
 }

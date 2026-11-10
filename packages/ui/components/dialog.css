@@ -1,0 +1,203 @@
+/*
+ * Dialog: a native <dialog>, opened as a modal by a button with commandfor and command="show-modal".
+ * The browser supplies the top layer, the focus trap, Escape and, with closedby="any", light dismiss.
+ * The stylesheet supplies the overlay sheet, the scrim, and the motion in and out through @starting-style
+ * and discrete transitions. Geometry: a 16px corner, 24px of padding, 8px controls.
+ */
+@layer components {
+  .dialog {
+    --dialog-width: 28rem;
+    --dialog-padding: 1.5rem;
+    --dialog-radius: var(--radius-2xl);
+    --surface-color: var(--color-surface-floating);
+    /* The parts respond to the dialog's own width, not the viewport's. */
+    container: dialog / inline-size;
+    flex-direction: column;
+    gap: 1.25rem;
+    width: min(var(--dialog-width), calc(100% - 2rem));
+    max-width: none;
+    max-height: min(calc(100dvh - 2rem), 44rem);
+    margin: auto;
+    padding: var(--dialog-padding) 0;
+    border: 0;
+    border-radius: var(--dialog-radius);
+    overflow: hidden;
+    background: var(--color-surface-floating);
+    color: var(--color-text-body);
+    box-shadow: var(--shadow-overlay);
+    font-size: .875rem;
+    line-height: 1.55;
+    /* Closed is where it leaves to: it fades and settles back a little, faster than it arrived. */
+    opacity: 0;
+    scale: .97;
+    translate: 0 .5rem;
+    transition-property: opacity, scale, translate, overlay, display;
+    transition-duration: var(--duration-quick);
+    transition-timing-function: var(--easing-glide);
+    transition-behavior: allow-discrete;
+
+    &[open] {
+      display: flex;
+      opacity: 1;
+      scale: 1;
+      translate: 0 0;
+      transition-duration: var(--duration-base);
+
+      /* Where it arrives from, on the first frame it is rendered. */
+      @starting-style {
+        opacity: 0;
+        scale: .97;
+        translate: 0 .5rem;
+      }
+    }
+
+    /* The scrim dims and softens the page; it fades with the dialog. */
+    &::backdrop {
+      background: var(--color-surface-scrim);
+      backdrop-filter: blur(3px);
+      opacity: 0;
+      transition-property: opacity, overlay, display;
+      transition-duration: var(--duration-quick);
+      transition-timing-function: var(--easing-glide);
+      transition-behavior: allow-discrete;
+    }
+
+    &[open]::backdrop {
+      opacity: 1;
+      transition-duration: var(--duration-base);
+    }
+
+    @starting-style {
+      &[open]::backdrop {
+        opacity: 0;
+      }
+    }
+
+    &:focus-visible {
+      outline: none;
+    }
+
+    &.dialog-sm {
+      --dialog-width: 22rem;
+    }
+
+    &.dialog-lg {
+      --dialog-width: 40rem;
+    }
+
+    /*
+     * Drawer: a panel on the inline-end edge for work that keeps the page in view. It floats 8px inside the
+     * viewport, so its corner and its shadow stay whole, and it slides in from the edge it rests on.
+     */
+    &.dialog-drawer {
+      --dialog-width: 24rem;
+      --dialog-from: calc(100% + .5rem);
+      width: min(var(--dialog-width), calc(100% - 1rem));
+      height: calc(100dvh - 1rem);
+      max-height: none;
+      margin: .5rem;
+      margin-inline-start: auto;
+      scale: 1;
+      translate: var(--dialog-from) 0;
+
+      &:dir(rtl) {
+        --dialog-from: calc(-100% - .5rem);
+      }
+
+      &[open] {
+        translate: 0 0;
+
+        @starting-style {
+          scale: 1;
+          translate: var(--dialog-from) 0;
+        }
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      scale: none;
+      translate: none;
+
+      &[open], &.dialog-drawer, &.dialog-drawer[open] {
+        scale: none;
+        translate: none;
+
+        @starting-style {
+          scale: none;
+          translate: none;
+        }
+      }
+    }
+
+    @media (forced-colors: active) {
+      outline: 1px solid CanvasText;
+      outline-offset: -1px;
+    }
+  }
+
+  /* The title and what it means, at the top of the sheet. */
+  .dialog-header {
+    display: grid;
+    flex: none;
+    gap: .375rem;
+    padding: 0 var(--dialog-padding);
+  }
+
+  /* Leave the title clear of the close button. */
+  .dialog:has(.dialog-close) .dialog-header {
+    padding-inline-end: calc(var(--dialog-padding) + 2rem);
+  }
+
+  .dialog-title {
+    margin: 0;
+    color: var(--color-text-strong);
+    font: var(--font-weight-control) 1.0625rem/1.35 var(--font-family-sans);
+    font-feature-settings: inherit;
+    letter-spacing: -.01em;
+    text-wrap: balance;
+  }
+
+  .dialog-description {
+    margin: 0;
+    color: var(--color-text-muted);
+    text-wrap: pretty;
+  }
+
+  /* The body takes the remaining height and scrolls inside the sheet; a little block padding keeps focus rings whole. */
+  .dialog-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    margin-block: -.25rem;
+    padding: .25rem var(--dialog-padding);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+
+  /* Actions end the sheet, the main one last. In a narrow dialog they stack at full width, the main one first. */
+  .dialog-footer {
+    display: flex;
+    flex: none;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: .5rem;
+    padding: .25rem var(--dialog-padding) 0;
+
+    @container dialog (inline-size < 22rem) {
+      flex-direction: column-reverse;
+      align-items: stretch;
+    }
+  }
+
+  /* A quiet square button in the corner; give it an accessible name. */
+  .dialog .dialog-close {
+    position: absolute;
+    top: calc(var(--dialog-padding) - .4375rem);
+    inset-inline-end: calc(var(--dialog-padding) - .4375rem);
+  }
+
+  /* While a modal dialog is open the page behind it does not scroll. */
+  :root:has(.dialog:modal) {
+    overflow: hidden;
+  }
+}

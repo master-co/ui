@@ -1,0 +1,170 @@
+/*
+ * Card: a raised sheet with a small structure: media, a header, a body and a footer of actions.
+ * The card is a size container, so its parts follow the room the card is given, not the viewport: the header's
+ * action drops under the title and the footer's buttons stack in a narrow card, and a split card sets its
+ * media beside its content once it is wide enough. Queries measure the card's content box, inside its padding.
+ * Media sits 4px inside, with an 8px corner in the card's 12px.
+ */
+@layer components {
+  .card {
+    --card-padding: 1.25rem;
+    --card-radius: var(--radius-xl);
+    --card-media-inset: 4px;
+    --surface-color: var(--color-surface-raised);
+    container: card / inline-size;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    min-width: 0;
+    padding: var(--card-padding);
+    border-radius: var(--card-radius);
+    @apply --surface-sheet;
+    color: var(--color-text-body);
+    box-shadow: var(--shadow-lifted);
+    font-size: .875rem;
+    line-height: 1.55;
+    text-decoration: none;
+
+    /* One contour and no lift, for cards in a dense list or on a tray. */
+    &.card-flat {
+      background: var(--color-surface-raised);
+      box-shadow: var(--shadow-flat);
+    }
+
+    /* A card that is one link or button: it lifts under the pointer and sinks when pressed, as a button does. */
+    &.card-interactive {
+      --card-lift: -1px;
+      cursor: pointer;
+      transition-property: box-shadow, translate;
+      transition-duration: var(--duration-quick);
+      transition-timing-function: var(--easing-glide);
+
+      @media (hover: hover) {
+        &:hover {
+          translate: 0 var(--card-lift);
+          box-shadow: var(--shadow-floating);
+        }
+      }
+
+      &:active {
+        translate: 0 0;
+        box-shadow: var(--shadow-raised);
+        transition-duration: var(--duration-press);
+      }
+
+      &:focus-visible {
+        @apply --focus-ring;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        --card-lift: 0px;
+      }
+    }
+
+    @media (forced-colors: active) {
+      outline: 1px solid CanvasText;
+      outline-offset: -1px;
+    }
+  }
+
+  /* An image or video at the top of the card, finished with a faint inward outline so pale pixels keep an edge. */
+  .card-media {
+    display: block;
+    flex: none;
+    width: calc(100% + (var(--card-padding) - var(--card-media-inset)) * 2);
+    max-width: none;
+    margin: calc(var(--card-media-inset) - var(--card-padding));
+    margin-bottom: 0;
+    border-radius: calc(var(--card-radius) - var(--card-media-inset));
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    background: var(--color-surface-chip);
+    outline: 1px solid light-dark(oklch(0% 0 none / .08), oklch(100% 0 none / .08));
+    outline-offset: -1px;
+  }
+
+  /* The title and its description, with an optional action at the end of the first line. */
+  .card-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: .25rem 1rem;
+    align-items: start;
+  }
+
+  .card-title {
+    grid-column: 1;
+    margin: 0;
+    color: var(--color-text-strong);
+    font: var(--font-weight-control) .9375rem/1.4 var(--font-family-sans);
+    font-feature-settings: inherit;
+    text-wrap: balance;
+  }
+
+  .card-description {
+    grid-column: 1;
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: .8125rem;
+    text-wrap: pretty;
+  }
+
+  /* A control or a status at the end of the header. Under 15rem of content it moves below the text it belongs to. */
+  .card-action {
+    grid-row: 1 / span 2;
+    grid-column: 2;
+    align-self: start;
+
+    @container card (inline-size < 15rem) {
+      grid-row: auto;
+      grid-column: 1;
+      justify-self: start;
+      margin-top: .375rem;
+    }
+  }
+
+  .card-body {
+    min-width: 0;
+  }
+
+  /* Actions at the foot of the card. Under 15rem of content they stack at full width, the last one first. */
+  .card-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: .5rem;
+    margin-top: auto;
+
+    @container card (inline-size < 15rem) {
+      flex-direction: column-reverse;
+      align-items: stretch;
+    }
+  }
+
+  /*
+   * Split: from 28rem of content the media stands beside it, 4px inside the card on three sides.
+   * A container cannot restyle itself from its own query, so the media is placed against the card's edge and
+   * the other parts make room for it.
+   */
+  .card-split {
+    --card-split: .4;
+
+    @container card (inline-size >= 28rem) {
+      .card-media {
+        position: absolute;
+        inset-block: var(--card-media-inset);
+        inset-inline-start: var(--card-media-inset);
+        width: calc(100% * var(--card-split) - var(--card-media-inset));
+        height: calc(100% - var(--card-media-inset) * 2);
+        margin: 0;
+        aspect-ratio: auto;
+      }
+
+      .card-header, .card-body, .card-footer {
+        /* The media ends at --card-split of the card's width; a percentage here is of the content box. */
+        margin-inline-start: calc((100% + var(--card-padding) * 2) * var(--card-split));
+      }
+    }
+  }
+}

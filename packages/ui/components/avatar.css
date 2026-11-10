@@ -1,0 +1,107 @@
+/*
+ * Avatar: a person or a team as a photo or as initials, in a circle of one fixed size.
+ * Three layers stay independent: the image, a faint inward stroke that keeps pale photos from losing their edge,
+ * and, in a stack, an opaque ring in the color of the surface behind it that separates overlapping circles.
+ */
+@layer components {
+  .avatar {
+    --avatar-size: 2rem;
+    --avatar-radius: 999px;
+    position: relative;
+    display: inline-grid;
+    flex: none;
+    place-items: center;
+    width: var(--avatar-size);
+    height: var(--avatar-size);
+    border-radius: var(--avatar-radius);
+    background: var(--color-surface-chip);
+    color: var(--color-text-body);
+    font: var(--font-weight-control) calc(var(--avatar-size) * .4)/1 var(--font-family-sans);
+    font-feature-settings: inherit;
+    letter-spacing: 0;
+    text-decoration: none;
+    text-transform: uppercase;
+    vertical-align: middle;
+    user-select: none;
+    -webkit-user-select: none;
+
+    /* The inward stroke paints above the image and never changes its crop or the box. */
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      box-shadow: inset 0 0 0 1px light-dark(oklch(0% 0 none / .1), oklch(100% 0 none / .1));
+      pointer-events: none;
+    }
+
+    &.avatar-xs { --avatar-size: 1.25rem; }
+    &.avatar-sm { --avatar-size: 1.5rem; }
+    &.avatar-lg { --avatar-size: 2.5rem; }
+    &.avatar-xl { --avatar-size: 3.5rem; }
+
+    /* A rounded square, for a team, a project or an organization. */
+    &.avatar-square {
+      --avatar-radius: calc(var(--avatar-size) * .25);
+    }
+
+    &:focus-visible {
+      @apply --focus-ring;
+    }
+
+    @media (forced-colors: active) {
+      outline: 1px solid CanvasText;
+      outline-offset: -1px;
+    }
+  }
+
+  /* The photo fills the circle; the box stays the same when it is missing and initials show instead. */
+  .avatar-image {
+    grid-area: 1 / 1;
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+    object-fit: cover;
+  }
+
+  /*
+   * A presence dot on the lower end of the circle, cut out by a ring of the surface behind it.
+   * Its center sits on the circle's edge at 45°. Say the status in words as well.
+   */
+  .avatar-status {
+    --avatar-status-size: max(.5rem, calc(var(--avatar-size) * .25));
+    position: absolute;
+    inset-block-end: calc(var(--avatar-size) * .146 - var(--avatar-status-size) / 2);
+    inset-inline-end: calc(var(--avatar-size) * .146 - var(--avatar-status-size) / 2);
+    z-index: 1;
+    width: var(--avatar-status-size);
+    height: var(--avatar-status-size);
+    border-radius: 999px;
+    background: var(--avatar-status, var(--color-success));
+    box-shadow: 0 0 0 2px var(--avatar-ring, var(--surface-color, var(--color-surface-base)));
+
+    @media (forced-colors: active) {
+      background: Highlight;
+      forced-color-adjust: none;
+    }
+  }
+
+  /*
+   * A stack: each avatar overlaps the one before it by a quarter of its size and paints in front of it,
+   * separated by a 2px ring of the surface color. Order follows the markup in both writing directions.
+   */
+  .avatar-group {
+    display: inline-flex;
+    align-items: center;
+    isolation: isolate;
+    vertical-align: middle;
+
+    .avatar {
+      box-shadow: 0 0 0 2px var(--avatar-ring, var(--surface-color, var(--color-surface-base)));
+
+      &:not(:first-child) {
+        margin-inline-start: calc(var(--avatar-size) * -.25);
+      }
+    }
+  }
+}

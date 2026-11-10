@@ -31,7 +31,18 @@ test('every imported file is published', () => {
 
 test('the complete library compiles against the Master CSS preset', () => {
   const { nativeClassNames } = compile(imports)
-  for (const name of ['sheet', 'well', 'tray', 'icon', 'btn', 'btn-primary', 'btn-square', 'input', 'field', 'field-hint', 'select', 'check', 'checkbox', 'radio', 'switch', 'segmented', 'segmented-item', 'segmented-input', 'tabs', 'tabs-item', 'badge', 'badge-corner', 'kbd', 'spinner']) {
+  for (const name of [
+    'sheet', 'well', 'tray', 'card', 'card-media', 'card-header', 'card-title', 'card-description', 'card-action', 'card-body', 'card-footer', 'card-split', 'divider',
+    'icon', 'btn', 'btn-primary', 'btn-square', 'btn-group', 'link',
+    'input', 'input-auto', 'input-group', 'input-group-field', 'input-group-addon', 'field', 'field-hint', 'field-error', 'select', 'select-option',
+    'check', 'checkbox', 'radio', 'switch', 'slider', 'segmented', 'segmented-item', 'segmented-input',
+    'tabs', 'tabs-item', 'breadcrumb', 'breadcrumb-item', 'breadcrumb-link',
+    'dialog', 'dialog-header', 'dialog-title', 'dialog-description', 'dialog-body', 'dialog-footer', 'dialog-close', 'popover',
+    'menu', 'menu-item', 'menu-input', 'menu-shortcut', 'menu-label', 'menu-separator', 'tooltip',
+    'alert', 'alert-icon', 'alert-body', 'alert-title', 'alert-description', 'progress', 'skeleton', 'spinner',
+    'accordion', 'accordion-item', 'accordion-trigger', 'accordion-content', 'avatar', 'avatar-image', 'avatar-status', 'avatar-group',
+    'badge', 'badge-corner', 'kbd',
+  ]) {
     assert.ok(nativeClassNames.includes(name), `missing native class .${name}`)
   }
 })
@@ -43,12 +54,15 @@ for (const component of components) {
   })
 }
 
-/** Selectors of component rules: every line that opens a block, except at-rules and keyframe steps. */
+/**
+ * Selectors of component rules: every line that opens a block, except at-rules and keyframe steps.
+ * `::picker(select)` is the customizable select's list, a pseudo-element whose argument is not an element selector.
+ */
 function selectors(file: string) {
   return read(file).replace(/\/\*[\s\S]*?\*\//g, '').split('\n')
     .map(line => line.trim())
     .filter(line => line.endsWith('{') && !line.startsWith('@') && !/^(from|to|\d+%)/.test(line))
-    .map(line => line.slice(0, -1).trim())
+    .map(line => line.slice(0, -1).trim().replaceAll('::picker(select)', '::picker()'))
 }
 
 const elementTypes = /(^|[\s,(>+~&])(a|button|input|label|select|textarea|svg|img|span|div|p|ul|ol|li|nav)(?=$|[\s,:.)[>+~])/

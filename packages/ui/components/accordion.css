@@ -1,0 +1,117 @@
+/*
+ * Accordion: native <details> rows on hairlines. The browser keeps the toggle, the keys and find-in-page;
+ * sharing a name attribute keeps one row open at a time. The panel opens to its own height by transitioning
+ * ::details-content with interpolate-size, and opens at once where that is not supported.
+ */
+@layer components {
+  .accordion {
+    display: grid;
+    min-width: 0;
+  }
+
+  .accordion-item {
+    min-width: 0;
+    /* Lets block-size travel from 0 to auto. */
+    interpolate-size: allow-keywords;
+
+    &:not(:last-child) {
+      box-shadow: inset 0 -1px 0 var(--color-line-hair);
+    }
+
+    &::details-content {
+      block-size: 0;
+      overflow-y: clip;
+      opacity: 0;
+      transition-property: block-size, opacity, content-visibility;
+      transition-duration: var(--duration-base);
+      transition-timing-function: var(--easing-glide);
+      transition-behavior: allow-discrete;
+    }
+
+    &[open]::details-content {
+      block-size: auto;
+      opacity: 1;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      &::details-content {
+        transition-property: opacity, content-visibility;
+      }
+    }
+
+    /* The chevron turns over when its row is open. */
+    &[open] .accordion-trigger::after {
+      rotate: x 180deg;
+    }
+
+    @media (forced-colors: active) {
+      &:not(:last-child) {
+        border-bottom: 1px solid CanvasText;
+      }
+    }
+  }
+
+  /* The <summary>: the row's title with a chevron at its end. */
+  .accordion-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    min-height: 3rem;
+    padding: .75rem 0;
+    border-radius: var(--radius-sm);
+    color: var(--color-text-strong);
+    font: var(--font-weight-control) .875rem/1.4 var(--font-family-sans);
+    font-feature-settings: inherit;
+    list-style: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    cursor: pointer;
+
+    &::-webkit-details-marker {
+      display: none;
+    }
+
+    &::after {
+      content: '';
+      flex: none;
+      width: 1rem;
+      height: 1rem;
+      background: var(--color-text-muted);
+      mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4.5 6.5 3.5 3.5 3.5-3.5'/%3E%3C/svg%3E") center / contain no-repeat;
+      transition: rotate var(--duration-base) var(--easing-glide), background-color var(--duration-quick) var(--easing-glide);
+    }
+
+    @media (hover: hover) {
+      &:hover::after {
+        background: var(--color-text-strong);
+      }
+    }
+
+    &:focus-visible {
+      @apply --focus-ring;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      &::after {
+        transition: none;
+      }
+    }
+
+    @media (forced-colors: active) {
+      &::after {
+        background: CanvasText;
+      }
+    }
+  }
+
+  /* The panel: running text under the title, on the same edge. */
+  .accordion-content {
+    padding: 0 2rem 1rem 0;
+    color: var(--color-text-body);
+    font-size: .875rem;
+    line-height: 1.6;
+    text-wrap: pretty;
+  }
+}

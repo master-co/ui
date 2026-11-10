@@ -1,10 +1,15 @@
-/* Select: a native <select> drawn as a well, or as a raised control in toolbars. */
+/*
+ * Select: a native <select> drawn as a well, or as a raised control in toolbars.
+ * Where the browser supports appearance: base-select, the option list becomes a floating sheet in the same
+ * material: options are rows with a concentric corner and the current one carries a check. Elsewhere the
+ * select keeps the platform's own list.
+ */
 @layer components {
   .select {
     --select-height: 2.5rem;
     --select-padding-x: .75rem;
     --select-font-size: .875rem;
-    --select-radius: var(--radius-md);
+    --select-radius: var(--radius-lg);
     /* A neutral mid-grey chevron reads on moonstone and obsidian alike. */
     --select-indicator: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23888' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4.5 6.5 3.5 3.5 3.5-3.5'/%3E%3C/svg%3E");
     min-width: 0;
@@ -16,7 +21,7 @@
     border-radius: var(--select-radius);
     background: var(--select-indicator) no-repeat right calc(var(--select-padding-x) - .125rem) center / 14px, var(--color-surface-inset);
     color: var(--color-text-strong);
-    box-shadow: var(--shadow-pressed);
+    box-shadow: var(--shadow-pressed), inset 0 0 0 .5px var(--color-line-contour);
     font: 400 var(--select-font-size)/1.45 var(--font-family-sans);
     font-feature-settings: inherit;
     text-overflow: ellipsis;
@@ -32,10 +37,15 @@
       }
     }
 
-    &:focus-visible {
+    /*
+     * Focused, or open. :open stays inside :is(), which forgives a browser that does not know it; a :not(:open)
+     * on the hover rule would drop that rule there. This rule matches hover's weight and follows it instead,
+     * so an open select keeps its raised face under the pointer.
+     */
+    &:is(:focus-visible, :open):not(:disabled) {
       outline: none;
       background-color: var(--color-surface-raised);
-      box-shadow: inset 0 0 0 1px var(--color-line-mark), 0 0 0 3px light-dark(oklch(22% .002 265 / .1), oklch(100% 0 none / .12));
+      box-shadow: inset 0 0 0 .5px var(--color-line-mark), 0 0 0 .5px var(--color-line-mark), 0 0 0 3.5px light-dark(oklch(22% .002 265 / .09), oklch(100% 0 none / .11));
     }
 
     &:disabled {
@@ -57,10 +67,18 @@
         }
       }
 
-      &:focus-visible {
-        background: var(--select-indicator) no-repeat right calc(var(--select-padding-x) - .125rem) center / 14px, var(--color-surface-raised);
+      &:is(:focus-visible, :open):not(:disabled) {
         box-shadow: var(--shadow-raised);
+      }
+
+      &:focus-visible {
         @apply --focus-ring;
+      }
+
+      &:disabled {
+        background-color: var(--color-surface-inset);
+        background-image: var(--select-indicator);
+        box-shadow: var(--shadow-flat);
       }
     }
 
@@ -69,7 +87,7 @@
       --select-height: 2rem;
       --select-padding-x: .625rem;
       --select-font-size: .8125rem;
-      --select-radius: 5px;
+      --select-radius: 7px;
     }
 
     &.select-raised:not(.select-sm, .select-lg) {
@@ -80,6 +98,7 @@
       --select-height: 2.75rem;
       --select-padding-x: .875rem;
       --select-font-size: 1rem;
+      --select-radius: 10px;
     }
 
     @media (pointer: coarse) {
@@ -91,9 +110,156 @@
       outline: 1px solid FieldText;
       outline-offset: -1px;
 
-      &:focus-visible {
+      &:is(:focus-visible, :open) {
         outline: 2px solid Highlight;
         outline-offset: -2px;
+      }
+    }
+  }
+
+  /*
+   * The customizable select. The control becomes a flex row whose chevron is ::picker-icon, and the list is
+   * ::picker(select): a popover the browser anchors to the control and flips at the viewport edge.
+   */
+  @supports (appearance: base-select) {
+    .select {
+      display: inline-flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: .5rem;
+      padding: 0 calc(var(--select-padding-x) - .125rem) 0 var(--select-padding-x);
+      background: var(--color-surface-inset);
+      appearance: base-select;
+
+      &::picker-icon {
+        content: '';
+        flex: none;
+        width: 14px;
+        height: 14px;
+        background: var(--color-text-muted);
+        mask: var(--select-indicator) center / contain no-repeat;
+        transition: rotate var(--duration-base) var(--easing-glide);
+      }
+
+      &:open::picker-icon {
+        rotate: x 180deg;
+      }
+
+      &:disabled::picker-icon {
+        background: var(--color-text-disabled);
+      }
+
+      &.select-raised {
+        @apply --surface-sheet;
+
+        &:disabled {
+          background: var(--color-surface-inset);
+        }
+      }
+
+      /* The list: a floating sheet 6px from the control, whose 4px inset nests an 8px row in a 12px corner. */
+      &::picker(select) {
+        margin: 6px 0;
+        padding: 4px;
+        border: 0;
+        border-radius: var(--radius-xl);
+        background: var(--color-surface-floating);
+        color: var(--color-text-strong);
+        box-shadow: var(--shadow-floating);
+        font: 400 var(--select-font-size)/1.2 var(--font-family-sans);
+        scrollbar-width: thin;
+        appearance: base-select;
+        opacity: 0;
+        scale: .97;
+        transform-origin: top;
+        transition-property: opacity, scale, overlay, display;
+        transition-duration: var(--duration-quick);
+        transition-timing-function: var(--easing-glide);
+        transition-behavior: allow-discrete;
+      }
+
+      &:open::picker(select) {
+        opacity: 1;
+        scale: 1;
+
+        @starting-style {
+          opacity: 0;
+          scale: .97;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        &::picker-icon {
+          transition: none;
+        }
+
+        &::picker(select), &:open::picker(select) {
+          scale: none;
+
+          @starting-style {
+            scale: none;
+          }
+        }
+      }
+
+      @media (forced-colors: active) {
+        &::picker-icon {
+          background: FieldText;
+        }
+
+        &::picker(select) {
+          border: 1px solid CanvasText;
+        }
+      }
+    }
+
+    /* An option in the list. The row under the pointer or the keys takes a chip tone; the current one a check. */
+    .select-option {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      min-height: 2rem;
+      padding: 0 .5rem;
+      border-radius: var(--radius-lg);
+      outline: none;
+      background: transparent;
+      color: var(--color-text-strong);
+      white-space: nowrap;
+      cursor: pointer;
+
+      &::checkmark {
+        content: '';
+        order: 1;
+        flex: none;
+        width: 14px;
+        height: 14px;
+        margin-inline-start: auto;
+        background: currentColor;
+        mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m3.5 8.5 3 3 6-7'/%3E%3C/svg%3E") center / contain no-repeat;
+      }
+
+      &:is(:hover, :focus-visible):not(:disabled) {
+        background: var(--color-surface-chip);
+      }
+
+      &:disabled {
+        color: var(--color-text-disabled);
+        cursor: not-allowed;
+      }
+
+      @media (pointer: coarse) {
+        min-height: 2.75rem;
+      }
+
+      @media (forced-colors: active) {
+        &:is(:hover, :focus-visible):not(:disabled) {
+          background: Highlight;
+          color: HighlightText;
+        }
+
+        &::checkmark {
+          background: CanvasText;
+        }
       }
     }
   }

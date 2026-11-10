@@ -1,0 +1,173 @@
+/*
+ * Slider: a native range input: a thin well with a pearl thumb, the same thumb a switch has.
+ * The part before the thumb fills with ink: Firefox draws it natively, and where scroll-driven animations
+ * exist the thumb's own position in the track drives the fill, with no script. Elsewhere the track stays a well.
+ */
+@property --slider-fill {
+  syntax: '<percentage>';
+  inherits: true;
+  initial-value: 0%;
+}
+
+@layer components {
+  .slider {
+    --slider-track: .375rem;
+    --slider-thumb: 1.125rem;
+    --slider-color: var(--color-surface-inverse);
+    /* Room around the thumb for its shadow and its focus ring; the negative margin keeps the track on the edge. */
+    --slider-bleed: 5px;
+    display: block;
+    box-sizing: content-box;
+    width: 100%;
+    height: var(--slider-thumb);
+    margin: calc(-1 * var(--slider-bleed));
+    padding: var(--slider-bleed);
+    border: 0;
+    background: transparent;
+    appearance: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+
+    &:focus-visible {
+      outline: none;
+    }
+
+    &::-webkit-slider-runnable-track {
+      height: var(--slider-track);
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--slider-color) var(--slider-fill), transparent 0) var(--color-surface-inset);
+      box-shadow: var(--shadow-pressed);
+    }
+
+    &::-webkit-slider-thumb {
+      width: var(--slider-thumb);
+      height: var(--slider-thumb);
+      margin-top: calc((var(--slider-track) - var(--slider-thumb)) / 2);
+      border: 0;
+      border-radius: 999px;
+      background: linear-gradient(180deg, oklch(100% 0 none), oklch(96.5% .0011 265));
+      box-shadow: 0 0 0 .5px var(--color-line-strong), 0 1px 2px -.5px var(--color-shade-1), 0 2px 4px -1px var(--color-shade-2), 0 4px 8px -4px var(--color-shade-3);
+      appearance: none;
+      transition: box-shadow var(--duration-quick) var(--easing-glide), scale var(--duration-quick) var(--easing-glide);
+    }
+
+    &::-moz-range-track {
+      height: var(--slider-track);
+      border-radius: 999px;
+      background: var(--color-surface-inset);
+      box-shadow: var(--shadow-pressed);
+    }
+
+    &::-moz-range-progress {
+      height: var(--slider-track);
+      border-radius: 999px;
+      background: var(--slider-color);
+    }
+
+    &::-moz-range-thumb {
+      width: var(--slider-thumb);
+      height: var(--slider-thumb);
+      border: 0;
+      border-radius: 999px;
+      background: linear-gradient(180deg, oklch(100% 0 none), oklch(96.5% .0011 265));
+      box-shadow: 0 0 0 .5px var(--color-line-strong), 0 1px 2px -.5px var(--color-shade-1), 0 2px 4px -1px var(--color-shade-2), 0 4px 8px -4px var(--color-shade-3);
+    }
+
+    /* Held, the thumb grows a little under the finger. */
+    &:active:not(:disabled)::-webkit-slider-thumb {
+      scale: 1.08;
+    }
+
+    &:focus-visible::-webkit-slider-thumb {
+      outline: 2px solid var(--color-focus);
+      outline-offset: 2px;
+    }
+
+    &:focus-visible::-moz-range-thumb {
+      outline: 2px solid var(--color-focus);
+      outline-offset: 2px;
+    }
+
+    &:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+    }
+
+    @media (pointer: coarse) {
+      --slider-thumb: 1.5rem;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      &:active:not(:disabled)::-webkit-slider-thumb {
+        scale: none;
+      }
+    }
+
+    @media (forced-colors: active) {
+      forced-color-adjust: none;
+      --slider-color: Highlight;
+
+      &::-webkit-slider-runnable-track {
+        background: linear-gradient(90deg, Highlight var(--slider-fill), transparent 0) Canvas;
+        box-shadow: inset 0 0 0 1px CanvasText;
+      }
+
+      &::-webkit-slider-thumb {
+        background: ButtonText;
+        box-shadow: none;
+      }
+
+      &::-moz-range-track {
+        background: Canvas;
+        box-shadow: inset 0 0 0 1px CanvasText;
+      }
+
+      &::-moz-range-thumb {
+        background: ButtonText;
+        box-shadow: none;
+      }
+    }
+  }
+
+  /*
+   * The fill. The input is the scroll container the thumb is measured in, so a view timeline on the thumb
+   * reads how far along the track it is; the input runs a one-property animation on that timeline and the
+   * track paints up to it. Clipping stays outside the bleed, so the thumb's shadow and focus ring are whole.
+   */
+  @supports (view-timeline: --slider-thumb inline) and (timeline-scope: --slider-thumb) {
+    .slider {
+      overflow: hidden;
+      timeline-scope: --slider-thumb;
+      /* Longhands: a shorthand would reset the timeline, and tools that fold one into it write a value no browser reads. */
+      animation-name: slider-fill;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-timeline: --slider-thumb;
+      animation-range: contain;
+
+      &::-webkit-slider-thumb {
+        view-timeline: --slider-thumb inline;
+        view-timeline-inset: var(--slider-bleed);
+      }
+
+      /* Right to left, the value grows toward the left: the reading and the paint both turn around. */
+      &:dir(rtl) {
+        animation-direction: reverse;
+      }
+
+      &:dir(rtl)::-webkit-slider-runnable-track {
+        background: linear-gradient(270deg, var(--slider-color) var(--slider-fill), transparent 0) var(--color-surface-inset);
+      }
+    }
+  }
+}
+
+@keyframes slider-fill {
+  from {
+    --slider-fill: 100%;
+  }
+
+  to {
+    --slider-fill: 0%;
+  }
+}

@@ -1,6 +1,7 @@
 /*
  * Tabs: words on one hairline; the current one is underlined in ink.
  * The current tab keeps its weight so the row never shifts between states.
+ * With anchor positioning the underline is one mark that glides to the current tab.
  */
 @layer components {
   .tabs {
@@ -64,7 +65,7 @@
     &:focus-visible {
       @apply --focus-ring;
       outline-offset: -2px;
-      border-radius: 3px;
+      border-radius: var(--radius-sm);
     }
 
     &:is(:disabled, [aria-disabled="true"]) {
@@ -76,6 +77,50 @@
       &:is([aria-current="page"], [aria-selected="true"]) {
         border-bottom: 2px solid Highlight;
       }
+    }
+  }
+
+  /*
+   * The gliding underline. The current tab names itself as an anchor; the row scopes that name and draws one
+   * mark between the anchor's edges, with a softened top so the ink does not end in a hard corner.
+   */
+  @supports (anchor-scope: --tabs-mark) {
+    .tabs {
+      position: relative;
+      anchor-scope: --tabs-mark;
+
+      &:has(.tabs-item:is([aria-current="page"], [aria-selected="true"]))::after {
+        content: '';
+        position: absolute;
+        position-anchor: --tabs-mark;
+        right: anchor(right);
+        bottom: 0;
+        left: anchor(left);
+        height: 2px;
+        border-radius: 2px 2px 0 0;
+        background: var(--color-text-strong);
+        pointer-events: none;
+        transition-property: right, left;
+        transition-duration: var(--duration-base);
+        transition-timing-function: var(--easing-glide);
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        &::after {
+          transition: none;
+        }
+      }
+
+      @media (forced-colors: active) {
+        &::after {
+          display: none;
+        }
+      }
+    }
+
+    .tabs-item:is([aria-current="page"], [aria-selected="true"]) {
+      anchor-name: --tabs-mark;
+      box-shadow: none;
     }
   }
 }

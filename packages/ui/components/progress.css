@@ -1,0 +1,86 @@
+/*
+ * Progress: a native <progress> drawn as a thin well that fills with ink.
+ * Without a value it is indeterminate: a band of ink travels along the track.
+ */
+@layer components {
+  .progress {
+    --progress-height: .375rem;
+    --progress-color: var(--color-surface-inverse);
+    display: block;
+    width: 100%;
+    height: var(--progress-height);
+    margin: 0;
+    border: 0;
+    border-radius: 999px;
+    overflow: hidden;
+    background: var(--color-surface-inset);
+    box-shadow: var(--shadow-pressed);
+    vertical-align: middle;
+    appearance: none;
+
+    &::-webkit-progress-bar {
+      background: transparent;
+    }
+
+    /* The fill keeps a round end and eases to each new value. */
+    &::-webkit-progress-value {
+      border-radius: 999px;
+      background: var(--progress-color);
+      transition: inline-size var(--duration-base) var(--easing-glide);
+    }
+
+    &::-moz-progress-bar {
+      border-radius: 999px;
+      background: var(--progress-color);
+    }
+
+    &:indeterminate {
+      background:
+        linear-gradient(90deg, transparent, var(--progress-color) 30%, var(--progress-color) 70%, transparent) 0 0 / 40% 100% no-repeat,
+        var(--color-surface-inset);
+      /* Linear: an eased loop would rest at its ends, where the band is outside the track. */
+      animation: progress-travel 1.2s linear infinite;
+    }
+
+    &:indeterminate::-webkit-progress-value {
+      background: transparent;
+    }
+
+    &:indeterminate::-moz-progress-bar {
+      background: transparent;
+    }
+
+    &.progress-sm { --progress-height: .25rem; }
+    &.progress-lg { --progress-height: .5rem; }
+
+    @media (prefers-reduced-motion: reduce) {
+      &::-webkit-progress-value {
+        transition: none;
+      }
+
+      /* Without travel, an even half tone says the amount is unknown. */
+      &:indeterminate {
+        background: color-mix(in oklab, var(--progress-color) 30%, var(--color-surface-inset));
+        animation: none;
+      }
+    }
+
+    @media (forced-colors: active) {
+      --progress-color: Highlight;
+      outline: 1px solid CanvasText;
+      outline-offset: -1px;
+      forced-color-adjust: none;
+      background: Canvas;
+    }
+  }
+}
+
+@keyframes progress-travel {
+  from {
+    background-position: -67% 0, 0 0;
+  }
+
+  to {
+    background-position: 167% 0, 0 0;
+  }
+}

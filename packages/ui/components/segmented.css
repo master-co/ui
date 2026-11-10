@@ -2,12 +2,14 @@
  * Segmented control: a well holding a few options; the current one rises as a sheet.
  * The track's padding is the inset around each option, and its radius is the option's radius plus
  * that inset, so the corners stay concentric. Total heights match buttons: 32, 38 and 44px.
+ * With anchor positioning the sheet is one thumb that glides to the current option; elsewhere the
+ * current option carries the sheet itself.
  */
 @layer components {
   .segmented {
     --segmented-inset: 4px;
     --segmented-item-height: 1.875rem;
-    --segmented-item-radius: var(--radius-md);
+    --segmented-item-radius: 7px;
     --segmented-font-size: .8125rem;
     --icon-size: .875rem;
     display: inline-flex;
@@ -22,13 +24,14 @@
     &.segmented-sm {
       --segmented-inset: 3px;
       --segmented-item-height: 1.625rem;
-      --segmented-item-radius: var(--radius-sm);
+      --segmented-item-radius: 5px;
       --segmented-font-size: .75rem;
       --icon-size: .75rem;
     }
 
     &.segmented-lg {
       --segmented-item-height: 2.25rem;
+      --segmented-item-radius: var(--radius-lg);
       --segmented-font-size: .875rem;
       --icon-size: 1rem;
     }
@@ -116,5 +119,51 @@
     opacity: 0;
     appearance: none;
     cursor: inherit;
+  }
+
+  /*
+   * The gliding thumb. The current option names itself as an anchor; the track scopes that name to itself and
+   * draws one sheet on the anchor's edges. When the choice changes the edges transition, so the sheet travels
+   * between options instead of blinking from one to the next.
+   */
+  @supports (anchor-scope: --segmented-thumb) {
+    .segmented {
+      position: relative;
+      anchor-scope: --segmented-thumb;
+
+      /* :has() cannot nest, so the track asks for a current option or a checked radio directly. */
+      &:has(.segmented-item:is([aria-pressed="true"], [aria-selected="true"], [aria-current="page"]), .segmented-input:checked)::before {
+        content: '';
+        position: absolute;
+        position-anchor: --segmented-thumb;
+        inset: anchor(top) anchor(right) anchor(bottom) anchor(left);
+        border-radius: var(--segmented-item-radius);
+        @apply --surface-sheet;
+        box-shadow: var(--shadow-raised);
+        pointer-events: none;
+        transition-property: top, right, bottom, left;
+        transition-duration: var(--duration-base);
+        transition-timing-function: var(--easing-glide);
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        &::before {
+          transition: none;
+        }
+      }
+
+      /* In forced colors the current option draws its own outline; the thumb has nothing to add. */
+      @media (forced-colors: active) {
+        &::before {
+          display: none;
+        }
+      }
+    }
+
+    .segmented-item:is([aria-pressed="true"], [aria-selected="true"], [aria-current="page"], :has(.segmented-input:checked)) {
+      anchor-name: --segmented-thumb;
+      background: none;
+      box-shadow: none;
+    }
   }
 }

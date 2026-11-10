@@ -1,0 +1,187 @@
+/*
+ * Menu: a popover holding a list of actions, placed against its button with anchor positioning.
+ * Items are native buttons, links, or labels around a checkbox or radio; the row under the pointer or the keys
+ * takes a chip tone. The 4px inset nests an 8px row inside a 12px corner.
+ */
+@layer components {
+  .menu {
+    --menu-inset: 4px;
+    --menu-item-radius: var(--radius-lg);
+    --surface-color: var(--color-surface-floating);
+    min-width: 11rem;
+    max-width: min(20rem, calc(100vw - 1rem));
+    padding: var(--menu-inset);
+    border: 0;
+    border-radius: calc(var(--menu-item-radius) + var(--menu-inset));
+    overflow-y: auto;
+    background: var(--color-surface-floating);
+    color: var(--color-text-strong);
+    box-shadow: var(--shadow-floating);
+    font: 400 .84375rem/1.2 var(--font-family-sans);
+    scrollbar-width: thin;
+    transform-origin: top;
+    @apply --anchored;
+    @apply --pop;
+
+    /* Line up with the button's end edge, for a menu opened from the end of a row. */
+    &.menu-end {
+      --anchored-inline: span-inline-start;
+    }
+
+    /* Open above the button. */
+    &.menu-top {
+      --anchored-block: block-start;
+      transform-origin: bottom;
+    }
+
+    @media (forced-colors: active) {
+      outline: 1px solid CanvasText;
+      outline-offset: -1px;
+    }
+  }
+
+  /* An action: a button, a link, or a label around a .menu-input checkbox or radio. */
+  .menu-item {
+    --icon-size: 1rem;
+    --icon-offset: -.0625rem;
+    --icon-color: var(--color-text-muted);
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: .625rem;
+    width: 100%;
+    min-height: 2rem;
+    margin: 0;
+    padding: 0 .5rem;
+    border: 0;
+    border-radius: var(--menu-item-radius);
+    outline: none;
+    background: transparent;
+    color: var(--color-text-strong);
+    font: inherit;
+    font-feature-settings: inherit;
+    text-align: start;
+    text-decoration: none;
+    white-space: nowrap;
+    appearance: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    cursor: pointer;
+
+    /* A row answers at once: no fade between rows as the pointer travels. */
+    @media (hover: hover) {
+      &:hover:not(:disabled, [aria-disabled="true"]) {
+        --icon-color: currentColor;
+        background: var(--color-surface-chip);
+      }
+    }
+
+    &:active:not(:disabled, [aria-disabled="true"]) {
+      background: var(--color-surface-inset-hover);
+    }
+
+    /* The keys leave an ink outline inside the row, so focus and hover stay different facts. */
+    &:is(:focus-visible, :has(.menu-input:focus-visible)) {
+      --icon-color: currentColor;
+      background: var(--color-surface-chip);
+      outline: 2px solid var(--color-focus);
+      outline-offset: -2px;
+    }
+
+    &:is(:disabled, [aria-disabled="true"], :has(.menu-input:disabled)) {
+      --icon-color: currentColor;
+      color: var(--color-text-disabled);
+      cursor: not-allowed;
+    }
+
+    /* A destructive action carries the danger ink and a faint tint of it under the pointer. */
+    &.menu-item-danger:not(:disabled, [aria-disabled="true"]) {
+      --icon-color: currentColor;
+      color: var(--color-danger);
+
+      @media (hover: hover) {
+        &:hover {
+          background: color-mix(in oklab, var(--color-danger) 9%, transparent);
+        }
+      }
+
+      &:focus-visible {
+        background: color-mix(in oklab, var(--color-danger) 9%, transparent);
+      }
+    }
+
+    /* A checkable item keeps room for its mark at the end, so labels do not move when it is checked. */
+    &:is([aria-checked], :has(.menu-input))::after {
+      content: '';
+      flex: none;
+      width: 14px;
+      height: 14px;
+      margin-inline-start: auto;
+      opacity: 0;
+      background: currentColor;
+      mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m3.5 8.5 3 3 6-7'/%3E%3C/svg%3E") center / contain no-repeat;
+    }
+
+    &:is([aria-checked="true"], :has(.menu-input:checked))::after {
+      opacity: 1;
+    }
+
+    @media (pointer: coarse) {
+      min-height: 2.75rem;
+    }
+
+    @media (forced-colors: active) {
+      &:is(:hover, :focus-visible, :has(.menu-input:focus-visible)) {
+        background: Highlight;
+        color: HighlightText;
+        forced-color-adjust: none;
+      }
+
+      &::after {
+        background: CanvasText;
+      }
+    }
+  }
+
+  /* The checkbox or radio inside an item covers it invisibly: the label is the target, the input keeps the state. */
+  .menu-input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: inherit;
+    opacity: 0;
+    appearance: none;
+    cursor: inherit;
+  }
+
+  /* A shortcut at the end of an item. */
+  .menu-shortcut {
+    margin-inline-start: auto;
+    padding-inline-start: 1.5rem;
+    color: var(--color-text-muted);
+    font: 400 .71875rem/1 var(--font-family-sans);
+    letter-spacing: .02em;
+  }
+
+  /* A quiet caption over a group of items. */
+  .menu-label {
+    padding: .4375rem .5rem .3125rem;
+    color: var(--color-text-muted);
+    font-size: .71875rem;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  /* A hairline between groups, running to the menu's edges. */
+  .menu-separator {
+    height: 1px;
+    margin: var(--menu-inset) calc(-1 * var(--menu-inset));
+    border: 0;
+    background: var(--color-line-hair);
+  }
+}
