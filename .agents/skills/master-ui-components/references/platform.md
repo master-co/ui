@@ -129,6 +129,17 @@ Do not add a dependency or a script for placement, focus trapping, dismissal, au
 - A whitespace-only text node between block children of a `<pre>` renders as an empty line; between grid items it is not rendered at all. That is why a block with line elements becomes a grid.
 - A transition that starts from `@starting-style` advances only when frames are produced. In the Browser pane each screenshot is a frame, so bars look half risen in the first one: take two before judging a height.
 
+## Lessons from the range, the compare and the checklist
+
+- A view timeline on a range input's thumb can be read two levels up. `timeline-scope` on a wrapper takes the names of both thumbs of a range (`--range-start, --range-end`), and the wrapper runs one animation per name. Turn the slider's own scope and animation off inside the wrapper (`timeline-scope: none; animation-name: none`), or the nearer scope keeps the timeline.
+- Two readings need no order: paint from `min()` of the two to `max()`, and crossed thumbs still fill between them. That removes the script that would keep one thumb before the other.
+- Two inputs stacked in one grid cell take the pointer only on their thumbs: `pointer-events: none` on the input, `auto` on `::-webkit-slider-thumb` and `::-moz-range-thumb`. A pseudo-element track on the wrapper is positioned, so position the inputs too or the track paints over the thumbs.
+- For a handle whose middle must reach both edges of a frame, make the input one thumb wider than the frame with a negative inline inset; `animation-range: contain` then maps the thumb's travel to 0% and 100% exactly.
+- CSS counters count state: `counter-increment` on every item and a second counter on `:has(:checked)`. An element can print them only after the last item in document order, so the count is written last in the markup.
+- An atomic inline (`inline-flex`, `inline-block`) may start a line apart from the word before it. A mark that must stay with its word, such as a citation, is a plain `inline` with padding.
+- A stroke through text that should run on across wrapped lines is a background on an inline element, grown with `background-size`; `text-decoration` cannot be eased from one end.
+- A mask over a native bar (`<progress>`, `<meter>`) cuts the well and the fill together, which is how a segmented track stays in step with its value. The mask also removes the round ends, so the track takes a small square corner.
+
 ## Checking support
 
 Record the engine and version you verified in. For a feature you could not see running, say so. A `@supports` test proves the parser accepts a declaration, not that the result paints as intended.
