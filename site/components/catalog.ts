@@ -9,6 +9,7 @@ export const components = [
   { slug: 'segmented', name: 'Segmented control', category: 'Forms', description: 'A few options in one well; the current one rises as a sheet.' },
   { slug: 'tabs', name: 'Tabs', category: 'Navigation', description: 'Words on one hairline, the current one underlined in ink.' },
   { slug: 'badge', name: 'Badge', category: 'Display', description: 'A small chip for a status, a category or a count.' },
+  { slug: 'icon', name: 'Icon', category: 'Display', description: 'Size inline icons through the component that holds them.' },
   { slug: 'kbd', name: 'Kbd', category: 'Display', description: 'A keycap for shortcuts in text and menus.' },
   { slug: 'spinner', name: 'Spinner', category: 'Display', description: 'A fine ring for work of unknown duration.' },
 ] as const
