@@ -1,0 +1,48 @@
+name: CI
+on:
+  pull_request:
+  push:
+    branches: [main, alpha, beta, rc, canary]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      # The commit hook and the PR title check already apply the policy; a direct push can skip both,
+      # so check every pushed commit again here.
+      - name: Check pushed commits against the release policy
+        if: ${{ github.event_name == 'push' }}
+        env:
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          # A new branch has no previous tip, and a force push may drop it; check the head commit then.
+          if [[ "$BEFORE" =~ ^0+$ ]] || ! git cat-file -e "${BEFORE}^{commit}" 2>/dev/null; then
+            from="${AFTER}~1"
+          else
+            from="$BEFORE"
+          fi
+          bun x aronrepo check --from "$from" --to "$AFTER"
+      - run: bun run test
+      - run: bun run type-check
+      - run: bun run build
+      - uses: actions/upload-artifact@v7
+        with:
+          name: site-${{ github.sha }}
+          path: site/out/
+          retention-days: 7
