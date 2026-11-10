@@ -11,6 +11,8 @@ Each page lives in `site/content/components/<slug>/` with `metadata.ts` (`define
 
 Previews follow the site theme. Pass `theme` only when the example is about color schemes. Invalid utility classes fail the build, so keep examples on documented preset utilities; a bare number in parentheses is pixels (`w(280)`, `min-h(320)`). Headings carry explicit ids: `## Sizes \{#sizes\}`.
 
+A preview may hold a `<script>` when the component needs one to be seen working. Keep it to the pattern itself, without a framework, template literals or backticks (the markup sits in a template literal), and scope it to ids that are unique on the page. The same script is what the page tells the reader to write.
+
 A preview is an iframe sized to its content, and the top layer cannot leave it. Give an example that opens a dialog, a popover, a menu, a tooltip or a select list room to open in with a minimum height on the body: `bodyClass="flex items-start justify-center p-lg min-h(320)"`. Pass `responsive` when the example is about a container query, so the reader can narrow it.
 
 Images in examples come from `site/public/demo/` (`/demo/moonstone.svg`, `/demo/portrait-1.svg`), never from another host.

@@ -19,8 +19,9 @@ Repository skills live in `.agents/skills/` (linked as `.claude/skills/`).
 
 The visual language is Master's Moonstone / Obsidian system. `site/content/guide/theme` documents it publicly and `master-ui-components` holds the full rules. The essentials:
 
-- Native element and semantics first; components work without JavaScript.
+- Native element and semantics first; components work without JavaScript wherever the platform has an element for the job. For a pattern with no native element (combobox, command palette, calendar, tree, context menu), the stylesheet draws every state from ARIA and native attributes, a script only moves those attributes, and the page shows the smallest script that drives it.
 - Platform before script. Overlays are `<dialog>` and `popover` opened by `command` / `commandfor` / `popovertarget`; tooltips are `popover="hint"` with `interestfor`; placement is CSS anchor positioning; a select's list is `appearance: base-select`; layout follows `@container` and `:has()`; textareas grow with `field-sizing: content`; scroll-driven animations read scroll position; carousels use `::scroll-button()` and `::scroll-marker`; motion in and out uses `@starting-style` and `transition-behavior: allow-discrete`. Each is an enhancement gated by `@supports` over a working baseline, with the fallback stated in the stylesheet and on the component page.
+- A class name must not be a preset utility (`list-item` is `display: list-item`); a test enforces it.
 - Class selectors only: `.<component>`, parts `.<component>-<part>`, modifiers `.<component>-<modifier>` nested as `&.<component>-<modifier>`. Never element types or child combinators (`> svg`); pass values to children through custom properties such as `--icon-size`. No data attributes for variants. Tests enforce this.
 - Tokens only, monochrome chrome, state as depth (raised → hover lift → pressed well), controls 32 / 38 / 44px.
 - Soft edges: a contour is a half-pixel `box-shadow` ring, never a 1px border; shadows fade out instead of ending in a line; radii come from role tokens (`--radius-chip`, `--radius-control*`, `--radius-surface`) and a holder's corner is what it holds plus the inset.

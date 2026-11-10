@@ -21,6 +21,10 @@ Use what the browser already does before writing a class, a wrapper or a script 
 | A message that leaves by itself | A keyframe animation that ends in `display: none`, paused on `:hover` and `:focus-within` | It stays until dismissed |
 | A softer corner | `corner-shape: squircle` through `--corner-shape` and `--corner-scale` | A circular corner |
 | Counting and ordering | CSS counters; `:has(~ .item[aria-current])` for "everything before the current one" | Baseline everywhere |
+| A list as wide as the field that opens it | `anchor-scope` on the wrapper, `min-inline-size: anchor-size(--name inline)` | Its own width |
+| A surface at a point a script supplies | `inset` from custom properties, `@position-try` rules that mirror it | It opens one way |
+| Rows that share columns without a table | `grid-template-columns: subgrid` | Baseline everywhere |
+| A measurement with thresholds | `<meter>` and its `::-webkit-meter-*` / `::-moz-meter-bar` parts | The platform's meter |
 
 Do not add a dependency or a script for placement, focus trapping, dismissal, auto-growing fields, or enter and exit animation.
 
@@ -80,6 +84,12 @@ Do not add a dependency or a script for placement, focus trapping, dismissal, au
 
 - A non-modal `<dialog open>` is shown at load and closes with `<form method="dialog">` or `command="close"`. That makes a dismissible message with no script. It is not in the top layer, so it needs a `z-index`.
 - `display` can end a keyframe animation: the element is shown for the whole run and `display: none` applies at the end with `animation-fill-mode: forwards`. Add `visibility: hidden` in the same keyframe for engines that do not animate `display`.
+
+## Native parts with engine quirks
+
+- `<meter>`: Chromium draws it from `::-webkit-meter-bar` and the three `-value` parts, inside `::-webkit-meter-inner-element`, which it lays out itself. Style the bar and the values only: a `display` on the inner element shifts the bar off the track by a couple of pixels, which a screenshot at normal size hides. Firefox paints the platform meter until `appearance: none`, so set that inside `@supports (-moz-appearance: none)`. Safari keeps its own meter. Compare variants of a native part side by side on a static page at high zoom; `getComputedStyle()` with these pseudo-elements returns the host's values, not the part's.
+- A context menu has no implicit anchor. Reset what `--anchored` sets (`position-area: none`, `margin: 0`) and place it with `inset` from `--menu-x` / `--menu-y`; each `@position-try` rule swaps one or both insets for the opposite edge measured with `100vw` / `100vh`.
+- A submenu is a popover nested in its parent menu, right after the item that opens it: the item is its implicit anchor, `position-area: inline-end span-block-end` puts it beside the item, and `:has(+ .menu:popover-open)` keeps the item lit.
 
 ## Checking support
 

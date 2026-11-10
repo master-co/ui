@@ -4,12 +4,12 @@ description: Author, review and document Master UI components, the native HTML a
 license: MIT
 metadata:
   author: master-co
-  version: "0.3.0"
+  version: "0.4.0"
 ---
 
 # Master UI components
 
-A Master UI component is one native element with the right semantics, one stylesheet in `@layer components`, and markup a reader can copy into any stack. It must work without JavaScript, use the web platform's own feature for its job, and read the Moonstone / Obsidian theme only through tokens.
+A Master UI component is one native element with the right semantics, one stylesheet in `@layer components`, and markup a reader can copy into any stack. It works without JavaScript wherever the platform has an element for the job, uses the web platform's own feature for that job, and reads the Moonstone / Obsidian theme only through tokens. Where a pattern has no native element, the stylesheet is still complete: it draws every state from ARIA and leaves the behavior to the reader's script.
 
 Use `$master-design` for craft judgment (surfaces, geometry, type, states, motion). This skill supplies the contracts that make components consistent with each other.
 
@@ -31,6 +31,17 @@ Before writing a class, a wrapper or a script, ask what the browser already does
 - **Corners are continuous.** Every radius is drawn with `corner-shape` where the browser has it.
 - **Every upgrade has a stated fallback.** Gate it with `@supports` or a forgiving selector, keep the baseline rule first, and write what happens without the feature in the header comment and on the component page.
 
+## Patterns that need a script
+
+A combobox, a command palette, a calendar, a tree with arrow keys, a context menu and an OTP field have no native element. Style them anyway, by this division of work:
+
+- **The stylesheet reads ARIA and native attributes, never a state class.** `aria-selected` is the active option, `aria-checked` a chosen one, `aria-expanded` an open branch or list, `aria-current="date"` today, `hidden` a filtered-out option. A class is used only for what ARIA cannot say, such as a day outside the month or the middle of a range.
+- **A script moves attributes and nothing else.** It never sets a style, a size or a position. A position that only an event knows, like a pointer's, is passed as a custom property (`--menu-x`) and the stylesheet does the placing.
+- **Use the native container.** A palette is a `<dialog>`, a picker's calendar sits in a `popover`, a tree without script is nested `<details>`. Compose existing components (`input-group`, `listbox`, `dialog`) instead of drawing a second field or a second list.
+- **Derive in CSS what a script would otherwise compute:** an empty state with `:has(.listbox-option:not([hidden]))`, a list's width with `anchor-size()`, a flip with `@position-try`.
+- **A rule that sets `display` on a part a script hides must restore `[hidden]`**, since a class in `@layer components` beats the browser's own `[hidden]` rule.
+- **The page shows the smallest script that drives the component**, in the default preview, written without a framework. Say plainly what works without it.
+
 ## Selector contract
 
 These rules are enforced by `packages/ui/tests/master.test.ts`.
@@ -42,6 +53,7 @@ These rules are enforced by `packages/ui/tests/master.test.ts`.
 - **No data attributes for variants.** States use native pseudo-classes, native state attributes and ARIA on the element itself: `:checked`, `:disabled`, `:focus-visible`, `:open`, `:popover-open`, `:user-invalid`, `[open]`, `aria-pressed`, `aria-current`, `aria-selected`, `aria-busy`, `aria-invalid`. A descendant state may be queried by class: `:has(.segmented-input:checked)`.
 - **A container may tune a whole component it holds, by class.** `.btn-group .btn` and `.input-group .btn` set that component's custom properties and the corners that meet. This is for joining, never for restyling content.
 - Never use `!important`, IDs or anything that would beat a consumer's utilities: the `utilities` layer must keep winning.
+- **A class name must not be a preset utility.** The utility would paint over the component: `list-item` is `display: list-item`. A test checks every class against the preset; the only allowed overlaps are `table`, `table-row` and `table-cell`, whose utilities set the display those parts have. Prefer `-row` over `-item` when in doubt.
 
 ## Material and tokens
 
