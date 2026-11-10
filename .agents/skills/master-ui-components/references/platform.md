@@ -140,6 +140,14 @@ Do not add a dependency or a script for placement, focus trapping, dismissal, au
 - A stroke through text that should run on across wrapped lines is a background on an inline element, grown with `background-size`; `text-decoration` cannot be eased from one end.
 - A mask over a native bar (`<progress>`, `<meter>`) cuts the well and the fill together, which is how a segmented track stays in step with its value. The mask also removes the round ends, so the track takes a small square corner.
 
+## Lessons from the polish passes
+
+- `color: transparent` makes `currentColor` transparent too. Text painted by a clipped background keeps its ink readable to its own gradients with `-webkit-text-fill-color: transparent` instead.
+- Two `margin-inline-start: auto` items in one flex row share the free space, so the first floats in the middle. When a row can hold both something at its end and a generated mark, only the first is pushed (`:has(.listbox-end)::after { margin-inline-start: 0 }`).
+- A column of shortcuts stays a column only if every row keeps the same room after it: in a menu with checkable items, plain rows get an empty mark of the same width.
+- A rule written after another for the same pseudo-element wins property by property. Search the file for an older rule before adding one for a native part (`::-webkit-calendar-picker-indicator`).
+- Audit a stylesheet for what cannot be seen in a screenshot: `overflow-wrap` on every block of free text, a disabled state on every part that can be pressed, `(hover: hover)` around every `:hover`, a 44px target under `(pointer: coarse)`, `overscroll-behavior` on every scroller that floats over the page.
+
 ## Checking support
 
 Record the engine and version you verified in. For a feature you could not see running, say so. A `@supports` test proves the parser accepts a declaration, not that the result paints as intended.
