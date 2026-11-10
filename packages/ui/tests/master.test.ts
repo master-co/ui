@@ -31,7 +31,7 @@ test('every imported file is published', () => {
 
 test('the complete library compiles against the Master CSS preset', () => {
   const { nativeClassNames } = compile(imports)
-  for (const name of ['btn', 'btn-primary', 'btn-icon', 'badge', 'badge-corner', 'spinner', 'switch', 'select', 'segmented', 'segment', 'tabs', 'tab']) {
+  for (const name of ['sheet', 'well', 'tray', 'btn', 'btn-primary', 'btn-icon', 'input', 'field', 'select', 'check', 'checkbox', 'radio', 'switch', 'segmented', 'tabs', 'badge', 'badge-corner', 'kbd', 'spinner']) {
     assert.ok(nativeClassNames.includes(name), `missing native class .${name}`)
   }
 })

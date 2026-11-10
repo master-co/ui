@@ -1,6 +1,6 @@
 # @master/ui
 
-Native HTML and CSS components crafted with [Master CSS](https://css.master.co).
+Native HTML and CSS components crafted with [Master CSS](https://css.master.co), in the Moonstone / Obsidian material: a zinc pearl in light mode, a matte obsidian in dark mode, lit from above with layered shadows.
 
 ## Install
 
@@ -32,13 +32,17 @@ Or import only the theme and the components you use:
 
 | Component | Classes |
 | --- | --- |
-| Button | `btn`, `btn-{xs,sm,md,lg,xl}`, `btn-{primary,accent,danger,ghost}`, `btn-icon` |
-| Badge | `badge`, `badge-{sm,lg}`, `badge-pill`, `badge-{primary,accent,success,warning,danger}`, `badge-corner` |
-| Spinner | `spinner`, `spinner-{sm,lg,xl}` |
+| Surface | `tray`, `sheet`, `sheet-{flat,raised,floating}`, `well` |
+| Button | `btn`, `btn-{primary,quiet,danger,gold}`, `btn-{sm,lg}`, `btn-{icon,pill}` |
+| Input | `input`, `input-{sm,lg}`, `field`, `field-hint`, `field-error` |
+| Select | `select`, `select-raised`, `select-{sm,lg}` |
+| Checkbox and radio | `checkbox`, `radio`, `check` |
 | Switch | `switch`, `switch-{sm,lg}` |
-| Select | `select`, `select-{sm,lg}` |
-| Segmented control | `segmented`, `segmented-{sm,lg}`, `segment` |
-| Tabs | `tabs`, `tabs-sm`, `tab` |
+| Segmented control | `segmented`, `segmented-{sm,lg}` |
+| Tabs | `tabs`, `tabs-sm` |
+| Badge | `badge`, `badge-{outline,raised,ink}`, `badge-{info,success,warning,danger}`, `badge-dot`, `badge-{sm,lg,pill}`, `badge-corner` |
+| Kbd | `kbd`, `kbd-raised` |
+| Spinner | `spinner`, `spinner-{sm,lg,xl}` |
 
 Documentation: [ui.master.co](https://ui.master.co)
 

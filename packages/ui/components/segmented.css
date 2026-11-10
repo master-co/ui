@@ -1,84 +1,101 @@
+/*
+ * Segmented control: a well holding a few options; the current one rises as a sheet.
+ * Options are direct children: buttons with aria-pressed, links with aria-current,
+ * or labels wrapping native radios. Radii nest: track 9 = thumb 6 + 3px padding.
+ */
 @layer components {
-  /* A group of mutually exclusive options built from native radio inputs. */
   .segmented {
-    --segment-height: 1.75rem;
-    --segment-padding-x: var(--spacing-sm);
-    --segment-font-size: var(--font-size-sm);
+    --segment-height: 1.875rem;
+    --segment-padding: 3px;
+    --segment-font-size: .78125rem;
     display: inline-flex;
+    flex-wrap: wrap;
     gap: 2px;
-    padding: 2px;
-    border-radius: var(--radius-lg);
-    background-color: var(--color-surface-inset);
-    box-shadow: var(--shadow-inset);
-  }
+    max-width: 100%;
+    padding: var(--segment-padding);
+    border-radius: calc(var(--radius-md) + var(--segment-padding));
+    background: var(--color-surface-inset);
+    box-shadow: var(--shadow-pressed);
 
-  .segmented-sm {
-    --segment-height: 1.5rem;
-    --segment-padding-x: var(--spacing-xs);
-    --segment-font-size: var(--font-size-xs);
-  }
-
-  .segmented-lg {
-    --segment-height: 2.25rem;
-    --segment-padding-x: var(--spacing-md);
-    --segment-font-size: var(--font-size-md);
-  }
-
-  .segment {
-    position: relative;
-    display: inline-flex;
-    flex: 1 0 auto;
-    align-items: center;
-    justify-content: center;
-    gap: var(--spacing-2xs);
-    height: var(--segment-height);
-    padding-inline: var(--segment-padding-x);
-    border-radius: calc(var(--radius-lg) - 2px);
-    color: var(--color-text-muted);
-    font: inherit;
-    font-size: var(--segment-font-size);
-    font-weight: var(--font-weight-medium);
-    line-height: 1;
-    white-space: nowrap;
-    user-select: none;
-    cursor: pointer;
-    transition-property: background-color, color, box-shadow;
-    transition-duration: var(--duration-fast);
-    transition-timing-function: var(--easing-smooth);
-
-    & > input {
-      position: absolute;
-      inset: 0;
-      margin: 0;
-      opacity: 0;
+    & > :is(button, a, label) {
+      position: relative;
+      display: inline-flex;
+      flex: 1 0 auto;
+      align-items: center;
+      justify-content: center;
+      gap: var(--spacing-2xs);
+      min-width: 3.5rem;
+      min-height: var(--segment-height);
+      padding: 0 .75rem;
+      border: 0;
+      border-radius: var(--radius-md);
+      background: transparent;
+      color: var(--color-text-muted);
+      font: var(--font-weight-control) var(--segment-font-size)/1 var(--font-family-sans);
+      text-decoration: none;
+      white-space: nowrap;
       appearance: none;
-      cursor: inherit;
+      user-select: none;
+      cursor: pointer;
+      transition: color var(--duration-quick), background-color var(--duration-quick), box-shadow var(--duration-quick);
+
+      & > input {
+        position: absolute;
+        inset: 0;
+        margin: 0;
+        opacity: 0;
+        appearance: none;
+        cursor: inherit;
+      }
+
+      & > svg {
+        flex: none;
+        width: .875rem;
+        height: .875rem;
+      }
+
+      &:hover {
+        color: var(--color-text-strong);
+      }
+
+      &:is([aria-pressed="true"], [aria-selected="true"], [aria-checked="true"], [aria-current="page"], :has(> input:checked)) {
+        @apply --surface-sheet;
+        color: var(--color-text-strong);
+        box-shadow: var(--shadow-raised);
+      }
+
+      &:is(:focus-visible, :has(> input:focus-visible)) {
+        @apply --focus-ring;
+      }
+
+      &:is(:disabled, :has(> input:disabled)) {
+        color: var(--color-text-disabled);
+        cursor: not-allowed;
+      }
     }
 
-    & > svg {
-      flex-shrink: 0;
-      width: 1.1em;
-      height: 1.1em;
+    &.segmented-sm {
+      --segment-height: 1.5rem;
+      --segment-padding: 2px;
+      --segment-font-size: .71875rem;
+
+      & > :is(button, a, label) {
+        min-width: 3rem;
+        padding-inline: .5625rem;
+        border-radius: var(--radius-sm);
+      }
     }
 
-    &:hover {
-      color: var(--color-text-strong);
+    &.segmented-lg {
+      --segment-height: 2.25rem;
+      --segment-padding: 4px;
+      --segment-font-size: .8125rem;
     }
 
-    &:is(:has(> input:checked), [aria-pressed="true"]) {
-      background-color: var(--color-surface-raised);
-      color: var(--color-text-strong);
-      box-shadow: var(--shadow-sm);
-    }
-
-    &:is(:has(> input:focus-visible), :focus-visible) {
-      @apply --focus-ring;
-      outline-offset: 0;
-    }
-
-    &:has(> input:disabled) {
-      opacity: .5;
-      cursor: not-allowed;
+    @media (pointer: coarse) {
+      & > :is(button, a, label) {
+        min-height: max(var(--segment-height), 2.5rem);
+      }
     }
   }
 }
