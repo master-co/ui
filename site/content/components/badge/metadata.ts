@@ -2,7 +2,7 @@ import define from '@master/internal-site/utils/metadata'
 
 export default define({
   title: 'Badge',
-  description: 'Label a status or count beside content or on the corner of an icon.',
-  category: 'Feedback',
+  description: 'A small chip for a status, a category or a count.',
+  category: 'Display',
   fileURL: import.meta.url
 })

@@ -2,7 +2,7 @@ import define from '@master/internal-site/utils/metadata'
 
 export default define({
   title: 'Switch',
-  description: 'Turn a setting on or off immediately with a native checkbox.',
+  description: 'A pearl thumb that slides onto ink for settings that apply at once.',
   category: 'Forms',
   fileURL: import.meta.url
 })

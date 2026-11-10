@@ -1,7 +1,7 @@
 <script lang="ts" module>
   import clsx from 'clsx'
-  import logotypeAtDark from '../public/brand/logo/master-ui/master-ui-horizontal-on-dark.svg?raw'
-  import logotypeAtLight from '../public/brand/logo/master-ui/master-ui-horizontal-on-light.svg?raw'
+  import logotypeAtDark from '../assets/brand/logo/master-ui/master-ui-horizontal-on-dark.svg?raw'
+  import logotypeAtLight from '../assets/brand/logo/master-ui/master-ui-horizontal-on-light.svg?raw'
 
   const escapeAttribute = (value: string) => value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;')
 </script>

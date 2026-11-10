@@ -2,7 +2,7 @@ import define from '@master/internal-site/utils/metadata'
 
 export default define({
   title: 'Select',
-  description: 'Choose one option from a native select with a consistent indicator.',
+  description: 'A native select drawn as a well, or raised for toolbars.',
   category: 'Forms',
   fileURL: import.meta.url
 })
