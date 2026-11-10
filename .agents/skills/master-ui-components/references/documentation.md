@@ -26,3 +26,12 @@ A preview is an iframe sized to its content, and the top layer cannot leave it. 
 Images in examples come from `site/public/demo/` (`/demo/moonstone.svg`, `/demo/portrait-1.svg`), never from another host.
 
 Write in plain, present-tense English. State facts and the reason for a choice; avoid marketing words.
+
+## The stage of a preview
+
+`background` picks the stage a specimen is seen against. The rule is one sentence: words never stand on dots.
+
+- `dots`, the default, is for a specimen that is a face: a button, a card, a field without a label, anything with its own edge.
+- `plain` is for a preview in which any text stands directly on the stage: a label over a field, rows of a list, a sentence, a quiet button's label, a hairline. The pattern runs through the letters and makes them harder to read.
+- When half or more of a page's previews need `plain`, set it on all of them, so the stage does not change from one example to the next. Typography pages are always plain.
+- A specimen that has no surface of its own and is shown in a card (a stat, a chart, a checklist) stands on a face, so dots are right.
