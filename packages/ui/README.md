@@ -41,6 +41,7 @@ Or import only the theme and the components you use:
 | --- | --- |
 | Surface | `tray`, `sheet`, `sheet-{flat,raised,floating}`, `well` |
 | Card | `card`, `card-{flat,interactive,split}`, `card-media`, `card-header`, `card-title`, `card-description`, `card-action`, `card-body`, `card-footer` |
+| Window | `window`, `window-flat`, `window-bar`, `window-controls`, `window-title`, `window-address`, `window-end`, `window-body` |
 | Divider | `divider`, `divider-{label,vertical}` |
 | Scroll area | `scroll-area`, `scroll-area-inline` |
 | Splitter | `splitter`, `splitter-pane`, `splitter-handle` |
@@ -63,6 +64,8 @@ Or import only the theme and the components you use:
 | Rating | `rating`, `rating-{sm,lg}`, `rating-input` |
 | Dropzone | `dropzone`, `dropzone-input`, `dropzone-title`, `dropzone-description` |
 | OTP | `otp`, `otp-slot`, `otp-separator` |
+| Stepper | `stepper`, `stepper-field` |
+| Wheel | `wheel`, `wheel-sm`, `wheel-column`, `wheel-option`, `wheel-separator` |
 | Composer | `composer`, `composer-field`, `composer-attachments`, `composer-toolbar`, `composer-end`, `composer-hint` |
 | Calendar | `calendar`, `calendar-header`, `calendar-title`, `calendar-grid`, `calendar-week`, `calendar-weekday`, `calendar-day`, `calendar-day-outside`, `calendar-day-range{,-start,-end}` |
 | Tabs | `tabs`, `tabs-sm`, `tabs-item` |
@@ -85,16 +88,21 @@ Or import only the theme and the components you use:
 | Progress | `progress`, `progress-{sm,lg}`, `progress-ring`, `progress-ring-{sm,lg,xl}` |
 | Meter | `meter`, `meter-{sm,lg}` |
 | Skeleton | `skeleton`, `skeleton-{text,circle}` |
+| Shimmer | `shimmer` |
 | Spinner | `spinner`, `spinner-{sm,lg,xl,inline}` |
 | Empty | `empty`, `empty-media`, `empty-title`, `empty-description`, `empty-actions` |
 | Accordion | `accordion`, `accordion-item`, `accordion-trigger`, `accordion-content` |
 | Expand | `expand`, `expand-toggle`, `expand-more`, `expand-less` |
 | Table | `table`, `table-{compact,interactive,sticky}`, `table-row`, `table-heading`, `table-cell`, `table-{primary,numeric}` |
 | List | `list`, `list-interactive`, `list-row`, `list-media`, `list-body`, `list-title`, `list-description`, `list-end` |
+| File | `file`, `file-{sm,interactive,failed}`, `file-page`, `file-thumb`, `file-body`, `file-name`, `file-meta`, `file-end`, `file-progress` |
 | Data list | `data-list`, `data-list-item`, `data-list-term`, `data-list-value` |
 | Stat | `stat`, `stat-label`, `stat-row`, `stat-value`, `stat-delta`, `stat-delta-{up,down}`, `stat-description` |
+| Chart | `chart`, `chart-{quiet,values,horizontal,spark}`, `chart-item`, `chart-label`, `chart-value` |
+| Heatmap | `heatmap`, `heatmap-lg`, `heatmap-cell` |
 | Timeline | `timeline`, `timeline-item`, `timeline-marker`, `timeline-body`, `timeline-title`, `timeline-description`, `timeline-time` |
 | Carousel | `carousel`, `carousel-{2,3}`, `carousel-slide` |
+| Marquee | `marquee`, `marquee-reverse`, `marquee-track` |
 | Figure | `figure`, `figure-{framed,center}`, `figure-media`, `figure-caption` |
 | Quote | `quote`, `quote-lg`, `quote-text`, `quote-source`, `quote-name` |
 | Message | `message-list`, `message`, `message-sent`, `message-avatar`, `message-bubble`, `message-meta`, `message-typing` |

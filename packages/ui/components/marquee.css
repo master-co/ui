@@ -1,0 +1,76 @@
+/*
+ * Marquee: a row that passes by without end: the names of customers, a line of quotes, a ticker.
+ * The row is written twice, each copy a track; both travel one track's length and start again, so the seam
+ * never shows. The second copy is aria-hidden: it exists for the eye only. Both ends fade into whatever is
+ * behind the marquee with a mask, so it needs no surface of its own.
+ * It stops while the pointer or the keyboard is on it. With reduced motion nothing travels: the copy is
+ * removed and the first track wraps onto as many centered lines as it needs.
+ */
+@layer components {
+  .marquee {
+    --marquee-duration: 40s;
+    --marquee-gap: 3rem;
+    --marquee-fade: 4rem;
+    display: flex;
+    gap: var(--marquee-gap);
+    min-width: 0;
+    overflow: hidden;
+    mask-image: linear-gradient(to right, transparent, black var(--marquee-fade), black calc(100% - var(--marquee-fade)), transparent);
+
+    @media (hover: hover) {
+      &:hover .marquee-track {
+        animation-play-state: paused;
+      }
+    }
+
+    &:focus-within .marquee-track {
+      animation-play-state: paused;
+    }
+
+    /* The row passes the other way, for the second of two rows. */
+    &.marquee-reverse .marquee-track {
+      animation-direction: reverse;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      mask-image: none;
+    }
+  }
+
+  /*
+   * One copy of the row. It is at least as wide as the marquee, with its items spread along it, so a short
+   * row still reaches both ends.
+   */
+  .marquee-track {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: space-around;
+    gap: var(--marquee-gap);
+    min-width: 100%;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    /* Linear: the row moves at one speed, and an eased loop would pause at the seam. */
+    animation: marquee-travel var(--marquee-duration) linear infinite;
+
+    @media (prefers-reduced-motion: reduce) {
+      flex: 1 1 auto;
+      flex-wrap: wrap;
+      justify-content: center;
+      row-gap: calc(var(--marquee-gap) / 2);
+      min-width: 0;
+      animation: none;
+
+      &[aria-hidden="true"] {
+        display: none;
+      }
+    }
+  }
+}
+
+@keyframes marquee-travel {
+  to {
+    translate: calc(-100% - var(--marquee-gap)) 0;
+  }
+}

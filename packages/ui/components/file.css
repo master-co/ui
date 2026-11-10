@@ -1,0 +1,277 @@
+/*
+ * File: one file as a thing with a name: an attachment, an upload, a download.
+ * A flat sheet holds a small page with the file's extension written on it, the name over a quiet line of
+ * facts, and one control at the end. The page is a sheet of its own, 28 by 36, whose top corner is folded:
+ * where the browser has corner-shape that corner is a bevel and the flap is what the bevel leaves of a small
+ * square; elsewhere the page keeps four round corners and no flap.
+ * While it uploads, a native <progress> lies under the words and tints the sheet as far as the upload has
+ * come. A file that failed is file-failed: its contour and its facts take the danger ink. That state is a
+ * class because ARIA has no word for it on a list item; the reason, in words, is in the facts.
+ */
+@layer components {
+  .file {
+    --file-padding: .625rem;
+    --file-radius: var(--radius-control-lg);
+    --file-page-width: 1.75rem;
+    --file-page-height: 2.25rem;
+    --file-fold: .5625rem;
+    --surface-color: var(--color-surface-raised);
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    min-width: 0;
+    margin: 0;
+    padding: var(--file-padding);
+    padding-inline-end: calc(var(--file-padding) + .125rem);
+    border: 0;
+    border-radius: calc(var(--file-radius) * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    /* The progress fill is finished by the sheet's own corner. */
+    overflow: clip;
+    background: var(--color-surface-raised);
+    color: var(--color-text-body);
+    box-shadow: var(--shadow-flat);
+    font: 400 .875rem/1.4 var(--font-family-sans);
+    font-feature-settings: inherit;
+    text-align: start;
+    text-decoration: none;
+
+    /* Failed: the edge says so before the words do. */
+    &.file-failed {
+      box-shadow: 0 0 0 .5px color-mix(in oklab, var(--color-danger) 60%, transparent), 0 0 0 3.5px color-mix(in oklab, var(--color-danger) 9%, transparent);
+
+      .file-meta {
+        color: var(--color-danger);
+      }
+    }
+
+    /* One line, 36px: an attachment above a composer, or a file named in a sentence of the interface. */
+    &.file-sm {
+      --file-padding: .375rem;
+      --file-radius: var(--radius-control);
+      --file-page-width: 1rem;
+      --file-page-height: 1.25rem;
+      --file-fold: .3125rem;
+      display: inline-flex;
+      gap: .5rem;
+      max-width: 100%;
+      min-height: 2.25rem;
+      padding-inline: .625rem .375rem;
+      font-size: .8125rem;
+      vertical-align: middle;
+
+      &:not(:has(.file-end)) {
+        padding-inline-end: .75rem;
+      }
+
+      .file-body {
+        display: flex;
+        align-items: baseline;
+        gap: .5rem;
+      }
+
+      /* The page is too small to carry its extension; the facts beside the name do. */
+      .file-page {
+        padding: 0;
+        color: transparent;
+        font-size: 0;
+      }
+
+      /* Its control is 24px, 6px inside the sheet, with the concentric corner. */
+      .btn {
+        --btn-height: 1.5rem;
+        --btn-radius: calc(var(--file-radius) - var(--file-padding) / var(--corner-scale));
+        --icon-size: .875rem;
+        min-height: var(--btn-height);
+      }
+
+      .file-thumb {
+        width: 1.5rem;
+        height: 1.5rem;
+        margin-inline-start: -.25rem;
+        border-radius: calc((var(--radius-control) - .375rem) * var(--corner-scale));
+      }
+    }
+
+    /* A file that opens or downloads: a link or a button. It stands raised, lifts under the pointer and sinks when pressed. */
+    &.file-interactive {
+      --file-lift: -.5px;
+      @apply --surface-sheet;
+      box-shadow: var(--shadow-raised);
+      -webkit-tap-highlight-color: transparent;
+      appearance: none;
+      cursor: pointer;
+      transition-property: box-shadow, translate;
+      transition-duration: var(--duration-quick);
+      transition-timing-function: var(--easing-glide);
+
+      @media (hover: hover) {
+        &:hover {
+          translate: 0 var(--file-lift);
+          box-shadow: var(--shadow-raised-hover);
+        }
+      }
+
+      &:active {
+        translate: 0 0;
+        background: var(--color-surface-inset);
+        box-shadow: var(--shadow-pressed);
+        transition-duration: var(--duration-press);
+      }
+
+      &:focus-visible {
+        @apply --focus-ring;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        --file-lift: 0px;
+      }
+    }
+
+    @media (forced-colors: active) {
+      outline: 1px solid CanvasText;
+      outline-offset: -1px;
+
+      &.file-failed {
+        outline-color: Mark;
+      }
+    }
+  }
+
+  /*
+   * The page: a small raised sheet with the extension at its foot. Its contour is one step firmer than a
+   * surface's, since it is paper on paper.
+   */
+  .file-page {
+    position: relative;
+    display: flex;
+    flex: none;
+    align-items: flex-end;
+    justify-content: center;
+    width: var(--file-page-width);
+    height: var(--file-page-height);
+    padding-bottom: .3125rem;
+    border-radius: calc(.1875rem * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    overflow: clip;
+    @apply --surface-sheet;
+    color: var(--color-text-muted);
+    box-shadow: inset 0 .5px 0 var(--color-highlight), 0 0 0 .5px var(--color-line-strong), 0 1px 2px -1px var(--color-shade-1), 0 2px 4px -2px var(--color-shade-2);
+    font: 600 .5rem/1 var(--font-family-sans);
+    font-feature-settings: inherit;
+    letter-spacing: .02em;
+    text-transform: uppercase;
+    user-select: none;
+    -webkit-user-select: none;
+
+    @supports (corner-shape: bevel) {
+      border-start-end-radius: var(--file-fold);
+      corner-start-end-shape: bevel;
+
+      /* The flap: a square in the folded corner, of which the bevel keeps the half that lies on the page. */
+      &::after {
+        content: '';
+        position: absolute;
+        inset-block-start: 0;
+        inset-inline-end: 0;
+        width: var(--file-fold);
+        height: var(--file-fold);
+        border-end-start-radius: 1.5px;
+        background: var(--color-surface-tray);
+        box-shadow: 0 0 0 .5px var(--color-line-strong), -1px 1px 2px -.5px var(--color-shade-1);
+      }
+    }
+
+    @media (forced-colors: active) {
+      outline: 1px solid CanvasText;
+      outline-offset: -1px;
+    }
+  }
+
+  /* A picture stands in for the page when the file is one. */
+  .file-thumb {
+    display: block;
+    flex: none;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: calc((var(--file-radius) - var(--file-padding)) * var(--corner-scale) + .125rem);
+    corner-shape: var(--corner-shape);
+    object-fit: cover;
+    background: var(--color-surface-chip);
+    outline: 1px solid light-dark(oklch(0% 0 none / .08), oklch(100% 0 none / .08));
+    outline-offset: -1px;
+  }
+
+  /* The name and the facts: 20px and 16px lines, together as tall as the page beside them. */
+  .file-body {
+    display: grid;
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .file-name {
+    margin: 0;
+    overflow: hidden;
+    color: var(--color-text-strong);
+    font-weight: var(--font-weight-control);
+    line-height: 1.25rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Size, kind, how far the upload is, or why it failed. */
+  .file-meta {
+    margin: 0;
+    overflow: hidden;
+    color: var(--color-text-muted);
+    font-size: .78125rem;
+    font-variant-numeric: tabular-nums;
+    line-height: 1rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* One control at the end: remove, retry or download. */
+  .file-end {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: .25rem;
+  }
+
+  /*
+   * On a <progress class="progress">: the bar is the sheet itself. It lies under the words from edge to edge
+   * and fills with a chip tone, so an upload reads as the sheet being tinted from its start, and the sheet's
+   * own corner finishes the fill. Without a value a band of the same tone travels across.
+   */
+  .file-progress {
+    --progress-color: var(--color-surface-chip);
+    position: absolute;
+    inset: 0;
+    height: 100%;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    pointer-events: none;
+
+    &::-webkit-progress-value {
+      border-radius: 0;
+      box-shadow: .5px 0 0 var(--color-line-contour);
+    }
+
+    &::-moz-progress-bar {
+      border-radius: 0;
+    }
+
+    &:indeterminate {
+      background: linear-gradient(90deg, transparent, var(--progress-color) 30%, var(--progress-color) 70%, transparent) 0 0 / 40% 100% no-repeat;
+    }
+  }
+
+  /* What the sheet holds stands over the bar. */
+  .file-page, .file-thumb, .file-body, .file-end {
+    position: relative;
+    z-index: 1;
+  }
+}

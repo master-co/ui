@@ -1,0 +1,209 @@
+/*
+ * Wheel: a value picked by turning a column until it rests under a mark: an hour, a minute, a unit.
+ * The wheel is a well. Each column in it is a scroll container that snaps one option to its center, and one
+ * small sheet lies across the middle of the well, under the options, to say which row is the value; several
+ * columns share it, as the hours and the minutes of one time do. A column fades into the well at both ends.
+ * Scrolling, snapping and the arrow keys are the platform's. Where the browser has view timelines, each
+ * option reads its own place in the column: it is full ink under the mark, and quieter and slightly turned
+ * away the further it has gone. Elsewhere, and for assistive technology, the chosen option is the one a
+ * script marks aria-selected, which it reads from how far the column has scrolled.
+ */
+@layer components {
+  .wheel {
+    --wheel-row: 2.25rem;
+    --wheel-rows: 5;
+    --wheel-radius: var(--radius-control-lg);
+    --wheel-inset: 4px;
+    position: relative;
+    display: inline-flex;
+    align-items: stretch;
+    justify-content: center;
+    max-width: 100%;
+    height: calc(var(--wheel-row) * var(--wheel-rows));
+    padding: 0 var(--wheel-inset);
+    border-radius: calc(var(--wheel-radius) * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    background: var(--color-surface-inset);
+    color: var(--color-text-strong);
+    box-shadow: var(--shadow-pressed);
+    font: var(--font-weight-control) .9375rem/1 var(--font-family-sans);
+    font-feature-settings: inherit;
+    font-variant-numeric: tabular-nums;
+    vertical-align: middle;
+    isolation: isolate;
+
+    /* The mark: a sheet as tall as a row, 4px inside the well, with the concentric corner. */
+    &::before {
+      content: '';
+      position: absolute;
+      inset: calc(50% - var(--wheel-row) / 2) var(--wheel-inset) auto;
+      z-index: -1;
+      height: var(--wheel-row);
+      border-radius: calc(var(--wheel-radius) * var(--corner-scale) - var(--wheel-inset));
+      corner-shape: var(--corner-shape);
+      @apply --surface-sheet;
+      box-shadow: var(--shadow-raised);
+      pointer-events: none;
+    }
+
+    &.wheel-sm {
+      --wheel-row: 2rem;
+      --wheel-rows: 3;
+      --wheel-radius: var(--radius-control);
+      font-size: .875rem;
+    }
+
+    @media (pointer: coarse) {
+      --wheel-row: 2.75rem;
+    }
+
+    @media (forced-colors: active) {
+      outline: 1px solid CanvasText;
+      outline-offset: -1px;
+
+      &::before {
+        outline: 1px solid Highlight;
+        outline-offset: -1px;
+      }
+    }
+  }
+
+  /*
+   * A column: a listbox that scrolls. Its padding is the room above the first option and below the last,
+   * so each of them can come to rest under the mark.
+   */
+  .wheel-column {
+    display: block;
+    flex: 1 1 auto;
+    min-width: 3.25rem;
+    margin: 0;
+    padding: calc((var(--wheel-rows) - 1) / 2 * var(--wheel-row)) 0;
+    overflow: hidden auto;
+    overscroll-behavior: contain;
+    list-style: none;
+    scroll-snap-type: y mandatory;
+    scrollbar-width: none;
+    mask-image: linear-gradient(to bottom, transparent, black 38%, black 62%, transparent);
+    perspective: 20rem;
+
+    @media (forced-colors: active) {
+      mask-image: none;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--color-focus);
+      outline-offset: -2px;
+      border-radius: calc(var(--wheel-radius) * var(--corner-scale) - var(--wheel-inset));
+      corner-shape: var(--corner-shape);
+    }
+  }
+
+  .wheel-option {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: var(--wheel-row);
+    margin: 0;
+    padding: 0 .875rem;
+    color: var(--color-text-muted);
+    white-space: nowrap;
+    scroll-snap-align: center;
+    scroll-snap-stop: normal;
+    user-select: none;
+    -webkit-user-select: none;
+
+    &[aria-selected="true"] {
+      color: var(--color-text-strong);
+    }
+
+    &[aria-disabled="true"] {
+      color: var(--color-text-disabled);
+    }
+
+    /*
+     * Each option is its own view timeline over the column. At the middle of its pass it is under the mark;
+     * a row away it has already let go of the ink.
+     */
+    @supports (animation-timeline: view()) {
+      &:not([aria-disabled="true"]) {
+        color: var(--color-text-strong);
+        animation-name: wheel-turn;
+        animation-timing-function: linear;
+        animation-fill-mode: both;
+        animation-timeline: view(block);
+        animation-range: cover;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        &:not([aria-disabled="true"]) {
+          animation-name: wheel-fade;
+        }
+      }
+
+      /* In forced colors a faded value could not be read: every option is plain text, the chosen one marked by the sheet. */
+      @media (forced-colors: active) {
+        &:not([aria-disabled="true"]) {
+          animation-name: none;
+        }
+      }
+    }
+  }
+
+  /* Fixed text between columns: the colon of a time, a unit after a number. It rests on the mark. */
+  .wheel-separator {
+    display: flex;
+    flex: none;
+    align-items: center;
+    align-self: center;
+    height: var(--wheel-row);
+    color: var(--color-text-muted);
+    user-select: none;
+    -webkit-user-select: none;
+  }
+}
+
+@keyframes wheel-turn {
+  0% {
+    opacity: .2;
+    rotate: x -52deg;
+    scale: .86;
+  }
+
+  38% {
+    opacity: .42;
+    rotate: x -18deg;
+    scale: .96;
+  }
+
+  50% {
+    opacity: 1;
+    rotate: x 0deg;
+    scale: 1;
+  }
+
+  62% {
+    opacity: .42;
+    rotate: x 18deg;
+    scale: .96;
+  }
+
+  100% {
+    opacity: .2;
+    rotate: x 52deg;
+    scale: .86;
+  }
+}
+
+@keyframes wheel-fade {
+  0%, 100% {
+    opacity: .2;
+  }
+
+  38%, 62% {
+    opacity: .42;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}

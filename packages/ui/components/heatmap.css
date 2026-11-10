@@ -1,0 +1,77 @@
+/*
+ * Heatmap: many small numbers as a field of cells, each as dark as its value: activity by day, load by hour.
+ * It is a list. Every cell carries its number as --value and says it in its own text, which is kept for
+ * assistive technology and not drawn. A cell's tone is ink mixed into the surface behind it, from a faint
+ * tint for nothing to full ink at --heatmap-max, so the scale is one material at different depths and has no
+ * hue. Cells fill columns of --heatmap-rows from the top, the way the weeks of a year are laid out.
+ * The cell under the pointer takes an ink ring; its title is the tooltip the browser already has.
+ */
+@layer components {
+  .heatmap {
+    --heatmap-rows: 7;
+    --heatmap-size: .75rem;
+    --heatmap-gap: 3px;
+    --heatmap-max: 4;
+    --heatmap-color: var(--color-surface-inverse);
+    /* The surface the cells stand on, which a card or a sheet publishes. */
+    --heatmap-surface: var(--surface-color, var(--color-surface-base));
+    display: inline-grid;
+    grid-template-rows: repeat(var(--heatmap-rows), var(--heatmap-size));
+    grid-auto-columns: var(--heatmap-size);
+    grid-auto-flow: column;
+    gap: var(--heatmap-gap);
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    vertical-align: middle;
+
+    /* Larger cells, for a week of hours or a short period. */
+    &.heatmap-lg {
+      --heatmap-size: 1.25rem;
+      --heatmap-gap: 4px;
+    }
+
+    @media (forced-colors: active) {
+      --heatmap-color: CanvasText;
+      --heatmap-surface: Canvas;
+    }
+  }
+
+  .heatmap-cell {
+    /* The cell's share of the scale, between nothing and all of it. */
+    --heatmap-share: clamp(0, calc(var(--value, 0) / var(--heatmap-max)), 1);
+    display: block;
+    margin: 0;
+    padding: 0;
+    border-radius: calc(var(--heatmap-size) / 4 * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    overflow: hidden;
+    /* Nothing is still a cell: 7% of ink, so an empty day has a place. Everything above it climbs to full ink. */
+    background: color-mix(in oklab, var(--heatmap-color) calc(7% + var(--heatmap-share) * 93%), var(--heatmap-surface));
+    box-shadow: inset 0 0 0 .5px color-mix(in oklab, var(--heatmap-color) 10%, transparent);
+    /* The text is the cell's value for a screen reader; the tone is the same value for the eye. */
+    color: transparent;
+    font-size: 0;
+    user-select: none;
+    -webkit-user-select: none;
+
+    @media (hover: hover) {
+      &:hover {
+        outline: 1.5px solid var(--color-text-strong);
+        outline-offset: 1px;
+      }
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--color-focus);
+      outline-offset: 1px;
+    }
+
+    @media (forced-colors: active) {
+      forced-color-adjust: none;
+      outline: 1px solid CanvasText;
+      outline-offset: -1px;
+    }
+  }
+}

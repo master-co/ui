@@ -1,0 +1,290 @@
+/*
+ * Chart: a few numbers as bars, drawn by the stylesheet from a list.
+ * Each item of the list is one bar: it carries its number as --value, its name as chart-label and the number
+ * again as chart-value, so the list reads as data to anyone who is not looking at it. Bars are ink, the way a
+ * progress bar fills with ink; they stand on a divider with hairlines behind them at even steps of the scale.
+ * The plot is --chart-height tall and a bar is its share of --chart-max. Under the pointer the other bars
+ * step back and the bar's value appears over it as a small ink tip.
+ * chart-horizontal turns the list into rows: the name lies on a tint as long as its share, the figure at the end.
+ * chart-spark keeps only the bars, small enough for a line of text or the corner of a card.
+ * Bars rise from the baseline when they first appear and ease to a new value; reduced motion removes both.
+ */
+@layer components {
+  .chart {
+    --chart-height: 10rem;
+    --chart-max: 100;
+    --chart-gap: .375rem;
+    --chart-lines: 4;
+    --chart-color: var(--color-surface-inverse);
+    --chart-bar-width: 2.5rem;
+    --chart-radius: var(--radius-chip);
+    /* The surface the chart stands on, which a card or a sheet publishes. */
+    --chart-surface: var(--surface-color, var(--color-surface-base));
+    position: relative;
+    display: grid;
+    grid-template-rows: var(--chart-height) auto;
+    grid-auto-columns: minmax(0, 1fr);
+    grid-auto-flow: column;
+    column-gap: var(--chart-gap);
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    color: var(--color-text-muted);
+    font: 400 .71875rem/1.4 var(--font-family-sans);
+    font-feature-settings: inherit;
+    font-variant-numeric: tabular-nums;
+    list-style: none;
+
+    /* The scale: a hairline at each step, and the divider the bars stand on. */
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0 0 auto;
+      height: var(--chart-height);
+      border-bottom: 1px solid var(--color-line-divider);
+      background: repeating-linear-gradient(to bottom, var(--color-line-hair) 0 1px, transparent 1px calc(100% / var(--chart-lines)));
+      pointer-events: none;
+    }
+
+    /* Quiet: bars are a tint, and the one marked aria-current is the ink. For a period in which one day matters. */
+    &.chart-quiet {
+      .chart-item:not([aria-current]) {
+        --chart-item-color: color-mix(in oklab, var(--chart-color) 15%, var(--chart-surface));
+
+        &::before {
+          box-shadow: inset 0 0 0 .5px color-mix(in oklab, var(--chart-color) 12%, transparent);
+        }
+      }
+    }
+
+    /* Every value is written over its bar, as plain figures. */
+    &.chart-values {
+      .chart-value {
+        padding: 0;
+        background: none;
+        color: var(--color-text-body);
+        box-shadow: none;
+        opacity: 1;
+      }
+    }
+
+    /* Spark: bars alone. The names and the numbers stay in the list for assistive technology. */
+    &.chart-spark {
+      --chart-height: 2rem;
+      --chart-gap: 2px;
+      --chart-radius: 1.5px;
+      --chart-bar-width: .375rem;
+      display: inline-grid;
+      grid-template-rows: var(--chart-height);
+      grid-auto-columns: var(--chart-bar-width);
+      vertical-align: bottom;
+
+      &::before {
+        content: none;
+      }
+
+      .chart-label, .chart-value {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+      }
+    }
+
+    /*
+     * Horizontal: one row to an item, for a ranking. The name lies on a tint as long as the item's share and
+     * the figure stands at the end of the row, so both are read without the pointer.
+     */
+    &.chart-horizontal {
+      --chart-radius: var(--radius-control-sm);
+      grid-template-rows: none;
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-auto-flow: row;
+      gap: .25rem 1rem;
+      font-size: .8125rem;
+
+      &::before {
+        content: none;
+      }
+
+      .chart-item {
+        grid-row: auto;
+        grid-column: 1 / -1;
+        grid-template-rows: none;
+        grid-template-columns: subgrid;
+        align-items: center;
+        justify-items: start;
+        min-height: 2rem;
+
+        &::before {
+          grid-row: 1;
+          grid-column: 1;
+          align-self: stretch;
+          justify-self: start;
+          width: calc(var(--chart-share) * 100%);
+          min-width: 2px;
+          max-width: none;
+          height: auto;
+          min-height: 0;
+          border-radius: calc(var(--chart-radius) * var(--corner-scale));
+          background: color-mix(in oklab, var(--chart-color) 9%, transparent);
+          box-shadow: none;
+          transition-property: width;
+
+          @starting-style {
+            width: 0;
+          }
+        }
+      }
+
+      .chart-label {
+        grid-row: 1;
+        grid-column: 1;
+        z-index: 1;
+        max-width: 100%;
+        margin: 0;
+        padding-inline: .625rem;
+        overflow: hidden;
+        color: var(--color-text-strong);
+        text-overflow: ellipsis;
+      }
+
+      .chart-value {
+        grid-row: 1;
+        grid-column: 2;
+        align-self: center;
+        justify-self: end;
+        margin: 0;
+        padding: 0;
+        background: none;
+        color: var(--color-text-muted);
+        box-shadow: none;
+        font-size: inherit;
+        opacity: 1;
+      }
+
+      @media (hover: hover) {
+        .chart-item:hover::before {
+          background: color-mix(in oklab, var(--chart-color) 15%, transparent);
+        }
+
+        .chart-item:hover .chart-value {
+          color: var(--color-text-strong);
+        }
+      }
+    }
+
+    @media (hover: hover) {
+      /*
+       * A bar answers the pointer at once: the others step back to a tint, with no fade to wait for.
+       * The tint is mixed with the surface behind the chart, so the scale does not show through a bar.
+       */
+      &:not(.chart-quiet, .chart-horizontal):has(.chart-item:hover) .chart-item:not(:hover) {
+        --chart-item-color: color-mix(in oklab, var(--chart-color) 28%, var(--chart-surface));
+
+        &::before {
+          box-shadow: none;
+        }
+      }
+
+      &.chart-quiet .chart-item:not([aria-current]):hover {
+        --chart-item-color: color-mix(in oklab, var(--chart-color) 36%, var(--chart-surface));
+      }
+
+      .chart-item:hover .chart-value {
+        opacity: 1;
+      }
+    }
+
+    @media (forced-colors: active) {
+      --chart-color: CanvasText;
+    }
+  }
+
+  /* One bar: a column of the plot and, under it, the cell for its name. */
+  .chart-item {
+    /* The bar's share of the scale, between nothing and all of it. */
+    --chart-share: clamp(0, calc(var(--value, 0) / var(--chart-max)), 1);
+    position: relative;
+    display: grid;
+    grid-row: 1 / span 2;
+    grid-template-rows: subgrid;
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+
+    /* The bar. Its top corners turn; its foot is square on the baseline. A value of nothing leaves a 1px tick. */
+    &::before {
+      content: '';
+      grid-row: 1;
+      grid-column: 1;
+      align-self: end;
+      width: 100%;
+      max-width: var(--chart-bar-width);
+      height: calc(var(--chart-height) * var(--chart-share));
+      min-height: 1px;
+      border-radius: calc(var(--chart-radius) * var(--corner-scale)) calc(var(--chart-radius) * var(--corner-scale)) 0 0;
+      corner-shape: var(--corner-shape);
+      background: var(--chart-item-color, var(--chart-color));
+      box-shadow: inset 0 .5px 0 light-dark(oklch(100% 0 none / .3), oklch(100% 0 none)), inset 0 1px 0 light-dark(oklch(100% 0 none / .1), oklch(100% 0 none / .5));
+      transition-property: height;
+      transition-duration: var(--duration-base);
+      transition-timing-function: var(--easing-glide);
+
+      @starting-style {
+        height: 0;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        transition: none;
+      }
+
+      @media (forced-colors: active) {
+        forced-color-adjust: none;
+      }
+    }
+
+    /* The bar that is the point of the chart keeps a firmer name. */
+    &[aria-current] .chart-label {
+      color: var(--color-text-strong);
+    }
+  }
+
+  /*
+   * The name under a bar, centered on it. It may be wider than its column, so in a dense chart name every
+   * fifth or seventh item and leave the others empty; an empty name keeps its column.
+   */
+  .chart-label {
+    grid-row: 2;
+    grid-column: 1;
+    margin-top: .5rem;
+    white-space: nowrap;
+  }
+
+  /* The number over its bar: a small ink tip, shown while the pointer is on the column. */
+  .chart-value {
+    grid-row: 1;
+    grid-column: 1;
+    z-index: 1;
+    align-self: end;
+    margin-bottom: calc(var(--chart-height) * var(--chart-share) + .3125rem);
+    padding: .1875rem .375rem;
+    border-radius: calc(var(--radius-chip) * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    background: light-dark(var(--color-surface-inverse), oklch(33% .0026 265));
+    color: light-dark(var(--color-text-inverse), var(--color-text-strong));
+    box-shadow:
+      inset 0 .5px 0 light-dark(oklch(100% 0 none / .22), oklch(100% 0 none / .12)),
+      0 0 0 .5px light-dark(oklch(15% .003 265), oklch(0% 0 none / .6)),
+      0 2px 4px -2px var(--color-shade-1), 0 4px 8px -4px var(--color-shade-2);
+    font-size: .71875rem;
+    line-height: 1.2;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+  }
+}
