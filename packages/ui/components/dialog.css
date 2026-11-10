@@ -2,13 +2,13 @@
  * Dialog: a native <dialog>, opened as a modal by a button with commandfor and command="show-modal".
  * The browser supplies the top layer, the focus trap, Escape and, with closedby="any", light dismiss.
  * The stylesheet supplies the overlay sheet, the scrim, and the motion in and out through @starting-style
- * and discrete transitions. Geometry: a 16px corner, 24px of padding, 8px controls.
+ * and discrete transitions. Geometry: a 20px corner, 24px of padding, 10px controls.
  */
 @layer components {
   .dialog {
     --dialog-width: 28rem;
     --dialog-padding: 1.5rem;
-    --dialog-radius: var(--radius-2xl);
+    --dialog-radius: 1.25rem;
     --surface-color: var(--color-surface-floating);
     /* The parts respond to the dialog's own width, not the viewport's. */
     container: dialog / inline-size;
@@ -20,7 +20,8 @@
     margin: auto;
     padding: var(--dialog-padding) 0;
     border: 0;
-    border-radius: var(--dialog-radius);
+    border-radius: calc(var(--dialog-radius) * var(--corner-scale));
+    corner-shape: var(--corner-shape);
     overflow: hidden;
     background: var(--color-surface-floating);
     color: var(--color-text-body);
@@ -114,11 +115,35 @@
       }
     }
 
+    /*
+     * Sheet: a panel that rises from the bottom edge, for a task on a small screen or a short list of
+     * choices. It spans the width up to --dialog-width, squares its lower corners and clears the home indicator.
+     */
+    &.dialog-sheet {
+      width: min(var(--dialog-width), 100%);
+      max-height: calc(100dvh - 3rem);
+      margin: auto auto 0;
+      padding-bottom: max(var(--dialog-padding), env(safe-area-inset-bottom));
+      border-end-start-radius: 0;
+      border-end-end-radius: 0;
+      scale: 1;
+      translate: 0 100%;
+
+      &[open] {
+        translate: 0 0;
+
+        @starting-style {
+          scale: 1;
+          translate: 0 100%;
+        }
+      }
+    }
+
     @media (prefers-reduced-motion: reduce) {
       scale: none;
       translate: none;
 
-      &[open], &.dialog-drawer, &.dialog-drawer[open] {
+      &[open], &.dialog-drawer, &.dialog-drawer[open], &.dialog-sheet, &.dialog-sheet[open] {
         scale: none;
         translate: none;
 

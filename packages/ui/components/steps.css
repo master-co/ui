@@ -1,0 +1,176 @@
+/*
+ * Steps: where a reader is in a short sequence. An ordered list whose markers are numbered by a CSS counter.
+ * Only the current step is marked, with aria-current="step": the steps before it are complete and take ink
+ * and a check, and the steps after it wait in a well. A line joins each marker to the next. When the whole
+ * sequence is done, steps-complete on the list completes every step.
+ */
+@layer components {
+  .steps {
+    --steps-marker: 1.5rem;
+    --steps-gap: .75rem;
+    display: flex;
+    gap: var(--steps-gap);
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    color: var(--color-text-muted);
+    font-size: .8125rem;
+    line-height: 1.4;
+    list-style: none;
+    counter-reset: steps;
+
+    /* Every step is done: none is current, and the list rests in body ink. */
+    &.steps-complete {
+      color: var(--color-text-body);
+    }
+
+    /* One step under another, for a narrow column or steps that carry a sentence each. */
+    &.steps-vertical {
+      flex-direction: column;
+      gap: 0;
+    }
+  }
+
+  .steps-item {
+    position: relative;
+    display: flex;
+    flex: 1 1 0;
+    align-items: center;
+    gap: .5rem;
+    min-width: 0;
+    counter-increment: steps;
+
+    /* The last step has nothing to lead to, so it takes only the room it needs. */
+    &:last-child {
+      flex: none;
+    }
+
+    /* The marker: a number in a well while the step waits. */
+    &::before {
+      content: counter(steps);
+      display: grid;
+      flex: none;
+      place-items: center;
+      width: var(--steps-marker);
+      height: var(--steps-marker);
+      border-radius: 999px;
+      background: var(--color-surface-inset);
+      color: var(--color-text-muted);
+      box-shadow: var(--shadow-pressed), inset 0 0 0 .5px var(--color-line-contour);
+      font: var(--font-weight-control) .71875rem/1 var(--font-family-sans);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* The line to the next step. */
+    &:not(:last-child)::after {
+      content: '';
+      flex: 1 1 1rem;
+      min-width: 1rem;
+      height: 1px;
+      background: var(--color-line-divider);
+    }
+
+    /* Current: the marker rises as a small sheet with an ink contour, and the words take strong ink. */
+    &[aria-current="step"] {
+      color: var(--color-text-strong);
+
+      &::before {
+        @apply --surface-sheet;
+        color: var(--color-text-strong);
+        box-shadow: 0 0 0 .5px var(--color-text-strong), 0 0 0 1px color-mix(in oklab, var(--color-text-strong) 22%, transparent), 0 1px 2px -1px var(--color-shade-1), 0 2px 4px -2px var(--color-shade-2);
+      }
+    }
+
+    /*
+     * Complete: every step that has the current one after it, or every step once the list is marked
+     * steps-complete. An ink disc with the check cut out of it, so the mark is the surface showing through
+     * and reads on moonstone and obsidian alike.
+     */
+    &:is(:has(~ .steps-item[aria-current="step"]), .steps-complete .steps-item) {
+      color: var(--color-text-body);
+
+      &::before {
+        content: '';
+        background: var(--color-surface-inverse);
+        box-shadow: none;
+        mask:
+          url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4 8.4 2.6 2.6 5.4-6'/%3E%3C/svg%3E") center / .875rem no-repeat,
+          linear-gradient(black, black);
+        mask-composite: exclude;
+      }
+
+      &::after {
+        background: var(--color-text-strong);
+      }
+    }
+
+    @media (forced-colors: active) {
+      &::before {
+        outline: 1px solid CanvasText;
+        outline-offset: -1px;
+      }
+
+      &[aria-current="step"]::before {
+        outline: 2px solid Highlight;
+      }
+
+      &::after {
+        background: CanvasText;
+      }
+    }
+  }
+
+  /* The words of a step: a title and an optional line under it. */
+  .steps-body {
+    display: grid;
+    gap: .0625rem;
+    min-width: 0;
+  }
+
+  .steps-title {
+    font-weight: var(--font-weight-control);
+    white-space: nowrap;
+  }
+
+  .steps-description {
+    color: var(--color-text-muted);
+    font-size: .75rem;
+    font-weight: 400;
+  }
+
+  /* Vertical: the marker stands on a column and the line runs down from it to the next marker. */
+  .steps-vertical .steps-item {
+    flex: none;
+    align-items: flex-start;
+    gap: .75rem;
+    padding-bottom: 1.25rem;
+
+    &:last-child {
+      padding-bottom: 0;
+    }
+
+    &:not(:last-child)::after {
+      position: absolute;
+      top: calc(var(--steps-marker) + .25rem);
+      bottom: .25rem;
+      left: calc(var(--steps-marker) / 2);
+      flex: none;
+      width: 1px;
+      min-width: 0;
+      height: auto;
+    }
+
+    &:dir(rtl)::after {
+      right: calc(var(--steps-marker) / 2);
+      left: auto;
+    }
+  }
+
+  .steps-vertical .steps-body {
+    padding-top: calc((var(--steps-marker) - 1lh) / 2);
+  }
+
+  .steps-vertical .steps-title {
+    white-space: normal;
+  }
+}

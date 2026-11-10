@@ -1,0 +1,83 @@
+/*
+ * Scroll area: a region that scrolls inside the page, with a thin quiet scrollbar.
+ * Where content continues past an edge, that edge fades out; where it ends, the edge is clean. The fade is
+ * read from the scroll position itself by a scroll-driven animation, with no script and no sentinel elements.
+ * Without scroll-driven animations the region scrolls the same and its edges stay clean.
+ */
+@property --scroll-area-start {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+
+@property --scroll-area-end {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+
+@layer components {
+  .scroll-area {
+    --scroll-area-fade: 1.5rem;
+    min-width: 0;
+    min-height: 0;
+    overflow: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-line-strong) transparent;
+
+    &:focus-visible {
+      @apply --focus-ring;
+    }
+
+    /* Scrolls along the inline axis: a row of cards, a wide table. */
+    &.scroll-area-inline {
+      overflow: auto hidden;
+    }
+
+    /*
+     * Two animations on the region's own scroll timeline. The first runs over the first stretch of scrolling
+     * and opens the fade at the start edge; the second runs over the last stretch and closes the fade at the
+     * end edge. While nothing overflows the timeline is inactive and both lengths stay 0.
+     */
+    @supports (animation-timeline: scroll()) {
+      mask-image: linear-gradient(to bottom, transparent, black var(--scroll-area-start), black calc(100% - var(--scroll-area-end)), transparent);
+      /* Longhands: tools that fold the timeline into the shorthand write a value no browser reads. */
+      animation-name: scroll-area-start, scroll-area-end;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-timeline: scroll(self block), scroll(self block);
+      animation-range: 0 var(--scroll-area-fade), calc(100% - var(--scroll-area-fade)) 100%;
+
+      &.scroll-area-inline {
+        mask-image: linear-gradient(to right, transparent, black var(--scroll-area-start), black calc(100% - var(--scroll-area-end)), transparent);
+        animation-timeline: scroll(self inline), scroll(self inline);
+      }
+    }
+
+    @media (forced-colors: active) {
+      scrollbar-color: auto;
+      mask-image: none;
+    }
+  }
+}
+
+@keyframes scroll-area-start {
+  from {
+    --scroll-area-start: 0px;
+  }
+
+  to {
+    --scroll-area-start: var(--scroll-area-fade);
+  }
+}
+
+@keyframes scroll-area-end {
+  from {
+    --scroll-area-end: var(--scroll-area-fade);
+  }
+
+  to {
+    --scroll-area-end: 0px;
+  }
+}

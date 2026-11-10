@@ -1,0 +1,177 @@
+/*
+ * Nav: a vertical list of destinations for a sidebar or a settings page.
+ * Rows are quiet until touched; the current one rises as a small sheet, the way the current option of a
+ * segmented control does. A group is a native <details>, so it folds without script.
+ */
+@layer components {
+  .nav {
+    --nav-item-height: 2rem;
+    --nav-item-radius: var(--radius-control-sm);
+    --icon-size: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    font-size: .84375rem;
+    line-height: 1.2;
+    list-style: none;
+  }
+
+  /* A destination: a link with aria-current="page", a button, or the <summary> of a group. */
+  .nav-item {
+    --icon-offset: -.0625rem;
+    --icon-color: var(--color-text-muted);
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: .625rem;
+    min-width: 0;
+    min-height: var(--nav-item-height);
+    margin: 0;
+    padding: 0 .5rem;
+    border: 0;
+    border-radius: calc(var(--nav-item-radius) * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    background: transparent;
+    color: var(--color-text-body);
+    font: inherit;
+    font-feature-settings: inherit;
+    text-align: start;
+    text-decoration: none;
+    list-style: none;
+    appearance: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    cursor: pointer;
+    transition: color var(--duration-quick) var(--easing-glide);
+
+    &::-webkit-details-marker {
+      display: none;
+    }
+
+    @media (hover: hover) {
+      &:hover:not([aria-current="page"], [aria-selected="true"], :disabled, [aria-disabled="true"]) {
+        --icon-color: currentColor;
+        background: var(--color-surface-chip);
+        color: var(--color-text-strong);
+      }
+    }
+
+    &:is([aria-current="page"], [aria-selected="true"]) {
+      --icon-color: currentColor;
+      @apply --surface-sheet;
+      color: var(--color-text-strong);
+      box-shadow: var(--shadow-raised);
+    }
+
+    &:focus-visible {
+      @apply --focus-ring;
+      z-index: 1;
+    }
+
+    &:is(:disabled, [aria-disabled="true"]) {
+      --icon-color: currentColor;
+      color: var(--color-text-disabled);
+      cursor: not-allowed;
+    }
+
+    @media (pointer: coarse) {
+      min-height: max(var(--nav-item-height), 2.75rem);
+    }
+
+    @media (forced-colors: active) {
+      &:is([aria-current="page"], [aria-selected="true"]) {
+        outline: 2px solid Highlight;
+        outline-offset: -2px;
+      }
+    }
+  }
+
+  /* A count, a shortcut or a badge at the end of a row. */
+  .nav-end {
+    margin-inline-start: auto;
+    padding-inline-start: .75rem;
+    color: var(--color-text-muted);
+    font-size: .75rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* A quiet caption over a set of rows. */
+  .nav-label {
+    padding: .75rem .5rem .375rem;
+    color: var(--color-text-muted);
+    font-size: .71875rem;
+
+    &:first-child {
+      padding-top: .25rem;
+    }
+  }
+
+  /* A <details> that folds a set of rows under its summary; the chevron turns over when it is open. */
+  .nav-group {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    interpolate-size: allow-keywords;
+
+    &::details-content {
+      block-size: 0;
+      overflow-y: clip;
+      opacity: 0;
+      transition-property: block-size, opacity, content-visibility;
+      transition-duration: var(--duration-base);
+      transition-timing-function: var(--easing-glide);
+      transition-behavior: allow-discrete;
+    }
+
+    &[open]::details-content {
+      block-size: auto;
+      opacity: 1;
+    }
+
+    &[open] .nav-toggle::after {
+      rotate: x 180deg;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      &::details-content {
+        transition-property: opacity, content-visibility;
+      }
+    }
+  }
+
+  /* The summary of a group: a row with a chevron at its end. */
+  .nav-toggle::after {
+    content: '';
+    flex: none;
+    width: .875rem;
+    height: .875rem;
+    margin-inline-start: auto;
+    background: var(--color-text-muted);
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4.5 6.5 3.5 3.5 3.5-3.5'/%3E%3C/svg%3E") center / contain no-repeat;
+    transition: rotate var(--duration-base) var(--easing-glide);
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: none;
+    }
+
+    @media (forced-colors: active) {
+      background: CanvasText;
+    }
+  }
+
+  /* Rows under a group, set in from the icon column on a hairline guide. */
+  .nav-sub {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: 2px 0 2px calc(.5rem + var(--icon-size) / 2);
+    padding: 0 0 0 calc(.625rem + var(--icon-size) / 2 - 1px);
+    border-inline-start: 1px solid var(--color-line-hair);
+    list-style: none;
+  }
+}

@@ -1,0 +1,182 @@
+/*
+ * Chip: a small pill that is a choice or a value.
+ * As a label around a checkbox or a radio it is a filter: raised at rest, filled with ink when chosen,
+ * the way a checkbox fills. As a plain element it is a value that can carry a remove button.
+ * A chip is 28px tall; its ends are true half circles, which tells it apart from a badge.
+ */
+@layer components {
+  .chip {
+    --chip-height: 1.75rem;
+    --chip-padding-x: .625rem;
+    --icon-size: .875rem;
+    --icon-offset: -.0625rem;
+    position: relative;
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: .375rem;
+    min-height: var(--chip-height);
+    margin: 0;
+    padding: 0 var(--chip-padding-x);
+    border: 0;
+    border-radius: 999px;
+    background: var(--color-surface-chip);
+    color: var(--color-text-strong);
+    box-shadow: inset 0 0 0 .5px var(--color-line-contour);
+    font: var(--font-weight-control) .78125rem/1 var(--font-family-sans);
+    font-feature-settings: inherit;
+    white-space: nowrap;
+    vertical-align: middle;
+    -webkit-tap-highlight-color: transparent;
+
+    /* A chip that holds a .chip-input is a control: a small raised sheet that lifts under the pointer. */
+    &:has(.chip-input) {
+      --chip-lift: .5px;
+      @apply --surface-sheet;
+      box-shadow: var(--shadow-raised);
+      user-select: none;
+      -webkit-user-select: none;
+      cursor: pointer;
+      transition-property: box-shadow, translate, color;
+      transition-duration: var(--duration-quick);
+      transition-timing-function: var(--easing-glide);
+
+      @media (hover: hover) {
+        &:hover:not(:has(.chip-input:disabled)) {
+          translate: 0 calc(-1 * var(--chip-lift));
+          box-shadow: var(--shadow-raised-hover);
+        }
+      }
+
+      &:active:not(:has(.chip-input:disabled)) {
+        translate: 0 var(--chip-lift);
+        transition-duration: var(--duration-press);
+      }
+    }
+
+    /* Chosen: ink, with the same line of light a checked checkbox has. */
+    &:has(.chip-input:checked) {
+      background: var(--color-surface-inverse);
+      color: var(--color-text-inverse);
+      box-shadow:
+        inset 0 .5px 0 light-dark(oklch(100% 0 none / .28), oklch(100% 0 none)),
+        0 0 0 .5px light-dark(oklch(15% .003 265), oklch(0% 0 none / .5)),
+        0 1px 2px -1px var(--color-shade-1), 0 2px 4px -2px var(--color-shade-2);
+
+      @media (hover: hover) {
+        &:hover:not(:has(.chip-input:disabled)) {
+          box-shadow:
+            inset 0 .5px 0 light-dark(oklch(100% 0 none / .28), oklch(100% 0 none)),
+            0 0 0 .5px light-dark(oklch(15% .003 265), oklch(0% 0 none / .5)),
+            0 1px 2px -1px var(--color-shade-1), 0 3px 6px -3px var(--color-shade-2), 0 6px 12px -6px var(--color-shade-3);
+        }
+      }
+    }
+
+    &:has(.chip-input:focus-visible) {
+      @apply --focus-ring;
+    }
+
+    &:has(.chip-input:disabled) {
+      background: var(--color-surface-inset);
+      color: var(--color-text-disabled);
+      box-shadow: var(--shadow-flat);
+      cursor: not-allowed;
+    }
+
+    /* A remove button takes up the end padding, so the pill stays balanced. */
+    &:has(.chip-remove) {
+      padding-inline-end: .25rem;
+    }
+
+    @media (pointer: coarse) {
+      &:has(.chip-input) {
+        min-height: 2.25rem;
+        padding-inline: .875rem;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      &:has(.chip-input) {
+        --chip-lift: 0px;
+      }
+    }
+
+    @media (forced-colors: active) {
+      outline: 1px solid CanvasText;
+      outline-offset: -1px;
+
+      &:has(.chip-input:checked) {
+        background: Highlight;
+        color: HighlightText;
+        forced-color-adjust: none;
+      }
+    }
+  }
+
+  /* The checkbox or radio inside a chip covers it invisibly: the label is the target, the input keeps the state. */
+  .chip-input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: inherit;
+    opacity: 0;
+    appearance: none;
+    cursor: inherit;
+  }
+
+  /* Removes the value; give it an accessible name that includes the value. */
+  .chip-remove {
+    position: relative;
+    display: inline-grid;
+    flex: none;
+    place-items: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--color-text-muted);
+    appearance: none;
+    cursor: pointer;
+
+    &::before {
+      content: '';
+      width: .75rem;
+      height: .75rem;
+      background: currentColor;
+      mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round'%3E%3Cpath d='M4.5 4.5l7 7M11.5 4.5l-7 7'/%3E%3C/svg%3E") center / contain no-repeat;
+    }
+
+    /* The target reaches past the glyph without moving it. */
+    &::after {
+      content: '';
+      position: absolute;
+      inset: -.25rem;
+    }
+
+    @media (hover: hover) {
+      &:hover {
+        background: var(--color-line-contour);
+        color: var(--color-text-strong);
+      }
+    }
+
+    &:focus-visible {
+      @apply --focus-ring;
+      outline-offset: 0;
+    }
+
+    @media (forced-colors: active) {
+      &::before {
+        background: ButtonText;
+      }
+    }
+  }
+}

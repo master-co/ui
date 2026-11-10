@@ -1,0 +1,181 @@
+/*
+ * Toast: a brief message over the page about something that just happened.
+ * Each toast is a non-modal <dialog>, so it can be dismissed without script by a form with method="dialog" or
+ * a button with command="close", and it enters and leaves through @starting-style and discrete transitions.
+ * A timed toast leaves by itself and waits while it is hovered or focused. Toasts stack in a fixed region.
+ */
+@layer components {
+  /*
+   * The stack. It takes no pointer events itself, so the page under its empty space stays usable.
+   * With popover="manual" and showPopover() it joins the top layer, above any open modal dialog.
+   */
+  .toast-region {
+    --toast-gap: .5rem;
+    --toast-inset: 1rem;
+    position: fixed;
+    inset: auto var(--toast-inset) var(--toast-inset) auto;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    gap: var(--toast-gap);
+    width: min(22.5rem, calc(100vw - var(--toast-inset) * 2));
+    margin: 0;
+    padding: 0;
+    border: 0;
+    overflow: visible;
+    background: none;
+    pointer-events: none;
+
+    &.toast-region-top {
+      inset: var(--toast-inset) var(--toast-inset) auto auto;
+      flex-direction: column-reverse;
+    }
+
+    &.toast-region-center {
+      inset-inline: 0;
+      margin-inline: auto;
+    }
+
+    /* On a narrow screen the stack spans the width, clear of the home indicator. */
+    @media (width < 30rem) {
+      inset-inline: var(--toast-inset);
+      width: auto;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+  }
+
+  .toast {
+    --toast-shift: .75rem;
+    --icon-size: 1rem;
+    --surface-color: var(--color-surface-floating);
+    position: relative;
+    inset: auto;
+    flex: none;
+    align-items: flex-start;
+    gap: .625rem .75rem;
+    width: auto;
+    max-width: none;
+    margin: 0;
+    padding: .75rem .875rem;
+    border: 0;
+    border-radius: calc(var(--radius-control-lg) * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    background: var(--color-surface-floating);
+    color: var(--color-text-body);
+    box-shadow: var(--shadow-floating);
+    font-size: .84375rem;
+    line-height: 1.5;
+    pointer-events: auto;
+    /* Closed is where it leaves to: it fades and drops back a little. */
+    opacity: 0;
+    scale: .97;
+    translate: 0 var(--toast-shift);
+    transition-property: opacity, scale, translate, display;
+    transition-duration: var(--duration-quick);
+    transition-timing-function: var(--easing-glide);
+    transition-behavior: allow-discrete;
+
+    &[open] {
+      display: flex;
+      opacity: 1;
+      scale: 1;
+      translate: 0 0;
+      transition-duration: var(--duration-base);
+
+      @starting-style {
+        opacity: 0;
+        scale: .97;
+        translate: 0 var(--toast-shift);
+      }
+    }
+
+    /*
+     * Timed: after --toast-duration the toast leaves by itself. The clock stops while the pointer or the
+     * keyboard is on it, so a reader is never raced.
+     */
+    &.toast-timed[open] {
+      animation: toast-expire var(--toast-duration, 6s) linear forwards;
+
+      &:is(:hover, :focus-within) {
+        animation-play-state: paused;
+      }
+    }
+
+    /* A status colors the icon; the words stay in ink. */
+    &.toast-info { --icon-color: var(--color-info); }
+    &.toast-success { --icon-color: var(--color-success); }
+    &.toast-warning { --icon-color: var(--color-warning); }
+    &.toast-danger { --icon-color: var(--color-danger); }
+
+    @media (prefers-reduced-motion: reduce) {
+      scale: none;
+      translate: none;
+
+      &[open] {
+        scale: none;
+        translate: none;
+
+        @starting-style {
+          scale: none;
+          translate: none;
+        }
+      }
+    }
+
+    @media (forced-colors: active) {
+      outline: 1px solid CanvasText;
+      outline-offset: -1px;
+    }
+  }
+
+  /* From the top the toast arrives downward. */
+  .toast-region-top .toast {
+    --toast-shift: -.75rem;
+  }
+
+  /* The icon centers on the first line of text. */
+  .toast-icon {
+    margin-block: calc((1lh - var(--icon-size)) / 2);
+  }
+
+  .toast-body {
+    display: grid;
+    flex: 1 1 0;
+    gap: .125rem;
+    min-width: 0;
+  }
+
+  .toast-title {
+    margin: 0;
+    color: var(--color-text-strong);
+    font-weight: var(--font-weight-control);
+  }
+
+  .toast-description {
+    margin: 0;
+    color: var(--color-text-muted);
+    text-wrap: pretty;
+  }
+
+  /* The form or button that dismisses the toast sits at the end, pulled into the padding. */
+  .toast-close {
+    flex: none;
+    margin: -.25rem -.375rem -.25rem 0;
+  }
+}
+
+/* The toast rests for most of its time, then leaves the way a closed one does and stops taking space. */
+@keyframes toast-expire {
+  0%, 96% {
+    opacity: 1;
+    translate: 0 0;
+    visibility: visible;
+  }
+
+  100% {
+    display: none;
+    opacity: 0;
+    translate: 0 var(--toast-shift);
+    visibility: hidden;
+  }
+}

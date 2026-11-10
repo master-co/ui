@@ -41,7 +41,12 @@ test('the complete library compiles against the Master CSS preset', () => {
     'menu', 'menu-item', 'menu-input', 'menu-shortcut', 'menu-label', 'menu-separator', 'tooltip',
     'alert', 'alert-icon', 'alert-body', 'alert-title', 'alert-description', 'progress', 'skeleton', 'spinner',
     'accordion', 'accordion-item', 'accordion-trigger', 'accordion-content', 'avatar', 'avatar-image', 'avatar-status', 'avatar-group',
-    'badge', 'badge-corner', 'kbd',
+    'badge', 'badge-corner', 'kbd', 'code', 'code-block',
+    'scroll-area', 'toolbar', 'toolbar-separator', 'chip', 'chip-input', 'chip-remove', 'choice', 'choice-body', 'choice-title', 'choice-description', 'choice-end',
+    'rating', 'rating-input', 'dropzone', 'dropzone-input', 'dropzone-title', 'dropzone-description', 'fieldset', 'fieldset-legend',
+    'nav', 'nav-item', 'nav-end', 'nav-label', 'nav-group', 'nav-toggle', 'nav-sub', 'pagination', 'pagination-gap', 'steps', 'steps-item', 'steps-title', 'steps-description', 'steps-body',
+    'toast-region', 'toast', 'toast-icon', 'toast-body', 'toast-title', 'toast-description', 'toast-close', 'empty', 'empty-media', 'empty-title', 'empty-description', 'empty-actions',
+    'table', 'table-row', 'table-heading', 'table-cell', 'carousel', 'carousel-slide',
   ]) {
     assert.ok(nativeClassNames.includes(name), `missing native class .${name}`)
   }

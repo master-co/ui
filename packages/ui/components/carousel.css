@@ -1,0 +1,155 @@
+/*
+ * Carousel: a row of slides that scrolls and snaps, built from CSS alone.
+ * The track is a scroll container with scroll snapping, so touch, trackpad, keys and assistive technology
+ * all work as scrolling does. Where the browser supports them, ::scroll-button() adds previous and next
+ * buttons and ::scroll-marker adds a dot per slide that follows the scroll position; both are real,
+ * focusable controls the browser generates. Elsewhere the carousel is a swipeable, scrollable row.
+ */
+@layer components {
+  .carousel {
+    --carousel-gap: 1rem;
+    --carousel-slide: 100%;
+    --carousel-control: 2rem;
+    /* A neutral mid-grey chevron reads on moonstone and obsidian alike. */
+    --carousel-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23777' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6.5 4.5 3.5 3.5-3.5 3.5'/%3E%3C/svg%3E");
+    position: relative;
+    display: flex;
+    gap: var(--carousel-gap);
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    overflow: auto hidden;
+    overscroll-behavior-x: contain;
+    list-style: none;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+
+    &:focus-visible {
+      @apply --focus-ring;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      scroll-behavior: auto;
+    }
+
+    @supports selector(::scroll-marker) {
+      /* Room under the track for the markers, which sit on the carousel's own edge. */
+      margin-bottom: 1.75rem;
+      /* The controls anchor to their own carousel: the name is scoped, so several on a page do not share it. */
+      anchor-name: --carousel;
+      anchor-scope: --carousel;
+      scroll-marker-group: after;
+
+      /* The dots: a row centered under the track. */
+      &::scroll-marker-group {
+        position: fixed;
+        position-anchor: --carousel;
+        top: calc(anchor(bottom) + .75rem);
+        left: anchor(left);
+        right: anchor(right);
+        display: flex;
+        justify-content: center;
+        gap: .375rem;
+      }
+
+      /* Previous and next: small raised squares on the track's edges, at its middle. */
+      &::scroll-button(inline-start), &::scroll-button(inline-end) {
+        position: fixed;
+        position-anchor: --carousel;
+        top: calc(anchor(center) - var(--carousel-control) / 2);
+        display: grid;
+        place-items: center;
+        width: var(--carousel-control);
+        height: var(--carousel-control);
+        padding: 0;
+        border: 0;
+        border-radius: 999px;
+        background: var(--carousel-chevron) center / .875rem no-repeat, var(--color-surface-floating);
+        box-shadow: var(--shadow-raised);
+        cursor: pointer;
+        transition: box-shadow var(--duration-quick) var(--easing-glide), opacity var(--duration-quick) var(--easing-glide);
+      }
+
+      &::scroll-button(inline-start) {
+        content: '' / 'Previous slide';
+        left: calc(anchor(left) + .5rem);
+        scale: -1 1;
+      }
+
+      &::scroll-button(inline-end) {
+        content: '' / 'Next slide';
+        right: calc(anchor(right) + .5rem);
+      }
+
+      &::scroll-button(inline-start):hover, &::scroll-button(inline-end):hover {
+        box-shadow: var(--shadow-raised-hover);
+      }
+
+      &::scroll-button(inline-start):focus-visible, &::scroll-button(inline-end):focus-visible {
+        outline: 2px solid var(--color-focus);
+        outline-offset: 2px;
+      }
+
+      /* At either end there is nowhere to go: the button steps back. */
+      &::scroll-button(inline-start):disabled, &::scroll-button(inline-end):disabled {
+        opacity: 0;
+        cursor: default;
+      }
+    }
+
+    @media (forced-colors: active) {
+      &::scroll-button(inline-start), &::scroll-button(inline-end) {
+        border: 1px solid ButtonText;
+      }
+    }
+  }
+
+  /* A slide: it snaps to the start of the track and takes --carousel-slide of its width. */
+  .carousel-slide {
+    flex: 0 0 var(--carousel-slide);
+    min-width: 0;
+    scroll-snap-align: start;
+
+    @supports selector(::scroll-marker) {
+      &::scroll-marker {
+        content: '';
+        width: .375rem;
+        height: .375rem;
+        border-radius: 999px;
+        background: var(--color-line-mark);
+        transition: width var(--duration-base) var(--easing-glide), background-color var(--duration-quick) var(--easing-glide);
+      }
+
+      /* The slide in view: the dot lengthens and takes ink. */
+      &::scroll-marker:target-current {
+        width: 1rem;
+        background: var(--color-text-strong);
+      }
+
+      &::scroll-marker:focus-visible {
+        outline: 2px solid var(--color-focus);
+        outline-offset: 2px;
+      }
+
+      @media (forced-colors: active) {
+        &::scroll-marker {
+          background: GrayText;
+        }
+
+        &::scroll-marker:target-current {
+          background: Highlight;
+        }
+      }
+    }
+  }
+
+  /* Several slides in view: each takes a share of the track, less the gaps between them. */
+  .carousel-2 {
+    --carousel-slide: calc((100% - var(--carousel-gap)) / 2);
+  }
+
+  .carousel-3 {
+    --carousel-slide: calc((100% - var(--carousel-gap) * 2) / 3);
+  }
+}

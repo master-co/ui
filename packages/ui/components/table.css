@@ -1,0 +1,124 @@
+/*
+ * Table: rows of data on hairlines. Every part is reached by class, so the same styles serve a native <table>
+ * and a grid of roles. Headings are quiet captions; a sortable heading shows its direction from aria-sort;
+ * numbers line up on tabular figures. Put the table in a sheet for a surface and in a scroll area when it can
+ * be wider than its column.
+ */
+@layer components {
+  .table {
+    --table-padding-x: 1rem;
+    --table-padding-y: .75rem;
+    width: 100%;
+    border-spacing: 0;
+    border-collapse: separate;
+    color: var(--color-text-body);
+    font-size: .875rem;
+    line-height: 1.45;
+    text-align: start;
+
+    /* Denser rows, for long lists read by scanning. */
+    &.table-compact {
+      --table-padding-x: .75rem;
+      --table-padding-y: .4375rem;
+      font-size: .8125rem;
+    }
+  }
+
+  /* A column heading: a quiet caption on a firmer rule than the rows below it. */
+  .table-heading {
+    padding: .625rem var(--table-padding-x);
+    border-bottom: 1px solid var(--color-line-divider);
+    color: var(--color-text-muted);
+    font-size: .75rem;
+    font-weight: var(--font-weight-control);
+    text-align: start;
+    white-space: nowrap;
+    vertical-align: bottom;
+
+    /* Sorted: the heading takes strong ink and a chevron that points the way the values run. */
+    &:is([aria-sort="ascending"], [aria-sort="descending"]) {
+      color: var(--color-text-strong);
+
+      &::after {
+        content: '';
+        display: inline-block;
+        width: .75rem;
+        height: .75rem;
+        margin-inline-start: .25rem;
+        background: currentColor;
+        mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4.5 6.5 3.5 3.5 3.5-3.5'/%3E%3C/svg%3E") center / contain no-repeat;
+        vertical-align: -.125em;
+      }
+    }
+
+    &[aria-sort="ascending"]::after {
+      rotate: x 180deg;
+    }
+
+    @media (forced-colors: active) {
+      border-bottom-color: CanvasText;
+
+      &::after {
+        background: CanvasText;
+      }
+    }
+  }
+
+  .table-cell {
+    padding: var(--table-padding-y) var(--table-padding-x);
+    border-bottom: 1px solid var(--color-line-hair);
+    vertical-align: middle;
+
+    @media (forced-colors: active) {
+      border-bottom-color: GrayText;
+    }
+  }
+
+  /* Numbers and amounts: on the end edge, in figures of one width, so digits stack in columns. */
+  .table-heading.table-numeric, .table-cell.table-numeric {
+    font-variant-numeric: tabular-nums;
+    text-align: end;
+  }
+
+  /* The identifying cell of a row, in strong ink. */
+  .table-cell.table-primary {
+    color: var(--color-text-strong);
+  }
+
+  .table-row {
+    /* The last row ends the table; the surface around it draws the edge. */
+    &:last-child .table-cell {
+      border-bottom-color: transparent;
+    }
+
+    /*
+     * A selected row takes a chip tone. The row paints it, not its cells, so no seam shows where two cells
+     * meet. Say it with aria-selected as well as with its checkbox.
+     */
+    &[aria-selected="true"] {
+      background: var(--color-surface-chip);
+    }
+  }
+
+  /* Rows that can be opened or selected answer the pointer at once, like rows in a menu. */
+  .table-interactive .table-row {
+    @media (hover: hover) {
+      &:hover:has(.table-cell) {
+        background: var(--color-surface-chip);
+      }
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--color-focus);
+      outline-offset: -2px;
+    }
+  }
+
+  /* Headings stay in view while the rows scroll under them, on the color of the surface they sit on. */
+  .table-sticky .table-heading {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--surface-color, var(--color-surface-base));
+  }
+}
