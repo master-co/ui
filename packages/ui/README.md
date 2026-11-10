@@ -108,7 +108,7 @@ Or import only the theme and the components you use:
 | Message | `message-list`, `message`, `message-sent`, `message-avatar`, `message-bubble`, `message-meta`, `message-typing` |
 | Avatar | `avatar`, `avatar-{xs,sm,lg,xl}`, `avatar-square`, `avatar-image`, `avatar-status`, `avatar-group` |
 | Badge | `badge`, `badge-{outline,raised,ink}`, `badge-{info,success,warning,danger}`, `badge-dot`, `badge-live`, `badge-{sm,lg,pill}`, `badge-corner` |
-| Code | `code`, `code-block` |
+| Code | `code`, `code-block`, `code-numbered`, `code-line`, `code-line-{highlight,added,removed}`, `code-panel`, `code-header`, `code-title` |
 | Icon | `icon` |
 | Kbd | `kbd`, `kbd-raised` |
 | Mark | `mark`, `mark-{brand,underline}` |

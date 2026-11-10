@@ -1,6 +1,10 @@
 /*
  * Code: literal text in the mono face. Inline, it is a small chip in the line; as a block, a well that
  * scrolls on its own when a line is long.
+ * A block may mark its lines. Each line is then a code-line, and the block lays them out as a grid, so a
+ * line's band runs the whole scrolling width and the line breaks between the spans cost nothing. Lines can
+ * be numbered by a CSS counter, highlighted, or marked as added and removed in a diff.
+ * A panel puts a header over the block: the file's name and a control, in one well.
  */
 @layer components {
   .code {
@@ -22,8 +26,10 @@
 
   /* On a <pre>. Lines keep their breaks and the block scrolls sideways. */
   .code-block {
+    --code-padding-x: 1rem;
+    --code-padding-y: .875rem;
     margin: 0;
-    padding: .875rem 1rem;
+    padding: var(--code-padding-y) var(--code-padding-x);
     border-radius: calc(var(--radius-control) * var(--corner-scale));
     corner-shape: var(--corner-shape);
     overflow: auto;
@@ -41,9 +47,142 @@
       @apply --focus-ring;
     }
 
+    /*
+     * Marked lines: the block becomes a grid of lines, each as wide as the longest. White space between the
+     * line elements is not rendered in a grid, so the markup may keep one line of source per line of code.
+     */
+    &:has(.code-line) {
+      display: grid;
+      align-content: start;
+      counter-reset: code-line;
+    }
+
     @media (forced-colors: active) {
       outline: 1px solid CanvasText;
       outline-offset: -1px;
     }
+  }
+
+  /* One line of a block. It bleeds to the block's edges, so a band on it meets the well's contour. */
+  .code-line {
+    display: block;
+    min-height: 1lh;
+    margin-inline: calc(-1 * var(--code-padding-x));
+    padding-inline: var(--code-padding-x);
+    counter-increment: code-line;
+
+    /* The line being talked about: a tint, and a 2px rule of ink at its start. */
+    &.code-line-highlight {
+      background: color-mix(in oklab, var(--color-text-strong) 6%, transparent);
+      box-shadow: inset 2px 0 0 var(--color-text-strong);
+    }
+
+    /*
+     * A diff. The hue agrees with the sign the line already starts with, + or -, which is part of the text
+     * and is what a reader copies; a removed line also steps back in ink.
+     */
+    &.code-line-added {
+      background: color-mix(in oklab, var(--color-success) 11%, transparent);
+      box-shadow: inset 2px 0 0 var(--color-success);
+    }
+
+    &.code-line-removed {
+      background: color-mix(in oklab, var(--color-danger) 10%, transparent);
+      color: var(--color-text-body);
+      box-shadow: inset 2px 0 0 var(--color-danger);
+    }
+
+    @media (forced-colors: active) {
+      &:is(.code-line-highlight, .code-line-added, .code-line-removed) {
+        outline: 1px solid Highlight;
+        outline-offset: -1px;
+      }
+    }
+  }
+
+  /* Numbered: each line counts itself in a quiet gutter that is not selected with the code. */
+  .code-numbered {
+    .code-line::before {
+      content: counter(code-line);
+      display: inline-block;
+      width: 2ch;
+      margin-inline-end: 1.25rem;
+      color: var(--color-text-disabled);
+      text-align: end;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .code-line:is(.code-line-highlight, .code-line-added, .code-line-removed)::before {
+      color: var(--color-text-muted);
+    }
+  }
+
+  /*
+   * Panel: one well around a header and a block. The block inside gives up its own well; the header is a
+   * 40px strip over a hairline, with the name at the start and a control 4px in from the end.
+   */
+  .code-panel {
+    --code-radius: var(--radius-control);
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    margin: 0;
+    border-radius: calc(var(--code-radius) * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    overflow: clip;
+    background: var(--color-surface-inset);
+    box-shadow: var(--shadow-pressed);
+
+    .code-block {
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+
+      &:focus-visible {
+        outline-offset: -2px;
+      }
+    }
+
+    .btn {
+      --btn-height: 2rem;
+      --btn-radius: calc(var(--code-radius) - 4px / var(--corner-scale));
+      --btn-font-size: .78125rem;
+      --btn-padding-x: .625rem;
+      --icon-size: .875rem;
+      --icon-offset: -.0625rem;
+      min-height: var(--btn-height);
+    }
+
+    @media (forced-colors: active) {
+      outline: 1px solid CanvasText;
+      outline-offset: -1px;
+    }
+  }
+
+  .code-header {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    min-height: 2.5rem;
+    padding: 0 4px 0 1rem;
+    border-bottom: 1px solid var(--color-line-hair);
+  }
+
+  /* The name of the file, or of the language. */
+  .code-title {
+    --icon-size: .875rem;
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    min-width: 0;
+    margin: 0;
+    overflow: hidden;
+    color: var(--color-text-muted);
+    font: 400 .75rem/1.4 var(--font-family-mono);
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }

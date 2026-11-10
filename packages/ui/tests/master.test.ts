@@ -61,6 +61,7 @@ test('the complete library compiles against the Master CSS preset', () => {
     'tree', 'tree-item', 'tree-toggle', 'tree-group', 'tree-sub', 'otp', 'otp-slot', 'otp-separator', 'meter',
     'stepper', 'stepper-field',
     'heatmap', 'heatmap-lg', 'heatmap-cell',
+    'code-numbered', 'code-line', 'code-line-highlight', 'code-line-added', 'code-line-removed', 'code-panel', 'code-header', 'code-title',
     'marquee', 'marquee-reverse', 'marquee-track', 'window', 'window-flat', 'window-bar', 'window-controls', 'window-title', 'window-address', 'window-end', 'window-body',
     'wheel', 'wheel-sm', 'wheel-column', 'wheel-option', 'wheel-separator', 'shimmer',
     'chart', 'chart-quiet', 'chart-values', 'chart-horizontal', 'chart-spark', 'chart-item', 'chart-label', 'chart-value',
