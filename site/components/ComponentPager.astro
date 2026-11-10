@@ -1,0 +1,65 @@
+---
+import '@master/internal-site/styles/system/pager.css'
+import Link from '@master/internal-site/components/Link.svelte'
+import ComponentTile from '~/site/components/ComponentTile.astro'
+import { createTranslation } from '@master/internal-site/utils/i18n'
+
+interface Props {
+  pageCategories?: { pages: any[] }[]
+  metadata: any
+  locale: string
+  dictionaries: Record<string, () => Promise<any>>
+}
+
+/**
+ * The previous and next documents in the sidebar's order. A neighbor that is a component shows its cover;
+ * any other document keeps the plain link.
+ */
+const { pageCategories, metadata, locale, dictionaries } = Astro.props
+const $ = await createTranslation(locale, dictionaries)
+const pages = (pageCategories?.flatMap(category => category.pages) ?? []).filter(({ pathname }) => pathname.split('/').length <= 3)
+const index = pages.findIndex(({ pathname }) => pathname === metadata.pathname)
+const navs = (index === -1 ? [] : [['prev', pages[index - 1]], ['next', pages[index + 1]]] as const)
+  .filter(([, page]) => page)
+  .map(([rel, page]) => ({
+    rel,
+    href: page.pathname as string,
+    slug: /^\/components\/([^/]+)$/.exec(page.pathname)?.[1],
+    label: rel === 'prev' ? $('Previous') : $('Next'),
+    title: $(page.title.absolute || page.title)
+  }))
+---
+
+{navs.length > 0 && (
+  <nav class="ui-pager component-pager" aria-label={$('Previous and next documents')}>
+    {navs.map(({ rel, href, slug, label, title }) => slug
+      ? <ComponentTile slug={slug} name={title} label={label} rel={rel} />
+      : <Link {href} rel={rel} aria-label={`${label}: ${title}`}><small>{label}</small><b>{title}</b></Link>)}
+  </nav>
+)}
+
+<style is:global>
+  @layer components {
+    /*
+     * The pager's own columns and hairline, holding tiles. A tile keeps a cover's real width, 240px;
+     * the next one stands at the end of its column and reads from the end.
+     */
+    .component-pager {
+      gap: var(--ui-space-lg) 1.5rem;
+      padding-top: var(--ui-space-xl);
+
+      & > .component-tile {
+        justify-items: stretch;
+        width: 100%;
+        max-width: 15rem;
+      }
+
+      & > .component-tile[rel="next"] {
+        grid-column: 2;
+        justify-items: stretch;
+        justify-self: end;
+        text-align: end;
+      }
+    }
+  }
+</style>

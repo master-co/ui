@@ -1,0 +1,33 @@
+---
+import './cover.css'
+import type { AstroComponentFactory } from 'astro/runtime/server/index.js'
+import { coverTheme } from './theme'
+
+interface Props {
+  /** A component slug from `catalog.ts`; its drawing is `art/<slug>.astro`. */
+  slug: string
+  /** Lock the cover to one scheme, for a light and dark comparison. A cover otherwise follows the site theme. */
+  scheme?: 'light' | 'dark'
+  class?: string
+}
+
+/**
+ * A component's cover: one drawing on a stage, in the library's own materials at their real size.
+ * The drawing is decoration beside the component's name, so it is hidden from assistive technology.
+ */
+const { slug, scheme, class: className } = Astro.props
+const drawings = import.meta.glob<{ default: AstroComponentFactory }>('./art/*.astro', { eager: true })
+const file = `./art/${slug}.astro`
+const drawn = Object.hasOwn(drawings, file)
+const Art = drawings[file]?.default
+
+// The scoped theme is written once per page, with the first cover.
+const locals = Astro.locals as { coverTheme?: boolean }
+const theme = locals.coverTheme ? undefined : coverTheme()
+locals.coverTheme = true
+---
+
+{theme && <style is:inline set:html={theme} />}
+<span class:list={['cover', className]} style={scheme && `color-scheme: ${scheme}`} data-cover={slug} data-pending={drawn ? undefined : ''} aria-hidden="true">
+  <span class="cover-art">{drawn && <Art />}</span>
+</span>

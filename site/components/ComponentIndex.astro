@@ -1,56 +1,136 @@
 ---
+import ComponentTile from '~/site/components/ComponentTile.astro'
 import { components } from '~/site/components/catalog'
 import { siteOf } from '@master/internal-site/astro/site-context'
+
+/** Every component as a cover with its name and what it is, grouped by category in reading order. */
 const { t } = siteOf(Astro)
+const categories = [...new Set(components.map(component => component.category))]
+  .map(name => ({ name, id: name.toLowerCase(), components: components.filter(component => component.category === name) }))
 ---
 
-<ul class="component-index">
-  {components.map(component => (
-    <li>
-      <a class="component-index-item" href={`/components/${component.slug}`}>
-        <span class="component-index-name">{t(component.name)}</span>
-        <span class="component-index-description">{t(component.description)}</span>
-      </a>
-    </li>
+<nav class="component-index-nav" aria-label={t('Categories')}>
+  {categories.map(category => (
+    <a href={`#${category.id}`}>{t(category.name)}<span>{category.components.length}</span></a>
   ))}
-</ul>
+</nav>
+
+<div class="component-index">
+  {categories.map(category => (
+    <section class="component-index-group" aria-labelledby={category.id}>
+      <h2 class="component-index-heading" id={category.id}>{t(category.name)}</h2>
+      <ul class="component-index-grid">
+        {category.components.map(component => (
+          <li>
+            <ComponentTile slug={component.slug} description />
+          </li>
+        ))}
+      </ul>
+    </section>
+  ))}
+</div>
 
 <style is:global>
+  /*
+   * The overview has no sidebar: its column is as wide as four covers, and the footer lines up with it.
+   * A cover's art is drawn at real size inside a 240px safe area, so a column is never narrower than that
+   * while it can be helped: four columns where they fit, then three and two. A phone keeps two, scaled.
+   */
   @layer components {
-    .component-index {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
-      gap: .75rem;
-      margin: 1.5rem 0 0;
-      padding: 0;
-      list-style: none;
+    .component-overview {
+      --docs-wide: 76rem;
     }
 
-    .component-index-item {
-      display: flex;
-      flex-direction: column;
-      gap: .375rem;
-      height: 100%;
-      padding: 1rem 1.125rem;
-      border-radius: .75rem;
-      box-shadow: 0 0 0 1px var(--color-line-divider);
-      color: var(--color-text-body);
-      text-decoration: none;
-      transition: box-shadow var(--duration-fast) var(--easing-smooth);
+    .component-overview-body {
+      width: 100%;
+      max-width: calc(var(--docs-wide) + var(--docs-gutter) * 2);
+      padding: var(--ui-space-xl) var(--docs-gutter) var(--ui-space-3xl);
 
-      &:hover {
-        box-shadow: 0 0 0 1px var(--color-line-control), var(--shadow-sm);
+      @media (--md) {
+        padding-top: 3.5rem;
+        padding-bottom: 6rem;
       }
     }
 
-    .component-index-name {
-      color: var(--color-text-strong);
-      font-weight: 600;
+    .component-overview .ui-pagehead {
+      margin-bottom: var(--ui-space-lg);
     }
 
-    .component-index-description {
-      font-size: .875rem;
-      line-height: 1.5;
+    .component-index-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--ui-space-3xs) var(--ui-space-lg);
+      margin-bottom: var(--ui-space-2xl);
+      padding-bottom: var(--ui-space-lg);
+      box-shadow: inset 0 -1px 0 var(--ui-line-hair);
+
+      & > a {
+        display: inline-flex;
+        align-items: baseline;
+        gap: .375rem;
+        min-height: 2rem;
+        align-items: center;
+        border-radius: var(--ui-radius-sm);
+        color: var(--ui-text-body);
+        font-size: var(--ui-text-small);
+        text-decoration: none;
+        transition: color var(--ui-duration-quick);
+
+        @media (hover: hover) {
+          &:hover {
+            color: var(--ui-text-strong);
+          }
+        }
+
+        &:focus-visible {
+          outline: 2px solid var(--ui-focus);
+          outline-offset: 2px;
+        }
+
+        @media (pointer: coarse) {
+          min-height: 2.75rem;
+        }
+      }
+
+      & > a > span {
+        color: var(--ui-text-disabled);
+        font-size: var(--ui-text-label);
+        font-variant-numeric: tabular-nums;
+      }
+    }
+
+    .component-index {
+      container-type: inline-size;
+      display: grid;
+      gap: var(--ui-space-3xl);
+    }
+
+    .component-index-group {
+      /* A category opens under the sticky header, not behind it. */
+      scroll-margin-top: calc(var(--docs-header) + var(--ui-space-lg));
+    }
+
+    .component-index-heading {
+      margin: 0 0 var(--ui-space-lg);
+      color: var(--ui-text-muted);
+      font: var(--ui-weight-medium) var(--ui-text-eyebrow)/1rem var(--font-family-sans);
+      letter-spacing: var(--ui-tracking-eyebrow);
+      text-transform: uppercase;
+    }
+
+    .component-index-grid {
+      --component-index-gap: 1.5rem;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--ui-space-xl) var(--component-index-gap);
+      margin: 0;
+      padding: 0;
+      list-style: none;
+
+      /* From two safe areas across: as many 240px columns as fit, and never more than four. */
+      @container (width >= 31.5rem) {
+        grid-template-columns: repeat(auto-fill, minmax(max(15rem, (100% - var(--component-index-gap) * 3) / 4), 1fr));
+      }
     }
   }
 </style>

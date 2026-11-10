@@ -24,8 +24,8 @@ export default defineSite({
     localizablePathnameRoots: ['guide', 'components'],
     translations
   },
-  // The guide and components share one documentation shell and sidebar.
-  sections: { home: section('home'), page: section('page'), guide: section('guide'), components: section('guide') },
+  // The guide and components share one documentation shell and sidebar; the components overview leaves the sidebar out.
+  sections: { home: section('home'), page: section('page'), guide: section('guide'), components: new URL('./sections/components.astro', import.meta.url) },
   navigation: { guide: new URL('./.categories/docs.json', import.meta.url) },
   documents: { guide: document, components: document },
   styles: { site: new URL('./styles/site.ts', import.meta.url) }

@@ -1,0 +1,99 @@
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+
+A composer is where a message or a prompt is written. A raised sheet holds a bare field that grows with its text, and under it a row of quiet tools with the send button at the end. The sheet draws the field's focus, one ink contour and a soft halo, the way an [input](/components/input) does.
+
+<ComponentPreview name="default" title="Composer" bodyClass="p-lg" html={`<form class="composer max-w(480) mx-auto">
+  <textarea class="composer-field" name="message" aria-label="Message" placeholder="Ask anything"></textarea>
+  <div class="composer-toolbar">
+    <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Attach a file"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+    <button type="button" class="btn btn-quiet btn-sm"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4c3 3 3 13 0 16M12 4c-3 3-3 13 0 16"/></svg>Search</button>
+    <div class="composer-end">
+      <span class="composer-hint">Enter to send</span>
+      <button class="btn btn-primary btn-square btn-sm" aria-label="Send"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg></button>
+    </div>
+  </div>
+</form>`} caption="Type a few lines: the field grows with them." />
+
+The field is a `<textarea>` with `field-sizing: content`: it starts at one line and grows to ten, then scrolls. Set `--composer-rows` and `--composer-max-rows` to change either end. Where the browser cannot size a field by its content, it keeps three lines and scrolls from there.
+
+Buttons sit 8px in from the sheet's edge and take the concentric corner, so the send button's curve follows the sheet's.
+
+## Attachments \{#attachments\}
+
+`composer-attachments` is a wrapping row above the field for what goes with the message: [chips](/components/chip) for files, or thumbnails.
+
+<ComponentPreview name="attachments" title="Attachments" bodyClass="p-lg" html={`<form class="composer max-w(480) mx-auto">
+  <div class="composer-attachments">
+    <span class="chip">brief.pdf<button type="button" class="chip-remove" aria-label="Remove brief.pdf"></button></span>
+    <span class="chip">notes.md<button type="button" class="chip-remove" aria-label="Remove notes.md"></button></span>
+  </div>
+  <textarea class="composer-field" name="message" aria-label="Message">Summarise the brief against these notes, and list what the notes leave out. Keep it to one page so the team can read it before the review on Thursday.</textarea>
+  <div class="composer-toolbar">
+    <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Attach a file"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+    <div class="composer-end">
+      <span class="composer-hint">138 / 2000</span>
+      <button class="btn btn-primary btn-sm">Send</button>
+    </div>
+  </div>
+</form>`} />
+
+## Disabled \{#disabled\}
+
+When the field is disabled the sheet settles into a well and stops lifting. Disable the send button with it, and say why in the placeholder or beside the composer.
+
+<ComponentPreview name="disabled" title="Disabled" bodyClass="p-lg" html={`<form class="composer max-w(480) mx-auto">
+  <textarea class="composer-field" name="message" aria-label="Message" placeholder="Replies are closed for this thread" disabled></textarea>
+  <div class="composer-toolbar">
+    <div class="composer-end">
+      <button class="btn btn-primary btn-square btn-sm" aria-label="Send" disabled><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg></button>
+    </div>
+  </div>
+</form>`} />
+
+## Sending with Enter \{#enter\}
+
+A textarea takes Enter as a new line. To send on Enter and keep Shift+Enter for a line, one listener is enough; skip it while an input method is composing.
+
+```js
+field.addEventListener('keydown', event => {
+  if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) {
+    event.preventDefault()
+    field.form.requestSubmit()
+  }
+})
+```
+
+Say so beside the tools with a `composer-hint`, since the convention differs between products.
+
+## Accessibility \{#accessibility\}
+
+- The field needs a name: `aria-label`, or a visible `<label for>` above the composer. A placeholder is not a name.
+- The composer is a `<form>`, so the send button submits it and a password manager or an extension can find it.
+- Icon buttons carry `aria-label`. The tools are in the tab order after the field, in reading order.
+- Clicking the sheet's padding does not focus the field by itself; if you want the whole sheet to be the target, wrap the field in a `<label>`.
+- On touch screens the field's text is 16px, so iOS does not zoom the page on focus.
+
+## Classes \{#classes\}
+
+| Class | Description |
+| --- | --- |
+| `composer` | The sheet around the field and its tools |
+| `composer-field` | The `<textarea>`, growing with its content |
+| `composer-attachments` | A wrapping row above the field |
+| `composer-toolbar` | The row of tools under the field |
+| `composer-end` | The group pushed to the end of the toolbar |
+| `composer-hint` | A quiet note beside the tools |
+
+## Custom properties \{#custom-properties\}
+
+| Property | Default | Description |
+| --- | --- | --- |
+| `--composer-rows` | `1` | Lines the field starts with |
+| `--composer-max-rows` | `10` | Lines after which the field scrolls |
+| `--composer-radius` | `var(--radius-surface)` | The sheet's corner |
+| `--composer-inset` | `.5rem` | The sheet's padding, and the inset its buttons' corners follow |
+
+## Source \{#source\}
+
+<ComponentSource name="composer" />

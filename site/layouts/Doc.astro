@@ -1,6 +1,73 @@
 ---
-import Layout from '@master/internal-site/layouts/Doc.astro'
+import ArticleHeader from '@master/internal-site/components/ArticleHeader.astro'
+import DocArticle from '@master/internal-site/components/DocArticle.astro'
+import DocMain from '@master/internal-site/components/DocMain.astro'
+import PageContent from '@master/internal-site/components/PageContent.svelte'
+import PageContentBootstrap from '@master/internal-site/components/PageContentBootstrap.astro'
+import PageNavs from '@master/internal-site/components/PageNavs.astro'
+import ComponentPager from '~/site/components/ComponentPager.astro'
+import Cover from '~/site/components/cover/Cover.astro'
 import { footerProps } from '~/site/navigation'
-type Props = import('astro/types').ComponentProps<typeof Layout>
+
+interface Props {
+  params: { locale: string, [key: string]: any }
+  toc?: any[] | null
+  pageCategories?: any
+  metadata: any
+  dictionaries: Record<string, () => Promise<any>>
+  class?: string
+  /** The rest reaches `ArticleHeader`: `subtitle`, `categoryLink`, `icon`, `end`, … */
+  [key: string]: any
+}
+
+/**
+ * The documentation layout, as `@master/internal-site/layouts/Doc.astro` composes it, with two additions for a
+ * component page: its cover stands at the end of the page head, and the pager shows its neighbors as covers.
+ */
+const { params, toc, pageCategories, metadata, dictionaries, ...props } = Astro.props
+const { locale } = params
+const pageContent = Array.isArray(toc) && toc.length > 0 ? toc : null
+const slug = /^\/components\/([^/]+)$/.exec(metadata.pathname ?? '')?.[1]
+const Pager = slug ? ComponentPager : PageNavs
 ---
-<Layout {...Astro.props} {footerProps}><slot /></Layout>
+
+<DocMain class={props.class} footerProps={footerProps}>
+  {/* Stream the rail before the article so both columns are present when its title first paints. */}
+  {pageContent && <PageContent client:load items={pageContent.map(({ id, title, level }) => ({ id, title, level }))} metadata={{ sourcePath: metadata.sourcePath, title: metadata.title }} />}
+  <DocArticle aside={Boolean(pageContent)} class={slug && 'component-page'}>
+    <ArticleHeader {...props} end={slug ? <Cover slug={slug} class="component-page-cover" /> : props.end} locale={locale} metadata={metadata} dictionaries={dictionaries} toc={pageContent} />
+    <slot />
+    <Pager locale={locale} metadata={metadata} pageCategories={pageCategories} dictionaries={dictionaries} />
+  </DocArticle>
+  {pageContent && <PageContentBootstrap items={pageContent} />}
+</DocMain>
+
+<style is:global>
+  /*
+   * A component page's head: the words keep the start, and the cover stands at the end at its real size, 240px.
+   * Where the column cannot hold both, the cover leads the title at the column's width.
+   */
+  @layer components {
+    .component-page .ui-pagehead-title {
+      flex-direction: column-reverse;
+      align-items: stretch;
+      gap: var(--ui-space-lg);
+    }
+
+    @media (width >= 48rem) {
+      .component-page .ui-pagehead {
+        position: relative;
+        min-height: 9.375rem;
+        padding-inline-end: 16.5rem;
+        align-content: center;
+      }
+
+      .component-page-cover {
+        position: absolute;
+        inset-block-start: 0;
+        inset-inline-end: 0;
+        width: 15rem;
+      }
+    }
+  }
+</style>

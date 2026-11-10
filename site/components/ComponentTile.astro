@@ -1,0 +1,110 @@
+---
+import Cover from '~/site/components/cover/Cover.astro'
+import { components } from '~/site/components/catalog'
+import { siteOf } from '@master/internal-site/astro/site-context'
+
+interface Props {
+  /** A component slug; the tile links to its page. */
+  slug: string
+  /** A caption over the name, such as Previous or Next. */
+  label?: string
+  /** The name to show when the component is not in the catalog. */
+  name?: string
+  /** Show what the component is, under its name. */
+  description?: boolean
+  rel?: string
+  class?: string
+}
+
+/** A component as a link: its cover, its name and, on request, what it is. */
+const { slug, label, name, description = false, rel, class: className } = Astro.props
+const { t } = siteOf(Astro)
+const component = components.find(component => component.slug === slug)
+---
+
+<a class:list={['component-tile', className]} href={`/components/${slug}`} rel={rel}>
+  <Cover slug={slug} />
+  {label && <span class="component-tile-label">{label}</span>}
+  <span class="component-tile-name">{t(name ?? component?.name ?? slug)}</span>
+  {description && component && <span class="component-tile-description">{t(component.description)}</span>}
+</a>
+
+<style is:global>
+  @layer components {
+    .component-tile {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      align-content: start;
+      gap: var(--ui-space-3xs);
+      border-radius: var(--ui-radius-lg);
+      color: var(--ui-text-muted);
+      text-decoration: none;
+
+      & > .cover {
+        margin-bottom: var(--ui-space-sm);
+        transition: box-shadow var(--ui-duration-quick) var(--ui-ease);
+      }
+
+      & .cover-art {
+        transition: translate var(--ui-duration-base) var(--ui-ease);
+      }
+
+      /* Under the pointer the stage firms its edge and the drawing rises a little, as a control would. */
+      @media (hover: hover) {
+        &:hover > .cover {
+          box-shadow: inset 0 0 0 .5px var(--color-line-strong), inset 0 1px 2px -1px var(--color-shade-2);
+        }
+
+        &:hover .cover-art {
+          translate: -50% calc(-50% - 2px);
+        }
+      }
+
+      &:focus-visible {
+        outline: 2px solid var(--ui-focus);
+        outline-offset: 6px;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        &:hover .cover-art {
+          translate: -50% -50%;
+        }
+      }
+    }
+
+    .component-tile-label {
+      color: var(--ui-text-muted);
+      font: var(--ui-weight-medium) var(--ui-text-eyebrow)/1rem var(--font-family-sans);
+      letter-spacing: var(--ui-tracking-eyebrow);
+      text-transform: uppercase;
+    }
+
+    .component-tile-name {
+      color: var(--ui-text-strong);
+      font-size: .9375rem;
+      font-weight: var(--ui-weight-medium);
+      line-height: 1.5rem;
+    }
+
+    .component-tile-description {
+      font-size: var(--ui-text-caption);
+      line-height: 1.55;
+      text-wrap: pretty;
+    }
+
+    /* A row of tiles in a page: as many 240px columns as fit, so each cover keeps its real size. */
+    .component-tiles {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+      gap: var(--ui-space-xl) 1.5rem;
+      margin: var(--ui-space-lg) 0 0;
+      padding: 0;
+      list-style: none;
+
+      & > li {
+        margin: 0;
+        padding: 0;
+      }
+    }
+  }
+</style>

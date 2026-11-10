@@ -1,0 +1,847 @@
+/*
+ * Cover: one drawing of a component on a stage, in the library's own materials.
+ *
+ * The stage is a tray; what stands on it is drawn with the published @master/ui tokens (`theme.ts` scopes them to
+ * `.cover`), so light and dark come from the same drawing. A drawing is at real size: a control is 38px, a ring is
+ * half a pixel, a corner is its role token. The art is a 240 × 150 safe area centered on the stage: a wider stage
+ * shows more stage around it, and only a stage narrower than the safe area scales the art down.
+ * Words are bars, never text. One mark per cover may be ink.
+ */
+/* A layout's gap is its own: a column inside a gapless column keeps the default. */
+@property --gap {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 8px;
+}
+
+@layer components {
+  .cover {
+    container-type: inline-size;
+    position: relative;
+    display: block;
+    overflow: hidden;
+    aspect-ratio: 16 / 10;
+    border-radius: calc(var(--radius-surface) * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    background: var(--color-surface-tray);
+    box-shadow: inset 0 0 0 .5px var(--color-line-hair), inset 0 1px 2px -1px var(--color-shade-2);
+    color: var(--color-text-strong);
+    font: var(--font-weight-control) .84375rem/1 var(--font-family-sans);
+    font-style: normal;
+    user-select: none;
+    -webkit-user-select: none;
+    pointer-events: none;
+
+    @media (forced-colors: active) {
+      outline: 1px solid CanvasText;
+      outline-offset: -1px;
+    }
+  }
+
+  .cover-art {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    display: grid;
+    place-content: center;
+    place-items: center;
+    width: 240px;
+    height: 150px;
+    translate: -50% -50%;
+    /* A length divided by a length, written with the trigonometry every engine has. */
+    scale: min(1, tan(atan2(100cqw, 240px)));
+  }
+
+  /* A component without a drawing yet: an empty outline, so the gap is plain to see. */
+  .cover[data-pending] .cover-art::before {
+    content: '';
+    width: 72px;
+    height: 48px;
+    border-radius: calc(var(--radius-control) * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    outline: 1px dashed var(--color-line-strong);
+    outline-offset: -1px;
+  }
+
+  /* Layout: a column and a row. Sizes are written on the element, in pixels. */
+  .cover-stack, .cover-line {
+    display: flex;
+    gap: var(--gap);
+    min-width: 0;
+  }
+
+  .cover-stack {
+    flex-direction: column;
+  }
+
+  .cover-line {
+    align-items: center;
+  }
+
+  /* Materials. Every corner is its role token on --r, drawn the way components draw theirs. */
+  .cover-sheet, .cover-float, .cover-well, .cover-control, .cover-row, .cover-media {
+    position: relative;
+    box-sizing: border-box;
+    border-radius: calc(var(--r) * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+  }
+
+  /* A raised face. */
+  .cover-sheet {
+    --r: var(--radius-surface);
+    background: linear-gradient(180deg, var(--color-surface-raised), var(--color-surface-raised-low)) var(--color-surface-raised-low);
+    box-shadow: var(--shadow-raised);
+  }
+
+  /* A floating face: a menu, a popover, a dialog, a toast. */
+  .cover-float {
+    --r: var(--radius-surface);
+    background: var(--color-surface-floating);
+    box-shadow: var(--shadow-floating);
+  }
+
+  /* A well: a field or a track, cut into the surface it sits on. */
+  .cover-well {
+    --r: var(--radius-control);
+    background: var(--color-surface-inset);
+    box-shadow: var(--shadow-pressed);
+
+    /* A focused field rises to the sheet and takes an ink contour with a soft halo. */
+    &.cover-focus {
+      background: var(--color-surface-raised);
+      box-shadow: inset 0 0 0 .5px var(--color-line-mark), 0 0 0 .5px var(--color-line-mark), 0 0 0 3.5px light-dark(oklch(22% .002 265 / .09), oklch(100% 0 none / .11));
+    }
+  }
+
+  /* A picture: a tone and an inward outline, never an image. */
+  .cover-media {
+    --r: calc(var(--radius-surface) - 4px);
+    background: linear-gradient(160deg, color-mix(in oklch, var(--color-text-strong) 5%, transparent), color-mix(in oklch, var(--color-text-strong) 13%, transparent));
+    box-shadow: inset 0 0 0 .5px var(--color-line-contour);
+  }
+
+  /* A control: a button at rest, 38px tall. */
+  .cover-control {
+    --r: var(--radius-control);
+    --glyph: 16px;
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 38px;
+    padding: 0 16px;
+    background: linear-gradient(180deg, var(--color-surface-raised), var(--color-surface-raised-low)) var(--color-surface-raised-low);
+    box-shadow: var(--shadow-raised);
+
+    &.cover-control-sm {
+      --r: var(--radius-control-sm);
+      --glyph: 14px;
+      gap: 6px;
+      height: 32px;
+      padding: 0 12px;
+    }
+
+    &.cover-square {
+      aspect-ratio: 1;
+      padding: 0;
+    }
+
+    /* Quiet: no material until touched. */
+    &.cover-quiet {
+      background: none;
+      box-shadow: none;
+      color: var(--color-text-body);
+    }
+
+    /* Pressed or toggled on: sunk into a well. */
+    &.cover-pressed {
+      background: var(--color-surface-inset);
+      box-shadow: var(--shadow-pressed);
+      color: var(--color-text-strong);
+    }
+
+    /* The primary face: ink on moonstone, pearl on obsidian. */
+    &.cover-ink {
+      background: linear-gradient(180deg, light-dark(oklch(31% .0026 265), oklch(98.8% 0 none)), light-dark(oklch(20.5% .003 265), oklch(92% .0032 265))) light-dark(oklch(20.5% .003 265), oklch(92% .0032 265));
+      box-shadow:
+        inset 0 .5px 0 light-dark(oklch(100% 0 none / .3), oklch(100% 0 none)),
+        inset 0 1px 0 light-dark(oklch(100% 0 none / .1), oklch(100% 0 none)),
+        inset 0 -1px 2px -1px light-dark(oklch(0% 0 none / .5), oklch(0% 0 none / .2)),
+        0 0 0 .5px light-dark(oklch(15% .003 265), oklch(0% 0 none / .55)),
+        0 1px 2px -1px light-dark(oklch(18% 0 none / .3), oklch(0% 0 none / .55)),
+        0 2px 4px -2px light-dark(oklch(18% 0 none / .2), oklch(0% 0 none / .4)),
+        0 4px 8px -4px light-dark(oklch(18% 0 none / .14), oklch(0% 0 none / .34));
+    }
+  }
+
+  /* Ink: the one mark a cover may fill. On it, bars and glyphs turn to the inverse ink. */
+  .cover-ink {
+    --cover-bar: color-mix(in oklch, var(--color-text-inverse) 92%, transparent);
+    background: var(--color-surface-inverse);
+    color: var(--color-text-inverse);
+  }
+
+  /* A row in a list: a menu item, an option. The active one takes the chip tone at once. */
+  .cover-row {
+    --r: var(--radius-control-sm);
+    --glyph: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 32px;
+    padding: 0 8px;
+    color: var(--color-text-muted);
+
+    &.cover-row-active {
+      background: var(--color-surface-chip);
+      color: var(--color-text-strong);
+    }
+  }
+
+  /* Marks. A bar stands for words: strong for a title or a label, plain for a sentence, faint for a hint. */
+  .cover-bar {
+    display: block;
+    flex: none;
+    height: 6px;
+    border-radius: 999px;
+    background: var(--cover-bar, var(--color-line-mark));
+
+    &.cover-bar-strong {
+      background: var(--cover-bar, color-mix(in oklch, var(--color-text-strong) 74%, transparent));
+    }
+
+    &.cover-bar-faint {
+      background: var(--cover-bar, var(--color-line-strong));
+    }
+  }
+
+  /* A hairline, and its upright form between controls. */
+  .cover-rule {
+    display: block;
+    flex: none;
+    align-self: stretch;
+    height: 1px;
+    background: var(--color-line-divider);
+
+    &.cover-rule-upright {
+      width: 1px;
+      height: auto;
+      margin: 8px 4px;
+    }
+  }
+
+  /* An icon on the 24px grid at a 1.5 stroke; the control that holds it sets its size. */
+  .cover-glyph {
+    display: block;
+    flex: none;
+    width: var(--glyph, 16px);
+    height: var(--glyph, 16px);
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  /* A text caret in a focused field. */
+  .cover-caret {
+    display: block;
+    flex: none;
+    width: 1.5px;
+    height: 16px;
+    border-radius: 1px;
+    background: var(--color-text-strong);
+  }
+
+  /* A switch: a pill well whose pearl thumb keeps 3px from every edge; on, the track is ink. */
+  .cover-switch {
+    position: relative;
+    display: block;
+    flex: none;
+    width: 36px;
+    height: 22px;
+    border-radius: 999px;
+    background: var(--color-surface-inset);
+    box-shadow: var(--shadow-pressed), inset 0 0 0 .5px var(--color-line-contour);
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 16px;
+      height: 16px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, oklch(100% 0 none), oklch(96.5% .0011 265));
+      box-shadow: 0 0 0 .5px var(--color-line-strong), 0 1px 2px -.5px var(--color-shade-1), 0 2px 4px -1px var(--color-shade-2);
+    }
+
+    &.cover-switch-on {
+      background: var(--color-surface-inverse);
+      box-shadow: inset 0 1px 2px oklch(0% 0 none / .3), 0 0 0 .5px light-dark(oklch(15% .003 265), oklch(0% 0 none / .5));
+
+      &::before {
+        translate: 14px 0;
+        background: linear-gradient(180deg, light-dark(oklch(100% 0 none), oklch(26% .0024 265)), light-dark(oklch(96.5% .0011 265), oklch(20% .002 265)));
+        box-shadow: 0 0 0 .5px oklch(0% 0 none / .3), 0 1px 2px -.5px oklch(0% 0 none / .35), 0 2px 4px -1px oklch(0% 0 none / .25);
+      }
+    }
+  }
+
+  /* A tab: a word on the hairline; the current one is underlined in ink. */
+  .cover-tab {
+    display: flex;
+    align-items: center;
+    align-self: stretch;
+
+    &.cover-tab-current {
+      box-shadow: inset 0 -2px 0 var(--color-text-strong);
+    }
+  }
+
+  /* A link: the ink of its sentence over a quiet underline. */
+  .cover-link {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+
+    &::after {
+      content: '';
+      position: absolute;
+      inset: auto 0 -6px;
+      height: 1px;
+      background: var(--color-text-strong);
+    }
+  }
+
+  /* A scrolling region: both edges fade where content continues, and a thin thumb marks the position. */
+  .cover-fade {
+    mask-image: linear-gradient(180deg, transparent, #000 34%, #000 66%, transparent);
+  }
+
+  .cover-thumb {
+    position: absolute;
+    display: block;
+    width: 3px;
+    border-radius: 999px;
+    background: var(--color-line-mark);
+  }
+
+  /* A scrim: what a modal dims. It covers the whole stage, past the art. */
+  .cover-scrim {
+    position: absolute;
+    inset: -100vmax;
+    background: var(--color-surface-scrim);
+  }
+
+  /* A flat face on one contour: a choice at rest. Chosen, it rises a step and its contour turns to ink. */
+  .cover-flat {
+    --r: var(--radius-control-lg);
+    background: var(--color-surface-raised);
+    box-shadow: var(--shadow-flat);
+
+    &.cover-chosen {
+      box-shadow: inset 0 1px 0 var(--color-highlight), 0 0 0 .5px var(--color-text-strong), 0 0 0 1px color-mix(in oklab, var(--color-text-strong) 22%, transparent), 0 1px 2px -1px var(--color-shade-1), 0 2px 4px -2px var(--color-shade-2);
+    }
+  }
+
+  /* A chip-toned face: an alert, inline code, a band. Without the contour it is a skeleton block. */
+  .cover-tone {
+    --r: var(--radius-control-lg);
+    background: var(--color-surface-chip);
+    box-shadow: inset 0 0 0 .5px var(--color-line-contour);
+
+    &.cover-skeleton {
+      --r: var(--radius-chip);
+      box-shadow: none;
+    }
+  }
+
+  /* A dashed contour says "put it here". */
+  .cover-dashed {
+    --r: var(--radius-control-lg);
+    border: 1px dashed var(--color-line-strong);
+    background: var(--color-surface-inset);
+  }
+
+  .cover-flat, .cover-tone, .cover-dashed, .cover-check, .cover-badge, .cover-key, .cover-day, .cover-tip {
+    position: relative;
+    box-sizing: border-box;
+    border-radius: calc(var(--r) * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+  }
+
+  /* Centers one mark in a box: a digit in a slot, an icon in a well. */
+  .cover-center {
+    display: grid;
+    place-items: center;
+  }
+
+  /* The current destination in a nav: a row that rises as a small sheet. */
+  .cover-row.cover-row-current {
+    background: linear-gradient(180deg, var(--color-surface-raised), var(--color-surface-raised-low)) var(--color-surface-raised-low);
+    box-shadow: var(--shadow-raised);
+    color: var(--color-text-strong);
+  }
+
+  /* A checkbox: a small well with a firmer edge; on, it fills with ink. Round, it is a radio. */
+  .cover-check {
+    --r: calc(var(--radius-chip) - 1px);
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 18px;
+    height: 18px;
+    background: var(--color-surface-inset);
+    box-shadow: var(--shadow-pressed), inset 0 0 0 .5px var(--color-line-strong);
+
+    &.cover-check-round {
+      border-radius: 999px;
+      corner-shape: round;
+    }
+
+    &.cover-check-on {
+      background: var(--color-surface-inverse);
+      box-shadow: inset 0 .5px 0 light-dark(oklch(100% 0 none / .28), oklch(100% 0 none)), 0 0 0 .5px light-dark(oklch(15% .003 265), oklch(0% 0 none / .5)), 0 1px 2px -1px var(--color-shade-1);
+
+      &::after {
+        content: '';
+        width: 10px;
+        height: 10px;
+        background: var(--color-text-inverse);
+        mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M2 5.2 4.1 7.3 8 2.8' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      }
+
+      &.cover-check-round::after {
+        width: 6px;
+        height: 6px;
+        border-radius: 999px;
+        mask: none;
+      }
+    }
+  }
+
+  /* A track: a thin well filled with ink up to --fill. A knob is the pearl thumb that stands at the fill. */
+  .cover-track {
+    --fill: 50%;
+    position: relative;
+    display: block;
+    height: 6px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--color-surface-inverse) var(--fill), transparent 0) var(--color-surface-inset);
+    box-shadow: var(--shadow-pressed);
+  }
+
+  .cover-knob {
+    position: absolute;
+    top: 50%;
+    left: var(--fill);
+    width: 18px;
+    height: 18px;
+    translate: -50% -50%;
+    border-radius: 999px;
+    background: linear-gradient(180deg, oklch(100% 0 none), oklch(96.5% .0011 265));
+    box-shadow: 0 0 0 .5px var(--color-line-strong), 0 1px 2px -.5px var(--color-shade-1), 0 2px 4px -1px var(--color-shade-2), 0 4px 8px -4px var(--color-shade-3);
+  }
+
+  /* The same amount around a circle. */
+  .cover-ring {
+    --fill: 50%;
+    display: block;
+    flex: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    background: conic-gradient(var(--color-surface-inverse) var(--fill), color-mix(in oklab, var(--color-surface-inverse) 11%, transparent) 0);
+    mask: radial-gradient(farthest-side, transparent calc(100% - 4.5px), black calc(100% - 4px));
+  }
+
+  /* A spinner at rest: a fine ring whose arc fades along its length. */
+  .cover-spinner {
+    --d: 36px;
+    display: block;
+    flex: none;
+    width: var(--d);
+    height: var(--d);
+    border-radius: 999px;
+    background: conic-gradient(from 90deg, color-mix(in oklab, currentColor 12%, transparent) 0 18%, currentColor);
+    mask: radial-gradient(farthest-side, transparent calc(100% - var(--d) / 9 - .5px), black calc(100% - var(--d) / 9), black calc(100% - .5px), transparent);
+  }
+
+  /* A chip: a 28px pill, raised; chosen, it fills with ink the way a checkbox does. */
+  .cover-chip {
+    --glyph: 14px;
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: 6px;
+    height: 28px;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: linear-gradient(180deg, var(--color-surface-raised), var(--color-surface-raised-low)) var(--color-surface-raised-low);
+    box-shadow: var(--shadow-raised);
+
+    &.cover-ink {
+      background: var(--color-surface-inverse);
+      box-shadow: inset 0 .5px 0 light-dark(oklch(100% 0 none / .28), oklch(100% 0 none)), 0 0 0 .5px light-dark(oklch(15% .003 265), oklch(0% 0 none / .5)), 0 1px 2px -1px var(--color-shade-1), 0 2px 4px -2px var(--color-shade-2);
+    }
+  }
+
+  /* A badge: a small chip-toned mark with a chip's corner. */
+  .cover-badge {
+    --r: var(--radius-chip);
+    --glyph: 14px;
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: 5px;
+    height: 22px;
+    padding: 0 7px;
+    background: var(--color-surface-chip);
+    box-shadow: inset 0 0 0 .5px var(--color-line-contour);
+    color: var(--color-text-body);
+  }
+
+  /* A keycap that catches the light. Its glyph is the component, so it is written. */
+  .cover-key {
+    --r: var(--radius-chip);
+    display: inline-grid;
+    flex: none;
+    place-items: center;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 5px;
+    background: linear-gradient(180deg, var(--color-surface-raised), var(--color-surface-raised-low)) var(--color-surface-raised-low);
+    box-shadow: inset 0 1px 0 var(--color-highlight), inset 0 -1px 0 var(--color-line-hair), 0 0 0 .5px var(--color-line-strong), 0 1px 1px -.5px var(--color-shade-1), 0 2px 2px -1px var(--color-shade-2);
+    font: 400 11px/1 var(--font-family-mono);
+  }
+
+  /* A dot: a marker on a line, a slide's marker, a status. --d sets its size. */
+  .cover-dot {
+    display: block;
+    flex: none;
+    width: var(--d, 7px);
+    height: var(--d, 7px);
+    border-radius: 999px;
+    background: var(--color-line-mark);
+
+    &.cover-ink {
+      background: var(--color-surface-inverse);
+    }
+  }
+
+  /*
+   * An avatar: initials in a circle, or a tone for a photo with its inward stroke. In a stack each one is cut
+   * out of the surface behind it by a ring in that surface's color, which the stack names with --cover-surface.
+   */
+  .cover-avatar {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: var(--d, 32px);
+    height: var(--d, 32px);
+    border-radius: 999px;
+    background: linear-gradient(var(--color-surface-chip), var(--color-surface-chip)) var(--cover-surface, var(--color-surface-tray));
+    color: var(--color-text-body);
+    font: var(--font-weight-control) calc(var(--d, 32px) * .4)/1 var(--font-family-sans);
+
+    &.cover-avatar-photo {
+      background: linear-gradient(160deg, color-mix(in oklch, var(--color-text-strong) 14%, var(--cover-surface, var(--color-surface-tray))), color-mix(in oklch, var(--color-text-strong) 34%, var(--cover-surface, var(--color-surface-tray))));
+      box-shadow: inset 0 0 0 1px light-dark(oklch(0% 0 none / .1), oklch(100% 0 none / .1));
+    }
+  }
+
+  .cover-avatars {
+    display: flex;
+
+    & .cover-avatar {
+      box-shadow: 0 0 0 2px var(--cover-surface, var(--color-surface-tray));
+    }
+
+    & .cover-avatar-photo {
+      box-shadow: inset 0 0 0 1px light-dark(oklch(0% 0 none / .1), oklch(100% 0 none / .1)), 0 0 0 2px var(--cover-surface, var(--color-surface-tray));
+    }
+
+    & .cover-avatar + .cover-avatar {
+      margin-inline-start: calc(var(--d, 32px) * -.25);
+    }
+  }
+
+  /* A star cut with the rating's own mask: a quiet line at rest, ink when it counts. */
+  .cover-star {
+    display: block;
+    flex: none;
+    width: 20px;
+    height: 20px;
+    background: var(--color-line-strong);
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2.6c.4 0 .8.2 1 .6l2.5 5.2 5.7.8c.9.1 1.3 1.3.6 1.9l-4.1 4 1 5.7c.2.9-.8 1.6-1.6 1.2L12 19.3l-5.1 2.7c-.8.4-1.8-.3-1.6-1.2l1-5.7-4.1-4c-.7-.6-.3-1.8.6-1.9l5.7-.8L11 3.2c.2-.4.6-.6 1-.6Z'/%3E%3C/svg%3E") center / contain no-repeat;
+
+    &.cover-ink {
+      background: var(--color-text-strong);
+    }
+  }
+
+  /* A step's marker: waiting in a well, current as a small sheet on an ink contour, done as an ink disc with a check. */
+  .cover-marker {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 999px;
+    background: var(--color-surface-inset);
+    box-shadow: var(--shadow-pressed);
+    color: var(--color-text-muted);
+    font: var(--font-weight-control) 11.5px/1 var(--font-family-sans);
+    font-variant-numeric: tabular-nums;
+
+    &.cover-marker-current {
+      background: linear-gradient(180deg, var(--color-surface-raised), var(--color-surface-raised-low)) var(--color-surface-raised-low);
+      box-shadow: 0 0 0 .5px var(--color-text-strong), 0 0 0 1px color-mix(in oklab, var(--color-text-strong) 22%, transparent), 0 1px 2px -1px var(--color-shade-1), 0 2px 4px -2px var(--color-shade-2);
+      color: var(--color-text-strong);
+    }
+
+    &.cover-marker-done {
+      background: var(--color-surface-inverse);
+      box-shadow: none;
+
+      &::after {
+        content: '';
+        width: 10px;
+        height: 10px;
+        background: var(--color-text-inverse);
+        mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M2 5.2 4.1 7.3 8 2.8' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      }
+    }
+  }
+
+  /* A day in a month: a 36px cell. Today carries a dot; the chosen day is ink. */
+  .cover-day {
+    --r: var(--radius-control-sm);
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+
+    &.cover-day-today::after {
+      content: '';
+      position: absolute;
+      bottom: 5px;
+      left: calc(50% - 1.5px);
+      width: 3px;
+      height: 3px;
+      border-radius: 999px;
+      background: var(--color-text-strong);
+    }
+
+    &.cover-ink {
+      box-shadow: inset 0 .5px 0 light-dark(oklch(100% 0 none / .28), oklch(100% 0 none)), 0 0 0 .5px light-dark(oklch(15% .003 265), oklch(0% 0 none / .5)), 0 1px 2px -1px var(--color-shade-1);
+    }
+  }
+
+  /* A tooltip: a short label in ink, a step lighter on obsidian. */
+  .cover-tip {
+    --r: calc(var(--radius-chip) + 1px);
+    --cover-bar: color-mix(in oklab, currentColor 88%, transparent);
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: 6px;
+    height: 26px;
+    padding: 0 8px;
+    background: light-dark(var(--color-surface-inverse), oklch(33% .0026 265));
+    color: light-dark(var(--color-text-inverse), var(--color-text-strong));
+    box-shadow: inset 0 .5px 0 light-dark(oklch(100% 0 none / .22), oklch(100% 0 none / .12)), 0 0 0 .5px light-dark(oklch(15% .003 265), oklch(0% 0 none / .6)), 0 2px 4px -2px var(--color-shade-1), 0 4px 8px -4px var(--color-shade-2);
+  }
+
+  /* A figure: the large number of a stat, as one tall bar. */
+  .cover-bar.cover-bar-figure {
+    height: 16px;
+    border-radius: 5px;
+  }
+
+  /* The edge fade of a row that scrolls sideways. */
+  .cover-fade-inline {
+    mask-image: linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent);
+  }
+
+  /* Pushes a mark to the end of its row: a check, a chevron, a key. */
+  .cover-end {
+    margin-inline-start: auto;
+  }
+
+  /* A chosen option: its check and its words in strong ink, without the pointer's tone. */
+  .cover-row.cover-row-checked {
+    color: var(--color-text-strong);
+  }
+
+  /* A level of a tree, set in on a hairline guide. */
+  .cover-guide {
+    margin-inline-start: 13px;
+    padding-inline-start: 5px;
+    box-shadow: inset 1px 0 0 var(--color-line-divider);
+  }
+
+  /* A true circle or pill, which keeps a circular corner where others turn continuous. */
+  .cover-round {
+    border-radius: 999px;
+    corner-shape: round;
+  }
+
+  /* The large control, 44px. */
+  .cover-control.cover-control-lg {
+    --r: var(--radius-control-lg);
+    --glyph: 18px;
+    height: 44px;
+    padding: 0 20px;
+  }
+
+  /* A handle between two panes while it is touched: the line takes ink and a grip appears on it. */
+  .cover-rule.cover-ink {
+    position: relative;
+    background: var(--color-text-strong);
+  }
+
+  .cover-grip {
+    position: absolute;
+    top: calc(50% - 12px);
+    left: -2.5px;
+    width: 6px;
+    height: 24px;
+    border-radius: 999px;
+    background: linear-gradient(180deg, var(--color-surface-raised), var(--color-surface-raised-low)) var(--color-surface-raised-low);
+    box-shadow: var(--shadow-raised);
+  }
+
+  /* A composer in use: a lifted sheet that draws its field's focus as an ink contour and a soft halo. */
+  .cover-sheet.cover-focus {
+    box-shadow: var(--shadow-lifted), 0 0 0 .5px var(--color-line-mark), 0 0 0 3.5px light-dark(oklch(22% .002 265 / .08), oklch(100% 0 none / .1));
+  }
+
+  /*
+   * A swatch: a disc with an edge inside it. A cover keeps to ink, so its colors are steps of ink set with
+   * --swatch; the chosen one stands in a ring of ink, a gap away, cut from --cover-surface.
+   */
+  .cover-swatch {
+    --swatch: currentColor;
+    display: block;
+    flex: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 999px;
+    background: var(--swatch);
+    box-shadow: inset 0 0 0 .5px light-dark(oklch(0% 0 none / .16), oklch(100% 0 none / .2)), inset 0 1px 0 oklch(100% 0 none / .18);
+
+    &.cover-swatch-on {
+      box-shadow:
+        inset 0 0 0 .5px light-dark(oklch(0% 0 none / .16), oklch(100% 0 none / .2)), inset 0 1px 0 oklch(100% 0 none / .18),
+        0 0 0 2px var(--cover-surface, var(--color-surface-tray)), 0 0 0 3.5px var(--color-text-strong);
+    }
+  }
+
+  /* A band of the tray tone on a hairline: a banner across the top of a page. */
+  .cover-band {
+    background: var(--color-surface-tray);
+    box-shadow: inset 0 -.5px 0 var(--color-line-contour);
+  }
+
+  /* A rail: the hairline a column of links hangs from. The row in view carries a short piece of ink on it. */
+  .cover-rail {
+    box-shadow: inset 1px 0 0 var(--color-line-divider);
+  }
+
+  .cover-rail-current {
+    position: relative;
+
+    &::before {
+      content: '';
+      position: absolute;
+      inset-block: 5px;
+      inset-inline-start: 0;
+      width: 1.5px;
+      border-radius: 999px;
+      background: var(--color-text-strong);
+    }
+  }
+
+  /* A quotation: its lines hang from a soft two-pixel rail with round ends. */
+  .cover-quote {
+    position: relative;
+    padding-inline-start: 18px;
+
+    &::before {
+      content: '';
+      position: absolute;
+      inset-block: 0;
+      inset-inline-start: 0;
+      width: 2px;
+      border-radius: 999px;
+      background: var(--color-line-strong);
+    }
+  }
+
+  /* A message: a raised bubble whose corner toward its author is tight. Sent, it is ink and points the other way. */
+  .cover-bubble {
+    --r: 1.125rem;
+    position: relative;
+    box-sizing: border-box;
+    border-radius: calc(var(--r) * var(--corner-scale));
+    border-end-start-radius: calc(.375rem * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    background: linear-gradient(180deg, var(--color-surface-raised), var(--color-surface-raised-low)) var(--color-surface-raised-low);
+    box-shadow: var(--shadow-raised);
+
+    &.cover-bubble-sent {
+      --cover-bar: color-mix(in oklch, var(--color-text-inverse) 92%, transparent);
+      border-end-start-radius: calc(var(--r) * var(--corner-scale));
+      border-end-end-radius: calc(.375rem * var(--corner-scale));
+      background: linear-gradient(180deg, light-dark(oklch(29% .0026 265), oklch(98% .001 265)), light-dark(oklch(21% .0022 265), oklch(92% .0018 265)));
+      box-shadow:
+        inset 0 .5px 0 light-dark(oklch(100% 0 none / .28), oklch(100% 0 none)),
+        0 0 0 .5px light-dark(oklch(15% .003 265), oklch(0% 0 none / .5)),
+        0 1px 2px -1px var(--color-shade-1), 0 2px 4px -2px var(--color-shade-2);
+    }
+  }
+
+  /* A stroke of highlighter: a wash of ink behind a phrase. The match the reader has stepped to is ink. */
+  .cover-mark {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    height: 18px;
+    margin-inline: -3px;
+    padding: 0 3px;
+    border-radius: calc(.1875rem * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    background: light-dark(oklch(22% .002 265 / .1), oklch(100% 0 none / .16));
+
+    &.cover-ink {
+      background: var(--color-surface-inverse);
+    }
+  }
+
+  /* The foot of a preview that fades out before it is opened. */
+  .cover-fade-foot {
+    mask-image: linear-gradient(180deg, #000 30%, transparent);
+  }
+
+  /* A tab bar's item: its icon rests on a soft pill when it is the current one. */
+  .cover-pill {
+    --glyph: 20px;
+    display: grid;
+    place-items: center;
+    width: 56px;
+    height: 28px;
+    border-radius: 999px;
+    color: var(--color-text-muted);
+
+    &.cover-pill-current {
+      background: var(--color-surface-chip);
+      box-shadow: inset 0 0 0 .5px var(--color-line-hair);
+      color: var(--color-text-strong);
+    }
+  }
+}
