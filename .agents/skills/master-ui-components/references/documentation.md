@@ -1,5 +1,7 @@
 # Documentation pattern
 
+This is the pattern for a component page. Layout and block pages follow [tiers](tiers.md).
+
 Each page lives in `site/content/components/<slug>/` with `metadata.ts` (`define()` with title, description and category) and `content.mdx`.
 
 1. One opening paragraph: what the component is in material terms and which native element carries it. Then a default `ComponentPreview`.
@@ -8,6 +10,12 @@ Each page lives in `site/content/components/<slug>/` with `metadata.ts` (`define
 4. When the component uses a platform feature as an enhancement, say which one, what it replaces and what a browser without it shows. Name engines only for a feature that is not yet in all of them.
 5. A Classes table, then a Custom properties table when the component exposes any.
 6. `## Source \{#source\}` with `<ComponentSource name="<slug>" />`, which shows the stylesheet clamped under a fade with an Expand control (`ExpandContent`). Long code that is reference material always uses this clamp, never a full open listing or a closed disclosure.
+
+Every preview is one tray with two views, chosen by a segmented control in its head: Preview, the default, and Code, the markup a reader copies. Both `ComponentPreview` and `PagePreview` get it from `site/components/PreviewSwitch.astro`; the choice is a pair of native radios read by the stylesheet, so no script is involved. Do not repeat a preview's markup in a fenced block under it.
+
+A preview that scrolls is guarded (`site/components/PreviewGuard.astro`): a reader scrolling the page passes over it, a pill says "Click to interact", and one click makes it live until the pointer leaves, Escape, or a press elsewhere. It applies by itself to a preview whose document is taller than its viewport, or that holds a scrolling region at least half its size or 320px tall; a small scroller inside a specimen is left alone, and the keyboard is never guarded. Prefer a preview that does not need it: size the example so it fits, and keep scrolling for examples about scrolling.
+
+A preview's document is transparent, so the specimen stands on the tray's stage. `ComponentPreview` takes `background`: `dots`, the default, is a field an object is seen against, so the edge of a well, a tray or a quiet control is found where a flat tone would swallow it; `plain` is for running text (headings, quotes, links, code), which a pattern only makes harder to read; `hatch` is for a specimen about empty room. Do not paint a background on the preview's body to separate a specimen from the stage: choose the material.
 
 Previews follow the site theme. Pass `theme` only when the example is about color schemes. Invalid utility classes fail the build, so keep examples on documented preset utilities; a bare number in parentheses is pixels (`w(280)`, `min-h(320)`). Headings carry explicit ids: `## Sizes \{#sizes\}`.
 

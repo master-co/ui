@@ -1,10 +1,10 @@
 ---
 name: master-ui-components
-description: Author, review and document Master UI components, the native HTML and CSS stylesheets in packages/ui. Use when adding or changing a component, its classes, tokens, states or sizes, or its documentation page, and when reviewing component CSS for selector, material, geometry and accessibility rules.
+description: Author, review and document Master UI components, layouts and blocks, the native HTML and CSS library in packages/ui and its pages in site. Use when adding or changing a component, its classes, tokens, states or sizes, a layout or a block, or a documentation page, when deciding whether something should be a class or utilities, and when reviewing component CSS for selector, material, geometry and accessibility rules.
 license: MIT
 metadata:
   author: master-co
-  version: "0.4.0"
+  version: "0.5.0"
 ---
 
 # Master UI components
@@ -12,6 +12,17 @@ metadata:
 A Master UI component is one native element with the right semantics, one stylesheet in `@layer components`, and markup a reader can copy into any stack. It works without JavaScript wherever the platform has an element for the job, uses the web platform's own feature for that job, and reads the Moonstone / Obsidian theme only through tokens. Where a pattern has no native element, the stylesheet is still complete: it draws every state from ARIA and leaves the behavior to the reader's script.
 
 Use `$master-design` for craft judgment (surfaces, geometry, type, states, motion). This skill supplies the contracts that make components consistent with each other.
+
+## Which tier
+
+Before writing anything, decide what the thing is. Read [tiers](references/tiers.md); in short:
+
+- A **component** has a material, a state, a platform behavior or a geometry its pieces share. It is a semantic class in `packages/ui/components`.
+- A **layout** says where the regions of a page go and what scrolls. It is markup written with utilities, published on a page in `site/content/layouts`. It owns no material. Only what utilities cannot say (a `dvh` height, a safe-area inset, a container threshold) becomes one of the few layout classes in `packages/ui/layouts`.
+- A **block** is one stretch of a page with a purpose, composed from components and utilities and published as markup in `site/content/blocks`. It invents no material.
+- A component does not own the page: it never positions itself unless standing there is its behavior.
+
+With none of the four kinds of knowledge, do not add a class, however often the markup repeats.
 
 ## Before changing a component
 
@@ -100,4 +111,13 @@ Every interactive component covers, in this order of checks: rest, hover, active
 3. Add it to `site/components/catalog.ts` and write `site/content/components/<slug>/{metadata.ts,content.mdx}` following [the documentation pattern](references/documentation.md).
 4. Update the class table in `packages/ui/README.md`.
 5. Draw its cover in `site/components/cover/art/<slug>.astro` with `$master-ui-covers`.
+6. Verify as in [verification](references/verification.md).
+
+## Add or change a layout or a block
+
+1. Write the markup with utilities and existing components, and check it at a desktop, a tablet and a phone width, in light and in dark.
+2. Add it to `layouts` or `blocks` in `site/components/catalog.ts` and write `site/content/<layouts|blocks>/<slug>/{metadata.ts,content.mdx}` with `PagePreview`, as [tiers](references/tiers.md) describes.
+3. If a layout cannot be written with utilities, name the declaration that cannot, and only then add a class in `packages/ui/layouts/<slug>.css`: import it after the components in `master.css`, add it to the tests' class list and to the README's layout table.
+4. If a block needs a material no component has, add the component or the modifier first.
+5. Draw its cover in `site/components/cover/art/<layouts|blocks>/<slug>.astro`.
 6. Verify as in [verification](references/verification.md).

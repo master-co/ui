@@ -1,20 +1,30 @@
 # Master UI AI Instructions
 
-Master UI publishes native HTML and CSS components for Master CSS v2. Keep shared policy here.
+Master UI publishes native HTML and CSS components for Master CSS v2, and the layouts and blocks built from them. Keep shared policy here.
 
 ## Layout
 
-- `packages/ui` is `@master/ui`: CSS source only, no build step. `master.css` imports `theme.css` first, then every `components/<name>.css`. Consumers import it after `@import '@master/css'`.
-- `site` is the documentation site on `@master/internal-site` (Astro 7, Svelte 5, Master CSS 2). Pages live in `site/content/<section>/<slug>/content.mdx` with a sibling `metadata.ts` (`define()` from `@master/internal-site/utils/metadata`). `scripts/prepare.ts` writes the sidebar (`.categories/docs.json`) and search index before dev, build and type checks.
-- Component docs use `site/components/ComponentPreview.astro` (isolated preview compiled from the published `@master/ui` source) and `ComponentSource.astro`. Add a new component to `site/components/catalog.ts` and `packages/ui/master.css`. Each component has a cover, `site/components/cover/art/<slug>.astro`, shown on the `/components` overview, which has no sidebar.
+- `packages/ui` is `@master/ui`: CSS source only, no build step. `master.css` imports `theme.css` first, then every `components/<name>.css`, then the few `layouts/<name>.css`. Consumers import it after `@import '@master/css'`.
+- `site` is the documentation site on `@master/internal-site` (Astro 7, Svelte 5, Master CSS 2). Pages live in `site/content/<section>/<slug>/content.mdx` with a sibling `metadata.ts` (`define()` from `@master/internal-site/utils/metadata`). `scripts/prepare.ts` writes one sidebar per section (`.categories/<section>.json`) and the search index before dev, build and type checks. The guide, components, layouts and blocks each have a sidebar of their own; none lists another section's pages.
+- The site has three library sections beside the guide: `content/components`, `content/layouts` and `content/blocks`, listed in `site/components/catalog.ts` (`components`, `layouts`, `blocks`). Component docs use `site/components/ComponentPreview.astro` (isolated preview compiled from the published `@master/ui` source) and `ComponentSource.astro`; layouts and blocks use `PagePreview.astro`, a real viewport at a desktop, tablet or phone width scaled to the column. Add a new component to the catalog and `packages/ui/master.css`. Every page of the three sections has a cover, `site/components/cover/art/<slug>.astro` for a component and `art/<layouts|blocks>/<slug>.astro` for the others, shown on the `/components`, `/layouts` and `/blocks` overviews, which have no sidebar. A layout's or a block's own page has no sidebar and no contents rail either; only component pages read beside a sidebar. Its head, words, tables and pager keep the text column, 41rem, centred in the window as a component's page keeps it; only its page previews leave that column, centred on the same axis and running to the page's gutters, up to 96rem. Every preview, on any page, opens on Preview with its source behind a Code view of the same tray (`site/components/PreviewSwitch.astro`). A preview that scrolls lets the pointer through until it is clicked (`PreviewGuard.astro`), so scrolling the page never gets caught in one. A preview's document is transparent and stands on the tray's stage: dots for a component's specimen, `plain` for running text, and a hatched stage around the window of a page preview, so every edge has something to be seen against.
 
 ## Skills
 
 Repository skills live in `.agents/skills/` (linked as `.claude/skills/`).
 
-- `master-ui-components` (owned here): the component contracts, size scale, documentation pattern and verification. Use it for any change to `packages/ui` or a component page.
-- `master-ui-covers` (owned here): the cover drawings in `site/components/cover`: the stage, the drawing rules, the vocabulary and verification. Use it when a component needs a cover or a cover is redrawn or placed on a page.
+- `master-ui-components` (owned here): the tiers, the component contracts, size scale, documentation pattern and verification. Use it for any change to `packages/ui` or to a component, layout or block page.
+- `master-ui-covers` (owned here): the cover drawings in `site/components/cover`: the stage, the drawing rules, the vocabulary and verification. Use it when a component, a layout or a block needs a cover or a cover is redrawn or placed on a page.
 - `master-design` (managed by `@master/internal-skills`; run `bun run skills:sync`, never edit it here): craft judgment for surfaces, geometry, type, states and motion.
+
+## Tiers
+
+What separates the tiers is whether there is knowledge worth a class, not size. `master-ui-components` holds the full rules in `references/tiers.md`.
+
+- **Component**: has a material, a state, a platform behavior or a geometry its pieces share. Semantic classes in `packages/ui/components`.
+- **Layout**: where regions go and what scrolls. Markup written with utilities, on a page in `site/content/layouts`. A layout owns no material; a test fails a layout stylesheet that draws one. Only what utilities cannot say (a `dvh` height, a safe-area inset, a container threshold) is a layout class in `packages/ui/layouts`: `page`, `shell`, `auto-grid`, `form`.
+- **Block**: one stretch of a page with a purpose, composed from components and utilities, on a page in `site/content/blocks`. A block invents no material: if it needs one, add the component or the modifier.
+- A component does not own the page: it never positions itself unless standing there is its behavior (a sticky navbar, a dialog in the top layer).
+- With none of the four kinds of knowledge, do not add a class, however often the markup repeats. Templates (whole pages) are not built yet.
 
 ## Component Contracts
 
