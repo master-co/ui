@@ -1,7 +1,7 @@
 import ComponentPreview from '~/site/components/ComponentPreview.astro'
 import ComponentSource from '~/site/components/ComponentSource.astro'
 
-A text field is a well cut into its surface. On focus it rises to the sheet and takes a single ink contour with a soft halo. Use `.input` on `<input>` and `<textarea>`, and `.field` on the `<label>` that holds it.
+A text field is a well cut into its surface, edged by a half-pixel contour. On focus it rises to the sheet and takes a single ink contour with a soft halo. Use `.input` on `<input>` and `<textarea>`, and `.field` on the `<label>` that holds it.
 
 <ComponentPreview name="default" title="Input" bodyClass="p-lg" html={`<label class="field">
   Email
@@ -10,7 +10,7 @@ A text field is a well cut into its surface. On focus it rises to the sheet and 
 
 ## Hint and error \{#hint-and-error\}
 
-Connect a hint or an error to its field with `aria-describedby`, and mark an invalid value with `aria-invalid="true"`.
+Connect a hint or an error to its field with `aria-describedby`, and mark an invalid value with `aria-invalid="true"`. A `field-error` shows only while its field is invalid, and replaces the hint while it shows, so both can be in the markup from the start.
 
 <ComponentPreview name="hint" title="Hint and error" bodyClass="grid gap-lg p-lg" html={`<label class="field">
   Project name
@@ -23,6 +23,20 @@ Connect a hint or an error to its field with `aria-describedby`, and mark an inv
   <span class="field-error" id="domain-error">Enter a full domain, such as atlas.dev.</span>
 </label>`} />
 
+## Native validation \{#native-validation\}
+
+The same states follow the browser's own constraints, without script. A field with `required`, a `type` or a `pattern` takes the error contour through `:user-invalid`, which matches only after the reader has edited the field or tried to submit, never on a fresh form. The `field-error` appears with it.
+
+<ComponentPreview name="validation" title="Native validation" bodyClass="p-lg" html={`<form class="flex flex-col gap-md">
+  <label class="field">
+    Work email
+    <input class="input" type="email" required placeholder="you@company.com" aria-describedby="work-email-hint work-email-error">
+    <span class="field-hint" id="work-email-hint">Type something that is not an email, then leave the field.</span>
+    <span class="field-error" id="work-email-error">Enter an email address, such as ada@example.com.</span>
+  </label>
+  <button type="submit" class="btn btn-primary self-start">Continue</button>
+</form>`} />
+
 ## Sizes \{#sizes\}
 
 <ComponentPreview name="sizes" title="Sizes" bodyClass="grid gap-md p-lg" html={`<input class="input input-sm" placeholder="Small" aria-label="Small">
@@ -31,17 +45,57 @@ Connect a hint or an error to its field with `aria-describedby`, and mark an inv
 
 ## Textarea \{#textarea\}
 
-<ComponentPreview name="textarea" title="Textarea" bodyClass="p-lg" html={`<label class="field">
+A `<textarea>` with `.input` keeps the rows you give it and a vertical resize handle. Add `input-auto` to let it grow with its content instead: `field-sizing: content` sizes it from three lines up to twelve, then it scrolls. Set `--input-rows` and `--input-max-rows` to change the range. In a browser without `field-sizing` it keeps its minimum height and the handle.
+
+<ComponentPreview name="textarea" title="Textarea" bodyClass="grid gap-lg p-lg" html={`<label class="field">
   Message
-  <textarea class="input" rows="3" placeholder="Write a short note"></textarea>
+  <textarea class="input" rows="3" placeholder="A fixed height with a resize handle"></textarea>
+</label>
+<label class="field">
+  Notes
+  <textarea class="input input-auto" placeholder="Keep typing: this one grows with its content"></textarea>
 </label>`} />
 
-## With a button \{#with-a-button\}
+## Input group \{#input-group\}
 
-<ComponentPreview name="inline" title="With a button" bodyClass="p-lg" html={`<form class="flex gap-xs">
-  <input class="input" type="email" placeholder="you@example.com" aria-label="Email">
+`input-group` is one well around a bare field and what belongs to it: an icon, a unit, a shortcut or a button. The group draws the hover, focus, invalid and disabled states of the field inside it through `:has()`; the field itself, an `input-group-field`, keeps the semantics and the caret. Make the group a `<label>` so the whole well focuses the field.
+
+<ComponentPreview name="group" title="Input group" bodyClass="grid gap-md p-lg" html={`<label class="input-group">
+  <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.35-4.35"/></svg>
+  <input class="input-group-field" type="search" placeholder="Search projects" aria-label="Search projects">
+  <kbd class="kbd">⌘K</kbd>
+</label>
+<label class="input-group">
+  <span class="input-group-addon">https://</span>
+  <input class="input-group-field" value="atlas" aria-label="Subdomain">
+  <span class="input-group-addon">.master.co</span>
+</label>
+<label class="input-group">
+  <input class="input-group-field" type="number" value="24" aria-label="Timeout">
+  <span class="input-group-addon">seconds</span>
+</label>`} />
+
+A [button](/components/button) inside the group sits 4px from the well's edge and takes a corner 4px smaller than the well's, so the two stay concentric at every size. Use a `<div>` for the group when it holds a button.
+
+<ComponentPreview name="inline" title="With a button" bodyClass="grid gap-md p-lg" html={`<form class="input-group">
+  <input class="input-group-field" type="email" placeholder="you@example.com" aria-label="Email">
   <button type="submit" class="btn btn-primary">Subscribe</button>
-</form>`} />
+</form>
+<div class="input-group input-group-sm">
+  <input class="input-group-field" value="https://atlas.dev/p/9f2c" readonly aria-label="Share link">
+  <button type="button" class="btn">Copy</button>
+</div>`} />
+
+To keep a field and a button apart instead, put them in a flex row: `<form class="flex gap-xs">`.
+
+## File \{#file\}
+
+On `<input type="file">` the browser's button becomes a small raised control that sits in the well like an option in a segmented track.
+
+<ComponentPreview name="file" title="File" bodyClass="p-lg" html={`<label class="field">
+  Attachment
+  <input class="input" type="file">
+</label>`} />
 
 ## Disabled \{#disabled\}
 
@@ -51,10 +105,24 @@ Connect a hint or an error to its field with `aria-describedby`, and mark an inv
 
 | Class | Description |
 | --- | --- |
-| `input` | A text input or textarea |
+| `input` | A text input, a file input or a textarea |
 | `input-sm`, `input-lg` | 32px and 44px heights; the default is 40px |
+| `input-auto` | A textarea that grows with its content |
+| `input-group`, `input-group-sm`, `input-group-lg` | One well around a field and its icon, addon or button |
+| `input-group-field` | The bare native field inside a group |
+| `input-group-addon` | Fixed text beside the value |
 | `field` | A label stacked over its control |
-| `field-hint`, `field-error` | Muted guidance and the danger message under a control |
+| `field-hint`, `field-error` | Muted guidance, and the danger message that shows while the field is invalid |
+
+## Custom properties \{#custom-properties\}
+
+| Property | Default | Description |
+| --- | --- | --- |
+| `--input-height` | `2.5rem` | Minimum block size |
+| `--input-padding-x` | `.75rem` | Inline padding |
+| `--input-font-size` | `.875rem` | Text size |
+| `--input-radius` | `var(--radius-lg)` | Corner radius |
+| `--input-rows`, `--input-max-rows` | `3`, `12` | The range an `input-auto` textarea grows in |
 
 ## Source \{#source\}
 

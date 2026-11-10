@@ -10,7 +10,7 @@ import { generateSearchPages } from '@master/internal-site/utils/search-pages'
 import type { DefinedMetadata } from '@master/internal-site/types/Metadata'
 
 /** Sidebar category order; unknown categories follow alphabetically. */
-const categoryOrder = ['Getting started', 'Overview', 'Materials', 'Actions', 'Forms', 'Navigation', 'Display']
+const categoryOrder = ['Getting started', 'Overview', 'Materials', 'Actions', 'Forms', 'Navigation', 'Overlays', 'Feedback', 'Display']
 
 const site = fileURLToPath(new URL('../', import.meta.url))
 const content = join(site, 'content')

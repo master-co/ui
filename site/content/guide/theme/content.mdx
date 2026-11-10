@@ -1,8 +1,8 @@
 import ComponentPreview from '~/site/components/ComponentPreview.astro'
 
-Master UI has one material language. Light mode is **moonstone**, a clean zinc pearl. Dark mode is **obsidian**, a matte zinc glass whose surfaces step apart and keep a legible edge. Both are lit by one source above and slightly to the left, so every raised face catches a line of light on its top edge and settles on a soft, converged shadow.
+Master UI has one material language. Light mode is **moonstone**, a clean zinc pearl. Dark mode is **obsidian**, a matte zinc glass whose surfaces step apart and keep a legible edge. Both are lit by one source above and slightly to the left, so every raised face catches a line of light on its top edge and settles on a short shadow that fades out.
 
-The character is restrained: ink rather than color, hairline contours, small radii and depth that changes with state. Detail comes from light, not decoration.
+The character is restrained: ink rather than color, half-pixel contours, corners that nest and depth that changes with state. Detail comes from light, not decoration, and no edge is harder than it needs to be to be found.
 
 <ComponentPreview name="overview" title="Moonstone and obsidian" theme bodyClass="p-lg" html={`<div class="tray">
   <div class="sheet flex flex-col gap-md p-lg">
@@ -24,8 +24,9 @@ The character is restrained: ink rather than color, hairline contours, small rad
 2. **Zinc neutrals.** Every neutral is the preset's zinc, with a hue of 265 at almost no chroma. Lines and shadows carry no hue of their own.
 3. **One material ladder.** Base, tray, raised, floating; an inset sits below its surroundings. Never invent a surface color.
 4. **State is depth.** A control lifts by half a pixel on hover and sinks into a well when pressed. Do not express state by changing hue.
-5. **Small concentric radii.** Radii nest by a 4px inset, so an outer corner is the inner one plus the space between them.
-6. **Converged shadows.** Every shadow layer doubles its offset and blur and pulls its spread in by half the offset. There is no single large blur.
+5. **Soft edges.** A contour is a half-pixel ring: one device pixel on a dense screen, finer than any border. An edge is found by its light and its shadow before its line.
+6. **Concentric radii.** Radii nest by the inset between surfaces, so an outer corner is the inner one plus the space between them: an 8px control, 4px inside a 12px sheet, 4px inside a 16px tray.
+7. **Short shadows.** Every shadow layer doubles its offset, blurs by twice that offset and pulls its spread in by the offset. A shadow stays under its object and fades out; there is no single large blur and no hard lower edge.
 
 ## Surfaces \{#surfaces\}
 
@@ -55,15 +56,17 @@ Values are OKLCH lightness. A raised face is a top-to-bottom gradient from `rais
 
 ## Lines \{#lines\}
 
-Lines are neutral ink alphas on moonstone and white alphas on obsidian. Each dark step is a little firmer than its light twin, so dark surfaces never blur into each other.
+Lines are neutral ink alphas on moonstone and white alphas on obsidian. Two of them are 1px rules. The other three are contours, drawn as half-pixel rings with a zero-blur `box-shadow`, which takes no layout space; their alphas are tuned for that width, so a contour reads as fine rather than faint.
 
-| Token | Moonstone | Obsidian | Use for |
-| --- | --- | --- | --- |
-| `--color-line-hair` | 6.5% | 7.5% | Quiet separators inside a surface |
-| `--color-line-contour` | 9.5% | 11% | The outline of every surface |
-| `--color-line-divider` | 12% | 13% | Rules between sections, tab rows |
-| `--color-line-strong` | 20% | 22% | Hovered contours, control borders |
-| `--color-line-mark` | 30% | 32% | A focused field's contour |
+| Token | Moonstone | Obsidian | Drawn at | Use for |
+| --- | --- | --- | --- | --- |
+| `--color-line-hair` | 6.5% | 7.5% | 1px | Quiet separators inside a surface |
+| `--color-line-divider` | 12% | 13% | 1px | Rules between sections, tab rows |
+| `--color-line-contour` | 15% | 15% | .5px | The outline of every surface |
+| `--color-line-strong` | 24% | 25% | .5px | Hovered contours, switch tracks, keycaps |
+| `--color-line-mark` | 36% | 38% | .5px | Checkboxes, a focused field's contour |
+
+A control that must be found at a glance takes a firmer contour than a surface does: a field stacks two contour rings, and a checkbox uses the mark.
 
 ## Text \{#text\}
 
@@ -80,7 +83,7 @@ Text is a soft ink, never pure black or white.
 
 ## Elevation \{#elevation\}
 
-Elevation is the order of depth, from a pressed well to an overlay. A raised face combines an inset highlight on its top edge, one contour and three to six falling shades.
+Elevation is the order of depth, from a pressed well to an overlay. A raised face combines an inset highlight on its top edge, one half-pixel contour and three to six falling shades.
 
 <ComponentPreview name="elevation" title="Elevation" theme bodyClass="grid grid-cols(3) gap-lg p-xl" html={`<div class="p-lg r-lg bg-surface-inset shadow-pressed text-xs fg-text-muted">pressed</div>
 <div class="p-lg r-lg bg-surface-raised shadow-flat text-xs fg-text-muted">flat</div>
@@ -99,21 +102,23 @@ Elevation is the order of depth, from a pressed well to an overlay. A raised fac
 | `--shadow-floating` | Menus and popovers |
 | `--shadow-overlay` | Dialogs |
 
-The layers converge: each doubles the previous offset and blur, and its negative spread is half its offset. A shadow therefore stays tight under the object instead of spreading into a grey halo.
+Each layer doubles the previous offset, blurs by twice its offset and pulls its spread in by the offset: `0 1px 2px -1px`, `0 2px 4px -2px`, `0 4px 8px -4px`. The pull keeps the shadow under the object instead of spreading into a grey halo, and the longer blur lets it fade out instead of ending in a line.
 
 ## Shape \{#shape\}
 
-Radii are small and nest by a 4px inset: a 14px tray around a 10px sheet, a 9px segmented track around 6px thumbs.
+Radii nest by the inset between surfaces: a 16px tray around a 12px sheet, an 11px segmented track around a 7px thumb, a 12px menu around 8px rows. An outer corner is always the inner corner plus the space between them, so the gap keeps one width around the bend.
 
 | Radius | Used by |
 | --- | --- |
-| 3px | Keycaps |
-| 4px (`--radius-sm`) | Badges, checkboxes |
-| 6px (`--radius-md`) | Buttons, fields, segmented thumbs |
-| 10px | Sheets |
-| 14px | Trays |
+| 5px | Checkboxes, keycaps, small badges |
+| 6px (`--radius-md`) | Badges, skeletons |
+| 7px | Small controls, tooltips, segmented thumbs |
+| 8px (`--radius-lg`) | Buttons, fields, wells, menu items |
+| 10px | Large controls, alerts |
+| 12px (`--radius-xl`) | Sheets, cards, popovers, menus |
+| 16px (`--radius-2xl`) | Trays, dialogs |
 
-Only pills and dots are rounder.
+Only pills, dots and avatars are rounder.
 
 ## Type \{#type\}
 
@@ -140,8 +145,10 @@ One easing family keeps interaction quick and explanation calm.
 | --- | --- | --- |
 | `--easing-glide` | `cubic-bezier(.22, 1, .36, 1)` | Every state change |
 | `--duration-press` | 60ms | Pressing a control |
-| `--duration-quick` | 160ms | Hover and focus |
-| `--duration-base` | 280ms | Thumbs and panels that move |
+| `--duration-quick` | 160ms | Hover and focus; popovers, menus and tooltips; any exit |
+| `--duration-base` | 280ms | Thumbs and panels that move; a dialog arriving |
+
+Overlays write both directions in CSS. `@starting-style` gives the frame an element arrives from, and `display` and `overlay` transition with `allow-discrete`, so the exit plays before the element leaves the top layer. An exit is shorter than its entrance. With reduced motion, travel and scale are removed and the fade stays.
 
 ## Status and gold \{#status-and-gold\}
 
@@ -176,7 +183,7 @@ Override tokens after importing Master UI. Components read them through `var()`,
 
 @theme {
   /* Rounder controls */
-  --radius-md: .5rem;
+  --radius-lg: .625rem;
   /* A warmer canvas */
   --color-surface-base: light-dark(oklch(98.4% .004 80), oklch(19.4% .004 60));
 }
