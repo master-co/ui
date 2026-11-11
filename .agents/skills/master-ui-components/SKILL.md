@@ -127,9 +127,9 @@ For a new or changed preview, including shared iframe rendering, read [preview s
 
 ## Add or change a layout or a block
 
-1. Write the markup with utilities and existing components, and check it at a desktop, a tablet and a phone width, in light and in dark.
-2. Add it to `layouts` or `blocks` in `site/components/catalog.ts` and write `site/content/<layouts|blocks>/<slug>/{metadata.ts,content.mdx}` with `PagePreview`, as [tiers](references/tiers.md) describes.
-3. If a layout cannot be written with utilities, name the declaration that cannot, and only then add a class in `packages/ui/layouts/<slug>.css` with its contract `<slug>.json` beside it, and import it after the components in `master.css`.
-4. If a block needs a material no component has, add the component or the modifier first.
-5. Draw its cover in `site/components/cover/art/<layouts|blocks>/<slug>.astro`.
-6. Verify as in [verification](references/verification.md).
+Each has a skill of its own, which holds its rules, its page pattern and its verification:
+
+- A layout, or a layout class in `packages/ui/layouts`: [master-ui-layouts](../master-ui-layouts/SKILL.md).
+- A block: [master-ui-blocks](../master-ui-blocks/SKILL.md).
+
+This skill stays the owner of the tier decision ([tiers](references/tiers.md)) and of every component a layout's region or a block holds. If a block needs a material no component has, add the component or the modifier here first.

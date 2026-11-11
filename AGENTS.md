@@ -13,7 +13,9 @@ Master UI publishes native HTML and CSS components for Master CSS v2, a contract
 
 Repository skills live in `.agents/skills/` (linked as `.claude/skills/`).
 
-- `master-ui-components` (owned here): the tiers, the component contracts, the contract files, the behaviors, the framework components, size scale, documentation pattern and verification. Use it for any change to `packages/ui` or to a component, layout or block page.
+- `master-ui-components` (owned here): the tiers, the component contracts, the contract files, the behaviors, the framework components, size scale, documentation pattern and verification. Use it for any change to `packages/ui/components` or to a component page, and to decide which tier a thing belongs to.
+- `master-ui-layouts` (owned here): the frame and the room, the four layout classes and what they declare, regions and scrolling, landmarks, the layout page and its verification. Use it for any change to `packages/ui/layouts` or to a page in `site/content/layouts`.
+- `master-ui-blocks` (owned here): the rules of a block, its frame, measure and heading group, which component does which job, the block page and its verification. Use it for any change to a page in `site/content/blocks`.
 - `master-ui-covers` (owned here): the cover drawings in `site/components/cover`: the stage, the drawing rules, the vocabulary and verification. Use it when a component, a layout or a block needs a cover or a cover is redrawn or placed on a page.
 - `master-design` (managed by `@master/internal-skills`; run `bun run skills:sync`, never edit it here): craft judgment for surfaces, geometry, type, states and motion.
 - `master-writing` (managed by the same package and sync command): shared technical writing, evidence and editing guidance.
