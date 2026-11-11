@@ -6,6 +6,8 @@
  * Everything is measured from the body's width: the corner is 14% of it, the bezel 3% and the screen's own
  * corner is the body's minus the bezel, so the gap keeps one width around the bend. The body is 280px wide
  * and 9 by 19.5; set --device-width to resize it, not a width, so the corners follow.
+ * The side buttons stand 2px proud of the body, and the element is that much wider than the body on each
+ * side to hold them: nothing is drawn outside its box, so a device at the edge of a scroller adds no scroll.
  */
 @layer components {
   .device {
@@ -13,31 +15,46 @@
     --device-ratio: 9 / 19.5;
     --device-radius: calc(var(--device-width) * .14);
     --device-bezel: calc(var(--device-width) * .03);
+    --device-button: 2px;
     --surface-color: var(--color-surface-raised);
     position: relative;
     display: block;
     flex: none;
     box-sizing: border-box;
-    /* The buttons lie behind the body, and no further back than that. */
+    /* The body and the camera's well are layers of the device, and no further back or forward than that. */
     isolation: isolate;
-    width: var(--device-width);
-    aspect-ratio: var(--device-ratio);
+    width: calc(var(--device-width) + var(--device-button) * 2);
+    height: calc(var(--device-width) / (var(--device-ratio)));
     margin: 0;
-    padding: var(--device-bezel);
-    border-radius: calc(var(--device-radius) * var(--corner-scale));
-    corner-shape: var(--corner-shape);
-    @apply --surface-sheet;
-    /* A hairline inside the edge turns the sheet into a frame with a rim. */
-    box-shadow: inset 0 0 0 1px var(--color-line-hair), var(--shadow-lifted);
+    padding: var(--device-bezel) calc(var(--device-bezel) + var(--device-button));
+    /* The buttons: three on one side and one on the other, as thin slips the body covers all but 2px of. */
+    background:
+      linear-gradient(var(--color-line-strong) 0 0) 0 17% / 50% 4% no-repeat,
+      linear-gradient(var(--color-line-strong) 0 0) 0 26% / 50% 8% no-repeat,
+      linear-gradient(var(--color-line-strong) 0 0) 0 37% / 50% 8% no-repeat,
+      linear-gradient(var(--color-line-strong) 0 0) 100% 31% / 50% 13% no-repeat;
+
+    /* The body: a lifted sheet behind the screen. A hairline inside its edge turns the sheet into a frame with a rim. */
+    &::before {
+      content: '';
+      position: absolute;
+      z-index: -1;
+      inset: 0 var(--device-button);
+      border-radius: calc(var(--device-radius) * var(--corner-scale));
+      corner-shape: var(--corner-shape);
+      @apply --surface-sheet;
+      box-shadow: inset 0 0 0 1px var(--color-line-hair), var(--shadow-lifted);
+      pointer-events: none;
+    }
 
     /* The camera's well: a pill a third of the screen wide, a little below its top edge. */
-    &::before {
+    &::after {
       content: '';
       position: absolute;
       z-index: 1;
       top: calc(var(--device-bezel) + var(--device-width) * .03);
       left: 50%;
-      width: 30%;
+      width: calc(var(--device-width) * .3);
       aspect-ratio: 3.4;
       border-radius: 999px;
       background: var(--color-surface-raised-low);
@@ -46,31 +63,12 @@
       pointer-events: none;
     }
 
-    /* The buttons: three on one side and one on the other, as thin slips behind the body's edge. */
-    &::after {
-      content: '';
-      position: absolute;
-      z-index: -1;
-      inset: 0 -2px;
-      background:
-        linear-gradient(var(--color-line-strong) 0 0) 0 17% / 2px 4% no-repeat,
-        linear-gradient(var(--color-line-strong) 0 0) 0 26% / 2px 8% no-repeat,
-        linear-gradient(var(--color-line-strong) 0 0) 0 37% / 2px 8% no-repeat,
-        linear-gradient(var(--color-line-strong) 0 0) 100% 31% / 2px 13% no-repeat;
-      pointer-events: none;
-    }
-
     @media (forced-colors: active) {
-      outline: 1px solid CanvasText;
-      outline-offset: -1px;
+      background: none;
 
-      &::before {
+      &::before, &::after {
         outline: 1px solid CanvasText;
         outline-offset: -1px;
-      }
-
-      &::after {
-        content: none;
       }
     }
   }
