@@ -1,6 +1,6 @@
-A project uses Master UI by name: a class in markup, a custom property in a stylesheet, a command in a script. This page says which names are promised and which are details of the current implementation.
+A project depends on Master UI through class names, custom properties, imports and commands. Use the public interfaces below when building on the library, and review them when upgrading.
 
-The rule is short. A name is public when a [contract](/guide/contracts), the theme or the package's `exports` states it. Everything else is private, however easy it is to find in the source.
+Master UI is experimental: even public interfaces may change in a 0.x release. Public identifies the supported way to use the current version; it does not promise compatibility with the next one. [Upgrade deliberately](#experimental) to check the changes that affect your project.
 
 ## Public \{#public\}
 
@@ -19,13 +19,13 @@ The rule is short. A name is public when a [contract](/guide/contracts), the the
 | The commands | `master-ui` | `list`, `contract`, `check`, `init`, `own`, `add`, `status`, `diff`, `accept` |
 | Import paths | `exports` in the package's `package.json` | The table below |
 
-A contract is the list for one component. Print it to see exactly what is promised:
+A contract lists the interface for one component in the installed version. Print it before relying on a class or property:
 
 ```bash
 npx master-ui contract button
 ```
 
-The schema says the same thing about custom properties in its own words: anything not listed in `properties` is private and may change.
+The contract's `properties` list defines the component-specific extension points. Its unlisted internal properties may change. Shared theme tokens are a separate public interface, defined in `theme.css`.
 
 ### Import paths \{#import-paths\}
 
@@ -50,7 +50,7 @@ The compiled files are also reachable under `@master/ui/dist/`, which is the pat
 
 | What | Example | Use instead |
 | --- | --- | --- |
-| A custom property that no contract lists | `--btn-lift`, which the button uses to pass its travel between its own rules | A listed property, or a token: `--lift` |
+| An internal component property that its contract does not list | `--btn-lift`, which the button uses to pass its travel between its own rules | A listed property, or a theme token: `--lift` |
 | The structure of a selector | How a rule nests, which pseudo-element draws a mark, how specific a rule is inside the `components` layer | The class and the state mark; a utility on the element wins over any component rule |
 | The values of the default theme | The shadow lists behind `--shadow-raised`, the stops of a gradient in `--surface-sheet` | The token or mixin name, redefined in a theme of your own |
 | The order of declarations and of rules in a stylesheet | Which of two rules comes later | Nothing depends on it from outside the file |
@@ -58,7 +58,7 @@ The compiled files are also reachable under `@master/ui/dist/`, which is the pat
 | Files under `dist/` that this page does not name | Any other file a build leaves there | The paths in the table above |
 | The files under `frameworks/` | The [React, Svelte and Vue components](/guide/frameworks) as the package holds them. They are source to copy, not modules to import, and their props may change between releases | `npx master-ui add <name>`, which copies one; the copy is yours and does not change with a release |
 
-The private list is what lets the default implementation improve. A shadow can be retuned, a mark can move from one pseudo-element to another and a rule can be rewritten for a new platform feature, and markup written to the contract does not notice.
+Implementation details can change while the contract stays the same. For example, a shadow can be retuned or a mark can move to another pseudo-element without changing the markup a component accepts. The result can still look different, so visual review remains part of an upgrade.
 
 ```css name=app.css
 /* Public: the button contract lists --btn-height. */
@@ -86,15 +86,17 @@ The private list is what lets the default implementation improve. A shadow can b
 | Anything on the private list changes | No |
 | A framework component in the package changes: a prop, its markup | No. A copy in a project stays as it was taken; `master-ui status` says that upstream moved |
 
-A visual retuning is not a breaking change because the look is the implementation, not the contract. A project that needs the look to hold still has two ways to opt out.
+A visual retuning can preserve the contract. Decide which part the project needs to control: the installed release, one component's implementation or the theme's values.
 
-**Own the component.** `own` copies a component's stylesheet, its contract and its behavior, when it has one, into the project. From then on the copy is what the project imports, and a new release does not change it. See [customization](/guide/customization#own-a-component).
+**Own the component.** `own` copies its stylesheet, contract and behavior, when present. Wire the page to those copies to keep later package releases from replacing that implementation. The copied stylesheet still reads theme tokens, so owning it alone does not freeze its appearance. See [customization](/guide/customization#own-a-component).
 
 ```bash
 npx master-ui own button
 ```
 
-**Pin the theme.** Copy `node_modules/@master/ui/theme.css` into the project and import the copy after the library, the way a second theme is imported. Its tokens and mixins are then the last definitions, so they are the ones every component reads, and a release that retunes the default theme changes nothing on screen. A token added later still arrives from the library. [Theming](/guide/theming) describes what the file holds.
+### Keep a local theme \{#pin-the-theme\}
+
+Copy `node_modules/@master/ui/theme.css` into the project and import it after the library. Its token and mixin definitions take precedence over the package's definitions. This preserves the values you copied; new tokens and changes to how a component uses them can still affect the result. [Theming](/guide/theming) describes how to maintain the file.
 
 ```css name=app.css
 @import '@master/css';
@@ -112,7 +114,7 @@ So install an exact version and upgrade on purpose:
 npm install @master/ui --save-exact
 ```
 
-The default `^` range can still let a fresh install pick up a newer 0.x release. `--save-exact` writes the version itself into `package.json`, so it changes only when you upgrade.
+`--save-exact` records the selected version rather than a permitted version range. Commit the package manifest and lockfile together so other checkouts install the same dependency set. A local theme or component copy can then be reviewed against a known release.
 
 For the components a project owns, the command line tool reports what moved. `status` compares each owned component with the installed package and lists the files that changed upstream since they were taken:
 
@@ -120,6 +122,13 @@ For the components a project owns, the command line tool reports what moved. `st
 npx master-ui status
 ```
 
-It exits with code 2 when an owned component changed upstream, so a job that runs after an upgrade can report it. `npx master-ui diff button` shows what changed, and `npx master-ui accept button` records that the change has been merged into the copy. [Customization](/guide/customization#upstream-changes) walks through the three commands.
+It exits with code 2 when an owned component changed upstream, so a job that runs after an upgrade can report it. `npx master-ui diff button` shows the difference between the saved base and the installed package. After reviewing and merging it yourself, `npx master-ui accept button` advances the saved base; it does not merge or edit your working copy. [Customization](/guide/customization#upstream-changes) walks through the commands.
 
-Markup that follows the library is checked the other way round: after an upgrade, `npx master-ui check` reports a class, an element or an attribute that no longer matches a contract.
+For each upgrade:
+
+1. Read the release notes and update the exact dependency version and lockfile.
+2. Run `npx master-ui check` against the project's markup to find classes, elements or attributes that no longer match its contracts.
+3. Review `status` and `diff` for owned and added components; merge before accepting a new base.
+4. Build the application and exercise affected controls, overlays and keyboard paths. Compare light and dark appearance, including any local theme.
+
+The checker validates markup against contracts; it cannot establish that application behavior or the rendered result is unchanged.

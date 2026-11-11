@@ -1,4 +1,4 @@
-A change belongs on the lowest step that can express it. Each step up costs more to maintain and gives up more of what the library keeps current for the project. This page describes the five steps, shows one change on each, and says when a component should become yours.
+Choose a customization by what needs to change: one instance, a shared design value, a component's geometry, a material or the implementation itself. Start with the smallest change that expresses the result, so the package can continue maintaining the rest.
 
 For the default materials and token values, see [Default theme](/guide/theme). Once you have chosen a token or theme change, [Theming](/guide/theming) covers the implementation.
 
@@ -11,6 +11,8 @@ For the default materials and token values, see [Default theme](/guide/theme). O
 | 3. Property | Set a public custom property of the component, on one element or through a class of the project's own | One component's size or spacing, everywhere or in a scope | Everything |
 | 4. Theme | Write a theme file: tokens, and a mixin where a recipe needs it | Another material: flat, bordered, tinted | Every component |
 | 5. Own | `npx master-ui own <name>`: the stylesheet, the contract and the behavior are copied into `ui/` and the import points at the copy | Structure, parts, states, behavior | The other components; this one on request |
+
+“Follows upstream” means the implementation comes from the package version you install. An upgrade still needs review, and your overrides continue to replace their chosen values; see [Stability](/guide/stability#experimental).
 
 ## Which layer, not how many lines \{#which-layer\}
 
@@ -32,7 +34,7 @@ Use it for what belongs to one instance: its width, its margin, where it stands 
 
 ## 2. A token \{#token\}
 
-A component names a token for every color, shadow and radius. Override the token after the import and every component that reads it follows.
+Theme tokens control shared design values such as color, shadow and corner radius. Override a token after the import and every component that reads it follows. For example, changing `--color-brand` retunes brand surfaces while ordinary buttons keep their neutral material:
 
 ```css name=app.css
 @import '@master/css';
@@ -100,10 +102,9 @@ Step 5 is for a change to structure, parts, states or behavior, which no value c
 Own a component when any one of these is true. Until then, stay on steps 1 to 4.
 
 - The change needs a selector the stylesheet does not have: another part, another nesting, another element.
-- The same component needs an override in three or more of its states (rest, hover, pressed, focus, checked, disabled), or needs to undo what the stylesheet declares rather than add to it.
-- The override only wins with more specificity, a later layer or `!important`.
+- The desired state treatment cannot be expressed by the theme tokens or the component's public properties.
 - The change is to behavior: keys, focus, what selecting means.
-- The project does not want this component's future visual changes.
+- The project needs to maintain this component's implementation independently. If you only need control of theme values, [keep a local theme](/guide/stability#pin-the-theme) instead.
 
 ### Take the source \{#take-the-source\}
 
@@ -134,7 +135,7 @@ The copy still reads the theme's tokens and applies its mixins, so it follows th
 
 ### Keep the contract true \{#keep-the-contract-true\}
 
-The copied contract, `ui/menu.json`, replaces the library's for this project. The checker and every agent read it. When a class is added, renamed or removed in `ui/menu.css`, change `ui/menu.json` too. Here a part is added to the stylesheet, and an entry for it to `classes` in the contract:
+The copied contract, `ui/menu.json`, replaces the library's when the CLI reads this project's configuration. An agent should read that local contract too. When a class is added, renamed or removed in `ui/menu.css`, change `ui/menu.json` with it. Here a part is added to the stylesheet, followed by the entry to append to the contract's `classes` array:
 
 ```css name=ui/menu.css
 @layer components {
@@ -152,6 +153,8 @@ The copied contract, `ui/menu.json`, replaces the library's for this project. Th
 ```
 
 Keeping the existing class names and state attributes means blocks, behaviors and the documentation still fit. [Contracts](/guide/contracts) describes every key.
+
+Run `npx master-ui check` against markup that uses the new part, then check the component in a browser. The checker validates the markup contract; it does not prove that the copied CSS implements the state, contrast or keyboard behavior you intend.
 
 ### Follow upstream changes \{#upstream-changes\}
 
@@ -187,18 +190,20 @@ Merge what is wanted into `ui/menu.css` by hand. `accept` then makes the package
 
 ### Give a component back \{#give-back\}
 
-Delete the copies in `ui/` and `ui/.base/`, point the import at `@master/ui` again, and remove the component's entry from `owned` in `master-ui.json`. The library's contract applies again.
+Point the stylesheet import back at the package and restore any application or framework imports of its behavior to `@master/ui/behaviors`. Remove the component's entry from `owned` in `master-ui.json`; the library's contract then applies again.
+
+Delete only working and base files that no other owned or added component still uses. Behaviors can share a copied helper such as `ui/internal.js`, and a framework component can import a local behavior. Check those imports before removing the files, then build and exercise the returned component.
 
 ### When much of the library is owned \{#own-all\}
 
-When about a third of the library is owned, consider owning all of it. The tokens, the contracts, the checker and the [skill](/guide/ai#the-skill) still apply. [Owning the source](/guide/registry) compares the package and the registry.
+Consider owning more source when maintaining a consistent implementation across the project is easier than coordinating local copies with package styles. The number of copied components alone is not a reason to take on the rest. The tokens, contracts, checker and [skill](/guide/ai#the-skill) still apply; [Owning the source](/guide/registry) compares the package and registry workflows.
 
 ## What is not a customization \{#what-is-not\}
 
-These look like steps on the ladder and are not. Each one is a fork that nothing tracks.
+These overrides can change the result, but they bypass the supported customization points and leave you responsible for tracking the implementation they replace:
 
 - **A rule that selects a library class and redeclares its face, edge or shadow.** Use a token, a property, or own the component.
-- **A custom property the contract does not list.** Private properties change without notice.
+- **An undocumented component property.** Use the properties listed in its contract or the separately documented theme tokens. Internal component properties can change without notice.
 - **A new class that restyles a library component from outside**, such as `.my-btn.btn` with material declarations. A project class may set public properties and layout. A new material is a new component or an owned one.
 - **Winning by force.** Never raise specificity or use `!important` to beat a component. A utility already wins by its layer, and an override that needs more than that is a reason to own the component.
 

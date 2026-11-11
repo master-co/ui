@@ -4,7 +4,7 @@ Master UI's default theme has one material language. Light mode is **moonstone**
 
 The character is restrained: ink rather than color, half-pixel contours, corners that nest and depth that changes with state. Detail comes from light, not decoration, and no edge is harder than it needs to be to be found.
 
-This page describes the default design and its token values. To change them or build another material, see [Theming](/guide/theming).
+Use the sections below to choose a surface, line, text or depth role for your interface. The values describe the default theme in the current package; [Theming](/guide/theming) shows how to override them or build another material.
 
 <ComponentPreview name="overview" height={248} title="Moonstone and obsidian" theme bodyClass="p-lg" html={`<div class="tray">
   <div class="sheet flex flex-col gap-md p-lg">
@@ -22,14 +22,14 @@ This page describes the default design and its token values. To change them or b
 
 ## Principles \{#principles\}
 
-1. **Monochrome interface.** Controls use ink and pearl only. Hue marks status, always beside words that say the same thing; the brand color is kept for one moment per view.
+1. **Monochrome interface.** Ordinary controls use ink and pearl. Hue marks status, always beside words that say the same thing; the brand color is kept for one moment per view.
 2. **Zinc neutrals.** Every neutral is the preset's zinc, with a hue of 265 at almost no chroma. Lines and shadows carry no hue of their own.
 3. **One material ladder.** Base, tray, raised, floating; an inset sits below its surroundings. Never invent a surface color.
 4. **State is depth.** A control lifts by half a pixel on hover and sinks into a well when pressed. Do not express state by changing hue.
-5. **Soft edges.** A contour is a half-pixel ring: one device pixel on a dense screen, finer than any border. An edge is found by its light and its shadow before its line.
+5. **Soft edges.** A contour is a .5 CSS pixel ring, which maps to one device pixel at a device-pixel ratio of 2. Its rendering depends on the display and zoom. Light and shadow help distinguish the edge without a heavy outline.
 6. **Continuous corners.** A circular arc meets a straight edge with a sudden change of curvature, which reads as a hard shoulder. Where the browser can draw them, corners are squircles: the curve starts earlier and turns gradually, like a polished stone.
 7. **Concentric radii.** Radii nest by the inset between surfaces, so an outer corner is the inner one plus the space between them: a 10px control, a 16px sheet, a 20px tray 4px around it.
-8. **Short shadows.** Every shadow layer doubles its offset, blurs by twice that offset and pulls its spread in by the offset. A shadow stays under its object and fades out; there is no single large blur and no hard lower edge.
+8. **Short shadows.** Successive drop-shadow layers increase their offsets, use blur radii twice those offsets and pull their spread inward. This keeps the depth close to its object while allowing the shadow to fade out.
 
 ## Surfaces \{#surfaces\}
 
@@ -51,11 +51,13 @@ Surfaces form one ladder. Each step is a role, not a color: pick the step by wha
 | `--color-surface-raised` | A raised face: cards, buttons | 100% | 24.2% |
 | `--color-surface-raised-low` | The lower end of a raised face's gradient | 99.3% | 22.8% |
 | `--color-surface-inset` | A well: fields, tracks | 96.6% | 16.4% |
+| `--color-surface-inset-hover` | The same well under the pointer | 95.8% | 15.4% |
 | `--color-surface-floating` | Popovers and menus over content | 100% | 26.4% |
 | `--color-surface-chip` | Neutral chips and badges | 96.5% | white 7% |
 | `--color-surface-inverse` | Ink: primary buttons, checked controls | 22% | 95% |
+| `--color-surface-scrim` | The backdrop behind a modal | 18% at 20% opacity | black at 55% opacity |
 
-Values are OKLCH lightness. A raised face is a top-to-bottom gradient from `raised` to `raised-low`, which `@apply --surface-sheet` writes for you.
+Values are OKLCH lightness unless opacity is stated. A raised face is a top-to-bottom gradient from `raised` to `raised-low`, which `@apply --surface-sheet` writes for you. Choose a role by purpose: `floating` distinguishes a menu over a sheet, while `inset` marks a field within it. The color token does not position the element or give it a shadow.
 
 ## Lines \{#lines\}
 
@@ -105,7 +107,7 @@ Elevation is the order of depth, from a pressed well to an overlay. A raised fac
 | `--shadow-floating` | Menus and popovers |
 | `--shadow-overlay` | Dialogs |
 
-Each layer doubles the previous offset, blurs by twice its offset and pulls its spread in by the offset: `0 1px 2px -1px`, `0 2px 4px -2px`, `0 4px 8px -4px`. The pull keeps the shadow under the object instead of spreading into a grey halo, and the longer blur lets it fade out instead of ending in a line.
+For example, `--shadow-raised` layers `0 1px 2px -1px`, `0 2px 4px -2px` and `0 4px 8px -4px` beneath its highlight and contour. Higher elevations use a wider sequence of offsets. The negative spread keeps the shadow close to the object, while the blur softens its edge. These tokens draw depth; stacking order still comes from the element's layout and platform behavior.
 
 ## Ink \{#ink\}
 
@@ -141,7 +143,7 @@ A hued control (brand, a destructive confirmation) mixes its face, its edge and 
 
 ## Shape \{#shape\}
 
-Radii are roles, like surfaces. A chip is a small mark, a control is something pressed or typed in, and a surface is a sheet. Because the tokens are in `@theme`, they are utilities too: `r-control` gives a custom element the corner of a button.
+Radii are roles, like surfaces. A chip is a small mark, a control is something pressed or typed in, and a surface is a sheet. Because the tokens are in `@theme`, they are utilities too: `r-control` uses the control's base radius. Components additionally apply the continuous-corner shape and scale described below; a radius utility alone does not reproduce that treatment.
 
 | Token | Value | Used by |
 | --- | --- | --- |
@@ -181,7 +183,7 @@ Pills, dots, avatars and thumbs stay true circles. [Theming](/guide/theming#retu
 
 ## Type \{#type\}
 
-Components inherit the page's font family. Master UI is designed with [Geist](https://vercel.com/font) and its stylistic sets, at a light regular weight for running text:
+The theme does not download a font. The documentation uses Geist, and controls read the preset's font-family tokens. Load the font in your app before selecting it; the site's typography settings are:
 
 ```css name=app.css
 @theme {
@@ -232,7 +234,7 @@ A brand surface mixes its edge, its light and its glow from `--color-brand`, so 
 
 ## Color schemes \{#color-schemes\}
 
-Every color token resolves with `light-dark()`, so the theme follows the element's `color-scheme`. The Master CSS preset sets `color-scheme: light dark` on the root and lets you pin a scheme for the page or for one subtree:
+Colors that differ between schemes use `light-dark()`; some highlights and colors drawn over images stay the same in both. The theme follows the element's `color-scheme`. The Master CSS preset sets `color-scheme: light dark` on the root and lets you pin a scheme for the page or for one subtree:
 
 ```html
 <html data-theme="dark">

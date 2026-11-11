@@ -2,7 +2,7 @@ import define from '@master/internal-site/utils/metadata'
 
 export default define({
   title: 'Stability',
-  description: 'Which names of Master UI are public API, which are private, and what a change to either means while the package is experimental.',
+  description: 'Identify public interfaces, control the source and theme your project uses, and review upgrades while Master UI is experimental.',
   category: 'Reference',
   order: 2,
   fileURL: import.meta.url

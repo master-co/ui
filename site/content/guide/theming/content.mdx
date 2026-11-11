@@ -33,7 +33,7 @@ export const specimen = `<div class="tray max-w(440) mx-auto">
   </div>
 </div>`
 
-A theme gives values to the tokens and defines the material recipes that components read. This page shows how to override a few tokens, scope them to part of a page and build a complete theme with Paper as a working example.
+A theme gives values to the tokens and defines the material recipes that components read. You can change one shared value, limit it to part of a page, or replace the material across the interface while keeping the component markup and behavior.
 
 For the design principles and token values of moonstone and obsidian, see [Default theme](/guide/theme). To decide whether a change belongs in a theme or in a component, start with [Customization](/guide/customization).
 
@@ -52,14 +52,29 @@ Override a token after the import. Every component that reads it follows.
 }
 ```
 
-A token is a custom property, so it also cascades. Set one on an element to retune only what is inside it, without a second build:
+This changes brand surfaces and the default control radius. Small and large controls use their own radius tokens. Check `--color-brand-ink` against the new face; brand-colored text uses the separate `--color-brand-text` token and does not automatically take the new hue.
 
-```css name=app.css
-.checkout {
-  --color-brand: oklch(55% .15 150);
-  --lift: 0px;
-}
-```
+### Limit an override to one region \{#scope\}
+
+A token is a custom property, so it also cascades. Set one on an element to retune its descendants without a second build. Here the two checkout buttons inherit a smaller radius, while the button outside that region keeps the default:
+
+<ComponentPreview name="scope" height={232} narrowHeight={280} title="A token scoped to checkout" background="plain" bodyClass="p-lg" html={`<div class="flex flex-col gap-lg w-full max-w(440) mx-auto">
+  <div class="sheet flex flex-col gap-sm p-md" style="--radius-control: .25rem">
+    <span class="text-xs fg-text-muted">Inside checkout · 4px radius token</span>
+    <div class="flex flex-wrap gap-sm">
+      <button type="button" class="btn">Review</button>
+      <button type="button" class="btn">Pay</button>
+    </div>
+  </div>
+  <div class="flex flex-wrap items-center gap-sm">
+    <button type="button" class="btn">Continue browsing</button>
+    <span class="text-xs fg-text-muted">Outside · default 10px token</span>
+  </div>
+</div>`} />
+
+The button reads `--radius-control` through its own `--btn-radius` property. Setting `--btn-radius` only on the checkout container would not have this effect, because each button declares that property on itself. Use the theme token for the region, or set a [component property](/guide/customization#property) directly on the buttons. The inline declaration can also live in a project class applied to that container.
+
+### Keep circular corners \{#circular-corners\}
 
 The default theme uses continuous corners where supported. To keep circular corners everywhere, set both corner properties:
 
@@ -91,11 +106,11 @@ Use this checklist when building a theme. [Default theme](/guide/theme) explains
 | Travel and time | `--lift`, `--duration-press`, `-quick`, `-base`, `--easing-glide` |
 | Type | `--font-weight-control`, and the preset's `--font-sans` and `--font-mono` |
 
-A package test rejects color literals in component stylesheets, keeping their colors under the theme's control. Use `packages/ui/theme.css` as the source when checking the full set of tokens and recipes.
+A package test rejects color literals in component stylesheets, keeping their colors under the theme's control. Use the installed `@master/ui/theme.css` as the source when checking the full set of tokens and recipes.
 
 ## Paper, a second theme \{#paper\}
 
-Paper is published in `@master/ui/themes/paper.css`. It exists to prove the list above. Moonstone is lit from above; Paper has no light source. Every face is one flat tone, every edge is a ruled hairline, nothing travels, corners are tighter and circular, the neutrals are warm and the brand is green. It changes no component.
+Paper is published in `@master/ui/themes/paper.css`. It replaces the default material with flat faces, ruled edges, tighter circular corners, warm neutrals and a green brand. Its `--lift: 0px` removes the hover and press travel driven by that token; component animations such as a switch thumb moving still work. It changes no component stylesheet.
 
 ```css name=app.css
 @import '@master/css';
@@ -112,6 +127,25 @@ The same markup, in each theme:
 Read its source as a template. It is a list of tokens, a corner setting, and one recipe.
 
 <ComponentSource name="paper" directory="themes" />
+
+### Start a theme file \{#create-a-theme\}
+
+Copy Paper from the installed package when you want a flat starting point, or copy `theme.css` to retain the default material as your starting point:
+
+```bash
+mkdir -p themes
+cp node_modules/@master/ui/themes/paper.css themes/app.css
+```
+
+Import your file after the library, then edit its tokens and recipes:
+
+```css name=app.css
+@import '@master/css';
+@import '@master/ui';
+@import './themes/app.css';
+```
+
+Rebuild with your existing Master CSS integration. The component markup stays the same; compare a button, a field, an ink surface and an overlay in both color schemes before applying the theme throughout the app.
 
 ## Recipes \{#recipes\}
 
@@ -134,21 +168,24 @@ Tokens are custom properties and work at run time, on any element. Mixins are re
 
 ## Without Master CSS \{#without-master-css\}
 
-The package also ships each theme compiled to plain CSS. Link one file and override tokens as ordinary custom properties:
+The package also ships each theme compiled with the components into plain CSS. A CSS bundler can import Paper from the installed package; use this in place of the default standalone stylesheet:
 
-```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@master/ui/dist/themes/paper.css">
-<style>
-  :root { --color-brand: oklch(58% .19 28); }
-</style>
+```css name=app.css
+@import '@master/ui/dist/themes/paper.css';
+
+:root {
+  --color-brand: oklch(58% .19 28);
+}
 ```
 
-`dist/standalone.css` is Moonstone and obsidian. A compiled file cannot take a redefined mixin, so a theme with recipes of its own is built with Master CSS and shipped as its own file.
+For a page without a bundler, serve that compiled file from your static assets; see [Installation](/guide/installation#without-master-css) for the reset and utility limitations. `dist/standalone.css` contains moonstone and obsidian. A compiled file accepts custom-property overrides, but redefining a mixin requires compiling a theme with Master CSS.
 
 ## Rules for a theme \{#rules\}
 
 - **A theme never selects a component.** It sets tokens and defines mixins. A rule such as `.btn { … }` in a theme is a component override; see [customization](/guide/customization) for where that belongs.
 - **Keep the pairs.** A surface and the ink on it, a line and the surface under it, are chosen together. Check body text on every surface for contrast, in both color schemes.
-- **Keep the edges findable.** If a theme removes light and shade, its lines carry every edge and must be firmer. Paper raises each line by about half.
+- **Keep the edges findable.** If a theme removes light and shade, its lines carry more of the boundary. Paper uses firmer line tokens, tuned separately for each role and color scheme.
 - **A shadow token that draws nothing is `0 0 0 0 transparent`, not `none`.** Components compose shadows in lists, and `none` is not valid inside one.
-- **Answer a request for more contrast.** The theme firms its lines and its two quiet inks under `prefers-contrast: more`; a theme that sets its own lines writes that block too, as Paper does. Forced colors and reduced motion are handled by the components and need no theme work.
+- **Answer a request for more contrast.** The theme firms its lines and its two quiet inks under `prefers-contrast: more`; a theme that sets its own lines writes that block too, as Paper does. Preserve the components' forced-color and reduced-motion behavior when changing recipes.
+
+Check the result with keyboard focus, hover, press, disabled controls and invalid fields, in light and dark. Open a menu or dialog over the page to judge its edge and text against the actual backdrop. Repeat with reduced motion and forced colors: a theme that looks clear at rest can still hide a state or remove the only visible boundary.

@@ -1,21 +1,24 @@
-There are two ways to get Master UI into a project: import the package, or copy source into the repository. They are not exclusive. Most projects import the package and own a few things.
+Keep components in the package when you want upgrades to update their implementation. Copy source when the project needs to edit it. You can combine both: import most of Master UI and maintain a few local components.
 
-| | The package | The registry |
+Choose the copying tool by where the source should come from and how you will track later changes:
+
+| Path | Source | How updates reach the project |
 | --- | --- | --- |
-| What arrives | `@master/ui` in `node_modules`, imported by your stylesheet | Source files copied into `ui/` in your repository |
-| An upstream fix | Arrives when the package is updated | Arrives when you merge it |
-| Who edits it | The library | You |
-| Use it for | Components, by default | A component you have a reason to own, and everything that is markup |
+| Import `@master/ui` | The installed package | Upgrade the dependency |
+| `master-ui own` or `master-ui add` | The installed package | Review `status` and `diff`, then merge into the local copy |
+| A registry client | The files served at the registry URL | Review and merge copied files with your own workflow |
+
+Use the first-party commands when a copy must match the installed version. The hosted registry follows the site's published source; it is not selected by your project's lockfile.
 
 ## The package is the default \{#the-package\}
 
 A component from the package keeps following upstream: a fix to a focus ring, a forced-colors outline or a new platform feature reaches the project with an update. Most changes to how a component looks do not need its source. A utility, a token, a public custom property or a theme covers them, and [customization](/guide/customization) lists the conditions under which [owning a component](/guide/customization#own-a-component) is the right step.
 
-## What always comes as source \{#always-source\}
+## What you can copy \{#always-source\}
 
-- **Blocks and layouts are markup.** A hero or a dashboard is components and utilities arranged for one page, and the first thing a project does is change it. There is nothing to import. Copy it from the Code view of its page, from `https://ui.master.co/blocks/<slug>.md` or `https://ui.master.co/layouts/<slug>.md`, or from its registry item.
-- **A behavior is a reference script.** It moves ARIA attributes and sets no style. Import it from the package, as in `@master/ui/behaviors/combobox.js`, or take the copy that comes with its component when the keys, the focus or what selecting means should differ. See [behaviors](/guide/behaviors).
-- **A React, Svelte or Vue component is yours.** It renders a contract's markup in your framework's idiom, with your props, and imports the behavior from the package. There is nothing in it for an update to fix, so it is copied, never imported. See [React, Svelte and Vue](/guide/frameworks).
+- **Blocks and layouts provide page markup.** Copy it from the Code view, the page's Markdown or its registry item, then adapt the content. Keep the component styles it uses installed; layouts that use `page`, `shell`, `auto-grid` or `form` also need those layout styles.
+- **Behaviors can stay in the package.** Import a reference script such as `@master/ui/behaviors/combobox.js`, or take the copy that comes with its component when keys, focus or selection should differ. A copied stylesheet alone does not redirect an existing behavior import. See [behaviors](/guide/behaviors).
+- **Framework components are local source.** `add` copies the React, Svelte or Vue component and its local helpers. Package updates may improve that source, but your copy changes only when you merge them. Its behavior imports normally keep using the package. See [React, Svelte and Vue](/guide/frameworks).
 
 ## The registry \{#the-registry\}
 
@@ -26,7 +29,7 @@ The registry is a set of JSON files generated from the same source as the packag
 | `https://ui.master.co/r/registry.json` | The index: every item with its files' paths, without their content |
 | `https://ui.master.co/r/<name>.json` | One item, with the content of each file |
 
-Each file follows the shadcn registry-item format. Every item is the universal type, `registry:item`, and every file is a `registry:file` with an explicit `target`, so nothing in the registry assumes React or Tailwind. This is the item for the button, with its file contents left out:
+Each item follows the [shadcn registry-item schema](https://ui.shadcn.com/docs/registry/registry-item-json). Items use `registry:item`, and their files use `registry:file` with explicit targets. This lets the registry distribute CSS, HTML and framework source without requiring a Tailwind stylesheet. This is the button item's structure, with its file contents left out:
 
 ```json name=button.json
 {
@@ -69,12 +72,16 @@ A block's or a layout's file is the markup of the first preview on its page. Its
 
 The `master-ui` command in the package is the first-party path. It copies from the installed package, so the source matches the version the project already runs.
 
+Start from a project with [Master UI installed](/guide/installation). Run these commands at its root:
+
 ```bash
 npx master-ui init        # once: ui/index.css, one @import per stylesheet
 npx master-ui own button  # ui/button.css and ui/button.json; the import now points at the copy
 ```
 
-It also records what was taken: a copy of each file in `ui/.base/` and a hash in `master-ui.json`. With that record, `master-ui status` says which owned components changed upstream and `master-ui diff button` shows the change, so it can be merged into an edited copy. [Own a component](/guide/customization#own-a-component) walks through it.
+Use the generated `ui/index.css` in place of the full `@master/ui` import. Check that its button import points to `./button.css`; otherwise the page is still drawing the package's button. [Own a component](/guide/customization#own-a-component) shows the stylesheet setup.
+
+The command records base copies in `ui/.base/` and hashes in `master-ui.json`. Commit them with the owned source so another checkout can compare it with a later installed package. See [reviewing upstream changes](/guide/customization#upstream-changes) for the update workflow.
 
 `own` takes what has a contract: components and the four layout classes. Blocks and layout markup are copied from their pages or from the registry.
 
@@ -87,7 +94,7 @@ npx master-ui add dialog                       # the framework is remembered
 
 ## Use the shadcn CLI \{#shadcn-cli\}
 
-Because the registry is in the shadcn format, the shadcn CLI can read it. Add the registry as a namespace in `components.json`:
+Use a registry client when you want an item from the hosted catalog, including block or layout markup. For the shadcn CLI, add the namespace to `components.json`; merge this field into an existing configuration:
 
 ```json name=components.json
 {
@@ -111,11 +118,11 @@ A framework component is added the same way, as `@master/react-combobox`, or by 
 npx shadcn@latest add https://ui.master.co/r/react-combobox.json
 ```
 
-- `add` needs neither `shadcn init` nor Tailwind. `init` does ask for Tailwind, and is not needed here.
-- The files go to `ui/` at the root of the project, where the item's targets say, whatever aliases `components.json` holds.
-- The item names `@master/ui` as a dependency. A project that already has the package keeps the version it has; one that does not gets the latest from npm.
+Universal items with explicit targets can use a configuration containing only `registries`; they do not need a Tailwind project. See the [registry API documentation](https://ui.shadcn.com/docs/registry/api-reference). The item's targets place these files under the project's `ui/` directory.
 
-The claim here is limited to this: the registry follows the published schema, so a client that reads that schema can read it. The path Master UI itself provides and is developed against is `master-ui own`. The shadcn CLI also keeps no record of what it copied, so `master-ui status` and `master-ui diff` cannot tell you what changed upstream for a component added this way. For a component you intend to keep in step with the library, use `master-ui own`.
+Framework items declare `@master/ui` and the framework as dependencies; stylesheet items declare `@master/css` and their registry dependencies. Review the package manifest and lockfile after installation, then confirm that copied source and installed dependencies work together. Run the page and check the copied component's states and keyboard behavior.
+
+A registry installation does not create Master UI's base copies and ownership records. `master-ui status` and `master-ui diff` therefore cannot track that installation. Choose `own` or `add` when you want their update workflow.
 
 ## What stays the same \{#what-stays-the-same\}
 
