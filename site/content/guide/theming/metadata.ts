@@ -1,10 +1,9 @@
 import define from '@master/internal-site/utils/metadata'
 
 export default define({
-  title: 'A theme of your own',
-  description: 'What a theme decides, how to retune it with tokens, and Paper: a second theme that changes no component.',
+  title: 'Theming',
+  description: 'Override tokens, define material recipes and build a theme of your own, with Paper as a working example.',
   category: 'Customizing',
-  other: { subject: 'Theming' },
   order: 2,
   fileURL: import.meta.url
 })

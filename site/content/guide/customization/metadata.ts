@@ -2,7 +2,7 @@ import define from '@master/internal-site/utils/metadata'
 
 export default define({
   title: 'Customization',
-  description: 'Five steps for changing how a component looks, from one utility to owning its source, and how to tell which step a change belongs on.',
+  description: 'Choose the right layer for a change: utilities, theme tokens, component properties, a theme or owning the source.',
   category: 'Customizing',
   order: 3,
   fileURL: import.meta.url
