@@ -251,9 +251,26 @@ for (const framework of ['react', 'svelte', 'vue']) {
     await t.test('a wheel turns to the next option and gives its value once it rests', async () => {
       const column = example('wheel').locator('.wheel-column').first()
       assert.ok(await column.evaluate(element => element.scrollTop) > 0, 'the first value is under the mark')
+      const geometry = () => example('wheel').locator('.wheel-column').evaluateAll(columns => columns.map(column => ({
+        top: column.scrollTop,
+        height: column.clientHeight,
+        padding: getComputedStyle(column).paddingBlock,
+        options: [...column.querySelectorAll<HTMLElement>('.wheel-option')].map(option => ({
+          value: option.dataset.value ?? option.textContent,
+          selected: option.getAttribute('aria-selected'),
+          offset: option.offsetTop,
+          height: option.offsetHeight,
+          center: option.getBoundingClientRect().top + option.getBoundingClientRect().height / 2 - column.getBoundingClientRect().top,
+        })),
+      })))
+      const before = await geometry()
       await column.focus()
       await page.keyboard.press('ArrowDown')
-      await said('wheel', 'onValueChange: ["11","30","pm"]')
+      try {
+        await said('wheel', 'onValueChange: ["11","30","pm"]')
+      } catch (error) {
+        assert.fail(`${error}\nWheel geometry: ${JSON.stringify({ before, after: await geometry() })}`)
+      }
     })
 
     await t.test('tabs switch their panels', async () => {
