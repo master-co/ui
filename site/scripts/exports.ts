@@ -18,6 +18,7 @@ import { blocks, components, layouts } from '../components/catalog.ts'
 import { exampleSource } from '../utils/framework-example.ts'
 import { previewMarkdown } from '../utils/preview-markdown.ts'
 import { anchorMarkdown } from '../utils/anchor-markdown.ts'
+import { figureMarkdown } from '../utils/figure-markdown.ts'
 
 const site = fileURLToPath(new URL('../', import.meta.url))
 const ui = join(site, '../packages/ui')
@@ -105,7 +106,7 @@ function contractMarkdown(contract: any) {
 
 /** An MDX page as Markdown: previews become fenced markup, components that only draw are dropped. */
 function mdxMarkdown(source: string, title: string, description: string) {
-  const body = previewMarkdown(source)
+  const body = figureMarkdown(previewMarkdown(source))
     // The imports of the page itself, at its top. An import inside a code sample is part of the sample.
     .replace(/^(?:import .*\n)+/, '')
     .replace(/<FrameworkPreview name="([^"]+)"[\s\S]*?\/>/g, (_, name) => `\`\`\`svelte\n${exampleSource(name)}\n\`\`\``)

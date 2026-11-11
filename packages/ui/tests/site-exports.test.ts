@@ -3,8 +3,28 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { previewMarkdown } from '../../../site/utils/preview-markdown.ts'
 import { anchorMarkdown } from '../../../site/utils/anchor-markdown.ts'
+import { figureMarkdown } from '../../../site/utils/figure-markdown.ts'
 
 const page = (slug: string) => readFileSync(new URL(`../../../site/content/${slug}/content.mdx`, import.meta.url), 'utf8')
+
+test('portable figures keep the authored explanation, formatting and links', () => {
+  const caption = '**A scoped token.** Descendants inherit `--radius-control`; [properties](/guide/customization#property) belong on the component.'
+  const source = `Before\n\n<GuideFigure name="theming">\n\n${caption}\n\n</GuideFigure>\n\nAfter`
+  const markdown = figureMarkdown(source)
+  assert.ok(markdown.includes(caption))
+  assert.ok(markdown.startsWith('Before'))
+  assert.ok(markdown.endsWith('After'))
+  assert.doesNotMatch(markdown, /<\/?GuideFigure/)
+  for (const fence of ['```', '~~~~']) {
+    const example = `${fence}mdx\n${source}\n${fence}`
+    assert.equal(figureMarkdown(example), example)
+  }
+})
+
+test('unsupported figure presentations fail instead of leaking JSX into Markdown', () => {
+  assert.throws(() => figureMarkdown('<GuideFigure name="theming" />'), /standalone tags/)
+  assert.throws(() => figureMarkdown('<GuideFigure name="theming">\nCaption'), /Unclosed/)
+})
 
 test('theming exports both previews from the same authored specimen', () => {
   const source = page('guide/theming')
