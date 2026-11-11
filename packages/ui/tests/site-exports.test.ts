@@ -2,6 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { previewMarkdown } from '../../../site/utils/preview-markdown.ts'
+import { anchorMarkdown } from '../../../site/utils/anchor-markdown.ts'
 
 const page = (slug: string) => readFileSync(new URL(`../../../site/content/${slug}/content.mdx`, import.meta.url), 'utf8')
 
@@ -31,4 +32,22 @@ test('markup attributes and self-closing elements cannot replace preview metadat
 test('unsupported preview expressions fail instead of losing the example silently', () => {
   assert.throws(() => previewMarkdown('<ComponentPreview title="Missing" html={unknown} />'), /static html/)
   assert.throws(() => previewMarkdown('<ComponentPreview title="Dynamic" html={`<p>${value}</p>`} />'), /static html/)
+})
+
+test('portable guides preserve authored link targets independently of heading wording', () => {
+  for (const slug of ['theming', 'customization', 'contracts']) {
+    const source = page(`guide/${slug}`)
+    const markdown = anchorMarkdown(previewMarkdown(source))
+    for (const [, id] of source.matchAll(/^#+ .*? \\\{#([\w-]+)\\\}/gm)) {
+      assert.ok(markdown.includes(`<a id="${id}"></a>`), `${slug} lost #${id}`)
+    }
+  }
+})
+
+test('heading examples inside fenced code are preserved literally', () => {
+  const sample = '## Example \\{#example\\}'
+  for (const fence of ['```', '~~~~']) {
+    const source = `${fence}md\n${sample}\n${fence}\n\n${sample}`
+    assert.equal(anchorMarkdown(source), `${fence}md\n${sample}\n${fence}\n\n<a id="example"></a>\n\n## Example`)
+  }
 })

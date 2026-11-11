@@ -17,6 +17,7 @@ import { fileURLToPath } from 'node:url'
 import { blocks, components, layouts } from '../components/catalog.ts'
 import { exampleSource } from '../utils/framework-example.ts'
 import { previewMarkdown } from '../utils/preview-markdown.ts'
+import { anchorMarkdown } from '../utils/anchor-markdown.ts'
 
 const site = fileURLToPath(new URL('../', import.meta.url))
 const ui = join(site, '../packages/ui')
@@ -111,11 +112,10 @@ function mdxMarkdown(source: string, title: string, description: string) {
     .replace(/<ComponentSource name="([^"]+)"(?: directory="([^"]+)")? \/>/g, (_, name, directory = 'components') => `\`\`\`css\n${read(join(ui, directory, `${name}.css`)).trim()}\n\`\`\``)
     .replace(/<ComponentLinks slugs=\{\[([^\]]*)\]\}(?: kind="(\w+)")? \/>/g, (_, slugs, kind = 'components') => slugs.split(',').map((slug: string) => slug.trim().replace(/['"]/g, '')).filter(Boolean).map((slug: string) => `- [${slug}](${origin}/${kind}/${slug}.md)`).join('\n'))
     .replace(/<Contract\w* [^>]*\/>/g, '')
-    .replace(/ \\\{#[\w-]+\\\}/g, '')
     .replace(/\]\(\/(guide|components|layouts|blocks)\/([\w-]+)(#[\w-]+)?\)/g, (_, section, slug, hash = '') => `](${origin}/${section}/${slug}.md${hash})`)
     .replace(/\n{3,}/g, '\n\n')
     .trim()
-  return `# ${title}\n\n${description}\n\n${body}\n`
+  return `# ${title}\n\n${description}\n\n${anchorMarkdown(body)}\n`
 }
 
 const metadataOf = (file: string) => {
