@@ -35,7 +35,8 @@
   const id = $props.id()
   const first = untrack(() => value)
   let shown = $state(untrack(() => calendarMonth(month ?? [first].flat()[0] ?? undefined).month))
-  const view = $derived(calendarMonth(shown, { weekStart, locale }))
+  // The first value's days are marked in the first render; after that the behavior marks what is chosen.
+  const view = $derived(calendarMonth(shown, { weekStart, locale, value: first, range }))
   const attach = behavior(calendar, () => ({ value: (first ?? undefined) as string | string[] | undefined, range, min, max, month, weekStart, locale, disabled, draw: (next: string) => { shown = next } }), {
     value: () => value,
     change: (next) => { value = next; onValueChange?.(next) },
@@ -63,10 +64,10 @@
         <span class="calendar-weekday" role="columnheader" aria-label={weekday.name}>{weekday.short}</span>
       {/each}
     </div>
-    {#each view.weeks as week (week[0].date)}
+    {#each view.weeks as week (week[0]!.date)}
       <div class="calendar-week" role="row">
         {#each week as day (day.date)}
-          <button type="button" class={day.outside ? 'calendar-day calendar-day-outside' : 'calendar-day'} role="gridcell" tabindex={-1} value={day.date} aria-label={day.label}>{day.text}</button>
+          <button type="button" class={['calendar-day', day.outside && 'calendar-day-outside', day.range]} role="gridcell" tabindex={day.tab ? 0 : -1} value={day.date} aria-selected={day.selected || undefined} aria-label={day.label}>{day.text}</button>
         {/each}
       </div>
     {/each}

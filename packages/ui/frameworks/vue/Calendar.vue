@@ -37,7 +37,8 @@ const model = defineModel<CalendarValue>()
 const id = useId()
 const first = model.value
 const shown = shallowRef(calendarMonth(month ?? [first].flat()[0] ?? undefined).month)
-const view = computed(() => calendarMonth(shown.value, { weekStart, locale }))
+// The first value's days are marked in the first render; after that the behavior marks what is chosen.
+const view = computed(() => calendarMonth(shown.value, { weekStart, locale, value: first, range }))
 const root = useTemplateRef<HTMLDivElement>('root')
 useBehavior(root, calendar, () => ({
   value: (first ?? undefined) as string | string[] | undefined,
@@ -67,8 +68,8 @@ useBehavior(root, calendar, () => ({
       <div class="calendar-week" role="row">
         <span v-for="weekday in view.weekdays" :key="weekday.name" class="calendar-weekday" role="columnheader" :aria-label="weekday.name">{{ weekday.short }}</span>
       </div>
-      <div v-for="week in view.weeks" :key="week[0].date" class="calendar-week" role="row">
-        <button v-for="day in week" :key="day.date" type="button" class="calendar-day" :class="{ 'calendar-day-outside': day.outside }" role="gridcell" tabindex="-1" :value="day.date" :aria-label="day.label">{{ day.text }}</button>
+      <div v-for="week in view.weeks" :key="week[0]!.date" class="calendar-week" role="row">
+        <button v-for="day in week" :key="day.date" type="button" class="calendar-day" :class="[{ 'calendar-day-outside': day.outside }, day.range]" role="gridcell" :tabindex="day.tab ? 0 : -1" :value="day.date" :aria-selected="day.selected || undefined" :aria-label="day.label">{{ day.text }}</button>
       </div>
     </div>
   </div>

@@ -248,11 +248,29 @@ test('calendarMonth: a month as data, with the days that complete its weeks', ()
   assert.equal(view.title, 'November 2026')
   assert.deepEqual(view.weekdays.map(weekday => weekday.name), ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'])
   assert.equal(view.weeks.length, 6, 'November 2026 starts on a Sunday, so it spans six weeks from Monday')
-  assert.deepEqual(view.weeks[0][0], { date: '2026-10-26', text: '26', label: 'Monday, 26 October 2026', outside: true })
-  assert.deepEqual(view.weeks[0][6], { date: '2026-11-01', text: '1', label: 'Sunday, 1 November 2026', outside: false })
+  assert.deepEqual(view.weeks[0][0], { date: '2026-10-26', text: '26', label: 'Monday, 26 October 2026', outside: true, selected: false, tab: false, range: '' })
+  assert.deepEqual(view.weeks[0][6], { date: '2026-11-01', text: '1', label: 'Sunday, 1 November 2026', outside: false, selected: false, tab: false, range: '' })
   assert.equal(view.weeks.flat().filter(day => !day.outside).length, 30)
   assert.equal(calendarMonth('2026-11-13', { locale: 'en-GB' }).month, '2026-11', 'a day stands for its month')
   assert.match(calendarMonth().month, /^\d{4}-\d{2}$/, 'this month by default')
+})
+
+test('calendarMonth: a value given with the month marks its days in the data, as the behavior marks them', () => {
+  const days = (options: Record<string, unknown>) => calendarMonth('2026-11', { locale: 'en-GB', weekStart: 1, ...options }).weeks.flat().filter(day => day.selected || day.tab || day.range)
+  assert.deepEqual(days({ value: '2026-11-13' }).map(day => [day.date, day.selected, day.tab, day.range]), [['2026-11-13', true, true, '']])
+  assert.deepEqual(days({ value: ['2026-11-12', '2026-11-14'], range: true }).map(day => [day.date, day.tab, day.range]), [
+    ['2026-11-12', true, 'calendar-day-range-start'],
+    ['2026-11-13', false, 'calendar-day-range'],
+    ['2026-11-14', false, 'calendar-day-range-end'],
+  ])
+  assert.deepEqual(days({ value: ['2026-11-12', null], range: true }).map(day => [day.date, day.range]), [['2026-11-12', 'calendar-day-range-start calendar-day-range-end']], 'a range of one day until its end is chosen')
+  assert.deepEqual(days({ value: 'not a date' }), [])
+
+  // The data and the behavior agree: what one says, the other draws.
+  const { one, all } = setup(calendarMarkup)
+  calendar(one('.calendar'), { value: ['2026-11-12', '2026-11-14'], range: true, locale: 'en-GB', weekStart: 1 })
+  const drawn = all<HTMLButtonElement>('.calendar-day').filter(day => day.getAttribute('aria-selected') === 'true').map(day => [day.value, day.getAttribute('tabindex') === '0', [...day.classList].filter(name => name.startsWith('calendar-day-range')).join(' ')])
+  assert.deepEqual(drawn, days({ value: ['2026-11-12', '2026-11-14'], range: true }).map(day => [day.date, day.tab, day.range]))
 })
 
 test('calendar: the days it writes carry their date as value', () => {

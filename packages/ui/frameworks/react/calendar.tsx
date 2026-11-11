@@ -35,10 +35,11 @@ export function Calendar({ value, defaultValue, onValueChange, range, min, max, 
   const id = useId()
   const [first] = useState(value ?? defaultValue)
   const [shown, setShown] = useState(() => calendarMonth(month ?? [first].flat()[0] ?? undefined).month)
-  const view = useMemo(() => calendarMonth(shown, { weekStart, locale }), [shown, weekStart, locale])
+  // The first value's days are marked in the first render; after that the behavior marks what is chosen.
+  const view = useMemo(() => calendarMonth(shown, { weekStart, locale, value: first, range }), [shown, weekStart, locale, first, range])
   const ref = useBehavior(calendar, { value: (first ?? undefined) as string | string[] | undefined, range, min, max, month, weekStart, locale, disabled, draw: setShown }, { value, onValueChange })
   return (
-    <div className={`calendar ${className ?? ''}`} ref={ref} {...root}>
+    <div className={className ? `calendar ${className}` : 'calendar'} ref={ref} {...root}>
       <div className="calendar-header">
         <button type="button" className="btn btn-quiet btn-square btn-sm" aria-label={previousLabel}>
           <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6" /></svg>
@@ -53,8 +54,8 @@ export function Calendar({ value, defaultValue, onValueChange, range, min, max, 
           {view.weekdays.map(weekday => <span className="calendar-weekday" role="columnheader" aria-label={weekday.name} key={weekday.name}>{weekday.short}</span>)}
         </div>
         {view.weeks.map(week => (
-          <div className="calendar-week" role="row" key={week[0].date}>
-            {week.map(day => <button type="button" className={day.outside ? 'calendar-day calendar-day-outside' : 'calendar-day'} role="gridcell" tabIndex={-1} value={day.date} aria-label={day.label} key={day.date}>{day.text}</button>)}
+          <div className="calendar-week" role="row" key={week[0]!.date}>
+            {week.map(day => <button type="button" className={['calendar-day', day.outside && 'calendar-day-outside', day.range].filter(Boolean).join(' ')} role="gridcell" tabIndex={day.tab ? 0 : -1} value={day.date} aria-selected={day.selected || undefined} aria-label={day.label} key={day.date}>{day.text}</button>)}
           </div>
         ))}
       </div>

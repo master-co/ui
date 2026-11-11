@@ -44,9 +44,12 @@
  * @property {string} month The month, as `YYYY-MM`.
  * @property {string} title The month and the year, as the locale writes them.
  * @property {{ name: string, short: string }[]} weekdays The seven column headings, from the first day of the week.
- * @property {{ date: string, text: string, label: string, outside: boolean }[][]} weeks The weeks that hold
- *   a day of the month. `date` is `YYYY-MM-DD`, `text` the number shown, `label` the full date for assistive
- *   technology, and `outside` marks a day of the month before or after.
+ * @property {{ date: string, text: string, label: string, outside: boolean, selected: boolean, tab: boolean, range: string }[][]} weeks
+ *   The weeks that hold a day of the month. `date` is `YYYY-MM-DD`, `text` the number shown, `label` the full
+ *   date for assistive technology, and `outside` marks a day of the month before or after. The last three say
+ *   how a `value` given with the month is drawn, for a renderer that writes the days before the behavior
+ *   attaches: `selected` is `aria-selected`, `tab` the one day with `tabindex="0"`, and `range` the classes of
+ *   a day in a range, empty for any other day.
  */
 
 /**
@@ -134,8 +137,10 @@ function canonical(tag) {
  * its full name. The calendar behavior writes its grid from this; a renderer that writes the grid itself,
  * with the `draw` option, reads the same.
  * @param {string} [of] The month as `YYYY-MM`, or any day of it as `YYYY-MM-DD`. This month by default.
- * @param {{ weekStart?: number, locale?: string }} [options] `weekStart`: the day in the first column, 0 for
- *   Sunday to 6 for Saturday; the locale's own by default. `locale`: a BCP 47 tag for the names.
+ * @param {{ weekStart?: number, locale?: string, value?: string | (string | null)[] | null, range?: boolean }} [options]
+ *   `weekStart`: the day in the first column, 0 for Sunday to 6 for Saturday; the locale's own by default.
+ *   `locale`: a BCP 47 tag for the names. `value` and `range`: what is chosen, as the behavior takes them,
+ *   to have its days marked in the data. The behavior marks the days itself once it attaches.
  * @returns {CalendarMonth}
  */
 export function calendarMonth(of, options = {}) {
@@ -156,11 +161,27 @@ export function calendarMonth(of, options = {}) {
   const to = noon(day.getFullYear(), day.getMonth() + 1, 0)
   const corner = shift(from, -((from.getDay() - weekStart + 7) % 7))
   const week = Array.from({ length: 7 }, (_, index) => index)
+  // The chosen day, or the two ends of a range, as the behavior reads them.
+  const given = [options.value].flat().map(parse).filter((date) => date !== null).map(iso).sort()
+  const start = given[0] ?? null
+  const last = (options.range && given[1]) || start
   const weeks = []
   for (let head = corner; head <= to; head = shift(head, 7)) {
     weeks.push(week.map((index) => {
       const date = shift(head, index)
-      return { date: iso(date), text: dayNumber.format(date.getDate()), label: dayName.format(date), outside: date < from || date > to }
+      const key = iso(date)
+      const selected = start !== null && key >= start && key <= /** @type {string} */ (last)
+      return {
+        date: key,
+        text: dayNumber.format(date.getDate()),
+        label: dayName.format(date),
+        outside: date < from || date > to,
+        selected,
+        tab: key === start,
+        range: options.range && selected
+          ? [key === start && 'calendar-day-range-start', key === last && 'calendar-day-range-end', key !== start && key !== last && 'calendar-day-range'].filter(Boolean).join(' ')
+          : ''
+      }
     }))
   }
   return {

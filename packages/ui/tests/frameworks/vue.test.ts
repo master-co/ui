@@ -189,7 +189,7 @@ test('vue: the first HTML, rendered on a server, holds the state, and hydrates w
   const { renderToString } = await import('vue/server-renderer')
   const examples: [string, Record<string, unknown>, RegExp][] = [
     ['combobox', { options: regions, value: 'sin', listLabel: 'Regions', toggleLabel: 'Show regions', 'aria-label': 'Region' }, /value="Singapore"[\s\S]*data-value="sin" aria-checked="true"/],
-    ['calendar', { value: '2026-11-13', locale: 'en-GB', weekStart: 1 }, /November 2026[\s\S]*value="2026-11-13"/],
+    ['calendar', { value: '2026-11-13', locale: 'en-GB', weekStart: 1 }, /November 2026[\s\S]*<button[^>]*tabindex="0"[^>]*value="2026-11-13"[^>]*aria-selected="true"/],
     ['tabs', { tabs: [{ value: 'a', label: 'A', content: 'Panel A' }, { value: 'b', label: 'B', content: 'Panel B' }], value: 'b', 'aria-label': 'Account' }, /data-value="b" aria-selected="true"[\s\S]* hidden>(<!--\[-->)?Panel A/],
     ['splitter', { value: 36, label: 'Resize', style: 'height:20rem' }, /--splitter-size:36%;height:20rem[\s\S]*aria-valuenow="36"/],
     ['wheel', { columns: [{ label: 'Hour', options: ['09', '10'] }], value: ['10'], 'aria-label': 'Time' }, /data-value="10" aria-selected="true"/],
