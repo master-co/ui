@@ -7,7 +7,8 @@
  *   master-ui check [paths…]            report markup that breaks a contract
  *   master-ui init                      write ui/index.css, one @import per component
  *   master-ui own <name…>               copy a component's stylesheet, contract and behavior into the project
- *   master-ui add <name…>               copy a React, Svelte or Vue component into the project (--framework=react)
+ *   master-ui add <name…>               copy a React, Svelte or Vue component into the project (--framework=react,
+ *                                       --directory=src/lib/ui for another place than ui/)
  *   master-ui status                    which owned or added components changed upstream since they were taken
  *   master-ui diff <name>               what changed upstream in an owned or added component
  *   master-ui accept <name…>            record that upstream's current version has been merged
@@ -262,6 +263,11 @@ const commands = {
     const settings = config()
     const framework = option('framework') ?? settings.framework ?? detect()
     if (!framework) fail(`Say which framework: master-ui add combobox --framework=react. It is one of: ${Object.keys(manifest.frameworks).join(', ')}.`)
+    // A framework may keep its source somewhere of its own: src/lib in SvelteKit, app in Nuxt.
+    if (option('directory')) {
+      settings.directory = /** @type {string} */ (option('directory'))
+      if (!existsSync(join(cwd, settings.entry))) settings.entry = `${settings.directory}/index.css`
+    }
     const directory = join(cwd, settings.directory)
     if (!names.length) {
       const width = Math.max(...Object.keys(manifest.components).map(name => name.length))

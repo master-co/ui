@@ -133,3 +133,16 @@ test('add reads the framework from package.json, and imports a behavior the proj
     assert.equal(run('add', 'combobox', '--framework=solid').status, 1)
   } finally { remove() }
 })
+
+test('add writes where --directory says, and remembers the place', () => {
+  const { run, read, has, remove } = project()
+  try {
+    assert.equal(run('add', 'dialog', '--framework=svelte', '--directory=src/lib/ui').status, 0)
+    assert.ok(has('src/lib/ui/Dialog.svelte'))
+    assert.ok(!has('ui/Dialog.svelte'))
+    assert.equal(JSON.parse(read('master-ui.json')).directory, 'src/lib/ui')
+    assert.equal(run('add', 'tabs').status, 0)
+    assert.ok(has('src/lib/ui/Tabs.svelte'), 'the next one goes to the same place')
+    assert.ok(has('src/lib/ui/behavior.svelte.ts'))
+  } finally { remove() }
+})
