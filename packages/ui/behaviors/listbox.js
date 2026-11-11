@@ -6,35 +6,49 @@
  * the listbox. A chosen option has `aria-checked="true"`: one of them, or any number of them when the
  * listbox has `aria-multiselectable="true"`. Disabled and hidden options are skipped.
  *
- * The listbox dispatches `input` and `change` each time what is chosen changes.
+ * The listbox dispatches `input` and `change` each time what is chosen changes. The function the behavior
+ * returns has a `value`: what the chosen option stands for, its `data-value` or its text, null when none is
+ * chosen, and a list of them when the listbox is multiselectable. Set it to choose from outside; that
+ * dispatches nothing.
  *
  * A listbox that a text field controls, in a combobox or a command palette, is driven from that field by
  * the behavior of the same name; this one leaves it alone.
  */
-import { activate, enabled, options, step, typeahead } from './internal.js'
+import { activate, enabled, options, step, typeahead, valued, valueOf } from './internal.js'
 
 /** @type {WeakMap<Element, AbortController>} */
 const attached = new WeakMap()
 
 /**
  * @param {HTMLElement} root The element with the `listbox` class and `role="listbox"`, focusable with `tabindex="0"`.
- * @returns {() => void} Removes everything the behavior added.
+ * @returns {(() => void) & { value: string | string[] | null }} Removes everything the behavior added. Its
+ *   `value` is what is chosen.
  */
 export function listbox(root) {
   attached.get(root)?.abort()
   const controller = new AbortController()
   const { signal } = controller
   attached.set(root, controller)
-  const detach = () => controller.abort()
+  const all = () => [...root.querySelectorAll('[role="option"]')]
+  const multiple = () => root.getAttribute('aria-multiselectable') === 'true'
+  const detach = valued(
+    () => controller.abort(),
+    () => {
+      const chosen = all().filter((option) => option.getAttribute('aria-checked') === 'true').map(valueOf)
+      return multiple() ? chosen : chosen[0] ?? null
+    },
+    (next) => {
+      const values = [next].flat()
+      for (const option of all()) option.setAttribute('aria-checked', String(values.includes(valueOf(option))))
+    }
+  )
 
   // A listbox that a field with role="combobox" controls belongs to that field's behavior.
   const fields = root.id ? [...root.ownerDocument.querySelectorAll('[role="combobox"][aria-controls]')] : []
   if (fields.some((field) => (field.getAttribute('aria-controls') ?? '').split(/\s+/).includes(root.id))) return detach
 
   const seek = typeahead()
-  const all = () => [...root.querySelectorAll('[role="option"]')]
   const active = () => root.querySelector('[role="option"][aria-selected="true"]')
-  const multiple = () => root.getAttribute('aria-multiselectable') === 'true'
 
   /**
    * Choose an option. In a list of one choice it takes the check from the others; in a multiselectable list

@@ -7,6 +7,9 @@
  * `aria-valuenow`. The handle's `aria-valuemin` and `aria-valuemax` are the least and the greatest it goes.
  *
  * The handle dispatches `input` each time the size changes and `change` when a drag ends or a key moved it.
+ *
+ * The function the behavior returns has a `value`: the first pane's size, in percent. Set it to move the
+ * handle from outside; that dispatches nothing.
  */
 
 /** @type {WeakMap<Element, AbortController>} */
@@ -15,17 +18,25 @@ const attached = new WeakMap()
 /**
  * @param {HTMLElement} root The element with the `splitter` class.
  * @param {{ step?: number }} [options] `step`: how far an arrow key moves the handle, in percent. 5 by default.
- * @returns {() => void} Removes everything the behavior added.
+ * @returns {(() => void) & { value: number }} Removes everything the behavior added. Its `value` is the
+ *   first pane's size, in percent.
  */
 export function splitter(root, { step = 5 } = {}) {
   attached.get(root)?.abort()
   const controller = new AbortController()
   const { signal } = controller
   attached.set(root, controller)
-  const detach = () => controller.abort()
 
   // The handle is a child of the root: a pane may hold a splitter of its own.
   const handle = /** @type {HTMLElement | undefined} */ ([...root.children].find((child) => child.classList.contains('splitter-handle')))
+  /** Set once the handle is found: reads the size, and writes one given from outside. */
+  let read = () => NaN
+  let take = (/** @type {number} */ value) => { void value }
+  const detach = /** @type {(() => void) & { value: number }} */ (Object.defineProperty(() => controller.abort(), 'value', {
+    enumerable: true,
+    get: () => read(),
+    set: (/** @type {number} */ value) => { if (Number.isFinite(value)) take(value) }
+  }))
   if (!handle) return detach
 
   const disabled = () => handle.getAttribute('aria-disabled') === 'true'
@@ -39,21 +50,30 @@ export function splitter(root, { step = 5 } = {}) {
   const least = () => number('aria-valuemin', 0)
   const greatest = () => number('aria-valuemax', 100)
   const now = () => number('aria-valuenow', 50)
+  /** The size the stylesheet lays out from, which is finer than the whole number assistive technology reads. */
+  const size = () => {
+    const own = parseFloat(root.style.getPropertyValue('--splitter-size'))
+    return Number.isFinite(own) ? own : now()
+  }
   const changed = () => handle.dispatchEvent(new Event('change', { bubbles: true }))
 
   /**
    * Pass a size on: the property the stylesheet lays out from, and the value assistive technology reads.
    * @param {number} value The first pane's size, in percent.
+   * @param {boolean} [silent] Say nothing: the size was set from outside.
    * @returns {boolean} Whether the size changed.
    */
-  const set = (value) => {
-    const size = `${Math.round(Math.min(greatest(), Math.max(least(), value)) * 100) / 100}%`
-    if (size === (root.style.getPropertyValue('--splitter-size').trim() || `${now()}%`)) return false
-    root.style.setProperty('--splitter-size', size)
-    handle.setAttribute('aria-valuenow', String(Math.round(parseFloat(size))))
-    handle.dispatchEvent(new Event('input', { bubbles: true }))
+  const set = (value, silent = false) => {
+    const next = Math.round(Math.min(greatest(), Math.max(least(), value)) * 100) / 100
+    if (next === size()) return false
+    root.style.setProperty('--splitter-size', `${next}%`)
+    handle.setAttribute('aria-valuenow', String(Math.round(next)))
+    if (!silent) handle.dispatchEvent(new Event('input', { bubbles: true }))
     return true
   }
+
+  read = size
+  take = (value) => { set(value, true) }
 
   /** The pointer that holds the handle, and whether it has moved it. */
   let held = /** @type {number | null} */ (null)

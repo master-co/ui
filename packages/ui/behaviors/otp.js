@@ -14,6 +14,9 @@
  * A slot the script writes to dispatches `input`, as it does when typed in. When every slot is filled the
  * root dispatches a bubbling `change` CustomEvent with the code in `detail.value`. A slot's own `change`
  * bubbles through the root too; it has no `detail`.
+ *
+ * The function the behavior returns has a `value`: the characters the slots hold, in order. Set it to fill
+ * the slots from outside; that dispatches nothing.
  */
 
 /** @type {WeakMap<Element, AbortController>} */
@@ -23,16 +26,24 @@ const attached = new WeakMap()
  * @param {HTMLElement} root The element with the `otp` class.
  * @param {{ pattern?: RegExp }} [options] `pattern`: what one character must match. By default the `pattern`
  * attribute of the first slot, and a digit when it has none.
- * @returns {() => void} Removes the listeners and gives the slots their `maxlength` back.
+ * @returns {(() => void) & { value: string }} Removes the listeners and gives the slots their `maxlength`
+ *   back. Its `value` is the code so far.
  */
 export function otp(root, options = {}) {
   attached.get(root)?.abort()
   const controller = new AbortController()
   const { signal } = controller
   attached.set(root, controller)
-  const detach = () => controller.abort()
 
   const every = () => /** @type {HTMLInputElement[]} */ ([...root.querySelectorAll('.otp-slot')])
+  const detach = Object.defineProperty(() => controller.abort(), 'value', {
+    enumerable: true,
+    get: () => every().map((slot) => slot.value).join(''),
+    set: (/** @type {string} */ text) => {
+      const characters = accept(text ?? '')
+      every().forEach((slot, index) => { slot.value = characters[index] ?? '' })
+    }
+  })
   /** The slots the keys may land on. */
   const slots = () => every().filter((slot) => !slot.disabled && !slot.closest('[hidden]'))
 
@@ -67,7 +78,10 @@ export function otp(root, options = {}) {
    */
   function write(slot, character) {
     if (slot.value === character) return
-    slot.value = character
+    // The prototype's setter: a framework that shadows `value` to notice its own writes still hears the event.
+    const set = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(slot), 'value')?.set
+    if (set) set.call(slot, character)
+    else slot.value = character
     writing = true
     slot.dispatchEvent(new Event('input', { bubbles: true }))
     writing = false
@@ -170,5 +184,5 @@ export function otp(root, options = {}) {
     for (const [slot, length] of lengths) if (length !== null) slot.setAttribute('maxlength', length)
   })
 
-  return detach
+  return /** @type {(() => void) & { value: string }} */ (detach)
 }

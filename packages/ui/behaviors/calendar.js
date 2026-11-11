@@ -14,8 +14,13 @@
  *
  * Choosing dispatches a bubbling `change` CustomEvent from the root with `detail.value`: the day as
  * `YYYY-MM-DD`, or `[start, end]` once both ends of a range are chosen. The value lives in the script, not in
- * the markup; read it from the returned function's `value`. To set it from outside, attach again with a new
- * `value`: the second call replaces the first.
+ * the markup; read it from the returned function's `value`, and set that to choose from outside, which shows
+ * the month of the new value and dispatches nothing.
+ *
+ * The grid may be written by something else: a template, or a framework that renders it on a server. Give
+ * `draw`, and the script writes no element. It calls `draw` with the month to show, as `YYYY-MM`, and marks
+ * the days once they are there; `calendarMonth()` gives that month's weekday names and weeks as data. Each
+ * day is a button whose `value` is its date, which is how the script knows the days it did not write.
  *
  * Days are local and Gregorian, kept at noon so that no daylight-saving change moves one to the day before.
  */
@@ -30,6 +35,18 @@
  * @property {number} [weekStart] The day in the first column, 0 for Sunday to 6 for Saturday. The locale's own by default, and Monday where the browser cannot say.
  * @property {string} [locale] A BCP 47 tag for the names of months and days. The `lang` the calendar stands in by default.
  * @property {(date: Date) => boolean} [disabled] Says whether a day cannot be chosen.
+ * @property {(month: string) => void} [draw] Takes over writing the grid: called with the month to show, as
+ *   `YYYY-MM`, whenever it is not the month the grid holds. Write the days `calendarMonth(month)` lists.
+ */
+
+/**
+ * @typedef {object} CalendarMonth A month as data, for a renderer that writes the grid itself.
+ * @property {string} month The month, as `YYYY-MM`.
+ * @property {string} title The month and the year, as the locale writes them.
+ * @property {{ name: string, short: string }[]} weekdays The seven column headings, from the first day of the week.
+ * @property {{ date: string, text: string, label: string, outside: boolean }[][]} weeks The weeks that hold
+ *   a day of the month. `date` is `YYYY-MM-DD`, `text` the number shown, `label` the full date for assistive
+ *   technology, and `outside` marks a day of the month before or after.
  */
 
 /**
@@ -94,41 +111,35 @@ function firstDay(locale) {
   }
 }
 
+/** Today, as a local day at noon. */
+function today() {
+  const now = new Date()
+  return noon(now.getFullYear(), now.getMonth(), now.getDate())
+}
+
 /**
- * @param {HTMLElement} root The element with the `calendar` class.
- * @param {CalendarOptions} [options]
- * @returns {(() => void) & { readonly value: CalendarValue }} Removes the listeners; the month it drew stays. Its `value` is what is chosen now.
+ * A BCP 47 tag in its canonical form; undefined, which is the browser's own language, for one that is not a tag.
+ * @param {string | undefined} tag
  */
-export function calendar(root, options = {}) {
-  attached.get(root)?.abort()
-  const controller = new AbortController()
-  const { signal } = controller
-  attached.set(root, controller)
-
-  const range = Boolean(options.range)
-  const given = [options.value].flat().map(parse).filter((date) => date !== null).map(iso).sort()
-  /** The chosen day; in a range, its two ends. */
-  let start = /** @type {string | null} */ (given[0] ?? null)
-  let end = /** @type {string | null} */ ((range && given[1]) || null)
-
-  /** @returns {CalendarValue} */
-  const value = () => (range && start ? [start, end] : start)
-  const detach = /** @type {(() => void) & { readonly value: CalendarValue }} */ (
-    Object.defineProperty(() => controller.abort(), 'value', { get: value, enumerable: true })
-  )
-
-  const grid = /** @type {HTMLElement} */ (root.querySelector('.calendar-grid'))
-  if (!grid) return detach
-  const title = root.querySelector('.calendar-title')
-  const turns = /** @type {HTMLButtonElement[]} */ ([...root.querySelectorAll('.calendar-header button')])
-  const previous = turns[0]
-  const next = turns.length > 1 ? turns[turns.length - 1] : undefined
-
-  /** The language of the names: the option, or the `lang` the calendar stands in, or the browser's. */
-  let locale = /** @type {string | undefined} */ (undefined)
+function canonical(tag) {
   try {
-    locale = Intl.getCanonicalLocales(options.locale ?? (root.closest('[lang]')?.getAttribute('lang') || undefined))[0]
-  } catch {}
+    return Intl.getCanonicalLocales(tag)[0]
+  } catch {
+    return undefined
+  }
+}
+
+/**
+ * A month as data: its name, the names of the weekdays and its weeks, each day with its date, its number and
+ * its full name. The calendar behavior writes its grid from this; a renderer that writes the grid itself,
+ * with the `draw` option, reads the same.
+ * @param {string} [of] The month as `YYYY-MM`, or any day of it as `YYYY-MM-DD`. This month by default.
+ * @param {{ weekStart?: number, locale?: string }} [options] `weekStart`: the day in the first column, 0 for
+ *   Sunday to 6 for Saturday; the locale's own by default. `locale`: a BCP 47 tag for the names.
+ * @returns {CalendarMonth}
+ */
+export function calendarMonth(of, options = {}) {
+  const locale = canonical(options.locale)
   /** @param {Intl.DateTimeFormatOptions} parts */
   const format = (parts) => new Intl.DateTimeFormat(locale, { calendar: 'gregory', ...parts })
   const monthName = format({ month: 'long', year: 'numeric' })
@@ -140,12 +151,85 @@ export function calendar(root, options = {}) {
     ? ((/** @type {number} */ (options.weekStart) % 7) + 7) % 7
     : firstDay(locale)
 
+  const day = parse(of) ?? parse(`${of}-01`) ?? today()
+  const from = noon(day.getFullYear(), day.getMonth(), 1)
+  const to = noon(day.getFullYear(), day.getMonth() + 1, 0)
+  const corner = shift(from, -((from.getDay() - weekStart + 7) % 7))
+  const week = Array.from({ length: 7 }, (_, index) => index)
+  const weeks = []
+  for (let head = corner; head <= to; head = shift(head, 7)) {
+    weeks.push(week.map((index) => {
+      const date = shift(head, index)
+      return { date: iso(date), text: dayNumber.format(date.getDate()), label: dayName.format(date), outside: date < from || date > to }
+    }))
+  }
+  return {
+    month: iso(from).slice(0, 7),
+    title: monthName.format(from),
+    weekdays: week.map((index) => ({ name: weekdayName.format(shift(corner, index)), short: weekdayShort.format(shift(corner, index)) })),
+    weeks
+  }
+}
+
+/**
+ * @param {HTMLElement} root The element with the `calendar` class.
+ * @param {CalendarOptions} [options]
+ * @returns {(() => void) & { value: CalendarValue }} Removes the listeners; the month it drew stays. Its
+ *   `value` is what is chosen now.
+ */
+export function calendar(root, options = {}) {
+  attached.get(root)?.abort()
+  const controller = new AbortController()
+  const { signal } = controller
+  attached.set(root, controller)
+
+  const range = Boolean(options.range)
+  /** The chosen day; in a range, its two ends. */
+  let start = /** @type {string | null} */ (null)
+  let end = /** @type {string | null} */ (null)
+  /**
+   * Take a value given from outside. Says whether it differs from what is chosen.
+   * @param {unknown} next
+   */
+  const take = (next) => {
+    const given = [next].flat().map(parse).filter((date) => date !== null).map(iso).sort()
+    const before = [start, end].join()
+    start = given[0] ?? null
+    end = (range && given[1]) || null
+    return [start, end].join() !== before
+  }
+  take(options.value)
+
+  /** @returns {CalendarValue} */
+  const value = () => (range && start ? [start, end] : start)
+  const detach = /** @type {(() => void) & { value: CalendarValue }} */ (
+    Object.defineProperty(() => controller.abort(), 'value', {
+      enumerable: true,
+      get: value,
+      // The same value given back, as a framework does after a choice, moves nothing: the month stays.
+      set: (/** @type {CalendarValue} */ next) => {
+        if (!grid || !take(next)) return
+        if (start) focused = settle(/** @type {Date} */ (parse(start)))
+        draw()
+      }
+    })
+  )
+
+  const grid = /** @type {HTMLElement} */ (root.querySelector('.calendar-grid'))
+  if (!grid) return detach
+  const title = root.querySelector('.calendar-title')
+  const turns = /** @type {HTMLButtonElement[]} */ ([...root.querySelectorAll('.calendar-header button')])
+  const previous = turns[0]
+  const next = turns.length > 1 ? turns[turns.length - 1] : undefined
+
+  /** The language of the names: the option, or the `lang` the calendar stands in, or the browser's. */
+  const locale = canonical(options.locale ?? (root.closest('[lang]')?.getAttribute('lang') || undefined))
+  const weekStart = Number.isInteger(options.weekStart)
+    ? ((/** @type {number} */ (options.weekStart) % 7) + 7) % 7
+    : firstDay(locale)
+
   const min = parse(options.min)
   const max = parse(options.max)
-  const today = () => {
-    const now = new Date()
-    return noon(now.getFullYear(), now.getMonth(), now.getDate())
-  }
   /** @param {Date} date */
   const unavailable = (date) => Boolean((min && date < min) || (max && date > max) || options.disabled?.(new Date(date)))
   /** @param {Date} date */
@@ -171,15 +255,27 @@ export function calendar(root, options = {}) {
     [parse(start), today()].find((date) => date && (!first || iso(date).slice(0, 7) === options.month)) ?? /** @type {Date} */ (first)
   )
 
-  /** The month in the grid, as `YYYY-MM`, and its days by their ISO date. */
-  let drawn = ''
+  /** The days in the grid by their ISO date, which each one carries as its `value`. */
   /** @type {Map<string, HTMLButtonElement>} */
   const cells = new Map()
+  function collect() {
+    cells.clear()
+    for (const cell of /** @type {NodeListOf<HTMLButtonElement>} */ (grid.querySelectorAll('.calendar-day'))) {
+      if (parse(cell.value)) cells.set(cell.value, cell)
+    }
+  }
+  /** The month in the grid, as `YYYY-MM`: the month of a day that is not of a neighboring one. */
+  const shown = () => {
+    for (const [key, cell] of cells) if (!cell.classList.contains('calendar-day-outside')) return key.slice(0, 7)
+    return ''
+  }
   /** @param {EventTarget | null} target */
   const dateOf = (target) => {
-    for (const [key, cell] of cells) if (cell === target) return parse(key)
-    return null
+    const cell = /** @type {HTMLButtonElement | null} */ (target)
+    return cell && cells.get(cell.value) === cell ? parse(cell.value) : null
   }
+  /** Whether focus goes to the focused day once the grid shows it. */
+  let wanted = false
 
   /** @param {string} tag @param {Record<string, string>} attributes @param {(Node | string)[]} children */
   function make(tag, attributes, ...children) {
@@ -191,33 +287,21 @@ export function calendar(root, options = {}) {
 
   /** Write the weekday names and the weeks of the focused day's month. */
   function build() {
-    const from = noon(focused.getFullYear(), focused.getMonth(), 1)
-    const to = noon(focused.getFullYear(), focused.getMonth() + 1, 0)
-    const corner = shift(from, -((from.getDay() - weekStart + 7) % 7))
-    const week = Array.from({ length: 7 }, (_, index) => index)
-    const rows = [make('div', { class: 'calendar-week', role: 'row' }, ...week.map((index) => {
-      const date = shift(corner, index)
-      return make('span', { class: 'calendar-weekday', role: 'columnheader', 'aria-label': weekdayName.format(date) }, weekdayShort.format(date))
-    }))]
-    cells.clear()
-    for (let head = corner; head <= to; head = shift(head, 7)) {
-      rows.push(make('div', { class: 'calendar-week', role: 'row' }, ...week.map((index) => {
-        const date = shift(head, index)
-        const outside = date < from || date > to
-        const cell = /** @type {HTMLButtonElement} */ (make('button', {
+    const view = calendarMonth(iso(focused), { weekStart, locale })
+    grid.replaceChildren(
+      make('div', { class: 'calendar-week', role: 'row' }, ...view.weekdays.map((weekday) =>
+        make('span', { class: 'calendar-weekday', role: 'columnheader', 'aria-label': weekday.name }, weekday.short))),
+      ...view.weeks.map((week) => make('div', { class: 'calendar-week', role: 'row' }, ...week.map((day) =>
+        make('button', {
           type: 'button',
-          class: outside ? 'calendar-day calendar-day-outside' : 'calendar-day',
+          class: day.outside ? 'calendar-day calendar-day-outside' : 'calendar-day',
           role: 'gridcell',
           tabindex: '-1',
-          'aria-label': dayName.format(date)
-        }, dayNumber.format(date.getDate())))
-        cells.set(iso(date), cell)
-        return cell
-      })))
-    }
-    grid.replaceChildren(...rows)
-    drawn = iso(from).slice(0, 7)
-    if (title) title.textContent = monthName.format(from)
+          value: day.date,
+          'aria-label': day.label
+        }, day.text))))
+    )
+    if (title) title.textContent = view.title
   }
 
   /** @param {Element} element @param {string} name @param {string | null} text */
@@ -255,11 +339,18 @@ export function calendar(root, options = {}) {
 
   /** Show the focused day's month. Focus that stood in a grid that is rewritten goes to the focused day. */
   function draw() {
-    const turned = iso(focused).slice(0, 7) !== drawn
-    const within = turned && grid.contains(root.ownerDocument.activeElement)
-    if (turned) build()
+    collect()
+    const month = iso(focused).slice(0, 7)
+    if (shown() !== month) {
+      if (grid.contains(root.ownerDocument.activeElement)) wanted = true
+      // A renderer that writes the grid is asked for the month; the days are marked once it has written them.
+      if (options.draw) return options.draw(month)
+      build()
+      collect()
+    }
     paint()
-    if (within) cells.get(iso(focused))?.focus()
+    if (wanted) cells.get(iso(focused))?.focus()
+    wanted = false
   }
 
   /**
@@ -273,8 +364,8 @@ export function calendar(root, options = {}) {
       if (tries === 366 || (min && to < min) || (max && to > max)) return
     }
     focused = to
+    wanted = true
     draw()
-    cells.get(iso(focused))?.focus()
   }
 
   /** @param {Date} date */
@@ -305,7 +396,7 @@ export function calendar(root, options = {}) {
   // of a neighboring month does not: the grid must not be rewritten under a press that has not ended.
   grid.addEventListener('focusin', (event) => {
     const date = dateOf(event.target)
-    if (!date || iso(date) === iso(focused) || iso(date).slice(0, 7) !== drawn) return
+    if (!date || iso(date) === iso(focused) || iso(date).slice(0, 7) !== shown()) return
     focused = date
     paint()
   }, { signal })
@@ -336,6 +427,13 @@ export function calendar(root, options = {}) {
     if (attached.get(root) === controller) attached.delete(root)
     for (const button of [previous, next]) if (button) button.disabled = false
   })
+
+  // The days a renderer writes arrive after it was asked for them, and it may write them again at any time.
+  if (options.draw && typeof MutationObserver === 'function') {
+    const observer = new MutationObserver(draw)
+    observer.observe(grid, { childList: true, subtree: true, attributes: true, attributeFilter: ['value'] })
+    signal.addEventListener('abort', () => observer.disconnect())
+  }
 
   draw()
   return detach

@@ -26,6 +26,45 @@ export function label(item) {
 }
 
 /**
+ * The value an option stands for: its `data-value`, or what it says without the description under it and the
+ * hint at its end.
+ * @param {Element} option
+ */
+export function valueOf(option) {
+  const own = option.getAttribute('data-value')
+  if (own !== null) return own
+  const copy = /** @type {Element} */ (option.cloneNode(true))
+  for (const extra of copy.querySelectorAll('.listbox-description, .listbox-end')) extra.remove()
+  return label(copy)
+}
+
+/**
+ * Write a field's value so that whoever listens hears the `input` that follows. A framework may shadow
+ * `value` on the element to notice its own writes, as React does, and then ignores an event for a value it
+ * has already seen. The setter of the element's prototype goes under that shadow.
+ * @param {HTMLInputElement | HTMLTextAreaElement} field
+ * @param {string} value
+ */
+export function write(field, value) {
+  const set = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(field), 'value')?.set
+  if (set) set.call(field, value)
+  else field.value = value
+}
+
+/**
+ * Give the function a behavior returns its `value`: what is chosen now, and a way to choose from outside.
+ * Setting it marks the pattern and dispatches nothing, as setting the `value` of a native control does.
+ * @template V
+ * @param {() => void} detach
+ * @param {() => V} get
+ * @param {(value: V) => void} set
+ * @returns {(() => void) & { value: V }}
+ */
+export function valued(detach, get, set) {
+  return /** @type {(() => void) & { value: V }} */ (Object.defineProperty(detach, 'value', { get, set, enumerable: true }))
+}
+
+/**
  * The options of a listbox the keys may land on, in the order of the document.
  * @param {Element} list The element with `role="listbox"`.
  * @returns {HTMLElement[]}

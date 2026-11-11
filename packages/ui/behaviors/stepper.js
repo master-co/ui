@@ -9,6 +9,9 @@
  *
  * A button says which way it steps in its `value`, negative for down. Without one, the button before the
  * field steps down and the button after it steps up.
+ *
+ * The function the behavior returns has a `value`: the field's number, null while it is empty. Set it to
+ * write the field from outside; that dispatches nothing, and the buttons follow the new value.
  */
 
 /** @type {WeakMap<Element, AbortController>} */
@@ -20,16 +23,27 @@ const EVERY = 60
 
 /**
  * @param {HTMLElement} root The element with the `stepper` class.
- * @returns {() => void} Removes the listeners and gives the buttons back the `disabled` they had.
+ * @returns {(() => void) & { value: number | null }} Removes the listeners and gives the buttons back the
+ *   `disabled` they had. Its `value` is the field's number.
  */
 export function stepper(root) {
   attached.get(root)?.abort()
   const controller = new AbortController()
   const { signal } = controller
   attached.set(root, controller)
-  const detach = () => controller.abort()
 
   const field = /** @type {HTMLInputElement} */ (root.querySelector('.stepper-field'))
+  /** Set once the buttons are known: brings them in step with the field. */
+  let follow = () => {}
+  const detach = /** @type {(() => void) & { value: number | null }} */ (Object.defineProperty(() => controller.abort(), 'value', {
+    enumerable: true,
+    get: () => (!field || field.value === '' || Number.isNaN(Number(field.value)) ? null : Number(field.value)),
+    set: (/** @type {number | null} */ next) => {
+      if (!field) return
+      field.value = next === null || next === undefined ? '' : String(next)
+      follow()
+    }
+  }))
   if (!field) return detach
   const buttons = /** @type {HTMLButtonElement[]} */ ([...root.querySelectorAll('button')])
   const before = buttons.map((button) => button.disabled)
@@ -116,6 +130,7 @@ export function stepper(root) {
     buttons.forEach((button, index) => { button.disabled = before[index] })
   })
 
+  follow = sync
   sync()
   return detach
 }

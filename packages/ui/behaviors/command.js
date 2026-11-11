@@ -9,6 +9,10 @@
  * clicks the active option, so a link navigates and a listener on the option runs, and a click on an option,
  * from Enter or the pointer, closes the palette. A shortcut, Command or Control with K, opens the palette
  * from anywhere and closes it again.
+ *
+ * With `filter: false` the script hides nothing: the page, or a server, decides which options the list
+ * holds, and writes them while the reader types. Whenever the options change, the first of them becomes the
+ * active one unless one still is.
  */
 import { activate, enabled, filter, options, step } from './internal.js'
 
@@ -17,11 +21,12 @@ const attached = new WeakMap()
 
 /**
  * @param {HTMLDialogElement} root The dialog with the `command` class.
- * @param {{ shortcut?: string | false }} [options] `shortcut`: the key that, with Command or Control, opens and
- *   closes the palette. `'k'` by default; `false` for none.
+ * @param {{ shortcut?: string | false, filter?: boolean }} [options] `shortcut`: the key that, with Command or
+ *   Control, opens and closes the palette. `'k'` by default; `false` for none. `filter`: hide the options that
+ *   do not hold what is typed. True by default; false when the page writes the matching options itself.
  * @returns {() => void} Removes everything the behavior added.
  */
-export function command(root, { shortcut = 'k' } = {}) {
+export function command(root, { shortcut = 'k', filter: filtering = true } = {}) {
   attached.get(root)?.abort()
   const controller = new AbortController()
   const { signal } = controller
@@ -38,9 +43,20 @@ export function command(root, { shortcut = 'k' } = {}) {
   if (active() && enabled(/** @type {Element} */ (active()))) activate(field, list, /** @type {HTMLElement} */ (active()))
 
   field.addEventListener('input', () => {
-    filter(list, field.value)
+    if (filtering) filter(list, field.value)
     activate(field, list, options(list)[0])
   }, { signal })
+
+  // Options written later, by a framework or from a server, leave the palette without an active option, or
+  // with one that has left: the first of them becomes it.
+  if (typeof MutationObserver === 'function') {
+    const observer = new MutationObserver(() => {
+      const current = active()
+      if (!current || !options(list).includes(current)) activate(field, list, options(list)[0])
+    })
+    observer.observe(list, { childList: true, subtree: true })
+    signal.addEventListener('abort', () => observer.disconnect())
+  }
 
   field.addEventListener('keydown', (event) => {
     // While an input method composes, Enter and the arrows belong to it.

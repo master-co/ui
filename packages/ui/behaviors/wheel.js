@@ -8,6 +8,9 @@
  * It also brings each column's chosen option under the mark when it attaches and when the column is laid
  * out again, brings a clicked option there, gives a focused column the keys of a listbox, one option at a
  * time, and turns a column that came to rest on a disabled option on to the nearest one that is not.
+ *
+ * The function the behavior returns has a `value`: what each column's selected option stands for, in the
+ * order of the columns. Set it to turn the columns from outside; that dispatches nothing.
  */
 
 /** @type {WeakMap<Element, AbortController>} */
@@ -18,7 +21,8 @@ const still = 120
 
 /**
  * @param {HTMLElement} root The element with the `wheel` class.
- * @returns {() => void} Removes everything the behavior added.
+ * @returns {(() => void) & { value: string[] }} Removes everything the behavior added. Its `value` is the
+ *   value of each column.
  */
 export function wheel(root) {
   attached.get(root)?.abort()
@@ -87,7 +91,7 @@ export function wheel(root) {
     }
     const changed = option.getAttribute('aria-selected') !== 'true'
     select(column, option)
-    if (changed) column.dispatchEvent(new CustomEvent('change', { bubbles: true, detail: { value: option.dataset.value ?? option.textContent?.trim() ?? '', option } }))
+    if (changed) column.dispatchEvent(new CustomEvent('change', { bubbles: true, detail: { value: valueOf(option), option } }))
   }
 
   /** Bring a column's chosen option under the mark, or choose the one that is there. @param {Element} column */
@@ -144,6 +148,24 @@ export function wheel(root) {
     if (option) turn(column, option, motion())
   }, { signal })
 
+  /** @param {HTMLElement} option */
+  const valueOf = (option) => option.dataset.value ?? option.textContent?.trim() ?? ''
+  const detach = /** @type {(() => void) & { value: string[] }} */ (Object.defineProperty(() => controller.abort(), 'value', {
+    enumerable: true,
+    get: () => [...root.querySelectorAll('.wheel-column')].map((column) => {
+      const selected = options(column).find((option) => option.getAttribute('aria-selected') === 'true')
+      return selected ? valueOf(selected) : ''
+    }),
+    set: (/** @type {string[]} */ next) => {
+      [...root.querySelectorAll('.wheel-column')].forEach((column, index) => {
+        const option = options(column).find((each) => valueOf(each) === next?.[index])
+        if (!option || disabled(option)) return
+        select(column, option)
+        turn(column, option)
+      })
+    }
+  }))
+
   const columns = [...root.querySelectorAll('.wheel-column')]
   columns.forEach(align)
   // A column laid out later, in a popover that opens, starts at its top: bring its chosen option back.
@@ -154,5 +176,5 @@ export function wheel(root) {
   }
   signal.addEventListener('abort', () => timers.forEach((timer) => clearTimeout(timer)))
 
-  return () => controller.abort()
+  return detach
 }

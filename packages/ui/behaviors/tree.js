@@ -14,6 +14,9 @@
  * Enter, Space and a click: a branch opens or closes, and a leaf becomes the selected row
  * (`aria-selected="true"`, removed from the row that had it), which dispatches a bubbling `change`
  * CustomEvent from the root with the row in `detail.item`.
+ *
+ * The function the behavior returns has a `value`: what the selected row stands for, its `data-value` or its
+ * text, and null when no row is selected. Set it to select a row from outside; that dispatches nothing.
  */
 
 /** @type {WeakMap<Element, AbortController>} */
@@ -24,17 +27,32 @@ const PAUSE = 500
 
 /**
  * @param {HTMLElement} root The element with the `tree` class.
- * @returns {() => void} Removes the listeners and gives every row back the `tabindex` it had.
+ * @returns {(() => void) & { value: string | null }} Removes the listeners and gives every row back the
+ *   `tabindex` it had. Its `value` is what the selected row stands for.
  */
 export function tree(root) {
   attached.get(root)?.abort()
   const controller = new AbortController()
   const { signal } = controller
   attached.set(root, controller)
-  const detach = () => controller.abort()
 
   /** The rows of this tree, not those of a tree inside it. */
   const all = () => /** @type {HTMLElement[]} */ ([...root.querySelectorAll('.tree-item')]).filter((item) => item.closest('.tree') === root)
+  /** @param {Element} item */
+  const valueOf = (item) => item.getAttribute('data-value') ?? (item.textContent ?? '').replace(/\s+/g, ' ').trim()
+  const detach = /** @type {(() => void) & { value: string | null }} */ (Object.defineProperty(() => controller.abort(), 'value', {
+    enumerable: true,
+    get: () => {
+      const selected = all().find((item) => item.getAttribute('aria-selected') === 'true')
+      return selected ? valueOf(selected) : null
+    },
+    set: (/** @type {string | null} */ next) => {
+      for (const item of all()) {
+        if (next !== null && next !== undefined && valueOf(item) === next) item.setAttribute('aria-selected', 'true')
+        else if (item.getAttribute('aria-selected') === 'true') item.removeAttribute('aria-selected')
+      }
+    }
+  }))
   /** @param {EventTarget | null} target */
   const rowOf = (target) => {
     const item = /** @type {HTMLElement | null} */ (target instanceof Element ? target.closest('.tree-item') : null)

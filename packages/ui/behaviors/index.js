@@ -6,8 +6,11 @@
  * document, or under an element, and attach its behavior.
  *
  * A context menu belongs to a target that only the page knows: attach it with `contextMenu(target, menu)`.
+ *
+ * Where a pattern has a value that no native control holds, the function its behavior returns has a `value`:
+ * read it for what is chosen, set it to choose from outside. Setting it dispatches nothing.
  */
-import { calendar } from './calendar.js'
+import { calendar, calendarMonth } from './calendar.js'
 import { combobox } from './combobox.js'
 import { command } from './command.js'
 import { compare } from './compare.js'
@@ -20,7 +23,7 @@ import { tabs } from './tabs.js'
 import { tree } from './tree.js'
 import { wheel } from './wheel.js'
 
-export { calendar, combobox, command, compare, contextMenu, listbox, menu, otp, splitter, stepper, tabs, tree, wheel }
+export { calendar, calendarMonth, combobox, command, compare, contextMenu, listbox, menu, otp, splitter, stepper, tabs, tree, wheel }
 
 /**
  * Each pattern's root class and the behavior that drives it.
