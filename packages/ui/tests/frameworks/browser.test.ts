@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { fileURLToPath } from 'node:url'
 import { chromium, firefox, webkit, type Browser, type Locator, type Page } from 'playwright'
 import { createServer, type ViteDevServer } from 'vite'
+import { verifyComponentGeometry } from '../components/geometry.ts'
 
 /**
  * The framework components in a real browser. The scenarios run in happy-dom, which has no layout, no top
@@ -55,6 +56,20 @@ async function until<T>(read: () => Promise<T>, wanted: (value: T) => boolean, m
 const open = (popover: Locator) => popover.evaluate(element => element.matches(':popover-open'))
 const box = async (locator: Locator) => (await locator.boundingBox())!
 const focused = (page: Page) => page.evaluate(() => (document.activeElement?.textContent ?? '').replace(/\s+/g, ' ').trim())
+
+test(`${engine}: native defaults and composed surface geometry`, async (t) => {
+  for (const theme of ['default', 'paper', 'round'] as const) for (const scheme of ['light', 'dark'] as const) {
+    await t.test(`${theme}/${scheme}`, async () => {
+      await verifyComponentGeometry(browser, { theme, scheme, direction: scheme === 'dark' ? 'rtl' : 'ltr' })
+    })
+  }
+  await t.test('coarse pointer', async () => {
+    await verifyComponentGeometry(browser, { theme: 'default', scheme: 'light', touch: true })
+  })
+  await t.test('forced colors', async () => {
+    await verifyComponentGeometry(browser, { theme: 'default', scheme: 'light', forcedColors: true })
+  })
+})
 
 for (const framework of ['react', 'svelte', 'vue']) {
   test(`${engine}/${framework}: every component, in a browser`, async (t) => {
