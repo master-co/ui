@@ -3,12 +3,12 @@ import type { Component } from 'svelte'
 import { render } from 'svelte/server'
 import Code from '@master/internal-site/components/Code.astro'
 import Demo from '@master/internal-site/demo/Demo.svelte'
-import DemoViewport from '@master/internal-site/demo/DemoViewport.svelte'
+import PreviewViewport from '~/site/components/PreviewViewport.svelte'
 import { demoDocument } from '@master/internal-site/demo/reference/document.ts'
 import PreviewGuard from '~/site/components/PreviewGuard.astro'
 import PreviewSwitch from '~/site/components/PreviewSwitch.astro'
 import { exampleScript, exampleSource } from '~/site/utils/framework-example'
-import { previewHead as head } from '~/site/utils/preview'
+import { specimenHead as head } from '~/site/utils/preview'
 import { uiSource } from '~/site/utils/ui-source'
 
 interface Props {
@@ -18,6 +18,10 @@ interface Props {
   caption?: string
   /** Utilities for the preview body, such as layout around the example. */
   bodyClass?: string
+  height: number
+  narrowHeight?: number
+  /** Fixed height for trays from 30rem to 40rem, where specimens may stack. */
+  mediumHeight?: number
   background?: 'dots' | 'hatch' | 'plain'
 }
 
@@ -27,7 +31,7 @@ interface Props {
  * what a reader works is the component and its behavior, not a copy of their markup. The Code view is the
  * example's file.
  */
-const { name, title, caption = '', bodyClass = 'flex items-start justify-center p-lg', background = 'plain' } = Astro.props
+const { name, title, caption = '', height, mediumHeight, narrowHeight, bodyClass = 'flex items-start justify-center p-lg', background = 'plain' } = Astro.props
 const examples = import.meta.glob<{ default: Component }>('./examples/*.svelte', { eager: true })
 const example = examples[`./examples/${name}.svelte`]
 if (!example) throw new Error(`No example is named ${name}. There are: ${Object.keys(examples).join(', ')}`)
@@ -45,5 +49,5 @@ const document = demoDocument(section as Parameters<typeof demoDocument>[0], { h
     <PreviewSwitch name={`preview-view-${name}`} label="View" kind="view" options={views} value="preview" />
   </Fragment>
   <Fragment slot="source"><Code lang="svelte" name={`${name}.svelte`} code={exampleSource(name)} /></Fragment>
-  <DemoViewport client:idle={{ timeout: 500 }} title={title} document={document} sizing="content" />
+  <PreviewViewport client:idle={{ timeout: 500 }} title={title} document={document} height={height} mediumHeight={mediumHeight} narrowHeight={narrowHeight} />
 </Demo>

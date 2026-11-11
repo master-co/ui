@@ -59,11 +59,21 @@
     let timer: ReturnType<typeof setTimeout> | undefined
     const later = () => { clearTimeout(timer); timer = setTimeout(check, 80) }
 
-    frame.addEventListener('load', () => {
+    let contentObserver: ResizeObserver | undefined
+    const loaded = () => {
       later()
+      contentObserver?.disconnect()
+      const doc = frame.contentDocument
+      if (!doc?.body) return
+      // A fixed viewport stays still when a textarea or disclosure grows. Only update the scroll guard.
+      contentObserver = new ResizeObserver(later)
+      contentObserver.observe(doc.body)
+      contentObserver.observe(doc.documentElement)
       // Escape inside the frame releases it too; keys there never reach this document.
-      frame.contentDocument?.addEventListener('keydown', event => { if (event.key === 'Escape') release(tray) })
-    })
+      doc.addEventListener('keydown', event => { if (event.key === 'Escape') release(tray) })
+    }
+    frame.addEventListener('load', loaded)
+    loaded()
     // A new width or a late font changes what overflows.
     new ResizeObserver(later).observe(frame)
     tray.addEventListener('change', later)

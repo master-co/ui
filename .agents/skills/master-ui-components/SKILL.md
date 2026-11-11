@@ -107,6 +107,10 @@ Every interactive component covers, in this order of checks: rest, hover, active
 - A row in a list (a menu item, an option) answers the pointer at once, with no fade: the highlight has to keep up with a moving pointer. Keyboard focus on a row adds an ink outline inside it, so focus and hover stay different facts.
 - Never transition `background` across a gradient. A gradient cannot interpolate, so it swaps instantly while `background-color` fades from transparent and the control flashes for a frame. Swap faces instantly, ease only depth (`box-shadow`), travel and ink, and put a solid color under every gradient face (`@apply --surface-sheet` does). Solid-to-solid fills, such as a checkbox filling with ink, may fade.
 
+## Documentation previews
+
+For a new or changed preview, including shared iframe rendering, read [preview sizing](references/previews.md). Reserve its height in the server HTML, select responsive heights with CSS, and verify both resting and expanded states; never resize it from a runtime content measurement.
+
 ## Add or change a component
 
 1. Write `packages/ui/components/<slug>.css` with a header comment that states its material and geometry.

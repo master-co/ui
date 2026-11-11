@@ -9,3 +9,7 @@
 7. For a platform enhancement, check both branches: the upgraded one in a browser that has the feature, and the baseline by reading the rules that remain outside `@supports`.
 8. After a change to `theme.css` that should not change a pixel, run `node --import tsx scripts/resolved.ts` in `packages/ui` before and after and compare: it prints every declaration with its tokens resolved, so only a real difference shows. After a change to a material, look at the Paper preview on `/guide/theming`.
 9. Report what was measured, what was derived and what was judged, and name anything left unverified (for example forced colors, a real touch device, a 1x display or an engine you could not run).
+
+## Preview changes
+
+Apply the [preview sizing acceptance checks](previews.md#acceptance-checks) when a preview or its shared rendering changes. They cover server-to-loaded height stability, actual iframe widths, coarse-pointer sizing, expanded states and reliable visual evidence. Content measurement is an authoring and verification tool; it must not become runtime height adjustment.

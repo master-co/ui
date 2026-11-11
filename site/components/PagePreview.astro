@@ -1,7 +1,7 @@
 ---
 import Code from '@master/internal-site/components/Code.astro'
 import Demo from '@master/internal-site/demo/Demo.svelte'
-import DemoViewport from '@master/internal-site/demo/DemoViewport.svelte'
+import PreviewViewport from '~/site/components/PreviewViewport.svelte'
 import { demoDocument } from '@master/internal-site/demo/reference/document.ts'
 import PreviewGuard from '~/site/components/PreviewGuard.astro'
 import PreviewSwitch from '~/site/components/PreviewSwitch.astro'
@@ -19,12 +19,11 @@ interface Props {
   bodyClass?: string
   /** The viewport's height in its own pixels; `100dvh` in the markup resolves to it. */
   height?: number
-  /**
-   * Size the viewport to its content, so the whole block shows and nothing scrolls inside it.
-   * Leave it off for a page whose height comes from the viewport (`page`, `shell`, anything in `dvh`)
-   * or whose scrolling is the point.
-   */
-  fit?: boolean
+  /** Authored heights at the two narrower viewport widths; no content measurement is needed. */
+  tabletHeight?: number
+  phoneHeight?: number
+  /** Larger touch targets may need a little more room at each authored viewport width. */
+  touchHeight?: { desktop?: number; tablet?: number; phone?: number }
   /** The width the preview opens at. */
   size?: 'desktop' | 'tablet' | 'phone'
 }
@@ -37,7 +36,7 @@ interface Props {
  * The source sits behind a second view of the same tray: Preview, the default, or Code.
  * Both choices are radios read by the stylesheet: the preview needs no script of its own.
  */
-const { name, title, html, caption = '', bodyClass = 'p(0)', height = 720, fit = false, size = 'desktop' } = Astro.props
+const { name, title, html, caption = '', bodyClass = 'p(0)', height = 720, tabletHeight = height, phoneHeight = tabletHeight, touchHeight = {}, size = 'desktop' } = Astro.props
 const section = { page: 'library', id: name, title, html: [html], css: uiSource(), classes: [], classLists: [], highlighted: [] }
 const document = demoDocument(section as Parameters<typeof demoDocument>[0], { html, caption, bodyClass, head } as Parameters<typeof demoDocument>[1])
 const views = [['preview', 'Preview'], ['code', 'Code']] as const
@@ -46,14 +45,14 @@ const sizes = [['desktop', 'Desktop'], ['tablet', 'Tablet'], ['phone', 'Phone']]
 
 <PreviewGuard />
 {/* The wrapper owns the preview's place in the column, so a page can widen it without touching the tray. */}
-<div class="page-preview">
+<div class="page-preview" style={`--preview-height-desktop: ${height}px; --preview-height-tablet: ${tabletHeight}px; --preview-height-phone: ${phoneHeight}px; --preview-height-touch-desktop: ${touchHeight.desktop ?? height}px; --preview-height-touch-tablet: ${touchHeight.tablet ?? tabletHeight}px; --preview-height-touch-phone: ${touchHeight.phone ?? phoneHeight}px`}>
 <Demo title={title} caption={caption} frame="none" data-component-preview={name} data-page-preview data-preview-background="hatch">
   <Fragment slot="controls">
     <PreviewSwitch name={`preview-size-${name}`} label="Viewport" kind="size" options={sizes} value={size} />
     <PreviewSwitch name={`preview-view-${name}`} label="View" kind="view" options={views} value="preview" />
   </Fragment>
   <Fragment slot="source"><Code lang="html" beautify code={html} /></Fragment>
-  <DemoViewport client:idle={{ timeout: 500 }} title={title} document={document} height={height} sizing={fit ? 'content' : 'viewport'} />
+  <PreviewViewport client:idle={{ timeout: 500 }} title={title} document={document} height={height} />
 </Demo>
 </div>
 
@@ -73,13 +72,28 @@ const sizes = [['desktop', 'Desktop'], ['tablet', 'Tablet'], ['phone', 'Phone']]
     [data-page-preview] {
       /* A desktop is at least 1280px; a tray wider than that is the desktop, so nothing is left empty beside it. */
       --page-preview-width: max(1280px, 100cqw);
+      --preview-height: var(--preview-height-desktop);
 
       &:has([data-size="tablet"]:checked) {
         --page-preview-width: 768px;
+        --preview-height: var(--preview-height-tablet);
       }
 
       &:has([data-size="phone"]:checked) {
         --page-preview-width: 390px;
+        --preview-height: var(--preview-height-phone);
+      }
+
+      @media (pointer: coarse) {
+        --preview-height: var(--preview-height-touch-desktop);
+
+        &:has([data-size="tablet"]:checked) {
+          --preview-height: var(--preview-height-touch-tablet);
+        }
+
+        &:has([data-size="phone"]:checked) {
+          --preview-height: var(--preview-height-touch-phone);
+        }
       }
 
       /* The stage keeps a margin around the window; the container's width, and so the zoom, is what is inside it. */

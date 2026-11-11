@@ -10,3 +10,10 @@ export const previewHead = `<style>
 html { background: transparent; }
 body { font-family: var(--font-family-sans); font-feature-settings: var(--font-feature-sans); font-weight: 350; -webkit-font-smoothing: antialiased; }
 </style>`
+
+/** Fill the reserved specimen stage without stretching grid rows or leaving compact controls at its top. */
+export const specimenHead = `${previewHead}<style>
+@layer theme,base,defaults,components,utilities;
+@layer defaults { body { align-content: safe center; } }
+body { min-height: 100dvh; }
+</style>`
