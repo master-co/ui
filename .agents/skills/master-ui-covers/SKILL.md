@@ -35,7 +35,7 @@ A component without a drawing shows a dashed outline on the overview, so a missi
 
 ## Drawing rules
 
-1. **Real size.** A control is 38px (32px small), a field 40px, a switch 36 × 22, a ring half a pixel, a corner its role token. These come from the primitives; do not resize one to fill the stage. A small control is drawn in the row it lives in (a switch at the end of a settings row), not enlarged.
+1. **Real size.** A control is 38px (32px small) and so is a field, a switch 36 × 22, a ring half a pixel, a corner its role token. These come from the primitives; do not resize one to fill the stage. A small control is drawn in the row it lives in (a switch at the end of a settings row), not enlarged.
 2. **Real materials.** Use the primitives and the theme tokens. A drawing never writes a color, a shadow or a radius value; where a mark needs a quieter ink or a nested corner, it names a token (`color: var(--color-text-muted)`, `--r: var(--radius-control-sm)`). Light and dark must both come out right from the same markup.
 3. **Words are bars.** `cover-bar` stands for text: strong for a title or a label, plain for a sentence, faint for a hint or a placeholder. A character is written only where the glyph is the component: a keycap, an avatar's initials, an OTP digit, a page or step number. Keep initials narrow (`AL`, `JT`) so a stack does not clip them.
 4. **One ink mark at most.** Ink goes on what the component is for: the primary action, the on or checked state, the current item. One state may take several marks when it is one fact (four stars of a rating); two different things never do. A component with no such state has no ink. Never hue, never the brand color: a status is drawn in muted ink, and even a swatch's colors are steps of ink.

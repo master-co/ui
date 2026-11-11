@@ -80,7 +80,7 @@ These rules are enforced by `packages/ui/tests/master.test.ts`.
 
 ## Geometry and type
 
-See [sizes and geometry](references/geometry.md) for the scale. In short: controls are 32 / 38 / 44px (fields 40px) with 8 / 10 / 12px corners from the role tokens, a holder's corner is what it holds plus the inset (sheet 16 → tray 20), icons are 14 / 16 / 18px at a 1.5 stroke, labels use `--font-weight-control` and never change weight between states.
+See [sizes and geometry](references/geometry.md) for the scale. In short: controls are 32 / 38 / 44px, fields and selects included, with 8 / 10 / 12px corners from the role tokens, a holder's corner is what it holds plus the inset (sheet 16 → tray 20), icons are 14 / 16 / 18px at a 1.5 stroke, labels use `--font-weight-control` and never change weight between states.
 
 **Every radius is written the same way**, so it turns into a squircle where the browser can draw one:
 
