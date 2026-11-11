@@ -254,6 +254,7 @@ for (const framework of ['react', 'svelte', 'vue']) {
       const geometry = () => example('wheel').locator('.wheel-column').evaluateAll(columns => columns.map(column => ({
         top: column.scrollTop,
         height: column.clientHeight,
+        scrollHeight: column.scrollHeight,
         padding: getComputedStyle(column).paddingBlock,
         options: [...column.querySelectorAll<HTMLElement>('.wheel-option')].map(option => ({
           value: option.dataset.value ?? option.textContent,
@@ -268,6 +269,19 @@ for (const framework of ['react', 'svelte', 'vue']) {
       await page.keyboard.press('ArrowDown')
       try {
         await said('wheel', 'onValueChange: ["11","30","pm"]')
+        for (const [index, bounds] of [['08', '12'], ['00', '45'], ['am', 'pm']].entries()) {
+          const current = example('wheel').locator('.wheel-column').nth(index)
+          await current.focus()
+          for (const [key, wanted] of [['Home', bounds[0]], ['End', bounds[1]]]) {
+            await current.press(key)
+            await until(() => current.locator('[aria-selected="true"]').getAttribute('data-value'), value => value === wanted, `${key} selects ${wanted}`)
+            await until(async () => {
+              const state = (await geometry())[index]
+              const selected = state.options.find(option => option.selected === 'true')!
+              return selected.center - state.height / 2
+            }, distance => Math.abs(distance) < 1, `${key} centers ${wanted} under the mark`)
+          }
+        }
       } catch (error) {
         assert.fail(`${error}\nWheel geometry: ${JSON.stringify({ before, after: await geometry() })}`)
       }
