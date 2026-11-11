@@ -50,3 +50,21 @@ jobs:
           name: site-${{ github.sha }}
           path: site/out/
           retention-days: 7
+
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup
+      - name: Install browser
+        run: bun x playwright install --with-deps ${{ matrix.browser }}
+        working-directory: packages/ui
+      - name: Exercise components and platform fallbacks
+        run: bun run --cwd packages/ui test:browser
+        env:
+          MASTER_UI_BROWSER: ${{ matrix.browser }}
