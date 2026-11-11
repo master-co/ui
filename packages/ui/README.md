@@ -6,7 +6,9 @@ Each stylesheet has a contract beside it, `button.css` and `button.json`: its cl
 
 Components use the platform before script: `<dialog>`, `popover` and invoker commands for overlays, CSS anchor positioning for placement, `appearance: base-select` for the option list, container queries for layout, scroll-driven animations for edge fades, `::scroll-button()` and `::scroll-marker` for carousels, `corner-shape` for corners, and `@starting-style` for motion in and out. Each feature is an enhancement over a working baseline.
 
-A few patterns need behavior the platform does not have yet: a combobox, a command palette, a calendar, a tree with arrow keys, a context menu. For those the stylesheets draw every state from ARIA attributes and leave the behavior to your script or framework; each page shows the smallest script that drives it.
+A few patterns need behavior the platform does not have yet: a combobox, a command palette, a calendar, a tree with arrow keys, a context menu. For those the stylesheets draw every state from ARIA attributes, and a reference script in `@master/ui/behaviors` moves the attributes: attach it, or write your own against the same ones.
+
+In React, Svelte and Vue most components are still a class on a native element. The patterns that hold state have a component to copy into the project, which renders the markup and attaches the behavior: `npx master-ui add combobox --framework=react`. See [React, Svelte and Vue](https://ui.master.co/guide/frameworks).
 
 ## Three tiers
 
@@ -149,7 +151,8 @@ npx master-ui contract dialog     # one contract as JSON; a class name works too
 npx master-ui check               # report markup that breaks a contract
 npx master-ui init                # write ui/index.css, one @import per stylesheet
 npx master-ui own menu            # copy a component's stylesheet, contract and behavior into ui/
-npx master-ui status              # which owned components changed upstream
+npx master-ui add combobox        # copy a React, Svelte or Vue component into ui/ (--framework=react)
+npx master-ui status              # which owned or added components changed upstream
 npx master-ui diff menu           # what changed upstream since it was taken
 npx master-ui accept menu         # record that the change has been merged
 ```
@@ -173,7 +176,18 @@ import { combobox } from '@master/ui/behaviors/combobox.js'
 
 const detach = attach()                                     // every pattern in the document
 const stop = combobox(document.querySelector('.combobox'))  // or one
+stop.value = 'hnd'                                          // where a pattern has a value: read it, or set it
 ```
+
+## React, Svelte and Vue
+
+A component is a class on a native element, so in a framework most of the library is the same markup in that framework's syntax; there is no `Button` to import. Seventeen patterns hold state, render rows from data, join parts by id or have a lifetime, and each has a component: calendar, combobox, command, compare, dialog, field, listbox, menu, otp, popover, splitter, stepper, tabs, toast, tooltip, tree and wheel.
+
+```sh
+npx master-ui add combobox --framework=react   # ui/combobox.tsx and ui/use-behavior.ts
+```
+
+The component is copied, not imported: it renders the contract's markup in the framework's idiom and is yours to edit. What it decides stays in `@master/ui/behaviors`, so a fix to the keys reaches every framework with the package. See [React, Svelte and Vue](https://ui.master.co/guide/frameworks).
 
 ## Without Master CSS
 
