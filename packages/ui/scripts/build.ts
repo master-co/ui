@@ -44,6 +44,14 @@ function themeTokens(source: string) {
  * The engine emits a theme variable only when something reads it, so a stylesheet that reads every token is
  * registered beside the components: a project that links the file can use any token in its own CSS.
  */
+/**
+ * Which scheme the tokens resolve for. With Master CSS the preset says so; a page that links the compiled
+ * file has no preset, and without this `light-dark()` gives the light value whatever the reader prefers.
+ * A minifier that lowers `light-dark()` for older browsers needs the declaration too: without one it
+ * writes values no browser reads, and every surface loses its color.
+ */
+const scheme = '@layer base{:root{color-scheme:light dark}[data-theme="light"],:host([data-theme="light"]){color-scheme:light}[data-theme="dark"],:host([data-theme="dark"]){color-scheme:dark}}'
+
 function standalone(themes: string[] = []) {
   const source = [...imports, ...themes].map(read).join('\n\n')
   const compiled = compileManifestSync(source, { baseManifest: preset as never })
@@ -54,7 +62,7 @@ function standalone(themes: string[] = []) {
   try {
     const every = `.master-ui-tokens{${tokens.map((token, at) => `--t${at}:var(${token})`).join(';')}}`
     const theme = session.ensureStylesheetResources(`${compiled.css}\n${every}`).snapshot().cssText
-    return { css: `@layer theme, base, defaults, components, utilities;\n${theme}\n${compiled.css}`, theme, tokens, compiled }
+    return { css: `@layer theme, base, defaults, components, utilities;\n${scheme}\n${theme}\n${compiled.css}`, theme, tokens, compiled }
   } finally { session.dispose() }
 }
 
