@@ -89,6 +89,9 @@ A layout has no real size, so its cover is the one kind that may be a **plan**: 
 | `cover-caret`, `cover-tab`, `cover-link`, `cover-fade`, `cover-fade-foot`, `cover-thumb`, `cover-scrim` | Shapes that belong to one component family. |
 | `cover-page`, `cover-column`, `cover-marks`, `cover-wheel`, `cover-cell` | A file's folded page, a chart's bar (`--h` tall; `cover-ink` for the one that matters), a window's three marks, a wheel's column of values that fade away from the middle, and a heatmap's cell at `--tone` of ink. |
 | `cover-span`, `cover-divide`, `cover-cite`, `cover-bar-struck` | On a `cover-track`: ink from `--from` to `--to` for a range; the line of a compare at `--fill`; a citation's numbered mark; a finished step's title with a hairline through it. |
+| `cover-arc`, `cover-part`, `cover-legend` | A gauge's dial filled to `--fill` (0 to 1); a breakdown's segment `--w` wide at `--tone` of ink (with `cover-well` for what is left), and the dot of the same tone beside its name. |
+| `cover-ticket`, `cover-stub`, `cover-device` + `cover-screen` | A ticket's two faces, which meet on a perforation between two notches; a phone's body `--d` wide and its screen. |
+| `cover-elbow`, `cover-action`, `cover-mark-inserted` | A thread's line where it turns into a reply; a swipe's action in the well its row has uncovered; on a `cover-mark`: inserted words over a fine underline. |
 | `<Glyph name="…" />` | An icon on the 24px grid at a 1.5 stroke, sized by the control that holds it (`--glyph`). |
 
 Extend the vocabulary before working around it. A new primitive copies its recipe from the component's stylesheet in `packages/ui/components`, reads tokens only, and is named for what it draws. Add a glyph's path to `Glyph.astro` first; keep the 24px grid and round caps. A nested corner is written as the component writes it: `--r: calc(var(--radius-control-sm) + 4px / var(--corner-scale))` is a small control's corner plus a 4px inset.

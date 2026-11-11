@@ -103,6 +103,7 @@ Every interactive component covers, in this order of checks: rest, hover, active
 - `@media (prefers-reduced-motion: reduce)`: remove travel (lift, stretch), keep the state change.
 - `@media (forced-colors: active)`: shadows vanish, so draw the edge with a system-color `outline` (never a layout-changing border) and keep checked marks visible with `forced-color-adjust: none` plus system colors.
 - Restyled native inputs reset `margin`, `padding` and `border` so host styles cannot distort them.
+- A part that holds words (a title, a description, a line of a row) sets `margin: 0`. A page's base stylesheet gives a paragraph a margin, and a component's rhythm is its own: where the content is free text, give it a part (`thread-text`) instead of leaving it to the page.
 - Name transitioned properties; never `transition: all`.
 - A selected or current state is an ink hairline and one step of depth (`0 0 0 .5px var(--color-text-strong)` with a faint 1px echo), not a heavy outline.
 - `mask` and `clip-path` cut an element's own focus ring and outer shadow. When a part is drawn with a mask (a star, a cut-out check), put the focus ring on its container with `:has(:focus-visible)`.
