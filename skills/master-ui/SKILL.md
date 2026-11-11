@@ -35,8 +35,15 @@ Then:
 - Give every control an accessible name. An icon-only button needs `aria-label`.
 - Lay out with Master CSS utilities in the markup. Utilities win over component classes, so one instance needs no override.
 - Overlays use the platform: `<dialog>` opened with `command="show-modal"` and `commandfor`, a `popover` opened with `popovertarget`, a tooltip with `popover="hint"` and `interestfor`. Add no positioning, dismissal or focus-trapping script.
-- When the contract says `"script": "required"` or names a `behavior`, attach the reference script: `import { combobox } from '@master/ui/behaviors/combobox.js'`, then `combobox(element)`. `attach()` from `@master/ui/behaviors` attaches every pattern in a document.
-- In JSX, `class` becomes `className` and `for` becomes `htmlFor`; nothing else changes. Wrap markup in the project's own components when it repeats; the classes stay the contract's.
+- When the contract says `"script": "required"` or names a `behavior`, attach the reference script: `import { combobox } from '@master/ui/behaviors/combobox.js'`, then `combobox(element)`. `attach()` from `@master/ui/behaviors` attaches every pattern in a document. In React, Svelte or Vue, use the framework component instead, as below.
+
+## In React, Svelte or Vue
+
+Read [frameworks](references/frameworks.md) before writing a component in one of them. In short:
+
+- Most of the library is the same markup, in the framework's syntax: `className` and `htmlFor` in JSX, nothing else changes. Do not wrap a class in a component to rename it: `<Button variant="primary">` hides `btn btn-primary` from the checker and from the next reader. Wrap markup only when the project already does, and keep the contract's classes as literal strings.
+- Seventeen patterns hold state and have a component to copy: calendar, combobox, command, compare, dialog, field, listbox, menu, otp, popover, splitter, stepper, tabs, toast, tooltip, tree, wheel. `npx master-ui add <name>` copies it into `ui/`; `npx master-ui add` lists them. Look in `ui/` first: the project may already have it, edited.
+- Never write the keys, the focus or the state attributes of one of those patterns in a component. They are in `@master/ui/behaviors`; the component gives the behavior a root and passes the value.
 
 ## Choose the component
 

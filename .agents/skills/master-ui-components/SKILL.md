@@ -52,6 +52,7 @@ A combobox, a command palette, a calendar, a tree with arrow keys, a context men
 - **Derive in CSS what a script would otherwise compute:** an empty state with `:has(.listbox-option:not([hidden]))`, a list's width with `anchor-size()`, a flip with `@position-try`.
 - **A rule that sets `display` on a part a script hides must restore `[hidden]`**, since a class in `@layer components` beats the browser's own `[hidden]` rule.
 - **The pattern ships a behavior.** `packages/ui/behaviors/<name>.js` is the reference script, named in the contract's `behavior` and specified by its `keyboard` list; read [behaviors](references/behaviors.md). The page's default preview shows the pattern working, written without a framework, and says plainly what works without the script.
+- **A pattern that holds state has a component in React, Svelte and Vue.** It renders this markup, attaches the behavior and passes the value; it decides nothing the behavior could. Read [framework components](references/frameworks.md) before adding or changing one, and before deciding that a contract needs one: most do not.
 
 ## Selector contract
 
@@ -111,7 +112,7 @@ Every interactive component covers, in this order of checks: rest, hover, active
 1. Write `packages/ui/components/<slug>.css` with a header comment that states its material and geometry.
 2. Write its contract, `packages/ui/components/<slug>.json`, following [contracts](references/contracts.md): every class, its states, its public custom properties, when to use it and the smallest correct example. A change to a class, a state or a public property changes the contract in the same commit.
 3. Import the stylesheet in `packages/ui/master.css`. Stylesheets that tune another component (`input.css` after `button.css`) come later in the import order.
-4. When the pattern has no native element, write its behavior and the behavior's test following [behaviors](references/behaviors.md), and export it from `packages/ui/behaviors/index.js`.
+4. When the pattern has no native element, write its behavior and the behavior's test following [behaviors](references/behaviors.md), and export it from `packages/ui/behaviors/index.js`. When a framework owns something of it (a value, rows from data, ids between parts, a lifetime), write its component in all three frameworks and its scenario following [framework components](references/frameworks.md).
 5. Add it to `site/components/catalog.ts` and write `site/content/components/<slug>/{metadata.ts,content.mdx}` following [the documentation pattern](references/documentation.md). The Classes and Custom properties tables are `<ContractTable name="<slug>" />`, never written by hand.
 6. Run `bun run build` in `packages/ui`: it rewrites the README's table of classes from the contracts.
 7. Draw its cover in `site/components/cover/art/<slug>.astro` with `$master-ui-covers`.

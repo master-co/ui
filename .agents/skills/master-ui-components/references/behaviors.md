@@ -20,8 +20,16 @@ const detach = combobox(document.querySelector('.combobox'))
 - Set and remove ARIA and native attributes: `aria-selected`, `aria-checked`, `aria-expanded`, `aria-activedescendant`, `aria-valuenow`, `hidden`, `tabindex`, `open`, a field's `value`. Give an element an `id` when another must point at it.
 - Move focus, and call the platform: `showPopover()`, `hidePopover()`, `showModal()`, `close()`, `stepUp()`, `scrollIntoView({ block: 'nearest' })`.
 - Pass what only an event knows as a custom property the contract publishes (`--menu-x`, `--splitter-size`); the stylesheet does the placing and the limits.
-- Create the rows a pattern repeats when they are data, not design: the weeks of a month in a calendar. Use the contract's classes and nothing else.
-- Dispatch `input` and `change` (bubbling) from the element whose value changed, so a form and a framework hear it the way they hear a native control.
+- Create the rows a pattern repeats when they are data, not design: the weeks of a month in a calendar. Use the contract's classes and nothing else. Such a behavior also steps aside for a renderer that writes the rows itself: it exports the rows as data (`calendarMonth()`), takes an option that hands the writing over (`draw`), and finds the rows it did not write by a native attribute (a day's `value`).
+- Dispatch `input` and `change` (bubbling) from the element whose value changed, so a form and a framework hear it the way they hear a native control. Write a field's value through the setter of its prototype (`write()` in `internal.js`): React shadows `value` on an input and ignores an event for a value it has already seen.
+
+## The value
+
+Where a pattern has a value that no single native control holds, the function the behavior returns has a `value` accessor. Reading it says what is chosen; setting it marks the pattern and dispatches nothing, as setting the `value` of a native input does. Setting the value it already has changes nothing. This is the one way a renderer passes a value in, so every behavior with a value has it, and it is tested in `tests/behaviors/value.test.ts`.
+
+- An option, a tab and a row stand for their `data-value`, or for their text when they have none.
+- A behavior reads the document each time it answers an event and keeps no list of elements, so a renderer may replace the options or the rows under it.
+- A behavior that filters takes `filter: false` for a page that writes the matches itself, and gives an active option to options that arrive later.
 
 ## What it never does
 
