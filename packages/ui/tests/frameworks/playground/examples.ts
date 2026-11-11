@@ -47,6 +47,6 @@ export const outputs: Record<string, string[]> = {
 }
 
 export const toasts = [
-  { title: 'Deployed to production', description: 'atlas.dev is live in 14 regions.', status: 'success' },
+  { title: 'Deployed to production', description: 'atlas.dev is live in 14 regions.', status: 'success', duration: 2000 },
   { description: 'Saved. This one stays until it is dismissed.', duration: false },
 ]
