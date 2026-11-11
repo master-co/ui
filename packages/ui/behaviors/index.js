@@ -16,10 +16,11 @@ import { contextMenu, menu } from './menu.js'
 import { otp } from './otp.js'
 import { splitter } from './splitter.js'
 import { stepper } from './stepper.js'
+import { tabs } from './tabs.js'
 import { tree } from './tree.js'
 import { wheel } from './wheel.js'
 
-export { calendar, combobox, command, compare, contextMenu, listbox, menu, otp, splitter, stepper, tree, wheel }
+export { calendar, combobox, command, compare, contextMenu, listbox, menu, otp, splitter, stepper, tabs, tree, wheel }
 
 /**
  * Each pattern's root class and the behavior that drives it.
@@ -32,6 +33,7 @@ const patterns = [
   ['.otp', otp],
   ['.splitter', splitter],
   ['.tree', tree],
+  ['.tabs[role="tablist"]', tabs],
   ['.menu', menu],
   ['.stepper', stepper],
   ['.wheel', wheel],
