@@ -28,6 +28,7 @@ Each is imported from `@master/ui/behaviors/<name>.js`. The last column is the `
 | [OTP](/components/otp) | `otp` | Moves focus from slot to slot, and spreads a pasted or autofilled code over the slots | Required |
 | [Splitter](/components/splitter) | `splitter` | Writes the first pane's size to `--splitter-size` and `aria-valuenow` as the handle is dragged or moved with the keys | Required |
 | [Stepper](/components/stepper) | `stepper` | Makes the two buttons call `stepDown()` and `stepUp()` on the number field, and disables the one whose limit is reached | Required |
+| [Tabs](/components/tabs#tab-panels) | `tabs` | In a `role="tablist"`: keeps one tab in the tab order, moves and selects with the arrow keys, and shows the panel of the selected tab | Optional |
 | [Tree](/components/tree) | `tree` | Makes the tree one tab stop, walked and folded with the arrow keys | Optional |
 | [Wheel](/components/wheel) | `wheel` | Moves `aria-selected` to the option that rests under the mark, and gives a focused column the keys of a listbox | Required |
 
@@ -69,13 +70,15 @@ attach()
 
 Three things to know before choosing it over single imports:
 
-- It attaches the optional behaviors too. Every `menu` gets the arrow keys and every `tree` becomes one tab stop. To leave one as the platform has it, import behaviors by name.
+- It attaches the optional behaviors too. Every `menu` gets the arrow keys, every `tree` becomes one tab stop and every `tabs` that is a `role="tablist"` switches its panels. To leave one as the platform has it, import behaviors by name.
 - It passes no options. A calendar that picks a range, or has a first and a last day, is attached by name.
 - A context menu belongs to a target only the page knows, so `attach()` does not attach one. Call `contextMenu(target, menu)`.
 
 It does not watch the document. For markup added later, call `attach(element)` on what was added.
 
 ## In a framework \{#in-a-framework\}
+
+For React, Svelte and Vue, each of these patterns has a component to copy into the project: it renders the markup, attaches the behavior and passes the value in and out. [React, Svelte and Vue](/guide/frameworks) lists them. The rest of this section is for attaching a behavior yourself, in a component of your own.
 
 A behavior fits the lifecycle every framework has: run when the element exists, and return what undoes it.
 
@@ -131,8 +134,9 @@ A behavior that can be configured takes an object as its second argument. The ot
 
 | Call | Options |
 | --- | --- |
-| `calendar(root, options)` | `value`: the chosen day as `YYYY-MM-DD`, or the two ends of a range. `month`: the month to show first, as `YYYY-MM`. `min`, `max`: the first and the last day that can be chosen. `range`: choose two days and every day between them. `weekStart`: the day in the first column, 0 for Sunday to 6 for Saturday. `locale`: a BCP 47 tag for the names. `disabled`: a function that says whether a day cannot be chosen |
-| `command(root, options)` | `shortcut`: the key that opens and closes the palette with Command or Control. `'k'` by default, `false` for none |
+| `calendar(root, options)` | `value`: the chosen day as `YYYY-MM-DD`, or the two ends of a range. `month`: the month to show first, as `YYYY-MM`. `min`, `max`: the first and the last day that can be chosen. `range`: choose two days and every day between them. `weekStart`: the day in the first column, 0 for Sunday to 6 for Saturday. `locale`: a BCP 47 tag for the names. `disabled`: a function that says whether a day cannot be chosen. `draw`: a function that [writes the grid instead of the script](#a-grid-of-your-own) |
+| `combobox(root, options)` | `filter`: hide the options that do not hold what is typed. `true` by default; `false` when [the page writes the matching options itself](#options-from-a-server) |
+| `command(root, options)` | `shortcut`: the key that opens and closes the palette with Command or Control. `'k'` by default, `false` for none. `filter`: as for the combobox |
 | `otp(root, options)` | `pattern`: a regular expression one character must match. By default the `pattern` attribute of the first slot, and a digit when it has none |
 | `splitter(root, options)` | `step`: how far an arrow key moves the handle, in percent. 5 by default |
 
@@ -150,8 +154,9 @@ A behavior reports a change the way a native control does: with a DOM event that
 | `calendar` | `change` | The root | `detail.value`: the day as `YYYY-MM-DD`, or `[start, end]` once both ends of a range are chosen |
 | `wheel` | `change` when a column comes to rest on another option | The column | `detail.value`: the option's `data-value`, or its text; `detail.option`: the element |
 | `tree` | `change` when a row with `role="treeitem"` that is not a branch is selected | The root | `detail.item`: the row |
+| `tabs` | `change` when another tab is selected | The tablist | `detail.value`: the tab's `data-value`, or its text; `detail.tab`: the element |
 
-The `change` of an OTP field, a calendar, a wheel and a tree is a `CustomEvent`, because the value is not on one native control. A slot of an OTP field is a native input, so its own `change` bubbles through the root as well, without a `detail`. The command palette, the menu and the compare dispatch nothing of their own. A command runs from the `click` of its option, which Enter sends too, and the items of a menu are native buttons, links and inputs.
+The `change` of an OTP field, a calendar, a wheel, a tree and a tablist is a `CustomEvent`, because the value is not on one native control. A slot of an OTP field is a native input, so its own `change` bubbles through the root as well, without a `detail`. The command palette, the menu and the compare dispatch nothing of their own. A command runs from the `click` of its option, which Enter sends too, and the items of a menu are native buttons, links and inputs.
 
 ```js name=app.js
 import { calendar } from '@master/ui/behaviors/calendar.js'
@@ -164,7 +169,73 @@ root.addEventListener('change', (event) => {
 })
 ```
 
-The calendar keeps its value in the script, not in the markup. The function it returns has a `value` property that reads what is chosen now. To set the value from outside, attach again with a new `value`.
+## The value \{#the-value\}
+
+Where a pattern has a value that no single native control holds, the function its behavior returns has a `value`. Read it for what is chosen now. Set it to choose from outside: that marks the pattern and dispatches nothing, as setting the `value` of a native input does.
+
+| Behavior | `value` |
+| --- | --- |
+| `calendar` | The day as `YYYY-MM-DD`, or `[start, end]` in a range, the end `null` until it is chosen; `null` for none. Setting it shows the month of the new value |
+| `combobox` | What the chosen option stands for; `null` while the field holds text no option was chosen for. Setting it writes the option's text into the field |
+| `listbox` | What the chosen option stands for, `null` for none; a list of them when the listbox has `aria-multiselectable="true"` |
+| `otp` | The characters the slots hold, in order |
+| `splitter` | The first pane's size, in percent |
+| `stepper` | The field's number; `null` while it is empty |
+| `compare` | The range input's number |
+| `tabs`, `tree` | What the selected tab or row stands for; `null` for none |
+| `wheel` | What each column's selected option stands for, in the order of the columns |
+
+An option, a tab and a row stand for their `data-value`, or for their text when they have none. Give `data-value` when the text is not what the application stores: `data-value="hnd"` on an option that says Tokyo.
+
+```js name=app.js
+import { combobox } from '@master/ui/behaviors/combobox.js'
+
+const region = combobox(document.querySelector('.combobox'))
+region.value = 'hnd'        // checks the option, writes "Tokyo" into the field
+console.log(region.value)   // "hnd"
+```
+
+A value the script writes into a field goes through the setter of the element's prototype. React shadows `value` on an input to notice its own writes and ignores an `input` event for a value it has already seen; written this way, a choice reaches `onChange` like typing does.
+
+## Options from a server \{#options-from-a-server\}
+
+By default the combobox and the command palette filter the options that are in the markup. When the page decides what matches, by asking a server or searching an index, pass `filter: false`: the script hides nothing, and the page writes the options as the reader types. Options that arrive while the list is open get an active option again, so <kbd>Enter</kbd> still chooses the first match.
+
+```js name=app.js
+import { combobox } from '@master/ui/behaviors/combobox.js'
+
+const root = document.querySelector('.combobox')
+const list = root.querySelector('[role="listbox"]')
+combobox(root, { filter: false })
+
+root.querySelector('[role="combobox"]').addEventListener('input', async (event) => {
+  const regions = await search(event.target.value)
+  list.replaceChildren(...regions.map(option))
+})
+```
+
+## A grid of your own \{#a-grid-of-your-own\}
+
+The calendar is the one behavior that writes elements: the weeks of the month it shows. A renderer that should write them itself, a template or a framework that renders on a server, passes `draw`. The script then writes no element. It calls `draw` with the month to show, as `YYYY-MM`, whenever that is not the month in the grid, and marks the days once they are there: today, the chosen ones, the ones that cannot be chosen and the one in the tab order.
+
+`calendarMonth()` gives a month as data, the same data the script draws from: its title, the seven weekday names and its weeks. Each day is a `calendar-day` button whose `value` is its date; that is how the script knows the days it did not write.
+
+```js name=app.js
+import { calendar, calendarMonth } from '@master/ui/behaviors/calendar.js'
+
+function draw(month) {
+  const view = calendarMonth(month, { locale: 'en-GB' })
+  title.textContent = view.title
+  grid.innerHTML = view.weeks.map(week => `<div class="calendar-week" role="row">${week.map(day =>
+    `<button type="button" class="calendar-day${day.outside ? ' calendar-day-outside' : ''}" role="gridcell" tabindex="-1" value="${day.date}" aria-label="${day.label}">${day.text}</button>`
+  ).join('')}</div>`).join('')
+}
+
+draw('2026-11')
+calendar(root, { value: '2026-11-13', locale: 'en-GB', draw })
+```
+
+The [calendar components](/guide/frameworks) for React, Svelte and Vue are written this way, so the month is in the first HTML.
 
 ## The keys \{#the-keys\}
 

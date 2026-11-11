@@ -1,6 +1,7 @@
 import ComponentPreview from '~/site/components/ComponentPreview.astro'
 import ComponentSource from '~/site/components/ComponentSource.astro'
 import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
 Tabs are words on one hairline, the current one underlined in ink. They switch between sibling pages or panels; for a compact choice of values, use a [segmented control](/components/segmented).
 
@@ -30,13 +31,35 @@ Where the browser supports CSS anchor positioning, the underline is one mark tha
 
 ## Tab panels \{#tab-panels\}
 
-For in-page panels, follow the WAI-ARIA tabs pattern: a `role="tablist"` container, `role="tab"` buttons with `aria-selected` and `aria-controls`, and `role="tabpanel"` regions. The stylesheet draws every state; switching panels and arrow-key focus need a small script, which the framework bindings will provide.
+For in-page panels, follow the WAI-ARIA tabs pattern: a `role="tablist"` container, `role="tab"` buttons with `aria-selected` and `aria-controls`, and `role="tabpanel"` regions. The stylesheet draws every state; the `tabs` [behavior](/guide/behaviors) switches the panels and gives the tablist its keys.
 
-<ComponentPreview name="tablist" title="Tab list" background="plain" bodyClass="p-lg" html={`<div class="tabs" role="tablist" aria-label="Account">
+<ComponentPreview name="tablist" title="Tab list" background="plain" bodyClass="p-lg" behaviors html={`<div class="tabs" role="tablist" aria-label="Account">
   <button type="button" class="tabs-item" role="tab" id="tab-profile" aria-selected="true" aria-controls="panel-profile">Profile</button>
   <button type="button" class="tabs-item" role="tab" id="tab-billing" aria-selected="false" aria-controls="panel-billing" tabindex="-1">Billing</button>
+  <button type="button" class="tabs-item" role="tab" id="tab-members" aria-selected="false" aria-controls="panel-members" tabindex="-1">Members</button>
 </div>
-<div role="tabpanel" id="panel-profile" aria-labelledby="tab-profile" class="pt-md text-sm fg-text-body">Profile settings</div>`} />
+<div role="tabpanel" id="panel-profile" aria-labelledby="tab-profile" class="pt-md text-sm fg-text-body">Profile settings</div>
+<div role="tabpanel" id="panel-billing" aria-labelledby="tab-billing" class="pt-md text-sm fg-text-body" hidden>Billing settings</div>
+<div role="tabpanel" id="panel-members" aria-labelledby="tab-members" class="pt-md text-sm fg-text-body" hidden>Members of the workspace</div>`} caption="Focus a tab and use the arrow keys, Home or End. A click selects too." />
+
+`tabs` takes the tablist, the element with the `tabs` class and `role="tablist"`, has no options, and returns the function that detaches it.
+
+```js name=app.js
+import { tabs } from '@master/ui/behaviors/tabs.js'
+
+const detach = tabs(document.querySelector('.tabs[role="tablist"]'))
+```
+
+- **One tab stop.** The selected tab is the one in the tab order. The arrow keys move to the tab before or after and select it, skipping disabled tabs and wrapping at the ends; <kbd>Home</kbd> and <kbd>End</kbd> go to the first and the last. A tablist with `aria-orientation="vertical"` takes the up and down arrows instead.
+- **Panels.** A tab names its panel in `aria-controls`. The panel of the selected tab is shown and the others get `hidden`.
+- **The value.** Selecting a tab dispatches a bubbling `change` from the tablist with `detail.value`: the tab's `data-value`, or its text. The function the behavior returns has the same `value`; set it to select a tab from outside.
+- **Without the script** the selected tab's panel is the only one without `hidden`, and nothing switches. Use links in a `nav` when each tab can be a page.
+
+## React, Svelte and Vue \{#frameworks\}
+
+The `tabs` component renders a tablist and its panels from data, joins each tab to its panel by id, attaches the behavior and passes the selected tab in and out. Tabs that are links in a `nav` stay markup. Copy it into the project with `npx master-ui add tabs`; [React, Svelte and Vue](/guide/frameworks) says how the components are built and used.
+
+<FrameworkSource name="tabs" />
 
 ## Classes \{#classes\}
 

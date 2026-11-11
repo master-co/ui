@@ -1,0 +1,53 @@
+---
+import Code from '@master/internal-site/components/Code.astro'
+import ExpandContent from '@master/internal-site/components/ExpandContent.svelte'
+import PreviewSwitch from './PreviewSwitch.astro'
+import { frameworkSources } from '~/site/utils/ui-source'
+
+interface Props {
+  /** The contract's name, such as `combobox`. */
+  name: string
+}
+
+/**
+ * The framework components that render a contract, as `master-ui add` copies them: one source per framework,
+ * chosen by the segmented control of a preview. The choice is a group of native radios the stylesheet reads,
+ * and every source stays in the server HTML for search and for copying.
+ */
+const { name } = Astro.props
+const language: Record<string, string> = { tsx: 'tsx', svelte: 'svelte', vue: 'vue', ts: 'ts' }
+---
+
+{frameworkSources(name).map(component => (
+  <div class="framework-source">
+    <PreviewSwitch name={`framework-${component.name}`} label="Framework" kind="view" options={component.sources.map(source => [source.framework, source.title] as const)} value={component.sources[0].framework} />
+    {component.sources.map(source => (
+      <div data-framework={source.framework}>
+        <ExpandContent client:idle={{ timeout: 500 }}>
+          <Code lang={language[source.file.split('.').at(-1)!] ?? 'ts'} name={`ui/${source.file}`} code={source.code} />
+        </ExpandContent>
+      </div>
+    ))}
+  </div>
+))}
+
+<style is:global>
+  @layer components {
+    .framework-source {
+      display: grid;
+      gap: .75rem;
+      justify-items: start;
+
+      & > [data-framework] {
+        justify-self: stretch;
+        min-width: 0;
+      }
+
+      &:has([data-view="react"]:checked) > [data-framework]:not([data-framework="react"]),
+      &:has([data-view="svelte"]:checked) > [data-framework]:not([data-framework="svelte"]),
+      &:has([data-view="vue"]:checked) > [data-framework]:not([data-framework="vue"]) {
+        display: none;
+      }
+    }
+  }
+</style>

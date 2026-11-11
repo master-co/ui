@@ -31,6 +31,27 @@ execFileSync(process.execPath, ['--import', 'tsx', join(ui, 'scripts/build.ts')]
 const { contracts } = JSON.parse(read(join(ui, 'dist/contracts.json'))) as { contracts: any[] }
 const contractOf = new Map(contracts.map(contract => [contract.name, contract]))
 
+/** The framework components: what each renders, and its file in each framework. */
+const manifest = JSON.parse(read(join(ui, 'frameworks/manifest.json'))) as { frameworks: Record<string, { title: string, package: string }>, components: Record<string, Record<string, string>> }
+const frameworkTitles = Object.values(manifest.frameworks).map(framework => framework.title)
+const componentsOf = (contract: string) => Object.entries(manifest.components).filter(([, entry]) => entry.contract === contract).map(([name]) => name)
+/** A framework component's files: the component and what it imports from beside it. */
+function frameworkFiles(framework: string, entry: string) {
+  const from = join(ui, 'frameworks', framework)
+  const files = new Map<string, string>()
+  const pending = [entry]
+  while (pending.length) {
+    const name = pending.pop()!
+    if (files.has(name)) continue
+    files.set(name, read(join(from, name)))
+    for (const match of files.get(name)!.matchAll(/from\s+['"]\.\/([\w.-]+)['"]/g)) {
+      const found = [match[1], `${match[1]}.ts`, `${match[1]}.tsx`, match[1].replace(/\.js$/, '.ts')].find(candidate => existsSync(join(from, candidate)))
+      if (found) pending.push(found)
+    }
+  }
+  return files
+}
+
 for (const generated of ['r', 'themes']) rmSync(join(out, generated), { recursive: true, force: true })
 for (const section of ['guide', 'components', 'layouts', 'blocks']) {
   if (existsSync(join(out, section))) for (const file of readdirSync(join(out, section))) if (file.endsWith('.md')) rmSync(join(out, section, file))
@@ -70,6 +91,9 @@ function contractMarkdown(contract: any) {
     contract.properties?.length && `## Custom properties\n\nThese are the public ones. A property with a default is declared on the class itself, so set it on that element: a class of your own beside it, a \`style\` attribute, or a rule such as \`.toolbar .btn { --btn-height: 2rem }\` that sets nothing else.\n\n${table(['Property', 'On', 'Default', 'What it sets'], contract.properties.map((property: any) => [code(property.name), property.on ? code(property.on) : '', property.default ? code(property.default) : '', property.description]))}`,
     `## Script\n\n${contract.script === 'none' ? 'None. Every state works without script.' : contract.script === 'optional' ? 'Optional. The component works without script; a script adds a convenience.' : 'Required. The pattern has no native element, so a script moves its attributes.'}${contract.behavior ? ` The reference script is \`@master/ui/behaviors/${contract.behavior}.js\`:\n\n\`\`\`js\nimport { ${contract.behavior.replace(/-(\w)/g, (_: string, letter: string) => letter.toUpperCase())} } from '@master/ui/behaviors/${contract.behavior}.js'\n\`\`\`` : ''}`,
     contract.keyboard?.length && `## Keyboard\n\n${table(['Keys', 'Action'], contract.keyboard.map((item: any) => [item.keys, item.action]))}`,
+    `## In ${frameworkTitles.slice(0, -1).join(', ')} and ${frameworkTitles.at(-1)}\n\n${componentsOf(contract.name).length
+      ? `${componentsOf(contract.name).map((name: string) => `\`${name}\``).join(' and ')} ${componentsOf(contract.name).length > 1 ? 'are components' : 'is a component'} to copy into the project: ${componentsOf(contract.name).map((name: string) => `\`npx master-ui add ${name}\``).join(', ')}. It renders this markup, attaches the behavior where there is one and passes the value in and out. Look in the project's \`ui/\` directory first: a copy may already be there. See ${origin}/guide/frameworks.md.${componentsOf(contract.name).includes(contract.name) ? '' : ' Every other class of this contract is written as markup.'}`
+      : `No component: write this markup in the framework's own syntax (\`className\` and \`htmlFor\` in JSX). Do not wrap a class in a component to rename it.`}`,
     contract.platform?.length && `## Platform\n\n${table(['Feature', 'Without it'], contract.platform.map((item: any) => [item.feature, item.fallback]))}`,
     contract.composes?.length && `## Used with\n\n${contract.composes.map((name: string) => `- [${name}](${origin}/${contractOf.get(name)?.tier === 'layout' ? 'layouts' : 'components'}/${name}.md)`).join('\n')}`,
     `## Install\n\n\`\`\`css\n@import '@master/ui/theme.css';\n${[...(contract.composes ?? []), contract.name].map((name: string) => `@import '@master/ui/${contractOf.get(name)?.tier === 'layout' ? 'layouts' : 'components'}/${name}.css';`).join('\n')}\n\`\`\`\n\nTheme tokens it reads: ${contract.tokens.length ? contract.tokens.map(code).join(', ') : 'none'}.\n\nHuman page: ${origin}/${directory === 'layouts' ? `layouts/${contract.name === 'shell' ? 'app-shell' : contract.name}` : `components/${contract.name}`}`,
@@ -137,6 +161,7 @@ Rules for writing Master UI markup:
 - Lay out with Master CSS utilities in the markup (\`flex gap-md p-lg\`). Do not write CSS for a component's face, edge or shadow; set a theme token or a public custom property instead.
 - Overlays use the platform: \`<dialog>\` with \`command="show-modal"\` and \`commandfor\`, the \`popover\` attribute with \`popovertarget\`. Do not add a positioning or focus-trapping script.
 - A pattern whose contract says \`"script": "required"\` needs its reference script from \`@master/ui/behaviors\`.
+- In React, Svelte or Vue the markup is the same, in the framework's syntax. Do not wrap a class in a component to rename it (\`<Button variant="primary">\`). Only the patterns that hold state have a component, copied into the project with \`npx master-ui add <name>\`: ${Object.keys(manifest.components).join(', ')}.
 - Check the result: \`npx master-ui check\` reports markup that breaks a contract.
 - To change how something looks, take the lowest step that works: a utility on the element, a theme token, a public custom property, a theme file, and only then own the component's source (\`npx master-ui own <name>\`). See the customization guide.
 
@@ -210,6 +235,20 @@ for (const contract of contracts) {
     meta: { tier: contract.tier, script: contract.script, classes: contract.classes.map((entry: any) => entry.name), tokens, mixins },
   })
 }
+/** A framework component is source to copy: it renders a contract's markup and imports the behavior from the package. */
+for (const [framework, { title, package: dependency }] of Object.entries(manifest.frameworks)) {
+  for (const [name, entry] of Object.entries(manifest.components)) {
+    const contract = contractOf.get(entry.contract)
+    items.push({
+      $schema: schema, name: `${framework}-${name}`, type: 'registry:item', title: `${name[0].toUpperCase()}${name.slice(1)} for ${title}`,
+      description: `The ${title} component that renders the markup of ${contract.title.toLowerCase()}, attaches its behavior where it has one and passes the value in and out.`,
+      dependencies: ['@master/ui', dependency], files: [...frameworkFiles(framework, entry[framework])].map(([path, content]) => file(`ui/${path}`, content)), categories: [title],
+      docs: `It needs the stylesheet of ${entry.contract} from @master/ui. Its markup is the contract's: ${origin}/components/${entry.contract}.md. How it is built: ${origin}/guide/frameworks.md`,
+      meta: { tier: 'framework', framework, contract: entry.contract },
+    })
+  }
+}
+
 /** A block or a page layout is its first preview: markup to paste, written with components and utilities. */
 for (const [kind, list] of [['layouts', layouts], ['blocks', blocks]] as const) {
   for (const entry of list) {

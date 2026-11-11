@@ -1,0 +1,321 @@
+In a framework, most of Master UI is what it is on a plain page: a class on a native element, written in the framework's syntax. A framework component exists only where the framework owns something. This page says where that line is, lists the components on its far side and shows how one is added, used and edited.
+
+## Markup stays markup \{#markup\}
+
+A button is a `<button>` with `btn btn-primary` in React, Svelte and Vue alike. There is no `Button` component, and a project should not write one that only turns props into classes.
+
+```tsx name=Toolbar.tsx
+<button type="button" className="btn btn-primary" disabled={saving} aria-busy={saving}>
+  Save changes
+</button>
+```
+
+- **There is nothing for a component to own.** A button has no value to pass, no rows to render, no ids to join and nothing to attach. Its states are attributes the framework already sets.
+- **The checker reads classes.** [`master-ui check`](/guide/ai#check-the-markup) reads `.jsx`, `.tsx`, `.svelte`, `.vue` and `.astro` files. It sees `className="btn btn-outline"` and says there is no such class; it cannot see `<Button variant="outline">`.
+- **Markup needs no client script.** A native element with a class renders on a server and stays there. In React Server Components it adds nothing to the client bundle.
+
+Only the syntax differs:
+
+| In HTML | In JSX | In Svelte and Vue |
+| --- | --- | --- |
+| `class="btn btn-primary"` | `className="btn btn-primary"` | The same |
+| `for="email"` | `htmlFor="email"` | The same |
+| `tabindex="-1"`, `popovertarget="share"` | `tabIndex={-1}`, `popoverTarget="share"` | The same |
+| `commandfor="confirm"` with `command="show-modal"`, `interestfor="tip"` | Spread them, where React's types do not list them yet | The same |
+
+When markup repeats in a project, wrap it in a component of the project's own, in its own idiom, and keep the contract's classes inside it as literal strings.
+
+## What a framework owns \{#what-a-framework-owns\}
+
+A framework component exists when the framework owns at least one of four things:
+
+1. **A value the application reads or sets.** What is chosen in a combobox, whether a dialog is open.
+2. **Rows rendered from data.** The options of a listbox, the days of a month, the items of a menu.
+3. **Ids that join parts.** A label and its control, a button and the popover it opens, a tab and its panel.
+4. **A lifetime.** A [behavior](/guide/behaviors) to attach when the element exists and detach when it goes.
+
+That is the same test the library applies to a [class](/guide/introduction#tiers): knowledge, not markup that repeats. Seventeen patterns pass it.
+
+| Component | Renders the contract of | The framework owns |
+| --- | --- | --- |
+| `calendar` | [Calendar](/components/calendar) | The value, and the month it draws |
+| `combobox` | [Combobox](/components/combobox) | The value, the options |
+| `command` | [Command palette](/components/command) | Whether it is open, the commands |
+| `compare` | [Compare](/components/compare) | The position |
+| `dialog` | [Dialog](/components/dialog) | Whether it is open, the id its trigger names |
+| `field` | [Field](/components/input#hint-and-error) | The ids that join the label, the control, the hint and the error |
+| `listbox` | [Listbox](/components/listbox) | The value, the options |
+| `menu` | [Menu](/components/menu) | The items, the id its trigger names, the target of a context menu |
+| `otp` | [OTP](/components/otp) | The code, the number of slots |
+| `popover` | [Popover](/components/popover) | Whether it is open, the id its trigger names |
+| `splitter` | [Splitter](/components/splitter) | The size |
+| `stepper` | [Stepper](/components/stepper) | The number |
+| `tabs` | [Tabs](/components/tabs#tab-panels) | The selected tab, the ids that join tabs and panels |
+| `toast` | [Toast](/components/toast) | The queue: a `toast()` function and the region that shows it |
+| `tooltip` | [Tooltip](/components/tooltip) | The id that joins the control and its label |
+| `tree` | [Tree](/components/tree) | The selected row, the rows |
+| `wheel` | [Wheel](/components/wheel) | The value of each column, the options |
+
+Every other contract is markup. A select is a `<select class="select">`, a switch is a checkbox with `role="switch"`, an accordion is `<details>`: the browser holds their state and the framework binds it as it binds any native control.
+
+## Add a component \{#add\}
+
+A component is source in your project, not an import from the package. The `master-ui` command copies it:
+
+```bash
+npx master-ui add combobox --framework=react
+```
+
+```
+Add combobox: ui/combobox.tsx, ui/use-behavior.ts.
+  It renders the markup of "master-ui contract combobox" and needs that stylesheet from @master/ui.
+```
+
+- The framework is read from `package.json` when it names exactly one of React, Svelte and Vue, and is remembered in `master-ui.json` after the first time.
+- The small helper a component imports from beside it comes with it: `use-behavior.ts` for React and Vue, `behavior.svelte.ts` for Svelte.
+- `npx master-ui add` without a name lists the components.
+- A copy that is already there is kept. It is yours, and may have been edited.
+
+What is copied holds no logic to fix. The component imports its behavior from `@master/ui/behaviors`, so a correction to the keys or the focus arrives with the package, in every framework at once. When the component itself changes upstream, [`status`, `diff` and `accept`](/guide/customization#upstream-changes) report and merge it as they do for an owned stylesheet. The [registry](/guide/registry#items) holds the same files as `react-combobox`, `svelte-combobox` and `vue-combobox`.
+
+## Use a component \{#use\}
+
+Each component is written in its framework's own idiom. What follows is the same combobox three times.
+
+```tsx name=Region.tsx
+import { useState } from 'react'
+import { Combobox } from './ui/combobox'
+
+const regions = [
+  { value: 'hnd', label: 'Tokyo' },
+  { value: 'sin', label: 'Singapore' },
+  { value: 'fra', label: 'Frankfurt', description: 'Germany' },
+]
+
+export function Region() {
+  const [region, setRegion] = useState<string | null>(null)
+  return (
+    <Combobox options={regions} value={region} onValueChange={setRegion}
+      aria-label="Region" listLabel="Regions" toggleLabel="Show regions" empty="No regions match." />
+  )
+}
+```
+
+```svelte name=Region.svelte
+<script lang="ts">
+  import Combobox from './ui/Combobox.svelte'
+
+  const regions = [
+    { value: 'hnd', label: 'Tokyo' },
+    { value: 'sin', label: 'Singapore' },
+    { value: 'fra', label: 'Frankfurt', description: 'Germany' },
+  ]
+  let region = $state<string | null>(null)
+</script>
+
+<Combobox options={regions} bind:value={region}
+  aria-label="Region" listLabel="Regions" toggleLabel="Show regions" empty="No regions match." />
+```
+
+```vue name=Region.vue
+<script setup lang="ts">
+import { ref } from 'vue'
+import Combobox from './ui/Combobox.vue'
+
+const regions = [
+  { value: 'hnd', label: 'Tokyo' },
+  { value: 'sin', label: 'Singapore' },
+  { value: 'fra', label: 'Frankfurt', description: 'Germany' },
+]
+const region = ref<string | null>(null)
+</script>
+
+<template>
+  <Combobox :options="regions" v-model="region"
+    aria-label="Region" list-label="Regions" toggle-label="Show regions" empty="No regions match." />
+</template>
+```
+
+The value is what an option stands for, `hnd`, not the text the field shows. It is `null` while the field holds text no option was chosen for.
+
+| | A value | Whether it is open | Other outputs |
+| --- | --- | --- | --- |
+| React | `value`, or `defaultValue` to let the component keep it, and `onValueChange` | `open`, `onOpenChange` | `onComplete`, `onValueCommit`, `onSearch` |
+| Svelte | `bind:value`, and `onValueChange` | `bind:open`, and `onOpenChange` | The same callback props |
+| Vue | `v-model` | `v-model:open` | `@complete`, `@value-commit`, `@search` |
+
+Props that are not the component's own go to the element a reader would expect: the field of a combobox, the `<dialog>` of a dialog, the root of a listbox. That is how a combobox gets its `aria-label`, its `placeholder` and its `name`.
+
+### The page's own markup \{#the-pages-own-markup\}
+
+A dialog, a popover, a menu and a tooltip are opened by a control that belongs to the page. The component does not render a button of its own. It hands the page the attributes that name it, and the page spreads them on its own button; the browser then opens the dialog, as it does on a plain page.
+
+```tsx name=DeleteProject.tsx
+import { Dialog } from './ui/dialog'
+
+export function DeleteProject() {
+  return (
+    <Dialog id="delete-project" aria-labelledby="delete-project-title"
+      trigger={attributes => <button type="button" className="btn" {...attributes}>Delete project</button>}>
+      <header className="dialog-header">
+        <h2 className="dialog-title" id="delete-project-title">Delete this project?</h2>
+        <p className="dialog-description">Atlas and its 14 deployments are removed.</p>
+      </header>
+      <footer className="dialog-footer">
+        <button type="button" className="btn" {...{ commandfor: 'delete-project', command: 'close' }}>Cancel</button>
+        <button type="button" className="btn btn-primary" onClick={remove}>Delete project</button>
+      </footer>
+    </Dialog>
+  )
+}
+```
+
+```svelte name=DeleteProject.svelte
+<script lang="ts">
+  import Dialog from './ui/Dialog.svelte'
+</script>
+
+<Dialog id="delete-project" aria-labelledby="delete-project-title">
+  {#snippet trigger(attributes)}
+    <button type="button" class="btn" {...attributes}>Delete project</button>
+  {/snippet}
+  <header class="dialog-header">
+    <h2 class="dialog-title" id="delete-project-title">Delete this project?</h2>
+    <p class="dialog-description">Atlas and its 14 deployments are removed.</p>
+  </header>
+  <footer class="dialog-footer">
+    <button type="button" class="btn" commandfor="delete-project" command="close">Cancel</button>
+    <button type="button" class="btn btn-primary" onclick={remove}>Delete project</button>
+  </footer>
+</Dialog>
+```
+
+```vue name=DeleteProject.vue
+<script setup lang="ts">
+import Dialog from './ui/Dialog.vue'
+</script>
+
+<template>
+  <Dialog id="delete-project" aria-labelledby="delete-project-title">
+    <template #trigger="attributes">
+      <button type="button" class="btn" v-bind="attributes">Delete project</button>
+    </template>
+    <header class="dialog-header">
+      <h2 class="dialog-title" id="delete-project-title">Delete this project?</h2>
+      <p class="dialog-description">Atlas and its 14 deployments are removed.</p>
+    </header>
+    <footer class="dialog-footer">
+      <button type="button" class="btn" commandfor="delete-project" command="close">Cancel</button>
+      <button type="button" class="btn btn-primary" @click="remove">Delete project</button>
+    </footer>
+  </Dialog>
+</template>
+```
+
+The parts inside the dialog are the contract's markup, not components: `dialog-header`, `dialog-title` and `dialog-footer` own nothing. Pass `open` only when the application decides it, to open a dialog after a request fails or to close one when a route changes. Without it, the trigger and the browser do the whole job.
+
+A [field](/components/input#hint-and-error) works the same way in the other direction. It owns the ids, and gives the page's control the attributes that carry them:
+
+```tsx name=Email.tsx
+import { Field } from './ui/field'
+
+<Field label="Work email" hint="We only send receipts." error={error}>
+  {control => <input className="input" type="email" name="email" {...control} />}
+</Field>
+```
+
+### Toasts \{#toasts\}
+
+A toast has no element until something happens, so its component is a queue: a `toast()` function to call from anywhere, and a region, rendered once, that shows what is in it.
+
+```tsx name=App.tsx
+import { toast, Toaster } from './ui/toast'
+
+<Toaster />
+
+toast({ title: 'Deployed to production', description: 'atlas.dev is live in 14 regions.', status: 'success' })
+```
+
+In Svelte and Vue, `toast` is a named export of `Toaster.svelte` and `Toaster.vue`. A toast leaves by itself after six seconds; `duration` sets another time, and `duration: false` keeps it until it is dismissed.
+
+## Where the logic is \{#where-the-logic-is\}
+
+A component decides no key, no move of focus and no state attribute. It does three things:
+
+- **It renders the contract's markup**, with the first value already drawn in it. The first HTML is right before any script runs.
+- **It attaches the behavior**, and attaches it again when an option changes.
+- **It passes the value.** It writes the behavior's [`value`](/guide/behaviors#the-value) when the application sets another, and reads it on every `input` and `change` that reaches the root.
+
+After the first render the behavior moves the attributes, as it does on a plain page. That is why the three frameworks cannot drift apart in what a key does: none of them says. They are held to one set of scenarios, written without a framework, that each one runs: mount, check the markup against the contracts, press keys, read the value that came out, set a value, unmount.
+
+To change what a key does, or what selecting means, [own the behavior](/guide/behaviors#own-a-behavior), not the component. `master-ui add` then imports your copy.
+
+## On a server \{#on-a-server\}
+
+- **The first HTML holds the state.** A chosen option, a selected tab, a splitter's size and a calendar's month are in the markup a server sends. The marks only a browser can know, such as today in a calendar, appear when the behavior attaches.
+- **Give a calendar its `locale`** when it is rendered on a server. The names of months and days come from `Intl`, and a server and a browser do not always agree on the language to use.
+- **In React Server Components,** the components that attach a behavior or keep state are client components and say `'use client'`. `Field` and `Tooltip` only join ids, so they render on the server. Everything that is markup renders wherever it is written.
+- **Ids come from the framework:** `useId` in React and Vue, `$props.id()` in Svelte, so they match between a server and a browser. Vue numbers them within one application. A page that mounts several Vue applications, as islands do, gives each an `app.config.idPrefix`, or two of them will name different elements `v-0`.
+
+## A component of your own \{#your-own\}
+
+The helper that comes with a component is the whole adapter, and it is the way to give a root to a behavior in a component you write. In React it is a hook that returns a ref:
+
+```tsx name=Sizes.tsx
+import { listbox } from '@master/ui/behaviors/listbox.js'
+import { useBehavior } from './ui/use-behavior'
+
+export function Sizes({ value, onValueChange }: { value: string, onValueChange: (value: string | string[] | null) => void }) {
+  const ref = useBehavior(listbox, undefined, { value, onValueChange })
+  return (
+    <div className="listbox" role="listbox" aria-label="Size" tabIndex={0} ref={ref}>
+      {['Small', 'Medium', 'Large'].map(size => (
+        <div className="listbox-option" role="option" aria-checked={size === value} key={size}>{size}</div>
+      ))}
+    </div>
+  )
+}
+```
+
+Its second argument is the behavior's options, its third the value and what hears it. In Svelte the helper makes an attachment, and in Vue it is a composable that takes a template ref and a model:
+
+```svelte name=Sizes.svelte
+<script lang="ts">
+  import { listbox } from '@master/ui/behaviors/listbox.js'
+  import { behavior } from './ui/behavior.svelte.js'
+
+  let { value = $bindable() }: { value?: string | string[] | null } = $props()
+  const attach = behavior(listbox, undefined, { value: () => value, change: next => { value = next } })
+</script>
+
+<div class="listbox" role="listbox" aria-label="Size" tabindex="0" {@attach attach}>
+  {#each ['Small', 'Medium', 'Large'] as size}
+    <div class="listbox-option" role="option" aria-checked="false">{size}</div>
+  {/each}
+</div>
+```
+
+```vue name=Sizes.vue
+<script setup lang="ts">
+import { useTemplateRef } from 'vue'
+import { listbox } from '@master/ui/behaviors/listbox.js'
+import { useBehavior } from './ui/use-behavior'
+
+const value = defineModel<string | string[] | null>()
+useBehavior(useTemplateRef<HTMLElement>('root'), listbox, undefined, value)
+</script>
+
+<template>
+  <div class="listbox" role="listbox" aria-label="Size" tabindex="0" ref="root">
+    <div v-for="size in ['Small', 'Medium', 'Large']" :key="size" class="listbox-option" role="option" aria-checked="false">{{ size }}</div>
+  </div>
+</template>
+```
+
+[Behaviors](/guide/behaviors#in-a-framework) shows the plain way to attach one in each framework, without the helper.
+
+## Other headless libraries \{#headless-libraries\}
+
+The components depend on no headless library, in any framework. Base UI, Radix and React Aria for React, Reka UI for Vue and Bits UI for Svelte each place overlays, trap focus and dismiss with script of their own; Master UI leaves that to `<dialog>`, `popover` and anchor positioning, and its stylesheets read ARIA and native attributes where those libraries mark state with `data-` attributes of their own.
+
+A project that needs what one of them offers and the behaviors do not, such as a virtual list or a calendar that is not Gregorian, can put the contract's classes on that library's parts. Nothing here promises that the states line up: check each one against the contract's `states`, and [own the stylesheet](/guide/customization#own-a-component) where a mark differs.

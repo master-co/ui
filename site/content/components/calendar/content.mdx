@@ -1,6 +1,7 @@
 import ComponentPreview from '~/site/components/ComponentPreview.astro'
 import ComponentSource from '~/site/components/ComponentSource.astro'
 import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
 A calendar is a month of days to pick from. It is an ARIA grid of buttons: the stylesheet draws every state, and the `calendar` [behavior](/guide/behaviors) supplies the dates, the month buttons and the arrow keys. It has no surface of its own, so it sits in a [card](/components/card), or in a [popover](/components/popover) to make a date picker.
 
@@ -188,10 +189,11 @@ root.addEventListener('change', (event) => console.log(event.detail.value))
 | `weekStart` | The day in the first column, 0 for Sunday to 6 for Saturday. By default the locale's own, and Monday where the browser cannot say |
 | `locale` | A BCP 47 tag for the names of months and days. By default the `lang` the calendar stands in |
 | `disabled` | A function that takes a `Date` and says whether that day cannot be chosen |
+| `draw` | A function that writes the grid instead of the script. It is called with the month to show, as `YYYY-MM`; see [a grid of your own](/guide/behaviors#a-grid-of-your-own) |
 
-- **What it writes.** The weekday names and the weeks of the shown month, and the month's name. On the days: `aria-current="date"` on today, `aria-selected="true"` and the range classes on what is chosen, `disabled` on a day that cannot be chosen, a full date as `aria-label`, and `tabindex` so one day is in the tab order.
+- **What it writes.** The weekday names and the weeks of the shown month, and the month's name. On the days: the date as the button's `value`, `aria-current="date"` on today, `aria-selected="true"` and the range classes on what is chosen, `disabled` on a day that cannot be chosen, a full date as `aria-label`, and `tabindex` so one day is in the tab order. With `draw`, a template or a framework writes the days and the script only marks them.
 - **The event.** Choosing a day dispatches a bubbling `change` from the root with `detail.value`: the day as `YYYY-MM-DD`, or `[start, end]` once both ends of a range are chosen.
-- **The value.** It lives in the script, not in the markup. Read it from the returned function's `value`: `picker.value`. In a range the end is `null` until it is chosen. To set it from outside, attach again with a new `value`; the second call replaces the first.
+- **The value.** It lives in the script, not in the markup. Read it from the returned function's `value`: `picker.value`. In a range the end is `null` until it is chosen. Set it to choose from outside: `picker.value = '2026-11-20'` shows the month of the new day and dispatches nothing.
 - **Days.** They are local and Gregorian.
 
 ## Structure \{#structure\}
@@ -212,6 +214,12 @@ The behavior gives the grid the keys of a date grid. A move past the edge of the
 - One day is in the tab order: the chosen one, or today, or the first day of a month that holds neither. The rest have `tabindex="-1"`.
 - Give the title `aria-live="polite"`, so a change of month is announced.
 - On touch screens a day is 44px.
+
+## React, Svelte and Vue \{#frameworks\}
+
+The `calendar` component draws the month from the same data as the behavior, so it is in the first HTML, and passes the chosen day in and out. Copy it into the project with `npx master-ui add calendar`; [React, Svelte and Vue](/guide/frameworks) says how the components are built and used.
+
+<FrameworkSource name="calendar" />
 
 ## Classes \{#classes\}
 

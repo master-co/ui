@@ -32,6 +32,15 @@ export function componentSource(name: string, directory: 'components' | 'layouts
   return read(`${directory}/${name}.css`)
 }
 
+/** The framework components of a contract: each one's source in every framework, as `master-ui add` copies it. */
+export function frameworkSources(contractName: string) {
+  const manifest = JSON.parse(read('frameworks/manifest.json')) as { frameworks: Record<string, { title: string }>, components: Record<string, Record<string, string>> }
+  return Object.entries(manifest.components).filter(([, entry]) => entry.contract === contractName).map(([name, entry]) => ({
+    name,
+    sources: Object.entries(manifest.frameworks).map(([framework, { title }]) => ({ framework, title, file: entry[framework], code: read(`frameworks/${framework}/${entry[framework]}`) })),
+  }))
+}
+
 /** A contract: what the stylesheet of that name promises. See `packages/ui/contract.schema.json`. */
 export interface Contract {
   name: string
