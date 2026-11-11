@@ -27,6 +27,7 @@ export const geometryMarkup = `
   <div id="geometry-menu" class="menu" popover><button type="button" class="menu-item">Rename</button><button type="button" class="menu-item" disabled>Unavailable</button><button type="button" class="menu-item" aria-disabled="true">Unavailable action</button><label class="menu-item menu-item-danger"><input class="menu-input" type="checkbox" disabled>Unavailable choice</label></div>
   <div class="listbox" role="listbox" aria-label="Results"><div class="listbox-option" role="option" aria-selected="true" aria-checked="true"><div class="listbox-body">Project<span class="listbox-description">Selected description</span></div><span class="listbox-end">Hint</span></div><div class="listbox-option" role="option" aria-disabled="true">Unavailable result</div></div>
   <dialog class="dialog"><div class="dialog-header"><h2 class="dialog-title">Publish deployment</h2></div><div class="dialog-body">The browser owns this modal.</div><div class="dialog-footer"><button class="btn" type="button">Cancel</button></div></dialog>
+  <dialog class="dialog command" aria-label="Search commands"><label class="command-search"><input class="command-input" type="search" role="combobox" aria-label="Search commands" aria-expanded="true" aria-controls="geometry-results"></label><div class="listbox command-list" id="geometry-results" role="listbox" aria-label="Commands"><div class="listbox-empty">No commands match.</div></div></dialog>
 </main>`
 
 export async function verifyComponentGeometry(browser: Browser, { theme, scheme, direction = 'ltr', screenshot, touch = false, forcedColors = false }: {
@@ -136,10 +137,20 @@ export async function verifyComponentGeometry(browser: Browser, { theme, scheme,
       assert.equal(ink.end, ink.label, 'selected hints inherit the system foreground')
       assert.equal(ink.check, ink.label, 'selected check marks inherit the system foreground')
     }
-    await page.locator('dialog').evaluate((element: HTMLDialogElement) => element.showModal())
-    assert.equal(await page.locator('dialog').evaluate(element => getComputedStyle(element).borderTopWidth), '0px', 'native dialog border does not double the UI contour')
+    await page.locator('dialog:not(.command)').evaluate((element: HTMLDialogElement) => element.showModal())
+    assert.equal(await page.locator('dialog:not(.command)').evaluate(element => getComputedStyle(element).borderTopWidth), '0px', 'native dialog border does not double the UI contour')
     await page.keyboard.press('Escape')
-    await page.locator('dialog').waitFor({ state: 'hidden' })
+    await page.locator('dialog:not(.command)').waitFor({ state: 'hidden' })
+    await page.locator('dialog.command').evaluate((element: HTMLDialogElement) => element.showModal())
+    const search = page.locator('.command-input')
+    await search.focus()
+    await search.press('ArrowRight')
+    if (forcedColors) {
+      const focus = await search.evaluate(element => ({ visible: element.matches(':focus-visible'), width: getComputedStyle(element).outlineWidth, style: getComputedStyle(element).outlineStyle, offset: getComputedStyle(element).outlineOffset }))
+      assert.deepEqual(focus, { visible: true, width: '2px', style: 'solid', offset: '-2px' }, 'an empty command search keeps an inset system focus indicator')
+    }
+    await page.keyboard.press('Escape')
+    await page.locator('dialog.command').waitFor({ state: 'hidden' })
     if (screenshot) await page.screenshot({ path: screenshot, fullPage: true })
     return values
   } finally { await page.close() }
