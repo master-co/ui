@@ -1,0 +1,55 @@
+---
+// Inference: initial selection exists in server HTML; a mounted adapter gives behavior a lifetime.
+// Evidence: frameworks/{react/listbox.tsx,svelte/Listbox.svelte,vue/Listbox.vue} render first;
+// their use-behavior/behavior helpers attach listeners and call the returned cleanup on unmount.
+---
+<div class="lifecycle" aria-hidden="true">
+  <div class="phase server">
+    <div class="marker"><span>1</span></div>
+    <strong>Render</strong><span class="where">Server HTML</span>
+    <div class="selected"><span>Tokyo</span><svg viewBox="0 0 16 16"><path d="m3.5 8.5 3 3 6-7"/></svg></div>
+    <span class="note">Initial choice is visible</span>
+  </div>
+  <div class="phase mounted">
+    <div class="marker"><span>2</span></div>
+    <strong>Mount</strong><span class="where">Browser</span>
+    <div class="keys"><span>↑</span><span>↓</span><span>Enter</span></div>
+    <span class="note">Attach behavior<br/>Synchronize values</span>
+  </div>
+  <div class="phase removed">
+    <div class="marker"><span>3</span></div>
+    <strong>Unmount</strong><span class="where">Browser</span>
+    <div class="cleanup">detach()</div>
+    <span class="note">Stop listeners<br/>Release observers</span>
+  </div>
+  <div class="active-span"><span>Behavior lifetime</span></div>
+</div>
+<style>
+  .lifecycle { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:20px; color:var(--gf-ink); font-size:14px; line-height:1.45; }
+  .phase { position:relative; display:flex; align-items:center; flex-direction:column; min-width:0; gap:8px; text-align:center; }
+  .marker { width:100%; display:flex; justify-content:center; position:relative; padding-bottom:6px; }
+  .marker::before { content:''; position:absolute; top:13px; left:calc(-50% - 20px); right:50%; border-top:1px solid var(--gf-line); }
+  .server .marker::before { display:none; }
+  .marker > span { z-index:1; display:grid; place-items:center; width:26px; height:26px; border:1px solid var(--gf-line); border-radius:50%; background:var(--gf-surface); font-size:13px; }
+  .phase strong { font-weight:500; font-size:15px; }
+  .where,.note { color:var(--gf-muted); font-size:13px; }
+  .selected { display:flex; align-items:center; justify-content:space-between; gap:12px; width:100%; max-width:152px; min-height:39px; padding:9px 10px; background:var(--gf-surface); border-radius:7px; box-shadow:0 0 0 1px var(--gf-line); margin-top:10px; }
+  .selected svg { flex:none; width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round; }
+  .keys { display:flex; justify-content:center; gap:5px; min-height:39px; align-items:center; margin-top:10px; }
+  .keys > span { font-family:monospace; font-size:13px; padding:3px 6px; border-radius:4px; box-shadow:0 0 0 1px var(--gf-line); background:var(--gf-surface); }
+  .cleanup { font-family:monospace; font-size:14px; min-height:39px; display:flex; align-items:center; margin-top:10px; }
+  .active-span { grid-column:2/4; margin-inline:calc(25% - 5px); display:flex; justify-content:center; position:relative; padding-top:14px; border-top:2px solid var(--gf-muted); font-size:13px; color:var(--gf-muted); white-space:nowrap; }
+  .active-span::before,.active-span::after { content:''; position:absolute; top:-5px; height:8px; border-left:1px solid var(--gf-muted); }
+  .active-span::before { left:0; }.active-span::after { right:0; }
+  @container (max-width:420px) {
+    .lifecycle { grid-template-columns:1fr; gap:24px; }
+    .phase { padding-left:44px; align-items:flex-start; text-align:left; }
+    .marker { position:absolute; left:0; top:0; width:26px; padding:0; height:100%; }
+    .marker::before { top:calc(-24px - 1px); bottom:calc(100% - 13px); left:13px; right:auto; border-top:0; border-left:1px solid var(--gf-line); }
+    .server .marker::after,.mounted .marker::after { content:''; position:absolute; top:26px; bottom:-24px; left:13px; border-left:1px solid var(--gf-line); }
+    .mounted .marker::after { border-left-width:2px; border-left-color:var(--gf-muted); }
+    .selected,.keys,.cleanup { margin-top:4px; }
+    .active-span { grid-column:auto; border-top:0; margin:0 0 0 44px; padding:0; justify-content:flex-start; }
+    .active-span::before,.active-span::after { display:none; }
+  }
+</style>
