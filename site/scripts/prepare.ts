@@ -14,7 +14,7 @@ import type { DefinedMetadata } from '@master/internal-site/types/Metadata'
 const categoryOrder = [
   'Getting started', 'Customizing', 'Building', 'Reference', 'Overview',
   // Components: parts with a material, a state or a platform behavior.
-  'Materials', 'Structure', 'Actions', 'Forms', 'Navigation', 'Overlays', 'Feedback', 'Display', 'Typography',
+  'Materials', 'Structure', 'Actions', 'Forms', 'Navigation', 'Overlays', 'Feedback', 'Data display', 'Media', 'Content', 'Typography',
   // Layouts: where regions go and what scrolls.
   'Layout basics', 'Page layouts',
   // Blocks: one stretch of a page with a purpose.
