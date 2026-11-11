@@ -6,11 +6,13 @@
  *   dist/base.css                the small reset the components assume (box-sizing, form control fonts)
  *   dist/contracts.json          every contract, with what was read from its stylesheet
  *   dist/theme.json              every token of the theme, with its value
+ *   dist/behaviors/<name>.d.ts   the types of the behaviors, read from their JSDoc
  *
  * The source stays the CSS in this package; nothing here is written by hand twice.
  */
 import { mkdirSync, readdirSync, readFileSync, writeFileSync, existsSync, rmSync } from 'node:fs'
 import { createRequire } from 'node:module'
+import ts from 'typescript'
 import { compileManifestSync } from '@master/css-compiler/node'
 import { createRenderSessionSync } from '@master/css/node'
 import preset from '@master/css-preset/default-manifest.json' with { type: 'json' }
@@ -94,6 +96,26 @@ const contracts = imports.filter(file => file !== 'theme.css').map(file => {
   }
 })
 report.push(write('contracts.json', `${JSON.stringify({ name: pkg.name, version: pkg.version ?? null, schema: 'https://ui.master.co/contract.schema.json', contracts }, null, 2)}\n`))
+
+/**
+ * The behaviors are JavaScript with JSDoc types, so that a page can paste one. A TypeScript project reads
+ * the same types as declarations, written here; a behavior whose JSDoc does not hold fails the build.
+ */
+const behaviors = list('behaviors', '.js').map(file => new URL(`behaviors/${file}`, root).pathname)
+const program = ts.createProgram(behaviors, {
+  allowJs: true, checkJs: true, declaration: true, emitDeclarationOnly: true, strict: true, skipLibCheck: true,
+  target: ts.ScriptTarget.ES2023, module: ts.ModuleKind.NodeNext, moduleResolution: ts.ModuleResolutionKind.NodeNext,
+  lib: ['lib.es2023.d.ts', 'lib.dom.d.ts', 'lib.dom.iterable.d.ts'], types: [], outDir: new URL('dist/behaviors', root).pathname,
+})
+const declared: string[] = []
+const emitted = program.emit(undefined, (file, text) => {
+  mkdirSync(new URL('dist/behaviors/', root), { recursive: true })
+  writeFileSync(file, text)
+  declared.push(file)
+})
+const typeErrors = [...ts.getPreEmitDiagnostics(program), ...emitted.diagnostics].filter(diagnostic => diagnostic.category === ts.DiagnosticCategory.Error)
+if (typeErrors.length) throw new Error(`The behaviors do not type-check:\n${ts.formatDiagnostics(typeErrors, { getCanonicalFileName: name => name, getCurrentDirectory: () => new URL('.', root).pathname, getNewLine: () => '\n' })}`)
+report.push(`dist/behaviors/*.d.ts ${declared.length} declarations`)
 
 /**
  * The README's table of classes is written from the contracts, between two markers, so the package page on
