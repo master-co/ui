@@ -25,16 +25,14 @@ const emit = defineEmits<{
 /* A one-time code. Name the group with `aria-label` or `aria-labelledby`; `disabled` disables every slot. */
 const first = model.value ?? ''
 const root = useTemplateRef<HTMLFieldSetElement>('root')
-useBehavior(root, otp, undefined, model)
-
-// The root's own change is the behavior's: every slot is filled. A slot's change bubbles through it too.
-const filled = (event: Event) => {
-  if (event.target === event.currentTarget) emit('complete', (event as CustomEvent<{ value: string }>).detail.value)
-}
+useBehavior(root, otp, undefined, model, {
+  // The root's own change is the behavior's: every slot is filled. A slot's change bubbles through it too.
+  change: (event) => { if (event.target === event.currentTarget) emit('complete', (event as CustomEvent<{ value: string }>).detail.value) },
+})
 </script>
 
 <template>
-  <fieldset class="otp" ref="root" v-bind="$attrs" @change="filled">
+  <fieldset class="otp" ref="root" v-bind="$attrs">
     <input v-for="index in length" :key="index" class="otp-slot" :inputmode="inputMode" :pattern="pattern" maxlength="1" :autocomplete="index === 1 ? 'one-time-code' : 'off'" :aria-label="slotLabel(index - 1)" :aria-invalid="invalid || undefined" :value.attr="first[index - 1]">
   </fieldset>
 </template>

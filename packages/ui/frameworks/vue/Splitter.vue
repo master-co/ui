@@ -33,20 +33,19 @@ defineSlots<{
 const first = model.value
 const root = useTemplateRef<HTMLDivElement>('root')
 const handle = useTemplateRef<HTMLDivElement>('handle')
-const current = useBehavior(root, splitter, () => ({ step }), model)
+const current = useBehavior(root, splitter, () => ({ step }), model, {
+  // The handle says change once a drag ends or a key moved it. A field in a pane says change too.
+  change: (event) => { if (event.target === handle.value) emit('valueCommit', size()) },
+})
 // Vue writes a style again each time it renders, so it writes the size the behavior holds, not the first one.
 const size = () => {
   const held = current()
   return held !== undefined && Number.isFinite(held) ? held : first
 }
-// The handle says change once a drag ends or a key moved it. A field in a pane says change too.
-const committed = (event: Event) => {
-  if (event.target === handle.value) emit('valueCommit', size())
-}
 </script>
 
 <template>
-  <div class="splitter" :style="{ '--splitter-size': `${size()}%` }" ref="root" v-bind="$attrs" @change="committed">
+  <div class="splitter" :style="{ '--splitter-size': `${size()}%` }" ref="root" v-bind="$attrs">
     <div class="splitter-pane"><slot name="start" /></div>
     <div class="splitter-handle" role="separator" ref="handle" :tabindex="disabled ? -1 : 0" :aria-label="label" :aria-valuenow="Math.round(first)" :aria-valuemin="min" :aria-valuemax="max" :aria-orientation="stacked ? 'horizontal' : undefined" :aria-disabled="disabled || undefined" />
     <div class="splitter-pane"><slot name="end" /></div>

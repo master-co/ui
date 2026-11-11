@@ -26,7 +26,7 @@ export function Listbox({ options, value, defaultValue, onValueChange, multiple,
   const ref = useBehavior(listbox, undefined, { value, defaultValue, onValueChange })
   const [first] = useState(() => [value ?? defaultValue ?? []].flat())
   return (
-    <div className={`listbox ${className ?? ''}`} role="listbox" tabIndex={0} aria-multiselectable={multiple || undefined} ref={ref} {...root}>
+    <div className={className ? `listbox ${className}` : 'listbox'} role="listbox" tabIndex={0} aria-multiselectable={multiple || undefined} ref={ref} {...root}>
       {options.map(option => (
         <div className="listbox-option" role="option" key={option.value} data-value={option.value} aria-checked={first.includes(option.value)} aria-disabled={option.disabled || undefined}>
           {option.description

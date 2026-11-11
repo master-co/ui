@@ -33,7 +33,7 @@ export function Menu({ items, trigger, context, className, id, ...root }: MenuPr
   return (
     <>
       {trigger?.({ popoverTarget: name, 'aria-haspopup': 'menu' })}
-      <div id={name} popover="auto" className={`menu ${context ? 'menu-context' : ''} ${className ?? ''}`} role="menu" ref={element} {...root}>
+      <div id={name} popover="auto" className={['menu', context && 'menu-context', className].filter(Boolean).join(' ')} role="menu" ref={element} {...root}>
         {items.map((item, index) => 'separator' in item
           ? <hr className="menu-separator" key={index} />
           : item.href

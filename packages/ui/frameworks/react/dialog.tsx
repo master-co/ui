@@ -49,7 +49,7 @@ export function Dialog({ open, onOpenChange, trigger, className, id, children, .
   return (
     <>
       {trigger?.({ commandfor: name, command: 'show-modal' })}
-      <dialog id={name} className={`dialog ${className ?? ''}`} ref={element} {...{ closedby: 'any' }} {...dialog}>{children}</dialog>
+      <dialog id={name} className={className ? `dialog ${className}` : 'dialog'} ref={element} {...{ closedby: 'any' }} {...dialog}>{children}</dialog>
     </>
   )
 }

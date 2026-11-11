@@ -50,7 +50,7 @@ export function Popover({ open, onOpenChange, trigger, mode = 'auto', className,
   return (
     <>
       {trigger?.({ popoverTarget: name })}
-      <div id={name} popover={mode} className={`popover ${className ?? ''}`} ref={element} {...root}>{children}</div>
+      <div id={name} popover={mode} className={className ? `popover ${className}` : 'popover'} ref={element} {...root}>{children}</div>
     </>
   )
 }

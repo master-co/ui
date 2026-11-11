@@ -21,7 +21,7 @@ export function Stepper({ value, defaultValue, onValueChange, decrementLabel, in
   const ref = useBehavior(stepper, undefined, { value, defaultValue, onValueChange })
   const [first] = useState(value ?? defaultValue)
   return (
-    <div className={`input-group stepper ${className ?? ''}`} ref={ref}>
+    <div className={className ? `input-group stepper ${className}` : 'input-group stepper'} ref={ref}>
       <button type="button" className="btn btn-square" value="-1" tabIndex={-1} aria-label={decrementLabel}>
         <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14" /></svg>
       </button>

@@ -51,7 +51,7 @@ export function useBehavior<E extends HTMLElement, O extends object, V = never>(
     // A function among the options is called through the latest render, so a new one does not attach again.
     const stable = options && Object.fromEntries(Object.entries(options).map(([name, value]) => [
       name,
-      typeof value === 'function' ? (...parameters: unknown[]) => (live.current.options as Record<string, (...parameters: unknown[]) => unknown>)[name](...parameters) : value,
+      typeof value === 'function' ? (...parameters: unknown[]) => (live.current.options as Record<string, (...parameters: unknown[]) => unknown>)[name]!(...parameters) : value,
     ])) as O
     const handle = behavior(root, stable)
     attached.current = handle

@@ -42,5 +42,5 @@ export function Tree({ nodes, value, defaultValue, onValueChange, className, ...
           : <div className="tree-item" role="treeitem" data-value={node.value} aria-selected={(node.value !== undefined && node.value === first) || undefined} aria-disabled={node.disabled || undefined}>{node.label}</div>}
     </li>
   ))
-  return <ul className={`tree ${className ?? ''}`} role="tree" ref={ref} {...root}>{rows(nodes)}</ul>
+  return <ul className={className ? `tree ${className}` : 'tree'} role="tree" ref={ref} {...root}>{rows(nodes)}</ul>
 }

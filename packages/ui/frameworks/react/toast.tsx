@@ -50,11 +50,11 @@ export interface ToasterProps extends ComponentProps<'div'> {
 export function Toaster({ label = 'Notifications', dismissLabel = 'Dismiss', className, ...root }: ToasterProps) {
   const toasts = useSyncExternalStore(subscribe, () => shown, () => none)
   return (
-    <div className={`toast-region ${className ?? ''}`} role="region" aria-label={label} aria-live="polite" {...root}>
+    <div className={className ? `toast-region ${className}` : 'toast-region'} role="region" aria-label={label} aria-live="polite" {...root}>
       {toasts.map(({ id, title, description, status, icon, duration = 6000 }) => (
         <dialog
           open
-          className={`toast ${duration === false ? '' : 'toast-timed'} ${status ? `toast-${status}` : ''}`}
+          className={['toast', duration !== false && 'toast-timed', status && `toast-${status}`].filter(Boolean).join(' ')}
           key={id}
           aria-labelledby={`toast-${id}`}
           style={duration === false ? undefined : { '--toast-duration': `${duration}ms` } as CSSProperties}

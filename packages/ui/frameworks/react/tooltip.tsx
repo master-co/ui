@@ -15,7 +15,7 @@ export function Tooltip({ trigger, className, id, children, ...root }: TooltipPr
   return (
     <>
       {trigger({ interestfor: name })}
-      <div id={name} popover="hint" className={`tooltip ${className ?? ''}`} {...root}>{children}</div>
+      <div id={name} popover="hint" className={className ? `tooltip ${className}` : 'tooltip'} {...root}>{children}</div>
     </>
   )
 }

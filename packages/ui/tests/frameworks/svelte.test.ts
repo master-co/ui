@@ -146,6 +146,23 @@ test('svelte: a value or another function among the options does not attach a be
   })
 })
 
+test('svelte: a splitter keeps the size the reader gave it when its owner writes its style again', async () => {
+  await mounted(Harness, { component: fixtures.splitter, initial: { label: 'Resize the file list', max: 60, style: 'height: 8rem' } }, async (app) => {
+    const root = page.one<HTMLElement>('.splitter')
+    const size = () => root.style.getPropertyValue('--splitter-size')
+    assert.equal(size(), '50%')
+    await act(() => page.key(page.one('.splitter-handle'), 'ArrowRight'))
+    assert.equal(size(), '55%')
+    await act(() => app.set({ style: 'height: 12rem' }))
+    assert.equal(root.style.height, '12rem')
+    assert.equal(size(), '55%', 'the style Svelte wrote again holds the size the behavior has')
+    // A value its owner sets past the limit is the limit, in the style as on the handle.
+    await act(() => app.set({ value: 90 }))
+    await act(() => app.set({ style: 'height: 10rem' }))
+    assert.equal(size(), '60%')
+  })
+})
+
 test('svelte: the first HTML, rendered on a server, holds the state, and hydrates without a mismatch', async () => {
   const { hydrate } = await import('svelte')
   const { render } = await import('svelte/server')

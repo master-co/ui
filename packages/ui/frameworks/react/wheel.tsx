@@ -24,7 +24,7 @@ export function Wheel({ columns, value, defaultValue, onValueChange, className, 
   const ref = useBehavior(wheel, undefined, { value, defaultValue, onValueChange })
   const [first] = useState(value ?? defaultValue ?? [])
   return (
-    <div className={`wheel ${className ?? ''}`} role="group" ref={ref} {...root}>
+    <div className={className ? `wheel ${className}` : 'wheel'} role="group" ref={ref} {...root}>
       {columns.map((column, at) => (
         <Fragment key={column.label}>
           <div className="wheel-column" role="listbox" aria-label={column.label} tabIndex={0}>

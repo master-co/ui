@@ -14,6 +14,8 @@ const signature = (options?: object) => Object.entries(options ?? {}).map(([name
  * only gives it a root and a lifetime. `options` is a function, read again whenever what it reads changes:
  * the behavior is attached again when an option does. `model` is written to the behavior's `value`
  * whenever the two differ, and takes every `input` and `change` that leaves the behavior with another value.
+ * `on` holds listeners for events of the root, such as the `change` a behavior dispatches when a code is
+ * complete. They hear an event after the model has, so what they say is said of the value the model holds.
  *
  * Returns a function that reads the behavior's value as it is now.
  */
@@ -22,6 +24,7 @@ export function useBehavior<E extends HTMLElement, O extends object, V = never>(
   behavior: (root: E, options?: O) => Handle<V>,
   options?: () => O | undefined,
   model?: Ref<V | undefined>,
+  on?: Record<string, (event: Event) => void>,
 ) {
   let handle: Handle<V> | undefined
   let listeners: AbortController | undefined
@@ -61,13 +64,14 @@ export function useBehavior<E extends HTMLElement, O extends object, V = never>(
     // A function among the options is called through the latest ones, so a new one does not attach again.
     const stable = given && Object.fromEntries(Object.entries(given).map(([name, value]) => [
       name,
-      typeof value === 'function' ? (...parameters: unknown[]) => (options!() as Record<string, (...parameters: unknown[]) => unknown>)[name](...parameters) : value,
+      typeof value === 'function' ? (...parameters: unknown[]) => (options!() as Record<string, (...parameters: unknown[]) => unknown>)[name]!(...parameters) : value,
     ])) as O
     handle = behavior(element, stable)
     write()
     kept = handle.value
     listeners = new AbortController()
     for (const type of ['input', 'change']) element.addEventListener(type, hear, { signal: listeners.signal })
+    for (const [type, listener] of Object.entries(on ?? {})) element.addEventListener(type, listener, { signal: listeners.signal })
   }
 
   onMounted(attach)

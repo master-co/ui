@@ -37,7 +37,7 @@ export function Combobox({ options, value, defaultValue, onValueChange, filter =
   const ref = useBehavior(combobox, { filter }, { value, defaultValue, onValueChange })
   const [first] = useState(value ?? defaultValue)
   return (
-    <div className={`combobox ${className ?? ''}`} ref={ref}>
+    <div className={className ? `combobox ${className}` : 'combobox'} ref={ref}>
       <div className="input-group">
         <input className="input-group-field" role="combobox" aria-expanded="false" aria-controls={`${id}list`} aria-autocomplete="list" autoComplete="off" defaultValue={options.find(option => option.value === first)?.label} {...field} />
         <button type="button" className="combobox-toggle" tabIndex={-1} aria-label={toggleLabel} />

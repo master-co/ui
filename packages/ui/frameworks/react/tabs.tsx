@@ -29,7 +29,7 @@ export function Tabs({ tabs: list, value, defaultValue, onValueChange, panelClas
   const [first] = useState(value ?? defaultValue ?? list.find(tab => !tab.disabled)?.value)
   return (
     <>
-      <div className={`tabs ${className ?? ''}`} role="tablist" ref={ref} {...root}>
+      <div className={className ? `tabs ${className}` : 'tabs'} role="tablist" ref={ref} {...root}>
         {list.map((tab, index) => (
           <button type="button" className="tabs-item" role="tab" key={tab.value} id={`${id}tab${index}`} data-value={tab.value} aria-selected={tab.value === first} aria-controls={`${id}panel${index}`} tabIndex={tab.value === first ? 0 : -1} disabled={tab.disabled}>{tab.label}</button>
         ))}

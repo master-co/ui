@@ -75,7 +75,7 @@ export function Command({ items, open, onOpenChange, shortcut = 'k', filter = tr
 
   return (
     <dialog
-      className={`dialog command ${className ?? ''}`}
+      className={className ? `dialog command ${className}` : 'dialog command'}
       ref={ref}
       {...{ closedby: 'any' }}
       {...dialog}

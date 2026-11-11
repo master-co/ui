@@ -17,7 +17,7 @@ export function Compare({ value, defaultValue = 50, onValueChange, label, classN
   const ref = useBehavior(compare, undefined, { value, defaultValue, onValueChange })
   const [first] = useState(value ?? defaultValue)
   return (
-    <figure className={`compare ${className ?? ''}`} ref={ref} {...root}>
+    <figure className={className ? `compare ${className}` : 'compare'} ref={ref} {...root}>
       {children}
       <input type="range" className="compare-range" min={0} max={100} defaultValue={first} aria-label={label} />
     </figure>

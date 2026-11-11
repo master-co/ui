@@ -193,7 +193,8 @@ export const scenarios: Record<string, Scenario> = {
 
   async otp(driver, page) {
     const complete: string[] = []
-    const { mounted, heard } = await owned(driver, 'otp', { length: 4, value: '', 'aria-label': 'Verification code', onComplete: (code: string) => complete.push(code) })
+    const known: unknown[] = []
+    const { mounted, heard } = await owned(driver, 'otp', { length: 4, value: '', 'aria-label': 'Verification code', onComplete: (code: string) => { complete.push(code); known.push(heard.at(-1)) } })
     conforms(page)
     const slots = () => page.all<HTMLInputElement>('.otp-slot')
     assert.equal(slots().length, 4)
@@ -206,6 +207,7 @@ export const scenarios: Record<string, Scenario> = {
     assert.deepEqual(slots().map(slot => slot.value), ['4', '8', '2', '1'], 'several characters spread over the slots')
     assert.equal(heard.at(-1), '4821')
     assert.deepEqual(complete, ['4821'], 'the code comes out once every slot is filled')
+    assert.deepEqual(known, ['4821'], 'after its last character has come out as the value')
 
     await driver.act(() => mounted.set({ value: '90' }))
     assert.deepEqual(slots().map(slot => slot.value), ['9', '0', '', ''])
@@ -214,7 +216,8 @@ export const scenarios: Record<string, Scenario> = {
 
   async splitter(driver, page) {
     const committed: number[] = []
-    const { mounted, heard } = await owned(driver, 'splitter', { value: 40, min: 20, max: 80, label: 'Resize the file list', onValueCommit: (size: number) => committed.push(size) })
+    const known: unknown[] = []
+    const { mounted, heard } = await owned(driver, 'splitter', { value: 40, min: 20, max: 80, label: 'Resize the file list', onValueCommit: (size: number) => { committed.push(size); known.push(heard.at(-1)) } })
     conforms(page)
     const root = page.one<HTMLElement>('.splitter')
     const handle = page.one<HTMLElement>('.splitter-handle')
@@ -225,8 +228,11 @@ export const scenarios: Record<string, Scenario> = {
     await driver.act(() => page.key(handle, 'ArrowRight'))
     assert.deepEqual(heard, [45])
     assert.deepEqual(committed, [45])
+    await driver.act(() => page.one('.splitter-pane').dispatchEvent(new page.window.Event('change', { bubbles: true })))
+    assert.deepEqual(committed, [45], 'a field in a pane that says change is not the handle')
     await driver.act(() => page.key(handle, 'End'))
     assert.deepEqual(heard, [45, 80], 'it stops at max')
+    assert.deepEqual(known, [45, 80], 'a size is committed after it has come out as the value')
 
     await driver.act(() => mounted.set({ value: 30 }))
     assert.equal(root.style.getPropertyValue('--splitter-size'), '30%')

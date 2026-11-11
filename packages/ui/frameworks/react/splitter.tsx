@@ -38,7 +38,7 @@ export function Splitter({ start, end, value, defaultValue = 50, onValueChange, 
     on: { change: (event) => { if ((event.target as Element).parentElement === event.currentTarget && (event.target as Element).classList.contains('splitter-handle')) onValueCommit?.(size.current) } },
   })
   return (
-    <div className={`splitter ${className ?? ''}`} style={{ '--splitter-size': `${first}%`, ...style } as CSSProperties} ref={ref} {...root}>
+    <div className={className ? `splitter ${className}` : 'splitter'} style={{ '--splitter-size': `${first}%`, ...style } as CSSProperties} ref={ref} {...root}>
       <div className="splitter-pane">{start}</div>
       <div className="splitter-handle" role="separator" tabIndex={disabled ? -1 : 0} aria-label={label} aria-valuenow={Math.round(first)} aria-valuemin={min} aria-valuemax={max} aria-orientation={stacked ? 'horizontal' : undefined} aria-disabled={disabled || undefined} />
       <div className="splitter-pane">{end}</div>

@@ -32,12 +32,14 @@
 
   let { start, end, value = $bindable(), onValueChange, onValueCommit, min = 0, max = 100, step = 5, stacked, label, disabled, class: className, ...root }: SplitterProps = $props()
   const first = untrack(() => value) ?? 50
-  let size = first
+  // Svelte writes a style again whenever its owner changes it, so it writes the size the behavior holds.
+  let size = $state(first)
   const attach = behavior(splitter, () => ({ step }), {
     value: () => value,
     change: (next) => { value = size = next; onValueChange?.(next) },
-    // The handle says change once a drag ends or a key moved it.
-    on: { change: () => onValueCommit?.(size) },
+    settled: (held) => { size = held },
+    // The handle says change once a drag ends or a key moved it. A field in a pane says change too.
+    on: { change: (event) => { if ((event.target as Element).parentElement === event.currentTarget && (event.target as Element).classList.contains('splitter-handle')) onValueCommit?.(size) } },
   })
 </script>
 
@@ -45,7 +47,7 @@
   @component
   Two panes and the handle between them.
 -->
-<div class={['splitter', className]} style:--splitter-size="{first}%" {@attach attach} {...root}>
+<div class={['splitter', className]} style:--splitter-size="{size}%" {@attach attach} {...root}>
   <div class="splitter-pane">{@render start()}</div>
   <!-- A separator that takes focus is a control: the keys move it. -->
   <!-- svelte-ignore a11y_no_noninteractive_tabindex -->

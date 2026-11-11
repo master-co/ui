@@ -39,5 +39,5 @@ useBehavior(root, tablist, undefined, model)
   <div class="tabs" role="tablist" ref="root" v-bind="$attrs">
     <button v-for="(tab, index) in tabs" :key="tab.value" type="button" class="tabs-item" role="tab" :id="`${id}-tab-${index}`" :data-value="tab.value" :aria-selected="tab.value === first" :aria-controls="`${id}-panel-${index}`" :tabindex="tab.value === first ? 0 : -1" :disabled="tab.disabled">{{ tab.label }}</button>
   </div>
-  <div v-for="(tab, index) in tabs" :key="tab.value" :class="panelClass" role="tabpanel" :id="`${id}-panel-${index}`" :aria-labelledby="`${id}-tab-${index}`" :hidden="tab.value !== first"><slot name="panel" :tab="tab">{{ tab.content }}</slot></div>
+  <div v-for="(tab, index) in tabs" :key="tab.value" :class="panelClass || undefined" role="tabpanel" :id="`${id}-panel-${index}`" :aria-labelledby="`${id}-tab-${index}`" :hidden="tab.value !== first"><slot name="panel" :tab="tab">{{ tab.content }}</slot></div>
 </template>

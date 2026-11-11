@@ -15,7 +15,7 @@ export function Field({ label, hint, error, className, children, ...root }: Fiel
   const id = useId()
   const described = [hint !== undefined && `${id}hint`, error !== undefined && `${id}error`].filter(Boolean).join(' ')
   return (
-    <div className={`field ${className ?? ''}`} {...root}>
+    <div className={className ? `field ${className}` : 'field'} {...root}>
       <label htmlFor={id}>{label}</label>
       {children({ id, 'aria-describedby': described || undefined, 'aria-invalid': error !== undefined && error !== false && error !== null ? true : undefined })}
       {hint !== undefined && <span className="field-hint" id={`${id}hint`}>{hint}</span>}

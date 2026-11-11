@@ -9,6 +9,11 @@ export interface Control<V> {
   value?: () => V | undefined
   /** Takes the new value each time the reader changes it. */
   change?: (value: V) => void
+  /**
+   * Takes the value the behavior holds once one was written to it: when it attaches, and after `value`
+   * was given. A behavior may hold another than it was given, as a splitter does past its limits.
+   */
+  settled?: (value: V) => void
   /** Listeners for events of the root, such as the `change` a behavior dispatches when a code is complete. */
   on?: Record<string, (event: Event) => void>
 }
@@ -43,11 +48,12 @@ export function behavior<E extends HTMLElement, O extends object, V = never>(
       // A function among the options is called through the latest one, so a new one does not attach again.
       const stable = given && Object.fromEntries(Object.entries(given).map(([name, value]) => [
         name,
-        typeof value === 'function' ? (...parameters: unknown[]) => (options!() as Record<string, (...parameters: unknown[]) => unknown>)[name](...parameters) : value,
+        typeof value === 'function' ? (...parameters: unknown[]) => (options!() as Record<string, (...parameters: unknown[]) => unknown>)[name]!(...parameters) : value,
       ])) as O
       const handle = attach(root, stable)
       /** The last value the owner knows: the one it gave, or the one it was told. */
       let kept = handle.value
+      if (kept !== undefined) control.settled?.(kept)
 
       $effect(() => {
         const value = control.value?.()
@@ -55,6 +61,7 @@ export function behavior<E extends HTMLElement, O extends object, V = never>(
         untrack(() => {
           if (!same(handle.value, value)) handle.value = value
           kept = handle.value
+          if (kept !== undefined) control.settled?.(kept)
         })
       })
 

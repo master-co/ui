@@ -31,7 +31,7 @@ export function Otp({ length = 6, value, defaultValue, onValueChange, onComplete
   })
   const [first] = useState(value ?? defaultValue ?? '')
   return (
-    <fieldset className={`otp ${className ?? ''}`} ref={ref} {...root}>
+    <fieldset className={className ? `otp ${className}` : 'otp'} ref={ref} {...root}>
       {Array.from({ length }, (_, index) => (
         <input className="otp-slot" key={index} inputMode={inputMode} pattern={pattern} maxLength={1} autoComplete={index === 0 ? 'one-time-code' : 'off'} aria-label={slotLabel(index)} aria-invalid={invalid || undefined} defaultValue={first[index] ?? ''} />
       ))}
