@@ -1,0 +1,109 @@
+There are two ways to get Master UI into a project: import the package, or copy source into the repository. They are not exclusive. Most projects import the package and own a few things.
+
+| | The package | The registry |
+| --- | --- | --- |
+| What arrives | `@master/ui` in `node_modules`, imported by your stylesheet | Source files copied into `ui/` in your repository |
+| An upstream fix | Arrives when the package is updated | Arrives when you merge it |
+| Who edits it | The library | You |
+| Use it for | Components, by default | A component you have a reason to own, and everything that is markup |
+
+## The package is the default \{#the-package\}
+
+A component from the package keeps following upstream: a fix to a focus ring, a forced-colors outline or a new platform feature reaches the project with an update. Most changes to how a component looks do not need its source. A utility, a token, a public custom property or a theme covers them, and [customization](/guide/customization) lists the conditions under which [owning a component](/guide/customization#own-a-component) is the right step.
+
+## What always comes as source \{#always-source\}
+
+- **Blocks and layouts are markup.** A hero or a dashboard is components and utilities arranged for one page, and the first thing a project does is change it. There is nothing to import. Copy it from the Code view of its page, from `https://ui.master.co/blocks/<slug>.md` or `https://ui.master.co/layouts/<slug>.md`, or from its registry item.
+- **A behavior is a reference script.** It moves ARIA attributes and sets no style. Import it from the package, as in `@master/ui/behaviors/combobox.js`, or take the copy that comes with its component when the keys, the focus or what selecting means should differ. See [behaviors](/guide/behaviors).
+
+## The registry \{#the-registry\}
+
+The registry is a set of JSON files generated from the same source as the package.
+
+| URL | Holds |
+| --- | --- |
+| `https://ui.master.co/r/registry.json` | The index: every item with its files' paths, without their content |
+| `https://ui.master.co/r/<name>.json` | One item, with the content of each file |
+
+Each file follows the shadcn registry-item format. Every item is the universal type, `registry:item`, and every file is a `registry:file` with an explicit `target`, so nothing in the registry assumes React or Tailwind. This is the item for the button, with its file contents left out:
+
+```json name=button.json
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "button",
+  "type": "registry:item",
+  "title": "Button",
+  "description": "A raised control that lifts on hover and sinks when pressed.",
+  "dependencies": ["@master/css"],
+  "registryDependencies": [
+    "https://ui.master.co/r/theme.json",
+    "https://ui.master.co/r/icon.json",
+    "https://ui.master.co/r/spinner.json"
+  ],
+  "files": [
+    { "path": "ui/button.css", "type": "registry:file", "target": "~/ui/button.css", "content": "…" },
+    { "path": "ui/button.json", "type": "registry:file", "target": "~/ui/button.json", "content": "…" }
+  ],
+  "categories": ["Actions"],
+  "docs": "Import ui/button.css after ui/theme.css. Its contract is ui/button.json; markup: https://ui.master.co/components/button.md"
+}
+```
+
+`registryDependencies` names the theme and the contracts the component composes. A component's item also has a `meta` key with its tier, whether it needs a script, its classes, and the tokens and mixins its stylesheet reads.
+
+## Items \{#items\}
+
+| Item | Name | Files |
+| --- | --- | --- |
+| The theme | `theme` | `ui/theme.css` |
+| The Paper theme | `theme-paper` | `ui/themes/paper.css` |
+| A component or a layout class | The name of its contract: `button`, `dialog`, `shell` | `ui/<name>.css` and `ui/<name>.json`; with a behavior, `ui/<behavior>.js` and the helpers it imports, `ui/internal.js` |
+| A block | `block-<slug>`, such as `block-hero` | `ui/blocks/<slug>.html` |
+| A layout | `layout-<slug>`, such as `layout-dashboard` | `ui/layouts/<slug>.html` |
+
+A block's or a layout's file is the markup of the first preview on its page. Its `registryDependencies` are the components that markup uses.
+
+## Take a component with master-ui \{#master-ui\}
+
+The `master-ui` command in the package is the first-party path. It copies from the installed package, so the source matches the version the project already runs.
+
+```bash
+npx master-ui init        # once: ui/index.css, one @import per stylesheet
+npx master-ui own button  # ui/button.css and ui/button.json; the import now points at the copy
+```
+
+It also records what was taken: a copy of each file in `ui/.base/` and a hash in `master-ui.json`. With that record, `master-ui status` says which owned components changed upstream and `master-ui diff button` shows the change, so it can be merged into an edited copy. [Own a component](/guide/customization#own-a-component) walks through it.
+
+`own` takes what has a contract: components and the four layout classes. Blocks and layout markup are copied from their pages or from the registry.
+
+## Use the shadcn CLI \{#shadcn-cli\}
+
+Because the registry is in the shadcn format, the shadcn CLI can read it. Add the registry as a namespace in `components.json`:
+
+```json name=components.json
+{
+  "registries": {
+    "@master": "https://ui.master.co/r/{name}.json"
+  }
+}
+```
+
+Then add an item by name:
+
+```bash
+npx shadcn@latest add @master/button
+```
+
+The files land at their targets, `ui/button.css` and `ui/button.json`. Import the stylesheet after the theme, as the item's `docs` says.
+
+The claim here is limited to this: the registry follows the published schema, so a client that reads that schema can read it. The path Master UI itself provides and is developed against is `master-ui own`. The shadcn CLI also keeps no record of what it copied, so `master-ui status` and `master-ui diff` cannot tell you what changed upstream for a component added this way. For a component you intend to keep in step with the library, use `master-ui own`.
+
+## What stays the same \{#what-stays-the-same\}
+
+Owning a component changes who maintains its stylesheet. It does not change its contract.
+
+- The copy arrives with its contract, `ui/<name>.json`. For this project it replaces the library's: `master-ui check`, `master-ui contract` and agents read the copy.
+- The classes, the element each goes on, the state attributes and the public custom properties are the same on the day the component is taken. Blocks, behaviors and the documentation fit it as before.
+- The copy still reads the theme's tokens and applies its mixins, so it follows the theme, including a theme of your own.
+
+It stays that way as long as the contract is kept true: when the stylesheet gains, renames or loses a class, the contract changes with it. [Contracts](/guide/contracts) describes what a contract holds.

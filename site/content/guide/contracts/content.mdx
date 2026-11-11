@@ -1,0 +1,191 @@
+Every stylesheet in the package has a contract beside it: `button.css` and `button.json`. The contract says what the stylesheet promises, in a form a program can read: its classes, where each one goes, the states it draws, the custom properties it publishes and the smallest correct markup.
+
+It exists so that nothing about a class is written twice. The package's tests, the tables on each component page, `llms.txt` and the Markdown pages, the [registry](/guide/registry) and the checker are all generated from the contract or read it, so they cannot disagree with each other. A test in the package keeps a contract and its stylesheet from drifting apart.
+
+Read one with `npx master-ui contract button`, import it as `@master/ui/components/button.json`, or take all of them from `@master/ui/contracts.json` or `https://ui.master.co/contracts.json`. The schema is `https://ui.master.co/contract.schema.json`.
+
+## What a contract holds \{#keys\}
+
+| Key | Holds |
+| --- | --- |
+| `name`, `title`, `tier`, `category`, `description` | The slug, which is the stylesheet's file name; the name a reader sees; `component` or `layout`; its group; one sentence on what it is |
+| `use` | When to reach for it |
+| `instead` | Neighbors that are the right choice in another situation, each as a `when` and the name of another contract in `use` |
+| `composes` | Other contracts whose classes its markup uses, such as `input` and `listbox` for a combobox. Their stylesheets must be imported too |
+| `script` | `none`, `optional` or `required` |
+| `behavior` | The reference script that drives the pattern |
+| `keyboard` | What the keys do, natively or once the behavior is attached |
+| `platform` | Each platform feature used as an enhancement, with what a browser without it shows |
+| `classes` | Every class the stylesheet defines, and no other |
+| `states` | Each state the stylesheet draws, and the attribute or pseudo-class that marks it |
+| `properties` | The public custom properties |
+| `example` | The smallest correct markup |
+
+`name`, `title`, `tier`, `category`, `description`, `use`, `script`, `classes` and `example` are required. The schema allows no key beyond the ones in this table and `$schema`.
+
+## Classes \{#classes\}
+
+Each class has a `name`, a `kind` and a `description`. The kind says where the class may stand.
+
+| Kind | Where it goes | Example |
+| --- | --- | --- |
+| `root` | By itself. A stylesheet may have several | `btn`, `btn-group`, `dialog` |
+| `part` | Inside its root, which it names in `of` | `dialog-title` of `dialog` |
+| `modifier` | On the same element as its base, which it names in `of` | `btn-primary` of `btn` |
+
+A modifier of a part names the part: `menu-item-danger` is `of` `menu-item`. `of` is a list when a class goes with any one of several. These are three entries from the button's `classes`:
+
+```json name=button.json
+{ "name": "btn", "kind": "root", "description": "The raised base button", "elements": ["button", "a", "summary", "label", "input"] },
+{ "name": "btn-sm", "kind": "modifier", "of": "btn", "exclusive": "size", "description": "32px tall; the default is 38px" },
+{ "name": "btn-square", "kind": "modifier", "of": "btn", "label": true, "description": "A square button for one icon; it needs an accessible name" }
+```
+
+## What the checker enforces \{#constraints\}
+
+The kind already gives the checker two rules: a modifier needs its base, and a part needs its root. Four optional keys on a class turn a rule of the documentation into something `master-ui check` reports. A contract adds one only when the stylesheet or the platform requires it, because a wrong constraint is a false error in someone's project.
+
+| Key | Meaning | Example |
+| --- | --- | --- |
+| `elements` | The class only works on these elements. Left out when any element will do | `dialog` on `["dialog"]` |
+| `attributes` | Attributes the element must carry: `true` for any value, a string for one value, an array for one of several | `switch`: `{ "type": "checkbox", "role": "switch" }` |
+| `label` | The element needs an accessible name | `btn-square`, `dialog-close` |
+| `exclusive` | A group key. Two modifiers with the same key do not share an element | `btn-sm` and `btn-lg` are both `"size"` |
+
+A fifth key loosens a rule. `"anywhere": true` marks a part that may stand outside its root, such as `field-hint`, a part of `field` that may also stand outside one.
+
+## States and properties \{#states-and-properties\}
+
+A state is drawn by the stylesheet and marked in the markup with a native or ARIA attribute. There is never a class for a state. Each entry names the class that carries the mark in `on`, a short `name`, and the `mark` as it is written in markup or CSS.
+
+```json name=button.json
+{ "on": "btn", "name": "pressed", "mark": "aria-pressed=\"true\"", "description": "A quiet toggle that is on stays sunk into a well" }
+```
+
+A mark that begins with a colon, such as `:user-invalid` or `:popover-open`, is a pseudo-class the browser sets; there is nothing to write for it.
+
+`properties` lists the custom properties that are public API: the ones a project may set. Each has a `name` and a `description`, the class that declares or reads it in `on` when that is not the first root, and a `default` when the stylesheet declares one.
+
+```json name=button.json
+{ "name": "--btn-height", "default": "2.375rem", "description": "Minimum block size" }
+```
+
+Any custom property a stylesheet uses and its contract does not list is private. It may be renamed or removed without notice, which is why [customization](/guide/customization#property) stops at the listed ones.
+
+## Script and behavior \{#script\}
+
+`script` says how much of the component depends on JavaScript.
+
+| Value | Meaning |
+| --- | --- |
+| `none` | Every state works without script |
+| `optional` | A script adds a convenience, such as arrow keys in a menu, and the page works without it |
+| `required` | The pattern has no native element, so a script moves its attributes |
+
+`behavior` names the reference script, published as `@master/ui/behaviors/<behavior>.js`. The combobox's contract says `"script": "required"` and `"behavior": "combobox"`:
+
+```js
+import { combobox } from '@master/ui/behaviors/combobox.js'
+
+combobox(document.querySelector('.combobox'))
+```
+
+A behavior moves attributes and sets no style. `keyboard` lists what the keys do once it is attached, or what the native element already does. See [behaviors](/guide/behaviors).
+
+## The example \{#example\}
+
+`example` is the smallest markup that is correct, with real words in it. The package's test runs the checker over every example and expects no diagnostics, so it is safe to copy and safe for an agent to start from.
+
+```html
+<button type="button" class="btn btn-primary">Save changes</button>
+```
+
+## Write a contract for your own component \{#your-own\}
+
+A project adds a component of its own when it has something the library lacks, with a material, a state, a platform behavior or a geometry its pieces share. Write its stylesheet in `@layer components`, with class selectors and tokens, and write its contract beside it in `ui/`. The contract follows the same schema as the library's.
+
+```css name=ui/price-tag.css
+@layer components {
+  .price-tag {
+    --price-tag-size: 1.125rem;
+    display: inline-flex;
+    align-items: baseline;
+    gap: .375rem;
+    color: var(--color-text-strong);
+    font-size: var(--price-tag-size);
+    font-variant-numeric: tabular-nums;
+
+    &.price-tag-sale {
+      color: var(--color-danger);
+    }
+  }
+
+  .price-tag-was {
+    color: var(--color-text-muted);
+    font-size: .75em;
+  }
+}
+```
+
+```json name=ui/price-tag.json
+{
+  "$schema": "https://ui.master.co/contract.schema.json",
+  "name": "price-tag",
+  "title": "Price tag",
+  "tier": "component",
+  "category": "Commerce",
+  "description": "The price of one product, with the price it replaces.",
+  "use": "A price on a product card or in a cart row. Add price-tag-sale and the old price when the product is reduced.",
+  "script": "none",
+  "classes": [
+    { "name": "price-tag", "kind": "root", "description": "The current price, in strong ink and tabular figures" },
+    { "name": "price-tag-sale", "kind": "modifier", "of": "price-tag", "description": "A reduced price, in the danger hue" },
+    { "name": "price-tag-was", "kind": "part", "of": "price-tag", "elements": ["s"], "description": "The price before the reduction, struck through in muted ink" }
+  ],
+  "properties": [
+    { "name": "--price-tag-size", "default": "1.125rem", "description": "Font size of the current price" }
+  ],
+  "example": "<p class=\"price-tag price-tag-sale\">$24 <s class=\"price-tag-was\">$32</s></p>"
+}
+```
+
+From then on the project's component is treated like a library one:
+
+- `npx master-ui list` lists it, and `npx master-ui contract price-tag` prints it. An agent that reads contracts before writing markup finds it the same way.
+- `npx master-ui check` holds markup to it. Here `npx master-ui check cart.html` reports three mistakes:
+
+```html name=cart.html
+<p class="price-tag-sale">$24</p>
+<p class="price-tag">$24 <span class="price-tag-was">$32</span></p>
+<p class="price-tag price-tag-large">$24</p>
+```
+
+```
+cart.html:1:1 error missing-base "price-tag-sale" modifies "price-tag": write class="price-tag price-tag-sale".
+cart.html:2:26 error element "price-tag-was" goes on <s>, not <span>.
+cart.html:3:1 warning unknown-class "price-tag-large" is not a class of price-tag. It has: price-tag, price-tag-sale, price-tag-was.
+
+1 files checked: 2 errors, 1 warnings.
+```
+
+Three details:
+
+- **Where contracts are read from.** Every `.json` file in the project's `ui/` directory that has a `name` and a `classes` array. `master-ui.json` may name another directory in `directory` and more patterns in a `contracts` array.
+- **The schema line.** `"$schema": "https://ui.master.co/contract.schema.json"` lets an editor validate the file as it is written.
+- **A name the library already has.** A project contract with the name of a library contract replaces it. That is how an [owned component](/guide/customization#own-a-component) is described by its copy.
+
+## Diagnostics \{#diagnostics\}
+
+`master-ui check` prints one line per finding: the file, line and column, the severity, a code and a message. Every code is an error, except `unknown-class`, which is a warning unless `--strict` is passed.
+
+| Code | What it means | How to fix it |
+| --- | --- | --- |
+| `unknown-class` | A class starts with a root's name and a dash, and is in no contract | Use one of the classes the message lists. For a class of the project's own, add it to a contract in `ui/` or give it a name outside the component's |
+| `missing-base` | A modifier is on an element without the class it modifies | Add the base beside it: `class="btn btn-primary"` |
+| `outside-root` | A part has no ancestor with its root class | Move it inside the root, or add the root class to the container |
+| `exclusive` | Two modifiers of the same group are on one element, such as two sizes | Keep one |
+| `element` | A class is on an element its contract does not allow | Use the element the message names: `dialog` goes on a dialog element |
+| `attribute` | The element lacks an attribute the class requires, or has another value | Add the attribute the message names, such as `role="switch"` |
+| `label` | A control has no accessible name | Give it text of its own, `aria-label`, `aria-labelledby`, or a label that wraps it or points at it |
+
+The checker reads source, not a rendered page, so it reports only what it can be sure of. A modifier on a framework component's tag, a class that comes from an expression and a part whose root is in another file are left alone.

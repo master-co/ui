@@ -1,0 +1,149 @@
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+
+export const specimen = `<div class="tray max-w(440) mx-auto">
+  <div class="sheet flex flex-col gap-lg p-lg">
+    <div class="flex flex-wrap items-center gap-sm">
+      <button type="button" class="btn btn-primary">Deploy</button>
+      <button type="button" class="btn">Preview</button>
+      <button type="button" class="btn btn-quiet">Cancel</button>
+      <button type="button" class="btn btn-brand">Upgrade</button>
+    </div>
+    <div class="field">
+      <label for="theme-domain">Domain</label>
+      <input class="input" id="theme-domain" value="atlas.dev">
+    </div>
+    <div class="flex flex-wrap items-center gap-lg">
+      <label class="check"><input type="checkbox" class="checkbox" checked> Preview builds</label>
+      <label class="check"><input type="radio" class="radio" name="theme-plan" checked> Team</label>
+      <label class="check"><input type="checkbox" role="switch" class="switch" checked> Alerts</label>
+    </div>
+    <div class="segmented" role="radiogroup" aria-label="Environment">
+      <label class="segmented-item"><input type="radio" class="segmented-input" name="theme-environment" checked>Production</label>
+      <label class="segmented-item"><input type="radio" class="segmented-input" name="theme-environment">Preview</label>
+      <label class="segmented-item"><input type="radio" class="segmented-input" name="theme-environment">Local</label>
+    </div>
+    <input type="range" class="slider" value="60" aria-label="Traffic to the new release">
+    <div class="flex flex-wrap items-center gap-sm">
+      <span class="badge">Draft</span>
+      <span class="badge badge-success badge-dot">Ready</span>
+      <span class="badge badge-ink">New</span>
+    </div>
+    <div class="sheet sheet-inverse p-md text-sm">Ship the release when the checks pass.</div>
+  </div>
+</div>`
+
+A component decides its structure, its states and its geometry. It does not decide a single color, shadow or radius: for each of those it names a token, and the theme gives the token a value. Moonstone and obsidian are one set of values. This page is about writing another.
+
+There are three sizes of change, and each is a different amount of work.
+
+| You want | Change | Where |
+| --- | --- | --- |
+| Your brand color, your radius, your focus color | A few tokens | `@theme` after the import, or a custom property on any element |
+| Another material: flat, bordered, glass | Every token of the material | A theme file, such as the one on this page |
+| One component built differently | Its stylesheet | [Own that component](/guide/customization#own-a-component) |
+
+## Retune tokens \{#retune-tokens\}
+
+Override a token after the import. Every component that reads it follows.
+
+```css name=app.css
+@import '@master/css';
+@import '@master/ui';
+
+@theme {
+  --color-brand: oklch(58% .19 28);
+  --color-brand-ink: oklch(99% .01 28);
+  --radius-control: .5rem;
+}
+```
+
+A token is a custom property, so it also cascades. Set one on an element to retune only what is inside it, without a second build:
+
+```css name=app.css
+.checkout {
+  --color-brand: oklch(55% .15 150);
+  --lift: 0px;
+}
+```
+
+## What a theme decides \{#what-a-theme-decides\}
+
+These are all the decisions. The [theme reference](/guide/theme) gives each token's value and role in Moonstone.
+
+| Decision | Tokens |
+| --- | --- |
+| The tone of each surface | `--color-surface-base`, `-tray`, `-raised`, `-raised-low`, `-inset`, `-inset-hover`, `-floating`, `-chip`, `-inverse`, `-scrim` |
+| How firm each line is | `--color-line-hair`, `-contour`, `-divider`, `-strong`, `-mark` |
+| The inks | `--color-text-strong`, `-body`, `-muted`, `-disabled`, `-inverse`, `--color-focus`, `--color-focus-halo` |
+| Where the light falls | `--color-highlight`, `--color-lip`, `--color-shade-1` to `-5` |
+| Depth | `--shadow-pressed`, `-flat`, `-raised`, `-raised-hover`, `-lifted`, `-floating`, `-overlay` |
+| A face of ink | `--color-surface-inverse-high`, `-low`, `--color-ink-high`, `-low`, their `-hover` forms, `--color-ink-pressed`, `--color-ink-highlight`, `--color-ink-edge`, `--shadow-ink`, `-ink-hover`, `-ink-pressed`, `-ink-mark`, `-ink-well`, `-ink-top`, `--color-surface-tip`, `--shadow-tip` |
+| A thumb | `--color-thumb-high`, `-low`, `--color-thumb-on-high`, `-on-low`, `--shadow-thumb-on-ink` |
+| Hue | `--color-brand`, `-brand-ink`, `-brand-text`, `--color-info`, `-success`, `-warning`, `-danger`, `--color-tone-highlight`, `-tone-highlight-soft` |
+| Pictures and supplied colors | `--color-line-image`, `-image-strong`, `--color-line-on-color`, `--color-highlight-on-color`, `--color-on-image`, `-on-image-shade`, `--color-mark`, `-mark-underline`, `--color-sheen` |
+| Shape | `--radius-chip`, `-control-sm`, `-control`, `-control-lg`, `-surface`, `--corner-shape`, `--corner-scale` |
+| Travel and time | `--lift`, `--duration-press`, `-quick`, `-base`, `--easing-glide` |
+| Type | `--font-weight-control`, and the preset's `--font-sans` and `--font-mono` |
+
+A test in the package fails a component stylesheet that writes a color of its own, so this list stays complete: there is no color a theme cannot reach.
+
+## Paper, a second theme \{#paper\}
+
+Paper is published in `@master/ui/themes/paper.css`. It exists to prove the list above. Moonstone is lit from above; Paper has no light source. Every face is one flat tone, every edge is a ruled hairline, nothing travels, corners are tighter and circular, the neutrals are warm and the brand is green. It changes no component.
+
+```css name=app.css
+@import '@master/css';
+@import '@master/ui';
+@import '@master/ui/themes/paper.css';
+```
+
+The same markup, in each theme:
+
+<ComponentPreview name="moonstone" title="Moonstone" theme bodyClass="p-lg" html={specimen} />
+
+<ComponentPreview name="paper" title="Paper" theme stylesheet="paper" bodyClass="p-lg" html={specimen} />
+
+Read its source as a template. It is a list of tokens, a corner setting, and one recipe.
+
+<ComponentSource name="paper" directory="themes" />
+
+## Recipes \{#recipes\}
+
+A few materials are more than one value: a face with its fall of light, a control with a face for each state. The theme writes these as mixins, and a component applies them by name. A theme file may define a mixin again; the last definition is the one every component gets.
+
+| Mixin | What it draws | Paper |
+| --- | --- | --- |
+| `--surface-sheet` | A raised face | Flat, through `--color-surface-raised-low` |
+| `--surface-ink` | A sheet of ink: an inverse sheet, a sent message | Flat, through the `-inverse-high` and `-low` tokens |
+| `--control-ink`, `-hover`, `-pressed` | The primary button's face and shadow in each state | Flat, through the ink tokens |
+| `--control-tone`, `-hover`, `-pressed` | A hued control, mixed from the control's own `--tone` | Redefined: one flat hue |
+| `--surface-thumb` | The thumb of a switch and a slider | Flat, through the thumb tokens |
+| `--focus-ring` | Keyboard focus | Unchanged |
+| `--on-ink` | What an ink surface tells the inline chips it holds | Unchanged |
+| `--anchored`, `--pop` | Where a popover stands, and how it enters and leaves | Unchanged |
+
+Reach for a token first. Paper redefines only the toned control, because that recipe mixes its face from a hue the control sets on itself, which a token at the root cannot read.
+
+Tokens are custom properties and work at run time, on any element. Mixins are resolved when Master CSS compiles the stylesheet, so a redefined mixin applies to the whole build.
+
+## Without Master CSS \{#without-master-css\}
+
+The package also ships each theme compiled to plain CSS. Link one file and override tokens as ordinary custom properties:
+
+```html
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@master/ui/dist/themes/paper.css">
+<style>
+  :root { --color-brand: oklch(58% .19 28); }
+</style>
+```
+
+`dist/standalone.css` is Moonstone and obsidian. A compiled file cannot take a redefined mixin, so a theme with recipes of its own is built with Master CSS and shipped as its own file.
+
+## Rules for a theme \{#rules\}
+
+- **A theme never selects a component.** It sets tokens and defines mixins. A rule such as `.btn { … }` in a theme is a component override; see [customization](/guide/customization) for where that belongs.
+- **Keep the pairs.** A surface and the ink on it, a line and the surface under it, are chosen together. Check body text on every surface for contrast, in both color schemes.
+- **Keep the edges findable.** If a theme removes light and shade, its lines carry every edge and must be firmer. Paper raises each line by about half.
+- **A shadow token that draws nothing is `0 0 0 0 transparent`, not `none`.** Components compose shadows in lists, and `none` is not valid inside one.
+- **Answer a request for more contrast.** The theme firms its lines and its two quiet inks under `prefers-contrast: more`; a theme that sets its own lines writes that block too, as Paper does. Forced colors and reduced motion are handled by the components and need no theme work.

@@ -1,13 +1,14 @@
 import ComponentPreview from '~/site/components/ComponentPreview.astro'
 import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
 
 A splitter is two panes and the handle between them that sets how they share the space: a file list beside an editor, an editor over a terminal. The panes meet at a hairline. Under the pointer, or with focus, the line takes ink and a small grip appears on it.
 
 A splitter is a component, not a layout, though layouts use it: its handle has a material, states and a keyboard contract. For two panes that need no resizing, see [master-detail](/layouts/master-detail).
 
-The stylesheet draws the splitter and lays it out; a script moves it. The script writes the first pane's size to `--splitter-size` on the container and the same number to the handle's `aria-valuenow`. Nothing else changes hands.
+The stylesheet draws the splitter and lays it out; the `splitter` [behavior](/guide/behaviors) moves it. The behavior writes the first pane's size to `--splitter-size` on the container and the same number to the handle's `aria-valuenow`. Nothing else changes hands.
 
-<ComponentPreview name="default" title="Splitter" bodyClass="p-lg" html={`<div class="splitter sheet overflow-hidden h(240)" style="--splitter-size: 36%">
+<ComponentPreview name="default" title="Splitter" bodyClass="p-lg" behaviors html={`<div class="splitter sheet overflow-hidden h(240)" style="--splitter-size: 36%">
   <div class="splitter-pane p-md text-sm fg-text-body">
     <p class="m(0) fg-text-strong">Files</p>
     <p class="mt-sm m(0)">theme.css</p>
@@ -19,50 +20,40 @@ The stylesheet draws the splitter and lays it out; a script moves it. The script
     <p class="m(0) fg-text-strong">Editor</p>
     <p class="mt-sm m(0)">Drag the line between the panes, or focus it and press the arrow keys.</p>
   </div>
-</div>
-<script>
-(function () {
-  document.querySelectorAll('.splitter-handle').forEach(function (handle) {
-    var root = handle.parentElement
-    var rows = handle.getAttribute('aria-orientation') === 'horizontal'
-    function set(value) {
-      value = Math.max(15, Math.min(85, value))
-      root.style.setProperty('--splitter-size', value + '%')
-      handle.setAttribute('aria-valuenow', Math.round(value))
-    }
-    handle.addEventListener('pointerdown', function (event) {
-      handle.setPointerCapture(event.pointerId)
-      function move(e) {
-        var box = root.getBoundingClientRect()
-        set(rows ? (e.clientY - box.top) / box.height * 100 : (e.clientX - box.left) / box.width * 100)
-      }
-      handle.addEventListener('pointermove', move)
-      handle.addEventListener('pointerup', function () { handle.removeEventListener('pointermove', move) }, { once: true })
-    })
-    handle.addEventListener('keydown', function (event) {
-      var now = Number(handle.getAttribute('aria-valuenow'))
-      var step = { ArrowLeft: -5, ArrowUp: -5, ArrowRight: 5, ArrowDown: 5, Home: -100, End: 100 }[event.key]
-      if (step) { event.preventDefault(); set(now + step) }
-    })
-  })
-})()
-</script>`} caption="Drag the line, or focus it and use the arrow keys, Home and End." />
+</div>`} caption="Drag the line, or focus it and use the arrow keys, Home and End." />
 
-## What the script does \{#script\}
+## The behavior \{#behavior\}
 
-The script in the example is the whole behavior, about twenty lines:
+`splitter` takes the root, the element with the `splitter` class, and returns the function that detaches it. The handle it moves is the `splitter-handle` that is a child of the root, so a pane may hold a splitter of its own.
 
-- On `pointerdown` it captures the pointer on the handle and, while the pointer moves, writes its position inside the container as a percentage.
-- On the arrow keys it moves by a step; <kbd class="kbd">Home</kbd> and <kbd class="kbd">End</kbd> go to the ends.
-- Each change sets `--splitter-size` on the container and `aria-valuenow` on the handle.
+```js name=app.js
+import { splitter } from '@master/ui/behaviors/splitter.js'
 
-The stylesheet keeps the first pane `--splitter-min` away from both ends whatever size is asked for, stops text selection while the handle is held, and switches the layout by the handle's orientation.
+const root = document.querySelector('.splitter')
+splitter(root, { step: 10 })
+
+root.addEventListener('change', (event) => {
+  localStorage.setItem('files-width', event.target.getAttribute('aria-valuenow'))
+})
+```
+
+- **Dragging.** On `pointerdown` it captures the pointer on the handle and, while the pointer moves, writes its place inside the container as a percentage.
+- **The keys.** An arrow of the handle's own axis moves it by a step; <kbd class="kbd">Home</kbd> and <kbd class="kbd">End</kbd> go to the least and the greatest size.
+- **Each change** sets `--splitter-size` on the root and `aria-valuenow` on the handle. The size stays between the handle's `aria-valuemin` and `aria-valuemax`, 0 and 100 when it has none.
+- **Events.** The handle dispatches `input` each time the size changes, and `change` when a drag ends or a key moved it. Both bubble. Read `aria-valuenow` on the handle.
+- **Disabled.** A handle with `aria-disabled="true"` does not move.
+
+| Option | What it sets |
+| --- | --- |
+| `step` | How far an arrow key moves the handle, in percent. 5 by default |
+
+The stylesheet keeps the first pane `--splitter-min` away from both ends whatever size is asked for, stops text selection while the handle is held, and switches the layout by the handle's orientation. Without the behavior the panes keep the share `--splitter-size` gives them and the handle does not move.
 
 ## Stacked panes \{#stacked\}
 
 `aria-orientation` says which way the line runs. A separator is vertical by default, between panes side by side. With `aria-orientation="horizontal"` the panes stack, and the handle becomes a horizontal line; the container reads the attribute, so there is no modifier class to keep in step.
 
-<ComponentPreview name="stacked" title="Stacked panes" bodyClass="p-lg" html={`<div class="splitter sheet overflow-hidden h(280) max-w(420) mx-auto" style="--splitter-size: 60%">
+<ComponentPreview name="stacked" title="Stacked panes" bodyClass="p-lg" behaviors html={`<div class="splitter sheet overflow-hidden h(280) max-w(420) mx-auto" style="--splitter-size: 60%">
   <div class="splitter-pane p-md text-sm fg-text-body">
     <p class="m(0) fg-text-strong">Editor</p>
   </div>
@@ -70,56 +61,26 @@ The stylesheet keeps the first pane `--splitter-min` away from both ends whateve
   <div class="splitter-pane p-md text-sm fg-text-body">
     <p class="m(0) fg-text-strong">Terminal</p>
   </div>
-</div>
-<script>
-(function () {
-  document.querySelectorAll('.splitter-handle').forEach(function (handle) {
-    var root = handle.parentElement
-    var rows = handle.getAttribute('aria-orientation') === 'horizontal'
-    function set(value) {
-      value = Math.max(15, Math.min(85, value))
-      root.style.setProperty('--splitter-size', value + '%')
-      handle.setAttribute('aria-valuenow', Math.round(value))
-    }
-    handle.addEventListener('pointerdown', function (event) {
-      handle.setPointerCapture(event.pointerId)
-      function move(e) {
-        var box = root.getBoundingClientRect()
-        set(rows ? (e.clientY - box.top) / box.height * 100 : (e.clientX - box.left) / box.width * 100)
-      }
-      handle.addEventListener('pointermove', move)
-      handle.addEventListener('pointerup', function () { handle.removeEventListener('pointermove', move) }, { once: true })
-    })
-    handle.addEventListener('keydown', function (event) {
-      var now = Number(handle.getAttribute('aria-valuenow'))
-      var step = { ArrowLeft: -5, ArrowUp: -5, ArrowRight: 5, ArrowDown: 5, Home: -100, End: 100 }[event.key]
-      if (step) { event.preventDefault(); set(now + step) }
-    })
-  })
-})()
-</script>`} />
+</div>`} />
+
+## Keyboard \{#keyboard\}
+
+<ContractTable name="splitter" show="keyboard" />
 
 ## Accessibility \{#accessibility\}
 
 - The handle is a focusable `role="separator"` with a label that names what it resizes, and `aria-valuenow`, `aria-valuemin` and `aria-valuemax` as percentages of the first pane. That makes it a window splitter to assistive technology.
-- The keyboard must do everything the pointer does: arrows to move, Home and End for the ends. The example script covers these.
+- The keyboard must do everything the pointer does: arrows to move, Home and End for the ends. The behavior covers these.
 - The line is one pixel in the layout with a 9px target across it, and 25px on touch screens, where the grip is always shown.
 - A pane scrolls by itself. Give a pane that scrolls a label and `tabindex="0"` when it holds no focusable content, so the keyboard can reach it.
 
 ## Classes \{#classes\}
 
-| Class | Description |
-| --- | --- |
-| `splitter` | The container: first pane, handle, second pane |
-| `splitter-pane` | A pane; scrolls by itself |
-| `splitter-handle` | The `role="separator"` between the panes; horizontal with `aria-orientation="horizontal"` |
+<ContractTable name="splitter" />
 
 ## Custom properties \{#custom-properties\}
 
-| Property | Default | Description |
-| --- | --- | --- |
-| `--splitter-size` | `50%` | The first pane's size; the script writes it |
-| `--splitter-min` | `4rem` | The least either pane keeps |
+<ContractTable name="splitter" show="properties" />
 
 ## Source \{#source\}
 

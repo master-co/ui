@@ -1,0 +1,126 @@
+Master UI uses platform features in two tiers. The first tier is what every stylesheet assumes: without it a component is broken, and nothing is written to catch that. The second tier is enhancements: each one is gated, and a browser without it shows a working component, plainer.
+
+This page names features, not browser versions. A version table goes stale the day it is written, and the feature name is all a reader needs to look one up; see [checking a feature](#checking-a-feature).
+
+## What every stylesheet assumes \{#baseline\}
+
+These are used without a gate and without a fallback. The list is read from the stylesheets, not from a policy: each row is a feature the source uses outside any `@supports` rule.
+
+| Feature | Where it is used |
+| --- | --- |
+| Custom properties | Every token, and every property a contract publishes |
+| Cascade layers (`@layer`) | Every component and layout rule is in the `components` layer and the tokens are in `theme`. It is how a utility wins over a component without `!important` |
+| CSS nesting | Rules are written nested, and the compiled stylesheet keeps the nesting |
+| `light-dark()` | Every color token, so one stylesheet serves both color schemes |
+| `oklch()` | The values of the color tokens |
+| `color-mix()` | Tints, the toned button, glass, the inline chips on an ink surface |
+| `:has()` | A parent that reads a child's state: [input group](/components/input), field, [segmented control](/components/segmented), [rating](/components/rating), [steps](/components/steps), the empty state of a [listbox](/components/listbox) |
+| Container size queries (`@container`) | [Card](/components/card), [dialog](/components/dialog), [data list](/components/data-list), [navbar](/components/navbar), and the [form](/layouts/form) and [shell](/layouts/app-shell) layouts |
+| `subgrid` | [Calendar](/components/calendar), [chart](/components/chart), [data list](/components/data-list) |
+| The individual transform properties (`translate`, `scale`) | The lift of a control, and the entrance of every overlay |
+| `:focus-visible` | The focus ring of every control |
+| `:dir()` | Parts that turn around in right-to-left text, such as a drawer, a breadcrumb separator and a calendar range |
+| Logical properties and `inset` | Spacing and placement that follow the direction of the text |
+| Dynamic viewport units (`dvh`) | The height limit of a [dialog](/components/dialog) and a [command palette](/components/command). The `page` and `shell` layouts write a `vh` value first |
+| The `popover` attribute | [Popover](/components/popover), [menu](/components/menu), [tooltip](/components/tooltip), the list of a [combobox](/components/combobox) |
+| `<dialog>` | [Dialog](/components/dialog), [command palette](/components/command), [toast](/components/toast), a dismissible [banner](/components/banner) |
+
+A browser without one of the CSS features drops the rules that use it. Without cascade layers or nesting that is most of the library; without `light-dark()` it is every color.
+
+## Enhancements \{#enhancements\}
+
+Each feature below is gated in one of two ways. Most are inside an `@supports` rule, such as `@supports (anchor-scope: --segmented-thumb)` or `@supports selector(::scroll-marker)`, written after the rule that draws the fallback. The rest are a single declaration, at-rule or attribute that a browser without the feature ignores, such as `interpolate-size`, `@starting-style` or `closedby`.
+
+The last column is what a browser without the feature shows. It follows the `platform` list of each [contract](/guide/contracts), which is where a coding agent reads it.
+
+### Overlays and placement \{#overlays-and-placement\}
+
+| Feature | Used by | Without it |
+| --- | --- | --- |
+| Invoker commands: `command` and `commandfor` | [Dialog](/components/dialog), [command palette](/components/command) | Call `showModal()` and `close()` from a click handler; the stylesheet is the same |
+| `closedby="any"` | [Dialog](/components/dialog), [command palette](/components/command) | A click on the scrim does nothing; Escape and the close buttons still close it |
+| Interest invokers: `popover="hint"` with `interestfor` | [Tooltip](/components/tooltip), a [popover](/components/popover) used as a preview | The tooltip or the preview does not appear; the control keeps its accessible name and still works as a link or a button |
+| CSS anchor positioning: `position-area`, `position-try-fallbacks` | [Popover](/components/popover), [menu](/components/menu), [tooltip](/components/tooltip), a [listbox](/components/listbox) with the `popover` attribute | The surface opens and closes the same; it appears centered in the viewport, where the browser places any popover |
+| `anchor-scope` and `anchor-size()` | [Combobox](/components/combobox) | The list sits in the flow directly under the field, at its own width |
+| `anchor-scope` with `anchor()`, for one indicator that moves | [Segmented control](/components/segmented), [tabs](/components/tabs), [table of contents](/components/toc) | Each current option draws its own mark, which changes at once and does not glide |
+| `anchor-scope` with `anchor()`, for a rule that starts at the words | [List](/components/list) | The hairline under a row spans the whole row |
+| `@position-try` | [Context menu](/components/menu) | It opens down and to the end of the pointer and does not turn back at the viewport edge |
+| `@starting-style` and `transition-behavior: allow-discrete` | [Dialog](/components/dialog), [popover](/components/popover), [menu](/components/menu), [tooltip](/components/tooltip), [toast](/components/toast), [chart](/components/chart) | An overlay appears and leaves at once, without the fade; the bars of a chart appear at full height |
+
+### Fields \{#fields\}
+
+| Feature | Used by | Without it |
+| --- | --- | --- |
+| `appearance: base-select` | [Select](/components/select) | The select keeps its well and chevron and opens the platform's own option list; `select-option` has no effect |
+| `field-sizing: content` | An `input-auto` textarea in [input](/components/input), [composer](/components/composer), [stepper](/components/stepper) | The textarea keeps its minimum height and the resize handle; the composer keeps three lines and scrolls; the stepper keeps the width of `--stepper-min` |
+| `:user-invalid` | [Input](/components/input) | Native validation draws no state; `aria-invalid="true"` still does |
+| The parts of native fields: `::-webkit-calendar-picker-indicator`, `::-webkit-inner-spin-button`, `::-webkit-search-cancel-button` | [Input](/components/input) | The browser keeps its own marks in date, time, number and search fields |
+| The parts of a native `<meter>` | [Meter](/components/meter) | The browser keeps its own meter, which reports the same value and the same three tones in its own style |
+
+### Disclosure \{#disclosure\}
+
+| Feature | Used by | Without it |
+| --- | --- | --- |
+| `interpolate-size`, with `::details-content` on a `<details>` | [Accordion](/components/accordion), [nav](/components/nav), [expand](/components/expand), [banner](/components/banner) | A panel or a group opens and closes at once; a dismissed banner leaves at once |
+| `::details-content` as a preview of closed text | [Expand](/components/expand) | The text is hidden while closed, as in any `<details>`, and the toggle still opens it |
+| The `name` attribute on `<details>` | [Accordion](/components/accordion) | Rows open and close independently |
+
+### Scrolling \{#scrolling\}
+
+| Feature | Used by | Without it |
+| --- | --- | --- |
+| Scroll-driven animations: `animation-timeline: scroll()` | [Scroll area](/components/scroll-area), `navbar-progress` in [navbar](/components/navbar) | The region scrolls the same and its edges stay clean, with no fade; the progress line is not drawn |
+| Scroll-driven animations: `view-timeline` and `timeline-scope` | [Slider](/components/slider), [range](/components/range), [compare](/components/compare) | The track of a slider or a range stays a plain well and the thumbs still show the value; the [compare behavior](/guide/behaviors) copies the input's value into `--compare-position` |
+| Scroll-driven animations: `animation-timeline: view()` | [Wheel](/components/wheel) | Options are drawn flat, and the one marked `aria-selected="true"` takes the strong ink |
+| `::scroll-button()` and `::scroll-marker` | [Carousel](/components/carousel) | No buttons and no dots: the carousel is a row that swipes, scrolls and snaps |
+| Scroll-state container queries: `container-type: scroll-state` | [Navbar](/components/navbar) | The pane of the bar is always drawn, at the top of the page too |
+| `scroll-target-group` and `:target-current` | [Table of contents](/components/toc) | No link is marked until a script or the server sets `aria-current` on it |
+
+### Drawing \{#drawing\}
+
+| Feature | Used by | Without it |
+| --- | --- | --- |
+| `corner-shape: squircle` | Every component, through `--corner-shape` and `--corner-scale` | Circular corners at the same apparent size |
+| `corner-shape: bevel` | [File](/components/file) | The page keeps four round corners and has no folded flap |
+| Typed `attr()` | The ring of [progress](/components/progress) | The ring does not read `aria-valuenow`: set `--progress-ring-value` in a `style` attribute as well |
+| `sibling-index()` | [Skeleton](/components/skeleton) | Every skeleton in a block starts its band of light at the same moment |
+| `text-wrap: balance` and `text-wrap: pretty` | [Heading](/components/heading) | The text wraps as usual |
+
+## Checking a feature \{#checking-a-feature\}
+
+Every feature on this page is written the way the platform names it. That name is the search term: MDN has a compatibility table on the feature's page, and caniuse has one per feature.
+
+To ask the browser in front of you, give `CSS.supports()` the condition a stylesheet tests:
+
+```js
+CSS.supports('(anchor-scope: --mark)')
+CSS.supports('(appearance: base-select)')
+CSS.supports('selector(::scroll-marker)')
+```
+
+A true answer means the browser parses the declaration. It does not prove the result paints as intended, so look at the component too.
+
+## Preferences and devices \{#preferences-and-devices\}
+
+Support is not only about features. Each stylesheet also answers the queries that describe the reader's device and settings, wherever the component has something to change.
+
+| Query | What changes |
+| --- | --- |
+| `(hover: hover)` | Hover states are written inside it, so they apply only where a pointer can hover. A touch does not leave a control looking hovered |
+| `(pointer: coarse)` | Targets grow to 44px. A button's minimum height becomes `2.75rem`; the label of a checkbox grows around its line without moving what stands near it |
+| `(prefers-reduced-motion: reduce)` | Travel is removed: the lift of a control, the scale and slide of an overlay, the glide of an indicator. Fades stay, so a change is still seen |
+| `(forced-colors: active)` | The browser removes shadows and replaces colors, so edges and states are drawn again as outlines and fills in system colors such as `ButtonText`, `CanvasText` and `Highlight` |
+| `(prefers-contrast: more)` | The theme makes every line a step firmer and brings the muted and disabled inks nearer the text. It is a change of tokens, so every component follows |
+| `(prefers-reduced-transparency: reduce)` | The glass of a [navbar](/components/navbar) and a [tab bar](/components/tabbar) becomes a solid surface, without the blur |
+
+Light and dark are not a query in the components. Every color token resolves with `light-dark()` and follows the `color-scheme` of the page or of one subtree; see the [theme](/guide/theme#color-schemes).
+
+## The standalone stylesheet \{#standalone\}
+
+`@master/ui/standalone.css` is the same source compiled to plain CSS, for a project without Master CSS. [Installation](/guide/installation#without-master-css) shows how to link it.
+
+```css name=app.css
+@import '@master/ui/standalone.css';
+```
+
+Compiling resolves the mixins and writes the tokens as custom properties. It does not lower the CSS: the file declares the same layers, keeps the nesting, `light-dark()` and `oklch()`, and carries the same `@supports` rules. Its requirements and its fallbacks are the ones on this page. The same is true of a compiled theme such as `@master/ui/dist/themes/paper.css`.

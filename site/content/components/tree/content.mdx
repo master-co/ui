@@ -1,5 +1,6 @@
 import ComponentPreview from '~/site/components/ComponentPreview.astro'
 import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
 
 A tree is nested rows for things that contain things: folders, an outline, categories. Without script, a branch is a native `<details>` whose `<summary>` is the row, so it folds and unfolds with the keys the browser already gives it, and find-in-page opens a folded branch that holds a match.
 
@@ -79,11 +80,11 @@ Put [`icon`](/components/icon) on an icon after the chevron's column. It stays q
   </li>
 </ul>`} />
 
-## With the tree pattern \{#with-the-tree-pattern\}
+## The behavior \{#behavior\}
 
-The WAI-ARIA tree pattern gives one tab stop and arrow keys that walk and fold the tree. That needs a script, and the same classes serve it: put `role="tree"` on the list, `role="treeitem"` and `aria-expanded` on each branch's row, and `role="group"` on its `tree-sub`. The chevron then follows `aria-expanded`, a row that says `aria-expanded="false"` hides the `tree-sub` that follows it, and `aria-selected="true"` marks the selected row.
+The WAI-ARIA tree pattern gives one tab stop and arrow keys that walk and fold the tree. That needs a script, the `tree` [behavior](/guide/behaviors), and the same classes serve it: put `role="tree"` on the list, `role="treeitem"` and `aria-expanded` on each branch's row, and `role="group"` on its `tree-sub`. The chevron then follows `aria-expanded`, a row that says `aria-expanded="false"` hides the `tree-sub` that follows it, and `aria-selected="true"` marks the selected row.
 
-<ComponentPreview name="aria" title="Driven by ARIA" background="plain" bodyClass="p-lg" html={`<ul class="tree max-w(260) mx-auto" role="tree" aria-label="Outline">
+<ComponentPreview name="aria" title="Driven by ARIA" background="plain" bodyClass="p-lg" behaviors html={`<ul class="tree max-w(260) mx-auto" role="tree" aria-label="Outline">
   <li role="none">
     <div class="tree-item tree-toggle" role="treeitem" aria-expanded="true" tabindex="0">Introduction</div>
     <ul class="tree-sub" role="group">
@@ -97,34 +98,48 @@ The WAI-ARIA tree pattern gives one tab stop and arrow keys that walk and fold t
       <li role="none"><div class="tree-item" role="treeitem" tabindex="-1">Surfaces</div></li>
     </ul>
   </li>
-</ul>`} />
+</ul>`} caption="Focus the tree and use the arrow keys. Enter, Space or a click opens a branch, or selects a row that is not one." />
+
+`tree` takes the root, the element with the `tree` class, has no options, and returns the function that detaches it.
+
+```js name=app.js
+import { tree } from '@master/ui/behaviors/tree.js'
+
+const root = document.querySelector('.tree')
+tree(root)
+
+root.addEventListener('change', (event) => console.log(event.detail.item))
+```
+
+- **One tab stop.** The behavior keeps one row in the tab order with `tabindex`: the row the markup gave `tabindex="0"`, or the selected or current row, or the first. A row that takes focus becomes the tab stop. Detaching gives every row back the `tabindex` it had.
+- **Walking.** The keys skip rows inside a closed branch, `hidden` rows and disabled ones.
+- **Activation.** A summary, a link and a button keep the activation the browser gives them. A row that has none, `role="treeitem"` on a `div`, is activated by <kbd>Enter</kbd>, <kbd>Space</kbd> and a click: a branch opens or closes, and a leaf becomes the selected row. `aria-selected="true"` moves to it from the row that had it.
+- **The event.** Selecting a row dispatches a bubbling `change` from the root with the row in `detail.item`.
+- **Disabled.** A row with `disabled` or `aria-disabled="true"` does nothing: its link is not followed and its branch stays as it is.
+
+The behavior serves a tree of `<details>` too, as in the first two previews, which run without it. It opens and closes a `tree-group` through `open`, and the tree becomes one tab stop walked with the same keys. `attach()` attaches it to every tree; to keep a tree of `<details>` as the platform has it, import behaviors by name.
 
 ## Tree or nav \{#tree-or-nav\}
 
 A [nav](/components/nav) is a short list of destinations with one level of grouping, and its current row rises as a sheet. A tree is for depth: many levels, dense rows, and a chevron that leads each branch.
 
+## Keyboard \{#keyboard\}
+
+<ContractTable name="tree" show="keyboard" />
+
 ## Accessibility \{#accessibility\}
 
-- With `<details>`, do not add tree roles: the native disclosure is announced correctly as it is, and every row is a tab stop.
+- With `<details>`, do not add tree roles: the native disclosure is announced correctly as it is, and without the behavior every row is a tab stop.
 - Mark the current row with `aria-current="page"`, or `aria-selected="true"` inside the tree pattern.
 - On touch screens a row is 40px.
 
 ## Classes \{#classes\}
 
-| Class | Description |
-| --- | --- |
-| `tree` | The list |
-| `tree-item` | A row |
-| `tree-toggle` | On a branch's row: adds the chevron |
-| `tree-group` | A `<details>` that holds a branch |
-| `tree-sub` | The rows under a branch |
+<ContractTable name="tree" />
 
 ## Custom properties \{#custom-properties\}
 
-| Property | Default | Description |
-| --- | --- | --- |
-| `--tree-item-height` | `1.75rem` | Row height |
-| `--tree-indent` | `1rem` | How far each level is set in |
+<ContractTable name="tree" show="properties" />
 
 ## Source \{#source\}
 

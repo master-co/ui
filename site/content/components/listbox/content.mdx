@@ -1,16 +1,17 @@
 import ComponentPreview from '~/site/components/ComponentPreview.astro'
 import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
 
-A listbox is a list of options to choose from. It is the surface a [combobox](/components/combobox) and a [command palette](/components/command) open, and it can stand in the page on its own. The stylesheet draws every state from ARIA and leaves the behavior to the script that drives it: which option is active, what a key does, when the list opens.
+A listbox is a list of options to choose from. It is the surface a [combobox](/components/combobox) and a [command palette](/components/command) open, and it can stand in the page on its own. The stylesheet draws every state from ARIA, and a script moves the attributes: which option is active, what a key does, what is chosen. For a listbox that stands in the page that script is the `listbox` [behavior](/guide/behaviors); a combobox and a command palette drive their list from their own field.
 
-<ComponentPreview name="default" title="Listbox" bodyClass="p-lg" html={`<div class="sheet sheet-flat max-w(320) mx-auto">
+<ComponentPreview name="default" title="Listbox" bodyClass="p-lg" behaviors html={`<div class="sheet sheet-flat max-w(320) mx-auto">
   <div class="listbox" role="listbox" aria-label="Framework" tabindex="0" aria-activedescendant="fw-astro">
     <div class="listbox-option" role="option" id="fw-astro" aria-selected="true" aria-checked="true">Astro</div>
     <div class="listbox-option" role="option" id="fw-next" aria-checked="false">Next.js</div>
     <div class="listbox-option" role="option" id="fw-svelte" aria-checked="false">SvelteKit</div>
     <div class="listbox-option" role="option" id="fw-nuxt" aria-checked="false" aria-disabled="true">Nuxt</div>
   </div>
-</div>`} />
+</div>`} caption="Click an option, or focus the list, move with the arrow keys and choose with Enter or Space." />
 
 ## Two states, two attributes \{#two-states\}
 
@@ -72,6 +73,39 @@ A script filters by setting the `hidden` attribute on the options that do not ma
   </div>
 </div>`} />
 
+## The behavior \{#behavior\}
+
+`listbox` drives a listbox that stands in the page and holds focus itself, so the listbox has `tabindex="0"`. It takes the element with `role="listbox"`, has no options, and returns the function that detaches it.
+
+```js name=app.js
+import { listbox } from '@master/ui/behaviors/listbox.js'
+
+const list = document.querySelector('.listbox')
+listbox(list)
+
+list.addEventListener('change', () => {
+  const chosen = list.querySelectorAll('[aria-checked="true"]')
+})
+```
+
+- **The active option.** The keys and a click move `aria-selected="true"` to one option, name it in `aria-activedescendant` on the listbox and scroll it into view. Focus never leaves the listbox. An option without an `id` is given one. When focus arrives and no option is active, the chosen option becomes active, or the first one.
+- **Choosing.** <kbd>Enter</kbd>, <kbd>Space</kbd> or a click sets `aria-checked="true"` on the option and `false` on the others.
+- **Events.** The listbox dispatches `input`, then `change`, each time what is chosen changes. Read the options with `aria-checked="true"`.
+- **Skipped.** Hidden options and those with `aria-disabled="true"` are never active and cannot be chosen.
+
+With `aria-multiselectable="true"` on the listbox, an option is checked or unchecked by itself and the others keep their state.
+
+<ComponentPreview name="multiple" title="Several values" bodyClass="p-lg" behaviors html={`<div class="sheet sheet-flat max-w(320) mx-auto">
+  <div class="listbox" role="listbox" aria-label="Notify me about" aria-multiselectable="true" tabindex="0">
+    <div class="listbox-option" role="option" id="notify-deploys" aria-checked="true">Deployments</div>
+    <div class="listbox-option" role="option" id="notify-comments" aria-checked="false">Comments</div>
+    <div class="listbox-option" role="option" id="notify-billing" aria-checked="true">Billing</div>
+    <div class="listbox-option" role="option" id="notify-digest" aria-checked="false" aria-disabled="true">Weekly digest</div>
+  </div>
+</div>`} />
+
+A listbox that a text field controls belongs to that field's behavior, which drives the list from the field. `listbox` leaves alone a listbox named by the `aria-controls` of a `role="combobox"` field, and `attach()` skips one inside a [combobox](/components/combobox) or a [command palette](/components/command). Without a script a listbox is drawn as its attributes say and does not change.
+
 ## Floating \{#floating\}
 
 With the `popover` attribute a listbox is a floating sheet: a 12px corner around 8px rows, placed against its anchor and flipped at the viewport edge, with the same motion in and out as a [menu](/components/menu). Use `popover="manual"` when a text field owns it, so typing does not dismiss it. The [combobox](/components/combobox) shows this.
@@ -82,30 +116,25 @@ With the `popover` attribute a listbox is a floating sheet: a 12px corner around
 - A [menu](/components/menu) holds actions, as native buttons and links.
 - A listbox holds values or results that a script filters, groups or loads: a combobox, a command palette, a multi-select.
 
+## Keyboard \{#keyboard\}
+
+These are the keys of the `listbox` behavior, on a listbox that holds focus. The arrow keys stop at the first and the last option. In a combobox and a command palette the field has the keys of those patterns.
+
+<ContractTable name="listbox" show="keyboard" />
+
 ## Accessibility \{#accessibility\}
 
 - Give the container `role="listbox"` and a label, and each option `role="option"`. A `listbox-group` is `role="group"`, labelled by its caption with `aria-labelledby`.
-- The script moves `aria-selected` and `aria-activedescendant` together and scrolls the active option into view; options keep a scroll margin so it clears the list's edge.
+- The behavior moves `aria-selected` and `aria-activedescendant` together and scrolls the active option into view; options keep a scroll margin so it clears the list's edge.
 - A disabled option has `aria-disabled="true"` and is skipped by the keys.
 
 ## Classes \{#classes\}
 
-| Class | Description |
-| --- | --- |
-| `listbox` | The list; a floating sheet when it has the `popover` attribute |
-| `listbox-option` | An option, on an element with `role="option"` |
-| `listbox-body`, `listbox-description` | A title with a line under it |
-| `listbox-end` | A shortcut or a hint at the end of an option |
-| `listbox-group`, `listbox-label` | A group of options and its caption |
-| `listbox-separator` | A hairline between groups |
-| `listbox-empty` | What the list says when nothing matches |
+<ContractTable name="listbox" />
 
 ## Custom properties \{#custom-properties\}
 
-| Property | Default | Description |
-| --- | --- | --- |
-| `--listbox-inset` | `4px` | Padding around the options |
-| `--listbox-option-radius` | `var(--radius-control-sm)` | Row corner; a floating list's corner is this plus the inset |
+<ContractTable name="listbox" show="properties" />
 
 ## Source \{#source\}
 

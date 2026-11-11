@@ -1,4 +1,4 @@
-Master UI is published as CSS source. Your project's Master CSS integration compiles it together with your own styles, so there is no separate build step or runtime.
+Master UI is published as CSS source. Your project's Master CSS integration compiles it together with your own styles, so there is no runtime and nothing to build twice. A project without Master CSS links [the compiled stylesheet](#without-master-css) instead.
 
 ## Set up Master CSS \{#set-up-master-css\}
 
@@ -34,6 +34,57 @@ Each component is also exported on its own. Import the shared theme first, then 
 @import '@master/ui/components/switch.css';
 ```
 
+## One import per stylesheet \{#one-import-per-stylesheet\}
+
+The package comes with a small command line tool. `init` writes `ui/index.css`, which imports the theme and each stylesheet on a line of its own, and `master-ui.json`, which records what the project owns:
+
+```bash
+npx master-ui init
+```
+
+```css name=app.css
+@import '@master/css';
+@import './ui/index.css';
+```
+
+Delete a line to leave a component out. When a component needs a change its tokens and properties cannot express, `npx master-ui own menu` copies its source into `ui/` and points that one line at the copy. [Customization](/guide/customization) says when that is the right step.
+
+## Behaviors \{#behaviors\}
+
+Most components need no script. A few patterns have no native element (a combobox, a command palette, a calendar), and the package ships the reference script for each:
+
+```js name=app.js
+import { attach } from '@master/ui/behaviors'
+
+attach()
+```
+
+`attach()` finds every such pattern in the document. Import one by name to attach it yourself; see [behaviors](/guide/behaviors).
+
+## Without Master CSS \{#without-master-css\}
+
+The package also ships the theme and every component compiled to plain CSS, for a project on another styling tool, a server-rendered page or a sandbox with no build:
+
+```html
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@master/ui/dist/standalone.css">
+```
+
+```css name=app.css
+@import '@master/ui/standalone.css';
+```
+
+It declares the same layers, `theme, base, defaults, components, utilities`, and the same tokens as custom properties. What it does not bring is the utilities: lay out with your own CSS, and copy a [layout](/layouts) or a [block](/blocks) only after replacing its utility classes. The components assume `box-sizing: border-box`; `@master/ui/base.css` is the small reset the preset uses, if the project has none.
+
+## Check your markup \{#check-your-markup\}
+
+Each stylesheet has a [contract](/guide/contracts): its classes, the element each goes on, and the attributes it needs. `check` reads your templates and reports what breaks one:
+
+```bash
+npx master-ui check
+```
+
+It reads HTML and the templates that look like it: JSX, Svelte, Vue, Astro. Run it in CI, and let a coding agent run it after each change; see [working with AI](/guide/ai).
+
 ## Customize the theme \{#customize-the-theme\}
 
 Override Master UI tokens after the import. Every component that reads a token follows the new value:
@@ -48,4 +99,4 @@ Override Master UI tokens after the import. Every component that reads a token f
 }
 ```
 
-The [theme guide](/guide/theme) describes the materials, every token and how dark mode works.
+The [theme reference](/guide/theme) describes the materials and every token; [a theme of your own](/guide/theming) shows how far tokens go.

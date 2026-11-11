@@ -1,9 +1,10 @@
 import ComponentPreview from '~/site/components/ComponentPreview.astro'
 import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
 
 An OTP field takes a short code, one character to a slot: the six digits from a text message or an authenticator. Each slot is a native input drawn as a small well, the same material as a [text field](/components/input), so it rises to the sheet with an ink contour while it has focus.
 
-<ComponentPreview name="default" title="OTP" background="plain" html={`<fieldset class="otp" aria-label="Verification code">
+<ComponentPreview name="default" title="OTP" background="plain" behaviors html={`<fieldset class="otp" aria-label="Verification code">
   <input class="otp-slot" inputmode="numeric" pattern="[0-9]" maxlength="1" autocomplete="one-time-code" aria-label="Digit 1" value="4">
   <input class="otp-slot" inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="Digit 2" value="2">
   <input class="otp-slot" inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="Digit 3">
@@ -11,31 +12,33 @@ An OTP field takes a short code, one character to a slot: the six digits from a 
   <input class="otp-slot" inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="Digit 4">
   <input class="otp-slot" inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="Digit 5">
   <input class="otp-slot" inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="Digit 6">
-</fieldset>
-<script>
-(function () {
-  var slots = Array.from(document.querySelectorAll('.otp-slot'))
-  slots.forEach(function (slot, index) {
-    slot.addEventListener('input', function () { if (slot.value && slots[index + 1]) slots[index + 1].focus() })
-    slot.addEventListener('keydown', function (event) { if (event.key === 'Backspace' && !slot.value && index) slots[index - 1].focus() })
-    slot.addEventListener('paste', function (event) {
-      event.preventDefault()
-      var text = event.clipboardData.getData('text').replace(/[^0-9]/g, '')
-      slots.slice(index).forEach(function (target, offset) { if (text[offset]) target.value = text[offset] })
-      slots[Math.min(index + text.length, slots.length - 1)].focus()
-    })
-  })
-})()
-</script>`} caption="Type a digit and focus moves on; paste a code into any slot." />
+</fieldset>`} caption="Type a digit and focus moves on. Backspace goes back, and a pasted code spreads over the slots." />
 
-## What a script adds \{#what-a-script-adds\}
+## The behavior \{#behavior\}
 
-Without script every slot is an ordinary input: the reader types a character and presses <kbd>Tab</kbd>. The ten lines in the example make it one field to the hand:
+Without script every slot is an ordinary input: the reader types a character and presses <kbd>Tab</kbd>. The `otp` [behavior](/guide/behaviors) makes the slots one field to the hand. It takes the root, the element with the `otp` class, and returns the function that detaches it.
 
-- After a character, focus moves to the next slot; <kbd>Backspace</kbd> in an empty slot moves back.
-- A pasted code is spread across the slots from where it lands.
+```js name=app.js
+import { otp } from '@master/ui/behaviors/otp.js'
 
-A phone that offers the code from a text message fills one field with all of it. Separate slots cannot take that fill reliably, which is the main reason to prefer [one field](#one-field-is-enough) when codes arrive by message.
+const root = document.querySelector('.otp')
+otp(root)
+
+root.addEventListener('change', (event) => {
+  if (event.detail) verify(event.detail.value)
+})
+```
+
+- **Typing.** After a character, focus moves to the next slot. A character the slot does not allow is refused. A slot that takes focus has its character selected, so typing replaces it.
+- **Going back.** <kbd>Backspace</kbd> clears the slot; in an empty slot it moves to the slot before and clears that one.
+- **Pasting and autofill.** A pasted or autofilled code is spread over the slots: from the first slot when it is a whole code, from the slot it landed in when it is part of one.
+- **Events.** A slot the script writes to dispatches `input`, as it does when typed in. When every slot is filled, the root dispatches a bubbling `change` with the code in `detail.value`. A slot's own `change` bubbles through the root too and has no `detail`, which is why the listener above checks for it.
+
+| Option | What it sets |
+| --- | --- |
+| `pattern` | A regular expression one character must match. By default the `pattern` attribute of the first slot, and a digit when it has none |
+
+Autofill is why the first slot carries `autocomplete="one-time-code"`. A phone that offers the code from a text message fills one field with all of it, and `maxlength="1"` would cut that code to one character before the script saw it. While attached, the behavior removes `maxlength` from the slots and keeps each to one character itself; detaching gives the attribute back. Without the script the attribute stays, and only the first character of an offered code arrives, which is a reason to prefer [one field](#one-field-is-enough) when codes arrive by message.
 
 ## Invalid \{#invalid\}
 
@@ -53,6 +56,10 @@ Mark the slots `aria-invalid="true"` when the code is wrong, and say why under t
 
 Slots are a visual convention, not a requirement. A single [input](/components/input) with `autocomplete="one-time-code"`, `inputmode="numeric"` and `maxlength="6"` takes the same code with no script, pastes naturally and is easier for a screen reader. Use slots when the product's voice calls for them.
 
+## Keyboard \{#keyboard\}
+
+<ContractTable name="otp" show="keyboard" />
+
 ## Accessibility \{#accessibility\}
 
 - Group the slots in a `<fieldset>` with a label, and name each slot, since a slot has no visible label.
@@ -61,18 +68,11 @@ Slots are a visual convention, not a requirement. A single [input](/components/i
 
 ## Classes \{#classes\}
 
-| Class | Description |
-| --- | --- |
-| `otp` | The group |
-| `otp-slot` | One character, on an `<input>` |
-| `otp-separator` | A dash between groups of slots |
+<ContractTable name="otp" />
 
 ## Custom properties \{#custom-properties\}
 
-| Property | Default | Description |
-| --- | --- | --- |
-| `--otp-width` | `2.5rem` | Slot width |
-| `--otp-height` | `2.75rem` | Slot height |
+<ContractTable name="otp" show="properties" />
 
 ## Source \{#source\}
 

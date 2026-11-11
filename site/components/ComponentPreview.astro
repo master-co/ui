@@ -6,7 +6,7 @@ import { demoDocument } from '@master/internal-site/demo/reference/document.ts'
 import PreviewGuard from '~/site/components/PreviewGuard.astro'
 import PreviewSwitch from '~/site/components/PreviewSwitch.astro'
 import { previewHead as head } from '~/site/utils/preview'
-import { uiSource } from '~/site/utils/ui-source'
+import { behaviorsScript, uiSource } from '~/site/utils/ui-source'
 
 interface Props {
   /** A stable id, unique within the page. */
@@ -26,6 +26,13 @@ interface Props {
    * running text, which a pattern only makes harder to read, and `hatch` for a specimen about empty room.
    */
   background?: 'dots' | 'hatch' | 'plain'
+  /** A theme in `@master/ui/themes`, compiled after the library, for examples about theming. */
+  stylesheet?: string
+  /**
+   * Attach the package's behaviors to the preview, for a pattern that needs a script. The preview runs the
+   * published scripts, and the Code view ends with the two lines a reader writes to do the same.
+   */
+  behaviors?: boolean
 }
 
 /**
@@ -33,10 +40,12 @@ interface Props {
  * and the markup a reader copies, behind a second view of the same tray: Preview, the default, or Code.
  * Previews follow the site theme; light and dark come from the same CSS.
  */
-const { name, title, html, caption = '', bodyClass = 'flex flex-wrap items-center justify-center gap-md p-lg', theme = false, responsive, height, background = 'dots' } = Astro.props
+const { name, title, html, caption = '', bodyClass = 'flex flex-wrap items-center justify-center gap-md p-lg', theme = false, responsive, height, background = 'dots', stylesheet, behaviors = false } = Astro.props
 const views = [['preview', 'Preview'], ['code', 'Code']] as const
-const section = { page: 'components', id: name, title, html: [html], css: uiSource(), classes: [], classLists: [], highlighted: [] }
-const document = demoDocument(section as Parameters<typeof demoDocument>[0], { html, caption, bodyClass, head } as Parameters<typeof demoDocument>[1])
+const running = behaviors ? `${html}\n<script>${behaviorsScript()};MasterUI.attach()</script>` : html
+const source = behaviors ? `${html}\n<script type="module">\n  import { attach } from '@master/ui/behaviors'\n\n  attach()\n</script>` : html
+const section = { page: 'components', id: name, title, html: [running], css: uiSource(stylesheet), classes: [], classLists: [], highlighted: [] }
+const document = demoDocument(section as Parameters<typeof demoDocument>[0], { html: running, caption, bodyClass, head } as Parameters<typeof demoDocument>[1])
 ---
 
 <PreviewGuard />
@@ -44,6 +53,6 @@ const document = demoDocument(section as Parameters<typeof demoDocument>[0], { h
   <Fragment slot="controls">
     <PreviewSwitch name={`preview-view-${name}`} label="View" kind="view" options={views} value="preview" />
   </Fragment>
-  <Fragment slot="source"><Code lang="html" beautify code={html} /></Fragment>
+  <Fragment slot="source"><Code lang="html" beautify code={source} /></Fragment>
   <DemoViewport client:idle={{ timeout: 500 }} title={title} document={document} theme={theme} responsive={responsive} height={height} sizing="content" />
 </Demo>

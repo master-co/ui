@@ -1,5 +1,6 @@
 import ComponentPreview from '~/site/components/ComponentPreview.astro'
 import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
 
 A menu is a popover that holds a list of actions. Add the `popover` attribute and `.menu` to a container, fill it with `menu-item` buttons and links, and point a button at it with `popovertarget`. The browser opens and closes it; CSS anchor positioning places it against the button and flips it at the viewport edge.
 
@@ -108,32 +109,72 @@ An item can open another menu. Give the item `popovertarget` and `aria-haspopup=
 
 A submenu opens on a click, which works the same for a pointer, a finger and the keys. Opening it on hover as well is a script's choice.
 
+## The behavior \{#behavior\}
+
+Without script a menu is complete: the browser opens and closes it, <kbd>Tab</kbd> moves through the items and <kbd>Esc</kbd> returns focus to the button. The `menu` [behavior](/guide/behaviors) is optional. It adds the keys of a menu, for an application whose readers expect the arrows.
+
+<ComponentPreview name="keys" title="With the behavior" bodyClass="flex items-start justify-center p-lg min-h(320)" behaviors html={`<button type="button" class="btn" popovertarget="edit-menu" aria-haspopup="menu">Edit</button>
+
+<div id="edit-menu" popover class="menu" role="menu" aria-label="Edit">
+  <button type="button" class="menu-item" role="menuitem" popovertarget="edit-menu" popovertargetaction="hide">Undo<span class="menu-shortcut">⌘Z</span></button>
+  <button type="button" class="menu-item" role="menuitem" popovertarget="edit-menu" popovertargetaction="hide">Redo<span class="menu-shortcut">⇧⌘Z</span></button>
+  <button type="button" class="menu-item" role="menuitem" disabled>Paste</button>
+  <hr class="menu-separator">
+  <button type="button" class="menu-item" role="menuitem" popovertarget="share-menu" aria-haspopup="menu">Share</button>
+  <div id="share-menu" popover class="menu menu-sub" role="menu" aria-label="Share">
+    <button type="button" class="menu-item" role="menuitem" popovertarget="edit-menu" popovertargetaction="hide">Copy link</button>
+    <button type="button" class="menu-item" role="menuitem" popovertarget="edit-menu" popovertargetaction="hide">Send by email</button>
+  </div>
+  <hr class="menu-separator">
+  <button type="button" class="menu-item" role="menuitem" popovertarget="edit-menu" popovertargetaction="hide">Select all<span class="menu-shortcut">⌘A</span></button>
+</div>`} caption="Open the menu and use the arrow keys, Home, End or a letter. The right arrow on Share opens its submenu and the left arrow closes it." />
+
+`menu` takes the element with the `menu` class and the `popover` attribute, has no options, and returns the function that detaches it. A submenu is a menu: attach the behavior to it too, as `attach()` does.
+
+```js name=app.js
+import { menu } from '@master/ui/behaviors/menu.js'
+
+for (const element of document.querySelectorAll('.menu')) menu(element)
+```
+
+- **Opening.** When the menu opens, focus moves to its first item.
+- **Moving.** The arrow keys, <kbd>Home</kbd>, <kbd>End</kbd> and typed letters move focus through the items, skipping hidden and disabled ones. <kbd>Tab</kbd> closes the menu.
+- **Submenus.** On an item with `aria-haspopup="menu"` that a `menu-sub` follows, the arrow that points into the submenu opens it, and the opposite arrow closes it and returns to the item. The two change places in a right-to-left menu.
+- **Items stay native.** A button, a link, and the checkbox or radio of a label item run with <kbd>Enter</kbd> and <kbd>Space</kbd> as they always do. The behavior sets no state and dispatches no event: listen for `click` on an item and `change` on a `menu-input`.
+- **Roles.** The behavior adds none. Write `role="menu"` on the menu and `role="menuitem"` on its items together with it, as the preview does.
+
 ## Context menu \{#context-menu\}
 
-`menu-context` opens a menu at the pointer instead of against a button. The platform has no declarative way to open a popover from a right click, so this takes three lines of script: on `contextmenu`, write the pointer's position into `--menu-x` and `--menu-y` and call `showPopover()`. The stylesheet does the rest. The menu opens down and to the end of that point, and `@position-try` turns it toward the middle when it would cross an edge of the viewport, with no measuring.
+`menu-context` opens a menu at the pointer instead of against a button. The platform has no declarative way to open a popover from a right click, so the menu behavior exports `contextMenu(target, menu)` for it. On `contextmenu`, which a right click and a long press send, it prevents the browser's own menu, writes the pointer's position into `--menu-x` and `--menu-y` and calls `showPopover()`. The stylesheet does the rest. The menu opens down and to the end of that point, and `@position-try` turns it toward the middle when it would cross an edge of the viewport, with no measuring.
 
-<ComponentPreview name="context" title="Context menu" bodyClass="p-lg min-h(300)" html={`<div class="well flex items-center justify-center h(200) text-sm fg-text-muted" id="canvas" tabindex="0">Right-click, or press the menu key</div>
+<ComponentPreview name="context" title="Context menu" bodyClass="p-lg min-h(300)" behaviors html={`<div class="well flex items-center justify-center h(200) text-sm fg-text-muted" id="canvas" tabindex="0">Right-click or long-press here, or focus it and press Shift F10</div>
 
-<div id="canvas-menu" popover class="menu menu-context">
-  <button type="button" class="menu-item" popovertarget="canvas-menu" popovertargetaction="hide">Copy<span class="menu-shortcut">⌘C</span></button>
-  <button type="button" class="menu-item" popovertarget="canvas-menu" popovertargetaction="hide">Paste<span class="menu-shortcut">⌘V</span></button>
-  <button type="button" class="menu-item" popovertarget="canvas-menu" popovertargetaction="hide">Duplicate</button>
+<div id="canvas-menu" popover class="menu menu-context" role="menu" aria-label="Canvas">
+  <button type="button" class="menu-item" role="menuitem" popovertarget="canvas-menu" popovertargetaction="hide">Copy<span class="menu-shortcut">⌘C</span></button>
+  <button type="button" class="menu-item" role="menuitem" popovertarget="canvas-menu" popovertargetaction="hide">Paste<span class="menu-shortcut">⌘V</span></button>
+  <button type="button" class="menu-item" role="menuitem" popovertarget="canvas-menu" popovertargetaction="hide">Duplicate</button>
   <hr class="menu-separator">
-  <button type="button" class="menu-item menu-item-danger" popovertarget="canvas-menu" popovertargetaction="hide">Delete</button>
+  <button type="button" class="menu-item menu-item-danger" role="menuitem" popovertarget="canvas-menu" popovertargetaction="hide">Delete</button>
 </div>
 <script>
-document.getElementById('canvas').addEventListener('contextmenu', function (event) {
-  event.preventDefault()
-  var menu = document.getElementById('canvas-menu')
-  var box = this.getBoundingClientRect()
-  menu.style.setProperty('--menu-x', (event.clientX || box.left + 16) + 'px')
-  menu.style.setProperty('--menu-y', (event.clientY || box.top + 16) + 'px')
-  menu.hidePopover()
-  menu.showPopover()
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.contextMenu(document.getElementById('canvas'), document.getElementById('canvas-menu'))
 })
 </script>`} />
 
-The `contextmenu` event also fires for the keyboard's menu key and for a long press on a touch screen, so one listener covers all three. When the event has no pointer position, as from the keyboard, the example falls back to the element's corner.
+A context menu belongs to a target that only the page knows, so `attach()` does not attach one. The preview calls `contextMenu` itself; `MasterUI` is the bundle a preview loads. In a project, import both functions: `contextMenu` opens the menu, and `menu` gives it the keys inside, which `attach()` did in the preview.
+
+```js name=app.js
+import { contextMenu, menu } from '@master/ui/behaviors/menu.js'
+
+const target = document.getElementById('canvas')
+const list = document.getElementById('canvas-menu')
+
+contextMenu(target, list)
+menu(list)
+```
+
+The ContextMenu key and <kbd>Shift</kbd> <kbd>F10</kbd> open the menu at the middle of the target. The target must be focusable to hear them, so it has `tabindex="0"`. Not every browser sends `contextmenu` for these keys, so the behavior listens for the keys as well. `contextMenu` returns the function that detaches it; calling it again for the same target replaces the first call.
 
 ## Menubar \{#menubar\}
 
@@ -158,34 +199,23 @@ A row of menus is a [toolbar](/components/toolbar) of quiet buttons, each with i
   </div>
 </div>`} />
 
+## Keyboard \{#keyboard\}
+
+<ContractTable name="menu" show="keyboard" />
+
 ## Accessibility \{#accessibility\}
 
 - Without script, a menu is a popover of buttons and links: <kbd>Tab</kbd> moves through the items, <kbd>Esc</kbd> closes it and focus returns to the button. That is complete and correct as it stands, so do not add `role="menu"`.
-- `role="menu"` and `role="menuitem"` promise arrow-key navigation. Add them only together with a script that provides it; the framework bindings will.
+- `role="menu"` and `role="menuitem"` promise arrow-key navigation. Add them only together with the `menu` behavior, or with a script of your own that provides the same keys.
 - Give an icon-only button an accessible name with `aria-label`.
 
 ## Classes \{#classes\}
 
-| Class | Description |
-| --- | --- |
-| `menu` | The floating list, on an element with the `popover` attribute |
-| `menu-item` | An action: a `button`, an `a`, or a `label` around a `menu-input` |
-| `menu-item-danger` | A destructive action |
-| `menu-input` | The checkbox or radio inside a label item |
-| `menu-shortcut` | A shortcut at the end of an item |
-| `menu-label`, `menu-separator` | A group caption and a hairline between groups |
-| `menu-end`, `menu-top` | Line up with the button's end edge; open above it |
-| `menu-sub` | A submenu, beside the item that opens it |
-| `menu-context` | Opens at `--menu-x` and `--menu-y` |
+<ContractTable name="menu" />
 
 ## Custom properties \{#custom-properties\}
 
-| Property | Default | Description |
-| --- | --- | --- |
-| `--menu-inset` | `4px` | Padding around the items |
-| `--menu-item-radius` | `var(--radius-control-sm)` | Row corner; the menu's corner is this plus the inset |
-| `--anchored-gap` | `6px` | Distance from the button |
-| `--menu-x`, `--menu-y` | `0px` | Where a context menu opens, set by script |
+<ContractTable name="menu" show="properties" />
 
 ## Source \{#source\}
 

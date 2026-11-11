@@ -1,0 +1,86 @@
+---
+import '@master/internal-site/styles/system/table.css'
+import InlineCode from '@master/internal-site/components/InlineCode.astro'
+import { contract } from '~/site/utils/ui-source'
+
+interface Props {
+  /** The stylesheet's name, such as `button`. */
+  name: string
+  /** Which part of the contract to show. */
+  show?: 'classes' | 'properties' | 'states' | 'keyboard'
+  /** Where it is published: `@master/ui/components` by default, or `layouts` for a layout class. */
+  directory?: 'components' | 'layouts'
+}
+
+/**
+ * A table written from the component's contract, the JSON file beside its stylesheet. The page does not
+ * repeat what the contract says, so a class or a property is described once and the two cannot drift.
+ * The wrapper, its stylesheet and the inline code are the ones a Markdown table gets, so both kinds read as one;
+ * the stylesheet is imported here because a page whose only tables come from a contract would not load it.
+ */
+const { name, show = 'classes', directory = 'components' } = Astro.props
+const subject = contract(name, directory)
+const base = (entry: { of?: string | string[] }) => entry.of === undefined ? [] : Array.isArray(entry.of) ? entry.of : [entry.of]
+---
+
+{show === 'classes' && (
+  <div class="ui-table" role="region" aria-label={`${subject.title}: ${show}`} tabindex="0"><table>
+    <thead><tr><th>Class</th><th>Description</th></tr></thead>
+    <tbody>
+      {subject.classes.map(entry => (
+        <tr>
+          <td><InlineCode code={entry.name} /></td>
+          <td>
+            {entry.description}
+            {entry.kind === 'modifier' && base(entry).length > 0 && <>. With {base(entry).map((owner, at) => <>{at > 0 && ' or '}<InlineCode code={owner} /></>)}</>}
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  </table></div>
+)}
+
+{show === 'properties' && (
+  <div class="ui-table" role="region" aria-label={`${subject.title}: ${show}`} tabindex="0"><table>
+    <thead><tr><th>Property</th><th>Default</th><th>Description</th></tr></thead>
+    <tbody>
+      {(subject.properties ?? []).map(property => (
+        <tr>
+          <td><InlineCode code={property.name} /></td>
+          <td>{property.default ? <InlineCode code={property.default} /> : ''}</td>
+          <td>{property.description}{property.on && <>. On <InlineCode code={property.on} /></>}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table></div>
+)}
+
+{show === 'states' && (
+  <div class="ui-table" role="region" aria-label={`${subject.title}: ${show}`} tabindex="0"><table>
+    <thead><tr><th>State</th><th>Mark it with</th><th>On</th><th>Description</th></tr></thead>
+    <tbody>
+      {(subject.states ?? []).map(state => (
+        <tr>
+          <td>{state.name}</td>
+          <td><InlineCode code={state.mark} /></td>
+          <td><InlineCode code={state.on} /></td>
+          <td>{state.description ?? ''}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table></div>
+)}
+
+{show === 'keyboard' && (
+  <div class="ui-table" role="region" aria-label={`${subject.title}: ${show}`} tabindex="0"><table>
+    <thead><tr><th>Keys</th><th>Action</th></tr></thead>
+    <tbody>
+      {(subject.keyboard ?? []).map(item => (
+        <tr>
+          <td>{item.keys}</td>
+          <td>{item.action}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table></div>
+)}

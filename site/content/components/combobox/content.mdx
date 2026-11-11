@@ -1,10 +1,11 @@
 import ComponentPreview from '~/site/components/ComponentPreview.astro'
 import ComponentSource from '~/site/components/ComponentSource.astro'
 import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
 
-A combobox is a text field that opens a [listbox](/components/listbox) of matches: a select you can type into. It is made of parts you already have, an [input group](/components/input#input-group) and a floating listbox, inside a `combobox` wrapper that ties the two together. The stylesheet places and draws it; filtering and the keys belong to a script.
+A combobox is a text field that opens a [listbox](/components/listbox) of matches: a select you can type into. It is made of parts you already have, an [input group](/components/input#input-group) and a floating listbox, inside a `combobox` wrapper that ties the two together. The stylesheet places and draws it; the `combobox` [behavior](/guide/behaviors) filters the options, moves through them and writes the chosen one into the field.
 
-<ComponentPreview name="default" title="Combobox" background="plain" bodyClass="p-lg min-h(320)" html={`<div class="field max-w(320) mx-auto">
+<ComponentPreview name="default" title="Combobox" background="plain" bodyClass="p-lg min-h(320)" behaviors html={`<div class="field max-w(320) mx-auto">
   <label for="region">Region</label>
   <div class="combobox">
     <div class="input-group">
@@ -21,51 +22,7 @@ A combobox is a text field that opens a [listbox](/components/listbox) of matche
       <div class="listbox-empty">No regions match.</div>
     </div>
   </div>
-</div>
-<script>
-(function () {
-  var input = document.getElementById('region')
-  var list = document.getElementById('region-list')
-  var toggle = input.parentNode.querySelector('.combobox-toggle')
-  var options = Array.from(list.querySelectorAll('[role=option]'))
-  var active = -1
-  function shown() { return options.filter(function (o) { return !o.hidden && o.getAttribute('aria-disabled') !== 'true' }) }
-  function move(to) {
-    var rows = shown()
-    options.forEach(function (o) { o.removeAttribute('aria-selected') })
-    active = rows.length ? (to + rows.length) % rows.length : -1
-    if (active < 0) return input.removeAttribute('aria-activedescendant')
-    rows[active].setAttribute('aria-selected', 'true')
-    rows[active].scrollIntoView({ block: 'nearest' })
-    input.setAttribute('aria-activedescendant', rows[active].id)
-  }
-  function open() { if (!list.matches(':popover-open')) list.showPopover(); input.setAttribute('aria-expanded', 'true') }
-  function close() { if (list.matches(':popover-open')) list.hidePopover(); input.setAttribute('aria-expanded', 'false') }
-  function choose(option) {
-    input.value = option.textContent.trim()
-    options.forEach(function (o) { o.setAttribute('aria-checked', String(o === option)) })
-    close()
-  }
-  input.addEventListener('input', function () {
-    var query = input.value.trim().toLowerCase()
-    options.forEach(function (o) { o.hidden = o.textContent.toLowerCase().indexOf(query) < 0 })
-    open(); move(0)
-  })
-  input.addEventListener('keydown', function (event) {
-    if (event.key === 'ArrowDown') { event.preventDefault(); open(); move(active + 1) }
-    else if (event.key === 'ArrowUp') { event.preventDefault(); open(); move(active - 1) }
-    else if (event.key === 'Enter' && active > -1) { event.preventDefault(); choose(shown()[active]) }
-    else if (event.key === 'Escape') close()
-  })
-  input.addEventListener('click', open)
-  input.addEventListener('blur', function () { setTimeout(close, 120) })
-  toggle.addEventListener('click', function () { list.matches(':popover-open') ? close() : open(); input.focus() })
-  list.addEventListener('pointerdown', function (event) {
-    var option = event.target.closest('[role=option]')
-    if (option && option.getAttribute('aria-disabled') !== 'true') choose(option)
-  })
-})()
-</script>`} caption="Type to filter, move with the arrow keys and choose with Enter. The script in this example is the whole behavior." />
+</div>`} caption="Type to filter, move with the arrow keys and choose with Enter or a click." />
 
 ## What the stylesheet does \{#what-the-stylesheet-does\}
 
@@ -76,20 +33,35 @@ A combobox is a text field that opens a [listbox](/components/listbox) of matche
 
 In a browser without anchor positioning the listbox still opens, centered in the viewport as any popover is.
 
-## What the script does \{#what-the-script-does\}
+## The behavior \{#behavior\}
 
-The example above is about forty lines and is the complete pattern:
+`combobox` takes the root, the element with the `combobox` class, and returns the function that detaches it. It has no options. It finds the field by `role="combobox"` and the list by `role="listbox"`.
 
-1. On input, set `hidden` on the options that do not match, open the list and make the first match active.
-2. On the arrow keys, move `aria-selected` and point `aria-activedescendant` at it.
-3. On <kbd>Enter</kbd> or a click, write the option's text into the field, mark it `aria-checked="true"` and close.
-4. Keep `aria-expanded` in step with the popover.
+```js name=app.js
+import { combobox } from '@master/ui/behaviors/combobox.js'
 
-The listbox is `popover="manual"`, so typing and clicking in the field do not dismiss it; the script closes it on blur and <kbd>Esc</kbd>.
+const detach = combobox(document.querySelector('.combobox'))
+```
+
+- **Typing** sets `hidden` on the options whose text does not hold what is typed, whatever its case, opens the list and makes the first match the active option.
+- **The active option** has `aria-selected="true"` and is named by `aria-activedescendant` on the field. Focus stays in the field.
+- **Choosing**, with <kbd>Enter</kbd> or the pointer, writes the option's text into the field, without its `listbox-description` and `listbox-end`, marks the option `aria-checked="true"` and the others `false`, and closes the list. Typing over a chosen value takes its check away.
+- **Opening and closing.** The listbox is `popover="manual"`, so typing and clicking in the field do not dismiss it. The behavior opens it on a click in the field, on the toggle and on the arrow keys, closes it on <kbd>Esc</kbd> and when focus leaves the combobox, and keeps `aria-expanded` in step.
+- **Events.** The field dispatches `input`, then `change`, when an option is chosen, as it does for typing. The value is the field's `value`.
+
+Disabled and hidden options are skipped. While an input method composes, <kbd>Enter</kbd> and the arrows belong to it.
+
+Without the behavior the field is a text input: the reader can type a value, and the list does not open.
 
 ## Choosing a control \{#choosing-a-control\}
 
 For up to a dozen plain options, a [select](/components/select) does this with no script and the platform's own type-ahead. Reach for a combobox when the list is long enough to search, loads as the reader types, or has rich rows.
+
+## Keyboard \{#keyboard\}
+
+The keys are those of the behavior. With the list closed, and with <kbd>Shift</kbd> held, <kbd>Home</kbd> and <kbd>End</kbd> move the caret as in any field. <kbd>Enter</kbd> without an active option is left alone, so it still submits a form.
+
+<ContractTable name="combobox" show="keyboard" />
 
 ## Accessibility \{#accessibility\}
 
@@ -100,10 +72,7 @@ For up to a dozen plain options, a [select](/components/select) does this with n
 
 ## Classes \{#classes\}
 
-| Class | Description |
-| --- | --- |
-| `combobox` | The wrapper that anchors the listbox to the field |
-| `combobox-toggle` | A chevron button at the field's end |
+<ContractTable name="combobox" />
 
 It is used with [`input-group`](/components/input#input-group), `input-group-field` and a [`listbox`](/components/listbox) that has the `popover` attribute.
 

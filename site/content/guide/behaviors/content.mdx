@@ -1,0 +1,204 @@
+Most components need no script: the element they style already has the behavior. A few patterns have no native element, such as a combobox, a calendar grid or a splitter. For those the stylesheet still draws every state, from ARIA and native attributes, and a behavior is the reference script that moves those attributes.
+
+## What a behavior is \{#what-a-behavior-is\}
+
+A behavior is one file with one function, named after the pattern. It takes the root element and returns a function that removes everything it added. It is a plain ES module with no dependency, no framework and no build step.
+
+| A behavior does | A behavior never does |
+| --- | --- |
+| Set and remove ARIA and native attributes: `aria-selected`, `aria-checked`, `aria-expanded`, `aria-activedescendant`, `aria-valuenow`, `hidden`, `tabindex`, `open`, a field's value | Set a style, a class for a state, a size or a position |
+| Move focus, and call the platform: `showPopover()`, `showModal()`, `stepUp()`, `scrollIntoView()` | Reimplement the platform: opening a popover or a dialog, light dismiss, the focus trap and Escape of a modal |
+| Pass what only an event knows through a custom property the contract publishes: `--menu-x`, `--splitter-size` | Place the element or apply limits. The stylesheet reads the property and does both |
+| Create the rows a pattern repeats when they are data, such as the weeks of a month, with the contract's classes | Read or write anything outside the contract: it finds parts by the contract's classes and roles |
+
+Because the script only moves attributes, the same stylesheet works with any script that moves them the same way: this one, a framework component, or code of your own.
+
+## The behaviors \{#the-behaviors\}
+
+Each is imported from `@master/ui/behaviors/<name>.js`. The last column is the `script` field of the [contract](/guide/contracts): `required` means the pattern does not work without a script, `optional` means the script adds to markup that already works.
+
+| Pattern | Import | What the script does | Script |
+| --- | --- | --- | --- |
+| [Calendar](/components/calendar) | `calendar` | Writes the weeks of the shown month, marks today, the chosen day or range and the days that cannot be chosen, and moves through the grid | Required |
+| [Combobox](/components/combobox) | `combobox` | Hides the options that do not match what is typed, moves the active option, opens and closes the list, and writes the chosen option into the field | Required |
+| [Command palette](/components/command) | `command` | Filters the commands, moves the active option, clicks it on Enter and closes the dialog; opens it from anywhere with a shortcut | Required |
+| [Compare](/components/compare) | `compare` | Copies the range input's value into `--compare-position` where the browser has no scroll-driven animations; changes nothing where it has | Required |
+| [Listbox](/components/listbox) | `listbox` | Moves the active option with the arrow keys and typed letters, and checks the chosen option, or several in a multiselectable list | Required |
+| [Menu](/components/menu) | `menu`, `contextMenu` | Moves focus through the items with the arrow keys and typed letters, opens a submenu with the arrow that points into it; `contextMenu` opens a menu at the pointer | Optional |
+| [OTP](/components/otp) | `otp` | Moves focus from slot to slot, and spreads a pasted or autofilled code over the slots | Required |
+| [Splitter](/components/splitter) | `splitter` | Writes the first pane's size to `--splitter-size` and `aria-valuenow` as the handle is dragged or moved with the keys | Required |
+| [Stepper](/components/stepper) | `stepper` | Makes the two buttons call `stepDown()` and `stepUp()` on the number field, and disables the one whose limit is reached | Required |
+| [Tree](/components/tree) | `tree` | Makes the tree one tab stop, walked and folded with the arrow keys | Optional |
+| [Wheel](/components/wheel) | `wheel` | Moves `aria-selected` to the option that rests under the mark, and gives a focused column the keys of a listbox | Required |
+
+## Attach one \{#attach-one\}
+
+Write the markup of the contract, then call the behavior with the root element, the one that carries the root class.
+
+```html
+<div class="combobox">
+  <div class="input-group">
+    <input class="input-group-field" id="region" role="combobox" aria-expanded="false" aria-controls="region-list" aria-autocomplete="list" autocomplete="off" aria-label="Region">
+    <button type="button" class="combobox-toggle" tabindex="-1" aria-label="Show regions"></button>
+  </div>
+  <div id="region-list" popover="manual" class="listbox" role="listbox" aria-label="Regions">
+    <div class="listbox-option" role="option" id="region-hnd" aria-checked="false">Tokyo</div>
+    <div class="listbox-option" role="option" id="region-sin" aria-checked="false">Singapore</div>
+    <div class="listbox-empty">No regions match.</div>
+  </div>
+</div>
+```
+
+```js name=app.js
+import { combobox } from '@master/ui/behaviors/combobox.js'
+
+const detach = combobox(document.querySelector('.combobox'))
+```
+
+Call `detach()` when the element leaves the page. Attaching twice to one root is safe: the second call detaches the first.
+
+## Attach all of them \{#attach-all\}
+
+`attach()` finds every pattern by its root class and attaches its behavior. It looks in the whole document, or in the element it is given and under it, and returns one function that detaches everything it attached.
+
+```js name=app.js
+import { attach } from '@master/ui/behaviors'
+
+attach()
+```
+
+Three things to know before choosing it over single imports:
+
+- It attaches the optional behaviors too. Every `menu` gets the arrow keys and every `tree` becomes one tab stop. To leave one as the platform has it, import behaviors by name.
+- It passes no options. A calendar that picks a range, or has a first and a last day, is attached by name.
+- A context menu belongs to a target only the page knows, so `attach()` does not attach one. Call `contextMenu(target, menu)`.
+
+It does not watch the document. For markup added later, call `attach(element)` on what was added.
+
+## In a framework \{#in-a-framework\}
+
+A behavior fits the lifecycle every framework has: run when the element exists, and return what undoes it.
+
+In React, `useEffect` takes the detach function as its cleanup:
+
+```jsx name=Combobox.jsx
+import { useEffect, useRef } from 'react'
+import { combobox } from '@master/ui/behaviors/combobox.js'
+
+export function Combobox({ children }) {
+  const root = useRef(null)
+  useEffect(() => combobox(root.current), [])
+  return <div className="combobox" ref={root}>{children}</div>
+}
+```
+
+In Svelte, a behavior has the signature of an attachment, so `{@attach}` takes it as it is:
+
+```svelte name=Combobox.svelte
+<script>
+  import { combobox } from '@master/ui/behaviors/combobox.js'
+</script>
+
+<div class="combobox" {@attach combobox}>
+  <!-- the field and the listbox -->
+</div>
+```
+
+An action returns an object, so in a version of Svelte without attachments wrap the behavior: `const action = (node) => ({ destroy: combobox(node) })`, then `use:action`.
+
+In Vue, attach when the component is mounted and detach when it is unmounted:
+
+```vue name=Combobox.vue
+<script setup>
+import { onMounted, onUnmounted, ref } from 'vue'
+import { combobox } from '@master/ui/behaviors/combobox.js'
+
+const root = ref(null)
+let detach
+
+onMounted(() => { detach = combobox(root.value) })
+onUnmounted(() => detach?.())
+</script>
+
+<template>
+  <div class="combobox" ref="root"><slot /></div>
+</template>
+```
+
+## Options \{#options\}
+
+A behavior that can be configured takes an object as its second argument. The others take only the root.
+
+| Call | Options |
+| --- | --- |
+| `calendar(root, options)` | `value`: the chosen day as `YYYY-MM-DD`, or the two ends of a range. `month`: the month to show first, as `YYYY-MM`. `min`, `max`: the first and the last day that can be chosen. `range`: choose two days and every day between them. `weekStart`: the day in the first column, 0 for Sunday to 6 for Saturday. `locale`: a BCP 47 tag for the names. `disabled`: a function that says whether a day cannot be chosen |
+| `command(root, options)` | `shortcut`: the key that opens and closes the palette with Command or Control. `'k'` by default, `false` for none |
+| `otp(root, options)` | `pattern`: a regular expression one character must match. By default the `pattern` attribute of the first slot, and a digit when it has none |
+| `splitter(root, options)` | `step`: how far an arrow key moves the handle, in percent. 5 by default |
+
+## Events \{#events\}
+
+A behavior reports a change the way a native control does: with a DOM event that bubbles. Listen with `addEventListener`, or with the framework's own binding for native events.
+
+| Behavior | Event | Dispatched from | Carries |
+| --- | --- | --- | --- |
+| `combobox` | `input`, then `change`, when an option is chosen | The field | The value is the field's `value` |
+| `listbox` | `input`, then `change` | The listbox | Read `aria-checked="true"` on its options |
+| `stepper` | `input`, then `change`, when a button changed the number | The field | The value is the field's `value` |
+| `splitter` | `input` on each change of size; `change` when a drag ends or a key moved the handle | The handle | Read `aria-valuenow` |
+| `otp` | `input` from a slot the script writes to; `change` when every slot is filled | The slot; the root | `detail.value`: the code |
+| `calendar` | `change` | The root | `detail.value`: the day as `YYYY-MM-DD`, or `[start, end]` once both ends of a range are chosen |
+| `wheel` | `change` when a column comes to rest on another option | The column | `detail.value`: the option's `data-value`, or its text; `detail.option`: the element |
+| `tree` | `change` when a row with `role="treeitem"` that is not a branch is selected | The root | `detail.item`: the row |
+
+The `change` of an OTP field, a calendar, a wheel and a tree is a `CustomEvent`, because the value is not on one native control. A slot of an OTP field is a native input, so its own `change` bubbles through the root as well, without a `detail`. The command palette, the menu and the compare dispatch nothing of their own. A command runs from the `click` of its option, which Enter sends too, and the items of a menu are native buttons, links and inputs.
+
+```js name=app.js
+import { calendar } from '@master/ui/behaviors/calendar.js'
+
+const root = document.querySelector('.calendar')
+const detach = calendar(root, { value: '2026-11-13', min: '2026-11-01' })
+
+root.addEventListener('change', (event) => {
+  console.log(event.detail.value)
+})
+```
+
+The calendar keeps its value in the script, not in the markup. The function it returns has a `value` property that reads what is chosen now. To set the value from outside, attach again with a new `value`.
+
+## The keys \{#the-keys\}
+
+The `keyboard` list of a contract is the specification of its behavior, and it follows the WAI-ARIA Authoring Practices for the pattern. Read it with `npx master-ui contract combobox`:
+
+| Keys | Action |
+| --- | --- |
+| ArrowDown, ArrowUp | Open the list and move the active option, wrapping at the ends |
+| Home, End | Move to the first or the last option while the list is open |
+| Enter | Choose the active option and close the list |
+| Escape | Close the list; the field keeps its text |
+| Typing | Filter the options and open the list on the first match |
+
+A key the behavior handles calls `preventDefault()`. A key it does not handle is left alone, so Enter in a combobox with no active option still submits the form. Hidden items and those with `disabled` or `aria-disabled="true"` are skipped, and the horizontal arrow keys follow the direction of the text.
+
+## Own a behavior \{#own-a-behavior\}
+
+A behavior is a reference, not a runtime to depend on. When a project needs other keys, another way of filtering or a value held elsewhere, take the file and edit it:
+
+```bash
+npx master-ui own combobox
+```
+
+`own` copies the component's stylesheet, its contract and its behavior into the project, by default `ui/combobox.css`, `ui/combobox.json` and `ui/combobox.js`. From then on the script is the project's. Import it from there instead of from the package. [Customization](/guide/customization#own-a-component) covers the rest of owning a component.
+
+The combobox, command, listbox and menu behaviors import shared helpers from `./internal.js`; `own` copies it beside them.
+
+Keep the contract true while editing: the attributes the script moves are the ones the stylesheet reads, and the `keyboard` list should say what the keys now do.
+
+## Without any script \{#without-any-script\}
+
+Everything not in the table above works with no behavior attached: the browser already does the work of a button, a dialog, a popover, a select, a switch or an accordion. Two of the patterns in the table also have a form without script:
+
+- **A tree** is nested `<details>` elements whose `<summary>` is the row. Branches open and close by themselves and every row is a tab stop.
+- **A menu** is a popover of buttons and links. The browser opens and closes it, Tab moves through the items and Escape returns focus to the button. Add `role="menu"` only together with the behavior, because the role promises arrow keys.
+
+A few other contracts mark a script `optional` and name no behavior. The script there is a line or two for something HTML has no attribute for, such as the `indeterminate` state of a checkbox, and the component works without it.

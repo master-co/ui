@@ -1,0 +1,114 @@
+A project uses Master UI by name: a class in markup, a custom property in a stylesheet, a command in a script. This page says which names are promised and which are details of the current implementation.
+
+The rule is short. A name is public when a [contract](/guide/contracts), the theme or the package's `exports` states it. Everything else is private, however easy it is to find in the source.
+
+## Public \{#public\}
+
+| What | Where it is stated | Example |
+| --- | --- | --- |
+| Class names | `classes` in a contract | `btn`, `btn-primary`, `dialog-header` |
+| The element and the attributes a class requires | `elements`, `attributes` and `label` of that class | `switch` goes on an `<input>` with `type="checkbox"` and `role="switch"`, and needs an accessible name |
+| State marks | `states` in a contract | `aria-pressed="true"` on `btn`, `:checked` on `switch` |
+| Custom properties of a component | `properties` in a contract | `--btn-height`, `--splitter-size` |
+| Theme tokens | `@theme` in `theme.css`; `@master/ui/theme.json` lists each with its value | `--color-surface-raised`, `--radius-control`, `--lift` |
+| Mixin names | `@mixin` in `theme.css` | `--surface-sheet`, `--focus-ring`, `--anchored` |
+| The contract schema | `@master/ui/contract.schema.json` | The fields of a contract and what each means |
+| The behaviors | The exports of `@master/ui/behaviors` | `combobox(root)`, `attach()`, and the function each returns |
+| The checker | The exports of `@master/ui/check` | `check`, `createIndex`, `parse`, `format`, `owners` |
+| The commands | `master-ui` | `list`, `contract`, `check`, `init`, `own`, `status`, `diff`, `accept` |
+| Import paths | `exports` in the package's `package.json` | The table below |
+
+A contract is the list for one component. Print it to see exactly what is promised:
+
+```bash
+npx master-ui contract button
+```
+
+The schema says the same thing about custom properties in its own words: anything not listed in `properties` is private and may change.
+
+### Import paths \{#import-paths\}
+
+| Path | What it is |
+| --- | --- |
+| `@master/ui`, `@master/ui/master.css` | The theme, every component and the layout classes, as Master CSS source |
+| `@master/ui/theme.css` | The tokens and mixins of the default theme |
+| `@master/ui/components/<name>.css`, `@master/ui/layouts/<name>.css` | One stylesheet |
+| `@master/ui/components/<name>.json`, `@master/ui/layouts/<name>.json` | Its contract |
+| `@master/ui/themes/<name>.css` | Another theme, such as `paper` |
+| `@master/ui/contract.schema.json` | The JSON Schema of a contract |
+| `@master/ui/contracts.json` | Every contract in one file |
+| `@master/ui/theme.json` | Every token of the theme with its value |
+| `@master/ui/standalone.css` | The theme and every component compiled to plain CSS |
+| `@master/ui/base.css` | The small reset the components assume |
+| `@master/ui/behaviors`, `@master/ui/behaviors/<name>.js` | Every behavior with `attach()`, or one behavior |
+| `@master/ui/check` | The contract checker as a module |
+
+The compiled files are also reachable under `@master/ui/dist/`, which is the path a CDN serves: `dist/standalone.css`, `dist/base.css`, `dist/themes/<name>.css`, `dist/contracts.json` and `dist/theme.json`.
+
+## Private \{#private\}
+
+| What | Example | Use instead |
+| --- | --- | --- |
+| A custom property that no contract lists | `--btn-lift`, which the button uses to pass its travel between its own rules | A listed property, or a token: `--lift` |
+| The structure of a selector | How a rule nests, which pseudo-element draws a mark, how specific a rule is inside the `components` layer | The class and the state mark; a utility on the element wins over any component rule |
+| The values of the default theme | The shadow lists behind `--shadow-raised`, the stops of a gradient in `--surface-sheet` | The token or mixin name, redefined in a theme of your own |
+| The order of declarations and of rules in a stylesheet | Which of two rules comes later | Nothing depends on it from outside the file |
+| `behaviors/internal.js` | The helpers the combobox, command, listbox and menu behaviors share. Its own header says it is not a behavior | The behavior's function; or [own the behavior](/guide/behaviors#own-a-behavior) and keep a copy of the file beside it |
+| Files under `dist/` that this page does not name | Any other file a build leaves there | The paths in the table above |
+
+The private list is what lets the default implementation improve. A shadow can be retuned, a mark can move from one pseudo-element to another and a rule can be rewritten for a new platform feature, and markup written to the contract does not notice.
+
+```css name=app.css
+/* Public: the button contract lists --btn-height. */
+.checkout .btn {
+  --btn-height: 2.75rem;
+}
+
+/* Private: no contract lists --btn-lift, so a release may rename it. */
+.checkout .btn {
+  --btn-lift: 0px;
+}
+
+/* The public way to say the same thing is the theme token. */
+.checkout {
+  --lift: 0px;
+}
+```
+
+## What a change means \{#what-a-change-means\}
+
+| Change | Breaking |
+| --- | --- |
+| A public name is removed or renamed: a class, a required attribute, a state mark, a listed property, a token, a mixin, an export, a command, an import path | Yes |
+| The default theme is retuned: a tone, a shadow, a gradient, a duration | No |
+| Anything on the private list changes | No |
+
+A visual retuning is not a breaking change because the look is the implementation, not the contract. A project that needs the look to hold still has two ways to opt out.
+
+**Own the component.** `own` copies a component's stylesheet, its contract and its behavior, when it has one, into the project. From then on the copy is what the project imports, and a new release does not change it. See [customization](/guide/customization#own-a-component).
+
+```bash
+npx master-ui own button
+```
+
+**Pin the theme.** Copy `node_modules/@master/ui/theme.css` into the project and import the copy after the library, the way a second theme is imported. Its tokens and mixins are then the last definitions, so they are the ones every component reads, and a release that retunes the default theme changes nothing on screen. A token added later still arrives from the library. [A theme of your own](/guide/theming) describes what the file holds.
+
+```css name=app.css
+@import '@master/css';
+@import '@master/ui';
+@import './ui/theme.css';
+```
+
+## While the package is in alpha \{#alpha\}
+
+Master UI is in alpha. Until 1.0, a breaking change can ship in any release. Each one is named in the release notes.
+
+For the components a project owns, the command line tool reports what moved. `status` compares each owned component with the installed package and lists the files that changed upstream since they were taken:
+
+```bash
+npx master-ui status
+```
+
+It exits with code 2 when an owned component changed upstream, so a job that runs after an upgrade can report it. `npx master-ui diff button` shows what changed, and `npx master-ui accept button` records that the change has been merged into the copy. [Customization](/guide/customization#upstream-changes) walks through the three commands.
+
+Markup that follows the library is checked the other way round: after an upgrade, `npx master-ui check` reports a class, an element or an attribute that no longer matches a contract.

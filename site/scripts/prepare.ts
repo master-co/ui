@@ -12,7 +12,7 @@ import type { DefinedMetadata } from '@master/internal-site/types/Metadata'
 
 /** Sidebar category order; unknown categories follow alphabetically. */
 const categoryOrder = [
-  'Getting started', 'Overview',
+  'Getting started', 'Customizing', 'Building', 'Reference', 'Overview',
   // Components: parts with a material, a state or a platform behavior.
   'Materials', 'Structure', 'Actions', 'Forms', 'Navigation', 'Overlays', 'Feedback', 'Display', 'Typography',
   // Layouts: where regions go and what scrolls.
@@ -71,3 +71,6 @@ for (const [section, pages] of sections) {
 }
 
 await generateSearchPages({ cwd: site, defaultLocale: 'en', locales: ['en'], dictionariesDir: join(site, 'i18n'), write: true })
+
+// What a program reads: llms.txt, each page as Markdown, the contracts, the compiled CSS and the registry.
+await import('./exports.ts')
