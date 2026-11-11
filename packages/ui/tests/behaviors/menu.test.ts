@@ -367,3 +367,30 @@ test('contextMenu: detach removes the listeners, and attaching twice leaves one 
   assert.equal(rightClick(one('#copy')), false)
   assert.equal(isOpen(root), false)
 })
+
+
+test('contextMenu: a context request before pointerup opens after release, even outside its target', () => {
+  const { target, root, document, pointer, rightClick, place, isOpen } = setupContext()
+  contextMenu(target, root)
+  pointer(target, 'pointerdown', { button: 2 })
+  assert.equal(rightClick(target, { clientX: 240, clientY: 96 }), true)
+  assert.equal(isOpen(root), false, 'the pending pointerup must not immediately dismiss a new popover')
+  pointer(document.body, 'pointerup', { button: 2 })
+  assert.equal(isOpen(root), true)
+  assert.deepEqual(place(), ['240px', '96px'])
+})
+
+test('contextMenu: cancellation and detachment discard an unfinished pointer request', () => {
+  const { target, root, document, pointer, rightClick, isOpen } = setupContext()
+  const detach = contextMenu(target, root)
+  pointer(target, 'pointerdown', { button: 2 })
+  rightClick(target, { clientX: 240, clientY: 96 })
+  pointer(document.body, 'pointercancel', { button: 2 })
+  pointer(document.body, 'pointerup', { button: 2 })
+  assert.equal(isOpen(root), false)
+  pointer(target, 'pointerdown', { button: 2 })
+  rightClick(target, { clientX: 240, clientY: 96 })
+  detach()
+  pointer(document.body, 'pointerup', { button: 2 })
+  assert.equal(isOpen(root), false)
+})

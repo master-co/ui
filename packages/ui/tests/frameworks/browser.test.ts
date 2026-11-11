@@ -1,7 +1,7 @@
 import { after, before, test } from 'node:test'
 import assert from 'node:assert/strict'
 import { fileURLToPath } from 'node:url'
-import { chromium, type Browser, type Locator, type Page } from 'playwright'
+import { chromium, firefox, webkit, type Browser, type Locator, type Page } from 'playwright'
 import { createServer, type ViteDevServer } from 'vite'
 
 /**
@@ -11,8 +11,13 @@ import { createServer, type ViteDevServer } from 'vite'
  *
  * It serves the playground, which mounts every fixture of one framework on the compiled stylesheet, and
  * works each example as a reader would, with a real pointer and real keys. Run it with
- * `bun run test:browser`; it needs `npx playwright install chromium` once.
+ * `bun run test:browser`; set MASTER_UI_BROWSER to chromium (default), firefox or webkit.
+ * Install the selected engine with `bun x playwright install <engine>` first.
  */
+const engine = process.env.MASTER_UI_BROWSER ?? 'chromium'
+const browsers = { chromium, firefox, webkit }
+if (!(engine in browsers)) throw new Error(`Unknown MASTER_UI_BROWSER: ${engine}`)
+
 let server: ViteDevServer
 let browser: Browser
 let origin: string
@@ -27,7 +32,7 @@ before(async () => {
   })
   await server.listen()
   origin = server.resolvedUrls!.local[0]
-  browser = await chromium.launch()
+  browser = await browsers[engine as keyof typeof browsers].launch()
 })
 
 after(async () => {
@@ -52,13 +57,15 @@ const box = async (locator: Locator) => (await locator.boundingBox())!
 const focused = (page: Page) => page.evaluate(() => (document.activeElement?.textContent ?? '').replace(/\s+/g, ' ').trim())
 
 for (const framework of ['react', 'svelte', 'vue']) {
-  test(`${framework}: every component, in a browser`, async (t) => {
+  test(`${engine}/${framework}: every component, in a browser`, async (t) => {
     const page = await browser.newPage({ viewport: { width: 900, height: 800 } })
     const problems: string[] = []
     page.on('console', (message) => { if (['error', 'warning'].includes(message.type())) problems.push(`${message.type()}: ${message.text()}`) })
     page.on('pageerror', error => problems.push(`thrown: ${error.message}`))
     await page.goto(`${origin}?only=${framework}`)
     await page.waitForSelector(`[data-framework="${framework}"] [data-example="toast"]`)
+    const anchored = await page.evaluate(() => CSS.supports('position-area: block-end'))
+    const scopedAnchor = await page.evaluate(() => CSS.supports('anchor-scope: --combobox') && CSS.supports('min-inline-size: anchor-size(--combobox inline)'))
 
     const example = (name: string) => page.locator(`[data-framework="${framework}"] [data-example="${name}"]`)
     const said = (name: string, text: string) => until(() => example(name).locator('output').innerText(), value => value === text, `${name} said`)
@@ -72,7 +79,8 @@ for (const framework of ['react', 'svelte', 'vue']) {
       await dialog.getByRole('button', { name: 'Cancel' }).click()
       await until(() => dialog.evaluate((element: HTMLDialogElement) => element.open), value => !value, 'a button with command="close" closes it')
       await said('dialog', 'onOpenChange: false')
-      await trigger.click()
+      await trigger.focus()
+      await trigger.press('Enter')
       await page.keyboard.press('Escape')
       await until(() => dialog.evaluate((element: HTMLDialogElement) => element.open), value => !value, 'Escape closes it')
       assert.equal(await trigger.evaluate(element => element === document.activeElement), true, 'focus returns to the trigger')
@@ -84,7 +92,11 @@ for (const framework of ['react', 'svelte', 'vue']) {
       await trigger.click()
       await until(() => open(popover), Boolean, 'the popover is open')
       const gap = (await box(popover)).y - ((await box(trigger)).y + (await box(trigger)).height)
-      assert.ok(gap > 2 && gap < 10, `it sits under its trigger, ${gap}px away`)
+      if (anchored) assert.ok(gap > 2 && gap < 10, `it sits under its trigger, ${gap}px away`)
+      else {
+        const bounds = await box(popover)
+        assert.ok(Math.abs(bounds.x + bounds.width / 2 - 450) < 2, 'without anchors the popover remains centered and usable')
+      }
       await said('popover', 'onOpenChange: true')
       await page.mouse.click(880, 10)
       await until(() => open(popover), value => !value, 'a press outside dismisses it')
@@ -94,7 +106,14 @@ for (const framework of ['react', 'svelte', 'vue']) {
     await t.test('a tooltip shows for the control that names it', async (t) => {
       const tooltip = example('tooltip').locator('.tooltip')
       const trigger = example('tooltip').locator('button[interestfor]')
-      if (!await page.evaluate(() => 'interestForElement' in HTMLButtonElement.prototype)) return t.skip('this browser has no interest invokers')
+      if (!await page.evaluate(() => 'interestForElement' in HTMLButtonElement.prototype)) {
+        await trigger.hover()
+        assert.equal(await open(tooltip), false, 'without interest invokers the optional hint stays closed')
+        assert.equal(await trigger.innerText(), 'Deploy', 'the control keeps its visible accessible name')
+        await trigger.focus()
+        assert.equal(await trigger.evaluate(element => element === document.activeElement), true)
+        return
+      }
       await trigger.hover()
       await until(() => open(tooltip), Boolean, 'interest in the control shows the tooltip')
       const above = (await box(trigger)).y - ((await box(tooltip)).y + (await box(tooltip)).height)
@@ -106,7 +125,8 @@ for (const framework of ['react', 'svelte', 'vue']) {
     await t.test('a menu opens from its trigger, takes focus and the keys, and gives focus back', async () => {
       const menu = example('menu').locator('.menu')
       const trigger = example('menu').locator('button[popovertarget].btn')
-      await trigger.click()
+      await trigger.focus()
+      await trigger.press('Enter')
       await until(() => open(menu), Boolean, 'the menu is open')
       await until(() => focused(page), value => value.startsWith('Rename'), 'focus is on the first item')
       await page.keyboard.press('ArrowDown')
@@ -139,7 +159,8 @@ for (const framework of ['react', 'svelte', 'vue']) {
       assert.deepEqual(await list.locator('[role="option"]:visible').allInnerTexts().then(texts => texts.map(text => text.split('\n')[0])), ['Frankfurt'])
       const group = example('combobox').locator('.input-group')
       // The list grows into place as it enters.
-      await until(async () => (await box(list)).width - (await box(group)).width, difference => Math.abs(difference) < 2, 'the list is as wide as the field')
+      if (scopedAnchor) await until(async () => (await box(list)).width - (await box(group)).width, difference => Math.abs(difference) < 2, 'the list is as wide as the field')
+      else assert.ok((await box(list)).width > 0, 'without scoped anchors the list retains its own usable width')
       const gap = (await box(list)).y - ((await box(group)).y + (await box(group)).height)
       assert.ok(gap > 2 && gap < 10, `the list sits under the whole field, ${gap}px away`)
       await page.keyboard.press('Enter')
@@ -271,6 +292,17 @@ for (const framework of ['react', 'svelte', 'vue']) {
       await page.mouse.move(10, 10)
       await until(() => toasts.count(), count => count === 1, 'a dismissed toast is removed once it has left')
       await until(() => toasts.count(), count => count === 0, 'a timed toast is removed when its time is up', 6000)
+    })
+
+    await t.test('the application invoker fallback opens and closes the native dialog', async () => {
+      await page.goto(`${origin}?only=${framework}&invokers=fallback`)
+      const dialog = example('dialog').locator('dialog')
+      await example('dialog').getByRole('button', { name: 'Delete project', exact: true }).click()
+      await until(() => dialog.evaluate((element: HTMLDialogElement) => element.open && element.matches(':modal')), Boolean, 'the application handler opens a modal')
+      await said('dialog', 'onOpenChange: true')
+      await dialog.getByRole('button', { name: 'Cancel' }).click()
+      await until(() => dialog.evaluate((element: HTMLDialogElement) => element.open), value => !value, 'the application handler closes it')
+      await said('dialog', 'onOpenChange: false')
     })
 
     await page.close()

@@ -11,6 +11,19 @@ const query = new URLSearchParams(location.search)
 const only = query.get('only')
 if (query.get('scheme')) document.documentElement.style.colorScheme = query.get('scheme')!
 
+// Application fallback documented by /guide/browser-support. The framework keeps owning `open`;
+// browsers without invoker commands still use the same native dialog and its close/toggle events.
+if (!('commandForElement' in HTMLButtonElement.prototype) || query.get('invokers') === 'fallback') {
+  document.addEventListener('click', event => {
+    const trigger = (event.target as Element | null)?.closest<HTMLButtonElement>('button[commandfor]')
+    const dialog = trigger && document.getElementById(trigger.getAttribute('commandfor')!)
+    if (!trigger || !(dialog instanceof HTMLDialogElement) || trigger.disabled) return
+    event.preventDefault()
+    if (trigger.getAttribute('command') === 'show-modal') dialog.showModal()
+    else if (trigger.getAttribute('command') === 'close') dialog.close()
+  })
+}
+
 type Mount = (name: string, target: HTMLElement, props: Record<string, unknown>) => void
 const frameworks: Record<string, () => Promise<{ mount: Mount, toast: (message: Record<string, unknown>) => void }>> = {
   react: () => import('./mount-react.tsx'),

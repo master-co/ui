@@ -125,11 +125,34 @@ export function contextMenu(target, menu) {
     open(box.left + box.width / 2, box.top + box.height / 2)
   }
 
+  // Some engines dispatch contextmenu before the secondary pointer is released. Opening an auto
+  // popover then lets that same pointerup light-dismiss it. Finish that gesture before opening.
+  let secondaryPointer = false
+  /** @type {(() => void) | undefined} */
+  let pending
+  target.addEventListener('pointerdown', (event) => {
+    secondaryPointer = event.button === 2
+  }, { signal })
+  target.ownerDocument.addEventListener('pointerup', () => {
+    secondaryPointer = false
+    const show = pending
+    pending = undefined
+    show?.()
+  }, { signal })
+  target.ownerDocument.addEventListener('pointercancel', () => {
+    secondaryPointer = false
+    pending = undefined
+  }, { signal })
+
   target.addEventListener('contextmenu', (event) => {
     event.preventDefault()
     // A browser that sends the event for a key may give it no position.
-    if (event.clientX || event.clientY) open(event.clientX, event.clientY)
-    else atTarget()
+    const show = () => {
+      if (event.clientX || event.clientY) open(event.clientX, event.clientY)
+      else atTarget()
+    }
+    if (secondaryPointer) pending = show
+    else show()
   }, { signal })
 
   // Not every browser sends `contextmenu` for these keys; macOS sends it for neither.
