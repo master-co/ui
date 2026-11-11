@@ -13,6 +13,8 @@ A Master UI component is one native element with the right semantics, one styles
 
 Use `$master-design` for craft judgment (surfaces, geometry, type, states, motion). This skill supplies the contracts that make components consistent with each other.
 
+For article purpose, prose, evidence and portable output, use [master-ui-writing](../master-ui-writing/SKILL.md). This skill owns the component contract and preview requirements; technical explanation figures use [master-ui-doc-illustrations](../master-ui-doc-illustrations/SKILL.md), while catalog covers use `master-ui-covers`.
+
 ## Which tier
 
 Before writing anything, decide what the thing is. Read [tiers](references/tiers.md); in short:

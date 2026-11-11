@@ -1,6 +1,6 @@
 # Documentation pattern
 
-This is the pattern for a component page. Layout and block pages follow [tiers](tiers.md).
+This is the pattern for a component page. Layout and block pages follow [tiers](tiers.md). Use [master-ui-writing](../../master-ui-writing/SKILL.md) for reader tasks, prose, technical evidence, navigation and search/Markdown verification. Guide articles follow that writing workflow rather than the component-page template below.
 
 Each page lives in `site/content/components/<slug>/` with `metadata.ts` (`define()` with title, description and category) and `content.mdx`.
 
@@ -25,7 +25,7 @@ Every preview reserves an authored, fixed iframe height before loading. Follow [
 
 Images in examples come from `site/public/demo/` (`/demo/moonstone.svg`, `/demo/portrait-1.svg`), never from another host.
 
-Write in plain, present-tense English. State facts and the reason for a choice; avoid marketing words.
+Use [master-ui-doc-illustrations](../../master-ui-doc-illustrations/SKILL.md) when the explanation needs a relationship diagram alongside its specimen. A preview demonstrates the real component; an explanatory figure and a catalog cover have different jobs.
 
 ## The stage of a preview
 

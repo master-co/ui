@@ -16,6 +16,17 @@ Repository skills live in `.agents/skills/` (linked as `.claude/skills/`).
 - `master-ui-components` (owned here): the tiers, the component contracts, the contract files, the behaviors, the framework components, size scale, documentation pattern and verification. Use it for any change to `packages/ui` or to a component, layout or block page.
 - `master-ui-covers` (owned here): the cover drawings in `site/components/cover`: the stage, the drawing rules, the vocabulary and verification. Use it when a component, a layout or a block needs a cover or a cover is redrawn or placed on a page.
 - `master-design` (managed by `@master/internal-skills`; run `bun run skills:sync`, never edit it here): craft judgment for surfaces, geometry, type, states and motion.
+- `master-writing` (managed by the same package and sync command): shared technical writing, evidence and editing guidance.
+- `master-ui-writing` (owned here): reader tasks, Guide organization, technical sources and the documentation/export workflow. Use for writing, restructuring or reviewing guides and library documentation.
+- `master-ui-doc-illustrations` (owned here): technical explanation figures, their composition, text equivalents and verification. Use when a relationship benefits from a drawing; a working preview or a concise explanation may already be sufficient.
+
+Select managed skills in `.agents/master-skills.json`, then run `bun run skills:sync` and commit the generated managed files and lock. Keep product-specific extensions in the repository-owned skills rather than editing synchronized copies.
+
+## Documentation
+
+Each guide has one primary reader task. `Customization` helps choose the modification layer; `Default theme` (`/guide/theme`) explains the default design and token values; `Theming` (`/guide/theming`) teaches token overrides, scope, recipes and complete themes. Keep full procedures with their owner and link to them from decision guides. Renaming a title preserves its route and explicit heading anchors and updates its metadata and inbound labels.
+
+Use working previews for material and behavior, code for reproducible instructions, and technical figures for relationships that prose or a specimen cannot explain clearly. Figures have no per-page quota or fixed canvas size. Covers identify catalog entries and follow their separate drawing rules. Essential meaning must remain available in prose, search and portable Markdown; new MDX presentations need their actual export paths checked. `master-ui-writing` and `master-ui-doc-illustrations` hold the workflow, while `master-ui-components` owns contract and preview requirements.
 
 ## Tiers
 
