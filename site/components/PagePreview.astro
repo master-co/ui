@@ -6,7 +6,7 @@ import { demoDocument } from '@master/internal-site/demo/reference/document.ts'
 import PreviewGuard from '~/site/components/PreviewGuard.astro'
 import PreviewSwitch from '~/site/components/PreviewSwitch.astro'
 import { previewHead as head } from '~/site/utils/preview'
-import { uiSource } from '~/site/utils/ui-source'
+import { behaviorsScript, uiSource } from '~/site/utils/ui-source'
 
 interface Props {
   /** A stable id, unique within the page. */
@@ -26,6 +26,11 @@ interface Props {
   touchHeight?: { desktop?: number; tablet?: number; phone?: number }
   /** The width the preview opens at. */
   size?: 'desktop' | 'tablet' | 'phone'
+  /**
+   * Attach the package's behaviors to the preview, for a page that holds a pattern which needs a script. The
+   * preview runs the published scripts, and the Code view ends with the two lines a reader writes to do the same.
+   */
+  behaviors?: boolean
 }
 
 /**
@@ -36,9 +41,11 @@ interface Props {
  * The source sits behind a second view of the same tray: Preview, the default, or Code.
  * Both choices are radios read by the stylesheet: the preview needs no script of its own.
  */
-const { name, title, html, caption = '', bodyClass = 'p(0)', height = 720, tabletHeight = height, phoneHeight = tabletHeight, touchHeight = {}, size = 'desktop' } = Astro.props
-const section = { page: 'library', id: name, title, html: [html], css: uiSource(), classes: [], classLists: [], highlighted: [] }
-const document = demoDocument(section as Parameters<typeof demoDocument>[0], { html, caption, bodyClass, head } as Parameters<typeof demoDocument>[1])
+const { name, title, html, caption = '', bodyClass = 'p(0)', height = 720, tabletHeight = height, phoneHeight = tabletHeight, touchHeight = {}, size = 'desktop', behaviors = false } = Astro.props
+const running = behaviors ? `${html}\n<script>${behaviorsScript()};MasterUI.attach()</script>` : html
+const source = behaviors ? `${html}\n<script type="module">\n  import { attach } from '@master/ui/behaviors'\n\n  attach()\n</script>` : html
+const section = { page: 'library', id: name, title, html: [running], css: uiSource(), classes: [], classLists: [], highlighted: [] }
+const document = demoDocument(section as Parameters<typeof demoDocument>[0], { html: running, caption, bodyClass, head } as Parameters<typeof demoDocument>[1])
 const views = [['preview', 'Preview'], ['code', 'Code']] as const
 const sizes = [['desktop', 'Desktop'], ['tablet', 'Tablet'], ['phone', 'Phone']] as const
 ---
@@ -51,7 +58,7 @@ const sizes = [['desktop', 'Desktop'], ['tablet', 'Tablet'], ['phone', 'Phone']]
     <PreviewSwitch name={`preview-size-${name}`} label="Viewport" kind="size" options={sizes} value={size} />
     <PreviewSwitch name={`preview-view-${name}`} label="View" kind="view" options={views} value="preview" />
   </Fragment>
-  <Fragment slot="source"><Code lang="html" beautify code={html} /></Fragment>
+  <Fragment slot="source"><Code lang="html" beautify code={source} /></Fragment>
   <PreviewViewport client:idle={{ timeout: 500 }} title={title} document={document} height={height} />
 </Demo>
 </div>
