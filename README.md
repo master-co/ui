@@ -47,7 +47,7 @@ Commits follow the [Aronrepo](https://github.com/1aron/aronrepo) policy in [AGEN
 2. **The foundation** (current): a contract for every stylesheet, a checker, reference behaviors, a second theme, a build to plain CSS, a registry of source to own, and what a coding agent reads (`llms.txt`, a skill).
 3. **Refinement**: tuning the components and adding to them on that foundation.
 
-Framework bindings for React, Svelte and Vue are set aside: a component is a class on a native element, so a wrapper is a few lines in a project's own idiom. They will be reconsidered later.
+React, Svelte and Vue are served without a bindings package. Most components are a class on a native element, the same in any framework. The seventeen patterns that hold state (a combobox, a calendar, a dialog opened from state, a toast queue and the like) have a component in `packages/ui/frameworks/<framework>`, which a project copies with `master-ui add`; what it decides stays in `@master/ui/behaviors`, written once and held to one set of scenarios in `packages/ui/tests/frameworks`.
 
 ## License
 
