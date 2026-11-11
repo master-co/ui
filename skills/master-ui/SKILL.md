@@ -18,6 +18,7 @@ Master UI is a contract and a default implementation of it. The contract of a co
 - What the project owns: `master-ui.json` lists owned components; their source and contracts are in its `directory` (`ui/` by default). An owned contract replaces the library's. Read it before using that component.
 - The theme: a file imported after the library, or `@theme` overrides in the app stylesheet. Read it before choosing a token.
 - The project's own instructions and nearby components come first. Match what is already there.
+- The version: Master UI is experimental, and any 0.x release may rename or remove a class, a token or an export. Read contracts from the installed package (`npx master-ui contract` does), not from memory. After an upgrade run `npx master-ui check` and `npx master-ui status`, and fix what they report.
 
 ## Read the contract before writing markup
 

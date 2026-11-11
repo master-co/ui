@@ -57,6 +57,15 @@ React, Svelte and Vue get no bindings package and no wrapper for a class. `maste
 
 Run `bun run test` (compiles every stylesheet against the preset, checks selectors, holds each stylesheet to its contract and every site preview to the contracts, runs the checker's and the behaviors' tests, and runs the framework scenarios in React, Svelte and Vue), `bun run skills:check`, `bun run type-check` (the site, then the framework components with `tsc`, `svelte-check` and `vue-tsc`) and `bun run build`. Preview markup is validated during the build: an invalid utility class fails it. After a change to tokens or mixins that should not change a pixel, compare `node --import tsx scripts/resolved.ts` (in `packages/ui`) before and after: it prints every declaration with its tokens resolved. Check visual changes in light and dark previews, and a theme change in the Paper preview on `/guide/theming` too.
 
+## Versions and Releases
+
+`@master/ui` is experimental and its versions are 0.x. The owner decided that a breaking change may ship in any 0.x release:
+
+- A change may rename or remove any public name on `/guide/stability`. Do not add a deprecation period, an alias, a compatibility shim or a migration guide for it, and do not stop to ask how to release it: commit it with the type that describes it (`Drop` for a removal, `Improve` for a change, `Feat` for something new), which releases a patch. This replaces the generated policy's instruction to stop and ask about a breaking change for as long as the version is 0.x; a `BREAKING CHANGE:` footer is still rejected.
+- Change the contract, the site and the README in the same commit as the code, so every release documents itself.
+- Versions come from `v*` tags. `v0.0.0` is the baseline and was never published. Each push to `main` that carries a release commit releases the next patch (0.0.x); only the owner writes `Bump(Minor)` (the next 0.x) or `Bump(Major)` (1.0, which ends the experimental phase and needs this section rewritten).
+- `main` is the only branch that releases; there are no prerelease branches. `.github/workflows/release.yml` runs on every push to `main`: CI (`ci.yml`, reused), `aronrepo release` (npm with provenance through trusted publishing, the version tag and the GitHub release), a check that the registry serves the version with provenance (`scripts/verify-package.mjs`), and the site deployment with that version in its header. Rerun the failed job to finish an interrupted release.
+
 ## Commit Format
 
 Commits and PR titles follow the generated Aronrepo policy below, enforced by the commit hook, the PR title check and CI. Edit `aronrepo.config.js` and run `bun x aronrepo agents --write` instead of editing the block.
