@@ -16,6 +16,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { blocks, components, layouts } from '../components/catalog.ts'
 import { exampleSource } from '../utils/framework-example.ts'
+import { previewMarkdown } from '../utils/preview-markdown.ts'
 
 const site = fileURLToPath(new URL('../', import.meta.url))
 const ui = join(site, '../packages/ui')
@@ -103,13 +104,10 @@ function contractMarkdown(contract: any) {
 
 /** An MDX page as Markdown: previews become fenced markup, components that only draw are dropped. */
 function mdxMarkdown(source: string, title: string, description: string) {
-  const body = source
+  const body = previewMarkdown(source)
     // The imports of the page itself, at its top. An import inside a code sample is part of the sample.
     .replace(/^(?:import .*\n)+/, '')
-    .replace(/export const (\w+) = `([\s\S]*?)`\n/g, '')
     .replace(/<FrameworkPreview name="([^"]+)"[\s\S]*?\/>/g, (_, name) => `\`\`\`svelte\n${exampleSource(name)}\n\`\`\``)
-    .replace(/<(?:ComponentPreview|PagePreview)\b[^>]*?title="([^"]*)"[\s\S]*?html=\{`([\s\S]*?)`\}[\s\S]*?\/>/g, (_, name, html) => `**${name}**\n\n\`\`\`html\n${html}\n\`\`\``)
-    .replace(/<(?:ComponentPreview|PagePreview)\b[\s\S]*?\/>/g, '')
     .replace(/<ComponentSource name="([^"]+)"(?: directory="([^"]+)")? \/>/g, (_, name, directory = 'components') => `\`\`\`css\n${read(join(ui, directory, `${name}.css`)).trim()}\n\`\`\``)
     .replace(/<ComponentLinks slugs=\{\[([^\]]*)\]\}(?: kind="(\w+)")? \/>/g, (_, slugs, kind = 'components') => slugs.split(',').map((slug: string) => slug.trim().replace(/['"]/g, '')).filter(Boolean).map((slug: string) => `- [${slug}](${origin}/${kind}/${slug}.md)`).join('\n'))
     .replace(/<Contract\w* [^>]*\/>/g, '')
