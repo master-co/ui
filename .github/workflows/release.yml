@@ -1,44 +1,97 @@
 name: Release
-# Every push to a release branch deploys the site and previews the next package release.
-# A maintainer publishes @master/ui by running this workflow with the previewed commit and version.
+# Every push to main validates the workspace, releases @master/ui when its commits call for a release,
+# checks the version the registry serves, and deploys the site with the version it documents.
+# Versions come from the v* tags (v0.0.0 is the baseline, never published) and the commit types; see AGENTS.md.
 on:
   push:
-    branches: [main, alpha, beta, rc, canary]
+    branches: [main]
+  # Reruns the jobs for the head of main, such as after npm publishing access was set up.
   workflow_dispatch:
-    inputs:
-      sha:
-        description: Commit of the release branch to release
-        required: true
-      version:
-        description: Version from the preview, such as 1.0.0-alpha.1
-        required: true
 
 permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
-  # A newer push replaces an older preview or deployment; a release is never cancelled halfway through publishing.
-  cancel-in-progress: ${{ github.event_name == 'push' }}
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # Never cancel a release halfway through publishing; the next push waits and releases its commits too.
+  cancel-in-progress: false
 
 jobs:
-  preview:
-    if: ${{ github.event_name == 'push' }}
+  validation:
+    if: ${{ github.ref == 'refs/heads/main' }}
+    uses: ./.github/workflows/ci.yml
+
+  release:
+    needs: validation
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write # push the version tag and create the GitHub release
+      id-token: write # npm trusted publishing and provenance
+    outputs:
+      released: ${{ steps.outcome.outputs.released }}
+      version: ${{ steps.outcome.outputs.version }}
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0 # versions come from tags and the full history
-          persist-credentials: false
       - uses: ./.github/actions/setup
-        with:
-          ignore-scripts: "true"
-      - run: |
+      - name: Install the publishing npm CLI
+        run: |
+          npm install --global npm@11.21.0
+          test "$(npm --version)" = 11.21.0
+      - name: Plan the release
+        id: plan
+        run: |
           bun x aronrepo explain --json > plan.json
+          echo "version=$(jq -r '.version // ""' plan.json)" >> "$GITHUB_OUTPUT"
           jq -r '"Next release: \(.version // "none") from `\(.head)`\n\n\(.notes // "")"' plan.json >> "$GITHUB_STEP_SUMMARY"
+      # npm trusted publishing only works for a package that exists, so the first version needs a token.
+      - name: Require npm publishing access
+        if: ${{ steps.plan.outputs.version != '' }}
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -z "$NPM_TOKEN" ] && ! npm view @master/ui name >/dev/null 2>&1; then
+            echo "::error::@master/ui is not on npm yet, so trusted publishing cannot publish it. Add a short-lived NPM_TOKEN repository secret for the first release, then rerun this job."
+            exit 1
+          fi
+      - run: bun run build:ui
+      - run: bun x aronrepo release --branch "$GITHUB_REF_NAME"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }} # only for the first release; trusted publishing afterwards
+      - name: Record the newest release on main
+        id: outcome
+        env:
+          PLANNED: ${{ steps.plan.outputs.version }}
+        run: |
+          git fetch --tags --force origin
+          tag=$(git describe --tags --abbrev=0 --match 'v[0-9]*' HEAD)
+          version=${tag#v}
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "released=$([ -n "$PLANNED" ] && [ "$PLANNED" = "$version" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
+  verify-registry:
+    needs: release
+    if: ${{ needs.release.outputs.released == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+      - name: Install the published version into an empty project and check its provenance
+        env:
+          VERSION: ${{ needs.release.outputs.version }}
+        run: node scripts/verify-package.mjs "@master/ui@$VERSION"
 
   deploy-site:
-    if: ${{ github.event_name == 'push' }}
+    needs: release
+    # The site shows the newest release in its header; v0.0.0 is only the baseline, so it shows none.
     runs-on: ubuntu-latest
     timeout-minutes: 20
     # Repository settings: secrets CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID, optional variable CLOUDFLARE_PAGES_PROJECT.
@@ -46,6 +99,7 @@ jobs:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       PAGES_PROJECT: ${{ vars.CLOUDFLARE_PAGES_PROJECT || 'master-ui' }}
+      PUBLIC_VERSION: ${{ needs.release.outputs.version != '0.0.0' && needs.release.outputs.version || '' }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -59,23 +113,3 @@ jobs:
       - name: Report a skipped deployment
         if: ${{ env.CLOUDFLARE_API_TOKEN == '' }}
         run: echo "::notice::Cloudflare credentials are not configured; the site was built but not deployed."
-
-  release:
-    if: ${{ github.event_name == 'workflow_dispatch' }}
-    runs-on: ubuntu-latest
-    environment: npm # required reviewers approve the release
-    permissions:
-      contents: write # push the version tag and create the GitHub release
-      id-token: write # npm trusted publishing and provenance
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          ref: ${{ inputs.sha }}
-          fetch-depth: 0 # also fetches the release branch, which the release checks the commit against
-      - uses: ./.github/actions/setup
-      - run: bun run test
-      - run: bun x aronrepo release --branch "$GITHUB_REF_NAME" --expect "$VERSION"
-        env:
-          VERSION: ${{ inputs.version }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }} # optional with npm trusted publishing

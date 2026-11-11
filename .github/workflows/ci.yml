@@ -1,16 +1,17 @@
 name: CI
+# Pull requests run it here; every push to main runs it as the first job of the Release workflow.
 on:
   pull_request:
-  push:
-    branches: [main, alpha, beta, rc, canary]
+  workflow_call:
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  # Called from Release, github.workflow names the caller, so keep the group apart from Release's own.
+  group: CI-${{ github.event.pull_request.number || github.ref }}-${{ github.event_name }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   validate:
@@ -42,6 +43,8 @@ jobs:
       - run: bun run test
       - run: bun run type-check
       - run: bun run build
+      - name: Install the packed package into an empty project and use it
+        run: node scripts/verify-package.mjs
       - uses: actions/upload-artifact@v7
         with:
           name: site-${{ github.sha }}
