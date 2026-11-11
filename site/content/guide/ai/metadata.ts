@@ -2,7 +2,7 @@ import define from '@master/internal-site/utils/metadata'
 
 export default define({
   title: 'Working with AI',
-  description: 'What an agent reads before it writes Master UI markup, and the checker that tells it when the markup is wrong.',
+  description: 'Give an agent version-correct contracts, check its markup, and verify the rendered interface before accepting an edit.',
   category: 'Getting started',
   order: 3,
   fileURL: import.meta.url

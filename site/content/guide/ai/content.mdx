@@ -1,9 +1,6 @@
-Every Master UI component has a contract: its classes, the element each goes on, the attribute that marks each state, its public custom properties and the smallest correct markup. That gives an agent two things it does not have with a library it only remembers from training.
+Give a coding agent the contracts from the version your project uses, then have it check the markup it changes. The contract supplies class names, required elements, state attributes and public custom properties; the checker catches common structural mistakes without rendering the page.
 
-- **A closed vocabulary it can look up.** A class is in a contract or it does not exist. The agent reads the contract and writes to it; it does not guess at `btn-secondary`.
-- **A checker that tells it when it is wrong.** One command reports a modifier without its base, a part outside its root, a class on the wrong element and a missing accessible name, with the fix in the message.
-
-The stylesheet already draws every state from a native or ARIA attribute. The agent writes `disabled` or `aria-pressed="true"`; it does not regenerate hover, focus and disabled styles, and nobody has to verify them again.
+Before an edit, the agent should inspect how your project imports Master UI, which theme it uses and whether `master-ui.json` records locally owned components. Those local contracts take precedence over the package's defaults. After the edit, static checks and a browser review answer different questions: valid markup can still have the wrong layout, an inaccessible interaction or a missing behavior script.
 
 ## The skill \{#the-skill\}
 
@@ -24,7 +21,7 @@ The skill tells the agent to use Master UI where a project already imports it. I
 
 ## What the site publishes for programs \{#for-programs\}
 
-Everything a person reads on this site is also published in a form a program reads, generated from the same contracts.
+The site publishes structured data and portable Markdown. Component Markdown is generated from contracts; guides, layouts and blocks are exported from their authored pages. These outputs provide text and code rather than an interactive copy of the site.
 
 | URL | Holds |
 | --- | --- |
@@ -35,31 +32,24 @@ Everything a person reads on this site is also published in a form a program rea
 | `https://ui.master.co/theme.json` | Every token of the theme, with its value |
 | `https://ui.master.co/r/registry.json` | The [registry](/guide/registry): source to copy into a project |
 
-An agent without a shell starts at `llms.txt` and fetches `https://ui.master.co/components/dialog.md` before it writes a dialog. These files are served to any origin, so an agent in a browser sandbox can fetch them. A program with the package installed reads the same data offline from `@master/ui/contracts.json` and `@master/ui/theme.json`.
+An agent without a shell starts at `llms.txt` and reads the relevant component page, such as `https://ui.master.co/components/dialog.md`. The public site describes its deployed library version, which may differ from a project's installed version. With the package available, prefer its `@master/ui/contracts.json` and `@master/ui/theme.json`, or the CLI below when the project has local contracts.
 
 ## Look up a contract \{#look-up-a-contract\}
 
-With a shell, the `master-ui` command in the package is the lookup. It needs no network and has no dependency.
+Run the CLI from the project root after [installing the package](/guide/installation). It reads contracts from that installed package and the project; do not let an uninstalled command fetch an unrelated version as part of a lookup.
 
 ```bash
 npx master-ui list             # every contract, one line each
 npx master-ui contract dialog  # one contract as JSON
 ```
 
-```
-surface      Trays, sheets and wells: the material ladder every component is built on.
-card         A raised sheet whose parts follow the room the card is given.
-window       The frame of an application around a screenshot, a demo or a terminal.
-…
-```
-
 A class name works as the name, so `npx master-ui contract btn-primary` prints the button's contract. `npx master-ui list --json` prints the list as data.
 
-Both commands read the project's own contracts in `ui/` as well. A component the project [owns](/guide/customization#own-a-component) is described by its copy, and a [component the project wrote](/guide/contracts#your-own) is listed beside the library's.
+Both commands also read the directory and additional contract paths configured in `master-ui.json` (`ui/` by default). A component the project [owns](/guide/customization#own-a-component) is described by its copy, and a [component the project wrote](/guide/contracts#your-own) is listed beside the library's.
 
 ## Check the markup \{#check-the-markup\}
 
-`npx master-ui check` reads markup and reports where it breaks a contract. This file has four mistakes:
+`npx master-ui check` reads markup and reports where it breaks a contract. For example, this file has three errors and one warning:
 
 ```html name=page.html
 <button type="button" class="btn-primary">Save changes</button>
@@ -90,7 +80,7 @@ Each line gives the place, the severity, a code and what to write instead, so an
 - **Paths.** Without arguments it checks every `.html`, `.htm`, `.astro`, `.svelte`, `.vue`, `.jsx`, `.tsx`, `.mdx`, `.erb`, `.php`, `.njk`, `.liquid` and `.hbs` file under the working directory, outside `node_modules` and build output. Pass files, directories or globs to narrow it.
 - **What it leaves alone.** It reads tags, classes and attributes without running a browser. What it cannot know, such as a class that comes from an expression or a part whose root is in another file, it does not report.
 - **`--json`** prints the result as data: the number of files, and for each file with a finding its diagnostics, each with `code`, `severity`, `className`, `contract`, `message`, `line` and `column`.
-- **`--strict`** reports `unknown-class` as an error. A class that starts with a component's root class and a dash, and is in no contract, is a warning by default, because it may be a utility. When the project has Master CSS installed, the checker asks it which classes are utilities, and `--strict` is then safe.
+- **`--strict`** reports `unknown-class` as an error. A class that starts with a component's root class and a dash, and is in no contract, is a warning by default, because it may be a utility. When the project has Master CSS installed, the checker recognizes preset utilities. Review diagnostics for project-defined classes too; a clean result does not validate every custom utility or dynamically computed class.
 
 The command exits with code 1 when it finds an error, so it fails a CI step as it stands:
 
@@ -102,7 +92,7 @@ The command exits with code 1 when it finds an error, so it fails a CI step as i
 }
 ```
 
-The checker is also a module, `@master/ui/check`, for a tool that checks markup it holds in memory.
+For programmatic checking, use `@master/ui/check`; [Contracts](/guide/contracts) documents the data the checker reads. Keep browser checks in the agent's completion criteria: test the affected keyboard actions, states, narrow layout and color schemes, including any required behavior attachment.
 
 ## Tell your agent \{#agents-md\}
 
@@ -114,27 +104,28 @@ An agent follows the project's own instructions first. Paste this into `AGENTS.m
 This project builds its interface with Master UI: classes on native elements, each described by a contract.
 
 - Read the contract before writing a component's markup: `npx master-ui contract <name>`, and `npx master-ui list` to find one. Do not write markup from memory.
-- Never invent a class. A class that is in no contract does not exist: there is no `btn-secondary` or `btn-outline`.
+- Never invent a Master UI component class. Use the installed or locally owned contract, and keep project-defined classes outside the library's class families.
 - Mark a state with the attribute the contract lists (`disabled`, `aria-pressed="true"`, `open`). Never add a class for a state.
 - A component is a class on a native element in any framework. Do not wrap one in a component to rename it. The patterns that hold state have a component to copy: `npx master-ui add` lists them, and `ui/` may already hold one.
-- To change how something looks, take the lowest step that works: a utility on the element, a theme token, a public custom property, a theme file, and only then `npx master-ui own <name>`. Never write a rule that restyles a library class.
-- Run `npx master-ui check` after changing markup. Fix every error and read each warning.
+- To change how something looks, take the lowest step that works: a utility on the element, a theme token, a public custom property, a theme file, and only then `npx master-ui own <name>`. A project rule may select a library class to set its documented custom properties; change its implementation through owned source.
+- Run `npx master-ui check` after changing markup. Fix every error and read each warning. Check the affected interactions in a browser, including the keyboard, a narrow viewport and both color schemes.
 ```
 
 ## MCP \{#mcp\}
 
-Master UI has no MCP server of its own. Its contracts are served through the Master CSS MCP server, `@master/css-mcp`, so an agent connects to one server for utilities, tokens and components, not two. The contract tools ship with a later release of that server. Until then the CLI and the published files hold the same contracts.
+The Master UI package provides the CLI and contract files described above. If your agent also connects to a Master CSS MCP server, inspect that connection's available tools before relying on component-contract lookup. Tool availability depends on the connected server; the installed CLI remains a direct way to read the project's effective contracts.
 
 ## In a chat sandbox or an artifact \{#without-a-build\}
 
-A page generated in a chat, an artifact or a single HTML file has no build step, so Master CSS cannot compile the library there. Link the compiled stylesheet, from this site or from a CDN:
+For a chat artifact or static HTML prototype with no CSS compilation, link the site's compiled stylesheet. Include its base reset if the environment does not provide one:
 
 ```html
+<link rel="stylesheet" href="https://ui.master.co/base.css">
 <link rel="stylesheet" href="https://ui.master.co/standalone.css">
 
 <button type="button" class="btn btn-primary">Save changes</button>
 ```
 
-`standalone.css` is the theme and every component as plain CSS, and `https://cdn.jsdelivr.net/npm/@master/ui/dist/standalone.css` is the same file from the package. Contracts apply as they do anywhere else.
+These URLs track the deployed site, so they suit a disposable prototype. For a maintained project, [serve the compiled files from a pinned package](/guide/installation#without-master-css) and read contracts from that same version. Loading CSS does not attach behavior scripts; patterns that need them still require a browser module or a framework component.
 
 Utilities are not available there. A class such as `flex` or `gap-md` needs Master CSS to generate it, so lay the page out with CSS of its own, in a `style` attribute or a small style block. The theme's tokens work, because they are custom properties: `color: var(--color-text-muted)` reads the theme.

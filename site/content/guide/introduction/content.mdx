@@ -1,19 +1,19 @@
-Master UI is a set of interface components written as native HTML and CSS, with a contract for each one. The contract is what you write to: the classes, the element each goes on, the states the stylesheet draws from native and ARIA attributes, and the custom properties you may set. The stylesheet is its default implementation, in one material language: moonstone in light mode, obsidian in dark mode, lit from above, with half-pixel contours, short shadows that fade and corners that turn with continuous curvature.
+Master UI gives HTML interfaces a shared set of component classes, design tokens and documented states. You write native markup, such as `<button class="btn">`, and use the same classes in a server template, React, Svelte or Vue. The package supplies CSS, contracts for the markup and scripts for patterns that need them.
 
-You copy the markup, not a dependency on a framework. A button is a `<button>`, a switch is a checkbox with `role="switch"`, a select is a real `<select>` and a dialog is a `<dialog>` opened by a button with `command="show-modal"`. Browsers keep their keyboard, form and accessibility behavior; Master UI supplies the appearance.
+Use it when you want to keep control of your markup while sharing component appearance and behavior across a project. Start with the default moonstone and obsidian theme, retune its tokens, or take a component's source into your project. Master UI is experimental: [pin the installed version and review upgrades](/guide/stability#experimental).
 
 ## A contract and an implementation \{#a-contract-and-an-implementation\}
 
-A person or a coding agent can draw a good button from nothing. What neither can draw from nothing is agreement: the twentieth page deciding what the first one decided, every state already checked on touch, in forced colors and with reduced motion, and a vocabulary small enough to look up and to check. That is what a component library is for now, and it is how this one is built.
+A contract describes the markup a stylesheet understands: classes, elements, state attributes and public custom properties. It gives people and coding agents the same vocabulary to use and a way to check common mistakes. The implementation supplies the actual appearance and behavior.
 
-| Part | What it is | Who changes it |
+| Part | What it provides | How you use it |
 | --- | --- | --- |
-| [Contract](/guide/contracts) | Class names, elements, state attributes, public custom properties, one correct example; a JSON file beside each stylesheet | It changes rarely, and a change is a breaking one |
-| Implementation | The stylesheet that draws the contract | You, by [tokens, a theme or your own copy](/guide/customization) |
-| [Behavior](/guide/behaviors) | The script that moves attributes, for the few patterns with no native element | You keep it or replace it |
-| Check | `npx master-ui check`, which reports markup that breaks a contract | It runs in CI and after an agent's edit |
+| [Contract](/guide/contracts) | A JSON description beside each stylesheet, including a correct example | Read the installed contract before writing markup |
+| Implementation | The stylesheet that draws the contract | Adjust [tokens, a theme or your own copy](/guide/customization) |
+| [Behavior](/guide/behaviors) | A reference script for patterns that need keyboard, value or focus handling | Attach it directly or through a supplied framework component |
+| Check | Static diagnostics for markup the checker can read | Run it after edits and in CI, then verify the rendered interface |
 
-The contract is closed: there is no `btn-outline` unless a contract says so, and the checker reports one that is written anyway. The implementation is open: retune it with tokens, replace its material with a [theme](/guide/theming), or take a component's source into your project. The contract stays the same through all three, so layouts, blocks, behaviors and this documentation keep fitting. [Working with AI](/guide/ai) covers what an agent reads and runs.
+The contract is closed: there is no `btn-outline` unless a contract says so, and the checker reports one that is written anyway. The implementation is open: retune it with tokens, replace its material with a [theme](/guide/theming), or take a component's source into your project. Token and theme changes keep the contract intact. If you own a component and change its structure or states, update its local contract and consumers together. [Working with AI](/guide/ai) covers what an agent reads and runs.
 
 ## How it fits together \{#how-it-fits-together\}
 
@@ -47,7 +47,7 @@ A thing earns a class when it has at least one of four kinds of knowledge:
 3. **A platform behavior.** Anchor positioning, a scroll-state query, an entrance in the top layer: what a utility cannot write.
 4. **A geometry its pieces share.** A corner that nests by an inset, a child whose size follows its holder's.
 
-A button has all four. A footer has none: it is links in columns, so it is a block, written with utilities. Three rules follow.
+A button combines material, states and geometry. A footer composed of links in columns needs no new component class: it is a block built with utilities. Three rules follow.
 
 - **A component does not own the page.** It never sets where it stands, unless standing there is its behavior: a navbar sticks, a dialog enters the top layer.
 - **A layout does not own a material.** It decides regions and scrolling; the faces in those regions are sheets, trays and cards.
@@ -57,7 +57,7 @@ A few layouts hold something utilities cannot say, such as a height in `dvh`, a 
 
 ## Principles \{#principles\}
 
-- **Native elements first.** Components style the element that already has the right semantics, so they work without JavaScript. Where a pattern has no native element, the stylesheet draws its states from ARIA and [a small script moves them](#patterns-that-need-a-script).
+- **Native elements first.** Components use the element that already has the right semantics and keep its native behavior where possible. Where a pattern has no native element, the stylesheet draws its states from ARIA and [a small script moves them](#patterns-that-need-a-script).
 - **The platform before script.** What a browser can now do by itself, a component does not reimplement. See [the platform](#the-platform) below.
 - **Light, not decoration.** Raised faces catch a line of light and settle on short shadows that fade; wells sink below their surroundings. State is depth, not color, and edges are soft. See [Default theme](/guide/theme).
 - **Tokens, not hard-coded values.** Surfaces, lines, elevation, radii and motion come from theme tokens, and a test fails a component that writes a color of its own; override a token once to retune every component.
@@ -66,45 +66,18 @@ A few layouts hold something utilities cannot say, such as a height in `dvh`, a 
 
 ## The platform \{#the-platform\}
 
-Each component uses the web platform's own feature for its job and treats it as an enhancement: a browser without the feature gets a working component, plainer.
+Native elements handle the work they already support: a checkbox stores a checked value, a select participates in a form, and a modal dialog makes the page behind it inert. Master UI styles their attributes and states.
 
-| Job | Platform feature | Used by | Without it |
-| --- | --- | --- | --- |
-| Open and close overlays | `<dialog>`, `popover`, `command` and `commandfor` | [Dialog](/components/dialog), [popover](/components/popover), [menu](/components/menu) | Call `showModal()` or `showPopover()` from a handler |
-| Show a label on hover and focus | `popover="hint"` and `interestfor` | [Tooltip](/components/tooltip) | The control keeps its accessible name |
-| Place a floating surface | CSS anchor positioning | Popover, menu, tooltip, [select](/components/select) | It appears centered, as the browser places a popover |
-| Move one indicator between options | `anchor-name` and `anchor-scope` | [Segmented control](/components/segmented), [tabs](/components/tabs) | Each option draws its own state |
-| Draw the option list | `appearance: base-select` | Select | The platform's own list |
-| Adapt to the space given | `@container` | [Card](/components/card), dialog, [form](/layouts/form), [navbar](/components/navbar) | Not needed: it is supported everywhere |
-| Read a state in a descendant | `:has()` | [Input group](/components/input#input-group), field, segmented control | Not needed: it is supported everywhere |
-| Grow with the content | `field-sizing: content` | [Textarea](/components/input#textarea) | A resize handle |
-| Animate in and out | `@starting-style`, `transition-behavior: allow-discrete` | Every overlay | It appears and leaves at once |
-| Open to an unknown height | `interpolate-size`, `::details-content` | [Accordion](/components/accordion), [banner](/components/banner) | It opens at once |
-| Show the first lines of a closed text | `::details-content` | [Expand](/components/expand) | The text is hidden while closed |
-| Validate without script | `:user-invalid` | [Input](/components/input#native-validation) | Use `aria-invalid` |
-| Fill a track up to its thumb | Scroll-driven animations | [Slider](/components/slider) | The track stays a well |
-| Fade an edge where content continues | Scroll-driven animations | [Scroll area](/components/scroll-area) | Clean edges |
-| Previous, next and a dot per slide | `::scroll-button()`, `::scroll-marker` | [Carousel](/components/carousel) | A swipeable, scrollable row |
-| Dismiss a message, or let it leave | `<dialog>`, `display` in keyframes | [Toast](/components/toast) | It stays until dismissed |
-| Fill stars and complete steps | `:has()` with a sibling | [Rating](/components/rating), [steps](/components/steps) | Not needed: it is supported everywhere |
-| Turn a corner with continuous curvature | `corner-shape` | Every component | Circular corners at the same apparent size |
-| Open a list under a whole field, at its width | `anchor-scope`, `anchor-size()` | [Combobox](/components/combobox) | The list sits in the flow directly under the field, at its own width |
-| Keep a menu on screen at the pointer | `@position-try` | [Context menu](/components/menu#context-menu) | It opens down and to the end |
-| Share columns between rows without a table | `subgrid` | [Calendar](/components/calendar), [data list](/components/data-list) | Not needed: it is supported everywhere |
-| Show an empty state when a filter hides every option | `:has()` with `:not([hidden])` | [Listbox](/components/listbox#filtering) | Not needed: it is supported everywhere |
-| Color a reading by its thresholds | `<meter>` with `low`, `high`, `optimum` | [Meter](/components/meter) | The platform's own meter |
-| Draw a value written once, in an attribute | Typed `attr()` | [Progress ring](/components/progress#ring) | Set a custom property beside it |
-| Give a sticky bar its material only once it is stuck | `container-type: scroll-state` | [Navbar](/components/navbar) | The material is always drawn |
-| Mark the section in view | `scroll-target-group`, `:target-current` | [Table of contents](/components/toc) | Set `aria-current` from a script |
-| Show how far the page has scrolled | A scroll timeline on the root | [Navbar](/components/navbar#progress) | No progress line |
-| Start siblings one after another | `sibling-index()` | [Skeleton](/components/skeleton) | They start together |
+The stylesheet still has a browser baseline. Features such as cascade layers, nesting and `light-dark()` are required; optional features such as anchor positioning and continuous corners enhance a working baseline. Some fallbacks need application code: a browser without invoker commands needs a click handler that calls `dialog.showModal()`.
+
+Read [Browser support](/guide/browser-support) for the baseline, enhancement fallbacks and how to test the features your application uses. Component pages name the relevant fallback beside their examples.
 
 ## Patterns that need a script \{#patterns-that-need-a-script\}
 
 A few patterns have no native element yet: a [combobox](/components/combobox), a [command palette](/components/command), a [calendar](/components/calendar), a [tree](/components/tree) walked with the arrow keys, a [context menu](/components/menu#context-menu), an [OTP field](/components/otp) that moves on by itself, a [splitter](/components/splitter) dragged between two panes, [tabs](/components/tabs#tab-panels) that switch panels in place. Master UI still gives them one stylesheet each. The division of work is the same every time:
 
 - **The stylesheet draws every state from ARIA**: `aria-selected` for the active option, `aria-checked` for a chosen one, `aria-expanded` for an open branch, `aria-current="date"` for today, `aria-orientation` for the way a splitter runs. It also places and animates the surface, and derives what it can, such as an empty state, with `:has()`.
-- **A script moves the attributes.** It never sets a style or measures to place something. The package ships a reference [behavior](/guide/behaviors) for each pattern, tested against the keys its contract lists; attach it, or write your own against the same attributes.
+- **A script handles input and updates state.** The package ships reference [behaviors](/guide/behaviors), tested against the keys their contracts list. They update native and ARIA attributes; a pointer position or another value CSS cannot derive may be passed through a custom property. CSS owns the material and placement rules.
 - **The container is native wherever one exists.** A command palette is a `<dialog>` opened by `command="show-modal"`; a date picker's calendar sits in a `popover`; a tree without script is nested `<details>`.
 
 Markup written against these attributes is the contract, so it keeps working whatever renders it: a template, a framework component, or an agent.
@@ -113,10 +86,10 @@ Markup written against these attributes is the contract, so it keeps working wha
 
 Most of the library is the same in a framework as on a plain page: a class on a native element, written in the framework's own syntax. A `<Button>` that only renames `btn btn-primary` adds nothing, and hides the class from the [checker](/guide/ai#check-the-markup).
 
-A framework component exists only where the framework owns something: a value the application reads or sets, rows rendered from data, ids that join one part to another, or a lifetime. That is seventeen components, among them the patterns above, a dialog opened from state, a toast queue and a field with its label and error. Each renders the contract's markup and attaches the behavior, which stays in the package; the component itself is source you copy into the project with `npx master-ui add combobox`. [React, Svelte and Vue](/guide/frameworks) lists them.
+A framework component exists only where the framework owns something: a value the application reads or sets, rows rendered from data, ids that join one part to another, or a lifetime. Examples include the patterns above, a dialog opened from state, a toast queue and a field with its label and error. Each renders the contract's markup and attaches the behavior, which stays in the package; the component itself is source you copy into the project with `npx master-ui add combobox`. [React, Svelte and Vue](/guide/frameworks) lists them.
 
 ## What this alpha publishes \{#what-comes-next\}
 
-The contracts, the stylesheets, the behaviors, a second theme, the checker, a [registry](/guide/registry) of source to copy, and the React, Svelte and Vue components for the patterns that hold state. There is no `@master/ui-react` package and none is planned: what a framework component decides is in `@master/ui/behaviors`, where a fix reaches every framework, and what is left is yours to edit. [Stability](/guide/stability) says what is public and what may change.
+The contracts, the stylesheets, the behaviors, a second theme, the checker, a [registry](/guide/registry) of source to copy, and the React, Svelte and Vue components for the patterns that hold state. Framework components ship as source in `@master/ui`, rather than separate bindings packages. Shared interaction logic stays in the behaviors; each framework component handles its own rendering and lifetime. [Stability](/guide/stability) says what is public and what may change.
 
 Continue with [Installation](/guide/installation), then [choose a component](/guide/choosing) or browse the [components](/components).

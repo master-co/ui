@@ -1,8 +1,8 @@
-Master UI is published as CSS source. Your project's Master CSS integration compiles it together with your own styles, so there is no runtime and nothing to build twice. A project without Master CSS links [the compiled stylesheet](#without-master-css) instead.
+Install `@master/ui`, load its stylesheet and render a native element with a component class. If your project uses Master CSS, compile the package's source with your app styles. Otherwise, use the [precompiled stylesheet](#without-master-css); it supplies the components without Master CSS utilities.
 
 ## Set up Master CSS \{#set-up-master-css\}
 
-Install Master CSS and its integration for your framework first. Follow the [Master CSS installation guide](https://css.master.co/guide/installation) for Vite, Astro, Next.js, Svelte and others.
+For the source stylesheet, set up Master CSS 2.1 or later and its integration for your framework first. Follow the [Master CSS installation guide](https://css.master.co/guide/installation) for Vite, Astro, Next.js, Svelte and others.
 
 ## Install the package \{#install-the-package\}
 
@@ -23,6 +23,18 @@ Import Master UI after the Master CSS preset in your app stylesheet:
 
 The preset declares the layer order `theme, base, defaults, components, utilities`. Master UI adds its rules to `components`, so utilities in your markup still win.
 
+## Verify the installation \{#verify-the-installation\}
+
+Make sure `app.css` is loaded by your app, then add a button to a rendered page. In JSX, write `className` instead of `class`:
+
+```html
+<button type="button" class="btn btn-primary">Save changes</button>
+```
+
+Run the app through its existing development command. The button should have an ink face in light mode and a pale face in dark mode, with a visible keyboard focus ring. Its appearance needs no behavior script; saving changes still needs your application's action handler.
+
+If it looks like an unstyled browser button, check that the page loads `app.css` and that the compiled output contains `.btn`. With source imports, verify that the Master CSS integration processes this stylesheet. Then [check the markup](#check-your-markup).
+
 ## Import only what you use \{#import-only-what-you-use\}
 
 Each component is also exported on its own. Import the shared theme first, then the components the app needs:
@@ -33,6 +45,8 @@ Each component is also exported on its own. Import the shared theme first, then 
 @import '@master/ui/components/button.css';
 @import '@master/ui/components/switch.css';
 ```
+
+Include the stylesheets for all classes used by your markup. For example, a button containing an `icon` or `spinner` also needs that component's stylesheet. The full import avoids managing this list yourself.
 
 ## One import per stylesheet \{#one-import-per-stylesheet\}
 
@@ -47,7 +61,7 @@ npx master-ui init
 @import './ui/index.css';
 ```
 
-Delete a line to leave a component out. When a component needs a change its tokens and properties cannot express, `npx master-ui own menu` copies its source into `ui/` and points that one line at the copy. [Customization](/guide/customization) says when that is the right step.
+Use this entry file in place of the full `@master/ui` import. It is optional: choose it when you want to maintain the import list or [own selected component source](/guide/registry). Delete a line only when your markup no longer uses its classes.
 
 ## Behaviors \{#behaviors\}
 
@@ -56,24 +70,40 @@ Most components need no script. A few patterns have no native element (a combobo
 ```js name=app.js
 import { attach } from '@master/ui/behaviors'
 
-attach()
+const detach = attach()
 ```
 
-`attach()` finds every such pattern in the document. Import one by name to attach it yourself; see [behaviors](/guide/behaviors).
+Call `attach()` in browser code after the markup exists. It attaches the patterns it recognizes at that moment and returns a cleanup function; call `detach()` before removing that markup. It does not observe later insertions or configure a context-menu target. See [Behaviors](/guide/behaviors) for scoped attachment and individual functions. In React, Svelte or Vue, use the [framework components](/guide/frameworks) to manage their lifetimes.
 
 ## Without Master CSS \{#without-master-css\}
 
-The package also ships the theme and every component compiled to plain CSS, for a project on another styling tool, a server-rendered page or a sandbox with no build:
-
-```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@master/ui/dist/standalone.css">
-```
+The package includes components compiled to ordinary CSS. A bundler that supports CSS imports can use the installed, pinned package:
 
 ```css name=app.css
+@import '@master/ui/base.css';
 @import '@master/ui/standalone.css';
 ```
 
-It declares the same layers, `theme, base, defaults, components, utilities`, and the same tokens as custom properties. It follows the reader's color scheme as the preset does, and `data-theme="light"` or `data-theme="dark"` pins one for the page or for a subtree. What it does not bring is the utilities: lay out with your own CSS, and copy a [layout](/layouts) or a [block](/blocks) only after replacing its utility classes. The components assume `box-sizing: border-box`; `@master/ui/base.css` is the small reset the preset uses, if the project has none.
+`base.css` supplies the preset's reset, including `box-sizing: border-box` and form-control fonts. Omit that import if your project already provides an equivalent reset.
+
+For a static page, copy the compiled files from the installed package into a directory your server exposes. For example, when `public/` is served at `/`:
+
+```bash
+mkdir -p public/styles
+cp node_modules/@master/ui/dist/base.css public/styles/master-ui-base.css
+cp node_modules/@master/ui/dist/standalone.css public/styles/master-ui.css
+```
+
+```html
+<link rel="stylesheet" href="/styles/master-ui-base.css">
+<link rel="stylesheet" href="/styles/master-ui.css">
+
+<button type="button" class="btn btn-primary">Save changes</button>
+```
+
+The copied files come from the exact package version you installed. Copy them again when you intentionally upgrade that version. This route needs no CSS compilation in your app.
+
+The compiled stylesheet declares the same layers and tokens as the source build. It follows the reader's color scheme; `data-theme="light"` or `data-theme="dark"` pins a scheme for the page or a subtree. It contains no Master CSS utilities: use your own CSS for layout, and replace utility classes when copying a [layout](/layouts) or [block](/blocks).
 
 ## Check your markup \{#check-your-markup\}
 
@@ -83,20 +113,8 @@ Each stylesheet has a [contract](/guide/contracts): its classes, the element eac
 npx master-ui check
 ```
 
-It reads HTML and the templates that look like it: JSX, Svelte, Vue, Astro. Run it in CI, and let a coding agent run it after each change; see [working with AI](/guide/ai).
+Run it from the project root with the package installed. It checks HTML and templates such as JSX, Svelte, Vue and Astro without rendering them. Resolve its diagnostics, then check the visible result and keyboard interaction in a browser; a clean static check does not establish accessibility or browser support. [Working with AI](/guide/ai#check-the-markup) covers diagnostics and CI use.
 
 ## Customize the theme \{#customize-the-theme\}
 
-Override Master UI tokens after the import. Every component that reads a token follows the new value:
-
-```css name=app.css
-@import '@master/css';
-@import '@master/ui';
-
-@theme {
-  --radius-control: .75rem;
-  --color-focus: light-dark(oklch(45% .18 265), oklch(80% .1 265));
-}
-```
-
-[Default theme](/guide/theme) describes the built-in materials and token values; [Theming](/guide/theming) shows how to override them and build another theme.
+Use [Theming](/guide/theming#retune-tokens) to change shared values such as brand color, radius or focus color. [Default theme](/guide/theme) explains their roles and defaults. If the change affects only one instance or one component, start with [Customization](/guide/customization) to choose the right layer.
