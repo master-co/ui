@@ -1,0 +1,51 @@
+---
+import { readFileSync } from 'node:fs'
+/* Inference: the same neutral face communicates state through shadow and depth.
+   Read the actual theme, rather than approximating its material with site chrome.
+   Evidence: packages/ui/theme.css and components/button.css rest/hover/active. */
+const source = readFileSync(new URL('../../../packages/ui/theme.css', import.meta.url), 'utf8')
+const tokens = source.match(/^@theme \{\n([\s\S]*?)\n\}/m)?.[1]
+if (!tokens) throw new Error('The material illustration needs the published theme tokens.')
+const theme = `.guide-depth { ${tokens} }`
+const states = [
+  { name: 'Rest', state: 'rest', shadow: '--shadow-raised', travel: 'No translation', profile: 'M4 38H28V26H76V38H100' },
+  { name: 'Hover', state: 'hover', shadow: '--shadow-raised-hover', travel: '↑ 0.5px with hover', profile: 'M4 38H28M28 15H76M76 38H100' },
+  { name: 'Pressed', state: 'pressed', shadow: '--shadow-pressed', travel: '↓ 0.5px when active', profile: 'M4 38H28V48H76V38H100' },
+]
+---
+<style is:inline set:html={theme} />
+<div class="guide-depth">
+  <div class="states">
+    {states.map(state => <div class={`state ${state.state}`}>
+      <strong>{state.name}</strong>
+      <div class="sample"><span class="face">Continue</span></div>
+      <div class="profile"><svg viewBox="0 0 104 60" width="104" height="60"><path class="datum" d="M4 38H100" /><path d={state.profile} /></svg></div>
+      <div class="explanation"><span>{state.travel}</span><code>{state.shadow}</code></div>
+    </div>)}
+  </div>
+  <div class="note">Depth sketches are schematic; vertical distances are exaggerated.</div>
+</div>
+<style>
+  .guide-depth { --corner-shape: round; --corner-scale: 1; }
+  @supports (corner-shape: squircle) { .guide-depth { --corner-shape: squircle; --corner-scale: 1.6; } }
+  .states { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+  .state { display: grid; justify-items: center; text-align: center; gap: 12px; }
+  strong { font-weight: 550; }
+  .sample { display: grid; place-items: center; width: 100%; padding: 18px 0; background: var(--color-surface-tray); }
+  .face { display: inline-flex; align-items: center; justify-content: center; min-height: 38px; padding: 0 16px; font-size: 13.5px; font-weight: var(--font-weight-control); color: var(--color-text-strong); border-radius: calc(var(--radius-control) * var(--corner-scale)); corner-shape: var(--corner-shape); background: linear-gradient(180deg, var(--color-surface-raised), var(--color-surface-raised-low)) var(--color-surface-raised-low); box-shadow: var(--shadow-raised); }
+  .hover .face { translate: 0 calc(-1 * var(--lift)); box-shadow: var(--shadow-raised-hover); }
+  .pressed .face { translate: 0 var(--lift); background: var(--color-surface-inset); box-shadow: var(--shadow-pressed); }
+  svg { display: block; fill: none; stroke: var(--gf-ink); stroke-width: 1.5; }
+  .datum { stroke: var(--gf-line); stroke-dasharray: 3 3; stroke-width: 1; }
+  .explanation { display: grid; gap: 4px; font-size: 13px; }
+  .explanation code { color: var(--gf-muted); }
+  .note { margin-top: 18px; text-align: center; color: var(--gf-muted); font-size: 13px; }
+  @container (max-width: 420px) {
+    .states { grid-template-columns: 1fr; gap: 20px; }
+    .state { grid-template-columns: 72px minmax(0, 1fr) 64px; gap: 8px; align-items: center; }
+    .sample { padding: 12px 0; }
+    .profile svg { width: 64px; }
+    .explanation { grid-column: 2 / -1; justify-self: start; text-align: left; }
+  }
+  @media (forced-colors: active) { .face { outline: 1px solid CanvasText; } }
+</style>
