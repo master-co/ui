@@ -1,0 +1,48 @@
+{
+  "$schema": "../contract.schema.json",
+  "name": "calendar",
+  "title": "Calendar",
+  "tier": "component",
+  "category": "Forms",
+  "description": "A month of days to pick from, with ranges.",
+  "use": "Picking a day or a range of days in the page, with the week in view. It is an ARIA grid of buttons: the stylesheet draws every state, and the script supplies the dates, the month buttons and the keys. It has no surface of its own: put it in a card, or in a popover to make a date picker.",
+  "instead": [
+    { "when": "A plain date is all the form needs, or the reader is on a phone: a native date input opens the picker of the device", "use": "input" },
+    { "when": "The value is a time, picked by touch", "use": "wheel" }
+  ],
+  "composes": ["button", "icon"],
+  "script": "required",
+  "behavior": "calendar",
+  "keyboard": [
+    { "keys": "ArrowLeft, ArrowRight", "action": "Move focus to the day before or the day after; the other way around from right to left" },
+    { "keys": "ArrowUp, ArrowDown", "action": "Move focus to the same weekday of the week before or after" },
+    { "keys": "Home, End", "action": "Move focus to the first or the last day of the week" },
+    { "keys": "PageUp, PageDown", "action": "Show the month before or after and move focus to the same day in it, or to its last day when it is shorter" },
+    { "keys": "Shift+PageUp, Shift+PageDown", "action": "Show the same month of the year before or after and move focus to the same day in it" },
+    { "keys": "Enter, Space", "action": "Choose the day that has focus; the day is a button, so the browser turns the key into its click" },
+    { "keys": "Tab", "action": "Enters the grid at the chosen day, or at today, or at the first day of a month that holds neither; the grid is one tab stop" }
+  ],
+  "classes": [
+    { "name": "calendar", "kind": "root", "description": "The month: a header over a grid of days" },
+    { "name": "calendar-header", "kind": "part", "of": "calendar", "description": "The row over the grid: a button to the month before, the title, a button to the month after" },
+    { "name": "calendar-title", "kind": "part", "of": "calendar", "description": "The name of the month, centered between the two buttons; give it aria-live=\"polite\" so a change of month is announced" },
+    { "name": "calendar-grid", "kind": "part", "of": "calendar", "description": "The seven-column grid, with role=\"grid\" and labelled by the title" },
+    { "name": "calendar-week", "kind": "part", "of": "calendar", "description": "A row on the grid's columns, with role=\"row\": the weekday names, or a week of days" },
+    { "name": "calendar-weekday", "kind": "part", "of": "calendar", "description": "A column heading with role=\"columnheader\"; give it the full name of the day as aria-label" },
+    { "name": "calendar-day", "kind": "part", "of": "calendar", "elements": ["button"], "description": "A day, on a button with role=\"gridcell\". One day is in the tab order; the others have tabindex=\"-1\"" },
+    { "name": "calendar-day-outside", "kind": "modifier", "of": "calendar-day", "description": "A day of the month before or after, shown in muted ink to complete a week" },
+    { "name": "calendar-day-range-start", "kind": "modifier", "of": "calendar-day", "description": "The first day of a range: an ink day on the half of the band that faces the range. With calendar-day-range-end on the same day, a range of one day" },
+    { "name": "calendar-day-range", "kind": "modifier", "of": "calendar-day", "description": "A day between the ends of a range: a chip-toned band from cell to cell, rounded where a week ends" },
+    { "name": "calendar-day-range-end", "kind": "modifier", "of": "calendar-day", "description": "The last day of a range: an ink day on the half of the band that faces the range" }
+  ],
+  "states": [
+    { "on": "calendar-day", "name": "today", "mark": "aria-current=\"date\"", "description": "A dot under the number, kept when the day is chosen" },
+    { "on": "calendar-day", "name": "chosen", "mark": "aria-selected=\"true\"", "description": "Fills with ink, the way a checked checkbox does. Every day of a range carries it. aria-pressed=\"true\" draws the same" },
+    { "on": "calendar-day", "name": "unavailable", "mark": "disabled", "description": "Or aria-disabled=\"true\": disabled ink" }
+  ],
+  "properties": [
+    { "name": "--calendar-cell", "default": "2.25rem", "description": "Width and height of a day; 2.75rem on touch screens" },
+    { "name": "--calendar-day-radius", "default": "var(--radius-control-sm)", "description": "Corner of a day" }
+  ],
+  "example": "<div class=\"calendar\">\n  <div class=\"calendar-header\">\n    <button type=\"button\" class=\"btn btn-quiet btn-square btn-sm\" aria-label=\"Previous month\"><svg class=\"icon\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m15 6-6 6 6 6\"/></svg></button>\n    <h3 class=\"calendar-title\" id=\"calendar-title\" aria-live=\"polite\">November 2026</h3>\n    <button type=\"button\" class=\"btn btn-quiet btn-square btn-sm\" aria-label=\"Next month\"><svg class=\"icon\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m9 6 6 6-6 6\"/></svg></button>\n  </div>\n  <div class=\"calendar-grid\" role=\"grid\" aria-labelledby=\"calendar-title\">\n    <div class=\"calendar-week\" role=\"row\">\n      <span class=\"calendar-weekday\" role=\"columnheader\" aria-label=\"Monday\">Mo</span>\n      <span class=\"calendar-weekday\" role=\"columnheader\" aria-label=\"Tuesday\">Tu</span>\n      <span class=\"calendar-weekday\" role=\"columnheader\" aria-label=\"Wednesday\">We</span>\n      <span class=\"calendar-weekday\" role=\"columnheader\" aria-label=\"Thursday\">Th</span>\n      <span class=\"calendar-weekday\" role=\"columnheader\" aria-label=\"Friday\">Fr</span>\n      <span class=\"calendar-weekday\" role=\"columnheader\" aria-label=\"Saturday\">Sa</span>\n      <span class=\"calendar-weekday\" role=\"columnheader\" aria-label=\"Sunday\">Su</span>\n    </div>\n    <div class=\"calendar-week\" role=\"row\">\n      <button type=\"button\" class=\"calendar-day\" role=\"gridcell\" tabindex=\"-1\">9</button>\n      <button type=\"button\" class=\"calendar-day\" role=\"gridcell\" tabindex=\"-1\">10</button>\n      <button type=\"button\" class=\"calendar-day\" role=\"gridcell\" aria-current=\"date\" tabindex=\"-1\">11</button>\n      <button type=\"button\" class=\"calendar-day\" role=\"gridcell\" tabindex=\"-1\">12</button>\n      <button type=\"button\" class=\"calendar-day\" role=\"gridcell\" aria-selected=\"true\">13</button>\n      <button type=\"button\" class=\"calendar-day\" role=\"gridcell\" tabindex=\"-1\">14</button>\n      <button type=\"button\" class=\"calendar-day\" role=\"gridcell\" tabindex=\"-1\">15</button>\n    </div>\n  </div>\n</div>"
+}

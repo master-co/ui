@@ -1,0 +1,53 @@
+{
+  "$schema": "../contract.schema.json",
+  "name": "dialog",
+  "title": "Dialog",
+  "tier": "component",
+  "category": "Overlays",
+  "description": "A native modal on an overlay sheet, opened and closed without script.",
+  "use": "A decision or a short task that must be finished or dismissed before the page is used again: confirm a destructive act, fill a short form. With dialog-drawer it is a side panel for filters, details or navigation; with dialog-sheet it is a panel from the bottom edge on a small screen.",
+  "instead": [
+    { "when": "The content belongs to one button and the page stays usable around it", "use": "popover" },
+    { "when": "It is a list of actions opened from a button", "use": "menu" },
+    { "when": "It is one search field over a list of commands", "use": "command" },
+    { "when": "It confirms something that just happened and needs no answer", "use": "toast" },
+    { "when": "The message can stay in the page and blocks nothing", "use": "alert" }
+  ],
+  "composes": ["button"],
+  "script": "none",
+  "keyboard": [
+    { "keys": "Enter, Space", "action": "On a button with commandfor and command=\"show-modal\": open the dialog and move focus into it, to the element with autofocus when there is one" },
+    { "keys": "Tab, Shift+Tab", "action": "Move between the controls inside the dialog; the page behind it is inert" },
+    { "keys": "Escape", "action": "Close the dialog and return focus to the button that opened it" },
+    { "keys": "Enter", "action": "In a form with method=\"dialog\": submit it, which closes the dialog and sets its returnValue" }
+  ],
+  "platform": [
+    { "feature": "commandfor with command=\"show-modal\" and command=\"close\" (invoker commands)", "fallback": "Call dialog.showModal() and dialog.close() from a click handler; the stylesheet is the same" },
+    { "feature": "closedby=\"any\" (light dismiss)", "fallback": "A click on the scrim does nothing; Escape and the close buttons still close the dialog" },
+    { "feature": "@starting-style and transition-behavior: allow-discrete", "fallback": "The dialog and its scrim appear and leave at once, without the fade" }
+  ],
+  "classes": [
+    { "name": "dialog", "kind": "root", "elements": ["dialog"], "label": true, "description": "The overlay sheet, on a dialog element named with aria-labelledby or aria-label. It is 28rem wide and keeps 1rem clear of the viewport" },
+    { "name": "dialog-sm", "kind": "modifier", "of": "dialog", "exclusive": "size", "description": "22rem wide, for a confirmation of one sentence; the default is 28rem" },
+    { "name": "dialog-lg", "kind": "modifier", "of": "dialog", "exclusive": "size", "description": "40rem wide; the default is 28rem" },
+    { "name": "dialog-drawer", "kind": "modifier", "of": "dialog", "exclusive": "position", "description": "A panel on the inline-end edge, 24rem wide, for work that keeps the page in view. It floats 8px inside the viewport and slides in from the edge it rests on" },
+    { "name": "dialog-drawer-start", "kind": "modifier", "of": "dialog", "description": "With dialog-drawer: the panel rests on the inline-start edge, 18rem wide, where navigation lives" },
+    { "name": "dialog-sheet", "kind": "modifier", "of": "dialog", "exclusive": "position", "description": "A panel that rises from the bottom edge, with square lower corners, clear of the home indicator" },
+    { "name": "dialog-header", "kind": "part", "of": "dialog", "description": "Holds the title and the description at the top of the sheet" },
+    { "name": "dialog-title", "kind": "part", "of": "dialog", "description": "The title; point the dialog's aria-labelledby at it" },
+    { "name": "dialog-description", "kind": "part", "of": "dialog", "description": "A quiet sentence under the title that says what the title means" },
+    { "name": "dialog-body", "kind": "part", "of": "dialog", "description": "Content between header and footer. It takes the remaining height and scrolls inside the sheet when it is long" },
+    { "name": "dialog-footer", "kind": "part", "of": "dialog", "description": "The actions, the main one last. Under 22rem of dialog width they stack at full width, the main one first" },
+    { "name": "dialog-close", "kind": "part", "of": "dialog", "label": true, "description": "Places a quiet square button in the top corner at the inline end; it needs an accessible name" }
+  ],
+  "states": [
+    { "on": "dialog", "name": "open", "mark": "open", "description": "Set by the browser when the dialog is shown. Do not write it in markup: a dialog that starts with open is not modal" },
+    { "on": "dialog", "name": "modal", "mark": ":modal", "description": "Opened with show-modal or showModal(): the page behind it does not scroll" }
+  ],
+  "properties": [
+    { "name": "--dialog-width", "default": "28rem", "description": "Preferred width" },
+    { "name": "--dialog-padding", "default": "1.5rem", "description": "Padding around the parts" },
+    { "name": "--dialog-radius", "default": "1.25rem", "description": "Corner radius" }
+  ],
+  "example": "<button type=\"button\" class=\"btn\" commandfor=\"delete-project\" command=\"show-modal\">Delete project</button>\n\n<dialog id=\"delete-project\" class=\"dialog\" closedby=\"any\" aria-labelledby=\"delete-project-title\">\n  <header class=\"dialog-header\">\n    <h2 class=\"dialog-title\" id=\"delete-project-title\">Delete this project?</h2>\n    <p class=\"dialog-description\">Atlas and its 14 deployments are removed, and its domains stop resolving at once.</p>\n  </header>\n  <footer class=\"dialog-footer\">\n    <button type=\"button\" class=\"btn\" commandfor=\"delete-project\" command=\"close\" autofocus>Cancel</button>\n    <button type=\"button\" class=\"btn btn-primary\" commandfor=\"delete-project\" command=\"close\">Delete project</button>\n  </footer>\n</dialog>"
+}

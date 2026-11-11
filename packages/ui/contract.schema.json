@@ -1,0 +1,170 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ui.master.co/contract.schema.json",
+  "title": "Master UI contract",
+  "description": "What a stylesheet promises: its classes, where they go, the states it draws, the properties it reads and the smallest markup that uses it. A contract sits beside its stylesheet and is the one source for the tests, the documentation tables, the registry and the checker.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["name", "title", "tier", "category", "description", "use", "script", "classes", "example"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "name": {
+      "description": "The slug: the file name of the stylesheet without its extension.",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$"
+    },
+    "title": { "description": "The name a reader sees.", "type": "string", "minLength": 1 },
+    "tier": { "enum": ["component", "layout"] },
+    "category": { "type": "string", "minLength": 1 },
+    "description": { "description": "One sentence: what it is.", "type": "string", "minLength": 1 },
+    "use": { "description": "When to reach for it.", "type": "string", "minLength": 1 },
+    "instead": {
+      "description": "Neighbors that are the right choice in another situation.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["when", "use"],
+        "properties": {
+          "when": { "type": "string", "minLength": 1 },
+          "use": { "description": "The name of another contract.", "type": "string", "pattern": "^[a-z][a-z0-9-]*$" }
+        }
+      }
+    },
+    "composes": {
+      "description": "Other contracts whose classes this one's markup uses. Their stylesheets must be imported too.",
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" }
+    },
+    "script": {
+      "description": "none: every state works without script. optional: a script adds a convenience and the page works without it. required: the pattern has no native element, so a script moves its attributes.",
+      "enum": ["none", "optional", "required"]
+    },
+    "behavior": {
+      "description": "The reference script in behaviors/<behavior>.js that drives the pattern.",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$"
+    },
+    "keyboard": {
+      "description": "What the keys do once the behavior is attached, or what the native element already does.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["keys", "action"],
+        "properties": {
+          "keys": { "type": "string", "minLength": 1 },
+          "action": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "platform": {
+      "description": "Platform features used as an enhancement, each with what a browser without it shows.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["feature", "fallback"],
+        "properties": {
+          "feature": { "type": "string", "minLength": 1 },
+          "fallback": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "classes": {
+      "description": "Every class the stylesheet defines, and nothing else.",
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/definitions/class" }
+    },
+    "states": {
+      "description": "The states the stylesheet draws and the attribute or pseudo-class that marks each.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["on", "name", "mark"],
+        "properties": {
+          "on": { "description": "The class of the element that carries the mark.", "type": "string" },
+          "name": { "type": "string", "minLength": 1 },
+          "mark": { "description": "The attribute or pseudo-class as written in markup or CSS: aria-pressed=\"true\", disabled, :user-invalid, open.", "type": "string", "minLength": 1 },
+          "description": { "type": "string" }
+        }
+      }
+    },
+    "properties": {
+      "description": "The public custom properties. Anything not listed is private and may change.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "description"],
+        "properties": {
+          "name": { "type": "string", "pattern": "^--[a-z][a-z0-9-]*$" },
+          "on": { "description": "The class that declares or reads it. Defaults to the first root.", "type": "string" },
+          "default": { "description": "The value the stylesheet declares on that class, when it declares one.", "type": "string" },
+          "description": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "example": {
+      "description": "The smallest markup that is correct: it passes the checker with no diagnostics.",
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "definitions": {
+    "class": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "kind", "description"],
+      "properties": {
+        "name": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+        "kind": {
+          "description": "root: stands by itself. part: lives inside its root. modifier: goes on the same element as its base.",
+          "enum": ["root", "part", "modifier"]
+        },
+        "of": {
+          "description": "The root a part belongs to, or the class a modifier goes with. Required for parts and modifiers. A list when it goes with any one of several, such as a modifier shared by two parts.",
+          "oneOf": [
+            { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+            { "type": "array", "minItems": 2, "uniqueItems": true, "items": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" } }
+          ]
+        },
+        "description": { "type": "string", "minLength": 1 },
+        "elements": {
+          "description": "The elements the class may be on. Omit when any element will do.",
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^[a-z][a-z0-9]*$" }
+        },
+        "attributes": {
+          "description": "Attributes the element must carry. true: present with any value. A string: that value. An array: one of those values.",
+          "type": "object",
+          "additionalProperties": {
+            "oneOf": [
+              { "const": true },
+              { "type": "string" },
+              { "type": "array", "minItems": 1, "items": { "type": "string" } }
+            ]
+          }
+        },
+        "label": {
+          "description": "The element needs an accessible name: text of its own, aria-label, aria-labelledby, title or a label that wraps or points at it.",
+          "const": true
+        },
+        "exclusive": {
+          "description": "A group key. Two modifiers with the same key do not go on one element.",
+          "type": "string",
+          "minLength": 1
+        },
+        "anywhere": {
+          "description": "A part that may stand outside its root, such as a popover the root opens.",
+          "const": true
+        }
+      }
+    }
+  }
+}

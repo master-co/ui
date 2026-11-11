@@ -1,0 +1,38 @@
+{
+  "$schema": "../contract.schema.json",
+  "name": "command",
+  "title": "Command palette",
+  "tier": "component",
+  "category": "Overlays",
+  "description": "A dialog that is one search field over a list of commands.",
+  "use": "A shortcut to every command of an application, opened from anywhere with a key such as ⌘K and searched by typing. It is a dialog with a different interior: write class=\"dialog command\". Every command in it must be reachable some other way too.",
+  "instead": [
+    { "when": "The list fills a form field with one value", "use": "combobox" },
+    { "when": "It is a short list of actions that belongs to one button", "use": "menu" },
+    { "when": "The modal holds a question or a form, not a search over commands", "use": "dialog" }
+  ],
+  "composes": ["dialog", "listbox", "button"],
+  "script": "required",
+  "behavior": "command",
+  "keyboard": [
+    { "keys": "Meta+K, Control+K", "action": "With the behavior: open the palette from anywhere, or close it when it is open" },
+    { "keys": "Typing", "action": "With the behavior: hide the options that do not match and make the first match the active one" },
+    { "keys": "ArrowDown, ArrowUp", "action": "With the behavior: move the active option, skipping disabled ones and wrapping at the ends" },
+    { "keys": "Home, End", "action": "With the behavior: move to the first or the last option" },
+    { "keys": "Enter", "action": "With the behavior: run the active command and close the palette" },
+    { "keys": "Escape", "action": "Close the palette and return focus to where it was, as the native dialog does" }
+  ],
+  "platform": [
+    { "feature": "commandfor with command=\"show-modal\" (invoker commands)", "fallback": "A button opens the palette without script where they are supported; elsewhere call dialog.showModal() from a click handler" },
+    { "feature": "closedby=\"any\" (light dismiss)", "fallback": "A click on the scrim does nothing; Escape still closes the palette" }
+  ],
+  "classes": [
+    { "name": "command", "kind": "root", "elements": ["dialog"], "label": true, "description": "Beside dialog, on the same dialog element: the palette's interior without padding, 36rem wide, placed near the top of the viewport so the field stays where it is while the list changes length" },
+    { "name": "command-search", "kind": "part", "of": "command", "elements": ["label"], "description": "The field row, on a label so the whole row focuses the input. It holds an icon, the command-input and an optional hint" },
+    { "name": "command-input", "kind": "part", "of": "command", "elements": ["input"], "description": "The bare search input, with role=\"combobox\" and aria-controls pointing at the list. It has no material of its own: the dialog is its surface" },
+    { "name": "command-list", "kind": "part", "of": "command", "description": "On the listbox of results: it takes the remaining height and scrolls inside the dialog" },
+    { "name": "command-footer", "kind": "part", "of": "command", "description": "A row of key hints under the list" },
+    { "name": "command-hint", "kind": "part", "of": "command", "description": "One hint in the footer: keys, then what they do" }
+  ],
+  "example": "<button type=\"button\" class=\"btn\" commandfor=\"palette\" command=\"show-modal\">Search commands</button>\n\n<dialog id=\"palette\" class=\"dialog command\" closedby=\"any\" aria-label=\"Command palette\">\n  <label class=\"command-search\">\n    <input class=\"command-input\" type=\"search\" role=\"combobox\" aria-expanded=\"true\" aria-controls=\"palette-list\" aria-activedescendant=\"cmd-new\" aria-autocomplete=\"list\" aria-label=\"Search commands\" autocomplete=\"off\" placeholder=\"Type a command or search\" autofocus>\n  </label>\n  <div class=\"listbox command-list\" id=\"palette-list\" role=\"listbox\" aria-label=\"Commands\">\n    <div class=\"listbox-option\" role=\"option\" id=\"cmd-new\" aria-selected=\"true\">New project</div>\n    <div class=\"listbox-option\" role=\"option\" id=\"cmd-deploy\">Deploy to production</div>\n    <div class=\"listbox-option\" role=\"option\" id=\"cmd-invite\">Invite a member</div>\n    <div class=\"listbox-empty\">No commands match.</div>\n  </div>\n</dialog>"
+}

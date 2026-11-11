@@ -2,6 +2,8 @@
 
 Native HTML and CSS components crafted with [Master CSS](https://css.master.co), and the layouts and blocks built from them, in the Moonstone / Obsidian material: a zinc pearl in light mode, a matte obsidian in dark mode, lit from above, with half-pixel contours, short shadows that fade and corners that turn with continuous curvature.
 
+Each stylesheet has a contract beside it, `button.css` and `button.json`: its classes, the element each goes on, the states it draws from native and ARIA attributes, its public custom properties and the smallest correct markup. People and coding agents write to the contract; `master-ui check` reports markup that breaks one.
+
 Components use the platform before script: `<dialog>`, `popover` and invoker commands for overlays, CSS anchor positioning for placement, `appearance: base-select` for the option list, container queries for layout, scroll-driven animations for edge fades, `::scroll-button()` and `::scroll-marker` for carousels, `corner-shape` for corners, and `@starting-style` for motion in and out. Each feature is an enhancement over a working baseline.
 
 A few patterns need behavior the platform does not have yet: a combobox, a command palette, a calendar, a tree with arrow keys, a context menu. For those the stylesheets draw every state from ARIA attributes and leave the behavior to your script or framework; each page shows the smallest script that drives it.
@@ -45,102 +47,154 @@ Or import only the theme and the components you use:
 <input type="checkbox" role="switch" class="switch" aria-label="Notifications">
 
 <button type="button" class="btn" commandfor="confirm" command="show-modal">Delete</button>
-<dialog id="confirm" class="dialog" closedby="any">…</dialog>
+<dialog id="confirm" class="dialog" aria-labelledby="confirm-title" closedby="any">…</dialog>
 ```
 
-| Component | Classes |
+## Contracts
+
+`components/<name>.json` and `layouts/<name>.json` follow `contract.schema.json`; `@master/ui/contracts.json` collects them. The table is written from them by `bun run build`.
+
+<!-- contracts:start -->
+| Stylesheet | Classes |
 | --- | --- |
-| Surface | `tray`, `sheet`, `sheet-{flat,raised,floating,inverse}`, `well` |
-| Card | `card`, `card-{flat,interactive,split}`, `card-media`, `card-header`, `card-title`, `card-description`, `card-action`, `card-body`, `card-footer` |
+| Surface | `sheet`, `sheet-flat`, `sheet-raised`, `sheet-floating`, `sheet-inverse`, `well`, `tray` |
+| Card | `card`, `card-flat`, `card-interactive`, `card-split`, `card-media`, `card-header`, `card-title`, `card-description`, `card-action`, `card-body`, `card-footer` |
 | Window | `window`, `window-flat`, `window-bar`, `window-controls`, `window-title`, `window-address`, `window-end`, `window-body` |
-| Divider | `divider`, `divider-{label,vertical}` |
+| Divider | `divider`, `divider-vertical`, `divider-label` |
 | Scroll area | `scroll-area`, `scroll-area-inline` |
-| Splitter | `splitter`, `splitter-pane`, `splitter-handle` |
-| Button | `btn`, `btn-{primary,quiet,danger,brand}`, `btn-{sm,lg}`, `btn-{square,pill}`, `btn-group` |
+| Icon | `icon` |
+| Button | `btn`, `btn-primary`, `btn-quiet`, `btn-brand`, `btn-danger`, `btn-sm`, `btn-lg`, `btn-square`, `btn-pill`, `btn-group` |
 | Toolbar | `toolbar`, `toolbar-floating`, `toolbar-separator` |
 | Link | `link`, `link-quiet` |
-| Input | `input`, `input-{sm,lg}`, `input-auto`, `input-group`, `input-group-{sm,lg}`, `input-group-field`, `input-group-addon`, `input-group-wrap`, `field`, `field-hint`, `field-error`, `fieldset`, `fieldset-legend` |
-| Select | `select`, `select-raised`, `select-{sm,lg}`, `select-option` |
-| Combobox | `combobox`, `combobox-toggle` |
-| Listbox | `listbox`, `listbox-option`, `listbox-body`, `listbox-description`, `listbox-end`, `listbox-group`, `listbox-label`, `listbox-separator`, `listbox-empty` |
-| Checkbox | `checkbox`, `check` |
+| Input | `input`, `input-sm`, `input-lg`, `input-auto`, `input-group`, `input-group-sm`, `input-group-lg`, `input-group-wrap`, `input-group-field`, `input-group-addon`, `field`, `field-hint`, `field-error`, `fieldset`, `fieldset-legend` |
+| Select | `select`, `select-option`, `select-raised`, `select-sm`, `select-lg` |
+| Checkbox | `check`, `checkbox` |
 | Radio | `radio` |
-| Switch | `switch`, `switch-{sm,lg}` |
+| Switch | `switch`, `switch-sm`, `switch-lg` |
 | Slider | `slider` |
 | Range | `range`, `range-start`, `range-end` |
-| Segmented control | `segmented`, `segmented-{sm,lg}`, `segmented-item`, `segmented-input` |
+| Segmented control | `segmented`, `segmented-item`, `segmented-input`, `segmented-sm`, `segmented-lg` |
 | Chip | `chip`, `chip-input`, `chip-remove` |
-| Swatch | `swatch`, `swatch-{sm,lg}`, `swatch-square`, `swatch-input` |
+| Swatch | `swatch`, `swatch-input`, `swatch-sm`, `swatch-lg`, `swatch-square` |
+| Rating | `rating`, `rating-input`, `rating-sm`, `rating-lg` |
 | Choice | `choice`, `choice-body`, `choice-title`, `choice-description`, `choice-end` |
 | Checklist | `checklist`, `checklist-item`, `checklist-label`, `checklist-body`, `checklist-title`, `checklist-description`, `checklist-end`, `checklist-count` |
-| Rating | `rating`, `rating-{sm,lg}`, `rating-input` |
 | Dropzone | `dropzone`, `dropzone-input`, `dropzone-title`, `dropzone-description` |
 | OTP | `otp`, `otp-slot`, `otp-separator` |
 | Stepper | `stepper`, `stepper-field` |
 | Wheel | `wheel`, `wheel-sm`, `wheel-column`, `wheel-option`, `wheel-separator` |
 | Composer | `composer`, `composer-field`, `composer-attachments`, `composer-toolbar`, `composer-end`, `composer-hint` |
-| Calendar | `calendar`, `calendar-header`, `calendar-title`, `calendar-grid`, `calendar-week`, `calendar-weekday`, `calendar-day`, `calendar-day-outside`, `calendar-day-range{,-start,-end}` |
-| Tabs | `tabs`, `tabs-sm`, `tabs-item` |
+| Tabs | `tabs`, `tabs-item`, `tabs-sm` |
 | Navbar | `navbar`, `navbar-floating`, `navbar-brand`, `navbar-nav`, `navbar-link`, `navbar-end`, `navbar-toggle`, `navbar-progress` |
 | Tab bar | `tabbar`, `tabbar-floating`, `tabbar-item`, `tabbar-label` |
-| Nav | `nav`, `nav-item`, `nav-end`, `nav-label`, `nav-group`, `nav-toggle`, `nav-sub` |
-| Tree | `tree`, `tree-item`, `tree-toggle`, `tree-group`, `tree-sub` |
 | Table of contents | `toc`, `toc-title`, `toc-list`, `toc-link` |
+| Nav | `nav`, `nav-item`, `nav-end`, `nav-label`, `nav-group`, `nav-toggle`, `nav-sub` |
 | Breadcrumb | `breadcrumb`, `breadcrumb-item`, `breadcrumb-link` |
 | Pagination | `pagination`, `pagination-gap` |
-| Steps | `steps`, `steps-{vertical,complete}`, `steps-item`, `steps-body`, `steps-title`, `steps-description` |
-| Dialog | `dialog`, `dialog-{sm,lg,drawer,sheet}`, `dialog-drawer-start`, `dialog-header`, `dialog-title`, `dialog-description`, `dialog-body`, `dialog-footer`, `dialog-close` |
-| Popover | `popover`, `popover-{end,center,top}` |
-| Menu | `menu`, `menu-{end,top,sub,context}`, `menu-item`, `menu-item-danger`, `menu-input`, `menu-shortcut`, `menu-label`, `menu-separator` |
+| Steps | `steps`, `steps-vertical`, `steps-complete`, `steps-item`, `steps-body`, `steps-title`, `steps-description` |
+| Dialog | `dialog`, `dialog-sm`, `dialog-lg`, `dialog-drawer`, `dialog-drawer-start`, `dialog-sheet`, `dialog-header`, `dialog-title`, `dialog-description`, `dialog-body`, `dialog-footer`, `dialog-close` |
+| Popover | `popover`, `popover-end`, `popover-center`, `popover-top` |
+| Menu | `menu`, `menu-end`, `menu-top`, `menu-sub`, `menu-context`, `menu-item`, `menu-item-danger`, `menu-input`, `menu-shortcut`, `menu-label`, `menu-separator` |
+| Listbox | `listbox`, `listbox-option`, `listbox-body`, `listbox-description`, `listbox-end`, `listbox-group`, `listbox-label`, `listbox-separator`, `listbox-empty` |
+| Combobox | `combobox`, `combobox-toggle` |
 | Command palette | `command`, `command-search`, `command-input`, `command-list`, `command-footer`, `command-hint` |
 | Tooltip | `tooltip`, `tooltip-bottom` |
-| Toast | `toast-region`, `toast-region-{top,center}`, `toast`, `toast-timed`, `toast-{info,success,warning,danger}`, `toast-icon`, `toast-body`, `toast-title`, `toast-description`, `toast-close` |
-| Alert | `alert`, `alert-{info,success,warning,danger}`, `alert-icon`, `alert-body`, `alert-title`, `alert-description` |
-| Banner | `banner`, `banner-dismissible`, `banner-{info,success,warning,danger}`, `banner-{inverse,brand}`, `banner-content`, `banner-title`, `banner-action`, `banner-close` |
-| Progress | `progress`, `progress-{sm,lg,segmented}`, `progress-ring`, `progress-ring-{sm,lg,xl}` |
-| Meter | `meter`, `meter-{sm,lg,segmented}` |
-| Skeleton | `skeleton`, `skeleton-{text,circle}` |
+| Toast | `toast-region`, `toast-region-top`, `toast-region-center`, `toast`, `toast-timed`, `toast-info`, `toast-success`, `toast-warning`, `toast-danger`, `toast-icon`, `toast-body`, `toast-title`, `toast-description`, `toast-close` |
+| Alert | `alert`, `alert-info`, `alert-success`, `alert-warning`, `alert-danger`, `alert-icon`, `alert-body`, `alert-title`, `alert-description` |
+| Banner | `banner`, `banner-dismissible`, `banner-info`, `banner-success`, `banner-warning`, `banner-danger`, `banner-inverse`, `banner-brand`, `banner-content`, `banner-title`, `banner-action`, `banner-close` |
+| Progress | `progress`, `progress-sm`, `progress-lg`, `progress-segmented`, `progress-ring`, `progress-ring-sm`, `progress-ring-lg`, `progress-ring-xl` |
+| Meter | `meter`, `meter-sm`, `meter-lg`, `meter-segmented` |
+| Skeleton | `skeleton`, `skeleton-text`, `skeleton-circle` |
 | Shimmer | `shimmer` |
-| Spinner | `spinner`, `spinner-{sm,lg,xl,inline}` |
+| Spinner | `spinner`, `spinner-sm`, `spinner-lg`, `spinner-xl`, `spinner-inline` |
 | Empty | `empty`, `empty-media`, `empty-title`, `empty-description`, `empty-actions` |
 | Accordion | `accordion`, `accordion-item`, `accordion-trigger`, `accordion-content` |
 | Expand | `expand`, `expand-toggle`, `expand-more`, `expand-less` |
-| Table | `table`, `table-{compact,interactive,sticky}`, `table-row`, `table-heading`, `table-cell`, `table-{primary,numeric}` |
-| List | `list`, `list-interactive`, `list-row`, `list-media`, `list-body`, `list-title`, `list-description`, `list-end` |
-| File | `file`, `file-{sm,interactive,failed}`, `file-page`, `file-thumb`, `file-body`, `file-name`, `file-meta`, `file-end`, `file-progress` |
+| Table | `table`, `table-row`, `table-heading`, `table-cell`, `table-primary`, `table-numeric`, `table-compact`, `table-interactive`, `table-sticky` |
+| List | `list`, `list-row`, `list-media`, `list-body`, `list-title`, `list-description`, `list-end`, `list-interactive` |
 | Data list | `data-list`, `data-list-item`, `data-list-term`, `data-list-value` |
-| Stat | `stat`, `stat-label`, `stat-row`, `stat-value`, `stat-delta`, `stat-delta-{up,down}`, `stat-description` |
-| Chart | `chart`, `chart-{quiet,values,horizontal,spark}`, `chart-item`, `chart-label`, `chart-value` |
+| File | `file`, `file-failed`, `file-sm`, `file-interactive`, `file-page`, `file-thumb`, `file-body`, `file-name`, `file-meta`, `file-end`, `file-progress` |
+| Stat | `stat`, `stat-label`, `stat-row`, `stat-value`, `stat-delta`, `stat-delta-up`, `stat-delta-down`, `stat-description` |
+| Chart | `chart`, `chart-quiet`, `chart-values`, `chart-horizontal`, `chart-spark`, `chart-item`, `chart-label`, `chart-value` |
 | Heatmap | `heatmap`, `heatmap-lg`, `heatmap-cell` |
 | Timeline | `timeline`, `timeline-item`, `timeline-marker`, `timeline-body`, `timeline-title`, `timeline-description`, `timeline-time` |
-| Carousel | `carousel`, `carousel-{2,3}`, `carousel-slide` |
+| Calendar | `calendar`, `calendar-header`, `calendar-title`, `calendar-grid`, `calendar-week`, `calendar-weekday`, `calendar-day`, `calendar-day-outside`, `calendar-day-range-start`, `calendar-day-range`, `calendar-day-range-end` |
+| Tree | `tree`, `tree-item`, `tree-toggle`, `tree-group`, `tree-sub` |
+| Carousel | `carousel`, `carousel-slide`, `carousel-2`, `carousel-3` |
 | Marquee | `marquee`, `marquee-reverse`, `marquee-track` |
+| Splitter | `splitter`, `splitter-pane`, `splitter-handle` |
+| Figure | `figure`, `figure-framed`, `figure-center`, `figure-media`, `figure-caption` |
 | Compare | `compare`, `compare-before`, `compare-after`, `compare-range` |
-| Heading | `heading`, `heading-{xs,sm,lg,xl,2xl,display}`, `eyebrow`, `lead`, `lead-{sm,lg}` |
-| Figure | `figure`, `figure-{framed,center}`, `figure-media`, `figure-caption` |
 | Quote | `quote`, `quote-lg`, `quote-text`, `quote-source`, `quote-name` |
 | Message | `message`, `message-sent`, `message-avatar`, `message-bubble`, `message-meta`, `message-typing` |
-| Avatar | `avatar`, `avatar-{xs,sm,lg,xl}`, `avatar-square`, `avatar-image`, `avatar-status`, `avatar-group` |
-| Badge | `badge`, `badge-{outline,raised,ink}`, `badge-{info,success,warning,danger}`, `badge-dot`, `badge-live`, `badge-{sm,lg,pill}`, `badge-corner` |
-| Code | `code`, `code-block`, `code-numbered`, `code-line`, `code-line-{highlight,added,removed}`, `code-panel`, `code-header`, `code-title` |
-| Icon | `icon` |
+| Avatar | `avatar`, `avatar-image`, `avatar-xs`, `avatar-sm`, `avatar-lg`, `avatar-xl`, `avatar-square`, `avatar-status`, `avatar-group` |
+| Badge | `badge`, `badge-sm`, `badge-lg`, `badge-pill`, `badge-outline`, `badge-raised`, `badge-ink`, `badge-info`, `badge-success`, `badge-warning`, `badge-danger`, `badge-dot`, `badge-live`, `badge-corner` |
+| Heading | `heading`, `heading-xs`, `heading-sm`, `heading-lg`, `heading-xl`, `heading-2xl`, `heading-display`, `eyebrow`, `lead`, `lead-sm`, `lead-lg` |
+| Code | `code`, `code-block`, `code-line`, `code-line-highlight`, `code-line-added`, `code-line-removed`, `code-numbered`, `code-panel`, `code-header`, `code-title` |
 | Kbd | `kbd`, `kbd-raised` |
-| Mark | `mark`, `mark-{brand,underline}` |
+| Mark | `mark`, `mark-brand`, `mark-underline` |
 | Mention | `mention`, `mention-self` |
 | Citation | `citation` |
+| Page (layout) | `page` |
+| Shell (layout) | `shell`, `shell-fixed`, `shell-header`, `shell-sidebar`, `shell-main`, `shell-aside`, `shell-footer`, `shell-toggle` |
+| Auto grid (layout) | `auto-grid`, `auto-grid-fit` |
+| Form (layout) | `form`, `form-row`, `form-section`, `form-heading`, `form-title`, `form-description`, `form-fields`, `form-actions` |
+<!-- contracts:end -->
 
-## Layout classes
+## Command line
 
-Most layouts are utilities. These four hold what utilities cannot say: a height in `dvh`, a phone's safe area, a container threshold, a grid that counts its own columns. They draw no surface.
+```sh
+npx master-ui list                # every contract, one line each
+npx master-ui contract dialog     # one contract as JSON; a class name works too
+npx master-ui check               # report markup that breaks a contract
+npx master-ui init                # write ui/index.css, one @import per stylesheet
+npx master-ui own menu            # copy a component's stylesheet, contract and behavior into ui/
+npx master-ui status              # which owned components changed upstream
+npx master-ui diff menu           # what changed upstream since it was taken
+npx master-ui accept menu         # record that the change has been merged
+```
 
-| Layout | Classes |
+`check` reads HTML and templates that look like it (JSX, Svelte, Vue, Astro). It reports a modifier without its base, a part outside its root, two exclusive modifiers together, a class on the wrong element, a missing attribute or accessible name, and a class that looks like one of the library's but is in no contract. A project's own contracts in `ui/*.json` are read too, and one with the name of a library contract replaces it.
+
+```js
+import { check, createIndex } from '@master/ui/check'
+import contracts from '@master/ui/contracts.json' with { type: 'json' }
+
+const diagnostics = check(html, createIndex(contracts.contracts))
+```
+
+## Behaviors
+
+A few patterns have no native element. Their stylesheets draw every state from ARIA; a behavior is the reference script that moves those attributes and nothing else.
+
+```js
+import { attach } from '@master/ui/behaviors'
+import { combobox } from '@master/ui/behaviors/combobox.js'
+
+const detach = attach()                                     // every pattern in the document
+const stop = combobox(document.querySelector('.combobox'))  // or one
+```
+
+## Without Master CSS
+
+`bun run build` compiles the same source to plain CSS, published in `dist/`:
+
+| File | Holds |
 | --- | --- |
-| [Page](https://ui.master.co/layouts/page) | `page` |
-| [App shell](https://ui.master.co/layouts/app-shell) | `shell`, `shell-fixed`, `shell-header`, `shell-sidebar`, `shell-main`, `shell-aside`, `shell-footer`, `shell-toggle` |
-| [Auto grid](https://ui.master.co/layouts/auto-grid) | `auto-grid`, `auto-grid-fit` |
-| [Form](https://ui.master.co/layouts/form) | `form`, `form-row`, `form-section`, `form-heading`, `form-title`, `form-description`, `form-fields`, `form-actions` |
+| `@master/ui/standalone.css` | The theme and every component; the tokens are custom properties |
+| `@master/ui/dist/themes/paper.css` | The same with the Paper theme |
+| `@master/ui/base.css` | The reset the components assume, from the Master CSS preset |
+| `@master/ui/contracts.json`, `@master/ui/theme.json` | The contracts and the tokens as data |
 
-Documentation: [ui.master.co](https://ui.master.co)
+## Themes
+
+A component never writes a color: it names a token of `theme.css`. `themes/paper.css` is a second theme written with tokens alone, flat and ruled where Moonstone is lit; import it after the library, or copy it to start your own.
+
+```css
+@import '@master/css';
+@import '@master/ui';
+@import '@master/ui/themes/paper.css';
+```
 
 ## License
 

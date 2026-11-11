@@ -1,25 +1,8 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { readdirSync, readFileSync } from 'node:fs'
-import { compileManifestSync } from '@master/css-compiler/node'
-import { createRenderSessionSync } from '@master/css/node'
-import preset from '@master/css-preset/default-manifest.json' with { type: 'json' }
+import { code, compile, components, imports, layouts, read, utilities } from './support.ts'
 
-const root = new URL('../', import.meta.url)
-const read = (file: string) => readFileSync(new URL(file, root), 'utf8')
-const imports = [...read('master.css').matchAll(/@import\s+['"]\.\/([^'"]+)['"]/g)].map(match => match[1])
-const stylesheets = (directory: string) => readdirSync(new URL(`${directory}/`, root)).filter(file => file.endsWith('.css')).map(file => `${directory}/${file}`).sort()
-/** Components have a material, a state or a platform behavior. Layouts only place regions, in the few cases utilities cannot. */
-const components = stylesheets('components')
-const layouts = stylesheets('layouts')
 const pkg = JSON.parse(read('package.json'))
-
-function compile(files: string[]) {
-  const result = compileManifestSync(files.map(read).join('\n\n'), { baseManifest: preset as never })
-  const problems = result.diagnostics.filter(diagnostic => diagnostic.severity === 'error' || diagnostic.severity === 'warning')
-  assert.deepEqual(problems, [], `${files.join(', ')} reported diagnostics`)
-  return result
-}
 
 test('master.css imports the theme first, then every component and every layout', () => {
   assert.equal(imports[0], 'theme.css')
@@ -38,51 +21,8 @@ test('every imported file is published', () => {
 })
 
 test('the complete library compiles against the Master CSS preset', () => {
-  const { nativeClassNames } = compile(imports)
-  for (const name of [
-    'sheet', 'well', 'tray', 'card', 'card-media', 'card-header', 'card-title', 'card-description', 'card-action', 'card-body', 'card-footer', 'card-split', 'divider',
-    'icon', 'btn', 'btn-primary', 'btn-square', 'btn-group', 'link',
-    'input', 'input-auto', 'input-group', 'input-group-field', 'input-group-addon', 'field', 'field-hint', 'field-error', 'input-group-wrap', 'heading', 'heading-xs', 'heading-sm', 'heading-lg', 'heading-xl', 'heading-2xl', 'heading-display', 'eyebrow', 'lead', 'lead-sm', 'lead-lg', 'sheet-inverse', 'dialog-drawer-start', 'page', 'shell', 'shell-fixed', 'shell-header', 'shell-sidebar', 'shell-main', 'shell-aside', 'shell-footer', 'shell-toggle', 'auto-grid', 'auto-grid-fit', 'form', 'form-row', 'form-section', 'form-heading', 'form-title', 'form-description', 'form-fields', 'form-actions', 'progress-ring', 'progress-ring-sm', 'progress-ring-lg', 'progress-ring-xl', 'badge-live',
-    'navbar', 'navbar-floating', 'navbar-brand', 'navbar-nav', 'navbar-link', 'navbar-end', 'navbar-toggle', 'navbar-progress',
-    'tabbar', 'tabbar-floating', 'tabbar-item', 'tabbar-label', 'toc', 'toc-title', 'toc-list', 'toc-link',
-    'banner', 'banner-info', 'banner-success', 'banner-warning', 'banner-danger', 'banner-inverse', 'banner-brand', 'banner-dismissible', 'banner-content', 'banner-title', 'banner-action', 'banner-close',
-    'figure', 'figure-framed', 'figure-center', 'figure-media', 'figure-caption', 'quote', 'quote-lg', 'quote-text', 'quote-source', 'quote-name',
-    'mark', 'mark-brand', 'mark-underline', 'swatch', 'swatch-square', 'swatch-sm', 'swatch-lg', 'swatch-input',
-    'splitter', 'splitter-pane', 'splitter-handle', 'message', 'message-sent', 'message-avatar', 'message-bubble', 'message-meta', 'message-typing',
-    'composer', 'composer-field', 'composer-attachments', 'composer-toolbar', 'composer-end', 'composer-hint', 'expand', 'expand-toggle', 'expand-more', 'expand-less', 'select', 'select-option',
-    'check', 'checkbox', 'radio', 'switch', 'slider', 'segmented', 'segmented-item', 'segmented-input',
-    'tabs', 'tabs-item', 'breadcrumb', 'breadcrumb-item', 'breadcrumb-link',
-    'dialog', 'dialog-header', 'dialog-title', 'dialog-description', 'dialog-body', 'dialog-footer', 'dialog-close', 'popover',
-    'menu', 'menu-item', 'menu-input', 'menu-shortcut', 'menu-label', 'menu-separator', 'tooltip',
-    'alert', 'alert-icon', 'alert-body', 'alert-title', 'alert-description', 'progress', 'skeleton', 'spinner',
-    'accordion', 'accordion-item', 'accordion-trigger', 'accordion-content', 'avatar', 'avatar-image', 'avatar-status', 'avatar-group',
-    'badge', 'badge-corner', 'kbd', 'code', 'code-block',
-    'scroll-area', 'toolbar', 'toolbar-separator', 'chip', 'chip-input', 'chip-remove', 'choice', 'choice-body', 'choice-title', 'choice-description', 'choice-end',
-    'rating', 'rating-input', 'dropzone', 'dropzone-input', 'dropzone-title', 'dropzone-description', 'fieldset', 'fieldset-legend',
-    'nav', 'nav-item', 'nav-end', 'nav-label', 'nav-group', 'nav-toggle', 'nav-sub', 'pagination', 'pagination-gap', 'steps', 'steps-item', 'steps-title', 'steps-description', 'steps-body',
-    'toast-region', 'toast', 'toast-icon', 'toast-body', 'toast-title', 'toast-description', 'toast-close', 'empty', 'empty-media', 'empty-title', 'empty-description', 'empty-actions',
-    'table', 'table-row', 'table-heading', 'table-cell', 'carousel', 'carousel-slide',
-    'listbox', 'listbox-option', 'listbox-body', 'listbox-description', 'listbox-end', 'listbox-group', 'listbox-label', 'listbox-separator', 'listbox-empty',
-    'combobox', 'combobox-toggle', 'command', 'command-search', 'command-input', 'command-list', 'command-footer', 'command-hint',
-    'calendar', 'calendar-header', 'calendar-title', 'calendar-grid', 'calendar-week', 'calendar-weekday', 'calendar-day',
-    'tree', 'tree-item', 'tree-toggle', 'tree-group', 'tree-sub', 'otp', 'otp-slot', 'otp-separator', 'meter',
-    'stepper', 'stepper-field',
-    'range', 'range-start', 'range-end', 'compare', 'compare-before', 'compare-after', 'compare-range',
-    'checklist', 'checklist-item', 'checklist-label', 'checklist-body', 'checklist-title', 'checklist-description', 'checklist-end', 'checklist-count',
-    'citation', 'mention', 'mention-self',
-    'progress-segmented', 'meter-segmented',
-    'heatmap', 'heatmap-lg', 'heatmap-cell',
-    'code-numbered', 'code-line', 'code-line-highlight', 'code-line-added', 'code-line-removed', 'code-panel', 'code-header', 'code-title',
-    'marquee', 'marquee-reverse', 'marquee-track', 'window', 'window-flat', 'window-bar', 'window-controls', 'window-title', 'window-address', 'window-end', 'window-body',
-    'wheel', 'wheel-sm', 'wheel-column', 'wheel-option', 'wheel-separator', 'shimmer',
-    'chart', 'chart-quiet', 'chart-values', 'chart-horizontal', 'chart-spark', 'chart-item', 'chart-label', 'chart-value',
-    'file', 'file-sm', 'file-interactive', 'file-failed', 'file-page', 'file-thumb', 'file-body', 'file-name', 'file-meta', 'file-end', 'file-progress',
-    'timeline', 'timeline-item', 'timeline-marker', 'timeline-body', 'timeline-title', 'timeline-description', 'timeline-time',
-    'stat', 'stat-label', 'stat-row', 'stat-value', 'stat-delta', 'stat-description',
-    'data-list', 'data-list-item', 'data-list-term', 'data-list-value', 'list', 'list-row', 'list-media', 'list-body', 'list-title', 'list-description', 'list-end',
-  ]) {
-    assert.ok(nativeClassNames.includes(name), `missing native class .${name}`)
-  }
+  // Which classes each stylesheet must define is its contract's business: see contracts.test.ts.
+  assert.ok(compile(imports).nativeClassNames.length > 0)
 })
 
 /**
@@ -92,11 +32,10 @@ test('the complete library compiles against the Master CSS preset', () => {
  */
 test('component classes do not collide with preset utilities', () => {
   const { nativeClassNames } = compile(imports)
-  const engine = createRenderSessionSync({ manifest: preset as never })
+  const preset = utilities()
   try {
-    const collisions = nativeClassNames.filter(name => !engine.ensureClassRules([name]).invalidClassNames.includes(name))
-    assert.deepEqual(collisions.sort(), ['table', 'table-cell', 'table-row'])
-  } finally { engine.dispose() }
+    assert.deepEqual(nativeClassNames.filter(name => preset.has(name)).sort(), ['table', 'table-cell', 'table-row'])
+  } finally { preset.dispose() }
 })
 
 for (const file of [...components, ...layouts]) {
@@ -111,7 +50,7 @@ for (const file of [...components, ...layouts]) {
  * `::picker(select)` is the customizable select's list, a pseudo-element whose argument is not an element selector.
  */
 function selectors(file: string) {
-  return read(file).replace(/\/\*[\s\S]*?\*\//g, '').split('\n')
+  return code(file).split('\n')
     .map(line => line.trim())
     .filter(line => line.endsWith('{') && !line.startsWith('@') && !/^(from|to|\d+%)/.test(line))
     .map(line => line.slice(0, -1).trim().replaceAll('::picker(select)', '::picker()'))
@@ -134,9 +73,47 @@ for (const file of [...components, ...layouts]) {
  */
 for (const file of layouts) {
   test(`${file} draws no material`, () => {
-    const source = read(file).replace(/\/\*[\s\S]*?\*\//g, '')
+    const source = code(file)
     for (const property of ['background', 'background-color', 'background-image', 'box-shadow', 'border-radius', 'corner-shape', 'backdrop-filter', 'filter']) {
       assert.ok(!new RegExp(`(^|[\\s;{])${property}\\s*:`).test(source), `${file}: a layout declares ${property}`)
     }
+  })
+}
+
+/**
+ * A color is a decision of the theme. A component names a token or mixes from one (`color-mix`, `currentColor`,
+ * `transparent`, a system color in forced colors); it never writes a color of its own, so one theme file can
+ * retune every face, edge and shadow. The stroke of an icon inside a data URL is the one place a token cannot reach.
+ */
+const literal = /(oklch|oklab|lch|lab|rgba?|hsla?|hwb|color)\(|#[0-9a-f]{3,8}\b/i
+
+for (const file of [...components, ...layouts]) {
+  test(`${file} writes no color of its own`, () => {
+    const source = code(file).replace(/url\((?:"[^"]*"|'[^']*'|[^)]*)\)/g, 'url()')
+    for (const [at, line] of source.split('\n').entries()) {
+      assert.ok(!literal.test(line), `${file}:${at + 1}: a color literal in "${line.trim()}"; name a token in theme.css`)
+    }
+  })
+}
+
+test('the README lists the classes the contracts list', async () => {
+  const { contracts } = await import('./support.ts')
+  const readme = read('README.md')
+  const table = /<!-- contracts:start -->([\s\S]*)<!-- contracts:end -->/.exec(readme)?.[1] ?? ''
+  for (const contract of contracts()) {
+    const row = table.split('\n').find(line => line.startsWith(`| ${contract.title} |`) || line.startsWith(`| ${contract.title} (layout) |`))
+    assert.ok(row, `README.md has no row for ${contract.title}; run "bun run build"`)
+    assert.deepEqual([...row!.matchAll(/`([^`]+)`/g)].map(match => match[1]), contract.classes.map(entry => entry.name), `README.md is out of date for ${contract.title}; run "bun run build"`)
+  }
+})
+
+/**
+ * A theme is tokens and mixins. It compiles after the library, and it never selects a component: a rule such
+ * as `.btn { … }` in a theme is a component override that no contract knows about.
+ */
+for (const file of (await import('./support.ts')).themes) {
+  test(`${file} compiles after the library and selects no component`, () => {
+    compile([...imports, file])
+    assert.deepEqual(code(file).split('\n').map(line => line.trim()).filter(line => line.endsWith('{') && /(^|[\s,])\.[a-z]/.test(line)), [])
   })
 }

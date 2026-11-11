@@ -1,0 +1,47 @@
+{
+  "$schema": "../contract.schema.json",
+  "name": "toast",
+  "title": "Toast",
+  "tier": "component",
+  "category": "Feedback",
+  "description": "A brief message over the page that can leave by itself.",
+  "use": "A confirmation of something that just happened: saved, deployed, copied. A reader must be able to miss it without losing anything, so the only way to an action never lives in a toast. Toasts stack in one toast-region per page, and each toast is a non-modal dialog.",
+  "instead": [
+    { "when": "The message must stay until it is dealt with, or belongs to one part of the page", "use": "alert" },
+    { "when": "It is news for everyone on the page and stays across its top", "use": "banner" },
+    { "when": "It needs an answer before the reader goes on", "use": "dialog" },
+    { "when": "It reports work that is still under way", "use": "progress" }
+  ],
+  "composes": ["button", "icon"],
+  "script": "none",
+  "platform": [
+    { "feature": "A dialog with the open attribute, dismissed by a form with method=\"dialog\" or a button with commandfor and command=\"close\"", "fallback": "A toast rendered with open is shown and dismissed without script. To show one after the page has loaded, call show() on it or append a new dialog with open to the region" },
+    { "feature": "@starting-style and transition-behavior: allow-discrete", "fallback": "The toast appears and leaves at once, without the fade" },
+    { "feature": "popover=\"manual\" on the region, shown once with showPopover()", "fallback": "Without it the region is a fixed element with a z-index and stays under an open modal dialog" }
+  ],
+  "classes": [
+    { "name": "toast-region", "kind": "root", "description": "The fixed stack at the bottom, at the end edge, with the newest toast last. Make it a live region with aria-live=\"polite\" and name it with aria-label. It takes no pointer events itself, and spans the width on a narrow screen" },
+    { "name": "toast-region-top", "kind": "modifier", "of": "toast-region", "description": "The stack at the top; toasts arrive downward and the newest is on top" },
+    { "name": "toast-region-center", "kind": "modifier", "of": "toast-region", "description": "The stack centered instead of at the end edge; it combines with toast-region-top" },
+    { "name": "toast", "kind": "root", "elements": ["dialog"], "label": true, "description": "A message, on a dialog element inside the region, named with aria-labelledby pointing at its title or with aria-label" },
+    { "name": "toast-timed", "kind": "modifier", "of": "toast", "description": "Leaves by itself after --toast-duration. The clock pauses while the toast is hovered or holds focus, and a hairline along its foot runs out with the clock" },
+    { "name": "toast-info", "kind": "modifier", "of": "toast", "exclusive": "status", "description": "Colors the icon with the info hue; the words stay in ink" },
+    { "name": "toast-success", "kind": "modifier", "of": "toast", "exclusive": "status", "description": "Colors the icon with the success hue; the words stay in ink" },
+    { "name": "toast-warning", "kind": "modifier", "of": "toast", "exclusive": "status", "description": "Colors the icon with the warning hue; the words stay in ink" },
+    { "name": "toast-danger", "kind": "modifier", "of": "toast", "exclusive": "status", "description": "Colors the icon with the danger hue; the words stay in ink" },
+    { "name": "toast-icon", "kind": "part", "of": "toast", "description": "Beside icon on the status icon: centers it on the first line of text" },
+    { "name": "toast-body", "kind": "part", "of": "toast", "description": "Holds the words and takes the remaining width; a button after it sits at the end of the row" },
+    { "name": "toast-title", "kind": "part", "of": "toast", "description": "The few strong words that say what happened" },
+    { "name": "toast-description", "kind": "part", "of": "toast", "description": "A quiet sentence under the title, or the whole message of a toast without a title" },
+    { "name": "toast-close", "kind": "part", "of": "toast", "description": "The form with method=\"dialog\", or the button, that dismisses the toast, pulled into the padding at the end" }
+  ],
+  "states": [
+    { "on": "toast", "name": "open", "mark": "open", "description": "The toast is shown. Written in markup it shows the toast when the page loads; show() and close() set and remove it" }
+  ],
+  "properties": [
+    { "name": "--toast-duration", "on": "toast", "description": "How long a toast-timed stays; 6s when not set" },
+    { "name": "--toast-inset", "on": "toast-region", "default": "1rem", "description": "Distance of the region from the viewport edge" },
+    { "name": "--toast-gap", "on": "toast-region", "default": ".5rem", "description": "Space between toasts" }
+  ],
+  "example": "<div class=\"toast-region\" role=\"region\" aria-label=\"Notifications\" aria-live=\"polite\">\n  <dialog open class=\"toast\" aria-labelledby=\"toast-deployed\">\n    <div class=\"toast-body\">\n      <p class=\"toast-title\" id=\"toast-deployed\">Deployed to production</p>\n      <p class=\"toast-description\">atlas.dev is live in 14 regions.</p>\n    </div>\n    <form method=\"dialog\" class=\"toast-close\">\n      <button class=\"btn btn-quiet btn-square btn-sm\" aria-label=\"Dismiss\">\n        <svg class=\"icon\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M6 6l12 12M18 6 6 18\"/></svg>\n      </button>\n    </form>\n  </dialog>\n</div>"
+}

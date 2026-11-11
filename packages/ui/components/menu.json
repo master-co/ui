@@ -1,0 +1,230 @@
+{
+  "$schema": "../contract.schema.json",
+  "name": "menu",
+  "title": "Menu",
+  "tier": "component",
+  "category": "Overlays",
+  "description": "A list of actions in a popover, placed against its button.",
+  "use": "A few actions or links behind one button: the actions of a row, an account menu, the hidden levels of a breadcrumb. Items may be checkable, may open a submenu, and the menu may open at the pointer as a context menu. Without script it is a popover of buttons and links, so do not add role=\"menu\"; add the roles only together with the behavior that provides arrow keys.",
+  "instead": [
+    {
+      "when": "It picks the value of a form field",
+      "use": "select"
+    },
+    {
+      "when": "The content is a form, a preview or anything but a list of actions",
+      "use": "popover"
+    },
+    {
+      "when": "There are many commands and the reader finds one by typing",
+      "use": "command"
+    },
+    {
+      "when": "The choice must be made before the page is used again",
+      "use": "dialog"
+    }
+  ],
+  "composes": [
+    "button"
+  ],
+  "script": "optional",
+  "behavior": "menu",
+  "keyboard": [
+    {
+      "keys": "Enter, Space",
+      "action": "On the button with popovertarget: open or close the menu. On an item: run it, or open its submenu"
+    },
+    {
+      "keys": "Tab, Shift+Tab",
+      "action": "Without the behavior: move through the items. With the behavior: close the menu and move on from its button"
+    },
+    {
+      "keys": "Escape",
+      "action": "Close the menu, one level at a time when a submenu is open, and return focus to the button"
+    },
+    {
+      "keys": "ArrowDown, ArrowUp",
+      "action": "With the behavior: move to the next or the previous item, skipping disabled ones and wrapping at the ends"
+    },
+    {
+      "keys": "Home, End",
+      "action": "With the behavior: move to the first or the last item"
+    },
+    {
+      "keys": "ArrowRight, ArrowLeft",
+      "action": "With the behavior: open the submenu of the focused item and move into it, or close the submenu and return to its item; the two change places in a right-to-left menu"
+    },
+    {
+      "keys": "Typing",
+      "action": "With the behavior: move to the next item that starts with the typed letters"
+    },
+    {
+      "keys": "ContextMenu, Shift+F10",
+      "action": "With contextMenu() from the behavior: open a menu-context at the focused element, as a right click and a long press do at the pointer"
+    }
+  ],
+  "platform": [
+    {
+      "feature": "The popover attribute with popovertarget and popovertargetaction=\"hide\"",
+      "fallback": "Supported in all current browsers: the menu opens, closes on an outside click or Escape and keeps a parent menu open under a submenu without script. A context menu has no declarative trigger: a script sets --menu-x and --menu-y and calls showPopover()"
+    },
+    {
+      "feature": "CSS anchor positioning (position-area and position-try-fallbacks)",
+      "fallback": "The menu still opens and closes; it appears centered in the viewport, where the browser places any popover, and a submenu does too"
+    },
+    {
+      "feature": "@position-try for menu-context",
+      "fallback": "The context menu opens down and to the end of the pointer and does not turn back at the viewport edge"
+    },
+    {
+      "feature": "@starting-style and transition-behavior: allow-discrete",
+      "fallback": "The menu appears and leaves at once, without the fade"
+    }
+  ],
+  "classes": [
+    {
+      "name": "menu",
+      "kind": "root",
+      "attributes": {
+        "popover": true
+      },
+      "description": "The floating list, on an element with the popover attribute; without the attribute it is never shown. It opens below its button, lined up with the start edge, at a distance of --anchored-gap (6px), and flips at the viewport edge"
+    },
+    {
+      "name": "menu-end",
+      "kind": "modifier",
+      "of": "menu",
+      "description": "Lines up with the button's end edge, for a button at the end of a row or a toolbar"
+    },
+    {
+      "name": "menu-top",
+      "kind": "modifier",
+      "of": "menu",
+      "description": "Opens above the button"
+    },
+    {
+      "name": "menu-sub",
+      "kind": "modifier",
+      "of": "menu",
+      "exclusive": "placement",
+      "description": "A submenu: written right after the item that opens it, inside the parent menu, it opens beside that item"
+    },
+    {
+      "name": "menu-context",
+      "kind": "modifier",
+      "of": "menu",
+      "exclusive": "placement",
+      "description": "A context menu: opens at --menu-x and --menu-y instead of against a button"
+    },
+    {
+      "name": "menu-item",
+      "kind": "part",
+      "of": "menu",
+      "elements": [
+        "button",
+        "a",
+        "label"
+      ],
+      "description": "An action: a button, a link, or a label around a menu-input. An icon inside takes the item's size and stays quiet until the row is in use"
+    },
+    {
+      "name": "menu-item-danger",
+      "kind": "modifier",
+      "of": "menu-item",
+      "description": "A destructive action, in the danger ink"
+    },
+    {
+      "name": "menu-input",
+      "kind": "part",
+      "of": "menu",
+      "elements": [
+        "input"
+      ],
+      "attributes": {
+        "type": [
+          "checkbox",
+          "radio"
+        ]
+      },
+      "description": "The checkbox or radio inside a label item. It covers the row invisibly and keeps the state; the row shows a check at its end"
+    },
+    {
+      "name": "menu-shortcut",
+      "kind": "part",
+      "of": "menu",
+      "description": "A shortcut at the end of an item"
+    },
+    {
+      "name": "menu-label",
+      "kind": "part",
+      "of": "menu",
+      "description": "A quiet caption over a group of items"
+    },
+    {
+      "name": "menu-separator",
+      "kind": "part",
+      "of": "menu",
+      "description": "A hairline between groups, on an hr, running to the menu's edges"
+    }
+  ],
+  "states": [
+    {
+      "on": "menu",
+      "name": "open",
+      "mark": ":popover-open",
+      "description": "Set by the browser. A quiet button or a menu item right before an open menu stays lit"
+    },
+    {
+      "on": "menu-item",
+      "name": "disabled",
+      "mark": "disabled",
+      "description": "Or aria-disabled=\"true\" on a link without href, or a disabled menu-input inside: disabled ink, no hover tone"
+    },
+    {
+      "on": "menu-item",
+      "name": "checked",
+      "mark": "aria-checked=\"true\"",
+      "description": "For an item driven by script with role=\"menuitemcheckbox\" or role=\"menuitemradio\": a check at the end of the row. aria-checked=\"false\" keeps the room for it"
+    },
+    {
+      "on": "menu-input",
+      "name": "checked",
+      "mark": ":checked",
+      "description": "The native state of the checkbox or radio: its row shows the check"
+    },
+    {
+      "on": "menu-item",
+      "name": "submenu",
+      "mark": "aria-haspopup=\"menu\"",
+      "description": "The item opens the menu-sub right after it: it gains a chevron at its end"
+    }
+  ],
+  "properties": [
+    {
+      "name": "--menu-inset",
+      "default": "4px",
+      "description": "Padding around the items"
+    },
+    {
+      "name": "--menu-item-radius",
+      "default": "var(--radius-control-sm)",
+      "description": "Row corner; the menu's corner is this plus the inset"
+    },
+    {
+      "name": "--menu-x",
+      "on": "menu-context",
+      "description": "Distance from the left edge of the viewport where a context menu opens, set by script from the event; 0px when not set"
+    },
+    {
+      "name": "--menu-y",
+      "on": "menu-context",
+      "description": "Distance from the top edge of the viewport where a context menu opens, set by script from the event; 0px when not set"
+    },
+    {
+      "name": "--anchored-gap",
+      "on": "menu",
+      "description": "Space between the surface and the control that opened it; 6px when not set"
+    }
+  ],
+  "example": "<button type=\"button\" class=\"btn\" popovertarget=\"project-menu\">Project</button>\n\n<div id=\"project-menu\" popover class=\"menu\">\n  <button type=\"button\" class=\"menu-item\" popovertarget=\"project-menu\" popovertargetaction=\"hide\">Rename <span class=\"menu-shortcut\">⌘R</span></button>\n  <button type=\"button\" class=\"menu-item\" popovertarget=\"project-menu\" popovertargetaction=\"hide\">Duplicate</button>\n  <a class=\"menu-item\" href=\"/settings\">Settings</a>\n  <hr class=\"menu-separator\">\n  <button type=\"button\" class=\"menu-item menu-item-danger\" popovertarget=\"project-menu\" popovertargetaction=\"hide\">Delete</button>\n</div>"
+}
