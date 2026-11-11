@@ -53,6 +53,51 @@ test('JSX: className is read, an expression is not guessed at, and a generic is 
   assert.deepEqual(codes('<button {...props} className="btn btn-square" />'), [])
 })
 
+test('JSX: attribute names are read as HTML reads them', () => {
+  const handle = (attribute: string) => `<div className="splitter"><div className="splitter-handle" role="separator" ${attribute} aria-label="Resize" aria-valuenow={size}></div></div>`
+  assert.deepEqual(codes(handle('tabIndex={0}')), [])
+  assert.deepEqual(codes(handle('tabIndex="0"')), [])
+  assert.deepEqual(codes(handle('tabIndex="2"')), ['attribute'])
+  assert.deepEqual(codes(handle('')), ['attribute'])
+})
+
+test('Vue: a bound attribute is there, with a value that is not guessed at', () => {
+  assert.deepEqual(codes('<div class="splitter"><div class="splitter-handle" role="separator" :tabindex="disabled ? -1 : 0" :aria-label="label" v-bind:aria-valuenow="size"></div></div>'), [])
+  assert.deepEqual(codes('<button type="button" class="btn btn-square" :aria-label="label"><svg class="icon"></svg></button>'), [])
+})
+
+test('markup a script holds, or a template renders elsewhere, is not placed', () => {
+  const tree = (rows: string) => `const rows = (list) => list.map(node => (\n  <li><div className="tree-item">{node.label}</div></li>\n))\n${rows}`
+  assert.deepEqual(codes(tree('return <ul className="tree">{rows(nodes)}</ul>')), [], 'a part in a function, its root in the return')
+  assert.deepEqual(codes('const option = cond ? <a className="listbox-option" role="option">A</a> : <div className="listbox-option" role="option">B</div>\nreturn <div className="listbox" role="listbox" aria-label="Commands">{option}</div>'), [])
+  assert.deepEqual(codes('{#snippet row(node)}<li><div class="tree-item">{node.label}</div></li>{/snippet}\n<ul class="tree">{@render row(root)}</ul>'), [], 'a Svelte snippet')
+  assert.deepEqual(codes('return <button className="btn-primary">Save</button>'), ['missing-base'], 'what does not depend on its place is still checked')
+  assert.deepEqual(codes('<dialog class="dialog" aria-label="Rename"></dialog>\n<h2 class="dialog-title">Rename</h2>'), ['outside-root'], 'markup in a document is placed')
+})
+
+test('a class with a computed part is not guessed at', () => {
+  assert.deepEqual(codes('<dialog open class="toast toast-{status}" aria-label="Saved"></dialog>', { strict: true }), [])
+  assert.deepEqual(codes('<dialog open className={`toast toast-${status}`} aria-label="Saved"></dialog>', { strict: true }), [])
+  assert.deepEqual(codes('<dialog open :class="`toast toast-${status}`" aria-label="Saved"></dialog>', { strict: true }), [])
+  assert.deepEqual(codes('<dialog open class="toast toast-loud {extra}" aria-label="Saved"></dialog>', { strict: true }), ['unknown-class'], 'a whole word beside an expression is still read')
+})
+
+test('classes an expression chooses between are not counted together', () => {
+  assert.deepEqual(codes('<dialog open class="toast" :class="{ \'toast-info\': status === \'info\', \'toast-danger\': status === \'danger\' }" aria-label="Saved"></dialog>'), [])
+  assert.deepEqual(codes('<button className={large ? "btn btn-lg" : "btn btn-sm"}>Save</button>'), [])
+  assert.deepEqual(codes('<button class="btn btn-sm btn-lg">Save</button>'), ['exclusive'])
+})
+
+test('Vue: v-bind without an argument spreads attributes, as {...props} does', () => {
+  assert.deepEqual(codes('<button type="button" class="btn btn-square" v-bind="$attrs"><svg class="icon"></svg></button>'), [])
+})
+
+test('Svelte: what a snippet holds is rendered where it is asked for, wherever it is written', () => {
+  const snippet = '{#snippet option(item)}\n  <div class="listbox-option" role="option">{item.label}</div>\n{/snippet}'
+  assert.deepEqual(codes(`<dialog class="dialog command" aria-label="Commands">\n${snippet}\n<div class="listbox command-list" role="listbox" aria-label="Commands">{@render option(first)}</div></dialog>`), [])
+  assert.deepEqual(codes(`<dialog class="dialog command" aria-label="Commands">\n${snippet}\n</dialog><div class="listbox-option" role="option">Stray</div><div class="listbox" role="listbox" aria-label="Other"></div>`), ['outside-root'], 'after the snippet ends, markup is placed again')
+})
+
 test('Svelte, Vue and Astro class directives make the element dynamic', () => {
   assert.deepEqual(codes('<button class="btn" class:btn-primary={primary}>Save</button>'), [])
   assert.deepEqual(codes('<button :class="{ \'btn-primary\': primary }">Save</button>'), [])

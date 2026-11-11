@@ -9,6 +9,8 @@
  * @typedef {{ name: string, title: string, tier: string, classes: ContractClass[], [key: string]: unknown }} Contract
  * @typedef {{ code: string, severity: 'error' | 'warning' | 'info', message: string, line: number, column: number, className?: string, contract?: string }} Diagnostic
  * @typedef {{ tag: string, attributes: Map<string, string | true | null>, classes: string[], dynamic: boolean, spread: boolean, line: number, column: number, parent: Element | null, text: boolean, opaque: boolean }} Element
+ *   opaque: the element starts a piece of markup whose place is not known: one a script holds in an expression,
+ *   or a template block that is rendered somewhere else.
  * @typedef {{ knows?: (className: string) => boolean, strict?: boolean }} CheckOptions
  *   knows: whether a class that is in no contract is something else the project defines, such as a utility.
  *   strict: report a class that only looks like a Master UI class as an error; use it when `knows` is complete.
@@ -41,15 +43,19 @@ export function createIndex(contracts) {
   return { classes, roots }
 }
 
+/** Stands where an expression was, so that a word it is part of (`toast-${status}`) is known to be computed. */
+const computed = '\u0000'
+
 /** String literals inside an expression: the classes it can produce. */
 function literals(/** @type {string} */ expression) {
   const found = []
   for (const match of expression.matchAll(/"([^"\\]*(?:\\.[^"\\]*)*)"|'([^'\\]*(?:\\.[^'\\]*)*)'|`([^`\\]*(?:\\.[^`\\]*)*)`/g)) {
-    found.push((match[1] ?? match[2] ?? match[3] ?? '').replace(/\$\{[^}]*\}/g, ' '))
+    found.push((match[1] ?? match[2] ?? match[3] ?? '').replace(/\$\{[^}]*\}/g, computed))
   }
   return found.join(' ')
 }
 
+/** The class names in a value. A word with a computed part is left out: only the framework knows what it is. */
 const words = (/** @type {string} */ value) => value.split(/\s+/).filter(word => /^[\w@:()./%#,!*-]+$/.test(word))
 
 /**
@@ -66,6 +72,8 @@ export function parse(source) {
   let index = 0
   let line = 1
   let lineStart = 0
+  /** How deep the stack was where each open `{#snippet}` began: what it holds is rendered somewhere else. */
+  const snippets = []
 
   const advance = (/** @type {number} */ to) => {
     for (let at = source.indexOf('\n', index); at !== -1 && at < to; at = source.indexOf('\n', at + 1)) {
@@ -97,6 +105,10 @@ export function parse(source) {
   while (index < length) {
     const open = source.indexOf('<', index)
     const text = source.slice(index, open === -1 ? length : open)
+    for (const [block] of text.matchAll(/\{#snippet\b|\{\/snippet\}/g)) {
+      if (block === '{/snippet}') snippets.pop()
+      else snippets.push(stack.length)
+    }
     if (stack.length && /[^\s{}()[\];,]/.test(text)) mark()
     if (open === -1) break
     advance(open)
@@ -128,8 +140,12 @@ export function parse(source) {
       continue
     }
 
+    // Markup with no element around it that follows an operator, a bracket, `return` or the end of a template
+    // block (`{/if}`, `{#snippet row()}`) is a value: a script or a template puts it where this file cannot see.
+    const before = stack.length ? '' : source.slice(Math.max(0, index - 12), index).trimEnd()
+    const opaque = /[(?:&|=,[}]$|=>$|\breturn$/.test(before) || snippets.at(-1) === stack.length
     /** @type {Element} */
-    const element = { tag, attributes: new Map(), classes: [], dynamic: false, spread: false, line, column: index - lineStart + 1, parent: stack.at(-1) ?? null, text: false, opaque: false }
+    const element = { tag, attributes: new Map(), classes: [], dynamic: false, spread: false, line, column: index - lineStart + 1, parent: stack.at(-1) ?? null, text: false, opaque }
     let at = index + 1 + tag.length
     let closed = false
     let selfClosing = false
@@ -175,7 +191,7 @@ export function parse(source) {
         if (typeof value === 'string') {
           if (/\$\{|\{\{|\{/.test(value)) {
             element.dynamic = true
-            element.classes.push(...words(value.replace(/\$?\{[^}]*\}\}?/g, ' ')))
+            element.classes.push(...words(value.replace(/\$?\{[^}]*\}\}?/g, computed)))
           } else element.classes.push(...words(value))
         }
       } else if (name === ':class' || name === 'v-bind:class' || name === 'class:list' || name === '[ngClass]' || name === '[class]') {
@@ -184,8 +200,15 @@ export function parse(source) {
       } else if (name.startsWith('class:')) {
         element.dynamic = true
         element.classes.push(name.slice(6))
+      } else if (name === 'v-bind') {
+        // `v-bind="$attrs"` is Vue's spread: any attribute may arrive through it.
+        element.spread = true
       } else {
-        element.attributes.set(name === 'htmlFor' ? 'for' : name, value)
+        // A bound attribute (`:tabindex`, `v-bind:tabindex`) is there, with a value only the framework knows.
+        // Names are compared in lower case, which is how HTML reads them and what JSX's `tabIndex` stands for.
+        const bound = /^(?::|v-bind:)(.+)$/.exec(name)
+        const plain = bound ? bound[1] : name
+        element.attributes.set(plain === 'htmlFor' ? 'for' : plain.toLowerCase(), bound ? null : value)
       }
     }
     if (!closed) {
@@ -258,17 +281,18 @@ export function check(source, contracts, options = {}) {
 
       if (entry.kind === 'part' && bases.length && !entry.anywhere && bases.some(base => present.has(base))) {
         let inside = bases.some(base => element.classes.includes(base))
-        let unknown = false
+        let unknown = element.opaque
         for (let ancestor = element.parent; ancestor && !inside; ancestor = ancestor.parent) {
           if (bases.some(base => ancestor.classes.includes(base))) inside = true
-          if (!isNative(ancestor.tag) || ancestor.dynamic || ancestor.spread) unknown = true
+          if (!isNative(ancestor.tag) || ancestor.dynamic || ancestor.spread || ancestor.opaque) unknown = true
         }
         if (!inside && !unknown) {
           report(element, { code: 'outside-root', severity: 'error', className, contract: contract.name, message: `"${className}" is a part of ${bases.map(base => `"${base}"`).join(' or ')} and must be inside an element with that class.` })
         }
       }
 
-      if (entry.exclusive) {
+      // Classes named in an expression may be alternatives: `{ 'toast-info': a, 'toast-danger': b }`.
+      if (entry.exclusive && !element.dynamic) {
         const key = `${contract.name}/${entry.exclusive}`
         const other = groups.get(key)
         if (other) report(element, { code: 'exclusive', severity: 'error', className, contract: contract.name, message: `"${other}" and "${className}" are both a ${entry.exclusive} of ${contract.title.toLowerCase()}: keep one.` })
@@ -297,10 +321,10 @@ export function check(source, contracts, options = {}) {
           return value === null || (typeof value === 'string' && value.trim() !== '')
         })
         const id = element.attributes.get('id')
-        let wrapped = false
+        let wrapped = element.opaque
         for (let ancestor = element.parent; ancestor; ancestor = ancestor.parent) {
           if (ancestor.tag === 'label' && ancestor.text) wrapped = true
-          if (!isNative(ancestor.tag)) wrapped = true
+          if (!isNative(ancestor.tag) || ancestor.opaque) wrapped = true
         }
         if (!named && !element.text && !wrapped && id !== null && !(typeof id === 'string' && labelled.has(id))) {
           report(element, { code: 'label', severity: 'error', className, contract: contract.name, message: `"${className}" needs an accessible name: text of its own, aria-label, aria-labelledby, or a <label> that wraps or points at it.` })
