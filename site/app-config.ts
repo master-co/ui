@@ -6,7 +6,7 @@ export type { AppNavItem } from '@master/internal-site/config'
 export default {
   name: 'Master UI',
   brandURL: 'https://master.co/brand',
-  sourceBaseURL: 'https://github.com/master-co/ui/blob/alpha/',
+  sourceBaseURL: 'https://github.com/master-co/ui/blob/main/',
   feedbackURL: 'https://github.com/master-co/ui/issues/new?template=docs_request.yml',
   navs: primaryNavs,
   communityNavs,
