@@ -1,0 +1,112 @@
+/*
+ * Bullets: a list in running text, with its markers hung in a column of their own.
+ * A marker is a small dot; with bullets-check it is a check in the strong ink, for what is included; with
+ * bullets-numbered each item counts itself in tabular figures. The marker stands on the first line of its
+ * item, however the text wraps, and the text of every item starts on one edge.
+ * An item that is bullets-off is what is not included: a short dash in place of its marker and quieter words.
+ * Say so in words as well, for a reader who sees neither.
+ * Geometry: a 16px marker column, 10px from the text, and 8px between items.
+ */
+@layer components {
+  .bullets {
+    --bullets-marker: 1rem;
+    --bullets-gap: .5rem;
+    display: grid;
+    gap: var(--bullets-gap);
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    color: var(--color-text-body);
+    list-style: none;
+    counter-reset: bullets;
+
+    /* A list inside an item stands a little apart from the words over it. */
+    & & {
+      margin-top: var(--bullets-gap);
+    }
+
+    /* Included: a check. */
+    &.bullets-check .bullets-item::before {
+      width: .875rem;
+      height: .875rem;
+      margin-block: calc((1lh - .875rem) / 2);
+      border-radius: 0;
+      background: var(--color-text-strong);
+      mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m3.5 8.5 3 3 6-7'/%3E%3C/svg%3E") center / contain no-repeat;
+    }
+
+    /* Counted: the item's number, set to the end of the marker column so the figures line up on their points. */
+    &.bullets-numbered {
+      --bullets-marker: 1.25rem;
+
+      .bullets-item::before {
+        content: counter(bullets) '.';
+        width: var(--bullets-marker);
+        height: auto;
+        margin: 0;
+        border-radius: 0;
+        background: none;
+        color: var(--color-text-muted);
+        font-variant-numeric: tabular-nums;
+        text-align: end;
+      }
+    }
+
+    @media (forced-colors: active) {
+      &.bullets-check .bullets-item::before {
+        background: CanvasText;
+      }
+    }
+  }
+
+  /* One item: the marker in its column, the words beside it. */
+  .bullets-item {
+    position: relative;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    padding-inline-start: calc(var(--bullets-marker) + .625rem);
+    text-wrap: pretty;
+    overflow-wrap: anywhere;
+    counter-increment: bullets;
+
+    /* The marker: a dot at the middle of the first line. */
+    &::before {
+      content: '';
+      position: absolute;
+      inset-block-start: 0;
+      inset-inline-start: calc((var(--bullets-marker) - .3125rem) / 2);
+      width: .3125rem;
+      height: .3125rem;
+      margin-block: calc((1lh - .3125rem) / 2);
+      border-radius: 999px;
+      background: var(--color-line-mark);
+    }
+
+    @media (forced-colors: active) {
+      &::before {
+        background: CanvasText;
+      }
+    }
+  }
+
+  .bullets-check .bullets-item::before, .bullets-numbered .bullets-item::before {
+    inset-inline-start: 0;
+  }
+
+  /* Not included: a dash where the marker was, and quieter words. */
+  .bullets .bullets-item.bullets-off {
+    color: var(--color-text-muted);
+
+    &::before {
+      content: '';
+      inset-inline-start: calc((var(--bullets-marker) - .5rem) / 2);
+      width: .5rem;
+      height: 1.5px;
+      margin-block: calc((1lh - 1.5px) / 2);
+      border-radius: 999px;
+      background: var(--color-line-mark);
+      mask: none;
+    }
+  }
+}

@@ -1,0 +1,119 @@
+/*
+ * Hotspot: points on a picture that say what is there.
+ * The hotspot is the frame around a picture; each pin is a button placed at --x and --y of it, in percent.
+ * A pin opens whatever its button opens: a popover with popovertarget, a tooltip with interestfor.
+ * A pin is a small disc of ink with a white rim and a dark shade outside the rim, so it reads on any
+ * picture in either theme. It may hold a number. A ring leaves it now and then, to say it can be pressed;
+ * with reduced motion the ring rests.
+ * Geometry: a 24px disc, and a 44px target on a touch screen.
+ */
+@layer components {
+  .hotspot {
+    position: relative;
+    display: block;
+    width: fit-content;
+    max-width: 100%;
+    min-width: 0;
+    margin: 0;
+  }
+
+  /* One pin: its middle stands on the point. */
+  .hotspot-pin {
+    --hotspot-size: 1.5rem;
+    position: absolute;
+    top: var(--y, 50%);
+    left: var(--x, 50%);
+    display: grid;
+    place-items: center;
+    width: var(--hotspot-size);
+    height: var(--hotspot-size);
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: var(--color-surface-inverse);
+    color: var(--color-text-inverse);
+    box-shadow: 0 0 0 1.5px var(--color-on-image), 0 0 0 2px var(--color-on-image-shade), 0 2px 6px 1px var(--color-on-image-shade);
+    font: var(--font-weight-control) .6875rem/1 var(--font-family-sans);
+    font-feature-settings: inherit;
+    font-variant-numeric: tabular-nums;
+    translate: -50% -50%;
+    appearance: none;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: scale var(--duration-quick) var(--easing-glide);
+
+    /* The ring that leaves the pin. */
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-on-image) 70%, transparent);
+      pointer-events: none;
+      animation: hotspot-ring 2.4s var(--easing-glide) infinite;
+    }
+
+    /* The target a finger needs, around the disc. */
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+
+      @media (pointer: coarse) {
+        inset: calc((var(--hotspot-size) - 2.75rem) / 2);
+      }
+    }
+
+    @media (hover: hover) {
+      &:hover {
+        scale: 1.12;
+      }
+    }
+
+    &:active {
+      scale: .94;
+      transition-duration: var(--duration-press);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--color-on-image);
+      outline-offset: 3px;
+      box-shadow: 0 0 0 1.5px var(--color-on-image), 0 0 0 3px var(--color-focus), 0 0 0 7px var(--color-on-image-shade);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: none;
+
+      &::before {
+        animation: none;
+      }
+
+      &:hover, &:active {
+        scale: none;
+      }
+    }
+
+    @media (forced-colors: active) {
+      outline: 2px solid ButtonText;
+      outline-offset: -2px;
+      background: ButtonFace;
+      color: ButtonText;
+
+      &::before {
+        animation: none;
+      }
+    }
+  }
+}
+
+@keyframes hotspot-ring {
+  0%, 20% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-on-image) 70%, transparent);
+  }
+
+  70%, 100% {
+    box-shadow: 0 0 0 .75rem transparent;
+  }
+}

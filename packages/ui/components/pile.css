@@ -1,0 +1,57 @@
+/*
+ * Pile: several things shown as one, with the edges of the others under it.
+ * The pile holds one surface, the top one, and draws two more behind it: each a step narrower, a step lower
+ * and a step fainter, so they read as sheets lying under the first and not as a shadow. Nothing in them is
+ * content: say how many there are in words, on the top one.
+ * Geometry: each sheet under the top is 8px in on both sides and shows 6px below the one above it. They take
+ * the corner in --pile-radius, a surface's corner unless the top sheet has another.
+ */
+@layer components {
+  .pile {
+    --pile-radius: var(--radius-surface);
+    --pile-step: .375rem;
+    --pile-inset: .5rem;
+    position: relative;
+    /* The sheets lie behind the top one, and no further back than the pile. */
+    isolation: isolate;
+    display: grid;
+    min-width: 0;
+    margin: 0;
+    padding-bottom: calc(var(--pile-step) * 2);
+
+    &::before, &::after {
+      content: '';
+      position: absolute;
+      inset-block-start: 1rem;
+      border-radius: calc(var(--pile-radius) * var(--corner-scale));
+      corner-shape: var(--corner-shape);
+      background: var(--color-surface-raised-low);
+      box-shadow: var(--shadow-flat), 0 1px 2px -1px var(--color-shade-2);
+      pointer-events: none;
+    }
+
+    /* The second sheet. */
+    &::before {
+      z-index: -1;
+      inset-block-end: var(--pile-step);
+      inset-inline: var(--pile-inset);
+      opacity: .8;
+    }
+
+    /* The third. */
+    &::after {
+      z-index: -2;
+      inset-block-end: 0;
+      inset-inline: calc(var(--pile-inset) * 2);
+      opacity: .5;
+    }
+
+    @media (forced-colors: active) {
+      &::before, &::after {
+        outline: 1px solid CanvasText;
+        outline-offset: -1px;
+        opacity: 1;
+      }
+    }
+  }
+}

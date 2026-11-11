@@ -1,0 +1,73 @@
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+A keypad is the keys of a phone, for a code or an amount typed with a thumb: twelve buttons in three columns. A key is a raised face that sinks at once under a press, with a large figure and, under it, the small letters a phone prints there. It types nothing by itself. Each key is a button, and the page puts its figure where it belongs.
+
+<ComponentPreview name="default" height={344} title="Keypad" bodyClass="flex flex-col items-center justify-center gap-md p-lg" caption="Press the keys: the script puts each figure in the field." html={`<input class="input input-lg text-center w-full max-w(272)" id="pad-amount" type="text" inputmode="none" value="" placeholder="0" aria-label="Amount" readonly>
+<div class="keypad" id="pad" role="group" aria-label="Keypad">
+  <button class="keypad-key" type="button" value="1">1</button>
+  <button class="keypad-key" type="button" value="2">2<span class="keypad-letters">abc</span></button>
+  <button class="keypad-key" type="button" value="3">3<span class="keypad-letters">def</span></button>
+  <button class="keypad-key" type="button" value="4">4<span class="keypad-letters">ghi</span></button>
+  <button class="keypad-key" type="button" value="5">5<span class="keypad-letters">jkl</span></button>
+  <button class="keypad-key" type="button" value="6">6<span class="keypad-letters">mno</span></button>
+  <button class="keypad-key" type="button" value="7">7<span class="keypad-letters">pqrs</span></button>
+  <button class="keypad-key" type="button" value="8">8<span class="keypad-letters">tuv</span></button>
+  <button class="keypad-key" type="button" value="9">9<span class="keypad-letters">wxyz</span></button>
+  <button class="keypad-key keypad-key-quiet" type="button" value=".">.</button>
+  <button class="keypad-key" type="button" value="0">0</button>
+  <button class="keypad-key keypad-key-quiet" type="button" value="delete" aria-label="Delete">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H9l-5-6zM12 10l4 4m0-4-4 4"/></svg>
+  </button>
+</div>
+<script>
+  var amount = document.getElementById('pad-amount')
+  document.getElementById('pad').addEventListener('click', function (event) {
+    var key = event.target.closest('button')
+    if (!key) return
+    amount.value = key.value === 'delete' ? amount.value.slice(0, -1) : amount.value + key.value
+  })
+</script>`} />
+
+## A key \{#a-key\}
+
+`keypad-key` is a button 52px tall. It has the raised face of a [button](/components/button) and none of its travel: under a press it is in the well at once, with no transition, because a thumb entering six figures moves faster than one. Under a pointer it takes the firmer contour of a hovered control.
+
+`keypad-letters` is the line under a figure. It is there because people remember codes as words; leave it out for an amount.
+
+`keypad-key-quiet` is a key that is not a figure: delete, a decimal point, a sign. It has no face until it is pressed, so the ten figures read as the pad and the others as its margin. Where a corner of the pad has no key, put an empty `<span>` there to keep the grid.
+
+## The pad \{#the-pad\}
+
+The pad is three equal columns 8px apart, as wide as its container up to 17rem. Two things it does are easy to forget when a pad is built from plain buttons:
+
+- It sets `touch-action: manipulation`, so the browser does not wait to see whether a second tap is a double-tap zoom. Two quick presses of the same key are two presses.
+- It does not select its figures, so a press that slides a little never highlights text.
+
+`--keypad-key` sets the height of a key and `--keypad-gap` the space between keys.
+
+## What the page does \{#script\}
+
+The keypad has no behavior of its own, since what a key means belongs to the page: a figure appended to an amount, a slot of an [OTP field](/components/otp) filled, a call placed. One listener on the pad is enough, as in the example: read the pressed button's `value` and write it where it goes.
+
+Keep a real field on the page. A reader with a hardware keyboard types into it, a password manager fills it, and a screen reader hears its value change. `inputmode="none"` on that field keeps the system's own keyboard from opening over the pad on a phone.
+
+## Accessibility \{#accessibility\}
+
+- Give the pad `role="group"` and an `aria-label`. Each key is a button whose name is its figure; a key that shows only an icon needs an `aria-label`.
+- The letters under a figure are part of the button's text. If "2 abc" is noise for your readers, wrap the letters in an element with `aria-hidden="true"`.
+- Announce the result, not each press: the field that receives the figures is what a screen reader should follow.
+- Keys are 52px tall, above the 44px a touch target needs, at every pointer.
+
+## Classes \{#classes\}
+
+<ContractTable name="keypad" />
+
+## Custom properties \{#custom-properties\}
+
+<ContractTable name="keypad" show="properties" />
+
+## Source \{#source\}
+
+<ComponentSource name="keypad" />

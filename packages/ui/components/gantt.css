@@ -1,0 +1,199 @@
+/*
+ * Gantt: things that last, as bars on one scale of time.
+ * It is a list. The scale runs from --gantt-from to --gantt-to, in any unit: days, weeks, hours. Each row
+ * carries where its bar begins and ends as --from and --to, its name in gantt-label and what the bar says as
+ * the text of gantt-bar, so the list reads as data to anyone who is not looking at it. The stylesheet does the
+ * placing: names in one column, bars in the other, a hairline at every unit of the scale.
+ * A bar is a tint of ink, 28px tall, and fills with a firmer tint as far as --progress percent. The row
+ * marked aria-current has an ink bar. A milestone is a point, not a span: a small ink diamond at --from.
+ * gantt-now draws an ink line down the rows at --gantt-now.
+ * In a narrow container the name stands over its bar instead of beside it.
+ */
+@layer components {
+  .gantt {
+    --gantt-from: 0;
+    --gantt-to: 12;
+    --gantt-now: 0;
+    --gantt-gap: .375rem;
+    --gantt-color: var(--color-surface-inverse);
+    --gantt-span: calc(var(--gantt-to) - var(--gantt-from));
+    container-type: inline-size;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--gantt-gap) 1rem;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    color: var(--color-text-body);
+    font: 400 .8125rem/1.25rem var(--font-family-sans);
+    font-feature-settings: inherit;
+    font-variant-numeric: tabular-nums;
+    list-style: none;
+
+    /* The line of now: drawn in every row, so it runs the height of the chart. */
+    &.gantt-now .gantt-row:not(.gantt-scale)::after {
+      content: '';
+      z-index: 2;
+      grid-area: 1 / 2;
+      align-self: stretch;
+      justify-self: start;
+      width: 1px;
+      margin-block: calc(var(--gantt-gap) / -2);
+      margin-inline-start: calc((var(--gantt-now) - var(--gantt-from)) / var(--gantt-span) * 100% - .5px);
+      background: var(--color-text-strong);
+      pointer-events: none;
+    }
+
+    @container (width < 26rem) {
+      .gantt-row {
+        grid-template-columns: minmax(0, 1fr);
+        row-gap: .125rem;
+      }
+
+      .gantt-label {
+        grid-area: 1 / 1;
+        max-width: none;
+      }
+
+      .gantt-row::before, .gantt-bar, .gantt-ticks {
+        grid-area: 2 / 1;
+      }
+
+      &.gantt-now .gantt-row:not(.gantt-scale)::after {
+        grid-area: 2 / 1;
+      }
+
+      .gantt-scale .gantt-ticks {
+        grid-area: 1 / 1;
+      }
+    }
+
+    @media (forced-colors: active) {
+      --gantt-color: CanvasText;
+    }
+  }
+
+  /* One row: the name in the first column, and the track with its bar in the second. */
+  .gantt-row {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+    align-items: center;
+    min-width: 0;
+    min-height: 1.75rem;
+    margin: 0;
+    padding: 0;
+
+    /* The scale behind the bar: a hairline at each unit, joined to the row above and below. */
+    &::before {
+      content: '';
+      grid-area: 1 / 2;
+      align-self: stretch;
+      margin-block: calc(var(--gantt-gap) / -2);
+      background: repeating-linear-gradient(90deg, var(--color-line-hair) 0 1px, transparent 1px calc(100% / var(--gantt-span)));
+      box-shadow: 1px 0 0 var(--color-line-hair);
+      pointer-events: none;
+    }
+
+    /* The row that matters now: its bar is ink. */
+    &[aria-current="true"] {
+      .gantt-bar {
+        background: var(--gantt-color);
+        color: var(--color-text-inverse);
+        box-shadow: var(--shadow-ink-top);
+      }
+
+      .gantt-label {
+        color: var(--color-text-strong);
+      }
+    }
+
+    /* The row of the scale itself: its names, and no track of its own. */
+    &.gantt-scale {
+      min-height: 1.25rem;
+
+      &::before {
+        content: none;
+      }
+    }
+  }
+
+  /* What the row is. */
+  .gantt-label {
+    grid-area: 1 / 1;
+    max-width: 10rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* The bar: from --from to --to of the scale, filled as far as --progress percent. Its text is what it says. */
+  .gantt-bar {
+    --gantt-tint: color-mix(in oklab, var(--gantt-color) 10%, transparent);
+    --gantt-done: color-mix(in oklab, var(--gantt-color) 22%, transparent);
+    z-index: 1;
+    grid-area: 1 / 2;
+    box-sizing: border-box;
+    width: calc((var(--to, 1) - var(--from, 0)) / var(--gantt-span) * 100%);
+    min-width: .25rem;
+    height: 1.75rem;
+    margin-inline-start: calc((var(--from, 0) - var(--gantt-from)) / var(--gantt-span) * 100%);
+    padding: .25rem .5rem;
+    border-radius: calc(var(--radius-chip) * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    overflow: hidden;
+    background: linear-gradient(90deg, var(--gantt-done) calc(var(--progress, 0) * 1%), var(--gantt-tint) 0);
+    color: var(--color-text-strong);
+    font-weight: var(--font-weight-control);
+    font-size: .78125rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    &:dir(rtl) {
+      background: linear-gradient(270deg, var(--gantt-done) calc(var(--progress, 0) * 1%), var(--gantt-tint) 0);
+    }
+
+    /* A milestone: a point in time, drawn as a diamond on it. Its text is kept for assistive technology. */
+    &.gantt-milestone {
+      width: .75rem;
+      min-width: 0;
+      height: .75rem;
+      margin-inline-start: calc((var(--from, 0) - var(--gantt-from)) / var(--gantt-span) * 100% - .375rem);
+      padding: 0;
+      border-radius: 2px;
+      corner-shape: round;
+      background: var(--gantt-color);
+      color: transparent;
+      font-size: 0;
+      rotate: 45deg;
+    }
+
+    @media (forced-colors: active) {
+      outline: 1px solid CanvasText;
+      outline-offset: -1px;
+      forced-color-adjust: none;
+      background: Canvas;
+      color: CanvasText;
+
+      &.gantt-milestone {
+        background: CanvasText;
+      }
+    }
+  }
+
+  /* The names of the scale's units, one to a unit, each over the hairline that begins it. */
+  .gantt-ticks {
+    display: grid;
+    grid-area: 1 / 2;
+    grid-auto-columns: minmax(0, 1fr);
+    grid-auto-flow: column;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    color: var(--color-text-muted);
+    font-size: .71875rem;
+    line-height: 1.25rem;
+    list-style: none;
+    white-space: nowrap;
+  }
+}

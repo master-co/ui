@@ -1,0 +1,139 @@
+/*
+ * Pager: the page before and the page after, at the foot of an article.
+ * Two links side by side, each a flat face with a quiet word over the title of the page it leads to. The
+ * links say which is which with rel="prev" and rel="next", and the stylesheet reads that: the next page
+ * stands at the end with its words set to the end, and an arrow points the way each one goes. A pager with
+ * only a next page keeps it at the end.
+ * Under the pointer a link rises a step and its arrow moves 2px the way it points. In a narrow container the
+ * two stack.
+ * Geometry: a large control's corner, 14px by 16px of padding, 12px between the two.
+ */
+@layer components {
+  .pager {
+    container-type: inline-size;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .75rem;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    @container (width < 26rem) {
+      .pager-link, .pager-link[rel~="next"] {
+        grid-column: 1 / -1;
+      }
+    }
+  }
+
+  .pager-link {
+    --pager-travel: 0px;
+    display: grid;
+    gap: .125rem;
+    min-width: 0;
+    padding: .875rem 1rem;
+    border-radius: calc(var(--radius-control-lg) * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    background: var(--color-surface-raised);
+    color: var(--color-text-body);
+    box-shadow: var(--shadow-flat);
+    text-decoration: none;
+    -webkit-tap-highlight-color: transparent;
+    transition: box-shadow var(--duration-quick) var(--easing-glide);
+
+    /* The page after: at the end, with its words set to the end. */
+    &[rel~="next"] {
+      grid-column: 2;
+      justify-items: end;
+      text-align: end;
+    }
+
+    @media (hover: hover) {
+      &:hover {
+        --pager-travel: 2px;
+        box-shadow: var(--shadow-raised);
+      }
+    }
+
+    &:active {
+      background: var(--color-surface-inset);
+      box-shadow: var(--shadow-pressed);
+      transition-duration: var(--duration-press);
+    }
+
+    &:focus-visible {
+      @apply --focus-ring;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      --pager-travel: 0px;
+
+      &:hover {
+        --pager-travel: 0px;
+      }
+    }
+
+    @media (forced-colors: active) {
+      outline: 1px solid LinkText;
+      outline-offset: -1px;
+    }
+  }
+
+  /* The quiet word: Previous, Next. Its arrow points the way the link goes. */
+  .pager-label {
+    display: inline-flex;
+    align-items: center;
+    gap: .25rem;
+    color: var(--color-text-muted);
+    font-size: .78125rem;
+    line-height: 1.25rem;
+
+    &::before, &::after {
+      flex: none;
+      width: .875rem;
+      height: .875rem;
+      background: currentColor;
+      mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.5 8h9m0 0L9 4.5M12.5 8 9 11.5'/%3E%3C/svg%3E") center / contain no-repeat;
+      transition: translate var(--duration-quick) var(--easing-glide);
+    }
+  }
+
+  /* The arrow of the page before leads the word and points back. */
+  .pager-link:not([rel~="next"]) .pager-label::before {
+    content: '';
+    scale: -1 1;
+    translate: calc(-1 * var(--pager-travel)) 0;
+  }
+
+  .pager-link[rel~="next"] .pager-label::after {
+    content: '';
+    translate: var(--pager-travel) 0;
+  }
+
+  .pager-link:not([rel~="next"]) .pager-label:dir(rtl)::before {
+    scale: none;
+    translate: var(--pager-travel) 0;
+  }
+
+  .pager-link[rel~="next"] .pager-label:dir(rtl)::after {
+    scale: -1 1;
+    translate: calc(-1 * var(--pager-travel)) 0;
+  }
+
+  /* The title of the page it leads to. */
+  .pager-title {
+    min-width: 0;
+    color: var(--color-text-strong);
+    font-weight: var(--font-weight-control);
+    font-size: .9375rem;
+    line-height: 1.35;
+    text-wrap: balance;
+    overflow-wrap: anywhere;
+  }
+
+  @media (forced-colors: active) {
+    .pager-label::before, .pager-label::after {
+      background: LinkText;
+    }
+  }
+}

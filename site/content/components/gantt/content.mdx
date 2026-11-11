@@ -1,0 +1,76 @@
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+A gantt shows things that last as bars on one scale of time: the phases of a project, on-call shifts, a release train. It is a list. Each row carries where its bar begins and ends, its name, and what the bar says as text, and the stylesheet does the placing: names in one column, bars in the other, a hairline at every unit of the scale. There is no script and no SVG.
+
+<ComponentPreview name="default" height={248} narrowHeight={320} title="Gantt" bodyClass="p-lg" html={`<div class="card max-w(560) mx-auto">
+  <ol class="gantt gantt-now" style="--gantt-from: 0; --gantt-to: 8; --gantt-now: 4.4" aria-label="Launch plan, in weeks">
+    <li class="gantt-row gantt-scale" aria-hidden="true">
+      <ol class="gantt-ticks"><li>W1</li><li>W2</li><li>W3</li><li>W4</li><li>W5</li><li>W6</li><li>W7</li><li>W8</li></ol>
+    </li>
+    <li class="gantt-row" style="--from: 0; --to: 3; --progress: 100"><span class="gantt-label">Research</span><span class="gantt-bar">Weeks 1 to 3</span></li>
+    <li class="gantt-row" aria-current="true" style="--from: 2; --to: 6"><span class="gantt-label">Design</span><span class="gantt-bar">Weeks 3 to 6</span></li>
+    <li class="gantt-row" style="--from: 4; --to: 7.5; --progress: 15"><span class="gantt-label">Build</span><span class="gantt-bar">Weeks 5 to 8</span></li>
+    <li class="gantt-row" style="--from: 7.5"><span class="gantt-label">Launch</span><span class="gantt-bar gantt-milestone">Middle of week 8</span></li>
+  </ol>
+</div>`} />
+
+## How a bar gets its place \{#how-a-bar-gets-its-place\}
+
+The scale runs from `--gantt-from` to `--gantt-to`, set on the list. The unit is yours: days, weeks, hours, sprints. Each `gantt-row` sets `--from` and `--to` in the same unit, and its `gantt-bar` begins and ends at that share of the track. Fractions work, so a bar can end in the middle of a unit.
+
+The names take the width of the longest one and the track takes the rest; every row shares the two columns, so the bars line up without a width written anywhere. A hairline marks each unit of the scale behind the bars.
+
+A bar's text is what the bar says: its dates, its length, who has it. Write it even when the bar is too short to show it, since it is what a screen reader reads; text that does not fit ends in an ellipsis.
+
+## Progress, the current row and now \{#progress\}
+
+`--progress` on a row, from 0 to 100, fills the bar with a firmer tint that far. The row marked `aria-current="true"` has an ink bar: the one phase a reader is in, or the one a view is about.
+
+`gantt-now` on the list draws an ink line down every row at `--gantt-now`, for today.
+
+## Milestones \{#milestones\}
+
+A milestone is a point, not a span. Put `gantt-milestone` on the bar of a row that sets only `--from`: it is drawn as a small ink diamond on that point. Its text stays in the list for assistive technology and is not shown, so name the row for what happens there.
+
+## The scale \{#the-scale\}
+
+A row with `gantt-scale` names the units. It holds one `gantt-ticks` list with an item for each unit, and each name stands over the hairline that begins its unit. It is a picture of what the bars already say in words, so hide it with `aria-hidden`.
+
+<ComponentPreview name="shifts" height={212} narrowHeight={280} title="Hours of a day" bodyClass="p-lg" html={`<div class="card max-w(560) mx-auto">
+  <ol class="gantt" style="--gantt-from: 0; --gantt-to: 24" aria-label="On call today">
+    <li class="gantt-row gantt-scale" aria-hidden="true">
+      <ol class="gantt-ticks"><li>00</li><li></li><li></li><li></li><li></li><li></li><li>06</li><li></li><li></li><li></li><li></li><li></li><li>12</li><li></li><li></li><li></li><li></li><li></li><li>18</li><li></li><li></li><li></li><li></li><li></li></ol>
+    </li>
+    <li class="gantt-row" style="--from: 0; --to: 8"><span class="gantt-label">Grace</span><span class="gantt-bar">00:00 to 08:00</span></li>
+    <li class="gantt-row" aria-current="true" style="--from: 8; --to: 16"><span class="gantt-label">Ada</span><span class="gantt-bar">08:00 to 16:00</span></li>
+    <li class="gantt-row" style="--from: 16; --to: 24"><span class="gantt-label">Alan</span><span class="gantt-bar">16:00 to 24:00</span></li>
+  </ol>
+</div>`} />
+
+## In a narrow container \{#narrow\}
+
+The gantt is a size container. Under 26rem of its own width each name stands over its bar instead of beside it, so the track keeps the whole width. Keep the scale short on a phone: eight units read, thirty do not.
+
+## Gantt, timeline or chart \{#gantt-timeline-or-chart\}
+
+A gantt is for things with a beginning and an end. Moments in the order they happened are a [timeline](/components/timeline). Amounts compared with each other, with no place in time, are a [chart](/components/chart).
+
+## Accessibility \{#accessibility\}
+
+- Write it as an `<ol>` and name it with `aria-label` or a heading. Each row is an item whose name and bar text are read in order: "Design, weeks 3 to 6".
+- The bars, the hairlines and the line of now are drawn by the stylesheet. Say in the text what they show: a bar's dates, and that a row is the current one where it matters.
+- Colour is not used: the current row is told apart by ink against a tint, and in forced colors by a filled bar against outlined ones.
+
+## Classes \{#classes\}
+
+<ContractTable name="gantt" />
+
+## Custom properties \{#custom-properties\}
+
+<ContractTable name="gantt" show="properties" />
+
+## Source \{#source\}
+
+<ComponentSource name="gantt" />

@@ -66,7 +66,9 @@ Or import only the theme and the components you use:
 | Card | `card`, `card-flat`, `card-interactive`, `card-split`, `card-media`, `card-header`, `card-title`, `card-description`, `card-action`, `card-body`, `card-footer` |
 | Window | `window`, `window-flat`, `window-bar`, `window-controls`, `window-title`, `window-address`, `window-end`, `window-body` |
 | Ticket | `ticket`, `ticket-row`, `ticket-body`, `ticket-stub` |
+| Pile | `pile` |
 | Device | `device`, `device-screen` |
+| Hotspot | `hotspot`, `hotspot-pin` |
 | Divider | `divider`, `divider-vertical`, `divider-label` |
 | Scroll area | `scroll-area`, `scroll-area-inline` |
 | Reveal | `reveal` |
@@ -74,6 +76,7 @@ Or import only the theme and the components you use:
 | Button | `btn`, `btn-primary`, `btn-quiet`, `btn-brand`, `btn-danger`, `btn-sm`, `btn-lg`, `btn-square`, `btn-pill`, `btn-group` |
 | Toolbar | `toolbar`, `toolbar-floating`, `toolbar-separator` |
 | Link | `link`, `link-quiet` |
+| Skip link | `skip` |
 | Input | `input`, `input-sm`, `input-lg`, `input-auto`, `input-group`, `input-group-sm`, `input-group-lg`, `input-group-wrap`, `input-group-field`, `input-group-addon`, `field`, `field-hint`, `field-error`, `fieldset`, `fieldset-legend` |
 | Select | `select`, `select-option`, `select-raised`, `select-sm`, `select-lg` |
 | Checkbox | `check`, `checkbox` |
@@ -87,6 +90,8 @@ Or import only the theme and the components you use:
 | Rating | `rating`, `rating-input`, `rating-sm`, `rating-lg` |
 | Choice | `choice`, `choice-body`, `choice-title`, `choice-description`, `choice-end` |
 | Poll | `poll`, `poll-title`, `poll-option`, `poll-input`, `poll-label`, `poll-value`, `poll-meta` |
+| Scale | `scale`, `scale-option`, `scale-input`, `scale-ends` |
+| Keypad | `keypad`, `keypad-key`, `keypad-key-quiet`, `keypad-letters` |
 | Checklist | `checklist`, `checklist-item`, `checklist-label`, `checklist-body`, `checklist-title`, `checklist-description`, `checklist-end`, `checklist-count` |
 | Dropzone | `dropzone`, `dropzone-input`, `dropzone-title`, `dropzone-description` |
 | OTP | `otp`, `otp-slot`, `otp-separator` |
@@ -100,6 +105,7 @@ Or import only the theme and the components you use:
 | Nav | `nav`, `nav-item`, `nav-end`, `nav-label`, `nav-group`, `nav-toggle`, `nav-sub` |
 | Breadcrumb | `breadcrumb`, `breadcrumb-item`, `breadcrumb-link` |
 | Pagination | `pagination`, `pagination-gap` |
+| Pager | `pager`, `pager-link`, `pager-label`, `pager-title` |
 | Steps | `steps`, `steps-vertical`, `steps-complete`, `steps-item`, `steps-body`, `steps-title`, `steps-description` |
 | Dialog | `dialog`, `dialog-sm`, `dialog-lg`, `dialog-drawer`, `dialog-drawer-start`, `dialog-sheet`, `dialog-header`, `dialog-title`, `dialog-description`, `dialog-body`, `dialog-footer`, `dialog-close` |
 | Lightbox | `lightbox`, `lightbox-media`, `lightbox-caption`, `lightbox-close` |
@@ -115,10 +121,15 @@ Or import only the theme and the components you use:
 | Progress | `progress`, `progress-sm`, `progress-lg`, `progress-segmented`, `progress-ring`, `progress-ring-sm`, `progress-ring-lg`, `progress-ring-xl` |
 | Meter | `meter`, `meter-sm`, `meter-lg`, `meter-segmented` |
 | Gauge | `gauge`, `gauge-sm`, `gauge-lg`, `gauge-value`, `gauge-label` |
+| Uptime | `uptime`, `uptime-sm`, `uptime-day`, `uptime-degraded`, `uptime-down`, `uptime-none` |
+| Gantt | `gantt`, `gantt-now`, `gantt-row`, `gantt-scale`, `gantt-label`, `gantt-bar`, `gantt-milestone`, `gantt-ticks` |
+| Price | `price`, `price-sm`, `price-lg`, `price-amount`, `price-currency`, `price-period`, `price-was` |
 | Skeleton | `skeleton`, `skeleton-text`, `skeleton-circle` |
 | Shimmer | `shimmer` |
 | Spinner | `spinner`, `spinner-sm`, `spinner-lg`, `spinner-xl`, `spinner-inline` |
 | Busy | `busy` |
+| Caret | `caret`, `caret-block` |
+| Flash | `flash` |
 | Empty | `empty`, `empty-media`, `empty-title`, `empty-description`, `empty-actions` |
 | Accordion | `accordion`, `accordion-item`, `accordion-trigger`, `accordion-content` |
 | Expand | `expand`, `expand-toggle`, `expand-more`, `expand-less` |
@@ -150,6 +161,7 @@ Or import only the theme and the components you use:
 | Kbd | `kbd`, `kbd-raised` |
 | Mark | `mark`, `mark-brand`, `mark-underline` |
 | Revision | `ins`, `del` |
+| Bullets | `bullets`, `bullets-check`, `bullets-numbered`, `bullets-item`, `bullets-off` |
 | Mention | `mention`, `mention-self` |
 | Citation | `citation` |
 | Page (layout) | `page` |

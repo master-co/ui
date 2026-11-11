@@ -23,6 +23,7 @@ Read the row that matches the job, then the contract of the component it names.
 | Something about this part of the page, which stays in the flow | `alert` |
 | One line everyone on the page should see, across the top | `banner` |
 | A view has nothing to show yet | `empty` |
+| Where a link has landed, shown for a moment | `flash` |
 | A field is wrong | `field-error` in `field`, with `aria-invalid` or `:user-invalid` on the control |
 
 ## Work is under way
@@ -32,6 +33,7 @@ Read the row that matches the job, then the contract of the component it names.
 | Unknown duration, small, beside a label | `spinner` |
 | Content is on its way and its shape is known | `skeleton` |
 | Words that say work is under way: thinking, generating | `shimmer` |
+| Text that is still being written, with more coming | `caret` |
 | A known share of the work is done | `progress` |
 | A reading within a range, not a task: disk used, a score | `meter` |
 | One reading on a dial, where the figure is the point | `gauge` |
@@ -53,6 +55,7 @@ Read the row that matches the job, then the contract of the component it names.
 | A color | `swatch` |
 | A score out of a few | `rating` |
 | A quick vote that shows how everyone answered | `poll` |
+| A degree on a row of numbers with named ends: how likely, how satisfied | `scale` |
 | A date or a range of dates | `calendar`, in a `popover` for a picker |
 
 ## A number or a text
@@ -65,6 +68,7 @@ Read the row that matches the job, then the contract of the component it names.
 | Any other number, a text, a file | `input` |
 | A value picked by turning, on touch: a time, a unit | `wheel` |
 | A short code sent to the reader | `otp` |
+| A code or an amount entered with keys drawn on the page, on touch | `keypad` |
 | A message or a prompt with tools under it | `composer` |
 | Files, dropped or chosen | `dropzone` |
 
@@ -79,8 +83,10 @@ Read the row that matches the job, then the contract of the component it names.
 | Views of one subject, one at a time | `tabs` |
 | Where this page is in the site | `breadcrumb` |
 | The pages of a long list | `pagination` |
+| The page before and the page after, at the foot of an article | `pager` |
 | A short sequence and where the reader is in it | `steps` |
 | The headings of this page | `toc` |
+| A way past the navigation for a reader who uses the keyboard | `skip` |
 
 ## Records and figures
 
@@ -90,14 +96,19 @@ Read the row that matches the job, then the contract of the component it names.
 | Records as rows with media, words and an action | `list` |
 | The facts about one thing | `data-list` |
 | One figure and how it moved | `stat` |
+| What something costs, with its currency and its period | `price` |
 | A few numbers compared | `chart` |
 | What a total is made of, as parts of one bar | `breakdown` |
 | Many small numbers over time or a grid | `heatmap` |
+| A service's days, each up, degraded or down | `uptime` |
 | Events in order | `timeline` |
+| Things that last, placed on a scale of time | `gantt` |
 | One file | `file` |
 | A turn of a conversation | `message` |
 | Comments and the replies to them | `thread` |
 | Words added and words struck in a sentence | `ins` and `del` |
+| A list of sentences with markers hung beside them: points, what a plan includes | `bullets` |
+| Points on a picture, explained one by one | `hotspot` |
 | A row with one or two actions behind it, on touch | `swipe` |
 | A block that arrives as it scrolls into view | `reveal` |
 
@@ -112,6 +123,7 @@ Read the row that matches the job, then the contract of the component it names.
 | A screenshot or a demo in the frame of an application | `window` |
 | A screenshot or a demo in the body of a phone | `device` |
 | Something issued and handed over: a pass, a voucher, a receipt | `ticket` |
+| Several things of one kind shown as one | `pile` around the top surface |
 
 ## It is not a component
 
