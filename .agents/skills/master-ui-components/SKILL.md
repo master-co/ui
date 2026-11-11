@@ -4,12 +4,12 @@ description: Author, review and document Master UI components, layouts and block
 license: MIT
 metadata:
   author: master-co
-  version: "0.5.0"
+  version: "0.6.0"
 ---
 
 # Master UI components
 
-A Master UI component is one native element with the right semantics, one stylesheet in `@layer components`, and markup a reader can copy into any stack. It works without JavaScript wherever the platform has an element for the job, uses the web platform's own feature for that job, and reads the Moonstone / Obsidian theme only through tokens. Where a pattern has no native element, the stylesheet is still complete: it draws every state from ARIA and leaves the behavior to the reader's script.
+A Master UI component is one native element with the right semantics, one stylesheet in `@layer components`, a contract beside it that says what the stylesheet promises, and markup a reader can copy into any stack. It works without JavaScript wherever the platform has an element for the job, uses the web platform's own feature for that job, and reads the Moonstone / Obsidian theme only through tokens. Where a pattern has no native element, the stylesheet is still complete: it draws every state from ARIA and leaves the behavior to the reader's script.
 
 Use `$master-design` for craft judgment (surfaces, geometry, type, states, motion). This skill supplies the contracts that make components consistent with each other.
 
@@ -51,7 +51,7 @@ A combobox, a command palette, a calendar, a tree with arrow keys, a context men
 - **Use the native container.** A palette is a `<dialog>`, a picker's calendar sits in a `popover`, a tree without script is nested `<details>`. Compose existing components (`input-group`, `listbox`, `dialog`) instead of drawing a second field or a second list.
 - **Derive in CSS what a script would otherwise compute:** an empty state with `:has(.listbox-option:not([hidden]))`, a list's width with `anchor-size()`, a flip with `@position-try`.
 - **A rule that sets `display` on a part a script hides must restore `[hidden]`**, since a class in `@layer components` beats the browser's own `[hidden]` rule.
-- **The page shows the smallest script that drives the component**, in the default preview, written without a framework. Say plainly what works without it.
+- **The pattern ships a behavior.** `packages/ui/behaviors/<name>.js` is the reference script, named in the contract's `behavior` and specified by its `keyboard` list; read [behaviors](references/behaviors.md). The page's default preview shows the pattern working, written without a framework, and says plainly what works without the script.
 
 ## Selector contract
 
@@ -68,7 +68,8 @@ These rules are enforced by `packages/ui/tests/master.test.ts`.
 
 ## Material and tokens
 
-- Read tokens only: `--color-surface-*`, `--color-line-*`, `--color-text-*`, `--color-focus`, status `--color-info|success|warning|danger`, `--color-brand*`, `--shadow-pressed|flat|raised|raised-hover|lifted|floating|overlay`, `--radius-chip|control-sm|control|control-lg|surface`, `--easing-glide`, `--duration-press|quick|base`, `--font-weight-control`. Never raw palette steps in component rules; new public tokens go in `theme.css` `@theme`.
+- **A component writes no color of its own.** No `oklch()`, no hex, no `rgb()`: a test fails one. A value that is not yet a token becomes one in `theme.css`, named for its role, and a recipe of several values becomes a mixin there (`--surface-ink`, `--control-ink`, `--control-tone`, `--surface-thumb`). `themes/paper.css` is the proof that this holds: it retunes every component with tokens alone, so check it after a change to a material.
+- Read tokens only: `--color-surface-*`, `--color-line-*`, `--color-text-*`, `--color-focus`, status `--color-info|success|warning|danger`, `--color-brand*`, `--shadow-pressed|flat|raised|raised-hover|lifted|floating|overlay`, `--radius-chip|control-sm|control|control-lg|surface`, `--easing-glide`, `--duration-press|quick|base`, `--lift`, `--font-weight-control`, and the ink, thumb and picture tokens `theme.css` lists. Never raw palette steps in component rules; new public tokens go in `theme.css` `@theme`.
 - Monochrome chrome: ink and pearl. Hue only for status, always with words; the brand color only on `btn-brand`, mixed from `--color-brand` and never written as a palette step.
 - State is depth, not hue: rest raised → hover lifts 0.5px to raised-hover → press sinks into the well. Disabled drops to a flat well with disabled ink.
 - **Edges are soft.** A contour is a half-pixel ring drawn with a zero-blur `box-shadow` (`0 0 0 .5px`, or `inset` for a well), never a 1px border. Use `--color-line-contour` for a surface, `--color-line-strong` for a hovered contour and a small track, `--color-line-mark` for a checkbox and a focused field: a control that must be found at a glance takes a firmer contour than a surface. `--color-line-hair` and `--color-line-divider` are the only 1px rules. A shadow layer blurs by twice its offset and pulls its spread in by the offset, so it fades out and never ends in a line; do not add a hard `inset 0 -1px 0` under a face.
@@ -108,17 +109,19 @@ Every interactive component covers, in this order of checks: rest, hover, active
 ## Add or change a component
 
 1. Write `packages/ui/components/<slug>.css` with a header comment that states its material and geometry.
-2. Import it in `packages/ui/master.css` and add its classes to the native-class list in `packages/ui/tests/master.test.ts`. Stylesheets that tune another component (`input.css` after `button.css`) come later in the import order.
-3. Add it to `site/components/catalog.ts` and write `site/content/components/<slug>/{metadata.ts,content.mdx}` following [the documentation pattern](references/documentation.md).
-4. Update the class table in `packages/ui/README.md`.
-5. Draw its cover in `site/components/cover/art/<slug>.astro` with `$master-ui-covers`.
-6. Verify as in [verification](references/verification.md).
+2. Write its contract, `packages/ui/components/<slug>.json`, following [contracts](references/contracts.md): every class, its states, its public custom properties, when to use it and the smallest correct example. A change to a class, a state or a public property changes the contract in the same commit.
+3. Import the stylesheet in `packages/ui/master.css`. Stylesheets that tune another component (`input.css` after `button.css`) come later in the import order.
+4. When the pattern has no native element, write its behavior and the behavior's test following [behaviors](references/behaviors.md), and export it from `packages/ui/behaviors/index.js`.
+5. Add it to `site/components/catalog.ts` and write `site/content/components/<slug>/{metadata.ts,content.mdx}` following [the documentation pattern](references/documentation.md). The Classes and Custom properties tables are `<ContractTable name="<slug>" />`, never written by hand.
+6. Run `bun run build` in `packages/ui`: it rewrites the README's table of classes from the contracts.
+7. Draw its cover in `site/components/cover/art/<slug>.astro` with `$master-ui-covers`.
+8. Verify as in [verification](references/verification.md).
 
 ## Add or change a layout or a block
 
 1. Write the markup with utilities and existing components, and check it at a desktop, a tablet and a phone width, in light and in dark.
 2. Add it to `layouts` or `blocks` in `site/components/catalog.ts` and write `site/content/<layouts|blocks>/<slug>/{metadata.ts,content.mdx}` with `PagePreview`, as [tiers](references/tiers.md) describes.
-3. If a layout cannot be written with utilities, name the declaration that cannot, and only then add a class in `packages/ui/layouts/<slug>.css`: import it after the components in `master.css`, add it to the tests' class list and to the README's layout table.
+3. If a layout cannot be written with utilities, name the declaration that cannot, and only then add a class in `packages/ui/layouts/<slug>.css` with its contract `<slug>.json` beside it, and import it after the components in `master.css`.
 4. If a block needs a material no component has, add the component or the modifier first.
 5. Draw its cover in `site/components/cover/art/<layouts|blocks>/<slug>.astro`.
 6. Verify as in [verification](references/verification.md).

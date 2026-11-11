@@ -1,0 +1,70 @@
+---
+name: master-ui
+description: Build, edit, review and customize interfaces with Master UI, the native HTML and CSS component library for Master CSS. Use in a project that imports @master/ui or links its stylesheet, when choosing a component, writing its markup, theming, deciding whether to override or own a component, or adding a component the library does not have. Do not introduce Master UI into a project that uses another component library without a request.
+license: MIT
+metadata:
+  author: master-co
+  version: "1.0"
+  compatibility: "@master/ui with contracts (contract.schema.json); Master CSS 2.1 or later, or the standalone stylesheet."
+---
+
+# Master UI
+
+Master UI is a contract and a default implementation of it. The contract of a component is its classes, the element each goes on, the states its stylesheet draws from native and ARIA attributes, its public custom properties and the smallest correct markup. The implementation is one stylesheet in the Moonstone / Obsidian theme. Write to the contract; change the implementation only through the steps in [customizing](references/customizing.md).
+
+## Establish the project
+
+- How the library arrives: `@import '@master/ui'` after `@import '@master/css'`, one import per stylesheet in `ui/index.css` (written by `master-ui init`), or the compiled `standalone.css` in a project without Master CSS. With the compiled file there are no utilities: lay out with the project's own CSS.
+- What the project owns: `master-ui.json` lists owned components; their source and contracts are in its `directory` (`ui/` by default). An owned contract replaces the library's. Read it before using that component.
+- The theme: a file imported after the library, or `@theme` overrides in the app stylesheet. Read it before choosing a token.
+- The project's own instructions and nearby components come first. Match what is already there.
+
+## Read the contract before writing markup
+
+Never write a component's markup from memory, and never invent a class.
+
+- `npx master-ui contract <name>` prints one contract; a class name works as the name (`master-ui contract btn-primary`). `npx master-ui list` prints every contract in one line each.
+- Without a shell: `https://ui.master.co/components/<name>.md`, and the index at `https://ui.master.co/llms.txt`.
+- With the Master CSS MCP server, use its contract tools when `tools/list` shows them.
+
+Then:
+
+- Put each class on the element the contract names. A component is a class on a native element: a button is a `<button>`, a dialog is a `<dialog>`, a switch is `<input type="checkbox" role="switch">`.
+- A modifier goes with its base on the same element; a part goes inside its root.
+- Mark a state with the attribute the contract lists (`disabled`, `aria-pressed="true"`, `aria-selected="true"`, `open`). Never add a class for a state.
+- Give every control an accessible name. An icon-only button needs `aria-label`.
+- Lay out with Master CSS utilities in the markup. Utilities win over component classes, so one instance needs no override.
+- Overlays use the platform: `<dialog>` opened with `command="show-modal"` and `commandfor`, a `popover` opened with `popovertarget`, a tooltip with `popover="hint"` and `interestfor`. Add no positioning, dismissal or focus-trapping script.
+- When the contract says `"script": "required"` or names a `behavior`, attach the reference script: `import { combobox } from '@master/ui/behaviors/combobox.js'`, then `combobox(element)`. `attach()` from `@master/ui/behaviors` attaches every pattern in a document.
+- In JSX, `class` becomes `className` and `for` becomes `htmlFor`; nothing else changes. Wrap markup in the project's own components when it repeats; the classes stay the contract's.
+
+## Choose the component
+
+Read [choosing](references/choosing.md) when more than one component could do the job: an overlay, a message, a choice among options, a number, navigation, a set of records. Each contract's `use` and `instead` say the same for one component.
+
+A layout or a block is markup, not a class: copy it from `https://ui.master.co/layouts/<slug>.md` or `/blocks/<slug>.md` and edit the copy.
+
+## Change how something looks
+
+Read [customizing](references/customizing.md) before overriding anything. In short, take the lowest step that works:
+
+1. A utility on the one element.
+2. A theme token, for everything that reads it.
+3. A public custom property of the component, set on the element that has the class.
+4. A theme file, for another material.
+5. Own the component's source, when the change is to its structure, its states or its behavior.
+
+A project rule may select a library class only to set its public custom properties. Never write one that redeclares or undoes what the stylesheet declares, never raise specificity or use `!important` to win, and never restyle a component by its private custom properties.
+
+## Add what the library does not have
+
+First check that it is not there under another name: `master-ui list`. Then decide what it is. Something with a material, a state, a platform behavior or a geometry its pieces share is a component: write one stylesheet in `@layer components` with class selectors only, tokens only, states from attributes, and write its contract beside it in the project's `ui/` directory so the checker and the next agent know it. Anything else is an arrangement: write it with utilities and existing components, and add no class.
+
+Use the `master-design` skill, when it is installed, for the craft of a new surface, state or motion.
+
+## Verify
+
+- `npx master-ui check` reports markup that breaks a contract: a modifier without its base, a part outside its root, a class on the wrong element, a missing attribute or name, a class that is in no contract. Fix every error; read each warning.
+- Run the project's Master CSS lint for utilities.
+- In a browser, check each state the change touches (rest, hover, focus-visible, pressed, disabled, invalid, open), in light and dark, at a narrow width, and with the keyboard alone for anything interactive.
+- Report what was checked and what was not.

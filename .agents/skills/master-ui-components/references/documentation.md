@@ -8,7 +8,7 @@ Each page lives in `site/content/components/<slug>/` with `metadata.ts` (`define
 2. Sections for variants, sizes, states and composition, each with a short reason to choose it and one preview. Use the component's own classes; utilities only lay out the specimen.
 3. An Accessibility section when the component has semantics a reader could get wrong.
 4. When the component uses a platform feature as an enhancement, say which one, what it replaces and what a browser without it shows. Name engines only for a feature that is not yet in all of them.
-5. A Classes table, then a Custom properties table when the component exposes any.
+5. `## Classes \{#classes\}` with `<ContractTable name="<slug>" />`, then `## Custom properties \{#custom-properties\}` with `<ContractTable name="<slug>" show="properties" />` when the contract publishes any. Both are written from the contract; `show="states"` and `show="keyboard"` are there for a page that wants them. Do not write these tables by hand.
 6. `## Source \{#source\}` with `<ComponentSource name="<slug>" />`, which shows the stylesheet clamped under a fade with an Expand control (`ExpandContent`). Long code that is reference material always uses this clamp, never a full open listing or a closed disclosure.
 
 Every preview is one tray with two views, chosen by a segmented control in its head: Preview, the default, and Code, the markup a reader copies. Both `ComponentPreview` and `PagePreview` get it from `site/components/PreviewSwitch.astro`; the choice is a pair of native radios read by the stylesheet, so no script is involved. Do not repeat a preview's markup in a fenced block under it.

@@ -55,7 +55,7 @@ A layout gets a class only for what utilities cannot say or what is easy to get 
 | `auto-grid` | `repeat(auto-fill, minmax(min(100%, …), 1fr))` |
 | `form`, `form-row`, `form-section`, `form-actions` | Thresholds at 24, 28 and 40rem of form |
 
-They follow the component selector contract and compile in `@layer components`, after every component in `master.css`. Before adding a fifth, write the layout with utilities and name the declaration that cannot be written. Add the class to the native-class list in the tests and to the README's layout table.
+They follow the component selector contract and compile in `@layer components`, after every component in `master.css`. Before adding a fifth, write the layout with utilities and name the declaration that cannot be written. Write its contract beside it; the tests and the README's table follow from that.
 
 ## Utilities a layout can use
 
