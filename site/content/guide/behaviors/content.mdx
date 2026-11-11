@@ -1,8 +1,8 @@
-Most components need no script: the element they style already has the behavior. A few patterns have no native element, such as a combobox, a calendar grid or a splitter. For those the stylesheet still draws every state, from ARIA and native attributes, and a behavior is the reference script that moves those attributes.
+Most components need no script: the element they style already has the behavior. A few patterns have no native element, such as a combobox, a calendar grid or a splitter. For those the stylesheet draws the states from ARIA and native attributes, and a behavior is the reference script that coordinates input, focus and selection. Use this guide to attach one, read its value and release its listeners when the element leaves the page.
 
 ## What a behavior is \{#what-a-behavior-is\}
 
-A behavior is one file with one function, named after the pattern. It takes the root element and returns a function that removes everything it added. It is a plain ES module with no dependency, no framework and no build step.
+A behavior is one file with one function, named after the pattern. It takes the root element and returns a cleanup function that stops its listeners, observers and timers. Cleanup does not restore the original markup; a calendar, for example, keeps the month it drew. It is a plain ES module with no dependency, no framework and no build step.
 
 | A behavior does | A behavior never does |
 | --- | --- |
@@ -11,7 +11,7 @@ A behavior is one file with one function, named after the pattern. It takes the 
 | Pass what only an event knows through a custom property the contract publishes: `--menu-x`, `--splitter-size` | Place the element or apply limits. The stylesheet reads the property and does both |
 | Create the rows a pattern repeats when they are data, such as the weeks of a month, with the contract's classes | Read or write anything outside the contract: it finds parts by the contract's classes and roles |
 
-Because the script only moves attributes, the same stylesheet works with any script that moves them the same way: this one, a framework component, or code of your own.
+The stylesheet can work with another script that maintains the same contract: the attributes, values and keyboard behavior must still agree. The framework components attach these same behaviors rather than reimplementing their keys.
 
 ## The behaviors \{#the-behaviors\}
 
@@ -34,7 +34,7 @@ Each is imported from `@master/ui/behaviors/<name>.js`. The last column is the `
 
 ## Attach one \{#attach-one\}
 
-Write the markup of the contract, then call the behavior with the root element, the one that carries the root class.
+First [load the stylesheet](/guide/installation), then write the contract's markup. Run the module after the root element exists, and pass the element carrying the root class. The bare package import below assumes your application resolves npm modules; a raw browser module needs a resolvable URL or import map.
 
 ```html
 <div class="combobox">
@@ -43,8 +43,8 @@ Write the markup of the contract, then call the behavior with the root element, 
     <button type="button" class="combobox-toggle" tabindex="-1" aria-label="Show regions"></button>
   </div>
   <div id="region-list" popover="manual" class="listbox" role="listbox" aria-label="Regions">
-    <div class="listbox-option" role="option" id="region-hnd" aria-checked="false">Tokyo</div>
-    <div class="listbox-option" role="option" id="region-sin" aria-checked="false">Singapore</div>
+    <div class="listbox-option" role="option" id="region-hnd" data-value="hnd" aria-checked="false">Tokyo</div>
+    <div class="listbox-option" role="option" id="region-sin" data-value="sin" aria-checked="false">Singapore</div>
     <div class="listbox-empty">No regions match.</div>
   </div>
 </div>
@@ -56,7 +56,7 @@ import { combobox } from '@master/ui/behaviors/combobox.js'
 const detach = combobox(document.querySelector('.combobox'))
 ```
 
-Call `detach()` when the element leaves the page. Attaching twice to one root is safe: the second call detaches the first.
+Type “Tok”, press ArrowDown and Enter, and confirm that the field shows Tokyo and `detach.value` is `hnd`. Call `detach()` when the element leaves the page. Attaching the same behavior twice to one root detaches its previous instance; it does not clean up listeners your application added.
 
 ## Attach all of them \{#attach-all\}
 
@@ -65,7 +65,7 @@ Call `detach()` when the element leaves the page. Attaching twice to one root is
 ```js name=app.js
 import { attach } from '@master/ui/behaviors'
 
-attach()
+const detach = attach()
 ```
 
 Three things to know before choosing it over single imports:
@@ -74,13 +74,13 @@ Three things to know before choosing it over single imports:
 - It passes no options. A calendar that picks a range, or has a first and a last day, is attached by name.
 - A context menu belongs to a target only the page knows, so `attach()` does not attach one. Call `contextMenu(target, menu)`.
 
-It does not watch the document. For markup added later, call `attach(element)` on what was added.
+It does not watch the document. For markup added later, call `attach(element)` on what was added and keep that call's cleanup function too. Call each cleanup before removing the corresponding roots.
 
 ## In a framework \{#in-a-framework\}
 
 For React, Svelte and Vue, each of these patterns has a component to copy into the project: it renders the markup, attaches the behavior and passes the value in and out. [React, Svelte and Vue](/guide/frameworks) lists them. The rest of this section is for attaching a behavior yourself, in a component of your own.
 
-A behavior fits the lifecycle every framework has: run when the element exists, and return what undoes it.
+The following snippets show attachment and cleanup only; place the full combobox markup from [Attach one](#attach-one) inside each root. Reattach when configuration options change. For application values and changing options, prefer the copied framework component or its [adapter helper](/guide/frameworks#your-own).
 
 In React, `useEffect` takes the detach function as its cleanup:
 
@@ -130,15 +130,34 @@ onUnmounted(() => detach?.())
 
 ## Options \{#options\}
 
-A behavior that can be configured takes an object as its second argument. The others take only the root.
+The behaviors below accept an options object as their second argument, for example `calendar(root, options)`.
 
-| Call | Options |
-| --- | --- |
-| `calendar(root, options)` | `value`: the chosen day as `YYYY-MM-DD`, or the two ends of a range. `month`: the month to show first, as `YYYY-MM`. `min`, `max`: the first and the last day that can be chosen. `range`: choose two days and every day between them. `weekStart`: the day in the first column, 0 for Sunday to 6 for Saturday. `locale`: a BCP 47 tag for the names. `disabled`: a function that says whether a day cannot be chosen. `draw`: a function that [writes the grid instead of the script](#a-grid-of-your-own) |
-| `combobox(root, options)` | `filter`: hide the options that do not hold what is typed. `true` by default; `false` when [the page writes the matching options itself](#options-from-a-server) |
-| `command(root, options)` | `shortcut`: the key that opens and closes the palette with Command or Control. `'k'` by default, `false` for none. `filter`: as for the combobox |
-| `otp(root, options)` | `pattern`: a regular expression one character must match. By default the `pattern` attribute of the first slot, and a digit when it has none |
-| `splitter(root, options)` | `step`: how far an arrow key moves the handle, in percent. 5 by default |
+### Calendar \{#calendar-options\}
+
+- `value`: the chosen day as `YYYY-MM-DD`, or the two ends of a range.
+- `month`: the month to show first, as `YYYY-MM`.
+- `min`, `max`: the first and last day that can be chosen.
+- `range`: choose two days and every day between them.
+- `weekStart`: the day in the first column, from 0 for Sunday to 6 for Saturday.
+- `locale`: a BCP 47 language tag for the displayed names.
+- `disabled`: a function that returns whether a day cannot be chosen.
+- `draw`: a function that [renders the grid instead of the behavior](#a-grid-of-your-own).
+
+### Combobox \{#combobox-options\}
+
+`filter` defaults to `true`: the behavior hides options whose text does not contain what was typed. Set it to `false` when [the application supplies the matching options](#options-from-a-server).
+
+### Command palette \{#command-options\}
+
+`shortcut` is the key combined with Command or Control to open and close the palette. It defaults to `'k'`; set it to `false` to disable the shortcut. `filter` works as it does for the combobox.
+
+### OTP \{#otp-options\}
+
+`pattern` is a regular expression each character must match. When omitted, the behavior reads the first slot's `pattern` attribute and falls back to digits when there is none.
+
+### Splitter \{#splitter-options\}
+
+`step` sets how far an arrow key moves the handle, in percentage points. It defaults to 5.
 
 ## Events \{#events\}
 
@@ -206,13 +225,19 @@ import { combobox } from '@master/ui/behaviors/combobox.js'
 
 const root = document.querySelector('.combobox')
 const list = root.querySelector('[role="listbox"]')
-combobox(root, { filter: false })
+const selection = combobox(root, { filter: false })
+let request = 0
 
 root.querySelector('[role="combobox"]').addEventListener('input', async (event) => {
+  const current = ++request
+  if (selection.value !== null) return // Choosing an option also dispatches input.
   const regions = await search(event.target.value)
+  if (current !== request || !root.isConnected) return
   list.replaceChildren(...regions.map(option))
 })
 ```
+
+Here `search(text)` is the application's async search function and `option(region)` builds one element with `listbox-option`, `role="option"`, a unique id, `data-value` and `aria-checked="false"`. Keep labels as text rather than injecting server strings as HTML. The request counter prevents an older response replacing newer results; provide loading, empty and error feedback in the application.
 
 ## A grid of your own \{#a-grid-of-your-own\}
 
@@ -220,26 +245,37 @@ The calendar is the one behavior that writes elements: the weeks of the month it
 
 `calendarMonth()` gives a month as data, the same data the script draws from: its title, the seven weekday names and its weeks. Each day is a `calendar-day` button whose `value` is its date; that is how the script knows the days it did not write. Given a `value`, and `range` for two ends, the data also says how each day is drawn: `selected`, `tab` for the one day in the tab order, and `range` for the classes of a day in a range. A renderer that writes them has the chosen day in its first HTML, before any script runs.
 
-```js name=app.js
-import { calendar, calendarMonth } from '@master/ui/behaviors/calendar.js'
+```js
+import { calendarMonth } from '@master/ui/behaviors/calendar.js'
 
-function draw(month) {
-  const view = calendarMonth(month, { locale: 'en-GB' })
-  title.textContent = view.title
-  grid.innerHTML = view.weeks.map(week => `<div class="calendar-week" role="row">${week.map(day =>
-    `<button type="button" class="calendar-day${day.outside ? ' calendar-day-outside' : ''}" role="gridcell" tabindex="-1" value="${day.date}" aria-label="${day.label}">${day.text}</button>`
-  ).join('')}</div>`).join('')
-}
+const month = calendarMonth('2026-11', {
+  value: '2026-11-13',
+  locale: 'en-GB'
+})
 
-draw('2026-11')
-calendar(root, { value: '2026-11-13', locale: 'en-GB', draw })
+const chosen = month.weeks.flat().find(day => day.selected)
+console.log(chosen.date) // "2026-11-13"
+console.log(chosen.tab)  // true
 ```
+
+The renderer uses that data to produce the contract's markup:
+
+| Data | Render as |
+| --- | --- |
+| `title` | The text of `calendar-title` |
+| `weekdays` | `calendar-weekday` column headers with the short name as text and full name as `aria-label` |
+| `weeks` | A `calendar-week` row for each week |
+| A day's `date`, `text`, `label` | The button's `value`, text and `aria-label` |
+| `selected`, `tab` | `aria-selected` and `tabindex="0"` for the initial chosen day, `-1` for the others |
+| `outside`, `range` | `calendar-day-outside` when needed and the returned range class names |
+
+After the grid exists, attach `calendar(root, { value, locale, draw })`, using the same initial value and locale. Your `draw(month)` callback renders another month's rows; the behavior marks the current selection and focus once those rows are present. Keep the title, weekday headers and grid labeling when replacing rows.
 
 The [calendar components](/guide/frameworks) for React, Svelte and Vue are written this way, so the month is in the first HTML.
 
 ## The keys \{#the-keys\}
 
-The `keyboard` list of a contract is the specification of its behavior, and it follows the WAI-ARIA Authoring Practices for the pattern. Read it with `npx master-ui contract combobox`:
+The `keyboard` list of a contract specifies the behavior shipped with that pattern. Read it with `npx master-ui contract combobox`:
 
 | Keys | Action |
 | --- | --- |
@@ -253,7 +289,7 @@ A key the behavior handles calls `preventDefault()`. A key it does not handle is
 
 ## Own a behavior \{#own-a-behavior\}
 
-A behavior is a reference, not a runtime to depend on. When a project needs other keys, another way of filtering or a value held elsewhere, take the file and edit it:
+Keep importing the packaged behavior while it meets the application's needs; package upgrades then bring its fixes. When the project needs different keyboard or selection behavior, take the source and maintain that implementation:
 
 ```bash
 npx master-ui own combobox
@@ -267,8 +303,9 @@ Keep the contract true while editing: the attributes the script moves are the on
 
 ## Without any script \{#without-any-script\}
 
-Everything not in the table above works with no behavior attached: the browser already does the work of a button, a dialog, a popover, a select, a switch or an accordion. Two of the patterns in the table also have a form without script:
+The table lists packaged behaviors, not every application action that may need JavaScript. Native controls supply their own interaction where the browser supports it; consult the [browser support guide](/guide/browser-support) for enhancement fallbacks. Several patterns in the table also have a form without a behavior:
 
+- **Tabs** can be links or radio controls. The optional behavior is for a tablist that selects and shows associated panels.
 - **A tree** is nested `<details>` elements whose `<summary>` is the row. Branches open and close by themselves and every row is a tab stop.
 - **A menu** is a popover of buttons and links. The browser opens and closes it, Tab moves through the items and Escape returns focus to the button. Add `role="menu"` only together with the behavior, because the role promises arrow keys.
 

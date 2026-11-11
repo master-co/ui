@@ -1,8 +1,8 @@
 Every stylesheet in the package has a contract beside it: `button.css` and `button.json`. The contract says what the stylesheet promises, in a form a program can read: its classes, where each one goes, the states it draws, the custom properties it publishes and the smallest correct markup.
 
-It exists so that nothing about a class is written twice. The package's tests, the tables on each component page, `llms.txt` and the Markdown pages, the [registry](/guide/registry) and the checker are all generated from the contract or read it, so they cannot disagree with each other. A test in the package keeps a contract and its stylesheet from drifting apart.
+The checker, generated component tables, portable component pages and [registry](/guide/registry) read these contracts. Keeping the class rules in one source reduces duplication; package tests check that the contract and stylesheet agree. A contract describes the supported markup, but does not replace a browser check of interaction, accessibility or visual behavior.
 
-Read one with `npx master-ui contract button`, import it as `@master/ui/components/button.json`, or take all of them from `@master/ui/contracts.json` or `https://ui.master.co/contracts.json`. The schema is `https://ui.master.co/contract.schema.json`.
+Start with `npx master-ui contract button` to find the markup and public properties of a button. You can also import it as `@master/ui/components/button.json`, or take all of them from `@master/ui/contracts.json` or `https://ui.master.co/contracts.json`. The schema is `https://ui.master.co/contract.schema.json`.
 
 ## What a contract holds \{#keys\}
 
@@ -70,7 +70,7 @@ A mark that begins with a colon, such as `:user-invalid` or `:popover-open`, is 
 { "name": "--btn-height", "default": "2.375rem", "description": "Minimum block size" }
 ```
 
-Any custom property a stylesheet uses and its contract does not list is private. It may be renamed or removed without notice, which is why [customization](/guide/customization#property) stops at the listed ones.
+Component-specific custom properties outside this list are implementation details. Theme tokens are a separate public surface shared across components; see [Default theme](/guide/theme) for their roles. Use [Customization](/guide/customization#property) to choose between a theme token and a component property, and [Stability](/guide/stability) for the current version policy.
 
 ## Script and behavior \{#script\}
 
@@ -90,11 +90,11 @@ import { combobox } from '@master/ui/behaviors/combobox.js'
 combobox(document.querySelector('.combobox'))
 ```
 
-A behavior moves attributes and sets no style. `keyboard` lists what the keys do once it is attached, or what the native element already does. See [behaviors](/guide/behaviors).
+A behavior moves the attributes the stylesheet reads. Patterns such as a splitter also pass event-derived values through a public custom property; the stylesheet decides how to draw them. `keyboard` lists what the keys do once it is attached, or what the native element already does. See [behaviors](/guide/behaviors).
 
 ## The example \{#example\}
 
-`example` is the smallest markup that is correct, with real words in it. The package's test runs the checker over every example and expects no diagnostics, so it is safe to copy and safe for an agent to start from.
+`example` is the smallest markup that is correct, with real words in it. The package tests run the checker over every example and expect no diagnostics. Use it as the markup baseline, then provide the labels, unique ids, application actions and any required behavior for your page.
 
 ```html
 <button type="button" class="btn btn-primary">Save changes</button>
@@ -149,7 +149,15 @@ A project adds a component of its own when it has something the library lacks, w
 }
 ```
 
-From then on the project's component is treated like a library one:
+Import `ui/price-tag.css` after Master UI in the application stylesheet so the example is drawn. The CLI discovers the sibling contract independently of that CSS import:
+
+```css name=app.css
+@import '@master/css';
+@import '@master/ui';
+@import './ui/price-tag.css';
+```
+
+The project's component is then available to the same tools:
 
 - `npx master-ui list` lists it, and `npx master-ui contract price-tag` prints it. An agent that reads contracts before writing markup finds it the same way.
 - `npx master-ui check` holds markup to it. Here `npx master-ui check cart.html` reports three mistakes:
@@ -188,4 +196,4 @@ Three details:
 | `attribute` | The element lacks an attribute the class requires, or has another value | Add the attribute the message names, such as `role="switch"` |
 | `label` | A control has no accessible name | Give it text of its own, `aria-label`, `aria-labelledby`, or a label that wraps it or points at it |
 
-The checker reads source, not a rendered page, so it reports only what it can be sure of. A modifier on a framework component's tag, a class that comes from an expression and a part whose root is in another file are left alone.
+The checker reads source rather than rendering a page. It can inspect literal classes inside expressions, but cannot resolve computed class names, prove where a framework component renders its children or inspect a root in another file. It leaves uncertain cases alone. A clean result does not verify focus order, contrast, browser support or whether the chosen component fits the task.
