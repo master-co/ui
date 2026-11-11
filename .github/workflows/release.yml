@@ -48,21 +48,11 @@ jobs:
           bun x aronrepo explain --json > "$plan"
           echo "version=$(jq -r '.version // ""' "$plan")" >> "$GITHUB_OUTPUT"
           jq -r '"Next release: \(.version // "none") from `\(.head)`\n\n\(.notes // "")"' "$plan" >> "$GITHUB_STEP_SUMMARY"
-      # npm trusted publishing only works for a package that exists, so the first version needs a token.
-      - name: Require npm publishing access
-        if: ${{ steps.plan.outputs.version != '' }}
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          if [ -z "$NPM_TOKEN" ] && ! npm view @master/ui name >/dev/null 2>&1; then
-            echo "::error::@master/ui is not on npm yet, so trusted publishing cannot publish it. Provide an NPM_TOKEN secret for the first release, then rerun this job."
-            exit 1
-          fi
       - run: bun run build:ui
       - run: bun x aronrepo release --branch "$GITHUB_REF_NAME"
         env:
+          # npm auth is trusted publishing alone (master-co/ui, release.yml); no NPM_TOKEN is passed.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }} # only for the first release; trusted publishing afterwards
       - name: Record the newest release on main
         id: outcome
         env:
