@@ -1,0 +1,49 @@
+---
+import type { Component } from 'svelte'
+import { render } from 'svelte/server'
+import Code from '@master/internal-site/components/Code.astro'
+import Demo from '@master/internal-site/demo/Demo.svelte'
+import DemoViewport from '@master/internal-site/demo/DemoViewport.svelte'
+import { demoDocument } from '@master/internal-site/demo/reference/document.ts'
+import PreviewGuard from '~/site/components/PreviewGuard.astro'
+import PreviewSwitch from '~/site/components/PreviewSwitch.astro'
+import { exampleScript, exampleSource } from '~/site/utils/framework-example'
+import { previewHead as head } from '~/site/utils/preview'
+import { uiSource } from '~/site/utils/ui-source'
+
+interface Props {
+  /** The example in `site/components/examples`, without its extension: `Region`. */
+  name: string
+  title: string
+  caption?: string
+  /** Utilities for the preview body, such as layout around the example. */
+  bodyClass?: string
+  background?: 'dots' | 'hatch' | 'plain'
+}
+
+/**
+ * A framework component, running. The example is a Svelte component that uses the library's own, as a project
+ * has it after `master-ui add`: it is rendered to HTML here, on the server, and the preview hydrates it, so
+ * what a reader works is the component and its behavior, not a copy of their markup. The Code view is the
+ * example's file.
+ */
+const { name, title, caption = '', bodyClass = 'flex items-start justify-center p-lg', background = 'plain' } = Astro.props
+const examples = import.meta.glob<{ default: Component }>('./examples/*.svelte', { eager: true })
+const example = examples[`./examples/${name}.svelte`]
+if (!example) throw new Error(`No example is named ${name}. There are: ${Object.keys(examples).join(', ')}`)
+const views = [['preview', 'Preview'], ['code', 'Code']] as const
+const html = `<div data-example="${name}" class="contents">${render(example.default).body}</div>`
+const section = { page: 'guide', id: name, title, html: [html], css: uiSource(), classes: [], classLists: [], highlighted: [] }
+// The script goes in after the document is made: its text is not markup to read classes from.
+const script = (await exampleScript(name, `[data-example="${name}"]`)).replaceAll('</script', '<\\/script')
+const document = demoDocument(section as Parameters<typeof demoDocument>[0], { html, caption, bodyClass, head } as Parameters<typeof demoDocument>[1]).replace('</body></html>', () => `<script>${script}</script></body></html>`)
+---
+
+<PreviewGuard />
+<Demo title={title} caption={caption} frame="none" data-component-preview={name} data-preview-background={background}>
+  <Fragment slot="controls">
+    <PreviewSwitch name={`preview-view-${name}`} label="View" kind="view" options={views} value="preview" />
+  </Fragment>
+  <Fragment slot="source"><Code lang="svelte" name={`${name}.svelte`} code={exampleSource(name)} /></Fragment>
+  <DemoViewport client:idle={{ timeout: 500 }} title={title} document={document} sizing="content" />
+</Demo>

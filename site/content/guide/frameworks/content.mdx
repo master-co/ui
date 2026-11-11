@@ -1,3 +1,5 @@
+import FrameworkPreview from '~/site/components/FrameworkPreview.astro'
+
 In a framework, most of Master UI is what it is on a plain page: a class on a native element, written in the framework's syntax. A framework component exists only where the framework owns something. This page says where that line is, lists the components on its far side and shows how one is added, used and edited.
 
 ## Markup stays markup \{#markup\}
@@ -73,6 +75,8 @@ Add combobox: ui/combobox.tsx, ui/use-behavior.ts.
 
 - The framework is read from `package.json` when it names exactly one of React, Svelte and Vue, and is remembered in `master-ui.json` after the first time.
 - The small helper a component imports from beside it comes with it: `use-behavior.ts` for React and Vue, `behavior.svelte.ts` for Svelte.
+- The files go to `ui/` at the root of the project. `--directory` names another place, and is remembered: `--directory=src/lib/ui` in SvelteKit, whose source is under `src`, or `--directory=app/ui` in Nuxt.
+- Beside them, `ui/.base/` keeps each file as it was taken. That copy is what `diff` compares with upstream later; leave it alone.
 - `npx master-ui add` without a name lists the components.
 - A copy that is already there is kept. It is yours, and may have been edited.
 
@@ -80,9 +84,10 @@ What is copied holds no logic to fix. The component imports its behavior from `@
 
 ## Use a component \{#use\}
 
-Each component is written in its framework's own idiom. What follows is the same combobox three times.
+Each component is written in its framework's own idiom. What follows is the same combobox three times. The Svelte one runs: it is rendered on the server and hydrated in the preview, with the component and the behavior a project gets. Its Code view is the file.
 
 ```tsx name=Region.tsx
+'use client'
 import { useState } from 'react'
 import { Combobox } from './ui/combobox'
 
@@ -101,21 +106,7 @@ export function Region() {
 }
 ```
 
-```svelte name=Region.svelte
-<script lang="ts">
-  import Combobox from './ui/Combobox.svelte'
-
-  const regions = [
-    { value: 'hnd', label: 'Tokyo' },
-    { value: 'sin', label: 'Singapore' },
-    { value: 'fra', label: 'Frankfurt', description: 'Germany' },
-  ]
-  let region = $state<string | null>(null)
-</script>
-
-<Combobox options={regions} bind:value={region}
-  aria-label="Region" listLabel="Regions" toggleLabel="Show regions" empty="No regions match." />
-```
+<FrameworkPreview name="Region" title="Region.svelte" bodyClass="flex items-start justify-center p-lg min-h(300)" caption="Type to filter, choose with Enter or a click, then type over the choice: the value the application holds follows." />
 
 ```vue name=Region.vue
 <script setup lang="ts">
@@ -144,6 +135,8 @@ The value is what an option stands for, `hnd`, not the text the field shows. It 
 | Svelte | `bind:value`, and `onValueChange` | `bind:open`, and `onOpenChange` | The same callback props |
 | Vue | `v-model` | `v-model:open` | `@complete`, `@value-commit`, `@search` |
 
+The three differ in one thing, and it is each framework's own habit, not a choice made here. In React a `value` is the owner's word: when a reader changes the component and the owner does not take the change in `onValueChange`, the component goes back to the value it was given, as a controlled `<input>` does. The same holds for `open`. Svelte and Vue have no such rule. A value that is passed without `bind:` or `v-model` is where the component starts, and the component keeps what the reader chose afterwards. To refuse a change there, set the bound value back yourself.
+
 Props that are not the component's own go to the element a reader would expect: the field of a combobox, the `<dialog>` of a dialog, the root of a listbox. That is how a combobox gets its `aria-label`, its `placeholder` and its `name`.
 
 ### The page's own markup \{#the-pages-own-markup\}
@@ -151,6 +144,7 @@ Props that are not the component's own go to the element a reader would expect: 
 A dialog, a popover, a menu and a tooltip are opened by a control that belongs to the page. The component does not render a button of its own. It hands the page the attributes that name it, and the page spreads them on its own button; the browser then opens the dialog, as it does on a plain page.
 
 ```tsx name=DeleteProject.tsx
+'use client'
 import { Dialog } from './ui/dialog'
 
 export function DeleteProject() {
@@ -170,25 +164,7 @@ export function DeleteProject() {
 }
 ```
 
-```svelte name=DeleteProject.svelte
-<script lang="ts">
-  import Dialog from './ui/Dialog.svelte'
-</script>
-
-<Dialog id="delete-project" aria-labelledby="delete-project-title">
-  {#snippet trigger(attributes)}
-    <button type="button" class="btn" {...attributes}>Delete project</button>
-  {/snippet}
-  <header class="dialog-header">
-    <h2 class="dialog-title" id="delete-project-title">Delete this project?</h2>
-    <p class="dialog-description">Atlas and its 14 deployments are removed.</p>
-  </header>
-  <footer class="dialog-footer">
-    <button type="button" class="btn" commandfor="delete-project" command="close">Cancel</button>
-    <button type="button" class="btn btn-primary" onclick={remove}>Delete project</button>
-  </footer>
-</Dialog>
-```
+<FrameworkPreview name="DeleteProject" title="DeleteProject.svelte" bodyClass="flex items-start justify-center p-lg min-h(320)" caption="The button opens the dialog through commandfor, with no handler of its own. The application hears that it opened, and closes it from its own state when the project is deleted." />
 
 ```vue name=DeleteProject.vue
 <script setup lang="ts">
@@ -252,9 +228,9 @@ To change what a key does, or what selecting means, [own the behavior](/guide/be
 
 ## On a server \{#on-a-server\}
 
-- **The first HTML holds the state.** A chosen option, a selected tab, a splitter's size and a calendar's month are in the markup a server sends. The marks only a browser can know, such as today in a calendar, appear when the behavior attaches.
+- **The first HTML holds the state.** A chosen option, a selected tab, a splitter's size, a calendar's month and its chosen day are in the markup a server sends. The marks only a browser can know, such as today in a calendar, appear when the behavior attaches.
 - **Give a calendar its `locale`** when it is rendered on a server. The names of months and days come from `Intl`, and a server and a browser do not always agree on the language to use.
-- **In React Server Components,** the components that attach a behavior or keep state are client components and say `'use client'`. `Field` and `Tooltip` only join ids, so they render on the server. Everything that is markup renders wherever it is written.
+- **In React Server Components,** the components that attach a behavior or keep state are client components and say `'use client'`. A file that hands one of them a function, a `trigger`, an `onValueChange` or an item's `onSelect`, is a client component too, which is why the examples above begin with `'use client'`: a Server Component cannot pass a function to a client one. `Field` and `Tooltip` only join ids, so they render on the server, in a file that renders nothing else from the client. Everything that is markup renders wherever it is written.
 - **Ids come from the framework:** `useId` in React and Vue, `$props.id()` in Svelte, so they match between a server and a browser. Vue numbers them within one application. A page that mounts several Vue applications, as islands do, gives each an `app.config.idPrefix`, or two of them will name different elements `v-0`.
 
 ## A component of your own \{#your-own\}
