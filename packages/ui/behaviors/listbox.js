@@ -66,9 +66,15 @@ export function listbox(root) {
     root.dispatchEvent(new Event('change', { bubbles: true }))
   }
 
+  // A press gives the list focus before it becomes a click. An option made active then is scrolled into view,
+  // which may move the page under the pointer, and the click lands somewhere else: the press waits for it.
+  let pressed = false
+  root.addEventListener('pointerdown', () => { pressed = true }, { signal })
+  for (const type of ['pointerup', 'pointercancel', 'click']) root.addEventListener(type, () => { pressed = false }, { signal })
+
   // Focus arrives on a list with no active option: the keys start from what is chosen, or from the first option.
   root.addEventListener('focus', () => {
-    if (active()) return
+    if (active() || pressed) return
     const items = options(root)
     activate(root, root, items.find((option) => option.getAttribute('aria-checked') === 'true') ?? items[0])
   }, { signal })

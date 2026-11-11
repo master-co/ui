@@ -196,6 +196,29 @@ test('listbox: focus on a list with no active option starts from the chosen one,
   assert.equal(chosen.active(), 'fw-svelte')
 })
 
+test('listbox: focus that a press brings does not move the active option: the click that follows does', () => {
+  const html = markup().replace(' aria-activedescendant="fw-astro"', '').replace(' aria-selected="true" aria-checked="true"', ' aria-checked="true"')
+  const { root, one, pointer, click, active, checked, all } = setup(html)
+  const scrolled: string[] = []
+  for (const option of all('[role="option"]')) option.scrollIntoView = () => { scrolled.push(option.id) }
+  listbox(root)
+  // A press on another option: the browser focuses the list between the press and the click.
+  pointer(one('#fw-solid'), 'pointerdown')
+  root.focus()
+  assert.equal(root.hasAttribute('aria-activedescendant'), false, 'the chosen option is not made active under the pointer')
+  assert.deepEqual(scrolled, [], 'so nothing scrolls before the click')
+  pointer(one('#fw-solid'), 'pointerup')
+  click(one('#fw-solid'))
+  assert.equal(active(), 'fw-solid')
+  assert.deepEqual(checked(), ['fw-solid'], 'the click chooses the option that was pressed')
+  // Focus from the keyboard, afterwards, behaves as before.
+  root.blur()
+  root.removeAttribute('aria-activedescendant')
+  one('#fw-solid').removeAttribute('aria-selected')
+  root.focus()
+  assert.equal(active(), 'fw-solid', 'focus without a press starts from the chosen option')
+})
+
 test('listbox: with no active option, ArrowDown starts at the first and ArrowUp at the last', () => {
   const html = markup().replace(' aria-activedescendant="fw-astro"', '').replace(' aria-selected="true"', '')
   const down = setup(html)
