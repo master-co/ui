@@ -7,8 +7,9 @@
  *   master-ui check [paths…]            report markup that breaks a contract
  *   master-ui init                      write ui/index.css, one @import per component
  *   master-ui own <name…>               copy a component's stylesheet, contract and behavior into the project
- *   master-ui status                    which owned components changed upstream since they were taken
- *   master-ui diff <name>               what changed upstream in an owned component
+ *   master-ui add <name…>               copy a React, Svelte or Vue component into the project (--framework=react)
+ *   master-ui status                    which owned or added components changed upstream since they were taken
+ *   master-ui diff <name>               what changed upstream in an owned or added component
  *   master-ui accept <name…>            record that upstream's current version has been merged
  *
  * It has no dependency. A project's own contracts and the components it owns are read from master-ui.json.
@@ -31,9 +32,12 @@ const read = (/** @type {string} */ file) => readFileSync(file, 'utf8')
 const hash = (/** @type {string} */ text) => createHash('sha256').update(text).digest('hex').slice(0, 16)
 const fail = (/** @type {string} */ message) => { console.error(message); process.exit(1) }
 
-/** @returns {{ directory: string, entry: string, contracts?: string[], owned: Record<string, { version: string | null, files: Record<string, string> }> }} */
+/**
+ * @typedef {{ version: string | null, files: Record<string, string> }} Taken What was copied, and a hash of each file as it was.
+ * @returns {{ directory: string, entry: string, contracts?: string[], framework?: string, owned: Record<string, Taken>, components: Record<string, Taken & { framework: string }> }}
+ */
 function config() {
-  const defaults = { directory: 'ui', entry: 'ui/index.css', owned: {} }
+  const defaults = { directory: 'ui', entry: 'ui/index.css', owned: {}, components: {} }
   return existsSync(configFile) ? { ...defaults, ...JSON.parse(read(configFile)) } : defaults
 }
 const save = (/** @type {ReturnType<typeof config>} */ value) => writeFileSync(configFile, `${JSON.stringify(value, null, 2)}\n`)
@@ -117,6 +121,56 @@ function upstream(/** @type {string} */ name) {
     }
   }
   return { stylesheet: /** @type {string} */ (stylesheet), files }
+}
+
+/** The framework components the package has: what each renders and its file in each framework. */
+const manifest = JSON.parse(read(join(pkgRoot, 'frameworks/manifest.json')))
+
+/** The framework a project uses, when its package.json names exactly one. */
+function detect() {
+  try {
+    const { dependencies = {}, devDependencies = {} } = JSON.parse(read(join(cwd, 'package.json')))
+    const found = Object.keys(manifest.frameworks).filter(name => manifest.frameworks[name].package in dependencies || manifest.frameworks[name].package in devDependencies)
+    return found.length === 1 ? found[0] : undefined
+  } catch { return undefined }
+}
+
+/**
+ * The files of a framework component as the installed package has them: the component and what it imports
+ * from beside it. A behavior the project owns is imported from the project's copy.
+ */
+function shell(/** @type {string} */ name, /** @type {string} */ framework, /** @type {string} */ directory) {
+  const entry = manifest.components[name]?.[framework]
+  const available = Object.keys(manifest.components).join(', ')
+  if (!manifest.frameworks[framework]) fail(`"${framework}" is not a framework Master UI has components for. It has: ${Object.keys(manifest.frameworks).join(', ')}.`)
+  if (!entry) {
+    fail(stylesheetOf(name)
+      ? `"${name}" has no ${manifest.frameworks[framework].title} component: it is a class on a native element, so its markup is the same in every framework. Read it with "master-ui contract ${name}".\nThe components are: ${available}.`
+      : `No component is named "${name}". The components are: ${available}.`)
+  }
+  const from = join(pkgRoot, 'frameworks', framework)
+  /** @type {Record<string, string>} */
+  const files = {}
+  const pending = [entry]
+  while (pending.length) {
+    const file = /** @type {string} */ (pending.pop())
+    if (files[file] !== undefined) continue
+    files[file] = read(join(from, file)).replace(/(['"])@master\/ui\/behaviors\/([\w-]+\.js)\1/g, (whole, quote, behavior) => existsSync(join(directory, behavior)) ? `${quote}./${behavior}${quote}` : whole)
+    for (const match of files[file].matchAll(/from\s+['"]\.\/([\w.-]+)['"]/g)) {
+      // An import may name the file as it is, without its extension, or as the `.js` its `.ts` compiles to.
+      const found = [match[1], `${match[1]}.ts`, `${match[1]}.tsx`, match[1].replace(/\.js$/, '.ts')].find(candidate => existsSync(join(from, candidate)))
+      if (found) pending.push(found)
+    }
+  }
+  return files
+}
+
+/** Everything the project took from the package: the components it owns and the framework components it added. */
+function taken(/** @type {ReturnType<typeof config>} */ settings) {
+  return [
+    ...Object.entries(settings.owned).map(([name, record]) => ({ name, record, files: () => upstream(name).files })),
+    ...Object.entries(settings.components).map(([name, record]) => ({ name, record, files: () => shell(name, record.framework, join(cwd, settings.directory)) })),
+  ]
 }
 
 const commands = {
@@ -204,10 +258,37 @@ const commands = {
     }
   },
 
+  add() {
+    const settings = config()
+    const framework = option('framework') ?? settings.framework ?? detect()
+    if (!framework) fail(`Say which framework: master-ui add combobox --framework=react. It is one of: ${Object.keys(manifest.frameworks).join(', ')}.`)
+    const directory = join(cwd, settings.directory)
+    if (!names.length) {
+      const width = Math.max(...Object.keys(manifest.components).map(name => name.length))
+      console.log(`The ${manifest.frameworks[framework]?.title ?? framework} components. Every other contract is a class on a native element: its markup is the same in every framework.\n`)
+      for (const [name, entry] of Object.entries(manifest.components)) console.log(`${name.padEnd(width)}  ${entry[framework]}`)
+      return
+    }
+    for (const name of names) {
+      const files = shell(name, /** @type {string} */ (framework), directory)
+      mkdirSync(join(directory, '.base'), { recursive: true })
+      for (const [file, content] of Object.entries(files)) {
+        writeFileSync(join(directory, '.base', file), content)
+        if (existsSync(join(directory, file)) && !flags.has('--force')) {
+          if (read(join(directory, file)) !== content) console.log(`  kept ${settings.directory}/${file} (it exists; pass --force to replace it)`)
+        } else writeFileSync(join(directory, file), content)
+      }
+      settings.framework = framework
+      settings.components[name] = { framework: /** @type {string} */ (framework), version: pkg.version ?? null, files: Object.fromEntries(Object.entries(files).map(([file, content]) => [file, hash(content)])) }
+      console.log(`Add ${name}: ${Object.keys(files).map(file => `${settings.directory}/${file}`).join(', ')}.\n  It renders the markup of "master-ui contract ${manifest.components[name].contract}" and needs that stylesheet from @master/ui.`)
+    }
+    save(settings)
+  },
+
   status() {
     const settings = config()
-    const rows = Object.entries(settings.owned).map(([name, record]) => {
-      const { files } = upstream(name)
+    const rows = taken(settings).map(({ name, record, files: read_ }) => {
+      const files = read_()
       const changed = Object.entries(files).filter(([file, content]) => record.files[file] !== hash(content)).map(([file]) => file)
       const edited = Object.keys(files).filter(file => existsSync(join(cwd, settings.directory, file)) && hash(read(join(cwd, settings.directory, file))) !== record.files[file])
       return { name, taken: record.version, upstream: changed, edited }
@@ -222,8 +303,9 @@ const commands = {
     if (!names.length) fail('Name an owned component: master-ui diff button')
     const settings = config()
     for (const name of names) {
-      if (!settings.owned[name]) fail(`This project does not own "${name}".`)
-      for (const [file, content] of Object.entries(upstream(name).files)) {
+      const found = taken(settings).filter(item => item.name === name)
+      if (!found.length) fail(`This project neither owns nor added "${name}".`)
+      for (const [file, content] of found.flatMap(item => Object.entries(item.files()))) {
         const base = join(cwd, settings.directory, '.base', file)
         if (!existsSync(base)) { console.log(`# ${file}: no base copy; compare ${settings.directory}/${file} with the package by hand`); continue }
         const changes = diff(read(base), content)
@@ -236,11 +318,15 @@ const commands = {
     if (!names.length) fail('Name an owned component: master-ui accept button')
     const settings = config()
     for (const name of names) {
-      if (!settings.owned[name]) fail(`This project does not own "${name}".`)
-      const { files } = upstream(name)
+      const found = taken(settings).filter(item => item.name === name)
+      if (!found.length) fail(`This project neither owns nor added "${name}".`)
       mkdirSync(join(cwd, settings.directory, '.base'), { recursive: true })
-      for (const [file, content] of Object.entries(files)) writeFileSync(join(cwd, settings.directory, '.base', file), content)
-      settings.owned[name] = { version: pkg.version ?? null, files: Object.fromEntries(Object.entries(files).map(([file, content]) => [file, hash(content)])) }
+      for (const { record, files: read_ } of found) {
+        const files = read_()
+        for (const [file, content] of Object.entries(files)) writeFileSync(join(cwd, settings.directory, '.base', file), content)
+        record.version = pkg.version ?? null
+        record.files = Object.fromEntries(Object.entries(files).map(([file, content]) => [file, hash(content)]))
+      }
       console.log(`${name}: upstream's current version is now the base. Your copy in ${settings.directory}/ was not touched.`)
     }
     save(settings)

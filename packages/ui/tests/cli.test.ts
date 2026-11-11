@@ -82,3 +82,54 @@ test('own copies a component with everything its behavior imports, and tracks up
     assert.match(read('ui/menu.css'), /\/\* ours \*\//, 'accept never touches the project\'s copy')
   } finally { remove() }
 })
+
+const manifest = JSON.parse(readFileSync(new URL('../frameworks/manifest.json', import.meta.url), 'utf8')) as { frameworks: Record<string, { package: string }>, components: Record<string, Record<string, string>> }
+
+for (const framework of Object.keys(manifest.frameworks)) {
+  test(`add copies a ${framework} component with what it imports from beside it, and tracks upstream`, () => {
+    const { run, read, write, has, remove } = project()
+    try {
+      assert.equal(run('add', 'combobox').status, 1, 'the framework is asked for when the project names none')
+      const added = run('add', 'combobox', 'dialog', `--framework=${framework}`)
+      assert.equal(added.status, 0, added.err)
+      for (const name of ['combobox', 'dialog']) {
+        const file = manifest.components[name][framework]
+        assert.ok(has(`ui/${file}`), `ui/${file}`)
+        assert.ok(has(`ui/.base/${file}`), 'the base copy')
+        for (const match of read(`ui/${file}`).matchAll(/from\s+['"]\.\/([\w.-]+)['"]/g)) assert.ok([match[1], `${match[1]}.ts`, `${match[1]}.tsx`, match[1].replace(/\.js$/, '.ts')].some(candidate => has(`ui/${candidate}`)), `ui/${match[1]}, which ${file} imports`)
+      }
+      assert.match(read(`ui/${manifest.components.combobox[framework]}`), /@master\/ui\/behaviors\/combobox\.js/, 'the behavior stays in the package')
+      const config = JSON.parse(read('master-ui.json'))
+      assert.equal(config.framework, framework)
+      assert.deepEqual(Object.keys(config.components), ['combobox', 'dialog'])
+
+      assert.equal(run('add', 'tabs').status, 0, 'the framework is remembered')
+      assert.match(run('add').out, new RegExp(`^combobox\\s+${manifest.components.combobox[framework].replace('.', '\\.')}$`, 'm'), 'without a name it lists the components')
+      const button = run('add', 'button')
+      assert.equal(button.status, 1)
+      assert.match(button.err, /class on a native element/, 'a contract without a component is markup')
+
+      assert.match(run('status').out, /combobox\s+upstream unchanged/)
+      const file = manifest.components.combobox[framework]
+      write(`ui/${file}`, `${read(`ui/${file}`)}\n// ours\n`)
+      assert.match(run('status').out, new RegExp(`edited here: ${file.replace('.', '\\.')}`))
+      const kept = run('add', 'combobox')
+      assert.match(kept.out, /kept ui\//, 'an edited copy is kept')
+      assert.match(read(`ui/${file}`), /\/\/ ours/)
+      assert.match(run('diff', 'combobox').out, /unchanged upstream/)
+      assert.equal(run('accept', 'combobox').status, 0)
+    } finally { remove() }
+  })
+}
+
+test('add reads the framework from package.json, and imports a behavior the project owns from its copy', () => {
+  const { run, read, write, remove } = project()
+  try {
+    write('package.json', JSON.stringify({ dependencies: { react: '^19.0.0' } }))
+    assert.equal(run('own', 'combobox').status, 0)
+    assert.equal(run('add', 'combobox').status, 0)
+    assert.match(read('ui/combobox.tsx'), /from '\.\/combobox\.js'/)
+    assert.doesNotMatch(read('ui/combobox.tsx'), /@master\/ui\/behaviors/)
+    assert.equal(run('add', 'combobox', '--framework=solid').status, 1)
+  } finally { remove() }
+})
