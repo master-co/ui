@@ -1,0 +1,153 @@
+/*
+ * Ticket: a sheet with a tear line: a pass, a coupon, a receipt and its stub.
+ * Two raised faces meet on a perforation: the body, and the stub that would be torn off. Where the browser
+ * has corner-shape, the two corners of each face that lie on the tear line are scooped, so together they
+ * punch a half-round notch into each edge of the sheet, and the contour and the shadow follow the notch
+ * because they follow the corner. Elsewhere the faces meet square and the perforation alone parts them.
+ * Each face is cut along the tear line, so neither draws a contour across it: the only line there is the
+ * perforation, a row of 4px dashes between the notches.
+ * Geometry: the surface corner, 8px notches and 20px of padding. The stub is below the body, or at its end
+ * with ticket-row.
+ */
+@layer components {
+  .ticket {
+    --ticket-radius: var(--radius-surface);
+    --ticket-notch: .5rem;
+    --ticket-padding: 1.25rem;
+    --surface-color: var(--color-surface-raised);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    margin: 0;
+    color: var(--color-text-body);
+
+    /* The stub at the end of the body, as a coupon has it. */
+    &.ticket-row {
+      flex-direction: row;
+
+      .ticket-body {
+        border-radius: calc(var(--ticket-radius) * var(--corner-scale));
+        @apply --surface-sheet;
+        border-start-end-radius: 0;
+        border-end-end-radius: 0;
+        clip-path: inset(-4rem 0 -4rem -4rem);
+
+        &:dir(rtl) {
+          clip-path: inset(-4rem -4rem -4rem 0);
+        }
+      }
+
+      .ticket-stub {
+        border-radius: calc(var(--ticket-radius) * var(--corner-scale));
+        border-start-start-radius: 0;
+        border-end-start-radius: 0;
+        clip-path: inset(-4rem -4rem -4rem 0);
+
+        &:dir(rtl) {
+          clip-path: inset(-4rem 0 -4rem -4rem);
+        }
+
+        /* The perforation runs down the stub's start edge. */
+        &::before {
+          inset: calc(var(--ticket-notch) + .25rem) auto calc(var(--ticket-notch) + .25rem) 0;
+          width: 1px;
+          height: auto;
+          background: repeating-linear-gradient(180deg, var(--color-line-strong) 0 4px, transparent 0 8px);
+        }
+
+        &:dir(rtl)::before {
+          inset-inline: 0 auto;
+        }
+      }
+    }
+
+    @supports (corner-shape: scoop) {
+      .ticket-body {
+        border-end-start-radius: var(--ticket-notch);
+        border-end-end-radius: var(--ticket-notch);
+        corner-end-start-shape: scoop;
+        corner-end-end-shape: scoop;
+      }
+
+      .ticket-stub {
+        border-start-start-radius: var(--ticket-notch);
+        border-start-end-radius: var(--ticket-notch);
+        corner-start-start-shape: scoop;
+        corner-start-end-shape: scoop;
+      }
+
+      &.ticket-row {
+        .ticket-body {
+          border-end-start-radius: calc(var(--ticket-radius) * var(--corner-scale));
+          border-start-end-radius: var(--ticket-notch);
+          border-end-end-radius: var(--ticket-notch);
+          corner-end-start-shape: var(--corner-shape);
+          corner-start-end-shape: scoop;
+          corner-end-end-shape: scoop;
+        }
+
+        .ticket-stub {
+          border-start-end-radius: calc(var(--ticket-radius) * var(--corner-scale));
+          border-start-start-radius: var(--ticket-notch);
+          border-end-start-radius: var(--ticket-notch);
+          corner-start-end-shape: var(--corner-shape);
+          corner-start-start-shape: scoop;
+          corner-end-start-shape: scoop;
+        }
+      }
+    }
+  }
+
+  /* The two faces. Each is a raised sheet with a corner of its own, cut straight where it meets the other. */
+  .ticket-body, .ticket-stub {
+    position: relative;
+    min-width: 0;
+    padding: var(--ticket-padding);
+    border-radius: calc(var(--ticket-radius) * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    @apply --surface-sheet;
+    box-shadow: var(--shadow-raised);
+
+    @media (forced-colors: active) {
+      outline: 1px solid CanvasText;
+      outline-offset: -1px;
+    }
+  }
+
+  /*
+   * What the ticket is for. It takes the room the stub leaves. Over a stub it is one even tone and the stub
+   * carries the fall of light, so the two read as one sheet from top to foot.
+   */
+  .ticket-body {
+    flex: 1 1 auto;
+    background: var(--color-surface-raised);
+    border-end-start-radius: 0;
+    border-end-end-radius: 0;
+    clip-path: inset(-4rem -4rem 0 -4rem);
+  }
+
+  /* What is torn off: a code, a price, a seat. */
+  .ticket-stub {
+    flex: none;
+    border-start-start-radius: 0;
+    border-start-end-radius: 0;
+    clip-path: inset(0 -4rem -4rem -4rem);
+
+    /* The perforation, between the notches. */
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0 calc(var(--ticket-notch) + .25rem) auto;
+      height: 1px;
+      background: repeating-linear-gradient(90deg, var(--color-line-strong) 0 4px, transparent 0 8px);
+      pointer-events: none;
+    }
+
+    @media (forced-colors: active) {
+      &::before {
+        background: CanvasText;
+      }
+    }
+  }
+}

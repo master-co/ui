@@ -1,0 +1,39 @@
+{
+  "$schema": "../contract.schema.json",
+  "name": "lightbox",
+  "title": "Lightbox",
+  "tier": "component",
+  "category": "Overlays",
+  "description": "A picture opened large over the page, in a native dialog.",
+  "use": "A thumbnail, a figure or a screenshot a reader may want to see large. The thumbnail's own button opens the dialog with commandfor and command=\"show-modal\"; closedby=\"any\" lets a click outside the picture close it. Set --lightbox-ratio to the picture's proportions.",
+  "instead": [
+    { "when": "The overlay holds a title, text or a form", "use": "dialog" },
+    { "when": "The picture stays in the page with its caption", "use": "figure" },
+    { "when": "Two versions of one picture are compared", "use": "compare" }
+  ],
+  "composes": ["button", "icon"],
+  "script": "none",
+  "keyboard": [
+    { "keys": "Esc", "action": "Closes the lightbox and returns focus to the button that opened it" }
+  ],
+  "platform": [
+    { "feature": "commandfor with command=\"show-modal\" and command=\"close\" (invoker commands)", "fallback": "Call dialog.showModal() and dialog.close() from a click handler; the stylesheet is the same" },
+    { "feature": "closedby=\"any\" (light dismiss)", "fallback": "A click outside the picture does nothing; Escape and the close button still close it" },
+    { "feature": "@starting-style and transition-behavior: allow-discrete", "fallback": "The picture and the scrim appear and leave at once, without the fade" }
+  ],
+  "classes": [
+    { "name": "lightbox", "kind": "root", "elements": ["dialog"], "label": true, "description": "The dialog, with no sheet of its own: it is exactly as large as the picture, over a dimmed and blurred page" },
+    { "name": "lightbox-media", "kind": "part", "of": "lightbox", "description": "The picture, a video or a frame: 64rem wide or as large as the viewport allows with a 24px gutter, at the proportions of --lightbox-ratio" },
+    { "name": "lightbox-caption", "kind": "part", "of": "lightbox", "description": "A floating bar under the picture, as wide as it is" },
+    { "name": "lightbox-close", "kind": "part", "of": "lightbox", "label": true, "description": "On the close button: it rests 8px inside the top corner of the picture" }
+  ],
+  "states": [
+    { "on": "lightbox", "name": "open", "mark": "open", "description": "Set by the browser when the dialog is shown. Do not write it in markup: a dialog that starts with open is not modal" }
+  ],
+  "properties": [
+    { "name": "--lightbox-ratio", "default": "3 / 2", "description": "The picture's proportions, width over height; the picture is cropped to them" },
+    { "name": "--lightbox-width", "default": "64rem", "description": "The widest the picture gets" },
+    { "name": "--lightbox-gutter", "default": "1.5rem", "description": "The room kept between the picture and each edge of the viewport" }
+  ],
+  "example": "<button class=\"btn\" type=\"button\" commandfor=\"shot\" command=\"show-modal\">View the screenshot</button>\n<dialog class=\"lightbox\" id=\"shot\" closedby=\"any\" aria-label=\"The dashboard in the light theme\">\n  <img class=\"lightbox-media\" src=\"/screens/dashboard.png\" alt=\"The dashboard in the light theme\">\n  <button class=\"btn btn-sm btn-square lightbox-close\" type=\"button\" commandfor=\"shot\" command=\"close\" aria-label=\"Close\">×</button>\n</dialog>"
+}

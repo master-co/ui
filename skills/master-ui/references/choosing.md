@@ -13,6 +13,7 @@ Read the row that matches the job, then the contract of the component it names.
 | A list of actions opened by a button, or at the pointer | `menu` |
 | A short label for a control, on hover and focus | `tooltip` |
 | Search across every command and page, opened by a shortcut | `command` |
+| A picture opened large over the page | `lightbox` |
 
 ## A message
 
@@ -33,6 +34,9 @@ Read the row that matches the job, then the contract of the component it names.
 | Words that say work is under way: thinking, generating | `shimmer` |
 | A known share of the work is done | `progress` |
 | A reading within a range, not a task: disk used, a score | `meter` |
+| One reading on a dial, where the figure is the point | `gauge` |
+| A region that already shows content and is fetching it again | `busy` on the region, with `aria-busy` |
+| The steps an agent or a job is taking, each of which may open | `trace` |
 
 ## One or several of a set
 
@@ -48,6 +52,7 @@ Read the row that matches the job, then the contract of the component it names.
 | Filters that toggle, or values that can be removed | `chip` |
 | A color | `swatch` |
 | A score out of a few | `rating` |
+| A quick vote that shows how everyone answered | `poll` |
 | A date or a range of dates | `calendar`, in a `popover` for a picker |
 
 ## A number or a text
@@ -86,10 +91,15 @@ Read the row that matches the job, then the contract of the component it names.
 | The facts about one thing | `data-list` |
 | One figure and how it moved | `stat` |
 | A few numbers compared | `chart` |
+| What a total is made of, as parts of one bar | `breakdown` |
 | Many small numbers over time or a grid | `heatmap` |
 | Events in order | `timeline` |
 | One file | `file` |
 | A turn of a conversation | `message` |
+| Comments and the replies to them | `thread` |
+| Words added and words struck in a sentence | `ins` and `del` |
+| A row with one or two actions behind it, on touch | `swipe` |
+| A block that arrives as it scrolls into view | `reveal` |
 
 ## Surfaces
 
@@ -100,6 +110,8 @@ Read the row that matches the job, then the contract of the component it names.
 | A recess inside a sheet: a code sample, a read-only value | `well` |
 | The one ink surface of a page, for the moment that asks for something | `sheet-inverse` |
 | A screenshot or a demo in the frame of an application | `window` |
+| A screenshot or a demo in the body of a phone | `device` |
+| Something issued and handed over: a pass, a voucher, a receipt | `ticket` |
 
 ## It is not a component
 

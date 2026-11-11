@@ -1,0 +1,171 @@
+/*
+ * Breakdown: a whole as its parts along one bar, each as wide as its share.
+ * The stylesheet draws it from a list. Each item carries its number as --value and its name in
+ * breakdown-label; the item itself has no box, so its segment joins the bar and its name joins the legend
+ * under it, and the list still reads as data to anyone who is not looking at it. The parts need not add up
+ * to anything: each takes its share of their sum.
+ * Segments are steps of one ink, darkest first, 2px apart, and the bar's two ends are round. The part that
+ * is not used (free space, what is left of a budget) is breakdown-rest: a well instead of ink.
+ * Under the pointer the other parts step back, at once, as a chart's bars do.
+ */
+@layer components {
+  .breakdown {
+    --breakdown-height: .5rem;
+    --breakdown-gap: 2px;
+    --breakdown-color: var(--color-surface-inverse);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    color: var(--color-text-body);
+    font: 400 .8125rem/1.25rem var(--font-family-sans);
+    font-feature-settings: inherit;
+    list-style: none;
+
+    /* The end of the bar's line: everything after it is the legend. */
+    &::before {
+      content: '';
+      order: 1;
+      flex: none;
+      width: 100%;
+      height: 0;
+    }
+
+    /* Rows: one line to a part, its figure at the end, for a legend that is read like a table. */
+    &.breakdown-rows {
+      .breakdown-label {
+        flex: none;
+        width: 100%;
+        margin: 0;
+        padding-block: .4375rem;
+      }
+
+      .breakdown-item:not(:last-child) .breakdown-label {
+        border-bottom: 1px solid var(--color-line-hair);
+      }
+
+      .breakdown-item:first-child .breakdown-label {
+        margin-top: .5rem;
+      }
+
+      .breakdown-value {
+        margin-inline-start: auto;
+      }
+    }
+
+    @media (hover: hover) {
+      /* The tint is the bar's ink stepped back, so a part that has its own color steps back with the others. */
+      &:has(.breakdown-item:hover) .breakdown-item:not(:hover, .breakdown-rest) {
+        --breakdown-fill: color-mix(in oklab, var(--breakdown-color) 9%, transparent);
+      }
+
+      .breakdown-item:hover .breakdown-label, .breakdown-item:hover .breakdown-value {
+        color: var(--color-text-strong);
+      }
+    }
+
+    @media (forced-colors: active) {
+      --breakdown-color: CanvasText;
+    }
+  }
+
+  /* One part. It has no box of its own: its segment and its name are laid out by the list. */
+  .breakdown-item {
+    --breakdown-tone: 100%;
+    --breakdown-fill: color-mix(in oklab, var(--breakdown-color) var(--breakdown-tone), transparent);
+    display: contents;
+
+    &:nth-child(2) { --breakdown-tone: 60%; }
+    &:nth-child(3) { --breakdown-tone: 36%; }
+    &:nth-child(4) { --breakdown-tone: 21%; }
+    &:nth-child(n + 5) { --breakdown-tone: 12%; }
+
+    /* The segment: its share of the bar. A share of nothing keeps a 2px tick. */
+    &::before {
+      content: '';
+      flex-grow: var(--value, 0);
+      flex-shrink: 0;
+      flex-basis: 0;
+      min-width: 2px;
+      height: var(--breakdown-height);
+      margin-inline-end: var(--breakdown-gap);
+      border-radius: 1.5px;
+      background: var(--breakdown-fill);
+      transition: flex-grow var(--duration-base) var(--easing-glide);
+
+      @media (prefers-reduced-motion: reduce) {
+        transition: none;
+      }
+
+      @media (forced-colors: active) {
+        forced-color-adjust: none;
+      }
+    }
+
+    &:first-child::before {
+      border-start-start-radius: 999px;
+      border-end-start-radius: 999px;
+    }
+
+    &:last-child::before {
+      margin-inline-end: 0;
+      border-start-end-radius: 999px;
+      border-end-end-radius: 999px;
+    }
+
+    /* What is left: a well, not ink, and a ring instead of a dot beside its name. */
+    &.breakdown-rest {
+      &::before {
+        background: var(--color-surface-inset);
+        box-shadow: var(--shadow-pressed);
+      }
+
+      .breakdown-label::before {
+        background: var(--color-surface-inset);
+        box-shadow: inset 0 0 0 .5px var(--color-line-mark);
+      }
+
+      @media (forced-colors: active) {
+        &::before {
+          outline: 1px solid CanvasText;
+          outline-offset: -1px;
+          background: Canvas;
+        }
+      }
+    }
+  }
+
+  /* The part's name in the legend, after a dot of its segment's color. */
+  .breakdown-label {
+    display: inline-flex;
+    order: 2;
+    align-items: center;
+    gap: .4375rem;
+    min-width: 0;
+    margin-block: .625rem 0;
+    margin-inline: 0 1.125rem;
+    white-space: nowrap;
+
+    &::before {
+      content: '';
+      flex: none;
+      width: .5rem;
+      height: .5rem;
+      border-radius: calc(.125rem * var(--corner-scale));
+      corner-shape: var(--corner-shape);
+      background: var(--breakdown-fill);
+
+      @media (forced-colors: active) {
+        forced-color-adjust: none;
+      }
+    }
+  }
+
+  /* The part's figure, inside its name. */
+  .breakdown-value {
+    color: var(--color-text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+}

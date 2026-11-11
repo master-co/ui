@@ -1,0 +1,144 @@
+/*
+ * Swipe: a row that slides aside to show what can be done to it.
+ * The row is a scroller with two places to rest: its content, as wide as the row, and the actions that wait
+ * behind its end edge. A finger, a trackpad or the Tab key brings the actions in. The browser's own scrolling
+ * does the work, so there is no script, and letting go between the two settles on the nearer one.
+ * The content keeps the color of the surface it lies on and casts a short shade on what it uncovers; the
+ * actions lie in a well, each at least 72px wide and as tall as the row. Where scroll-driven animations are
+ * supported the actions come forward as they are uncovered.
+ * Swiping is a shortcut and is never the only way: offer the same actions in a menu or on the opened item.
+ */
+@layer components {
+  .swipe {
+    --swipe-surface: var(--surface-color, var(--color-surface-base));
+    position: relative;
+    display: flex;
+    min-width: 0;
+    overflow: auto hidden;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    /* The well the actions lie in shows where the content has left. */
+    background: var(--color-surface-inset);
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+
+    @media (forced-colors: active) {
+      background: Canvas;
+    }
+  }
+
+  /* What the row shows at rest. It is opaque, so nothing of the well shows through it. */
+  .swipe-content {
+    position: relative;
+    z-index: 1;
+    flex: none;
+    width: 100%;
+    min-width: 0;
+    background: var(--swipe-surface);
+    /* A contour and a short shade on both edges; the scroller cuts the one that is not uncovered. */
+    box-shadow: 0 0 0 .5px var(--color-line-contour), 0 0 6px -1px var(--color-shade-1), 0 0 12px -2px var(--color-shade-2);
+    scroll-snap-align: start;
+
+    @media (forced-colors: active) {
+      outline: 1px solid CanvasText;
+      outline-offset: -1px;
+    }
+  }
+
+  /* The actions, behind the end edge. */
+  .swipe-actions {
+    display: flex;
+    flex: none;
+    /* The shade the row's upper edge casts into the well. */
+    box-shadow: inset 0 1px 2px -1px var(--color-shade-2);
+    scroll-snap-align: end;
+
+    @supports (animation-timeline: scroll()) {
+      @media (prefers-reduced-motion: no-preference) {
+        animation: swipe-arrive linear both;
+        animation-timeline: scroll(inline nearest);
+      }
+    }
+  }
+
+  /* One action: a word, or an icon over a word. The whole cell is the target. */
+  .swipe-action {
+    --icon-size: 1.125rem;
+    display: inline-flex;
+    flex: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: .25rem;
+    min-width: 4.5rem;
+    margin: 0;
+    padding: 0 .875rem;
+    border: 0;
+    border-inline-start: 1px solid var(--color-line-hair);
+    border-radius: 0;
+    background: transparent;
+    color: var(--color-text-body);
+    font: var(--font-weight-control) .78125rem/1.2 var(--font-family-sans);
+    font-feature-settings: inherit;
+    text-decoration: none;
+    white-space: nowrap;
+    appearance: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+
+    @media (hover: hover) {
+      &:hover {
+        background: var(--color-surface-inset-hover);
+        color: var(--color-text-strong);
+      }
+    }
+
+    &:active {
+      background: color-mix(in oklab, currentColor 9%, transparent);
+    }
+
+    /* The ring stays inside the cell: the scroller would cut one drawn outside it. */
+    &:focus-visible {
+      outline: 2px solid var(--color-focus);
+      outline-offset: -2px;
+    }
+
+    /* The action that cannot be undone, in the danger ink on its own tint. */
+    &.swipe-action-danger {
+      background: color-mix(in oklab, var(--color-danger) 9%, transparent);
+      color: var(--color-danger);
+
+      @media (hover: hover) {
+        &:hover {
+          background: color-mix(in oklab, var(--color-danger) 14%, transparent);
+          color: var(--color-danger);
+        }
+      }
+
+      &:active {
+        background: color-mix(in oklab, var(--color-danger) 18%, transparent);
+      }
+    }
+
+    @media (forced-colors: active) {
+      border-inline-start-color: CanvasText;
+
+      &:focus-visible {
+        outline-color: Highlight;
+      }
+    }
+  }
+}
+
+@keyframes swipe-arrive {
+  from {
+    opacity: 0;
+  }
+
+  60% {
+    opacity: 1;
+  }
+}

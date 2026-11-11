@@ -1,0 +1,159 @@
+/*
+ * Thread: comments and their replies, each joined to the comment it answers.
+ * A comment is an avatar on a column and its words beside it. Replies stand under the words, and a hairline
+ * runs down from the comment's avatar and turns into each of them: a reader follows a line, not an indent,
+ * to see what answers what. The line is drawn in pieces that never overlap, since its ink is translucent:
+ * the stretch under the avatar, an elbow into each reply, and the stretch on to the next one.
+ * Geometry: a 32px avatar for a comment and 24px for a reply (avatar-sm), 12px between an avatar and its
+ * words, 20px between comments and 14px between replies. The name stands level with the middle of its avatar.
+ */
+@layer components {
+  .thread {
+    --thread-avatar: 2rem;
+    --thread-gap: .75rem;
+    --thread-space: 1.25rem;
+    display: grid;
+    gap: var(--thread-space);
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    color: var(--color-text-body);
+    font-size: .875rem;
+    line-height: 1.55;
+    list-style: none;
+  }
+
+  /* One comment: the avatar's column, the words, and under the words its replies. */
+  .thread-item {
+    /* Where this comment's line runs, for the replies that turn off it. */
+    --thread-rail: calc(var(--thread-avatar) / 2);
+    position: relative;
+    display: grid;
+    grid-template-columns: var(--thread-avatar) minmax(0, 1fr);
+    column-gap: var(--thread-gap);
+    min-width: 0;
+  }
+
+  /* The avatar's column. Under the avatar the line begins, when replies follow. */
+  .thread-avatar {
+    --avatar-size: var(--thread-avatar);
+    display: flex;
+    grid-area: 1 / 1;
+    flex-direction: column;
+    align-items: center;
+    min-width: 0;
+
+    &:has(~ .thread-replies)::after {
+      content: '';
+      flex: 1 1 0;
+      width: 1px;
+      margin-top: .25rem;
+      background: var(--color-line-divider);
+    }
+
+    @media (forced-colors: active) {
+      &::after {
+        background: CanvasText;
+      }
+    }
+  }
+
+  /* The words: a line that says who and when, then what they wrote. The first line is level with the middle of the avatar. */
+  .thread-body {
+    display: grid;
+    grid-area: 1 / 2;
+    gap: .125rem;
+    min-width: 0;
+    padding-top: calc((var(--thread-avatar) - 1.25rem) / 2);
+    overflow-wrap: anywhere;
+  }
+
+  /* The line with the name on it, and what is said quietly beside the name. */
+  .thread-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 .5rem;
+    min-width: 0;
+    margin: 0;
+  }
+
+  /* What they wrote. Several paragraphs stand 8px apart. */
+  .thread-text {
+    min-width: 0;
+    margin: 0;
+    text-wrap: pretty;
+
+    & + & {
+      margin-top: .375rem;
+    }
+  }
+
+  /* Who wrote it. */
+  .thread-author {
+    color: var(--color-text-strong);
+    font-weight: var(--font-weight-control);
+    line-height: 1.25rem;
+  }
+
+  /* When, and anything else said quietly beside the name. */
+  .thread-meta {
+    color: var(--color-text-muted);
+    font-size: .78125rem;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.25rem;
+  }
+
+  /* The replies, under the words. Their avatars are a size smaller. */
+  .thread-replies {
+    --thread-parent: var(--thread-rail);
+    --thread-avatar: 1.5rem;
+    --thread-space: .875rem;
+    display: grid;
+    grid-area: 2 / 2;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    .thread-item {
+      padding-top: var(--thread-space);
+
+      /* The elbow: down the comment's line, then round into this reply's avatar, stopping 4px short of it. */
+      &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        inset-inline-start: calc(-1 * (var(--thread-gap) + var(--thread-parent)) - .5px);
+        width: calc(var(--thread-gap) + var(--thread-parent) - .25rem);
+        height: calc(var(--thread-space) + var(--thread-avatar) / 2);
+        border-block-end: 1px solid var(--color-line-divider);
+        border-inline-start: 1px solid var(--color-line-divider);
+        border-end-start-radius: .625rem;
+        pointer-events: none;
+      }
+
+      /* The line goes on to the next reply, from where the elbow leaves it. */
+      &:not(:last-child)::after {
+        content: '';
+        position: absolute;
+        top: calc(var(--thread-space) + var(--thread-avatar) / 2 - .625rem);
+        bottom: 0;
+        inset-inline-start: calc(-1 * (var(--thread-gap) + var(--thread-parent)) - .5px);
+        width: 1px;
+        background: var(--color-line-divider);
+        pointer-events: none;
+      }
+
+      @media (forced-colors: active) {
+        &::before {
+          border-color: CanvasText;
+        }
+
+        &::after {
+          background: CanvasText;
+        }
+      }
+    }
+  }
+}

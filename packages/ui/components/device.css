@@ -1,0 +1,98 @@
+/*
+ * Device: the body of a phone around a screenshot, a video or a running demo.
+ * It is drawn in one material, like a model cast in clay: a lifted sheet for the body, a narrow bezel, and
+ * a small well at the top of the screen where the camera would be. The frame says "this is a phone" and
+ * leaves every color to what it shows, as a window does.
+ * Everything is measured from the body's width: the corner is 14% of it, the bezel 3% and the screen's own
+ * corner is the body's minus the bezel, so the gap keeps one width around the bend. The body is 280px wide
+ * and 9 by 19.5; set --device-width to resize it, not a width, so the corners follow.
+ */
+@layer components {
+  .device {
+    --device-width: 17.5rem;
+    --device-ratio: 9 / 19.5;
+    --device-radius: calc(var(--device-width) * .14);
+    --device-bezel: calc(var(--device-width) * .03);
+    --surface-color: var(--color-surface-raised);
+    position: relative;
+    display: block;
+    flex: none;
+    box-sizing: border-box;
+    /* The buttons lie behind the body, and no further back than that. */
+    isolation: isolate;
+    width: var(--device-width);
+    aspect-ratio: var(--device-ratio);
+    margin: 0;
+    padding: var(--device-bezel);
+    border-radius: calc(var(--device-radius) * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    @apply --surface-sheet;
+    /* A hairline inside the edge turns the sheet into a frame with a rim. */
+    box-shadow: inset 0 0 0 1px var(--color-line-hair), var(--shadow-lifted);
+
+    /* The camera's well: a pill a third of the screen wide, a little below its top edge. */
+    &::before {
+      content: '';
+      position: absolute;
+      z-index: 1;
+      top: calc(var(--device-bezel) + var(--device-width) * .03);
+      left: 50%;
+      width: 30%;
+      aspect-ratio: 3.4;
+      border-radius: 999px;
+      background: var(--color-surface-raised-low);
+      box-shadow: var(--shadow-pressed);
+      translate: -50% 0;
+      pointer-events: none;
+    }
+
+    /* The buttons: three on one side and one on the other, as thin slips behind the body's edge. */
+    &::after {
+      content: '';
+      position: absolute;
+      z-index: -1;
+      inset: 0 -2px;
+      background:
+        linear-gradient(var(--color-line-strong) 0 0) 0 17% / 2px 4% no-repeat,
+        linear-gradient(var(--color-line-strong) 0 0) 0 26% / 2px 8% no-repeat,
+        linear-gradient(var(--color-line-strong) 0 0) 0 37% / 2px 8% no-repeat,
+        linear-gradient(var(--color-line-strong) 0 0) 100% 31% / 2px 13% no-repeat;
+      pointer-events: none;
+    }
+
+    @media (forced-colors: active) {
+      outline: 1px solid CanvasText;
+      outline-offset: -1px;
+
+      &::before {
+        outline: 1px solid CanvasText;
+        outline-offset: -1px;
+      }
+
+      &::after {
+        content: none;
+      }
+    }
+  }
+
+  /* The screen: a picture, a video, a frame or a block of markup, finished by a corner concentric with the body's. */
+  .device-screen {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    border: 0;
+    border-radius: calc(var(--device-radius) * var(--corner-scale) - var(--device-bezel));
+    corner-shape: var(--corner-shape);
+    overflow: clip;
+    background: var(--color-surface-inset);
+    outline: 1px solid var(--color-line-image-strong);
+    outline-offset: -1px;
+    object-fit: cover;
+
+    @media (forced-colors: active) {
+      outline-color: CanvasText;
+    }
+  }
+}

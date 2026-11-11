@@ -1,0 +1,86 @@
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+A breakdown shows a whole as its parts along one bar, each as wide as its share: storage by kind, a bill by service, a budget and what is left of it. It is a list. Every item carries its number once for the drawing and its name and figure as text, and the stylesheet draws the bar and the legend under it from that one list. There is no script and no SVG.
+
+<ComponentPreview name="default" height={220} narrowHeight={248} title="Breakdown" bodyClass="p-lg" html={`<div class="card max-w(440) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Storage</h3>
+    <p class="card-description">90 GB of 128 GB used</p>
+  </div>
+  <ul class="breakdown" aria-label="Storage by kind">
+    <li class="breakdown-item" style="--value: 42"><span class="breakdown-label">Photos <span class="breakdown-value">42 GB</span></span></li>
+    <li class="breakdown-item" style="--value: 28"><span class="breakdown-label">Apps <span class="breakdown-value">28 GB</span></span></li>
+    <li class="breakdown-item" style="--value: 14"><span class="breakdown-label">Mail <span class="breakdown-value">14 GB</span></span></li>
+    <li class="breakdown-item" style="--value: 6"><span class="breakdown-label">System <span class="breakdown-value">6 GB</span></span></li>
+    <li class="breakdown-item breakdown-rest" style="--value: 38"><span class="breakdown-label">Free <span class="breakdown-value">38 GB</span></span></li>
+  </ul>
+</div>`} caption="Point at a part: the others step back." />
+
+## How a part gets its width \{#how-a-part-gets-its-width\}
+
+Each `breakdown-item` sets `--value` in its style, and its segment grows by that number, so every part takes its share of their sum. The values need not be percentages and need not add up to anything: gigabytes, dollars and counts all work as they are. A share of nothing keeps a 2px tick, so a part that exists is never invisible.
+
+An item has no box of its own. Its segment joins the bar and its `breakdown-label` joins the legend, which wraps under the bar; the list keeps its items, so it still reads as data to assistive technology.
+
+Segments are steps of one ink, darkest first. Order the parts from largest to smallest and keep to five or so: the eye tells five tones apart, not eight.
+
+## What is left \{#what-is-left\}
+
+`breakdown-rest` marks the part that is not used: free space, the rest of a budget, seats not yet taken. Its segment is a well instead of ink and its dot in the legend is a ring, so used and unused are told apart by material, not by a shade of grey. Put it last.
+
+## Rows \{#rows\}
+
+`breakdown-rows` sets the legend as rows on hairlines, one to a part, with each figure at the end. Use it when the figures are read and compared, as on an invoice. `--breakdown-height` makes the bar thicker.
+
+<ComponentPreview name="rows" height={308} title="Rows" bodyClass="p-lg" html={`<div class="card max-w(340) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">November</h3>
+    <p class="card-description">$3,074 so far</p>
+  </div>
+  <ul class="breakdown breakdown-rows" style="--breakdown-height: .625rem" aria-label="Spend by service">
+    <li class="breakdown-item" style="--value: 1840"><span class="breakdown-label">Compute <span class="breakdown-value">$1,840</span></span></li>
+    <li class="breakdown-item" style="--value: 920"><span class="breakdown-label">Storage <span class="breakdown-value">$920</span></span></li>
+    <li class="breakdown-item" style="--value: 310"><span class="breakdown-label">Network <span class="breakdown-value">$310</span></span></li>
+    <li class="breakdown-item" style="--value: 4"><span class="breakdown-label">Support <span class="breakdown-value">$4</span></span></li>
+  </ul>
+</div>`} />
+
+## A part with a status \{#status\}
+
+The bar is monochrome. When one part is a status, such as requests that failed, set `--breakdown-fill` on that item to a status color, and name the status in its label: the hue never carries the meaning alone. `--breakdown-color` changes the ink every segment is a step of.
+
+<ComponentPreview name="status" height={188} narrowHeight={220} title="Status" bodyClass="p-lg" html={`<div class="card max-w(440) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Requests</h3>
+    <p class="card-description">1.28M in the last hour</p>
+  </div>
+  <ul class="breakdown" aria-label="Requests by result">
+    <li class="breakdown-item" style="--value: 962"><span class="breakdown-label">Succeeded <span class="breakdown-value">96.2%</span></span></li>
+    <li class="breakdown-item" style="--value: 31"><span class="breakdown-label">Redirected <span class="breakdown-value">3.1%</span></span></li>
+    <li class="breakdown-item" style="--value: 7; --breakdown-fill: var(--color-danger)"><span class="breakdown-label">Failed <span class="breakdown-value">0.7%</span></span></li>
+  </ul>
+</div>`} />
+
+## Breakdown or chart \{#breakdown-or-chart\}
+
+A breakdown answers "what is this made of": the parts are read against their sum. A [chart](/components/chart) answers "which is larger": the bars are read against each other and a scale. One amount within a range is a [meter](/components/meter).
+
+## Accessibility \{#accessibility\}
+
+- Write it as a `<ul>`, or an `<ol>` when the order is a ranking, and name it with `aria-label` or a heading.
+- Put the name and the figure of every part in its `breakdown-label`, with the unit. The bar is drawn by the stylesheet and is not announced.
+- Do not rely on the tones to tell parts apart: the legend names each one, in the same order as the bar. In forced colors every segment is the text color and the 2px gaps part them.
+
+## Classes \{#classes\}
+
+<ContractTable name="breakdown" />
+
+## Custom properties \{#custom-properties\}
+
+<ContractTable name="breakdown" show="properties" />
+
+## Source \{#source\}
+
+<ComponentSource name="breakdown" />

@@ -1,0 +1,246 @@
+/*
+ * Trace: what an agent or a job did, step by step.
+ * Each step is one quiet line with a marker on a column, and a hairline joins the markers. A step that has
+ * something behind it (the query it ran, the lines it read, why it failed) is a native <details>: its line
+ * is the <summary>, with a small chevron after the words, and the detail opens under it to its own height.
+ * A step with nothing behind it is a plain line.
+ * A bare marker is a dot; it may hold an icon instead, or a spinner-inline while the step runs. The step that is running carries
+ * aria-busy: its words take the strong ink and its dot sends out a ring. A step that failed is trace-failed,
+ * a class because ARIA has no word for it here; the reason, in words, is in the line or behind it.
+ * Geometry: a 32px row, a 20px marker column, and the detail on the edge of the words.
+ */
+@layer components {
+  .trace {
+    --trace-marker: 1.25rem;
+    --trace-padding: .375rem;
+    --trace-closed: -90deg;
+    display: grid;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    color: var(--color-text-body);
+    font: 400 .84375rem/1.25rem var(--font-family-sans);
+    font-feature-settings: inherit;
+    list-style: none;
+
+    @media (pointer: coarse) {
+      --trace-padding: .75rem;
+    }
+  }
+
+  .trace-step {
+    position: relative;
+    min-width: 0;
+    /* Lets block-size travel from 0 to auto. */
+    interpolate-size: allow-keywords;
+
+    /* The line from under this marker to the next one. */
+    &:not(:last-child)::before {
+      content: '';
+      position: absolute;
+      top: calc(var(--trace-padding) + var(--trace-marker) + .125rem);
+      bottom: calc(-1 * var(--trace-padding) + .125rem);
+      inset-inline-start: calc(var(--trace-marker) / 2 - .5px);
+      width: 1px;
+      background: var(--color-line-divider);
+    }
+
+    &::details-content {
+      block-size: 0;
+      overflow-y: clip;
+      opacity: 0;
+      transition-property: block-size, opacity, content-visibility;
+      transition-duration: var(--duration-base);
+      transition-timing-function: var(--easing-glide);
+      transition-behavior: allow-discrete;
+    }
+
+    &[open]::details-content {
+      block-size: auto;
+      opacity: 1;
+    }
+
+    /* The chevron points down while its step is open. A closed step nested in an open one keeps its own. */
+    &[open] .trace-summary:has(~ .trace-detail)::after {
+      rotate: none;
+    }
+
+    &[open] .trace-step:not([open]) .trace-summary:has(~ .trace-detail)::after {
+      rotate: var(--trace-closed);
+    }
+
+    /* Running: the words come forward and a bare dot sends out a ring. */
+    &[aria-busy="true"] {
+      .trace-summary {
+        color: var(--color-text-strong);
+      }
+
+      .trace-marker:empty::before {
+        background: var(--color-text-strong);
+        animation: trace-live 1.8s var(--easing-glide) infinite;
+      }
+    }
+
+    /* Failed: the dot, an icon and the fact at the end of the line take the danger ink. */
+    &.trace-failed {
+      .trace-marker {
+        --icon-color: var(--color-danger);
+        color: var(--color-danger);
+      }
+
+      .trace-marker:empty::before {
+        background: var(--color-danger);
+      }
+
+      .trace-meta {
+        color: var(--color-danger);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      &::details-content {
+        transition-property: opacity, content-visibility;
+      }
+
+      &[aria-busy="true"] .trace-marker:empty::before {
+        box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-text-strong) 12%, transparent);
+        animation: none;
+      }
+    }
+
+    @media (forced-colors: active) {
+      &::before {
+        background: CanvasText;
+      }
+    }
+  }
+
+  /* The step's line: the marker, the words, and a fact at the end. On a <summary> it is the toggle. */
+  .trace-summary {
+    display: flex;
+    align-items: flex-start;
+    gap: .5rem;
+    min-height: calc(var(--trace-marker) + var(--trace-padding) * 2);
+    margin: 0;
+    padding: var(--trace-padding) 0;
+    border-radius: calc((var(--radius-chip) - 2px) * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    list-style: none;
+    overflow-wrap: anywhere;
+    -webkit-tap-highlight-color: transparent;
+
+    &::-webkit-details-marker {
+      display: none;
+    }
+
+    /* With a detail after it, the line is a toggle: a chevron follows the words. */
+    &:has(~ .trace-detail) {
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+
+      &::after {
+        content: '';
+        order: 1;
+        flex: none;
+        width: .875rem;
+        height: .875rem;
+        margin-block: .1875rem;
+        margin-inline-start: -.25rem;
+        background: var(--color-text-muted);
+        mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4.5 6.5 3.5 3.5 3.5-3.5'/%3E%3C/svg%3E") center / contain no-repeat;
+        rotate: var(--trace-closed);
+        transition: rotate var(--duration-base) var(--easing-glide);
+      }
+
+      /* Closed, the chevron points the way the words run. */
+      &:dir(rtl) {
+        --trace-closed: 90deg;
+      }
+
+      @media (hover: hover) {
+        &:hover {
+          color: var(--color-text-strong);
+        }
+
+        &:hover::after {
+          background: var(--color-text-strong);
+        }
+      }
+    }
+
+    &:focus-visible {
+      @apply --focus-ring;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      &::after {
+        transition: none;
+      }
+    }
+
+    @media (forced-colors: active) {
+      &::after {
+        background: CanvasText;
+      }
+    }
+  }
+
+  /* The marker's column, as tall as the first line of words. Empty, it is a dot. */
+  .trace-marker {
+    --icon-size: .875rem;
+    --icon-color: var(--color-text-muted);
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: var(--trace-marker);
+    height: var(--trace-marker);
+    color: var(--color-text-muted);
+
+    &:empty::before {
+      content: '';
+      width: .375rem;
+      height: .375rem;
+      border-radius: 999px;
+      background: var(--color-line-mark);
+    }
+
+    @media (forced-colors: active) {
+      &:empty::before {
+        background: CanvasText;
+      }
+    }
+  }
+
+  /* A fact at the end of the line: how long it took, how many it found. */
+  .trace-meta {
+    order: 2;
+    flex: none;
+    margin-inline-start: auto;
+    padding-inline-start: .5rem;
+    color: var(--color-text-muted);
+    font-size: .78125rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* What stands behind the step, on the edge of its words. */
+  .trace-detail {
+    margin-inline-start: calc(var(--trace-marker) + .5rem);
+    padding: .125rem 0 .625rem;
+    color: var(--color-text-muted);
+    font-size: .8125rem;
+    line-height: 1.55;
+    text-wrap: pretty;
+    overflow-wrap: anywhere;
+  }
+}
+
+@keyframes trace-live {
+  from {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-text-strong) 40%, transparent);
+  }
+
+  70%, to {
+    box-shadow: 0 0 0 5px transparent;
+  }
+}

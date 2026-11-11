@@ -1,0 +1,37 @@
+/*
+ * Reveal: content that arrives as it scrolls into view.
+ * A scroll-driven animation on the element's own view timeline: it fades in and rises the last few pixels
+ * while its first stretch crosses the edge of the viewport, and is at rest from then on. Nothing observes
+ * it and no class is added: the position of the scroll is the clock, so scrolling back plays it backwards
+ * and what is already in view when the page opens does not move at all.
+ * Without scroll-driven animations, and for a reader who asks for less motion, the content is simply there.
+ * Geometry: 16px of travel, finished within the first 12rem of the element entering.
+ */
+@layer components {
+  .reveal {
+    --reveal-distance: 1rem;
+    --reveal-scale: 1;
+    --reveal-range: 12rem;
+
+    @supports (animation-timeline: view()) {
+      @media (prefers-reduced-motion: no-preference) {
+        animation: reveal-arrive var(--easing-glide) both;
+        animation-timeline: view();
+        /* An element shorter than the range has arrived once all of it is in view. */
+        animation-range: entry 0% entry min(100%, var(--reveal-range));
+      }
+    }
+
+    @media print {
+      animation: none;
+    }
+  }
+}
+
+@keyframes reveal-arrive {
+  from {
+    opacity: 0;
+    scale: var(--reveal-scale);
+    translate: 0 var(--reveal-distance);
+  }
+}

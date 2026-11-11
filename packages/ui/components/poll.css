@@ -1,0 +1,191 @@
+/*
+ * Poll: a question, a few answers, and how the votes fell.
+ * Each answer is a <label> around a native radio (or a checkbox, when several may be chosen), so the group
+ * keeps the arrow keys and the form keeps the value. Before a vote the answers are flat faces on one contour.
+ * Once one is chosen, every answer fills from its start with a tint as long as its share, set as --value
+ * in percent, and its figure appears at the end; the chosen answer takes an ink contour and a check.
+ * Nothing but the checked input drives this: :has() reads it, so there is no script. A poll that is over
+ * has its inputs disabled and shows its result from the start.
+ * Geometry: answers are 38px, as tall as a button (44 on a touch screen), 8px apart, with a control's corner.
+ */
+@layer components {
+  .poll {
+    --poll-color: var(--color-surface-inverse);
+    --poll-radius: var(--radius-control);
+    display: grid;
+    gap: .5rem;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    color: var(--color-text-body);
+    font-size: .875rem;
+    line-height: 1.45;
+
+    /* Voted, or over: the shares and their figures show. */
+    &:has(.poll-input:is(:checked, :disabled)) {
+      .poll-option::before {
+        width: calc(clamp(0, var(--value, 0), 100) * 1%);
+      }
+
+      .poll-value {
+        visibility: visible;
+        opacity: 1;
+      }
+    }
+  }
+
+  /* The question, on a <legend> or a heading. */
+  .poll-title {
+    margin: 0 0 .75rem;
+    padding: 0;
+    color: var(--color-text-strong);
+    font: var(--font-weight-control) .9375rem/1.4 var(--font-family-sans);
+    font-feature-settings: inherit;
+    text-wrap: balance;
+  }
+
+  /* One answer. */
+  .poll-option {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    min-width: 0;
+    min-height: 2.375rem;
+    padding: .5rem .875rem;
+    border-radius: calc(var(--poll-radius) * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    /* The share is finished by the answer's own corner. */
+    overflow: clip;
+    background: var(--color-surface-raised);
+    color: var(--color-text-strong);
+    box-shadow: var(--shadow-flat);
+    font: var(--font-weight-control) .84375rem/1.25rem var(--font-family-sans);
+    font-feature-settings: inherit;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: box-shadow var(--duration-quick) var(--easing-glide);
+
+    /* The share: a tint of ink from the start edge, which grows to its width when the result shows. */
+    &::before {
+      content: '';
+      position: absolute;
+      inset-block: 0;
+      inset-inline-start: 0;
+      width: 0;
+      border-start-end-radius: .1875rem;
+      border-end-end-radius: .1875rem;
+      background: color-mix(in oklab, var(--poll-color) 7%, transparent);
+      transition: width var(--duration-base) var(--easing-glide);
+    }
+
+    @media (hover: hover) {
+      &:hover:not(:has(:checked, :disabled)) {
+        box-shadow: 0 0 0 .5px var(--color-line-mark);
+      }
+    }
+
+    /* Chosen: an ink contour, a stronger tint and a check after the words. */
+    &:has(.poll-input:checked) {
+      box-shadow:
+        inset 0 1px 0 var(--color-highlight),
+        0 0 0 .5px var(--color-text-strong), 0 0 0 1px color-mix(in oklab, var(--color-text-strong) 22%, transparent),
+        0 1px 2px -1px var(--color-shade-1), 0 2px 4px -2px var(--color-shade-2);
+
+      &::before {
+        background: color-mix(in oklab, var(--poll-color) 13%, transparent);
+      }
+
+      .poll-label::after {
+        content: '';
+        display: inline-block;
+        width: .875rem;
+        height: .875rem;
+        margin-inline-start: .375rem;
+        background: currentColor;
+        mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m3.5 8.5 3 3 6-7'/%3E%3C/svg%3E") center / contain no-repeat;
+        vertical-align: -.125em;
+      }
+
+      .poll-value {
+        color: var(--color-text-strong);
+      }
+    }
+
+    &:has(.poll-input:focus-visible) {
+      @apply --focus-ring;
+    }
+
+    /* Over: nothing more to choose, and the result stays as legible as before. */
+    &:has(.poll-input:disabled) {
+      cursor: default;
+    }
+
+    @media (pointer: coarse) {
+      min-height: 2.75rem;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      &::before {
+        transition: none;
+      }
+    }
+
+    @media (forced-colors: active) {
+      outline: 1px solid CanvasText;
+      outline-offset: -1px;
+
+      &::before {
+        background: GrayText;
+        opacity: .3;
+        forced-color-adjust: none;
+      }
+
+      &:has(.poll-input:checked) {
+        outline: 2px solid Highlight;
+        outline-offset: -2px;
+      }
+    }
+  }
+
+  /* The native input covers the answer and is not drawn: the answer itself is its face. */
+  .poll-input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    opacity: 0;
+    appearance: none;
+    cursor: inherit;
+  }
+
+  /* The answer's words. */
+  .poll-label {
+    position: relative;
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  /* Its share of the votes, in tabular figures: hidden until the result shows. */
+  .poll-value {
+    position: relative;
+    flex: none;
+    visibility: hidden;
+    color: var(--color-text-muted);
+    font-weight: 400;
+    font-variant-numeric: tabular-nums;
+    opacity: 0;
+    transition: opacity var(--duration-base) var(--easing-glide), visibility var(--duration-base);
+  }
+
+  /* A quiet line under the answers: how many voted, how long is left. */
+  .poll-meta {
+    margin: .25rem 0 0;
+    color: var(--color-text-muted);
+    font-size: .78125rem;
+    font-variant-numeric: tabular-nums;
+  }
+}

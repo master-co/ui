@@ -65,8 +65,11 @@ Or import only the theme and the components you use:
 | Surface | `sheet`, `sheet-flat`, `sheet-raised`, `sheet-floating`, `sheet-inverse`, `well`, `tray` |
 | Card | `card`, `card-flat`, `card-interactive`, `card-split`, `card-media`, `card-header`, `card-title`, `card-description`, `card-action`, `card-body`, `card-footer` |
 | Window | `window`, `window-flat`, `window-bar`, `window-controls`, `window-title`, `window-address`, `window-end`, `window-body` |
+| Ticket | `ticket`, `ticket-row`, `ticket-body`, `ticket-stub` |
+| Device | `device`, `device-screen` |
 | Divider | `divider`, `divider-vertical`, `divider-label` |
 | Scroll area | `scroll-area`, `scroll-area-inline` |
+| Reveal | `reveal` |
 | Icon | `icon` |
 | Button | `btn`, `btn-primary`, `btn-quiet`, `btn-brand`, `btn-danger`, `btn-sm`, `btn-lg`, `btn-square`, `btn-pill`, `btn-group` |
 | Toolbar | `toolbar`, `toolbar-floating`, `toolbar-separator` |
@@ -83,6 +86,7 @@ Or import only the theme and the components you use:
 | Swatch | `swatch`, `swatch-input`, `swatch-sm`, `swatch-lg`, `swatch-square` |
 | Rating | `rating`, `rating-input`, `rating-sm`, `rating-lg` |
 | Choice | `choice`, `choice-body`, `choice-title`, `choice-description`, `choice-end` |
+| Poll | `poll`, `poll-title`, `poll-option`, `poll-input`, `poll-label`, `poll-value`, `poll-meta` |
 | Checklist | `checklist`, `checklist-item`, `checklist-label`, `checklist-body`, `checklist-title`, `checklist-description`, `checklist-end`, `checklist-count` |
 | Dropzone | `dropzone`, `dropzone-input`, `dropzone-title`, `dropzone-description` |
 | OTP | `otp`, `otp-slot`, `otp-separator` |
@@ -98,6 +102,7 @@ Or import only the theme and the components you use:
 | Pagination | `pagination`, `pagination-gap` |
 | Steps | `steps`, `steps-vertical`, `steps-complete`, `steps-item`, `steps-body`, `steps-title`, `steps-description` |
 | Dialog | `dialog`, `dialog-sm`, `dialog-lg`, `dialog-drawer`, `dialog-drawer-start`, `dialog-sheet`, `dialog-header`, `dialog-title`, `dialog-description`, `dialog-body`, `dialog-footer`, `dialog-close` |
+| Lightbox | `lightbox`, `lightbox-media`, `lightbox-caption`, `lightbox-close` |
 | Popover | `popover`, `popover-end`, `popover-center`, `popover-top` |
 | Menu | `menu`, `menu-end`, `menu-top`, `menu-sub`, `menu-context`, `menu-item`, `menu-item-danger`, `menu-input`, `menu-shortcut`, `menu-label`, `menu-separator` |
 | Listbox | `listbox`, `listbox-option`, `listbox-body`, `listbox-description`, `listbox-end`, `listbox-group`, `listbox-label`, `listbox-separator`, `listbox-empty` |
@@ -109,20 +114,25 @@ Or import only the theme and the components you use:
 | Banner | `banner`, `banner-dismissible`, `banner-info`, `banner-success`, `banner-warning`, `banner-danger`, `banner-inverse`, `banner-brand`, `banner-content`, `banner-title`, `banner-action`, `banner-close` |
 | Progress | `progress`, `progress-sm`, `progress-lg`, `progress-segmented`, `progress-ring`, `progress-ring-sm`, `progress-ring-lg`, `progress-ring-xl` |
 | Meter | `meter`, `meter-sm`, `meter-lg`, `meter-segmented` |
+| Gauge | `gauge`, `gauge-sm`, `gauge-lg`, `gauge-value`, `gauge-label` |
 | Skeleton | `skeleton`, `skeleton-text`, `skeleton-circle` |
 | Shimmer | `shimmer` |
 | Spinner | `spinner`, `spinner-sm`, `spinner-lg`, `spinner-xl`, `spinner-inline` |
+| Busy | `busy` |
 | Empty | `empty`, `empty-media`, `empty-title`, `empty-description`, `empty-actions` |
 | Accordion | `accordion`, `accordion-item`, `accordion-trigger`, `accordion-content` |
 | Expand | `expand`, `expand-toggle`, `expand-more`, `expand-less` |
 | Table | `table`, `table-row`, `table-heading`, `table-cell`, `table-primary`, `table-numeric`, `table-compact`, `table-interactive`, `table-sticky` |
 | List | `list`, `list-row`, `list-media`, `list-body`, `list-title`, `list-description`, `list-end`, `list-interactive` |
+| Swipe | `swipe`, `swipe-content`, `swipe-actions`, `swipe-action`, `swipe-action-danger` |
 | Data list | `data-list`, `data-list-item`, `data-list-term`, `data-list-value` |
 | File | `file`, `file-failed`, `file-sm`, `file-interactive`, `file-page`, `file-thumb`, `file-body`, `file-name`, `file-meta`, `file-end`, `file-progress` |
 | Stat | `stat`, `stat-label`, `stat-row`, `stat-value`, `stat-delta`, `stat-delta-up`, `stat-delta-down`, `stat-description` |
 | Chart | `chart`, `chart-quiet`, `chart-values`, `chart-horizontal`, `chart-spark`, `chart-item`, `chart-label`, `chart-value` |
+| Breakdown | `breakdown`, `breakdown-rows`, `breakdown-item`, `breakdown-rest`, `breakdown-label`, `breakdown-value` |
 | Heatmap | `heatmap`, `heatmap-lg`, `heatmap-cell` |
 | Timeline | `timeline`, `timeline-item`, `timeline-marker`, `timeline-body`, `timeline-title`, `timeline-description`, `timeline-time` |
+| Trace | `trace`, `trace-step`, `trace-failed`, `trace-summary`, `trace-marker`, `trace-meta`, `trace-detail` |
 | Calendar | `calendar`, `calendar-header`, `calendar-title`, `calendar-grid`, `calendar-week`, `calendar-weekday`, `calendar-day`, `calendar-day-outside`, `calendar-day-range-start`, `calendar-day-range`, `calendar-day-range-end` |
 | Tree | `tree`, `tree-item`, `tree-toggle`, `tree-group`, `tree-sub` |
 | Carousel | `carousel`, `carousel-slide`, `carousel-2`, `carousel-3` |
@@ -132,12 +142,14 @@ Or import only the theme and the components you use:
 | Compare | `compare`, `compare-before`, `compare-after`, `compare-range` |
 | Quote | `quote`, `quote-lg`, `quote-text`, `quote-source`, `quote-name` |
 | Message | `message`, `message-sent`, `message-avatar`, `message-bubble`, `message-meta`, `message-typing` |
+| Thread | `thread`, `thread-item`, `thread-avatar`, `thread-body`, `thread-header`, `thread-text`, `thread-author`, `thread-meta`, `thread-replies` |
 | Avatar | `avatar`, `avatar-image`, `avatar-xs`, `avatar-sm`, `avatar-lg`, `avatar-xl`, `avatar-square`, `avatar-status`, `avatar-group` |
 | Badge | `badge`, `badge-sm`, `badge-lg`, `badge-pill`, `badge-outline`, `badge-raised`, `badge-ink`, `badge-info`, `badge-success`, `badge-warning`, `badge-danger`, `badge-dot`, `badge-live`, `badge-corner` |
 | Heading | `heading`, `heading-xs`, `heading-sm`, `heading-lg`, `heading-xl`, `heading-2xl`, `heading-display`, `eyebrow`, `lead`, `lead-sm`, `lead-lg` |
 | Code | `code`, `code-block`, `code-line`, `code-line-highlight`, `code-line-added`, `code-line-removed`, `code-numbered`, `code-panel`, `code-header`, `code-title` |
 | Kbd | `kbd`, `kbd-raised` |
 | Mark | `mark`, `mark-brand`, `mark-underline` |
+| Revision | `ins`, `del` |
 | Mention | `mention`, `mention-self` |
 | Citation | `citation` |
 | Page (layout) | `page` |

@@ -1004,4 +1004,202 @@
       background: var(--color-text-muted);
     }
   }
+
+  /*
+   * A gauge's dial: two thirds of a ring, open at the foot, filled with ink as far as --fill, a number from
+   * 0 to 1. The track is the same ink stepped back as one layer; both have round ends.
+   */
+  .cover-arc {
+    --fill: .5;
+    --d: 96px;
+    --w: 7px;
+    --radius: calc((var(--d) - var(--w)) / 2);
+    position: relative;
+    display: block;
+    flex: none;
+    width: var(--d);
+    height: calc(var(--d) * .75 + var(--w) / 4);
+
+    &::before, &::after {
+      content: '';
+      position: absolute;
+      inset: 0 0 auto;
+      height: var(--d);
+      border-radius: 999px;
+      mask: radial-gradient(farthest-side, transparent calc(100% - var(--w) - .5px), black calc(100% - var(--w)), black calc(100% - .5px), transparent);
+    }
+
+    &::before {
+      background:
+        radial-gradient(circle at calc(50% + var(--radius) * sin(240deg)) calc(50% - var(--radius) * cos(240deg)), var(--color-surface-inverse) calc(var(--w) / 2 - .5px), transparent calc(var(--w) / 2)),
+        radial-gradient(circle at calc(50% + var(--radius) * sin(480deg)) calc(50% - var(--radius) * cos(480deg)), var(--color-surface-inverse) calc(var(--w) / 2 - .5px), transparent calc(var(--w) / 2)),
+        conic-gradient(from 240deg, var(--color-surface-inverse) 240deg, transparent 0);
+      opacity: .12;
+    }
+
+    &::after {
+      --end: calc(240deg + var(--fill) * 240deg);
+      background:
+        radial-gradient(circle at calc(50% + var(--radius) * sin(240deg)) calc(50% - var(--radius) * cos(240deg)), var(--color-surface-inverse) calc(var(--w) / 2 - .5px), transparent calc(var(--w) / 2)),
+        radial-gradient(circle at calc(50% + var(--radius) * sin(var(--end))) calc(50% - var(--radius) * cos(var(--end))), var(--color-surface-inverse) calc(var(--w) / 2 - .5px), transparent calc(var(--w) / 2)),
+        conic-gradient(from 240deg, var(--color-surface-inverse) calc(var(--fill) * 240deg), transparent 0);
+    }
+  }
+
+  /* A breakdown's segment, --w of the bar wide and --tone of ink dark, and the dot of the same tone beside its name. */
+  .cover-part, .cover-legend {
+    display: block;
+    background: color-mix(in oklab, var(--color-surface-inverse) var(--tone, 100%), transparent);
+  }
+
+  .cover-part {
+    flex: var(--w, 1) 0 0;
+    height: 8px;
+    border-radius: 1.5px;
+
+    &:first-child {
+      border-start-start-radius: 999px;
+      border-end-start-radius: 999px;
+    }
+
+    &:last-child {
+      border-start-end-radius: 999px;
+      border-end-end-radius: 999px;
+    }
+
+    /* What is left: a well, not ink. */
+    &.cover-well {
+      border-radius: 1.5px 999px 999px 1.5px;
+      corner-shape: round;
+      background: var(--color-surface-inset);
+    }
+  }
+
+  .cover-legend {
+    flex: none;
+    width: 8px;
+    height: 8px;
+    border-radius: calc(2px * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+
+    &.cover-well {
+      background: var(--color-surface-inset);
+      box-shadow: inset 0 0 0 .5px var(--color-line-mark);
+    }
+  }
+
+  /*
+   * A ticket's two faces. Each is a sheet cut straight on the tear line; where the browser has corner-shape the
+   * corners on that line are scooped, so two of them punch a notch. The stub carries the perforation.
+   */
+  .cover-ticket, .cover-stub {
+    position: relative;
+    box-sizing: border-box;
+    border-radius: calc(var(--radius-surface) * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    box-shadow: var(--shadow-raised);
+  }
+
+  .cover-ticket {
+    border-end-start-radius: 0;
+    border-end-end-radius: 0;
+    background: var(--color-surface-raised);
+    clip-path: inset(-40px -40px 0 -40px);
+  }
+
+  .cover-stub {
+    border-start-start-radius: 0;
+    border-start-end-radius: 0;
+    background: linear-gradient(180deg, var(--color-surface-raised), var(--color-surface-raised-low)) var(--color-surface-raised-low);
+    clip-path: inset(0 -40px -40px -40px);
+
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0 12px auto;
+      height: 1px;
+      background: repeating-linear-gradient(90deg, var(--color-line-strong) 0 4px, transparent 0 8px);
+    }
+  }
+
+  @supports (corner-shape: scoop) {
+    .cover-ticket {
+      border-end-start-radius: 8px;
+      border-end-end-radius: 8px;
+      corner-end-start-shape: scoop;
+      corner-end-end-shape: scoop;
+    }
+
+    .cover-stub {
+      border-start-start-radius: 8px;
+      border-start-end-radius: 8px;
+      corner-start-start-shape: scoop;
+      corner-start-end-shape: scoop;
+    }
+  }
+
+  /* A phone's body, --d wide: a lifted sheet with a bezel, the camera's well, and a screen with the concentric corner. */
+  .cover-device {
+    --d: 120px;
+    position: relative;
+    display: block;
+    flex: none;
+    box-sizing: border-box;
+    width: var(--d);
+    aspect-ratio: 9 / 19.5;
+    padding: calc(var(--d) * .03);
+    border-radius: calc(var(--d) * .14 * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    background: linear-gradient(180deg, var(--color-surface-raised), var(--color-surface-raised-low)) var(--color-surface-raised-low);
+    box-shadow: inset 0 0 0 1px var(--color-line-hair), var(--shadow-lifted);
+
+    &::before {
+      content: '';
+      position: absolute;
+      z-index: 1;
+      top: calc(var(--d) * .06);
+      left: 35%;
+      width: 30%;
+      aspect-ratio: 3.4;
+      border-radius: 999px;
+      background: var(--color-surface-raised-low);
+      box-shadow: var(--shadow-pressed);
+    }
+  }
+
+  .cover-screen {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: calc(var(--d) * .14 * var(--corner-scale) - var(--d) * .03);
+    corner-shape: var(--corner-shape);
+    background: linear-gradient(160deg, color-mix(in oklch, var(--color-text-strong) 5%, transparent), color-mix(in oklch, var(--color-text-strong) 13%, transparent));
+    box-shadow: inset 0 0 0 .5px var(--color-line-contour);
+  }
+
+  /* A thread's line where it turns into a reply: down the comment's column, then round into the reply's avatar. */
+  .cover-elbow {
+    display: block;
+    flex: none;
+    box-sizing: border-box;
+    border-block-end: 1px solid var(--color-line-divider);
+    border-inline-start: 1px solid var(--color-line-divider);
+    border-end-start-radius: 10px;
+  }
+
+  /* A swipe's action: a cell of the well the row has uncovered, with a hairline at its start. */
+  .cover-action {
+    --glyph: 16px;
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 44px;
+    border-inline-start: 1px solid var(--color-line-hair);
+    color: var(--color-text-muted);
+  }
+
+  /* Inserted words: a wash over a fine underline. Deleted ones are a struck bar. */
+  .cover-mark.cover-mark-inserted {
+    box-shadow: inset 0 -1px 0 var(--color-line-mark);
+  }
 }

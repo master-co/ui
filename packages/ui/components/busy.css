@@ -1,0 +1,81 @@
+/*
+ * Busy: a region whose content is being fetched again.
+ * While the region carries aria-busy="true", a veil in the color of the surface it lies on steps its content
+ * back and a spinner turns in the middle, where the veil is whole. What was there stays where it was, so
+ * nothing jumps when the new content arrives; for content that has never loaded, use a skeleton instead.
+ * The veil waits 160ms before it shows: work that ends at once never flashes. It takes the region's own
+ * corner and keeps the pointer off what is under it; add the inert attribute to keep the keyboard out too.
+ */
+@layer components {
+  .busy {
+    --busy-size: 1.25rem;
+    --busy-width: max(1.5px, calc(var(--busy-size) / 9));
+    --busy-surface: var(--surface-color, var(--color-surface-base));
+    position: relative;
+
+    &[aria-busy="true"] {
+      /* The veil. */
+      &::before {
+        content: '';
+        position: absolute;
+        z-index: 2;
+        inset: 0;
+        border-radius: inherit;
+        corner-shape: inherit;
+        /* The veil is whole behind the spinner and thins out around it, so the ring never stands on a word. */
+        background:
+          radial-gradient(circle at center, var(--busy-surface) calc(var(--busy-size) * .7), transparent calc(var(--busy-size) * 1.7)),
+          color-mix(in oklab, var(--busy-surface) 62%, transparent);
+        cursor: progress;
+        animation: busy-arrive var(--duration-base) var(--easing-glide) 160ms both;
+      }
+
+      /* The spinner: the same fine ring as the spinner component, in the strong ink. */
+      &::after {
+        content: '';
+        position: absolute;
+        z-index: 3;
+        inset: 0;
+        width: var(--busy-size);
+        height: var(--busy-size);
+        margin: auto;
+        border-radius: 999px;
+        background: conic-gradient(from 90deg, color-mix(in oklab, var(--color-text-strong) 12%, transparent) 0 18%, var(--color-text-strong));
+        mask: radial-gradient(farthest-side, transparent calc(100% - var(--busy-width) - .5px), black calc(100% - var(--busy-width)), black calc(100% - .5px), transparent);
+        pointer-events: none;
+        animation: busy-arrive var(--duration-base) var(--easing-glide) 160ms both, busy-rotate .72s linear infinite;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        &::after {
+          animation-duration: var(--duration-base), 1.8s;
+        }
+      }
+
+      @media (forced-colors: active) {
+        &::before {
+          background: Canvas;
+          opacity: .7;
+          animation: none;
+        }
+
+        &::after {
+          background: conic-gradient(from 90deg, GrayText 0 18%, CanvasText);
+          forced-color-adjust: none;
+        }
+      }
+    }
+  }
+}
+
+@keyframes busy-arrive {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes busy-rotate {
+  to {
+    rotate: 360deg;
+  }
+}

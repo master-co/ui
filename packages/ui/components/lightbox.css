@@ -1,0 +1,148 @@
+/*
+ * Lightbox: a picture opened large over the page.
+ * A native <dialog>, opened as a modal by the thumbnail's own button with commandfor and command="show-modal".
+ * The dialog has no sheet: it is exactly as large as the picture it holds, so a click anywhere else is a
+ * click outside it and, with closedby="any", closes it. The page behind is dimmed and blurred well out of
+ * focus, and the picture stands on it with the shadow of an overlay.
+ * The picture is 64rem wide, or as wide as the viewport lets it be with a 24px gutter on every side, at the
+ * proportions set in --lightbox-ratio, 3 by 2 unless told otherwise. Its size comes from that and never from
+ * the file, so an image, a video and a frame are all sized the same way and nothing moves when one loads.
+ * A caption is a floating bar under the picture, as wide as it is. A close button rests 8px inside its corner.
+ */
+@layer components {
+  .lightbox {
+    --lightbox-width: 64rem;
+    --lightbox-ratio: 3 / 2;
+    --lightbox-radius: var(--radius-control-lg);
+    --lightbox-gutter: 1.5rem;
+    /* The room a caption takes under the picture. */
+    --lightbox-room: 0rem;
+    width: fit-content;
+    max-width: none;
+    height: fit-content;
+    max-height: none;
+    margin: auto;
+    padding: 0;
+    border: 0;
+    overflow: visible;
+    background: transparent;
+    color: var(--color-text-body);
+    /* Closed is where it leaves to: it fades and settles back a little, faster than it arrived. */
+    opacity: 0;
+    scale: .96;
+    transition-property: opacity, scale, overlay, display;
+    transition-duration: var(--duration-quick);
+    transition-timing-function: var(--easing-glide);
+    transition-behavior: allow-discrete;
+
+    &[open] {
+      display: grid;
+      gap: .5rem;
+      opacity: 1;
+      scale: 1;
+      transition-duration: var(--duration-base);
+
+      @starting-style {
+        opacity: 0;
+        scale: .96;
+      }
+    }
+
+    /* The page steps well back: the same scrim as a dialog, with a deeper blur. */
+    &::backdrop {
+      background: var(--color-surface-scrim);
+      backdrop-filter: blur(16px);
+      opacity: 0;
+      transition-property: opacity, overlay, display;
+      transition-duration: var(--duration-quick);
+      transition-timing-function: var(--easing-glide);
+      transition-behavior: allow-discrete;
+    }
+
+    &[open]::backdrop {
+      opacity: 1;
+      transition-duration: var(--duration-base);
+
+      @starting-style {
+        opacity: 0;
+      }
+    }
+
+    /* With a caption under it, the picture leaves room for the bar. */
+    &:has(.lightbox-caption) {
+      --lightbox-room: 3rem;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      scale: none;
+
+      &[open] {
+        scale: none;
+
+        @starting-style {
+          scale: none;
+        }
+      }
+    }
+
+    @media (forced-colors: active) {
+      &::backdrop {
+        background: Canvas;
+        backdrop-filter: none;
+      }
+    }
+  }
+
+  /* The picture, a video or a frame: as wide as its limit, the viewport's width or the viewport's height allows. */
+  .lightbox-media {
+    display: block;
+    width: min(var(--lightbox-width), 100vw - var(--lightbox-gutter) * 2, (100dvh - var(--lightbox-gutter) * 2 - var(--lightbox-room)) * var(--lightbox-ratio));
+    height: auto;
+    aspect-ratio: var(--lightbox-ratio);
+    margin: 0;
+    border: 0;
+    border-radius: calc(var(--lightbox-radius) * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    background: var(--color-surface-inset);
+    box-shadow: var(--shadow-overlay);
+    outline: 1px solid var(--color-line-image);
+    outline-offset: -1px;
+    object-fit: cover;
+
+    @media (forced-colors: active) {
+      outline-color: CanvasText;
+    }
+  }
+
+  /* The caption: a floating bar as wide as the picture, which never makes the dialog wider than it. */
+  .lightbox-caption {
+    box-sizing: border-box;
+    width: 0;
+    min-width: 100%;
+    margin: 0;
+    padding: .5rem .875rem;
+    border-radius: calc(var(--lightbox-radius) * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    background: var(--color-surface-floating);
+    color: var(--color-text-body);
+    box-shadow: var(--shadow-floating);
+    font-size: .8125rem;
+    line-height: 1.45;
+    text-align: center;
+    text-wrap: balance;
+    overflow-wrap: anywhere;
+
+    @media (forced-colors: active) {
+      outline: 1px solid CanvasText;
+      outline-offset: -1px;
+    }
+  }
+
+  /* On the close button: it rests inside the picture's top corner. */
+  .lightbox-close {
+    position: absolute;
+    z-index: 1;
+    top: .5rem;
+    inset-inline-end: .5rem;
+  }
+}

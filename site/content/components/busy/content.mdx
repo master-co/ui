@@ -1,0 +1,73 @@
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+Busy marks a region whose content is being fetched again: a card after its filter changed, a table while a page loads, a form while it saves. Put `busy` on the region and set `aria-busy="true"` while the work runs. A veil in the color of the region's surface steps the content back and a spinner turns in the middle; what was there keeps its place, so nothing jumps when the new content arrives.
+
+<ComponentPreview name="default" height={200} title="Busy" bodyClass="flex items-center justify-center p-lg" html={`<article class="card busy w-full max-w(320)" id="revenue" aria-label="Revenue">
+  <header class="card-header">
+    <h3 class="card-title">Revenue</h3>
+    <p class="card-description">$48,200 this month, up 12% on October.</p>
+  </header>
+  <footer class="card-footer">
+    <button class="btn btn-sm" type="button" id="revenue-refresh">Refresh</button>
+  </footer>
+</article>
+<script>
+  var card = document.getElementById('revenue')
+  document.getElementById('revenue-refresh').addEventListener('click', function () {
+    card.setAttribute('aria-busy', 'true')
+    card.inert = true
+    setTimeout(function () {
+      card.removeAttribute('aria-busy')
+      card.inert = false
+    }, 1800)
+  })
+</script>`} caption="Press Refresh: the card is busy for two seconds." />
+
+## One attribute \{#one-attribute\}
+
+The class draws nothing by itself. `aria-busy="true"` on the same element is the state: it is what a screen reader is told, and it is what the stylesheet reads, so the two cannot disagree. Remove the attribute, or set it to `false`, when the work ends.
+
+The veil waits 160ms before it shows, then fades in. Work that ends at once never flashes, and a reader is not told to wait for something that is already there.
+
+<ComponentPreview name="resting" height={200} title="While busy" bodyClass="flex items-center justify-center p-lg" html={`<article class="card busy w-full max-w(320)" aria-busy="true" aria-label="Revenue" inert>
+  <header class="card-header">
+    <h3 class="card-title">Revenue</h3>
+    <p class="card-description">$48,200 this month, up 12% on October.</p>
+  </header>
+  <footer class="card-footer">
+    <button class="btn btn-sm" type="button">Refresh</button>
+  </footer>
+</article>`} />
+
+## The veil \{#the-veil\}
+
+The veil is mixed from `--surface-color`, which a [sheet](/components/surface), a card and a dialog publish, so it dims a card with the card's own color and never with a grey. On a region with no surface of its own it uses the page's canvas. It takes the region's corner, and it is whole behind the spinner and thinner around it, so the ring never stands on a word.
+
+The veil keeps the pointer off what is under it. It cannot keep the keyboard out: add the `inert` attribute while the region is busy, and remove it after, as the first example does.
+
+`--busy-size` sets the spinner's diameter, 20px by default.
+
+## Busy or skeleton \{#busy-or-skeleton\}
+
+Busy is for content that is already there and is being replaced. Content that has never loaded has nothing to step back: show its shape with a [skeleton](/components/skeleton). A wait that belongs to one control is a [spinner](/components/spinner) in that control, and a button has its own `aria-busy` state.
+
+## Accessibility \{#accessibility\}
+
+- `aria-busy="true"` tells assistive technology that the region is being updated, so it may wait until the attribute is removed before it reads changes inside it.
+- It does not announce that work has started. Say so in words in a live region outside the busy one, or in the control that started it.
+- Make the region `inert` while it is busy, so its controls cannot be focused or pressed under the veil.
+- The spinner turns more slowly for a reader who asks for reduced motion, and in forced colors the veil is the canvas color.
+
+## Classes \{#classes\}
+
+<ContractTable name="busy" />
+
+## Custom properties \{#custom-properties\}
+
+<ContractTable name="busy" show="properties" />
+
+## Source \{#source\}
+
+<ComponentSource name="busy" />

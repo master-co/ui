@@ -1,0 +1,153 @@
+/*
+ * Gauge: a reading on a dial, for one measurement a reader takes in at a glance.
+ * An element with role="meter" draws two thirds of a ring, open at the foot, and fills it with ink as far as
+ * the reading has come. The figure stands in the middle and one word under it, between the two ends of the arc.
+ * Where the browser supports typed attr(), the gauge reads aria-valuenow, aria-valuemin and aria-valuemax
+ * itself, so the reading is written once, for people and for the drawing; elsewhere set --gauge-value.
+ * The track and the fill both have round ends, and the fill eases to each new reading.
+ * A gauge is 120px across (88 small, 160 large) and its stroke is a fifteenth of that.
+ */
+@property --gauge-value {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+
+@layer components {
+  .gauge {
+    --gauge-size: 7.5rem;
+    --gauge-width: calc(var(--gauge-size) / 15);
+    --gauge-color: var(--color-surface-inverse);
+    --gauge-min: 0;
+    --gauge-max: 100;
+    /* How far along the arc the reading is, from nothing to all of it. */
+    --gauge-share: clamp(0, calc((var(--gauge-value) - var(--gauge-min)) / (var(--gauge-max) - var(--gauge-min))), 1);
+    --gauge-radius: calc((var(--gauge-size) - var(--gauge-width)) / 2);
+    position: relative;
+    display: inline-grid;
+    flex: none;
+    align-content: end;
+    justify-items: center;
+    gap: calc(var(--gauge-size) * .05);
+    box-sizing: border-box;
+    width: var(--gauge-size);
+    /* The arc ends a quarter of the way below the middle, so the box stops there, and so does what it can scroll. */
+    height: calc(var(--gauge-size) * .75 + var(--gauge-width) / 4);
+    margin: 0;
+    overflow: clip;
+    color: var(--color-text-strong);
+    font: var(--font-weight-control) calc(var(--gauge-size) * .235)/1 var(--font-family-sans);
+    font-feature-settings: inherit;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -.02em;
+    text-align: center;
+    vertical-align: middle;
+    transition: --gauge-value var(--duration-base) var(--easing-glide);
+
+    @supports (x: attr(x type(*))) {
+      &[aria-valuenow] {
+        --gauge-value: attr(aria-valuenow type(<number>), 0);
+      }
+
+      &[aria-valuemin] {
+        --gauge-min: attr(aria-valuemin type(<number>), 0);
+      }
+
+      &[aria-valuemax] {
+        --gauge-max: attr(aria-valuemax type(<number>), 100);
+      }
+    }
+
+    /* Both drawings are a square as wide as the gauge, cut down to a ring; the box shows its upper three quarters. */
+    &::before, &::after {
+      content: '';
+      position: absolute;
+      inset: 0 0 auto;
+      height: var(--gauge-size);
+      border-radius: 999px;
+      mask: radial-gradient(farthest-side, transparent calc(100% - var(--gauge-width) - .5px), black calc(100% - var(--gauge-width)), black calc(100% - .5px), transparent);
+      pointer-events: none;
+    }
+
+    /*
+     * The track: the whole arc, from 240 to 480 degrees, with a dot at each end to round it. It is drawn in
+     * the fill's own color and stepped back as one layer, so the dots and the arc never add up.
+     */
+    &::before {
+      background:
+        radial-gradient(circle at calc(50% + var(--gauge-radius) * sin(240deg)) calc(50% - var(--gauge-radius) * cos(240deg)), var(--gauge-color) calc(var(--gauge-width) / 2 - .5px), transparent calc(var(--gauge-width) / 2)),
+        radial-gradient(circle at calc(50% + var(--gauge-radius) * sin(480deg)) calc(50% - var(--gauge-radius) * cos(480deg)), var(--gauge-color) calc(var(--gauge-width) / 2 - .5px), transparent calc(var(--gauge-width) / 2)),
+        conic-gradient(from 240deg, var(--gauge-color) 240deg, transparent 0);
+      opacity: .12;
+    }
+
+    /* The fill: the same arc as far as the reading. Its end dots have no radius at nothing, so an empty gauge is an empty track. */
+    &::after {
+      --gauge-end: calc(240deg + var(--gauge-share) * 240deg);
+      --gauge-cap: calc(var(--gauge-width) / 2 * min(1, var(--gauge-share) * 200));
+      background:
+        radial-gradient(circle at calc(50% + var(--gauge-radius) * sin(240deg)) calc(50% - var(--gauge-radius) * cos(240deg)), var(--gauge-color) calc(var(--gauge-cap) - .5px), transparent var(--gauge-cap)),
+        radial-gradient(circle at calc(50% + var(--gauge-radius) * sin(var(--gauge-end))) calc(50% - var(--gauge-radius) * cos(var(--gauge-end))), var(--gauge-color) calc(var(--gauge-cap) - .5px), transparent var(--gauge-cap)),
+        conic-gradient(from 240deg, var(--gauge-color) calc(var(--gauge-share) * 240deg), transparent 0);
+    }
+
+    /* Without a word under it, the figure stands at the middle of the dial. */
+    &:not(:has(.gauge-label)) {
+      align-content: center;
+      padding-top: calc(var(--gauge-size) * .2);
+    }
+
+    &.gauge-sm {
+      --gauge-size: 5.5rem;
+    }
+
+    &.gauge-lg {
+      --gauge-size: 10rem;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: none;
+    }
+
+    @media (forced-colors: active) {
+      --gauge-color: Highlight;
+      forced-color-adjust: none;
+
+      &::before {
+        --gauge-color: GrayText;
+        opacity: 1;
+      }
+    }
+  }
+
+  /* The reading, in the gauge's own large figures. */
+  .gauge-value {
+    position: relative;
+    z-index: 1;
+    max-width: 100%;
+  }
+
+  /* What is measured: one quiet word between the ends of the arc. */
+  .gauge-label {
+    position: relative;
+    z-index: 1;
+    max-width: 62%;
+    overflow: hidden;
+    color: var(--color-text-muted);
+    font: 400 .75rem/1rem var(--font-family-sans);
+    font-feature-settings: inherit;
+    letter-spacing: 0;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .gauge-sm .gauge-label {
+    font-size: .6875rem;
+    line-height: .875rem;
+  }
+
+  .gauge-lg .gauge-label {
+    font-size: .8125rem;
+    line-height: 1.125rem;
+  }
+}
