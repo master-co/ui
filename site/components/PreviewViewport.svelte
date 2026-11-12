@@ -3,6 +3,7 @@
   import { getSite } from '@master/internal-site/site'
   import '@master/ui/components/window.css'
   import '@master/ui/components/surface.css'
+  import '@master/ui/components/texture.css'
   import '@master/ui/components/button.css'
   import '@master/ui/components/icon.css'
   import '@master/ui/components/slider.css'
@@ -11,7 +12,7 @@
   import IconSun from '@tabler/icons-svelte-runes/icons/sun'
 
   const { t } = getSite()
-  let { title, document: source, height, mediumHeight = height, narrowHeight = height, responsive = false, theme = false, framed = false }: {
+  let { title, document: source, height, mediumHeight = height, narrowHeight = height, responsive = false, theme = false, framed = false, background = 'plain' }: {
     title: string
     document: string
     /** Authored viewport height. CSS may select another authored height for a narrow tray. */
@@ -22,6 +23,8 @@
     theme?: boolean
     /** A scaled page has a UI sheet frame; component specimens stay transparent. */
     framed?: boolean
+    /** The stage's texture: Master UI's dots or stripes, or none under running text. */
+    background?: 'dots' | 'stripes' | 'plain'
   } = $props()
   let frame = $state<HTMLIFrameElement>()
   let body = $state<HTMLDivElement>()
@@ -82,7 +85,7 @@
 </script>
 
 <!-- The server reserves the final height, including before lazy loading and hydration. -->
-<div class="window window-flat ui-browser preview-window" data-demo-viewport data-variant={responsive ? undefined : 'plain'} data-ready={ready} style={`--specimen-height: ${height}px; --specimen-height-medium: ${mediumHeight}px; --specimen-height-narrow: ${narrowHeight}px`}>
+<div class={['window window-flat ui-browser preview-window', background !== 'plain' && 'texture', background === 'stripes' && 'texture-stripes']} data-demo-viewport data-variant={responsive ? undefined : 'plain'} data-ready={ready} style={`--specimen-height: ${height}px; --specimen-height-medium: ${mediumHeight}px; --specimen-height-narrow: ${narrowHeight}px`}>
   {#if responsive}<div class="window-bar" aria-hidden="true"><span class="window-controls"></span></div>{/if}
   <div bind:this={body} class="window-body preview-body">
     <div class="preview-viewport" style:width={width ? `${width}px` : 'min(100%, 1600px)'}>

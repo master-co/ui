@@ -71,6 +71,7 @@ Or import only the theme and the components you use:
 | Device | `device`, `device-screen` |
 | Hotspot | `hotspot`, `hotspot-pin` |
 | Divider | `divider`, `divider-vertical`, `divider-label` |
+| Texture | `texture`, `texture-grid`, `texture-stripes`, `texture-crosshatch`, `texture-checker`, `texture-fade` |
 | Scroll area | `scroll-area`, `scroll-area-inline` |
 | Reveal | `reveal` |
 | Icon | `icon` |

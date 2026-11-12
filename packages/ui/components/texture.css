@@ -1,0 +1,66 @@
+/*
+ * Texture: one drawing repeated across the face of a surface. It is a background image in the theme's
+ * texture ink, tiled at --texture-size, so it stands on whatever color the element already has and takes
+ * the place of that face's own image only. Each texture says one thing about the room it fills: dots are an
+ * open stage, a grid is measured room, stripes are room kept empty, a crosshatch is room that cannot be used
+ * and a checker is nothing at all, the ground under something transparent.
+ *
+ * Every mark is a hard-stopped gradient, so one tile holds the drawing and --texture-weight is its real
+ * thickness. Stripes turn 45° in a square tile, which sets them the tile's side over √2 apart. Tiles are counted
+ * from the middle of the room, so the drawing is cut the same way at opposite edges. Where the browser has
+ * round(), the middle is snapped to a whole pixel: a tile centered in a room of odd width would otherwise land
+ * on half a pixel and blur every mark. The drawing is published as --texture-image, to lay under another image
+ * or to use as a mask.
+ *
+ * In forced colors the drawing is removed: a texture never carries a meaning alone.
+ */
+@layer components {
+  .texture {
+    --texture-ink: var(--color-texture);
+    --texture-size: 12px;
+    --texture-weight: 1px;
+    /* Dots: one point in the middle of each tile, with a quarter pixel of edge so it stays round. */
+    --texture-image: radial-gradient(circle, var(--texture-ink) var(--texture-weight), transparent calc(var(--texture-weight) + .25px));
+    background-image: var(--texture-image);
+    background-size: var(--texture-size) var(--texture-size);
+    background-position: center;
+    background-position: round(50%, 1px) round(50%, 1px);
+
+    /* A rule along the top and the start of each tile. Rules cover more than points do, so they take half the ink. */
+    &.texture-grid {
+      --texture-size: 24px;
+      --texture-image: conic-gradient(from 90deg at var(--texture-weight) var(--texture-weight), transparent 25%, color-mix(in oklab, var(--texture-ink) 50%, transparent) 0);
+    }
+
+    /* Two hairlines a tile: one through its corners, one across its middle. */
+    &.texture-stripes {
+      --texture-size: 8px;
+      --texture-weight: .5px;
+      --texture-image: linear-gradient(135deg, var(--texture-ink) 0 var(--texture-weight), transparent 0 50%, var(--texture-ink) 0 calc(50% + var(--texture-weight)), transparent 0);
+    }
+
+    /* The same hairlines both ways. This drawing is two layers. */
+    &.texture-crosshatch {
+      --texture-size: 8px;
+      --texture-weight: .5px;
+      --texture-image:
+        linear-gradient(135deg, var(--texture-ink) 0 var(--texture-weight), transparent 0 50%, var(--texture-ink) 0 calc(50% + var(--texture-weight)), transparent 0),
+        linear-gradient(45deg, var(--texture-ink) 0 var(--texture-weight), transparent 0 50%, var(--texture-ink) 0 calc(50% + var(--texture-weight)), transparent 0);
+    }
+
+    /* Two squares of four. Squares cover half the face, so they take half the ink. */
+    &.texture-checker {
+      --texture-size: 16px;
+      --texture-image: conic-gradient(color-mix(in oklab, var(--texture-ink) 50%, transparent) 25%, transparent 0 50%, color-mix(in oklab, var(--texture-ink) 50%, transparent) 0 75%, transparent 0);
+    }
+
+    /* The drawing thins out toward the edges. A mask fades what the element holds too, so it goes on an element of its own. */
+    &.texture-fade {
+      mask-image: radial-gradient(farthest-side, black 30%, transparent);
+    }
+
+    @media (forced-colors: active) {
+      background-image: none;
+    }
+  }
+}

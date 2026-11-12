@@ -14,6 +14,7 @@ export const components = [
   { slug: 'ticket', name: 'Ticket', category: 'Materials', description: 'A sheet with a tear line: a pass, a coupon, a receipt and its stub.' },
   { slug: 'pile', name: 'Pile', category: 'Materials', description: 'Several things shown as one, with the edges of the others under it.' },
   { slug: 'divider', name: 'Divider', category: 'Materials', description: 'One hairline between sections, with an optional label.' },
+  { slug: 'texture', name: 'Texture', category: 'Materials', description: 'Dots, a grid, stripes, a crosshatch and a checker, drawn across the face of a surface.' },
   { slug: 'arrangements', name: 'Arrangements', category: 'Layouts', description: 'Stack, cluster, split and center: the four moves most layouts are made of.' },
   { slug: 'auto-grid', name: 'Auto grid', category: 'Layouts', description: 'As many equal columns as fit, counted by the grid itself.' },
   { slug: 'bento', name: 'Bento', category: 'Layouts', description: 'Tiles of a few sizes fitted into one box, in columns that follow its room.' },

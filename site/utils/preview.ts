@@ -1,7 +1,7 @@
 /**
  * Previews render in the typography the theme guide recommends: Geist with its stylistic sets, light regular text.
  * The document has no canvas of its own. The tray's stage shows through it, so a specimen stands on the stage's
- * material (plain, dots or hatch) and a page paints its own surface.
+ * material (plain, dots or stripes) and a page paints its own surface.
  */
 export const previewHead = `<style>
 @font-face { font-family: Geist; font-style: normal; font-weight: 100 900; font-display: block; src: url("/fonts/GeistVariable.woff2") format("woff2"); }

@@ -71,6 +71,7 @@ A page has no real size, so its cover is the kind that may be a **plan**: the wh
 | `cover-tone`, `cover-skeleton` | A chip-toned face (an alert, inline code), and the same without a contour. |
 | `cover-well`, `cover-focus` | A field, a slot or a track; with `cover-focus`, the focused one. |
 | `cover-dashed` | A dropzone's dashed contour. |
+| `cover-texture`, `cover-texture-grid`, `cover-texture-stripes` | On a `cover-well`: dots, a grid or stripes across it, in the texture ink. |
 | `cover-media` | A picture: a tone with an inward outline. |
 | `cover-control` | A button at rest. With `cover-control-sm`, `cover-control-lg`, `cover-square`, `cover-quiet`, `cover-pressed`, `cover-ink`. |
 | `cover-ink` | The ink fill; bars and glyphs on it turn to the inverse ink. Also on `cover-chip`, `cover-dot`, `cover-star`, `cover-day`. |
