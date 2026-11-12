@@ -9,9 +9,10 @@ const page = (slug: string) => readFileSync(new URL(`../../../site/content/${slu
 
 test('portable figures keep the authored explanation, formatting and links', () => {
   const caption = '**A scoped token.** Descendants inherit `--radius-control`; [properties](/guide/customization#property) belong on the component.'
-  const source = `Before\n\n<GuideFigure name="theming">\n\n${caption}\n\n</GuideFigure>\n\nAfter`
+  const source = `Before\n\n<GuideFigure name="theming" title="Token scope and inheritance">\n\n${caption}\n\n</GuideFigure>\n\nAfter`
   const markdown = figureMarkdown(source)
   assert.ok(markdown.includes(caption))
+  assert.ok(markdown.includes('**Token scope and inheritance**'))
   assert.ok(markdown.startsWith('Before'))
   assert.ok(markdown.endsWith('After'))
   assert.doesNotMatch(markdown, /<\/?GuideFigure/)

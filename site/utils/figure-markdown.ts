@@ -11,10 +11,11 @@ export function figureMarkdown(source: string): string {
       return line
     }
     if (fence) return line
-    if (/^<GuideFigure name="[\w-]+">\s*$/.test(line)) {
+    const figure = /^<GuideFigure name="[\w-]+"(?: title="([^"\n]+)")?>\s*$/.exec(line)
+    if (figure) {
       if (inFigure) throw new Error('Guide figures cannot be nested.')
       inFigure = true
-      return ''
+      return figure[1] ? `**${figure[1]}**` : ''
     }
     if (/^<\/GuideFigure>\s*$/.test(line)) {
       if (!inFigure) throw new Error('Unmatched GuideFigure closing tag.')

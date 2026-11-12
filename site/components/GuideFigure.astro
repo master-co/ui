@@ -1,51 +1,50 @@
 ---
 import type { AstroComponentFactory } from 'astro/runtime/server/index.js'
+import Demo from '@master/internal-site/demo/Demo.svelte'
 
-interface Props { name: string }
-const { name } = Astro.props
+interface Props { name: string; title: string }
+const { name, title } = Astro.props
 const drawings = import.meta.glob<{ default: AstroComponentFactory }>('./guide-art/*.astro', { eager: true })
 const Art = drawings[`./guide-art/${name}.astro`]?.default
 if (!Art) throw new Error(`Missing Guide illustration: ${name}`)
 ---
 
-<figure class="guide-figure" data-guide-figure={name}>
+<Demo title={title} frameClassName="guide-figure" data-guide-figure={name} padding="sm">
   <div class="guide-figure-art" aria-hidden="true"><Art /></div>
-  <figcaption><slot /></figcaption>
-</figure>
+  <Fragment slot="caption"><div class="guide-figure-caption"><slot /></div></Fragment>
+</Demo>
 
 <style>
-  .guide-figure {
+  :global(.guide-figure) {
     --gf-ink: var(--ui-text-strong);
     --gf-muted: var(--ui-text-muted);
     --gf-line: var(--ui-line-strong);
     --gf-surface: var(--ui-surface-canvas);
     --gf-soft: var(--ui-surface-tray);
     container-type: inline-size;
-    margin: 2rem 0;
+    margin-block: 2rem;
     color: var(--gf-ink);
   }
   .guide-figure-art {
-    padding: 1.5rem 0;
-    border-block: 1px solid var(--ui-line-contour);
+    width: 100%;
     font-size: .875rem;
     line-height: 1.5;
     overflow-wrap: anywhere;
   }
   /* The caption is ordinary MDX: one explanation for sighted readers, assistive
      technology, search and the portable Markdown adapter. */
-  figcaption { margin-top: .875rem; color: var(--gf-muted); font-size: .875rem; line-height: 1.6; }
-  figcaption :global(p) { margin: 0; }
-  figcaption :global(strong) { color: var(--gf-ink); font-weight: 550; }
-  .guide-figure figcaption :global(code) {
+  .guide-figure-caption :global(p) { margin: 0; }
+  .guide-figure-caption :global(strong) { color: var(--gf-ink); font-weight: 550; }
+  .guide-figure-caption :global(code) {
     display: inline-block;
     max-width: 100%;
-    font-size: .8125rem;
+    font-size: inherit;
     overflow-wrap: anywhere;
     white-space: normal;
     vertical-align: baseline;
   }
   .guide-figure-art :global(code) { font-size: .8125rem; overflow-wrap: anywhere; white-space: normal; }
   @media (forced-colors: active) {
-    .guide-figure { --gf-ink: CanvasText; --gf-muted: CanvasText; --gf-line: CanvasText; --gf-surface: Canvas; --gf-soft: Canvas; }
+    :global(.guide-figure) { --gf-ink: CanvasText; --gf-muted: CanvasText; --gf-line: CanvasText; --gf-surface: Canvas; --gf-soft: Canvas; }
   }
 </style>

@@ -82,7 +82,7 @@
 </script>
 
 <!-- The server reserves the final height, including before lazy loading and hydration. -->
-<div class="window window-flat ui-browser preview-window" data-variant={responsive ? undefined : 'plain'} data-ready={ready} style={`--specimen-height: ${height}px; --specimen-height-medium: ${mediumHeight}px; --specimen-height-narrow: ${narrowHeight}px`}>
+<div class="window window-flat ui-browser preview-window" data-demo-viewport data-variant={responsive ? undefined : 'plain'} data-ready={ready} style={`--specimen-height: ${height}px; --specimen-height-medium: ${mediumHeight}px; --specimen-height-narrow: ${narrowHeight}px`}>
   {#if responsive}<div class="window-bar" aria-hidden="true"><span class="window-controls"></span></div>{/if}
   <div bind:this={body} class="window-body preview-body">
     <div class="preview-viewport" style:width={width ? `${width}px` : 'min(100%, 1600px)'}>
@@ -93,7 +93,7 @@
   </div>
 </div>
 {#if responsive || theme}
-  <div class="ui-browser-tools preview-tools" role="group" aria-label={t('{label} controls').replace('{label}', t(title))}>
+  <div class="ui-browser-tools preview-tools" data-demo-tools role="group" aria-label={t('{label} controls').replace('{label}', t(title))}>
     {#if responsive}
       <span class="preview-range">
         <label class="preview-label" for={widthId}>{t('Viewport')}</label>

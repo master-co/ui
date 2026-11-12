@@ -4,8 +4,7 @@
  *
  * A reader scrolling the page should pass over a preview, not get caught in it. So a preview whose document
  * scrolls, or that holds a large or tall scrolling region, starts idle: the pointer goes through its frame to the page,
- * and a small pill says how to use it. One click makes it live. It goes back to idle when the pointer leaves it,
- * on Escape, on a press anywhere else, and when it scrolls out of view.
+ * and a small pill says how to use it. One click keeps that preview live for the lifetime of its tray.
  *
  * Only the pointer is guarded. The frame stays in the tab order, so the keyboard reaches it either way, and a
  * preview that does not scroll is never guarded.
@@ -41,10 +40,6 @@
     return false
   }
 
-  function release(tray: HTMLElement) {
-    if (tray.dataset.previewGuard === 'active') tray.dataset.previewGuard = 'idle'
-  }
-
   function watch(tray: HTMLElement) {
     const frame = tray.querySelector('iframe')
     const viewport = frame?.parentElement
@@ -69,8 +64,6 @@
       contentObserver = new ResizeObserver(later)
       contentObserver.observe(doc.body)
       contentObserver.observe(doc.documentElement)
-      // Escape inside the frame releases it too; keys there never reach this document.
-      doc.addEventListener('keydown', event => { if (event.key === 'Escape') release(tray) })
     }
     frame.addEventListener('load', loaded)
     loaded()
@@ -84,34 +77,25 @@
       tray.dataset.previewGuard = 'active'
       frame.focus({ preventScroll: true })
     })
-    viewport.addEventListener('pointerleave', event => { if (event.pointerType === 'mouse') release(tray) })
-    new IntersectionObserver(entries => { if (!entries.some(entry => entry.isIntersecting)) release(tray) }).observe(viewport)
   }
 
   function start() {
     document.querySelectorAll<HTMLElement>('[data-component-preview]').forEach(watch)
   }
 
-  document.addEventListener('pointerdown', event => {
-    const tray = (event.target as Element).closest?.('.preview-viewport')?.closest('[data-component-preview]')
-    document.querySelectorAll<HTMLElement>('[data-preview-guard="active"]').forEach(active => { if (active !== tray) release(active) })
-  })
-  document.addEventListener('keydown', event => {
-    if (event.key === 'Escape') document.querySelectorAll<HTMLElement>('[data-preview-guard="active"]').forEach(release)
-  })
   document.addEventListener('astro:page-load', start)
   start()
 </script>
 
 <style is:global>
   @layer components {
-    /* Idle: the frame lets the pointer through, so a wheel or a swipe over it moves the page. */
-    [data-preview-guard="idle"] .preview-viewport {
+    /* A shield over the idle frame routes wheels and swipes to the page. Removing the shield
+       lets the browser hit-test scrollable content inside the iframe. */
+    [data-preview-guard="idle"] .preview-viewport::before {
+      content: "";
+      position: absolute;
+      inset: 0;
       cursor: pointer;
-
-      & > iframe {
-        pointer-events: none;
-      }
     }
 
     /*
