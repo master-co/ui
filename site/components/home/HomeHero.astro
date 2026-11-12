@@ -1,0 +1,152 @@
+---
+import IconArrowRight from '@tabler/icons-svelte-runes/icons/arrow-right'
+import IconCheck from '@tabler/icons-svelte-runes/icons/check'
+import IconCopy from '@tabler/icons-svelte-runes/icons/copy'
+import IconSparkles from '@tabler/icons-svelte-runes/icons/sparkles'
+import Link from '@master/internal-site/components/Link.svelte'
+import { siteOf } from '@master/internal-site/astro/site-context'
+import { setupPrompt } from './setup-prompt'
+
+const { t } = siteOf(Astro)
+
+/** The drafting notes beside the figure, from the table up: each layer is a token of the theme. */
+const notes = [
+  { index: '01', token: 'surface-base', detail: t('markup') },
+  { index: '02', token: 'surface-tray', detail: 'shadow-pressed' },
+  { index: '03', token: 'surface-raised', detail: 'shadow-raised' },
+  { index: '04', token: 'surface-floating', detail: 'shadow-floating' },
+]
+---
+
+{/*
+  The hero is a technical drawing: the theme's surface ladder as an exploded section, standing on a table
+  printed with markup. The figure is decoration; everything it says is in the words, which stand on a clear
+  patch of the table and read the same without WebGL.
+*/}
+<section class="ui-hero" data-still-host aria-labelledby="hero-title">
+  <canvas class="ui-hero-stage" aria-hidden="true"></canvas>
+  <div class="ui-hero-notes" aria-hidden="true" data-hidden>
+    <svg class="ui-hero-leaders"><path d="" /></svg>
+    {notes.map(note => (
+      <span class="ui-hero-note" data-note>
+        <span class="ui-hero-note-index">{note.index}</span>
+        <span class="ui-hero-note-token">{note.token}</span>
+        <span class="ui-hero-note-detail">{note.detail}</span>
+      </span>
+    ))}
+  </div>
+  <div class="ui-hero-body app-wrapper home-section-wrap">
+    <div class="ui-hero-reading" data-still-reading>
+      <Link class="ui-hero-pill" href="/components" data-lit>
+        <span class="ui-hero-pill-badge">{t('Alpha')}</span>
+        <span class="ui-hero-pill-label">{t('Native HTML and CSS components')}</span>
+        <IconArrowRight aria-hidden="true" size={14} stroke={1.75} />
+      </Link>
+      <h1 id="hero-title" class="ui-hero-title">{t('Beautiful interface crafted with Master CSS.')}</h1>
+      <p class="ui-hero-lead">{t('Native elements and modern CSS do the work: dialogs, menus, tooltips and selects open, anchor and animate with zero JavaScript to start. Copy the markup into any stack, and add a script only where a pattern needs one.')}</p>
+      {/* A stone action cut from the figure's one ink object, and a glass pill that copies the guide's setup prompt. */}
+      <div class="ui-hero-actions">
+        <Link class="ui-hero-start" href="/guide/introduction" data-lit>
+          {t('Get started')}
+          <IconArrowRight aria-hidden="true" size={16} stroke={1.75} />
+        </Link>
+        <button type="button" class="ui-hero-prompt" data-lit data-prompt={setupPrompt()} data-copied={t('Setup prompt copied')} data-failed={t('Copy failed')} aria-label={t('Set up with your AI agent: copy the setup prompt')}>
+          <IconSparkles aria-hidden="true" class="ui-hero-prompt-icon" size={16} stroke={1.75} />
+          <span class="ui-hero-prompt-label">{t('Set up with your AI agent')}</span>
+          <span class="ui-hero-prompt-copy" aria-hidden="true">
+            <IconCopy class="ui-hero-prompt-idle" size={16} stroke={1.75} />
+            <IconCheck class="ui-hero-prompt-done" size={16} stroke={2} />
+          </span>
+        </button>
+        <span class="sr-only" aria-live="polite" data-prompt-status></span>
+      </div>
+    </div>
+  </div>
+  <p class="ui-hero-caption home-annotation" aria-hidden="true">
+    <span>{t('Fig. 01')}</span>
+    <span>{t('The surface ladder in section, over the markup it is written in')}</span>
+  </p>
+</section>
+
+<script>
+  import type { NoteAnchor } from './still-life/still-life'
+
+  const host = document.querySelector<HTMLElement>('[data-still-host]')
+  const canvas = host?.querySelector<HTMLCanvasElement>('.ui-hero-stage')
+  const reading = host?.querySelector<HTMLElement>('[data-still-reading]')
+  const notesRoot = host?.querySelector<HTMLElement>('.ui-hero-notes')
+  const notes = [...(host?.querySelectorAll<HTMLElement>('[data-note]') ?? [])]
+
+  const leaders = notesRoot?.querySelector<SVGPathElement>('.ui-hero-leaders path')
+  const lit = [...(host?.querySelectorAll<HTMLElement>('[data-lit]') ?? [])]
+
+  // The glass pill copies the installation guide's prompt; the result shows for a moment, then it rests again.
+  const prompt = host?.querySelector<HTMLButtonElement>('[data-prompt]')
+  const promptStatus = host?.querySelector<HTMLElement>('[data-prompt-status]')
+  let promptTimer: ReturnType<typeof setTimeout> | undefined
+  prompt?.addEventListener('click', async () => {
+    let result: 'copied' | 'failed'
+    const text = prompt.dataset.prompt ?? ''
+    try {
+      await navigator.clipboard.writeText(text)
+      result = 'copied'
+    } catch {
+      // Where the Clipboard API is refused, a selected text area still copies within the same click.
+      const area = document.createElement('textarea')
+      area.value = text
+      area.setAttribute('readonly', '')
+      area.style.cssText = 'position:fixed;inset:0 auto auto 0;opacity:0;pointer-events:none'
+      document.body.append(area)
+      area.select()
+      result = document.execCommand('copy') ? 'copied' : 'failed'
+      area.remove()
+      prompt.focus()
+    }
+    prompt.dataset.status = result
+    if (promptStatus) promptStatus.textContent = (result === 'copied' ? prompt.dataset.copied : prompt.dataset.failed) ?? ''
+    clearTimeout(promptTimer)
+    promptTimer = setTimeout(() => {
+      delete prompt.dataset.status
+      if (promptStatus) promptStatus.textContent = ''
+    }, 1800)
+  })
+
+  /**
+   * The notes hang in one column right of the figure, at least a line apart, each joined to its layer's edge by
+   * a leader that leaves the edge level and turns once toward its note.
+   */
+  const place = (anchors: NoteAnchor[], stage: { width: number, wide: boolean }) => {
+    if (!notesRoot) return
+    const edge = Math.max(...anchors.map(anchor => anchor.x))
+    const column = Math.round(Math.min(edge + 48, stage.width - 164))
+    const fits = stage.wide && column - edge >= 24
+    notesRoot.toggleAttribute('data-hidden', !fits)
+    if (!fits) return
+    const heights = anchors.map(anchor => anchor.y)
+    for (let index = heights.length - 2; index >= 0; index--) heights[index] = Math.max(heights[index], heights[index + 1] + 40)
+    let path = ''
+    anchors.forEach((anchor, index) => {
+      const note = notes[index]
+      if (!note) return
+      const y = Math.round(heights[index])
+      note.style.translate = `${column}px ${y}px`
+      const elbow = Math.max(anchor.x + 8, column - 28)
+      path += `M${anchor.x.toFixed(1)} ${anchor.y.toFixed(1)}H${elbow.toFixed(1)}L${column - 8} ${y}`
+    })
+    leaders?.setAttribute('d', path)
+    notes.forEach((note, index) => note.style.setProperty('--dot-x', `${(anchors[index]?.x ?? 0) - column}px`))
+    notes.forEach((note, index) => note.style.setProperty('--dot-y', `${(anchors[index]?.y ?? 0) - heights[index]}px`))
+  }
+
+  if (host && canvas && !matchMedia('print').matches) {
+    import('./still-life/still-life').then(({ mountStillLife }) => {
+      try {
+        mountStillLife(canvas, host, { reading, onAnchors: place, lit })
+      } catch (error) {
+        // The hero reads the same on its plain ground; the figure is only decoration.
+        canvas.hidden = true
+        console.warn(error)
+      }
+    }, () => { canvas.hidden = true })
+  }
+</script>

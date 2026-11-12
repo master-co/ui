@@ -1,0 +1,123 @@
+---
+import '@master/ui/components/badge.css'
+import '@master/ui/components/icon.css'
+import '@master/ui/components/tabs.css'
+import '../../styles/home-frameworks.css'
+import IconArrowRight from '@tabler/icons-svelte-runes/icons/arrow-right'
+import { siteOf } from '@master/internal-site/astro/site-context'
+import { frameworkComponents, frameworkFile, stylesheets } from './frameworks/data'
+import { frameworkExamples } from './frameworks/examples'
+import { highlightSource } from './frameworks/highlight'
+
+const { t } = siteOf(Astro)
+
+/** Each stylesheet a framework component renders, with that component's name. */
+const owners = new Map(frameworkComponents.map(component => [component.contract, component.name]))
+const cells = stylesheets.map(name => ({ name, owner: owners.get(name) }))
+let order = 0
+const ownedCount = frameworkComponents.length
+const markupCount = stylesheets.length - cells.filter(cell => cell.owner).length
+
+/** What a framework component may own, in the words of the frameworks guide. */
+const owns = ['A value the application reads or sets', 'Rows rendered from data', 'Ids that join parts', 'A lifetime']
+
+const count = (text: string, value: number) => t(text).replace('{count}', String(value))
+---
+
+{/*
+  Frameworks: the proportion first, every stylesheet as a cell and the few a framework owns raised out of it,
+  then the same card in React, Svelte and Vue beside the one kind of thing that is a framework component.
+*/}
+<section id="frameworks" class="home-section" aria-labelledby="frameworks-title">
+  <div class="app-wrapper home-section-wrap">
+    <header class="home-section-header">
+      <p class="home-eyebrow"><span class="home-eyebrow-index" aria-hidden="true">05</span><span>{t('Frameworks')}</span></p>
+      <h2 id="frameworks-title" class="home-lit home-section-heading home-stone-type"><span>{t('Any framework,')}</span>{' '}<span>{t('no bindings.')}</span></h2>
+      <p class="home-section-body">{t('React, Svelte and Vue get no bindings package and no wrapper for a class. Most components are a class on a native element: plain markup in any framework, rendered on the server, with nothing to hydrate. A framework component exists only where the framework owns something, and its source is copied into your project.')}</p>
+      <a class="home-section-link" href="/guide/frameworks">{t('Framework components')}<IconArrowRight aria-hidden="true" stroke={1.75} /></a>
+    </header>
+
+    <figure class="ui-frameworks" data-frameworks>
+      <figcaption class="ui-frameworks-hidden">{count('Of {count} component stylesheets,', stylesheets.length)} {count('{count} are markup in every framework', markupCount)} {count('and {count} have a framework component.', ownedCount)}</figcaption>
+
+      <div class="ui-frameworks-ledger" data-frameworks-ledger>
+        <div class="ui-frameworks-head">
+          <p class="ui-frameworks-total home-annotation" aria-hidden="true">{count('{count} stylesheets', stylesheets.length)} <span>@master/ui/components</span></p>
+          <ul class="ui-frameworks-legend home-annotation" aria-hidden="true">
+            <li><span class="ui-frameworks-key"></span><span class="ui-frameworks-count">{markupCount}</span>{t('Markup in any framework')}</li>
+            <li><span class="ui-frameworks-key ui-frameworks-key-owned"></span><span class="ui-frameworks-count">{ownedCount}</span>{t('Framework components')}</li>
+          </ul>
+        </div>
+        <ol class="ui-frameworks-cells" aria-label={t('Every component stylesheet')}>
+          {cells.map(cell => cell.owner ? (
+            <li class="ui-frameworks-cell" data-owned style={`--order: ${order++}`}>
+              <span class="ui-frameworks-name">{cell.name}{cell.owner !== cell.name && <span class="ui-frameworks-alias"> · {cell.owner}</span>}<span class="ui-frameworks-hidden">{t(', a framework component')}</span></span>
+            </li>
+          ) : (
+            <li class="ui-frameworks-cell"><span class="ui-frameworks-name">{cell.name}</span></li>
+          ))}
+        </ol>
+        <p class="ui-frameworks-owned home-annotation" aria-hidden="true">
+          {frameworkComponents.map(component => <span>{component.name}</span>)}
+        </p>
+        <div class="ui-frameworks-test">
+          <p class="home-annotation">{t('A framework component, only where the framework owns')}</p>
+          <ul class="ui-frameworks-owns">
+            {owns.map((thing, index) => <li><span class="ui-frameworks-index" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span><span>{t(thing)}</span></li>)}
+          </ul>
+        </div>
+      </div>
+
+      <div class="ui-frameworks-bar">
+        <div class="tabs tabs-sm" role="tablist" aria-label={t('Framework')} data-frameworks-tabs>
+          {frameworkExamples.map((example, index) => (
+            <button type="button" class="tabs-item" role="tab" id={`frameworks-tab-${example.id}`} aria-selected={index === 0 ? 'true' : 'false'} aria-controls={`frameworks-panel-${example.id}`} tabindex={index === 0 ? undefined : '-1'} data-value={example.id}>{example.title}</button>
+          ))}
+        </div>
+        <p class="home-annotation">{t('The same classes in all three')}</p>
+      </div>
+      {frameworkExamples.map((example, index) => (
+        <div class="ui-frameworks-panel" role="tabpanel" id={`frameworks-panel-${example.id}`} aria-labelledby={`frameworks-tab-${example.id}`} hidden={index !== 0}>
+          <figure class="ui-frameworks-slab">
+            <figcaption class="ui-frameworks-file home-annotation"><span>{example.markup.file}</span><span>{t('Markup')}</span></figcaption>
+            <pre class="ui-frameworks-pre" tabindex="0" aria-label={example.markup.file}><code set:html={highlightSource(example.markup.code, example.language)} /></pre>
+            <p class="ui-frameworks-note home-annotation">{t(example.markup.note)}</p>
+          </figure>
+          <figure class="ui-frameworks-slab">
+            <figcaption class="ui-frameworks-file home-annotation"><span>{example.component.file}</span><span>{t('Framework component')}</span></figcaption>
+            <p class="ui-frameworks-command"><code>npx master-ui add stepper</code>Add stepper: <span>ui/{frameworkFile('stepper', example.id)},</span> <span>ui/{example.helper}.</span></p>
+            <pre class="ui-frameworks-pre" tabindex="0" aria-label={example.component.file}><code set:html={highlightSource(example.component.code, example.language)} /></pre>
+            <p class="ui-frameworks-note home-annotation">{t(example.component.note)}</p>
+          </figure>
+        </div>
+      ))}
+    </figure>
+  </div>
+</section>
+
+<script>
+  import { tabs } from '@master/ui/behaviors/tabs.js'
+
+  const figure = document.querySelector<HTMLElement>('[data-frameworks]')
+  const list = figure?.querySelector<HTMLElement>('[data-frameworks-tabs]')
+  if (list) tabs(list)
+
+  // The owned cells rise once the ledger is well in view; before that they wait flat in the drawing.
+  const ledger = figure?.querySelector<HTMLElement>('[data-frameworks-ledger]')
+  if (figure && ledger && !matchMedia('(prefers-reduced-motion: reduce)').matches && 'IntersectionObserver' in window) {
+    const box = ledger.getBoundingClientRect()
+    // A ledger already on screen or scrolled past is left as it is drawn.
+    if (box.top > innerHeight) {
+      figure.setAttribute('data-frameworks-pending', '')
+      const seen = new IntersectionObserver(([entry]) => {
+        if (!entry.isIntersecting) return
+        seen.disconnect()
+        figure.setAttribute('data-frameworks-rising', '')
+        figure.removeAttribute('data-frameworks-pending')
+        // The last cell has risen by about 1.5s; then the transitions are taken away again.
+        setTimeout(() => figure.removeAttribute('data-frameworks-rising'), 2000)
+      }, { threshold: 0.35 })
+      seen.observe(ledger)
+    }
+  }
+</script>

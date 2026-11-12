@@ -1,0 +1,332 @@
+/*
+ * Customize: one composition of real components drawn twice in a stage, light under dark, with a seam between
+ * them, and a console beside it. Each layer forces its own color scheme, so the library's light-dark() tokens
+ * resolve per layer; Paper's tokens are scoped to both layers by a style the component writes from paper.css,
+ * and the console writes the corner properties and size modifiers onto both. The seam sits at 50% until the
+ * script measures the range's thumb.
+ */
+@property --home-customize-seam {
+  syntax: '<percentage>';
+  inherits: true;
+  initial-value: 50%;
+}
+
+@layer components {
+  .home-customize {
+    scroll-margin-top: 3.75rem;
+  }
+
+  /* Text that belongs to one theme: the other theme's text leaves the page and the accessibility tree. */
+  .home-customize:not(:has([name="home-customize-theme"][value="paper"]:checked)) .home-customize-when-paper,
+  .home-customize:has([name="home-customize-theme"][value="paper"]:checked) .home-customize-when-default {
+    display: none;
+  }
+
+  .home-customize-figure {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--home-gap);
+    margin: 0;
+    padding: var(--home-gap);
+    border-radius: var(--home-radius-tray);
+    background-color: var(--home-tray);
+    box-shadow: inset 0 0 0 1px var(--home-hairline);
+
+    @media (width >= 64rem) {
+      grid-template-columns: minmax(0, 1fr) minmax(19rem, 22rem);
+    }
+  }
+
+  .home-customize-view {
+    display: grid;
+    align-content: start;
+    gap: 1.125rem;
+    min-width: 0;
+    /* Room under the range for its thumb's shadow and focus ring. */
+    padding-bottom: 0.625rem;
+  }
+
+  .home-customize-stage {
+    position: relative;
+    display: grid;
+    overflow: clip;
+    border-radius: var(--home-radius-sheet);
+    box-shadow: 0 0 0 1px var(--home-hairline);
+    container-type: inline-size;
+
+    &[data-gliding] {
+      transition: --home-customize-seam 480ms var(--home-ease);
+    }
+  }
+
+  /* Both layers fill the one cell, so the stage is as tall as the composition and no taller. */
+  .home-customize-layer {
+    position: relative;
+    grid-area: 1 / 1;
+    display: grid;
+    place-items: center;
+    min-height: 32rem;
+    padding: 4.25rem 1rem 2.75rem;
+    color: var(--color-text-strong);
+    background-color: var(--color-surface-base);
+
+    @container (width >= 30rem) {
+      padding-inline: 1.5rem;
+    }
+  }
+
+  .home-customize-layer-light {
+    color-scheme: light;
+  }
+
+  .home-customize-layer-dark {
+    color-scheme: dark;
+    clip-path: inset(0 0 0 var(--home-customize-seam));
+  }
+
+  /* The library's own dots in its finest line, quieter than anything that stands on them. */
+  .home-customize-ground {
+    --color-texture: var(--color-line-hair);
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .home-customize-tag {
+    position: absolute;
+    top: 1.125rem;
+    display: grid;
+    gap: 0.25rem;
+    margin: 0;
+    font-family: var(--home-mono);
+    font-size: var(--home-label);
+    line-height: 1.3;
+    letter-spacing: 0.04em;
+    color: var(--color-text-muted);
+
+    & > :last-child {
+      display: none;
+
+      @container (width >= 34rem) {
+        display: block;
+      }
+    }
+  }
+
+  .home-customize-tag-name {
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--color-text-strong);
+  }
+
+  .home-customize-layer-light .home-customize-tag {
+    left: 1.25rem;
+  }
+
+  .home-customize-layer-dark .home-customize-tag {
+    right: 1.25rem;
+    text-align: end;
+  }
+
+  .home-customize-specimen {
+    position: relative;
+    width: min(100%, 23rem);
+  }
+
+  .home-customize-fields {
+    display: grid;
+    justify-items: start;
+    gap: 1rem;
+
+    & > .field {
+      justify-self: stretch;
+    }
+  }
+
+  /* The seam: a hairline of a middle grey, the one line that reads on both grounds. */
+  .home-customize-seam {
+    position: absolute;
+    inset-block: 0;
+    left: var(--home-customize-seam);
+    width: 1px;
+    translate: -0.5px 0;
+    background-color: oklch(62% 0.003 265 / 0.7);
+    pointer-events: none;
+    transition: background-color var(--home-base) var(--home-ease);
+  }
+
+  .home-customize-view:has(.home-customize-range:focus-visible) .home-customize-seam {
+    background-color: oklch(62% 0.003 265);
+  }
+
+  @media (hover: hover) {
+    .home-customize-view:has(.home-customize-range:hover) .home-customize-seam {
+      background-color: oklch(62% 0.003 265);
+    }
+  }
+
+  /* The range moves a seam, not an amount, so its track stays an empty well. */
+  .home-customize-range {
+    --slider-color: transparent;
+  }
+
+  .home-customize-console {
+    display: grid;
+    align-content: start;
+    gap: 1.125rem;
+    min-width: 0;
+    padding: 1.25rem;
+    border-radius: var(--home-radius-sheet);
+    background-color: var(--home-ground);
+    box-shadow: inset 0 0 0 1px var(--home-hairline);
+  }
+
+  .home-customize-row {
+    display: grid;
+    gap: 0.5rem;
+    min-width: 0;
+
+    & > .home-annotation {
+      display: block;
+    }
+
+    & code {
+      font-family: inherit;
+      text-transform: none;
+      letter-spacing: 0.02em;
+    }
+
+    & > .segmented {
+      width: 100%;
+    }
+
+    & .segmented-item {
+      flex: 1;
+    }
+  }
+
+  .home-customize-rule {
+    height: 1px;
+    background-color: var(--home-rule);
+  }
+
+  .home-customize-scale {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 2.25rem;
+    align-items: center;
+    gap: 1rem;
+    padding-inline: 0.3125rem;
+  }
+
+  .home-customize-output {
+    font-family: var(--home-mono);
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+    text-align: end;
+    color: var(--home-text);
+  }
+
+  .home-customize-code {
+    margin: 0.25rem 0 0;
+    padding: 0.875rem 1rem;
+    overflow-x: auto;
+    border-radius: var(--home-radius-well);
+    font-family: var(--home-mono);
+    font-size: 0.71875rem;
+    line-height: 1.7;
+    color: var(--home-text-body);
+    background-color: var(--home-tray);
+    box-shadow: inset 0 0 0 1px var(--home-hairline);
+    outline: none;
+
+    & .c { color: var(--home-text-faint); }
+    & .k { color: var(--home-text-quiet); }
+    & .s { color: var(--home-text-body); }
+    & .t,
+    & .p,
+    & .v { color: var(--home-text); }
+
+    &:focus-visible {
+      box-shadow: inset 0 0 0 2px var(--home-ink);
+    }
+  }
+
+  /* The ladder: five steps in order of reach, ruled like a specification. */
+  .home-customize-ladder {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0 1.5rem;
+    margin: clamp(2.5rem, 2rem + 2vw, 3.5rem) 0 0;
+    padding: 0;
+    list-style: none;
+
+    @media (width >= 40rem) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    @media (width >= 64rem) {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+  }
+
+  .home-customize-step {
+    display: grid;
+    grid-template-rows: subgrid;
+    grid-row: span 5;
+    align-content: start;
+    gap: 0.375rem;
+    padding: 1.125rem 0 1.5rem;
+    border-top: 1px solid var(--home-rule);
+  }
+
+  .home-customize-step-index {
+    margin-bottom: 0.375rem;
+  }
+
+  .home-customize-step-name {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    color: var(--home-text);
+  }
+
+  .home-customize-step-reach {
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: var(--home-text-quiet);
+  }
+
+  .home-customize-step-code {
+    justify-self: start;
+    margin-top: 0.375rem;
+    font-family: var(--home-mono);
+    font-size: 0.71875rem;
+    line-height: 1.5;
+    color: var(--home-text-body);
+    overflow-wrap: anywhere;
+  }
+
+  .home-customize-step-upstream {
+    margin: 0.25rem 0 0;
+    font-size: 0.75rem;
+    color: var(--home-text-faint);
+  }
+
+  .home-customize-footnote {
+    max-width: 44rem;
+    margin: 0.75rem 0 0;
+    font-size: 0.8125rem;
+    line-height: 1.55;
+    color: var(--home-text-faint);
+    text-wrap: pretty;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .home-customize-stage[data-gliding],
+    .home-customize-seam {
+      transition: none;
+    }
+  }
+}

@@ -1,0 +1,186 @@
+---
+import '@master/ui/components/badge.css'
+import '@master/ui/components/button.css'
+import '@master/ui/components/card.css'
+import '@master/ui/components/checkbox.css'
+import '@master/ui/components/chip.css'
+import '@master/ui/components/dialog.css'
+import '@master/ui/components/icon.css'
+import '@master/ui/components/input.css'
+import '@master/ui/components/kbd.css'
+import '@master/ui/components/menu.css'
+import '@master/ui/components/segmented.css'
+import '@master/ui/components/select.css'
+import '@master/ui/components/switch.css'
+import '@master/ui/components/tabs.css'
+import '@master/ui/components/texture.css'
+import '@master/ui/components/toast.css'
+import '@master/ui/components/tooltip.css'
+import { siteOf } from '@master/internal-site/astro/site-context'
+import { forgeExamples, highlight } from './forge'
+import { platformFeatures } from './platform'
+
+const { t } = siteOf(Astro)
+const lines = (html: string) => html.split('\n').length
+---
+
+{/*
+  Markup in, material out: each example is written out as code, then drawn by the library on the same page.
+  The code is real text and the specimen is real markup; the decode and the reveal only stage their arrival.
+*/}
+<section id="markup" class="home-section ui-markup" aria-labelledby="markup-title">
+  <div class="app-wrapper home-section-wrap">
+    <header class="home-section-header">
+      <p class="home-eyebrow"><span class="home-eyebrow-index" aria-hidden="true">01</span><span>{t('HTML first')}</span></p>
+      <h2 id="markup-title" class="home-lit home-section-heading home-stone-type"><span>{t('Markup in,')}</span>{' '}<span>{t('material out.')}</span></h2>
+      <p class="home-section-body">{t('A component is a class on a native element. There is no runtime to install and nothing to hydrate: the browser draws the material from one stylesheet, and every state from the element’s own attributes.')}</p>
+    </header>
+    <figure class="ui-forge" data-forge>
+      <div class="ui-forge-bar">
+        <div class="tabs tabs-sm" role="tablist" aria-label={t('Examples')} data-forge-tabs>
+          {forgeExamples.map((example, index) => (
+            <button type="button" class="tabs-item" role="tab" id={`forge-tab-${example.id}`} aria-selected={index === 0 ? 'true' : 'false'} aria-controls={`forge-panel-${example.id}`} tabindex={index === 0 ? undefined : '-1'} data-value={example.id}>{t(example.label)}</button>
+          ))}
+        </div>
+        <p class="ui-forge-status home-annotation"><span class="ui-forge-status-dot" aria-hidden="true"></span>{t('Rendered by the stylesheet, with no script')}</p>
+      </div>
+      {forgeExamples.map((example, index) => (
+        <div class="ui-forge-panel" role="tabpanel" id={`forge-panel-${example.id}`} aria-labelledby={`forge-tab-${example.id}`} hidden={index !== 0} data-forge-panel>
+          <div class="ui-forge-code">
+            <p class="ui-forge-file home-annotation"><span>{example.file}</span><span>{lines(example.html)} {t('lines')}</span></p>
+            <pre class="ui-forge-pre" tabindex="0"><code set:html={highlight(example.html)} /></pre>
+          </div>
+          <div class="ui-forge-stage texture" data-forge-stage>
+            <span class="ui-forge-scan" aria-hidden="true"></span>
+            <div class="ui-forge-specimen" data-example={example.id} set:html={example.html} />
+          </div>
+        </div>
+      ))}
+    </figure>
+    {/* The platform does the work: each feature with what it does here, who uses it, the fallback, and a live specimen. */}
+    <div class="ui-platform">
+      <header class="ui-platform-header">
+        <h3 class="ui-platform-title">{t('Modern CSS and the platform do the work.')}</h3>
+        <p class="ui-platform-lead">{t('Where the browser has an element or a feature for the job, the component uses it, over a baseline that works without it. Try each one: none of them loads a script.')}</p>
+      </header>
+      <ul class="ui-platform-grid">
+        {platformFeatures.map(feature => (
+          <li class="ui-platform-cell">
+            <div class="ui-platform-specimen texture" set:html={feature.html} />
+            <div class="ui-platform-text">
+              <p class="ui-platform-names">{feature.names.map(name => <code>{name}</code>)}</p>
+              <p class="ui-platform-summary">{t(feature.summary)}</p>
+              <dl class="ui-platform-facts">
+                <dt>{t('Used by')}</dt>
+                <dd>{feature.usedBy.join(', ')}</dd>
+                <dt>{t('Without it')}</dt>
+                <dd>{t(feature.without)}</dd>
+              </dl>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { tabs } from '@master/ui/behaviors/tabs.js'
+
+  const figure = document.querySelector<HTMLElement>('[data-forge]')
+  const motion = matchMedia('(prefers-reduced-motion: reduce)')
+  const glyphs = '<>/="{}:;.-_#()[]+*abcdeghiklmnoprstuvwxy0123456789'
+  const random = () => glyphs[Math.floor(Math.random() * glyphs.length)]
+  let running = 0
+  /** Each text node's own text, kept before any decode or blanking touches it. */
+  const originals = new WeakMap<Text, string>()
+  const textNodes = (root: HTMLElement) => {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
+    const nodes: Text[] = []
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      const text = node as Text
+      if (!originals.has(text)) originals.set(text, text.data)
+      nodes.push(text)
+    }
+    return nodes
+  }
+  /** Clears a panel to its whitespace before it is first written out, so it does not show and then vanish. */
+  const blank = (panel: HTMLElement) => {
+    const code = panel.querySelector<HTMLElement>('code')
+    if (code) textNodes(code).forEach(node => { node.data = originals.get(node)!.replace(/[^\s]/g, ' ') })
+    panel.querySelector<HTMLElement>('[data-forge-stage]')?.style.setProperty('--reveal', '0')
+  }
+
+  /**
+   * Writes a panel's code out again: each character flickers through glyphs before it settles, line by line,
+   * and the specimen beside it is revealed as the last lines land. Only the text changes; widths are fixed by
+   * the monospace face, so nothing reflows.
+   */
+  function play(panel: HTMLElement) {
+    const code = panel.querySelector<HTMLElement>('code')
+    const stage = panel.querySelector<HTMLElement>('[data-forge-stage]')
+    if (!code || !stage) return
+    panel.querySelectorAll<HTMLDialogElement>('dialog.toast:not([open])').forEach(dialog => dialog.show())
+    cancelAnimationFrame(running)
+    if (motion.matches) {
+      stage.style.setProperty('--reveal', '1')
+      return
+    }
+    const nodes: { node: Text, text: string, settle: number[] }[] = []
+    let line = 0
+    let column = 0
+    for (const node of textNodes(code)) {
+      const text = originals.get(node)!
+      const settle = [...text].map(character => {
+        if (character === '\n') { line++; column = 0; return 0 }
+        column++
+        return line * 55 + column * 4 + Math.random() * 140
+      })
+      nodes.push({ node, text, settle })
+    }
+    const total = line * 55 + 360
+    const start = performance.now()
+    code.setAttribute('aria-busy', 'true')
+    stage.style.setProperty('--reveal', '0')
+    const tick = (now: number) => {
+      const elapsed = now - start
+      for (const { node, text, settle } of nodes) {
+        let out = ''
+        for (let index = 0; index < text.length; index++) {
+          const character = text[index]
+          if (character === ' ' || character === '\n' || elapsed >= settle[index]) out += character
+          // A character waiting its turn stays blank until its line is reached, then flickers.
+          else out += elapsed > settle[index] - 220 ? random() : ' '
+        }
+        if (node.data !== out) node.data = out
+      }
+      const reveal = Math.min(Math.max((elapsed - total * 0.45) / 900, 0), 1)
+      stage.style.setProperty('--reveal', (1 - Math.pow(1 - reveal, 3)).toFixed(4))
+      if (elapsed < Math.max(total, total * 0.45 + 900)) running = requestAnimationFrame(tick)
+      else {
+        nodes.forEach(({ node, text }) => { node.data = text })
+        code.removeAttribute('aria-busy')
+      }
+    }
+    running = requestAnimationFrame(tick)
+  }
+
+  if (figure) {
+    const list = figure.querySelector<HTMLElement>('[data-forge-tabs]')
+    if (list) tabs(list)
+    const current = () => figure.querySelector<HTMLElement>('[data-forge-panel]:not([hidden])')
+    list?.addEventListener('change', () => { const panel = current(); if (panel) play(panel) })
+    // The first example writes itself out once the figure is well in view.
+    const seen = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return
+      seen.disconnect()
+      const panel = current()
+      if (panel) play(panel)
+    }, { threshold: 0.4 })
+    if (!motion.matches) {
+      const panel = current()
+      if (panel) blank(panel)
+      seen.observe(figure)
+    }
+  }
+</script>

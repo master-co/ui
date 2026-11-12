@@ -1,0 +1,250 @@
+---
+import '@master/ui/components/checkbox.css'
+import '@master/ui/components/switch.css'
+import '../../styles/home-contracts.css'
+import IconArrowRight from '@tabler/icons-svelte-runes/icons/arrow-right'
+import { siteOf } from '@master/internal-site/astro/site-context'
+import { highlight } from './forge'
+import { contractRun, type Finding } from './contracts/run'
+
+const { t } = siteOf(Astro)
+const run = contractRun()
+const spec = run.contract
+
+/** Callout letters join each diagnostic to the entry of the contract it enforces. */
+const cited = run.findings.map((finding, at) => ({ ...finding, letter: 'ABCDEFGH'[at] }))
+/** A rule broken on a class points at that class; a class the contract lacks, written for a state, points at the states. */
+const citesState = (finding: Finding) => finding.code === 'unknown-class' && !!spec.states?.length
+const classLetters = (name: string) => cited.filter(finding => !citesState(finding) && finding.className === name).map(finding => finding.letter).join(' ') || undefined
+const stateLetters = cited.filter(citesState).map(finding => finding.letter).join(' ') || undefined
+
+const attributes = (entry: Record<string, true | string | string[]>) => Object.entries(entry)
+  .map(([name, value]) => value === true ? name : `${name}="${Array.isArray(value) ? value.join('|') : value}"`).join(' ')
+/** What the checker holds a class to, in the words of its contract. */
+const rules = (entry: typeof spec.classes[number]) => [
+  entry.of ? `of ${[entry.of].flat().join(' | ')}` : '',
+  entry.elements ? `<${entry.elements.join('|')}${entry.attributes ? ` ${attributes(entry.attributes)}` : ''}>` : entry.attributes ? attributes(entry.attributes) : '',
+  entry.label ? 'label' : '',
+  entry.exclusive ? `exclusive: ${entry.exclusive}` : '',
+].filter(Boolean)
+
+/** The keys of the file this sheet leaves out, so the reader sees what else a contract holds. */
+const drawn = ['$schema', 'name', 'title', 'description', 'tier', 'category', 'script', 'classes', 'states', 'keyboard', 'example']
+const more = Object.keys(spec).filter(key => !drawn.includes(key))
+
+/*
+ * The terminal's text is assembled here, so a `<pre>` holds exactly the lines below and no template whitespace.
+ * Line numbers, prompts, callouts and diff signs are drawn by CSS, so copying a block takes its text alone.
+ */
+const escape = (value: string) => value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;')
+const code = (source: string) => highlight(source).replace(/^<span class="ui-forge-line">|<\/span>$/g, '')
+const flagged = new Set(cited.map(finding => finding.line))
+const draftHtml = run.draft.split('\n')
+  .map((text, at) => `<span class="ui-contract-line"${flagged.has(at + 1) ? ' data-flag' : ''}>${code(text)}</span>`).join('')
+const command = `<span class="ui-contract-command" data-type>${escape(run.command)}</span>`
+const firstRunHtml = command + cited.map(finding => {
+  const marker = ` ${finding.severity} `
+  const at = finding.text.indexOf(marker)
+  return `<span class="ui-contract-out" data-out data-callout="${finding.letter}">${escape(finding.text.slice(0, at))} <span class="ui-contract-severity" data-severity="${finding.severity}">${finding.severity}</span> ${escape(finding.text.slice(at + marker.length))}</span>`
+}).join('') + `<span class="ui-contract-out ui-contract-summary" data-out>${escape(run.summary.draft)}</span>`
+const patchHtml = `<span class="ui-contract-out ui-contract-diff" data-out data-change="removed"><span class="sr-only">${escape(t('Before'))}: </span>${code(run.changed.before.trimStart())}</span>`
+  + `<span class="ui-contract-out ui-contract-diff" data-out data-change="added"><span class="sr-only">${escape(t('After'))}: </span>${code(run.changed.after.trimStart())}</span>`
+const secondRunHtml = command + `<span class="ui-contract-out ui-contract-summary" data-out data-pass>${escape(run.summary.fixed)}</span>`
+---
+
+{/*
+  Contracts: one real contract beside a real run of the checker. Everything in the figure is computed when the
+  page is built, from `switch.json` and `@master/ui/check`, so it says what the library says. The run is
+  staged in script as it would be typed; without script, or with reduced motion, it is simply shown.
+*/}
+<section id="contracts" class="home-section ui-contracts" aria-labelledby="contracts-title">
+  <div class="app-wrapper home-section-wrap">
+    <header class="home-section-header">
+      <p class="home-eyebrow"><span class="home-eyebrow-index" aria-hidden="true">06</span><span>{t('Contracts')}</span></p>
+      <h2 id="contracts-title" class="home-lit home-section-heading home-stone-type"><span>{t('Written for people,')}</span>{' '}<span>{t('checked for agents.')}</span></h2>
+      <p class="home-section-body">{t('Every component ships with a contract beside its stylesheet: its classes, the states it draws, its public properties, its keys and one correct example. A coding agent reads it before it writes, and the checker reports markup that breaks it.')}</p>
+      <div class="ui-contracts-links">
+        <a class="home-section-link" href="/guide/contracts">{t('How contracts work')}<IconArrowRight aria-hidden="true" stroke={1.75} /></a>
+        <a class="home-section-link" href="/guide/ai">{t('Working with AI')}<IconArrowRight aria-hidden="true" stroke={1.75} /></a>
+      </div>
+    </header>
+
+    <figure class="ui-contract" data-contract>
+      <figcaption class="ui-contract-bar">
+        <span class="ui-contract-path home-annotation">@master/ui/components/{spec.name}.json</span>
+        <span class="ui-contract-status home-annotation"><span class="ui-contract-status-dot" aria-hidden="true"></span>{t('Checked by @master/ui/check when this page was built')}</span>
+      </figcaption>
+
+      <div class="ui-contract-body">
+        {/* The contract as a spec sheet: what the stylesheet promises, read straight from the file. */}
+        <article class="ui-contract-sheet" aria-labelledby="contract-title">
+          <header class="ui-contract-sheet-head">
+            <p class="ui-contract-meta home-annotation"><span>{spec.name}.json</span><span>{spec.tier} · {spec.category} · script: {spec.script}</span></p>
+            <h3 id="contract-title" class="ui-contract-title">{spec.title}</h3>
+            <p class="ui-contract-description">{spec.description}</p>
+          </header>
+
+          <section class="ui-contract-group" aria-labelledby="contract-classes">
+            <h4 id="contract-classes" class="ui-contract-label home-annotation">classes</h4>
+            <dl class="ui-contract-rows">
+              {spec.classes.map(entry => (
+                <div class="ui-contract-row" data-callout={classLetters(entry.name)}>
+                  <dt class="ui-contract-name">{entry.name}</dt>
+                  <dd class="ui-contract-kind">{entry.kind}</dd>
+                  <dd class="ui-contract-rules">{rules(entry).map(rule => <code>{rule}</code>)}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+
+          {spec.states?.length ? (
+            <section class="ui-contract-group" aria-labelledby="contract-states">
+              <h4 id="contract-states" class="ui-contract-label home-annotation">states</h4>
+              <dl class="ui-contract-rows">
+                {spec.states.map((state, index) => (
+                  <div class="ui-contract-row" data-callout={index === 0 ? stateLetters : undefined}>
+                    <dt class="ui-contract-name">{state.name}</dt>
+                    <dd class="ui-contract-kind">{state.on}</dd>
+                    <dd class="ui-contract-rules"><code>{state.mark}</code></dd>
+                  </div>
+                ))}
+              </dl>
+              <p class="ui-contract-note">{t('A state is marked with an attribute or a pseudo-class, never with a class.')}</p>
+            </section>
+          ) : null}
+
+          {spec.keyboard?.length ? (
+            <section class="ui-contract-group" aria-labelledby="contract-keyboard">
+              <h4 id="contract-keyboard" class="ui-contract-label home-annotation">keyboard</h4>
+              <dl class="ui-contract-rows">
+                {spec.keyboard.map(key => (
+                  <div class="ui-contract-row ui-contract-row-key">
+                    <dt class="ui-contract-name"><kbd class="ui-contract-key">{key.keys}</kbd></dt>
+                    <dd class="ui-contract-action">{key.action}</dd>
+                  </div>
+                ))}
+              </dl>
+            </section>
+          ) : null}
+
+          <section class="ui-contract-group" aria-labelledby="contract-example">
+            <h4 id="contract-example" class="ui-contract-label home-annotation">example</h4>
+            <div class="ui-contract-specimen" set:html={spec.example} />
+          </section>
+
+          {more.length ? <p class="ui-contract-more home-annotation">{t('Also in the file')}: {more.join(' · ')}</p> : null}
+        </article>
+
+        {/* The checker's run: the draft, its diagnostics, the line rewritten from the example, and a clean pass. */}
+        <div class="ui-contract-term" data-contract-term>
+          <p class="ui-contract-head home-annotation"><span class="ui-contract-path">{run.file}</span><span>{t('First draft')}</span></p>
+          <pre class="ui-contract-pre ui-contract-file" tabindex="0"><code set:html={draftHtml} /></pre>
+          <p class="ui-contract-head home-annotation"><span>{t('Terminal')}</span><span class="ui-contract-exit" data-out>exit 1</span></p>
+          <pre class="ui-contract-pre" tabindex="0"><code set:html={firstRunHtml} /></pre>
+          <p class="ui-contract-head home-annotation"><span>{t('Line')} {run.changed.line}, {t('rewritten from the example')}</span></p>
+          <pre class="ui-contract-pre ui-contract-patch" tabindex="0"><code set:html={patchHtml} /></pre>
+          <p class="ui-contract-head home-annotation"><span>{t('Terminal')}</span><span class="ui-contract-exit" data-out>exit 0</span></p>
+          <pre class="ui-contract-pre" tabindex="0"><code set:html={secondRunHtml} /></pre>
+        </div>
+      </div>
+    </figure>
+
+    <ul class="ui-contract-outputs" aria-label={t('What the site publishes for programs')}>
+      <li class="ui-contract-output">
+        <a href="/llms.txt"><code>/llms.txt</code></a>
+        <p>{t('The rules for writing Master UI markup, and a link to every page as Markdown.')}</p>
+      </li>
+      <li class="ui-contract-output">
+        <a href="/contracts.json"><code>/contracts.json</code></a>
+        <p>{t('Every contract as data, for programs that write markup.')}</p>
+      </li>
+      <li class="ui-contract-output">
+        <a href="/guide/ai#the-skill"><code>npx skills add master-co/ui --skill master-ui</code></a>
+        <p>{t('A skill that has an agent read the contracts, check its markup and verify the result in a browser.')}</p>
+      </li>
+      <li class="ui-contract-output">
+        <a href="/guide/registry"><code>npx master-ui add &lt;name&gt;</code></a>
+        <p>{t('React, Svelte and Vue components copied into the project as source, also served as a shadcn-style registry.')}</p>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<script>
+  /*
+   * The run, as it would be typed: each command writes itself out, the checker's lines arrive one at a time and
+   * their callouts land on the contract, the fix is struck and written, and the second run comes back clean.
+   * The text is in the page from the start; a command waiting to be typed holds no-break spaces of the same
+   * width, so nothing reflows.
+   */
+  const figure = document.querySelector<HTMLElement>('[data-contract]')
+  const term = figure?.querySelector<HTMLElement>('[data-contract-term]')
+  const motion = matchMedia('(prefers-reduced-motion: reduce)')
+
+  if (figure && term && !motion.matches) {
+    const commands = [...term.querySelectorAll<HTMLElement>('[data-type]')].map(node => ({ node, text: node.textContent ?? '' }))
+    const pending = (selector: string) => [...figure.querySelectorAll<HTMLElement>(selector)]
+    const blank = (text: string) => text.replace(/\S/g, ' ')
+    let timers: number[] = []
+    let finished = false
+
+    const settle = () => {
+      if (finished) return
+      finished = true
+      timers.forEach(clearTimeout)
+      timers = []
+      commands.forEach(({ node, text }) => { node.textContent = text })
+      figure.querySelectorAll('[data-pending]').forEach(node => node.removeAttribute('data-pending'))
+      term.removeAttribute('aria-busy')
+    }
+    const at = (delay: number, step: () => void) => { timers.push(window.setTimeout(step, delay)) }
+    const show = (delay: number, nodes: Element[]) => at(delay, () => nodes.forEach(node => node.removeAttribute('data-pending')))
+    /** Types one command a character at a time and returns the time it is done. */
+    const caret = Object.assign(document.createElement('span'), { className: 'ui-contract-caret' })
+    caret.setAttribute('aria-hidden', 'true')
+    const write = (node: HTMLElement, text: string, length: number) => node.replaceChildren(text.slice(0, length), caret, blank(text.slice(length)))
+    const type = (start: number, { node, text }: typeof commands[number]) => {
+      const pace = 32
+      at(start, () => write(node, text, 0))
+      for (let length = 1; length <= text.length; length++) {
+        at(start + 320 + length * pace, () => write(node, text, length))
+      }
+      const end = start + 320 + text.length * pace
+      at(end + 240, () => { node.textContent = text })
+      return end + 360
+    }
+
+    // Until the figure is reached the draft stands alone: both commands blank, every result waiting.
+    const [firstOut, secondOut] = [pending('[data-contract-term] pre:nth-of-type(2) [data-out]'), pending('[data-contract-term] pre:nth-of-type(4) [data-out]')]
+    const patch = pending('[data-change]')
+    const exits = pending('.ui-contract-exit')
+    const marks = [...pending('.ui-contract-sheet [data-callout]'), ...pending('[data-flag]')]
+    term.setAttribute('aria-busy', 'true')
+    commands.forEach(({ node, text }) => { node.textContent = blank(text) })
+    ;[...firstOut, ...secondOut, ...patch, ...exits, ...marks].forEach(node => node.setAttribute('data-pending', ''))
+
+    const play = () => {
+      let time = type(0, commands[0])
+      firstOut.forEach((line, index) => show(time + index * 160, [line]))
+      time += firstOut.length * 160
+      show(time, [exits[0], ...marks])
+      time += 1000
+      show(time, [patch[0]])
+      show(time + 480, [patch[1]])
+      time = type(time + 1100, commands[1])
+      show(time, [...secondOut, exits[1]])
+      at(time + 200, settle)
+    }
+
+    const seen = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return
+      seen.disconnect()
+      play()
+    }, { threshold: 0.4 })
+    seen.observe(term)
+    // A reader who turns motion off mid-run, or prints, gets the finished figure.
+    const finish = () => { seen.disconnect(); settle() }
+    motion.addEventListener('change', finish)
+    addEventListener('beforeprint', finish)
+  }
+</script>

@@ -1,0 +1,539 @@
+/*
+ * Cost and Compared: two measured figures, drawn like a technical sheet. A tray with an inset hairline holds
+ * sheets; figures are mono with tabular digits; bars are flat ink on a hairline track. Nothing glows.
+ */
+@layer components {
+  .home-cost,
+  .home-compare {
+    scroll-margin-top: 3.75rem;
+  }
+
+  .home-cost-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .home-cost-tray {
+    margin: 0;
+    padding: var(--home-gap);
+    border-radius: var(--home-radius-tray);
+    background-color: var(--home-tray);
+    box-shadow: inset 0 0 0 1px var(--home-hairline);
+  }
+
+  .home-cost-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem 1.5rem;
+    min-height: 2rem;
+    padding: 0 0.25rem var(--home-gap);
+  }
+
+  .home-cost-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+  }
+
+  .home-cost-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--home-gap);
+
+    @media (width >= 64rem) {
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    }
+  }
+
+  /* A sheet on the tray: the page's ground, cut in with one hairline. */
+  .home-cost-sheet {
+    min-width: 0;
+    border-radius: var(--home-radius-sheet);
+    background-color: var(--home-ground);
+    box-shadow: inset 0 0 0 1px var(--home-hairline);
+  }
+
+  /* The readout stands one step above: a raised sheet catching the light on its top edge. */
+  .home-cost-readout {
+    display: grid;
+    align-content: start;
+    gap: 1.5rem;
+    padding: 1.5rem 1.25rem 1.25rem;
+    background-color: var(--home-sheet);
+    box-shadow: var(--home-elevation-1);
+
+    @media (width >= 40rem) {
+      padding: 1.75rem 1.75rem 1.5rem;
+    }
+
+    @media (width < 64rem) {
+      order: -1;
+    }
+  }
+
+  .home-cost-picker {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+
+    &[hidden] {
+      display: none;
+    }
+  }
+
+  .home-cost-search {
+    padding: 0.875rem;
+    border-bottom: 1px solid var(--home-rule);
+  }
+
+  .home-cost-list {
+    max-height: 26rem;
+    padding: 0.25rem 0.875rem 1rem;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+
+    @media (width >= 64rem) {
+      max-height: 30rem;
+    }
+  }
+
+  .home-cost-group {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    min-width: 0;
+
+    &[hidden] {
+      display: none;
+    }
+  }
+
+  .home-cost-legend {
+    float: left;
+    width: 100%;
+    margin: 0;
+    padding: 1rem 0.375rem 0.375rem;
+  }
+
+  .home-cost-rows {
+    clear: both;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    column-gap: 1rem;
+
+    @media (width >= 40rem) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .home-cost-row {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    min-width: 0;
+    min-height: 2.25rem;
+    padding-inline: 0.375rem;
+    border-radius: var(--home-radius-chip);
+    font-size: 0.875rem;
+    color: var(--home-text-body);
+    transition: background-color var(--home-quick) var(--home-ease);
+
+    &[hidden] {
+      display: none;
+    }
+
+    &:has(:checked) {
+      color: var(--home-text);
+    }
+
+    @media (hover: hover) {
+      &:hover {
+        background-color: color-mix(in oklab, var(--home-tray) 70%, transparent);
+      }
+    }
+  }
+
+  .home-cost-row-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .home-cost-row-meta {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--home-mono);
+    font-size: var(--home-label);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+    color: var(--home-text-faint);
+  }
+
+  .home-cost-row-via {
+    max-width: 7rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    &:empty {
+      display: none;
+    }
+  }
+
+  .home-cost-empty {
+    margin: 1.5rem 0.375rem;
+    font-size: 0.875rem;
+    color: var(--home-text-quiet);
+  }
+
+  /* Readout: the figure, what it is made of, and where it stands against the whole library. */
+  .home-cost-reading {
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .home-cost-reading + .home-cost-reading {
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--home-rule);
+  }
+
+  .home-cost-label {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .home-cost-value {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    margin: 0;
+    font-family: var(--home-mono);
+    font-variant-numeric: tabular-nums;
+    color: var(--home-text);
+  }
+
+  .home-cost-number {
+    font-size: clamp(2.25rem, 1.75rem + 2vw, 3.25rem);
+    font-weight: 400;
+    line-height: 1;
+    letter-spacing: -0.04em;
+  }
+
+  .home-cost-number-sm {
+    font-size: clamp(1.625rem, 1.375rem + 1vw, 2rem);
+  }
+
+  .home-cost-unit {
+    font-size: 0.8125rem;
+    letter-spacing: 0.02em;
+    color: var(--home-text-quiet);
+  }
+
+  .home-cost-detail {
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.55;
+    color: var(--home-text-quiet);
+    text-wrap: pretty;
+
+    & code,
+    & .home-cost-figure-inline {
+      font-family: var(--home-mono);
+      font-size: 0.8125rem;
+      font-variant-numeric: tabular-nums;
+      color: var(--home-text-body);
+    }
+  }
+
+  .home-cost-meter {
+    display: grid;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+
+    & > .meter {
+      width: 100%;
+    }
+  }
+
+  .home-cost-modules {
+    display: grid;
+    gap: 0.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    &:empty {
+      display: none;
+    }
+  }
+
+  .home-cost-module {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    font-size: 0.8125rem;
+    color: var(--home-text-body);
+
+    & > code {
+      font-family: var(--home-mono);
+      color: var(--home-text);
+    }
+
+    & > .home-cost-module-note {
+      flex: 1 1 auto;
+      min-width: 0;
+      color: var(--home-text-quiet);
+    }
+
+    & > .home-cost-module-size {
+      flex: none;
+      font-family: var(--home-mono);
+      font-size: 0.75rem;
+      font-variant-numeric: tabular-nums;
+      color: var(--home-text-body);
+    }
+  }
+
+  .home-cost-static {
+    padding: 0.5rem 1rem 1rem;
+    overflow-x: auto;
+
+    &[hidden] {
+      display: none;
+    }
+  }
+
+  /* Method notes under a figure, the way a drawing carries its legend. */
+  .home-cost-notes {
+    display: grid;
+    gap: 0.5rem;
+    margin: 0;
+    padding: calc(var(--home-gap) + 0.25rem) 0.5rem 0.25rem;
+    font-size: 0.8125rem;
+    line-height: 1.55;
+    color: var(--home-text-faint);
+    list-style: none;
+
+    @media (width >= 64rem) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: 2.5rem;
+    }
+
+    & code {
+      font-family: var(--home-mono);
+      font-size: 0.75rem;
+      color: var(--home-text-quiet);
+    }
+
+    & a {
+      color: var(--home-text-quiet);
+      text-decoration: underline;
+      text-decoration-color: var(--home-rule-strong);
+      text-underline-offset: 0.2em;
+      transition: color var(--home-quick) var(--home-ease);
+
+      &:hover {
+        color: var(--home-text);
+      }
+
+      &:focus-visible {
+        border-radius: 2px;
+        outline: 2px solid var(--home-ink);
+        outline-offset: 2px;
+      }
+    }
+  }
+
+  .home-cost-notes > li {
+    padding-left: 1.25rem;
+    text-indent: -1.25rem;
+  }
+
+  .home-cost-note-mark {
+    display: inline-block;
+    width: 1.25rem;
+    text-indent: 0;
+    font-family: var(--home-mono);
+    font-size: 0.6875rem;
+    color: var(--home-text-faint);
+  }
+
+  /*
+   * Compared: one row per component, two marks on a shared scale, each labelled. The scale is the largest value
+   * in the table; the marks grow from the left edge, Master UI in ink, shadcn/ui in a quiet grey.
+   */
+  .home-compare-sheet {
+    padding: 0.25rem 0.75rem 1rem;
+    overflow-x: auto;
+
+    @media (width >= 40rem) {
+      padding: 0.5rem 1.5rem 1.25rem;
+    }
+  }
+
+  .home-compare-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .home-compare-key {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
+    color: var(--home-text-body);
+
+    &::before {
+      width: 0.75rem;
+      height: 0.375rem;
+      border-radius: 1px;
+      background-color: var(--home-compare-mark);
+      content: '';
+    }
+  }
+
+  .home-compare-key-master,
+  .home-compare-mark-master {
+    --home-compare-mark: var(--home-text);
+  }
+
+  .home-compare-key-shadcn,
+  .home-compare-mark-shadcn {
+    --home-compare-mark: color-mix(in oklab, var(--home-text-quiet) 55%, var(--home-ground));
+  }
+
+  .home-compare-table {
+    width: 100%;
+  }
+
+  .home-compare-name {
+    width: 6.5rem;
+
+    @media (width >= 48rem) {
+      width: 10rem;
+    }
+
+    vertical-align: top;
+
+    & > span {
+      display: block;
+    }
+  }
+
+  .home-compare-name-note {
+    margin-top: 0.125rem;
+    font-family: var(--home-mono);
+    font-size: 0.6875rem;
+    font-weight: 400;
+    letter-spacing: 0.02em;
+    color: var(--home-text-faint);
+  }
+
+  .home-compare-bars {
+    display: grid;
+    gap: 0.375rem;
+    padding-block: 0.25rem;
+  }
+
+  .home-compare-bar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 5.25rem;
+    align-items: center;
+    gap: 0.75rem;
+
+    @media (width >= 48rem) {
+      grid-template-columns: minmax(0, 1fr) 13rem;
+    }
+  }
+
+  .home-compare-track {
+    position: relative;
+    height: 0.5rem;
+    border-radius: 1px;
+    background-image: linear-gradient(var(--home-rule), var(--home-rule));
+    background-size: 100% 1px;
+    background-position: 0 50%;
+    background-repeat: no-repeat;
+  }
+
+  .home-compare-fill {
+    position: absolute;
+    inset-block: 0;
+    left: 0;
+    width: calc(var(--share) * 100%);
+    min-width: 2px;
+    border-radius: 1px;
+    background-color: var(--home-compare-mark);
+    transition: width var(--home-slow) var(--home-ease);
+  }
+
+  .home-compare-figure {
+    font-family: var(--home-mono);
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.35;
+    color: var(--home-text-body);
+    white-space: nowrap;
+  }
+
+  .home-compare-figure-total {
+    color: var(--home-text);
+  }
+
+  .home-compare-split {
+    display: none;
+    color: var(--home-text-faint);
+
+    @media (width >= 48rem) {
+      display: inline;
+    }
+  }
+
+  /*
+   * Which JavaScript the bars count (with React's runtime, or the components alone) and which primitives the
+   * shadcn/ui side is built on. Radios, so the figure needs no script; each state has its own scale.
+   */
+  .home-compare-bar {
+    --share: var(--share-base-with);
+  }
+
+  .home-compare:has([name="home-compare-runtime"][value="without"]:checked) .home-compare-bar {
+    --share: var(--share-base-without);
+  }
+
+  .home-compare:has([name="home-compare-base"][value="radix"]:checked) .home-compare-bar {
+    --share: var(--share-radix-with);
+  }
+
+  .home-compare:has([name="home-compare-base"][value="radix"]:checked):has([name="home-compare-runtime"][value="without"]:checked) .home-compare-bar {
+    --share: var(--share-radix-without);
+  }
+
+  .home-compare:has([name="home-compare-runtime"][value="without"]:checked) .home-compare-when-with,
+  .home-compare:not(:has([name="home-compare-runtime"][value="without"]:checked)) .home-compare-when-without,
+  .home-compare:has([name="home-compare-base"][value="radix"]:checked) .home-compare-when-base,
+  .home-compare:not(:has([name="home-compare-base"][value="radix"]:checked)) .home-compare-when-radix {
+    display: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .home-compare-fill {
+      transition: none;
+    }
+  }
+}

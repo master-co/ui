@@ -1,0 +1,71 @@
+---
+import '../../styles/home-contracts.css'
+import IconArrowRight from '@tabler/icons-svelte-runes/icons/arrow-right'
+import IconCopy from '@tabler/icons-svelte-runes/icons/copy'
+import IconCheck from '@tabler/icons-svelte-runes/icons/check'
+import Link from '@master/internal-site/components/Link.svelte'
+import { siteOf } from '@master/internal-site/astro/site-context'
+
+const { t } = siteOf(Astro)
+
+/** The install command from the installation guide: an exact version, since 0.x releases may break. */
+const install = 'npm install @master/ui --save-exact'
+---
+
+{/*
+  The close: the hero's promise once more, the one command that starts it, and the two ways in. The copy button
+  appears only where the Clipboard API does; the command is selectable text either way.
+*/}
+<section id="start" class="home-section ui-close" aria-labelledby="start-title">
+  <div class="app-wrapper home-section-wrap ui-close-wrap">
+    <div class="ui-close-reading">
+      <h2 id="start-title" class="home-lit home-section-heading home-stone-type ui-close-title"><span>{t('Copy the markup.')}</span>{' '}<span>{t('Keep your stack.')}</span></h2>
+      <p class="home-section-body ui-close-body">{t('Install the package, import its stylesheet after Master CSS and write a class on a native element. Every component works in plain HTML and in any framework.')}</p>
+    </div>
+    <div class="ui-close-start">
+      <div class="ui-close-command" data-copy data-copied-label={t('Copied')} data-failed-label={t('Clipboard unavailable. Select the command to copy it.')}>
+        <code class="ui-close-code"><span class="ui-close-prompt" aria-hidden="true">$</span><span data-copy-text>{install.split(' ').map((word, index) => <>{index ? ' ' : ''}<span class="ui-close-word">{word}</span></>)}</span></code>
+        <button type="button" class="ui-close-copy" aria-label={t('Copy the install command')} data-copy-button hidden>
+          <IconCopy class="ui-close-copy-idle" aria-hidden="true" size={16} stroke={1.75} />
+          <IconCheck class="ui-close-copy-done" aria-hidden="true" size={16} stroke={1.75} />
+        </button>
+        <span class="sr-only" role="status" data-copy-status></span>
+      </div>
+      <p class="ui-close-note home-annotation">{t('Then')} <code>@import '@master/ui';</code> {t('after')} <code>@import '@master/css';</code></p>
+      <div class="ui-close-actions">
+        {/* The hero's stone and glass, lit by the theme's resting lamp. */}
+        <Link class="ui-hero-start" href="/guide/introduction">
+          {t('Get started')}
+          <IconArrowRight aria-hidden="true" size={16} stroke={1.75} />
+        </Link>
+        <Link class="ui-glass-action" href="/components">{t('Browse components')}</Link>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  const host = document.querySelector<HTMLElement>('[data-copy]')
+  const button = host?.querySelector<HTMLButtonElement>('[data-copy-button]')
+  const status = host?.querySelector<HTMLElement>('[data-copy-status]')
+  const text = host?.querySelector<HTMLElement>('[data-copy-text]')?.textContent ?? ''
+
+  if (host && button && status && navigator.clipboard?.writeText) {
+    button.hidden = false
+    let timer = 0
+    button.addEventListener('click', async () => {
+      clearTimeout(timer)
+      try {
+        await navigator.clipboard.writeText(text)
+        host.setAttribute('data-copied', '')
+        status.textContent = host.dataset.copiedLabel ?? 'Copied'
+        timer = window.setTimeout(() => {
+          host.removeAttribute('data-copied')
+          status.textContent = ''
+        }, 2000)
+      } catch {
+        status.textContent = host.dataset.failedLabel ?? ''
+      }
+    })
+  }
+</script>

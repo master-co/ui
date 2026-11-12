@@ -1,0 +1,149 @@
+---
+import '@master/ui/components/icon.css'
+import '@master/ui/components/segmented.css'
+import '@master/ui/components/table.css'
+import '../../styles/home-cost.css'
+import IconArrowRight from '@tabler/icons-svelte-runes/icons/arrow-right'
+import { siteOf } from '@master/internal-site/astro/site-context'
+import results from '../../../benchmarks/shadcn-cost/results.json'
+
+/*
+ * Compared: the committed results of benchmarks/shadcn-cost, read at build time. Nothing here is typed in by
+ * hand; the sentences that name a case are chosen from the figures.
+ */
+const { t } = siteOf(Astro)
+const kB = (bytes: number) => bytes ? (bytes / 1000).toFixed(1) : '0'
+const repository = 'https://github.com/master-co/ui/tree/main/benchmarks/shadcn-cost'
+
+interface Size { raw: number, gzip: number }
+interface Case { html: Size, css: Size, js: Size, react: Size, jsWithoutReact: Size, total: Size }
+const master = results.masterUi as Record<string, Case & { behaviors: string[], stylesheets: string[] }>
+const shadcn = results.shadcn as Record<string, Record<string, Case>>
+const bases = Object.keys(shadcn)
+const baseLabel: Record<string, string> = { base: 'Base UI', radix: 'Radix' }
+const runtimes = ['with', 'without'] as const
+
+const total = (entry: Case, runtime: typeof runtimes[number]) => entry.html.gzip + entry.css.gzip + (runtime === 'with' ? entry.js.gzip : entry.jsWithoutReact.gzip)
+const js = (entry: Case, runtime: typeof runtimes[number]) => runtime === 'with' ? entry.js.gzip : entry.jsWithoutReact.gzip
+
+const rows = [
+    { id: 'none', name: t('The setup alone'), note: t('no component') },
+    { id: 'button', name: 'Button' },
+    { id: 'card', name: 'Card' },
+    { id: 'dialog', name: 'Dialog' },
+    { id: 'tabs', name: 'Tabs', note: t('Master UI: tabs.js') },
+    { id: 'select', name: 'Select', note: t('Master UI: native, no script') },
+    { id: 'tooltip', name: 'Tooltip' },
+    { id: 'all', name: t('All six') },
+]
+
+/* One scale per state: the largest total in the table, so bars compare across rows as well as within one. */
+const scale = Object.fromEntries(bases.flatMap(base => runtimes.map(runtime => [`${base}-${runtime}`, Math.max(...rows.flatMap(row => [total(master[row.id], runtime), total(shadcn[base][row.id], runtime)]))])))
+const share = (value: number, key: string) => (value / scale[key]).toFixed(4)
+const style = (value: (base: string, runtime: typeof runtimes[number]) => number) => bases.flatMap(base => runtimes.map(runtime => `--share-${base}-${runtime}:${share(value(base, runtime), `${base}-${runtime}`)}`)).join(';')
+
+/* Where shadcn/ui ships less CSS than Master UI, said in words chosen from the figures. */
+const gaps = rows.filter(row => row.id !== 'none').map(row => ({ row, gap: Math.min(...bases.map(base => master[row.id].css.gzip - shadcn[base][row.id].css.gzip)) }))
+const smallerCss = gaps.filter(entry => entry.gap > 0)
+const widest = smallerCss.toSorted((a, b) => b.gap - a.gap)[0]
+const caseName = (row: typeof rows[number]) => row.id === 'all' ? t('all six') : row.name
+const date = new Date(results.date)
+const day = date.toISOString().slice(0, 10)
+const shadcnVersions = results.versions.shadcn as Record<string, Record<string, string>>
+const first = shadcnVersions[bases[0]]
+const combobox = master.combobox
+---
+
+{/*
+  Compared: what the same six components cost a page with Master UI and with shadcn/ui, each built for
+  production the standard way. One row per component, two marks on one scale, each labelled.
+*/}
+<section id="compare" class="home-section home-compare" aria-labelledby="compare-title">
+  <div class="app-wrapper home-section-wrap">
+    <header class="home-section-header">
+      <p class="home-eyebrow"><span class="home-eyebrow-index" aria-hidden="true">04</span><span>{t('Compared')}</span></p>
+      <h2 id="compare-title" class="home-lit home-section-heading home-stone-type"><span>{t('The same components,')}</span>{' '}<span>{t('weighed the same way.')}</span></h2>
+      <p class="home-section-body">{t('Six common components, built for production with Master UI and with shadcn/ui, and measured by one script on the files each page loads first.')}</p>
+      <a class="home-section-link" href={repository}>{t('Read the benchmark and run it')}<IconArrowRight aria-hidden="true" size={14} stroke={1.75} /></a>
+    </header>
+    <figure class="home-cost-tray" aria-labelledby="compare-caption">
+      <div class="home-cost-bar">
+        <ul class="home-compare-legend" aria-hidden="true">
+          <li class="home-compare-key home-compare-key-master">Master UI</li>
+          <li class="home-compare-key home-compare-key-shadcn">shadcn/ui</li>
+        </ul>
+        <div class="home-cost-actions">
+          <div class="segmented segmented-sm" role="radiogroup" aria-label={t('JavaScript counted')}>
+            <label class="segmented-item"><input type="radio" class="segmented-input" name="home-compare-runtime" value="with" checked>{t('With React')}</label>
+            <label class="segmented-item"><input type="radio" class="segmented-input" name="home-compare-runtime" value="without">{t('Without React')}</label>
+          </div>
+          {bases.length > 1 && (
+            <div class="segmented segmented-sm" role="radiogroup" aria-label={t('shadcn/ui primitives')}>
+              {bases.map((base, index) => (
+                <label class="segmented-item"><input type="radio" class="segmented-input" name="home-compare-base" value={base} checked={index === 0}>{baseLabel[base] ?? base}</label>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+      <div class="home-cost-sheet home-compare-sheet">
+        <table class="table home-compare-table">
+          <caption id="compare-caption" class="home-cost-hidden">{t('First load, gzipped: HTML, CSS and JavaScript of each page, in kB')}</caption>
+          <thead>
+            <tr class="table-row">
+              <th class="table-heading" scope="col">{t('Component')}</th>
+              <th class="table-heading" scope="col">{t('First load, gzipped')}<span class="home-compare-split">{t(': HTML + CSS + JS')}</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(row => (
+              <tr class="table-row">
+                <th class="table-cell home-compare-name" scope="row">
+                  <span>{row.name}</span>
+                  {row.note && <span class="home-compare-name-note">{row.note}</span>}
+                </th>
+                <td class="table-cell">
+                  <div class="home-compare-bars">
+                    <div class="home-compare-bar home-compare-mark-master" style={style((_, runtime) => total(master[row.id], runtime))}>
+                      <span class="home-compare-track" aria-hidden="true"><span class="home-compare-fill"></span></span>
+                      <span class="home-compare-figure">
+                        <span class="home-cost-hidden">Master UI: </span>
+                        {runtimes.map(runtime => (
+                          <span class={`home-compare-when-${runtime}`}><span class="home-compare-figure-total">{kB(total(master[row.id], runtime))} kB</span><span class="home-compare-split"> · CSS {kB(master[row.id].css.gzip)} · JS {kB(js(master[row.id], runtime))}</span></span>
+                        ))}
+                      </span>
+                    </div>
+                    <div class="home-compare-bar home-compare-mark-shadcn" style={style((base, runtime) => total(shadcn[base][row.id], runtime))}>
+                      <span class="home-compare-track" aria-hidden="true"><span class="home-compare-fill"></span></span>
+                      <span class="home-compare-figure">
+                        {bases.map(base => runtimes.map(runtime => (
+                          <span class={`home-compare-when-${runtime} home-compare-when-${base}`}><span class="home-cost-hidden">shadcn/ui, {baseLabel[base] ?? base}: </span><span class="home-compare-figure-total">{kB(total(shadcn[base][row.id], runtime))} kB</span><span class="home-compare-split"> · CSS {kB(shadcn[base][row.id].css.gzip)} · JS {kB(js(shadcn[base][row.id], runtime))}</span></span>
+                        )))}
+                      </span>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <ol class="home-cost-notes" id="compare-notes">
+        <li><span class="home-cost-note-mark" aria-hidden="true">1</span>{t('Every file the built page loads first, gzipped: the HTML, its stylesheets and its module scripts. Master UI writes the markup in the HTML; shadcn/ui renders it from JavaScript. React and React DOM are {size} kB of that JavaScript on every shadcn/ui page; “Without React” leaves them out.').replace('{size}', kB(shadcn[bases[0]].none.react.gzip))}</li>
+        <li><span class="home-cost-note-mark" aria-hidden="true">2</span>{smallerCss.length
+          ? t('CSS alone, shadcn/ui ships less for {cases}, since Tailwind writes only the utilities a page uses. The widest gap is {widest}: {master} kB against {shadcn} kB.').replace('{cases}', new Intl.ListFormat('en', { type: 'conjunction' }).format(smallerCss.map(entry => caseName(entry.row)))).replace('{widest}', caseName(widest.row)).replace('{master}', kB(master[widest.row.id].css.gzip)).replace('{shadcn}', kB(Math.max(...bases.map(base => shadcn[base][widest.row.id].css.gzip))))
+          : t('CSS alone, Master UI ships no more than shadcn/ui in any case.')}{widest ? ` ${t('A Master UI {name} compiles {count} stylesheets after the theme, itself and what it composes: {list}.').replace('{name}', caseName(widest.row).toLowerCase()).replace('{count}', String(master[widest.row.id].stylesheets.length)).replace('{list}', new Intl.ListFormat('en', { type: 'conjunction' }).format(master[widest.row.id].stylesheets.map(file => file.replace(/^.*\//, '').replace(/\.css$/, ''))))}` : ''}</li>
+        <li><span class="home-cost-note-mark" aria-hidden="true">3</span>{t('Master UI needs a script only where no native element does the job. Tabs that switch panels in place load the tabs behavior; the select measured is a native select, which needs none. Drawn as a combobox, a select costs {css} kB of CSS and {js} kB of JavaScript.').replace('{css}', kB(combobox.css.gzip)).replace('{js}', kB(combobox.js.gzip))}</li>
+        <li><span class="home-cost-note-mark" aria-hidden="true">4</span>{t('shadcn/ui {shadcn} ({styles}) on Vite {vite}, React {react}, Tailwind CSS {tailwind}; Master UI from commit {commit} on the same Vite. Built with Vite’s defaults, gzipped by node:zlib, on {date} ({machine}).')
+          .replace('{shadcn}', first.shadcn)
+          .replace('{styles}', bases.map(base => shadcnVersions[base].style).join(', '))
+          .replace('{vite}', first.vite)
+          .replace('{react}', first.react)
+          .replace('{tailwind}', first.tailwindcss)
+          .replace('{commit}', (results.versions.masterUi.commit ?? '').slice(0, 7))
+          .replace('{date}', day)
+          .replace('{machine}', `${results.machine.cpu}, Node ${results.machine.node}`)}{' '}<a href={repository}>benchmarks/shadcn-cost</a></li>
+      </ol>
+    </figure>
+  </div>
+</section>

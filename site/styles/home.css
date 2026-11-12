@@ -1,14 +1,806 @@
 /* Master UI owns its homepage composition; shared home materials stay in internal-site. */
 @layer components {
-  .home-hero .home-display { margin-top: 0; }
+  /*
+   * Hero: a technical drawing behind the words. WebGL draws the theme's surface ladder in section on a table
+   * printed with markup; the words stand on a patch of the table it keeps clear. Without the figure (no WebGL 2,
+   * print, a failed script) the ground stays plain and the hero reads the same.
+   */
+  .ui-hero {
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    align-content: center;
+    min-height: max(42rem, 100svh);
+    padding-block: clamp(7rem, 5rem + 5vw, 9rem) clamp(6rem, 4rem + 6vw, 9rem);
+    overflow: clip;
+    background-color: var(--home-ground);
 
-  .home-hero-lead {
+    /* Below 75rem the figure stands under the words, in room the hero keeps for it. */
+    @media (width < 75rem), (max-aspect-ratio: 23 / 20) {
+      align-content: start;
+      min-height: 0;
+      padding-block: clamp(6.5rem, 5rem + 4vw, 8rem) clamp(16rem, 9rem + 36vw, 30rem);
+    }
+  }
+
+  .ui-hero-stage {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transition: opacity 900ms var(--home-ease);
+    /* The table meets the next section without an edge. */
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 8rem), transparent);
+  }
+
+  .ui-hero[data-still-ready] .ui-hero-stage {
+    opacity: 1;
+  }
+
+  .ui-hero-body {
+    position: relative;
+    width: 100%;
+  }
+
+  /* The patch of table kept clear for reading; the figure measures it. */
+  .ui-hero-reading {
+    display: grid;
+    justify-items: start;
+    /* Wide enough for “Beautiful interface” on one line at the largest size: about 9.3em. */
     max-width: 38rem;
-    margin-top: 1.5rem;
-    color: var(--color-text-body);
-    font-size: clamp(1.0625rem, 1rem + 0.25vw, 1.1875rem);
+    padding-block: 1rem;
+  }
+
+  .ui-hero-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.625rem;
+    height: 1.875rem;
+    padding-inline: 0.25rem 0.75rem;
+    border-radius: calc(infinity * 1px);
+    font-size: 0.8125rem;
+    color: var(--home-text-body);
+    background-color: var(--home-sheet);
+    box-shadow: inset 0 1px 0 var(--home-highlight), 0 0 0 0.5px var(--home-rule), 0 1px 2px -1px var(--home-shade-far);
+    transition: box-shadow var(--home-quick) var(--home-ease), color var(--home-quick) var(--home-ease);
+
+    & > svg {
+      color: var(--home-text-faint);
+      transition: translate var(--home-base) var(--home-ease);
+    }
+
+    @media (hover: hover) {
+      &:hover {
+        color: var(--home-text);
+        box-shadow: inset 0 1px 0 var(--home-highlight), 0 0 0 0.5px var(--home-rule-strong), 0 1px 2px -1px var(--home-shade-far);
+
+        & > svg { translate: 2px 0; }
+      }
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--home-ink);
+      outline-offset: 2px;
+    }
+  }
+
+  .ui-hero-pill-badge {
+    display: inline-flex;
+    align-items: center;
+    height: 1.375rem;
+    padding-inline: 0.5rem;
+    border-radius: inherit;
+    font-family: var(--home-mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--home-text);
+    background-color: var(--home-tray);
+    box-shadow: inset 0 0 0 0.5px var(--home-rule);
+  }
+
+  .ui-hero-title {
+    margin: 1.75rem 0 0;
+    font-size: clamp(2.5rem, 1rem + 2.9vw, 4rem);
+    font-weight: 500;
+    line-height: 1.02;
+    letter-spacing: -0.048em;
+    color: var(--home-text);
+    text-wrap: balance;
+  }
+
+  .ui-hero-lead {
+    max-width: 33rem;
+    margin: 1.5rem 0 0;
+    font-size: clamp(1.0625rem, 1rem + 0.2vw, 1.1875rem);
     line-height: 1.6;
+    color: var(--home-text-body);
     text-wrap: pretty;
+  }
+
+  .ui-hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: 0.75rem;
+    margin-top: 2.5rem;
+
+    @media (width < 30rem) {
+      flex-direction: column;
+      width: 100%;
+    }
+  }
+
+  /*
+   * The hero's actions share the figure's lamp. Without the figure these defaults hang it above and a little
+   * left, as the theme's light is; with it, the scene writes where the lamp is and where shadows fall.
+   */
+  :is(.ui-hero-start, .ui-hero-prompt, .ui-glass-action, .ui-hero-pill) {
+    --lit-x: 30%;
+    --lit-y: -160%;
+    --lit-angle: -45deg;
+    --cast-x: 2px;
+    --cast-y: 4px;
+    --lit-near: 0;
+  }
+
+  /*
+   * Get started is cut from the figure's one ink object: polished obsidian in light mode, moonstone in dark
+   * mode. A rim catches the lamp on its near side, a lip of light sits on its top edge, a glint crosses the face
+   * as the pointer arrives, and its shadow falls the way the figure's shadows fall. Pressing trades the cast
+   * shadow for an inner one.
+   */
+  .ui-hero-start {
+    --stone-top: light-dark(oklch(0.32 0.004 265), oklch(0.99 0.001 265));
+    --stone-mid: light-dark(oklch(0.19 0.003 265), oklch(0.94 0.002 265));
+    --stone-bottom: light-dark(oklch(0.09 0.002 265), oklch(0.84 0.004 265));
+    --stone-text: light-dark(oklch(0.975 0.001 265), oklch(0.19 0.003 265));
+    --stone-lip: light-dark(rgb(255 255 255 / 0.22), rgb(255 255 255 / 0.95));
+    --stone-rim: light-dark(rgb(255 255 255 / 0.42), rgb(255 255 255 / 1));
+    --stone-mirror: light-dark(oklch(0.72 0.004 265 / 0.26), oklch(0.55 0.004 265 / 0.32));
+    --stone-sheen: light-dark(rgb(255 255 255 / 0.14), rgb(255 255 255 / 0.9));
+    --stone-glare: light-dark(rgb(255 255 255 / 0.32), rgb(255 255 255 / 1));
+    /* Moonstone's cool sheen floats low in the pill, across from the lamp; obsidian has none. */
+    --stone-adularescence: light-dark(transparent, oklch(0.9 0.03 245 / 0.22));
+    --stone-glint: light-dark(rgb(255 255 255 / 0.15), rgb(255 255 255 / 0.85));
+    --stone-contact: light-dark(rgb(0 0 0 / 0.26), rgb(0 0 0 / 0.55));
+    --stone-cast: light-dark(oklch(0.2 0.003 265 / 0.3), oklch(0.02 0 none / 0.7));
+    --stone-press: light-dark(rgb(0 0 0 / 0.7), oklch(0.5 0.004 265 / 0.5));
+    position: relative;
+    isolation: isolate;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 3.25rem;
+    padding: 0.5rem 1.625rem;
+    overflow: hidden;
+    border-radius: calc(infinity * 1px);
+    font-size: 0.9375rem;
+    font-weight: var(--font-weight-medium);
+    letter-spacing: -0.005em;
+    color: var(--stone-text);
+    text-decoration: none;
+    text-shadow: 0 -1px 0 light-dark(rgb(0 0 0 / 0.45), rgb(255 255 255 / 0.7));
+    background-color: var(--stone-mid);
+    /* The curved top reflects the lamp as a sheen that follows it, and as a hot spot when the pointer brings it close. */
+    background-image:
+      radial-gradient(ellipse 13% 18% at clamp(14%, var(--lit-x), 86%) 24%, color-mix(in oklab, var(--stone-glare) calc(var(--lit-near) * 100%), transparent), color-mix(in oklab, var(--stone-glare) calc(var(--lit-near) * 30%), transparent) 45%, transparent),
+      radial-gradient(ellipse 80% 70% at var(--lit-x) -10%, var(--stone-sheen), transparent 70%),
+      radial-gradient(ellipse 34% 70% at clamp(30%, calc(100% - var(--lit-x) * 0.5), 70%) 75%, var(--stone-adularescence), transparent),
+      linear-gradient(180deg, var(--stone-top), var(--stone-mid) 52%, var(--stone-bottom));
+    box-shadow:
+      inset 0 1px 0 var(--stone-lip),
+      inset 0 -1px 0 var(--stone-mirror),
+      inset 0 -10px 16px -12px var(--stone-mirror),
+      0 1px 1px var(--stone-contact),
+      var(--cast-x) var(--cast-y) 10px -3px var(--stone-cast),
+      calc(var(--cast-x) * 2.5) calc(var(--cast-y) * 2.5) 28px -10px var(--stone-cast);
+    /* No shadow transition: the lamp moves these shadows continuously, so easing them would restyle every frame. */
+    transition: background-color var(--home-quick) var(--home-ease);
+
+    /* The rim: bright on the side that faces the lamp, a cool reflection on the far side. */
+    &::before {
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      padding: 1px;
+      border-radius: inherit;
+      background-image: linear-gradient(var(--lit-angle), var(--stone-mirror), transparent 40%, transparent 58%, var(--stone-rim));
+      mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+      pointer-events: none;
+      content: '';
+    }
+
+    /* One glint crosses the polished face as the pointer arrives. */
+    &::after {
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      border-radius: inherit;
+      background-image: linear-gradient(105deg, transparent 38%, var(--stone-glint) 50%, transparent 62%);
+      background-size: 250% 100%;
+      background-position: 100% 0;
+      background-repeat: no-repeat;
+      pointer-events: none;
+      content: '';
+    }
+
+    & > svg {
+      transition: translate var(--home-base) var(--home-ease);
+    }
+
+    &:is(:hover, :focus-visible) {
+      --stone-adularescence: light-dark(transparent, oklch(0.88 0.035 245 / 0.42));
+      box-shadow:
+        inset 0 1px 0 var(--stone-lip),
+        inset 0 -1px 0 var(--stone-mirror),
+        inset 0 -14px 20px -12px var(--stone-mirror),
+        0 1px 1px var(--stone-contact),
+        var(--cast-x) var(--cast-y) 12px -3px var(--stone-cast),
+        calc(var(--cast-x) * 3) calc(var(--cast-y) * 3) 34px -10px var(--stone-cast);
+
+      & > svg { translate: 3px 0; }
+
+      &::after {
+        background-position: 0 0;
+        transition: background-position 900ms var(--home-ease);
+      }
+    }
+
+    &:active {
+      box-shadow:
+        inset 0 2px 6px var(--stone-press),
+        inset 0 -1px 0 var(--stone-mirror),
+        0 1px 1px var(--stone-contact),
+        calc(var(--cast-x) * 0.4) calc(var(--cast-y) * 0.4) 6px -3px var(--stone-cast);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--home-ink);
+      outline-offset: 4px;
+    }
+  }
+
+  /*
+   * The setup prompt as a pill of clear glass the same height as the stone: a faint sheet, a lip of light, a rim
+   * that catches the lamp on its near side and a faint shadow, since glass passes most of the light. The copy
+   * mark sits in a well at its end; copying sends one glint across the glass.
+   */
+  :is(.ui-hero-prompt, .ui-glass-action) {
+    --glass-fill: light-dark(rgb(255 255 255 / 0.5), rgb(255 255 255 / 0.045));
+    --glass-top: light-dark(rgb(255 255 255 / 0.7), rgb(255 255 255 / 0.06));
+    --glass-lip: light-dark(rgb(255 255 255 / 1), rgb(255 255 255 / 0.14));
+    --glass-rim: light-dark(oklch(0.22 0.002 265 / 0.16), rgb(255 255 255 / 0.4));
+    --glass-rim-far: light-dark(oklch(0.22 0.002 265 / 0.07), rgb(255 255 255 / 0.1));
+    --glass-glint: light-dark(rgb(255 255 255 / 0.95), rgb(255 255 255 / 0.2));
+    --glass-cast: light-dark(oklch(0.2 0.003 265 / 0.12), rgb(0 0 0 / 0.45));
+    position: relative;
+    isolation: isolate;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.625rem;
+    min-height: 3.25rem;
+    padding: 0.25rem 0.25rem 0.25rem 1.125rem;
+    border: 0;
+    border-radius: calc(infinity * 1px);
+    font: inherit;
+    font-size: 0.9375rem;
+    font-weight: var(--font-weight-medium);
+    color: var(--home-text);
+    text-align: start;
+    background-color: var(--glass-fill);
+    background-image: linear-gradient(180deg, var(--glass-top), transparent 55%);
+    box-shadow:
+      inset 0 1px 1px var(--glass-lip),
+      0 1px 2px light-dark(oklch(0.2 0.003 265 / 0.06), rgb(0 0 0 / 0.3)),
+      var(--cast-x) var(--cast-y) 16px -6px var(--glass-cast);
+    backdrop-filter: blur(10px) saturate(1.2);
+    cursor: pointer;
+    transition: background-color var(--home-quick) var(--home-ease);
+
+    &::before {
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      padding: 1px;
+      border-radius: inherit;
+      background-image: linear-gradient(var(--lit-angle), var(--glass-rim-far), var(--glass-rim-far) 30%, var(--glass-rim));
+      mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+      pointer-events: none;
+      content: '';
+    }
+
+    &::after {
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      border-radius: inherit;
+      background-image: linear-gradient(105deg, transparent 40%, var(--glass-glint) 50%, transparent 60%);
+      background-size: 300% 100%;
+      background-position: 100% 0;
+      background-repeat: no-repeat;
+      opacity: 0;
+      pointer-events: none;
+      content: '';
+    }
+
+    &[data-status='copied']::after {
+      animation: ui-hero-glint 1000ms var(--home-ease-inout);
+    }
+
+    @media (hover: hover) {
+      &:hover {
+        --glass-fill: light-dark(rgb(255 255 255 / 0.72), rgb(255 255 255 / 0.075));
+      }
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--home-ink);
+      outline-offset: 4px;
+    }
+  }
+
+  /* A link of the same glass: no copy well, so its padding is even. */
+  .ui-glass-action {
+    justify-content: center;
+    padding-inline: 1.5rem;
+    text-decoration: none;
+  }
+
+  .ui-hero-prompt-icon {
+    flex: none;
+    color: var(--home-text-quiet);
+  }
+
+  .ui-hero-prompt-label {
+    flex: auto;
+    min-width: 0;
+  }
+
+  .ui-hero-prompt-copy {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: calc(infinity * 1px);
+    color: var(--home-text-body);
+    background-color: light-dark(oklch(0.22 0.002 265 / 0.045), rgb(255 255 255 / 0.06));
+    box-shadow: inset 0 0 0 0.5px var(--home-rule);
+    transition: background-color var(--home-quick) var(--home-ease);
+
+    & > * {
+      grid-area: 1 / 1;
+      transition: opacity var(--home-quick) var(--home-ease), scale var(--home-base) var(--home-ease);
+    }
+
+    & > .ui-hero-prompt-done {
+      opacity: 0;
+      scale: 0.6;
+    }
+
+    .ui-hero-prompt[data-status='copied'] & > .ui-hero-prompt-idle {
+      opacity: 0;
+      scale: 0.6;
+    }
+
+    .ui-hero-prompt[data-status='copied'] & > .ui-hero-prompt-done {
+      opacity: 1;
+      scale: 1;
+    }
+
+    @media (hover: hover) {
+      .ui-hero-prompt:hover & {
+        background-color: light-dark(oklch(0.22 0.002 265 / 0.07), rgb(255 255 255 / 0.1));
+      }
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ui-hero-start::after,
+    :is(.ui-hero-prompt, .ui-glass-action)::after {
+      display: none;
+    }
+
+    .ui-hero-start:is(:hover, :focus-visible) > svg {
+      translate: none;
+    }
+  }
+
+  /* System colors draw the actions as plain buttons with their own borders. */
+  @media (forced-colors: active) {
+    :is(.ui-hero-start, .ui-hero-prompt, .ui-glass-action) {
+      border: 1px solid ButtonText;
+      background: ButtonFace;
+      color: ButtonText;
+      box-shadow: none;
+      text-shadow: none;
+
+      &::before,
+      &::after {
+        display: none;
+      }
+    }
+  }
+
+  /* Drafting notes: a mono label at the end of a hairline drawn level from the edge it names. */
+  .ui-hero-notes {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 1;
+    transition: opacity 600ms var(--home-ease) 1.6s;
+
+    &[data-hidden] {
+      opacity: 0;
+      transition-delay: 0s;
+    }
+  }
+
+  .ui-hero-leaders {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    fill: none;
+    stroke: color-mix(in oklab, var(--home-text-quiet) 50%, transparent);
+    stroke-width: 1;
+  }
+
+  .ui-hero-note {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: grid;
+    grid-template-columns: auto auto;
+    column-gap: 0.5rem;
+    /* The first line's middle sits on the leader. */
+    margin-top: -0.464rem;
+    font-family: var(--home-mono);
+    font-size: 0.6875rem;
+    line-height: 1.35;
+    letter-spacing: 0.02em;
+    color: var(--home-text-body);
+    white-space: nowrap;
+
+    /* A small ring marks the edge each leader starts from. */
+    &::after {
+      position: absolute;
+      top: calc(0.464rem - 2.5px + var(--dot-y, 0px));
+      left: calc(var(--dot-x, 0px) - 2.5px);
+      width: 5px;
+      height: 5px;
+      border-radius: calc(infinity * 1px);
+      background-color: var(--home-ground);
+      box-shadow: inset 0 0 0 1px var(--home-text-quiet);
+      content: '';
+    }
+  }
+
+  .ui-hero-note-index {
+    grid-row: span 2;
+    color: var(--home-text-faint);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .ui-hero-note-token {
+    color: var(--home-text);
+  }
+
+  .ui-hero-note-detail {
+    color: var(--home-text-faint);
+  }
+
+  .ui-hero-caption {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 2rem;
+    display: none;
+    gap: 0.75rem;
+    width: min(100%, 100rem);
+    margin-inline: auto;
+    padding-inline: var(--home-gutter, 2.5rem);
+
+    & > :first-child {
+      color: var(--home-text);
+    }
+
+    @media (width >= 64rem) {
+      display: flex;
+    }
+  }
+
+  /* The words arrive before the figure opens: each rises out of a soft focus, the actions last. */
+  @media (prefers-reduced-motion: no-preference) {
+    .ui-hero-reading > * {
+      animation: ui-hero-arrive 1000ms var(--home-ease) both;
+    }
+
+    .ui-hero-pill { animation-delay: 100ms; }
+    .ui-hero-title { animation-delay: 200ms; }
+    .ui-hero-lead { animation-delay: 340ms; }
+    .ui-hero-actions { animation-delay: 460ms; }
+  }
+
+  /*
+   * Markup in, material out: the code on an obsidian slab in either theme, the specimen on the library's own
+   * dotted stage beside it. The decode and the reveal are staged in script; without it both are simply shown.
+   */
+  .ui-forge {
+    margin: 0;
+    padding: var(--home-gap);
+    border-radius: var(--home-radius-tray);
+    background-color: var(--home-tray);
+    box-shadow: inset 0 0 0 1px var(--home-hairline);
+  }
+
+  .ui-forge-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem 1.5rem;
+    padding: 0 0.25rem var(--home-gap);
+  }
+
+  .ui-forge-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .ui-forge-status-dot {
+    width: 0.375rem;
+    height: 0.375rem;
+    border-radius: calc(infinity * 1px);
+    background-color: var(--home-ok);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--home-ok) 18%, transparent);
+  }
+
+  .ui-forge-panel {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--home-gap);
+
+    &[hidden] {
+      display: none;
+    }
+
+    @media (width >= 64rem) {
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+      min-height: 28rem;
+    }
+  }
+
+  .ui-forge-code {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    min-width: 0;
+    border-radius: var(--home-radius-sheet);
+    color-scheme: dark;
+    background-color: oklch(17.4% .0018 265);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05), 0 0 0 1px oklch(12% 0 none / 0.6), var(--home-elevation-1);
+  }
+
+  .ui-forge-file {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin: 0;
+    padding: 0.875rem 1.25rem;
+    color: oklch(68.6% .0028 265);
+    border-bottom: 1px solid rgb(255 255 255 / 0.07);
+
+    & > :first-child {
+      color: oklch(90% .002 265);
+    }
+  }
+
+  .ui-forge-pre {
+    margin: 0;
+    padding: 1.125rem 1.25rem 1.5rem;
+    overflow: auto;
+    font-family: var(--home-mono);
+    font-size: 0.78125rem;
+    line-height: 1.75;
+    tab-size: 2;
+    color: var(--ui-code-text);
+    outline: none;
+
+    & .t { color: var(--ui-code-function); }
+    & .a { color: var(--ui-code-property); }
+    & .s { color: var(--ui-code-string); }
+    & .p { color: var(--ui-code-punctuation); }
+
+    &:focus-visible {
+      box-shadow: inset 0 0 0 2px var(--ui-code-function);
+      border-radius: var(--home-radius-sheet);
+    }
+  }
+
+  .ui-forge-pre code {
+    counter-reset: line;
+  }
+
+  /* Line numbers are drawn, not written: copying the code takes the markup alone. */
+  .ui-forge-line {
+    display: inline;
+    counter-increment: line;
+
+    &::before {
+      display: inline-block;
+      width: 2ch;
+      margin-right: 1.5ch;
+      text-align: right;
+      color: oklch(48.6% .003 265);
+      content: counter(line);
+    }
+  }
+
+  .ui-forge-stage {
+    --color-texture: var(--color-line-hair);
+    position: relative;
+    min-height: 22rem;
+    border-radius: var(--home-radius-sheet);
+    background-color: var(--home-ground);
+    box-shadow: inset 0 0 0 1px var(--home-hairline);
+    /* A fixed toast region is placed within the stage, not the window. */
+    contain: layout paint;
+  }
+
+  /* The specimen fills the stage, so the reveal covers whatever the stage holds, a fixed toast region included. */
+  .ui-forge-specimen {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 2.5rem 1.5rem;
+    mask-image: linear-gradient(90deg, #000 calc(var(--reveal, 1) * 140% - 40%), transparent calc(var(--reveal, 1) * 140%));
+
+    &[data-example='card'] > * {
+      width: min(100%, 24rem);
+    }
+  }
+
+  /* The reveal's front: a hairline of light crossing the stage, gone at either end. */
+  .ui-forge-scan {
+    position: absolute;
+    inset-block: 1.5rem;
+    left: calc(var(--reveal, 1) * 100%);
+    width: 1px;
+    background: linear-gradient(transparent, var(--home-text-quiet) 30%, var(--home-text-quiet) 70%, transparent);
+    opacity: min(var(--reveal, 1) * 10, (1 - var(--reveal, 1)) * 10, 0.6);
+    pointer-events: none;
+  }
+
+  /* The platform's work, as a ledger of live specimens: each feature, who uses it and the baseline beneath it. */
+  .ui-platform {
+    margin-top: clamp(4.5rem, 3rem + 4vw, 7rem);
+  }
+
+  .ui-platform-header {
+    display: grid;
+    max-width: 44rem;
+  }
+
+  .ui-platform-title {
+    margin: 0;
+    font-size: clamp(1.5rem, 1.25rem + 1vw, 2rem);
+    font-weight: var(--font-weight-regular);
+    line-height: 1.15;
+    letter-spacing: -0.03em;
+    color: var(--home-text);
+    text-wrap: balance;
+  }
+
+  .ui-platform-lead {
+    margin: 1rem 0 0;
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--home-text-quiet);
+    text-wrap: pretty;
+  }
+
+  .ui-platform-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--home-gap);
+    margin: 2.5rem 0 0;
+    padding: 0;
+    list-style: none;
+
+    @media (width >= 48rem) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    @media (width >= 72rem) {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  .ui-platform-cell {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    padding: var(--home-gap);
+    border-radius: var(--home-radius-tray);
+    background-color: var(--home-tray);
+    box-shadow: inset 0 0 0 1px var(--home-hairline);
+  }
+
+  .ui-platform-specimen {
+    --color-texture: var(--color-line-hair);
+    display: grid;
+    place-items: center;
+    min-height: 10.5rem;
+    padding: 1.5rem;
+    border-radius: var(--home-radius-sheet);
+    background-color: var(--home-ground);
+    box-shadow: inset 0 0 0 1px var(--home-hairline);
+
+    & > .field {
+      width: min(100%, 17rem);
+    }
+  }
+
+  .ui-platform-text {
+    padding: 1.125rem 0.375rem 0.375rem;
+  }
+
+  .ui-platform-names {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+    margin: 0;
+
+    & > code {
+      padding: 0.125rem 0.4375rem;
+      border-radius: var(--home-radius-chip);
+      font-family: var(--home-mono);
+      font-size: 0.75rem;
+      line-height: 1.5;
+      color: var(--home-text);
+      background-color: var(--home-sheet);
+      box-shadow: inset 0 0 0 0.5px var(--home-rule);
+    }
+  }
+
+  .ui-platform-summary {
+    margin: 0.875rem 0 0;
+    font-size: 0.9375rem;
+    line-height: 1.55;
+    color: var(--home-text-body);
+    text-wrap: pretty;
+  }
+
+  .ui-platform-facts {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0.375rem 1rem;
+    margin: 1rem 0 0;
+    padding-top: 0.875rem;
+    border-top: 1px solid var(--home-guide);
+    font-size: 0.8125rem;
+    line-height: 1.5;
+
+    & > dt {
+      font-family: var(--home-mono);
+      font-size: 0.6875rem;
+      line-height: 1.75;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--home-text-faint);
+    }
+
+    & > dd {
+      margin: 0;
+      color: var(--home-text-quiet);
+    }
   }
 
   .home-components {
@@ -26,15 +818,96 @@
 
   .home-components .home-section-heading > span { display: block; }
 
-  /* Every component as its cover: columns no narrower than a cover's 240px safe area. */
+  /* A dozen components as their covers: columns no narrower than a cover's 240px safe area. */
   .home-component-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 2rem 1.5rem;
-    margin-top: clamp(2.5rem, 2rem + 2vw, 4rem);
 
-    @media (width >= 40rem) {
-      grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+    @media (width >= 48rem) {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
     }
+
+    @media (width >= 72rem) {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  /* The rest of the catalog as an index: every category and its count, ruled like a table of contents. */
+  .ui-catalog-index {
+    display: grid;
+    gap: 1.75rem;
+    margin-top: clamp(3rem, 2rem + 3vw, 5rem);
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--home-rule);
+  }
+
+  .ui-catalog-categories {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 1.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    @media (width >= 48rem) {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    @media (width >= 72rem) {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+  }
+
+  .ui-catalog-category {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding-block: 0.625rem;
+    border-bottom: 1px solid var(--home-guide);
+    font-size: 0.875rem;
+    color: var(--home-text-body);
+    text-decoration: none;
+    transition: color var(--home-quick) var(--home-ease);
+
+    @media (hover: hover) {
+      &:hover {
+        color: var(--home-text);
+      }
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--home-ink);
+      outline-offset: 2px;
+      border-radius: 2px;
+    }
+  }
+
+  .ui-catalog-count {
+    font-family: var(--home-mono);
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--home-text-faint);
+  }
+}
+
+@keyframes ui-hero-glint {
+  from {
+    opacity: 1;
+    background-position: 100% 0;
+  }
+
+  to {
+    opacity: 1;
+    background-position: 0 0;
+  }
+}
+
+@keyframes ui-hero-arrive {
+  from {
+    opacity: 0;
+    filter: blur(6px);
+    translate: 0 0.75rem;
   }
 }
