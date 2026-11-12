@@ -537,3 +537,33 @@ test(`${engine}: scaled page viewport and native size controls work without Java
     await noOuterOverflow(page)
   } finally { await page.close() }
 })
+
+
+// The previous registry published these ten layout items. A moved item must resolve to real JSON;
+// the contractless arrangements page was removed from the registry in the 0.x taxonomy change.
+test('retired registry names redirect only to generated registry items', async () => {
+  const redirects = (await readFile(resolve(output, '_redirects'), 'utf8')).split('\n')
+    .map(line => line.trim()).filter(line => line && !line.startsWith('#'))
+    .map(line => { const [from, to, status] = line.split(/\s+/); return { from, to, status } })
+  const match = pathname => {
+    for (const rule of redirects) {
+      const [prefix, suffix] = rule.from.split('*')
+      const matches = suffix === undefined ? pathname === prefix : pathname.startsWith(prefix) && pathname.endsWith(suffix)
+      if (matches) return { ...rule, target: rule.to.replace(':splat', suffix === undefined ? '' : pathname.slice(prefix.length, pathname.length - suffix.length)) }
+    }
+  }
+  const registry = JSON.parse(await readFile(resolve(output, 'r/registry.json'), 'utf8'))
+  const available = new Set(registry.items.map(item => item.name))
+  for (const name of ['app-shell', 'auto-grid', 'centered', 'dashboard', 'docs', 'holy-grail', 'master-detail', 'page', 'settings']) {
+    const pathname = `/r/layout-${name}.json`, rule = match(pathname)
+    assert.ok(rule, `${pathname} lost its moved item`)
+    assert.equal(rule.status, '301')
+    const destination = JSON.parse(await readFile(resolve(output, '.' + rule.target), 'utf8'))
+    assert.ok(available.has(destination.name), `${rule.target} must remain a listed registry item`)
+    assert.ok(destination.files.length > 0, `${rule.target} must contain usable source`)
+    assert.equal(rule.target, `/r/${destination.name}.json`)
+  }
+  assert.equal(match('/r/layout-arrangements.json'), undefined, 'Removed arrangements must not be redirected to nonexistent page JSON')
+  assert.equal(existsSync(resolve(output, 'r/layout-arrangements.json')), false)
+  assert.equal(match('/r/layout-does-not-exist.json'), undefined, 'Unknown names must not acquire speculative registry redirects')
+})
