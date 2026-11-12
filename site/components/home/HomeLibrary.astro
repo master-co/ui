@@ -1,0 +1,56 @@
+---
+import '@master/ui/components/marquee.css'
+import IconArrowRight from '@tabler/icons-svelte-runes/icons/arrow-right'
+import { siteOf } from '@master/internal-site/astro/site-context'
+import { library, type LibraryKind } from '~/site/components/catalog'
+import ComponentTile from '~/site/components/ComponentTile.astro'
+
+interface Props {
+  /** Which part of the library the shelf shows. */
+  kind: LibraryKind
+  /** The section's number in the page. */
+  index: string
+  eyebrow: string
+  /** The heading, in two parts that may each take a line. */
+  heading: [string, string]
+  body: string
+  /** The link to the overview; `{count}` is replaced with the number of items. */
+  link: string
+  /** The items to show, in order; every item of the kind when left out. */
+  slugs?: string[]
+  /** The shelf passes the other way. */
+  reverse?: boolean
+}
+
+const { kind, index, eyebrow, heading, body, link, slugs, reverse = false } = Astro.props
+const { t } = siteOf(Astro)
+const all = library[kind] as readonly { slug: string, name: string }[]
+const items = slugs ?? all.map(item => item.slug)
+/** About 30px a second, whatever the length of the row. A copy narrower than the window spreads to its width. */
+const duration = `${(items.length * 13).toFixed(0)}s`
+const id = `${kind}-title`
+---
+
+{/*
+  A shelf of the library: the section's words, then one row of covers that passes by without end and stops under
+  the pointer or the keyboard, so any tile can be opened. The overview it links to lists them all.
+*/}
+<section id={kind} class="home-section home-library" aria-labelledby={id}>
+  <div class="app-wrapper home-section-wrap">
+    <header class="home-section-header">
+      <p class="home-eyebrow"><span class="home-eyebrow-index" aria-hidden="true">{index}</span><span>{t(eyebrow)}</span></p>
+      <h2 id={id} class="home-lit home-section-heading home-stone-type"><span>{t(heading[0])}</span>{' '}<span>{t(heading[1])}</span></h2>
+      <p class="home-section-body">{t(body)}</p>
+      <a class="home-section-link" href={`/${kind}`}>{t(link).replace('{count}', String(all.length))}<IconArrowRight aria-hidden="true" size={14} stroke={1.75} /></a>
+    </header>
+  </div>
+  <div class:list={['marquee', 'home-library-row', reverse && 'marquee-reverse']} role="group" aria-label={t(eyebrow)} style={`--marquee-duration: ${duration}`}>
+    <ul class="marquee-track">
+      {items.map(slug => <li><ComponentTile slug={slug} kind={kind} description /></li>)}
+    </ul>
+    {/* The copy is for the eye: hidden from assistive technology and out of the tab order. */}
+    <ul class="marquee-track" aria-hidden="true" inert>
+      {items.map(slug => <li><ComponentTile slug={slug} kind={kind} description /></li>)}
+    </ul>
+  </div>
+</section>
