@@ -148,7 +148,7 @@ Or import only the theme and the components you use:
 | Trace | `trace`, `trace-step`, `trace-failed`, `trace-summary`, `trace-marker`, `trace-meta`, `trace-detail` |
 | Calendar | `calendar`, `calendar-header`, `calendar-title`, `calendar-grid`, `calendar-week`, `calendar-weekday`, `calendar-day`, `calendar-day-outside`, `calendar-day-range-start`, `calendar-day-range`, `calendar-day-range-end` |
 | Tree | `tree`, `tree-item`, `tree-toggle`, `tree-group`, `tree-sub` |
-| Carousel | `carousel`, `carousel-slide`, `carousel-2`, `carousel-3` |
+| Carousel | `carousel`, `carousel-slide`, `carousel-2`, `carousel-3`, `carousel-center` |
 | Marquee | `marquee`, `marquee-reverse`, `marquee-track` |
 | Splitter | `splitter`, `splitter-pane`, `splitter-handle` |
 | Figure | `figure`, `figure-framed`, `figure-center`, `figure-media`, `figure-caption` |

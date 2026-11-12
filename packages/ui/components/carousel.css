@@ -38,6 +38,25 @@
       scroll-behavior: auto;
     }
 
+    /*
+     * Centered: the slide in view stands in the middle and its neighbors show an edge on either side. Room before
+     * the first slide and after the last lets both reach the middle too. That room is two empty flex items, not
+     * padding: a percentage in a slide is read from the track less its padding, so padding would shrink the slide
+     * it is measured from. A flex item's percentage is read from the whole track, as the slide's is.
+     */
+    &.carousel-center {
+      --carousel-slide: 80%;
+
+      &::before, &::after {
+        content: '';
+        flex: 0 0 max(0px, calc((100% - var(--carousel-slide)) / 2 - var(--carousel-gap)));
+      }
+
+      .carousel-slide {
+        scroll-snap-align: center;
+      }
+    }
+
     @supports selector(::scroll-marker) {
       /* Room under the track for the markers, which sit on the carousel's own edge. */
       margin-bottom: 1.75rem;
@@ -46,16 +65,22 @@
       anchor-scope: --carousel;
       scroll-marker-group: after;
 
-      /* The dots: a row centered under the track. */
+      /*
+       * The dots: a row centered under the track. Each dot is padded into a larger target, so the row has no gap of
+       * its own: the padding on either side of a dot is the space between them, and the dot stays .75rem under the track.
+       */
       &::scroll-marker-group {
         position: fixed;
         position-anchor: --carousel;
-        top: calc(anchor(bottom) + .75rem);
+        top: calc(anchor(bottom) + .5625rem);
         left: anchor(left);
         right: anchor(right);
         display: flex;
         justify-content: center;
-        gap: .375rem;
+
+        @media (pointer: coarse) {
+          top: calc(anchor(bottom) + .25rem);
+        }
       }
 
       /* Previous and next: small raised squares on the track's edges, at its middle. */
@@ -75,7 +100,7 @@
         cursor: pointer;
         touch-action: manipulation;
         -webkit-tap-highlight-color: transparent;
-        transition: box-shadow var(--duration-quick) var(--easing-glide), opacity var(--duration-quick) var(--easing-glide);
+        transition: box-shadow var(--duration-quick) var(--easing-glide), opacity var(--duration-quick) var(--easing-glide), visibility var(--duration-quick);
       }
 
       &::scroll-button(inline-start) {
@@ -108,21 +133,32 @@
         }
       }
 
+      /* Pressed, the button sinks into the well, as every raised control does. */
+      &::scroll-button(inline-start):active:not(:disabled), &::scroll-button(inline-end):active:not(:disabled) {
+        box-shadow: var(--shadow-pressed);
+      }
+
       &::scroll-button(inline-start):focus-visible, &::scroll-button(inline-end):focus-visible {
         outline: 2px solid var(--color-focus);
         outline-offset: 2px;
       }
 
-      /* At either end there is nowhere to go: the button steps back. */
+      /*
+       * At either end there is nowhere to go: the button fades out and then leaves, so it no longer covers what the
+       * slide under it holds.
+       */
       &::scroll-button(inline-start):disabled, &::scroll-button(inline-end):disabled {
         opacity: 0;
+        visibility: hidden;
         cursor: default;
       }
     }
 
+    /* Shadows vanish in forced colors: an outline draws the buttons' edge without changing their size. */
     @media (forced-colors: active) {
       &::scroll-button(inline-start), &::scroll-button(inline-end) {
-        border: 1px solid ButtonText;
+        outline: 1px solid ButtonText;
+        outline-offset: -1px;
       }
     }
   }
@@ -134,33 +170,56 @@
     scroll-snap-align: start;
 
     @supports selector(::scroll-marker) {
+      /*
+       * A 6px dot painted in the middle of its padding, which is the target and the space beside it. The padding is
+       * even on every side: the round corner less the padding is what rounds the dot, so it stays a dot and a pill.
+       */
       &::scroll-marker {
         content: '';
+        box-sizing: content-box;
         width: .375rem;
         height: .375rem;
+        padding: .1875rem;
         border-radius: 999px;
-        background: var(--color-line-mark);
+        corner-shape: round;
+        background: var(--color-line-mark) content-box;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
         transition: width var(--duration-base) var(--easing-glide), background-color var(--duration-quick) var(--easing-glide);
+
+        /* On a touch screen the target grows; the dot does not. */
+        @media (pointer: coarse) {
+          padding: .5rem;
+        }
+      }
+
+      @media (hover: hover) {
+        &::scroll-marker:hover {
+          background-color: var(--color-text-muted);
+        }
       }
 
       /* The slide in view: the dot lengthens and takes ink. */
       &::scroll-marker:target-current {
         width: 1rem;
-        background: var(--color-text-strong);
+        background-color: var(--color-text-strong);
+        cursor: default;
       }
 
       &::scroll-marker:focus-visible {
         outline: 2px solid var(--color-focus);
-        outline-offset: 2px;
+        outline-offset: 0;
       }
 
+      /* The dots keep their system colors, and the one in view its highlight, instead of the forced canvas. */
       @media (forced-colors: active) {
         &::scroll-marker {
-          background: GrayText;
+          forced-color-adjust: none;
+          background-color: GrayText;
         }
 
         &::scroll-marker:target-current {
-          background: Highlight;
+          background-color: Highlight;
         }
       }
     }
