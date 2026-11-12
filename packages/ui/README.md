@@ -245,4 +245,4 @@ A component never writes a color: it names a token of `theme.css`. `themes/paper
 
 ## License
 
-MIT
+[MIT License](LICENSE) © Aoyue Design LLC.

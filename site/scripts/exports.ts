@@ -31,6 +31,8 @@ const write = (file: string, content: string) => {
   writeFileSync(join(out, file), content)
 }
 
+write('license.txt', `${read(join(site, 'LICENSE')).trimEnd()}\n\n---\n\n${read(join(ui, 'LICENSE')).trimEnd()}\n`)
+
 /** Build the package first: the compiled CSS and the collected contracts are its outputs, not ours. */
 execFileSync(process.execPath, ['--import', 'tsx', join(ui, 'scripts/build.ts')], { cwd: ui, stdio: 'ignore' })
 const { contracts } = JSON.parse(read(join(ui, 'dist/contracts.json'))) as { contracts: any[] }
@@ -175,6 +177,8 @@ Rules for writing Master UI markup:
 - In React, Svelte or Vue the markup is the same, in the framework's syntax. Do not wrap a class in a component to rename it (\`<Button variant="primary">\`). Only the patterns that hold state have a component, copied into the project with \`npx master-ui add <name>\`: ${Object.keys(manifest.components).join(', ')}.
 - Check the result: \`npx master-ui check\` reports markup that breaks a contract.
 - To change how something looks, take the lowest step that works: a utility on the element, a theme token, a public custom property, a theme file, and only then own the component's source (\`npx master-ui own <name>\`). See the customization guide.
+
+[Licensing](${origin}/license.txt): the library and reusable code examples are MIT licensed.
 
 Data: [every contract](${origin}/contracts.json), [the contract schema](${origin}/contract.schema.json), [the theme's tokens](${origin}/theme.json), [the registry](${origin}/r/registry.json), [the library as plain CSS](${origin}/standalone.css).
 

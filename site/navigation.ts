@@ -56,7 +56,7 @@ export const footerNavGroups = [
   {
     name: 'Legal',
     links: [
-      { name: 'MIT License', href: `${repositoryURL}?tab=MIT-1-ov-file#readme` },
+      { name: 'Licensing', href: '/license.txt' },
     ]
   },
 ] satisfies FooterNavGroup[]

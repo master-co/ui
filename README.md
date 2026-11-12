@@ -58,4 +58,4 @@ React, Svelte and Vue are served without a bindings package. Most components are
 
 ## License
 
-[MIT](LICENSE) © Aoyue Design LLC.
+The [Master UI library](packages/ui/LICENSE), the public skill, and reusable documentation examples are MIT licensed. The [website notice](site/LICENSE) covers the site implementation, original prose, and artwork. See the [repository license](LICENSE) for the full scope.
