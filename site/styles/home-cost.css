@@ -46,13 +46,22 @@
     }
   }
 
-  /* On a phone the three starting points fill the row they wrap into, instead of leaving a ragged edge. */
+  /*
+   * The three starting points, a segmented control whose thumb rests on the one the selection still matches.
+   * The script shows them. On a phone they fill the row they wrap into, a little tighter so all three fit.
+   */
   .home-cost-presets {
+    &[hidden] {
+      display: none;
+    }
+
     @media (width < 40rem) {
+      display: flex;
       flex: 1 1 100%;
 
-      & > .btn {
-        flex: 1 1 auto;
+      & > .segmented-item {
+        min-width: 0;
+        padding-inline: 0.5rem;
       }
     }
   }
@@ -77,15 +86,16 @@
 
   /* The readout stands one step above: a raised sheet catching the light on its top edge. */
   .home-cost-readout {
+    container-type: inline-size;
     display: grid;
     align-content: start;
     gap: 1.5rem;
-    padding: 1.5rem 1.25rem 1.25rem;
+    padding: 1.25rem 1.25rem 1.375rem;
     background-color: var(--home-sheet);
     box-shadow: var(--home-elevation-1);
 
     @media (width >= 40rem) {
-      padding: 1.75rem 1.75rem 1.5rem;
+      padding: 1.5rem 1.75rem 1.75rem;
     }
 
     @media (width < 64rem) {
@@ -121,6 +131,13 @@
       flex: none;
     }
 
+    @container (width < 26rem) {
+      & > .segmented {
+        display: flex;
+        flex: 1 1 100%;
+      }
+    }
+
     /*
      * In one column the list runs longer than a phone's screen, so the filter, the view and the totals stay
      * under the page header while it scrolls by. A hair inside the sheet, so the sheet's contour still shows.
@@ -148,7 +165,11 @@
 
   /* The totals in short, for a single column, where the readout is out of sight while boxes are ticked. */
   .home-cost-mini {
+    display: flex;
     flex: 1 0 100%;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 0.625rem;
     margin: 0;
     font-family: var(--home-mono);
     font-size: var(--home-label);
@@ -169,9 +190,8 @@
     color: var(--home-text-faint);
   }
 
-  /* A package name and a size are written as they are spelled, not set in capitals like the labels around them. */
-  .home-cost-file,
-  .home-cost-share {
+  /* A package name is written as it is spelled, not set in capitals like the label around it. */
+  .home-cost-file {
     text-transform: none;
     letter-spacing: 0.02em;
   }
@@ -325,6 +345,22 @@
     color: var(--home-text-faint);
   }
 
+  /* A size that counts toward the total, ticked or brought along, reads a step firmer than one that does not. */
+  .home-cost-row:has(.checkbox:is(:checked, :indeterminate)) .home-cost-row-size {
+    color: var(--home-text-body);
+  }
+
+  /* A row that a tick elsewhere ticked or unticked lights for a moment, so the reason is seen. */
+  .home-cost-row-flash {
+    animation: home-cost-flash var(--home-slow) var(--home-ease) both;
+  }
+
+  @keyframes home-cost-flash {
+    from {
+      background-color: color-mix(in oklab, var(--home-text) 9%, transparent);
+    }
+  }
+
   .home-cost-row-via {
     max-width: 7rem;
     overflow: hidden;
@@ -337,24 +373,76 @@
   }
 
   .home-cost-empty {
-    margin: 1.5rem 0.375rem;
-    font-size: 0.875rem;
-    color: var(--home-text-quiet);
+    padding: 2.5rem 1rem 2rem;
+
+    &[hidden] {
+      display: none;
+    }
   }
 
-  /* Which selection the figures below are for: the opening one is named, any other is the reader's own. */
+  /* The list's key: what the figures and the two marks beside a name mean. */
+  .home-cost-key {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.375rem 1.25rem;
+    margin: 0;
+    padding: 0.625rem 1.25rem 0.75rem;
+    border-top: 1px solid var(--home-rule);
+    font-size: 0.75rem;
+    line-height: 1.4;
+    color: var(--home-text-faint);
+
+    & > span {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      white-space: nowrap;
+    }
+  }
+
+  /* The readout's title block: which selection the figures are for, and how many stylesheets it comes to. */
+  .home-cost-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.25rem 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--home-rule);
+  }
+
   .home-cost-preset {
-    margin: 0 0 -0.5rem;
+    margin: 0;
     font-size: 0.9375rem;
     font-weight: var(--font-weight-medium);
     line-height: 1.4;
     color: var(--home-text);
   }
 
-  /* Readout: the figure, what it is made of, and where it stands against the whole library. */
+  .home-cost-count,
+  .home-cost-share {
+    margin: 0;
+    font-family: var(--home-mono);
+    font-size: var(--home-label);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+    color: var(--home-text-quiet);
+  }
+
+  /* Where the share runs onto a second line, the two lines balance rather than leave one word. */
+  .home-cost-share {
+    text-wrap: balance;
+  }
+
+  /* Readout: the figure, where it stands against the whole library, and what it is made of. */
   .home-cost-reading {
     display: grid;
-    gap: 0.5rem;
+    gap: 0.75rem;
+
+    & > .stat {
+      gap: 0.625rem;
+    }
   }
 
   .home-cost-reading + .home-cost-reading {
@@ -362,19 +450,7 @@
     border-top: 1px solid var(--home-rule);
   }
 
-  /* Under large text the two labels take a line each rather than breaking inside one another. */
-  .home-cost-label {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: 0.25rem 1rem;
-
-    & > span {
-      white-space: nowrap;
-    }
-  }
-
-  .home-cost-value {
+  .stat-value.home-cost-value {
     display: flex;
     align-items: baseline;
     gap: 0.5rem;
@@ -382,6 +458,37 @@
     font-family: var(--home-mono);
     font-variant-numeric: tabular-nums;
     color: var(--home-text);
+  }
+
+  /*
+   * What the last change added or took away. It arrives with the figure, holds long enough to read, then
+   * fades; it is an aside to the totals, which the live region says in words. Only its opacity moves.
+   */
+  .home-cost-delta {
+    font-family: var(--home-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.02em;
+    color: var(--home-text-quiet);
+    opacity: 0;
+  }
+
+  .home-cost-delta-shown {
+    animation: home-cost-delta 4.5s var(--home-ease) both;
+  }
+
+  @keyframes home-cost-delta {
+    0% {
+      opacity: 0;
+    }
+
+    6%,
+    70% {
+      opacity: 1;
+    }
+
+    100% {
+      opacity: 0;
+    }
   }
 
   .home-cost-number {
@@ -392,7 +499,7 @@
     transition: opacity var(--home-base) var(--home-ease);
 
     /* While a new selection is gzipped the old figure steps back. */
-    [aria-busy='true'] > .home-cost-value > & {
+    [aria-busy='true'] .home-cost-value > & {
       opacity: 0.4;
     }
   }
@@ -427,16 +534,18 @@
   .home-cost-meter {
     display: grid;
     gap: 0.5rem;
-    margin-top: 0.5rem;
+    margin-top: 0.375rem;
 
     & > .meter {
       width: 100%;
     }
   }
 
+  /* The behavior modules, a short ledger on guide lines: required ones first, then the optional. */
   .home-cost-modules {
     display: grid;
-    gap: 0.25rem;
+    grid-template-columns: max-content minmax(0, 1fr) max-content;
+    column-gap: 0.75rem;
     margin: 0;
     padding: 0;
     list-style: none;
@@ -446,12 +555,20 @@
     }
   }
 
+  /* Each module a row on the list's columns, so names, notes and sizes line up from row to row. */
   .home-cost-module {
-    display: flex;
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
     align-items: baseline;
-    gap: 0.75rem;
+    padding-block: 0.5rem;
+    border-top: 1px solid var(--home-guide);
     font-size: 0.8125rem;
     color: var(--home-text-body);
+
+    &:last-child {
+      padding-bottom: 0;
+    }
 
     & > code {
       font-family: var(--home-mono);
@@ -459,17 +576,21 @@
     }
 
     & > .home-cost-module-note {
-      flex: 1 1 auto;
       min-width: 0;
       color: var(--home-text-quiet);
     }
 
     & > .home-cost-module-size {
-      flex: none;
       font-family: var(--home-mono);
+      text-align: end;
       font-size: 0.75rem;
       font-variant-numeric: tabular-nums;
       color: var(--home-text-body);
+    }
+
+    /* An optional module is not in the total: it reads a step quieter than the ones that are. */
+    &.home-cost-module-optional > :is(code, .home-cost-module-size) {
+      color: var(--home-text-quiet);
     }
   }
 

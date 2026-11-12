@@ -2,9 +2,11 @@
 import '@master/ui/components/badge.css'
 import '@master/ui/components/button.css'
 import '@master/ui/components/checkbox.css'
+import '@master/ui/components/empty.css'
 import '@master/ui/components/input.css'
 import '@master/ui/components/meter.css'
 import '@master/ui/components/segmented.css'
+import '@master/ui/components/stat.css'
 import '@master/ui/components/table.css'
 import '../../styles/home-cost.css'
 import { siteOf } from '@master/internal-site/astro/site-context'
@@ -57,12 +59,11 @@ const data = {
         cssCompiled: t('CSS, compiled'),
         shareCompiled: t('{percent}% of the whole library, {size} kB compiled'),
         nothing: t('Nothing selected: the theme alone, {size} kB compiled.'),
-        noMatch: t('No component matches.'),
+        noMatch: t('No component matches “{query}”.'),
         presetDefaults: t('A settings page'),
         presetAll: t('The whole library'),
         presetNone: t('The theme alone'),
         presetCustom: t('Your selection'),
-        noneSelected: t('Nothing selected. Choose components from All.'),
     },
 }
 const json = JSON.stringify(data).replace(/</g, '\\u003c')
@@ -83,10 +84,11 @@ const json = JSON.stringify(data).replace(/</g, '\\u003c')
     <figure class="home-cost-tray" data-cost>
       <div class="home-cost-bar">
         <p class="home-annotation">{t('Compiled from')} <span class="home-cost-file">@master/ui</span></p>
-        <div class="home-cost-actions home-cost-presets" role="group" aria-label={t('Start from')} data-cost-actions hidden>
-          <button type="button" class="btn btn-sm" data-cost-set="defaults">{t('Settings page')}</button>
-          <button type="button" class="btn btn-sm" data-cost-set="none">{t('Theme alone')}</button>
-          <button type="button" class="btn btn-sm" data-cost-set="all">{t('Whole library')}</button>
+        {/* Three starting points; the one the selection still matches stays pressed, and a selection of your own presses none. */}
+        <div class="segmented segmented-sm home-cost-presets" role="group" aria-label={t('Start from')} data-cost-actions hidden>
+          <button type="button" class="segmented-item" aria-pressed="true" data-cost-set="defaults">{t('Settings page')}</button>
+          <button type="button" class="segmented-item" aria-pressed="false" data-cost-set="none">{t('Theme alone')}</button>
+          <button type="button" class="segmented-item" aria-pressed="false" data-cost-set="all">{t('Whole library')}</button>
         </div>
       </div>
       <div class="home-cost-body">
@@ -99,7 +101,7 @@ const json = JSON.stringify(data).replace(/</g, '\\u003c')
               <label class="segmented-item"><input type="radio" class="segmented-input" name="home-cost-view" value="all">{t('All')}<span class="home-cost-view-count">{cost.units.length}</span></label>
             </div>
             {/* Where the readout stands above the list, the totals repeat here, in view of the boxes that change them. */}
-            <p class="home-cost-mini" aria-hidden="true" data-cost-mini>{t('{css} kB CSS and {js} kB JavaScript, gzipped').replace('{css}', kB(cost.selection.gzip)).replace('{js}', kB(requiredJs))}</p>
+            <p class="home-cost-mini" aria-hidden="true"><span data-cost-mini>{t('{css} kB CSS and {js} kB JavaScript, gzipped').replace('{css}', kB(cost.selection.gzip)).replace('{js}', kB(requiredJs))}</span><span class="home-cost-delta" data-cost-mini-delta></span></p>
           </div>
           <div class="home-cost-list" role="group" aria-label={t('Components')} data-cost-list>
             {groups.map(group => (
@@ -113,15 +115,30 @@ const json = JSON.stringify(data).replace(/</g, '\\u003c')
                       <span class="home-cost-row-meta">
                         <span class="home-cost-row-via" data-cost-via></span>
                         {unit.behavior && <span class="badge badge-sm badge-outline" title={unit.script === 'required' ? t('Needs its behavior script') : t('Its behavior script is optional')}>{unit.script === 'required' ? 'JS' : 'JS?'}</span>}
-                        <span>{kB(unit.bytes)}</span>
+                        <span class="home-cost-row-size">{kB(unit.bytes)}</span>
                       </span>
                     </label>
                   ))}
                 </div>
               </fieldset>
             ))}
-            <p class="home-cost-empty" data-cost-empty hidden></p>
+            {/* Selected with nothing in it, and a filter that finds nothing: each says so and offers the way out. */}
+            <div class="empty home-cost-empty" data-cost-empty="selected" hidden>
+              <p class="empty-title">{t('Nothing selected')}</p>
+              <p class="empty-description">{t('Choose what the page uses from All.')}</p>
+              <div class="empty-actions"><button type="button" class="btn btn-sm" data-cost-show-all>{t('Show all')}</button></div>
+            </div>
+            <div class="empty home-cost-empty" data-cost-empty="filter" hidden>
+              <p class="empty-title" data-cost-no-match></p>
+              <div class="empty-actions"><button type="button" class="btn btn-sm" data-cost-clear>{t('Clear filter')}</button></div>
+            </div>
           </div>
+          {/* The list's key, under the list it explains. */}
+          <p class="home-cost-key">
+            <span>{t('Sizes in kB, compiled')}</span>
+            <span><span class="badge badge-sm badge-outline">JS</span> {t('needs its script')}</span>
+            <span><span class="badge badge-sm badge-outline">JS?</span> {t('script optional')}</span>
+          </p>
         </div>
         <div class="home-cost-sheet home-cost-static" data-cost-static>
           <table class="table table-compact">
@@ -150,23 +167,38 @@ const json = JSON.stringify(data).replace(/</g, '\\u003c')
           </table>
         </div>
         <div class="home-cost-sheet home-cost-readout">
-          <h3 class="home-cost-preset" data-cost-preset>{t('A settings page')}</h3>
-          <div class="home-cost-reading">
-            <p class="home-cost-label home-annotation"><span data-cost-css-label>{t('CSS, gzipped')}</span><span data-cost-count>{t('{count} stylesheets').replace('{count}', String(chosen.length))}</span></p>
-            <p class="home-cost-value"><span class="home-cost-number" data-cost-css>{kB(cost.selection.gzip)}</span><span class="home-cost-unit">kB</span></p>
-            <p class="home-cost-detail" data-cost-compiled>{t('{size} kB compiled: the theme once, then {count}.').replace('{size}', kB(compiled)).replace('{count}', t('{count} stylesheets').replace('{count}', String(chosen.length)))} {t('{count} of them come with another component.').replace('{count}', String(chosen.length - cost.defaultSelection.length))}</p>
+          {/* Which selection the figures are for, and how many stylesheets it comes to. */}
+          <div class="home-cost-head">
+            <h3 class="home-cost-preset" data-cost-preset>{t('A settings page')}</h3>
+            <p class="home-cost-count" data-cost-count>{t('{count} stylesheets').replace('{count}', String(chosen.length))}</p>
+          </div>
+          <div class="home-cost-reading" data-cost-css-reading>
+            <div class="stat">
+              <p class="stat-label home-annotation" data-cost-css-label>{t('CSS, gzipped')}</p>
+              <div class="stat-row">
+                <p class="stat-value home-cost-value"><span class="home-cost-number" data-cost-css>{kB(cost.selection.gzip)}</span><span class="home-cost-unit">kB</span></p>
+                {/* What the last change added or took away; the live region below says the totals in words. */}
+                <p class="stat-delta home-cost-delta" aria-hidden="true" data-cost-css-delta></p>
+              </div>
+            </div>
             <div class="home-cost-meter">
               <meter class="meter meter-sm" min="0" max={cost.library.gzip} value={cost.selection.gzip} aria-label={t('Share of the whole library')} data-cost-meter>{sharePercent}%</meter>
-              <p class="home-annotation home-cost-share" data-cost-share>{t('{percent}% of the whole library, {size} kB gzipped').replace('{percent}', String(sharePercent)).replace('{size}', kB(cost.library.gzip))}</p>
+              <p class="home-cost-share" data-cost-share>{t('{percent}% of the whole library, {size} kB gzipped').replace('{percent}', String(sharePercent)).replace('{size}', kB(cost.library.gzip))}</p>
             </div>
+            <p class="home-cost-detail" data-cost-compiled>{t('{size} kB compiled: the theme once, then {count}.').replace('{size}', kB(compiled)).replace('{count}', t('{count} stylesheets').replace('{count}', String(chosen.length)))} {t('{count} of them come with another component.').replace('{count}', String(chosen.length - cost.defaultSelection.length))}</p>
           </div>
           <div class="home-cost-reading">
-            <p class="home-cost-label home-annotation"><span>{t('JavaScript, gzipped')}</span></p>
-            <p class="home-cost-value"><span class="home-cost-number home-cost-number-sm" data-cost-js>{kB(requiredJs)}</span><span class="home-cost-unit">kB</span></p>
+            <div class="stat">
+              <p class="stat-label home-annotation">{t('JavaScript, gzipped')}</p>
+              <div class="stat-row">
+                <p class="stat-value home-cost-value"><span class="home-cost-number home-cost-number-sm" data-cost-js>{kB(requiredJs)}</span><span class="home-cost-unit">kB</span></p>
+                <p class="stat-delta home-cost-delta" aria-hidden="true" data-cost-js-delta></p>
+              </div>
+            </div>
             <p class="home-cost-detail" data-cost-js-detail>{required.length ? '' : `${t('None required: every state is drawn from native elements and their attributes.')}${optional.length ? ` ${t('What is marked optional is not counted.')}` : ''}`}</p>
             <ul class="home-cost-modules" data-cost-modules>
               {optional.map(unit => (
-                <li class="home-cost-module"><code>{unit.behavior}.js</code><span class="home-cost-module-note">{t('optional, for {names}').replace('{names}', unit.title)}</span><span class="home-cost-module-size">{kB(behaviorSize(unit.behavior!).gzip)} kB</span></li>
+                <li class="home-cost-module home-cost-module-optional"><code>{unit.behavior}.js</code><span class="home-cost-module-note">{t('optional, for {names}').replace('{names}', unit.title)}</span><span class="home-cost-module-size">{kB(behaviorSize(unit.behavior!).gzip)} kB</span></li>
               ))}
             </ul>
           </div>
@@ -177,7 +209,7 @@ const json = JSON.stringify(data).replace(/</g, '\\u003c')
         <li><span class="home-cost-note-mark" aria-hidden="true">1</span>{t('The theme counts once. Each stylesheet adds its own compiled rules, the kB listed beside it, and brings every stylesheet it composes: a dialog brings the button.')}</li>
         <li><span class="home-cost-note-mark" aria-hidden="true">2</span>{t('CSS is compiled the way the package build writes')} <code>dist/standalone.css</code>{t(', unminified, then gzipped as one file. Compressed sizes do not add up, so this page gzips each selection it cuts from the published file.')}</li>
         <li><span class="home-cost-note-mark" aria-hidden="true">3</span>{t('The whole library is {raw} kB compiled and {gzip} kB gzipped; minified by {minifier} and gzipped, {minified} kB. The reset the components assume,').replace('{raw}', kB(cost.library.raw)).replace('{gzip}', kB(cost.library.gzip)).replace('{minifier}', cost.library.minified.minifier).replace('{minified}', kB(cost.library.minified.gzip))} <code>base.css</code>{t(', adds {size} kB gzipped where a project has none.').replace('{size}', kB(cost.base.gzip))}</li>
-        <li><span class="home-cost-note-mark" aria-hidden="true">4</span>{t('JavaScript is each behavior module minified by esbuild and gzipped as its own file;')} <code>internal.js</code>{t(', which {count} behaviors share, counts once. In the list, JS marks a component that needs its behavior and JS? one whose behavior is optional. 1 kB is 1,000 bytes.').replace('{count}', String(cost.behaviors.filter(behavior => behavior.imports.includes('internal')).length))}</li>
+        <li><span class="home-cost-note-mark" aria-hidden="true">4</span>{t('JavaScript is each behavior module minified by esbuild and gzipped as its own file;')} <code>internal.js</code>{t(', which {count} behaviors share, counts once. 1 kB is 1,000 bytes.').replace('{count}', String(cost.behaviors.filter(behavior => behavior.imports.includes('internal')).length))}</li>
       </ol>
     </figure>
   </div>
@@ -213,6 +245,7 @@ const json = JSON.stringify(data).replace(/</g, '\\u003c')
     const behaviors = new Map(data.behaviors.map(behavior => [behavior.name, behavior]))
     const rows = [...root.querySelectorAll<HTMLLabelElement>('[data-cost-row]')]
     const boxes = new Map(rows.map(row => [row.dataset.costRow!, row.querySelector<HTMLInputElement>('input')!]))
+    const presets = [...root.querySelectorAll<HTMLButtonElement>('[data-cost-set]')]
     const selected = new Set(data.defaults)
     /** The rows Selected shows: what the page uses, and whatever was unticked since the view was chosen. */
     let pinned = new Set<string>()
@@ -264,8 +297,24 @@ const json = JSON.stringify(data).replace(/</g, '\\u003c')
       state.frame = requestAnimationFrame(tick)
       tweens.set(element, state)
     }
+
+    /*
+     * What the last change added or took away, beside the figure it changed. Small moves keep two decimals, so
+     * a stylesheet that adds 40 bytes does not read as nothing. A change of nothing, or a figure that switched
+     * between gzipped and compiled, has no difference worth reading, and the note clears.
+     */
+    const delta = (element: HTMLElement, before: number | undefined, after: number) => {
+      const difference = before === undefined ? 0 : after - before
+      const size = Math.abs(difference)
+      element.textContent = difference ? `${difference > 0 ? '+' : '−'}${(size / 1000).toFixed(size < 100 ? 2 : 1)} kB` : ''
+      // The note shows, then fades: restarting its animation brings it back for the next change.
+      element.classList.remove('home-cost-delta-shown')
+      if (!difference) return
+      void element.offsetWidth
+      element.classList.add('home-cost-delta-shown')
+    }
     const cssFigure = $('[data-cost-css]')
-    const cssReading = cssFigure.closest<HTMLElement>('.home-cost-reading')!
+    const cssReading = $('[data-cost-css-reading]')
     const jsFigure = $('[data-cost-js]')
     cssFigure.dataset.value = String(data.selection.gzip)
     jsFigure.dataset.value = String(Number(jsFigure.textContent) * 1000)
@@ -273,6 +322,24 @@ const json = JSON.stringify(data).replace(/</g, '\\u003c')
     let token = 0
     let announce = 0
     let latest = { css: data.selection.gzip, js: 0, count: 0 }
+    /** The figures on show, for the difference the next change makes. */
+    let shownCss: { bytes: number, exact: boolean } | undefined
+    let shownJs: number | undefined
+
+    /** Ticking one box can bring others: their rows catch the eye for a moment, so the reason is seen. */
+    const marks = () => new Map([...boxes].map(([name, box]) => [name, `${box.checked}${box.indeterminate}`]))
+    const flash = (before: Map<string, string>, except?: string) => {
+      if (motion.matches) return
+      const after = marks()
+      for (const [name, state] of after) {
+        if (name === except || before.get(name) === state) continue
+        const row = boxes.get(name)!.closest<HTMLElement>('[data-cost-row]')!
+        row.classList.remove('home-cost-row-flash')
+        void row.offsetWidth
+        row.classList.add('home-cost-row-flash')
+      }
+    }
+    root.addEventListener('animationend', event => (event.target as HTMLElement).classList.remove('home-cost-row-flash'))
 
     async function update() {
       const chosen = closure(data.units, selected)
@@ -292,7 +359,9 @@ const json = JSON.stringify(data).replace(/</g, '\\u003c')
 
       const count = chosen.length
       const isDefault = selected.size === data.defaults.length && data.defaults.every(name => selected.has(name))
-      $('[data-cost-preset]').textContent = isDefault ? data.copy.presetDefaults : !selected.size ? data.copy.presetNone : selected.size === data.units.length ? data.copy.presetAll : data.copy.presetCustom
+      const preset = isDefault ? 'defaults' : !selected.size ? 'none' : selected.size === data.units.length ? 'all' : undefined
+      $('[data-cost-preset]').textContent = preset === 'defaults' ? data.copy.presetDefaults : preset === 'none' ? data.copy.presetNone : preset === 'all' ? data.copy.presetAll : data.copy.presetCustom
+      for (const button of presets) button.setAttribute('aria-pressed', String(button.dataset.costSet === preset))
       chosenNames.forEach(name => pinned.add(name))
       $('[data-cost-view-count]').textContent = String(count)
       showRows()
@@ -321,6 +390,7 @@ const json = JSON.stringify(data).replace(/</g, '\\u003c')
       items.replaceChildren(...[...modules].sort(([nameA, a], [nameB, b]) => Number(a.optional) - Number(b.optional) || behaviors.get(nameB)!.gzip - behaviors.get(nameA)!.gzip).map(([name, entry]) => {
         const item = document.createElement('li')
         item.className = 'home-cost-module'
+        if (entry.optional) item.classList.add('home-cost-module-optional')
         const code = document.createElement('code')
         code.textContent = `${name}.js`
         const note = document.createElement('span')
@@ -337,6 +407,8 @@ const json = JSON.stringify(data).replace(/</g, '\\u003c')
       }))
       $('[data-cost-js-detail]').textContent = [js || !selected.size ? '' : data.copy.none, optionalJs ? data.copy.optionalTotal : ''].filter(Boolean).join(' ')
       show(jsFigure, js)
+      delta($('[data-cost-js-delta]'), shownJs, js)
+      shownJs = js
 
       /*
        * CSS gzipped: the exact selection, cut from the published file and compressed here. Where that cannot
@@ -360,6 +432,10 @@ const json = JSON.stringify(data).replace(/</g, '\\u003c')
       const whole = exact ? data.library.gzip : data.library.raw
       $('[data-cost-css-label]').textContent = exact ? data.copy.cssGzip : data.copy.cssCompiled
       show(cssFigure, css)
+      const before = shownCss?.exact === exact ? shownCss.bytes : undefined
+      delta($('[data-cost-css-delta]'), before, css)
+      delta($('[data-cost-mini-delta]'), before, css)
+      shownCss = { bytes: css, exact }
       const meter = $<HTMLMeterElement>('[data-cost-meter]')
       meter.max = whole
       meter.value = css
@@ -378,13 +454,15 @@ const json = JSON.stringify(data).replace(/</g, '\\u003c')
     root.addEventListener('change', event => {
       const box = event.target as HTMLInputElement
       if (!box.matches('[data-cost-row] input')) return
+      const before = marks()
       if (box.checked) selected.add(box.value)
       else selected.delete(box.value)
       load()
       update()
+      flash(before, box.value)
     })
 
-    root.querySelectorAll<HTMLButtonElement>('[data-cost-set]').forEach(button => button.addEventListener('click', () => {
+    for (const button of presets) button.addEventListener('click', () => {
       selected.clear()
       const set = button.dataset.costSet
       const names = set === 'defaults' ? data.defaults : set === 'all' ? data.units.map(unit => unit.name) : []
@@ -392,7 +470,7 @@ const json = JSON.stringify(data).replace(/</g, '\\u003c')
       pinned.clear()
       load()
       update()
-    }))
+    })
 
     /*
      * Which rows the list shows: a filter searches the whole library; otherwise Selected shows what the page
@@ -402,6 +480,7 @@ const json = JSON.stringify(data).replace(/</g, '\\u003c')
     const filter = $<HTMLInputElement>('[data-cost-filter]')
     const views = [...root.querySelectorAll<HTMLInputElement>('[name="home-cost-view"]')]
     const view = () => views.find(input => input.checked)?.value ?? 'all'
+    const empties = [...root.querySelectorAll<HTMLElement>('[data-cost-empty]')]
     function showRows() {
       const query = filter.value.trim().toLowerCase()
       const onlySelected = !query && view() === 'selected'
@@ -410,20 +489,38 @@ const json = JSON.stringify(data).replace(/</g, '\\u003c')
       root.querySelectorAll<HTMLElement>('[data-cost-group]').forEach(group => {
         group.hidden = !group.querySelector('[data-cost-row]:not([hidden])')
       })
-      const empty = $('[data-cost-empty]')
-      empty.hidden = rows.some(row => !row.hidden)
-      empty.textContent = query ? data.copy.noMatch : data.copy.noneSelected
+      const nothing = !rows.some(row => !row.hidden)
+      for (const empty of empties) empty.hidden = !nothing || empty.dataset.costEmpty !== (query ? 'filter' : 'selected')
+      if (!nothing || !query) return
+      // Said as well as shown, for a reader typing who is not looking at the list.
+      const message = fill(data.copy.noMatch, { query: filter.value.trim() })
+      $('[data-cost-no-match]').textContent = message
+      $('[data-cost-live]').textContent = message
     }
     filter.addEventListener('input', () => {
       const all = views.find(input => input.value === 'all')
       if (filter.value.trim() && all && !all.checked) all.checked = true
       showRows()
     })
-    views.forEach(input => input.addEventListener('change', () => {
+    const choose = () => {
       pinned = new Set(closure(data.units, selected).map(unit => unit.name))
       showRows()
       $('[data-cost-list]').scrollTop = 0
-    }))
+    }
+    views.forEach(input => input.addEventListener('change', choose))
+
+    // The ways out of an empty list take focus to where the reader goes next, since the button itself goes away.
+    $('[data-cost-show-all]').addEventListener('click', () => {
+      const all = views.find(input => input.value === 'all')!
+      all.checked = true
+      choose()
+      all.focus()
+    })
+    $('[data-cost-clear]').addEventListener('click', () => {
+      filter.value = ''
+      showRows()
+      filter.focus()
+    })
 
     update()
   }
