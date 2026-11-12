@@ -66,9 +66,12 @@ const switches = (rows: [string, boolean][]) => `<div class="sheet ui-mx-list">
 ${rows.map(([label, on]) => `  <label class="check ui-mx-row"><span class="ui-mx-grow">${label}</span><input type="checkbox" role="switch" class="switch"${on ? ' checked' : ''}></label>`).join('\n')}
 </div>`
 
+/** The soft hue each person's initials keep across the page, as in the platform's scenes. */
+const tints: Record<string, string> = { 'Ada Lovelace': 'indigo', 'Alan Turing': 'sage', 'Grace Hopper': 'clay' }
+
 const avatar = (portrait: number | string, name: string, size = '') => typeof portrait === 'number'
   ? `<span class="avatar${size}"><img class="avatar-image" src="/home/matrix/portrait-${portrait}.svg" alt="${name}"></span>`
-  : `<span class="avatar${size}" role="img" aria-label="${name}">${portrait}</span>`
+  : `<span class="avatar${size}${tints[name] ? ` ui-tint-${tints[name]}` : ''}" role="img" aria-label="${name}">${portrait}</span>`
 
 const poll = (question: string, options: [string, number][], meta: string) => `<div class="card">
   <fieldset class="poll">

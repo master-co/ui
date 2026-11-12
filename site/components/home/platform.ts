@@ -53,9 +53,9 @@ ${slides.map(([file, alt]) => `  <figure class="carousel-slide figure">
     <button type="button" class="btn btn-primary btn-sm" commandfor="platform-dialog" command="show-modal">Publish</button>
   </header>
   <ul class="ui-scene-rows">
-    <li><span class="avatar avatar-sm" role="img" aria-label="Ada Lovelace">AL</span><span class="ui-scene-commit">Tighten the card's inset on phones</span><code>a1f9e2c</code><span class="badge badge-success badge-dot">Ready</span></li>
-    <li><span class="avatar avatar-sm" role="img" aria-label="Grace Hopper">GH</span><span class="ui-scene-commit">Draw the toast's clock as a hairline</span><code>7c04b1d</code><span class="badge badge-success badge-dot">Ready</span></li>
-    <li><span class="avatar avatar-sm" role="img" aria-label="Alan Turing">AT</span><span class="ui-scene-commit">Glide the segmented thumb</span><code>e55d0a8</code><span class="badge badge-warning badge-dot">Building</span></li>
+    <li><span class="avatar avatar-sm ui-tint-indigo" role="img" aria-label="Ada Lovelace">AL</span><span class="ui-scene-commit">Tighten the card's inset on phones</span><code>a1f9e2c</code><span class="badge badge-success badge-dot">Ready</span></li>
+    <li><span class="avatar avatar-sm ui-tint-clay" role="img" aria-label="Grace Hopper">GH</span><span class="ui-scene-commit">Draw the toast's clock as a hairline</span><code>7c04b1d</code><span class="badge badge-success badge-dot">Ready</span></li>
+    <li><span class="avatar avatar-sm ui-tint-sage" role="img" aria-label="Alan Turing">AT</span><span class="ui-scene-commit">Glide the segmented thumb</span><code>e55d0a8</code><span class="badge badge-warning badge-dot">Building</span></li>
   </ul>
 </section>
 <dialog id="platform-dialog" class="dialog" closedby="any" aria-labelledby="platform-dialog-title">
@@ -125,12 +125,12 @@ ${slides.map(([file, alt]) => `  <figure class="carousel-slide figure">
       <label class="segmented-item"><input type="radio" class="segmented-input" name="platform-period" value="month">Month</label>
     </div>
   </header>
-  <ol class="chart" style="--chart-max: 250" aria-label="Requests per day, this week, in thousands">
+  <ol class="chart chart-quiet ui-chart-brand" style="--chart-max: 250" aria-label="Requests per day, this week, in thousands">
     <li class="chart-item" style="--value: 148"><span class="chart-label">Mon</span><span class="chart-value">148k</span></li>
     <li class="chart-item" style="--value: 176"><span class="chart-label">Tue</span><span class="chart-value">176k</span></li>
     <li class="chart-item" style="--value: 162"><span class="chart-label">Wed</span><span class="chart-value">162k</span></li>
     <li class="chart-item" style="--value: 214"><span class="chart-label">Thu</span><span class="chart-value">214k</span></li>
-    <li class="chart-item" style="--value: 238"><span class="chart-label">Fri</span><span class="chart-value">238k</span></li>
+    <li class="chart-item" aria-current="true" style="--value: 238"><span class="chart-label">Fri</span><span class="chart-value">238k</span></li>
     <li class="chart-item" style="--value: 171"><span class="chart-label">Sat</span><span class="chart-value">171k</span></li>
     <li class="chart-item" style="--value: 171"><span class="chart-label">Sun</span><span class="chart-value">171k</span></li>
   </ol>
@@ -168,14 +168,14 @@ ${slides.map(([file, alt]) => `  <figure class="carousel-slide figure">
   </header>
   <ol class="thread">
     <li class="thread-item">
-      <span class="thread-avatar"><span class="avatar">AL</span></span>
+      <span class="thread-avatar"><span class="avatar ui-tint-indigo">AL</span></span>
       <div class="thread-body">
         <p class="thread-header"><span class="thread-author">Ada Lovelace</span> <time class="thread-meta" datetime="2026-11-12T09:12">9:12</time></p>
         <p class="thread-text">The focus ring is cut by the mask on the code panel. Should it move to the group?</p>
       </div>
     </li>
     <li class="thread-item">
-      <span class="thread-avatar"><span class="avatar">AT</span></span>
+      <span class="thread-avatar"><span class="avatar ui-tint-sage">AT</span></span>
       <div class="thread-body">
         <p class="thread-header"><span class="thread-author">Alan Turing</span> <time class="thread-meta" datetime="2026-11-12T09:20">9:20</time></p>
         <p class="thread-text">Yes. The group already has the corner, so the ring follows it.</p>
