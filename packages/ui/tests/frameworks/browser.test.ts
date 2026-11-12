@@ -1,6 +1,7 @@
 import { after, before, test } from 'node:test'
 import assert from 'node:assert/strict'
 import { fileURLToPath } from 'node:url'
+import { readFile } from 'node:fs/promises'
 import { chromium, firefox, webkit, type Browser, type Locator, type Page } from 'playwright'
 import { createServer, type ViteDevServer } from 'vite'
 import { verifyComponentGeometry } from '../components/geometry.ts'
@@ -355,3 +356,36 @@ for (const framework of ['react', 'svelte', 'vue']) {
     assert.deepEqual(problems, [], 'the page complained')
   })
 }
+
+
+test(`${engine}: segmented selection honors a changed reduced-motion preference`, async () => {
+  const page = await browser.newPage({ reducedMotion: 'no-preference' })
+  try {
+    const css = await readFile(new URL('../../dist/standalone.css', import.meta.url), 'utf8')
+    await page.setContent(`<style>${css}</style><div class="segmented" role="radiogroup" aria-label="View">
+      <label class="segmented-item"><input class="segmented-input" type="radio" name="view" checked><span>Preview</span></label>
+      <label class="segmented-item"><input class="segmented-input" type="radio" name="view"><span>Code</span></label>
+    </div>`)
+    const track = page.locator('.segmented')
+    const motion = () => track.evaluate(element => {
+      const style = getComputedStyle(element, '::before')
+      return { property: style.transitionProperty, duration: style.transitionDuration }
+    })
+    const anchored = await page.evaluate(() => CSS.supports('anchor-scope: --segmented-thumb'))
+    if (anchored) {
+      const normal = await motion()
+      assert.ok(normal.property.includes('left'))
+      assert.ok(normal.duration.split(',').some(value => parseFloat(value) > 0), 'Ordinary motion remains available')
+    }
+    await page.emulateMedia({ reducedMotion: 'reduce' })
+    await page.getByRole('radio', { name: 'Preview' }).focus()
+    await page.keyboard.press('ArrowRight')
+    assert.equal(await page.getByRole('radio', { name: 'Code' }).isChecked(), true)
+    if (anchored) {
+      const reduced = await motion()
+      assert.ok(reduced.property === 'none' || reduced.duration.split(',').every(value => parseFloat(value) === 0), `Reduced motion disables thumb travel: ${JSON.stringify(reduced)}`)
+    }
+    await page.keyboard.press('ArrowLeft')
+    assert.equal(await page.getByRole('radio', { name: 'Preview' }).isChecked(), true, 'Native selection remains usable in the fallback too')
+  } finally { await page.close() }
+})
