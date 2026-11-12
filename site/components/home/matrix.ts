@@ -67,7 +67,7 @@ ${rows.map(([label, on]) => `  <label class="check ui-mx-row"><span class="ui-mx
 </div>`
 
 const avatar = (portrait: number | string, name: string, size = '') => typeof portrait === 'number'
-  ? `<span class="avatar${size}"><img class="avatar-image" src="/demo/portrait-${portrait}.svg" alt="${name}"></span>`
+  ? `<span class="avatar${size}"><img class="avatar-image" src="/home/matrix/portrait-${portrait}.svg" alt="${name}"></span>`
   : `<span class="avatar${size}" role="img" aria-label="${name}">${portrait}</span>`
 
 const poll = (question: string, options: [string, number][], meta: string) => `<div class="card">
@@ -164,15 +164,15 @@ const cover = (image: string, name: string, meta: string) => `<figure class="fig
  */
 const kinds: string[][] = [
   [
-    project('/demo/harbor.svg', 'Harbor', 'harbor.dev · 2 hours ago', 'success', 'Ready'),
-    project('/demo/lighthouse.svg', 'Lighthouse', 'Status pages for every region', 'warning', 'Building'),
-    project('/demo/pines.svg', 'Pines', 'pines.app · 14 regions', 'success', 'Ready'),
-    project('/demo/cairn.svg', 'Cairn', 'Preview of pull request #311', 'info', 'Preview'),
+    project('/home/matrix/harbor.svg', 'Harbor', 'harbor.dev · 2 hours ago', 'success', 'Ready'),
+    project('/home/matrix/lighthouse.svg', 'Lighthouse', 'Status pages for every region', 'warning', 'Building'),
+    project('/home/matrix/pines.svg', 'Pines', 'pines.app · 14 regions', 'success', 'Ready'),
+    project('/home/matrix/cairn.svg', 'Cairn', 'Preview of pull request #311', 'info', 'Preview'),
   ],
   [
     cover('/home/slides/dune.svg', 'Dune', '1,200 × 1,000'),
     cover('/home/slides/tide.svg', 'Tide', 'Moodboard, autumn'),
-    cover('/demo/steps.svg', 'Steps', 'Shot on a grey morning'),
+    cover('/home/matrix/steps.svg', 'Steps', 'Stair hall, west light'),
     cover('/home/slides/arches.svg', 'Arches', 'Lobby, north wing'),
   ],
   [
