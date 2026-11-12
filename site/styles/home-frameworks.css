@@ -1,6 +1,7 @@
 /*
- * 05 Frameworks: every component stylesheet drawn as one cell of a ledger, the few a framework owns raised out
- * of it, and beside them the same markup and one framework component in React, Svelte and Vue.
+ * 06 Frameworks: the proportion of component stylesheets as two figures over one bar, a row that opens onto every
+ * stylesheet with the few a framework owns raised out of it, and under it the same markup and one framework
+ * component in React, Svelte and Vue.
  */
 
 /*
@@ -17,9 +18,11 @@
   .ui-frameworks {
     /* Obsidian on the light tray; in the dark theme a step below the tray, so it still reads as a slab set into it. */
     --ui-frameworks-slab: light-dark(oklch(17.4% .0018 265), oklch(13.6% .0016 265));
+    /* The two inks of the proportion: markup is the ruled paper, a framework component the ink drawn on it. */
+    --ui-frameworks-markup: color-mix(in oklab, var(--home-text-quiet) 30%, transparent);
+    --ui-frameworks-owned: var(--home-text);
     display: grid;
     gap: var(--home-gap);
-    margin: 0;
     padding: var(--home-gap);
     border-radius: var(--home-radius-tray);
     background-color: var(--home-tray);
@@ -35,84 +38,155 @@
     white-space: nowrap;
   }
 
-  /* The ledger: a sheet of drafting paper with every stylesheet ruled into it. */
+  /* The ledger: one accordion row on a sheet of the ground, closed until it is asked for. */
   .ui-frameworks-ledger {
-    display: grid;
-    gap: 1.25rem;
-    padding: 1.25rem;
     border-radius: var(--home-radius-sheet);
     background-color: var(--home-ground);
     box-shadow: inset 0 0 0 1px var(--home-hairline);
+  }
+
+  /*
+   * The summary is the whole closed sheet: the two figures at either end of the bar that splits them, and under
+   * it the total and the toggle, with the accordion's chevron drawn as the last cell of that line.
+   */
+  .accordion-trigger.ui-frameworks-summary {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 0 0.5rem;
+    min-height: 0;
+    padding: 1.25rem 1.25rem 1rem;
+    border-radius: var(--home-radius-sheet);
+    font: inherit;
+    color: var(--home-text);
 
     @media (width >= 48rem) {
-      padding: 1.5rem;
+      padding: 1.5rem 1.5rem 1.125rem;
+    }
+
+    /* The ring sits inside the sheet, on its own corners. */
+    &:focus-visible {
+      outline-offset: -2px;
+    }
+
+    &::after {
+      grid-area: 3 / 3;
+      width: 0.875rem;
+      height: 0.875rem;
+    }
+
+    @media (hover: hover) {
+      &:hover > .ui-frameworks-toggle {
+        color: var(--home-text);
+      }
     }
   }
 
-  /* The proportion in figures first, so it reads before the drawing is looked at. */
-  .ui-frameworks-head {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: end;
-    justify-content: space-between;
-    gap: 1rem 2rem;
-  }
-
-  .ui-frameworks-total {
-    color: var(--home-text-body);
-
-    /* A path is written as it is spelled, not set in capitals like the label before it. */
-    & > span {
-      letter-spacing: 0.02em;
-      text-transform: none;
-      color: var(--home-text-faint);
-    }
-  }
-
-  /* Side by side at every width; on a phone a label wraps under its figure instead of the pair stacking. */
-  .ui-frameworks-legend {
+  /*
+   * The two figures share the first line, one from each end, so neither takes its width from the columns of the
+   * line under it; on a phone each label wraps within its half.
+   */
+  .ui-frameworks-figure {
     display: grid;
-    grid-auto-flow: column;
-    grid-auto-columns: minmax(0, auto);
-    gap: 2rem;
-    margin: 0;
-    padding: 0;
-    list-style: none;
+    grid-area: 1 / 1 / 2 / 4;
+    justify-self: start;
+    justify-items: start;
+    align-content: start;
+    gap: 0.5rem;
+    max-width: calc(50% - 0.75rem);
+  }
 
-    & > li {
-      display: grid;
-      align-content: start;
-      gap: 0.375rem;
-    }
+  .ui-frameworks-figure-owned {
+    justify-self: end;
+    justify-items: end;
+    text-align: end;
   }
 
   .ui-frameworks-count {
-    font-size: 1.75rem;
+    font-size: 2rem;
     font-weight: 400;
     line-height: 1;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.03em;
     font-variant-numeric: tabular-nums;
     color: var(--home-text);
   }
 
   .ui-frameworks-label {
-    display: block;
+    color: var(--home-text-quiet);
   }
 
-  /* A legend key is a cell in miniature: an empty ruled square, or a raised one. */
+  /* A key is a cell in miniature: a ruled square for markup, an ink one for a framework component. */
   .ui-frameworks-key {
     display: inline-block;
-    width: 0.625rem;
-    height: 0.625rem;
-    margin-right: 0.5rem;
-    vertical-align: -0.0625rem;
-    border-radius: 2px;
-    box-shadow: inset 0 0 0 0.5px var(--home-rule-strong);
+    flex: none;
+    width: 0.5rem;
+    height: 0.5rem;
+    margin-inline-end: 0.5rem;
+    vertical-align: 0;
+    border-radius: 1.5px;
+    background-color: var(--ui-frameworks-markup);
   }
 
   .ui-frameworks-key-owned {
-    background-color: var(--home-text);
-    box-shadow: none;
+    background-color: var(--ui-frameworks-owned);
+  }
+
+  /* The bar: two lengths in the proportion of their counts, so the point reads while the sheet is closed. */
+  .ui-frameworks-split {
+    display: flex;
+    grid-area: 2 / 1 / 3 / 4;
+    gap: 3px;
+    height: 0.375rem;
+    margin-block: 0.875rem 1rem;
+
+    & > span {
+      flex: var(--markup) 1 0;
+      border-radius: 999px;
+      background-color: var(--ui-frameworks-markup);
+    }
+
+    & > span:last-child {
+      flex-grow: var(--owned);
+      background-color: var(--ui-frameworks-owned);
+    }
+  }
+
+  .ui-frameworks-total {
+    grid-area: 3 / 1;
+    min-width: 0;
+
+    /* A path is written as it is spelled, not set in capitals like the label before it. */
+    & > span {
+      letter-spacing: 0.02em;
+      text-transform: none;
+      white-space: nowrap;
+    }
+  }
+
+  /* The toggle's wording follows the row's state, as the expand component's does. */
+  .ui-frameworks-toggle {
+    grid-area: 3 / 2;
+    color: var(--home-text-quiet);
+    transition: color var(--home-quick) var(--home-ease);
+
+    [open] > summary > & > .ui-frameworks-more,
+    :not([open]) > summary > & > .ui-frameworks-less {
+      display: none;
+    }
+  }
+
+  /* The open sheet: the cells on the summary's edges, then the test a framework component passes. */
+  .accordion-content.ui-frameworks-content {
+    display: grid;
+    gap: 1.25rem;
+    padding: 0.25rem 1.25rem 1.25rem;
+    font-size: inherit;
+    line-height: inherit;
+    overflow-wrap: normal;
+
+    @media (width >= 48rem) {
+      padding: 0.25rem 1.5rem 1.5rem;
+    }
   }
 
   /*
@@ -366,6 +440,16 @@
   }
 
   /* A file name is case-sensitive, so it keeps its own letters; the role beside it stays a label. */
+  /*
+   * What the file is, keyed as the bar above keys it: on the dark slab the paper is a dim square and the ink a
+   * bright one.
+   */
+  .ui-frameworks-role {
+    --ui-frameworks-markup: rgb(255 255 255 / 0.22);
+    --ui-frameworks-owned: oklch(90% .002 265);
+    white-space: nowrap;
+  }
+
   .ui-frameworks-file-name {
     min-width: 0;
     font-size: 0.75rem;
@@ -483,8 +567,18 @@
     color: var(--ui-frameworks-dim);
   }
 
-  /* In forced colors backgrounds are dropped, so an owned cell and its key are drawn in the text color. */
+  /*
+   * In forced colors backgrounds are dropped, so an owned cell, its key and its length of the bar are drawn in
+   * the text color, and the markup ones as outlines.
+   */
   @media (forced-colors: active) {
+    .ui-frameworks-key,
+    .ui-frameworks-split > span {
+      forced-color-adjust: none;
+      background-color: Canvas;
+      box-shadow: inset 0 0 0 1px CanvasText;
+    }
+
     /* The slab's focus ring is a shadow, which forced colors drop: an outline in the highlight color stands in. */
     .ui-frameworks-slab:has(> .ui-frameworks-pre:focus-visible) {
       outline: 2px solid Highlight;
@@ -493,7 +587,8 @@
 
     .ui-frameworks-cell[data-owned]::before,
     .ui-frameworks-cell[data-owned] > .ui-frameworks-name::before,
-    .ui-frameworks-key-owned {
+    .ui-frameworks-key-owned,
+    .ui-frameworks-split > span:last-child {
       forced-color-adjust: none;
       background-color: CanvasText;
     }
@@ -512,32 +607,20 @@
 
   @media (prefers-reduced-motion: no-preference) {
     /*
-     * As the ledger comes into view, the owned cells rise out of it one after another. Script marks the figure
-     * pending only once it is sure to clear the mark again, so without it the cells are simply raised; the
-     * transitions last only while they rise, so a change of theme later is not staggered.
+     * As the row opens, the owned cells rise out of the ruled sheet one after another. The selector holds only
+     * while the row is open, so each opening plays it again and a change of theme later is not staggered.
      */
-    [data-frameworks-rising] .ui-frameworks-cell[data-owned] {
-      &::before {
-        transition: opacity var(--home-slow) var(--home-ease), scale var(--home-slow) var(--home-ease);
-        transition-delay: calc(var(--order) * 45ms + 120ms);
-      }
-
-      & > .ui-frameworks-name {
-        transition: color var(--home-slow) var(--home-ease);
-        transition-delay: calc(var(--order) * 45ms + 120ms);
-      }
+    .accordion-item[open] .ui-frameworks-cell[data-owned]::before {
+      animation: ui-frameworks-rise var(--home-slow) var(--home-ease) backwards;
+      animation-delay: calc(var(--order) * 30ms + 120ms);
     }
+  }
+}
 
-    [data-frameworks-pending] .ui-frameworks-cell[data-owned] {
-      &::before {
-        opacity: 0;
-        scale: 0.86;
-      }
-
-      & > .ui-frameworks-name {
-        color: var(--home-text-faint);
-      }
-    }
+@keyframes ui-frameworks-rise {
+  from {
+    opacity: 0;
+    scale: 0.86;
   }
 }
 
