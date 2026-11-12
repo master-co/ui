@@ -538,10 +538,17 @@
   }
 
   /*
-   * Compared: one row per component, two marks on a shared scale, each labelled. The scale is the largest value
-   * any toggle shows; the marks grow from the left edge, Master UI in ink, shadcn/ui in a quiet grey. The sheet
-   * is not a scroll container, since the bars' view timelines read the page's scroll; the table fits from 320px.
+   * Compared: one row per component, two bars on a shared scale, each named. The scale is the largest value any
+   * toggle shows; a bar grows from the left edge in its three parts, HTML in grey, CSS in blue and JavaScript in
+   * yellow, so what makes the difference is seen, not only read. The sheet is not a scroll container, since the
+   * bars' view timelines read the page's scroll; the table fits from 320px.
    */
+  .home-compare {
+    --home-compare-html: color-mix(in oklab, var(--home-text-quiet) 45%, var(--home-ground));
+    --home-compare-css: light-dark(oklch(60% .15 250), oklch(68% .13 250));
+    --home-compare-js: light-dark(oklch(80% .16 84), oklch(82% .15 88));
+  }
+
   .home-compare-sheet {
     padding: 0.25rem 0.75rem 1rem;
 
@@ -576,15 +583,16 @@
     }
   }
 
-  .home-compare-key-master,
-  .home-compare-mark-master {
-    --home-compare-mark: var(--home-text);
+  .home-compare-key-html {
+    --home-compare-mark: var(--home-compare-html);
   }
 
-  /* Quiet, yet 3:1 against the sheet and against the ink bar beside it, in either theme. */
-  .home-compare-key-shadcn,
-  .home-compare-mark-shadcn {
-    --home-compare-mark: color-mix(in oklab, var(--home-text-quiet) 70%, var(--home-ground));
+  .home-compare-key-css {
+    --home-compare-mark: var(--home-compare-css);
+  }
+
+  .home-compare-key-js {
+    --home-compare-mark: var(--home-compare-js);
   }
 
   /* Each toggle says what it switches; a label keeps its own spelling, since one of them is a product name. */
@@ -652,9 +660,22 @@
 
   .home-compare-bar {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 13rem;
+    grid-template-columns: 4.5rem minmax(0, 1fr) 13rem;
     align-items: center;
     gap: 0.75rem;
+  }
+
+  /* Whose bar it is, in the figures' mono: Master UI in ink, shadcn/ui a step quieter. */
+  .home-compare-who {
+    font-family: var(--home-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.02em;
+    color: var(--home-text-faint);
+    white-space: nowrap;
+
+    .home-compare-mark-master > & {
+      color: var(--home-text);
+    }
   }
 
   .home-compare-track {
@@ -671,11 +692,35 @@
     position: absolute;
     inset-block: 0;
     left: 0;
+    display: flex;
     width: calc(var(--share) * 100%);
     min-width: 2px;
+    overflow: hidden;
     border-radius: 1px;
-    background-color: var(--home-compare-mark);
     transition: width var(--home-base) var(--home-ease);
+  }
+
+  /* A part is as long as its share of the bar's bytes; one with none takes no room. */
+  .home-compare-part {
+    flex: var(--part) 1 0;
+    min-width: 0;
+    background-color: var(--home-compare-color);
+    transition: flex-grow var(--home-base) var(--home-ease);
+  }
+
+  .home-compare-part-html {
+    --part: var(--html);
+    --home-compare-color: var(--home-compare-html);
+  }
+
+  .home-compare-part-css {
+    --part: var(--css);
+    --home-compare-color: var(--home-compare-css);
+  }
+
+  .home-compare-part-js {
+    --part: var(--js);
+    --home-compare-color: var(--home-compare-js);
   }
 
   .home-compare-figure {
@@ -717,12 +762,14 @@
       gap: 0.5rem;
     }
 
+    /* The name and the figure share a line over the bar. */
     .home-compare-bar {
-      grid-template-columns: minmax(0, 1fr);
-      gap: 0.125rem;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: 0.125rem 0.5rem;
 
-      & > .home-compare-figure {
-        order: -1;
+      & > .home-compare-track {
+        grid-column: 1 / -1;
+        order: 1;
       }
     }
 
@@ -751,18 +798,30 @@
    */
   .home-compare-bar {
     --share: var(--share-base-with);
+    --html: var(--html-base-with);
+    --css: var(--css-base-with);
+    --js: var(--js-base-with);
   }
 
   .home-compare:has([name="home-compare-runtime"][value="without"]:checked) .home-compare-bar {
     --share: var(--share-base-without);
+    --html: var(--html-base-without);
+    --css: var(--css-base-without);
+    --js: var(--js-base-without);
   }
 
   .home-compare:has([name="home-compare-base"][value="radix"]:checked) .home-compare-bar {
     --share: var(--share-radix-with);
+    --html: var(--html-radix-with);
+    --css: var(--css-radix-with);
+    --js: var(--js-radix-with);
   }
 
   .home-compare:has([name="home-compare-base"][value="radix"]:checked):has([name="home-compare-runtime"][value="without"]:checked) .home-compare-bar {
     --share: var(--share-radix-without);
+    --html: var(--html-radix-without);
+    --css: var(--css-radix-without);
+    --js: var(--js-radix-without);
   }
 
   .home-compare:has([name="home-compare-runtime"][value="without"]:checked) .home-compare-when-with,
@@ -793,24 +852,78 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .home-compare-fill {
+    .home-compare-fill,
+    .home-compare-part {
       transition: none;
     }
   }
 
+  /* How it was measured: a quiet line under the figure that opens onto the notes. */
+  .home-compare-summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    margin: calc(var(--home-gap) + 0.25rem) 0.5rem 0.25rem;
+    color: var(--home-text-quiet);
+    text-transform: none;
+    letter-spacing: 0.02em;
+    list-style: none;
+    cursor: pointer;
+    transition: color var(--home-quick) var(--home-ease);
+
+    &::-webkit-details-marker {
+      display: none;
+    }
+
+    /* A chevron that turns down when the notes are open. */
+    &::after {
+      width: 0.375rem;
+      height: 0.375rem;
+      border-right: 1px solid currentColor;
+      border-bottom: 1px solid currentColor;
+      rotate: -45deg;
+      translate: 0 -0.0625rem;
+      transition: rotate var(--home-quick) var(--home-ease);
+      content: '';
+    }
+
+    @media (hover: hover) {
+      &:hover {
+        color: var(--home-text);
+      }
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--ui-focus, currentColor);
+      outline-offset: 4px;
+      border-radius: 2px;
+    }
+
+    .home-compare-details[open] > &::after {
+      rotate: 45deg;
+      translate: 0 -0.1875rem;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      &::after {
+        transition: none;
+      }
+    }
+  }
+
+  .home-compare-details > .home-cost-notes {
+    padding-top: 0.75rem;
+  }
+
   /* Forced colors would paint the marks away with their backgrounds: draw them in system ink, the two kept apart. */
   @media (forced-colors: active) {
-    .home-compare-key-master,
-    .home-compare-mark-master {
-      --home-compare-mark: CanvasText;
+    .home-compare {
+      --home-compare-html: GrayText;
+      --home-compare-css: CanvasText;
+      --home-compare-js: Highlight;
     }
 
-    .home-compare-key-shadcn,
-    .home-compare-mark-shadcn {
-      --home-compare-mark: GrayText;
-    }
-
-    .home-compare-fill,
+    .home-compare-part,
     .home-compare-key::before {
       forced-color-adjust: none;
     }

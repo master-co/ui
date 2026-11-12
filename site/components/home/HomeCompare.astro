@@ -43,7 +43,19 @@ const rows = [
  */
 const scale = Math.max(...bases.flatMap(base => runtimes.flatMap(runtime => rows.flatMap(row => [total(master[row.id], runtime), total(shadcn[base][row.id], runtime)]))))
 const share = (value: number) => (value / scale).toFixed(4)
-const style = (value: (base: string, runtime: typeof runtimes[number]) => number) => bases.flatMap(base => runtimes.map(runtime => `--share-${base}-${runtime}:${share(value(base, runtime))}`)).join(';')
+/*
+ * A bar's figures for every state the toggles can show: its length on the scale, and the share of it that is
+ * HTML, CSS and JavaScript, so the bar is drawn in its three parts.
+ */
+const style = (entry: (base: string) => Case) => bases.flatMap(base => runtimes.flatMap(runtime => {
+    const value = entry(base)
+    return [
+        `--share-${base}-${runtime}:${share(total(value, runtime))}`,
+        `--html-${base}-${runtime}:${value.html.gzip}`,
+        `--css-${base}-${runtime}:${value.css.gzip}`,
+        `--js-${base}-${runtime}:${js(value, runtime)}`,
+    ]
+})).join(';')
 
 /* Where shadcn/ui ships less CSS than Master UI, said in words chosen from the figures. */
 const gaps = rows.filter(row => row.id !== 'none').map(row => ({ row, gap: Math.min(...bases.map(base => master[row.id].css.gzip - shadcn[base][row.id].css.gzip)) }))
@@ -61,8 +73,8 @@ const allMaster = master.all
 const allShadcn = shadcn[bases[0]].all
 const gap = total(allShadcn, 'with') - total(allMaster, 'with')
 const headline = (gap > 0 && allShadcn.js.gzip - allMaster.js.gzip >= gap
-    ? t('With all six on one page, the first load is {master} kB with Master UI and {shadcn} kB with shadcn/ui on {base}, gzipped; the gap is JavaScript.')
-    : t('With all six on one page, the first load is {master} kB with Master UI and {shadcn} kB with shadcn/ui on {base}, gzipped.'))
+    ? t('All six on one page: {master} kB with Master UI, {shadcn} kB with shadcn/ui on {base}, gzipped. The gap is JavaScript.')
+    : t('All six on one page: {master} kB with Master UI, {shadcn} kB with shadcn/ui on {base}, gzipped.'))
     .replace('{master}', kB(total(allMaster, 'with'))).replace('{shadcn}', kB(total(allShadcn, 'with'))).replace('{base}', baseLabel[bases[0]] ?? bases[0])
 ---
 
@@ -75,14 +87,15 @@ const headline = (gap > 0 && allShadcn.js.gzip - allMaster.js.gzip >= gap
     <header class="home-section-header">
       <p class="home-eyebrow"><span class="home-eyebrow-index" aria-hidden="true">05</span><span>{t('Compared')}</span></p>
       <h2 id="compare-title" class="home-lit home-section-heading home-stone-type"><span>{t('The same components,')}</span>{' '}<span>{t('weighed the same way.')}</span></h2>
-      <p class="home-section-body">{t('Six common components, built for production with Master UI and with shadcn/ui, and measured by one script on the files each page loads first.')} {headline}</p>
+      <p class="home-section-body">{t('Six common components, built for production with Master UI and shadcn/ui, measured by one script.')} {headline}</p>
       <a class="home-section-link" href={repository}>{t('Read the benchmark and run it')}<IconArrowUpRight aria-hidden="true" size={14} stroke={1.75} /></a>
     </header>
     <figure class="home-cost-tray" aria-labelledby="compare-caption">
       <div class="home-cost-bar">
         <ul class="home-compare-legend" aria-hidden="true">
-          <li class="home-compare-key home-compare-key-master">Master UI</li>
-          <li class="home-compare-key home-compare-key-shadcn">shadcn/ui</li>
+          <li class="home-compare-key home-compare-key-html">HTML</li>
+          <li class="home-compare-key home-compare-key-css">CSS</li>
+          <li class="home-compare-key home-compare-key-js">JavaScript</li>
         </ul>
         <div class="home-cost-actions home-compare-controls">
           <div class="home-compare-control">
@@ -122,8 +135,9 @@ const headline = (gap > 0 && allShadcn.js.gzip - allMaster.js.gzip >= gap
                 </th>
                 <td class="table-cell">
                   <div class="home-compare-bars">
-                    <div class="home-compare-bar home-compare-mark-master" style={style((_, runtime) => total(master[row.id], runtime))}>
-                      <span class="home-compare-track" aria-hidden="true"><span class="home-compare-fill"></span></span>
+                    <div class="home-compare-bar home-compare-mark-master" style={style(() => master[row.id])}>
+                      <span class="home-compare-who" aria-hidden="true">Master UI</span>
+                      <span class="home-compare-track" aria-hidden="true"><span class="home-compare-fill"><span class="home-compare-part home-compare-part-html"></span><span class="home-compare-part home-compare-part-css"></span><span class="home-compare-part home-compare-part-js"></span></span></span>
                       <span class="home-compare-figure">
                         <span class="home-cost-hidden">Master UI: </span>
                         {runtimes.map(runtime => (
@@ -131,8 +145,9 @@ const headline = (gap > 0 && allShadcn.js.gzip - allMaster.js.gzip >= gap
                         ))}
                       </span>
                     </div>
-                    <div class="home-compare-bar home-compare-mark-shadcn" style={style((base, runtime) => total(shadcn[base][row.id], runtime))}>
-                      <span class="home-compare-track" aria-hidden="true"><span class="home-compare-fill"></span></span>
+                    <div class="home-compare-bar home-compare-mark-shadcn" style={style(base => shadcn[base][row.id])}>
+                      <span class="home-compare-who" aria-hidden="true">shadcn/ui</span>
+                      <span class="home-compare-track" aria-hidden="true"><span class="home-compare-fill"><span class="home-compare-part home-compare-part-html"></span><span class="home-compare-part home-compare-part-css"></span><span class="home-compare-part home-compare-part-js"></span></span></span>
                       <span class="home-compare-figure">
                         {bases.map(base => runtimes.map(runtime => (
                           <span class={`home-compare-when-${runtime} home-compare-when-${base}`}><span class="home-cost-hidden">shadcn/ui, {baseLabel[base] ?? base}: </span><span class="home-compare-figure-total">{kB(total(shadcn[base][row.id], runtime))} kB</span><span class="home-compare-split"><span class="home-compare-dot"> · </span>CSS {kB(shadcn[base][row.id].css.gzip)} · JS {kB(js(shadcn[base][row.id], runtime))}</span></span>
@@ -146,6 +161,9 @@ const headline = (gap > 0 && allShadcn.js.gzip - allMaster.js.gzip >= gap
           </tbody>
         </table>
       </div>
+      {/* How it was measured, closed until asked for: the figure reads without it. */}
+      <details class="home-compare-details">
+        <summary class="home-compare-summary home-annotation">{t('How it was measured')}</summary>
       <ol class="home-cost-notes" id="compare-notes">
         <li><span class="home-cost-note-mark" aria-hidden="true">1</span>{t('Every file the built page loads first, gzipped: the HTML, its stylesheets and its module scripts. Master UI writes the markup in the HTML; shadcn/ui renders it from JavaScript. React and React DOM are {size} kB of that JavaScript on every shadcn/ui page; “Without React” leaves them out. Lightning CSS minifies both builds’ CSS, so it weighs less here than in the unminified figures above.').replace('{size}', kB(shadcn[bases[0]].none.react.gzip))}</li>
         <li><span class="home-cost-note-mark" aria-hidden="true">2</span>{smallerCss.length
@@ -162,6 +180,7 @@ const headline = (gap > 0 && allShadcn.js.gzip - allMaster.js.gzip >= gap
           .replace('{date}', day)
           .replace('{machine}', `${results.machine.cpu}, Node ${results.machine.node}`)}{' '}<a href={repository}>benchmarks/shadcn-cost</a></li>
       </ol>
+      </details>
     </figure>
   </div>
 </section>
