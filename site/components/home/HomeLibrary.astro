@@ -5,52 +5,61 @@ import { siteOf } from '@master/internal-site/astro/site-context'
 import { library, type LibraryKind } from '~/site/components/catalog'
 import ComponentTile from '~/site/components/ComponentTile.astro'
 
-interface Props {
-  /** Which part of the library the shelf shows. */
-  kind: LibraryKind
-  /** The section's number in the page. */
-  index: string
-  eyebrow: string
-  /** The heading, in two parts that may each take a line. */
-  heading: [string, string]
-  body: string
-  /** The link to the overview; `{count}` is replaced with the number of items. */
-  link: string
-  /** The items to show, in order; every item of the kind when left out. */
-  slugs?: string[]
-  /** The shelf passes the other way. */
-  reverse?: boolean
-}
-
-const { kind, index, eyebrow, heading, body, link, slugs, reverse = false } = Astro.props
 const { t } = siteOf(Astro)
-const all = library[kind] as readonly { slug: string, name: string }[]
-const items = slugs ?? all.map(item => item.slug)
-/** About 30px a second, whatever the length of the row. A copy narrower than the window spreads to its width. */
-const duration = `${(items.length * 13).toFixed(0)}s`
-const id = `${kind}-title`
+
+/**
+ * The library's three shelves, in the order a product is built: the parts, what they make, the frames around it.
+ * Components show a chosen two dozen across the kinds of control; blocks and pages show every item there is.
+ */
+const shelves: { kind: LibraryKind, name: string, link: string, slugs?: string[] }[] = [
+  {
+    kind: 'components',
+    name: 'Components',
+    link: 'Browse components',
+    slugs: ['button', 'switch', 'card', 'segmented', 'combobox', 'menu', 'dialog', 'tooltip', 'toast', 'tabs', 'accordion', 'carousel', 'tree', 'calendar', 'chart', 'table', 'gauge', 'heatmap', 'timeline', 'otp', 'rating', 'composer', 'bento', 'masonry'],
+  },
+  { kind: 'blocks', name: 'Blocks', link: 'Browse blocks' },
+  { kind: 'pages', name: 'Pages', link: 'Browse pages' },
+]
 ---
 
 {/*
-  A shelf of the library: the section's words, then one row of covers that passes by without end and stops under
-  the pointer or the keyboard, so any tile can be opened. The overview it links to lists them all.
+  The library: one header, then a shelf for each of components, blocks and pages. A shelf is named and counted
+  on the content column and links to its overview; under it one row of covers passes by without end, the middle
+  row the other way, and stops under the pointer or the keyboard so any tile can be opened.
 */}
-<section id={kind} class="home-section home-library" aria-labelledby={id}>
+<section id="library" class="home-section home-library" aria-labelledby="library-title">
   <div class="app-wrapper home-section-wrap">
     <header class="home-section-header">
-      <p class="home-eyebrow"><span class="home-eyebrow-index" aria-hidden="true">{index}</span><span>{t(eyebrow)}</span></p>
-      <h2 id={id} class="home-lit home-section-heading home-stone-type"><span>{t(heading[0])}</span>{' '}<span>{t(heading[1])}</span></h2>
-      <p class="home-section-body">{t(body)}</p>
-      <a class="home-section-link" href={`/${kind}`}>{t(link).replace('{count}', String(all.length))}<IconArrowRight aria-hidden="true" size={14} stroke={1.75} /></a>
+      <p class="home-eyebrow"><span class="home-eyebrow-index" aria-hidden="true">08</span><span>{t('Library')}</span></p>
+      <h2 id="library-title" class="home-lit home-section-heading home-stone-type"><span>{t('From a button')}</span>{' '}<span>{t('to a whole page.')}</span></h2>
+      <p class="home-section-body">{t('Components with live previews, their markup and the contract a coding agent reads. Blocks that put them together into the parts of a product. Pages that frame a whole screen. Copy any of them and keep it.')}</p>
     </header>
   </div>
-  <div class:list={['marquee', 'home-library-row', reverse && 'marquee-reverse']} role="group" aria-label={t(eyebrow)} style={`--marquee-duration: ${duration}`}>
-    <ul class="marquee-track">
-      {items.map(slug => <li><ComponentTile slug={slug} kind={kind} description /></li>)}
-    </ul>
-    {/* The copy is for the eye: hidden from assistive technology and out of the tab order. */}
-    <ul class="marquee-track" aria-hidden="true" inert>
-      {items.map(slug => <li><ComponentTile slug={slug} kind={kind} description /></li>)}
-    </ul>
-  </div>
+  {shelves.map(({ kind, name, link, slugs }, index) => {
+    const all = library[kind] as readonly { slug: string }[]
+    const items = slugs ?? all.map(item => item.slug)
+    /** About 30px a second, whatever the length of the row. A copy narrower than the window spreads to its width. */
+    const duration = `${(items.length * 13).toFixed(0)}s`
+    const id = `${kind}-title`
+    return (
+      <div id={kind} class="home-library-shelf">
+        <div class="app-wrapper home-section-wrap">
+          <div class="home-library-shelf-head">
+            <h3 id={id} class="home-library-shelf-name">{t(name)}{' '}<span class="home-library-shelf-count">{all.length}</span></h3>
+            <a class="home-section-link" href={`/${kind}`}>{t(link)}<IconArrowRight aria-hidden="true" size={14} stroke={1.75} /></a>
+          </div>
+        </div>
+        <div class:list={['marquee', 'home-library-row', index % 2 === 1 && 'marquee-reverse']} role="group" aria-labelledby={id} style={`--marquee-duration: ${duration}`}>
+          <ul class="marquee-track">
+            {items.map(slug => <li><ComponentTile slug={slug} kind={kind} description /></li>)}
+          </ul>
+          {/* The copy is for the eye: hidden from assistive technology and out of the tab order. */}
+          <ul class="marquee-track" aria-hidden="true" inert>
+            {items.map(slug => <li><ComponentTile slug={slug} kind={kind} description /></li>)}
+          </ul>
+        </div>
+      </div>
+    )
+  })}
 </section>
