@@ -330,33 +330,45 @@
      * tile has above its caption and cropping to it. On one column the image keeps a 4:3 frame instead.
      */
     /*
-     * A gallery: the current slide sits in the middle of the stage with room all round it, the slides before and
-     * after it show at the edges, and a mask fades them out toward the stage, so the eye rests on the middle and
-     * still sees there is more. The padding lets the first and the last slide reach the middle too. The dots sit
-     * under the pictures, inside the stage, with no caption between: each picture's description is its alt text.
+     * A gallery: carousel-center keeps the current slide in the middle of the stage and lets the first and the last
+     * reach it. The track runs edge to edge, with no inset on either side, so the slides before and after it are
+     * cut by the stage's own edges and the eye still sees there is more. The dots sit under the pictures, inside
+     * the stage, with no caption between: each picture's description is its alt text.
      */
     &[data-feature='carousel'] {
+      padding-inline: 0;
+
       & > .carousel {
-        /* In the stage's own units: a percentage would be read from the track less its padding. */
-        --carousel-slide: 68cqi;
+        /* In the stage's own units, so the buttons below, placed outside the track's flow, can read the same width. */
+        --carousel-slide: 60cqi;
         --carousel-gap: 0.875rem;
         width: 100%;
         margin-bottom: 2.25rem;
-        padding-inline: calc((100cqi - var(--carousel-slide)) / 2);
-        scroll-padding-inline: calc((100cqi - var(--carousel-slide)) / 2);
-        mask-image: linear-gradient(to right, transparent, #000 11%, #000 89%, transparent);
 
         @container (inline-size < 26rem) {
-          --carousel-slide: 74cqi;
+          --carousel-slide: 68cqi;
         }
       }
 
+      /* The dots sit 1rem under the pictures; each is padded into its target, which is larger on a touch screen. */
       & > .carousel::scroll-marker-group {
-        top: calc(anchor(bottom) + 1rem);
+        top: calc(anchor(bottom) + .8125rem);
+
+        @media (pointer: coarse) {
+          top: calc(anchor(bottom) + .5rem);
+        }
       }
 
-      & .carousel-slide {
-        scroll-snap-align: center;
+      /*
+       * The buttons straddle the middle picture's edges, where the eye already rests, rather than the stage's edges,
+       * where they would stand on a neighbor cut in half.
+       */
+      & > .carousel::scroll-button(inline-start) {
+        left: calc(anchor(left) + (100cqi - var(--carousel-slide)) / 2 - var(--carousel-control) / 2);
+      }
+
+      & > .carousel::scroll-button(inline-end) {
+        right: calc(anchor(right) + (100cqi - var(--carousel-slide)) / 2 - var(--carousel-control) / 2);
       }
 
       & .figure {

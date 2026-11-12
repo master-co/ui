@@ -32,7 +32,7 @@ export const platformFeatures: PlatformFeature[] = [
     names: ['::scroll-button()', '::scroll-marker', 'scroll-snap'],
     title: 'Slides with buttons and dots, drawn by the browser',
     summary: 'A row of slides snaps into place, and the browser adds previous and next buttons and a dot for each slide.',
-    html: `<div class="carousel" role="region" aria-label="Material studies" tabindex="0">
+    html: `<div class="carousel carousel-center" role="region" aria-label="Material studies" tabindex="0">
 ${slides.map(([file, alt]) => `  <figure class="carousel-slide figure">
     <img class="figure-media" src="/home/slides/${file}.svg" alt="${alt}" width="1200" height="1000" loading="lazy" decoding="async">
   </figure>`).join('\n')}
