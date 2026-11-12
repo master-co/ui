@@ -1,28 +1,18 @@
 /*
- * Customize: one composition of real components drawn twice in a stage, light under dark, with a seam between
- * them, and a console beside it. Each layer forces its own color scheme, so the library's light-dark() tokens
- * resolve per layer; Paper's tokens are scoped to both layers by a style the component writes from paper.css,
- * and the console writes the corner properties and size modifiers onto both, easing the geometry for a moment
- * when a choice is made. The seam sits at 50% until the script measures the range's thumb.
+ * Customize: one composition of real components in four styles, and a console beside it. Each style is a theme
+ * file of tokens scoped to its own picture (the component writes them from customize.ts); the pictures stand in
+ * one cell, so the stage is as tall as the tallest style, and the files in the console stand in one cell of a
+ * fixed height, so changing style moves nothing. A new style wipes across the old one, which stays whole under it.
  */
-@property --home-customize-seam {
-  syntax: '<percentage>';
-  inherits: true;
-  initial-value: 50%;
-}
-
 @layer components {
   .home-customize {
     scroll-margin-top: 3.75rem;
   }
 
-  /* Text that belongs to one theme: the other theme's text leaves the page and the accessibility tree. */
-  .home-customize:not(:has([name="home-customize-theme"][value="paper"]:checked)) .home-customize-when-paper,
-  .home-customize:has([name="home-customize-theme"][value="paper"]:checked) .home-customize-when-default {
-    display: none;
-  }
-
   .home-customize-figure {
+    --home-customize-wipe: 900ms;
+    /* How long a style is shown while the styles play in turn, its wipe included. */
+    --home-customize-dwell: 5.5s;
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     gap: var(--home-gap);
@@ -33,162 +23,160 @@
     box-shadow: inset 0 0 0 1px var(--home-hairline);
 
     @media (width >= 64rem) {
-      grid-template-columns: minmax(0, 1fr) minmax(19rem, 23rem);
+      grid-template-columns: minmax(0, 1fr) minmax(20rem, 24rem);
     }
   }
 
-  /* Beside the console, the stage takes the console's height, so the two sheets end on one line. */
-  .home-customize-view {
-    position: relative;
-    display: grid;
-    grid-template-rows: minmax(0, 1fr) auto;
-    gap: 1.125rem;
-    min-width: 0;
-    /* Room under the range for its thumb's shadow and focus ring. */
-    padding-bottom: 0.625rem;
-
-    &[data-gliding] {
-      transition: --home-customize-seam 480ms var(--home-ease);
-    }
-  }
+  /* ---------------------------------------------------------------------------------------- the stage */
 
   .home-customize-stage {
     position: relative;
     display: grid;
+    min-width: 0;
     overflow: clip;
     border-radius: var(--home-radius-sheet);
     box-shadow: 0 0 0 1px var(--home-hairline);
     container-type: inline-size;
-  }
-
-  /* Both layers fill the one cell, so the stage is as tall as the composition, or as the console beside it. */
-  .home-customize-layer {
-    position: relative;
-    grid-area: 1 / 1;
-    display: grid;
-    place-items: center;
-    min-height: 32rem;
-    /* On a phone the tag is one line and the stage stays short enough to keep the presets in view under it. */
-    padding: 3.5rem 1rem 1.5rem;
-    color: var(--color-text-strong);
-    background-color: var(--color-surface-base);
-
-    @container (width >= 30rem) {
-      padding: 4.25rem 1.5rem 2.75rem;
-    }
-  }
-
-  .home-customize-layer-light {
-    color-scheme: light;
-  }
-
-  .home-customize-layer-dark {
-    color-scheme: dark;
-    clip-path: inset(0 0 0 var(--home-customize-seam));
-  }
-
-  /* The library's own dots in its finest line, quieter than anything that stands on them. */
-  .home-customize-ground {
-    --color-texture: var(--color-line-hair);
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-  }
-
-  .home-customize-tag {
-    position: absolute;
-    top: 1.125rem;
-    display: grid;
-    gap: 0.25rem;
-    margin: 0;
-    font-family: var(--home-mono);
-    font-size: var(--home-label);
-    line-height: 1.3;
-    letter-spacing: 0.04em;
-    color: var(--color-text-muted);
-
-    & > :last-child {
-      display: none;
-
-      @container (width >= 34rem) {
-        display: block;
-      }
-    }
-  }
-
-  .home-customize-tag-name {
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--color-text-strong);
-  }
-
-  .home-customize-layer-light .home-customize-tag {
-    left: 1.25rem;
-  }
-
-  .home-customize-layer-dark .home-customize-tag {
-    right: 1.25rem;
-    text-align: end;
-  }
-
-  .home-customize-specimen {
-    position: relative;
-    width: min(100%, 23rem);
-  }
-
-  .home-customize-fields {
-    display: grid;
-    justify-items: start;
-    gap: 1rem;
-
-    & > .field {
-      justify-self: stretch;
-    }
+    isolation: isolate;
   }
 
   /*
-   * The seam: a hairline of a middle grey, the one line that reads on both grounds. It runs on past the stage
-   * down to the range's thumb, which covers its end, so the thumb reads as the seam's handle.
+   * A style's picture. Its ground is the style's own canvas and its type the style's own font. A picture that is
+   * not chosen keeps its room, so the cell stays as tall as the tallest, but is hidden, which also takes it out of
+   * the tab order and the accessibility tree; the chosen one is shown by a rule the component writes per style.
+   */
+  /*
+   * The dots every scene on the page stands on, as faint as the platform's, in the style's own ink. A style's
+   * texture token follows its strong line, which runs from a whisper to solid black, so the strength is set here
+   * on the ink itself and only the hue is the style's.
+   */
+  .home-customize-layer.texture {
+    --texture-ink: color-mix(in oklab, var(--color-text-strong) 8%, transparent);
+  }
+
+  .home-customize-layer {
+    position: relative;
+    z-index: 0;
+    grid-area: 1 / 1;
+    visibility: hidden;
+    display: grid;
+    place-items: center;
+    min-width: 0;
+    padding: 3.25rem 0.75rem 1.5rem;
+    color: var(--color-text-body);
+    background-color: var(--color-surface-base);
+    color-scheme: light;
+    font-family: var(--font-family-sans);
+    font-weight: 400;
+
+    @container (width >= 30rem) {
+      padding: 4rem 1.75rem 2.75rem;
+    }
+
+    /* The style before: whole, under the new one, until the wipe has covered it. */
+    &[data-leaving] {
+      visibility: visible;
+    }
+
+    &[data-entering] {
+      animation: home-customize-wipe var(--home-customize-wipe) var(--home-ease-inout) both;
+    }
+  }
+
+  .home-customize:has(.home-customize-scheme .switch:checked) .home-customize-layer {
+    color-scheme: dark;
+  }
+
+  /* The style's name, in its own type, where a caption would be. */
+  .home-customize-tag {
+    position: absolute;
+    top: 1.125rem;
+    left: 1.25rem;
+    display: flex;
+    gap: 0.75rem;
+    margin: 0;
+    font-size: 0.6875rem;
+    font-weight: var(--font-weight-control);
+    line-height: 1.3;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-text-strong);
+
+    & > :first-child {
+      color: var(--color-text-muted);
+    }
+  }
+
+  .home-customize-card {
+    width: min(100%, 44rem);
+    text-align: start;
+  }
+
+  /* The cover's size attributes reserve its ratio; on top of the card its height follows the card's own ratio. */
+  :where(.home-customize-card) .card-media {
+    height: auto;
+  }
+
+  .home-customize-body {
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  /* The activity and the setting share a row while it holds both, and part onto two lines when it does not. */
+  .home-customize-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem 1rem;
+  }
+
+  /* A stop's picture: a view into the cover, cut to the style's own control corner. */
+  .home-customize-thumb {
+    display: block;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: calc(var(--radius-control) * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    object-fit: cover;
+    background-color: var(--color-surface-chip);
+    outline: 1px solid var(--color-line-image);
+    outline-offset: -1px;
+  }
+
+  .home-customize-offline {
+    font-size: 0.8125rem;
+    color: var(--color-text-body);
+  }
+
+  /*
+   * The wipe's edge: a line of light with a shade on each side, which reads on every style's ground. It travels
+   * with the wipe and leaves the stage at its end.
    */
   .home-customize-seam {
     position: absolute;
-    top: 0;
-    bottom: calc(0.625rem + 0.5625rem);
-    left: var(--home-customize-seam);
-    width: 1px;
-    translate: -0.5px 0;
-    background-color: oklch(62% 0.003 265 / 0.7);
+    z-index: 2;
+    inset-block: 0;
+    left: 0;
+    width: 2px;
+    translate: -1px 0;
+    background-color: oklch(100% 0 none);
+    box-shadow: 0 0 0 0.5px oklch(0% 0 none / 0.18), 0 0 18px 2px oklch(0% 0 none / 0.16);
+    opacity: 0;
     pointer-events: none;
-    transition: background-color var(--home-base) var(--home-ease);
   }
 
-  .home-customize-view:has(.home-customize-range:focus-visible) .home-customize-seam {
-    background-color: oklch(62% 0.003 265);
+  .home-customize-stage[data-wiping] .home-customize-seam {
+    animation: home-customize-seam var(--home-customize-wipe) var(--home-ease-inout) both;
   }
 
-  @media (hover: hover) {
-    .home-customize-view:has(.home-customize-range:hover) .home-customize-seam {
-      background-color: oklch(62% 0.003 265);
-    }
-  }
-
-  /* The range moves a seam, not an amount, so its track stays an empty well, drawn over the seam's tail. */
-  .home-customize-range {
-    --slider-color: transparent;
-    position: relative;
-    z-index: 1;
-    cursor: ew-resize;
-
-    /* Under a finger the range reaches 44px tall into the room around it; its track and thumb stay where they are. */
-    @media (pointer: coarse) {
-      --slider-bleed: 10px;
-    }
-  }
+  /* ---------------------------------------------------------------------------------------- the console */
 
   .home-customize-console {
     display: grid;
+    grid-template-rows: auto auto minmax(0, 1fr);
     align-content: start;
-    gap: 1.125rem;
+    gap: 1rem;
     min-width: 0;
     padding: 1rem;
     border-radius: var(--home-radius-sheet);
@@ -199,111 +187,238 @@
       padding: 1.25rem;
     }
 
-    /* Under the stage on a tablet: the controls beside their code, so the console stays short. */
+    /* Under the stage on a tablet: the styles beside their file, so the console stays short. */
     @media (40rem <= width < 64rem) {
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+      grid-template-rows: auto minmax(0, 1fr);
       column-gap: 1.5rem;
 
-      & > .home-customize-code {
-        grid-column: 2;
-        grid-row: 1 / span 6;
-        margin: 0;
+      & > .home-customize-bar {
+        grid-column: 1 / -1;
       }
     }
   }
 
-  .home-customize-row {
-    display: grid;
-    gap: 0.5rem;
-    min-width: 0;
+  .home-customize-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-height: 2rem;
 
     & > .home-annotation {
+      margin-inline-end: auto;
+    }
+  }
+
+  /* The two icons stand for the two states; the button's name says which. */
+  .home-customize-play {
+    margin-inline-end: -0.25rem;
+
+    /* It waits for the script that plays the styles; the button's own display would show it before. */
+    &[hidden] {
+      display: none;
+    }
+
+    & > .home-customize-when-playing {
+      display: none;
+    }
+  }
+
+  .home-customize-figure[data-playing] .home-customize-play {
+    & > .home-customize-when-playing {
       display: block;
     }
 
-    & code {
-      font-family: inherit;
-      text-transform: none;
-      letter-spacing: 0.02em;
-    }
-
-    & > .segmented {
-      width: 100%;
-    }
-
-    & .segmented-item {
-      flex: 1;
-    }
-
-    /* The theme's two labels differ most in length: shares that start from each label, so the long one has room. */
-    & .home-customize-themes .segmented-item {
-      flex: 1 1 auto;
+    & > .home-customize-when-stopped {
+      display: none;
     }
   }
 
-  .home-customize-rule {
-    border-top: 0.5px solid var(--home-rule);
+  .home-customize-scheme {
+    font-size: 0.8125rem;
+    color: var(--home-text-body);
   }
 
-  .home-customize-scale {
+  .home-customize-options {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 2.25rem;
-    align-items: center;
-    gap: 1rem;
-    padding-inline: 0.3125rem;
+    gap: 0.25rem;
+  }
 
-    /* The same 44px reach under a finger as the seam's range. */
-    & > .slider {
-      @media (pointer: coarse) {
-        --slider-bleed: 10px;
+  /*
+   * A style: its number, its name and what sets it apart. The radio covers the option invisibly, so the whole
+   * row is the target and the radio keeps the state and the arrow keys. The chosen one is a raised sheet.
+   */
+  .home-customize-option {
+    position: relative;
+    display: grid;
+    grid-template-columns: 2rem minmax(0, 1fr);
+    align-items: baseline;
+    gap: 0.125rem 0;
+    padding: 0.6875rem 0.875rem 0.8125rem;
+    border-radius: var(--home-radius-well);
+    color: var(--home-text-quiet);
+    cursor: pointer;
+    transition: background-color var(--home-quick) var(--home-ease), box-shadow var(--home-quick) var(--home-ease);
+
+    @media (hover: hover) {
+      &:hover:not(:has(:checked)) {
+        background-color: color-mix(in oklab, var(--home-sheet) 55%, transparent);
       }
     }
-  }
 
-  .home-customize-output {
-    font-family: var(--home-mono);
-    font-size: 0.75rem;
-    font-variant-numeric: tabular-nums;
-    text-align: end;
-    color: var(--home-text);
-  }
-
-  .home-customize-code {
-    margin: 0.25rem 0 0;
-    padding: 0.875rem;
-    overflow-x: auto;
-    border-radius: var(--home-radius-well);
-    font-family: var(--home-mono);
-    font-size: 0.6875rem;
-    line-height: 1.7;
-    color: var(--home-text-body);
-    background-color: var(--home-tray);
-    box-shadow: inset 0 0 0 1px var(--home-hairline);
-    outline: none;
-
-    @media (width >= 30rem) {
-      font-size: 0.71875rem;
+    &:has(:checked) {
+      color: var(--home-text);
+      background-color: var(--home-sheet);
+      box-shadow: var(--home-elevation-1);
     }
 
-    & .c { color: var(--home-text-faint); }
-    & .k { color: var(--home-text-quiet); }
-    & .s { color: var(--home-text-body); }
-    & .t,
-    & .p,
-    & .v { color: var(--home-text); }
+    &:has(:focus-visible) {
+      outline: 2px solid var(--home-ink);
+      outline-offset: 2px;
+    }
+  }
 
-    &:focus-visible {
+  .home-customize-option-input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .home-customize-option-index {
+    grid-row: span 2;
+    font-family: var(--home-mono);
+    font-size: var(--home-label);
+    letter-spacing: 0.04em;
+    color: var(--home-text-faint);
+  }
+
+  .home-customize-option-name {
+    font-size: 0.9375rem;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+
+  .home-customize-option-summary {
+    font-size: 0.8125rem;
+    line-height: 1.4;
+    color: var(--home-text-quiet);
+  }
+
+  /*
+   * The time a style has left while the styles play: a hairline that fills under the chosen one. Its end moves
+   * the turn on (the script listens for it), so pausing it pauses the turn.
+   */
+  .home-customize-option-time {
+    position: absolute;
+    left: 0.875rem;
+    right: 0.875rem;
+    bottom: 0.375rem;
+    height: 1px;
+    background-color: var(--home-text-faint);
+    transform-origin: left;
+    scale: 0 1;
+    pointer-events: none;
+  }
+
+  .home-customize-figure[data-playing] .home-customize-option:has(:checked) .home-customize-option-time {
+    animation: home-customize-time var(--home-customize-dwell) linear both;
+  }
+
+  .home-customize-figure[data-playing][data-paused] .home-customize-option:has(:checked) .home-customize-option-time {
+    animation-play-state: paused;
+  }
+
+  /*
+   * The files stand in one cell of a set height. Beside the stage it takes no height of its own (size
+   * containment), so it fills what the stage leaves and never makes the row taller.
+   */
+  .home-customize-sources {
+    display: grid;
+    height: 16rem;
+    min-width: 0;
+
+    @media (40rem <= width < 64rem) {
+      height: auto;
+      contain: size;
+    }
+
+    @media (width >= 64rem) {
+      height: auto;
+      min-height: 11rem;
+      contain: size;
+    }
+  }
+
+  /* Like the pictures, every file keeps its room and only the chosen one is shown. */
+  .home-customize-source {
+    grid-area: 1 / 1;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    min-width: 0;
+    min-height: 0;
+    border-radius: var(--home-radius-well);
+    background-color: var(--home-tray);
+    box-shadow: inset 0 0 0 1px var(--home-hairline);
+    visibility: hidden;
+
+    /* The code scrolls inside the frame, so the frame draws the scroller's focus ring. */
+    &:has(.home-customize-code:focus-visible) {
       box-shadow: inset 0 0 0 2px var(--home-ink);
     }
   }
 
-  /* A line the last change wrote: a quiet wash that fades out. It moves nothing, so reduced motion keeps it. */
-  .home-customize-changed {
-    border-radius: 0.1875rem;
-    animation: home-customize-changed 1.4s var(--home-ease);
+  .home-customize-file {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin: 0;
+    padding: 0.625rem 0.875rem;
+    border-bottom: 0.5px solid var(--home-rule);
+    font-family: var(--home-mono);
+    font-size: var(--home-label);
+    letter-spacing: 0.02em;
+    color: var(--home-text-faint);
   }
 
-  /* The ladder: five steps in order of reach, ruled like a specification. */
+  .home-customize-file-name {
+    color: var(--home-text);
+  }
+
+  /* Long values wrap under their property, a step in from it, so nothing is hidden past the edge. */
+  .home-customize-code {
+    min-height: 0;
+    margin: 0;
+    padding: 0.75rem 0.875rem 1rem;
+    overflow: auto;
+    font-family: var(--home-mono);
+    font-size: 0.6875rem;
+    line-height: 1.65;
+    color: var(--home-text-body);
+    overscroll-behavior: contain;
+    outline: none;
+
+    & .l {
+      display: block;
+      padding-inline-start: 4ch;
+      text-indent: -4ch;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    & .c { color: var(--home-text-faint); }
+    & .k { color: var(--home-text-quiet); }
+    & .t,
+    & .p { color: var(--home-text); }
+    & .v { color: var(--home-text-body); }
+  }
+
+  /* ---------------------------------------------------------------------------------------- the ladder */
+
+  /* Five steps in order of reach, ruled like a specification. */
   .home-customize-ladder {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
@@ -398,30 +513,6 @@
     color: var(--home-text-faint);
   }
 
-  .home-customize-footnote {
-    max-width: 44rem;
-    margin: 0.75rem 0 0;
-    font-size: 0.8125rem;
-    line-height: 1.55;
-    color: var(--home-text-faint);
-    text-wrap: pretty;
-  }
-
-  /*
-   * While a choice in the console settles, the components ease into their new corners and heights instead of
-   * jumping, so the change reads as the same markup taking another shape. Colors swap at once: a gradient face
-   * cannot interpolate. The list keeps the properties the components transition themselves; the segmented
-   * thumb is named on its own because its rule is more specific than the others.
-   */
-  .home-customize-stage[data-morphing] *,
-  .home-customize-stage[data-morphing] *::before,
-  .home-customize-stage[data-morphing] *::after,
-  .home-customize-stage[data-morphing] .home-customize-fields .segmented::before {
-    transition-property: border-radius, corner-shape, min-height, height, width, padding, font-size, gap, translate, box-shadow, top, right, bottom, left;
-    transition-duration: var(--home-base);
-    transition-timing-function: var(--home-ease);
-  }
-
   /* In forced colors a background is dropped: the seam is drawn in the text color instead. */
   @media (forced-colors: active) {
     .home-customize-seam {
@@ -430,16 +521,57 @@
     }
   }
 
+  /* Reduced motion: no travel. A new style fades in over the old one, and the styles only play when asked to. */
   @media (prefers-reduced-motion: reduce) {
-    .home-customize-view[data-gliding],
-    .home-customize-seam {
-      transition: none;
+    .home-customize-layer[data-entering] {
+      animation-name: home-customize-fade;
+      animation-duration: var(--home-base);
+    }
+
+    .home-customize-stage[data-wiping] .home-customize-seam {
+      animation: none;
     }
   }
 }
 
-@keyframes home-customize-changed {
+@keyframes home-customize-wipe {
   from {
-    background-color: var(--home-rule-strong);
+    clip-path: inset(0 100% 0 0);
+  }
+
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes home-customize-seam {
+  0% {
+    left: 0;
+    opacity: 1;
+  }
+
+  92% {
+    opacity: 1;
+  }
+
+  100% {
+    left: 100%;
+    opacity: 0;
+  }
+}
+
+@keyframes home-customize-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes home-customize-time {
+  from {
+    scale: 0 1;
+  }
+
+  to {
+    scale: 1 1;
   }
 }
