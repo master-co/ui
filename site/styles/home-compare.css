@@ -3,20 +3,23 @@
   /*
    * Compared: one row per component, two bars on a shared scale, each named. The scale is the largest value any
    * toggle shows; a bar grows from the left edge in its three parts, HTML in grey, CSS in blue and JavaScript in
-   * yellow, so what makes the difference is seen, not only read. The sheet is not a scroll container, since the
-   * bars' view timelines read the page's scroll; the table fits from 320px.
+   * yellow, so what makes the difference is seen, not only read. Each mark keeps 3:1 against the sheet in both
+   * themes. Yellow cannot on a light sheet and stay yellow, so there it is edged in a deeper gold that does.
+   * The sheet is not a scroll container, since the bars' view timelines read the page's scroll; the table fits
+   * from 320px.
    */
   .home-compare {
-    --home-compare-html: color-mix(in oklab, var(--home-text-quiet) 45%, var(--home-ground));
-    --home-compare-css: light-dark(oklch(60% .15 250), oklch(68% .13 250));
-    --home-compare-js: light-dark(oklch(80% .16 84), oklch(82% .15 88));
+    --home-compare-html: light-dark(oklch(62% .004 265), oklch(54% .004 265));
+    --home-compare-css: light-dark(oklch(57% .15 252), oklch(70% .13 250));
+    --home-compare-js: light-dark(oklch(81% .155 86), oklch(83% .15 88));
+    --home-compare-js-edge: light-dark(oklch(63% .13 78), transparent);
   }
 
   .home-compare-sheet {
-    padding: 0.25rem 0.75rem 1rem;
+    padding: 0.25rem 0.75rem 0.5rem;
 
     @media (width >= 40rem) {
-      padding: 0.5rem 1.5rem 1.25rem;
+      padding: 0.5rem 1.5rem 0.75rem;
     }
   }
 
@@ -56,11 +59,18 @@
 
   .home-compare-key-js {
     --home-compare-mark: var(--home-compare-js);
+
+    &::before {
+      box-shadow: inset 0 0 0 1px var(--home-compare-js-edge);
+    }
   }
 
-  /* Each toggle says what it switches; a label keeps its own spelling, since one of them is a product name. */
+  /*
+   * The toggles say what they switch: React's runtime needs no caption, since its options name it, while the
+   * base reads as a phrase. A label keeps its own spelling, since it names a product.
+   */
   .home-compare-controls {
-    gap: 0.5rem 1.25rem;
+    gap: 0.5rem 1rem;
   }
 
   .home-compare-control {
@@ -74,8 +84,64 @@
     }
   }
 
+  /*
+   * The columns every bar and the heading share: who, the bar, then the total, the CSS and the JavaScript, each
+   * figure set on the end edge in digits of one width, so the decimals stack down the table.
+   */
   .home-compare-table {
+    --home-compare-columns: 4.5rem minmax(0, 1fr) 4.25rem 2.75rem 3rem;
     width: 100%;
+  }
+
+  .home-compare-head,
+  .home-compare-bar {
+    display: grid;
+    grid-template-columns: var(--home-compare-columns);
+    align-items: center;
+    column-gap: 0.75rem;
+  }
+
+  .home-compare-head {
+    align-items: end;
+
+    & > .home-compare-total,
+    & > .home-compare-css,
+    & > .home-compare-js {
+      text-align: end;
+    }
+
+    /* The CSS and JS columns carry the swatch of the part they count, tying the figures to the bars. */
+    & > .home-compare-css::before,
+    & > .home-compare-js::before {
+      display: inline-block;
+      width: 0.375rem;
+      height: 0.375rem;
+      margin-inline-end: 0.3125rem;
+      border-radius: 1px;
+      background-color: var(--home-compare-mark);
+      vertical-align: 0.0625rem;
+      content: '';
+    }
+
+    & > .home-compare-css {
+      --home-compare-mark: var(--home-compare-css);
+    }
+
+    & > .home-compare-js {
+      --home-compare-mark: var(--home-compare-js);
+
+      &::before {
+        box-shadow: inset 0 0 0 1px var(--home-compare-js-edge);
+      }
+    }
+  }
+
+  .home-compare-head-title {
+    grid-column: 1 / 3;
+  }
+
+  .home-compare-head-unit {
+    color: var(--home-text-faint);
   }
 
   /* The sum of the six closes the table on a firmer rule, so the answer is the last thing read. */
@@ -93,12 +159,18 @@
     }
   }
 
+  /* A row's name sits level with its first bar; a note under it is a quieter mono line. */
   .home-compare-name {
     width: 6.5rem;
     vertical-align: top;
+    line-height: 1.25rem;
 
     @media (width >= 48rem) {
       width: 10rem;
+    }
+
+    @media (width >= 64rem) {
+      width: 11rem;
     }
 
     & > span {
@@ -111,25 +183,23 @@
     font-family: var(--home-mono);
     font-size: 0.6875rem;
     font-weight: 400;
+    line-height: 1.4;
     letter-spacing: 0.02em;
     color: var(--home-text-faint);
   }
 
   .home-compare-bars {
     display: grid;
-    gap: 0.375rem;
-    padding-block: 0.25rem;
+    gap: 0.25rem;
   }
 
   .home-compare-bar {
-    display: grid;
-    grid-template-columns: 4.5rem minmax(0, 1fr) 13rem;
-    align-items: center;
-    gap: 0.75rem;
+    min-height: 1.25rem;
   }
 
   /* Whose bar it is, in the figures' mono: Master UI in ink, shadcn/ui a step quieter. */
   .home-compare-who {
+    grid-column: 1;
     font-family: var(--home-mono);
     font-size: 0.6875rem;
     letter-spacing: 0.02em;
@@ -142,33 +212,38 @@
   }
 
   .home-compare-track {
+    --home-compare-thickness: 0.5rem;
     position: relative;
-    height: 0.5rem;
-    border-radius: 1px;
+    grid-column: 2;
+    height: var(--home-compare-thickness);
     background-image: linear-gradient(var(--home-rule), var(--home-rule));
     background-size: 100% 1px;
     background-position: 0 50%;
     background-repeat: no-repeat;
   }
 
+  /*
+   * The parts meet on a hairline of the sheet, so blue and yellow stay apart however close their tones; a part
+   * with no bytes takes no room.
+   */
   .home-compare-fill {
     position: absolute;
     inset-block: 0;
     left: 0;
     display: flex;
+    gap: 1px;
     width: calc(var(--share) * 100%);
     min-width: 2px;
     overflow: hidden;
     border-radius: 1px;
-    transition: width var(--home-base) var(--home-ease);
+    transition: width var(--home-compare-move) var(--home-ease);
   }
 
-  /* A part is as long as its share of the bar's bytes; one with none takes no room. */
   .home-compare-part {
     flex: var(--part) 1 0;
     min-width: 0;
     background-color: var(--home-compare-color);
-    transition: flex-grow var(--home-base) var(--home-ease);
+    transition: flex-grow var(--home-compare-move) var(--home-ease);
   }
 
   .home-compare-part-html {
@@ -184,33 +259,118 @@
   .home-compare-part-js {
     --part: var(--js);
     --home-compare-color: var(--home-compare-js);
+    box-shadow: inset 0 0 0 1px var(--home-compare-js-edge);
   }
 
-  .home-compare-figure {
+  /*
+   * The figures of the state shown fall into the bar's own columns; the states a toggle does not select are
+   * hidden below. A figure that comes in fades up, as its bar settles to its new length.
+   */
+  .home-compare-figure,
+  .home-compare-state {
+    display: contents;
+  }
+
+  .home-compare-bar .home-compare-total,
+  .home-compare-bar .home-compare-css,
+  .home-compare-bar .home-compare-js {
     font-family: var(--home-mono);
     font-size: 0.75rem;
     font-variant-numeric: tabular-nums;
-    line-height: 1.35;
-    color: var(--home-text-body);
+    line-height: 1.25rem;
+    color: var(--home-text-faint);
+    text-align: end;
     white-space: nowrap;
+    transition: opacity var(--home-compare-move) var(--home-ease);
+
+    @starting-style {
+      opacity: 0;
+    }
   }
 
-  .home-compare-figure-total {
+  .home-compare-bar .home-compare-total {
+    grid-column: 3;
     color: var(--home-text);
   }
 
-  .home-compare-split {
-    display: none;
-    color: var(--home-text-faint);
+  .home-compare-bar .home-compare-css {
+    grid-column: 4;
+  }
 
-    @media (width >= 40rem) {
-      display: inline;
+  .home-compare-bar .home-compare-js {
+    grid-column: 5;
+  }
+
+  .home-compare-unit {
+    color: var(--home-text-faint);
+  }
+
+  /* The columns name the figures on a wide sheet; the words stay for a screen reader. */
+  .home-compare-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /*
+   * All six, the answer: thicker bars, figures in full ink, and how many times lighter Master UI comes out,
+   * in the name column where the eye arrives first.
+   */
+  .home-compare-sum {
+    & > .table-cell {
+      padding-top: calc(var(--table-padding-y) + 0.25rem);
     }
+
+    & .home-compare-track {
+      --home-compare-thickness: 0.75rem;
+    }
+
+    & .home-compare-name > span:first-child {
+      color: var(--home-text);
+    }
+
+    & .home-compare-bar .home-compare-total {
+      font-weight: 600;
+    }
+
+    & .home-compare-bar .home-compare-css,
+    & .home-compare-bar .home-compare-js {
+      color: var(--home-text-quiet);
+    }
+  }
+
+  .home-compare-ratio {
+    margin-top: 0.375rem;
+    font-size: 0.75rem;
+    font-weight: 400;
+    line-height: 1.35;
+    color: var(--home-text-quiet);
+
+    & > .home-compare-state {
+      display: block;
+      transition: opacity var(--home-compare-move) var(--home-ease);
+
+      @starting-style {
+        opacity: 0;
+      }
+    }
+  }
+
+  .home-compare-ratio-figure {
+    font-family: var(--home-mono);
+    font-size: 0.875rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--home-text);
   }
 
   /*
    * A phone keeps the table (its cells are table cells by utility as well as by component), so the bars win
-   * width another way: a narrower name column, tighter cells, and each figure set over its own bar.
+   * width another way: a narrower name column, tighter cells, and each bar on a line of its own under its name
+   * and total, with the CSS and JavaScript on the end edge beneath it.
    */
   @media (width < 40rem) {
     .home-compare-table {
@@ -218,39 +378,71 @@
     }
 
     .home-compare-name {
-      width: 5.75rem;
+      width: 5.5rem;
+      line-height: 1rem;
     }
 
     .home-compare-bars {
-      gap: 0.5rem;
+      gap: 0.75rem;
     }
 
-    /* The name and the figure share a line over the bar. */
-    .home-compare-bar {
-      grid-template-columns: auto minmax(0, 1fr);
-      gap: 0.125rem 0.5rem;
-
-      & > .home-compare-track {
-        grid-column: 1 / -1;
-        order: 1;
-      }
-    }
-
-    /* The split has a line of its own here, so what makes the gap is still there to read on a phone. */
-    .home-compare-figure .home-compare-split {
+    .home-compare-head {
       display: block;
-      font-size: 0.6875rem;
-    }
-
-    .home-compare-table .table-heading {
       white-space: normal;
 
-      & > .home-compare-split {
-        display: inline;
+      & > :not(.home-compare-head-title) {
+        display: none;
       }
     }
 
-    .home-compare-dot {
+    /* Fixed figure columns, so a row's two splits and every row's totals line up on the end edge. */
+    .home-compare-bar {
+      grid-template-columns: minmax(0, 1fr) 3.75rem 4.25rem;
+      column-gap: 0.5rem;
+      row-gap: 0.25rem;
+      min-height: 0;
+
+      & > .home-compare-who,
+      & .home-compare-total {
+        line-height: 1rem;
+      }
+
+      & > .home-compare-who {
+        grid-area: 1 / 1 / 2 / 3;
+      }
+
+      & > .home-compare-track {
+        grid-area: 2 / 1 / 3 / -1;
+      }
+
+      & .home-compare-total {
+        grid-area: 1 / 3;
+      }
+
+      & .home-compare-css {
+        grid-area: 3 / 2;
+      }
+
+      & .home-compare-js {
+        grid-area: 3 / 3;
+      }
+
+      & .home-compare-css,
+      & .home-compare-js {
+        font-size: 0.6875rem;
+        line-height: 0.875rem;
+      }
+    }
+
+    .home-compare-label {
+      position: static;
+      width: auto;
+      height: auto;
+      overflow: visible;
+      clip-path: none;
+    }
+
+    .home-compare-label-comma {
       display: none;
     }
   }
@@ -295,6 +487,14 @@
   }
 
   /*
+   * Toggled, a bar eases to its new length a little slower than a control answers, so the eye can follow
+   * which bars moved and which stayed.
+   */
+  .home-compare {
+    --home-compare-move: 0.42s;
+  }
+
+  /*
    * The marks draw out from the baseline while their row scrolls into view, tied to scroll rather than time.
    * Each row is its own timeline, so a row wholly in view always shows its whole bars: a reader who stops
    * never reads a figure beside a bar that is still growing. Without scroll timelines the bars simply stand.
@@ -315,39 +515,35 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .home-compare-fill,
-    .home-compare-part {
-      transition: none;
+    .home-compare {
+      --home-compare-move: 0s;
     }
   }
 
-  /* How it was measured: a quiet line under the figure that opens onto the notes. */
+  /*
+   * How it was measured: a quiet line under the figure that opens onto the notes, with when and against what
+   * the figures were taken at its end, so the date reads before the notes are opened.
+   */
+  .home-compare-details {
+    margin-top: var(--home-gap);
+  }
+
   .home-compare-summary {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.375rem;
-    margin: calc(var(--home-gap) + 0.25rem) 0.5rem 0.25rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.25rem 1.5rem;
+    padding: 0.375rem 0.5rem;
+    border-radius: var(--home-radius-sheet, 0.5rem);
+    font-size: 0.8125rem;
     color: var(--home-text-quiet);
-    text-transform: none;
-    letter-spacing: 0.02em;
     list-style: none;
     cursor: pointer;
     transition: color var(--home-quick) var(--home-ease);
 
     &::-webkit-details-marker {
       display: none;
-    }
-
-    /* A chevron that turns down when the notes are open. */
-    &::after {
-      width: 0.375rem;
-      height: 0.375rem;
-      border-right: 1px solid currentColor;
-      border-bottom: 1px solid currentColor;
-      rotate: -45deg;
-      translate: 0 -0.0625rem;
-      transition: rotate var(--home-quick) var(--home-ease);
-      content: '';
     }
 
     @media (hover: hover) {
@@ -357,25 +553,49 @@
     }
 
     &:focus-visible {
-      outline: 2px solid var(--ui-focus, currentColor);
-      outline-offset: 4px;
-      border-radius: 2px;
+      outline: 2px solid var(--home-ink);
+      outline-offset: 2px;
+    }
+  }
+
+  /* A chevron before the words that turns down when the notes are open. */
+  .home-compare-summary-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.625rem;
+
+    &::before {
+      width: 0.375rem;
+      height: 0.375rem;
+      border-right: 1px solid currentColor;
+      border-bottom: 1px solid currentColor;
+      rotate: -45deg;
+      transition: rotate var(--home-quick) var(--home-ease);
+      content: '';
     }
 
-    .home-compare-details[open] > &::after {
+    .home-compare-details[open] > .home-compare-summary > &::before {
       rotate: 45deg;
-      translate: 0 -0.1875rem;
+      translate: 0 -0.125rem;
     }
 
     @media (prefers-reduced-motion: reduce) {
-      &::after {
+      &::before {
         transition: none;
       }
     }
   }
 
+  .home-compare-summary-meta {
+    font-family: var(--home-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.02em;
+    font-variant-numeric: tabular-nums;
+    color: var(--home-text-faint);
+  }
+
   .home-compare-details > .home-cost-notes {
-    padding-top: 0.75rem;
+    padding-top: 0.5rem;
   }
 
   /* Forced colors would paint the marks away with their backgrounds: draw them in system ink, the two kept apart. */
@@ -384,10 +604,12 @@
       --home-compare-html: GrayText;
       --home-compare-css: CanvasText;
       --home-compare-js: Highlight;
+      --home-compare-js-edge: transparent;
     }
 
     .home-compare-part,
-    .home-compare-key::before {
+    .home-compare-key::before,
+    .home-compare-head > ::before {
       forced-color-adjust: none;
     }
 

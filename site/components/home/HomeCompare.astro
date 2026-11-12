@@ -58,6 +58,26 @@ const style = (entry: (base: string) => Case) => bases.flatMap(base => runtimes.
     ]
 })).join(';')
 
+/*
+ * The two bars of a row, each with its figures for every state the toggles can show; the states a toggle does
+ * not select are hidden by the stylesheet. Master UI's figures do not depend on the base.
+ */
+const marks = (id: string) => [
+    {
+        id: 'master', who: 'Master UI', style: style(() => master[id]),
+        states: runtimes.map(runtime => ({ when: [`home-compare-when-${runtime}`], label: 'Master UI', entry: master[id], runtime })),
+    },
+    {
+        id: 'shadcn', who: 'shadcn/ui', style: style(base => shadcn[base][id]),
+        states: bases.flatMap(base => runtimes.map(runtime => ({ when: [`home-compare-when-${runtime}`, `home-compare-when-${base}`], label: `shadcn/ui, ${baseLabel[base] ?? base}`, entry: shadcn[base][id], runtime }))),
+    },
+]
+
+/* How many times the bytes of all six shadcn/ui ships against Master UI's, for each state; said only where it is more. */
+const ratios = bases.flatMap(base => runtimes.map(runtime => ({ base, runtime, value: total(shadcn[base].all, runtime) / total(master.all, runtime) })))
+    .filter(entry => entry.value > 1)
+    .map(entry => ({ ...entry, ratio: entry.value.toFixed(1) }))
+
 /* Where shadcn/ui ships less CSS than Master UI, said in words chosen from the figures. */
 const gaps = rows.filter(row => row.id !== 'none').map(row => ({ row, gap: Math.min(...bases.map(base => master[row.id].css.gzip - shadcn[base][row.id].css.gzip)) }))
 const smallerCss = gaps.filter(entry => entry.gap > 0)
@@ -100,7 +120,7 @@ const headline = (gap > 0 && allShadcn.js.gzip - allMaster.js.gzip >= gap
         </ul>
         <div class="home-cost-actions home-compare-controls">
           <div class="home-compare-control">
-            <span id="compare-runtime-label" class="home-annotation">{t('JavaScript')}</span>
+            <span id="compare-runtime-label" class="home-cost-hidden">{t('React and React DOM')}</span>
             <div class="segmented segmented-sm" role="radiogroup" aria-labelledby="compare-runtime-label">
               <label class="segmented-item"><input type="radio" class="segmented-input" name="home-compare-runtime" value="with" checked>{t('With React')}</label>
               <label class="segmented-item"><input type="radio" class="segmented-input" name="home-compare-runtime" value="without">{t('Without React')}</label>
@@ -124,7 +144,14 @@ const headline = (gap > 0 && allShadcn.js.gzip - allMaster.js.gzip >= gap
           <thead>
             <tr class="table-row">
               <th class="table-heading" scope="col">{t('Component')}</th>
-              <th class="table-heading" scope="col">{t('First load, gzipped')}<span class="home-compare-split">{t(': HTML + CSS + JS')}</span></th>
+              <th class="table-heading" scope="col">
+                <span class="home-compare-head">
+                  <span class="home-compare-head-title">{t('First load, gzipped')}<span class="home-compare-head-unit">, kB</span></span>
+                  <span class="home-compare-total">{t('Total')}</span>
+                  <span class="home-compare-css">CSS</span>
+                  <span class="home-compare-js">JS</span>
+                </span>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -133,28 +160,32 @@ const headline = (gap > 0 && allShadcn.js.gzip - allMaster.js.gzip >= gap
                 <th class="table-cell home-compare-name" scope="row">
                   <span>{row.name}</span>
                   {row.note && <span class="home-compare-name-note">{row.note}</span>}
+                  {row.id === 'all' && ratios.length > 0 && (
+                    <span class="home-compare-ratio">
+                      {ratios.map(entry => (
+                        <span class:list={['home-compare-state', `home-compare-when-${entry.runtime}`, `home-compare-when-${entry.base}`]}><span class="home-compare-ratio-figure">{entry.ratio}×</span> {t('lighter with Master UI')}</span>
+                      ))}
+                    </span>
+                  )}
                 </th>
                 <td class="table-cell">
                   <div class="home-compare-bars">
-                    <div class="home-compare-bar home-compare-mark-master" style={style(() => master[row.id])}>
-                      <span class="home-compare-who" aria-hidden="true">Master UI</span>
-                      <span class="home-compare-track" aria-hidden="true"><span class="home-compare-fill"><span class="home-compare-part home-compare-part-html"></span><span class="home-compare-part home-compare-part-css"></span><span class="home-compare-part home-compare-part-js"></span></span></span>
-                      <span class="home-compare-figure">
-                        <span class="home-cost-hidden">Master UI: </span>
-                        {runtimes.map(runtime => (
-                          <span class={`home-compare-when-${runtime}`}><span class="home-compare-figure-total">{kB(total(master[row.id], runtime))} kB</span><span class="home-compare-split"><span class="home-compare-dot"> · </span>CSS {kB(master[row.id].css.gzip)} · JS {kB(js(master[row.id], runtime))}</span></span>
-                        ))}
-                      </span>
-                    </div>
-                    <div class="home-compare-bar home-compare-mark-shadcn" style={style(base => shadcn[base][row.id])}>
-                      <span class="home-compare-who" aria-hidden="true">shadcn/ui</span>
-                      <span class="home-compare-track" aria-hidden="true"><span class="home-compare-fill"><span class="home-compare-part home-compare-part-html"></span><span class="home-compare-part home-compare-part-css"></span><span class="home-compare-part home-compare-part-js"></span></span></span>
-                      <span class="home-compare-figure">
-                        {bases.map(base => runtimes.map(runtime => (
-                          <span class={`home-compare-when-${runtime} home-compare-when-${base}`}><span class="home-cost-hidden">shadcn/ui, {baseLabel[base] ?? base}: </span><span class="home-compare-figure-total">{kB(total(shadcn[base][row.id], runtime))} kB</span><span class="home-compare-split"><span class="home-compare-dot"> · </span>CSS {kB(shadcn[base][row.id].css.gzip)} · JS {kB(js(shadcn[base][row.id], runtime))}</span></span>
-                        )))}
-                      </span>
-                    </div>
+                    {marks(row.id).map(mark => (
+                      <div class={`home-compare-bar home-compare-mark-${mark.id}`} style={mark.style}>
+                        <span class="home-compare-who" aria-hidden="true">{mark.who}</span>
+                        <span class="home-compare-track" aria-hidden="true"><span class="home-compare-fill"><span class="home-compare-part home-compare-part-html"></span><span class="home-compare-part home-compare-part-css"></span><span class="home-compare-part home-compare-part-js"></span></span></span>
+                        <span class="home-compare-figure">
+                          {mark.states.map(state => (
+                            <span class:list={['home-compare-state', ...state.when]}>
+                              <span class="home-cost-hidden">{state.label}: </span>
+                              <span class="home-compare-total">{kB(total(state.entry, state.runtime))}<span class="home-compare-unit"> kB</span></span>
+                              <span class="home-compare-css"><span class="home-compare-label"><span class="home-compare-label-comma">, </span>CSS </span>{kB(state.entry.css.gzip)}</span>
+                              <span class="home-compare-js"><span class="home-compare-label"><span class="home-compare-label-comma">, </span>JS </span>{kB(js(state.entry, state.runtime))}</span>
+                            </span>
+                          ))}
+                        </span>
+                      </div>
+                    ))}
                   </div>
                 </td>
               </tr>
@@ -164,7 +195,10 @@ const headline = (gap > 0 && allShadcn.js.gzip - allMaster.js.gzip >= gap
       </div>
       {/* How it was measured, closed until asked for: the figure reads without it. */}
       <details class="home-compare-details">
-        <summary class="home-compare-summary home-annotation">{t('How it was measured')}</summary>
+        <summary class="home-compare-summary">
+          <span class="home-compare-summary-title">{t('How it was measured')}</span>
+          <span class="home-compare-summary-meta">{day} · shadcn/ui {first.shadcn} · Vite {first.vite}</span>
+        </summary>
       <ol class="home-cost-notes" id="compare-notes">
         <li><span class="home-cost-note-mark" aria-hidden="true">1</span>{t('Every file the built page loads first, gzipped: the HTML, its stylesheets and its module scripts. Master UI writes the markup in the HTML; shadcn/ui renders it from JavaScript. React and React DOM are {size} kB of that JavaScript on every shadcn/ui page; “Without React” leaves them out. Lightning CSS minifies both builds’ CSS, so it weighs less here than in the unminified figures above.').replace('{size}', kB(shadcn[bases[0]].none.react.gzip))}</li>
         <li><span class="home-cost-note-mark" aria-hidden="true">2</span>{smallerCss.length
