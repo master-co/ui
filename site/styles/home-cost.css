@@ -412,6 +412,57 @@
     border-bottom: 1px solid var(--home-rule);
   }
 
+  /* Each reading's label carries the swatch of its part, the same blue and yellow as its meter and as Compared. */
+  .home-cost-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    &::before {
+      width: 0.625rem;
+      height: 0.375rem;
+      border-radius: 1px;
+      background-color: var(--home-cost-swatch);
+      box-shadow: inset 0 0 0 1px var(--home-cost-swatch-edge, transparent);
+      content: '';
+    }
+
+    @media (forced-colors: active) {
+      &::before {
+        forced-color-adjust: none;
+      }
+    }
+  }
+
+  .home-cost-label-css {
+    --home-cost-swatch: var(--home-ink-css);
+  }
+
+  .home-cost-label-js {
+    --home-cost-swatch: var(--home-ink-js);
+    --home-cost-swatch-edge: var(--home-ink-js-edge);
+  }
+
+  /*
+   * A component that loads a script says so in JavaScript's color: a soft wash of yellow where the script is
+   * needed, only a yellow edge where it is optional and so not counted.
+   */
+  .badge.home-cost-js[data-script] {
+    color: var(--home-text-body);
+  }
+
+  .badge.home-cost-js[data-script='required'] {
+    background: color-mix(in oklab, var(--home-ink-js) 26%, transparent);
+    box-shadow: inset 0 0 0 0.5px color-mix(in oklab, var(--home-ink-js) 60%, var(--home-ink-js-edge, transparent));
+  }
+
+  .badge.home-cost-js[data-script='optional'] {
+    background: transparent;
+    box-shadow: none;
+    outline: 1px dashed color-mix(in oklab, var(--home-ink-js) 75%, var(--home-text-faint));
+    outline-offset: -1px;
+  }
+
   .home-cost-preset {
     margin: 0;
     font-size: 0.9375rem;
@@ -536,8 +587,14 @@
     gap: 0.5rem;
     margin-top: 0.375rem;
 
+    /* Each share fills in the color of what it measures: the library's CSS in blue, its JavaScript in yellow. */
     & > .meter {
+      --color-surface-inverse: var(--home-ink-css);
       width: 100%;
+    }
+
+    &.home-cost-meter-js > .meter {
+      --color-surface-inverse: var(--home-ink-js);
     }
   }
 
@@ -656,5 +713,83 @@
     font-family: var(--home-mono);
     font-size: 0.6875rem;
     color: var(--home-text-faint);
+  }
+
+  /*
+   * How it is measured: a quiet line under a figure that opens onto its notes, with what the figures were taken
+   * from at its end, so that reads before the notes are opened. Cost and Compared both close their notes in it.
+   */
+  .home-notes {
+    margin-top: var(--home-gap);
+  }
+
+  .home-notes-summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.25rem 1.5rem;
+    padding: 0.375rem 0.5rem;
+    border-radius: var(--home-radius-sheet, 0.5rem);
+    font-size: 0.8125rem;
+    color: var(--home-text-quiet);
+    list-style: none;
+    cursor: pointer;
+    transition: color var(--home-quick) var(--home-ease);
+
+    &::-webkit-details-marker {
+      display: none;
+    }
+
+    @media (hover: hover) {
+      &:hover {
+        color: var(--home-text);
+      }
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--home-ink);
+      outline-offset: 2px;
+    }
+  }
+
+  /* A chevron before the words that turns down when the notes are open. */
+  .home-notes-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.625rem;
+
+    &::before {
+      width: 0.375rem;
+      height: 0.375rem;
+      border-right: 1px solid currentColor;
+      border-bottom: 1px solid currentColor;
+      rotate: -45deg;
+      transition: rotate var(--home-quick) var(--home-ease);
+      content: '';
+    }
+
+    .home-notes[open] > .home-notes-summary > &::before {
+      rotate: 45deg;
+      translate: 0 -0.125rem;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      &::before {
+        transition: none;
+      }
+    }
+  }
+
+  .home-notes-meta {
+    font-family: var(--home-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.02em;
+    font-variant-numeric: tabular-nums;
+    color: var(--home-text-faint);
+  }
+
+  .home-notes > .home-cost-notes {
+    padding-top: 0.5rem;
   }
 }

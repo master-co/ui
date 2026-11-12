@@ -29,6 +29,8 @@ const behaviorSize = (name: string) => cost.behaviors.find(behavior => behavior.
 const groups = cost.categories.map(category => ({ category, units: cost.order.map(name => byName.get(name)!).filter(unit => unit.category === category) }))
 const sharePercent = Math.round(cost.selection.gzip / cost.library.gzip * 100)
 const requiredJs = required.reduce((sum, unit) => sum + behaviorSize(unit.behavior!).gzip, 0)
+/* Every behavior module, each gzipped as its own file: the whole of the library's JavaScript. */
+const allJs = cost.behaviors.reduce((sum, behavior) => sum + behavior.gzip, 0)
 
 /* The table the page's script reads. Words it writes are translated here. */
 const data = {
@@ -38,7 +40,7 @@ const data = {
     behaviors: cost.behaviors,
     defaults: cost.defaultSelection,
     selection: cost.selection,
-    library: { gzip: cost.library.gzip, raw: cost.library.raw },
+    library: { gzip: cost.library.gzip, raw: cost.library.raw, js: allJs },
     copy: {
         stylesheets: t('{count} stylesheets'),
         stylesheet: t('1 stylesheet'),
@@ -58,6 +60,7 @@ const data = {
         cssGzip: t('CSS, gzipped'),
         cssCompiled: t('CSS, compiled'),
         shareCompiled: t('{percent}% of the whole library, {size} kB compiled'),
+        shareJs: t('{percent}% of every behavior, {size} kB gzipped'),
         nothing: t('Nothing selected: the theme alone, {size} kB compiled.'),
         noMatch: t('No component matches “{query}”.'),
         presetDefaults: t('A settings page'),
@@ -114,7 +117,7 @@ const json = JSON.stringify(data).replace(/</g, '\\u003c')
                       <span class="home-cost-row-name">{unit.title}</span>
                       <span class="home-cost-row-meta">
                         <span class="home-cost-row-via" data-cost-via></span>
-                        {unit.behavior && <span class="badge badge-sm badge-outline" title={unit.script === 'required' ? t('Needs its behavior script') : t('Its behavior script is optional')}>{unit.script === 'required' ? 'JS' : 'JS?'}</span>}
+                        {unit.behavior && <span class="badge badge-sm badge-outline home-cost-js" data-script={unit.script} title={unit.script === 'required' ? t('Needs its behavior script') : t('Its behavior script is optional')}>{unit.script === 'required' ? 'JS' : 'JS?'}</span>}
                         <span class="home-cost-row-size">{kB(unit.bytes)}</span>
                       </span>
                     </label>
@@ -136,8 +139,8 @@ const json = JSON.stringify(data).replace(/</g, '\\u003c')
           {/* The list's key, under the list it explains. */}
           <p class="home-cost-key">
             <span>{t('Sizes in kB, compiled')}</span>
-            <span><span class="badge badge-sm badge-outline">JS</span> {t('needs its script')}</span>
-            <span><span class="badge badge-sm badge-outline">JS?</span> {t('script optional')}</span>
+            <span><span class="badge badge-sm badge-outline home-cost-js" data-script="required">JS</span> {t('needs its script')}</span>
+            <span><span class="badge badge-sm badge-outline home-cost-js" data-script="optional">JS?</span> {t('script optional')}</span>
           </p>
         </div>
         <div class="home-cost-sheet home-cost-static" data-cost-static>
@@ -174,7 +177,7 @@ const json = JSON.stringify(data).replace(/</g, '\\u003c')
           </div>
           <div class="home-cost-reading" data-cost-css-reading>
             <div class="stat">
-              <p class="stat-label home-annotation" data-cost-css-label>{t('CSS, gzipped')}</p>
+              <p class="stat-label home-annotation home-cost-label home-cost-label-css" data-cost-css-label>{t('CSS, gzipped')}</p>
               <div class="stat-row">
                 <p class="stat-value home-cost-value"><span class="home-cost-number" data-cost-css>{kB(cost.selection.gzip)}</span><span class="home-cost-unit">kB</span></p>
                 {/* What the last change added or took away; the live region below says the totals in words. */}
@@ -189,11 +192,15 @@ const json = JSON.stringify(data).replace(/</g, '\\u003c')
           </div>
           <div class="home-cost-reading">
             <div class="stat">
-              <p class="stat-label home-annotation">{t('JavaScript, gzipped')}</p>
+              <p class="stat-label home-annotation home-cost-label home-cost-label-js">{t('JavaScript, gzipped')}</p>
               <div class="stat-row">
                 <p class="stat-value home-cost-value"><span class="home-cost-number home-cost-number-sm" data-cost-js>{kB(requiredJs)}</span><span class="home-cost-unit">kB</span></p>
                 <p class="stat-delta home-cost-delta" aria-hidden="true" data-cost-js-delta></p>
               </div>
+            </div>
+            <div class="home-cost-meter home-cost-meter-js">
+              <meter class="meter meter-sm" min="0" max={allJs} value={requiredJs} aria-label={t('Share of every behavior')} data-cost-js-meter>{Math.round(requiredJs / allJs * 100)}%</meter>
+              <p class="home-cost-share" data-cost-js-share>{t('{percent}% of every behavior, {size} kB gzipped').replace('{percent}', String(Math.round(requiredJs / allJs * 100))).replace('{size}', kB(allJs))}</p>
             </div>
             <p class="home-cost-detail" data-cost-js-detail>{required.length ? '' : `${t('None required: every state is drawn from native elements and their attributes.')}${optional.length ? ` ${t('What is marked optional is not counted.')}` : ''}`}</p>
             <ul class="home-cost-modules" data-cost-modules>
@@ -205,12 +212,19 @@ const json = JSON.stringify(data).replace(/</g, '\\u003c')
           <p class="home-cost-hidden" aria-live="polite" data-cost-live></p>
         </div>
       </div>
+      {/* How the figures are taken, closed until asked for: the calculator reads without it. */}
+      <details class="home-notes">
+        <summary class="home-notes-summary">
+          <span class="home-notes-title">{t('How it is measured')}</span>
+          <span class="home-notes-meta">{t('{count} stylesheets').replace('{count}', String(cost.units.length))} · {cost.behaviors.length} {t('behaviors')} · esbuild, gzip</span>
+        </summary>
       <ol class="home-cost-notes">
         <li><span class="home-cost-note-mark" aria-hidden="true">1</span>{t('The theme counts once. Each stylesheet adds its own compiled rules, the kB listed beside it, and brings every stylesheet it composes: a dialog brings the button.')}</li>
         <li><span class="home-cost-note-mark" aria-hidden="true">2</span>{t('CSS is compiled the way the package build writes')} <code>dist/standalone.css</code>{t(', unminified, then gzipped as one file. Compressed sizes do not add up, so this page gzips each selection it cuts from the published file.')}</li>
         <li><span class="home-cost-note-mark" aria-hidden="true">3</span>{t('The whole library is {raw} kB compiled and {gzip} kB gzipped; minified by {minifier} and gzipped, {minified} kB. The reset the components assume,').replace('{raw}', kB(cost.library.raw)).replace('{gzip}', kB(cost.library.gzip)).replace('{minifier}', cost.library.minified.minifier).replace('{minified}', kB(cost.library.minified.gzip))} <code>base.css</code>{t(', adds {size} kB gzipped where a project has none.').replace('{size}', kB(cost.base.gzip))}</li>
         <li><span class="home-cost-note-mark" aria-hidden="true">4</span>{t('JavaScript is each behavior module minified by esbuild and gzipped as its own file;')} <code>internal.js</code>{t(', which {count} behaviors share, counts once. 1 kB is 1,000 bytes.').replace('{count}', String(cost.behaviors.filter(behavior => behavior.imports.includes('internal')).length))}</li>
       </ol>
+      </details>
     </figure>
   </div>
   <script type="application/json" data-cost-data set:html={json} />
@@ -227,7 +241,7 @@ const json = JSON.stringify(data).replace(/</g, '\\u003c')
     behaviors: { name: string, raw: number, gzip: number, imports: string[] }[]
     defaults: string[]
     selection: { names: string[], raw: number, gzip: number }
-    library: { gzip: number, raw: number }
+    library: { gzip: number, raw: number, js: number }
     copy: Record<string, string>
   }
 
@@ -408,6 +422,11 @@ const json = JSON.stringify(data).replace(/</g, '\\u003c')
       $('[data-cost-js-detail]').textContent = [js || !selected.size ? '' : data.copy.none, optionalJs ? data.copy.optionalTotal : ''].filter(Boolean).join(' ')
       show(jsFigure, js)
       delta($('[data-cost-js-delta]'), shownJs, js)
+      const jsMeter = $<HTMLMeterElement>('[data-cost-js-meter]')
+      jsMeter.value = js
+      const jsPercent = Math.round(js / data.library.js * 100)
+      jsMeter.textContent = `${jsPercent}%`
+      $('[data-cost-js-share]').textContent = fill(data.copy.shareJs, { percent: jsPercent, size: kB(data.library.js) })
       shownJs = js
 
       /*
