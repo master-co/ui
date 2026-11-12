@@ -267,66 +267,30 @@
     }
   }
 
-  /* The platform's work, as a ledger of live specimens: each feature, who uses it and what a browser without it shows. */
-  .ui-platform {
-    margin-top: clamp(4.5rem, 3rem + 4vw, 7rem);
-  }
+  /* The platform's work, as a bento of live scenes: each feature and what it does here. */
+  /*
+   * The platform's bento is the library's own: four columns from 48rem of room, two below, one on a phone, and a tile
+   * spans only as far as there are columns. Rows grow with what they hold, so a growing composer lengthens its row.
+   */
+  /* Doubled with the layout's own class, so it holds whichever stylesheet the bundle puts last. */
+  .bento.ui-platform-grid {
+    --bento-gap: var(--home-gap);
 
-  .ui-platform-header {
-    display: grid;
-    max-width: 44rem;
-  }
-
-  .ui-platform-title {
-    margin: 0;
-    font-size: clamp(1.5rem, 1.25rem + 1vw, 2rem);
-    font-weight: var(--font-weight-regular);
-    line-height: 1.15;
-    letter-spacing: -0.03em;
-    color: var(--home-text);
-    text-wrap: balance;
-  }
-
-  .ui-platform-lead {
-    margin: 1rem 0 0;
-    font-size: 1rem;
-    line-height: 1.6;
-    color: var(--home-text-quiet);
-    text-wrap: pretty;
-  }
-
-  .ui-platform-link {
-    justify-self: start;
-    margin-top: 1.25rem;
-  }
-
-  .ui-platform-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--home-gap);
-    margin: 2.5rem 0 0;
-    padding: 0;
-    list-style: none;
-
-    @media (width >= 48rem) {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    @media (width >= 72rem) {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
+    --bento-row: 13rem;
+    /*
+     * The library's columns, with four counted from 60rem of room instead of 48rem: these tiles hold a whole scene,
+     * which needs about 18rem a column. The formula is the bento's own, so two columns and one behave as it does.
+     */
+    grid-template-columns: repeat(auto-fill, minmax(calc(clamp(clamp((100% - var(--bento-gap) * 3) / 4, (60rem - 100%) * 999, (100% - var(--bento-gap)) / 2), (28rem - 100%) * 999, 100%) - 1px), 1fr));
   }
 
   /*
-   * Each cell takes four rows of the ledger as a subgrid: specimen, names, summary and facts. The rows are shared
-   * across a line of cells, so the names, the summaries and the rule over the facts line up whatever the length of
-   * the text, and a textarea that grows lengthens its whole row of specimens.
+   * A tile: a tray holding a scene on the dotted stage, and under it what the scene rests on.
    */
   .ui-platform-cell {
-    display: grid;
-    grid-row: span 4;
-    grid-template-rows: subgrid;
-    row-gap: 0;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
     padding: var(--home-gap);
     border-radius: var(--home-radius-tray);
     background-color: var(--home-tray);
@@ -334,8 +298,8 @@
   }
 
   /*
-   * The cells of a row rise one after another, 24px of scroll apart, the way a header's lines do. Only the range
-   * is set here; the rise itself, its motion preference and its support check belong to the shared reveal.
+   * Tiles rise one after another across a row, 24px of scroll apart. Only the range is set here; the rise itself,
+   * its motion preference and its support check belong to the shared reveal.
    */
   @supports (animation-timeline: view()) {
     @media (width >= 48rem) {
@@ -343,71 +307,127 @@
         animation-range: entry 24px entry 244px;
       }
     }
-
-    @media (width >= 72rem) {
-      .ui-platform-cell:nth-child(n) {
-        animation-range: entry 0px entry 220px;
-      }
-
-      .ui-platform-cell:nth-child(3n + 2) {
-        animation-range: entry 24px entry 244px;
-      }
-
-      .ui-platform-cell:nth-child(3n) {
-        animation-range: entry 48px entry 268px;
-      }
-    }
   }
 
-  .ui-platform-specimen {
+  .ui-platform-scene {
     --color-texture: var(--color-line-hair);
     container-type: inline-size;
     display: grid;
+    flex: 1;
     place-items: center;
-    min-height: 8rem;
-    padding: 1.5rem;
+    min-height: 11rem;
+    padding: clamp(1.25rem, 3cqi, 2rem);
     border-radius: var(--home-radius-sheet);
     background-color: var(--home-ground);
     box-shadow: inset 0 0 0 1px var(--home-hairline);
-
-    /* Side by side, specimens share one height, room enough for the tallest at rest. */
-    @media (width >= 48rem) {
-      min-height: 10.5rem;
-    }
 
     & > .field {
       width: min(100%, 17rem);
     }
 
     /*
-     * Two slides in view and the edge of a third, the way the carousel page shows a slide that peeks, so the next
-     * button rests over the peek rather than over a name; one and a peek where two would squeeze their names.
+     * The slides fill their tile: one in view, edge to edge within the stage, the image taking whatever height the
+     * tile has above its caption and cropping to it. On one column the image keeps a 4:3 frame instead.
      */
-    & > .carousel {
-      --carousel-slide: 42%;
-      width: min(100%, 20rem);
+    /*
+     * A gallery: the current slide sits in the middle of the stage with room all round it, the slides before and
+     * after it show at the edges, and a mask fades them out toward the stage, so the eye rests on the middle and
+     * still sees there is more. The padding lets the first and the last slide reach the middle too. The dots sit
+     * under the pictures, inside the stage, with no caption between: each picture's description is its alt text.
+     */
+    &[data-feature='carousel'] {
+      & > .carousel {
+        /* In the stage's own units: a percentage would be read from the track less its padding. */
+        --carousel-slide: 68cqi;
+        --carousel-gap: 0.875rem;
+        width: 100%;
+        margin-bottom: 2.25rem;
+        padding-inline: calc((100cqi - var(--carousel-slide)) / 2);
+        scroll-padding-inline: calc((100cqi - var(--carousel-slide)) / 2);
+        mask-image: linear-gradient(to right, transparent, #000 11%, #000 89%, transparent);
 
-      @container (width < 22rem) {
-        --carousel-slide: 72%;
+        @container (inline-size < 26rem) {
+          --carousel-slide: 74cqi;
+        }
       }
+
+      & > .carousel::scroll-marker-group {
+        top: calc(anchor(bottom) + 1rem);
+      }
+
+      & .carousel-slide {
+        scroll-snap-align: center;
+      }
+
+      & .figure {
+        margin: 0;
+      }
+
+      & .figure-media {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 1;
+        object-fit: cover;
+      }
+
+      /*
+       * Depth across the row: a slide steps back a little and dims as it leaves the middle, read from its own place
+       * in the track by a view timeline, so the motion is the scroll itself. Reduced motion keeps the dimming only.
+       */
+      @supports (animation-timeline: view()) {
+        & .carousel-slide {
+          animation: ui-gallery-depth linear both;
+          animation-timeline: view(inline);
+          animation-range: cover;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          & .carousel-slide {
+            animation-name: ui-gallery-dim;
+          }
+        }
+      }
+    }
+
+    &[data-feature='accordion'] > .accordion {
+      width: min(100%, 34rem);
     }
   }
 
-  /* The text's parts sit directly on the cell's rows; the wrapper only groups them in the source. */
+  /*
+   * The words under the scene take the type of the Master CSS homepage's card header and a padding near its middle
+   * step, measured from the tray's edge (the tray's own inset is taken off). It is the same in every tile, however
+   * narrow.
+   */
   .ui-platform-text {
-    display: contents;
+    padding: 2rem calc(2.25rem - var(--home-gap)) calc(2.5rem - var(--home-gap));
+  }
 
-    & > * {
-      margin-inline: 0.375rem;
-    }
+  .ui-platform-cell-title {
+    min-width: 0;
+    margin: 1rem 0 0;
+    font-size: var(--home-card-title);
+    font-weight: var(--font-weight-regular);
+    line-height: 1.25;
+    letter-spacing: -0.025em;
+    color: var(--home-text);
+    text-wrap: balance;
+  }
+
+  .ui-platform-summary {
+    max-width: 44ch;
+    margin: 0.75rem 0 0;
+    font-size: var(--home-body);
+    line-height: 1.6;
+    color: var(--home-text-quiet);
+    text-wrap: pretty;
   }
 
   .ui-platform-names {
     display: flex;
     flex-wrap: wrap;
-    align-content: start;
     gap: 0.375rem;
-    margin-block: 1.125rem 0;
+    margin: 0;
 
     & > code {
       padding: 0.125rem 0.4375rem;
@@ -421,38 +441,146 @@
     }
   }
 
-  .ui-platform-summary {
-    margin-block: 0.875rem 0;
-    font-size: 0.9375rem;
-    line-height: 1.55;
-    color: var(--home-text-body);
-    text-wrap: pretty;
+  /*
+   * The scenes: a few lines of an application around each component, set with the theme's text roles so they read
+   * as a product, not a specimen. Only arrangement lives here; every material is the library's.
+   */
+  .ui-scene-title {
+    margin: 0;
+    font-size: 0.875rem;
+    font-weight: var(--font-weight-medium);
+    line-height: 1.35;
+    color: var(--color-text-strong);
   }
 
-  .ui-platform-facts {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    align-content: start;
-    gap: 0.375rem 1rem;
-    margin-block: 1rem 0.375rem;
-    padding-top: 0.875rem;
-    border-top: 0.5px solid var(--home-rule);
+  .ui-scene-meta {
+    margin: 0.125rem 0 0;
     font-size: 0.8125rem;
-    line-height: 1.5;
+    line-height: 1.45;
+    color: var(--color-text-muted);
+  }
 
-    & > dt {
+  .ui-scene-deploys {
+    width: min(100%, 32rem);
+    padding: 0;
+    overflow: clip;
+  }
+
+  .ui-scene-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.875rem 1rem 0.875rem 1.125rem;
+  }
+
+  .ui-scene-rows {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    & > li {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto auto;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.625rem 1rem 0.625rem 1.125rem;
+      border-top: 0.5px solid var(--color-line-hair);
+      font-size: 0.8125rem;
+      color: var(--color-text-body);
+    }
+
+    & code {
       font-family: var(--home-mono);
-      font-size: 0.6875rem;
-      line-height: 1.75;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--home-text-faint);
-    }
+      font-size: 0.75rem;
+      color: var(--color-text-muted);
 
-    & > dd {
-      margin: 0;
-      color: var(--home-text-quiet);
+      @container (width < 26rem) {
+        display: none;
+      }
     }
+  }
+
+  .ui-scene-rows > li:has(code) {
+    @container (width < 26rem) {
+      grid-template-columns: auto minmax(0, 1fr) auto;
+    }
+  }
+
+  .ui-scene-commit {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .ui-scene-file {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: min(100%, 19rem);
+    padding: 0.625rem 0.625rem 0.625rem 0.75rem;
+  }
+
+  .ui-scene-file-icon {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.5rem;
+    border-radius: calc(var(--radius-chip, 0.375rem) * var(--corner-scale, 1));
+    corner-shape: var(--corner-shape, round);
+    font-family: var(--home-mono);
+    font-size: 0.5625rem;
+    letter-spacing: 0.06em;
+    color: var(--color-text-muted);
+    background-color: var(--color-surface-inset);
+    box-shadow: var(--shadow-pressed);
+  }
+
+  .ui-scene-file-text {
+    flex: auto;
+    min-width: 0;
+
+    & > .ui-scene-title {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  .ui-scene-form {
+    display: grid;
+    gap: 1.125rem;
+    width: min(100%, 18rem);
+    padding: 1.125rem;
+
+    & > .ui-scene-meta {
+      margin: -0.375rem 0 0;
+    }
+  }
+
+  .ui-scene-chart {
+    width: min(100%, 38rem);
+  }
+
+  /* A chat window: the card fills the tall tile, and the thread and the composer sit at its foot, as they do. */
+  .ui-platform-scene .ui-scene-chat {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    width: min(100%, 24rem);
+    align-self: stretch;
+    padding: 1rem;
+
+    & > .thread {
+      margin-top: auto;
+    }
+  }
+
+  .ui-scene-chat-head {
+    margin: -0.25rem -0.25rem 0;
+    padding: 0 0.25rem 0.875rem;
+    border-bottom: 0.5px solid var(--color-line-hair);
   }
 
   .home-components {
@@ -602,7 +730,7 @@
     .ui-forge-code,
     .ui-forge-stage,
     .ui-platform-cell,
-    .ui-platform-specimen {
+    .ui-platform-scene {
       outline: 1px solid CanvasText;
       outline-offset: -1px;
     }
@@ -623,5 +751,29 @@
 @keyframes ui-forge-panel-in {
   from {
     opacity: 0;
+  }
+}
+
+@keyframes ui-gallery-depth {
+  0%,
+  100% {
+    opacity: 0.55;
+    scale: 0.92;
+  }
+
+  50% {
+    opacity: 1;
+    scale: 1;
+  }
+}
+
+@keyframes ui-gallery-dim {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+
+  50% {
+    opacity: 1;
   }
 }
