@@ -24,7 +24,7 @@ Read the documentation at [ui.master.co](https://ui.master.co).
 
 ## Ownership
 
-[Master Design](https://design.master.co/master-ui) explains the design foundations. Master UI implements the theme, components, behavior and markup contracts. [Master CSS](https://css.master.co) supplies the styling language and compiler; `@master/internal-site` composes the first-party documentation sites from these components and owns their routing, reading layout and search.
+[Master UI’s design guide](https://ui.master.co/guide/design) explains its material, geometry and interaction choices. [Master Design](https://design.master.co/principles) covers general design principles. Master UI owns its design language and implements the theme, components, behavior and markup contracts. [Master CSS](https://css.master.co) supplies the styling language and compiler; `@master/internal-site` composes the first-party documentation sites from these components and owns their routing, reading layout and search.
 
 ## Repository
 

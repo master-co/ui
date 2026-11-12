@@ -11,7 +11,7 @@ metadata:
 
 A Master UI component is one native element with the right semantics, one stylesheet in `@layer components`, a contract beside it that says what the stylesheet promises, and markup a reader can copy into any stack. It works without JavaScript wherever the platform has an element for the job, uses the web platform's own feature for that job, and reads the Moonstone / Obsidian theme only through tokens. Where a pattern has no native element, the stylesheet is still complete: it draws every state from ARIA and leaves the behavior to the reader's script.
 
-Use `$master-design` and [Master Design’s UI foundation](https://design.master.co/master-ui) for design principles, hierarchy and interaction guidance. This skill owns the implementation rules, contracts and verification that make components consistent. Executable tokens remain in `packages/ui/theme.css`; do not maintain another token definition in a guideline or the site shell.
+Use `$master-design` for general design principles and [Master UI’s design guide](https://ui.master.co/guide/design) for its material, hierarchy, geometry and interaction choices. This skill owns the implementation rules, contracts and verification that make components consistent. Executable tokens remain in `packages/ui/theme.css`; do not maintain another token definition in a guideline or the site shell.
 
 For article purpose, prose, evidence and portable output, use [master-ui-writing](../master-ui-writing/SKILL.md). This skill owns the component contract and preview requirements; technical explanation figures use [master-ui-doc-illustrations](../master-ui-doc-illustrations/SKILL.md), while catalog covers use `master-ui-covers`.
 

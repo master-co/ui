@@ -55,7 +55,7 @@ test('unsupported preview expressions fail instead of losing the example silentl
 })
 
 test('portable guides preserve authored link targets independently of heading wording', () => {
-  for (const slug of ['theming', 'customization', 'contracts']) {
+  for (const slug of ['design', 'theming', 'customization', 'contracts']) {
     const source = page(`guide/${slug}`)
     const markdown = anchorMarkdown(previewMarkdown(source))
     for (const [, id] of source.matchAll(/^#+ .*? \\\{#([\w-]+)\\\}/gm)) {
@@ -70,4 +70,17 @@ test('heading examples inside fenced code are preserved literally', () => {
     const source = `${fence}md\n${sample}\n${fence}\n\n${sample}`
     assert.equal(anchorMarkdown(source), `${fence}md\n${sample}\n${fence}\n\n<a id="example"></a>\n\n## Example`)
   }
+})
+
+// These identifiers are public links from the retired Design /master-ui chapter.
+test('the UI design guide preserves the transferred chapter links in portable output', () => {
+  const markdown = anchorMarkdown(page('guide/design'))
+  for (const id of [
+    'ownership', 'native-behavior-and-explicit-contracts', 'moonstone-and-obsidian',
+    'choose-a-role-on-the-material-ladder', 'concentric-geometry-and-continuous-corners',
+    'state-feedback-on-a-stable-control', 'paper-demonstrates-a-different-material',
+    'customization-boundaries', 'components-layouts-and-blocks', 'guideline-to-implementation',
+    'review-a-change-together',
+  ]) assert.equal(markdown.split(`<a id="${id}"></a>`).length, 2, `Expected exactly one meaningful target for #${id}`)
+  assert.doesNotMatch(markdown, /design\.master\.co\/master-ui|\]\(geometry\.md\)/)
 })

@@ -17,8 +17,9 @@ The customization guides divide their work this way:
 
 | Page | Reader task | Keep elsewhere |
 | --- | --- | --- |
+| `/guide/design` (Design) | Understand Master UI’s material, geometry and state decisions | General design principles and executable token tables |
 | `/guide/customization` | Choose a utility, theme token, component property, theme or owned source | Full theme-authoring instructions |
-| `/guide/theme` (Default theme) | Understand the default material and look up token roles and values | Repeated token-override tutorials |
+| `/guide/theme` (Default theme) | Look up default token roles, material recipes and values | Repeated token-override tutorials |
 | `/guide/theming` (Theming) | Override and scope tokens, define recipes and build a theme | Repeated modification-layer decision tables |
 
 A short example can make a choice concrete even when the full procedure lives elsewhere. Preserve URLs and explicit heading anchors when renaming headings or page titles. Update inbound link labels, metadata descriptions and sidebar subjects together. Read current neighboring metadata before changing categories or order; do not invent a parallel navigation list.
