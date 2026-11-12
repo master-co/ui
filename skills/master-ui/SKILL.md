@@ -68,7 +68,7 @@ A project rule may select a library class only to set its public custom properti
 
 First check that it is not there under another name: `master-ui list`. Then decide what it is. Something with a material, a state, a platform behavior or a geometry its pieces share is a component: write one stylesheet in `@layer components` with class selectors only, tokens only, states from attributes, and write its contract beside it in the project's `ui/` directory so the checker and the next agent know it. Anything else is an arrangement: write it with utilities and existing components, and add no class.
 
-Use the `master-design` skill, when it is installed, for the craft of a new surface, state or motion.
+Use the `master-design` skill, when it is installed, for design judgment. [Master Design’s UI foundation](https://design.master.co/master-ui) explains the default design choices; the installed UI contracts and theme remain the source for exact classes, behavior and token values.
 
 ## Verify
 

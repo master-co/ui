@@ -1,14 +1,17 @@
 <script lang="ts">
   import { onMount, untrack } from 'svelte'
   import { getSite } from '@master/internal-site/site'
-  import '@master/internal-site/styles/interface.css'
-  import '@master/internal-site/styles/system/browser.css'
-  import '@master/internal-site/styles/system/range.css'
+  import '@master/ui/components/window.css'
+  import '@master/ui/components/surface.css'
+  import '@master/ui/components/button.css'
+  import '@master/ui/components/icon.css'
+  import '@master/ui/components/slider.css'
+  import '../styles/preview-viewport.css'
   import IconMoon from '@tabler/icons-svelte-runes/icons/moon'
   import IconSun from '@tabler/icons-svelte-runes/icons/sun'
 
   const { t } = getSite()
-  let { title, document: source, height, mediumHeight = height, narrowHeight = height, responsive = false, theme = false }: {
+  let { title, document: source, height, mediumHeight = height, narrowHeight = height, responsive = false, theme = false, framed = false }: {
     title: string
     document: string
     /** Authored viewport height. CSS may select another authored height for a narrow tray. */
@@ -17,6 +20,8 @@
     narrowHeight?: number
     responsive?: boolean
     theme?: boolean
+    /** A scaled page has a UI sheet frame; component specimens stay transparent. */
+    framed?: boolean
   } = $props()
   let frame = $state<HTMLIFrameElement>()
   let body = $state<HTMLDivElement>()
@@ -40,6 +45,7 @@
     const mode = dark ?? document.documentElement.classList.contains('dark')
     root.classList.toggle('dark', mode)
     root.classList.toggle('light', !mode)
+    root.dataset.theme = mode ? 'dark' : 'light'
     root.style.colorScheme = mode ? 'dark' : 'light'
     isDark = mode
   }
@@ -76,42 +82,31 @@
 </script>
 
 <!-- The server reserves the final height, including before lazy loading and hydration. -->
-<div class="ui-browser" data-variant={responsive ? undefined : 'plain'} data-ready={ready} style={`--specimen-height: ${height}px; --specimen-height-medium: ${mediumHeight}px; --specimen-height-narrow: ${narrowHeight}px`}>
-  {#if responsive}<div class="ui-browser-bar" aria-hidden="true"><span class="ui-browser-dots"><i></i><i></i><i></i></span></div>{/if}
-  <div bind:this={body} class="ui-browser-body">
-    <div class="ui-browser-viewport" style:width={width ? `${width}px` : 'min(100%, 1600px)'}>
-      <iframe bind:this={frame} title={t(title)} srcdoc={source} loading="lazy" data-ready={ready} data-sizing="viewport"
+<div class="window window-flat ui-browser preview-window" data-variant={responsive ? undefined : 'plain'} data-ready={ready} style={`--specimen-height: ${height}px; --specimen-height-medium: ${mediumHeight}px; --specimen-height-narrow: ${narrowHeight}px`}>
+  {#if responsive}<div class="window-bar" aria-hidden="true"><span class="window-controls"></span></div>{/if}
+  <div bind:this={body} class="window-body preview-body">
+    <div class="preview-viewport" style:width={width ? `${width}px` : 'min(100%, 1600px)'}>
+      <iframe bind:this={frame} class={framed ? 'sheet sheet-raised' : undefined} title={t(title)} srcdoc={source} loading="lazy" data-ready={ready} data-sizing="viewport"
         style:height="var(--preview-height, var(--specimen-height))" onload={load}></iframe>
-      {#if responsive}<span class="ui-resize" aria-hidden="true" onpointerdown={drag}></span>{/if}
+      {#if responsive}<span class="preview-resize" aria-hidden="true" onpointerdown={drag}></span>{/if}
     </div>
   </div>
 </div>
 {#if responsive || theme}
-  <div class="ui-browser-tools" role="group" aria-label={t('{label} controls').replace('{label}', t(title))}>
+  <div class="ui-browser-tools preview-tools" role="group" aria-label={t('{label} controls').replace('{label}', t(title))}>
     {#if responsive}
-      <span class="ui-browser-range">
-        <label class="ui-label" for={widthId}>{t('Viewport')}</label>
-        <input id={widthId} class="ui-range" disabled={!ready} type="range" min={minimumWidth} max="1600" step="1" value={shownWidth}
-          style:--value={`${((shownWidth - minimumWidth) / Math.max(1, 1600 - minimumWidth)) * 100}%`}
+      <span class="preview-range">
+        <label class="preview-label" for={widthId}>{t('Viewport')}</label>
+        <input id={widthId} class="slider" disabled={!ready} type="range" min={minimumWidth} max="1600" step="1" value={shownWidth}
           oninput={event => { width = Number(event.currentTarget.value) }} />
-        <output class="ui-browser-size" for={widthId}>{shownWidth} px</output>
+        <output class="preview-size" for={widthId}>{shownWidth} px</output>
       </span>
-      <button type="button" disabled={!ready} class="ui-button" data-size="sm" onclick={() => { width = undefined }}>{t('Fit')}</button>
+      <button type="button" disabled={!ready} class="btn btn-sm" onclick={() => { width = undefined }}>{t('Fit')}</button>
     {/if}
     {#if theme}
-      <button type="button" disabled={!ready} class="ui-button" data-size="sm" aria-pressed={isDark} title={t('Toggle dark theme')} onclick={() => { dark = !isDark }}>
-        {#if isDark}<IconMoon aria-hidden="true" />{:else}<IconSun aria-hidden="true" />{/if}{t('Theme')}
+      <button type="button" disabled={!ready} class="btn btn-sm" aria-pressed={isDark} title={t('Toggle dark theme')} onclick={() => { dark = !isDark }}>
+        {#if isDark}<IconMoon class="icon" aria-hidden="true" />{:else}<IconSun class="icon" aria-hidden="true" />{/if}{t('Theme')}
       </button>
     {/if}
   </div>
 {/if}
-
-<style>
-  .ui-browser-viewport { container-type: inline-size; }
-  @container (width < 40rem) {
-    iframe { --specimen-height: var(--specimen-height-medium); }
-  }
-  @container (width < 30rem) {
-    iframe { --specimen-height: var(--specimen-height-narrow); }
-  }
-</style>

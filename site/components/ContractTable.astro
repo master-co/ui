@@ -1,5 +1,6 @@
 ---
-import '@master/internal-site/styles/system/table.css'
+import '@master/ui/components/table.css'
+import '@master/ui/components/scroll-area.css'
 import InlineCode from '@master/internal-site/components/InlineCode.astro'
 import { contract } from '~/site/utils/ui-source'
 
@@ -15,8 +16,8 @@ interface Props {
 /**
  * A table written from the component's contract, the JSON file beside its stylesheet. The page does not
  * repeat what the contract says, so a class or a property is described once and the two cannot drift.
- * The wrapper, its stylesheet and the inline code are the ones a Markdown table gets, so both kinds read as one;
- * the stylesheet is imported here because a page whose only tables come from a contract would not load it.
+ * The table and its cells use the published UI contract. The scroll wrapper belongs to this document;
+ * its accessible name lets keyboard readers distinguish multiple contract tables.
  */
 const { name, show = 'classes', directory = 'components' } = Astro.props
 const subject = contract(name, directory)
@@ -24,13 +25,13 @@ const base = (entry: { of?: string | string[] }) => entry.of === undefined ? [] 
 ---
 
 {show === 'classes' && (
-  <div class="ui-table" role="region" aria-label={`${subject.title}: ${show}`} tabindex="0"><table>
-    <thead><tr><th>Class</th><th>Description</th></tr></thead>
+  <div class="scroll-area scroll-area-inline contract-table" role="region" aria-label={`${subject.title}: ${show}`} tabindex="0"><table class="table">
+    <thead><tr class="table-row"><th class="table-heading" scope="col">Class</th><th class="table-heading" scope="col">Description</th></tr></thead>
     <tbody>
       {subject.classes.map(entry => (
-        <tr>
-          <td><InlineCode code={entry.name} /></td>
-          <td>
+        <tr class="table-row">
+          <th class="table-cell" scope="row"><InlineCode code={entry.name} /></th>
+          <td class="table-cell">
             {entry.description}
             {entry.kind === 'modifier' && base(entry).length > 0 && <>. With {base(entry).map((owner, at) => <>{at > 0 && ' or '}<InlineCode code={owner} /></>)}</>}
           </td>
@@ -41,14 +42,14 @@ const base = (entry: { of?: string | string[] }) => entry.of === undefined ? [] 
 )}
 
 {show === 'properties' && (
-  <div class="ui-table" role="region" aria-label={`${subject.title}: ${show}`} tabindex="0"><table>
-    <thead><tr><th>Property</th><th>Default</th><th>Description</th></tr></thead>
+  <div class="scroll-area scroll-area-inline contract-table" role="region" aria-label={`${subject.title}: ${show}`} tabindex="0"><table class="table">
+    <thead><tr class="table-row"><th class="table-heading" scope="col">Property</th><th class="table-heading" scope="col">Default</th><th class="table-heading" scope="col">Description</th></tr></thead>
     <tbody>
       {(subject.properties ?? []).map(property => (
-        <tr>
-          <td><InlineCode code={property.name} /></td>
-          <td>{property.default ? <InlineCode code={property.default} /> : ''}</td>
-          <td>{property.description}{property.on && <>. On <InlineCode code={property.on} /></>}</td>
+        <tr class="table-row">
+          <th class="table-cell" scope="row"><InlineCode code={property.name} /></th>
+          <td class="table-cell">{property.default ? <InlineCode code={property.default} /> : ''}</td>
+          <td class="table-cell">{property.description}{property.on && <>. On <InlineCode code={property.on} /></>}</td>
         </tr>
       ))}
     </tbody>
@@ -56,15 +57,15 @@ const base = (entry: { of?: string | string[] }) => entry.of === undefined ? [] 
 )}
 
 {show === 'states' && (
-  <div class="ui-table" role="region" aria-label={`${subject.title}: ${show}`} tabindex="0"><table>
-    <thead><tr><th>State</th><th>Mark it with</th><th>On</th><th>Description</th></tr></thead>
+  <div class="scroll-area scroll-area-inline contract-table" role="region" aria-label={`${subject.title}: ${show}`} tabindex="0"><table class="table">
+    <thead><tr class="table-row"><th class="table-heading" scope="col">State</th><th class="table-heading" scope="col">Mark it with</th><th class="table-heading" scope="col">On</th><th class="table-heading" scope="col">Description</th></tr></thead>
     <tbody>
       {(subject.states ?? []).map(state => (
-        <tr>
-          <td>{state.name}</td>
-          <td><InlineCode code={state.mark} /></td>
-          <td><InlineCode code={state.on} /></td>
-          <td>{state.description ?? ''}</td>
+        <tr class="table-row">
+          <th class="table-cell" scope="row">{state.name}</th>
+          <td class="table-cell"><InlineCode code={state.mark} /></td>
+          <td class="table-cell"><InlineCode code={state.on} /></td>
+          <td class="table-cell">{state.description ?? ''}</td>
         </tr>
       ))}
     </tbody>
@@ -72,15 +73,19 @@ const base = (entry: { of?: string | string[] }) => entry.of === undefined ? [] 
 )}
 
 {show === 'keyboard' && (
-  <div class="ui-table" role="region" aria-label={`${subject.title}: ${show}`} tabindex="0"><table>
-    <thead><tr><th>Keys</th><th>Action</th></tr></thead>
+  <div class="scroll-area scroll-area-inline contract-table" role="region" aria-label={`${subject.title}: ${show}`} tabindex="0"><table class="table">
+    <thead><tr class="table-row"><th class="table-heading" scope="col">Keys</th><th class="table-heading" scope="col">Action</th></tr></thead>
     <tbody>
       {(subject.keyboard ?? []).map(item => (
-        <tr>
-          <td>{item.keys}</td>
-          <td>{item.action}</td>
+        <tr class="table-row">
+          <th class="table-cell" scope="row">{item.keys}</th>
+          <td class="table-cell">{item.action}</td>
         </tr>
       ))}
     </tbody>
   </table></div>
 )}
+
+<style>
+  .contract-table { width: 100%; margin-block: 1.5rem; }
+</style>

@@ -82,7 +82,8 @@ jobs:
         run: node scripts/verify-package.mjs "@master/ui@$VERSION"
 
   deploy-site:
-    needs: release
+    needs: [release, verify-registry]
+    if: ${{ always() && needs.release.result == 'success' && (needs.verify-registry.result == 'success' || (needs.release.outputs.released == 'false' && needs.verify-registry.result == 'skipped')) }}
     # The site shows the newest release in its header; v0.0.0 is only the baseline, so it shows none.
     runs-on: ubuntu-latest
     timeout-minutes: 20

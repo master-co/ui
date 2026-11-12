@@ -42,7 +42,7 @@ export const footerNavGroups = [
     name: 'Products',
     links: [
       { name: 'Master CSS', href: 'https://css.master.co' },
-      { name: 'Master Design', href: 'https://github.com/master-co/design' },
+      { name: 'Master Design', href: 'https://design.master.co' },
       { name: 'Master', href: 'https://master.co' },
     ]
   },

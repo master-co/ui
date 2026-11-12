@@ -9,6 +9,7 @@ import { dirname, join, relative, sep } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { generateSearchPages } from '@master/internal-site/utils/search-pages'
 import type { DefinedMetadata } from '@master/internal-site/types/Metadata'
+import { verifySiteUIInstance } from '../../scripts/verify-package-source.mjs'
 
 /** Sidebar category order; unknown categories follow alphabetically. */
 const categoryOrder = [
@@ -23,6 +24,7 @@ const categoryOrder = [
 
 const site = fileURLToPath(new URL('../', import.meta.url))
 const content = join(site, 'content')
+verifySiteUIInstance(join(site, 'package.json'), join(site, '../packages/ui'))
 
 async function writeIfChanged(file: string, data: string) {
   if (await readFile(file, 'utf8').catch(() => undefined) === data) return

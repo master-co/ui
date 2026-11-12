@@ -22,6 +22,10 @@ Read the documentation at [ui.master.co](https://ui.master.co).
 > [!WARNING]
 > Master UI is experimental. Until 1.0 any release may break what it published, without a migration guide; see [Stability](https://ui.master.co/guide/stability#experimental).
 
+## Ownership
+
+[Master Design](https://design.master.co/master-ui) explains the design foundations. Master UI implements the theme, components, behavior and markup contracts. [Master CSS](https://css.master.co) supplies the styling language and compiler; `@master/internal-site` composes the first-party documentation sites from these components and owns their routing, reading layout and search.
+
 ## Repository
 
 | Path | Contents |

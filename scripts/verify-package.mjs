@@ -9,6 +9,7 @@ import { existsSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } fro
 import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
+import { verifyPublishedSource } from './verify-package-source.mjs'
 
 const run = (command, args, cwd) => execFileSync(command, args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'] })
 const temporary = prefix => mkdtempSync(join(tmpdir(), prefix))
@@ -60,6 +61,8 @@ assert.ok(Object.keys(contracts.contracts ?? {}).length > 0, 'contracts.json lis
 assert.match(run('npx', ['--no-install', 'master-ui', 'list'], project), /^button\s/m, 'master-ui list printed no button')
 
 if (spec) {
+  const files = verifyPublishedSource(root, resolve('packages/ui'))
+  console.log(`✓ ${files} published authored files match the UI workspace byte for byte`)
   // Every package in the project, @master/ui included, carries a valid registry signature and provenance.
   run('npm', ['audit', 'signatures'], project)
   const view = JSON.parse(run('npm', ['view', spec, 'dist', '--json'], project))

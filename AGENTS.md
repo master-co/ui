@@ -42,7 +42,7 @@ What separates the tiers is whether there is knowledge worth a class, not size. 
 
 ## Component Contracts
 
-The visual language is Master's Moonstone / Obsidian system. `site/content/guide/theme` documents it publicly and `master-ui-components` holds the full rules. The essentials:
+Master Design owns design guidance at `https://design.master.co/master-ui`; this package owns its executable theme, components, behaviors and contracts. `site/content/guide/theme` documents the default Moonstone / Obsidian token roles and values, while `master-ui-components` holds implementation rules. The documentation shell and site compositions belong to `@master/internal-site`, which consumes UI; published UI source must never import it. The essentials:
 
 - Native element and semantics first; components work without JavaScript wherever the platform has an element for the job. For a pattern with no native element (combobox, command palette, calendar, tree, context menu), the stylesheet draws every state from ARIA and native attributes, a script only moves those attributes, and the page shows the smallest script that drives it.
 - Platform before script. Overlays are `<dialog>` and `popover` opened by `command` / `commandfor` / `popovertarget`; tooltips are `popover="hint"` with `interestfor`; placement is CSS anchor positioning; a select's list is `appearance: base-select`; layout follows `@container` and `:has()`; textareas grow with `field-sizing: content`; scroll-driven animations read scroll position; carousels use `::scroll-button()` and `::scroll-marker`; motion in and out uses `@starting-style` and `transition-behavior: allow-discrete`. Each is an enhancement gated by `@supports` over a working baseline, with the fallback stated in the stylesheet and on the component page.
@@ -69,6 +69,10 @@ React, Svelte and Vue get no bindings package and no wrapper for a class. `maste
 ## Validation
 
 Run `bun run test` (compiles every stylesheet against the preset, checks selectors, holds each stylesheet to its contract and every site preview to the contracts, runs the checker's and the behaviors' tests, and runs the framework scenarios in React, Svelte and Vue), `bun run skills:check`, `bun run type-check` (the site, then the framework components with `tsc`, `svelte-check` and `vue-tsc`) and `bun run build`. After a change to a framework component, a behavior or a stylesheet one of them draws, also run `bun run --cwd packages/ui test:browser`: it works the components in Chromium, where the top layer, anchor positioning, scrolling and animation exist. Preview markup is validated during the build: an invalid utility class fails it. After a change to tokens or mixins that should not change a pixel, compare `node --import tsx scripts/resolved.ts` (in `packages/ui`) before and after: it prints every declaration with its tokens resolved. Check visual changes in light and dark previews, and a theme change in the Paper preview on `/guide/theming` too.
+
+## Documentation package identity
+
+Other repositories pin the published UI version exactly. This repository's own site intentionally uses `@master/ui: workspace:*`: previews resolve that package, while portable exports are generated from `packages/ui`. Pinning a second registry copy would split those sources and prevent pre-publication CI from checking new components. Site preparation checks that the site and shared shell resolve the same physical workspace package. Registry verification compares every authored CSS, contract, behavior, framework, checker, CLI and package README/license file against the published archive, excluding generated `dist` and injected version metadata. A new release's deployment waits for this check and registry signatures/provenance. Site-only deployments must preserve the already released package sources.
 
 ## Versions and Releases
 
