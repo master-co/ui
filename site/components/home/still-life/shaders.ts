@@ -3,7 +3,9 @@
  * sheet hang over a table printed with markup, each a signed distance field with its interface blind-embossed
  * into its face, lit by the theme's one lamp above and a little left. The only dark object is the primary button.
  *
- * Material ids: 1 raised, 2 inset, 3 ink, 4 thumb, 11 tint, 12 tray, 13 floating.
+ * Material ids: 1 raised, 2 inset, 3 ink, 5 mark, 6 rule, 7 mark on the tray, 11 tint, 12 tray, 13 floating.
+ * A mark (a line of text, a nav item) or a rule is raised less than a pixel, so its relief alone would break into
+ * dots; it carries a faint tone of its own and is shaded as the level face it is printed on.
  */
 export const vertexSource = /* glsl */ `#version 300 es
 in vec2 position;
@@ -27,6 +29,8 @@ uniform vec3 uInk;
 uniform float uDark;
 uniform vec4 uReading;
 uniform float uReadingRadius;
+/* The drafting notes' column, kept clear of print like the words: left, bottom, right, top in pixels. */
+uniform vec4 uNotes;
 uniform sampler2D uAtlas;
 /* x, z, scale, turn */
 uniform vec4 uStack;
@@ -77,38 +81,40 @@ vec2 stack(vec3 q) {
   vec2 res = vec2(sdSlab(t, vec2(3.3, 2.2), 0.44, 0.07, 0.035), 12.0);
   if (res.x < 0.08) {
     vec3 s = t - vec3(0.0, 0.07, 0.0);
-    for (int i = 0; i < 4; i++) emboss(res, s, vec2(-2.98, -1.62 + float(i) * 0.3), vec2(0.17, 0.028), 0.028, 0.008, 12.0);
+    for (int i = 0; i < 4; i++) emboss(res, s, vec2(-2.98, -1.62 + float(i) * 0.3), vec2(0.17, 0.028), 0.028, 0.008, 7.0);
   }
 
-  // The raised sheet: a card with a header, a switch, two fields and its two actions.
+  // The raised sheet: a card with a header and its action, two fields and its two actions.
   vec3 c = q - vec3(0.18, ySheet + 0.07, -0.04);
   vec2 sheet = vec2(sdSlab(c, vec2(2.72, 1.74), 0.34, 0.07, 0.035), 1.0);
   if (sheet.x < 0.1) {
     vec3 s = c - vec3(0.0, 0.07, 0.0);
     emboss(sheet, s, vec2(-2.2, -1.22), vec2(0.21, 0.21), 0.21, 0.012, 11.0);
-    emboss(sheet, s, vec2(-1.36, -1.31), vec2(0.6, 0.05), 0.05, 0.008, 1.0);
-    emboss(sheet, s, vec2(-1.5, -1.12), vec2(0.46, 0.035), 0.035, 0.006, 1.0);
-    carve(sheet, s, vec2(2.12, -1.22), vec2(0.34, 0.18), 0.18, 0.022, 3.0);
-    emboss(sheet, s - vec3(0.0, -0.022, 0.0), vec2(2.3, -1.22), vec2(0.14, 0.14), 0.14, 0.04, 4.0);
-    carve(sheet, s, vec2(0.0, -0.74), vec2(2.72, 0.006), 0.0, 0.004, 2.0);
-    emboss(sheet, s, vec2(-2.08, -0.43), vec2(0.34, 0.032), 0.032, 0.006, 1.0);
+    emboss(sheet, s, vec2(-1.36, -1.31), vec2(0.6, 0.05), 0.05, 0.008, 5.0);
+    emboss(sheet, s, vec2(-1.5, -1.12), vec2(0.46, 0.035), 0.035, 0.006, 5.0);
+    // The header's action: a small raised button marked with three dots, the menu's opener.
+    emboss(sheet, s, vec2(2.3, -1.22), vec2(0.17, 0.17), 0.07, 0.03, 1.0);
+    for (int i = -1; i <= 1; i++) carve(sheet, s - vec3(0.0, 0.03, 0.0), vec2(2.3 + float(i) * 0.075, -1.22), vec2(0.022, 0.022), 0.022, 0.008, 2.0);
+    emboss(sheet, s, vec2(0.0, -0.74), vec2(2.44, 0.011), 0.011, 0.003, 6.0);
+    emboss(sheet, s, vec2(-2.08, -0.43), vec2(0.34, 0.032), 0.032, 0.006, 5.0);
     carve(sheet, s, vec2(0.0, -0.13), vec2(2.42, 0.2), 0.1, 0.016, 2.0);
-    emboss(sheet, s, vec2(-2.14, 0.33), vec2(0.28, 0.032), 0.032, 0.006, 1.0);
+    emboss(sheet, s, vec2(-2.14, 0.33), vec2(0.28, 0.032), 0.032, 0.006, 5.0);
     carve(sheet, s, vec2(0.0, 0.63), vec2(2.42, 0.2), 0.1, 0.016, 2.0);
     emboss(sheet, s, vec2(0.92, 1.3), vec2(0.44, 0.19), 0.1, 0.034, 1.0);
     emboss(sheet, s, vec2(1.98, 1.3), vec2(0.52, 0.19), 0.1, 0.034, 3.0);
   }
   if (sheet.x < res.x) res = sheet;
 
-  // The floating sheet: the menu the first field opens, hung below it over the sheet's lower left.
-  vec3 f = q - vec3(-1.02, yFloat + 0.06, 0.98);
-  vec2 menu = vec2(sdSlab(f, vec2(1.22, 0.84), 0.22, 0.06, 0.03), 13.0);
+  // The floating sheet: the menu the header's action opens, hung below it and out past the sheet's edge, as a
+  // popover in the top layer may. Every layer then shows an edge of its own on the figure's right.
+  vec3 f = q - vec3(2.6, yFloat + 0.06, -0.25);
+  vec2 menu = vec2(sdSlab(f, vec2(1.05, 0.8), 0.2, 0.06, 0.03), 13.0);
   if (menu.x < 0.08) {
     vec3 s = f - vec3(0.0, 0.06, 0.0);
-    carve(menu, s, vec2(0.0, -0.42), vec2(1.08, 0.17), 0.09, 0.012, 2.0);
-    emboss(menu, s, vec2(-0.5, -0.42), vec2(0.42, 0.03), 0.03, 0.006, 13.0);
-    emboss(menu, s, vec2(-0.38, 0.0), vec2(0.54, 0.03), 0.03, 0.006, 13.0);
-    emboss(menu, s, vec2(-0.52, 0.42), vec2(0.4, 0.03), 0.03, 0.006, 13.0);
+    carve(menu, s, vec2(0.0, -0.4), vec2(0.92, 0.16), 0.08, 0.012, 2.0);
+    emboss(menu, s, vec2(-0.42, -0.4), vec2(0.36, 0.03), 0.03, 0.006, 5.0);
+    emboss(menu, s, vec2(-0.3, 0.0), vec2(0.48, 0.03), 0.03, 0.006, 5.0);
+    emboss(menu, s, vec2(-0.44, 0.4), vec2(0.34, 0.03), 0.03, 0.006, 5.0);
   }
   if (menu.x < res.x) res = menu;
   return res;
@@ -132,7 +138,9 @@ vec2 map(vec3 p) {
 float mapDistance(vec3 p) { return map(p).x; }
 
 vec3 normalAt(vec3 p, float t) {
-  vec2 e = vec2(1.0, -1.0) * 0.0005 * max(t * 0.05, 1.0);
+  // Sampled about a pixel wide, so a bevel narrower than a pixel shades as a soft continuous line instead of a
+  // stair of dark and light pixels.
+  vec2 e = vec2(1.0, -1.0) * max(0.0005 * max(t * 0.05, 1.0), 0.6 * t / (uFocal * uResolution.y));
   return normalize(e.xyy * mapDistance(p + e.xyy) + e.yyx * mapDistance(p + e.yyx) + e.yxy * mapDistance(p + e.yxy) + e.xxx * mapDistance(p + e.xxx));
 }
 
@@ -140,7 +148,8 @@ float softShadow(vec3 ro, vec3 rd, float tmax, float k) {
   vec3 center = vec3(uStack.x, BOUND_CENTER.y * uStack.z, uStack.y);
   vec3 oc = center - ro;
   float along = max(dot(oc, rd), 0.0);
-  if (length(oc - rd * along) > BOUND_RADIUS * uStack.z + 0.8) return 1.0;
+  // A ray that passes this far outside the bounding sphere gets no penumbra either; the margin scales with the figure.
+  if (length(oc - rd * along) > (BOUND_RADIUS + 0.6) * uStack.z) return 1.0;
   float res = 1.0;
   float t = 0.02 * uStack.z;
   for (int i = 0; i < 64; i++) {
@@ -167,7 +176,8 @@ float occlusion(vec3 p, vec3 n) {
 
 /* The markup printed on the table: slow columns of glyphs, a head that resolves and a trail that fades. */
 float glyphs(vec2 xz, float lod) {
-  vec2 g = xz / CELL;
+  // The print grows with the figure, but slower, so a phone's smaller figure does not stand in outsized type.
+  vec2 g = xz / (CELL * sqrt(uStack.z / 0.86));
   vec2 cell = floor(g);
   vec2 f = fract(g);
   float column = cell.x;
@@ -189,7 +199,16 @@ float glyphs(vec2 xz, float lod) {
     ink = textureLod(uAtlas, atlas, lod).r;
   }
   float present = step(0.35, hash2(cell + 3.1));
-  return ink * (0.06 * present + trail * 0.26 + isHead * 0.34) * mix(1.35, 0.8, uDark);
+  // Light ink on a dark table carries further than dark on light, so the night print keeps its heads quieter.
+  return ink * (0.06 * present + trail * 0.26 + isHead * mix(0.34, 0.22, uDark)) * mix(1.35, 0.62, uDark);
+}
+
+/* 0 inside a patch of the stage kept clear of print, rising to 1 a radius outside it. */
+float clearOf(vec4 rect, float radius) {
+  if (rect.z <= rect.x) return 1.0;
+  vec2 center = (rect.xy + rect.zw) * 0.5;
+  vec2 half_ = (rect.zw - rect.xy) * 0.5;
+  return smoothstep(0.0, radius, sdRoundRect(gl_FragCoord.xy - center, half_, radius * 0.6));
 }
 
 vec3 tableColor(vec3 p, float lod) {
@@ -197,14 +216,12 @@ vec3 tableColor(vec3 p, float lod) {
   vec2 fromStack = p.xz - uStack.xy;
   // The print is a field around the figure, densest under it and gone before the edges of the hero.
   float reach = uStack.z;
-  float field = 1.0 - smoothstep(3.5 * reach, 11.0 * reach, length(fromStack * vec2(0.8, 1.25)));
+  float field = 1.0 - smoothstep(3.0 * reach, 9.0 * reach, length(fromStack * vec2(0.8, 1.25)));
   float sweep = length(fromStack) - uBoot * 12.0 * reach;
   float printed = 1.0 - smoothstep(-0.6, 0.6, sweep);
   float alpha = glyphs(p.xz, lod) * field * printed;
 
-  vec2 center = (uReading.xy + uReading.zw) * 0.5;
-  vec2 half_ = (uReading.zw - uReading.xy) * 0.5;
-  alpha *= smoothstep(0.0, uReadingRadius, sdRoundRect(gl_FragCoord.xy - center, half_, uReadingRadius * 0.6));
+  alpha *= clearOf(uReading, uReadingRadius) * clearOf(uNotes, uReadingRadius * 0.5);
   return mix(col, uInk, clamp(alpha, 0.0, 0.6));
 }
 
@@ -214,7 +231,10 @@ Material material(float id) {
   if (id > 12.5) return Material(mix(vec3(1.0), vec3(0.042, 0.043, 0.047), uDark), 0.5, 36.0, 0.25, 0.04, mix(0.12, 0.55, uDark));
   if (id > 11.5) return Material(mix(vec3(0.9, 0.903, 0.91), vec3(0.0105, 0.0107, 0.0118), uDark), 0.5, 24.0, 0.12, 0.03, mix(0.06, 0.4, uDark));
   if (id > 10.5) return Material(mix(vec3(0.8, 0.803, 0.812), vec3(0.075, 0.076, 0.082), uDark), 0.45, 30.0, 0.2, 0.04, 0.25);
-  if (id > 3.5) return Material(vec3(1.0), 0.6, 60.0, 0.6, 0.05, 0.35);
+  // A mark keeps the same contrast to the tray, a step darker than the sheet, as to the sheet.
+  if (id > 6.5) return Material(mix(vec3(0.7, 0.703, 0.712), vec3(0.04, 0.041, 0.045), uDark), 0.5, 30.0, 0.15, 0.04, mix(0.06, 0.35, uDark));
+  if (id > 5.5) return Material(mix(vec3(0.83, 0.833, 0.84), vec3(0.0085, 0.0087, 0.0097), uDark), 0.45, 20.0, 0.1, 0.03, mix(0.05, 0.35, uDark));
+  if (id > 4.5) return Material(mix(vec3(0.78, 0.783, 0.792), vec3(0.1, 0.102, 0.11), uDark), 0.5, 30.0, 0.15, 0.04, mix(0.06, 0.35, uDark));
   if (id > 2.5) return Material(mix(vec3(0.012, 0.012, 0.014), vec3(0.86, 0.865, 0.875), uDark), 0.2, 120.0, 1.2, 0.05, mix(0.9, 0.2, uDark));
   if (id > 1.5) return Material(mix(vec3(0.905, 0.908, 0.915), vec3(0.0085, 0.0087, 0.0097), uDark), 0.45, 20.0, 0.1, 0.03, mix(0.05, 0.35, uDark));
   return Material(mix(vec3(1.0), vec3(0.03, 0.031, 0.034), uDark), 0.5, 36.0, 0.25, 0.04, mix(0.1, 0.55, uDark));
@@ -239,7 +259,7 @@ vec3 shade(vec3 p, vec3 n, vec3 rd, float id, float t) {
   vec3 l = toLamp / dl;
   float shadow = softShadow(p + n * 0.006 * uStack.z, l, dl, 10.0);
   float ao = occlusion(p, n);
-  float diffuse = clamp((dot(n, l) + m.wrap) / (1.0 + m.wrap), 0.0, 1.0) * mix(mix(0.5, 0.3, uDark), 1.0, shadow);
+  float diffuse = clamp((dot(n, l) + m.wrap) / (1.0 + m.wrap), 0.0, 1.0) * mix(mix(0.6, 0.3, uDark), 1.0, shadow);
   vec3 h = normalize(l - rd);
   float specular = pow(max(dot(n, h), 0.0), m.shine) * (m.shine + 8.0) / 64.0 * shadow * m.spec;
   float fresnel = pow(1.0 - max(dot(n, -rd), 0.0), 5.0);
@@ -268,16 +288,32 @@ void main() {
     float ceiling = (BOUND_CENTER.y + BOUND_RADIUS) * uStack.z;
     float t = max((ro.y - ceiling) / -rd.y, 0.0);
     float id = -1.0;
+    // How wide a pixel is at distance 1 along the ray.
+    float footprint = 2.0 / (uFocal * uResolution.y);
+    // The closest the ray came to an edge it then passed, in pixels, and where; the edge's coverage of the pixel.
+    float edgeGap = 1.0;
+    float edgeT = 0.0;
+    float lastD = 1e9;
+    float lastT = 0.0;
     // The embossed marks are shallower than a pixel is wide, so a hit is taken only very near the surface.
     for (int i = 0; i < 180; i++) {
       vec2 h = map(ro + rd * t);
       if (h.x < 0.00003 * t) { id = h.y; break; }
+      // Closing in, then pulling away: the ray grazed a silhouette without touching it.
+      if (h.y > 0.5 && h.x > lastD) {
+        float gap = lastD / (lastT * footprint);
+        if (gap < edgeGap) { edgeGap = gap; edgeT = lastT; }
+      }
+      lastD = h.y > 0.5 ? h.x : 1e9;
+      lastT = t;
       t += h.x;
       if (t > tTable) break;
     }
     if (id > 0.5 && t < tTable) {
       vec3 p = ro + rd * t;
-      col = shade(p, normalAt(p, t), rd, id, t);
+      // A mark is a tone on a level face: its sub-pixel relief would only add noise to the normal.
+      vec3 n = id > 4.5 && id < 7.5 ? vec3(0.0, 1.0, 0.0) : normalAt(p, t);
+      col = shade(p, n, rd, id, t);
     } else {
       vec3 p = ro + rd * tTable;
       col = tableColor(p, -1.0);
@@ -286,6 +322,15 @@ void main() {
       float shadow = softShadow(p + vec3(0.0, 0.002, 0.0), toLamp / dl, dl, 8.0);
       float contact = clamp(mapDistance(p + vec3(0.0, 0.18, 0.0)) / 0.18, 0.0, 1.0);
       col *= mix(mix(0.9, 0.55, uDark), 1.0, shadow) * mix(mix(0.82, 0.5, uDark), 1.0, contact);
+    }
+    // A pixel the ray left half a pixel from an edge is partly that edge: blend it in, so silhouettes resolve
+    // into a smooth line instead of a stair of whole pixels. Only an edge well in front of what the ray met counts;
+    // a recess in the same face is not a silhouette.
+    if (edgeGap < 0.5 && (id < 0.5 || t - edgeT > 0.08 * uStack.z)) {
+      vec3 p = ro + rd * edgeT;
+      float edgeId = map(p).y;
+      vec3 n = normalAt(p, edgeT);
+      col = mix(col, shade(p, n, rd, edgeId, edgeT), 0.5 - edgeGap);
     }
   }
   // Grain breaks the banding of slow gradients on the table.

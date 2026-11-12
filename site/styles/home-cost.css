@@ -39,6 +39,22 @@
     display: flex;
     flex-wrap: wrap;
     gap: 0.375rem;
+
+    /* The presets work only with the script, which shows them. */
+    &[hidden] {
+      display: none;
+    }
+  }
+
+  /* On a phone the three starting points fill the row they wrap into, instead of leaving a ragged edge. */
+  .home-cost-presets {
+    @media (width < 40rem) {
+      flex: 1 1 100%;
+
+      & > .btn {
+        flex: 1 1 auto;
+      }
+    }
   }
 
   .home-cost-body {
@@ -78,6 +94,7 @@
   }
 
   .home-cost-picker {
+    container-type: inline-size;
     display: grid;
     grid-template-rows: auto minmax(0, 1fr);
 
@@ -86,20 +103,102 @@
     }
   }
 
+  /* The filter and the view share one row; a narrow sheet puts the view under the filter. */
   .home-cost-search {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
     padding: 0.875rem;
     border-bottom: 1px solid var(--home-rule);
+
+    & > .input {
+      flex: 1 1 12rem;
+      min-width: 0;
+    }
+
+    & > .segmented {
+      flex: none;
+    }
+
+    /*
+     * In one column the list runs longer than a phone's screen, so the filter, the view and the totals stay
+     * under the page header while it scrolls by. A hair inside the sheet, so the sheet's contour still shows.
+     * A short screen, a phone on its side, keeps all its height for the list.
+     */
+    @media (width < 64rem) and (height >= 36rem) {
+      position: sticky;
+      top: 3.75rem;
+      z-index: 1;
+      margin: 1px 1px 0;
+      border-radius: calc(var(--home-radius-sheet) - 1px) calc(var(--home-radius-sheet) - 1px) 0 0;
+      background-color: var(--home-ground);
+      transition: top var(--home-base) var(--home-ease);
+
+      /* The header tucks away as the page scrolls down, with the same timing; the head follows it up. */
+      :root:has(.ui-header[data-tucked]) & {
+        top: 0;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        transition: none;
+      }
+    }
   }
 
-  .home-cost-list {
-    max-height: 26rem;
-    padding: 0.25rem 0.875rem 1rem;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    scrollbar-width: thin;
+  /* The totals in short, for a single column, where the readout is out of sight while boxes are ticked. */
+  .home-cost-mini {
+    flex: 1 0 100%;
+    margin: 0;
+    font-family: var(--home-mono);
+    font-size: var(--home-label);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+    color: var(--home-text-quiet);
 
     @media (width >= 64rem) {
-      max-height: 30rem;
+      display: none;
+    }
+  }
+
+  .home-cost-view-count {
+    margin-inline-start: 0.375rem;
+    font-family: var(--home-mono);
+    font-size: var(--home-label);
+    font-variant-numeric: tabular-nums;
+    color: var(--home-text-faint);
+  }
+
+  /* A package name and a size are written as they are spelled, not set in capitals like the labels around them. */
+  .home-cost-file,
+  .home-cost-share {
+    text-transform: none;
+    letter-spacing: 0.02em;
+  }
+
+  .home-cost-file {
+    color: var(--home-text-quiet);
+  }
+
+  /* All scrolls in its own box, never taller than most of the screen, so a short one still shows its end. */
+  .home-cost-list {
+    max-height: min(26rem, 75vh);
+    padding: 0.25rem 0.875rem 1rem;
+    overflow-y: auto;
+    /* No contained axis: a contained list stops the wheel even when it is short enough not to scroll. */
+    scrollbar-width: thin;
+
+    @container (width >= 30rem) {
+      padding-top: 0.5rem;
+    }
+
+    @media (width >= 64rem) {
+      max-height: min(30rem, 75vh);
+    }
+
+    /* What a page uses is short enough to read whole, without a scroll inside the page's own. */
+    &[data-view='selected'] {
+      max-height: 60rem;
     }
   }
 
@@ -112,13 +211,36 @@
     &[hidden] {
       display: none;
     }
+
+    @container (width >= 30rem) {
+      padding-block: 0.25rem;
+
+      &:not([hidden]) ~ & {
+        border-top: 1px solid var(--home-guide);
+      }
+    }
   }
 
+  /*
+   * A narrow sheet heads each group with its category; a wide one sets the category in a gutter beside its
+   * rows, the way a spec table does, and parts the groups with a guide line. A floated legend sits in the
+   * fieldset's content, and the rows, a grid of their own, stand beside it.
+   */
   .home-cost-legend {
     float: left;
     width: 100%;
     margin: 0;
     padding: 1rem 0.375rem 0.375rem;
+
+    /* Level with the first row's text: a row is 36px, 44px under a coarse pointer. */
+    @container (width >= 30rem) {
+      width: 7rem;
+      padding: 0.6875rem 0.375rem 0;
+
+      @media (pointer: coarse) {
+        padding-top: 0.9375rem;
+      }
+    }
   }
 
   .home-cost-rows {
@@ -127,8 +249,13 @@
     grid-template-columns: minmax(0, 1fr);
     column-gap: 1rem;
 
-    @media (width >= 40rem) {
+    /* Two columns where they fit: under the heading in a narrow sheet, beside the gutter in a wide one. */
+    @container (28rem <= width < 30rem) or (width >= 38rem) {
       grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    @container (width >= 30rem) {
+      clear: none;
     }
   }
 
@@ -142,7 +269,6 @@
     border-radius: var(--home-radius-chip);
     font-size: 0.875rem;
     color: var(--home-text-body);
-    transition: background-color var(--home-quick) var(--home-ease);
 
     &[hidden] {
       display: none;
@@ -152,9 +278,29 @@
       color: var(--home-text);
     }
 
+    /*
+     * Where the page, not the list, scrolls the rows (one column, Selected), a row reached by keyboard comes to
+     * rest clear of the page header and the list's sticky head above it.
+     */
+    @media (width < 64rem) and (height >= 36rem) {
+      [data-view='selected'] & > .checkbox {
+        scroll-margin-top: 13.5rem;
+      }
+    }
+
+    /*
+     * A check reaches 44px on touch by overhanging its neighbours; in a list of a hundred that packs the lines
+     * 20px apart with targets laid over each other. Here each row takes its 44px in the layout instead.
+     */
+    @media (pointer: coarse) {
+      min-height: 2.75rem;
+      padding-block: 0;
+      margin-block: 0;
+    }
+
     @media (hover: hover) {
       &:hover {
-        background-color: color-mix(in oklab, var(--home-tray) 70%, transparent);
+        background-color: color-mix(in oklab, var(--home-text) 3.5%, transparent);
       }
     }
   }
@@ -196,6 +342,15 @@
     color: var(--home-text-quiet);
   }
 
+  /* Which selection the figures below are for: the opening one is named, any other is the reader's own. */
+  .home-cost-preset {
+    margin: 0 0 -0.5rem;
+    font-size: 0.9375rem;
+    font-weight: var(--font-weight-medium);
+    line-height: 1.4;
+    color: var(--home-text);
+  }
+
   /* Readout: the figure, what it is made of, and where it stands against the whole library. */
   .home-cost-reading {
     display: grid;
@@ -207,10 +362,16 @@
     border-top: 1px solid var(--home-rule);
   }
 
+  /* Under large text the two labels take a line each rather than breaking inside one another. */
   .home-cost-label {
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
-    gap: 1rem;
+    gap: 0.25rem 1rem;
+
+    & > span {
+      white-space: nowrap;
+    }
   }
 
   .home-cost-value {
@@ -228,6 +389,12 @@
     font-weight: 400;
     line-height: 1;
     letter-spacing: -0.04em;
+    transition: opacity var(--home-base) var(--home-ease);
+
+    /* While a new selection is gzipped the old figure steps back. */
+    [aria-busy='true'] > .home-cost-value > & {
+      opacity: 0.4;
+    }
   }
 
   .home-cost-number-sm {
@@ -241,6 +408,7 @@
   }
 
   .home-cost-detail {
+    max-width: 36rem;
     margin: 0;
     font-size: 0.875rem;
     line-height: 1.55;
@@ -371,11 +539,11 @@
 
   /*
    * Compared: one row per component, two marks on a shared scale, each labelled. The scale is the largest value
-   * in the table; the marks grow from the left edge, Master UI in ink, shadcn/ui in a quiet grey.
+   * any toggle shows; the marks grow from the left edge, Master UI in ink, shadcn/ui in a quiet grey. The sheet
+   * is not a scroll container, since the bars' view timelines read the page's scroll; the table fits from 320px.
    */
   .home-compare-sheet {
     padding: 0.25rem 0.75rem 1rem;
-    overflow-x: auto;
 
     @media (width >= 40rem) {
       padding: 0.5rem 1.5rem 1.25rem;
@@ -398,9 +566,10 @@
     font-size: 0.8125rem;
     color: var(--home-text-body);
 
+    /* The swatch is a short length of the mark it names, as thick as the bars. */
     &::before {
       width: 0.75rem;
-      height: 0.375rem;
+      height: 0.5rem;
       border-radius: 1px;
       background-color: var(--home-compare-mark);
       content: '';
@@ -412,23 +581,54 @@
     --home-compare-mark: var(--home-text);
   }
 
+  /* Quiet, yet 3:1 against the sheet and against the ink bar beside it, in either theme. */
   .home-compare-key-shadcn,
   .home-compare-mark-shadcn {
-    --home-compare-mark: color-mix(in oklab, var(--home-text-quiet) 55%, var(--home-ground));
+    --home-compare-mark: color-mix(in oklab, var(--home-text-quiet) 70%, var(--home-ground));
+  }
+
+  /* Each toggle says what it switches; a label keeps its own spelling, since one of them is a product name. */
+  .home-compare-controls {
+    gap: 0.5rem 1.25rem;
+  }
+
+  .home-compare-control {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.625rem;
+
+    & > .home-annotation {
+      text-transform: none;
+      letter-spacing: 0.02em;
+    }
   }
 
   .home-compare-table {
     width: 100%;
   }
 
+  /* The sum of the six closes the table on a firmer rule, so the answer is the last thing read. */
+  .home-compare-table .table-row:has(+ .home-compare-sum) > .table-cell {
+    border-bottom-color: var(--home-rule-strong);
+  }
+
+  /*
+   * On a wide screen a bar and its figure stand far apart; the row under the pointer is toned to carry the eye.
+   * It answers at once, as a row does, so a sweeping pointer leaves no rows half lit.
+   */
+  @media (hover: hover) {
+    .home-compare-table tbody .table-row:hover {
+      background-color: color-mix(in oklab, var(--home-text) 3.5%, transparent);
+    }
+  }
+
   .home-compare-name {
     width: 6.5rem;
+    vertical-align: top;
 
     @media (width >= 48rem) {
       width: 10rem;
     }
-
-    vertical-align: top;
 
     & > span {
       display: block;
@@ -452,13 +652,9 @@
 
   .home-compare-bar {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 5.25rem;
+    grid-template-columns: minmax(0, 1fr) 13rem;
     align-items: center;
     gap: 0.75rem;
-
-    @media (width >= 48rem) {
-      grid-template-columns: minmax(0, 1fr) 13rem;
-    }
   }
 
   .home-compare-track {
@@ -479,7 +675,7 @@
     min-width: 2px;
     border-radius: 1px;
     background-color: var(--home-compare-mark);
-    transition: width var(--home-slow) var(--home-ease);
+    transition: width var(--home-base) var(--home-ease);
   }
 
   .home-compare-figure {
@@ -499,14 +695,59 @@
     display: none;
     color: var(--home-text-faint);
 
-    @media (width >= 48rem) {
+    @media (width >= 40rem) {
       display: inline;
     }
   }
 
   /*
+   * A phone keeps the table (its cells are table cells by utility as well as by component), so the bars win
+   * width another way: a narrower name column, tighter cells, and each figure set over its own bar.
+   */
+  @media (width < 40rem) {
+    .home-compare-table {
+      --table-padding-x: 0.375rem;
+    }
+
+    .home-compare-name {
+      width: 5.75rem;
+    }
+
+    .home-compare-bars {
+      gap: 0.5rem;
+    }
+
+    .home-compare-bar {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0.125rem;
+
+      & > .home-compare-figure {
+        order: -1;
+      }
+    }
+
+    /* The split has a line of its own here, so what makes the gap is still there to read on a phone. */
+    .home-compare-figure .home-compare-split {
+      display: block;
+      font-size: 0.6875rem;
+    }
+
+    .home-compare-table .table-heading {
+      white-space: normal;
+
+      & > .home-compare-split {
+        display: inline;
+      }
+    }
+
+    .home-compare-dot {
+      display: none;
+    }
+  }
+
+  /*
    * Which JavaScript the bars count (with React's runtime, or the components alone) and which primitives the
-   * shadcn/ui side is built on. Radios, so the figure needs no script; each state has its own scale.
+   * shadcn/ui side is built on. Radios, so the figure needs no script; every state shares one scale.
    */
   .home-compare-bar {
     --share: var(--share-base-with);
@@ -531,9 +772,57 @@
     display: none;
   }
 
+  /*
+   * The marks draw out from the baseline while their row scrolls into view, tied to scroll rather than time.
+   * Each row is its own timeline, so a row wholly in view always shows its whole bars: a reader who stops
+   * never reads a figure beside a bar that is still growing. Without scroll timelines the bars simply stand.
+   */
+  @media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: view()) {
+      .home-compare-table .table-row {
+        view-timeline: --home-compare-row block;
+      }
+
+      .home-compare-fill {
+        transform-origin: left center;
+        animation: home-compare-draw linear both;
+        animation-timeline: --home-compare-row;
+        animation-range: entry 0% entry 100%;
+      }
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .home-compare-fill {
       transition: none;
     }
+  }
+
+  /* Forced colors would paint the marks away with their backgrounds: draw them in system ink, the two kept apart. */
+  @media (forced-colors: active) {
+    .home-compare-key-master,
+    .home-compare-mark-master {
+      --home-compare-mark: CanvasText;
+    }
+
+    .home-compare-key-shadcn,
+    .home-compare-mark-shadcn {
+      --home-compare-mark: GrayText;
+    }
+
+    .home-compare-fill,
+    .home-compare-key::before {
+      forced-color-adjust: none;
+    }
+
+    .home-compare-track {
+      background-image: linear-gradient(GrayText, GrayText);
+    }
+  }
+}
+
+@keyframes home-compare-draw {
+  from {
+    scale: 0 1;
   }
 }

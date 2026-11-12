@@ -306,7 +306,8 @@ function measureNow() {
 
     /* Exact figures for what the page shows before any script runs. */
     const selectionCss = exactCss(defaultSelection)
-    const libraryRaw = bytes(published)
+    /* The library as every selection is cut from it: the compile without the published file's banner, so all of it is 100%. */
+    const libraryRaw = bytes(fullCss)
     const ordered = [...catalog.map(entry => entry.slug).filter(slug => units.some(unit => unit.name === slug)), ...units.map(unit => unit.name).filter(name => !catalog.some(entry => entry.slug === name))]
     const categories: string[] = []
     for (const name of ordered) {
@@ -326,7 +327,7 @@ function measureNow() {
         behaviors,
         defaultSelection,
         selection: { names: [...selectionCss.needed], raw: bytes(selectionCss.css), gzip: gzip(selectionCss.css) },
-        library: { raw: libraryRaw, gzip: gzip(published), minified: minifiedGzip(fullCss), count: units.length },
+        library: { raw: libraryRaw, gzip: gzip(fullCss), minified: minifiedGzip(fullCss), count: units.length },
         base: { raw: bytes(read('dist/base.css')), gzip: gzip(read('dist/base.css')) },
     }
 }

@@ -87,7 +87,7 @@ export function Seats() {
     },
     component: {
       file: 'Seats.svelte',
-      note: 'A framework component: it owns the value',
+      note: 'The value binds both ways with bind:value',
       code: `<script lang="ts">
   import Stepper from './ui/Stepper.svelte'
 
@@ -129,7 +129,7 @@ defineProps<{ project: Project }>()
     },
     component: {
       file: 'Seats.vue',
-      note: 'A framework component: it owns the value',
+      note: 'The value binds both ways with v-model',
       code: `<script setup lang="ts">
 import { ref } from 'vue'
 import Stepper from './ui/Stepper.vue'

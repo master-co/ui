@@ -1,10 +1,25 @@
 /* Master UI owns its homepage composition; shared home materials stay in internal-site. */
+
+/*
+ * The slab's face, resolved where the page's color scheme still applies: the slab itself is dark in either
+ * theme, so a light-dark() written on it would always take the dark branch.
+ */
+@property --ui-forge-slab {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+
 @layer components {
   /*
    * Markup in, material out: the code on an obsidian slab in either theme, the specimen on the library's own
    * dotted stage beside it. The decode and the reveal are staged in script; without it both are simply shown.
    */
   .ui-forge {
+    /* Obsidian on the light tray; in the dark theme a step below the tray, so it still reads as a slab set into it. */
+    --ui-forge-slab: light-dark(oklch(17.4% .0018 265), oklch(13.6% .0016 265));
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
     margin: 0;
     padding: var(--home-gap);
     border-radius: var(--home-radius-tray);
@@ -14,14 +29,29 @@
 
   .ui-forge-bar {
     display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem 1.5rem;
     padding: 0 0.25rem var(--home-gap);
+
+    /*
+     * Under a finger the small tabs are as tall as any target. tabs.css means to do this itself, but its
+     * modifier outranks its own touch rule, so the bar restores it here, naming the modifier too: this file
+     * loads before tabs.css, so it has to win on specificity rather than order.
+     */
+    & > .tabs.tabs-sm {
+      @media (pointer: coarse) {
+        --tabs-item-height: 2.75rem;
+      }
+    }
   }
 
+  /*
+   * Pinned in the stage's corner, beside what it describes, and outside the reveal, so it is there from the start.
+   * It sits on the line of the slab's file bar, as the second column of the same row.
+   */
   .ui-forge-status {
+    position: absolute;
+    top: 0.9375rem;
+    inset-inline-start: 1rem;
+    z-index: 1;
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
@@ -32,52 +62,119 @@
     height: 0.375rem;
     border-radius: calc(infinity * 1px);
     background-color: var(--home-ok);
+    /* The same live mark as the contracts figure's status. */
     box-shadow: 0 0 0 3px color-mix(in oklab, var(--home-ok) 18%, transparent);
   }
 
+  /*
+   * Every panel stands in the same cell, so the figure is as tall as the longest example and switching examples
+   * moves nothing below it. A hidden panel keeps its room but leaves the screen, the tab order and the
+   * accessibility tree. Switching crossfades: the new panel fades in over the old one, which stays whole
+   * underneath until the new one covers it, so the slab never thins on the way.
+   */
   .ui-forge-panel {
+    grid-area: 2 / 1;
+    z-index: 1;
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     gap: var(--home-gap);
+    animation: ui-forge-panel-in var(--home-quick) var(--home-ease);
 
     &[hidden] {
-      display: none;
+      z-index: 0;
+      display: grid;
+      visibility: hidden;
+      animation: none;
+      transition: visibility 0s var(--home-quick);
     }
 
-    @media (width >= 64rem) {
+    /* Side by side once the slab holds a 72-character line and the stage a 24rem card. */
+    @media (width >= 72rem) {
+      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    }
+
+    /* Wide enough that the code has room to spare: the stage takes back its share. */
+    @media (width >= 96rem) {
       grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
-      min-height: 28rem;
     }
   }
 
   .ui-forge-code {
+    container-type: inline-size;
     display: grid;
     grid-template-rows: auto minmax(0, 1fr);
     min-width: 0;
     border-radius: var(--home-radius-sheet);
     color-scheme: dark;
-    background-color: oklch(17.4% .0018 265);
+    background-color: var(--ui-forge-slab);
     box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05), 0 0 0 1px oklch(12% 0 none / 0.6), var(--home-elevation-1);
+
+    /*
+     * The code scrolls inside a mask that fades the edge where a line runs on, which would also fade a ring drawn
+     * on the code itself; so the slab draws the ring, in the focus ink of its own dark scheme.
+     */
+    &:has(> .ui-forge-pre:focus-visible) {
+      box-shadow: inset 0 0 0 2px var(--color-focus), 0 0 0 1px oklch(12% 0 none / 0.6), var(--home-elevation-1);
+    }
   }
 
   .ui-forge-file {
     display: flex;
-    justify-content: space-between;
-    gap: 1rem;
+    align-items: center;
+    gap: 0.75rem;
     margin: 0;
-    padding: 0.875rem 1.25rem;
+    padding: 0.875rem 1rem;
     color: oklch(68.6% .0028 265);
-    border-bottom: 1px solid rgb(255 255 255 / 0.07);
+    border-bottom: 0.5px solid rgb(255 255 255 / 0.1);
+  }
 
-    & > :first-child {
-      color: oklch(90% .002 265);
+  /* A file name is case-sensitive, so it keeps its own letters; the line count stays a label. */
+  .ui-forge-file-name {
+    margin-inline-end: auto;
+    font-size: 0.75rem;
+    letter-spacing: 0;
+    text-transform: none;
+    color: oklch(90% .002 265);
+  }
+
+  /* The count stays on one line, and gives way on the narrowest phones so the name and the copy button keep theirs. */
+  .ui-forge-lines {
+    white-space: nowrap;
+
+    @container (width < 18rem) {
+      display: none;
     }
   }
 
+  /* A quiet square in the bar's corner that takes no height from it: the bar stays one line of type tall. */
+  .ui-forge-copy {
+    margin-block: -0.5rem;
+    margin-inline-end: -0.5rem;
+
+    /* Under a finger the button is 44px; it reaches further into the bar's padding, so the bar keeps its height. */
+    @media (pointer: coarse) {
+      margin-block: -0.875rem;
+    }
+
+    & > .ui-forge-copy-done {
+      display: none;
+    }
+
+    &[data-status='copied'] {
+      & > .ui-forge-copy-idle {
+        display: none;
+      }
+
+      & > .ui-forge-copy-done {
+        display: block;
+      }
+    }
+  }
+
+  /* A scroll area along the line: where a line runs past the slab, that edge fades instead of cutting off. */
   .ui-forge-pre {
     margin: 0;
-    padding: 1.125rem 1.25rem 1.5rem;
-    overflow: auto;
+    padding: 1.125rem 1rem 1.5rem;
     font-family: var(--home-mono);
     font-size: 0.78125rem;
     line-height: 1.75;
@@ -85,14 +182,19 @@
     color: var(--ui-code-text);
     outline: none;
 
+    /* Just past the side-by-side threshold the slab is at its narrowest: a half step smaller keeps every line whole. */
+    @media (72rem <= width < 80rem) {
+      font-size: 0.75rem;
+    }
+
     & .t { color: var(--ui-code-function); }
     & .a { color: var(--ui-code-property); }
     & .s { color: var(--ui-code-string); }
     & .p { color: var(--ui-code-punctuation); }
 
-    &:focus-visible {
-      box-shadow: inset 0 0 0 2px var(--ui-code-function);
-      border-radius: var(--home-radius-sheet);
+    /* The slab draws the focus ring; scroll-area's own outline would sit outside the mask and be cut away. */
+    &.scroll-area:focus-visible {
+      outline: none;
     }
   }
 
@@ -110,8 +212,10 @@
       width: 2ch;
       margin-right: 1.5ch;
       text-align: right;
-      color: oklch(48.6% .003 265);
+      color: oklch(54% .003 265);
       content: counter(line);
+      /* Empty alternative text: a screen reader reads the markup, not a number before every line. */
+      content: counter(line) / '';
     }
   }
 
@@ -132,26 +236,38 @@
     inset: 0;
     display: grid;
     place-items: center;
-    padding: 2.5rem 1.5rem;
-    mask-image: linear-gradient(90deg, #000 calc(var(--reveal, 1) * 140% - 40%), transparent calc(var(--reveal, 1) * 140%));
+    padding: 3.25rem 1.5rem 2.5rem;
 
     &[data-example='card'] > * {
       width: min(100%, 24rem);
     }
   }
 
-  /* The reveal's front: a hairline of light crossing the stage, gone at either end. */
+  /*
+   * While the code is written out the specimen is uncovered from the left: a soft edge a fifth of the stage wide
+   * travels to the right, and a hairline of light leads it. Outside the reveal there is no mask at all.
+   */
+  .ui-forge-stage[data-revealing] > .ui-forge-specimen {
+    mask-image: linear-gradient(90deg, #000 calc(var(--reveal) * 120% - 20%), transparent calc(var(--reveal) * 120%));
+  }
+
+  /* As wide as the stage with the line on its right edge, so it travels by translation and never shifts layout. */
   .ui-forge-scan {
     position: absolute;
     inset-block: 1.5rem;
-    left: calc(var(--reveal, 1) * 100%);
-    width: 1px;
-    background: linear-gradient(transparent, var(--home-text-quiet) 30%, var(--home-text-quiet) 70%, transparent);
-    opacity: min(var(--reveal, 1) * 10, (1 - var(--reveal, 1)) * 10, 0.6);
+    left: 0;
+    width: 100%;
+    translate: calc((var(--reveal, 1) * 1.2 - 1) * 100%) 0;
+    background: linear-gradient(transparent, var(--home-text-quiet) 30%, var(--home-text-quiet) 70%, transparent) right / 1px 100% no-repeat;
+    opacity: 0;
     pointer-events: none;
+
+    .ui-forge-stage[data-revealing] > & {
+      opacity: clamp(0, min(var(--reveal) * 12, (0.84 - var(--reveal)) * 12), 0.5);
+    }
   }
 
-  /* The platform's work, as a ledger of live specimens: each feature, who uses it and the baseline beneath it. */
+  /* The platform's work, as a ledger of live specimens: each feature, who uses it and what a browser without it shows. */
   .ui-platform {
     margin-top: clamp(4.5rem, 3rem + 4vw, 7rem);
   }
@@ -179,6 +295,11 @@
     text-wrap: pretty;
   }
 
+  .ui-platform-link {
+    justify-self: start;
+    margin-top: 1.25rem;
+  }
+
   .ui-platform-grid {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
@@ -196,39 +317,97 @@
     }
   }
 
+  /*
+   * Each cell takes four rows of the ledger as a subgrid: specimen, names, summary and facts. The rows are shared
+   * across a line of cells, so the names, the summaries and the rule over the facts line up whatever the length of
+   * the text, and a textarea that grows lengthens its whole row of specimens.
+   */
   .ui-platform-cell {
     display: grid;
-    grid-template-rows: auto 1fr;
+    grid-row: span 4;
+    grid-template-rows: subgrid;
+    row-gap: 0;
     padding: var(--home-gap);
     border-radius: var(--home-radius-tray);
     background-color: var(--home-tray);
     box-shadow: inset 0 0 0 1px var(--home-hairline);
   }
 
+  /*
+   * The cells of a row rise one after another, 24px of scroll apart, the way a header's lines do. Only the range
+   * is set here; the rise itself, its motion preference and its support check belong to the shared reveal.
+   */
+  @supports (animation-timeline: view()) {
+    @media (width >= 48rem) {
+      .ui-platform-cell:nth-child(2n) {
+        animation-range: entry 24px entry 244px;
+      }
+    }
+
+    @media (width >= 72rem) {
+      .ui-platform-cell:nth-child(n) {
+        animation-range: entry 0px entry 220px;
+      }
+
+      .ui-platform-cell:nth-child(3n + 2) {
+        animation-range: entry 24px entry 244px;
+      }
+
+      .ui-platform-cell:nth-child(3n) {
+        animation-range: entry 48px entry 268px;
+      }
+    }
+  }
+
   .ui-platform-specimen {
     --color-texture: var(--color-line-hair);
+    container-type: inline-size;
     display: grid;
     place-items: center;
-    min-height: 10.5rem;
+    min-height: 8rem;
     padding: 1.5rem;
     border-radius: var(--home-radius-sheet);
     background-color: var(--home-ground);
     box-shadow: inset 0 0 0 1px var(--home-hairline);
 
+    /* Side by side, specimens share one height, room enough for the tallest at rest. */
+    @media (width >= 48rem) {
+      min-height: 10.5rem;
+    }
+
     & > .field {
       width: min(100%, 17rem);
     }
+
+    /*
+     * Two slides in view and the edge of a third, the way the carousel page shows a slide that peeks, so the next
+     * button rests over the peek rather than over a name; one and a peek where two would squeeze their names.
+     */
+    & > .carousel {
+      --carousel-slide: 42%;
+      width: min(100%, 20rem);
+
+      @container (width < 22rem) {
+        --carousel-slide: 72%;
+      }
+    }
   }
 
+  /* The text's parts sit directly on the cell's rows; the wrapper only groups them in the source. */
   .ui-platform-text {
-    padding: 1.125rem 0.375rem 0.375rem;
+    display: contents;
+
+    & > * {
+      margin-inline: 0.375rem;
+    }
   }
 
   .ui-platform-names {
     display: flex;
     flex-wrap: wrap;
+    align-content: start;
     gap: 0.375rem;
-    margin: 0;
+    margin-block: 1.125rem 0;
 
     & > code {
       padding: 0.125rem 0.4375rem;
@@ -243,7 +422,7 @@
   }
 
   .ui-platform-summary {
-    margin: 0.875rem 0 0;
+    margin-block: 0.875rem 0;
     font-size: 0.9375rem;
     line-height: 1.55;
     color: var(--home-text-body);
@@ -253,10 +432,11 @@
   .ui-platform-facts {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
+    align-content: start;
     gap: 0.375rem 1rem;
-    margin: 1rem 0 0;
+    margin-block: 1rem 0.375rem;
     padding-top: 0.875rem;
-    border-top: 1px solid var(--home-guide);
+    border-top: 0.5px solid var(--home-rule);
     font-size: 0.8125rem;
     line-height: 1.5;
 
@@ -290,7 +470,7 @@
 
   .home-components .home-section-heading > span { display: block; }
 
-  /* A dozen components as their covers: columns no narrower than a cover's 240px safe area. */
+  /* A dozen components as their covers: two columns on a phone, where a cover scales its 240px art down to fit. */
   .home-component-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -305,15 +485,55 @@
     }
   }
 
+  /* The covers of a row rise one after another, as the ledger's cells do. */
+  @supports (animation-timeline: view()) {
+    .home-component-grid > :nth-child(2n) {
+      animation-range: entry 24px entry 244px;
+    }
+
+    @media (width >= 48rem) {
+      .home-component-grid > :nth-child(n) {
+        animation-range: entry 0px entry 220px;
+      }
+
+      .home-component-grid > :nth-child(3n + 2) {
+        animation-range: entry 24px entry 244px;
+      }
+
+      .home-component-grid > :nth-child(3n) {
+        animation-range: entry 48px entry 268px;
+      }
+    }
+
+    @media (width >= 72rem) {
+      .home-component-grid > :nth-child(n) {
+        animation-range: entry 0px entry 220px;
+      }
+
+      .home-component-grid > :nth-child(4n + 2) {
+        animation-range: entry 24px entry 244px;
+      }
+
+      .home-component-grid > :nth-child(4n + 3) {
+        animation-range: entry 48px entry 268px;
+      }
+
+      .home-component-grid > :nth-child(4n) {
+        animation-range: entry 72px entry 292px;
+      }
+    }
+  }
+
   /* The rest of the catalog as an index: every category and its count, ruled like a table of contents. */
   .ui-catalog-index {
     display: grid;
     gap: 1.75rem;
     margin-top: clamp(3rem, 2rem + 3vw, 5rem);
     padding-top: 1.5rem;
-    border-top: 1px solid var(--home-rule);
+    border-top: 0.5px solid var(--home-rule);
   }
 
+  /* On the covers' columns, so each rule starts under a cover's edge; twelve categories fill every row of 2, 3 or 4. */
   .ui-catalog-categories {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -323,11 +543,11 @@
     list-style: none;
 
     @media (width >= 48rem) {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 
     @media (width >= 72rem) {
-      grid-template-columns: repeat(6, minmax(0, 1fr));
+      grid-template-columns: repeat(4, minmax(0, 1fr));
     }
   }
 
@@ -337,11 +557,15 @@
     justify-content: space-between;
     gap: 0.75rem;
     padding-block: 0.625rem;
-    border-bottom: 1px solid var(--home-guide);
+    border-bottom: 0.5px solid var(--home-rule);
     font-size: 0.875rem;
     color: var(--home-text-body);
     text-decoration: none;
-    transition: color var(--home-quick) var(--home-ease);
+
+    /* At least a 44px row under a finger. */
+    @media (pointer: coarse) {
+      padding-block: 0.875rem;
+    }
 
     @media (hover: hover) {
       &:hover {
@@ -361,5 +585,43 @@
     font-size: 0.75rem;
     font-variant-numeric: tabular-nums;
     color: var(--home-text-faint);
+
+    /* A row answers the pointer at once, with no fade, and brightens as one: the count a step behind its name. */
+    @media (hover: hover) {
+      .ui-catalog-category:hover > & {
+        color: var(--home-text-quiet);
+      }
+    }
+  }
+
+  /*
+   * Forced colors remove the shadows that draw every edge here, so the slab, the stages and the ledger's cells
+   * are outlined in the system's text color, and the status dot keeps a fill.
+   */
+  @media (forced-colors: active) {
+    .ui-forge-code,
+    .ui-forge-stage,
+    .ui-platform-cell,
+    .ui-platform-specimen {
+      outline: 1px solid CanvasText;
+      outline-offset: -1px;
+    }
+
+    .ui-forge-status-dot {
+      forced-color-adjust: none;
+      background-color: CanvasText;
+    }
+
+    /* The slab's focus ring is a shadow, which forced colors drop: an outline in the highlight color stands in. */
+    .ui-forge-code:has(> .ui-forge-pre:focus-visible) {
+      outline: 2px solid Highlight;
+      outline-offset: -2px;
+    }
+  }
+}
+
+@keyframes ui-forge-panel-in {
+  from {
+    opacity: 0;
   }
 }

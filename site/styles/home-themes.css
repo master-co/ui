@@ -2,8 +2,8 @@
  * Customize: one composition of real components drawn twice in a stage, light under dark, with a seam between
  * them, and a console beside it. Each layer forces its own color scheme, so the library's light-dark() tokens
  * resolve per layer; Paper's tokens are scoped to both layers by a style the component writes from paper.css,
- * and the console writes the corner properties and size modifiers onto both. The seam sits at 50% until the
- * script measures the range's thumb.
+ * and the console writes the corner properties and size modifiers onto both, easing the geometry for a moment
+ * when a choice is made. The seam sits at 50% until the script measures the range's thumb.
  */
 @property --home-customize-seam {
   syntax: '<percentage>';
@@ -33,17 +33,23 @@
     box-shadow: inset 0 0 0 1px var(--home-hairline);
 
     @media (width >= 64rem) {
-      grid-template-columns: minmax(0, 1fr) minmax(19rem, 22rem);
+      grid-template-columns: minmax(0, 1fr) minmax(19rem, 23rem);
     }
   }
 
+  /* Beside the console, the stage takes the console's height, so the two sheets end on one line. */
   .home-customize-view {
+    position: relative;
     display: grid;
-    align-content: start;
+    grid-template-rows: minmax(0, 1fr) auto;
     gap: 1.125rem;
     min-width: 0;
     /* Room under the range for its thumb's shadow and focus ring. */
     padding-bottom: 0.625rem;
+
+    &[data-gliding] {
+      transition: --home-customize-seam 480ms var(--home-ease);
+    }
   }
 
   .home-customize-stage {
@@ -53,25 +59,22 @@
     border-radius: var(--home-radius-sheet);
     box-shadow: 0 0 0 1px var(--home-hairline);
     container-type: inline-size;
-
-    &[data-gliding] {
-      transition: --home-customize-seam 480ms var(--home-ease);
-    }
   }
 
-  /* Both layers fill the one cell, so the stage is as tall as the composition and no taller. */
+  /* Both layers fill the one cell, so the stage is as tall as the composition, or as the console beside it. */
   .home-customize-layer {
     position: relative;
     grid-area: 1 / 1;
     display: grid;
     place-items: center;
     min-height: 32rem;
-    padding: 4.25rem 1rem 2.75rem;
+    /* On a phone the tag is one line and the stage stays short enough to keep the presets in view under it. */
+    padding: 3.5rem 1rem 1.5rem;
     color: var(--color-text-strong);
     background-color: var(--color-surface-base);
 
     @container (width >= 30rem) {
-      padding-inline: 1.5rem;
+      padding: 4.25rem 1.5rem 2.75rem;
     }
   }
 
@@ -143,10 +146,14 @@
     }
   }
 
-  /* The seam: a hairline of a middle grey, the one line that reads on both grounds. */
+  /*
+   * The seam: a hairline of a middle grey, the one line that reads on both grounds. It runs on past the stage
+   * down to the range's thumb, which covers its end, so the thumb reads as the seam's handle.
+   */
   .home-customize-seam {
     position: absolute;
-    inset-block: 0;
+    top: 0;
+    bottom: calc(0.625rem + 0.5625rem);
     left: var(--home-customize-seam);
     width: 1px;
     translate: -0.5px 0;
@@ -165,9 +172,17 @@
     }
   }
 
-  /* The range moves a seam, not an amount, so its track stays an empty well. */
+  /* The range moves a seam, not an amount, so its track stays an empty well, drawn over the seam's tail. */
   .home-customize-range {
     --slider-color: transparent;
+    position: relative;
+    z-index: 1;
+    cursor: ew-resize;
+
+    /* Under a finger the range reaches 44px tall into the room around it; its track and thumb stay where they are. */
+    @media (pointer: coarse) {
+      --slider-bleed: 10px;
+    }
   }
 
   .home-customize-console {
@@ -175,10 +190,26 @@
     align-content: start;
     gap: 1.125rem;
     min-width: 0;
-    padding: 1.25rem;
+    padding: 1rem;
     border-radius: var(--home-radius-sheet);
     background-color: var(--home-ground);
     box-shadow: inset 0 0 0 1px var(--home-hairline);
+
+    @media (width >= 30rem) {
+      padding: 1.25rem;
+    }
+
+    /* Under the stage on a tablet: the controls beside their code, so the console stays short. */
+    @media (40rem <= width < 64rem) {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      column-gap: 1.5rem;
+
+      & > .home-customize-code {
+        grid-column: 2;
+        grid-row: 1 / span 6;
+        margin: 0;
+      }
+    }
   }
 
   .home-customize-row {
@@ -203,11 +234,15 @@
     & .segmented-item {
       flex: 1;
     }
+
+    /* The theme's two labels differ most in length: shares that start from each label, so the long one has room. */
+    & .home-customize-themes .segmented-item {
+      flex: 1 1 auto;
+    }
   }
 
   .home-customize-rule {
-    height: 1px;
-    background-color: var(--home-rule);
+    border-top: 0.5px solid var(--home-rule);
   }
 
   .home-customize-scale {
@@ -216,6 +251,13 @@
     align-items: center;
     gap: 1rem;
     padding-inline: 0.3125rem;
+
+    /* The same 44px reach under a finger as the seam's range. */
+    & > .slider {
+      @media (pointer: coarse) {
+        --slider-bleed: 10px;
+      }
+    }
   }
 
   .home-customize-output {
@@ -228,16 +270,20 @@
 
   .home-customize-code {
     margin: 0.25rem 0 0;
-    padding: 0.875rem 1rem;
+    padding: 0.875rem;
     overflow-x: auto;
     border-radius: var(--home-radius-well);
     font-family: var(--home-mono);
-    font-size: 0.71875rem;
+    font-size: 0.6875rem;
     line-height: 1.7;
     color: var(--home-text-body);
     background-color: var(--home-tray);
     box-shadow: inset 0 0 0 1px var(--home-hairline);
     outline: none;
+
+    @media (width >= 30rem) {
+      font-size: 0.71875rem;
+    }
 
     & .c { color: var(--home-text-faint); }
     & .k { color: var(--home-text-quiet); }
@@ -249,6 +295,12 @@
     &:focus-visible {
       box-shadow: inset 0 0 0 2px var(--home-ink);
     }
+  }
+
+  /* A line the last change wrote: a quiet wash that fades out. It moves nothing, so reduced motion keeps it. */
+  .home-customize-changed {
+    border-radius: 0.1875rem;
+    animation: home-customize-changed 1.4s var(--home-ease);
   }
 
   /* The ladder: five steps in order of reach, ruled like a specification. */
@@ -276,7 +328,7 @@
     align-content: start;
     gap: 0.375rem;
     padding: 1.125rem 0 1.5rem;
-    border-top: 1px solid var(--home-rule);
+    border-top: 0.5px solid var(--home-rule);
   }
 
   .home-customize-step-index {
@@ -289,6 +341,38 @@
     font-weight: 500;
     letter-spacing: -0.01em;
     color: var(--home-text);
+
+    /* Each step opens its section of the guide. */
+    & > a {
+      border-radius: 0.25rem;
+      color: inherit;
+      text-decoration: underline;
+      text-decoration-color: transparent;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 0.25em;
+      transition: text-decoration-color var(--home-quick) var(--home-ease);
+
+      &:focus-visible {
+        outline: 2px solid var(--home-ink);
+        outline-offset: 2px;
+      }
+
+      @media (hover: hover) {
+        &:hover {
+          text-decoration-color: color-mix(in oklab, currentColor 35%, transparent);
+        }
+      }
+
+      /* Without hover the underline stays, so the name still reads as a link. */
+      @media (hover: none) {
+        text-decoration-color: color-mix(in oklab, currentColor 35%, transparent);
+      }
+
+      /* Under a finger the target reaches into the space above and below the name, which the line keeps. */
+      @media (pointer: coarse) {
+        padding-block: 0.8125rem;
+      }
+    }
   }
 
   .home-customize-step-reach {
@@ -323,10 +407,39 @@
     text-wrap: pretty;
   }
 
+  /*
+   * While a choice in the console settles, the components ease into their new corners and heights instead of
+   * jumping, so the change reads as the same markup taking another shape. Colors swap at once: a gradient face
+   * cannot interpolate. The list keeps the properties the components transition themselves; the segmented
+   * thumb is named on its own because its rule is more specific than the others.
+   */
+  .home-customize-stage[data-morphing] *,
+  .home-customize-stage[data-morphing] *::before,
+  .home-customize-stage[data-morphing] *::after,
+  .home-customize-stage[data-morphing] .home-customize-fields .segmented::before {
+    transition-property: border-radius, corner-shape, min-height, height, width, padding, font-size, gap, translate, box-shadow, top, right, bottom, left;
+    transition-duration: var(--home-base);
+    transition-timing-function: var(--home-ease);
+  }
+
+  /* In forced colors a background is dropped: the seam is drawn in the text color instead. */
+  @media (forced-colors: active) {
+    .home-customize-seam {
+      forced-color-adjust: none;
+      background-color: CanvasText;
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
-    .home-customize-stage[data-gliding],
+    .home-customize-view[data-gliding],
     .home-customize-seam {
       transition: none;
     }
+  }
+}
+
+@keyframes home-customize-changed {
+  from {
+    background-color: var(--home-rule-strong);
   }
 }

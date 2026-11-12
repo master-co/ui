@@ -2,8 +2,21 @@
  * 05 Frameworks: every component stylesheet drawn as one cell of a ledger, the few a framework owns raised out
  * of it, and beside them the same markup and one framework component in React, Svelte and Vue.
  */
+
+/*
+ * The slab's face, resolved where the page's color scheme still applies: the slab itself is dark in either
+ * theme, so a light-dark() written on it would always take the dark branch. The same face as the Markup section's.
+ */
+@property --ui-frameworks-slab {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+
 @layer components {
   .ui-frameworks {
+    /* Obsidian on the light tray; in the dark theme a step below the tray, so it still reads as a slab set into it. */
+    --ui-frameworks-slab: light-dark(oklch(17.4% .0018 265), oklch(13.6% .0016 265));
     display: grid;
     gap: var(--home-gap);
     margin: 0;
@@ -36,46 +49,63 @@
     }
   }
 
+  /* The proportion in figures first, so it reads before the drawing is looked at. */
   .ui-frameworks-head {
     display: flex;
     flex-wrap: wrap;
-    align-items: baseline;
+    align-items: end;
     justify-content: space-between;
-    gap: 0.75rem 2rem;
+    gap: 1rem 2rem;
   }
 
   .ui-frameworks-total {
     color: var(--home-text-body);
 
+    /* A path is written as it is spelled, not set in capitals like the label before it. */
     & > span {
+      letter-spacing: 0.02em;
+      text-transform: none;
       color: var(--home-text-faint);
     }
   }
 
+  /* Side by side at every width; on a phone a label wraps under its figure instead of the pair stacking. */
   .ui-frameworks-legend {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem 1.5rem;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, auto);
+    gap: 2rem;
     margin: 0;
     padding: 0;
     list-style: none;
 
     & > li {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
+      display: grid;
+      align-content: start;
+      gap: 0.375rem;
     }
   }
 
   .ui-frameworks-count {
-    color: var(--home-text);
+    font-size: 1.75rem;
+    font-weight: 400;
+    line-height: 1;
+    letter-spacing: -0.02em;
     font-variant-numeric: tabular-nums;
+    color: var(--home-text);
+  }
+
+  .ui-frameworks-label {
+    display: block;
   }
 
   /* A legend key is a cell in miniature: an empty ruled square, or a raised one. */
   .ui-frameworks-key {
+    display: inline-block;
     width: 0.625rem;
     height: 0.625rem;
+    margin-right: 0.5rem;
+    vertical-align: -0.0625rem;
     border-radius: 2px;
     box-shadow: inset 0 0 0 0.5px var(--home-rule-strong);
   }
@@ -182,12 +212,17 @@
     white-space: pre;
   }
 
-  /* On a phone the names are not drawn in the cells: the owned ones are written out under them. */
+  /*
+   * On a phone the names are not drawn in the cells: the owned ones are written out under them, spelled as the
+   * command takes them rather than in capitals.
+   */
   .ui-frameworks-owned {
     display: flex;
     flex-wrap: wrap;
     gap: 0.375rem 0.875rem;
     margin: 0;
+    letter-spacing: 0.02em;
+    text-transform: none;
     color: var(--home-text-body);
 
     @media (width >= 48rem) {
@@ -201,17 +236,12 @@
     gap: 0.75rem;
     padding-top: 1.25rem;
     border-top: 0.5px solid var(--home-rule);
-
-    @media (width >= 64rem) {
-      grid-template-columns: auto minmax(0, 1fr);
-      align-items: baseline;
-      gap: 2.5rem;
-    }
   }
 
+  /* One, two or four in a row, never three and one left over. */
   .ui-frameworks-owns {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+    grid-template-columns: minmax(0, 1fr);
     gap: 0.5rem 1.5rem;
     margin: 0;
     padding: 0;
@@ -224,6 +254,14 @@
       display: flex;
       align-items: baseline;
       gap: 0.625rem;
+    }
+
+    @media (width >= 40rem) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    @media (width >= 64rem) {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
     }
   }
 
@@ -242,18 +280,41 @@
     justify-content: space-between;
     gap: 0.75rem 1.5rem;
     padding: 0.5rem 0.25rem 0;
+
+    /*
+     * Under a finger the small tabs are as tall as any target. tabs.css means to do this itself, but its
+     * modifier outranks its own touch rule, so the bar restores it here.
+     */
+    & > .tabs {
+      @media (pointer: coarse) {
+        --tabs-item-height: 2.75rem;
+      }
+    }
   }
 
+  /*
+   * The three panels share one cell, so the figure is as tall as the longest of them and choosing another
+   * framework moves nothing under it. A hidden panel keeps its room but leaves the page, the tab order and the
+   * accessibility tree. Switching crossfades as the Markup section's examples do: the new panel fades in over
+   * the old one, which stays whole underneath until it is covered, so the slabs never thin on the way.
+   */
   .ui-frameworks-panel {
     display: grid;
+    grid-area: 3 / 1;
+    z-index: 1;
     grid-template-columns: minmax(0, 1fr);
     gap: var(--home-gap);
+    animation: ui-frameworks-panel-in var(--home-quick) var(--home-ease);
 
     &[hidden] {
-      display: none;
+      z-index: 0;
+      visibility: hidden;
+      animation: none;
+      transition: visibility 0s var(--home-quick);
     }
 
-    @media (width >= 64rem) {
+    /* Side by side once each slab holds its longest line whole; narrower, the two stack at full width. */
+    @media (width >= 75rem) {
       grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     }
   }
@@ -267,24 +328,69 @@
     margin: 0;
     border-radius: var(--home-radius-sheet);
     color-scheme: dark;
-    background-color: oklch(17.4% .0018 265);
+    container-type: inline-size;
+    background-color: var(--ui-frameworks-slab);
     box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05), 0 0 0 1px oklch(12% 0 none / 0.6), var(--home-elevation-1);
+
+    /* Focus on the code rings the whole slab, in the focus ink of its own dark scheme. */
+    &:has(> .ui-frameworks-pre:focus-visible) {
+      box-shadow: inset 0 0 0 2px var(--color-focus), 0 0 0 1px oklch(12% 0 none / 0.6), var(--home-elevation-1);
+    }
   }
 
+  /*
+   * The file, what it is and the copy button on one line; on a slab too narrow for that, what it is drops under
+   * the file and the button keeps its corner.
+   */
   .ui-frameworks-file {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: 0.25rem 1rem;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 0.25rem 0.75rem;
     margin: 0;
     padding: 0.875rem 1.25rem;
-    border-bottom: 1px solid rgb(255 255 255 / 0.07);
+    border-bottom: 0.5px solid rgb(255 255 255 / 0.1);
     color: var(--ui-frameworks-dim);
 
-    & > :first-child {
-      color: oklch(90% .002 265);
-      text-transform: none;
-      letter-spacing: 0.02em;
+    @container (width < 24rem) {
+      grid-template-columns: minmax(0, 1fr) auto;
+
+      & > :nth-child(2) {
+        grid-area: 2 / 1;
+      }
+
+      & > .ui-frameworks-copy {
+        grid-area: 1 / 2;
+      }
+    }
+  }
+
+  /* A file name is case-sensitive, so it keeps its own letters; the role beside it stays a label. */
+  .ui-frameworks-file-name {
+    min-width: 0;
+    font-size: 0.75rem;
+    letter-spacing: 0;
+    text-transform: none;
+    color: oklch(90% .002 265);
+  }
+
+  /* A quiet square at the bar's end that takes no height from it, as on the Markup section's slab. */
+  .ui-frameworks-copy {
+    margin-block: -0.5rem;
+    margin-inline-end: -0.5rem;
+
+    & > .ui-frameworks-copy-done {
+      display: none;
+    }
+
+    &[data-status='copied'] {
+      & > .ui-frameworks-copy-idle {
+        display: none;
+      }
+
+      & > .ui-frameworks-copy-done {
+        display: block;
+      }
     }
   }
 
@@ -292,7 +398,7 @@
   .ui-frameworks-command {
     margin: 0;
     padding: 0.75rem 1.25rem;
-    border-bottom: 1px solid rgb(255 255 255 / 0.07);
+    border-bottom: 0.5px solid rgb(255 255 255 / 0.1);
     font-family: var(--home-mono);
     font-size: 0.75rem;
     line-height: 1.7;
@@ -328,6 +434,12 @@
     color: var(--ui-code-text);
     outline: none;
 
+    /* Just past the side-by-side threshold the slabs are at their narrowest: a half step smaller keeps lines whole. */
+    @media (75rem <= width < 80rem) {
+      padding-inline: 1rem;
+      font-size: 0.75rem;
+    }
+
     & .k { color: var(--ui-code-keyword); }
     & .t { color: var(--ui-code-function); }
     & .a { color: var(--ui-code-property); }
@@ -336,9 +448,10 @@
     & .c { color: var(--ui-code-comment); }
     & .p { color: var(--ui-code-punctuation); }
 
-    &:focus-visible {
-      border-radius: var(--home-radius-sheet);
-      box-shadow: inset 0 0 0 2px var(--ui-code-function);
+    /* The slab draws the focus ring; scroll-area's own ring would sit under the faded edge and be cut away. */
+    &.scroll-area:focus-visible {
+      outline: none;
+      box-shadow: none;
     }
   }
 
@@ -364,18 +477,40 @@
   .ui-frameworks-note {
     margin: 0;
     padding: 0.75rem 1.25rem 0.875rem;
-    border-top: 1px solid rgb(255 255 255 / 0.07);
+    border-top: 0.5px solid rgb(255 255 255 / 0.1);
     letter-spacing: 0.02em;
     text-transform: none;
     color: var(--ui-frameworks-dim);
   }
 
-  @media (prefers-reduced-motion: no-preference) {
-    /* A panel settles in when its tab is chosen. */
-    .ui-frameworks-panel:not([hidden]) {
-      animation: ui-frameworks-settle var(--home-base) var(--home-ease);
+  /* In forced colors backgrounds are dropped, so an owned cell and its key are drawn in the text color. */
+  @media (forced-colors: active) {
+    /* The slab's focus ring is a shadow, which forced colors drop: an outline in the highlight color stands in. */
+    .ui-frameworks-slab:has(> .ui-frameworks-pre:focus-visible) {
+      outline: 2px solid Highlight;
+      outline-offset: -2px;
     }
 
+    .ui-frameworks-cell[data-owned]::before,
+    .ui-frameworks-cell[data-owned] > .ui-frameworks-name::before,
+    .ui-frameworks-key-owned {
+      forced-color-adjust: none;
+      background-color: CanvasText;
+    }
+
+    @media (width >= 48rem) {
+      .ui-frameworks-cell[data-owned]::before {
+        background-color: Canvas;
+        box-shadow: 0 0 0 1px CanvasText;
+      }
+
+      .ui-frameworks-cell[data-owned] > .ui-frameworks-name::before {
+        background-color: CanvasText;
+      }
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
     /*
      * As the ledger comes into view, the owned cells rise out of it one after another. Script marks the figure
      * pending only once it is sure to clear the mark again, so without it the cells are simply raised; the
@@ -406,9 +541,8 @@
   }
 }
 
-@keyframes ui-frameworks-settle {
+@keyframes ui-frameworks-panel-in {
   from {
     opacity: 0;
-    translate: 0 0.25rem;
   }
 }

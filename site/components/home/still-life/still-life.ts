@@ -68,8 +68,19 @@ export interface NoteAnchor {
   y: number
 }
 
+/** A box on the stage, measured from its top left. */
+export interface NoteBox {
+  left: number
+  top: number
+  right: number
+  bottom: number
+}
+
 export interface StillLifeOptions {
-  /** The text the table keeps clear of glyphs. */
+  /**
+   * The words. The table keeps them clear of glyphs, the figure stands beside or under their longest line, and
+   * their parent's content box is the column the figure and its notes keep to.
+   */
   reading?: HTMLElement | null
   /**
    * Controls lit by the same lamp. Each receives `--lit-x`, `--lit-y` (where the lamp is, relative to the control),
@@ -77,16 +88,23 @@ export interface StillLifeOptions {
    * figure's shadows fall on the table) and `--lit-near` (0–1, how close the pointer carries the lamp).
    */
   lit?: HTMLElement[]
-  /** Called with each layer's edge on the stage (table, tray, sheet, floating sheet) whenever the figure moves. */
-  onAnchors?: (anchors: NoteAnchor[], stage: { width: number, height: number, wide: boolean }) => void
+  /**
+   * Called with each layer's edge on the stage (table, tray, sheet, floating sheet) whenever the figure moves, and
+   * with how far right the notes may run (`reach`). It may return the box the notes then take on the stage, which
+   * the print keeps clear.
+   */
+  onAnchors?: (anchors: NoteAnchor[], stage: { width: number, height: number, reach: number, wide: boolean }) => NoteBox | void
 }
 
 /** Footprints of the layers in the stack's units: center x, center z, half width, half depth, top above its underside. */
 const footprints = [
   [0, 0, 3.3, 2.2, 0.14],
   [0.18, -0.04, 2.72, 1.74, 0.14],
-  [-1.02, 0.98, 1.22, 0.84, 0.12],
+  [2.6, -0.25, 1.05, 0.8, 0.12],
 ] as const
+
+/** The undersides of the tray, the sheet and the floating sheet once the figure has opened. */
+const openLayers = [0.12, 1.22, 2.37]
 
 /**
  * Mounts the figure on a canvas inside `host`. Returns a cleanup. Without WebGL 2 the canvas stays hidden and
@@ -105,9 +123,11 @@ export function mountStillLife(canvas: HTMLCanvasElement, host: HTMLElement, opt
     const shader = gl.createShader(type)!
     gl.shaderSource(shader, source)
     gl.compileShader(shader)
-    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(shader) ?? 'Cannot compile the figure')
     return shader
   }
+  // Where the browser compiles in the background, the page keeps running while it does; asking for the result
+  // before it is ready would block the main thread for as long as the compile takes.
+  const parallel = gl.getExtension('KHR_parallel_shader_compile')
   const program = gl.createProgram()!
   const vertex = compile(gl.VERTEX_SHADER, vertexSource)
   const fragment = compile(gl.FRAGMENT_SHADER, fragmentSource)
@@ -115,8 +135,6 @@ export function mountStillLife(canvas: HTMLCanvasElement, host: HTMLElement, opt
   gl.attachShader(program, fragment)
   gl.bindAttribLocation(program, 0, 'position')
   gl.linkProgram(program)
-  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(program) ?? 'Cannot link the figure')
-  gl.useProgram(program)
 
   const buffer = gl.createBuffer()
   gl.bindBuffer(gl.ARRAY_BUFFER, buffer)
@@ -124,8 +142,8 @@ export function mountStillLife(canvas: HTMLCanvasElement, host: HTMLElement, opt
   gl.enableVertexAttribArray(0)
   gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0)
 
-  const names = ['uResolution', 'uTime', 'uBoot', 'uCamPos', 'uCamTarget', 'uFocal', 'uLamp', 'uLampColor', 'uGround', 'uInk', 'uDark', 'uReading', 'uReadingRadius', 'uAtlas', 'uStack', 'uLayers'] as const
-  const uniform = Object.fromEntries(names.map(name => [name, gl.getUniformLocation(program, name)])) as Record<typeof names[number], WebGLUniformLocation | null>
+  const names = ['uResolution', 'uTime', 'uBoot', 'uCamPos', 'uCamTarget', 'uFocal', 'uLamp', 'uLampColor', 'uGround', 'uInk', 'uDark', 'uReading', 'uReadingRadius', 'uNotes', 'uAtlas', 'uStack', 'uLayers'] as const
+  let uniform: Record<typeof names[number], WebGLUniformLocation | null> | null = null
 
   let disposed = false
   let visible = true
@@ -135,7 +153,10 @@ export function mountStillLife(canvas: HTMLCanvasElement, host: HTMLElement, opt
   let cssWidth = 1
   let cssHeight = 1
   let wide = true
-  let quality = coarse.matches ? 0.65 : 0.85
+  /** How far right the figure and its notes may reach on the stage. */
+  let reach = 1
+  // A 1x screen starts at its full resolution, where every lost pixel shows; a dense one starts a little under it.
+  let quality = coarse.matches ? 0.65 : devicePixelRatio < 1.5 ? 1 : 0.85
   let slowFrames = 0
   let fastFrames = 0
   let lastFrame = -1
@@ -143,10 +164,14 @@ export function mountStillLife(canvas: HTMLCanvasElement, host: HTMLElement, opt
   let wasSettling = false
   /** How far the hero has scrolled out of view, 0 to 1; the layers settle back together as it leaves. */
   let leaving = 0
+  /** The middle of the drawn figure, from the top of the stage. */
+  let figureY = 0
   const stackAt = { x: 0, z: 0, scale: 1 }
   const lamp = { x: 0, y: 8, z: 0, offsetX: 0, offsetZ: 0, targetX: 0, targetZ: 0 }
   const tilt = { value: 0, target: 0 }
   const reading = [0, 0, 0, 0]
+  /** The notes' column in canvas pixels, kept clear of print; empty while the notes are hidden. */
+  const notesClear = [0, 0, 0, 0]
   let readingRadius = 80
   const colors = { ground: [1, 1, 1] as Vec3, ink: [0, 0, 0] as Vec3, dark: 0 }
 
@@ -180,54 +205,103 @@ export function mountStillLife(canvas: HTMLCanvasElement, host: HTMLElement, opt
     colors.ink = resolve('--home-text-quiet', '#777')
   }
 
+  /** The box the opened figure covers on the stage, for its current place and scale. */
+  const extent = () => {
+    const c = Math.cos(turn)
+    const sn = Math.sin(turn)
+    const box = { left: Infinity, right: -Infinity, top: Infinity, bottom: -Infinity }
+    footprints.forEach(([cx, cz, hx, hz, top], index) => {
+      for (const [dx, dz] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) {
+        const lx = cx + dx * hx
+        const lz = cz + dz * hz
+        for (const ly of [openLayers[index], openLayers[index] + top]) {
+          const [px, py] = project([stackAt.x + (c * lx - sn * lz) * stackAt.scale, ly * stackAt.scale, stackAt.z + (sn * lx + c * lz) * stackAt.scale], cssWidth, cssHeight)
+          box.left = Math.min(box.left, px)
+          box.right = Math.max(box.right, px)
+          box.top = Math.min(box.top, py)
+          box.bottom = Math.max(box.bottom, py)
+        }
+      }
+    })
+    return box
+  }
+
   const layout = () => {
     const rect = canvas.getBoundingClientRect()
     cssWidth = Math.max(rect.width, 1)
     cssHeight = Math.max(rect.height, 1)
     const ratio = Math.min(devicePixelRatio || 1, 2) * quality
-    const scale = Math.min(ratio, Math.sqrt(2_600_000 / (cssWidth * cssHeight)))
+    // A pixel budget keeps a large screen affordable; a GPU that has earned full quality earns a larger budget too.
+    const budget = 2_600_000 * Math.max(1, quality / 0.85) ** 2
+    const scale = Math.min(ratio, Math.sqrt(budget / (cssWidth * cssHeight)))
+    // The drawing buffer is resized by the next frame, just before it draws: resizing it here would clear it, and
+    // a cleared opaque canvas shows black until something draws again.
     width = Math.max(1, Math.round(cssWidth * scale))
     height = Math.max(1, Math.round(cssHeight * scale))
-    canvas.width = width
-    canvas.height = height
 
     // Beside the words on a wide stage, in the room right of them; under them on a narrow one.
     const area = options.reading?.getBoundingClientRect()
-    const readingRight = area ? area.right - rect.left : cssWidth * 0.45
+    // The words end where their longest line ends, not where their column could reach.
+    const inked = options.reading ? [...options.reading.children].map((child) => {
+      const range = document.createRange()
+      range.selectNodeContents(child)
+      return range.getBoundingClientRect().right
+    }) : []
+    const readingRight = inked.length ? Math.max(...inked) - rect.left : cssWidth * 0.45
     const readingBottom = area ? area.bottom - rect.top : cssHeight * 0.55
-    wide = cssWidth >= 1200 && cssWidth / cssHeight > 1.15
+    // The figure and its notes keep to the page's column, ending where the words of the sections below end.
+    const wrapper = options.reading?.parentElement
+    const column = wrapper ? wrapper.getBoundingClientRect().right - parseFloat(getComputedStyle(wrapper).paddingRight) : cssWidth
+    reach = Math.min(cssWidth - 16, column - rect.left)
+    // The same threshold as the stylesheet's: below 64rem, or on a tall screen, the figure stands under the words.
+    wide = cssWidth >= 1024 && cssWidth / cssHeight > 1.15
     let anchor: [number, number]
     let span: number
+    let tall: number
     if (wide) {
-      const left = readingRight + 24
-      const room = cssWidth - 16 - left
-      // The notes take a column at the far right when the room is generous.
-      const figure = room > 720 ? room - 190 : room
-      span = Math.min(figure * 0.86, 760)
-      anchor = [left + figure / 2, cssHeight * 0.58]
+      // A clear gutter keeps the figure's near corner from crowding the words.
+      const left = readingRight + 56
+      const room = reach - left
+      // The notes take a column at the far right whenever the figure keeps a useful size beside them.
+      const figure = room > 540 ? room - 170 : room
+      span = Math.min(figure * 0.94, 800)
+      tall = cssHeight * 0.6
+      anchor = [left + figure / 2, cssHeight * 0.55]
     } else {
-      span = Math.min(cssWidth * 0.84, 600)
-      anchor = [cssWidth / 2, readingBottom + (cssHeight - readingBottom) * 0.5]
+      span = Math.min(cssWidth * 0.84, 580)
+      tall = (cssHeight - readingBottom) * 0.8
+      anchor = [cssWidth / 2, readingBottom + (cssHeight - readingBottom) * 0.45]
     }
+    // Fit the opened figure's drawn extent, not its footprint: scale it to the span (or the height it may take)
+    // and move it until the middle of what is drawn sits on the anchor. Two passes absorb the slight perspective.
     const [x, z] = unproject(anchor[0], anchor[1], cssWidth, cssHeight)
     const [ex] = unproject(anchor[0] + 100, anchor[1], cssWidth, cssHeight)
-    const unitsPerPixel = Math.abs(ex - x) / 100
-    // The turned stack spans about seven of its units across the stage.
-    stackAt.scale = (span * unitsPerPixel) / 7
+    stackAt.scale = (span * Math.abs(ex - x)) / 100 / 7
     stackAt.x = x
     stackAt.z = z
+    for (let pass = 0; pass < 2; pass++) {
+      const box = extent()
+      stackAt.scale *= Math.min(span / (box.right - box.left), tall / (box.bottom - box.top))
+      const fitted = extent()
+      const [px, py] = project([stackAt.x, 0, stackAt.z], cssWidth, cssHeight)
+      ;[stackAt.x, stackAt.z] = unproject(px + anchor[0] - (fitted.left + fitted.right) / 2, py + anchor[1] - (fitted.top + fitted.bottom) / 2, cssWidth, cssHeight)
+    }
+    figureY = anchor[1]
+    onScroll()
 
     if (area) {
       const s = width / cssWidth
       reading[0] = (area.left - rect.left) * s
       reading[1] = (rect.bottom - area.bottom) * s
-      reading[2] = (area.right - rect.left) * s
+      reading[2] = readingRight * s
       reading[3] = (rect.bottom - area.top) * s
       readingRadius = 64 * s
     }
   }
 
   const pointer = { x: 0, y: 0, inside: false }
+  const litProperties = ['--lit-x', '--lit-y', '--lit-angle', '--cast-x', '--cast-y', '--lit-near']
+  const litValues = new WeakMap<HTMLElement, string[]>()
   const onPointerMove = (event: PointerEvent) => {
     if (event.pointerType !== 'mouse') return
     pointer.x = event.clientX
@@ -239,7 +313,8 @@ export function mountStillLife(canvas: HTMLCanvasElement, host: HTMLElement, opt
     // The lamp moves a little with the pointer, and the figure turns a little toward it.
     lamp.targetX = nx * 4
     lamp.targetZ = ny * 3
-    tilt.target = nx * 0.08
+    // Under reduced motion only the light follows; the figure holds still.
+    tilt.target = motion.matches ? 0 : nx * 0.08
     schedule()
   }
   const onPointerLeave = () => {
@@ -263,7 +338,8 @@ export function mountStillLife(canvas: HTMLCanvasElement, host: HTMLElement, opt
 
   const draw = (now: number) => {
     frame = 0
-    if (disposed) return
+    const u = uniform
+    if (disposed || !u) return
     if (startedAt < 0) startedAt = now
     const elapsed = (now - startedAt) / 1000
     // Once the figure has opened and nothing is being followed, it only breathes and the print drifts:
@@ -294,25 +370,32 @@ export function mountStillLife(canvas: HTMLCanvasElement, host: HTMLElement, opt
     layers[2] = layers[1] + 0.15 + 1.0 * e2
     const angle = turn + tilt.value
 
+    if (canvas.width !== width || canvas.height !== height) {
+      canvas.width = width
+      canvas.height = height
+    }
     gl.viewport(0, 0, width, height)
-    gl.uniform2f(uniform.uResolution, width, height)
-    gl.uniform1f(uniform.uTime, time)
-    gl.uniform1f(uniform.uBoot, motion.matches ? 9 : (elapsed - 0.15) / 2.2)
-    gl.uniform3fv(uniform.uCamPos, camPos)
-    gl.uniform3fv(uniform.uCamTarget, camTarget)
-    gl.uniform1f(uniform.uFocal, focal)
-    gl.uniform3f(uniform.uLamp, lamp.x, lamp.y, lamp.z)
-    gl.uniform3fv(uniform.uLampColor, colors.dark ? [1, 0.965, 0.92] : [1, 0.99, 0.975])
-    gl.uniform3fv(uniform.uGround, colors.ground)
-    gl.uniform3fv(uniform.uInk, colors.ink)
-    gl.uniform1f(uniform.uDark, colors.dark)
-    gl.uniform4fv(uniform.uReading, reading)
-    gl.uniform1f(uniform.uReadingRadius, readingRadius)
-    gl.uniform1i(uniform.uAtlas, 0)
-    gl.uniform4f(uniform.uStack, stackAt.x, stackAt.z, s, angle)
-    gl.uniform3fv(uniform.uLayers, layers)
+    gl.uniform2f(u.uResolution, width, height)
+    gl.uniform1f(u.uTime, time)
+    gl.uniform1f(u.uBoot, motion.matches ? 9 : (elapsed - 0.15) / 2.2)
+    gl.uniform3fv(u.uCamPos, camPos)
+    gl.uniform3fv(u.uCamTarget, camTarget)
+    gl.uniform1f(u.uFocal, focal)
+    gl.uniform3f(u.uLamp, lamp.x, lamp.y, lamp.z)
+    gl.uniform3fv(u.uLampColor, colors.dark ? [1, 0.965, 0.92] : [1, 0.99, 0.975])
+    gl.uniform3fv(u.uGround, colors.ground)
+    gl.uniform3fv(u.uInk, colors.ink)
+    gl.uniform1f(u.uDark, colors.dark)
+    gl.uniform4fv(u.uReading, reading)
+    gl.uniform1f(u.uReadingRadius, readingRadius)
+    gl.uniform4fv(u.uNotes, notesClear)
+    gl.uniform1i(u.uAtlas, 0)
+    gl.uniform4f(u.uStack, stackAt.x, stackAt.z, s, angle)
+    gl.uniform3fv(u.uLayers, layers)
     gl.drawArrays(gl.TRIANGLES, 0, 3)
     if (!host.hasAttribute('data-still-ready')) host.setAttribute('data-still-ready', '')
+    // Once the layers have opened, the notes answer at once instead of waiting out the entrance.
+    if ((motion.matches || elapsed > 2.6) && !host.hasAttribute('data-still-open')) host.setAttribute('data-still-open', '')
 
     if (options.lit?.length) {
       // The lamp is far above the table, so on the page it acts as a direction: the one the figure's shadows take.
@@ -328,17 +411,23 @@ export function mountStillLife(canvas: HTMLCanvasElement, host: HTMLElement, opt
         const rect = rects[index]
         const near = pointer.inside ? clamp01(1 - Math.hypot(pointer.x - (rect.left + rect.width / 2), pointer.y - (rect.top + rect.height / 2)) / 260) : 0
         const litX = pointer.inside && near > 0 ? ((pointer.x - rect.left) / rect.width) * 100 : 50 - sx * 34
-        element.style.setProperty('--lit-x', `${litX.toFixed(1)}%`)
-        element.style.setProperty('--lit-y', `${(pointer.inside && near > 0 ? ((pointer.y - rect.top) / rect.height) * 100 - 120 : -160).toFixed(1)}%`)
-        element.style.setProperty('--lit-angle', `${angle.toFixed(1)}deg`)
-        element.style.setProperty('--cast-x', `${(sx * 3.5).toFixed(2)}px`)
-        element.style.setProperty('--cast-y', `${(sy * 4.5).toFixed(2)}px`)
-        element.style.setProperty('--lit-near', near.toFixed(3))
+        const values = [
+          `${litX.toFixed(1)}%`,
+          `${(pointer.inside && near > 0 ? ((pointer.y - rect.top) / rect.height) * 100 - 120 : -160).toFixed(1)}%`,
+          `${angle.toFixed(1)}deg`,
+          `${(sx * 3.5).toFixed(2)}px`,
+          `${(sy * 4.5).toFixed(2)}px`,
+          near.toFixed(3),
+        ]
+        // Only a changed value is written, so a still lamp restyles and repaints nothing.
+        const last = litValues.get(element) ?? []
+        values.forEach((value, at) => { if (last[at] !== value) element.style.setProperty(litProperties[at], value) })
+        litValues.set(element, values)
       }
     }
 
     if (options.onAnchors) {
-      // Each layer's rightmost top corner on the stage; the table's note sits beyond the tray.
+      // Each layer's rightmost top corner on the stage.
       const c = Math.cos(angle)
       const sn = Math.sin(angle)
       const toWorld = (lx: number, ly: number, lz: number): Vec3 => [stackAt.x + (c * lx - sn * lz) * s, ly * s, stackAt.z + (sn * lx + c * lz) * s]
@@ -350,8 +439,12 @@ export function mountStillLife(canvas: HTMLCanvasElement, host: HTMLElement, opt
         }
         return { x: best[0], y: best[1] }
       })
-      const [tx, ty] = project(toWorld(2.4, 0, 3.3), cssWidth, cssHeight)
-      options.onAnchors([{ x: tx, y: ty }, ...anchors], { width: cssWidth, height: cssHeight, wide })
+      // The table's note starts on open, printed table in front of the tray, so its leader is a line, not a stub.
+      const [tx, ty] = project(toWorld(1.0, 0, 2.9), cssWidth, cssHeight)
+      const box = options.onAnchors([{ x: tx, y: ty }, ...anchors], { width: cssWidth, height: cssHeight, reach, wide })
+      const k = width / cssWidth
+      if (box) [notesClear[0], notesClear[1], notesClear[2], notesClear[3]] = [box.left * k, (cssHeight - box.bottom) * k, box.right * k, (cssHeight - box.top) * k]
+      else notesClear.fill(0)
     }
 
     // A slow GPU gets fewer pixels; a fast one earns them back.
@@ -365,7 +458,7 @@ export function mountStillLife(canvas: HTMLCanvasElement, host: HTMLElement, opt
   }
 
   function schedule() {
-    if (disposed || frame || !visible || document.hidden) return
+    if (disposed || frame || !uniform || !visible || document.hidden) return
     frame = requestAnimationFrame(draw)
   }
 
@@ -374,35 +467,74 @@ export function mountStillLife(canvas: HTMLCanvasElement, host: HTMLElement, opt
   if (options.reading) resize.observe(options.reading)
   const intersection = new IntersectionObserver(([entry]) => {
     visible = entry.isIntersecting
-    if (visible) { lastFrame = -1; schedule() }
+    if (visible) { lastFrame = -1; onScroll(); schedule() }
   })
   intersection.observe(host)
   const theme = new MutationObserver(() => { readColors(); schedule() })
   theme.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'style', 'data-theme'] })
   const onVisibility = () => { lastFrame = -1; schedule() }
+  // Dragged to a screen of another density, the figure is drawn at that screen's pixels.
+  let density = matchMedia(`(resolution: ${devicePixelRatio}dppx)`)
+  const onDensity = () => {
+    density.removeEventListener('change', onDensity)
+    density = matchMedia(`(resolution: ${devicePixelRatio}dppx)`)
+    density.addEventListener('change', onDensity)
+    layout()
+    schedule()
+  }
+  density.addEventListener('change', onDensity)
   document.addEventListener('visibilitychange', onVisibility)
   motion.addEventListener('change', schedule)
   host.addEventListener('pointermove', onPointerMove)
   host.addEventListener('pointerleave', onPointerLeave)
   const onScroll = () => {
-    const rect = host.getBoundingClientRect()
-    leaving = clamp01(-rect.top / Math.max(rect.height, 1))
+    // Off screen the hero keeps its last value; the intersection observer reads it again on the way back.
+    if (!visible) return
+    // The layers settle once the figure's middle has passed the upper third of the window, so on a phone, where
+    // the figure stands below the words, it is still open when it is scrolled into view.
+    const view = innerHeight || cssHeight
+    const middle = host.getBoundingClientRect().top + figureY
+    leaving = clamp01((view * 0.35 - middle) / (view * 0.6))
+    // While the layers close, the notes step aside rather than chase edges that slide toward each other.
+    host.toggleAttribute('data-still-closing', leaving > 0 && !motion.matches)
   }
   addEventListener('scroll', onScroll, { passive: true })
-  onScroll()
   const onLost = (event: Event) => {
     event.preventDefault()
     cancelAnimationFrame(frame)
     frame = 0
     host.removeAttribute('data-still-ready')
+    host.removeAttribute('data-still-open')
   }
   canvas.addEventListener('webglcontextlost', onLost)
 
+  /**
+   * Takes the linked program into use once it is ready, then starts drawing. A program that fails to link hides
+   * the canvas, and the hero keeps its plain ground.
+   */
+  const link = () => {
+    if (disposed) return
+    if (parallel && !gl.getProgramParameter(program, parallel.COMPLETION_STATUS_KHR)) {
+      setTimeout(link, 16)
+      return
+    }
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      if (gl.isContextLost()) return
+      canvas.hidden = true
+      console.warn(gl.getShaderInfoLog(fragment) || gl.getShaderInfoLog(vertex) || gl.getProgramInfoLog(program) || 'Cannot build the figure')
+      return
+    }
+    gl.useProgram(program)
+    uniform = Object.fromEntries(names.map(name => [name, gl.getUniformLocation(program, name)])) as Record<typeof names[number], WebGLUniformLocation | null>
+    schedule()
+  }
+
   readColors()
   uploadAtlas()
-  document.fonts?.ready.then(() => { if (!disposed) { uploadAtlas(); schedule() } })
+  // The real faces change both the glyphs and how far the words reach.
+  document.fonts?.ready.then(() => { if (!disposed) { uploadAtlas(); layout(); schedule() } })
   layout()
-  schedule()
+  link()
 
   return () => {
     disposed = true
@@ -411,6 +543,7 @@ export function mountStillLife(canvas: HTMLCanvasElement, host: HTMLElement, opt
     intersection.disconnect()
     theme.disconnect()
     document.removeEventListener('visibilitychange', onVisibility)
+    density.removeEventListener('change', onDensity)
     motion.removeEventListener('change', schedule)
     host.removeEventListener('pointermove', onPointerMove)
     host.removeEventListener('pointerleave', onPointerLeave)

@@ -1,13 +1,14 @@
 /**
  * The platform features the library leans on, each with a live specimen in the contract's own markup. The facts
  * follow /guide/browser-support and the contracts' `platform` lists: what the feature does here, the components
- * that use it, and what a browser without it shows.
+ * that use it, and what a browser without it shows. Ids are prefixed, since other sections render live markup too.
  */
 export interface PlatformFeature {
   id: string
   /** The feature's own names, set in mono. */
   names: string[]
   summary: string
+  /** Catalog names of the components whose contracts list the feature. */
   usedBy: string[]
   without: string
   html: string
@@ -17,50 +18,53 @@ export const platformFeatures: PlatformFeature[] = [
   {
     id: 'dialog',
     names: ['<dialog>', 'commandfor', 'closedby'],
-    summary: 'A modal opens, traps focus, closes on Escape or the scrim and returns focus, from three attributes.',
-    usedBy: ['dialog', 'command', 'toast', 'banner'],
-    without: 'Without invoker commands, call showModal() from a click handler; the stylesheet is the same.',
-    html: `<button type="button" class="btn btn-sm" commandfor="platform-dialog" command="show-modal">Delete project</button>
+    summary: 'A modal opens from its button, keeps focus inside, closes on Escape or a click on the scrim, and hands focus back.',
+    usedBy: ['Dialog', 'Command palette', 'Lightbox', 'Toast'],
+    without: 'Without invoker commands, call showModal() and close() from click handlers; the stylesheet is the same.',
+    html: `<button type="button" class="btn" commandfor="platform-dialog" command="show-modal">Publish</button>
 <dialog id="platform-dialog" class="dialog" closedby="any" aria-labelledby="platform-dialog-title">
   <header class="dialog-header">
-    <h2 class="dialog-title" id="platform-dialog-title">Delete this project?</h2>
-    <p class="dialog-description">Atlas and its 14 deployments are removed, and its domains stop resolving at once.</p>
+    <h2 class="dialog-title" id="platform-dialog-title">Publish to production?</h2>
+    <p class="dialog-description">The three changes on main go live on atlas.dev at once.</p>
   </header>
   <footer class="dialog-footer">
     <button type="button" class="btn" commandfor="platform-dialog" command="close">Cancel</button>
-    <button type="button" class="btn btn-primary" commandfor="platform-dialog" command="close">Delete project</button>
+    <button type="button" class="btn btn-primary" commandfor="platform-dialog" command="close">Publish</button>
   </footer>
 </dialog>`,
   },
   {
     id: 'popover',
     names: ['popover', 'position-area'],
-    summary: 'A menu opens beside its button, flips at the viewport edge and closes on an outside click.',
-    usedBy: ['menu', 'popover', 'tooltip', 'listbox'],
+    summary: 'A menu opens against its button, turns back at the edge of the viewport, and closes on Escape or a click outside.',
+    usedBy: ['Menu', 'Popover', 'Tooltip', 'Listbox'],
     without: 'Without anchor positioning it opens and closes the same, centered in the viewport.',
-    html: `<button type="button" class="btn btn-sm" popovertarget="platform-menu">Ada Lovelace</button>
+    html: `<button type="button" class="btn" popovertarget="platform-menu">
+  Ada Lovelace
+  <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg>
+</button>
 <div id="platform-menu" popover class="menu">
   <div class="menu-label">Account</div>
-  <a class="menu-item" href="#markup">Profile</a>
-  <a class="menu-item" href="#markup">Billing</a>
-  <a class="menu-item" href="#markup">Sign out</a>
+  <button type="button" class="menu-item" popovertarget="platform-menu" popovertargetaction="hide">Profile</button>
+  <button type="button" class="menu-item" popovertarget="platform-menu" popovertargetaction="hide">Billing</button>
+  <button type="button" class="menu-item" popovertarget="platform-menu" popovertargetaction="hide">Sign out</button>
 </div>`,
   },
   {
     id: 'interest',
     names: ['popover="hint"', 'interestfor'],
     summary: 'A tooltip shows on hover or keyboard focus and stays out of the way of the click.',
-    usedBy: ['tooltip', 'popover', 'citation', 'hotspot'],
+    usedBy: ['Tooltip', 'Popover', 'Hotspot'],
     without: 'Without interest invokers the tooltip does not appear; the button keeps its name and works.',
-    html: `<button type="button" class="btn btn-sm" interestfor="platform-tip">Deploy</button>
+    html: `<button type="button" class="btn" interestfor="platform-tip">Deploy</button>
 <div id="platform-tip" popover="hint" class="tooltip">Ships the main branch to production</div>`,
   },
   {
     id: 'select',
     names: ['appearance: base-select', '::picker(select)'],
-    summary: 'A native select draws its list on the floating sheet, with a check on the current option.',
-    usedBy: ['select'],
-    without: 'Without base-select the operating system draws the list; the control is the same.',
+    summary: 'A native select opens its list on the floating sheet, with a check beside the current option.',
+    usedBy: ['Select'],
+    without: 'Without base-select the browser opens its own option list; the control keeps its well and chevron.',
     html: `<label class="field">
   Framework
   <select class="select">
@@ -74,7 +78,7 @@ export const platformFeatures: PlatformFeature[] = [
     id: 'sizing',
     names: ['field-sizing: content'],
     summary: 'A textarea grows with what is typed into it, from three lines to twelve, then scrolls.',
-    usedBy: ['input', 'composer', 'stepper'],
+    usedBy: ['Input', 'Composer', 'Stepper'],
     without: 'Without field-sizing it keeps its minimum height and a resize handle.',
     html: `<label class="field">
   Notes
@@ -82,15 +86,16 @@ export const platformFeatures: PlatformFeature[] = [
 </label>`,
   },
   {
-    id: 'anchor',
-    names: ['anchor-scope', 'anchor()'],
-    summary: 'One thumb glides to the current option: the edges are drawn on an anchor and transition.',
-    usedBy: ['segmented', 'tabs', 'toc', 'list'],
-    without: 'Without anchor-scope each current option draws its own mark, which changes at once.',
-    html: `<div class="segmented segmented-sm" role="radiogroup" aria-label="Period">
-  <label class="segmented-item"><input type="radio" class="segmented-input" name="platform-period" checked>Day</label>
-  <label class="segmented-item"><input type="radio" class="segmented-input" name="platform-period">Week</label>
-  <label class="segmented-item"><input type="radio" class="segmented-input" name="platform-period">Month</label>
+    id: 'carousel',
+    names: ['::scroll-button()', '::scroll-marker'],
+    summary: 'A row of slides gets previous and next buttons and a dot for each slide, all generated by the browser.',
+    usedBy: ['Carousel'],
+    without: 'Without them there are no buttons and no dots: the row still swipes, scrolls and snaps.',
+    html: `<div class="carousel carousel-2" role="region" aria-label="Regions" tabindex="0">
+  <div class="carousel-slide card card-flat"><div class="card-header"><p class="card-title">Frankfurt</p><p class="card-description">fra1</p></div></div>
+  <div class="carousel-slide card card-flat"><div class="card-header"><p class="card-title">Tokyo</p><p class="card-description">hnd1</p></div></div>
+  <div class="carousel-slide card card-flat"><div class="card-header"><p class="card-title">São Paulo</p><p class="card-description">gru1</p></div></div>
+  <div class="carousel-slide card card-flat"><div class="card-header"><p class="card-title">Virginia</p><p class="card-description">iad1</p></div></div>
 </div>`,
   },
 ]

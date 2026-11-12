@@ -13,7 +13,7 @@ const { t } = siteOf(Astro)
 /** The drafting notes beside the figure, from the table up: each layer is a token of the theme. */
 const notes = [
   { index: '01', token: 'surface-base', detail: t('markup') },
-  { index: '02', token: 'surface-tray', detail: 'shadow-pressed' },
+  { index: '02', token: 'surface-tray', detail: 'inset line-hair' },
   { index: '03', token: 'surface-raised', detail: 'shadow-raised' },
   { index: '04', token: 'surface-floating', detail: 'shadow-floating' },
 ]
@@ -38,7 +38,7 @@ const notes = [
   </div>
   <div class="ui-hero-body app-wrapper home-section-wrap">
     <div class="ui-hero-reading" data-still-reading>
-      <Link class="ui-hero-pill" href="/components" data-lit>
+      <Link class="ui-hero-pill" href="/components">
         <span class="ui-hero-pill-badge">{t('Alpha')}</span>
         <span class="ui-hero-pill-label">{t('Native HTML and CSS components')}</span>
         <IconArrowRight aria-hidden="true" size={14} stroke={1.75} />
@@ -53,7 +53,11 @@ const notes = [
         </Link>
         <button type="button" class="ui-hero-prompt" data-lit data-prompt={setupPrompt()} data-copied={t('Setup prompt copied')} data-failed={t('Copy failed')} aria-label={t('Set up with your AI agent: copy the setup prompt')}>
           <IconSparkles aria-hidden="true" class="ui-hero-prompt-icon" size={16} stroke={1.75} />
-          <span class="ui-hero-prompt-label">{t('Set up with your AI agent')}</span>
+          {/* The result takes the label's place for a moment; the live region below announces it. */}
+          <span class="ui-hero-prompt-label">
+            <span class="ui-hero-prompt-text">{t('Set up with your AI agent')}</span>
+            <span class="ui-hero-prompt-result" aria-hidden="true" data-prompt-result></span>
+          </span>
           <span class="ui-hero-prompt-copy" aria-hidden="true">
             <IconCopy class="ui-hero-prompt-idle" size={16} stroke={1.75} />
             <IconCheck class="ui-hero-prompt-done" size={16} stroke={2} />
@@ -70,7 +74,7 @@ const notes = [
 </section>
 
 <script>
-  import type { NoteAnchor } from './still-life/still-life'
+  import type { NoteAnchor, NoteBox } from './still-life/still-life'
 
   const host = document.querySelector<HTMLElement>('[data-still-host]')
   const canvas = host?.querySelector<HTMLCanvasElement>('.ui-hero-stage')
@@ -84,6 +88,7 @@ const notes = [
   // The glass pill copies the installation guide's prompt; the result shows for a moment, then it rests again.
   const prompt = host?.querySelector<HTMLButtonElement>('[data-prompt]')
   const promptStatus = host?.querySelector<HTMLElement>('[data-prompt-status]')
+  const promptResult = host?.querySelector<HTMLElement>('[data-prompt-result]')
   let promptTimer: ReturnType<typeof setTimeout> | undefined
   prompt?.addEventListener('click', async () => {
     let result: 'copied' | 'failed'
@@ -104,7 +109,9 @@ const notes = [
       prompt.focus()
     }
     prompt.dataset.status = result
-    if (promptStatus) promptStatus.textContent = (result === 'copied' ? prompt.dataset.copied : prompt.dataset.failed) ?? ''
+    const message = (result === 'copied' ? prompt.dataset.copied : prompt.dataset.failed) ?? ''
+    if (promptStatus) promptStatus.textContent = message
+    if (promptResult) promptResult.textContent = message
     clearTimeout(promptTimer)
     promptTimer = setTimeout(() => {
       delete prompt.dataset.status
@@ -112,42 +119,62 @@ const notes = [
     }, 1800)
   })
 
+  let drawn = ''
+  let box: NoteBox | undefined
   /**
    * The notes hang in one column right of the figure, at least a line apart, each joined to its layer's edge by
    * a leader that leaves the edge level and turns once toward its note.
    */
-  const place = (anchors: NoteAnchor[], stage: { width: number, wide: boolean }) => {
+  const place = (anchors: NoteAnchor[], stage: { reach: number, wide: boolean }): NoteBox | undefined => {
     if (!notesRoot) return
     const edge = Math.max(...anchors.map(anchor => anchor.x))
-    const column = Math.round(Math.min(edge + 48, stage.width - 164))
+    const column = Math.round(Math.min(edge + 48, stage.reach - 148))
     const fits = stage.wide && column - edge >= 24
     notesRoot.toggleAttribute('data-hidden', !fits)
     if (!fits) return
     const heights = anchors.map(anchor => anchor.y)
     for (let index = heights.length - 2; index >= 0; index--) heights[index] = Math.max(heights[index], heights[index + 1] + 40)
-    let path = ''
-    anchors.forEach((anchor, index) => {
-      const note = notes[index]
-      if (!note) return
-      const y = Math.round(heights[index])
-      note.style.translate = `${column}px ${y}px`
-      const elbow = Math.max(anchor.x + 8, column - 28)
-      path += `M${anchor.x.toFixed(1)} ${anchor.y.toFixed(1)}H${elbow.toFixed(1)}L${column - 8} ${y}`
-    })
+    const rows = anchors.map((anchor, index) => ({ x: anchor.x, y: anchor.y, note: Math.round(heights[index]) }))
+    // A level leader sits on the pixel grid, so its hairline stays one crisp row of pixels as the figure breathes;
+    // one pushed down by the note above it runs level from its edge, then turns once.
+    const grid = devicePixelRatio >= 2 ? 0.25 : 0.5
+    const path = rows.map(({ x, y, note }) => Math.abs(y - note) < 1
+      ? `M${x.toFixed(1)} ${note + grid}H${column - 8}`
+      : `M${x.toFixed(1)} ${y.toFixed(1)}H${Math.max(x + 8, column - 28).toFixed(1)}L${column - 8} ${note + grid}`).join('')
+    // A figure at rest moves no leader, so nothing is written.
+    if (path === drawn) return box
+    drawn = path
     leaders?.setAttribute('d', path)
-    notes.forEach((note, index) => note.style.setProperty('--dot-x', `${(anchors[index]?.x ?? 0) - column}px`))
-    notes.forEach((note, index) => note.style.setProperty('--dot-y', `${(anchors[index]?.y ?? 0) - heights[index]}px`))
+    rows.forEach(({ x, y, note }, index) => {
+      const element = notes[index]
+      if (!element) return
+      element.style.translate = `${column}px ${note}px`
+      // The ring marks the edge the leader starts from.
+      element.style.setProperty('--dot-x', `${(x - column).toFixed(1)}px`)
+      element.style.setProperty('--dot-y', `${(y - note).toFixed(1)}px`)
+    })
+    // The column the labels take, which the print keeps clear so they read on plain ground.
+    box = { left: column - 12, top: Math.min(...heights) - 14, right: column + 148, bottom: Math.max(...heights) + 30 }
+    return box
   }
 
-  if (host && canvas && !matchMedia('print').matches) {
+  // In print and under forced colors the hero is its words alone (see the stylesheet), so the figure is not drawn.
+  if (host && canvas && !matchMedia('print, (forced-colors: active)').matches) {
     import('./still-life/still-life').then(({ mountStillLife }) => {
-      try {
-        mountStillLife(canvas, host, { reading, onAnchors: place, lit })
-      } catch (error) {
-        // The hero reads the same on its plain ground; the figure is only decoration.
-        canvas.hidden = true
-        console.warn(error)
+      let stop = () => {}
+      const mount = () => {
+        stop()
+        try {
+          stop = mountStillLife(canvas, host, { reading, onAnchors: place, lit })
+        } catch (error) {
+          // The hero reads the same on its plain ground; the figure is only decoration.
+          canvas.hidden = true
+          console.warn(error)
+        }
       }
+      mount()
+      // A context the browser took back (a GPU reset, too many contexts) is drawn again once it is returned.
+      canvas.addEventListener('webglcontextrestored', mount)
     }, () => { canvas.hidden = true })
   }
 </script>

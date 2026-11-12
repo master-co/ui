@@ -13,6 +13,7 @@ import '@master/ui/components/spinner.css'
 import '@master/ui/components/switch.css'
 import '@master/ui/components/texture.css'
 import '../../styles/home-themes.css'
+import IconArrowRight from '@tabler/icons-svelte-runes/icons/arrow-right'
 import { siteOf } from '@master/internal-site/astro/site-context'
 import { paperScope } from './themes/tokens'
 import { code, presets, sizes, themeCorners } from './themes/console'
@@ -33,11 +34,11 @@ const initial = { theme: 'default', ...themeCorners('default', true), size: 'md'
 
 /* The customization ladder, from /guide/customization: each step reaches further and leaves less upstream. */
 const ladder = [
-    { name: 'Utility', reach: 'One instance', example: 'class="btn w-full"', upstream: 'Everything follows upstream' },
-    { name: 'Token', reach: 'Every component that reads it', example: '--radius-control: .5rem', upstream: 'Everything follows upstream' },
-    { name: 'Property', reach: 'One component’s size or spacing', example: '--btn-height: 2rem', upstream: 'Everything follows upstream' },
-    { name: 'Theme', reach: 'The whole material', example: "@import '@master/ui/themes/paper.css'", upstream: 'Every component follows upstream' },
-    { name: 'Own', reach: 'Structure, parts, states and behavior', example: 'npx master-ui own menu', upstream: 'The other components follow upstream' },
+    { name: 'Utility', anchor: 'utility', reach: 'One instance', example: 'class="btn w-full"', upstream: 'Everything follows upstream' },
+    { name: 'Token', anchor: 'token', reach: 'Every component that reads it', example: '--radius-control: .5rem', upstream: 'Everything follows upstream' },
+    { name: 'Property', anchor: 'property', reach: 'One component’s size or spacing', example: '--btn-height: 2rem', upstream: 'Everything follows upstream' },
+    { name: 'Theme', anchor: 'theme', reach: 'The whole material', example: "@import '@master/ui/themes/paper.css'", upstream: 'Every component follows upstream' },
+    { name: 'Own', anchor: 'own-a-component', reach: 'Structure, parts, states and behavior', example: 'npx master-ui own menu', upstream: 'The other components follow upstream' },
 ]
 ---
 
@@ -51,10 +52,11 @@ const ladder = [
     <header class="home-section-header">
       <p class="home-eyebrow"><span class="home-eyebrow-index" aria-hidden="true">02</span><span>{t('Customize')}</span></p>
       <h2 id="customize-title" class="home-lit home-section-heading home-stone-type"><span>{t('Same markup,')}</span>{' '}<span>{t('your material.')}</span></h2>
-      <p class="home-section-body">{t('Components read tokens and write no color, corner or shadow of their own, so a project retunes the library instead of overriding it. Moonstone and Obsidian are one stylesheet through light-dark(); Paper replaces the tokens and changes no component.')}</p>
+      <p class="home-section-body">{t('Components draw their colors, corners and shadows from the theme’s tokens, so a project retunes the library instead of overriding it. Moonstone and Obsidian are one stylesheet through light-dark(); Paper is a second theme and changes no component.')}</p>
+      <a class="home-section-link" href="/guide/customization">{t('Choose a customization')}<IconArrowRight aria-hidden="true" stroke={1.75} /></a>
     </header>
     <figure class="home-customize-figure" data-customize aria-label={t('Customization console')}>
-      <div class="home-customize-view">
+      <div class="home-customize-view" data-customize-view>
         <div class="home-customize-stage" data-customize-stage>
           {layers.map(layer => (
             <div class:list={['home-customize-layer', `home-customize-layer-${layer.scheme}`]} inert={layer.copy} aria-hidden={layer.copy ? 'true' : undefined} data-customize-layer={layer.copy ? 'copy' : 'page'}>
@@ -90,24 +92,24 @@ const ladder = [
               </div>
             </div>
           ))}
-          <span class="home-customize-seam" aria-hidden="true"></span>
         </div>
+        <span class="home-customize-seam" aria-hidden="true"></span>
         <input type="range" class="slider home-customize-range" min="0" max="100" step="any" value="50" aria-label={t('Seam between light and dark')} aria-valuetext={t('Half light, half dark')} data-customize-range>
       </div>
 
       <div class="home-customize-console">
         <div class="home-customize-row">
           <p class="home-annotation" id="customize-presets-label">{t('Presets')}</p>
-          <div class="segmented segmented-sm home-customize-presets" role="group" aria-labelledby="customize-presets-label" data-customize-presets>
+          <div class="segmented home-customize-presets" role="radiogroup" aria-labelledby="customize-presets-label">
             {presets.map(preset => (
-              <button type="button" class="segmented-item" aria-pressed={preset.id === 'soft' ? 'true' : 'false'} data-preset={preset.id} disabled>{t(preset.label)}</button>
+              <label class="segmented-item"><input type="radio" class="segmented-input" name="home-customize-preset" value={preset.id} checked={preset.id === 'soft'} disabled>{t(preset.label)}</label>
             ))}
           </div>
         </div>
         <div class="home-customize-rule" aria-hidden="true"></div>
         <div class="home-customize-row">
           <p class="home-annotation" id="customize-theme-label">{t('Theme')}</p>
-          <div class="segmented segmented-sm" role="radiogroup" aria-labelledby="customize-theme-label">
+          <div class="segmented segmented-sm home-customize-themes" role="radiogroup" aria-labelledby="customize-theme-label">
             <label class="segmented-item"><input type="radio" class="segmented-input" name="home-customize-theme" value="default" checked>{t('Moonstone · Obsidian')}</label>
             <label class="segmented-item"><input type="radio" class="segmented-input" name="home-customize-theme" value="paper">{t('Paper')}</label>
           </div>
@@ -143,14 +145,14 @@ const ladder = [
       {ladder.map((step, index) => (
         <li class="home-customize-step">
           <p class="home-customize-step-index home-annotation" aria-hidden="true">{String(index + 1).padStart(2, '0')}</p>
-          <h3 class="home-customize-step-name">{t(step.name)}</h3>
+          <h3 class="home-customize-step-name"><a href={`/guide/customization#${step.anchor}`}>{t(step.name)}</a></h3>
           <p class="home-customize-step-reach">{t(step.reach)}</p>
           <code class="home-customize-step-code">{step.example}</code>
           <p class="home-customize-step-upstream">{t(step.upstream)}</p>
         </li>
       ))}
     </ol>
-    <p class="home-customize-footnote">{t('Own copies a component’s stylesheet, contract and behavior into ui/ and points the import at the copy; add copies a React, Svelte or Vue component instead.')}</p>
+    <p class="home-customize-footnote">{t('Own copies a component’s stylesheet, contract and any behavior into ui/ and points its import at the copy. Add copies a React, Svelte or Vue component into ui/; status and diff report what upstream changed in either.')}</p>
   </div>
 </section>
 
@@ -158,13 +160,14 @@ const ladder = [
   import { code, formatScale, presets, same, sized, sizes, themeCorners, type Setting, type Shape, type Size, type Theme } from './themes/console'
 
   const figure = document.querySelector<HTMLElement>('[data-customize]')
+  const view = figure?.querySelector<HTMLElement>('[data-customize-view]')
   const stage = figure?.querySelector<HTMLElement>('[data-customize-stage]')
   const range = figure?.querySelector<HTMLInputElement>('[data-customize-range]')
   const page = stage?.querySelector<HTMLElement>('[data-customize-layer="page"]')
   const copy = stage?.querySelector<HTMLElement>('[data-customize-layer="copy"]')
   const motion = matchMedia('(prefers-reduced-motion: reduce)')
 
-  if (figure && stage && range && page && copy) {
+  if (figure && view && stage && range && page && copy) {
     const layers = [page, copy]
 
     /*
@@ -188,12 +191,12 @@ const ladder = [
       return Math.min(Math.max((seam / 100 * width - start) / travel * 100, 0), 100)
     }
     const draw = () => {
-      stage.style.setProperty('--home-customize-seam', `${seamOf(range.valueAsNumber).toFixed(3)}%`)
+      view.style.setProperty('--home-customize-seam', `${seamOf(range.valueAsNumber).toFixed(3)}%`)
       const light = Math.round(range.valueAsNumber)
       range.setAttribute('aria-valuetext', `${light}% light, ${100 - light}% dark`)
     }
     range.addEventListener('input', () => {
-      stage.removeAttribute('data-gliding')
+      view.removeAttribute('data-gliding')
       draw()
     })
     new ResizeObserver(draw).observe(stage)
@@ -225,12 +228,12 @@ const ladder = [
       const room = stage.getBoundingClientRect()
       const edge = (holder.getBoundingClientRect().right + 16 - room.left) / room.width * 100
       if (edge <= seamOf(range.valueAsNumber)) return
-      if (!motion.matches) stage.setAttribute('data-gliding', '')
+      if (!motion.matches) view.setAttribute('data-gliding', '')
       range.value = String(valueOf(Math.min(edge, 100)))
       draw()
     })
-    stage.addEventListener('transitionend', event => {
-      if (event.target === stage) stage.removeAttribute('data-gliding')
+    view.addEventListener('transitionend', event => {
+      if (event.target === view) view.removeAttribute('data-gliding')
     })
 
     /*
@@ -242,11 +245,35 @@ const ladder = [
     const scale = figure.querySelector<HTMLInputElement>('[data-customize-scale]')!
     const output = figure.querySelector<HTMLOutputElement>('[data-customize-scale-output]')!
     const codeBlock = figure.querySelector<HTMLElement>('[data-customize-code]')!
-    const presetButtons = [...figure.querySelectorAll<HTMLButtonElement>('[data-preset]')]
     const checked = (name: string) => radios(name).find(radio => radio.checked)?.value
 
     let setting: Setting = { theme: (checked('theme') as Theme) ?? 'default', ...themeCorners('default', squircle), size: 'md' }
     if (setting.theme === 'paper') setting = { ...setting, ...themeCorners('paper', squircle) }
+
+    /*
+     * A choice made in one step (a preset, a theme, a shape, a height) eases the components into their new
+     * geometry for a moment; dragging the scale is direct manipulation and follows the thumb at once.
+     */
+    let settling = 0
+    const morph = () => {
+      if (motion.matches) return
+      stage.setAttribute('data-morphing', '')
+      clearTimeout(settling)
+      settling = window.setTimeout(() => stage.removeAttribute('data-morphing'), 420)
+    }
+
+    /*
+     * The readout marks the lines a change wrote, which then fade back into the rest, so each choice can be
+     * read as the code it costs. Nothing is marked on the first render.
+     */
+    let written: Set<string> | undefined
+    const writeCode = () => {
+      const lines = code(setting, squircle).split('\n')
+      codeBlock.innerHTML = lines
+        .map(line => written && line.trim() && !written.has(line) ? `<span class="home-customize-changed">${line}</span>` : line)
+        .join('\n')
+      written = new Set(lines)
+    }
 
     const apply = () => {
       radios('theme').forEach(radio => { radio.checked = radio.value === setting.theme })
@@ -264,34 +291,30 @@ const ladder = [
           if (modifier) element.classList.add(`${root}${modifier}`)
         })
       }
-      codeBlock.innerHTML = code(setting, squircle)
-      presetButtons.forEach(button => {
-        const preset = presets.find(entry => entry.id === button.dataset.preset)!
-        button.setAttribute('aria-pressed', String(same(preset.setting(squircle), setting)))
+      writeCode()
+      // A preset stays chosen while the setting is its own; a change made by hand leaves none chosen.
+      radios('preset').forEach(radio => {
+        radio.checked = same(presets.find(preset => preset.id === radio.value)!.setting(squircle), setting)
       })
       draw()
     }
 
     figure.addEventListener('change', event => {
       const input = event.target as HTMLInputElement
-      if (input.name === 'home-customize-theme') setting = { ...setting, theme: input.value as Theme, ...themeCorners(input.value as Theme, squircle) }
+      if (input.name === 'home-customize-preset') setting = presets.find(preset => preset.id === input.value)!.setting(squircle)
+      else if (input.name === 'home-customize-theme') setting = { ...setting, theme: input.value as Theme, ...themeCorners(input.value as Theme, squircle) }
       else if (input.name === 'home-customize-shape') setting = { ...setting, shape: input.value as Shape }
       else if (input.name === 'home-customize-size') setting = { ...setting, size: input.value as Size }
       else return
+      morph()
       apply()
     })
     scale.addEventListener('input', () => {
       setting = { ...setting, scale: scale.valueAsNumber }
       apply()
     })
-    presetButtons.forEach(button => button.addEventListener('click', () => {
-      setting = presets.find(entry => entry.id === button.dataset.preset)!.setting(squircle)
-      apply()
-    }))
-
     // The console needs this script, so its controls wait for it; the theme works without it.
-    presetButtons.forEach(button => { button.disabled = false })
-    ;[...radios('size'), scale].forEach(control => { control.disabled = false })
+    ;[...radios('preset'), ...radios('size'), scale].forEach(control => { control.disabled = false })
     radios('shape').forEach(radio => { radio.disabled = radio.value === 'squircle' && !squircle })
     apply()
   }

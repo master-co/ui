@@ -3,7 +3,7 @@
   /*
    * Hero: a technical drawing behind the words. WebGL draws the theme's surface ladder in section on a table
    * printed with markup; the words stand on a patch of the table it keeps clear. Without the figure (no WebGL 2,
-   * print, a failed script) the ground stays plain and the hero reads the same.
+   * print, forced colors, a failed script or a lost context) the ground stays plain and the hero reads the same.
    */
   .ui-hero {
     position: relative;
@@ -15,8 +15,8 @@
     overflow: clip;
     background-color: var(--home-ground);
 
-    /* Below 75rem the figure stands under the words, in room the hero keeps for it. */
-    @media (width < 75rem), (max-aspect-ratio: 23 / 20) {
+    /* Below 64rem, or on a tall screen, the figure stands under the words, in room the hero keeps for it. */
+    @media (width < 64rem), (max-aspect-ratio: 23 / 20) {
       align-content: start;
       min-height: 0;
       padding-block: clamp(6.5rem, 5rem + 4vw, 8rem) clamp(16rem, 9rem + 36vw, 30rem);
@@ -137,7 +137,7 @@
    * The hero's actions share the figure's lamp. Without the figure these defaults hang it above and a little
    * left, as the theme's light is; with it, the scene writes where the lamp is and where shadows fall.
    */
-  :is(.ui-hero-start, .ui-hero-prompt, .ui-glass-action, .ui-hero-pill) {
+  :is(.ui-hero-start, .ui-hero-prompt, .ui-glass-action) {
     --lit-x: 30%;
     --lit-y: -160%;
     --lit-angle: -45deg;
@@ -232,21 +232,24 @@
       transition: translate var(--home-base) var(--home-ease);
     }
 
-    &:is(:hover, :focus-visible) {
-      --stone-adularescence: light-dark(transparent, oklch(0.88 0.035 245 / 0.42));
-      box-shadow:
-        inset 0 1px 0 var(--stone-lip),
-        inset 0 -1px 0 var(--stone-mirror),
-        inset 0 -14px 20px -12px var(--stone-mirror),
-        0 1px 1px var(--stone-contact),
-        var(--cast-x) var(--cast-y) 12px -3px var(--stone-cast),
-        calc(var(--cast-x) * 3) calc(var(--cast-y) * 3) 34px -10px var(--stone-cast);
+    /* The lift answers a pointer that can hover; a tap on a touch screen only presses. */
+    @media (hover: hover) {
+      &:is(:hover, :focus-visible) {
+        --stone-adularescence: light-dark(transparent, oklch(0.88 0.035 245 / 0.42));
+        box-shadow:
+          inset 0 1px 0 var(--stone-lip),
+          inset 0 -1px 0 var(--stone-mirror),
+          inset 0 -14px 20px -12px var(--stone-mirror),
+          0 1px 1px var(--stone-contact),
+          var(--cast-x) var(--cast-y) 12px -3px var(--stone-cast),
+          calc(var(--cast-x) * 3) calc(var(--cast-y) * 3) 34px -10px var(--stone-cast);
 
-      & > svg { translate: 3px 0; }
+        & > svg { translate: 3px 0; }
 
-      &::after {
-        background-position: 0 0;
-        transition: background-position 900ms var(--home-ease);
+        &::after {
+          background-position: 0 0;
+          transition: background-position 900ms var(--home-ease);
+        }
       }
     }
 
@@ -343,6 +346,27 @@
     }
   }
 
+  /* Asked for less transparency, the glass turns to the sheet it stands for. */
+  @media (prefers-reduced-transparency: reduce) {
+    :is(.ui-hero-prompt, .ui-glass-action) {
+      backdrop-filter: none;
+
+      &,
+      &:hover {
+        --glass-fill: var(--home-sheet);
+        --glass-top: transparent;
+      }
+    }
+  }
+
+  /* Asked for more contrast, the glass draws its whole rim in a firm line. */
+  @media (prefers-contrast: more) {
+    :is(.ui-hero-prompt, .ui-glass-action) {
+      --glass-rim: var(--home-text-quiet);
+      --glass-rim-far: var(--home-text-quiet);
+    }
+  }
+
   /* A link of the same glass: no copy well, so its padding is even. */
   .ui-glass-action {
     justify-content: center;
@@ -355,9 +379,30 @@
     color: var(--home-text-quiet);
   }
 
+  /* The label and the result share one cell, so the pill keeps its width while they trade places. */
   .ui-hero-prompt-label {
+    display: grid;
     flex: auto;
     min-width: 0;
+
+    & > * {
+      grid-area: 1 / 1;
+      transition: opacity var(--home-quick) var(--home-ease);
+    }
+  }
+
+  .ui-hero-prompt-result {
+    opacity: 0;
+
+    .ui-hero-prompt[data-status] & {
+      opacity: 1;
+    }
+  }
+
+  .ui-hero-prompt-text {
+    .ui-hero-prompt[data-status] & {
+      opacity: 0;
+    }
   }
 
   .ui-hero-prompt-copy {
@@ -379,17 +424,26 @@
 
     & > .ui-hero-prompt-done {
       opacity: 0;
-      scale: 0.6;
     }
 
     .ui-hero-prompt[data-status='copied'] & > .ui-hero-prompt-idle {
       opacity: 0;
-      scale: 0.6;
     }
 
     .ui-hero-prompt[data-status='copied'] & > .ui-hero-prompt-done {
       opacity: 1;
-      scale: 1;
+    }
+
+    /* With motion, the marks also trade size as they cross; without it they only cross-fade. */
+    @media (prefers-reduced-motion: no-preference) {
+      & > .ui-hero-prompt-done,
+      .ui-hero-prompt[data-status='copied'] & > .ui-hero-prompt-idle {
+        scale: 0.6;
+      }
+
+      .ui-hero-prompt[data-status='copied'] & > .ui-hero-prompt-done {
+        scale: 1;
+      }
     }
 
     @media (hover: hover) {
@@ -405,7 +459,7 @@
       display: none;
     }
 
-    .ui-hero-start:is(:hover, :focus-visible) > svg {
+    :is(.ui-hero-start, .ui-hero-pill):is(:hover, :focus-visible) > svg {
       translate: none;
     }
   }
@@ -433,10 +487,25 @@
     z-index: 0;
     pointer-events: none;
     opacity: 1;
-    transition: opacity 600ms var(--home-ease) 1.6s;
+    /* The notes are drawn once the layers have nearly opened, so the leaders do not chase them. */
+    transition: opacity 700ms var(--home-ease) 2.2s;
 
-    &[data-hidden] {
+    /* After the entrance they come and go at once. */
+    .ui-hero[data-still-open] & {
+      transition-delay: 0s;
+    }
+
+    /*
+     * Hidden where they do not fit, with the figure they name (before it draws, once its context is lost), and
+     * while its layers close as the hero scrolls away.
+     */
+    &[data-hidden],
+    .ui-hero:is(:not([data-still-ready]), [data-still-closing]) & {
       opacity: 0;
+      transition-delay: 0s;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
       transition-delay: 0s;
     }
   }
@@ -450,6 +519,12 @@
     fill: none;
     stroke: color-mix(in oklab, var(--home-text-quiet) 50%, transparent);
     stroke-width: 1;
+
+    /* A half-pixel hairline where the screen has the pixels for it, as every contour on the page is. */
+    @media (min-resolution: 2dppx) {
+      stroke: color-mix(in oklab, var(--home-text-quiet) 75%, transparent);
+      stroke-width: 0.5;
+    }
   }
 
   .ui-hero-note {
@@ -496,6 +571,25 @@
     color: var(--home-text-faint);
   }
 
+  /* Asked for more contrast, the notes and their leaders take the body's ink. */
+  @media (prefers-contrast: more) {
+    .ui-hero-leaders {
+      stroke: var(--home-text-body);
+    }
+
+    :is(.ui-hero-note-index, .ui-hero-note-detail) {
+      color: var(--home-text-body);
+    }
+  }
+
+  /* Forced colors cannot reach into the figure, so the hero keeps its words and drops the drawing and its notes. */
+  @media (forced-colors: active) {
+    :is(.ui-hero-stage, .ui-hero-notes, .ui-hero-caption) {
+      display: none;
+    }
+  }
+
+  /* The caption names the figure, so it shows only once the figure is drawn. */
   .ui-hero-caption {
     position: absolute;
     left: 0;
@@ -506,6 +600,12 @@
     width: min(100%, 100rem);
     margin-inline: auto;
     padding-inline: var(--home-gutter, 2.5rem);
+    opacity: 0;
+    transition: opacity 900ms var(--home-ease) 400ms;
+
+    .ui-hero[data-still-ready] & {
+      opacity: 1;
+    }
 
     & > :first-child {
       color: var(--home-text);
@@ -513,6 +613,34 @@
 
     @media (width >= 64rem) {
       display: flex;
+    }
+  }
+
+  /* On paper the hero is its words: no figure, no notes, no full-screen height. */
+  @media print {
+    .ui-hero {
+      min-height: 0;
+      padding-block: 2rem;
+    }
+
+    :is(.ui-hero-stage, .ui-hero-notes, .ui-hero-caption) {
+      display: none;
+    }
+
+    /* Paper drops backgrounds, which would leave the stone's light words on white: print the actions as outlines. */
+    :is(.ui-hero-start, .ui-hero-prompt, .ui-glass-action) {
+      color: var(--home-text);
+      background: none;
+      box-shadow: none;
+      outline: 1px solid currentColor;
+      outline-offset: -1px;
+      text-shadow: none;
+      backdrop-filter: none;
+
+      &::before,
+      &::after {
+        display: none;
+      }
     }
   }
 

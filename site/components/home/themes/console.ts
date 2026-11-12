@@ -65,11 +65,13 @@ export function code(setting: Setting, squircle: boolean) {
         ...(setting.theme === 'paper' ? [at('@master/ui/themes/paper.css')] : []),
         '',
         ...(same(setting, { ...setting, ...themeCorners(setting.theme, squircle) })
-            ? [comment('/* corners: as the theme sets them */')]
+            ? [comment("/* corners: the theme's own */")]
             : ['<span class="t">:root</span> {', property('--corner-shape', setting.shape), property('--corner-scale', formatScale(setting.scale)), '}']),
         '',
-        comment(`<!-- ${size.label}px controls -->`),
-        `${escape('<button class="')}<span class="s">btn${size.modifier ? ` btn${size.modifier}` : ''}</span>${escape('">')}Deploy${escape('</button>')}`,
+        comment(`<!-- markup: ${size.label}px controls -->`),
+        `${escape('<button class="')}<span class="s">btn${size.modifier ? ` btn${size.modifier}` : ''}</span>${escape('">')}`,
+        '  Deploy',
+        escape('</button>'),
     ]
     return lines.join('\n')
 }

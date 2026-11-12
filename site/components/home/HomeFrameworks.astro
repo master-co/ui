@@ -1,9 +1,13 @@
 ---
 import '@master/ui/components/badge.css'
+import '@master/ui/components/button.css'
 import '@master/ui/components/icon.css'
+import '@master/ui/components/scroll-area.css'
 import '@master/ui/components/tabs.css'
 import '../../styles/home-frameworks.css'
 import IconArrowRight from '@tabler/icons-svelte-runes/icons/arrow-right'
+import IconCheck from '@tabler/icons-svelte-runes/icons/check'
+import IconCopy from '@tabler/icons-svelte-runes/icons/copy'
 import { siteOf } from '@master/internal-site/astro/site-context'
 import { frameworkComponents, frameworkFile, stylesheets } from './frameworks/data'
 import { frameworkExamples } from './frameworks/examples'
@@ -22,6 +26,9 @@ const markupCount = stylesheets.length - cells.filter(cell => cell.owner).length
 const owns = ['A value the application reads or sets', 'Rows rendered from data', 'Ids that join parts', 'A lifetime']
 
 const count = (text: string, value: number) => t(text).replace('{count}', String(value))
+
+/** The copy button's name says which file it copies. */
+const copyLabel = (file: string) => t('Copy {file}').replace('{file}', file)
 ---
 
 {/*
@@ -43,9 +50,9 @@ const count = (text: string, value: number) => t(text).replace('{count}', String
       <div class="ui-frameworks-ledger" data-frameworks-ledger>
         <div class="ui-frameworks-head">
           <p class="ui-frameworks-total home-annotation" aria-hidden="true">{count('{count} stylesheets', stylesheets.length)} <span>@master/ui/components</span></p>
-          <ul class="ui-frameworks-legend home-annotation" aria-hidden="true">
-            <li><span class="ui-frameworks-key"></span><span class="ui-frameworks-count">{markupCount}</span>{t('Markup in any framework')}</li>
-            <li><span class="ui-frameworks-key ui-frameworks-key-owned"></span><span class="ui-frameworks-count">{ownedCount}</span>{t('Framework components')}</li>
+          <ul class="ui-frameworks-legend" aria-hidden="true">
+            <li><span class="ui-frameworks-count">{markupCount}</span><span class="ui-frameworks-label home-annotation"><span class="ui-frameworks-key"></span>{t('Markup in any framework')}</span></li>
+            <li><span class="ui-frameworks-count">{ownedCount}</span><span class="ui-frameworks-label home-annotation"><span class="ui-frameworks-key ui-frameworks-key-owned"></span>{t('Framework components')}</span></li>
           </ul>
         </div>
         <ol class="ui-frameworks-cells" aria-label={t('Every component stylesheet')}>
@@ -61,7 +68,7 @@ const count = (text: string, value: number) => t(text).replace('{count}', String
           {frameworkComponents.map(component => <span>{component.name}</span>)}
         </p>
         <div class="ui-frameworks-test">
-          <p class="home-annotation">{t('A framework component, only where the framework owns')}</p>
+          <p class="home-annotation">{t('A framework component exists when the framework owns one of these')}</p>
           <ul class="ui-frameworks-owns">
             {owns.map((thing, index) => <li><span class="ui-frameworks-index" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span><span>{t(thing)}</span></li>)}
           </ul>
@@ -79,18 +86,31 @@ const count = (text: string, value: number) => t(text).replace('{count}', String
       {frameworkExamples.map((example, index) => (
         <div class="ui-frameworks-panel" role="tabpanel" id={`frameworks-panel-${example.id}`} aria-labelledby={`frameworks-tab-${example.id}`} hidden={index !== 0}>
           <figure class="ui-frameworks-slab">
-            <figcaption class="ui-frameworks-file home-annotation"><span>{example.markup.file}</span><span>{t('Markup')}</span></figcaption>
-            <pre class="ui-frameworks-pre" tabindex="0" aria-label={example.markup.file}><code set:html={highlightSource(example.markup.code, example.language)} /></pre>
+            <figcaption class="ui-frameworks-file home-annotation">
+              <span class="ui-frameworks-file-name">{example.markup.file}</span><span>{t('Markup')}</span>
+              <button type="button" class="btn btn-quiet btn-square btn-sm ui-frameworks-copy" aria-label={copyLabel(example.markup.file)} data-frameworks-copy>
+                <IconCopy class="icon ui-frameworks-copy-idle" aria-hidden="true" size={16} stroke={1.75} />
+                <IconCheck class="icon ui-frameworks-copy-done" aria-hidden="true" size={16} stroke={1.75} />
+              </button>
+            </figcaption>
+            <pre class="ui-frameworks-pre scroll-area scroll-area-inline" tabindex="0" translate="no" aria-label={example.markup.file}><code set:html={highlightSource(example.markup.code, example.language)} /></pre>
             <p class="ui-frameworks-note home-annotation">{t(example.markup.note)}</p>
           </figure>
           <figure class="ui-frameworks-slab">
-            <figcaption class="ui-frameworks-file home-annotation"><span>{example.component.file}</span><span>{t('Framework component')}</span></figcaption>
+            <figcaption class="ui-frameworks-file home-annotation">
+              <span class="ui-frameworks-file-name">{example.component.file}</span><span>{t('With a framework component')}</span>
+              <button type="button" class="btn btn-quiet btn-square btn-sm ui-frameworks-copy" aria-label={copyLabel(example.component.file)} data-frameworks-copy>
+                <IconCopy class="icon ui-frameworks-copy-idle" aria-hidden="true" size={16} stroke={1.75} />
+                <IconCheck class="icon ui-frameworks-copy-done" aria-hidden="true" size={16} stroke={1.75} />
+              </button>
+            </figcaption>
             <p class="ui-frameworks-command"><code>npx master-ui add stepper</code>Add stepper: <span>ui/{frameworkFile('stepper', example.id)},</span> <span>ui/{example.helper}.</span></p>
-            <pre class="ui-frameworks-pre" tabindex="0" aria-label={example.component.file}><code set:html={highlightSource(example.component.code, example.language)} /></pre>
+            <pre class="ui-frameworks-pre scroll-area scroll-area-inline" tabindex="0" translate="no" aria-label={example.component.file}><code set:html={highlightSource(example.component.code, example.language)} /></pre>
             <p class="ui-frameworks-note home-annotation">{t(example.component.note)}</p>
           </figure>
         </div>
       ))}
+      <span class="ui-frameworks-hidden" aria-live="polite" data-frameworks-copy-status data-copied={t('Copied')} data-failed={t('Copy failed')}></span>
     </figure>
   </div>
 </section>
@@ -102,6 +122,42 @@ const count = (text: string, value: number) => t(text).replace('{count}', String
   const list = figure?.querySelector<HTMLElement>('[data-frameworks-tabs]')
   if (list) tabs(list)
 
+  // Each slab copies its code as written; the line numbers are drawn, so they stay behind.
+  if (figure) {
+    const status = figure.querySelector<HTMLElement>('[data-frameworks-copy-status]')
+    let copiedTimer: ReturnType<typeof setTimeout> | undefined
+    figure.addEventListener('click', async event => {
+      const button = (event.target as Element).closest<HTMLButtonElement>('[data-frameworks-copy]')
+      const code = button?.closest('.ui-frameworks-slab')?.querySelector('pre code')
+      if (!button || !code) return
+      const text = code.textContent ?? ''
+      let copied = false
+      try {
+        await navigator.clipboard.writeText(text)
+        copied = true
+      } catch {
+        // Where the Clipboard API is refused, a selected text area still copies within the same click.
+        const area = document.createElement('textarea')
+        area.value = text
+        area.setAttribute('readonly', '')
+        area.style.cssText = 'position:fixed;inset:0 auto auto 0;opacity:0;pointer-events:none'
+        document.body.append(area)
+        area.select()
+        copied = document.execCommand('copy')
+        area.remove()
+        button.focus()
+      }
+      figure.querySelectorAll('[data-frameworks-copy][data-status]').forEach(other => other.removeAttribute('data-status'))
+      button.dataset.status = copied ? 'copied' : 'failed'
+      if (status) status.textContent = (copied ? status.dataset.copied : status.dataset.failed) ?? ''
+      clearTimeout(copiedTimer)
+      copiedTimer = setTimeout(() => {
+        button.removeAttribute('data-status')
+        if (status) status.textContent = ''
+      }, 1800)
+    })
+  }
+
   // The owned cells rise once the ledger is well in view; before that they wait flat in the drawing.
   const ledger = figure?.querySelector<HTMLElement>('[data-frameworks-ledger]')
   if (figure && ledger && !matchMedia('(prefers-reduced-motion: reduce)').matches && 'IntersectionObserver' in window) {
@@ -109,14 +165,15 @@ const count = (text: string, value: number) => t(text).replace('{count}', String
     // A ledger already on screen or scrolled past is left as it is drawn.
     if (box.top > innerHeight) {
       figure.setAttribute('data-frameworks-pending', '')
+      // Well in view: a third of the ledger, or half the window when the ledger is taller than a short window.
       const seen = new IntersectionObserver(([entry]) => {
-        if (!entry.isIntersecting) return
+        if (entry.intersectionRatio < 0.35 && entry.intersectionRect.height < innerHeight / 2) return
         seen.disconnect()
         figure.setAttribute('data-frameworks-rising', '')
         figure.removeAttribute('data-frameworks-pending')
         // The last cell has risen by about 1.5s; then the transitions are taken away again.
         setTimeout(() => figure.removeAttribute('data-frameworks-rising'), 2000)
-      }, { threshold: 0.35 })
+      }, { threshold: [0.1, 0.2, 0.35] })
       seen.observe(ledger)
     }
   }

@@ -29,7 +29,9 @@ const rules = (entry: typeof spec.classes[number]) => [
 ].filter(Boolean)
 
 /** The keys of the file this sheet leaves out, so the reader sees what else a contract holds. */
-const drawn = ['$schema', 'name', 'title', 'description', 'tier', 'category', 'script', 'classes', 'states', 'keyboard', 'example']
+const drawn = ['$schema', 'name', 'title', 'description', 'tier', 'category', 'script', 'use', 'classes', 'states', 'keyboard', 'example']
+/** When to reach for the component: the sentence an agent chooses by. What to use instead stays in the file. */
+const use = typeof spec.use === 'string' ? spec.use : undefined
 const more = Object.keys(spec).filter(key => !drawn.includes(key))
 
 /*
@@ -62,17 +64,17 @@ const secondRunHtml = command + `<span class="ui-contract-out ui-contract-summar
     <header class="home-section-header">
       <p class="home-eyebrow"><span class="home-eyebrow-index" aria-hidden="true">06</span><span>{t('Contracts')}</span></p>
       <h2 id="contracts-title" class="home-lit home-section-heading home-stone-type"><span>{t('Written for people,')}</span>{' '}<span>{t('checked for agents.')}</span></h2>
-      <p class="home-section-body">{t('Every component ships with a contract beside its stylesheet: its classes, the states it draws, its public properties, its keys and one correct example. A coding agent reads it before it writes, and the checker reports markup that breaks it.')}</p>
+      <p class="home-section-body">{t('Every component ships with a contract beside its stylesheet: its classes and states, its public properties and keys, when to use it and what to use instead, and one correct example. A coding agent reads it before it writes, and the checker reports markup that breaks it.')}</p>
       <div class="ui-contracts-links">
-        <a class="home-section-link" href="/guide/contracts">{t('How contracts work')}<IconArrowRight aria-hidden="true" stroke={1.75} /></a>
-        <a class="home-section-link" href="/guide/ai">{t('Working with AI')}<IconArrowRight aria-hidden="true" stroke={1.75} /></a>
+        <a class="home-section-link" href="/guide/contracts">{t('How contracts work')}<IconArrowRight aria-hidden="true" size={14} stroke={1.75} /></a>
+        <a class="home-section-link" href="/guide/ai">{t('Working with AI')}<IconArrowRight aria-hidden="true" size={14} stroke={1.75} /></a>
       </div>
     </header>
 
     <figure class="ui-contract" data-contract>
       <figcaption class="ui-contract-bar">
         <span class="ui-contract-path home-annotation">@master/ui/components/{spec.name}.json</span>
-        <span class="ui-contract-status home-annotation"><span class="ui-contract-status-dot" aria-hidden="true"></span>{t('Checked by @master/ui/check when this page was built')}</span>
+        <span class="ui-contract-status home-annotation"><span class="ui-contract-status-dot" aria-hidden="true"></span><span>{t('Checked by')} <code class="ui-contract-path">@master/ui/check</code> {t('when this page was built')}</span></span>
       </figcaption>
 
       <div class="ui-contract-body">
@@ -83,6 +85,13 @@ const secondRunHtml = command + `<span class="ui-contract-out ui-contract-summar
             <h3 id="contract-title" class="ui-contract-title">{spec.title}</h3>
             <p class="ui-contract-description">{spec.description}</p>
           </header>
+
+          {use ? (
+            <section class="ui-contract-group" aria-labelledby="contract-use">
+              <h4 id="contract-use" class="ui-contract-label home-annotation">use</h4>
+              <p class="ui-contract-use">{use}</p>
+            </section>
+          ) : null}
 
           <section class="ui-contract-group" aria-labelledby="contract-classes">
             <h4 id="contract-classes" class="ui-contract-label home-annotation">classes</h4>
@@ -149,7 +158,8 @@ const secondRunHtml = command + `<span class="ui-contract-out ui-contract-summar
       </div>
     </figure>
 
-    <ul class="ui-contract-outputs" aria-label={t('What the site publishes for programs')}>
+    <h3 id="contracts-outputs-title" class="ui-contract-outputs-title home-annotation">{t('What the site publishes for programs')}</h3>
+    <ul class="ui-contract-outputs" aria-labelledby="contracts-outputs-title">
       <li class="ui-contract-output">
         <a href="/llms.txt"><code>/llms.txt</code></a>
         <p>{t('The rules for writing Master UI markup, and a link to every page as Markdown.')}</p>
@@ -172,8 +182,9 @@ const secondRunHtml = command + `<span class="ui-contract-out ui-contract-summar
 
 <script>
   /*
-   * The run, as it would be typed: each command writes itself out, the checker's lines arrive one at a time and
-   * their callouts land on the contract, the fix is struck and written, and the second run comes back clean.
+   * The run, as it would be typed: the command writes itself out, the checker's lines arrive one at a time and
+   * their callouts land on the contract, the fix is struck and written, and the same command, called back from
+   * the shell's history, comes back clean.
    * The text is in the page from the start; a command waiting to be typed holds no-break spaces of the same
    * width, so nothing reflows.
    */
@@ -199,10 +210,10 @@ const secondRunHtml = command + `<span class="ui-contract-out ui-contract-summar
     }
     const at = (delay: number, step: () => void) => { timers.push(window.setTimeout(step, delay)) }
     const show = (delay: number, nodes: Element[]) => at(delay, () => nodes.forEach(node => node.removeAttribute('data-pending')))
-    /** Types one command a character at a time and returns the time it is done. */
     const caret = Object.assign(document.createElement('span'), { className: 'ui-contract-caret' })
     caret.setAttribute('aria-hidden', 'true')
     const write = (node: HTMLElement, text: string, length: number) => node.replaceChildren(text.slice(0, length), caret, blank(text.slice(length)))
+    /** Types one command a character at a time and returns the time it is done. */
     const type = (start: number, { node, text }: typeof commands[number]) => {
       const pace = 32
       at(start, () => write(node, text, 0))
@@ -213,15 +224,25 @@ const secondRunHtml = command + `<span class="ui-contract-out ui-contract-summar
       at(end + 240, () => { node.textContent = text })
       return end + 360
     }
+    /** Brings back a command already typed, the way the up arrow does: whole, after a beat. Returns when it is done. */
+    const recall = (start: number, { node, text }: typeof commands[number]) => {
+      at(start, () => write(node, text, 0))
+      at(start + 420, () => write(node, text, text.length))
+      at(start + 660, () => { node.textContent = text })
+      return start + 780
+    }
 
     // Until the figure is reached the draft stands alone: both commands blank, every result waiting.
     const [firstOut, secondOut] = [pending('[data-contract-term] pre:nth-of-type(2) [data-out]'), pending('[data-contract-term] pre:nth-of-type(4) [data-out]')]
     const patch = pending('[data-change]')
     const exits = pending('.ui-contract-exit')
     const marks = [...pending('.ui-contract-sheet [data-callout]'), ...pending('[data-flag]')]
+    // Staged without transitions, so a figure already in view on load does not fade its results out first.
+    figure.setAttribute('data-staging', '')
     term.setAttribute('aria-busy', 'true')
     commands.forEach(({ node, text }) => { node.textContent = blank(text) })
     ;[...firstOut, ...secondOut, ...patch, ...exits, ...marks].forEach(node => node.setAttribute('data-pending', ''))
+    requestAnimationFrame(() => requestAnimationFrame(() => figure.removeAttribute('data-staging')))
 
     const play = () => {
       let time = type(0, commands[0])
@@ -231,7 +252,7 @@ const secondRunHtml = command + `<span class="ui-contract-out ui-contract-summar
       time += 1000
       show(time, [patch[0]])
       show(time + 480, [patch[1]])
-      time = type(time + 1100, commands[1])
+      time = commands[1].text === commands[0].text ? recall(time + 1100, commands[1]) : type(time + 1100, commands[1])
       show(time, [...secondOut, exits[1]])
       at(time + 200, settle)
     }
@@ -240,8 +261,10 @@ const secondRunHtml = command + `<span class="ui-contract-out ui-contract-summar
       if (!entry.isIntersecting) return
       seen.disconnect()
       play()
-    }, { threshold: 0.4 })
-    seen.observe(term)
+    }, { threshold: 0.6 })
+    // The run starts once its first terminal is in view: a block small enough to be seen whole on any screen,
+    // where a share of the whole column could never come into view on a short one.
+    seen.observe(commands[0]?.node.closest('pre') ?? term)
     // A reader who turns motion off mid-run, or prints, gets the finished figure.
     const finish = () => { seen.disconnect(); settle() }
     motion.addEventListener('change', finish)

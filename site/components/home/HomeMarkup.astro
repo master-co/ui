@@ -2,6 +2,7 @@
 import '@master/ui/components/badge.css'
 import '@master/ui/components/button.css'
 import '@master/ui/components/card.css'
+import '@master/ui/components/carousel.css'
 import '@master/ui/components/checkbox.css'
 import '@master/ui/components/chip.css'
 import '@master/ui/components/dialog.css'
@@ -9,6 +10,7 @@ import '@master/ui/components/icon.css'
 import '@master/ui/components/input.css'
 import '@master/ui/components/kbd.css'
 import '@master/ui/components/menu.css'
+import '@master/ui/components/scroll-area.css'
 import '@master/ui/components/segmented.css'
 import '@master/ui/components/select.css'
 import '@master/ui/components/switch.css'
@@ -16,6 +18,9 @@ import '@master/ui/components/tabs.css'
 import '@master/ui/components/texture.css'
 import '@master/ui/components/toast.css'
 import '@master/ui/components/tooltip.css'
+import IconArrowRight from '@tabler/icons-svelte-runes/icons/arrow-right'
+import IconCheck from '@tabler/icons-svelte-runes/icons/check'
+import IconCopy from '@tabler/icons-svelte-runes/icons/copy'
 import { siteOf } from '@master/internal-site/astro/site-context'
 import { forgeExamples, highlight } from './forge'
 import { platformFeatures } from './platform'
@@ -42,38 +47,47 @@ const lines = (html: string) => html.split('\n').length
             <button type="button" class="tabs-item" role="tab" id={`forge-tab-${example.id}`} aria-selected={index === 0 ? 'true' : 'false'} aria-controls={`forge-panel-${example.id}`} tabindex={index === 0 ? undefined : '-1'} data-value={example.id}>{t(example.label)}</button>
           ))}
         </div>
-        <p class="ui-forge-status home-annotation"><span class="ui-forge-status-dot" aria-hidden="true"></span>{t('Rendered by the stylesheet, with no script')}</p>
       </div>
       {forgeExamples.map((example, index) => (
         <div class="ui-forge-panel" role="tabpanel" id={`forge-panel-${example.id}`} aria-labelledby={`forge-tab-${example.id}`} hidden={index !== 0} data-forge-panel>
           <div class="ui-forge-code">
-            <p class="ui-forge-file home-annotation"><span>{example.file}</span><span>{lines(example.html)} {t('lines')}</span></p>
-            <pre class="ui-forge-pre" tabindex="0"><code set:html={highlight(example.html)} /></pre>
+            <div class="ui-forge-file home-annotation">
+              <span class="ui-forge-file-name" translate="no">{example.file}</span>
+              <span class="ui-forge-lines">{lines(example.html)} {t('lines')}</span>
+              <button type="button" class="btn btn-quiet btn-square btn-sm ui-forge-copy" aria-label={t('Copy {file}').replace('{file}', example.file)} data-forge-copy>
+                <IconCopy class="icon ui-forge-copy-idle" aria-hidden="true" size={16} stroke={1.75} />
+                <IconCheck class="icon ui-forge-copy-done" aria-hidden="true" size={16} stroke={1.75} />
+              </button>
+            </div>
+            <pre class="ui-forge-pre scroll-area scroll-area-inline" tabindex="0" translate="no"><code set:html={highlight(example.html)} /></pre>
           </div>
           <div class="ui-forge-stage texture" data-forge-stage>
+            <p class="ui-forge-status home-annotation"><span class="ui-forge-status-dot" aria-hidden="true"></span>{t('Drawn by the stylesheet alone')}</p>
             <span class="ui-forge-scan" aria-hidden="true"></span>
             <div class="ui-forge-specimen" data-example={example.id} set:html={example.html} />
           </div>
         </div>
       ))}
+      <span class="sr-only" aria-live="polite" data-forge-copy-status data-copied={t('Copied')} data-failed={t('Copy failed')}></span>
     </figure>
     {/* The platform does the work: each feature with what it does here, who uses it, the fallback, and a live specimen. */}
     <div class="ui-platform">
       <header class="ui-platform-header">
         <h3 class="ui-platform-title">{t('Modern CSS and the platform do the work.')}</h3>
-        <p class="ui-platform-lead">{t('Where the browser has an element or a feature for the job, the component uses it, over a baseline that works without it. Try each one: none of them loads a script.')}</p>
+        <p class="ui-platform-lead">{t('Where the browser has an element or a feature for the job, the component uses it, and its contract says what a browser without it shows. Try each one: none of them loads a script.')}</p>
+        <a class="home-section-link ui-platform-link" href="/guide/browser-support">{t('Browser support')}<IconArrowRight aria-hidden="true" size={14} stroke={1.75} /></a>
       </header>
       <ul class="ui-platform-grid">
         {platformFeatures.map(feature => (
-          <li class="ui-platform-cell">
-            <div class="ui-platform-specimen texture" set:html={feature.html} />
+          <li class="ui-platform-cell home-reveal-item">
+            <div class="ui-platform-specimen texture" data-feature={feature.id} set:html={feature.html} />
             <div class="ui-platform-text">
-              <p class="ui-platform-names">{feature.names.map(name => <code>{name}</code>)}</p>
+              <p class="ui-platform-names" translate="no">{feature.names.map((name, index) => <>{index > 0 && ' '}<code>{name}</code></>)}</p>
               <p class="ui-platform-summary">{t(feature.summary)}</p>
               <dl class="ui-platform-facts">
                 <dt>{t('Used by')}</dt>
-                <dd>{feature.usedBy.join(', ')}</dd>
-                <dt>{t('Without it')}</dt>
+                <dd>{feature.usedBy.map(name => t(name)).join(', ')}</dd>
+                <dt>{t('Fallback')}</dt>
                 <dd>{t(feature.without)}</dd>
               </dl>
             </div>
@@ -89,11 +103,17 @@ const lines = (html: string) => html.split('\n').length
 
   const figure = document.querySelector<HTMLElement>('[data-forge]')
   const motion = matchMedia('(prefers-reduced-motion: reduce)')
-  const glyphs = '<>/="{}:;.-_#()[]+*abcdeghiklmnoprstuvwxy0123456789'
-  const random = () => glyphs[Math.floor(Math.random() * glyphs.length)]
-  let running = 0
+  /** Letters, digits and the marks markup is written with: in the monospace face, each is as wide as what it stands in for. */
+  const glyphs = '<>="#_*:;.abcdeghiklmnoprstuvwxyz0123456789'
+  /** A glyph that holds for one step of the flicker: the same character, index and step always give the same glyph. */
+  const glyph = (index: number, step: number) => glyphs[Math.abs(Math.imul(index * 31 + step, 2654435761) >> 7) % glyphs.length]
   /** Each text node's own text, kept before any decode or blanking touches it. */
   const originals = new WeakMap<Text, string>()
+  /** Panels written out already: a panel decodes the first time it is shown, and is simply there after that. */
+  const written = new WeakSet<HTMLElement>()
+  let running = 0
+  let finish: (() => void) | undefined
+
   const textNodes = (root: HTMLElement) => {
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
     const nodes: Text[] = []
@@ -104,83 +124,151 @@ const lines = (html: string) => html.split('\n').length
     }
     return nodes
   }
-  /** Clears a panel to its whitespace before it is first written out, so it does not show and then vanish. */
-  const blank = (panel: HTMLElement) => {
+
+  /** Clears a panel to its whitespace and hides its specimen, so neither shows and then vanishes when the decode starts. */
+  function blank(panel: HTMLElement) {
     const code = panel.querySelector<HTMLElement>('code')
-    if (code) textNodes(code).forEach(node => { node.data = originals.get(node)!.replace(/[^\s]/g, ' ') })
-    panel.querySelector<HTMLElement>('[data-forge-stage]')?.style.setProperty('--reveal', '0')
+    const stage = panel.querySelector<HTMLElement>('[data-forge-stage]')
+    if (code) textNodes(code).forEach(node => { node.data = originals.get(node)!.replace(/\S/g, ' ') })
+    stage?.style.setProperty('--reveal', '0')
+    stage?.setAttribute('data-revealing', '')
   }
 
   /**
-   * Writes a panel's code out again: each character flickers through glyphs before it settles, line by line,
-   * and the specimen beside it is revealed as the last lines land. Only the text changes; widths are fixed by
-   * the monospace face, so nothing reflows.
+   * Writes a panel's code out: line by line, each character flickers through a few glyphs before it settles, and
+   * the specimen beside it is uncovered from the left as the last lines land. Only the text changes, and every
+   * glyph is as wide as the character it stands for, so nothing reflows.
    */
   function play(panel: HTMLElement) {
     const code = panel.querySelector<HTMLElement>('code')
     const stage = panel.querySelector<HTMLElement>('[data-forge-stage]')
     if (!code || !stage) return
-    panel.querySelectorAll<HTMLDialogElement>('dialog.toast:not([open])').forEach(dialog => dialog.show())
-    cancelAnimationFrame(running)
-    if (motion.matches) {
-      stage.style.setProperty('--reveal', '1')
-      return
-    }
+    finish?.()
+    written.add(panel)
     const nodes: { node: Text, text: string, settle: number[] }[] = []
     let line = 0
     let column = 0
+    let count = 0
     for (const node of textNodes(code)) {
       const text = originals.get(node)!
-      const settle = [...text].map(character => {
+      // Indexed by UTF-16 unit, as the tick reads the text.
+      const settle = text.split('').map(character => {
         if (character === '\n') { line++; column = 0; return 0 }
         column++
-        return line * 55 + column * 4 + Math.random() * 140
+        count++
+        return line * 48 + column * 3.5 + ((count * 37) % 100) * 1.2
       })
       nodes.push({ node, text, settle })
     }
-    const total = line * 55 + 360
+    const typed = line * 48 + 380
+    const revealFrom = typed * 0.4
+    const revealFor = 1000
+    const end = Math.max(typed, revealFrom + revealFor)
     const start = performance.now()
+    blank(panel)
     code.setAttribute('aria-busy', 'true')
-    stage.style.setProperty('--reveal', '0')
+    finish = () => {
+      cancelAnimationFrame(running)
+      nodes.forEach(({ node, text }) => { node.data = text })
+      code.removeAttribute('aria-busy')
+      stage.style.setProperty('--reveal', '1')
+      stage.removeAttribute('data-revealing')
+      finish = undefined
+    }
     const tick = (now: number) => {
       const elapsed = now - start
+      // The flicker steps about fourteen times a second, slower than the frames, so each glyph can be seen.
+      const step = Math.floor(elapsed / 70)
+      let index = 0
       for (const { node, text, settle } of nodes) {
         let out = ''
-        for (let index = 0; index < text.length; index++) {
-          const character = text[index]
-          if (character === ' ' || character === '\n' || elapsed >= settle[index]) out += character
+        for (let position = 0; position < text.length; position++, index++) {
+          const character = text[position]
+          if (character === ' ' || character === '\n' || elapsed >= settle[position]) out += character
           // A character waiting its turn stays blank until its line is reached, then flickers.
-          else out += elapsed > settle[index] - 220 ? random() : ' '
+          else out += elapsed > settle[position] - 200 ? glyph(index, step) : ' '
         }
         if (node.data !== out) node.data = out
       }
-      const reveal = Math.min(Math.max((elapsed - total * 0.45) / 900, 0), 1)
+      const reveal = Math.min(Math.max((elapsed - revealFrom) / revealFor, 0), 1)
       stage.style.setProperty('--reveal', (1 - Math.pow(1 - reveal, 3)).toFixed(4))
-      if (elapsed < Math.max(total, total * 0.45 + 900)) running = requestAnimationFrame(tick)
-      else {
-        nodes.forEach(({ node, text }) => { node.data = text })
-        code.removeAttribute('aria-busy')
-      }
+      if (elapsed < end) running = requestAnimationFrame(tick)
+      else finish?.()
     }
     running = requestAnimationFrame(tick)
   }
 
   if (figure) {
+    const status = figure.querySelector<HTMLElement>('[data-forge-copy-status]')
+    let copiedTimer: ReturnType<typeof setTimeout> | undefined
+    // Copies the example as written, settling a decode first so the clipboard never takes the glyphs in flight.
+    figure.addEventListener('click', async event => {
+      const button = (event.target as Element).closest<HTMLButtonElement>('[data-forge-copy]')
+      const panel = button?.closest<HTMLElement>('[data-forge-panel]')
+      const code = panel?.querySelector('code')
+      if (!button || !panel || !code) return
+      // A slab still blank, waiting to come into view, is settled at once: played and finished before any paint.
+      if (!written.has(panel)) play(panel)
+      finish?.()
+      const text = code.textContent ?? ''
+      let copied = false
+      try {
+        await navigator.clipboard.writeText(text)
+        copied = true
+      } catch {
+        // Where the Clipboard API is refused, a selected text area still copies within the same click.
+        const area = document.createElement('textarea')
+        area.value = text
+        area.setAttribute('readonly', '')
+        area.style.cssText = 'position:fixed;inset:0 auto auto 0;opacity:0;pointer-events:none'
+        document.body.append(area)
+        area.select()
+        copied = document.execCommand('copy')
+        area.remove()
+        button.focus()
+      }
+      figure.querySelectorAll('[data-forge-copy][data-status]').forEach(other => other.removeAttribute('data-status'))
+      button.dataset.status = copied ? 'copied' : 'failed'
+      if (status) status.textContent = (copied ? status.dataset.copied : status.dataset.failed) ?? ''
+      clearTimeout(copiedTimer)
+      copiedTimer = setTimeout(() => {
+        button.removeAttribute('data-status')
+        if (status) status.textContent = ''
+      }, 1800)
+    })
+
     const list = figure.querySelector<HTMLElement>('[data-forge-tabs]')
     if (list) tabs(list)
     const current = () => figure.querySelector<HTMLElement>('[data-forge-panel]:not([hidden])')
-    list?.addEventListener('change', () => { const panel = current(); if (panel) play(panel) })
-    // The first example writes itself out once the figure is well in view.
-    const seen = new IntersectionObserver(([entry]) => {
-      if (!entry.isIntersecting) return
-      seen.disconnect()
+    list?.addEventListener('change', () => {
       const panel = current()
-      if (panel) play(panel)
-    }, { threshold: 0.4 })
+      if (!panel) return
+      // A toast dismissed earlier comes back with its panel.
+      panel.querySelectorAll<HTMLDialogElement>('dialog.toast:not([open])').forEach(dialog => dialog.show())
+      // Leaving a panel mid-decode settles it, so it is whole when it is shown again.
+      if (written.has(panel)) finish?.()
+      else if (motion.matches) written.add(panel)
+      else play(panel)
+    })
     if (!motion.matches) {
+      // The first example writes itself out once the figure's top is above the window's lower two fifths, so
+      // on a laptop the middle of the stage, where the specimen lands, is in view by the time it is uncovered.
+      const seen = new IntersectionObserver(([entry]) => {
+        if (!entry.isIntersecting) return
+        seen.disconnect()
+        const panel = current()
+        if (panel && !written.has(panel)) play(panel)
+      }, { rootMargin: '0px 0px -40% 0px' })
       const panel = current()
       if (panel) blank(panel)
       seen.observe(figure)
+      // A page printed before the slab came into view prints the example whole, not its blank.
+      addEventListener('beforeprint', () => {
+        seen.disconnect()
+        const shown = current()
+        if (shown && !written.has(shown)) play(shown)
+        finish?.()
+      })
     }
   }
 </script>
