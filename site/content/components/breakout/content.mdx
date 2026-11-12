@@ -1,0 +1,136 @@
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import PagePreview from '~/site/components/PagePreview.astro'
+
+A breakout is a column at a reading measure, centred in the room it is given, that a picture, a table or a band can step out of: wider than the text by a little, or out to the edges. It is the layout of a long article, a changelog or a story, where the words keep a line that is comfortable to read and what is not words is allowed more room.
+
+Everything inside reads in the column without a class. Only what leaves it says so, with `breakout-wide` or `breakout-full`. It draws no surface: a band that runs to the edges takes its face from a utility or a component.
+
+<PagePreview name="default" title="Breakout" height={1576} tabletHeight={1500} phoneHeight={1800} caption="Scroll through the article, then choose Tablet and Phone: the text keeps its measure, the picture and the table keep what room there is beside it, and the band always reaches the edges." html={`<article class="breakout py-2xl bg-surface-base fg-text-body text-md leading-lg">
+  <header class="flex flex-col gap-xs">
+    <p class="eyebrow">Changelog · 12 November</p>
+    <h1 class="heading heading-2xl">Faster cold builds, and comments on previews</h1>
+    <p class="lead">Dependency caches are now restored before the install step, and anyone with the link to a preview can leave a comment on it.</p>
+  </header>
+  <p>A cold build is one that starts with nothing: a new branch, a cleared cache, a project that has not built in a week. Until this release it downloaded every dependency again before it could restore anything, which made the first build of a branch the slowest one, and the one people waited for most.</p>
+  <figure class="figure breakout-wide">
+    <img class="figure-media" src="/demo/harbor.svg" alt="A wooden jetty running out over calm water" style="--figure-ratio: 21 / 9">
+    <figcaption class="figure-caption">The cache now waits at the end of the jetty, not the start: it is there before the install begins.</figcaption>
+  </figure>
+  <h2 class="heading heading-lg mt-md">Caches before the install</h2>
+  <p>The cache of a project is now keyed by its lockfile and restored before the install step runs. The install finds what it needs already in place and only fetches what changed. A branch that changes no dependency builds as fast as the one it came from.</p>
+  <div class="breakout breakout-full py-xl bg-surface-tray">
+    <dl class="auto-grid" style="--auto-grid-min: 9rem">
+      <div class="stat">
+        <dt class="stat-label">Cold builds</dt>
+        <dd class="stat-row m(0)"><span class="stat-value">38s</span><span class="stat-delta">21% faster</span></dd>
+      </div>
+      <div class="stat">
+        <dt class="stat-label">Installs skipped</dt>
+        <dd class="stat-row m(0)"><span class="stat-value">64%</span></dd>
+      </div>
+      <div class="stat">
+        <dt class="stat-label">Data fetched</dt>
+        <dd class="stat-row m(0)"><span class="stat-value">1.9 GB</span><span class="stat-delta">48% less</span></dd>
+      </div>
+    </dl>
+  </div>
+  <h2 class="heading heading-lg mt-md">Comments on previews</h2>
+  <p>Anyone with the link to a preview can now leave a comment on it, pinned to the place they mean. Comments are kept with the deploy, so they are still there when someone opens the same preview next week, and they are listed on the pull request.</p>
+  <div class="scroll-area scroll-area-inline breakout-wide" tabindex="0" role="region" aria-label="Who can comment, by plan">
+    <table class="table">
+      <thead>
+        <tr class="table-row">
+          <th class="table-heading" scope="col">Plan</th>
+          <th class="table-heading" scope="col">Who can comment</th>
+          <th class="table-heading" scope="col">Kept for</th>
+          <th class="table-heading table-numeric" scope="col">Previews</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="table-row">
+          <th class="table-cell table-primary" scope="row">Free</th>
+          <td class="table-cell">Members of the team</td>
+          <td class="table-cell">30 days</td>
+          <td class="table-cell table-numeric">10</td>
+        </tr>
+        <tr class="table-row">
+          <th class="table-cell table-primary" scope="row">Pro</th>
+          <td class="table-cell">Anyone with the link</td>
+          <td class="table-cell">One year</td>
+          <td class="table-cell table-numeric">Unlimited</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Both changes are on for every project today. There is nothing to turn on.</p>
+</article>`} />
+
+## How it is built \{#how-it-is-built\}
+
+- **One track.** The breakout is a grid whose only column is `--breakout-measure` wide, 40rem, or the room less a `--breakout-gutter` on each side, whichever is narrower. It is centred, and every child is placed in it without a class.
+- **Leaving the column by its margins.** The breakout is an inline-size container. In a child, `100cqi` is the width of the breakout and `100%` is the width of the column, so the room beside the column is half their difference. `breakout-wide` takes that room with negative margins, up to `--breakout-wide` on each side and never into the gutter; `breakout-full` takes all of it.
+- **A band whose words keep the column.** A full child that is also a `breakout` runs to the edges and sets its own children in a column at the same measure. The figures in the band above line up with the text over and under it.
+- **A rhythm, not margins.** Children are 1.25rem apart, the row gap of the grid, because a grid does not collapse margins. A heading takes `mt-md` to stand a little further from what is above it than from what it introduces.
+- **A wide table scrolls by itself.** It stands in a [scroll area](/components/scroll-area) with `scroll-area-inline`, which is `breakout-wide`, so on a phone it scrolls inside the column instead of widening the page.
+
+## Wide and full \{#wide-and-full\}
+
+How much a child gains depends on the room beside the column, and so on the width of the page:
+
+| Room | The column | `breakout-wide` | `breakout-full` |
+| --- | --- | --- | --- |
+| Wider than the measure and two wide reaches | 40rem, centred | 8rem more on each side: 56rem | The whole room |
+| Between the two | 40rem, centred | What room there is, less the gutter | The whole room |
+| Narrower than the measure | The room less two gutters | The same as the column | The whole room |
+
+<ComponentPreview name="widths" background="hatch" height={332} narrowHeight={332} title="Widths" bodyClass="p(0)" html={`<div class="breakout py-lg fg-text-muted text-sm" style="--breakout-measure: 20rem; --breakout-wide: 5rem">
+  <div class="well flex items-center justify-center h(56)">The column</div>
+  <div class="well flex items-center justify-center h(56) breakout-wide">breakout-wide</div>
+  <div class="well flex items-center justify-center h(56) breakout-full">breakout-full</div>
+  <div class="well flex items-center justify-center h(56)">The column</div>
+</div>`} />
+
+`--breakout-measure` is the widest the column may be. 40rem holds about 70 characters of body text; set it lower for larger type and higher for a column of code. `--breakout-wide` is how far a wide child may reach on each side, and `--breakout-gutter` is the least room kept between anything but a full child and an edge.
+
+## A full band \{#full-band\}
+
+A band that runs to the edges is usually a color or a picture with words on it, and the words should not run to the edges with it. Make the band a breakout of its own: it reaches the edges as a `breakout-full` child, and its own children are set in a column at the same measure as the text around it.
+
+```html
+<div class="breakout breakout-full py-xl bg-surface-tray">
+  <p>These words line up with the column above and below the band.</p>
+</div>
+```
+
+The band's color is a utility, `bg-surface-tray`, because the breakout draws nothing. A picture that runs to the edges is a `breakout-full` [figure](/components/figure) with `--figure-radius: 0`, since a corner at the edge of the window has nothing to turn against.
+
+## When to use it \{#when\}
+
+Use a breakout for a page that is one column of reading: an article, a post, a changelog, a guide. A page with regions beside the reading column, such as navigation and contents, is a [documentation page](/pages/docs), whose article column can itself be a breakout. A column that nothing ever leaves is written with utilities alone: `max-w(640) mx-auto` and a gutter.
+
+## Accessibility \{#accessibility\}
+
+- A breakout changes widths, never order: what is read first is what comes first in the markup.
+- The measure is in rem, so it follows the reader's text size: a larger font makes a wider column of the same 70 or so characters, until the window is narrower than that, and then the column follows the window and nothing scrolls sideways.
+- A table that is wider than the column scrolls in a [scroll area](/components/scroll-area) with a name and `tabindex="0"`, so a keyboard can scroll it.
+
+## Classes \{#classes\}
+
+<ContractTable name="breakout" directory="layouts" />
+
+## Custom properties \{#custom-properties\}
+
+<ContractTable name="breakout" show="properties" directory="layouts" />
+
+## Related \{#related\}
+
+<ComponentLinks slugs={['figure', 'heading', 'table', 'scroll-area', 'quote', 'arrangements']} />
+
+<ComponentLinks kind="pages" slugs={['docs', 'page']} />
+
+## Source \{#source\}
+
+<ComponentSource name="breakout" directory="layouts" />

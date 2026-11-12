@@ -1,0 +1,38 @@
+/*
+ * Sticky stack: panels that pile up as the page scrolls. Each panel sticks when it reaches the top of the
+ * scroller, a little lower than the one before it, so the edge of every panel it covers stays in view; when the
+ * stack has scrolled to its end, they leave together. It is a layout: it decides what sticks where, and draws
+ * nothing. The panels need a face of their own (a card, a sheet), or each would show the one under it.
+ *
+ * The step between two panels is --sticky-stack-peek, counted from each panel's place among its siblings with
+ * sibling-index(). Without it every panel sticks on the same line and covers the one before it whole: the same
+ * stack, without the edges.
+ *
+ * A sticky panel sticks to the nearest scroller and moves only inside its parent, so the panels are the
+ * stack's own children and nothing between the stack and the scroller clips them (overflow: hidden would).
+ * --sticky-stack-top is where the first one stops; under a sticky header, make it the header's height.
+ * A sequence is a list, <ol class="sticky-stack">, so the stack clears a list's indent and markers.
+ */
+@layer components {
+  .sticky-stack {
+    --sticky-stack-top: 1rem;
+    --sticky-stack-peek: .75rem;
+    display: grid;
+    align-items: start;
+    gap: 1.5rem;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .sticky-stack-item {
+    position: sticky;
+    inset-block-start: var(--sticky-stack-top);
+    min-width: 0;
+
+    @supports (inset-block-start: calc(sibling-index() * 1px)) {
+      inset-block-start: calc(var(--sticky-stack-top) + (sibling-index() - 1) * var(--sticky-stack-peek));
+    }
+  }
+}

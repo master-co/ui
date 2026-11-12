@@ -1,15 +1,20 @@
 ---
 name: master-ui-layouts
-description: Write, review and document Master UI layouts, the frames that say where the regions of a page go and what scrolls (a page, an app shell, documentation, master-detail, a dashboard), published as markup in site/content/layouts, and the few layout classes in packages/ui/layouts (page, shell, auto-grid, form). Use when adding or changing a layout or a layout class, when reviewing a layout's regions, scrolling, thresholds, landmarks or page, and when deciding whether a layout needs a class at all.
+description: Write, review and document Master UI layouts and pages. Layouts arrange the room a region gives (arrangements, auto grid, bento, masonry, breakout, sticky stack, form) and are documented in the Layouts category of site/content/components; pages frame a whole screen, its regions and what scrolls (a page, an app shell, documentation, master-detail, a dashboard), published as markup in site/content/pages. Both rest on the layout classes in packages/ui/layouts. Use when adding or changing a layout, a page or a layout class, when reviewing regions, scrolling, thresholds, landmarks or a page about them, and when deciding whether a layout needs a class at all.
 license: MIT
 metadata:
   author: master-co
-  version: "0.1.0"
+  version: "0.2.0"
 ---
 
 # Master UI layouts
 
-A layout says where the regions of a page go and what scrolls. It is markup written with utilities, published on a page to copy, and it owns no material: a face, an edge, a shadow or a corner comes from a component standing in a region. Only what utilities cannot say becomes a layout class, and there are four of them.
+A layout says where things go and what scrolls. It is markup written with utilities, published on a page to copy, and it owns no material: a face, an edge, a shadow or a corner comes from a component standing in a region. Only what utilities cannot say becomes a layout class.
+
+The site documents the tier in two places, by the size of what is arranged:
+
+- **Layouts** arrange the room a region gives: a stack, tiles, lanes, a reading column. They are listed with the components, in their `Layouts` category, and read beside the components' sidebar: `/components/arrangements`, `/components/bento`.
+- **Pages** frame a whole screen: its header, main region, sidebar and footer, and which of them scrolls. They are a section of their own, `/pages`, shown at full width: `/pages/app-shell`, `/pages/dashboard`. The two frames, `page` and `shell`, are layout classes documented on the page of that name and on the app shell.
 
 Use `$master-ui-components` for the tier decision and for any component a region holds, `$master-ui-blocks` for what goes inside a region (a header, a sidebar, a footer), `$master-ui-covers` for the cover and `$master-ui-writing` for the prose of the page. This skill holds how a frame is written and what a layout class is allowed to be.
 
@@ -27,12 +32,13 @@ A layout that seems to need a surface needs a component in that region. Never gi
 
 | File | Role |
 | --- | --- |
-| `site/content/layouts/<slug>/content.mdx` | The page: the layout as a real page, and how it is built |
-| `site/content/layouts/<slug>/metadata.ts` | `title`, `description`, `category` (`Layout basics` or `Page layouts`) and `order` |
-| `site/components/catalog.ts` | The `layouts` list, in reading order |
-| `site/components/cover/art/layouts/<slug>.astro` | The cover: a plan of the page, drawn with `$master-ui-covers` |
-| `packages/ui/layouts/<slug>.css` and `<slug>.json` | A layout class and its contract, for the four that exist |
+| `site/content/components/<slug>/content.mdx` and `metadata.ts` | A layout's page, with `category: 'Layouts'` and an `order` |
+| `site/content/pages/<slug>/content.mdx` and `metadata.ts` | A page's page: the frame as a real page, and how it is built. `category` is `Site pages` or `Application pages` |
+| `site/components/catalog.ts` | A layout in `components` under `Layouts`; a page in `pages`; each list in reading order. `pageOfContract()` says where a contract's reader page is |
+| `site/components/cover/art/<slug>.astro`, `art/pages/<slug>.astro` | The cover of a layout, drawn at real size where it can be, and of a page, a plan, both with `$master-ui-covers` |
+| `packages/ui/layouts/<slug>.css` and `<slug>.json` | A layout class and its contract, `"tier": "layout"`, `"category": "Layouts"` |
 | `packages/ui/master.css` | Imports the layout classes after every component |
+| `site/public/_redirects` | Sends the retired `/layouts/<slug>` URLs to `/components/<slug>` or `/pages/<slug>` |
 
 ## The frame and the room
 
@@ -43,7 +49,7 @@ Two widths matter and they are not the same thing.
 
 `shell` and `form` are size containers themselves, named `shell` and `form`; their thresholds are of their own width.
 
-## The four classes
+## The classes
 
 [The layout classes](references/classes.md) has what each declares, its properties and its thresholds. In short:
 
@@ -52,9 +58,15 @@ Two widths matter and they are not the same thing.
 | `page` | A document that scrolls as a whole: header, main, footer | A `dvh` height |
 | `shell` and its regions | An app: a sidebar that stays, an optional header, aside and footer | `dvh`, the safe-area inset, sticky columns with their own scroll, container thresholds |
 | `auto-grid` | Equal tiles, as many across as fit | Custom grid tracks |
+| `bento` and its tiles | A few tiles of a few sizes, composed once | Columns counted from its own width without a query, spans held by container thresholds, rows with a floor, `grid-auto-flow: dense` |
+| `masonry` and its items | Tiles of their own heights, packed into lanes | `display: grid-lanes`, and a multi-column fallback that keeps each tile whole |
+| `breakout` and its children | A reading column that a figure, a table or a band may leave | A track at a measure, and margins measured in the room with `cqi` |
+| `sticky-stack` and its items | A short sequence that piles up as the page scrolls | A sticky offset counted with `sibling-index()` |
 | `form` and its parts | Rows, sections and actions of a form | Container thresholds and an order that reverses |
 
-Everything else is utilities: a centered task is `page items-center justify-center`, master-detail is a grid with a `container-inline`, a dashboard is a `shell` with an `auto-grid` in its main region.
+Everything else is utilities: the arrangements (stack, cluster, split, center, beside), a centered task is `page items-center justify-center`, master-detail is a grid with a `container-inline`, a dashboard is a `shell` with an `auto-grid` in its main region.
+
+A layout class that is meant for a list (`auto-grid`, `bento`, `masonry`, `sticky-stack`) clears the list's margin, indent and markers itself, as `chart` and `tree` do: a project may have no base reset, and a preview has none.
 
 ## Regions and scrolling
 
@@ -85,19 +97,19 @@ A layout is the first thing a screen reader's landmark list shows. Write it so t
 2. Start from the frame that fits: `page` when the document scrolls as a whole, `shell` when something stays beside it. Do not write a third frame.
 3. Write the regions with utilities. Put a real block in each region, with real content, so the layout is judged as a page and not as boxes.
 4. Narrow it. Decide what each region does at 768 and at 390: stack, leave, or move into a drawer. Write that as a container variant or let the layout class do it.
-5. If a declaration cannot be written, name it, and only then follow [the layout classes](references/classes.md#before-adding-a-fifth).
+5. If a declaration cannot be written, name it, and only then follow [the layout classes](references/classes.md#before-adding-another).
 
 ## The page
 
-A layout's page explains how it is built. It follows this order:
+A layout's page and a page's page both explain how it is built. A layout's reads beside the components' sidebar and its contents rail, so its `PagePreview` is drawn at the text column's width; a page's has neither and its previews run wide. Both follow this order:
 
-1. One paragraph: what the layout is for, and the frame it stands on. Then the default `PagePreview`, with a caption that tells the reader what to try: scroll, choose Tablet, choose Phone.
+1. One paragraph: what the layout is for, and the frame or the room it stands in. Then the default preview, with a caption that tells the reader what to try: scroll, choose Tablet, choose Phone. A layout whose point is a width uses `PagePreview`; a detail of it that does not need a viewport uses `ComponentPreview`.
 2. `## How it is built \{#how-it-is-built\}`: one item to a job, naming the class or the utility that does it and why that one. This is the part a reader copies with understanding.
 3. A section for each variant, with one preview.
 4. A section that says when to use it and when a neighbor is the right one, where that is not obvious.
 5. `## Accessibility \{#accessibility\}`: the landmarks, the source order, what the keyboard reaches.
 6. For a layout class: `## Classes \{#classes\}` with `<ContractTable name="<slug>" />`, `## Custom properties \{#custom-properties\}` with `show="properties"`, and at the end `## Source \{#source\}` with `<ComponentSource name="<slug>" directory="layouts" />`.
-7. `## Related \{#related\}`: `<ComponentLinks slugs={[…]} />` for the components in the example, `kind="layouts"` for neighboring layouts and `kind="blocks"` for the blocks in its regions.
+7. `## Related \{#related\}`: `<ComponentLinks slugs={[…]} />` for the components and the layouts in the example, `kind="blocks"` for the blocks in its regions and `kind="pages"` for neighboring pages.
 
 ## Previews
 
@@ -114,10 +126,10 @@ Read [preview sizing](../master-ui-components/references/previews.md). For a lay
 
 1. `bun run test`: holds every preview to the contracts, and fails a layout stylesheet that draws a material.
 2. `bun run type-check` and `bun run build`.
-3. Serve the build and open `/layouts/<slug>.html`. At Desktop, Tablet and Phone: the regions are where the page says, the right one scrolls, nothing overflows sideways.
+3. Serve the build and open `/components/<slug>.html` or `/pages/<slug>.html`. At Desktop, Tablet and Phone: the regions are where the page says, the right one scrolls, nothing overflows sideways.
 4. Scroll each region to its end with the wheel and with the keyboard. Open the drawer, tab through it, close it with <kbd>Esc</kbd>, and check focus returns to the toggle.
 5. Read the landmark list (`document.querySelectorAll('header, nav, main, aside, footer')`) and the heading outline against the page's Accessibility section.
-6. Look at it in light and in dark, then at the overview `/layouts` between its neighbors.
+6. Look at it in light and in dark, then at the overview, `/components#layouts` or `/pages`, between its neighbors.
 7. Report what was measured and what was judged, and name what was not checked: a real phone's toolbars, a screen reader, an engine you could not run.
 
 ## Review checklist
@@ -129,6 +141,6 @@ Read [preview sizing](../master-ui-components/references/previews.md). For a lay
 - Is there one `<main>`, and do the landmarks and their names read like the page?
 - Does the source order match the reading order, or does the page say why not?
 - Does a whole-page example begin with a skip link, and does its drawer have a close button?
-- Does Related list the components in the example, the neighboring layouts and the blocks in its regions?
+- Does Related list the components and layouts in the example, the blocks in its regions and the neighboring pages?
 - Do the numbers on the page (widths, thresholds, heights) match the stylesheet?
 - Does "How it is built" name the class or utility that does each job, as the markup has it now?

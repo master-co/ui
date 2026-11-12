@@ -56,7 +56,7 @@ The example is the smallest markup that is correct, with real words in it. The t
 
 ## Writing one
 
-1. Read the stylesheet, then its page in `site/content/<components|layouts>/<slug>/content.mdx` and its entry in `site/components/catalog.ts`.
+1. Read the stylesheet, then its page in `site/content/components/<slug>/content.mdx` (or, for the frames `page` and `shell`, `site/content/pages/<page|app-shell>/content.mdx`) and its entry in `site/components/catalog.ts`.
 2. Write `<slug>.json` with `"$schema": "../contract.schema.json"`. Take `title`, `category` and `description` from the catalog.
 3. Run `node --import tsx --test --test-name-pattern="<slug>" tests/contracts.test.ts` in `packages/ui`.
 4. Where the page and the stylesheet disagree, the stylesheet is right; fix the page.

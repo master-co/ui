@@ -1,6 +1,6 @@
 ---
 name: master-ui-covers
-description: Draw, review and place Master UI covers, the small drawings of a component, a layout or a block shown on the /components, /layouts and /blocks overviews and on documentation pages. Use when one needs a cover, when redrawing or reviewing one, when adding a primitive or a glyph to the cover vocabulary, or when placing covers on a page.
+description: Draw, review and place Master UI covers, the small drawings of a component, a layout, a block or a page shown on the /components, /blocks and /pages overviews and on documentation pages. Use when one needs a cover, when redrawing or reviewing one, when adding a primitive or a glyph to the cover vocabulary, or when placing covers on a page.
 license: MIT
 metadata:
   author: master-co
@@ -21,8 +21,8 @@ Use `$master-design` for craft judgment and `$master-ui-components` for the comp
 | `site/components/cover/cover.css` | The stage and the drawing vocabulary: materials, marks and the few component shapes. |
 | `site/components/cover/theme.ts` | Scopes the published `@master/ui` theme to `.cover`. Never copy a token value into the site. |
 | `site/components/cover/Glyph.astro` | The icons a cover may use. |
-| `site/components/cover/art/<slug>.astro` | One drawing per component; the slug matches `site/components/catalog.ts`. |
-| `site/components/cover/art/layouts/<slug>.astro`, `art/blocks/<slug>.astro` | One drawing per layout and per block. `<Cover slug="hero" kind="blocks" />` finds it. |
+| `site/components/cover/art/<slug>.astro` | One drawing per component, a layout among them; the slug matches `site/components/catalog.ts`. |
+| `site/components/cover/art/blocks/<slug>.astro`, `art/pages/<slug>.astro` | One drawing per block and per page. `<Cover slug="hero" kind="blocks" />` finds it. |
 
 A component without a drawing shows a dashed outline on the overview, so a missing cover is plain to see.
 
@@ -46,16 +46,16 @@ A component without a drawing shows a dashed outline on the overview, so a missi
 9. **Flow before coordinates.** Build with `cover-stack` and `cover-line` and their `--gap`; write sizes in pixels on the element. Use absolute positions only for things that overlap.
 10. **Still.** A drawing has no animation and no interaction. The tile that holds it owns hover and focus.
 
-## Layouts and blocks
+## Layouts, blocks and pages
 
 A block is drawn like a component: its pieces at real size, on a sheet, or on the page sheet that runs off the stage when it belongs to a page's edge (a header at the top, a footer at the foot). Where a block is several surfaces side by side (plans, quotations, figures), they stand on the stage as small sheets.
 
-A layout has no real size, so its cover is the one kind that may be a **plan**: the whole page drawn small on a `cover-sheet cover-plan`, about 208 × 130.
+A page has no real size, so its cover is the kind that may be a **plan**: the whole page drawn small on a `cover-sheet cover-plan`, about 208 × 130. A layout whose point is the page around it (a breakout's edges, a sticky stack under its bar) is drawn as a plan too.
 
 - Hairlines part the regions: `cover-rule` across, `cover-rule-upright` between columns.
 - A region holds one or two bars to say what it is, never a drawing of its content. A block of content is a `cover-tone cover-skeleton`.
-- The plan shows the region the layout is named for: the sidebar of an app shell, the three columns of a holy grail, the card in the middle of a centered page.
-- A layout that is small enough is drawn at real size instead (arrangements, an auto grid, a master-detail panel, a form).
+- The plan shows the region the page or layout is named for: the sidebar of an app shell, the three columns of a holy grail, the card in the middle of a centered page, the band that runs to the edges of a breakout.
+- A layout that is small enough is drawn at real size instead (arrangements, an auto grid, a bento, masonry, a master-detail panel, a form).
 - No ink on a plan, unless one small mark names the subject.
 
 ## Vocabulary
@@ -107,15 +107,15 @@ Extend the vocabulary before working around it. A new primitive copies its recip
 
 ## Place a cover
 
-- The overview (`site/components/ComponentIndex.astro`) shows every page of one tier in catalog order, grouped by category, four columns where they fit; `kind="layouts"` and `kind="blocks"` list the other tiers. It has no sidebar: `site/sections/library.astro` leaves it out for the three overview pages, and for every page of the blocks.
+- The overview (`site/components/ComponentIndex.astro`) shows every page of one tier in catalog order, grouped by category, four columns where they fit; `kind="blocks"` and `kind="pages"` list the other sections. It has no sidebar: `site/sections/library.astro` leaves it out for the three overview pages, and for every block and every page.
 - A component page shows its own cover at the end of the page head and its neighbors' covers in the pager; `site/layouts/Doc.astro` does both from the page's pathname, so a page writes nothing.
-- Link to other components with tiles, not bare covers: `<ComponentLinks slugs={['input', 'listbox']} />` in MDX under a `## Related` heading, or `ComponentTile` in an Astro page, as the homepage does. Pass `kind="layouts"` or `kind="blocks"` to link the other tiers. A tile is the cover, the name and, on request, the description, and it owns hover and focus.
+- Link to other components with tiles, not bare covers: `<ComponentLinks slugs={['input', 'listbox']} />` in MDX under a `## Related` heading, or `ComponentTile` in an Astro page, as the homepage does. Pass `kind="blocks"` or `kind="pages"` to link the other sections. A tile is the cover, the name and, on request, the description, and it owns hover and focus.
 - A bare `<Cover slug="menu" class="w(288)" />` is for a figure. Give it at least 240px so the art keeps its real size; it follows the page's theme without help.
 - For a light and dark comparison, place two covers with `scheme="light"` and `scheme="dark"`.
 
 ## Verify
 
-1. Open `/components`, `/layouts` or `/blocks` in the site (`bun run dev`, port 3300). Changing a page's kind (`content.mdx` to `page.astro`) or the section shell needs a restart of the dev server.
+1. Open `/components`, `/blocks` or `/pages` in the site (`bun run dev`, port 3300). Changing a page's kind (`content.mdx` to `page.astro`) or the section shell needs a restart of the dev server.
 2. Check light and dark. Each cover resolves its tokens from its own `color-scheme`, so cloning the covers into a scratch grid with `color-scheme: light` and `dark` gives a contact sheet of both; enlarge it with CSS `zoom` to inspect, and judge final weight at 100%.
 3. Measure rather than guess: the subject's box against 208 × 128, a control's height, `scale: 1` on `.cover-art` at four columns.
 4. Check two columns on a phone width, where the art scales down, and a keyboard pass over the tiles.

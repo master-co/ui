@@ -1,6 +1,6 @@
 # @master/ui
 
-Native HTML and CSS components crafted with [Master CSS](https://css.master.co), and the layouts and blocks built from them, in the Moonstone / Obsidian material: a zinc pearl in light mode, a matte obsidian in dark mode, lit from above, with half-pixel contours, short shadows that fade and corners that turn with continuous curvature.
+Native HTML and CSS components crafted with [Master CSS](https://css.master.co), and the layouts, blocks and pages built from them, in the Moonstone / Obsidian material: a zinc pearl in light mode, a matte obsidian in dark mode, lit from above, with half-pixel contours, short shadows that fade and corners that turn with continuous curvature.
 
 Each stylesheet has a contract beside it, `button.css` and `button.json`: its classes, the element each goes on, the states it draws from native and ARIA attributes, its public custom properties and the smallest correct markup. People and coding agents write to the contract; `master-ui check` reports markup that breaks one.
 
@@ -10,13 +10,14 @@ A few patterns need behavior the platform does not have yet: a combobox, a comma
 
 In React, Svelte and Vue most components are still a class on a native element. The patterns that hold state have a component to copy into the project, which renders the markup and attaches the behavior: `npx master-ui add combobox --framework=react`. See [React, Svelte and Vue](https://ui.master.co/guide/frameworks).
 
-## Three tiers
+## Four tiers
 
 | Tier | What it is | How it is published |
 | --- | --- | --- |
-| Components | A part with a material, a state, a platform behavior or a geometry its pieces share | Semantic classes in this package |
-| [Layouts](https://ui.master.co/layouts) | Where the regions of a page go, and what scrolls | Markup to copy, written with utilities, and the four layout classes below |
+| [Components](https://ui.master.co/components) | A part with a material, a state, a platform behavior or a geometry its pieces share | Semantic classes in this package |
+| [Layouts](https://ui.master.co/components#layouts) | How the room inside a region is arranged: a stack, an auto grid, a bento, masonry, a column a figure breaks out of | Utilities, and the layout classes below where utilities cannot say it |
 | [Blocks](https://ui.master.co/blocks) | One stretch of a page with a purpose: a hero, a pricing table, a footer | Markup to copy: components and utilities, composed |
+| [Pages](https://ui.master.co/pages) | A whole screen: where its regions go and what scrolls | Markup to copy, on one of two frames, `page` and `shell` |
 
 A thing is a class only when there is knowledge to put behind it. A footer is links in columns, so it is markup. A component never positions itself on the page unless standing there is its behavior, and a layout never draws a surface.
 
@@ -167,6 +168,10 @@ Or import only the theme and the components you use:
 | Page (layout) | `page` |
 | Shell (layout) | `shell`, `shell-fixed`, `shell-header`, `shell-sidebar`, `shell-main`, `shell-aside`, `shell-footer`, `shell-toggle` |
 | Auto grid (layout) | `auto-grid`, `auto-grid-fit` |
+| Bento (layout) | `bento`, `bento-dense`, `bento-wide`, `bento-tall`, `bento-large`, `bento-full` |
+| Masonry (layout) | `masonry`, `masonry-item` |
+| Breakout (layout) | `breakout`, `breakout-wide`, `breakout-full` |
+| Sticky stack (layout) | `sticky-stack`, `sticky-stack-item` |
 | Form (layout) | `form`, `form-row`, `form-section`, `form-heading`, `form-title`, `form-description`, `form-fields`, `form-actions` |
 <!-- contracts:end -->
 

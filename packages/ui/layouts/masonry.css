@@ -1,0 +1,46 @@
+/*
+ * Masonry: tiles of their own heights, packed into as many equal lanes as fit, none narrower than
+ * --masonry-min. Each tile goes where the lanes end highest, so no row of gaps is left under a short one. Like
+ * the auto grid it counts its own lanes from the room it is given and needs no query. It draws no surface.
+ *
+ * Where the browser has grid lanes (display: grid-lanes), the lanes are a grid's columns: tiles are placed in the
+ * order of the markup, each into the lane that ends highest, and the gap is the grid's. Elsewhere the lanes are
+ * the columns of a multi-column box: the same packing, filled down the first column before the next. A tile
+ * never breaks across two lanes, and the space between two tiles is a margin that a column's top cuts off.
+ *
+ * Every tile is a masonry-item, because the fallback has to keep each one whole and spaced. A set of like
+ * things is a list, <ul class="masonry">, so the masonry clears a list's indent and markers.
+ */
+@layer components {
+  .masonry {
+    --masonry-min: 14rem;
+    --masonry-gap: 1rem;
+    columns: var(--masonry-min);
+    column-gap: var(--masonry-gap);
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    @supports (display: grid-lanes) {
+      display: grid-lanes;
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--masonry-min)), 1fr));
+      gap: var(--masonry-gap);
+    }
+  }
+
+  .masonry-item {
+    min-width: 0;
+    break-inside: avoid;
+
+    & + & {
+      margin-block-start: var(--masonry-gap);
+    }
+
+    @supports (display: grid-lanes) {
+      & + & {
+        margin-block-start: 0;
+      }
+    }
+  }
+}

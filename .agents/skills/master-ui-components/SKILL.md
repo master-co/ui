@@ -20,8 +20,9 @@ For article purpose, prose, evidence and portable output, use [master-ui-writing
 Before writing anything, decide what the thing is. Read [tiers](references/tiers.md); in short:
 
 - A **component** has a material, a state, a platform behavior or a geometry its pieces share. It is a semantic class in `packages/ui/components`.
-- A **layout** says where the regions of a page go and what scrolls. It is markup written with utilities, published on a page in `site/content/layouts`. It owns no material. Only what utilities cannot say (a `dvh` height, a safe-area inset, a container threshold) becomes one of the few layout classes in `packages/ui/layouts`.
+- A **layout** says where things go and what scrolls. It is markup written with utilities, documented in the components' `Layouts` category. It owns no material. Only what utilities cannot say (a `dvh` height, a safe-area inset, a container threshold, a track list) becomes one of the few layout classes in `packages/ui/layouts`.
 - A **block** is one stretch of a page with a purpose, composed from components and utilities and published as markup in `site/content/blocks`. It invents no material.
+- A **page** is a whole screen on the frame `page` or `shell`, published as markup in `site/content/pages`.
 - A component does not own the page: it never positions itself unless standing there is its behavior.
 
 With none of the four kinds of knowledge, do not add a class, however often the markup repeats.

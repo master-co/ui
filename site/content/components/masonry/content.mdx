@@ -1,0 +1,220 @@
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import PagePreview from '~/site/components/PagePreview.astro'
+
+Masonry packs tiles of their own heights into lanes of one width. Each tile goes where the lanes end highest, so a short picture leaves no row of empty space beside a tall one, and every picture keeps the shape it was taken in. It is a layout: it draws no surface; the tiles are [figures](/components/figure), [cards](/components/card) and [sheets](/components/surface).
+
+Like an [auto grid](/components/auto-grid), it counts its own lanes from the room it is given, none narrower than `--masonry-min`, and needs no query. Where the browser has grid lanes, the grid does the packing; elsewhere a multi-column box does the same with one difference, in the order the tiles are read, described [below](#fallback).
+
+<PagePreview name="default" title="Masonry" height={817} tabletHeight={1014} phoneHeight={1775} caption="Choose Tablet, then Phone: six lanes become four, then two, and no picture is cropped to line up with another." html={`<section class="p-lg bg-surface-base fg-text-body text-sm" aria-labelledby="masonry-title">
+  <div class="flex flex-col gap-xl max-w(1120) mx-auto">
+    <header class="flex flex-col gap-xs max-w(560)">
+      <p class="eyebrow">Field notes</p>
+      <h2 class="heading heading-xl" id="masonry-title">A week on the coast</h2>
+      <p class="lead lead-sm">Fourteen pictures, each at the shape it was taken in.</p>
+    </header>
+    <ul class="masonry" style="--masonry-min: 10rem">
+      <li class="masonry-item">
+        <figure class="figure">
+          <img class="figure-media" src="/demo/dunes.svg" alt="Dunes in the afternoon, their lee sides in shadow" style="--figure-ratio: 3 / 4">
+          <figcaption class="figure-caption">Monday, the dunes</figcaption>
+        </figure>
+      </li>
+      <li class="masonry-item">
+        <figure class="figure">
+          <img class="figure-media" src="/demo/tide.svg" alt="A pale sun low over flat water" style="--figure-ratio: 4 / 3">
+          <figcaption class="figure-caption">Low tide at seven</figcaption>
+        </figure>
+      </li>
+      <li class="masonry-item">
+        <figure class="figure">
+          <img class="figure-media" src="/demo/cairn.svg" alt="Five stones balanced on a beach" style="--figure-ratio: 4 / 5">
+          <figcaption class="figure-caption">A cairn on the point</figcaption>
+        </figure>
+      </li>
+      <li class="masonry-item">
+        <figure class="figure">
+          <img class="figure-media" src="/demo/harbor.svg" alt="A wooden jetty running out over calm water" style="--figure-ratio: 3 / 2">
+          <figcaption class="figure-caption">The old jetty</figcaption>
+        </figure>
+      </li>
+      <li class="masonry-item">
+        <figure class="figure">
+          <img class="figure-media" src="/demo/pines.svg" alt="Rows of pines fading into fog" style="--figure-ratio: 2 / 3">
+          <figcaption class="figure-caption">Fog in the pines</figcaption>
+        </figure>
+      </li>
+      <li class="masonry-item">
+        <figure class="figure">
+          <img class="figure-media" src="/demo/steps.svg" alt="Concrete steps half in shadow" style="--figure-ratio: 1 / 1">
+          <figcaption class="figure-caption">Stairs to the harbour</figcaption>
+        </figure>
+      </li>
+      <li class="masonry-item">
+        <figure class="figure">
+          <img class="figure-media" src="/demo/lighthouse.svg" alt="A lighthouse on a dark headland, its beam over the sea" style="--figure-ratio: 3 / 4">
+          <figcaption class="figure-caption">The light at dusk</figcaption>
+        </figure>
+      </li>
+      <li class="masonry-item">
+        <figure class="figure">
+          <img class="figure-media" src="/demo/moonstone.svg" alt="A full moon above two ridges" style="--figure-ratio: 16 / 10">
+          <figcaption class="figure-caption">Moonrise over the ridge</figcaption>
+        </figure>
+      </li>
+      <li class="masonry-item">
+        <figure class="figure">
+          <img class="figure-media" src="/demo/tide.svg" alt="The sea at slack tide" style="--figure-ratio: 1 / 1">
+          <figcaption class="figure-caption">Wednesday, still water</figcaption>
+        </figure>
+      </li>
+      <li class="masonry-item">
+        <figure class="figure">
+          <img class="figure-media" src="/demo/dunes.svg" alt="Dune ridges reshaped by the wind" style="--figure-ratio: 4 / 3">
+          <figcaption class="figure-caption">Ridges after the wind</figcaption>
+        </figure>
+      </li>
+      <li class="masonry-item">
+        <figure class="figure">
+          <img class="figure-media" src="/demo/harbor.svg" alt="Jetty posts standing in the water" style="--figure-ratio: 4 / 5">
+          <figcaption class="figure-caption">Posts at high water</figcaption>
+        </figure>
+      </li>
+      <li class="masonry-item">
+        <figure class="figure">
+          <img class="figure-media" src="/demo/cairn.svg" alt="A small stack of beach stones" style="--figure-ratio: 1 / 1">
+          <figcaption class="figure-caption">Stones by the door</figcaption>
+        </figure>
+      </li>
+      <li class="masonry-item">
+        <figure class="figure">
+          <img class="figure-media" src="/demo/pines.svg" alt="A line of pines in mist" style="--figure-ratio: 4 / 3">
+          <figcaption class="figure-caption">The road through the wood</figcaption>
+        </figure>
+      </li>
+      <li class="masonry-item">
+        <figure class="figure">
+          <img class="figure-media" src="/demo/steps.svg" alt="Steps in early light" style="--figure-ratio: 3 / 4">
+          <figcaption class="figure-caption">Morning on the steps</figcaption>
+        </figure>
+      </li>
+    </ul>
+  </div>
+</section>`} />
+
+## How it is built \{#how-it-is-built\}
+
+- **Lanes counted from the room.** `masonry` makes as many equal lanes as fit at `--masonry-min` or wider, and never one wider than itself, so a phone does not overflow. The gallery sets `--masonry-min` to 10rem, which keeps two lanes on a phone.
+- **Packing by the platform.** Where `display: grid-lanes` is supported, the lanes are grid columns and the browser places each tile in the lane that ends highest. Elsewhere they are the columns of a multi-column box, which fills one column before the next and balances their heights.
+- **Each tile whole.** `masonry-item` keeps a tile from breaking across two columns, and keeps the gap above it. The fallback needs a class on the tile for both, so every tile has one.
+- **Tiles at their own shape.** Each picture is a [figure](/components/figure) with `--figure-ratio` set to its shape, so the lane holds its place before the picture loads and nothing moves when it arrives.
+
+## Lanes \{#lanes\}
+
+`--masonry-min` is the narrowest a lane may be, 14rem by default. A smaller minimum makes more, narrower lanes: 9 or 10rem for pictures, which keeps two lanes on a phone; 16rem or more for cards with paragraphs. `--masonry-gap` is the space between lanes and between the tiles in a lane, 1rem.
+
+Tiles need not be pictures. Anything that is as tall as what it holds can share the lanes: a note, a quote, a figure with a longer caption.
+
+<ComponentPreview name="mixed" height={531} mediumHeight={649} narrowHeight={1301} title="Mixed tiles" bodyClass="p-lg" html={`<ul class="masonry w-full" style="--masonry-min: 11rem">
+  <li class="masonry-item">
+    <article class="card">
+      <header class="card-header">
+        <h3 class="card-title">Tuesday</h3>
+        <p class="card-description">Low tide at seven</p>
+      </header>
+      <p class="card-body">Walked out past the last post of the jetty. The sand was ribbed like a roof and full of small shells.</p>
+    </article>
+  </li>
+  <li class="masonry-item">
+    <figure class="figure">
+      <img class="figure-media" src="/demo/lighthouse.svg" alt="A lighthouse on a dark headland" style="--figure-ratio: 4 / 5">
+      <figcaption class="figure-caption">The light comes on at twenty past five.</figcaption>
+    </figure>
+  </li>
+  <li class="masonry-item">
+    <div class="sheet p-lg">
+      <blockquote class="quote">
+        <p class="quote-text">Nothing here is in a hurry, least of all the sea.</p>
+        <footer class="quote-source"><span class="quote-name">The harbour master</span></footer>
+      </blockquote>
+    </div>
+  </li>
+  <li class="masonry-item">
+    <article class="card">
+      <header class="card-header">
+        <h3 class="card-title">To bring back</h3>
+      </header>
+      <ul class="card-body bullets m(0)">
+        <li class="bullets-item">A stone for the desk</li>
+        <li class="bullets-item">The tide table</li>
+        <li class="bullets-item">Film for the camera</li>
+      </ul>
+    </article>
+  </li>
+  <li class="masonry-item">
+    <figure class="figure">
+      <img class="figure-media" src="/demo/cairn.svg" alt="Five stones balanced on a beach" style="--figure-ratio: 1 / 1">
+      <figcaption class="figure-caption">Someone builds it again every morning.</figcaption>
+    </figure>
+  </li>
+</ul>`} />
+
+## Grid lanes and the fallback \{#fallback\}
+
+Masonry is written once and laid out by whichever the browser has.
+
+| | With grid lanes | Without them |
+| --- | --- | --- |
+| The lanes | The columns of `display: grid-lanes` | The columns of a multi-column box, `columns: var(--masonry-min)` |
+| Where a tile goes | The lane that ends highest, in the order of the markup | Down the first column until it is full, then the next |
+| The order seen | Across the lanes: the first tiles make the top row | Down each column: the first tiles make the first column |
+| The gap between tiles | The grid's gap | A margin, which the top of a column cuts off |
+
+Grid lanes are new, and not every engine has them yet; [browser support](/guide/browser-support#layout) lists the layouts that use them. Without them nothing is lost but the order: every tile is packed, whole and at its shape. Follow the numbers below to see which one your browser used.
+
+<ComponentPreview name="order" height={384} mediumHeight={416} narrowHeight={640} title="Order" bodyClass="p-lg" caption="Across the lanes with grid lanes, down each column without them." html={`<ol class="masonry w-full fg-text-muted text-sm" style="--masonry-min: 8rem">
+  <li class="masonry-item well flex items-center justify-center h(96)">1</li>
+  <li class="masonry-item well flex items-center justify-center h(160)">2</li>
+  <li class="masonry-item well flex items-center justify-center h(64)">3</li>
+  <li class="masonry-item well flex items-center justify-center h(128)">4</li>
+  <li class="masonry-item well flex items-center justify-center h(112)">5</li>
+  <li class="masonry-item well flex items-center justify-center h(80)">6</li>
+  <li class="masonry-item well flex items-center justify-center h(144)">7</li>
+  <li class="masonry-item well flex items-center justify-center h(72)">8</li>
+  <li class="masonry-item well flex items-center justify-center h(120)">9</li>
+</ol>`} />
+
+Choose masonry when that difference does not matter: a gallery, a board of notes, a wall of quotes, read in any order. When the order does matter, as in a feed with the newest first, use an [auto grid](/components/auto-grid), whose rows always read across.
+
+## When to use it \{#when\}
+
+| The tiles | Use |
+| --- | --- |
+| Each as tall as what it holds, read in any order | Masonry |
+| Of one size, or meant to line up in rows | An [auto grid](/components/auto-grid) |
+| Of a few sizes, arranged once, some meaning more | A [bento](/components/bento) |
+| On one row, scrolled through | A [carousel](/components/carousel) |
+
+## Accessibility \{#accessibility\}
+
+- The order of the markup is the reading order and the order of the keyboard in both layouts. With grid lanes the order seen follows it across the lanes; in the fallback it follows it down each column. Neither moves a tile out of its place in the sequence.
+- Use a list, `<ul class="masonry">`, for a set of like things, so their number is announced. The tiles are its items.
+- A picture that says something needs `alt` text even when it has a caption: the caption adds to the picture, and does not stand in for it.
+
+## Classes \{#classes\}
+
+<ContractTable name="masonry" directory="layouts" />
+
+## Custom properties \{#custom-properties\}
+
+<ContractTable name="masonry" show="properties" directory="layouts" />
+
+## Related \{#related\}
+
+<ComponentLinks slugs={['auto-grid', 'bento', 'figure', 'card', 'quote', 'lightbox']} />
+
+## Source \{#source\}
+
+<ComponentSource name="masonry" directory="layouts" />

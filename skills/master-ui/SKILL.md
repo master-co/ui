@@ -50,7 +50,7 @@ Read [frameworks](references/frameworks.md) before writing a component in one of
 
 Read [choosing](references/choosing.md) when more than one component could do the job: an overlay, a message, a choice among options, a number, navigation, a set of records. Each contract's `use` and `instead` say the same for one component.
 
-A layout or a block is markup, not a class: copy it from `https://ui.master.co/layouts/<slug>.md` or `/blocks/<slug>.md` and edit the copy.
+A block or a page is markup, not a class: copy it from `https://ui.master.co/blocks/<slug>.md` or `/pages/<slug>.md` and edit the copy. A layout class (`auto-grid`, `bento`, `masonry`, `breakout`, `sticky-stack`, `form`, and the frames `page` and `shell`) has a contract like a component's: read `https://ui.master.co/components/<name>.md`, or `/pages/page.md` and `/pages/app-shell.md` for the frames.
 
 ## Change how something looks
 

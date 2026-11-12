@@ -1,0 +1,153 @@
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import PagePreview from '~/site/components/PagePreview.astro'
+
+A sticky stack is a short sequence of panels that pile up as the page scrolls. Each panel stops when it reaches the top, a little lower than the one before it, and the next one slides over it; the edges of the panels already read stay in view above the one being read. When the stack has scrolled to its end, the panels leave together and the page goes on.
+
+It is a layout: it decides what sticks and where, and draws nothing. The panels are [cards](/components/card) or [sheets](/components/surface), which give each one the face that covers the one under it. It needs no script: every panel is `position: sticky`, and the step between them is counted by the stylesheet.
+
+<PagePreview name="default" title="Sticky stack" height={640} tabletHeight={720} phoneHeight={720} caption="Click the preview, then scroll: each step stops under the bar, a little lower than the one before it. Choose Phone: the stack works the same in a narrow column." html={`<div class="bg-surface-base fg-text-body text-sm">
+  <header class="navbar">
+    <a class="navbar-brand" href="#top">Atlas</a>
+    <nav class="navbar-nav" aria-label="Main">
+      <a class="navbar-link" href="#product">Product</a>
+      <a class="navbar-link" href="#start" aria-current="page">Get started</a>
+      <a class="navbar-link" href="#pricing">Pricing</a>
+    </nav>
+    <div class="navbar-end">
+      <a class="btn btn-primary btn-sm" href="#sign-up">Sign up</a>
+      <button type="button" class="btn btn-quiet btn-square btn-sm navbar-toggle" popovertarget="stack-menu" aria-label="Open the menu"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h16M4 16h16"/></svg></button>
+      <div class="menu menu-end" id="stack-menu" popover>
+        <a class="menu-item" href="#product">Product</a>
+        <a class="menu-item" href="#start">Get started</a>
+        <a class="menu-item" href="#pricing">Pricing</a>
+      </div>
+    </div>
+  </header>
+  <main class="flex flex-col gap-2xl max-w(720) mx-auto px-lg py-2xl">
+    <header class="flex flex-col gap-xs">
+      <p class="eyebrow">Get started</p>
+      <h1 class="heading heading-2xl">From a repository to a live site</h1>
+      <p class="lead">Four steps, about five minutes. Each one is undone as easily as it is done.</p>
+    </header>
+    <ol class="sticky-stack" style="--sticky-stack-top: 4.5rem">
+      <li class="sticky-stack-item">
+        <article class="card min-h(256)">
+          <p class="eyebrow">Step 1</p>
+          <header class="card-header">
+            <h2 class="card-title">Connect a repository</h2>
+            <p class="card-description">Choose one you have, or start from a template.</p>
+          </header>
+          <div class="card-body well flex items-center justify-between gap-sm p-md">
+            <code class="code">atlas/site</code>
+            <span class="badge">main</span>
+          </div>
+          <footer class="card-footer">
+            <a class="btn btn-sm" href="#repositories">Choose another</a>
+          </footer>
+        </article>
+      </li>
+      <li class="sticky-stack-item">
+        <article class="card min-h(256)">
+          <p class="eyebrow">Step 2</p>
+          <header class="card-header">
+            <h2 class="card-title">Set the build</h2>
+            <p class="card-description">The command that builds the site, and the folder it writes.</p>
+          </header>
+          <div class="card-body well flex flex-col gap-3xs p-md">
+            <code class="code">bun run build</code>
+            <code class="code">dist/</code>
+          </div>
+          <footer class="card-footer">
+            <a class="btn btn-sm" href="#build">Edit the build</a>
+          </footer>
+        </article>
+      </li>
+      <li class="sticky-stack-item">
+        <article class="card min-h(256)">
+          <p class="eyebrow">Step 3</p>
+          <header class="card-header">
+            <h2 class="card-title">Preview every branch</h2>
+            <p class="card-description">A pull request gets a link of its own, rebuilt on every push.</p>
+          </header>
+          <div class="card-body well flex items-center justify-between gap-sm p-md">
+            <code class="code">pr-142.atlas.dev</code>
+            <span class="badge badge-success badge-dot">Ready</span>
+          </div>
+          <footer class="card-footer">
+            <a class="btn btn-sm" href="#preview">Open the preview</a>
+          </footer>
+        </article>
+      </li>
+      <li class="sticky-stack-item">
+        <article class="card min-h(256)">
+          <p class="eyebrow">Step 4</p>
+          <header class="card-header">
+            <h2 class="card-title">Ship</h2>
+            <p class="card-description">Merge to main, and the preview you approved is what goes live.</p>
+          </header>
+          <div class="card-body well flex items-center justify-between gap-sm p-md">
+            <code class="code">atlas.dev</code>
+            <span class="badge badge-success badge-live">Live</span>
+          </div>
+          <footer class="card-footer">
+            <a class="btn btn-sm btn-primary" href="#ship">Merge and ship</a>
+          </footer>
+        </article>
+      </li>
+    </ol>
+    <section class="flex flex-col gap-xs" aria-labelledby="stack-next">
+      <h2 class="heading heading-lg" id="stack-next">Then it is yours</h2>
+      <p class="m(0) leading-md">Add a domain, invite the team, or leave it as it is. The stack has ended, so the steps scrolled away together, and the page goes on as a page.</p>
+    </section>
+  </main>
+</div>`} />
+
+## How it is built \{#how-it-is-built\}
+
+- **Every panel sticks.** `sticky-stack-item` is `position: sticky`. A sticky box stops at its `inset-block-start` from the top of the nearest scroller, here the page, and moves only within its parent, the stack. So each step stops under the bar and stays there until the stack's end comes up, and then all four leave together.
+- **Each a little lower.** The line each panel stops at is `--sticky-stack-top` plus `--sticky-stack-peek` for every panel before it. The stylesheet counts the panels before it with `sibling-index()`, so nothing in the markup is numbered.
+- **Under the bar.** The bar is a [navbar](/components/navbar), sticky itself and 3.5rem tall, so the stack sets `--sticky-stack-top` to 4.5rem: the bar's height and a rem of room.
+- **A face to cover with.** Each item holds a [card](/components/card), whose face hides the step under it. Later panels paint over earlier ones because they come later in the markup.
+- **The steps are a list.** An `<ol>`, because their order is the point, with the card inside the item, so the card keeps its own position and the item does the sticking.
+
+## The peek \{#peek\}
+
+`--sticky-stack-peek` is how much lower each panel stops than the one before it, .75rem by default: enough of each covered panel's edge to count the steps behind the one in view. A larger peek shows more of each covered panel, a heading's worth at 2.5rem; at 0 every panel stops on the same line and covers the last one whole.
+
+Where `sibling-index()` is not supported, every panel stops on the same line, as at 0. The stack still works: each step covers the one before it as it arrives, and only the edges are missing.
+
+## The scroller \{#scroller\}
+
+A sticky panel sticks to the nearest scroller and moves only inside its parent. Three things follow:
+
+- The items are the stack's own children. Wrapped in another element, an item would have that element for its parent and nowhere to move. What is inside an item, here a card, can be anything.
+- Nothing between the stack and the scroller may clip it. `overflow: hidden` on an ancestor makes that ancestor the scroller, and nothing sticks.
+- How long a panel stays depends on what follows it in the stack. The last one is stuck only as long as it takes the stack's end to reach it; to hold it longer, give the stack more height below it, such as a closing panel.
+
+## When to use it \{#when\}
+
+Use a sticky stack for a short sequence read in order as the page scrolls: three to six steps, chapters or plans, each worth a moment of its own. When the panels should be seen side by side, or a reader should move through them at will, use a [carousel](/components/carousel). When they are reference a reader opens one at a time, use an [accordion](/components/accordion). A long list is not a stack: the edges of twenty panels are a wall.
+
+## Accessibility \{#accessibility\}
+
+- The stack changes where panels are drawn, never their order: the markup is read in sequence, and a keyboard moves through it in sequence. A link that takes focus in a covered panel scrolls the page until the panel is in view.
+- Every panel is fully in view at the moment it arrives, so nothing is read through a covering one. Keep the panels shorter than the viewport less `--sticky-stack-top`; a panel taller than that is covered before its end is read.
+- Nothing moves by itself and nothing is animated, so there is nothing to reduce: the panels move exactly as far as the reader scrolls.
+
+## Classes \{#classes\}
+
+<ContractTable name="sticky-stack" directory="layouts" />
+
+## Custom properties \{#custom-properties\}
+
+<ContractTable name="sticky-stack" show="properties" directory="layouts" />
+
+## Related \{#related\}
+
+<ComponentLinks slugs={['card', 'navbar', 'carousel', 'accordion', 'steps']} />
+
+## Source \{#source\}
+
+<ComponentSource name="sticky-stack" directory="layouts" />

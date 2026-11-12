@@ -24,13 +24,13 @@ export default defineSite({
     locales: ['en'],
     hreflangOfLocale: { en: 'en' },
     nameOfLocale: { en: 'English' },
-    localizablePathnameRoots: ['guide', 'components', 'layouts', 'blocks'],
+    localizablePathnameRoots: ['guide', 'components', 'blocks', 'pages'],
     translations
   },
-  // The guide and the three tiers of the library share one documentation shell, and each has a sidebar of its own.
-  // A tier's overview leaves the sidebar out, and so does every page of the blocks, which are shown at full width.
-  sections: { home: section('home'), page: section('page'), guide: section('guide'), components: library, layouts: library, blocks: library },
-  navigation: { guide: categories('guide'), components: categories('components'), layouts: categories('layouts'), blocks: categories('blocks') },
-  documents: { guide: document('guide'), components: document('components'), layouts: document('layouts'), blocks: document('blocks') },
+  // The guide and the three sections of the library share one documentation shell, and each has a sidebar of its own.
+  // A section's overview leaves the sidebar out, and so does every block and every page, which are shown at full width.
+  sections: { home: section('home'), page: section('page'), guide: section('guide'), components: library, blocks: library, pages: library },
+  navigation: { guide: categories('guide'), components: categories('components'), blocks: categories('blocks'), pages: categories('pages') },
+  documents: { guide: document('guide'), components: document('components'), blocks: document('blocks'), pages: document('pages') },
   styles: { site: new URL('./styles/site.ts', import.meta.url) }
 })

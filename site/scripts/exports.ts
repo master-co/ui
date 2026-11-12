@@ -14,7 +14,7 @@ import { execFileSync } from 'node:child_process'
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { blocks, components, layouts } from '../components/catalog.ts'
+import { blocks, components, pageOfContract, pages as pageLayouts } from '../components/catalog.ts'
 import { exampleSource } from '../utils/framework-example.ts'
 import { previewMarkdown } from '../utils/preview-markdown.ts'
 import { anchorMarkdown } from '../utils/anchor-markdown.ts'
@@ -56,8 +56,9 @@ function frameworkFiles(framework: string, entry: string) {
   return files
 }
 
-for (const generated of ['r', 'themes']) rmSync(join(out, generated), { recursive: true, force: true })
-for (const section of ['guide', 'components', 'layouts', 'blocks']) {
+// `layouts/` is the retired section: its pages moved to the components and the pages, and `_redirects` sends them there.
+for (const generated of ['r', 'themes', 'layouts']) rmSync(join(out, generated), { recursive: true, force: true })
+for (const section of ['guide', 'components', 'blocks', 'pages']) {
   if (existsSync(join(out, section))) for (const file of readdirSync(join(out, section))) if (file.endsWith('.md')) rmSync(join(out, section, file))
 }
 cpSync(join(ui, 'dist/contracts.json'), join(out, 'contracts.json'))
@@ -83,12 +84,11 @@ function contractMarkdown(contract: any) {
     entry.label && 'needs an accessible name',
     entry.exclusive && `one ${entry.exclusive} at a time`,
   ].filter(Boolean).join('; ')
-  const directory = contract.tier === 'layout' ? 'layouts' : 'components'
   return [
     `# ${contract.title}`,
     contract.description,
     `**Use it for:** ${contract.use}`,
-    contract.instead?.length && `**Use something else when:**\n\n${contract.instead.map((item: any) => `- ${item.when}: use [${item.use}](${origin}/${contractOf.get(item.use)?.tier === 'layout' ? 'layouts' : 'components'}/${item.use}.md).`).join('\n')}`,
+    contract.instead?.length && `**Use something else when:**\n\n${contract.instead.map((item: any) => `- ${item.when}: use [${item.use}](${origin}/${pageOfContract(item.use)}.md).`).join('\n')}`,
     `## Markup\n\n\`\`\`html\n${contract.example}\n\`\`\``,
     `## Classes\n\n${table(['Class', 'Where it goes', 'What it is'], contract.classes.map((entry: any) => [code(entry.name), constraints(entry), entry.description]))}`,
     contract.states?.length && `## States\n\nMark a state with the attribute; the stylesheet draws it. Never add a class for a state.\n\n${table(['State', 'On', 'Mark it with', 'Notes'], contract.states.map((state: any) => [state.name, code(state.on), code(state.mark), state.description ?? '']))}`,
@@ -99,8 +99,8 @@ function contractMarkdown(contract: any) {
       ? `${componentsOf(contract.name).map((name: string) => `\`${name}\``).join(' and ')} ${componentsOf(contract.name).length > 1 ? 'are components' : 'is a component'} to copy into the project: ${componentsOf(contract.name).map((name: string) => `\`npx master-ui add ${name}\``).join(', ')}. It renders this markup, attaches the behavior where there is one and passes the value in and out. Look in the project's \`ui/\` directory first: a copy may already be there. See ${origin}/guide/frameworks.md.${componentsOf(contract.name).includes(contract.name) ? '' : ' Every other class of this contract is written as markup.'}`
       : `No component: write this markup in the framework's own syntax (\`className\` and \`htmlFor\` in JSX). Do not wrap a class in a component to rename it.`}`,
     contract.platform?.length && `## Platform\n\n${table(['Feature', 'Without it'], contract.platform.map((item: any) => [item.feature, item.fallback]))}`,
-    contract.composes?.length && `## Used with\n\n${contract.composes.map((name: string) => `- [${name}](${origin}/${contractOf.get(name)?.tier === 'layout' ? 'layouts' : 'components'}/${name}.md)`).join('\n')}`,
-    `## Install\n\n\`\`\`css\n@import '@master/ui/theme.css';\n${[...(contract.composes ?? []), contract.name].map((name: string) => `@import '@master/ui/${contractOf.get(name)?.tier === 'layout' ? 'layouts' : 'components'}/${name}.css';`).join('\n')}\n\`\`\`\n\nTheme tokens it reads: ${contract.tokens.length ? contract.tokens.map(code).join(', ') : 'none'}.\n\nHuman page: ${origin}/${directory === 'layouts' ? `layouts/${contract.name === 'shell' ? 'app-shell' : contract.name}` : `components/${contract.name}`}`,
+    contract.composes?.length && `## Used with\n\n${contract.composes.map((name: string) => `- [${name}](${origin}/${pageOfContract(name)}.md)`).join('\n')}`,
+    `## Install\n\n\`\`\`css\n@import '@master/ui/theme.css';\n${[...(contract.composes ?? []), contract.name].map((name: string) => `@import '@master/ui/${contractOf.get(name)?.tier === 'layout' ? 'layouts' : 'components'}/${name}.css';`).join('\n')}\n\`\`\`\n\nTheme tokens it reads: ${contract.tokens.length ? contract.tokens.map(code).join(', ') : 'none'}.\n\nHuman page: ${origin}/${pageOfContract(contract.name)}`,
   ].filter(Boolean).join('\n\n') + '\n'
 }
 
@@ -113,7 +113,7 @@ function mdxMarkdown(source: string, title: string, description: string) {
     .replace(/<ComponentSource name="([^"]+)"(?: directory="([^"]+)")? \/>/g, (_, name, directory = 'components') => `\`\`\`css\n${read(join(ui, directory, `${name}.css`)).trim()}\n\`\`\``)
     .replace(/<ComponentLinks slugs=\{\[([^\]]*)\]\}(?: kind="(\w+)")? \/>/g, (_, slugs, kind = 'components') => slugs.split(',').map((slug: string) => slug.trim().replace(/['"]/g, '')).filter(Boolean).map((slug: string) => `- [${slug}](${origin}/${kind}/${slug}.md)`).join('\n'))
     .replace(/<Contract\w* [^>]*\/>/g, '')
-    .replace(/\]\(\/(guide|components|layouts|blocks)\/([\w-]+)(#[\w-]+)?\)/g, (_, section, slug, hash = '') => `](${origin}/${section}/${slug}.md${hash})`)
+    .replace(/\]\(\/(guide|components|blocks|pages)\/([\w-]+)(#[\w-]+)?\)/g, (_, section, slug, hash = '') => `](${origin}/${section}/${slug}.md${hash})`)
     .replace(/\n{3,}/g, '\n\n')
     .trim()
   return `# ${title}\n\n${description}\n\n${anchorMarkdown(body)}\n`
@@ -125,7 +125,7 @@ const metadataOf = (file: string) => {
   return { title, description: /description: '((?:[^'\\]|\\.)*)'/.exec(source)?.[1].replace(/\\'/g, '\'') ?? '', order: Number(/order: (\d+)/.exec(source)?.[1] ?? 99), category: /category: '([^']+)'/.exec(source)?.[1] ?? '' }
 }
 
-const pages: Record<string, { slug: string, title: string, description: string }[]> = { guide: [], components: [], layouts: [], blocks: [] }
+const pages: Record<string, { slug: string, title: string, description: string }[]> = { guide: [], components: [], blocks: [], pages: [] }
 
 for (const slug of readdirSync(join(site, 'content/guide'))) {
   const directory = join(site, 'content/guide', slug)
@@ -137,14 +137,22 @@ for (const slug of readdirSync(join(site, 'content/guide'))) {
 const categoryRank = ['Getting started', 'Customizing', 'Building', 'Reference']
 pages.guide.sort((a: any, b: any) => categoryRank.indexOf(a.category) - categoryRank.indexOf(b.category) || a.order - b.order)
 
+/*
+ * A component's page is its contract. A layout among the components is read for its page first, the way it is built
+ * and when to use it, with its contract after; the arrangements have no contract and are their page alone. A block or
+ * a page is its page, and a page that is a frame (`page`, the app shell) ends with that frame's contract.
+ */
 for (const item of components) {
+  const contract = contractOf.get(item.slug)
   pages.components.push({ slug: item.slug, title: item.name, description: item.description })
-  write(`components/${item.slug}.md`, contractMarkdown(contractOf.get(item.slug)))
+  write(`components/${item.slug}.md`, contract?.tier === 'component'
+    ? contractMarkdown(contract)
+    : mdxMarkdown(read(join(site, 'content/components', item.slug, 'content.mdx')), item.name, item.description) + (contract ? `\n---\n\n${contractMarkdown(contract)}` : ''))
 }
-for (const [kind, list] of [['layouts', layouts], ['blocks', blocks]] as const) {
+for (const [kind, list] of [['blocks', blocks], ['pages', pageLayouts]] as const) {
   for (const item of list) {
     const source = read(join(site, 'content', kind, item.slug, 'content.mdx'))
-    const contract = kind === 'layouts' ? contractOf.get(item.slug === 'app-shell' ? 'shell' : item.slug) : undefined
+    const contract = kind === 'pages' ? contractOf.get(item.slug === 'app-shell' ? 'shell' : item.slug) : undefined
     pages[kind].push({ slug: item.slug, title: item.name, description: item.description })
     write(`${kind}/${item.slug}.md`, mdxMarkdown(source, item.name, item.description) + (contract ? `\n---\n\n${contractMarkdown(contract)}` : ''))
   }
@@ -153,7 +161,7 @@ for (const [kind, list] of [['layouts', layouts], ['blocks', blocks]] as const) 
 const links = (section: string) => pages[section].map(page => `- [${page.title}](${origin}/${section}/${page.slug}.md): ${page.description}`).join('\n')
 write('llms.txt', `# Master UI
 
-> Native HTML and CSS interface components for Master CSS, with a contract for each: the classes, where they go, the states the stylesheet draws, the public custom properties and the smallest correct markup. Layouts and blocks are markup to copy.
+> Native HTML and CSS interface components for Master CSS, with a contract for each: the classes, where they go, the states the stylesheet draws, the public custom properties and the smallest correct markup. Blocks and pages are markup to copy.
 
 Rules for writing Master UI markup:
 
@@ -177,13 +185,13 @@ ${links('guide')}
 
 ${links('components')}
 
-## Layouts
-
-${links('layouts')}
-
 ## Blocks
 
 ${links('blocks')}
+
+## Pages
+
+${links('pages')}
 `)
 
 /* ---------------------------------------------------------------- Registry */
@@ -212,7 +220,6 @@ for (const name of readdirSync(join(ui, 'themes')).filter(name => name.endsWith(
   })
 }
 for (const contract of contracts) {
-  const directory = contract.tier === 'layout' ? 'layouts' : 'components'
   const { stylesheet, tokens, mixins, ...published } = contract
   const files = [
     file(`ui/${contract.name}.css`, read(join(ui, stylesheet))),
@@ -233,7 +240,7 @@ for (const contract of contracts) {
   items.push({
     $schema: schema, name: contract.name, type: 'registry:item', title: contract.title, description: contract.description,
     dependencies: ['@master/css'], registryDependencies: [item('theme'), ...(contract.composes ?? []).map(item)], files, categories: [contract.category],
-    docs: `Import ui/${contract.name}.css after ui/theme.css. Its contract is ui/${contract.name}.json; markup: ${origin}/${directory}/${contract.name}.md`,
+    docs: `Import ui/${contract.name}.css after ui/theme.css. Its contract is ui/${contract.name}.json; markup: ${origin}/${pageOfContract(contract.name)}.md`,
     meta: { tier: contract.tier, script: contract.script, classes: contract.classes.map((entry: any) => entry.name), tokens, mixins },
   })
 }
@@ -251,20 +258,20 @@ for (const [framework, { title, package: dependency }] of Object.entries(manifes
   }
 }
 
-/** A block or a page layout is its first preview: markup to paste, written with components and utilities. */
-for (const [kind, list] of [['layouts', layouts], ['blocks', blocks]] as const) {
+/** A block or a page is its first preview: markup to paste, written with components and utilities. */
+for (const [kind, list] of [['blocks', blocks], ['pages', pageLayouts]] as const) {
   for (const entry of list) {
     const source = read(join(site, 'content', kind, entry.slug, 'content.mdx'))
     const markup = /<PagePreview\b[\s\S]*?html=\{`([\s\S]*?)`\}/.exec(source)?.[1]
     if (!markup) continue
     const used = [...new Set([...markup.matchAll(/class="([^"]*)"/g)].flatMap(match => match[1].split(/\s+/)))]
     const needs = contracts.filter(contract => contract.classes.some((entry: any) => used.includes(entry.name))).map(contract => contract.name)
-    const name = kind === 'blocks' ? `block-${entry.slug}` : `layout-${entry.slug}`
+    const name = kind === 'blocks' ? `block-${entry.slug}` : `page-${entry.slug}`
     items.push({
       $schema: schema, name, type: 'registry:item', title: entry.name, description: entry.description,
       dependencies: ['@master/css'], registryDependencies: needs.map(item), files: [file(`ui/${kind}/${entry.slug}.html`, `${markup}\n`)], categories: [entry.category],
       docs: `Markup to paste into a page or a component. It uses: ${needs.join(', ')}. Variants: ${origin}/${kind}/${entry.slug}.md`,
-      meta: { tier: kind === 'blocks' ? 'block' : 'layout', components: needs },
+      meta: { tier: kind === 'blocks' ? 'block' : 'page', components: needs },
     })
   }
 }

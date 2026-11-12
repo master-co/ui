@@ -40,7 +40,7 @@ test('theming exports both previews from the same authored specimen', () => {
 test('portable previews retain their teaching captions before or after the markup prop', () => {
   const theme = previewMarkdown(page('guide/theme'))
   assert.ok(theme.includes('Toggle Theme to compare moonstone and obsidian. Both come from the same stylesheet.'))
-  const layout = previewMarkdown(page('layouts/auto-grid'))
+  const layout = previewMarkdown(page('components/auto-grid'))
   assert.ok(layout.includes('Choose Tablet, then Phone: four columns become two, then one. No query was written.'))
 })
 

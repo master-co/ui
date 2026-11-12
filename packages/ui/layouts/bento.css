@@ -1,0 +1,55 @@
+/*
+ * Bento: a few tiles of different sizes fitted into one box, the way a product's features or a profile's
+ * highlights are shown. It is a layout: it draws no surface; the tiles are cards, sheets or figures.
+ *
+ * What it knows is how many columns there are and how far a tile may span. Both follow the room the bento is
+ * given, never the viewport: four columns from 48rem, two from 28rem, one below. The bento is a size container,
+ * named bento, so the tiles read the same width the columns are counted from. The columns are counted without
+ * a query on the bento itself (a container cannot query its own size): the narrowest a track may be jumps from a
+ * quarter to a half to the whole of the width at those two thresholds, and auto-fill makes as many tracks as
+ * that allows. A pixel is taken off each, so rounding never costs a column.
+ *
+ * A tile takes one cell. bento-wide spans two columns, bento-tall two rows, bento-large both, bento-full the
+ * row. A span never asks for more columns than there are: in two columns a wide tile is the row, and in one
+ * column every tile is one cell. Rows are at least --bento-row tall and grow with what they hold, so a tile
+ * never cuts its words.
+ *
+ * Tiles are placed in the order of the markup, which is also the order a keyboard and a screen reader follow.
+ * The grid does not move a later tile up into a hole: arrange the tiles so they pack, or add bento-dense to a
+ * set whose order means nothing.
+ */
+@layer components {
+  .bento {
+    --bento-row: 10rem;
+    --bento-gap: 1rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(calc(clamp(clamp((100% - var(--bento-gap) * 3) / 4, (48rem - 100%) * 999, (100% - var(--bento-gap)) / 2), (28rem - 100%) * 999, 100%) - 1px), 1fr));
+    grid-auto-rows: minmax(var(--bento-row), auto);
+    gap: var(--bento-gap);
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    container: bento / inline-size;
+
+    &.bento-dense {
+      grid-auto-flow: row dense;
+    }
+  }
+
+  .bento-full {
+    grid-column: 1 / -1;
+  }
+
+  @container bento (inline-size >= 28rem) {
+    .bento-wide,
+    .bento-large {
+      grid-column: span 2;
+    }
+
+    .bento-tall,
+    .bento-large {
+      grid-row: span 2;
+    }
+  }
+}

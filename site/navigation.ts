@@ -17,8 +17,8 @@ const repositoryURL = 'https://github.com/master-co/ui'
 export const primaryNavs = [
   { name: 'Guide', href: '/guide/introduction', Icon: IconCompass },
   { name: 'Components', href: '/components', Icon: IconComponents },
-  { name: 'Layouts', href: '/layouts', Icon: IconLayoutSidebar },
   { name: 'Blocks', href: '/blocks', Icon: IconStack2 },
+  { name: 'Pages', href: '/pages', Icon: IconLayoutSidebar },
 ] satisfies AppNavItem[]
 
 export const communityNavs = [
@@ -34,8 +34,8 @@ export const footerNavGroups = [
       { name: 'Introduction', href: '/guide/introduction' },
       { name: 'Installation', href: '/guide/installation' },
       { name: 'Components', href: '/components' },
-      { name: 'Layouts', href: '/layouts' },
       { name: 'Blocks', href: '/blocks' },
+      { name: 'Pages', href: '/pages' },
     ]
   },
   {

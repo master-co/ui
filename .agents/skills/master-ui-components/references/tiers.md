@@ -1,12 +1,13 @@
-# Components, layouts and blocks
+# Components, layouts, blocks and pages
 
 The library has three tiers. What separates them is not size, and not whether something "is layout". It is whether there is knowledge worth putting behind a class.
 
 | Tier | What it is | Where it lives | How it is published |
 | --- | --- | --- | --- |
 | Component | A part with a material, a state, a platform behavior or a geometry its pieces share | `packages/ui/components/<slug>.css`, `site/content/components/<slug>/` | Semantic classes |
-| Layout | Where the regions of a page go, and what scrolls | `site/content/layouts/<slug>/`, and `packages/ui/layouts/<slug>.css` for the few layout classes | Markup to copy, written with utilities |
+| Layout | Where things go in a room, and what scrolls: a stack, tiles, lanes, a reading column | `site/content/components/<slug>/` in the `Layouts` category, and `packages/ui/layouts/<slug>.css` for the layout classes | Markup to copy, written with utilities and a layout class where they cannot say it |
 | Block | One stretch of a page with a purpose: a hero, a pricing table, a footer | `site/content/blocks/<slug>/` | Markup to copy: components and utilities |
+| Page | A whole screen: its regions and what scrolls | `site/content/pages/<slug>/`, on the frames `page` and `shell` | Markup to copy, filled with blocks and components |
 
 Templates, whole pages, are a fourth tier that does not exist yet. Do not add one without a design discussion.
 
@@ -28,7 +29,7 @@ The threshold is knowledge, not repetition. Markup that appears ten times is cop
 - **A component does not own the page.** It never sets where it stands, unless standing there is its behavior: a navbar is sticky, a dialog enters the top layer, a toast region is fixed. A component never sets its own outer margin or a width from the viewport.
 - **A layout does not own a material.** It decides regions and scrolling. A face, a contour, a shadow or a corner comes from a component standing in the region, or from a utility in the markup. `packages/ui/tests/master.test.ts` fails a layout stylesheet that declares `background`, `background-color`, `background-image`, `box-shadow`, `border-radius`, `corner-shape`, `backdrop-filter` or `filter`.
 - **Layouts answer to their own room.** Inside the frame of a page, write `@container(--3xl)` variants on a `container-inline` ancestor, not `@md`. Viewport variants are for the frame itself.
-- **A block invents nothing.** Every surface in it is a component, every arrangement is on the [arrangements](/layouts/arrangements) page. A block that needs a new material is a request for a component or a modifier (`sheet-inverse` came from the call to action).
+- **A block invents nothing.** Every surface in it is a component, every arrangement is on the [arrangements](/components/arrangements) page. A block that needs a new material is a request for a component or a modifier (`sheet-inverse` came from the call to action).
 
 ## Sorting an idea
 
@@ -46,16 +47,20 @@ The threshold is knowledge, not repetition. Markup that appears ten times is cop
 
 ## The layout classes
 
-A layout gets a class only for what utilities cannot say or what is easy to get wrong each time: a height in `dvh`, the inset of a phone's home indicator, a sticky column with its own scroll, a container threshold, a grid that counts its own columns. There are four, in `packages/ui/layouts/`:
+A layout gets a class only for what utilities cannot say or what is easy to get wrong each time: a height in `dvh`, the inset of a phone's home indicator, a sticky column with its own scroll, a container threshold, a grid that counts its own columns, grid lanes, a margin measured in its container, an offset counted from a sibling index. They are in `packages/ui/layouts/`:
 
 | Class | Holds |
 | --- | --- |
 | `page` | A column at least as tall as the viewport, in `dvh` |
 | `shell` and its regions | Sticky columns as tall as the viewport, a fixed mode, thresholds at 48rem and 64rem of shell, the safe-area inset |
 | `auto-grid` | `repeat(auto-fill, minmax(min(100%, …), 1fr))` |
+| `bento` and its tiles | Four, two or one columns counted from its own width without a query; spans from 28rem of bento; `grid-auto-flow: dense` |
+| `masonry`, `masonry-item` | `display: grid-lanes`, and a multi-column fallback whose tiles keep whole |
+| `breakout`, `breakout-wide`, `breakout-full` | A track at a measure, and margins measured in `cqi` |
+| `sticky-stack`, `sticky-stack-item` | A sticky offset counted with `sibling-index()` |
 | `form`, `form-row`, `form-section`, `form-actions` | Thresholds at 24, 28 and 40rem of form |
 
-They follow the component selector contract and compile in `@layer components`, after every component in `master.css`. Before adding a fifth, write the layout with utilities and name the declaration that cannot be written. Write its contract beside it; the tests and the README's table follow from that.
+They follow the component selector contract and compile in `@layer components`, after every component in `master.css`. Before adding another, write the layout with utilities and name the declaration that cannot be written. Write its contract beside it; the tests and the README's table follow from that.
 
 ## Utilities a layout can use
 
@@ -69,14 +74,14 @@ The preset has no arbitrary `property:value` syntax. Check a class against the p
 - Container variants: `@container(--md)` 28rem, `--lg` 32, `--xl` 36, `--2xl` 42, `--3xl` 48, `--4xl` 56, `--5xl` 64rem, and `@container(--max-3xl)` for below. `container-inline` makes the container.
 - Not available: `dvh` and `vh` heights, `z-index`, `opacity`, `aspect-ratio`, `text-wrap`, `tabular-nums`, custom grid tracks. When a layout needs one of these, that is the sign it needs a component, a layout class or a custom property on a component.
 
-## Documenting a layout or a block
+## Documenting a layout, a block or a page
 
-Each tier has a skill that holds its page pattern, its previews and its verification: [master-ui-layouts](../../master-ui-layouts/SKILL.md) and [master-ui-blocks](../../master-ui-blocks/SKILL.md). What the two share:
+Each tier has a skill that holds its page pattern, its previews and its verification: [master-ui-layouts](../../master-ui-layouts/SKILL.md) for layouts and pages, and [master-ui-blocks](../../master-ui-blocks/SKILL.md). What they share:
 
-- A page is `site/content/<layouts|blocks>/<slug>/{metadata.ts,content.mdx}` and an entry in `layouts` or `blocks` in `site/components/catalog.ts`. `metadata.ts` carries the category (`Layout basics`, `Page layouts`, `Marketing blocks`, `Application blocks`) and an `order`.
-- It is shown with `PagePreview`: a real viewport at a desktop, tablet or phone width, scaled to the column. Its heights are authored, `height`, `tabletHeight`, `phoneHeight` and `touchHeight`, as [preview sizing](previews.md) describes; the frame is never sized from a measurement at runtime.
-- A layout page and a block page have neither a sidebar nor a contents rail. Everything but a page preview keeps the text column, 41rem, centred in the window; a page preview leaves the column and runs to the page's own gutters, up to 96rem.
-- A layout page explains **how it is built**; a block page lists **what is in it**.
+- A layout is `site/content/components/<slug>/{metadata.ts,content.mdx}` with the category `Layouts`, and an entry in `components`; a block or a page is `site/content/<blocks|pages>/<slug>/{metadata.ts,content.mdx}` and an entry in `blocks` or `pages` in `site/components/catalog.ts`. `metadata.ts` carries the category (`Layouts`, `Marketing blocks`, `Application blocks`, `Site pages`, `Application pages`) and an `order`.
+- Whatever is about a width is shown with `PagePreview`: a real viewport at a desktop, tablet or phone width, scaled to the column. Its heights are authored, `height`, `tabletHeight`, `phoneHeight` and `touchHeight`, as [preview sizing](previews.md) describes; the frame is never sized from a measurement at runtime.
+- A block page and a page's page have neither a sidebar nor a contents rail; a layout reads beside the components' sidebar, and its page previews are drawn at the column's width. Everything but a page preview keeps the text column, 41rem, centred in the window; a page preview leaves the column and runs to the page's own gutters, up to 96rem.
+- A layout's or a page's page explains **how it is built**; a block page lists **what is in it**.
 - Every example is real content. No lorem ipsum.
-- Link the components a page uses with `<ComponentLinks slugs={[…]} />`, and neighbors in the other tiers with `kind="layouts"` or `kind="blocks"`.
-- Its cover is `site/components/cover/art/<layouts|blocks>/<slug>.astro`, drawn with `$master-ui-covers`.
+- Link the components a page uses with `<ComponentLinks slugs={[…]} />`, layouts included, and neighbors in the other sections with `kind="blocks"` or `kind="pages"`.
+- Its cover is `site/components/cover/art/<slug>.astro` for a layout and `art/<blocks|pages>/<slug>.astro` for the others, drawn with `$master-ui-covers`.

@@ -1,0 +1,187 @@
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import PagePreview from '~/site/components/PagePreview.astro'
+
+A bento fits a few tiles of different sizes into one box, the way a product's features or a profile's highlights are shown: one large, a tall one beside it, a few small ones around them. It is a layout: it draws no surface, and the tiles are [cards](/components/card), [sheets](/components/surface) and whatever they hold.
+
+What it knows is how many columns there are and how far a tile may span. Both follow the room the bento is given, not the viewport: four columns from 48rem, two from 28rem, one below. A tile that spans two columns in a wide bento is the whole row in two columns and one cell in one, so the same markup is a mosaic on a desktop and a plain column on a phone.
+
+<PagePreview name="default" title="Bento" height={708} tabletHeight={1236} phoneHeight={1584} caption="Choose Tablet, then Phone: four columns become two, then one, and each tile spans only as far as there are columns." html={`<section class="flex flex-col gap-xl p-xl bg-surface-base fg-text-body text-sm" aria-labelledby="bento-title">
+  <header class="flex flex-col gap-xs max-w(560)">
+    <p class="eyebrow">Platform</p>
+    <h2 class="heading heading-xl" id="bento-title">Everything a deploy needs</h2>
+  </header>
+  <div class="bento">
+    <article class="card card-split bento-large">
+      <img class="card-media" src="/demo/moonstone.svg" alt="">
+      <header class="card-header">
+        <h3 class="card-title">Live at the edge</h3>
+        <p class="card-description">Every push is served from 14 regions before the review is done.</p>
+      </header>
+      <p class="card-body">Static files, functions and images are cached where the reader is, and purged the moment a deploy replaces them.</p>
+      <footer class="card-footer">
+        <a class="btn btn-sm" href="#regions">See the regions</a>
+      </footer>
+    </article>
+    <article class="card bento-tall">
+      <header class="card-header">
+        <h3 class="card-title">Reviewed together</h3>
+        <p class="card-description">Comments land on the preview, beside what they are about.</p>
+      </header>
+      <div class="card-body flex flex-col gap-sm">
+        <div class="avatar-group" role="group" aria-label="Ada Lovelace, Alan Turing, Grace Hopper and 5 others">
+          <span class="avatar avatar-sm"><img class="avatar-image" src="/demo/portrait-1.svg" alt=""></span>
+          <span class="avatar avatar-sm"><img class="avatar-image" src="/demo/portrait-2.svg" alt=""></span>
+          <span class="avatar avatar-sm"><img class="avatar-image" src="/demo/portrait-3.svg" alt=""></span>
+          <span class="avatar avatar-sm" aria-hidden="true">+5</span>
+        </div>
+        <p class="m(0)">Eight people left 23 comments on this week's previews. Four are still open.</p>
+      </div>
+      <footer class="card-footer">
+        <a class="btn btn-sm" href="#comments">Open comments</a>
+      </footer>
+    </article>
+    <article class="card">
+      <div class="stat">
+        <p class="stat-label">Cold builds</p>
+        <div class="stat-row">
+          <p class="stat-value">38s</p>
+          <p class="stat-delta">21% faster</p>
+        </div>
+        <p class="stat-description">Caches are restored before the install.</p>
+      </div>
+    </article>
+    <article class="card">
+      <header class="card-header">
+        <h3 class="card-title">Rollbacks</h3>
+        <p class="card-description">Any deploy is one click away, and so is the one before it.</p>
+      </header>
+    </article>
+    <article class="card bento-wide">
+      <header class="card-header">
+        <h3 class="card-title">Builds this week</h3>
+        <p class="card-description">Thursday so far</p>
+      </header>
+      <ol class="chart chart-quiet" style="--chart-height: 4.5rem" aria-label="Builds per day, this week">
+        <li class="chart-item" style="--value: 42"><span class="chart-label">Mon</span><span class="chart-value">42</span></li>
+        <li class="chart-item" style="--value: 58"><span class="chart-label">Tue</span><span class="chart-value">58</span></li>
+        <li class="chart-item" style="--value: 36"><span class="chart-label">Wed</span><span class="chart-value">36</span></li>
+        <li class="chart-item" style="--value: 71" aria-current="true"><span class="chart-label">Thu</span><span class="chart-value">71</span></li>
+        <li class="chart-item" style="--value: 0"><span class="chart-label">Fri</span><span class="chart-value">0</span></li>
+        <li class="chart-item" style="--value: 0"><span class="chart-label">Sat</span><span class="chart-value">0</span></li>
+        <li class="chart-item" style="--value: 0"><span class="chart-label">Sun</span><span class="chart-value">0</span></li>
+      </ol>
+    </article>
+    <article class="sheet sheet-inverse bento-wide flex flex-col justify-between gap-md p(20)">
+      <div class="flex flex-col gap-3xs">
+        <h3 class="heading heading-sm fg-text-inverse">Start on the free plan</h3>
+        <p class="m(0)">Three projects and every feature above. No card needed.</p>
+      </div>
+      <div class="flex">
+        <a class="btn btn-sm" href="#start">Create a project</a>
+      </div>
+    </article>
+  </div>
+</section>`} />
+
+## How it is built \{#how-it-is-built\}
+
+- **Columns counted from its own width.** A container cannot query its own size, so the bento counts its columns the way an [auto grid](/components/auto-grid) does: `repeat(auto-fill, …)` with a narrowest track. That narrowest track is a quarter of the width from 48rem, a half from 28rem and the whole below, so auto-fill makes four columns, two or one, and never three.
+- **Spans that follow the columns.** The bento is a size container named `bento`, measured at the same width. `bento-wide`, `bento-tall` and `bento-large` span only from 28rem of bento, where there are two columns to span. `bento-full` spans the row at every width.
+- **Rows with a floor.** Rows are at least `--bento-row` tall, 10rem, and grow with what they hold. A tall tile is two rows and the gap between them, whatever is in it.
+- **Tiles in the order of the markup.** The six tiles above are written so they pack in four columns and in two: the large one and the tall one first, the two small ones that fill the column beside the tall one, then the two wide ones.
+- **The tiles are components.** A [split card](/components/card#it-follows-its-container) puts the picture beside its words while the tile is wide and above them when it is not. The figures are a [stat](/components/stat) and a [quiet chart](/components/chart#quiet); the last tile is the page's one [inverse sheet](/components/surface#inverse).
+
+## Tiles \{#tiles\}
+
+A tile with no class takes one cell. Four parts make a tile larger:
+
+| Class | In four columns | In two | In one |
+| --- | --- | --- | --- |
+| `bento-wide` | Two columns | The row | One cell |
+| `bento-tall` | Two rows | Two rows | One cell |
+| `bento-large` | Two columns, two rows | The row, two rows | One cell |
+| `bento-full` | The row | The row | The row |
+
+<PagePreview name="tiles" title="Tiles" height={416} tabletHeight={704} phoneHeight={800} caption="Choose Tablet, then Phone: each span holds while there are columns to span, and lets go when there are not." html={`<div class="bento p-lg bg-surface-base fg-text-muted text-2xl font-mono" style="--bento-row: 5rem">
+  <div class="well flex items-center justify-center bento-large">bento-large</div>
+  <div class="well flex items-center justify-center bento-tall">bento-tall</div>
+  <div class="well flex items-center justify-center">One cell</div>
+  <div class="well flex items-center justify-center">One cell</div>
+  <div class="well flex items-center justify-center bento-wide">bento-wide</div>
+  <div class="well flex items-center justify-center">One cell</div>
+  <div class="well flex items-center justify-center">One cell</div>
+  <div class="well flex items-center justify-center bento-full">bento-full</div>
+</div>`} />
+
+Keep spans to a few tiles. A bento where every tile is large is an auto grid with larger tiles, and one where nothing is large has nothing to say first.
+
+## Order \{#order\}
+
+Tiles are placed in the order of the markup, each in the first place it fits after the one before it. When a wide tile does not fit at the end of a row, it starts the next one and leaves a hole behind it. The grid does not move a later tile back into that hole, because then the order seen would not be the order read: a keyboard and a screen reader follow the markup.
+
+So write the tiles in an order that packs. Where the order means nothing, as in a wall of logos or a set of pictures, `bento-dense` lets a later tile move up into a hole.
+
+<ComponentPreview name="order" height={610} mediumHeight={738} narrowHeight={738} title="Order" bodyClass="p-lg" caption="In a tray narrower than 28rem of bento every tile is one cell and no hole is left; widen the window to see one." html={`<div class="flex flex-col gap-md w-full fg-text-muted text-sm">
+  <p class="eyebrow">bento</p>
+  <div class="bento" style="--bento-row: 3rem">
+    <div class="well flex items-center justify-center">1</div>
+    <div class="well flex items-center justify-center bento-wide">2</div>
+    <div class="well flex items-center justify-center bento-wide">3</div>
+    <div class="well flex items-center justify-center">4</div>
+    <div class="well flex items-center justify-center">5</div>
+  </div>
+  <p class="eyebrow">bento bento-dense</p>
+  <div class="bento bento-dense" style="--bento-row: 3rem">
+    <div class="well flex items-center justify-center">1</div>
+    <div class="well flex items-center justify-center bento-wide">2</div>
+    <div class="well flex items-center justify-center bento-wide">3</div>
+    <div class="well flex items-center justify-center">4</div>
+    <div class="well flex items-center justify-center">5</div>
+  </div>
+</div>`} />
+
+In the first bento the wide tile leaves a hole after the first. In the second, the fourth tile has moved up into it: seen, it is second; read, it is still fourth.
+
+## Rows \{#rows\}
+
+`--bento-row` is the least a row may be, 10rem by default. It is a floor, not a height: a tile with more words makes its row taller, and the tiles beside it stretch to match, so a row is never cut. Lower it for tiles that hold a figure or a line, such as the diagrams on this page at 5rem; raise it for tiles that hold a picture.
+
+`--bento-gap` is the space between tiles, 1rem. It is a property and not a gap utility because the columns are counted with it.
+
+## When to use it \{#when\}
+
+| The tiles | Use |
+| --- | --- |
+| Of a few sizes, some meaning more than others | A bento |
+| Of one size, as many as there are | An [auto grid](/components/auto-grid) |
+| Each as tall as what it holds, as in a gallery | [Masonry](/components/masonry) |
+| In a number of columns the design fixes | `grid grid-cols(3)` and `grid-col-span(2)`, with a container variant |
+
+A bento is for a set that is composed: six to ten tiles, arranged once. A collection that grows, such as projects or search results, has no tile that matters more than the rest and belongs in an auto grid.
+
+## Accessibility \{#accessibility\}
+
+- The order of the markup is the reading order and the order of the keyboard. Write the tile that matters most first, and keep `bento-dense` for sets whose order means nothing.
+- Size is emphasis a screen reader does not hear. Give the large tile the heading the reader most needs, and let each tile's heading say what it is about, so the list of headings reads as the set.
+- A tile that is one link is a [card](/components/card) with `card-interactive` on the link itself, not a card with a link stretched over it.
+
+## Classes \{#classes\}
+
+<ContractTable name="bento" directory="layouts" />
+
+## Custom properties \{#custom-properties\}
+
+<ContractTable name="bento" show="properties" directory="layouts" />
+
+## Related \{#related\}
+
+<ComponentLinks slugs={['auto-grid', 'masonry', 'card', 'stat', 'chart', 'surface']} />
+
+<ComponentLinks kind="blocks" slugs={['features']} />
+
+## Source \{#source\}
+
+<ComponentSource name="bento" directory="layouts" />

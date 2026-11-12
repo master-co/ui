@@ -1,10 +1,12 @@
 /**
- * The library in three tiers, each in reading order.
+ * The library in three sections, each in reading order.
  *
  * Components are the parts with a material, a state or a platform behavior; each slug matches
- * `content/components/<slug>` and `@master/ui/components/<slug>.css`.
- * Layouts say where regions go and what scrolls; blocks are one stretch of a page with a purpose. Both are
- * published as markup to copy, in `content/layouts/<slug>` and `content/blocks/<slug>`.
+ * `content/components/<slug>` and `@master/ui/components/<slug>.css`. Their Layouts category is the layout tier
+ * a room is arranged with: the moves written with utilities, and the classes in `@master/ui/layouts/<slug>.css`
+ * for what utilities cannot say.
+ * Blocks are one stretch of a page with a purpose; pages are a whole screen, its regions and what scrolls. Both
+ * are published as markup to copy, in `content/blocks/<slug>` and `content/pages/<slug>`.
  */
 export const components = [
   { slug: 'surface', name: 'Surface', category: 'Materials', description: 'Trays, sheets and wells: the material ladder every component is built on.' },
@@ -12,6 +14,13 @@ export const components = [
   { slug: 'ticket', name: 'Ticket', category: 'Materials', description: 'A sheet with a tear line: a pass, a coupon, a receipt and its stub.' },
   { slug: 'pile', name: 'Pile', category: 'Materials', description: 'Several things shown as one, with the edges of the others under it.' },
   { slug: 'divider', name: 'Divider', category: 'Materials', description: 'One hairline between sections, with an optional label.' },
+  { slug: 'arrangements', name: 'Arrangements', category: 'Layouts', description: 'Stack, cluster, split and center: the four moves most layouts are made of.' },
+  { slug: 'auto-grid', name: 'Auto grid', category: 'Layouts', description: 'As many equal columns as fit, counted by the grid itself.' },
+  { slug: 'bento', name: 'Bento', category: 'Layouts', description: 'Tiles of a few sizes fitted into one box, in columns that follow its room.' },
+  { slug: 'masonry', name: 'Masonry', category: 'Layouts', description: 'Tiles of their own heights, packed into lanes with no gaps under them.' },
+  { slug: 'breakout', name: 'Breakout', category: 'Layouts', description: 'A reading column that a figure or a band can step out of, wider or to the edges.' },
+  { slug: 'sticky-stack', name: 'Sticky stack', category: 'Layouts', description: 'Panels that pile up under one another as the page scrolls.' },
+  { slug: 'form', name: 'Form', category: 'Layouts', description: 'The rhythm of a form: rows, sections and actions that follow their column.' },
   { slug: 'scroll-area', name: 'Scroll area', category: 'Structure', description: 'A scrolling region whose edges fade where content continues.' },
   { slug: 'splitter', name: 'Splitter', category: 'Structure', description: 'Two panes and the handle between them that sets how they share the space.' },
   { slug: 'swipe', name: 'Swipe', category: 'Structure', description: 'A row that slides aside to show what can be done to it.' },
@@ -111,18 +120,15 @@ export const components = [
   { slug: 'kbd', name: 'Kbd', category: 'Typography', description: 'A keycap for shortcuts in text and menus.' },
 ] as const
 
-export const layouts = [
-  { slug: 'arrangements', name: 'Arrangements', category: 'Layout basics', description: 'Stack, cluster, split and center: the four moves most layouts are made of.' },
-  { slug: 'auto-grid', name: 'Auto grid', category: 'Layout basics', description: 'As many equal columns as fit, counted by the grid itself.' },
-  { slug: 'form', name: 'Form', category: 'Layout basics', description: 'The rhythm of a form: rows, sections and actions that follow their column.' },
-  { slug: 'page', name: 'Page', category: 'Page layouts', description: 'A header, the main region and a footer in a frame as tall as the viewport.' },
-  { slug: 'app-shell', name: 'App shell', category: 'Page layouts', description: 'A sidebar that stays while the main region scrolls, and a drawer when it is narrow.' },
-  { slug: 'docs', name: 'Documentation', category: 'Page layouts', description: 'Navigation, an article at a reading measure, and the contents of the page.' },
-  { slug: 'holy-grail', name: 'Holy grail', category: 'Page layouts', description: 'A header, three columns and a footer, with the middle one first in the source.' },
-  { slug: 'master-detail', name: 'Master-detail', category: 'Page layouts', description: 'A list beside what is chosen in it, each scrolling by itself.' },
-  { slug: 'dashboard', name: 'Dashboard', category: 'Page layouts', description: 'Figures across the top and panels in a grid that reflows without queries.' },
-  { slug: 'settings', name: 'Settings', category: 'Page layouts', description: 'A short navigation beside the sections of a long form.' },
-  { slug: 'centered', name: 'Centered', category: 'Page layouts', description: 'One task in the middle of the viewport, alone or beside a panel.' },
+export const pages = [
+  { slug: 'page', name: 'Page', category: 'Site pages', description: 'A header, the main region and a footer in a frame as tall as the viewport.' },
+  { slug: 'docs', name: 'Documentation', category: 'Site pages', description: 'Navigation, an article at a reading measure, and the contents of the page.' },
+  { slug: 'holy-grail', name: 'Holy grail', category: 'Site pages', description: 'A header, three columns and a footer, with the middle one first in the source.' },
+  { slug: 'centered', name: 'Centered', category: 'Site pages', description: 'One task in the middle of the viewport, alone or beside a panel.' },
+  { slug: 'app-shell', name: 'App shell', category: 'Application pages', description: 'A sidebar that stays while the main region scrolls, and a drawer when it is narrow.' },
+  { slug: 'master-detail', name: 'Master-detail', category: 'Application pages', description: 'A list beside what is chosen in it, each scrolling by itself.' },
+  { slug: 'dashboard', name: 'Dashboard', category: 'Application pages', description: 'Figures across the top and panels in a grid that reflows without queries.' },
+  { slug: 'settings', name: 'Settings', category: 'Application pages', description: 'A short navigation beside the sections of a long form.' },
 ] as const
 
 export const blocks = [
@@ -143,7 +149,13 @@ export const blocks = [
   { slug: 'empty-state', name: 'Empty state', category: 'Application blocks', description: 'What a view shows before it has anything, and how to begin.' },
 ] as const
 
-/** The tiers by the first segment of their URL. */
-export const library = { components, layouts, blocks } as const
+/** The sections by the first segment of their URL. */
+export const library = { components, blocks, pages } as const
 export type LibraryKind = keyof typeof library
-export const kindOf = (pathname: string) => /^\/(components|layouts|blocks)\/([^/]+)$/.exec(pathname) as [string, LibraryKind, string] | null
+export const kindOf = (pathname: string) => /^\/(components|blocks|pages)\/([^/]+)$/.exec(pathname) as [string, LibraryKind, string] | null
+
+/**
+ * Where the reader's page of a contract is. A layout class is documented with the components, except the two
+ * frames, which are documented with the pages they make: `page` on the page of that name, `shell` on the app shell.
+ */
+export const pageOfContract = (name: string) => name === 'shell' ? 'pages/app-shell' : name === 'page' ? 'pages/page' : `components/${name}`

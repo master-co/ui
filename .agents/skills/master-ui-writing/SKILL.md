@@ -46,7 +46,7 @@ Avoid claims such as “every token” or “works without JavaScript” unless 
 ## Choose the teaching surface
 
 - Use code for exact imports, markup, overrides and commands. Include the context needed to reproduce the example and explain the result readers can check.
-- Use `ComponentPreview` for actual component material and states, and `PagePreview` for layouts and blocks. Keep working previews when they teach the point; use the component skill's preview rules when changing them.
+- Use `ComponentPreview` for actual component material and states, and `PagePreview` for blocks, pages and layouts whose point is a width. Keep working previews when they teach the point; use the component skill's preview rules when changing them.
 - Use a table for comparable token roles or choices. Generate contract classes and property tables with `ContractTable`; do not maintain a second copy in prose.
 - Use [master-ui-doc-illustrations](../master-ui-doc-illustrations/SKILL.md) when a relationship needs a drawing: token scope, theme overrides, contract versus implementation, or a sequence that a specimen cannot show. A short paragraph or an existing preview may already be enough. There is no figure quota.
 - Use [master-ui-covers](../master-ui-covers/SKILL.md) for catalog cover drawings. A cover identifies a component, layout or block; it does not establish a technical claim.
