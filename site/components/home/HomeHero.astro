@@ -46,20 +46,20 @@ import IconArrowRight from '@tabler/icons-svelte-runes/icons/arrow-right'
 import Link from '@master/internal-site/components/Link.svelte'
 import { siteOf } from '@master/internal-site/astro/site-context'
 import SetupPromptButton from './SetupPromptButton.astro'
-import { columnStarts, drawPanel, matrixPool } from './matrix'
+import { drawPanel, matrixColumns, matrixPool } from './matrix'
 
 const { t } = siteOf(Astro)
 
 /**
  * Eight columns, wider than the hero, so the plane runs past every edge of the window. Each column starts with
  * twenty-two panels drawn here, enough to fill the view with or without script; the script then scrolls each column and
- * recycles a panel that leaves one end to the other, drawing the next panel of the pool into it, so a column has
- * no end and the whole pool passes in turn. Columns start far apart in the pool and take turns climbing and
- * falling, each at its own pace.
+ * recycles a panel that leaves one end to the other, drawing the next panel of the column's shelf into it, so a
+ * column has no end. Neighboring columns take their panels from different shelves of the pool, so one kind of panel
+ * never stands beside itself, and the columns take turns climbing and falling, each at its own pace.
  */
 const columnCount = 8
 const slots = 22
-const starts = columnStarts(columnCount)
+const columns = matrixColumns(columnCount, slots)
 /** Pixels a second. */
 const speeds = [34, 26, 40, 30, 44, 28, 38, 32]
 ---
@@ -91,9 +91,9 @@ const speeds = [34, 26, 40, 30, 44, 28, 38, 32]
   </div>
   <div class="ui-matrix" aria-hidden="true" inert data-matrix>
     <div class="ui-matrix-plane">
-      {starts.map((start, column) => (
-        <div class="ui-matrix-column" data-start={start} data-speed={speeds[column]} data-reverse={column % 2 ? '' : undefined}>
-          {Array.from({ length: slots }, (_, slot) => <div class="ui-matrix-panel" set:html={drawPanel(start + slot, column * 100 + slot)} />)}
+      {columns.map((plan, column) => (
+        <div class="ui-matrix-column" data-shelf={plan.shelf.join(' ')} data-start={plan.start} data-speed={speeds[column]} data-reverse={column % 2 ? '' : undefined}>
+          {plan.panels.map((index, slot) => <div class="ui-matrix-panel" set:html={drawPanel(index, column * 100 + slot)} />)}
         </div>
       ))}
     </div>
@@ -104,7 +104,7 @@ const speeds = [34, 26, 40, 30, 44, 28, 38, 32]
 <script>
   /*
    * The matrix scrolls with no end: each column moves at its own pace, and a panel that leaves one end is taken
-   * off and the next panel of the pool is drawn at the other, so the DOM stays the same size however long the page
+   * off and the next panel of its shelf is drawn at the other, so the DOM stays the same size however long the page
    * is open. The plane also leans a few degrees toward the pointer. It all stops while the hero is out of view or
    * the page is hidden, and with reduced motion nothing moves.
    */
@@ -113,7 +113,6 @@ const speeds = [34, 26, 40, 30, 44, 28, 38, 32]
   const motion = matchMedia('(prefers-reduced-motion: reduce)')
   if (hero && matrix) {
     const templates = [...matrix.querySelectorAll<HTMLTemplateElement>('template[data-panel]')]
-    const size = templates.length
     const plane = matrix.querySelector<HTMLElement>('.ui-matrix-plane')!
     let place = 10_000
     const heights = new WeakMap<Element, number>()
@@ -121,7 +120,7 @@ const speeds = [34, 26, 40, 30, 44, 28, 38, 32]
     const draw = (index: number) => {
       const panel = document.createElement('div')
       panel.className = 'ui-matrix-panel'
-      panel.innerHTML = templates[((index % size) + size) % size].innerHTML.replaceAll('__K__', String(place++))
+      panel.innerHTML = templates[index].innerHTML.replaceAll('__K__', String(place++))
       return panel
     }
     const height = (panel: Element) => {
@@ -135,14 +134,16 @@ const speeds = [34, 26, 40, 30, 44, 28, 38, 32]
      * view's lower edge with room for the lean. Panels are added or dropped at the far end to keep it there.
      */
     const reach = () => plane.offsetHeight * 0.85
+    /* A column walks its shelf from its start: `head` and `tail` count places on the shelf, around and around. */
     const columns = [...matrix.querySelectorAll<HTMLElement>('.ui-matrix-column')].map(element => {
-      const start = Number(element.dataset.start)
       const length = [...element.children].reduce((sum, panel) => sum + height(panel) + spacing, 0)
-      return { element, head: start, tail: start + element.children.length - 1, offset: 0, length, speed: Number(element.dataset.speed), direction: element.hasAttribute('data-reverse') ? 1 : -1 }
+      const shelf = (element.dataset.shelf ?? '').split(' ').map(Number)
+      return { element, shelf, start: Number(element.dataset.start), head: 0, tail: element.children.length - 1, offset: 0, length, speed: Number(element.dataset.speed), direction: element.hasAttribute('data-reverse') ? 1 : -1 }
     })
     type Column = typeof columns[number]
+    const at = (column: Column, place: number) => column.shelf[(((column.start + place) % column.shelf.length) + column.shelf.length) % column.shelf.length]
     const append = (column: Column) => {
-      const panel = draw(++column.tail)
+      const panel = draw(at(column, ++column.tail))
       column.element.append(panel)
       column.length += height(panel) + spacing
     }
@@ -162,7 +163,7 @@ const speeds = [34, 26, 40, 30, 44, 28, 38, 32]
         column.offset += column.direction * column.speed * dt
         const { element } = column
         if (column.direction < 0) {
-          // Climbing: the first panel, once wholly past the top, goes; the next panel of the pool joins the foot.
+          // Climbing: the first panel, once wholly past the top, goes; the next panel of the shelf joins the foot.
           let first = element.firstElementChild!
           while (column.offset <= -(height(first) + spacing)) {
             column.offset += height(first) + spacing
@@ -175,7 +176,7 @@ const speeds = [34, 26, 40, 30, 44, 28, 38, 32]
         } else {
           // Falling: once a gap opens at the top, the last panel goes and the panel before the first joins the top.
           while (column.offset > 0) {
-            const panel = draw(--column.head)
+            const panel = draw(at(column, --column.head))
             element.prepend(panel)
             column.offset -= height(panel) + spacing
             column.length += height(panel) + spacing

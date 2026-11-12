@@ -427,30 +427,44 @@ ${[0, 1].map(() => `  <div class="ui-mx-skeleton" aria-hidden="true"><span class
 ]
 
 /** Every panel, dealt variant by variant: all the first variants, then all the second, and so on. */
-export const matrixPool: string[] = Array.from({ length: Math.max(...kinds.map(kind => kind.length)) }, (_, variant) => kinds.flatMap(kind => kind[variant] ?? [])).flat()
+const dealt = Array.from({ length: Math.max(...kinds.map(kind => kind.length)) }, (_, variant) => kinds.flatMap((kind, id) => kind[variant] === undefined ? [] : [{ html: kind[variant], kind: id }])).flat()
+export const matrixPool: string[] = dealt.map(panel => panel.html)
+
+/**
+ * The pool in four shelves, each kind of panel wholly on one, the kinds dealt largest first to whichever shelf is
+ * shortest so the four come out the same size. A column takes its panels from one shelf, and the three columns on
+ * either side of it from the other three, so the same panel, or another variant of its kind, never stands near it.
+ * A column goes round its shelf without end, so each kind's variants are spread evenly round it: a variant's place
+ * is its share of the way round, staggered from kind to kind, and two of one kind stand as far apart as they can.
+ */
+export const matrixShelves: number[][] = (() => {
+  const sizes = [0, 0, 0, 0]
+  const shelfOf = new Map<number, number>()
+  kinds.map((kind, id) => ({ id, count: kind.length })).sort((a, b) => b.count - a.count || a.id - b.id).forEach(({ id, count }) => {
+    const shortest = sizes.indexOf(Math.min(...sizes))
+    shelfOf.set(id, shortest)
+    sizes[shortest] += count
+  })
+  return sizes.map((_, shelf) => {
+    const members = kinds.flatMap((_, id) => shelfOf.get(id) === shelf ? [id] : [])
+    return members
+      .flatMap((id, order) => kinds[id].map((_, variant) => ({ id, variant, at: (variant + order / members.length) / kinds[id].length })))
+      .sort((a, b) => a.at - b.at)
+      .map(({ id, variant }) => dealt.findIndex(panel => panel.kind === id && panel.html === kinds[id][variant]))
+  })
+})()
 
 /** A panel drawn for one place in the matrix, its radio groups named for that place alone. */
 export const drawPanel = (index: number, place: number) => matrixPool[index % matrixPool.length].replaceAll('__K__', String(place))
 
 /**
- * Where each column starts in the pool. A seeded search keeps every pair of columns within four of each other as
- * far apart in the pool as it can, so the panel one column shows is a long way up or down in any column near it.
+ * Each column's shelf and where on it the column starts. Columns four apart share a shelf, at the two edges of the
+ * view, so they start half way round it from each other.
  */
-export function columnStarts(columns: number) {
-  const size = matrixPool.length
-  const gap = (a: number, b: number) => Math.min(Math.abs(a - b) % size, size - (Math.abs(a - b) % size))
-  const score = (starts: number[]) => {
-    let worst = Infinity
-    for (let a = 0; a < columns; a++) for (let b = a + 1; b < Math.min(columns, a + 5); b++) worst = Math.min(worst, gap(starts[a], starts[b]) * (1 + (5 - (b - a)) / 4))
-    return worst
-  }
-  const next = seeded(101)
-  let best = Array.from({ length: columns }, (_, column) => column * Math.floor(size / columns))
-  let bestScore = score(best)
-  for (let attempt = 0; attempt < 4000; attempt++) {
-    const starts = Array.from({ length: columns }, () => Math.floor(next() * size))
-    const value = score(starts)
-    if (value > bestScore) { best = starts; bestScore = value }
-  }
-  return best
+export function matrixColumns(columns: number, slots: number) {
+  return Array.from({ length: columns }, (_, column) => {
+    const shelf = matrixShelves[column % matrixShelves.length]
+    const start = Math.floor(Math.floor(column / matrixShelves.length) * shelf.length / Math.ceil(columns / matrixShelves.length))
+    return { shelf, start, panels: Array.from({ length: slots }, (_, slot) => shelf[(start + slot) % shelf.length]) }
+  })
 }
