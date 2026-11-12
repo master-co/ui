@@ -1,0 +1,63 @@
+---
+import IconCheck from '@tabler/icons-svelte-runes/icons/check'
+import IconCopy from '@tabler/icons-svelte-runes/icons/copy'
+import IconSparkles from '@tabler/icons-svelte-runes/icons/sparkles'
+import { siteOf } from '@master/internal-site/astro/site-context'
+import { setupPrompt } from './setup-prompt'
+
+const { t } = siteOf(Astro)
+---
+
+{/*
+  The glass pill that copies the installation guide's "Set up Master UI" prompt. The result takes the label's place
+  for a moment, and the live region after the button announces it.
+*/}
+<button type="button" class="ui-hero-prompt" data-setup-prompt={setupPrompt()} data-copied={t('Setup prompt copied')} data-failed={t('Copy failed')} aria-label={t('Set up with your AI agent: copy the setup prompt')}>
+  <IconSparkles aria-hidden="true" class="ui-hero-prompt-icon" size={16} stroke={1.75} />
+  <span class="ui-hero-prompt-label">
+    <span class="ui-hero-prompt-text">{t('Set up with your AI agent')}</span>
+    <span class="ui-hero-prompt-result" aria-hidden="true" data-prompt-result></span>
+  </span>
+  <span class="ui-hero-prompt-copy" aria-hidden="true">
+    <IconCopy class="ui-hero-prompt-idle" size={16} stroke={1.75} />
+    <IconCheck class="ui-hero-prompt-done" size={16} stroke={2} />
+  </span>
+</button>
+<span class="sr-only" aria-live="polite" data-prompt-status></span>
+
+<script>
+  /** Every setup-prompt pill on the page copies its prompt; the result shows for a moment, then it rests again. */
+  for (const button of document.querySelectorAll<HTMLButtonElement>('[data-setup-prompt]')) {
+    const status = button.nextElementSibling?.matches('[data-prompt-status]') ? button.nextElementSibling as HTMLElement : undefined
+    const result = button.querySelector<HTMLElement>('[data-prompt-result]')
+    let timer: ReturnType<typeof setTimeout> | undefined
+    button.addEventListener('click', async () => {
+      let outcome: 'copied' | 'failed'
+      const text = button.dataset.setupPrompt ?? ''
+      try {
+        await navigator.clipboard.writeText(text)
+        outcome = 'copied'
+      } catch {
+        // Where the Clipboard API is refused, a selected text area still copies within the same click.
+        const area = document.createElement('textarea')
+        area.value = text
+        area.setAttribute('readonly', '')
+        area.style.cssText = 'position:fixed;inset:0 auto auto 0;opacity:0;pointer-events:none'
+        document.body.append(area)
+        area.select()
+        outcome = document.execCommand('copy') ? 'copied' : 'failed'
+        area.remove()
+        button.focus()
+      }
+      button.dataset.status = outcome
+      const message = (outcome === 'copied' ? button.dataset.copied : button.dataset.failed) ?? ''
+      if (status) status.textContent = message
+      if (result) result.textContent = message
+      clearTimeout(timer)
+      timer = setTimeout(() => {
+        delete button.dataset.status
+        if (status) status.textContent = ''
+      }, 1800)
+    })
+  }
+</script>

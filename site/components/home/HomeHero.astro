@@ -1,180 +1,227 @@
 ---
 import '../../styles/home-hero.css'
+import '@master/ui/components/alert.css'
+import '@master/ui/components/avatar.css'
+import '@master/ui/components/badge.css'
+import '@master/ui/components/breadcrumb.css'
+import '@master/ui/components/button.css'
+import '@master/ui/components/card.css'
+import '@master/ui/components/chart.css'
+import '@master/ui/components/checkbox.css'
+import '@master/ui/components/checklist.css'
+import '@master/ui/components/chip.css'
+import '@master/ui/components/code.css'
+import '@master/ui/components/data-list.css'
+import '@master/ui/components/empty.css'
+import '@master/ui/components/figure.css'
+import '@master/ui/components/file.css'
+import '@master/ui/components/gauge.css'
+import '@master/ui/components/heatmap.css'
+import '@master/ui/components/icon.css'
+import '@master/ui/components/input.css'
+import '@master/ui/components/kbd.css'
+import '@master/ui/components/message.css'
+import '@master/ui/components/meter.css'
+import '@master/ui/components/otp.css'
+import '@master/ui/components/pagination.css'
+import '@master/ui/components/poll.css'
+import '@master/ui/components/price.css'
+import '@master/ui/components/progress.css'
+import '@master/ui/components/quote.css'
+import '@master/ui/components/rating.css'
+import '@master/ui/components/segmented.css'
+import '@master/ui/components/select.css'
+import '@master/ui/components/skeleton.css'
+import '@master/ui/components/slider.css'
+import '@master/ui/components/spinner.css'
+import '@master/ui/components/stat.css'
+import '@master/ui/components/steps.css'
+import '@master/ui/components/surface.css'
+import '@master/ui/components/swatch.css'
+import '@master/ui/components/switch.css'
+import '@master/ui/components/table.css'
+import '@master/ui/components/timeline.css'
+import '@master/ui/components/uptime.css'
 import IconArrowRight from '@tabler/icons-svelte-runes/icons/arrow-right'
-import IconCheck from '@tabler/icons-svelte-runes/icons/check'
-import IconCopy from '@tabler/icons-svelte-runes/icons/copy'
-import IconSparkles from '@tabler/icons-svelte-runes/icons/sparkles'
 import Link from '@master/internal-site/components/Link.svelte'
 import { siteOf } from '@master/internal-site/astro/site-context'
-import { setupPrompt } from './setup-prompt'
+import SetupPromptButton from './SetupPromptButton.astro'
+import { columnStarts, drawPanel, matrixPool } from './matrix'
 
 const { t } = siteOf(Astro)
 
-/** The drafting notes beside the figure, from the table up: each layer is a token of the theme. */
-const notes = [
-  { index: '01', token: 'surface-base', detail: t('markup') },
-  { index: '02', token: 'surface-tray', detail: 'inset line-hair' },
-  { index: '03', token: 'surface-raised', detail: 'shadow-raised' },
-  { index: '04', token: 'surface-floating', detail: 'shadow-floating' },
-]
+/**
+ * Eight columns, wider than the hero, so the plane runs past every edge of the window. Each column starts with
+ * twenty-two panels drawn here, enough to fill the view with or without script; the script then scrolls each column and
+ * recycles a panel that leaves one end to the other, drawing the next panel of the pool into it, so a column has
+ * no end and the whole pool passes in turn. Columns start far apart in the pool and take turns climbing and
+ * falling, each at its own pace.
+ */
+const columnCount = 8
+const slots = 22
+const starts = columnStarts(columnCount)
+/** Pixels a second. */
+const speeds = [34, 26, 40, 30, 44, 28, 38, 32]
 ---
 
 {/*
-  The hero is a technical drawing: the theme's surface ladder as an exploded section, standing on a table
-  printed with markup. The figure is decoration; everything it says is in the words, which stand on a clear
-  patch of the table and read the same without WebGL.
+  The hero: the words on the left, and on the right the library itself, a plane of its components tilted away in
+  perspective, every column scrolling past. The plane is decoration, inert and hidden from assistive technology;
+  everything the hero says is in the words, which read the same without it.
 */}
-<section class="ui-hero" data-still-host aria-labelledby="hero-title">
-  <canvas class="ui-hero-stage" aria-hidden="true"></canvas>
-  <div class="ui-hero-notes" aria-hidden="true" data-hidden>
-    <svg class="ui-hero-leaders"><path d="" /></svg>
-    {notes.map(note => (
-      <span class="ui-hero-note" data-note>
-        <span class="ui-hero-note-index">{note.index}</span>
-        <span class="ui-hero-note-token">{note.token}</span>
-        <span class="ui-hero-note-detail">{note.detail}</span>
-      </span>
-    ))}
-  </div>
+<section class="ui-hero" aria-labelledby="hero-title" data-hero>
   <div class="ui-hero-body app-wrapper home-section-wrap">
-    <div class="ui-hero-reading" data-still-reading>
+    <div class="ui-hero-reading">
       <Link class="ui-hero-pill" href="/components">
         <span class="ui-hero-pill-badge">{t('Alpha')}</span>
         <span class="ui-hero-pill-label">{t('Native HTML and CSS components')}</span>
         <IconArrowRight aria-hidden="true" size={14} stroke={1.75} />
       </Link>
       <h1 id="hero-title" class="ui-hero-title">{t('Beautiful interface crafted with Master CSS.')}</h1>
-      <p class="ui-hero-lead">{t('Native elements and modern CSS do the work: dialogs, menus, tooltips and selects open, anchor and animate with zero JavaScript to start. Copy the markup into any stack, and add a script only where a pattern needs one.')}</p>
-      {/* A stone action cut from the figure's one ink object, and a glass pill that copies the guide's setup prompt. */}
+      <p class="ui-hero-lead">{t('Native elements and modern CSS do the work: dialogs, menus, tooltips and selects open, anchor and animate with zero JavaScript to start.')}</p>
+      {/* A stone action and a glass pill that copies the guide's setup prompt. */}
       <div class="ui-hero-actions">
-        <Link class="ui-hero-start" href="/guide/introduction" data-lit>
+        <Link class="ui-hero-start" href="/guide/introduction">
           {t('Get started')}
           <IconArrowRight aria-hidden="true" size={16} stroke={1.75} />
         </Link>
-        <button type="button" class="ui-hero-prompt" data-lit data-prompt={setupPrompt()} data-copied={t('Setup prompt copied')} data-failed={t('Copy failed')} aria-label={t('Set up with your AI agent: copy the setup prompt')}>
-          <IconSparkles aria-hidden="true" class="ui-hero-prompt-icon" size={16} stroke={1.75} />
-          {/* The result takes the label's place for a moment; the live region below announces it. */}
-          <span class="ui-hero-prompt-label">
-            <span class="ui-hero-prompt-text">{t('Set up with your AI agent')}</span>
-            <span class="ui-hero-prompt-result" aria-hidden="true" data-prompt-result></span>
-          </span>
-          <span class="ui-hero-prompt-copy" aria-hidden="true">
-            <IconCopy class="ui-hero-prompt-idle" size={16} stroke={1.75} />
-            <IconCheck class="ui-hero-prompt-done" size={16} stroke={2} />
-          </span>
-        </button>
-        <span class="sr-only" aria-live="polite" data-prompt-status></span>
+        <SetupPromptButton />
       </div>
     </div>
   </div>
-  <p class="ui-hero-caption home-annotation" aria-hidden="true">
-    <span>{t('Fig. 01')}</span>
-    <span>{t('The surface ladder in section, over the markup it is written in')}</span>
-  </p>
+  <div class="ui-matrix" aria-hidden="true" inert data-matrix>
+    <div class="ui-matrix-plane">
+      {starts.map((start, column) => (
+        <div class="ui-matrix-column" data-start={start} data-speed={speeds[column]} data-reverse={column % 2 ? '' : undefined}>
+          {Array.from({ length: slots }, (_, slot) => <div class="ui-matrix-panel" set:html={drawPanel(start + slot, column * 100 + slot)} />)}
+        </div>
+      ))}
+    </div>
+    {matrixPool.map(panel => <template data-panel set:html={panel} />)}
+  </div>
 </section>
 
 <script>
-  import type { NoteAnchor, NoteBox } from './still-life/still-life'
-
-  const host = document.querySelector<HTMLElement>('[data-still-host]')
-  const canvas = host?.querySelector<HTMLCanvasElement>('.ui-hero-stage')
-  const reading = host?.querySelector<HTMLElement>('[data-still-reading]')
-  const notesRoot = host?.querySelector<HTMLElement>('.ui-hero-notes')
-  const notes = [...(host?.querySelectorAll<HTMLElement>('[data-note]') ?? [])]
-
-  const leaders = notesRoot?.querySelector<SVGPathElement>('.ui-hero-leaders path')
-  const lit = [...(host?.querySelectorAll<HTMLElement>('[data-lit]') ?? [])]
-
-  // The glass pill copies the installation guide's prompt; the result shows for a moment, then it rests again.
-  const prompt = host?.querySelector<HTMLButtonElement>('[data-prompt]')
-  const promptStatus = host?.querySelector<HTMLElement>('[data-prompt-status]')
-  const promptResult = host?.querySelector<HTMLElement>('[data-prompt-result]')
-  let promptTimer: ReturnType<typeof setTimeout> | undefined
-  prompt?.addEventListener('click', async () => {
-    let result: 'copied' | 'failed'
-    const text = prompt.dataset.prompt ?? ''
-    try {
-      await navigator.clipboard.writeText(text)
-      result = 'copied'
-    } catch {
-      // Where the Clipboard API is refused, a selected text area still copies within the same click.
-      const area = document.createElement('textarea')
-      area.value = text
-      area.setAttribute('readonly', '')
-      area.style.cssText = 'position:fixed;inset:0 auto auto 0;opacity:0;pointer-events:none'
-      document.body.append(area)
-      area.select()
-      result = document.execCommand('copy') ? 'copied' : 'failed'
-      area.remove()
-      prompt.focus()
-    }
-    prompt.dataset.status = result
-    const message = (result === 'copied' ? prompt.dataset.copied : prompt.dataset.failed) ?? ''
-    if (promptStatus) promptStatus.textContent = message
-    if (promptResult) promptResult.textContent = message
-    clearTimeout(promptTimer)
-    promptTimer = setTimeout(() => {
-      delete prompt.dataset.status
-      if (promptStatus) promptStatus.textContent = ''
-    }, 1800)
-  })
-
-  let drawn = ''
-  let box: NoteBox | undefined
-  /**
-   * The notes hang in one column right of the figure, at least a line apart, each joined to its layer's edge by
-   * a leader that leaves the edge level and turns once toward its note.
+  /*
+   * The matrix scrolls with no end: each column moves at its own pace, and a panel that leaves one end is taken
+   * off and the next panel of the pool is drawn at the other, so the DOM stays the same size however long the page
+   * is open. The plane also leans a few degrees toward the pointer. It all stops while the hero is out of view or
+   * the page is hidden, and with reduced motion nothing moves.
    */
-  const place = (anchors: NoteAnchor[], stage: { reach: number, wide: boolean }): NoteBox | undefined => {
-    if (!notesRoot) return
-    const edge = Math.max(...anchors.map(anchor => anchor.x))
-    const column = Math.round(Math.min(edge + 48, stage.reach - 148))
-    const fits = stage.wide && column - edge >= 24
-    notesRoot.toggleAttribute('data-hidden', !fits)
-    if (!fits) return
-    const heights = anchors.map(anchor => anchor.y)
-    for (let index = heights.length - 2; index >= 0; index--) heights[index] = Math.max(heights[index], heights[index + 1] + 40)
-    const rows = anchors.map((anchor, index) => ({ x: anchor.x, y: anchor.y, note: Math.round(heights[index]) }))
-    // A level leader sits on the pixel grid, so its hairline stays one crisp row of pixels as the figure breathes;
-    // one pushed down by the note above it runs level from its edge, then turns once.
-    const grid = devicePixelRatio >= 2 ? 0.25 : 0.5
-    const path = rows.map(({ x, y, note }) => Math.abs(y - note) < 1
-      ? `M${x.toFixed(1)} ${note + grid}H${column - 8}`
-      : `M${x.toFixed(1)} ${y.toFixed(1)}H${Math.max(x + 8, column - 28).toFixed(1)}L${column - 8} ${note + grid}`).join('')
-    // A figure at rest moves no leader, so nothing is written.
-    if (path === drawn) return box
-    drawn = path
-    leaders?.setAttribute('d', path)
-    rows.forEach(({ x, y, note }, index) => {
-      const element = notes[index]
-      if (!element) return
-      element.style.translate = `${column}px ${note}px`
-      // The ring marks the edge the leader starts from.
-      element.style.setProperty('--dot-x', `${(x - column).toFixed(1)}px`)
-      element.style.setProperty('--dot-y', `${(y - note).toFixed(1)}px`)
+  const hero = document.querySelector<HTMLElement>('[data-hero]')
+  const matrix = hero?.querySelector<HTMLElement>('[data-matrix]')
+  const motion = matchMedia('(prefers-reduced-motion: reduce)')
+  if (hero && matrix) {
+    const templates = [...matrix.querySelectorAll<HTMLTemplateElement>('template[data-panel]')]
+    const size = templates.length
+    const plane = matrix.querySelector<HTMLElement>('.ui-matrix-plane')!
+    let place = 10_000
+    const heights = new WeakMap<Element, number>()
+    const gap = () => parseFloat(getComputedStyle(plane).rowGap || getComputedStyle(plane).gap) || 20
+    const draw = (index: number) => {
+      const panel = document.createElement('div')
+      panel.className = 'ui-matrix-panel'
+      panel.innerHTML = templates[((index % size) + size) % size].innerHTML.replaceAll('__K__', String(place++))
+      return panel
+    }
+    const height = (panel: Element) => {
+      let value = heights.get(panel)
+      if (value === undefined) heights.set(panel, value = (panel as HTMLElement).offsetHeight)
+      return value
+    }
+    let spacing = gap()
+    /**
+     * How far down the plane a column must reach, whatever the heights of the panels it happens to hold: past the
+     * view's lower edge with room for the lean. Panels are added or dropped at the far end to keep it there.
+     */
+    const reach = () => plane.offsetHeight * 0.85
+    const columns = [...matrix.querySelectorAll<HTMLElement>('.ui-matrix-column')].map(element => {
+      const start = Number(element.dataset.start)
+      const length = [...element.children].reduce((sum, panel) => sum + height(panel) + spacing, 0)
+      return { element, head: start, tail: start + element.children.length - 1, offset: 0, length, speed: Number(element.dataset.speed), direction: element.hasAttribute('data-reverse') ? 1 : -1 }
     })
-    // The column the labels take, which the print keeps clear so they read on plain ground.
-    box = { left: column - 12, top: Math.min(...heights) - 14, right: column + 148, bottom: Math.max(...heights) + 30 }
-    return box
-  }
-
-  // In print and under forced colors the hero is its words alone (see the stylesheet), so the figure is not drawn.
-  if (host && canvas && !matchMedia('print, (forced-colors: active)').matches) {
-    import('./still-life/still-life').then(({ mountStillLife }) => {
-      let stop = () => {}
-      const mount = () => {
-        stop()
-        try {
-          stop = mountStillLife(canvas, host, { reading, onAnchors: place, lit })
-        } catch (error) {
-          // The hero reads the same on its plain ground; the figure is only decoration.
-          canvas.hidden = true
-          console.warn(error)
+    type Column = typeof columns[number]
+    const append = (column: Column) => {
+      const panel = draw(++column.tail)
+      column.element.append(panel)
+      column.length += height(panel) + spacing
+    }
+    const fill = (column: Column) => {
+      const target = reach()
+      while (column.offset + column.length < target) append(column)
+    }
+    columns.forEach(fill)
+    let frame = 0
+    let last = 0
+    let visible = false
+    const step = (now: number) => {
+      frame = 0
+      const dt = Math.min((now - (last || now)) / 1000, 0.1)
+      last = now
+      for (const column of columns) {
+        column.offset += column.direction * column.speed * dt
+        const { element } = column
+        if (column.direction < 0) {
+          // Climbing: the first panel, once wholly past the top, goes; the next panel of the pool joins the foot.
+          let first = element.firstElementChild!
+          while (column.offset <= -(height(first) + spacing)) {
+            column.offset += height(first) + spacing
+            column.length -= height(first) + spacing
+            first.remove()
+            column.head++
+            first = element.firstElementChild!
+          }
+          fill(column)
+        } else {
+          // Falling: once a gap opens at the top, the last panel goes and the panel before the first joins the top.
+          while (column.offset > 0) {
+            const panel = draw(--column.head)
+            element.prepend(panel)
+            column.offset -= height(panel) + spacing
+            column.length += height(panel) + spacing
+          }
+          // The foot only needs to reach so far; what hangs below it is dropped.
+          let last = element.lastElementChild!
+          while (column.offset + column.length - (height(last) + spacing) >= reach()) {
+            column.length -= height(last) + spacing
+            last.remove()
+            column.tail--
+            last = element.lastElementChild!
+          }
         }
+        element.style.translate = `0 ${column.offset.toFixed(2)}px`
       }
-      mount()
-      // A context the browser took back (a GPU reset, too many contexts) is drawn again once it is returned.
-      canvas.addEventListener('webglcontextrestored', mount)
-    }, () => { canvas.hidden = true })
+      schedule()
+    }
+    const schedule = () => {
+      if (frame || !visible || document.hidden || motion.matches) return
+      frame = requestAnimationFrame(step)
+    }
+    const stop = () => {
+      cancelAnimationFrame(frame)
+      frame = 0
+      last = 0
+    }
+    new IntersectionObserver(([entry]) => {
+      visible = entry.isIntersecting
+      if (visible) schedule()
+      else stop()
+    }).observe(matrix)
+    document.addEventListener('visibilitychange', () => (document.hidden ? stop() : schedule()))
+    motion.addEventListener('change', () => (motion.matches ? stop() : schedule()))
+    addEventListener('resize', () => { spacing = gap() })
+
+    hero.addEventListener('pointermove', (event) => {
+      if (event.pointerType !== 'mouse' || motion.matches) return
+      const rect = hero.getBoundingClientRect()
+      const x = (event.clientX - rect.left) / rect.width - 0.5
+      const y = (event.clientY - rect.top) / rect.height - 0.5
+      matrix.style.setProperty('--matrix-lean-x', `${(x * 5).toFixed(2)}deg`)
+      matrix.style.setProperty('--matrix-lean-y', `${(-y * 4).toFixed(2)}deg`)
+    })
+    hero.addEventListener('pointerleave', () => {
+      matrix.style.removeProperty('--matrix-lean-x')
+      matrix.style.removeProperty('--matrix-lean-y')
+    })
   }
 </script>
