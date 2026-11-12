@@ -1,3 +1,4 @@
+import DocumentPrompt from '@master/internal-site/components/DocumentPrompt.astro'
 import GuideFigure from '../../../components/GuideFigure.astro'
 
 Install `@master/ui`, load its stylesheet and render a native element with a component class. If your project uses Master CSS, compile the package's source with your app styles. Otherwise, use the [precompiled stylesheet](#without-master-css); it supplies the components without Master CSS utilities.
@@ -7,6 +8,33 @@ Install `@master/ui`, load its stylesheet and render a native element with a com
 **Choose one route to the page.** Source imports pass through your app's Master CSS compiler, alongside the classes used to generate utilities. The package's `standalone.css` has already been compiled and can be loaded directly. Both routes supply component styles; the standalone route needs your own CSS for layout.
 
 </GuideFigure>
+
+## Set up with an AI agent \{#set-up-with-an-ai-agent\}
+
+A coding agent can run this setup for you. Paste the prompt below into the agent from the app's root directory. It inspects the project and asks you for the stylesheet route, the import scope, the agent setup and what happens to an existing component library before changing files. Then it installs a pinned package, imports the stylesheet, and checks the first component in the browser and with `master-ui check`.
+
+<DocumentPrompt title="Set up Master UI" text={`You are working in an existing web application. Set up Master UI end to end.
+Documentation: https://ui.master.co/guide/installation.md
+
+First inspect the project before editing: package manager, framework and build tool, whether Master CSS is set up (the installed @master/css version, and the app stylesheet that contains @import '@master/css' and where it is loaded), any component library or styling system already in use, React, Svelte or Vue, an existing master-ui.json, the dev/lint/build/test commands, and agent guidance files such as AGENTS.md.
+
+Before editing, ask me these and wait for the answers. Do not choose them yourself:
+- Stylesheet route: source (the default; @import '@master/ui' compiled by Master CSS 2.1 or later, with utilities for layout) or precompiled (@master/ui/standalone.css, no Master CSS and no utilities). If the project has no Master CSS and I choose source, set it up first by following https://css.master.co/guide/installation.
+- Import scope: the full library in one import (the default), or npx master-ui init, which writes ui/index.css with one @import per stylesheet and master-ui.json for components the project may later own. See https://ui.master.co/guide/installation#one-import-per-stylesheet.
+- Agent setup: the full setup (the master-ui skill, Master UI guidance in AGENTS.md and a check:ui script) or minimal (package and stylesheet only).
+- Existing components: if the project already uses another component library, whether to leave it in place (the default) and use Master UI only for new interface, or replace the components I name. Never replace components I have not named.
+
+Then adopt Master UI conservatively:
+1. Run every command from the app root, where its package.json lives, with the project's package manager.
+2. Install the package at an exact version: npm install @master/ui --save-exact (bun add @master/ui --exact, pnpm add @master/ui --save-exact). Master UI is experimental and any 0.x release may break what it published, so keep the version pinned.
+3. Load the stylesheet in the stylesheet the app already loads. Source route: add @import '@master/ui'; on the line after @import '@master/css';, or, with npx master-ui init, @import './ui/index.css'; in its place (adjust the path to where ui/ is). Precompiled route: @import '@master/ui/base.css'; then @import '@master/ui/standalone.css';, and omit base.css if the project already has an equivalent reset. Installing the package alone does not load anything.
+4. Add no behavior script and no framework component yet. When a pattern that needs one is used later, follow https://ui.master.co/guide/behaviors, or https://ui.master.co/guide/frameworks with npx master-ui add <name> in React, Svelte or Vue.
+5. If I chose the full agent setup: install the skill with npx skills add master-co/ui --skill master-ui, append the Master UI block from https://ui.master.co/guide/ai.md#agents-md to AGENTS.md with the project's actual validation commands below it, and add "check:ui": "master-ui check --strict" to the package.json scripts.
+6. If I chose to replace named components, rewrite each one's markup from its contract (npx master-ui contract <name>), keep its behavior and accessible names, and remove the old dependency only after nothing uses it.
+7. Preserve the existing architecture, styling and component library unless I chose otherwise, and avoid unrelated refactors.
+8. Verify: start the dev server and render <button type="button" class="btn btn-primary">Save changes</button> on a visible page (className in JSX). Confirm an ink face in light mode, a pale face in dark mode and a visible focus ring when it is reached with Tab. If it looks like an unstyled browser button, confirm the page loads the stylesheet and the compiled CSS contains .btn. Run npx master-ui check on the file that holds the button and fix what it reports. Then remove the button unless I want to keep it, and run the project's lint, build and tests.
+
+When finished, summarize the changed files, the installed version, the route and options chosen, behavior intentionally left unchanged, the validation results, and anything not verified in a browser.`} />
 
 ## Set up Master CSS \{#set-up-master-css\}
 

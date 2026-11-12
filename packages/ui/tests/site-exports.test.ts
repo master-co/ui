@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs'
 import { previewMarkdown } from '../../../site/utils/preview-markdown.ts'
 import { anchorMarkdown } from '../../../site/utils/anchor-markdown.ts'
 import { figureMarkdown } from '../../../site/utils/figure-markdown.ts'
+import { promptMarkdown } from '../../../site/utils/prompt-markdown.ts'
 
 const page = (slug: string) => readFileSync(new URL(`../../../site/content/${slug}/content.mdx`, import.meta.url), 'utf8')
 
@@ -84,4 +85,14 @@ test('the UI design guide preserves the transferred chapter links in portable ou
     'review-a-change-together',
   ]) assert.equal(markdown.split(`<a id="${id}"></a>`).length, 2, `Expected exactly one meaningful target for #${id}`)
   assert.doesNotMatch(markdown, /design\.master\.co\/master-ui|\]\(geometry\.md\)/)
+})
+
+test('the installation prompt keeps its exact text in portable output', () => {
+  const source = page('guide/installation')
+  const text = /<DocumentPrompt title="Set up Master UI" text=\{`([\s\S]*?)`\} \/>/.exec(source)![1]
+  const markdown = promptMarkdown(source)
+  assert.ok(markdown.includes(`**Set up Master UI**\n\n\`\`\`text\n${text}\n\`\`\``))
+  assert.doesNotMatch(markdown, /<DocumentPrompt/)
+  assert.equal(promptMarkdown('<DocumentPrompt title="T" text={`run \\`\\`\\`npm\\`\\`\\``} />'), '**T**\n\n````text\nrun ```npm```\n````')
+  assert.throws(() => promptMarkdown('<DocumentPrompt title="T" text={`${x}`} />'), /static template literal/)
 })
