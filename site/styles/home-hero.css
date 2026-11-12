@@ -25,8 +25,9 @@
 
   /*
    * The matrix: a window onto a plane that lies tilted away from the viewer, its columns running diagonally up the
-   * page. The window fades toward the words and toward the hero's top and foot, so the plane has no edge of its
-   * own. A pointer leans the plane a few degrees; the lean eases, so the plane follows rather than tracks.
+   * page. The plane fades itself, along its own lines (see below); the window only softens where the hero meets
+   * the header and the next section, which are level edges of the page. A pointer leans the plane a few degrees;
+   * the lean eases, so the plane follows rather than tracks.
    */
   .ui-matrix {
     --matrix-lean-x: 0deg;
@@ -39,11 +40,8 @@
     perspective: 2000px;
     perspective-origin: 72% 35%;
     pointer-events: none;
-    /* Clear of the words on the left; the far edge, at the top, fades longer than the near one, as distance would. */
-    mask-image:
-      linear-gradient(90deg, transparent 46%, rgb(0 0 0 / 0.6) 58%, #000 70%),
-      linear-gradient(transparent 2%, #000 30%, #000 80%, transparent);
-    mask-composite: intersect;
+    /* Eased ends, so neither the header nor the next section meets the plane at a line. */
+    mask-image: linear-gradient(transparent, rgb(0 0 0 / 0.15) 3%, rgb(0 0 0 / 0.5) 6%, rgb(0 0 0 / 0.85) 9%, #000 12%, #000 74%, rgb(0 0 0 / 0.85) 80.5%, rgb(0 0 0 / 0.5) 87%, rgb(0 0 0 / 0.15) 93.5%, transparent);
 
     @media (width < 64rem) {
       position: relative;
@@ -51,18 +49,33 @@
       height: clamp(24rem, 64vw + 6rem, 36rem);
       margin-top: 2rem;
       perspective-origin: 50% 30%;
-      mask-image:
-        linear-gradient(transparent, #000 18%, #000 74%, transparent),
-        linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+      mask-image: linear-gradient(transparent, rgb(0 0 0 / 0.15) 4.5%, rgb(0 0 0 / 0.5) 9%, rgb(0 0 0 / 0.85) 13.5%, #000 18%, #000 70%, rgb(0 0 0 / 0.85) 77.5%, rgb(0 0 0 / 0.5) 85%, rgb(0 0 0 / 0.15) 92.5%, transparent);
     }
   }
 
   /*
    * The plane has a fixed length, so a column that grows or shrinks by a panel as it recycles never moves the plane;
    * each column hangs from the plane's top and slides along it.
+   *
+   * The plane fades in its own coordinates, so the fade lies in the plane and takes its tilt and perspective: the
+   * columns nearest the words dissolve along their length, the fade's edge running with them rather than straight
+   * down the page, and the far end, up toward the header, recedes into the ground as distance would. The two
+   * falloffs multiply, so where they meet the edge turns in a soft curve, and each eases at both ends, so no stop
+   * shows. The words keep their column while the plane is placed by the hero's width, so where the clearing ends
+   * moves with the viewport: on a narrower screen the plane sits closer to the words and clears more of itself.
    */
   .ui-matrix-plane {
     --matrix-scale: 1.1;
+    /*
+     * Along the columns' width, from the words' side: clear to here, then a fade this long. Measured so the fade
+     * begins a little past the title's longest line at every width from 64rem, the pointer's lean included; the
+     * floor holds once the page's column stops widening and the words stop moving away from the plane.
+     */
+    --matrix-clear: max(30.5%, 58.3% - 29.9vw);
+    --matrix-fade: 16%;
+    /* Along the columns' length, from the far end: clear to here, then a fade this long. */
+    --matrix-far: 30%;
+    --matrix-haze: 18%;
     position: absolute;
     top: 50%;
     left: 74%;
@@ -72,10 +85,18 @@
     height: 4800px;
     transform: translate(-50%, -50%) rotateX(calc(44deg + var(--matrix-lean-y))) rotateZ(calc(-32deg + var(--matrix-lean-x))) scale(var(--matrix-scale));
     transition: transform 1.6s var(--home-ease);
+    mask-image:
+      linear-gradient(90deg, transparent var(--matrix-clear), rgb(0 0 0 / 0.15) calc(var(--matrix-clear) + var(--matrix-fade) * 0.25), rgb(0 0 0 / 0.5) calc(var(--matrix-clear) + var(--matrix-fade) * 0.5), rgb(0 0 0 / 0.85) calc(var(--matrix-clear) + var(--matrix-fade) * 0.75), #000 calc(var(--matrix-clear) + var(--matrix-fade))),
+      linear-gradient(transparent var(--matrix-far), rgb(0 0 0 / 0.15) calc(var(--matrix-far) + var(--matrix-haze) * 0.25), rgb(0 0 0 / 0.5) calc(var(--matrix-far) + var(--matrix-haze) * 0.5), rgb(0 0 0 / 0.85) calc(var(--matrix-far) + var(--matrix-haze) * 0.75), #000 calc(var(--matrix-far) + var(--matrix-haze)));
+    mask-composite: intersect;
 
-    /* Under the words the band is short, so the plane steps back to show a wall of panels rather than two. */
+    /*
+     * Under the words the band is short, so the plane steps back to show a wall of panels rather than two. No words
+     * stand beside it, so the side fade only takes the band's lower-left corner, opposite the far end's haze.
+     */
     @media (width < 64rem) {
       --matrix-scale: 0.8;
+      --matrix-clear: 20%;
       left: 50%;
       top: 46%;
     }
