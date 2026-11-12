@@ -77,8 +77,8 @@ const sizes = [['desktop', 'Desktop'], ['tablet', 'Tablet'], ['phone', 'Phone']]
     }
 
     /*
-     * The viewport is laid out at --page-preview-width and drawn at the width of its column: `zoom` scales
-     * the frame together with its document, so the page inside still measures the chosen width.
+     * The iframe is laid out at --page-preview-width, then its drawing is scaled to the column.
+     * Unlike CSS zoom, a transform preserves the document viewport used by WebKit container layout.
      * A length divided by a length is written with the trigonometry every engine has.
      */
     [data-page-preview] {
@@ -108,7 +108,7 @@ const sizes = [['desktop', 'Desktop'], ['tablet', 'Tablet'], ['phone', 'Phone']]
         }
       }
 
-      /* The stage keeps a margin around the window; the container's width, and so the zoom, is what is inside it. */
+      /* The stage keeps a margin around the window; its inner width determines the drawing scale. */
       & .preview-body {
         container-type: inline-size;
         padding: var(--ui-space-sm);
@@ -119,11 +119,24 @@ const sizes = [['desktop', 'Desktop'], ['tablet', 'Tablet'], ['phone', 'Phone']]
         }
       }
 
-      /* The sheet supplies the page's material; this composition only sizes its real viewport. */
+      /* Reserve the scaled drawing height without changing the iframe's authored viewport. */
+      & .preview-viewport {
+        --page-preview-scale: min(1, tan(atan2(100cqw, var(--page-preview-width))));
+        height: calc(var(--preview-height) * var(--page-preview-scale));
+      }
+
+      /* The sheet supplies the material; the transform changes only how the real viewport is drawn. */
       & .preview-viewport > iframe {
         width: var(--page-preview-width);
-        margin-inline: auto;
-        zoom: min(1, tan(atan2(100cqw, var(--page-preview-width))));
+        max-width: none;
+        margin-inline: calc((100% - var(--page-preview-width)) / 2);
+        transform: scale(var(--page-preview-scale));
+        transform-origin: top center;
+      }
+
+      /* A transformed iframe has a stacking context; the idle shield must stay above that context. */
+      &[data-preview-guard="idle"] .preview-viewport::before {
+        z-index: 1;
       }
     }
   }

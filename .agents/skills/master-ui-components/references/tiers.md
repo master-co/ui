@@ -1,6 +1,6 @@
 # Components, layouts, blocks and pages
 
-The library has three tiers. What separates them is not size, and not whether something "is layout". It is whether there is knowledge worth putting behind a class.
+The library has four tiers. What separates them is not size, and not whether something "is layout". It is whether there is knowledge worth putting behind a class.
 
 | Tier | What it is | Where it lives | How it is published |
 | --- | --- | --- | --- |
@@ -9,7 +9,7 @@ The library has three tiers. What separates them is not size, and not whether so
 | Block | One stretch of a page with a purpose: a hero, a pricing table, a footer | `site/content/blocks/<slug>/` | Markup to copy: components and utilities |
 | Page | A whole screen: its regions and what scrolls | `site/content/pages/<slug>/`, on the frames `page` and `shell` | Markup to copy, filled with blocks and components |
 
-Templates, whole pages, are a fourth tier that does not exist yet. Do not add one without a design discussion.
+Pages compose the existing layout frames, blocks and components into whole screens; they do not introduce another material or runtime API.
 
 ## The test for a class
 

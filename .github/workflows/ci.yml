@@ -68,3 +68,33 @@ jobs:
         run: bun run --cwd packages/ui test:browser
         env:
           MASTER_UI_BROWSER: ${{ matrix.browser }}
+
+  documentation-browser:
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup
+      - uses: actions/download-artifact@v8
+        with:
+          name: site-${{ github.sha }}
+          path: site/out/
+      - name: Install browser
+        run: bun x playwright install --with-deps ${{ matrix.browser }}
+        working-directory: packages/ui
+      - name: Verify the built documentation and static fallbacks
+        run: bun run test:site
+        env:
+          MASTER_UI_BROWSER: ${{ matrix.browser }}
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: documentation-${{ matrix.browser }}-${{ github.sha }}
+          path: site/.cache/documentation-tests/
+          include-hidden-files: true
+          retention-days: 7
