@@ -16,6 +16,8 @@ export interface Control<V> {
   settled?: (value: V) => void
   /** Listeners for events of the root, such as the `change` a behavior dispatches when a code is complete. */
   on?: Record<string, (event: Event) => void>
+  /** Takes what the behavior returned each time it attaches, and null when it detaches, for a handle with more than a `value`. */
+  attached?: (handle: Handle<V> | null) => void
 }
 
 const same = (a: unknown, b: unknown) => a === b || JSON.stringify(a) === JSON.stringify(b)
@@ -54,6 +56,7 @@ export function behavior<E extends HTMLElement, O extends object, V = never>(
       /** The last value the owner knows: the one it gave, or the one it was told. */
       let kept = handle.value
       if (kept !== undefined) control.settled?.(kept)
+      control.attached?.(handle)
 
       $effect(() => {
         const value = control.value?.()
@@ -78,6 +81,7 @@ export function behavior<E extends HTMLElement, O extends object, V = never>(
       return () => {
         controller.abort()
         handle()
+        control.attached?.(null)
       }
     })
   }

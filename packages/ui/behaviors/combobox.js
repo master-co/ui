@@ -14,9 +14,13 @@
  * and null while the field holds text that no option was chosen for. Set it to choose an option from
  * outside; that writes the option's text into the field and dispatches nothing.
  *
+ * It also has a `query`: the text in the field, what the reader is looking for. It is not the value: it
+ * changes with every key, and holds the chosen option's text once one is chosen. Set it to write the field
+ * from outside; that filters the options as typing does and dispatches nothing.
+ *
  * With `filter: false` the script hides nothing: the page, or a server, decides which options the list
- * holds, and writes them while the reader types. Options that arrive while the list is open get an active
- * option again.
+ * holds, and writes them while the reader types. It reads `query` on the field's `input` to know what to
+ * look for. Options that arrive while the list is open get an active option again.
  *
  * A list with `aria-multiselectable="true"` holds several values. The field is then an input group with
  * `input-group-wrap`, and each chosen option is a chip before the field. Choosing checks or unchecks an
@@ -56,8 +60,9 @@ function text(option) {
 /**
  * @param {HTMLElement} root The element with the `combobox` class.
  * @param {ComboboxOptions} [options]
- * @returns {(() => void) & { value: string | string[] | null }} Removes everything the behavior added. Its
- *   `value` is what the chosen option stands for, or the list of them when the list is multiselectable.
+ * @returns {(() => void) & { value: string | string[] | null, query: string }} Removes everything the behavior
+ *   added. Its `value` is what the chosen option stands for, or the list of them when the list is
+ *   multiselectable; its `query` the text in the field.
  */
 export function combobox(root, { filter: filtering = true, name, removeLabel = (text) => `Remove ${text}`, draw } = {}) {
   attached.get(root)?.abort()
@@ -119,7 +124,19 @@ export function combobox(root, { filter: filtering = true, name, removeLabel = (
       else if (next === null || next === undefined) field.value = ''
     }
   )
-  if (!field || !list) return detach
+  const handle = /** @type {typeof detach & { query: string }} */ (Object.defineProperty(detach, 'query', {
+    enumerable: true,
+    get: () => field?.value ?? '',
+    set: (/** @type {string | null | undefined} */ next) => {
+      const query = next ?? ''
+      if (!field || !list) return
+      // The text the field already holds is filtered too, so a first query a renderer drew is matched.
+      if (field.value !== query) field.value = query
+      if (filtering) filter(list, query)
+      if (isOpen(list)) activate(field, list, options(list)[0])
+    }
+  }))
+  if (!field || !list) return handle
 
   const active = () => list.querySelector('[role="option"][aria-selected="true"]')
   /** True while the field hears the `input` this script dispatches, which is not typing. */
@@ -274,5 +291,5 @@ export function combobox(root, { filter: filtering = true, name, removeLabel = (
   }, { signal })
 
   sync()
-  return detach
+  return handle
 }

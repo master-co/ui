@@ -36,13 +36,20 @@ In a browser without anchor positioning the listbox still opens, centered in the
 
 ## The behavior \{#behavior\}
 
-`combobox` takes the root, the element with the `combobox` class, and returns the function that detaches it. It finds the field by `role="combobox"` and the list by `role="listbox"`. Pass `filter: false` when the page writes the matching options itself.
+`combobox` takes the root, the element with the `combobox` class, and an object of options, and returns the function that detaches it. It finds the field by `role="combobox"` and the list by `role="listbox"`. Its `filter` option is true by default; `filter: false` leaves the options to the page, as [Autocomplete](#autocomplete) shows. `name`, `removeLabel` and `draw` concern [several values](#several-values).
 
 ```js name=app.js
 import { combobox } from '@master/ui/behaviors/combobox.js'
 
-const detach = combobox(document.querySelector('.combobox'))
+const box = combobox(document.querySelector('.combobox'))
+box.value // what the chosen option stands for, or null
+box.query // the text in the field
 ```
+
+The function it returns has two properties, read and set from outside. Setting either dispatches nothing.
+
+- **`value`** is what the chosen option stands for, its `data-value` or its text, and null while the field holds text no option was chosen for. Setting it checks that option and writes its text into the field.
+- **`query`** is the text in the field, what the reader is looking for. It is not the value: it changes with every key, and once an option is chosen it is that option's text. Setting it writes the field and filters the options as typing does.
 
 - **Typing** sets `hidden` on the options whose text does not hold what is typed, whatever its case, opens the list and makes the first match the active option.
 - **The active option** has `aria-selected="true"` and is named by `aria-activedescendant` on the field. Focus stays in the field.
@@ -84,6 +91,72 @@ A listbox with `aria-multiselectable="true"` holds several values. The field is 
 
 When the values are typed freely rather than chosen from a list, use a [tags field](/components/tags).
 
+## Autocomplete \{#autocomplete\}
+
+When the matches come from a server, or from a search of the page's own, attach the behavior with `filter: false`. It hides nothing: on each `input` of the field, read `query`, look for it and write the matches as the list's options. Options that arrive after the typing that asked for them still get an active option, so <kbd>Enter</kbd> and the arrows work on them.
+
+<ComponentPreview name="autocomplete" height={360} title="Autocomplete" background="plain" bodyClass="content-start p-lg min-h(360)" behaviors html={`<div class="field max-w(320) mx-auto">
+  <label for="city">City</label>
+  <div class="combobox" id="city-combobox">
+    <div class="input-group">
+      <input class="input-group-field" id="city" role="combobox" aria-expanded="false" aria-controls="city-list" aria-autocomplete="list" autocomplete="off" placeholder="Start typing a city">
+      <button type="button" class="combobox-toggle" tabindex="-1" aria-label="Show cities"></button>
+    </div>
+    <div id="city-list" popover="manual" class="listbox" role="listbox" aria-label="Cities">
+      <div class="listbox-empty">No cities start with that.</div>
+    </div>
+  </div>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  var root = document.getElementById('city-combobox')
+  var list = document.getElementById('city-list')
+  var cities = ['Amsterdam', 'Athens', 'Auckland', 'Bangkok', 'Barcelona', 'Berlin', 'Bogotá', 'Boston', 'Brussels', 'Buenos Aires', 'Cairo', 'Cape Town', 'Chicago', 'Copenhagen', 'Dublin', 'Frankfurt', 'Helsinki', 'Hong Kong', 'Istanbul', 'Lisbon', 'London', 'Los Angeles', 'Madrid', 'Melbourne', 'Mexico City', 'Montreal', 'Mumbai', 'Nairobi', 'New York', 'Oslo', 'Paris', 'Prague', 'Rome', 'San Francisco', 'Santiago', 'São Paulo', 'Seoul', 'Singapore', 'Stockholm', 'Sydney', 'Taipei', 'Tokyo', 'Toronto', 'Vienna', 'Warsaw', 'Zurich']
+  var box = MasterUI.combobox(root, { filter: false })
+  var asked = 0
+
+  // Stands for a request to a server: the cities that start with the query, a moment later.
+  function search(query) {
+    return new Promise(function (resolve) {
+      setTimeout(function () {
+        var text = query.trim().toLowerCase()
+        resolve(cities.filter(function (city) { return city.toLowerCase().startsWith(text) }).slice(0, 6))
+      }, 120)
+    })
+  }
+
+  function write(matches) {
+    list.querySelectorAll('.listbox-option').forEach(function (option) { option.remove() })
+    matches.forEach(function (city) {
+      var option = document.createElement('div')
+      option.className = 'listbox-option'
+      option.setAttribute('role', 'option')
+      option.setAttribute('aria-checked', 'false')
+      option.textContent = city
+      list.insertBefore(option, list.querySelector('.listbox-empty'))
+    })
+  }
+
+  root.addEventListener('input', function (event) {
+    // A choice says input too; its text is the option's, with nothing more to look for.
+    if (event.target.getAttribute('role') !== 'combobox' || box.value !== null) return
+    var ticket = ++asked
+    search(box.query).then(function (matches) {
+      // An answer to an older query that arrives late is dropped.
+      if (ticket === asked) write(matches)
+    })
+  })
+  search('').then(write)
+})
+</script>`} caption="Type a few letters: the page searches for the query and writes the options a moment later. Choose one with the arrow keys and Enter." />
+
+- **Read `query`, not the event.** The query is the field's text; `query` reads it the same way whether the reader typed it or a framework wrote it.
+- **A choice dispatches `input` too.** Its text is the chosen option's, and `value` is no longer null: there is nothing to look for, and writing new options then would take the chosen one away.
+- **Answers arrive out of order.** Keep only the answer to the newest query.
+- **The empty state is the stylesheet's.** `listbox-empty` shows by itself while the list holds no option.
+
+In React, Svelte and Vue, the component's `query` and `onQueryChange` (a bindable `query` in Svelte, `v-model:query` in Vue) carry the same text: search for it, and give the matches as `options` with `filter` set to false.
+
 ## Choosing a control \{#choosing-a-control\}
 
 For up to a dozen plain options, a [select](/components/select) does this with no script and the platform's own type-ahead. Reach for a combobox when the list is long enough to search, loads as the reader types, or has rich rows.
@@ -103,7 +176,7 @@ The keys are those of the behavior. With the list closed, and with <kbd>Shift</k
 
 ## React, Svelte and Vue \{#frameworks\}
 
-The `combobox` component renders this markup from a list of options, attaches the behavior and passes the chosen value in and out. With `multiple` it writes the chips from the value, which is then a list. An option with a `group` is written under that caption, in a `listbox-group` with `role="group"` labelled by its `listbox-label`; a group whose options are all filtered out hides with them. Copy it into the project with `npx master-ui add combobox`; [React, Svelte and Vue](/guide/frameworks) says how the components are built and used.
+The `combobox` component renders this markup from a list of options, attaches the behavior and passes the chosen value in and out. With `multiple` it writes the chips from the value, which is then a list. An option with a `group` is written under that caption, in a `listbox-group` with `role="group"` labelled by its `listbox-label`; a group whose options are all filtered out hides with them. Apart from the value it carries the query: `query` and `onQueryChange` in React, a bindable `query` with `onQueryChange` in Svelte, `v-model:query` in Vue. The query comes out as the reader types and once they choose, after the value; a query the owner gives is written into the field and filters the options. Copy it into the project with `npx master-ui add combobox`; [React, Svelte and Vue](/guide/frameworks) says how the components are built and used.
 
 <FrameworkSource name="combobox" />
 

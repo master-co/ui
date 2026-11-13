@@ -67,6 +67,46 @@ test('combobox: setting value checks the option, writes its text and says nothin
   assert.deepEqual(heard, [], 'a value set from outside dispatches nothing')
 })
 
+test('combobox: query is the text in the field, typed or chosen, apart from the value', () => {
+  const { one, key, type } = setup(comboboxMarkup)
+  const field = one<HTMLInputElement>('[role="combobox"]')
+  const handle = combobox(one('.combobox'))
+  assert.equal(handle.query, '')
+  type(field, 'sing')
+  assert.equal(handle.query, 'sing')
+  assert.equal(handle.value, null, 'typing is a query, not a value')
+  key(field, 'Enter')
+  assert.equal(handle.query, 'Singapore', 'a choice writes its text, and the query is that text')
+  assert.equal(handle.value, 'sin')
+  handle.value = 'hnd'
+  assert.equal(handle.query, 'Tokyo', 'so does a value set from outside')
+})
+
+test('combobox: setting query writes the field and filters as typing does, and says nothing', () => {
+  const { one, all, heard, isOpen } = setup(comboboxMarkup)
+  const field = one<HTMLInputElement>('[role="combobox"]')
+  const list = one('[role="listbox"]')
+  const handle = combobox(one('.combobox'))
+  handle.query = 'fra'
+  assert.equal(field.value, 'fra')
+  assert.deepEqual(all('[role="option"]').map(option => option.hidden), [true, true, false])
+  assert.equal(isOpen(list), false, 'it does not open the list')
+  assert.equal(handle.value, null)
+  handle.query = ''
+  assert.deepEqual(all('[role="option"]').map(option => option.hidden), [false, false, false])
+  assert.deepEqual(heard, [], 'a query set from outside dispatches nothing')
+
+  const open = combobox(one('.combobox'))
+  list.showPopover()
+  open.query = 'sin'
+  assert.equal(field.getAttribute('aria-activedescendant'), all('[role="option"]')[1].id, 'an open list gets its first match as the active option')
+  open.query = ''
+
+  const own = combobox(one('.combobox'), { filter: false })
+  own.query = 'zzz'
+  assert.deepEqual(all('[role="option"]').map(option => option.hidden), [false, false, false], 'with filter: false the page writes the matches')
+})
+
 test('combobox: a choice is written through the prototype\'s setter, so a shadowed value still hears it', () => {
   const { one, key, type, window } = setup(comboboxMarkup)
   const field = one<HTMLInputElement>('[role="combobox"]')

@@ -12,7 +12,7 @@ export interface ComboboxOption {
 </script>
 
 <script setup lang="ts">
-import { computed, h, ref, useAttrs, useId, useTemplateRef, type FunctionalComponent } from 'vue'
+import { computed, h, onMounted, ref, useAttrs, useId, useTemplateRef, watch, type FunctionalComponent } from 'vue'
 import { combobox } from '@master/ui/behaviors/combobox.js'
 import { useBehavior } from './use-behavior'
 
@@ -20,7 +20,7 @@ defineOptions({ inheritAttrs: false })
 
 const { options, filter = true, multiple, removeLabel = (label: string) => `Remove ${label}` } = defineProps<{
   options: ComboboxOption[]
-  /** False when `options` are already the matches, from a server or a search of your own. */
+  /** False when `options` are already the matches: search for the query and give the matches as `options`. */
   filter?: boolean
   /** Several values, each a chip in the field; the model is then the list of them. */
   multiple?: boolean
@@ -40,6 +40,11 @@ const { options, filter = true, multiple, removeLabel = (label: string) => `Remo
  * `multiple`, the chosen values in the order they were chosen: `v-model`.
  */
 const model = defineModel<string | string[] | null>()
+/**
+ * The text in the field, what the reader is looking for: `v-model:query`. It is not the value; with one value
+ * it holds the chosen option's label once one is chosen.
+ */
+const query = defineModel<string>('query')
 
 /*
  * A combobox. Name the field with `aria-label`, or give it an `id` a label points at; every attribute but
@@ -55,13 +60,31 @@ const first = model.value
 const firsts = [first ?? []].flat() as string[]
 const several = multiple
 // The first label is the field's default value, an attribute: what is typed after is not Vue's to write.
-const firstLabel = several ? undefined : options.find(option => option.value === first)?.label
+const firstLabel = (several ? undefined : options.find(option => option.value === first)?.label) ?? query.value
 // With several values the behavior asks for the chips it wants; Vue writes them from this list.
 const chips = ref<string[]>(several ? firsts : [])
 const labelOf = (each: string) => options.find(option => option.value === each)?.label ?? each
 const checked = (option: ComboboxOption) => (several ? firsts.includes(option.value) : option.value === first)
 const root = useTemplateRef<HTMLDivElement>('root')
-useBehavior(root, combobox, () => (multiple ? { filter, removeLabel, draw: (values: string[]) => { chips.value = values } } : { filter }), model)
+/** The last query the owner gave or was told. */
+let known: string | undefined
+const behavior = useBehavior(root, combobox, () => (multiple ? { filter, removeLabel, draw: (values: string[]) => { chips.value = values } } : { filter }), model, {
+  input: () => {
+    const next = handle()?.query
+    if (next === undefined || next === known) return
+    query.value = known = next
+  },
+})
+const handle = () => behavior.handle() as ReturnType<typeof combobox> | undefined
+/** Query in: a query the owner gives is written into the field, and filters the options as typing does. */
+const write = () => {
+  const given = query.value
+  const current = handle()
+  if (given === undefined || !current || given === known) return
+  current.query = known = given
+}
+onMounted(write)
+watch(query, write, { flush: 'post' })
 
 const groups = computed(() => [...new Set(options.map(option => option.group))])
 const Row: FunctionalComponent<{ option: ComboboxOption }> = ({ option }) => h('div', {

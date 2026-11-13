@@ -156,6 +156,26 @@ export const scenarios: Record<string, Scenario> = {
     assert.deepEqual(grouped.heard, ['fra'])
     await driver.act(() => grouped.mounted.unmount())
 
+    // The query is the text in the field, apart from the value: it comes out as the reader types and
+    // chooses, and a query the owner gives is written and filters, as typing does.
+    const queries: string[] = []
+    const asked = await owned(driver, 'combobox', { options: regions, value: null, query: 'fra', listLabel: 'Regions', toggleLabel: 'Show regions', 'aria-label': 'Region', onQueryChange: (text: string) => queries.push(text) })
+    const text = page.one<HTMLInputElement>('[role="combobox"]')
+    const hidden = () => page.all('[role="option"]').map(option => option.hidden)
+    assert.equal(text.value, 'fra', 'the first query is the field\'s text')
+    assert.deepEqual(hidden(), [true, true, false], 'and the options match it')
+    await driver.act(() => page.type(text, 'tok'))
+    assert.deepEqual(queries, ['tok'], 'typing says the query')
+    assert.deepEqual(asked.heard, [], 'and is not a value')
+    await driver.act(() => page.key(text, 'Enter'))
+    assert.deepEqual(asked.heard, ['hnd'])
+    assert.deepEqual(queries, ['tok', 'Tokyo'], 'choosing writes the label, which is the query after, said once the value is')
+    await driver.act(() => asked.mounted.set({ query: 'sin' }))
+    assert.equal(text.value, 'sin', 'a query the owner gives is written')
+    assert.deepEqual(hidden(), [true, false, true], 'and filters')
+    assert.deepEqual(queries, ['tok', 'Tokyo'], 'and is not said back')
+    await driver.act(() => asked.mounted.unmount())
+
     await comboboxSeveral(driver, page)
   },
 
