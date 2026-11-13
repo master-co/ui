@@ -3,6 +3,7 @@ import Calendar from '../../../frameworks/vue/Calendar.vue'
 import Combobox from '../../../frameworks/vue/Combobox.vue'
 import Command from '../../../frameworks/vue/Command.vue'
 import Editable from '../../../frameworks/vue/Editable.vue'
+import Dial from '../../../frameworks/vue/Dial.vue'
 import Listbox from '../../../frameworks/vue/Listbox.vue'
 import Otp from '../../../frameworks/vue/Otp.vue'
 import Stepper from '../../../frameworks/vue/Stepper.vue'
@@ -32,6 +33,7 @@ export const fixtures: Record<string, Component> = {
   'command': Command,
   'compare': CompareExample,
   'context-menu': ContextMenuExample,
+  'dial': Dial,
   'dialog': DialogExample,
   'editable': Editable,
   'field': FieldExample,

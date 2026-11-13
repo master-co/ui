@@ -282,6 +282,41 @@ export const scenarios: Record<string, Scenario> = {
     await driver.act(() => mounted.unmount())
   },
 
+  async dial(driver, page) {
+    const committed: number[] = []
+    const known: unknown[] = []
+    const { mounted, heard } = await owned(driver, 'dial', { value: 40, label: 'Volume', name: 'volume', ticks: 10, marks: [{ value: 0 }, { value: 100, label: 'Max' }], text: (value: number) => `${value}%`, onValueCommit: (value: number) => { committed.push(value); known.push(heard.at(-1)) } })
+    conforms(page)
+    const root = page.one<HTMLElement>('.dial')
+    const field = page.one<HTMLInputElement>('input[type="hidden"]')
+    const shown = () => page.one('.dial-value').textContent
+    assert.equal(root.getAttribute('role'), 'slider')
+    assert.equal(root.getAttribute('aria-valuenow'), '40', 'the value is in the first render')
+    assert.equal(root.getAttribute('aria-valuetext'), '40%')
+    assert.equal(root.style.getPropertyValue('--dial-value'), '40')
+    assert.equal(shown(), '40%')
+    assert.equal(field.name, 'volume')
+    assert.equal(field.value, '40')
+    assert.deepEqual(page.all('.dial-mark').map(mark => mark.textContent), ['0', 'Max'], 'the marks are rows from data')
+
+    await driver.act(() => page.key(root, 'ArrowUp'))
+    assert.deepEqual(heard, [41])
+    assert.deepEqual(committed, [41])
+    assert.equal(shown(), '41%')
+    assert.equal(field.value, '41', 'the field a form submits follows')
+    await driver.act(() => page.key(root, 'End'))
+    assert.deepEqual(heard, [41, 100], 'it stops at max')
+    assert.deepEqual(known, [41, 100], 'a value is committed after it has come out')
+
+    await driver.act(() => mounted.set({ value: 25 }))
+    assert.equal(root.getAttribute('aria-valuenow'), '25')
+    assert.equal(root.style.getPropertyValue('--dial-value'), '25')
+    assert.equal(shown(), '25%')
+    assert.equal(field.value, '25')
+    assert.deepEqual(heard, [41, 100], 'and says nothing')
+    await driver.act(() => mounted.unmount())
+  },
+
   async stepper(driver, page) {
     const { mounted, heard } = await owned(driver, 'stepper', { value: 4, min: 1, max: 6, decrementLabel: 'Fewer seats', incrementLabel: 'More seats', 'aria-label': 'Seats' })
     conforms(page)

@@ -175,6 +175,7 @@ test('svelte: the first HTML, rendered on a server, holds the state, and hydrate
     'calendar': [() => values('[aria-selected="true"]'), ['2026-11-13']],
     'tabs': [() => page.all<HTMLElement>('[role="tabpanel"]').filter(panel => !panel.hidden).map(panel => panel.textContent?.trim()), ['Panel B']],
     'splitter': [() => page.one<HTMLElement>('.splitter').style.getPropertyValue('--splitter-size'), '36%'],
+    'dial': [() => [page.one<HTMLElement>('.dial').style.getPropertyValue('--dial-value'), page.one('.dial-value').textContent, values('input[type="hidden"]')[0]], ['90', '90°', '90']],
     'wheel': [() => page.all('[aria-selected="true"]').map(option => option.getAttribute('data-value')), ['10']],
     'otp': [() => values('.otp-slot'), ['4', '8', '', '']],
     'context-menu': [() => page.all('.menu.menu-context').length, 1],

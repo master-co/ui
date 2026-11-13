@@ -1,0 +1,177 @@
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+A dial sets a value by turning a thumb around a circle: a level set like a knob, an angle, a direction. It is the input sibling of the [gauge](/components/gauge): a round track in the fill's own ink, stepped back, fills with ink from where it starts to the value, and the [slider](/components/slider)'s pearl thumb stands on it at the value's angle. The figure sits in the middle in tabular figures. There is no native element for it, so the dial is an element with `role="slider"`, and the `dial` [behavior](/guide/behaviors) turns it.
+
+<ComponentPreview name="default" height={176} title="Dial" bodyClass="flex flex-wrap items-center justify-center gap-xl p-lg" behaviors html={`<div class="dial" role="slider" tabindex="0" aria-label="Volume" aria-valuenow="40" aria-valuemin="0" aria-valuemax="100" style="--dial-value: 40">
+  <span class="dial-value">40%</span>
+  <span class="dial-thumb"></span>
+</div>`} caption="Drag the thumb round, press anywhere on the track, or focus the dial and use the arrow keys, Page Up, Page Down, Home and End." />
+
+By default the dial is a knob: 270 degrees, open at the foot, from its least value at the lower left to its greatest at the lower right. A press on the track moves the value there; a press on the thumb takes hold of it where it is, so it turns without a jump. A drag that goes past an end stays at that end, through the gap at the foot, until the pointer comes back.
+
+## An angle \{#angle\}
+
+`dial-full` is the whole circle, starting at the top: an angle or a direction, from `aria-valuemin` 0 to `aria-valuemax` 360. Past its greatest value it comes round to the least again, from the keys and from a drag through the top, and 360 is written as 0, the same place. <kbd class="kbd">End</kbd> stops a step before it.
+
+<ComponentPreview name="angle" height={176} title="An angle" bodyClass="flex flex-wrap items-center justify-center gap-xl p-lg" behaviors html={`<div class="dial dial-full" role="slider" tabindex="0" aria-label="Gradient angle" aria-valuenow="135" aria-valuemin="0" aria-valuemax="360" aria-valuetext="135°" style="--dial-value: 135; --dial-max: 360">
+  <span class="dial-value">135°</span>
+  <span class="dial-thumb"></span>
+</div>`} caption="Turn it past the top, or press the up arrow at 359." />
+
+The label and `aria-valuetext` keep the words they were written with around the number, so "135°" becomes "136°" with no script of the page's. For words of another kind, pass the behavior a `text` function, as [the behavior](#behavior) shows.
+
+## Ticks and marks \{#ticks-and-marks\}
+
+A `dial-ticks` element draws `--dial-ticks` equal steps across the sweep as fine lines just outside the thumb's path: a knob shows one more tick than steps, one at each end, and the full circle as many as steps. A `dial-mark` is a short word or figure in the rim, placed by the stylesheet at the value its `--dial-at` stands for. Both take a rim inside the dial's box, so the track grows smaller around them; give a dial with marks the large size.
+
+<ComponentPreview name="ticks-and-marks" height={224} narrowHeight={400} title="Ticks and marks" bodyClass="flex flex-wrap items-center justify-center gap-xl p-lg" behaviors html={`<div class="dial dial-lg" role="slider" tabindex="0" aria-label="Volume" aria-valuenow="6" aria-valuemin="0" aria-valuemax="10" style="--dial-value: 6; --dial-max: 10">
+  <span class="dial-ticks" style="--dial-ticks: 10"></span>
+  <span class="dial-mark" style="--dial-at: 0">0</span>
+  <span class="dial-mark" style="--dial-at: 5">5</span>
+  <span class="dial-mark" style="--dial-at: 10">10</span>
+  <span class="dial-value">6</span>
+  <span class="dial-thumb"></span>
+</div>
+<div class="dial dial-lg dial-full" role="slider" tabindex="0" aria-label="Wind direction" aria-valuenow="225" aria-valuemin="0" aria-valuemax="360" aria-valuetext="225°" style="--dial-value: 225; --dial-max: 360">
+  <span class="dial-ticks" style="--dial-ticks: 12"></span>
+  <span class="dial-mark" style="--dial-at: 0">N</span>
+  <span class="dial-mark" style="--dial-at: 90">E</span>
+  <span class="dial-mark" style="--dial-at: 180">S</span>
+  <span class="dial-mark" style="--dial-at: 270">W</span>
+  <span class="dial-value">225°</span>
+  <span class="dial-thumb"></span>
+</div>`} />
+
+Ticks and marks are drawings: inside a `role="slider"` they are not announced, so the value and its words must say everything a mark says.
+
+## Sizes \{#sizes\}
+
+A dial is 120px across. `dial-sm` is 88px, for a row of controls, and `dial-lg` is 160px, for the one value a panel is about or a dial with marks. The track is a twentieth of the width and the figure scales with the track; the thumb keeps the slider's 18px, and grows to 24px on touch screens.
+
+<ComponentPreview name="sizes" height={208} narrowHeight={400} title="Sizes" bodyClass="flex flex-wrap items-center justify-center gap-xl p-lg" behaviors html={`<div class="dial dial-sm" role="slider" tabindex="0" aria-label="Treble" aria-valuenow="30" aria-valuemin="0" aria-valuemax="100" style="--dial-value: 30">
+  <span class="dial-value">30</span>
+  <span class="dial-thumb"></span>
+</div>
+<div class="dial" role="slider" tabindex="0" aria-label="Mid" aria-valuenow="55" aria-valuemin="0" aria-valuemax="100" style="--dial-value: 55">
+  <span class="dial-value">55</span>
+  <span class="dial-thumb"></span>
+</div>
+<div class="dial dial-lg" role="slider" tabindex="0" aria-label="Bass" aria-valuenow="70" aria-valuemin="0" aria-valuemax="100" style="--dial-value: 70">
+  <span class="dial-value">70</span>
+  <span class="dial-thumb"></span>
+</div>`} />
+
+## In a form \{#form\}
+
+A `role="slider"` is not a form control, so the dial carries a hidden input. The behavior writes the value into the first `<input type="hidden">` inside the dial with every change, and a form submits it under the input's `name`. The dial's `input` and `change` events bubble to the form like a native control's. A form's reset does not reach a hidden input, so the dial stays where it was; set its value again from the page if a reset should move it.
+
+<ComponentPreview name="form" height={232} title="In a form" background="plain" bodyClass="flex items-center justify-center p-lg" behaviors html={`<form class="flex flex-col items-center gap-sm">
+  <span class="text-sm fg-text-strong" id="heating-label">Heating</span>
+  <div class="dial" role="slider" tabindex="0" aria-labelledby="heating-label" aria-valuenow="21" aria-valuemin="16" aria-valuemax="30" style="--dial-value: 21; --dial-min: 16; --dial-max: 30">
+    <span class="dial-value">21°</span>
+    <span class="dial-thumb"></span>
+    <input type="hidden" name="temperature" value="21">
+  </div>
+  <span class="text-xs fg-text-muted">16° to 30°</span>
+</form>`} />
+
+A visible label is an element of its own, pointed at with `aria-labelledby`: a `<label>` names only form controls. Show the range in words beside the dial when it is not plain from the figure.
+
+## Disabled \{#disabled\}
+
+`aria-disabled="true"` fades the dial and leaves it out of every key, pointer and wheel. Take it out of the tab order with `tabindex="-1"`, and put `disabled` on its hidden input too, so a form does not submit the value.
+
+<ComponentPreview name="disabled" height={176} title="Disabled" bodyClass="flex flex-wrap items-center justify-center gap-xl p-lg" behaviors html={`<div class="dial" role="slider" tabindex="-1" aria-label="Volume" aria-valuenow="40" aria-valuemin="0" aria-valuemax="100" aria-disabled="true" style="--dial-value: 40">
+  <span class="dial-value">40%</span>
+  <span class="dial-thumb"></span>
+  <input type="hidden" name="volume" value="40" disabled>
+</div>`} />
+
+## Which way it turns \{#direction\}
+
+Clockwise is more, in every writing direction. A dial turns like a clock or a knob on a device, and those are not mirrored from right to left, so the dial is not either, and its arrow keys do not turn around: <kbd class="kbd">→</kbd> and <kbd class="kbd">↑</kbd> always turn it up. At the top of the dial, where the eye starts, clockwise is the way to the right; that is the arrow that turns it there.
+
+## The behavior \{#behavior\}
+
+`dial` takes the root, the element with the `dial` class, and returns the function that detaches it. The function has a `value`, the number: set it to turn the dial from outside, which dispatches nothing.
+
+```js name=app.js
+import { dial } from '@master/ui/behaviors/dial.js'
+
+const root = document.querySelector('.dial')
+const turn = dial(root, { step: 15, text: (value) => `${value}°` })
+
+root.addEventListener('change', () => save(turn.value))
+```
+
+- **Each change** writes the value to `aria-valuenow` and `--dial-value` on the root, to the text of `dial-value`, to `aria-valuetext` when there is one or `text` is given, and to the hidden input. As it attaches, it writes the first value the same way, and copies `aria-valuemin` and `aria-valuemax` to `--dial-min` and `--dial-max` for a browser that cannot read the attributes.
+- **The value** stays on a step from `aria-valuemin`, between it and `aria-valuemax`, 0 and 100 when they are left out; round a full circle it comes round instead.
+- **Dragging.** On `pointerdown` it captures the pointer and reads its angle around the middle of the dial, which it turns into a value with the same `--dial-start` and `--dial-sweep` the stylesheet draws with. A dial whose sweep is 360 degrees comes round, with or without `dial-full`. A press near the middle, on the figure, does not move the value.
+- **The keys.** The arrows turn by a step, <kbd class="kbd">Page Up</kbd> and <kbd class="kbd">Page Down</kbd> by a larger one, and <kbd class="kbd">Home</kbd> and <kbd class="kbd">End</kbd> go to the ends.
+- **The wheel**, when it is asked for, turns the dial a step for each notch, but only while <kbd class="kbd">Alt</kbd> (<kbd class="kbd">Option</kbd>) is held: scrolling a page past a dial never turns it.
+- **Events.** The root dispatches `input` each time the value changes, and `change` when a drag ends or a key or the wheel turned it. Both bubble.
+- **Disabled.** A dial with `aria-disabled="true"` takes no key, pointer or wheel.
+
+| Option | What it sets |
+| --- | --- |
+| `step` | How far an arrow key turns the value, and what a drag rounds it to. 1 by default |
+| `page` | How far Page Up and Page Down turn it. A tenth of the range by default, on a step |
+| `text` | A function from the value to its words, written in `dial-value` and in `aria-valuetext` |
+| `wheel` | `true` lets a wheel turn the dial while Alt is held. `false` by default |
+
+`attach()` passes no options. A dial that needs them is attached by itself, after `attach()` has run: a second call on one root replaces the first, as this preview's script does. `MasterUI` is the bundle a preview loads; in a project, import `dial` as above.
+
+<ComponentPreview name="options" height={176} title="Steps, words and the wheel" bodyClass="flex flex-wrap items-center justify-center gap-xl p-lg" behaviors html={`<div class="dial dial-full" id="hue" role="slider" tabindex="0" aria-label="Hue" aria-valuenow="210" aria-valuemin="0" aria-valuemax="360" style="--dial-value: 210; --dial-max: 360">
+  <span class="dial-ticks" style="--dial-ticks: 24"></span>
+  <span class="dial-value">210°</span>
+  <span class="dial-thumb"></span>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.dial(document.getElementById('hue'), {
+    step: 15,
+    wheel: true,
+    text: function (value) { return value + '°' }
+  })
+})
+</script>`} caption="Each key and each notch is 15 degrees. Hold Alt (Option) and scroll over the dial to turn it." />
+
+Without the behavior a dial shows its first value, from its attributes where the browser supports typed `attr()` and from `--dial-value` elsewhere, and does not turn.
+
+## Keyboard \{#keyboard\}
+
+<ContractTable name="dial" show="keyboard" />
+
+## Accessibility \{#accessibility\}
+
+- The root is a focusable `role="slider"` with an accessible name, from `aria-label` or `aria-labelledby`, and the value in `aria-valuenow` between `aria-valuemin` and `aria-valuemax`. A slider has no orientation that means anything round a circle, so leave `aria-orientation` out.
+- When the number needs a unit or words to be understood, write `aria-valuetext`: "135°", "21 degrees", "Loud". The behavior keeps it in step with the value.
+- Everything inside the slider, the figure, the ticks and the marks, is presentation to assistive technology. The keys do everything a drag does, and a single press on the track sets a value, so turning by dragging is never the only way.
+- Focus rings the thumb, as on a slider. On touch screens the thumb grows to 24px, and a finger on the dial turns it instead of scrolling the page.
+- With reduced motion the held thumb does not grow. In forced colors the fill takes the system highlight, the track and the ticks the system's grey, and the thumb the button text color.
+
+## React, Svelte and Vue \{#frameworks\}
+
+The `dial` component attaches the behavior and passes the value in and out. It renders the ticks and the marks from data, and the hidden input when it is given a `name`. Copy it into the project with `npx master-ui add dial`; [React, Svelte and Vue](/guide/frameworks) says how the components are built and used.
+
+<FrameworkSource name="dial" />
+
+## Related \{#related\}
+
+<ComponentLinks slugs={['slider', 'gauge', 'stepper']} />
+
+## Classes \{#classes\}
+
+<ContractTable name="dial" />
+
+## Custom properties \{#custom-properties\}
+
+<ContractTable name="dial" show="properties" />
+
+## Source \{#source\}
+
+<ComponentSource name="dial" />

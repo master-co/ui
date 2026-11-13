@@ -1,7 +1,7 @@
 import { afterEach, test } from 'node:test'
 import assert from 'node:assert/strict'
 import { dom } from './dom.ts'
-import { calendar, calendarMonth, combobox, command, compare, listbox, otp, splitter, stepper, tree, wheel } from '../../behaviors/index.js'
+import { calendar, calendarMonth, combobox, command, compare, dial, listbox, otp, splitter, stepper, tree, wheel } from '../../behaviors/index.js'
 
 /** happy-dom catches what a listener throws and reports it on the window; a test must not pass over it. */
 const thrown: unknown[] = []
@@ -191,6 +191,25 @@ test('splitter: value reads and sets the size within its limits, and setting it 
   assert.equal(one('.splitter-handle').getAttribute('aria-valuenow'), '63')
   handle.value = 99
   assert.equal(handle.value, 85, 'it stops at aria-valuemax')
+  assert.deepEqual(heard, [])
+})
+
+test('dial: value reads and sets the number on a step within the ends, and setting it says nothing', () => {
+  const { one, heard } = setup(`<div class="dial" role="slider" tabindex="0" aria-label="Volume" aria-valuenow="40" aria-valuemin="0" aria-valuemax="100" style="--dial-value: 40">
+  <span class="dial-value">40%</span>
+  <span class="dial-thumb"></span>
+  <input type="hidden" name="volume" value="40">
+</div>`)
+  const root = one<HTMLElement>('.dial')
+  const handle = dial(root)
+  assert.equal(handle.value, 40)
+  handle.value = 62.6
+  assert.equal(handle.value, 63)
+  assert.equal(root.style.getPropertyValue('--dial-value'), '63')
+  assert.equal(one('.dial-value').textContent, '63%')
+  assert.equal(one<HTMLInputElement>('input[type="hidden"]').value, '63')
+  handle.value = -5
+  assert.equal(handle.value, 0, 'it stops at aria-valuemin')
   assert.deepEqual(heard, [])
 })
 

@@ -3,6 +3,7 @@ import Calendar from '../../../frameworks/svelte/Calendar.svelte'
 import Combobox from '../../../frameworks/svelte/Combobox.svelte'
 import Command from '../../../frameworks/svelte/Command.svelte'
 import Editable from '../../../frameworks/svelte/Editable.svelte'
+import Dial from '../../../frameworks/svelte/Dial.svelte'
 import Listbox from '../../../frameworks/svelte/Listbox.svelte'
 import Otp from '../../../frameworks/svelte/Otp.svelte'
 import Stepper from '../../../frameworks/svelte/Stepper.svelte'
@@ -32,6 +33,7 @@ export const fixtures = {
   'command': Command,
   'compare': CompareExample,
   'context-menu': ContextMenuExample,
+  'dial': Dial,
   'dialog': DialogExample,
   'editable': Editable,
   'field': FieldExample,

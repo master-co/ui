@@ -86,6 +86,7 @@ Or import only the theme and the components you use:
 | Switch | `switch`, `switch-sm`, `switch-lg` |
 | Slider | `slider` |
 | Range | `range`, `range-start`, `range-end` |
+| Dial | `dial`, `dial-full`, `dial-sm`, `dial-lg`, `dial-thumb`, `dial-value`, `dial-ticks`, `dial-mark` |
 | Segmented control | `segmented`, `segmented-item`, `segmented-input`, `segmented-sm`, `segmented-lg` |
 | Chip | `chip`, `chip-input`, `chip-remove` |
 | Tags | `tags` |

@@ -43,6 +43,7 @@ export const components = [
   { slug: 'switch', name: 'Switch', category: 'Forms', description: 'A pearl thumb that slides onto ink for settings that apply at once.' },
   { slug: 'slider', name: 'Slider', category: 'Forms', description: 'A native range input: a thin well with a pearl thumb.' },
   { slug: 'range', name: 'Range', category: 'Forms', description: 'Two values on one track, with ink between them.' },
+  { slug: 'dial', name: 'Dial', category: 'Forms', description: 'A value set by turning a thumb around a circle.' },
   { slug: 'segmented', name: 'Segmented control', category: 'Forms', description: 'A few options in one well; a sheet glides to the current one.' },
   { slug: 'chip', name: 'Chip', category: 'Forms', description: 'A small pill that is a filter or a removable value.' },
   { slug: 'swatch', name: 'Swatch', category: 'Forms', description: 'A color to look at or to pick, as a disc with a finished edge.' },

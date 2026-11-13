@@ -4,6 +4,7 @@ import { Combobox } from '../../../frameworks/react/combobox.tsx'
 import { Editable } from '../../../frameworks/react/editable.tsx'
 import { Command } from '../../../frameworks/react/command.tsx'
 import { Compare } from '../../../frameworks/react/compare.tsx'
+import { Dial } from '../../../frameworks/react/dial.tsx'
 import { Dialog } from '../../../frameworks/react/dialog.tsx'
 import { Field } from '../../../frameworks/react/field.tsx'
 import { Listbox } from '../../../frameworks/react/listbox.tsx'
@@ -122,6 +123,7 @@ export const fixtures = {
   'command': Command,
   'compare': CompareExample,
   'context-menu': ContextMenuExample,
+  'dial': Dial,
   'dialog': DialogExample,
   'editable': Editable,
   'field': FieldExample,

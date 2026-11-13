@@ -15,6 +15,7 @@ import { combobox } from './combobox.js'
 import { command } from './command.js'
 import { compare } from './compare.js'
 import { editable } from './editable.js'
+import { dial } from './dial.js'
 import { listbox } from './listbox.js'
 import { contextMenu, menu } from './menu.js'
 import { otp } from './otp.js'
@@ -27,7 +28,7 @@ import { toolbar } from './toolbar.js'
 import { tree } from './tree.js'
 import { wheel } from './wheel.js'
 
-export { calendar, calendarMonth, combobox, command, compare, contextMenu, editable, listbox, menu, otp, sortable, splitter, stepper, tabs, tags, toolbar, tree, wheel }
+export { calendar, calendarMonth, combobox, command, compare, contextMenu, dial, editable, listbox, menu, otp, sortable, splitter, stepper, tabs, tags, toolbar, tree, wheel }
 
 /**
  * Each pattern's root class and the behavior that drives it.
@@ -45,6 +46,7 @@ const patterns = [
   ['.stepper', stepper],
   ['.wheel', wheel],
   ['.compare', compare],
+  ['.dial', dial],
   ['.listbox', listbox],
   ['.tags', tags],
   ['.editable', editable],
