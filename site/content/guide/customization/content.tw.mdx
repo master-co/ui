@@ -10,7 +10,7 @@ import GuideFigure from '../../../components/GuideFigure.astro'
 
 <GuideFigure name="customization" title="選擇自訂層級">
 
-**有四個自訂點會保留套件的實作。** utility、token、公開屬性與主題會改變版面、值或材質。執行 `init` 之後，`master-ui own` 會複製元件的原始碼，並將它的樣式表匯入指向副本。若要執行複製出來的行為，還需要把使用它的地方的匯入改成本地檔案。這份原始碼由你的專案維護；其他元件仍留在套件中。這些步驟描述的是責任歸屬，而不是程式碼長度。
+**有四個自訂點會保留套件的實作。** utility、token、公開屬性與主題會改變版面、值或材質。執行 `init` 之後，`master-ui own` 會複製元件的原始碼，並將它的樣式表匯入指向副本。若要執行複製出來的行為，還需要把用到它的匯入改為指向本地檔案。這份原始碼由你的專案維護；其他元件仍留在套件中。這些步驟描述的是責任歸屬，而不是程式碼長度。
 
 </GuideFigure>
 
@@ -30,7 +30,7 @@ import GuideFigure from '../../../components/GuideFigure.astro'
 
 並沒有一個「覆寫了三分之一的宣告就該擁有元件」之類的比例門檻。衡量標準是變更觸及哪個層級，而不是需要幾行。
 
-一個包含兩百個 token 值的主題只觸及主題。它屬於步驟 4，所有元件仍然跟隨上游。而一個推翻樣式表為按下狀態的按鈕所繪製之效果、且沒有任何 token 或屬性能表達的宣告，觸及的是元件的狀態。無論它多短，它都屬於步驟 5。若以行數計算，第一個變更會被放得太高，第二個則太低。
+一個包含兩百個 token 值的主題只觸及主題。它屬於步驟 4，所有元件仍然跟隨上游。反過來，若某條宣告推翻了樣式表為按下狀態的按鈕所繪製的效果，而這又無法以任何 token 或屬性表達，它觸及的就是元件的狀態；無論多短，都屬於步驟 5。若以行數計算，第一個變更會被放得太高，第二個則太低。
 
 所以要問的是：這項變更針對的是什麼？單一實例、每個元件都會讀取的值、某個元件公開的值、材質，還是元件的結構、狀態與行為。答案就是對應的步驟。
 
@@ -109,7 +109,7 @@ import GuideFigure from '../../../components/GuideFigure.astro'
 
 ## 擁有元件 \{#own-a-component\}
 
-步驟 5 用於結構、部件、狀態或行為的變更，這些是任何值都無法表達的。元件的原始碼會被複製到專案中，並在那裡編輯。
+步驟 5 用於結構、部件、狀態或行為的變更，這些是任何值都無法表達的。元件的原始碼會複製到專案中，並在那裡編輯。
 
 只有在符合以下任一情況時，才擁有該元件。在那之前，請停留在步驟 1 到 4。
 
@@ -170,7 +170,7 @@ npx master-ui own menu  # copies ui/menu.css, ui/menu.json and its behavior; rep
 
 ### 跟進上游變更 \{#upstream-changes\}
 
-被擁有的元件不會再隨套件更新而改變。有三個指令可以顯示套件改了什麼，並記錄已合併的內容。
+專案擁有的元件不會再隨套件更新而改變。有三個指令可以顯示套件改了什麼，並記錄已合併的內容。
 
 ```bash
 npx master-ui status       # which owned components changed upstream since they were taken
@@ -178,7 +178,7 @@ npx master-ui diff menu    # the change, against the copy kept in ui/.base/
 npx master-ui accept menu  # after merging what is wanted: record the new base
 ```
 
-`status` 會為每個被擁有的元件印出一行，並在其中任何一個於上游有變更時以代碼 2 結束，因此排程工作可以回報它：
+`status` 會為每個專案擁有的元件印出一行，並在其中任何一個於上游有變更時以代碼 2 結束，因此排程工作可以回報它：
 
 ```
 menu  upstream changed: menu.css (master-ui diff menu); edited here: menu.css
@@ -206,7 +206,7 @@ menu  upstream changed: menu.css (master-ui diff menu); edited here: menu.css
 
 只刪除沒有被其他擁有或新增的元件使用的工作檔案與基準檔案。行為之間可能共用一個複製出來的輔助檔案，例如 `ui/internal.js`，而框架元件也可能匯入本地的行為。移除檔案前請先檢查這些匯入，然後建置並實際操作還回去的元件。
 
-### 當元件庫有大部分被擁有時 \{#own-all\}
+### 當元件庫大部分都由專案擁有時 \{#own-all\}
 
 如果在整個專案中維護一致的實作，比協調本地副本與套件樣式更容易，就可以考慮擁有更多原始碼。單憑已複製的元件數量，並不構成接手其餘部分的理由。token、契約、檢查器與 [skill](/guide/ai#the-skill) 仍然適用；[擁有原始碼](/guide/registry)比較了套件與登錄庫的工作流程。
 
@@ -216,7 +216,7 @@ menu  upstream changed: menu.css (master-ui diff menu); edited here: menu.css
 
 - **選取元件庫 class 並重新宣告其表面、邊緣或陰影的規則。** 請使用 token、屬性，或擁有該元件。
 - **未記載於文件中的元件屬性。** 請使用契約中列出的屬性，或另外記載於文件中的主題 token。元件的內部屬性可能在未經通知的情況下變動。
-- **從外部重新設定元件庫元件樣式的新 class**，例如帶有材質宣告的 `.my-btn.btn`。專案的 class 可以設定公開屬性與版面。新的材質就是新的元件，或是被擁有的元件。
+- **從外部重新設定元件庫元件樣式的新 class**，例如帶有材質宣告的 `.my-btn.btn`。專案的 class 可以設定公開屬性與版面。新的材質就是新的元件，或是專案擁有的元件。
 - **以強制手段勝出。** 絕不要提高選擇器權重或使用 `!important` 來壓過元件。utility 已經憑藉它所在的層勝出，而需要更多手段的覆寫，正是擁有該元件的理由。
 
 ```css name=app.css

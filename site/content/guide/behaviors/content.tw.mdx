@@ -68,7 +68,7 @@ import { combobox } from '@master/ui/behaviors/combobox.js'
 const detach = combobox(document.querySelector('.combobox'))
 ```
 
-輸入「Tok」，按下 ArrowDown 與 Enter，確認欄位顯示 Tokyo，且 `detach.value` 為 `hnd`。當元素離開頁面時呼叫 `detach()`。對同一個根元素重複掛上同一個行為，會卸載先前的實例；但不會清理你的應用程式自行加入的監聽器。
+輸入「Tok」，按下 ArrowDown 與 Enter，確認欄位顯示 Tokyo，且 `detach.value` 為 `hnd`。元素離開頁面時，呼叫 `detach()`。對同一個根元素重複掛上同一個行為，會卸載先前的實例；但不會清理你的應用程式自行加入的監聽器。
 
 ## 一次掛上全部 \{#attach-all\}
 
@@ -80,7 +80,7 @@ import { attach } from '@master/ui/behaviors'
 const detach = attach()
 ```
 
-在選擇它而非逐一匯入之前，有三件事需要知道：
+決定用它取代逐一匯入之前，有三件事要先知道：
 
 - 它也會掛上選用的行為。每個 `menu` 都會支援方向鍵，每個 `tree` 都會成為單一 Tab 停駐點，每個屬於 `role="tablist"` 的 `tabs` 都會切換其面板。若要讓某個模式維持平台原本的行為，請依名稱匯入行為。
 - 它不傳入任何選項。選取範圍、或有起始日與結束日的日曆，需依名稱掛上。
@@ -202,7 +202,7 @@ root.addEventListener('change', (event) => {
 
 ## 值 \{#the-value\}
 
-當模式擁有一個不由任何單一原生控制項保存的值時，其行為回傳的函式會帶有 `value`。讀取它可得知目前選了什麼。設定它則可從外部進行選擇：這會標示模式而不派送任何事件，就像設定原生 input 的 `value` 一樣。
+如果模式的值不是由某個原生控制項保存，行為回傳的函式就會帶有 `value`。讀取它可得知目前選了什麼；設定它則能從外部選取：這會標示模式而不派送任何事件，就像設定原生 input 的 `value` 一樣。
 
 | 行為 | `value` |
 | --- | --- |
@@ -255,7 +255,7 @@ root.querySelector('[role="combobox"]').addEventListener('input', async (event) 
 
 日曆是唯一會寫入元素的行為：它會寫入所顯示月份的各週。若要由渲染器自行寫入這些元素（例如樣板，或在伺服器上渲染的框架），請傳入 `draw`。此時腳本不會寫入任何元素。每當要顯示的月份不是格線中的月份時，它會以 `YYYY-MM` 格式的月份呼叫 `draw`，並在日期出現後加以標示：今天、已選的日期、無法選擇的日期，以及位於 Tab 鍵順序中的那一天。
 
-`calendarMonth()` 以資料形式提供一個月份，與腳本繪製時所用的資料相同：標題、七個星期名稱以及各週。每一天都是一個 `calendar-day` 按鈕，其 `value` 為日期；腳本就是藉此辨識那些不是它寫入的日期。若提供 `value`（以及用於兩端的 `range`），資料也會說明每一天該如何繪製：`selected`、代表位於 Tab 鍵順序中那一天的 `tab`，以及代表範圍內日期 class 的 `range`。寫入這些資訊的渲染器，在任何腳本執行之前，其第一份 HTML 中就已包含已選的日期。
+`calendarMonth()` 以資料形式提供一個月份，與腳本繪製時所用的資料相同：標題、七個星期名稱以及各週。每一天都是一個 `calendar-day` 按鈕，其 `value` 為日期；腳本就是藉此辨識那些不是它寫入的日期。若提供 `value`（以及用於兩端的 `range`），資料也會說明每一天該如何繪製：`selected`、代表位於 Tab 鍵順序中那一天的 `tab`，以及代表範圍內日期 class 的 `range`。渲染器若寫入這些資訊，第一份 HTML 在任何腳本執行之前就已包含已選的日期。
 
 ```js
 import { calendarMonth } from '@master/ui/behaviors/calendar.js'
@@ -297,11 +297,11 @@ React、Svelte 與 Vue 的[日曆元件](/guide/frameworks)就是以這種方式
 | Escape | 關閉清單；欄位保留其文字 |
 | 輸入文字 | 篩選選項，並在出現第一個相符項目時開啟清單 |
 
-行為處理的按鍵會呼叫 `preventDefault()`。它不處理的按鍵則維持原樣，因此在沒有作用中選項的 combobox 中按下 Enter，仍會送出表單。隱藏的項目以及具有 `disabled` 或 `aria-disabled="true"` 的項目會被略過，而水平方向鍵會依循文字的方向。
+行為處理的按鍵會呼叫 `preventDefault()`。它不處理的按鍵則維持原樣，因此在沒有作用中選項的 combobox 中按下 Enter，仍會送出表單。行為會略過隱藏的項目，以及具有 `disabled` 或 `aria-disabled="true"` 的項目；水平方向鍵則依循文字的方向。
 
 ## 擁有行為 \{#own-a-behavior\}
 
-只要套件中的行為能滿足應用程式的需求，就繼續匯入它；如此一來，套件升級時就能帶來其修正。當專案需要不同的鍵盤或選取行為時，請取得原始碼並自行維護該實作：
+只要套件中的行為能滿足應用程式的需求，就繼續匯入它，套件升級時便會一併帶來修正。當專案需要不同的鍵盤或選取行為時，請取得原始碼並自行維護該實作：
 
 ```bash
 npx master-ui own combobox
