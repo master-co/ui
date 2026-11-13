@@ -1,0 +1,120 @@
+---
+title: "에디터"
+description: "서식 있는 텍스트 에디터의 틀로, 도구 모음과 문서, 그리고 그 상태를 제공합니다."
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+에디터는 서식 있는 텍스트 필드의 틀입니다. [입력 필드](/components/input)의 오목한 영역, 그 위쪽에 평평하게 놓인 [도구 모음](/components/toolbar), 그 아래의 문서로 구성됩니다. 문서 모델, 선택 영역, 실행 기록, 키 입력 등 실제 편집 작업은 TipTap이나 ProseMirror 같은 엔진이 담당합니다. 엔진은 `editor-document`를 편집 가능하게 만들고, 렌더링하는 블록에 에디터의 클래스를 작성합니다. [서식 있는 텍스트](/guide/rich-text)에서 TipTap을 에디터에 적용하는 방법을 설명합니다.
+
+<ComponentPreview name="default" height={256} narrowHeight={296} title="에디터" background="plain" bodyClass="content-start p-lg" html={`<div class="field w-full max-w(560) mx-auto">
+  <span id="notes-label">Release notes</span>
+  <div class="editor" style="--editor-rows: 5">
+    <div class="toolbar editor-toolbar" role="toolbar" aria-label="Formatting">
+      <button type="button" class="btn btn-quiet btn-sm btn-square" aria-label="Bold" aria-pressed="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 5h6a3.5 3.5 0 0 1 0 7h-6zM13 12h1a3.5 3.5 0 0 1 0 7h-7v-7"/></svg></button>
+      <button type="button" class="btn btn-quiet btn-sm btn-square" aria-label="Italic" aria-pressed="false"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5h6M7 19h6M14 5l-4 14"/></svg></button>
+      <span class="toolbar-separator" role="separator" aria-orientation="vertical"></span>
+      <button type="button" class="btn btn-quiet btn-sm btn-square" aria-label="Bulleted list" aria-pressed="false"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11M5 6v.01M5 12v.01M5 18v.01"/></svg></button>
+      <button type="button" class="btn btn-quiet btn-sm btn-square" aria-label="Link" aria-pressed="false"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 15l6-6M11 6l.5-.5a5 5 0 0 1 7 7l-.5.5M13 18l-.4.5a5 5 0 0 1-7.1 0a5 5 0 0 1 0-7l.5-.5"/></svg></button>
+    </div>
+    <div class="editor-document" role="textbox" aria-multiline="true" aria-labelledby="notes-label" contenteditable="true">
+      <h2 class="editor-heading">Version 0.4</h2>
+      <p class="editor-paragraph">Category colors arrive: <strong>twenty-three palettes</strong>, each with a surface, a text, a line and a mark.</p>
+    </div>
+  </div>
+</div>`} />
+
+엔진이 없으면 이 미리보기의 문서는 브라우저 자체의 `contenteditable`입니다. 텍스트는 입력할 수 있지만 구조는 만들 수 없으며, 도구 모음도 동작하지 않습니다.
+
+## 틀 \{#frame\}
+
+- **필드입니다.** 오목한 영역, 호버, 포커스 링, 위험 상태의 가장자리, 비활성화 시의 잉크 색은 모두 입력 필드와 같으므로, 서식 있는 텍스트 필드가 주변 필드와 같은 방식으로 보입니다. 틀을 강조하는 포커스는 문서의 포커스이므로, 도구 모음 안에서 이동할 때는 틀이 강조되지 않습니다.
+- **도구 모음은 띠 형태입니다.** 도구 모음에 `editor-toolbar`를 지정하면 오목한 영역의 위쪽에 안쪽 여백 하나만큼 들어가 평평하게 놓이므로, 모서리가 오목한 영역의 모서리 안에 맞물리고 아래에는 가는 구분선이 생깁니다. 에디터가 좁으면 줄바꿈됩니다. [도구 모음 동작](/components/toolbar)은 도구 모음을 Tab 키 이동 순서에서 한 지점으로 만들고 방향키로 이동할 수 있게 합니다.
+- **문서는 내용에 따라 늘어납니다.** 비어 있을 때는 `--editor-rows`줄(기본값 6줄)이고, `--editor-max-rows`줄(기본값 18줄)까지 늘어난 뒤에는 틀 안에서 스크롤됩니다.
+
+## 문서에 담기는 내용 \{#content\}
+
+스타일시트는 요소를 직접 선택하지 않습니다. 엔진이 각 블록에 클래스를 작성하며, 에디터 안에 있는 이 클래스들에만 스타일이 적용됩니다. 페이지용 타이포그래피가 아닙니다.
+
+<ComponentPreview name="content" height={368} narrowHeight={448} title="문서에 담기는 내용" background="plain" bodyClass="content-start p-lg" html={`<div class="editor w-full max-w(560) mx-auto">
+  <div class="editor-document" role="textbox" aria-multiline="true" aria-label="Document" contenteditable="true">
+    <h2 class="editor-heading">A heading</h2>
+    <p class="editor-paragraph">A paragraph with <a class="editor-link" href="#content">a link</a>, <em>emphasis</em> and <code class="code">inline code</code>.</p>
+    <h3 class="editor-subheading">A subheading</h3>
+    <ul class="editor-list">
+      <li class="editor-item"><p class="editor-paragraph">A list with bullets</p></li>
+      <li class="editor-item"><p class="editor-paragraph">Its markers in the muted ink</p></li>
+    </ul>
+    <ol class="editor-list editor-list-numbered">
+      <li class="editor-item"><p class="editor-paragraph">A list with numbers</p></li>
+      <li class="editor-item"><p class="editor-paragraph">On an ordered list</p></li>
+    </ol>
+    <blockquote class="editor-quote"><p class="editor-paragraph">A quotation, a step quieter.</p></blockquote>
+    <hr class="editor-rule">
+    <p class="editor-paragraph">And a paragraph after a rule.</p>
+  </div>
+</div>`} />
+
+## 상태 \{#states\}
+
+각 상태는 엔진이 요소에 유지하는 속성이거나 페이지가 틀에 설정하는 속성입니다. 포커스와 `aria-invalid="true"`는 틀을 강조하거나 위험 상태의 가장자리를 표시합니다. `aria-readonly="true"`는 캐럿 없이 틀을 평평하게 만들고, 틀에 `aria-disabled="true"`를 지정하면 비활성화 잉크 색의 평평한 오목한 영역이 됩니다. 문서가 유효하지 않으면 필드의 `field-error`를 표시합니다. 에디터를 비활성화할 때는 도구 모음의 컨트롤도 함께 비활성화하고, 엔진에 편집할 수 없는 상태임을 알리세요.
+
+<ComponentPreview name="states" height={456} narrowHeight={496} title="상태" background="plain" bodyClass="content-start p-lg" html={`<div class="grid gap-lg w-full max-w(560) mx-auto">
+  <div class="field">
+    <span id="state-invalid">Summary</span>
+    <div class="editor" style="--editor-rows: 2">
+      <div class="editor-document" role="textbox" aria-multiline="true" aria-labelledby="state-invalid" aria-describedby="state-invalid-error" aria-invalid="true" contenteditable="true"></div>
+    </div>
+    <p class="field-error" id="state-invalid-error">Write at least a sentence before you publish.</p>
+  </div>
+  <div class="field">
+    <span id="state-readonly">Published notes</span>
+    <div class="editor" style="--editor-rows: 2">
+      <div class="editor-document" role="textbox" aria-multiline="true" aria-labelledby="state-readonly" aria-readonly="true" contenteditable="false">
+        <p class="editor-paragraph">Version 0.3 shipped tags, editable values and sortable lists.</p>
+      </div>
+    </div>
+  </div>
+  <div class="field">
+    <span id="state-disabled">Draft</span>
+    <div class="editor" style="--editor-rows: 2" aria-disabled="true">
+    <div class="toolbar editor-toolbar" role="toolbar" aria-label="Formatting">
+      <button type="button" class="btn btn-quiet btn-sm btn-square" aria-label="Bold" aria-pressed="false" disabled><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 5h6a3.5 3.5 0 0 1 0 7h-6zM13 12h1a3.5 3.5 0 0 1 0 7h-7v-7"/></svg></button>
+      <button type="button" class="btn btn-quiet btn-sm btn-square" aria-label="Italic" aria-pressed="false" disabled><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5h6M7 19h6M14 5l-4 14"/></svg></button>
+      <span class="toolbar-separator" role="separator" aria-orientation="vertical"></span>
+      <button type="button" class="btn btn-quiet btn-sm btn-square" aria-label="Bulleted list" aria-pressed="false" disabled><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11M5 6v.01M5 12v.01M5 18v.01"/></svg></button>
+      <button type="button" class="btn btn-quiet btn-sm btn-square" aria-label="Link" aria-pressed="false" disabled><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 15l6-6M11 6l.5-.5a5 5 0 0 1 7 7l-.5.5M13 18l-.4.5a5 5 0 0 1-7.1 0a5 5 0 0 1 0-7l.5-.5"/></svg></button>
+    </div>
+      <div class="editor-document" role="textbox" aria-multiline="true" aria-labelledby="state-disabled" aria-disabled="true" contenteditable="false">
+        <p class="editor-paragraph">Locked while the release is reviewed.</p>
+      </div>
+    </div>
+  </div>
+</div>`} />
+
+## 접근성 \{#accessibility\}
+
+- 문서는 `aria-multiline="true"`를 지정한 `role="textbox"`입니다. `aria-labelledby`로 필드의 레이블을 이름으로 지정하고, `aria-describedby`로 도움말과 오류 메시지를 설명으로 연결합니다. `<label for>`는 폼 컨트롤이 아닌 요소의 이름을 지정할 수 없습니다.
+- 도구 모음은 Tab 키 이동 순서에서 한 지점이며, 이름을 지정하고 `aria-controls`로 문서를 가리킵니다. 모든 아이콘 버튼에 이름을 지정하고, 토글 버튼은 `aria-pressed`로 표시하며, 엔진이 처리하는 단축키를 `aria-keyshortcuts`에 지정하세요.
+- 도구 모음에서 명령을 실행한 뒤에는 독자가 작성하던 문서로 포커스를 되돌립니다.
+- 문서에 별도의 키 처리기를 추가하지 마세요. 입력기는 단어를 조합할 때 Enter 키와 방향키를 사용하며, 엔진은 그 시점을 알고 있습니다.
+- 강제 색상 모드에서는 틀에 필드 색상의 윤곽선이 표시되고, 포커스가 있는 동안에는 강조 색상의 윤곽선이 표시됩니다.
+
+## 클래스 \{#classes\}
+
+<ContractTable name="editor" />
+
+## 사용자 지정 속성 \{#custom-properties\}
+
+<ContractTable name="editor" show="properties" />
+
+## 관련 항목 \{#related\}
+
+<ComponentLinks slugs={['input', 'toolbar', 'composer', 'code']} />
+
+## 소스 \{#source\}
+
+<ComponentSource name="editor" />

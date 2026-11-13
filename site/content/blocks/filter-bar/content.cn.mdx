@@ -1,0 +1,43 @@
+---
+title: "筛选栏"
+description: "用条件筛选列表：先暂存，再一并应用，并以胶囊标签显示。"
+---
+
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import PagePreview from '~/site/components/PagePreview.astro'
+
+筛选栏按条件筛选列表。每个条件由字段、比较方式和值组成，例如“状态为 Ready”或“耗时小于 60 秒”。条件在[弹出层](/components/popover)中编辑，一并应用后，以[胶囊标签](/components/chip#values)显示在筛选栏上，每个标签都可以单独移除。筛选栏适用于任何列表：这里用它筛选部署列表，在[表格视图](/blocks/table-view)中，同一个筛选栏用来筛选表格。
+
+<PagePreview name="default" title="筛选栏" example="filter-bar" touchHeight={{ desktop: 624, tablet: 624, phone: 776 }} caption="打开 Filters 修改或添加条件，然后点 Apply。点胶囊标签上的叉号即可移除对应条件。" />
+
+区块提供可直接复制的标记，沿用页面的文字颜色和字号。预览在 body 上设置 `fg-text-body text-sm`。每个区块都是尺寸容器，会根据自身宽度重排，无论放在宽页面、侧边栏大小的空间还是对话框中。
+
+## 区块组成 \{#anatomy\}
+
+- **一个按钮打开条件编辑。** “Filters”按钮旁用墨色[徽标](/components/badge)显示已应用的条件数，即使筛选栏收起，也能看出列表已被筛选。按钮的可访问名称同样说明这一点：“Filters, 2 applied”。
+- **条件先作为草稿编辑。** 弹出层打开时，编辑的是已应用条件的副本。添加条件、更换字段、修改值，在点 Apply 之前都不会影响列表。Cancel、<kbd class="kbd">Escape</kbd> 或点击外部会丢弃草稿；Clear 会清空草稿，此时再点 Apply 会显示所有行。
+- **每个条件占一行**，第一行前写“Where”，其余各行前写“and”：一行数据必须满足全部条件。条件只有一层，不能分组，也没有“或”。每行包含选择字段的[下拉选择框](/components/select)、选择比较方式的下拉选择框、值，以及一个用于删除该行的低调按钮。
+- **字段决定其余部分。** 文本字段可选“包含”“是”“不是”“开头是”，值为文字；选项字段可选“是”“不是”，值为该字段的某个选项；数字字段可选大于或小于，值为数字输入框；日期字段可选“当天”“早于”“晚于”，值为日期输入框。更换字段会重置该行，因此比较方式不会遇到无法解读的值。
+- **无法生效的条件永远不会被应用。** 值缺失、数字中含有字母或日期不完整时，值会被标记为 `aria-invalid="true"`，[输入框](/components/input)随之显示危险色边框，条件列表下方的消息会说明是哪个条件、原因是什么。焦点会移到该处，列表保持不变。
+- **已应用的条件显示为胶囊标签。** 每个标签用文字写出条件，并带有一个以条件命名的移除按钮，例如“Remove the filter Status is Ready”。行尾的 Clear all 一次移除全部条件。
+- **列表会说明当前显示的内容。** 标题下的摘要显示匹配数与总数，例如“12 of 30 deployments match all 2 filters”；没有匹配项时，列表会说明这一点并告诉读者如何恢复。
+
+## 哪些操作需要脚本 \{#script\}
+
+示例由三个模块组成。`query.js` 管理条件：每种类型提供的比较方式、条件哪里有误、一行是否满足条件，以及搜索、排序和分页；它只读取普通的行数据，不操作任何元素。`filters.js` 驱动筛选栏：复制标记中为条件行、选项和胶囊标签准备的模板并填入内容，再以已应用的条件调用 `onChange`。`main.js` 据此绘制列表。应用可以向自己的数据源提出同样的查询，筛选栏无需改动：把已应用的条件发送给服务器，而不是交给 `filter()`。
+
+没有脚本时，筛选栏无法暂存条件：改为给列表加一个 `<form method="get">`，为每个字段放一个下拉选择框，由服务器响应查询字符串。
+
+## 无障碍 \{#accessibility\}
+
+- 弹出层是 `role="dialog"`，以其标题“Filter deployments”命名。打开时，焦点移到第一个条件的字段；没有条件时移到 Add condition。关闭时，焦点回到 Filters。
+- 每行中的控件都以条件序号命名，例如“Field of condition 2”“Value of condition 2”“Remove condition 2”。数字值会说明单位。
+- 关于无法应用的条件的消息是 `role="alert"`，并通过 `aria-describedby` 关联到对应的值，因此出现时会被朗读，之后从该值上还能再次读到。
+- 移除一个胶囊标签后，焦点移到下一个标签；移除的是最后一个时，焦点移到 Filters。Clear all 会把焦点移到 Filters。摘要是 polite 实时区域，变更后会朗读新的数量。
+- 条件在胶囊标签中用文字表达，从不只靠颜色：列表中的状态保留[徽标](/components/badge)色调，并附有状态名称。
+
+## 相关内容 \{#related\}
+
+<ComponentLinks slugs={['surface', 'heading', 'button', 'badge', 'popover', 'select', 'input', 'chip', 'list']} />
+
+<ComponentLinks kind="blocks" slugs={['table-view', 'page-header']} />

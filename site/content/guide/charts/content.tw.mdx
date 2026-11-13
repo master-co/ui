@@ -1,0 +1,88 @@
+---
+title: "圖表"
+description: "以 Chart.js 搭配 Master UI 的色彩繪製圖表，提供可操作的圖例，並以表格提供相同的數值。"
+---
+
+import PagePreview from '~/site/components/PagePreview.astro'
+
+Master UI 不需要腳本就能自行繪製少量的數字：幾根長條、句子中的趨勢、一個儀表、一條長條中的占比。需要能依資料縮放的座標軸、大量資料點、指標下方的工具提示，或雷達圖之類形狀的圖表，則是圖表引擎的工作。本指南將其中一個引擎 [Chart.js](https://www.chartjs.org/docs/latest/getting-started/integration.html) 套上 Master UI 的色彩，提供可操作的圖例，並以表格提供相同的數值，同時說明如何讓它與主題保持同步，以及如何將它釋放。
+
+在這些範例中，Chart.js 是網站本身的相依套件，而不是元件庫的：`@master/ui` 不依賴它，任何在 canvas 或 SVG 上繪圖的引擎都能以相同方式搭配使用。
+
+## 元件庫的圖表，還是圖表引擎 \{#choose\}
+
+請先考慮使用元件。每個元件都從標記繪製，因此數字以文字形式存在於頁面中，不需要腳本就能跟隨主題，也能列印。
+
+| 你需要 | 使用 |
+| --- | --- |
+| 同一刻度上的少量數字，例如一週中的每一天 | [圖表](/components/chart) |
+| 數列的走向，放在數字旁或一列之中 | [迷你趨勢線](/components/sparkline) |
+| 一個讀數，以及它距離上限多近 | [儀表](/components/gauge)，或[半環形進度](/components/progress#half-ring) |
+| 某個數量在已知範圍中的位置 | [量表](/components/meter) |
+| 總量的組成，沿著一條長條呈現 | [占比分布](/components/breakdown) |
+| 大量小數值之間的模式 | [熱圖](/components/heatmap) |
+
+當座標軸必須依資料縮放、資料點多於標籤、讀者要在指標下方探索數值、需要顯示與隱藏數列，或是需要元件無法繪製的形狀（跨越數月的折線、甜甜圈圖、圓環、雷達圖）時，圖表引擎才值得它的體積。下方的範例只在各自的預覽中載入 Chart.js，每個約 160 KB，並且只註冊每張圖表實際繪製的部分。
+
+## 折線與長條 \{#lines-and-bars\}
+
+以折線或長條呈現隨時間變化的多個數列。切換器會以另一種方式繪製相同的資料；圖例可顯示與隱藏某個地區，圖表下方的表格則包含所有數值。
+
+<PagePreview name="series" title="折線與長條" example="chart-series" caption="切換為長條圖、從圖例隱藏某個地區，或展開數值。" />
+
+- **只註冊要繪製的部分。** 從 `chart.js`（而非 `chart.js/auto`）匯入並執行 `Chart.register(LineController, LineElement, PointElement, BarController, BarElement, CategoryScale, LinearScale, Tooltip)`，可讓引擎的其餘部分不進入打包檔。
+- **標記要精細。** 折線寬 2px，只在指標下方顯示資料點；長條遠離座標軸的一端為圓角，並以表面顏色的環形描邊與相鄰長條隔開。格線只有橫向的細線，沒有縱向的線。
+- **只用一條座標軸。** 刻度不同的兩種度量應畫成兩張圖表，絕不在一張圖表的兩側各放一條座標軸。
+
+## 整體的組成 \{#parts-of-a-whole\}
+
+以甜甜圈圖或圓餅圖呈現占比，並以同心圓環呈現三個目標，每個圓環以自己的顏色填在同色調淡色的軌道上。
+
+<PagePreview name="parts" title="整體的組成" example="chart-parts" caption="切換為圓餅圖、隱藏某個種類或目標，或展開數值。" />
+
+部分的圖例膠囊標籤可隱藏它的扇形，其他扇形會隨之合攏。圓環的軌道使用分類的底面色，因此尚未達成的部分讀起來仍是同一個目標，只是較為低調。一個整體請保持在四到五個部分；其餘的併入「其他」，就像儲存空間範例那樣。
+
+## 雷達圖 \{#radar\}
+
+以六項度量比較兩個版本。每個形狀以其標記色繪製，並帶有同色的淡色填充，讓兩個形狀能互相透出。
+
+<PagePreview name="radar" title="雷達圖" example="chart-radar" caption="從圖例隱藏某個版本，或展開數值。" />
+
+雷達圖可一眼比較少數幾個項目在相同度量上的表現；確切分數則由表格說明。它的各項度量共用同一個範圍，這裡是 0 到 100。
+
+## 來自主題的色彩 \{#colors\}
+
+每個數列都指定一個[分類色](/components/category)，由分類決定它的顏色：無論在清單中的位置為何，Tokyo 在圖表、圖例膠囊標籤以及任何寫出它名稱的徽章中都是藍色。標記使用各分類的 `-mark` 角色，與表面維持 3:1 的對比；雷達圖的淡色填充是同一個標記色，只是較淡。格線、刻度和工具提示使用主題的線條、文字與墨色 token。資料中只存放分類名稱，從不存放色彩。
+
+canvas 無法讀取自訂屬性，而 token 是以 `light-dark()` 撰寫的，因此每個範例都會在圖表所在的位置解析色彩：在圖表根元素內放一個隱藏的探測元素，將 token 設為它的顏色，再用這個顏色繪製一個像素，就能取得 `rgba()` 形式的色彩。由於探測元素位於圖表所在的位置，Paper、限定於某個區域的覆寫，以及配色方案都會生效。
+
+```js name=theme.js
+const probe = document.createElement('span')
+probe.style.cssText = 'position:absolute;visibility:hidden'
+root.append(probe)
+
+function resolve(token) {
+  probe.style.color = `var(${token})`
+  pixel.fillStyle = getComputedStyle(probe).color
+  pixel.fillRect(0, 0, 1, 1)
+  const [r, g, b, a] = pixel.getImageData(0, 0, 1, 1).data
+  return `rgba(${r}, ${g}, ${b}, ${a / 255})`
+}
+```
+
+範例使用四個分類，並採固定順序：藍色、橘色、藍綠色和紫羅蘭色。以色盤整體檢查時，這四色在兩種配色方案中，對常見的色覺障礙類型都能保持區別。第五個數列應併入「其他」或改畫成另一張圖表，而不是給它一個與這四色之一太接近的色相。
+
+## 無障礙 \{#accessibility\}
+
+- **圖例是控制項。** 每個項目都是包住真正核取方塊的[篩選標籤](/components/chip#category)，放在以其內容命名的群組中，因此可以用 Tab 抵達、用空白鍵切換。它的圓點代表分類，文字則是名稱。
+- **數字是文字。** 每張圖表都有一個收在展開控制項後方、包含相同數值的表格，它的 canvas 則帶有 `role="img"`，並以一句話說明圖表呈現的內容。指標下方的工具提示只是便利功能，從來不是讀取數值的唯一方式。
+- **色彩從不單獨傳達資訊。** 數列在圖例和表格中都有名稱，狀態色也從不代表數列。
+- **動態效果依讀者的設定。** 啟用減少動態效果時，圖表會直接繪製完成，不會以動畫淡入。
+
+## 保持同步，並將它釋放 \{#lifecycle\}
+
+每個範例的 `main.js` 都匯出 `mount(root)`，它會繪製圖表，並傳回停止圖表的函式。
+
+- **尺寸。** canvas 放在由樣式表設定高度的容器中，Chart.js 則透過 `responsive` 和 `maintainAspectRatio: false` 跟隨該容器的寬度。不需要量測任何尺寸來定位。
+- **主題。** 讀者的配色方案改變，或根元素上的類別、樣式或 `data-theme` 改變時，都會重新解析色彩並重新繪製圖表。
+- **結束。** 卸載時會對每張圖表呼叫 `destroy()`，並移除所有監聽器和觀察器，因此離開的檢視中的圖表不會留下任何東西。在框架中，請在元素存在時呼叫 `mount`，並在元素移除時呼叫它傳回的函式：在 React 中是 effect 的清除函式，在 Svelte 中是 attachment，在 Vue 中則是 `onBeforeUnmount`。

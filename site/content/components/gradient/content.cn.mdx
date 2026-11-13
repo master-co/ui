@@ -1,0 +1,164 @@
+---
+title: "渐变"
+description: "制作中的渐变：色标排列在色条上，当前色标在颜色选择器中编辑，另有渐变类型、角度和中心点。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+渐变编辑器用于制作渐变：色标排列在色条上，当前选中的色标在[颜色选择器](/components/color-picker)中编辑，此外还能设置渐变的类型、角度和中心点。其中每个控件都来自组件库本身：颜色选择器；用于设置色标位置的[滑块](/components/slider)和数字输入框；用于选择类型的[分段控件](/components/segmented)；用于设置角度的[旋钮](/components/dial)；以及用于设置中心点的数字输入框。渐变组件自己补充的只有色标条、预览，以及让这一切保持同步的 [`gradient` 行为脚本](/guide/behaviors)。
+
+<ComponentPreview name="default" height={744} narrowHeight={1040} title="渐变" background="plain" bodyClass="content-start p-lg" behaviors html={`<div class="gradient max-w(640) mx-auto" id="sunrise" aria-label="Background gradient" style="--gradient-ratio: 3 / 1">
+  <div class="gradient-preview" aria-hidden="true"></div>
+  <div class="gradient-bar"></div>
+  <div class="flex flex-wrap items-center gap-xs">
+    <button type="button" class="btn btn-sm gradient-add"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Add a stop</button>
+    <button type="button" class="btn btn-sm gradient-remove"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg>Remove</button>
+    <button type="button" class="btn btn-sm btn-quiet gradient-reverse"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 3 4 4-4 4M20 7H4M8 21l-4-4 4-4M4 17h16"/></svg>Reverse</button>
+  </div>
+  <div class="gradient-fields">
+    <fieldset class="gradient-color">
+      <legend class="mb(6) text-xs font-medium fg-text-muted">Color of the stop</legend>
+      <div class="color-picker" style="--color-picker-lightness: .7; --color-picker-chroma: .19; --color-picker-hue: 50">
+        <div class="color-picker-area">
+          <div class="color-picker-thumb" role="slider" tabindex="0" aria-label="Lightness and chroma" aria-valuemin="0" aria-valuemax="100" aria-valuenow="70"></div>
+        </div>
+        <span class="swatch swatch-lg color-picker-swatch"></span>
+        <input type="range" class="slider color-picker-hue" min="0" max="360" value="50" aria-label="Hue">
+        <input type="range" class="slider color-picker-alpha" min="0" max="100" value="100" aria-label="Opacity">
+        <div class="color-picker-fields">
+          <select class="select select-sm color-picker-format" aria-label="Format">
+            <option value="hex" selected>Hex</option>
+            <option value="rgb">RGB</option>
+            <option value="oklch">OKLCH</option>
+          </select>
+          <input class="input input-sm color-picker-text" value="#ff6a00" aria-label="Color" spellcheck="false" autocomplete="off">
+        </div>
+      </div>
+    </fieldset>
+    <div class="flex flex-col gap-md min-w(0)">
+      <fieldset class="gradient-offset">
+        <legend class="mb(6) text-xs font-medium fg-text-muted">Position</legend>
+        <input type="range" class="slider" min="0" max="100" step="1" value="0" aria-label="Position of the stop">
+        <input type="number" class="input input-sm w(72)" min="0" max="100" step="1" value="0" aria-label="Position of the stop, in percent">
+      </fieldset>
+      <fieldset class="gradient-type">
+        <legend class="mb(6) text-xs font-medium fg-text-muted">Type</legend>
+        <div class="segmented segmented-sm" role="radiogroup" aria-label="Type">
+          <label class="segmented-item"><input type="radio" class="segmented-input" name="sunrise-type" value="linear" checked>Linear</label>
+          <label class="segmented-item"><input type="radio" class="segmented-input" name="sunrise-type" value="radial">Radial</label>
+          <label class="segmented-item"><input type="radio" class="segmented-input" name="sunrise-type" value="conic">Conic</label>
+        </div>
+      </fieldset>
+      <div class="flex flex-wrap items-start gap-lg">
+        <fieldset class="gradient-angle">
+          <legend class="mb(6) text-xs font-medium fg-text-muted">Angle</legend>
+          <div class="dial dial-sm dial-full" role="slider" tabindex="0" aria-label="Angle" aria-valuenow="135" aria-valuemin="0" aria-valuemax="360" aria-valuetext="135°" style="--dial-value: 135">
+            <span class="dial-value">135°</span>
+            <span class="dial-thumb"></span>
+          </div>
+        </fieldset>
+        <fieldset class="gradient-center">
+          <legend class="mb(6) text-xs font-medium fg-text-muted">Centre</legend>
+          <input type="number" class="input input-sm w(72)" min="0" max="100" value="50" aria-label="Centre across, in percent">
+          <input type="number" class="input input-sm w(72)" min="0" max="100" value="50" aria-label="Centre down, in percent">
+        </fieldset>
+      </div>
+    </div>
+  </div>
+  <pre class="code-block gradient-css" aria-label="The gradient as CSS"></pre>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.gradient(document.getElementById('sunrise'), { value: { type: 'linear', angle: 135, center: [50, 50], stops: [
+    { id: 'dawn', offset: 0, color: '#ff6a00' },
+    { id: 'noon', offset: 55, color: '#ee0979' },
+    { id: 'dusk', offset: 100, color: '#4f46e5' }
+  ] } })
+})
+</script>`} caption="拖动色标，或选中色标后用方向键移动；切换类型并转动角度。" />
+
+## 值 \{#the-value\}
+
+渐变是一个由四部分组成的值：
+
+| 部分 | 含义 |
+| --- | --- |
+| `type` | `linear`、`radial` 或 `conic` |
+| `angle` | 角度（度），用于线性渐变和锥形渐变 |
+| `center` | 两个百分比，用于径向渐变和锥形渐变 |
+| `stops` | 每个色标都有一个始终跟随它的 `id`、取值 0 到 100 的 `offset`，以及一个 `color` |
+
+颜色的写法与颜色选择器一致：以十六进制表示的 sRGB，并带有不透明度。`gradientCss(value)` 将渐变输出为 CSS，预览和复制的文本都来自它：在能够指定插值空间的浏览器中使用 OKLab 插值，并在此之前先提供一行回退声明，供不支持的浏览器使用。
+
+```css name=copied.css
+background-image: linear-gradient(90deg, #ff6a00 0%, #ee0979 100%);
+background-image: linear-gradient(in oklab 90deg, #ff6a00 0%, #ee0979 100%);
+```
+
+编辑器不会回读 CSS：编辑器持有的是值，应用程序保存的也是值，而不是文本。
+
+## 色标 \{#the-stops\}
+
+- **色标的手柄是一个滑块**，控制色标的位置，在色条上显示为一个带有该色标颜色的圆片。按下手柄即选中该色标，拖动即可移动；方向键每次移动 1，按住 <kbd class="kbd">Shift</kbd> 每次移动 10，<kbd class="kbd">Home</kbd> 和 <kbd class="kbd">End</kbd> 将它移到两端。当前选中的色标带有 `aria-current="true"`，会稍稍向前突出并显示一道墨色圆环。
+- **色标可以交叉。** 一个色标移过另一个色标时，仍保留自己的 id，其手柄也保持焦点；渐变按各色标位置的先后顺序绘制。两个色标位于同一位置时会形成硬边，并保持原有顺序。
+- **添加**会在当前色标之后 10 个单位处放置一个与其同色的新色标，最远到 100。**删除**（使用按钮或 <kbd class="kbd">Delete</kbd> 键）会把焦点交给色条上的下一个色标，没有下一个时交给前一个。色标至少要有两个：只剩两个时，删除按钮会被禁用。
+- **反转**会把色标颠倒过来：每个位置变为 100 减去原值。
+
+拖动绝不是唯一的操作方式：位置旁边另有滑块和数字输入框，每个色标也都能用 <kbd class="kbd">Tab</kbd> 键到达。
+
+## 状态 \{#states\}
+
+在根元素上设置 `aria-readonly="true"` 表示渐变不可更改，设置 `aria-disabled="true"` 表示渐变未启用：两种情况下手柄都保持原位，控件都被禁用。
+
+## 行为脚本 \{#behavior\}
+
+```js name=app.js
+import { gradient, gradientCss } from '@master/ui/behaviors/gradient.js'
+
+const editor = gradient(document.querySelector('.gradient'), {
+  value: { type: 'linear', angle: 90, center: [50, 50], stops: [
+    { id: 'from', offset: 0, color: '#ff6a00' },
+    { id: 'to', offset: 100, color: '#ee0979' },
+  ] },
+})
+editor.value                     // the value as above
+gradientCss(editor.value).text   // the two lines to copy
+```
+
+读者操作过程中会持续派发 `input` 事件，操作结束时派发 `change` 事件；通过代码设置 `value` 会显示另一个渐变，但不派发任何事件。行为脚本根据值绘制手柄，因此自行绘制手柄的框架应传入 `draw`。它在根元素上以 `--gradient` 和 `--gradient-fallback` 发布整个渐变，并在每个色标的手柄上以 `--gradient-offset` 和 `--gradient-color` 发布该色标：编辑器所绘制的是它的内容，而由样式表负责摆放。
+
+## 键盘操作 \{#keyboard\}
+
+<ContractTable name="gradient" show="keyboard" />
+
+## 无障碍 \{#accessibility\}
+
+- 每个手柄都以它在色标中的序位命名，并通过 `aria-valuetext` 说明其位置和颜色。
+- 预览只是值的图像：请对辅助技术隐藏它，因为色标和 CSS 已经表达了相同的信息。
+- 在强制颜色模式下，渐变保留自身的颜色，因为这些颜色就是它的内容；手柄和色条则用系统颜色描边。
+
+## React、Svelte 和 Vue \{#frameworks\}
+
+`gradient` 组件根据值绘制手柄和控件，并接入行为脚本。用 `npx master-ui add gradient` 将组件复制到项目中。[React、Svelte 和 Vue](/guide/frameworks) 介绍了这些组件的实现和用法。
+
+<FrameworkSource name="gradient" />
+
+## 类名 \{#classes\}
+
+<ContractTable name="gradient" />
+
+## 自定义属性 \{#custom-properties\}
+
+<ContractTable name="gradient" show="properties" />
+
+## 相关内容 \{#related\}
+
+<ComponentLinks slugs={['color-picker', 'dial', 'slider', 'segmented', 'swatch']} />
+
+## 源码 \{#source\}
+
+<ComponentSource name="gradient" />

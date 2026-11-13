@@ -1,0 +1,43 @@
+---
+title: "필터 바"
+description: "목록의 범위를 좁히는 조건을 준비하고 적용한 뒤 칩으로 표시합니다."
+---
+
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import PagePreview from '~/site/components/PagePreview.astro'
+
+필터 바는 조건으로 목록의 범위를 좁힙니다. 조건은 필드, 비교 방식, 값으로 구성되며, 예를 들어 “Status is Ready”나 “Duration is less than 60 seconds”와 같습니다. 조건은 [팝오버](/components/popover)에서 작성하고 한꺼번에 적용하며, 바에는 [칩](/components/chip#values)으로 표시되어 각 칩으로 조건을 하나씩 해제할 수 있습니다. 필터 바는 어떤 목록에서든 동작합니다. 여기서는 배포 목록의 범위를 좁히고, [테이블 뷰](/blocks/table-view)에서는 같은 바로 표의 범위를 좁힙니다.
+
+<PagePreview name="default" title="필터 바" example="filter-bar" touchHeight={{ desktop: 624, tablet: 624, phone: 776 }} caption="Filters를 열어 조건을 바꾸거나 추가한 뒤 Apply를 누르세요. 칩의 X 버튼을 누르면 해당 조건이 해제됩니다." />
+
+블록은 복사해 사용하는 마크업입니다. 페이지의 텍스트 색상과 크기를 따르며, 미리보기에서는 body에 `fg-text-body text-sm` 클래스를 설정합니다. 각 블록은 크기 컨테이너이므로 넓은 페이지, 사이드바 너비의 공간, 대화 상자 어디서든 자체 너비에 맞춰 배치가 바뀝니다.
+
+## 구성 요소 \{#anatomy\}
+
+- **버튼 하나로 조건을 엽니다.** “Filters” 버튼에는 적용된 조건의 개수가 잉크 색 [배지](/components/badge)로 표시되므로, 바가 닫혀 있어도 목록의 범위가 좁혀져 있다는 것을 알 수 있습니다. 접근 가능한 이름에도 “Filters, 2 applied”처럼 이 정보를 포함합니다.
+- **조건은 초안입니다.** 팝오버는 적용된 조건의 복사본을 엽니다. 조건을 추가하거나 필드나 값을 바꿔도 Apply를 누르기 전까지 목록은 바뀌지 않습니다. Cancel, <kbd class="kbd">Escape</kbd>, 바깥 클릭은 초안을 버리고, Clear는 초안을 비우므로 그 상태에서 Apply를 누르면 모든 행이 표시됩니다.
+- **조건마다 한 행을 차지합니다.** 첫 번째 조건 앞에는 “Where”, 나머지 앞에는 “and”가 붙습니다. 행은 모든 조건을 충족해야 하며, 단계는 하나뿐이고 그룹이나 “or”는 없습니다. 각 행은 필드를 고르는 [셀렉트](/components/select), 비교 방식을 고르는 셀렉트, 값, 그리고 조건을 삭제하는 눈에 띄지 않는 버튼으로 구성됩니다.
+- **필드가 나머지를 결정합니다.** 텍스트 필드는 contains, is, is not, starts with로 비교하고 텍스트를 받습니다. 선택 필드는 is 또는 is not으로 비교하고 값 중 하나를 받습니다. 숫자는 더 큼 또는 더 작음으로 비교하고 숫자 필드를 받으며, 날짜는 on, before, after로 비교하고 날짜 필드를 받습니다. 필드를 바꾸면 해당 행이 처음부터 다시 시작되므로, 비교 방식이 읽을 수 없는 값과 만나는 일이 없습니다.
+- **동작할 수 없는 조건은 적용되지 않습니다.** 값이 없거나, 숫자에 문자가 들어 있거나, 날짜가 절반만 입력되면 값에 `aria-invalid="true"`가 지정되어 [필드](/components/input)가 위험 상태의 가장자리를 표시하고, 행 아래의 메시지가 어느 조건이 왜 문제인지 알려 줍니다. 포커스는 해당 값으로 이동하고 목록은 바뀌지 않습니다.
+- **적용된 조건은 칩입니다.** 각 칩은 조건을 텍스트로 전달하고, “Remove the filter Status is Ready”처럼 조건에 맞는 이름이 지정된 삭제 버튼이 있습니다. 행 끝의 Clear all은 모든 조건을 한 번에 해제합니다.
+- **목록은 무엇을 표시하는지 알려 줍니다.** 제목 아래의 요약은 “12 of 30 deployments match all 2 filters”처럼 전체 중 일치하는 항목 수를 세고, 일치하는 항목이 없으면 목록이 그 사실과 돌아가는 방법을 알려 줍니다.
+
+## 스크립트가 필요한 동작 \{#script\}
+
+예제는 세 개의 모듈로 구성됩니다. `query.js`는 조건을 다룹니다. 각 유형이 제공하는 비교 방식, 조건의 문제점, 행이 조건을 충족하는지 여부, 검색, 정렬, 페이지 나누기를 처리하며, 일반 행을 읽고 요소에는 접근하지 않습니다. `filters.js`는 바를 동작시킵니다. 마크업에 들어 있는 조건 행, 선택지, 칩 템플릿을 복사해 채우고, 적용된 조건으로 `onChange`를 호출합니다. `main.js`는 그 조건으로 목록을 그립니다. 애플리케이션은 자체 데이터 소스에 같은 질의를 보내면 되며, 바는 바뀌지 않습니다. 적용된 조건을 `filter()` 대신 서버로 보내세요.
+
+스크립트가 없으면 바에서 조건을 준비할 수 없습니다. 대신 목록에 필드마다 셀렉트가 있는 `<form method="get">`을 두면 서버가 쿼리 문자열을 받아 처리합니다.
+
+## 접근성 \{#accessibility\}
+
+- 팝오버는 제목 “Filter deployments”로 이름을 지정한 `role="dialog"`입니다. 팝오버를 열면 첫 번째 조건의 필드로, 조건이 없으면 Add condition으로 포커스가 이동하며, 닫으면 Filters로 포커스가 돌아갑니다.
+- 행의 각 컨트롤 이름에는 “Field of condition 2”, “Value of condition 2”, “Remove condition 2”처럼 조건 번호가 포함됩니다. 숫자 값은 단위를 함께 알려 줍니다.
+- 적용할 수 없는 조건에 대한 메시지는 `role="alert"`이며 `aria-describedby`로 해당 값과 연결되므로, 나타날 때 읽히고 값에서도 다시 읽힙니다.
+- 칩을 삭제하면 포커스가 다음 칩으로, 마지막 칩이었다면 Filters로 이동하며, Clear all은 포커스를 Filters로 옮깁니다. 요약은 polite 라이브 영역이므로 변경 후 새 개수가 읽힙니다.
+- 조건은 칩 안의 텍스트로 전달하며 색상으로 전달하지 않습니다. 상태는 목록에서 이름 옆에 [배지](/components/badge) 톤을 유지합니다.
+
+## 관련 항목 \{#related\}
+
+<ComponentLinks slugs={['surface', 'heading', 'button', 'badge', 'popover', 'select', 'input', 'chip', 'list']} />
+
+<ComponentLinks kind="blocks" slugs={['table-view', 'page-header']} />

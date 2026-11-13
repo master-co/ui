@@ -1,0 +1,164 @@
+---
+title: "漸層"
+description: "製作中的漸層：色標排在一條橫條上，目前選取的色標以取色器調整，並可設定類型、角度與中心點。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+漸層編輯器用來製作漸層：色標排在一條橫條上，目前選取的色標以[取色器](/components/color-picker)調整，並可設定漸層的類型、角度與中心點。其中每個控制項都是元件庫本身的元件：取色器、用來設定色標位置的[滑桿](/components/slider)和數字欄位、用來選擇類型的[分段控制項](/components/segmented)、用來設定角度的[旋鈕](/components/dial)，以及用來設定中心點的數字欄位。漸層本身加上的是色標橫條、預覽，以及讓這一切保持同步的 [`gradient` 行為](/guide/behaviors)。
+
+<ComponentPreview name="default" height={744} narrowHeight={1040} title="漸層" background="plain" bodyClass="content-start p-lg" behaviors html={`<div class="gradient max-w(640) mx-auto" id="sunrise" aria-label="Background gradient" style="--gradient-ratio: 3 / 1">
+  <div class="gradient-preview" aria-hidden="true"></div>
+  <div class="gradient-bar"></div>
+  <div class="flex flex-wrap items-center gap-xs">
+    <button type="button" class="btn btn-sm gradient-add"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Add a stop</button>
+    <button type="button" class="btn btn-sm gradient-remove"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg>Remove</button>
+    <button type="button" class="btn btn-sm btn-quiet gradient-reverse"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 3 4 4-4 4M20 7H4M8 21l-4-4 4-4M4 17h16"/></svg>Reverse</button>
+  </div>
+  <div class="gradient-fields">
+    <fieldset class="gradient-color">
+      <legend class="mb(6) text-xs font-medium fg-text-muted">Color of the stop</legend>
+      <div class="color-picker" style="--color-picker-lightness: .7; --color-picker-chroma: .19; --color-picker-hue: 50">
+        <div class="color-picker-area">
+          <div class="color-picker-thumb" role="slider" tabindex="0" aria-label="Lightness and chroma" aria-valuemin="0" aria-valuemax="100" aria-valuenow="70"></div>
+        </div>
+        <span class="swatch swatch-lg color-picker-swatch"></span>
+        <input type="range" class="slider color-picker-hue" min="0" max="360" value="50" aria-label="Hue">
+        <input type="range" class="slider color-picker-alpha" min="0" max="100" value="100" aria-label="Opacity">
+        <div class="color-picker-fields">
+          <select class="select select-sm color-picker-format" aria-label="Format">
+            <option value="hex" selected>Hex</option>
+            <option value="rgb">RGB</option>
+            <option value="oklch">OKLCH</option>
+          </select>
+          <input class="input input-sm color-picker-text" value="#ff6a00" aria-label="Color" spellcheck="false" autocomplete="off">
+        </div>
+      </div>
+    </fieldset>
+    <div class="flex flex-col gap-md min-w(0)">
+      <fieldset class="gradient-offset">
+        <legend class="mb(6) text-xs font-medium fg-text-muted">Position</legend>
+        <input type="range" class="slider" min="0" max="100" step="1" value="0" aria-label="Position of the stop">
+        <input type="number" class="input input-sm w(72)" min="0" max="100" step="1" value="0" aria-label="Position of the stop, in percent">
+      </fieldset>
+      <fieldset class="gradient-type">
+        <legend class="mb(6) text-xs font-medium fg-text-muted">Type</legend>
+        <div class="segmented segmented-sm" role="radiogroup" aria-label="Type">
+          <label class="segmented-item"><input type="radio" class="segmented-input" name="sunrise-type" value="linear" checked>Linear</label>
+          <label class="segmented-item"><input type="radio" class="segmented-input" name="sunrise-type" value="radial">Radial</label>
+          <label class="segmented-item"><input type="radio" class="segmented-input" name="sunrise-type" value="conic">Conic</label>
+        </div>
+      </fieldset>
+      <div class="flex flex-wrap items-start gap-lg">
+        <fieldset class="gradient-angle">
+          <legend class="mb(6) text-xs font-medium fg-text-muted">Angle</legend>
+          <div class="dial dial-sm dial-full" role="slider" tabindex="0" aria-label="Angle" aria-valuenow="135" aria-valuemin="0" aria-valuemax="360" aria-valuetext="135°" style="--dial-value: 135">
+            <span class="dial-value">135°</span>
+            <span class="dial-thumb"></span>
+          </div>
+        </fieldset>
+        <fieldset class="gradient-center">
+          <legend class="mb(6) text-xs font-medium fg-text-muted">Centre</legend>
+          <input type="number" class="input input-sm w(72)" min="0" max="100" value="50" aria-label="Centre across, in percent">
+          <input type="number" class="input input-sm w(72)" min="0" max="100" value="50" aria-label="Centre down, in percent">
+        </fieldset>
+      </div>
+    </div>
+  </div>
+  <pre class="code-block gradient-css" aria-label="The gradient as CSS"></pre>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.gradient(document.getElementById('sunrise'), { value: { type: 'linear', angle: 135, center: [50, 50], stops: [
+    { id: 'dawn', offset: 0, color: '#ff6a00' },
+    { id: 'noon', offset: 55, color: '#ee0979' },
+    { id: 'dusk', offset: 100, color: '#4f46e5' }
+  ] } })
+})
+</script>`} caption="拖曳色標，或選取色標後使用方向鍵；切換類型並轉動角度。" />
+
+## 值 \{#the-value\}
+
+漸層是由四個部分組成的值：
+
+| 部分 | 內容 |
+| --- | --- |
+| `type` | `linear`、`radial` 或 `conic` |
+| `angle` | 角度（度），用於線性與圓錐漸層 |
+| `center` | 兩個百分比，用於放射與圓錐漸層 |
+| `stops` | 每個色標都有一個固定跟著它的 `id`、從 0 到 100 的 `offset`，以及一個 `color` |
+
+色彩的寫法與取色器相同，以十六進位的 sRGB 表示，並包含不透明度。`gradientCss(value)` 會將漸層寫成 CSS，預覽和複製的文字都來自它：在能指定插值色彩空間的瀏覽器中以 OKLab 插值，並在前面先寫一行供不支援的瀏覽器使用的備援。
+
+```css name=copied.css
+background-image: linear-gradient(90deg, #ff6a00 0%, #ee0979 100%);
+background-image: linear-gradient(in oklab 90deg, #ff6a00 0%, #ee0979 100%);
+```
+
+編輯器不會讀回 CSS：值由編輯器保存，應用程式也應儲存值，而不是文字。
+
+## 色標 \{#the-stops\}
+
+- **色標的控點是一個滑桿**，代表它的位置，在橫條上以該色標顏色的圓盤呈現。按下即可選取色標，拖曳可移動它；方向鍵每次移動 1，按住 <kbd class="kbd">Shift</kbd> 時每次移動 10，<kbd class="kbd">Home</kbd> 和 <kbd class="kbd">End</kbd> 則移到兩端。目前選取的色標帶有 `aria-current="true"`，會略微突出並加上墨色外環。
+- **色標可以交錯。** 被移過另一個色標的色標仍保有它的 id，它的控點也保有焦點；漸層會依位置的順序繪製色標。兩個色標位於同一位置時會形成銳利的邊界，並維持原本的順序。
+- **新增**會在目前色標之後 10 個單位處（最多到 100）加入一個與目前色標同色的色標。以按鈕或 <kbd class="kbd">Delete</kbd> **移除**色標時，焦點會交給橫條上的下一個色標，若沒有則交給前一個。至少需要兩個色標：只剩兩個時，無法再移除。
+- **反轉**會將色標的順序顛倒：每個位置都變成 100 減去原本的值。
+
+拖曳從來不是唯一的操作方式：位置有滑桿和旁邊的數字欄位，每個色標也都能以 <kbd class="kbd">Tab</kbd> 抵達。
+
+## 狀態 \{#states\}
+
+在根元素上設定 `aria-readonly="true"` 表示漸層無法變更，設定 `aria-disabled="true"` 則表示漸層目前未使用：控點停留在原位，控制項則會停用。
+
+## 行為 \{#behavior\}
+
+```js name=app.js
+import { gradient, gradientCss } from '@master/ui/behaviors/gradient.js'
+
+const editor = gradient(document.querySelector('.gradient'), {
+  value: { type: 'linear', angle: 90, center: [50, 50], stops: [
+    { id: 'from', offset: 0, color: '#ff6a00' },
+    { id: 'to', offset: 100, color: '#ee0979' },
+  ] },
+})
+editor.value                     // the value as above
+gradientCss(editor.value).text   // the two lines to copy
+```
+
+讀者操作期間會持續觸發 `input`，操作結束時觸發 `change`；設定 `value` 會顯示另一個漸層，但不會觸發任何事件。行為會依值寫出控點，因此自行寫出控點的框架應提供 `draw`。它會在根元素上以 `--gradient` 和 `--gradient-fallback` 公開漸層，並在每個色標的控點上以 `--gradient-offset` 和 `--gradient-color` 公開該色標：編輯器繪製的是它的內容，樣式表則負責定位。
+
+## 鍵盤 \{#keyboard\}
+
+<ContractTable name="gradient" show="keyboard" />
+
+## 無障礙 \{#accessibility\}
+
+- 每個控點都以它在色標中的順序命名，並在 `aria-valuetext` 中說明它的位置與色彩。
+- 預覽只是值的圖像：請將它從輔助技術中隱藏，因為色標和 CSS 已傳達相同的資訊。
+- 在強制色彩模式下，漸層會保留自己的色彩，因為這些色彩就是它的內容；控點和橫條則以系統色彩繪製輪廓。
+
+## React、Svelte 和 Vue \{#frameworks\}
+
+`gradient` 元件依值寫出控點與控制項，並掛上行為。使用 `npx master-ui add gradient` 將它複製到專案中；[React、Svelte 和 Vue](/guide/frameworks) 說明了這些元件的建構與使用方式。
+
+<FrameworkSource name="gradient" />
+
+## 類別 \{#classes\}
+
+<ContractTable name="gradient" />
+
+## 自訂屬性 \{#custom-properties\}
+
+<ContractTable name="gradient" show="properties" />
+
+## 相關內容 \{#related\}
+
+<ComponentLinks slugs={['color-picker', 'dial', 'slider', 'segmented', 'swatch']} />
+
+## 原始碼 \{#source\}
+
+<ComponentSource name="gradient" />

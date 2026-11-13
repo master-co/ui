@@ -1,0 +1,119 @@
+---
+title: "エディター"
+description: "リッチテキストエディターの枠組み。ツールバー、ドキュメント、それぞれの状態を扱います。"
+---
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+エディターは、リッチテキストフィールドの枠組みです。[入力フィールド](/components/input)のウェル、その上部に平らに置いた[ツールバー](/components/toolbar)、その下のドキュメントで構成します。編集そのもの、つまりドキュメントモデル、選択範囲、履歴、キー操作は、TipTap や ProseMirror などのエンジンが担当します。エンジンは `editor-document` を編集可能にし、描画するブロックにエディターのクラスを書き込みます。[リッチテキスト](/guide/rich-text)では、TipTap をエディターに組み込む方法を紹介しています。
+
+<ComponentPreview name="default" height={256} narrowHeight={296} title="エディター" background="plain" bodyClass="content-start p-lg" html={`<div class="field w-full max-w(560) mx-auto">
+  <span id="notes-label">Release notes</span>
+  <div class="editor" style="--editor-rows: 5">
+    <div class="toolbar editor-toolbar" role="toolbar" aria-label="Formatting">
+      <button type="button" class="btn btn-quiet btn-sm btn-square" aria-label="Bold" aria-pressed="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 5h6a3.5 3.5 0 0 1 0 7h-6zM13 12h1a3.5 3.5 0 0 1 0 7h-7v-7"/></svg></button>
+      <button type="button" class="btn btn-quiet btn-sm btn-square" aria-label="Italic" aria-pressed="false"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5h6M7 19h6M14 5l-4 14"/></svg></button>
+      <span class="toolbar-separator" role="separator" aria-orientation="vertical"></span>
+      <button type="button" class="btn btn-quiet btn-sm btn-square" aria-label="Bulleted list" aria-pressed="false"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11M5 6v.01M5 12v.01M5 18v.01"/></svg></button>
+      <button type="button" class="btn btn-quiet btn-sm btn-square" aria-label="Link" aria-pressed="false"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 15l6-6M11 6l.5-.5a5 5 0 0 1 7 7l-.5.5M13 18l-.4.5a5 5 0 0 1-7.1 0a5 5 0 0 1 0-7l.5-.5"/></svg></button>
+    </div>
+    <div class="editor-document" role="textbox" aria-multiline="true" aria-labelledby="notes-label" contenteditable="true">
+      <h2 class="editor-heading">Version 0.4</h2>
+      <p class="editor-paragraph">Category colors arrive: <strong>twenty-three palettes</strong>, each with a surface, a text, a line and a mark.</p>
+    </div>
+  </div>
+</div>`} />
+
+エンジンがない場合、このプレビューのドキュメントはブラウザー標準の `contenteditable` です。文字は入力できますが、構造は扱えず、ツールバーも動作しません。
+
+## 枠組み \{#frame\}
+
+- **フィールドとして振る舞います。** ウェル、ホバー、フォーカス時のハロー、エラー時の危険色の縁、無効時のインク色は入力欄と同じなので、リッチテキストフィールドも周囲のフィールドと同じように見えます。フレームを浮き上がらせるのはドキュメントのフォーカスなので、ツールバー内を移動しても浮き上がりません。
+- **ツールバーは帯です。** ツールバーに `editor-toolbar` を付けると、ウェルの上部に内側の余白 1 つ分だけ内側に平らに配置され、角丸がウェルの角丸の内側に収まり、下に細い罫線が引かれます。エディターの幅が狭いときは折り返します。[ツールバーのビヘイビア](/components/toolbar)により、ツールバー全体が 1 つのタブストップになり、矢印キーで移動できます。
+- **ドキュメントは内容に応じて伸びます。** 空のときは `--editor-rows` 行（既定は 6 行）で、`--editor-max-rows`（既定は 18 行）まで伸び、それを超えるとフレームの中でスクロールします。
+
+## ドキュメントの内容 \{#content\}
+
+スタイルシートは要素名で選択することはありません。エンジンが各ブロックにクラスを書き込み、スタイルが付くのはそれらのクラスだけで、しかもエディターの中に限られます。ページ全体のタイポグラフィではありません。
+
+<ComponentPreview name="content" height={368} narrowHeight={448} title="ドキュメントの内容" background="plain" bodyClass="content-start p-lg" html={`<div class="editor w-full max-w(560) mx-auto">
+  <div class="editor-document" role="textbox" aria-multiline="true" aria-label="Document" contenteditable="true">
+    <h2 class="editor-heading">A heading</h2>
+    <p class="editor-paragraph">A paragraph with <a class="editor-link" href="#content">a link</a>, <em>emphasis</em> and <code class="code">inline code</code>.</p>
+    <h3 class="editor-subheading">A subheading</h3>
+    <ul class="editor-list">
+      <li class="editor-item"><p class="editor-paragraph">A list with bullets</p></li>
+      <li class="editor-item"><p class="editor-paragraph">Its markers in the muted ink</p></li>
+    </ul>
+    <ol class="editor-list editor-list-numbered">
+      <li class="editor-item"><p class="editor-paragraph">A list with numbers</p></li>
+      <li class="editor-item"><p class="editor-paragraph">On an ordered list</p></li>
+    </ol>
+    <blockquote class="editor-quote"><p class="editor-paragraph">A quotation, a step quieter.</p></blockquote>
+    <hr class="editor-rule">
+    <p class="editor-paragraph">And a paragraph after a rule.</p>
+  </div>
+</div>`} />
+
+## 状態 \{#states\}
+
+各状態は、エンジンが要素に保持する属性か、ページがフレームに設定する属性で表します。フォーカスと `aria-invalid="true"` は、フレームを浮き上がらせるか、危険色の縁を付けます。`aria-readonly="true"` はフレームを平らにし、キャレットを表示しません。フレームに `aria-disabled="true"` を付けると、無効時のインク色の平らなウェルになります。無効な内容のドキュメントには、フィールドの `field-error` を表示します。エディターを無効にするときはツールバーのコントロールも無効にし、エンジンにも編集不可であることを伝えます。
+
+<ComponentPreview name="states" height={456} narrowHeight={496} title="状態" background="plain" bodyClass="content-start p-lg" html={`<div class="grid gap-lg w-full max-w(560) mx-auto">
+  <div class="field">
+    <span id="state-invalid">Summary</span>
+    <div class="editor" style="--editor-rows: 2">
+      <div class="editor-document" role="textbox" aria-multiline="true" aria-labelledby="state-invalid" aria-describedby="state-invalid-error" aria-invalid="true" contenteditable="true"></div>
+    </div>
+    <p class="field-error" id="state-invalid-error">Write at least a sentence before you publish.</p>
+  </div>
+  <div class="field">
+    <span id="state-readonly">Published notes</span>
+    <div class="editor" style="--editor-rows: 2">
+      <div class="editor-document" role="textbox" aria-multiline="true" aria-labelledby="state-readonly" aria-readonly="true" contenteditable="false">
+        <p class="editor-paragraph">Version 0.3 shipped tags, editable values and sortable lists.</p>
+      </div>
+    </div>
+  </div>
+  <div class="field">
+    <span id="state-disabled">Draft</span>
+    <div class="editor" style="--editor-rows: 2" aria-disabled="true">
+    <div class="toolbar editor-toolbar" role="toolbar" aria-label="Formatting">
+      <button type="button" class="btn btn-quiet btn-sm btn-square" aria-label="Bold" aria-pressed="false" disabled><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 5h6a3.5 3.5 0 0 1 0 7h-6zM13 12h1a3.5 3.5 0 0 1 0 7h-7v-7"/></svg></button>
+      <button type="button" class="btn btn-quiet btn-sm btn-square" aria-label="Italic" aria-pressed="false" disabled><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5h6M7 19h6M14 5l-4 14"/></svg></button>
+      <span class="toolbar-separator" role="separator" aria-orientation="vertical"></span>
+      <button type="button" class="btn btn-quiet btn-sm btn-square" aria-label="Bulleted list" aria-pressed="false" disabled><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11M5 6v.01M5 12v.01M5 18v.01"/></svg></button>
+      <button type="button" class="btn btn-quiet btn-sm btn-square" aria-label="Link" aria-pressed="false" disabled><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 15l6-6M11 6l.5-.5a5 5 0 0 1 7 7l-.5.5M13 18l-.4.5a5 5 0 0 1-7.1 0a5 5 0 0 1 0-7l.5-.5"/></svg></button>
+    </div>
+      <div class="editor-document" role="textbox" aria-multiline="true" aria-labelledby="state-disabled" aria-disabled="true" contenteditable="false">
+        <p class="editor-paragraph">Locked while the release is reviewed.</p>
+      </div>
+    </div>
+  </div>
+</div>`} />
+
+## アクセシビリティ \{#accessibility\}
+
+- ドキュメントは `aria-multiline="true"` を指定した `role="textbox"` です。`aria-labelledby` でフィールドのラベルを名前として参照し、`aria-describedby` でヒントとエラーを説明として参照します。`<label for>` はフォームコントロール以外の要素に名前を付けられません。
+- ツールバーは名前を付けた 1 つのタブストップで、`aria-controls` でドキュメントを参照します。アイコンボタンにはすべて名前を付け、切り替えボタンには `aria-pressed` を指定し、エンジンが処理するショートカットを `aria-keyshortcuts` に指定します。
+- ツールバーのコマンドを実行した後は、読み手が書いていたドキュメントにフォーカスを戻します。
+- ドキュメントに独自のキーハンドラーを追加しないでください。単語を変換中の入力メソッドは Enter キーや矢印キーを使い、エンジンはそれがいつ起きているかを把握しています。
+- 強制カラーモードでは、フレームの輪郭はフィールドの色で描画され、フォーカス中はハイライト色になります。
+
+## クラス \{#classes\}
+
+<ContractTable name="editor" />
+
+## カスタムプロパティ \{#custom-properties\}
+
+<ContractTable name="editor" show="properties" />
+
+## 関連項目 \{#related\}
+
+<ComponentLinks slugs={['input', 'toolbar', 'composer', 'code']} />
+
+## ソース \{#source\}
+
+<ComponentSource name="editor" />

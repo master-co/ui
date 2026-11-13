@@ -1,0 +1,120 @@
+---
+title: "编辑器"
+description: "富文本编辑器的外框：工具栏、文档区域及其状态。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+编辑器是富文本字段的外框：由[输入框](/components/input)的凹槽、平铺在凹槽顶部的[工具栏](/components/toolbar)以及其下方的文档区域组成。编辑本身，包括文档模型、选区、历史记录和按键处理，都由 TipTap 或 ProseMirror 这类引擎负责：引擎让 `editor-document` 变为可编辑，并在它渲染的块上写入编辑器的类名。[富文本](/guide/rich-text)指南介绍了如何在其中接入 TipTap。
+
+<ComponentPreview name="default" height={256} narrowHeight={296} title="编辑器" background="plain" bodyClass="content-start p-lg" html={`<div class="field w-full max-w(560) mx-auto">
+  <span id="notes-label">Release notes</span>
+  <div class="editor" style="--editor-rows: 5">
+    <div class="toolbar editor-toolbar" role="toolbar" aria-label="Formatting">
+      <button type="button" class="btn btn-quiet btn-sm btn-square" aria-label="Bold" aria-pressed="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 5h6a3.5 3.5 0 0 1 0 7h-6zM13 12h1a3.5 3.5 0 0 1 0 7h-7v-7"/></svg></button>
+      <button type="button" class="btn btn-quiet btn-sm btn-square" aria-label="Italic" aria-pressed="false"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5h6M7 19h6M14 5l-4 14"/></svg></button>
+      <span class="toolbar-separator" role="separator" aria-orientation="vertical"></span>
+      <button type="button" class="btn btn-quiet btn-sm btn-square" aria-label="Bulleted list" aria-pressed="false"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11M5 6v.01M5 12v.01M5 18v.01"/></svg></button>
+      <button type="button" class="btn btn-quiet btn-sm btn-square" aria-label="Link" aria-pressed="false"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 15l6-6M11 6l.5-.5a5 5 0 0 1 7 7l-.5.5M13 18l-.4.5a5 5 0 0 1-7.1 0a5 5 0 0 1 0-7l.5-.5"/></svg></button>
+    </div>
+    <div class="editor-document" role="textbox" aria-multiline="true" aria-labelledby="notes-label" contenteditable="true">
+      <h2 class="editor-heading">Version 0.4</h2>
+      <p class="editor-paragraph">Category colors arrive: <strong>twenty-three palettes</strong>, each with a surface, a text, a line and a mark.</p>
+    </div>
+  </div>
+</div>`} />
+
+没有引擎时，这个预览中的文档只是浏览器自带的 `contenteditable`：可以输入文字，但无法建立结构，工具栏也不起作用。
+
+## 外框 \{#frame\}
+
+- **它是一个字段。** 凹槽及其悬停效果、聚焦光晕、危险色边缘和禁用时的墨色都与输入框一致，因此富文本字段看起来与周围的字段并无二致。让外框抬升的是文档获得的焦点，所以在工具栏中移动焦点不会让外框抬升。
+- **工具栏是一条横栏。** 在工具栏上使用 `editor-toolbar`，它会平铺在凹槽顶部，向内缩进一个间距，使其圆角嵌套在凹槽的圆角之内，下方有一条细线。编辑器较窄时，工具栏会换行。[工具栏行为](/components/toolbar)让整个工具栏只占一个 Tab 停靠点，并支持方向键。
+- **文档会随内容增高。** 文档为空时高 `--editor-rows` 行，默认 6 行；随内容增高至 `--editor-max-rows` 行，默认 18 行，之后在外框内滚动。
+
+## 文档中的内容 \{#content\}
+
+样式表从不按元素选择：引擎在每个块上写入类名，只有这些类名会被设置样式，而且只在编辑器内部生效。它不是用于整个页面的排版样式。
+
+<ComponentPreview name="content" height={368} narrowHeight={448} title="文档中的内容" background="plain" bodyClass="content-start p-lg" html={`<div class="editor w-full max-w(560) mx-auto">
+  <div class="editor-document" role="textbox" aria-multiline="true" aria-label="Document" contenteditable="true">
+    <h2 class="editor-heading">A heading</h2>
+    <p class="editor-paragraph">A paragraph with <a class="editor-link" href="#content">a link</a>, <em>emphasis</em> and <code class="code">inline code</code>.</p>
+    <h3 class="editor-subheading">A subheading</h3>
+    <ul class="editor-list">
+      <li class="editor-item"><p class="editor-paragraph">A list with bullets</p></li>
+      <li class="editor-item"><p class="editor-paragraph">Its markers in the muted ink</p></li>
+    </ul>
+    <ol class="editor-list editor-list-numbered">
+      <li class="editor-item"><p class="editor-paragraph">A list with numbers</p></li>
+      <li class="editor-item"><p class="editor-paragraph">On an ordered list</p></li>
+    </ol>
+    <blockquote class="editor-quote"><p class="editor-paragraph">A quotation, a step quieter.</p></blockquote>
+    <hr class="editor-rule">
+    <p class="editor-paragraph">And a paragraph after a rule.</p>
+  </div>
+</div>`} />
+
+## 状态 \{#states\}
+
+每种状态都是一个属性，由引擎保留在相应元素上，或由页面设置在外框上：获得焦点和 `aria-invalid="true"` 会让外框抬升或显示危险色边缘；`aria-readonly="true"` 让外框平铺且不显示插入光标；在外框上设置 `aria-disabled="true"` 则让它降为使用禁用墨色的扁平凹槽。文档无效时，显示字段的 `field-error`。禁用编辑器时，同时禁用工具栏中的控件，并告知引擎文档不可编辑。
+
+<ComponentPreview name="states" height={456} narrowHeight={496} title="状态" background="plain" bodyClass="content-start p-lg" html={`<div class="grid gap-lg w-full max-w(560) mx-auto">
+  <div class="field">
+    <span id="state-invalid">Summary</span>
+    <div class="editor" style="--editor-rows: 2">
+      <div class="editor-document" role="textbox" aria-multiline="true" aria-labelledby="state-invalid" aria-describedby="state-invalid-error" aria-invalid="true" contenteditable="true"></div>
+    </div>
+    <p class="field-error" id="state-invalid-error">Write at least a sentence before you publish.</p>
+  </div>
+  <div class="field">
+    <span id="state-readonly">Published notes</span>
+    <div class="editor" style="--editor-rows: 2">
+      <div class="editor-document" role="textbox" aria-multiline="true" aria-labelledby="state-readonly" aria-readonly="true" contenteditable="false">
+        <p class="editor-paragraph">Version 0.3 shipped tags, editable values and sortable lists.</p>
+      </div>
+    </div>
+  </div>
+  <div class="field">
+    <span id="state-disabled">Draft</span>
+    <div class="editor" style="--editor-rows: 2" aria-disabled="true">
+    <div class="toolbar editor-toolbar" role="toolbar" aria-label="Formatting">
+      <button type="button" class="btn btn-quiet btn-sm btn-square" aria-label="Bold" aria-pressed="false" disabled><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 5h6a3.5 3.5 0 0 1 0 7h-6zM13 12h1a3.5 3.5 0 0 1 0 7h-7v-7"/></svg></button>
+      <button type="button" class="btn btn-quiet btn-sm btn-square" aria-label="Italic" aria-pressed="false" disabled><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5h6M7 19h6M14 5l-4 14"/></svg></button>
+      <span class="toolbar-separator" role="separator" aria-orientation="vertical"></span>
+      <button type="button" class="btn btn-quiet btn-sm btn-square" aria-label="Bulleted list" aria-pressed="false" disabled><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11M5 6v.01M5 12v.01M5 18v.01"/></svg></button>
+      <button type="button" class="btn btn-quiet btn-sm btn-square" aria-label="Link" aria-pressed="false" disabled><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 15l6-6M11 6l.5-.5a5 5 0 0 1 7 7l-.5.5M13 18l-.4.5a5 5 0 0 1-7.1 0a5 5 0 0 1 0-7l.5-.5"/></svg></button>
+    </div>
+      <div class="editor-document" role="textbox" aria-multiline="true" aria-labelledby="state-disabled" aria-disabled="true" contenteditable="false">
+        <p class="editor-paragraph">Locked while the release is reviewed.</p>
+      </div>
+    </div>
+  </div>
+</div>`} />
+
+## 无障碍 \{#accessibility\}
+
+- 文档是带 `aria-multiline="true"` 的 `role="textbox"`，通过 `aria-labelledby` 以字段的标签命名，并通过 `aria-describedby` 关联提示和错误信息。`<label for>` 无法为非表单控件的元素命名。
+- 工具栏只占一个 Tab 停靠点，需要有名称，并用 `aria-controls` 指向文档。为每个图标按钮命名，用 `aria-pressed` 标记切换按钮，并通过 `aria-keyshortcuts` 声明引擎处理的快捷键。
+- 执行工具栏命令后，焦点回到文档中读者正在书写的位置。
+- 不要在文档上自行添加按键处理程序：输入法在组字时会用到 Enter 和方向键，而引擎知道何时处于组字状态。
+- 在强制颜色模式下，外框使用字段的颜色描边，获得焦点时改用高亮色。
+
+## 类名 \{#classes\}
+
+<ContractTable name="editor" />
+
+## 自定义属性 \{#custom-properties\}
+
+<ContractTable name="editor" show="properties" />
+
+## 相关内容 \{#related\}
+
+<ComponentLinks slugs={['input', 'toolbar', 'composer', 'code']} />
+
+## 源码 \{#source\}
+
+<ComponentSource name="editor" />

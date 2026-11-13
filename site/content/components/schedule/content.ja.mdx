@@ -1,12 +1,15 @@
 ---
 title: "スケジュール"
-description: "1 日の時刻を縦軸に並べ、予定の長さを高さで表すコンポーネント。"
+description: "予定を時間軸上に配置します。日や週は時刻を縦軸に、月は週ごとのレーンで、またはアジェンダとして表示します。"
 ---
 import ComponentPreview from '~/site/components/ComponentPreview.astro'
 import ComponentSource from '~/site/components/ComponentSource.astro'
 import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
 スケジュールは、1 日の時刻を縦軸に並べ、各予定の所要時間を高さで表します。カレンダーの日表示、会議の会場別プログラム、クリニックの予約表などに使えます。予定は順序付きリストで、各項目にタイトルと時刻をテキストで記述します。スタイルシートが予定を時間軸上に配置し、1 時間ごとに極細線と時刻ラベルを表示します。重なる予定は横に並びます。スクリプトや寸法の計測は不要です。
+
+終日続く予定は、時間帯の上の帯に表示します。月表示では各日の予定をレーンに並べ、アジェンダでは日ごとに一覧表示します。[スケジュールビュー](#schedule-view)は、読み手が操作するスケジュールで、日、週、月、アジェンダで表示でき、`schedule` ビヘイビアで動作します。
 
 <ComponentPreview name="default" height={400} title="スケジュール" bodyClass="p-lg" html={`<div class="card max-w(480) mx-auto">
   <div class="schedule schedule-now" style="--schedule-from: 9; --schedule-to: 15; --now: 12.45">
@@ -96,9 +99,126 @@ import ContractTable from '~/site/components/ContractTable.astro'
 </li>
 ```
 
+## 終日の予定 \{#whole-days\}
+
+1 日以上続く予定は、見出しの下、時間帯の上にある帯 `schedule-allday` に置き、時刻欄の列に「All day」（終日）などの帯の名前を表示します。帯の中の各予定は `schedule-event-lane` で、`--column` 日目から `--span` 日分を、`--lane` 番目のレーンに表示します。帯は複数の日にまたがるため、各 `schedule-day` は `--column` で自分の列を示し、スケジュールは列の数を `--schedule-days` で示します。
+
+<ComponentPreview name="all-day" height={344} title="終日の予定" bodyClass="p-lg" html={`<div class="card max-w(560) mx-auto">
+  <div class="card-body">
+    <div class="schedule" style="--schedule-from: 9; --schedule-to: 13; --schedule-days: 3">
+      <ol class="schedule-rail" aria-hidden="true"><li>9 AM</li><li>10 AM</li><li>11 AM</li><li>12 PM</li><li>1 PM</li></ol>
+      <div class="schedule-day" style="--column: 1"><h3 class="schedule-heading">Wed 12</h3><ol class="schedule-events" aria-label="Wednesday 12 November"><li class="schedule-event" style="--start: 9.5; --end: 10.5"><p class="schedule-title">Planning</p><p class="schedule-time">9:30 – 10:30</p></li></ol></div>
+      <div class="schedule-day" style="--column: 2" aria-current="date"><h3 class="schedule-heading">Thu 13</h3><ol class="schedule-events" aria-label="Thursday 13 November"><li class="schedule-event" style="--start: 11; --end: 12"><p class="schedule-title">Design review</p><p class="schedule-time">11:00 – 12:00</p></li></ol></div>
+      <div class="schedule-day" style="--column: 3"><h3 class="schedule-heading">Fri 14</h3><ol class="schedule-events" aria-label="Friday 14 November"></ol></div>
+      <div class="schedule-allday" role="group" aria-label="All day">
+        <span class="schedule-allday-label" aria-hidden="true">All day</span>
+        <p class="schedule-event schedule-event-lane" style="--column: 2; --span: 2"><span class="schedule-title">Offsite in Lisbon</span></p>
+        <p class="schedule-event schedule-event-lane schedule-event-continued" style="--column: 1; --lane: 1"><span class="schedule-title">On call</span></p>
+      </div>
+    </div>
+  </div>
+</div>`} />
+
+表示範囲より前に始まった予定の一部には `schedule-event-continued` を、表示範囲より後まで続く予定の一部には `schedule-event-continues` を付けます。レーンでは開始側または終了側の端が角張って縁まで伸び、時間帯の表示で日付をまたぐ場合は上端または下端が同様になります。予定の開始部分ではない部分には、バーは表示されません。
+
+## カテゴリー \{#category\}
+
+`schedule-event-category` は、予定自身またはその祖先に設定された[カテゴリー](/components/category)で予定を色分けします。予定のシートにはカテゴリーの面の色、バーにはマークの色、文字にはテキストの色が使われます。複数のチームやプロジェクトのカレンダーでは、この方法で予定を見分けられます。その場合も、予定の内容はタイトルで伝えます。
+
+<ComponentPreview name="category" height={240} title="カテゴリー" bodyClass="p-lg" html={`<div class="card max-w(480) mx-auto">
+  <div class="card-body">
+    <div class="schedule" style="--schedule-from: 9; --schedule-to: 12">
+      <ol class="schedule-rail" aria-hidden="true"><li>9 AM</li><li>10 AM</li><li>11 AM</li><li>12 PM</li></ol>
+      <ol class="schedule-events" aria-label="Thursday 13 November">
+        <li class="schedule-event schedule-event-category category-violet" style="--start: 9; --end: 10; --lanes: 2"><p class="schedule-title">User interviews</p><p class="schedule-time">9:00 – 10:00</p></li>
+        <li class="schedule-event schedule-event-category category-teal" style="--start: 9.5; --end: 11; --lane: 1; --lanes: 2"><p class="schedule-title">Token audit</p><p class="schedule-time">9:30 – 11:00</p></li>
+        <li class="schedule-event schedule-event-category category-orange" style="--start: 11; --end: 11.75"><p class="schedule-title">Launch check-in</p><p class="schedule-time">11:00 – 11:45</p></li>
+      </ol>
+    </div>
+  </div>
+</div>`} />
+
+## 月表示 \{#month\}
+
+`schedule-month` は、1 か月を 7 日ずつの週で表示します。各 `schedule-week` は、日付、その日に始まる予定、「さらに表示」ボタンの順に書き出すため、スクリーンリーダーは日付の順に読み上げます。スタイルシートがそれぞれを列とレーンに配置します。日付の数字 `schedule-date-number` は、その日を開く丸いボタンで、今日はインク色で表示されます。1 日に表示する予定は `--lanes` 件（既定は 3 件）で、残りは `schedule-more` ボタンにまとめられます。このボタンは、残りの予定を一覧にした[ポップオーバー](/components/popover)を開きます。月表示の短い予定は、シートのない簡素な表示 `schedule-event-plain` になり、ドット、時刻、タイトルだけを表示します。
+
+36rem より狭い領域ではレーンを使わず、各日の数字の下に予定ごとのドットを最大 3 つ表示します。数字を押すとその日が開きます。7 つの狭い列にテキストを詰め込むことはしません。
+
+`schedule-agenda` は、同じ予定を日ごとに一覧表示します。各行の先頭に日付を置き、その横の `schedule-list` に予定を並べます。狭い領域では予定を日付の下に並べます。スマートフォンや印刷物、図を見るより文章で読みたい読者に適しています。
+
+月表示とアジェンダは予定データから書き出すため、下のビューのように、ビヘイビアかフレームワークのコンポーネントで生成します。
+
+## 操作できるスケジュール \{#schedule-view\}
+
+`schedule-view` は、[`schedule` ビヘイビア](/guide/behaviors)が書き出す本体の上に、コントロールを並べたヘッダーを置きます。ヘッダーには、今日、前へ、次へ、期間の名前、日・週・月・アジェンダの切り替えがあります。前へと次へはビューの期間単位で移動し、日付の数字を押すとその日が開き、期間の名前は変わったときに読み上げられます。狭い領域では、期間の名前が独立した 1 行に表示されます。
+
+<ComponentPreview name="view" height={640} narrowHeight={600} title="操作できるスケジュール" background="plain" bodyClass="content-start p-lg" behaviors html={`<section class="schedule-view" id="team" aria-labelledby="team-title">
+  <div class="schedule-view-header">
+    <button type="button" class="btn btn-sm schedule-view-today">Today</button>
+    <button type="button" class="btn btn-sm btn-square btn-quiet schedule-view-previous" aria-label="Previous"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button>
+    <button type="button" class="btn btn-sm btn-square btn-quiet schedule-view-next" aria-label="Next"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
+    <h2 class="schedule-view-title" id="team-title" aria-live="polite">November 2026</h2>
+    <div class="segmented segmented-sm schedule-view-switch" role="radiogroup" aria-label="View">
+      <label class="segmented-item"><input type="radio" class="segmented-input" name="team-view" value="day">Day</label>
+      <label class="segmented-item"><input type="radio" class="segmented-input" name="team-view" value="week">Week</label>
+      <label class="segmented-item"><input type="radio" class="segmented-input" name="team-view" value="month" checked>Month</label>
+      <label class="segmented-item"><input type="radio" class="segmented-input" name="team-view" value="agenda">Agenda</label>
+    </div>
+  </div>
+  <div class="schedule-view-body"></div>
+</section>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.schedule(document.getElementById('team'), {
+    today: '2026-11-13', locale: 'en-US', weekStart: 1, value: { date: '2026-11-13', view: 'month' },
+    events: [
+      { id: 'review', title: 'Design review', start: '2026-11-03T10:00', end: '2026-11-03T11:30', category: 'violet' },
+      { id: 'offsite', title: 'Offsite', start: '2026-11-07', end: '2026-11-11', allDay: true, category: 'teal' },
+      { id: 'deploy', title: 'Deploy window', start: '2026-11-12T22:00', end: '2026-11-13T02:00', category: 'red' },
+      { id: 'launch', title: 'Launch', start: '2026-11-13', end: '2026-11-14', allDay: true, category: 'orange' },
+      { id: 'standup', title: 'Standup', start: '2026-11-13T09:00', end: '2026-11-13T09:15' },
+      { id: 'lunch', title: 'Team lunch', start: '2026-11-13T12:00', end: '2026-11-13T13:00', category: 'green' },
+      { id: 'call', title: 'Customer call', start: '2026-11-13T14:00', end: '2026-11-13T15:00', category: 'blue' },
+      { id: 'retro', title: 'Retro', start: '2026-11-13T17:00', end: '2026-11-13T17:45' },
+      { id: 'planning', title: 'Planning', start: '2026-11-17T09:30', end: '2026-11-17T11:00', category: 'blue' },
+      { id: 'conference', title: 'Conference', start: '2026-11-19', end: '2026-11-22', allDay: true, category: 'violet' }
+    ]
+  })
+})
+</script>`} caption="1 か月単位で移動したり、日付の数字からその日を開いたり、週表示やアジェンダに切り替えたりできます。" />
+
+### 予定 \{#the-events\}
+
+各予定には、変わらない `id`、`title`、`start`、`end` を指定します。終日の予定には `allDay: true` を指定し、開始と終了を日付 `YYYY-MM-DD` で表します。それ以外の予定はローカル時刻 `YYYY-MM-DDTHH:mm` で表します。`end` はその時点を含みません。13 日だけの終日の予定は 14 日に終わり、午前 0 時に終わる予定は前日のうちに終わります。`category` はパレットの名前で、たとえば `blue` は `category-blue` を表します。`href` を指定すると予定はリンクになります。指定しない場合は、予定の id を `value` に持つボタンになり、ページはその操作を受け取れます。
+
+時刻は、スケジュールを表示するタイムゾーンにすでに変換されている必要があります。繰り返しの予定は、個々の発生日時に展開して渡します。タイムゾーンと繰り返しはアプリケーション側で解決します。日数はカレンダーに従って正午を基準に数えるため、夏時間の切り替えで終日の予定が前日にずれることはありません。ビューは予定を編集、移動、保存しません。予定を表示し、どの予定が押されたかを伝えるだけです。
+
+### ビヘイビア \{#behavior\}
+
+```js name=app.js
+import { schedule } from '@master/ui/behaviors/schedule.js'
+
+const team = schedule(document.querySelector('.schedule-view'), { events, today: '2026-11-13' })
+team.value // { date: '2026-11-13', view: 'month' }
+```
+
+| オプション | 既定値 | |
+| --- | --- | --- |
+| `events` | `[]` | 上記の形式の予定 |
+| `value` | 今日を含む月 | 最初に表示する日付とビュー。`{ date, view }` の形で、ビューは `day`、`week`、`month`、`agenda` のいずれか |
+| `today` | ブラウザーの日付 | 今日の日付（`YYYY-MM-DD`）。サーバーでスケジュールを描画する場合に指定し、サーバーとブラウザーで結果を一致させます |
+| `locale` | ページの `lang` | 曜日と月の名前に使う BCP 47 タグ |
+| `weekStart` | ロケールの既定 | 週の最初の曜日。0（日曜日）から 6（土曜日） |
+| `lanes` | `3` | 月表示の 1 日に表示する予定の数。残りは「さらに表示」ボタンにまとめます |
+| `from`, `to` | `8`, `18` | 日表示と週表示で最低限表示する時間帯。それより早い予定や遅い予定があれば範囲が広がります |
+| `messages` | 英語 | 帯の名前、「さらに表示」ボタンの文言と名前、アジェンダが空のときの文 |
+| `draw` | なし | タイトルと本体の書き出しを引き受けます。自分で書き出すレンダラー向けです |
+
+読み手の操作では、ルートから `input` と `change` が発行されます。ビヘイビアが返す関数には読み書きできる `value` があり、値を設定してもイベントは発行されません。`scheduleLayout(value, options)` は、ビューが表示する内容をデータとして返します。各予定のレーンを含む週、各予定の位置を含む時間帯、帯、アジェンダの日付です。そのため、サーバー、フレームワーク、ビヘイビアのいずれでも、同じ予定が同じように配置されます。
+
 ## スケジュール、ガントチャート、カレンダー \{#schedule-gantt-or-calendar\}
 
-スケジュールは、1日の時間の流れを上から下へ読むためのものです。計画の各項目を1行ずつ割り当て、共通の時間軸に期間を示すには[ガントチャート](/components/gantt)を使います。月表示から日付を選ぶには[カレンダー](/components/calendar)、出来事を発生順に並べるには[タイムライン](/components/timeline)を使います。
+スケジュールは、時間軸上に配置した予定のためのものです。1 日の時間の流れを上から下へ読む場合も、1 か月の日付を見る場合も使えます。計画の各項目を1行ずつ割り当て、共通の時間軸に期間を示すには[ガントチャート](/components/gantt)を使います。月表示から日付や日付の範囲を選ぶには[カレンダー](/components/calendar)、出来事を発生順に並べるには[タイムライン](/components/timeline)を使います。
 
 ## アクセシビリティ \{#accessibility\}
 
@@ -106,6 +226,14 @@ import ContractTable from '~/site/components/ContractTable.astro'
 - 各予定にはタイトルと時刻をテキストで記載し、時刻には`<time datetime>`を使います。これにより、図がなくても「デザインレビュー、10:00から11:30まで」と読み上げられます。時刻欄は同じ時間軸を視覚化したものなので、`aria-hidden="true"`で支援技術から隠します。
 - 現在の予定と今日の列には`aria-current`を指定し、スクリーンリーダーがその状態を読み上げられるようにします。現在時刻の線はスタイルシートで描画されるため、時刻を伝える必要がある箇所にはテキストでも記載します。
 - 強制カラーモードでは、各予定に輪郭が付き、現在の予定はハイライト色で塗りつぶされます。細い罫線と現在時刻の線にはシステムカラーが使われます。
+- 月表示は日付グリッドではありません。日付は、その日を開く数字で、予定はリンクまたはボタンです。それぞれにタイトルと日時で名前を付けます。「さらに表示」ボタンには、何日の何件の予定を一覧にするかを含めます。カテゴリーの色だけで予定を区別させることはしません。
+- ビューのコントロールは、移動してもフォーカスを保ちます。日付の数字は月表示とともに消えるため、開いた日の名前にフォーカスを移します。
+
+## React、Svelte、Vue \{#frameworks\}
+
+`schedule` コンポーネントは、`scheduleLayout()` から期間を書き出すため、サーバーが最初に送る HTML にスケジュールが含まれます。また、ヘッダーと日付の数字に応答するビヘイビアを適用します。値は `{ date, view }` で、`href` のない予定が押されると `onEventClick`（Vue では `eventClick`）で受け取れます。サーバーで描画する場合は `today` と `locale` を指定します。`npx master-ui add schedule` でプロジェクトにコピーできます。構成と使い方は [React、Svelte、Vue](/guide/frameworks) を参照してください。
+
+<FrameworkSource name="schedule" />
 
 ## クラス \{#classes\}
 

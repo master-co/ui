@@ -1,0 +1,90 @@
+---
+title: "富文本"
+description: "把 TipTap 放进编辑器外框：固定工具栏、输入字段的各种状态，以及作为数据的文档。"
+---
+
+import PagePreview from '~/site/components/PagePreview.astro'
+
+Master UI 本身不提供编辑器。编辑带格式的文本，包括文档模型、选区、历史记录、粘贴以及输入法组字，是大型引擎的工作，而且已有成熟的方案。Master UI 为这类引擎提供的是一个外框：[`editor`](/components/editor) 契约负责绘制凹槽、工具栏横栏、各种状态以及文档中的内容，让富文本字段的外观和行为都与页面上的其他输入字段一致。本指南用原生 JavaScript 把 [TipTap](https://tiptap.dev/docs/editor/getting-started/install/vanilla-javascript) 放进这个外框。
+
+<PagePreview name="default" title="富文本" example="rich-text" caption="输入文字，用工具栏或快捷键设置格式，添加链接，切换状态，并展开查看值。" />
+
+## 职责划分 \{#who-does-what\}
+
+| | 负责 |
+| --- | --- |
+| TipTap | 文档及其 schema、选区、撤销与重做、按键与快捷键、粘贴、输入法，以及它设为可编辑的元素 |
+| `editor` | 外框及其状态、工具栏横栏、文档尺寸，以及段落、标题、列表、引用、链接和分隔线的外观 |
+| [`toolbar`](/components/toolbar) 及其行为脚本 | 让所有控件只占一个 Tab 停靠点、用方向键在控件间移动，以及按钮的按下状态 |
+| 你的页面 | 把两者连接起来：按钮执行哪个命令、处于什么状态，以及值交给哪里 |
+
+`@master/ui` 不依赖任何编辑器，也没有 React、Svelte 或 Vue 组件封装编辑器。示例属于本站点，TipTap 是站点的依赖：可以直接复制，也可以参照它改用 ProseMirror、Lexical 或其他引擎，契约保持不变。
+
+## 把引擎放进外框 \{#frame\}
+
+TipTap 会把一个元素设为可编辑，并把文档写入其中。让它在该元素上加上 `editor-document`，并带上输入字段控件应有的角色、名称和描述；同时让它在所渲染的节点上写入编辑器的类：`editor` 样式表从不按元素类型选择，因此标题之所以有样式，是因为它带有 `editor-heading`，而不是因为它是 `h2`。行内代码和代码块使用组件库自己的[代码](/components/code)类。
+
+```js name=main.js
+const editor = new Editor({
+  element: root.querySelector('[data-editor]'),
+  content: notes,
+  extensions: [
+    StarterKit.configure({
+      heading: { levels: [2, 3] },
+      paragraph: { HTMLAttributes: { class: 'editor-paragraph' } },
+      bulletList: { HTMLAttributes: { class: 'editor-list' } },
+      orderedList: { HTMLAttributes: { class: 'editor-list editor-list-numbered' } },
+      listItem: { HTMLAttributes: { class: 'editor-item' } },
+      blockquote: { HTMLAttributes: { class: 'editor-quote' } },
+      code: { HTMLAttributes: { class: 'code' } },
+      codeBlock: { HTMLAttributes: { class: 'code-block' } },
+      horizontalRule: { HTMLAttributes: { class: 'editor-rule' } },
+      link: { openOnClick: false, autolink: true, defaultProtocol: 'https', HTMLAttributes: { class: 'editor-link' } },
+    }),
+    headingClass,
+  ],
+  editorProps: {
+    attributes: { class: 'editor-document', role: 'textbox', 'aria-multiline': 'true', 'aria-labelledby': 'rich-text-label', 'aria-describedby': 'rich-text-hint rich-text-error' },
+  },
+})
+```
+
+标题不会为其级别渲染任何属性，因此用一个小扩展（示例中的 `headingClass`）为每个级别加上对应的类：二级标题用 `editor-heading`，三级标题用 `editor-subheading`。文档高度从 `--editor-rows` 行（默认 6 行）开始增长，到 `--editor-max-rows` 后开始滚动。
+
+## 连接工具栏 \{#toolbar\}
+
+这里的工具栏是带有 `editor-toolbar` 的[工具栏](/components/toolbar)，平铺在凹槽顶部。它的行为脚本让整个工具栏只占一个 Tab 停靠点，用方向键在其中移动，并通过 `aria-pressed` 表示按钮按下；每个按钮做什么、显示什么则由页面决定。
+
+- **按下按钮执行命令并交还焦点。** `editor.chain().focus().toggleBold().run()`：读者回到文档中原先输入的位置，选区由 TipTap 保留。
+- **选区决定哪些按钮处于按下状态。** 每次 transaction 时，把各按钮的 `aria-pressed` 设为 `editor.isActive(...)`，因此只要光标位于粗体文字中，“粗体”按钮就显示为按下，文本样式下拉框也会显示光标所在的块类型。
+- **无法执行的操作会被禁用。** `editor.can()` 会试运行命令：没有可撤销的内容时禁用“撤销”；编辑器为只读或禁用状态时，禁用所有控件。
+- **链接用小表单而不是 prompt 添加。** 链接按钮打开一个带 URL 输入框的[弹出层](/components/popover)。输入框自身的校验会检查地址；“应用”把链接加到选区上，没有选区时以文本形式插入，“移除”则去掉链接。TipTap 会拒绝 `javascript:` 之类的地址，链接都带有 `rel="noopener noreferrer nofollow"`。
+
+为每个图标按钮命名，并用 `aria-keyshortcuts` 写上 TipTap 已处理的快捷键，让屏幕阅读器能同时读出两者。
+
+## 状态 \{#states\}
+
+| 状态 | 标记 | 示例如何设置 |
+| --- | --- | --- |
+| 聚焦 | `editor-document` 上的 `:focus` | 文档获得焦点时由浏览器设置；外框浮起，并显示输入字段的光晕 |
+| 无效 | `editor-document` 上的 `aria-invalid="true"` | 内容留空时：外框显示危险色边框，并显示输入字段的 `field-error`，直到读者再次输入 |
+| 只读 | `editor-document` 上的 `aria-readonly="true"` | `editor.setEditable(false)` 加上该属性；文字仍可阅读和复制 |
+| 禁用 | `editor` 上的 `aria-disabled="true"` | `editor.setEditable(false)`、该属性，并禁用所有控件 |
+
+这些状态是 TipTap 在其元素上维护的属性：请通过 `editor.setOptions({ editorProps: { attributes } })` 设置，切勿直接写在元素上，否则下一次渲染会将其移除。
+
+## 值 \{#value\}
+
+TipTap 的文档是数据。应用保存的是 `editor.getJSON()`，用 `editor.commands.setContent(json)` 载入已保存的文档，**Load other notes** 和 **Reset** 就是这样做的。示例用 `textContent` 输出 JSON：读者输入的任何内容都不会作为标记插入页面。如果需要在编辑器之外以 HTML 显示内容，请在服务器上根据 JSON 渲染，并经过清理器处理。
+
+监听 `update` 来保存或校验，监听 `transaction` 来更新工具栏；两者都不会修改文档。页面不在文档上添加自己的按键处理：输入日文、中文或韩文的输入法在组字时会用到 Enter 和方向键，而 TipTap 知道何时正在组字。请在 `blur` 时校验，而不是在按键时。
+
+## 销毁 \{#destroy\}
+
+编辑器持有监听器、视图及其历史记录。`mount()` 返回一个函数，它会卸载工具栏行为脚本、移除页面的监听器并调用 `editor.destroy()`；在输入字段离开页面时调用它，就像框架在组件卸载时所做的那样。
+
+## 未涵盖的内容 \{#leaves-out\}
+
+- **跟随选区的工具栏。** 浮在选中文字上方的工具栏需要追踪选区的绘制位置，这由 TipTap 的 `BubbleMenu` 扩展及其定位负责；本指南使用固定工具栏。
+- **提及、表格、图片和协同编辑。** 每一项都是一个 TipTap 扩展，各有自己的界面。
+- **Markdown 导入与导出。** 请在服务器上转换 JSON。

@@ -1,13 +1,14 @@
 ---
 title: "캐러셀"
-description: "CSS만으로 구현한 스크롤 및 스냅 방식의 가로 슬라이드 목록입니다."
+description: "CSS만으로 구현한 스크롤 및 스냅 방식의 가로 또는 세로 슬라이드 목록입니다."
 ---
 
 import ComponentPreview from '~/site/components/ComponentPreview.astro'
 import ComponentSource from '~/site/components/ComponentSource.astro'
 import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
-캐러셀은 가로로 나열된 슬라이드를 스크롤하고 스냅하는 컴포넌트입니다. CSS만으로 구현하며, 트랙은 스크롤 스냅이 적용된 스크롤 컨테이너입니다. 따라서 터치, 트랙패드, 키보드, 보조 기술로 일반 스크롤 영역과 같은 방식으로 조작할 수 있습니다. 브라우저가 지원하는 경우 스타일시트는 이전·다음 버튼과 슬라이드별 점을 추가합니다. 브라우저는 이를 포커스할 수 있는 실제 컨트롤로 생성합니다.
+캐러셀은 가로 또는 세로로 나열된 슬라이드를 스크롤하고 스냅하는 컴포넌트입니다. CSS만으로 구현하며, 트랙은 스크롤 스냅이 적용된 스크롤 컨테이너입니다. 따라서 터치, 트랙패드, 키보드, 보조 기술로 일반 스크롤 영역과 같은 방식으로 조작할 수 있습니다. 브라우저가 지원하는 경우 스타일시트는 이전·다음 버튼과 슬라이드별 점을 추가합니다. 브라우저는 이를 포커스할 수 있는 실제 컨트롤로 생성합니다.
 
 <ComponentPreview name="default" height={200} narrowHeight={224} title="캐러셀" bodyClass="p-lg" html={`<div class="carousel" role="region" aria-label="Featured projects" tabindex="0">
   <article class="carousel-slide card card-flat">
@@ -193,13 +194,91 @@ import ContractTable from '~/site/components/ContractTable.astro'
   </div>
 </div>`} />
 
+## 세로 방향 \{#vertical\}
+
+`carousel-vertical`은 가로 행을 높이가 `--carousel-viewport`(기본값 20rem)인 세로 열로 바꾸며, 위아래로 스크롤하고 스냅합니다. 슬라이드는 높이의 `--carousel-slide`만큼을 차지합니다. 버튼은 위쪽과 아래쪽 가장자리의 가운데에 놓이고, 점은 끝 가장자리 옆에 세로로 나열됩니다.
+
+<ComponentPreview name="vertical" height={296} title="세로 방향" bodyClass="p-lg" html={`<div class="carousel carousel-vertical w-full max-w(360)" style="--carousel-viewport: 15rem; --carousel-slide: 50%" role="region" aria-label="This week" tabindex="0">
+  <article class="carousel-slide card card-flat">
+    <header class="card-header">
+      <h3 class="card-title">Monday</h3>
+      <p class="card-description">Planning, then the design review.</p>
+    </header>
+  </article>
+  <article class="carousel-slide card card-flat">
+    <header class="card-header">
+      <h3 class="card-title">Tuesday</h3>
+      <p class="card-description">Pairing on the schedule view.</p>
+    </header>
+  </article>
+  <article class="carousel-slide card card-flat">
+    <header class="card-header">
+      <h3 class="card-title">Wednesday</h3>
+      <p class="card-description">Release notes and the changelog.</p>
+    </header>
+  </article>
+</div>`} />
+
+## 표시 중인 슬라이드 읽기와 설정 \{#view\}
+
+어떤 슬라이드가 표시되어 있는지 알아야 하거나 특정 슬라이드를 보여 주어야 하는 페이지에서는 트랙을 `carousel-view`에 넣고 이전·다음 버튼과 점 행을 직접 작성합니다. 뷰 안에서는 생성된 컨트롤이 물러나므로 버튼은 한 세트만 남습니다. 이 컨트롤은 [`carousel` 동작](/guide/behaviors)이 제어합니다.
+
+- `IntersectionObserver`로 가장 많이 보이는 슬라이드를 추적하며, 두 슬라이드가 똑같이 보이면 순서상 앞의 슬라이드를 택합니다. 스크롤이 멈춘 뒤, 즉 `scrollend` 시점에, 또는 `scrollend`가 없는 브라우저에서는 잠시 멈춘 뒤에 그 슬라이드를 현재 슬라이드로 지정합니다.
+- 이전, 다음 버튼과 점은 플랫폼에 해당 슬라이드를 자체 스냅 정렬 위치로 스크롤해 달라고 요청하며, 동작 줄이기 설정에서는 즉시 이동합니다. 동작이 위치를 직접 설정하지는 않습니다.
+- 현재 슬라이드의 점에는 `aria-current="true"`가 지정되고, 양 끝에서는 이전·다음 버튼이 비활성화됩니다. 여러 슬라이드가 함께 보일 수 있지만 현재 슬라이드는 하나이며, 다른 슬라이드는 숨겨지지 않습니다.
+- 각 슬라이드는 `data-value` 또는 `id`로 식별하므로, 앞에 슬라이드가 추가되어도 현재 슬라이드는 그대로 유지됩니다. 독자가 변경하면 `input`과 `change` 이벤트가 발행됩니다. 함수가 반환하는 객체의 `value`는 읽고 설정할 수 있으며, 값을 설정할 때는 이벤트가 발행되지 않습니다.
+
+<ComponentPreview name="view" height={232} narrowHeight={256} title="표시 중인 슬라이드 읽기와 설정" bodyClass="p-lg" behaviors html={`<div class="carousel-view w-full">
+  <div class="carousel" role="region" aria-label="Releases" tabindex="0">
+  <article class="carousel-slide card card-flat" id="release-atlas" data-value="atlas">
+    <header class="card-header">
+      <h3 class="card-title">Atlas</h3>
+      <p class="card-description">A map of every deployment, live.</p>
+    </header>
+  </article>
+  <article class="carousel-slide card card-flat" id="release-borealis" data-value="borealis">
+    <header class="card-header">
+      <h3 class="card-title">Borealis</h3>
+      <p class="card-description">Edge functions close to the reader.</p>
+    </header>
+  </article>
+  <article class="carousel-slide card card-flat" id="release-cirrus" data-value="cirrus">
+    <header class="card-header">
+      <h3 class="card-title">Cirrus</h3>
+      <p class="card-description">Storage that follows the project.</p>
+    </header>
+  </article>
+  </div>
+  <button type="button" class="btn btn-square btn-sm btn-pill carousel-previous" aria-label="Previous slide"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button>
+  <button type="button" class="btn btn-square btn-sm btn-pill carousel-next" aria-label="Next slide"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
+  <div class="carousel-dots">
+    <button type="button" class="carousel-dot" aria-controls="release-atlas" aria-label="Slide 1 of 3"></button>
+    <button type="button" class="carousel-dot" aria-controls="release-borealis" aria-label="Slide 2 of 3"></button>
+    <button type="button" class="carousel-dot" aria-controls="release-cirrus" aria-label="Slide 3 of 3"></button>
+  </div>
+</div>`} />
+
+```js name=app.js
+import { carousel } from '@master/ui/behaviors/carousel.js'
+
+const releases = carousel(document.querySelector('.carousel-view'), { value: 'borealis' })
+releases.value // 'borealis'
+```
+
 ## 접근성 \{#accessibility\}
 
 - 방향키로 트랙을 스크롤할 수 있도록 트랙에 `role="region"`과 레이블, `tabindex="0"`을 지정하세요.
-- 스타일시트는 생성된 버튼에 각각 "이전 슬라이드"와 "다음 슬라이드"라는 이름을 지정합니다. 각 점의 이름은 해당 슬라이드 콘텐츠의 이름을 따릅니다.
+- 스타일시트는 생성된 버튼에 각각 "Previous slide"와 "Next slide"라는 이름을 지정합니다. 각 점의 이름은 해당 슬라이드 콘텐츠의 이름을 따릅니다.
 - 캐러셀은 자동으로 이동하지 않습니다. 타이머에 따라 콘텐츠가 넘어가도록 구현하려면 스크립트로 일시정지 컨트롤을 제공해야 합니다.
 - 동작 줄이기 설정이 켜져 있으면 트랙은 부드럽게 스크롤하는 대신 슬라이드 사이를 즉시 이동합니다.
 - 강제 색상 모드에서는 버튼에 버튼 색상의 윤곽선이 표시되고, 점에는 시스템 색상이 유지됩니다. 현재 표시 중인 슬라이드의 점에는 시스템 강조 색상이 적용됩니다.
+- `carousel-view`에서는 버튼과 점의 이름을 페이지 언어로 지정하세요. 점의 이름은 전체 슬라이드 중 몇 번째 슬라이드로 이동하는지 알려 주어야 합니다.
+
+## React, Svelte 및 Vue \{#frameworks\}
+
+`carousel` 컴포넌트는 항목 목록으로 슬라이드를 작성하고 그 옆에 뷰의 버튼과 점을 작성합니다. 각 항목의 `value`는 항목 목록이 바뀌어도 그대로 유지되어야 합니다. 컴포넌트의 값은 현재 슬라이드입니다. `npx master-ui add carousel`로 프로젝트에 복사하세요. 컴포넌트의 구성과 사용법은 [React, Svelte 및 Vue](/guide/frameworks)에서 확인할 수 있습니다. 현재 슬라이드를 읽을 필요가 없는 캐러셀이라면 컴포넌트가 필요 없으며 위의 마크업으로 충분합니다.
+
+<FrameworkSource name="carousel" />
 
 ## 클래스 \{#classes\}
 

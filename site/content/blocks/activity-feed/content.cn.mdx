@@ -1,0 +1,42 @@
+---
+title: "动态记录"
+description: "按时间分组列出发生了什么、由谁操作，以及涉及哪些对象。"
+---
+
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import PagePreview from '~/site/components/PagePreview.astro'
+
+动态记录列出工作区中发生的事以及操作者，例如部署、评论和文件。每天是一条[时间线](/components/timeline)，最新的排在最前；标记点换成操作者本人，涉及的对象写在句子里。顶部的切换控件可以只显示某一类事件。
+
+<PagePreview name="default" title="动态记录" example="activity-feed" touchHeight={{ desktop: 1028, tablet: 1028, phone: 1290 }} caption="选择一类事件来筛选动态，或展开某次部署的详情。" />
+
+区块提供可直接复制的标记，沿用页面的文字颜色和字号。预览在 body 上设置 `fg-text-body text-sm`。每个区块都是尺寸容器，会根据自身宽度重排，无论放在宽页面、侧边栏大小的空间还是对话框中。
+
+## 区块组成 \{#anatomy\}
+
+- **一块[面板](/components/surface#sheet)**，标题区和各天之间用细线 `bt(1) bt-solid b-line-hair` 分隔。
+- **每天由一个标题和一条时间线组成。** 依次为“今天”“昨天”，之后是具体日期，每天都是一个 `<h3>` 加上一个 `<ol class="timeline">`，最新的排在最前。标题区的数量表示当前显示的事件数，与下方各天的事件总数一致。
+- **操作者就是标记点。** `timeline-marker` 中放一个[头像](/components/avatar)代替圆点，尺寸与标记点的 24px 相同，连线把一位操作者接到下一位。名字已经写在句子里，因此照片的 `alt` 留空，姓名缩写设置 `aria-hidden`。
+- **涉及的对象是链接。** 标题中的部署、预览或 issue 是指向该对象的[链接](/components/link)；文件则是读者可以打开的[文件](/components/file)。
+- **状态用色调表示，项目用分类色表示。** “Ready”和“Failed”是带圆点和文字的状态[徽标](/components/badge)；事件所属的项目用 `badge-category` 显示项目名称，并使用该项目在其他地方都采用的[分类色](/components/category)。
+- **最新事件为当前项。** 在其所在行设置 `aria-current="true"`，标记点为圆点时会改用墨色。
+- **详情默认收起。** 部署的构建过程和失败原因放在[展开区域](/components/expand)中：先显示前几行，原生 `<details>` 展开其余内容，页内查找和键盘操作照常可用。
+- **切换控件是[分段控件](/components/segmented)。** 它把动态限定为部署、评论或文件；某天筛选后没有事件时，整天从列表中移除。
+
+## 哪些操作需要脚本 \{#script\}
+
+动态记录是由服务器输出的标记，没有脚本也能完整阅读。`main.js` 只负责筛选：在各列表中保留所选类别的事件，移除筛选后没有事件的日期，并更新数量；数量是一个 polite 实时区域。如果服务器对动态进行分页，用查询参数响应同一个切换控件即可。
+
+## 无障碍 \{#accessibility\}
+
+- 面板是一个以其标题命名的 `<section>`；每天也是一个以自身标题命名的 `<section>`。
+- 每条事件都是一句完整的话，说明谁对什么做了什么，不看头像、徽标或连线也能读懂。
+- 状态徽标用文字写明状态；分类徽标写出项目名称，颜色只是重复这一信息。
+- 时间使用 `<time datetime>` 元素，读者能获得确切时刻，程序也能读取。
+- 切换控件是名为“Show”的单选按钮组；选择后会播报新的数量。
+
+## 相关内容 \{#related\}
+
+<ComponentLinks slugs={['surface', 'heading', 'segmented', 'timeline', 'avatar', 'link', 'badge', 'category', 'file', 'expand']} />
+
+<ComponentLinks kind="blocks" slugs={['page-header', 'table-view', 'messaging']} />

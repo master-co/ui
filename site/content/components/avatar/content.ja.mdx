@@ -5,6 +5,7 @@ description: "人物やチームを写真やイニシャルで表し、単独で
 import ComponentPreview from '~/site/components/ComponentPreview.astro'
 import ComponentSource from '~/site/components/ComponentSource.astro'
 import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
 アバターは人物やチームを表します。写真があれば写真を、なければイニシャルを、同じ大きさの円に表示します。縁の内側に淡い線を入れ、明るい写真でも明るい背景との境界が見えるようにします。
 
@@ -49,6 +50,50 @@ import ContractTable from '~/site/components/ContractTable.astro'
   <span class="avatar-status bg-warning"></span>
 </span>`} />
 
+## バッジ \{#badge\}
+
+`avatar-badge` は、ステータスドットと同じ角に、在席しているかどうかではなく、その人が何者かを示す画像を置きます。認証済みであること、勤務先の会社、プロジェクトが属するチームなどです。大きさはアバターの 5 分の 2 で、中心は 45° の位置で円の縁に重なり、ステータスドットと同じように背後の面の色のリングで縁取られます。正方形のアバターでは、バッジも角丸の正方形になります。中にアイコンを入れるか、バッジ自体を画像にし、その意味をアバターの名前に含めます。
+
+<ComponentPreview name="badge" height={112} title="バッジ" html={`<span class="avatar avatar-lg" role="img" aria-label="Ada Lovelace, verified">
+  <img class="avatar-image" src="/demo/portrait-1.svg" alt="">
+  <span class="avatar-badge"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 12.5 4 4 8-9"/></svg></span>
+</span>
+<span class="avatar avatar-xl" role="img" aria-label="Grace Hopper, verified">
+  <img class="avatar-image" src="/demo/portrait-3.svg" alt="">
+  <span class="avatar-badge"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 12.5 4 4 8-9"/></svg></span>
+</span>
+<span class="avatar avatar-xl avatar-square" role="img" aria-label="Moonstone team, at Master">
+  MT
+  <img class="avatar-badge" src="/demo/moonstone.svg" alt="">
+</span>`} />
+
+1 つの角に置けるマークは 1 つです。ステータスドット、認証バッジ、会社のロゴを同じ角に置くと互いに隠れてしまいます。読み手に必要なものを 1 つ選び、残りは言葉で伝えます。
+
+## 写真を表示できないとき \{#fallback\}
+
+サーバーから読み込む写真は、遅れたり見つからなかったりすることがあります。写真の下に `avatar-fallback` を置き、イニシャルやアイコンを入れます。2 つは同じセルを共有するため、ボックスの大きさは変わりません。[`avatar` ビヘイビア](/guide/behaviors)は写真の状態を追跡します。読み込み中はフォールバックが見え、読み込みが完了するとフォールバックを隠します。読み込みに失敗した場合や `src` がない場合は、逆に写真を隠すため、壊れた画像は表示されません。新しい `src` を設定すると最初からやり直し、アバターがもう表示していない写真の読み込み結果が後から届いても、何も変わりません。
+
+<ComponentPreview name="fallback" height={96} title="写真を表示できないとき" behaviors html={`<span class="avatar avatar-lg" role="img" aria-label="Ada Lovelace">
+  <img class="avatar-image" src="/demo/portrait-1.svg" alt="">
+  <span class="avatar-fallback" aria-hidden="true">AL</span>
+</span>
+<span class="avatar avatar-lg" role="img" aria-label="Alan Turing">
+  <img class="avatar-image" src="data:image/png;base64,AAAA" alt="">
+  <span class="avatar-fallback" aria-hidden="true">AT</span>
+</span>
+<span class="avatar avatar-lg" role="img" aria-label="A guest">
+  <img class="avatar-image" alt="">
+  <span class="avatar-fallback" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12a4 4 0 1 0 0-8a4 4 0 0 0 0 8z"/><path d="M5 20a7 7 0 0 1 14 0"/></svg></span>
+</span>`} />
+
+アバターの名前は、ルートに `role="img"` と `aria-label` で 1 回だけ付けます。写真の `alt` は空にし、フォールバックには `aria-hidden` を付けて、名前が 2 回読み上げられないようにします。スクリプトがない場合、写真が描画されるまではフォールバックが見え、読み込みに失敗した写真はブラウザーが描く壊れた画像として表示されます。
+
+```js name=app.js
+import { avatar } from '@master/ui/behaviors/avatar.js'
+
+for (const root of document.querySelectorAll('.avatar')) avatar(root)
+```
+
 ## 重ね表示 \{#stack\}
 
 `avatar-group` は、アバターをそれぞれのサイズの 4 分の 1 ずつ重ねます。後にあるアバターほど手前に描画され、背後の面と同じ色の 2px のリングで隣のアバターと区切られます。書字方向が左から右でも右から左でも、並びはマークアップの順序に従います。表示しきれない人数は最後のアバターに示し、グループ全体に 1 つの名前を付けます。
@@ -77,6 +122,13 @@ import ContractTable from '~/site/components/ContractTable.astro'
 - 写真には、人物の名前を `alt` で指定します。イニシャルだけでは人物名が伝わらないため、アバターに `role="img"` を指定し、`aria-label` に人物名を設定します。
 - アバターの横に名前を表示する場合、アバターは装飾として扱い、`alt=""` または `aria-hidden="true"` を使います。
 - 重ね表示では、コンテナーにグループの名前を 1 つ付け、各画像の代替テキストは空にします。これで同じ名前の二重読み上げを防げます。
+- バッジやステータスドットは単独では読み上げられません。認証済み、離席中、会社名などはアバターの名前に含めます。
+
+## React、Svelte、Vue \{#frameworks\}
+
+`avatar` コンポーネントは `src`、`alt`、`initials` を受け取り、写真をフォールバックの上に重ねて描画し、ビヘイビアを適用します。角のマークは子要素として渡します。`npx master-ui add avatar` でプロジェクトにコピーできます。構成と使い方は [React、Svelte、Vue](/guide/frameworks) を参照してください。読み込みに失敗することのない写真なら、コンポーネントは不要で、上記のマークアップだけで十分です。
+
+<FrameworkSource name="avatar" />
 
 ## クラス \{#classes\}
 

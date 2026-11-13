@@ -1,0 +1,42 @@
+---
+title: "訊息對話"
+description: "一段對話：分組的訊息、附件、送達狀態與訊息編輯器。"
+---
+
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import PagePreview from '~/site/components/PagePreview.astro'
+
+訊息對話區塊呈現一段對話：參與的成員、依先後順序排列的每一則發言，以及用來撰寫下一則訊息的[訊息編輯器](/components/composer)。每則發言都是一個[訊息](/components/message)；檔案、圖片、語音訊息和表情回應也都排在同樣的列中。
+
+<PagePreview name="default" title="訊息對話" example="messaging" touchHeight={{ desktop: 644, tablet: 644, phone: 665 }} caption="撰寫訊息後按 Enter 送出、附加檔案、播放語音訊息，或加上表情回應。" />
+
+區塊提供可直接複製的標記，沿用頁面的文字顏色和字級。預覽在 body 上設定 `fg-text-body text-sm`。每個區塊都是尺寸容器，無論放在寬大的頁面、側邊欄大小的空間，還是對話框裡，都會依自身寬度重新排列。
+
+## 組成 \{#anatomy\}
+
+- **一個[面板](/components/surface#sheet)**：標頭列出聊天室中的成員，對話串放在自己的[捲動區域](/components/scroll-area)中，訊息編輯器則位於底部，因此無論對話串多長，訊息編輯器都會留在原處。
+- **對話串是一個 `<ol>`。** 順序本身就是內容。帶有標籤的[分隔線](/components/divider)會標示日期。
+- **同一個人的連續發言會分組。** 它們的訊息泡泡相距 4px，只有最後一則會顯示頭像、姓名和時間；其他發言則以 `invisible` 頭像保留頭像的位置，讓訊息泡泡對齊。每則發言仍會在視覺上隱藏的前綴中寫出作者和時間，因此即使沒有視覺呈現，分組讀起來也一樣。
+- **附件是獨立的一則發言。** [檔案](/components/file)或[圖文](/components/figure)會放在訊息泡泡的位置：收到的發言放在開頭側，送出的發言放在結尾側。
+- **語音訊息是訊息泡泡中的[波形](/components/waveform)**，附有播放按鈕，並可在波形長條上拖曳定位。在預覽中，以計時器代替音訊。
+- **送達狀態以文字表達。** 送出的發言會在 `message-meta` 中寫出「已讀」或「已送出」及其時間；沒有任何資訊只靠勾號的顏色表達。
+- **[表情回應](/components/reaction)跟在它所回應的發言之後**，位於開頭側或結尾側，是帶有名稱和計數的核取方塊。
+- **訊息編輯器按 Enter 送出**，以 Shift+Enter 換行；輸入法組字期間，Enter 則交給輸入法處理。檔案會以可撤回的[膠囊標籤](/components/chip)在欄位上方等候。在有內容可送出之前，「傳送」按鈕都會停用。
+
+## 哪些功能需要腳本 \{#script\}
+
+`main.js` 會將撰寫的內容和附加的檔案，以讀者自己的發言加到對話串的最後；它以純文字設定內容，從不當成標記，讓最新的發言保持在可見範圍內，並將焦點交回欄位。傳送、排序、已讀回條，以及讓對話串與其他人保持同步，則由應用程式負責：在這裡加入的發言會一直顯示「已送出」。沒有腳本時，訊息編輯器是一個將內容提交到伺服器的表單。
+
+## 無障礙 \{#accessibility\}
+
+- 面板使用 `<section>`，以聊天室的名稱命名；對話串是一個有自己名稱的區域，並位於 Tab 順序中，因此可以用按鍵捲動。
+- 對話串的清單設定 `aria-live="polite"` 以通知新增的內容，因此新的發言會被朗讀出來，而不會移動焦點。
+- 每則發言的作者和時間都包含在其無障礙文字中，無論是否繪製頭像和中繼資訊；因此可見的中繼資訊會加上 `aria-hidden`，以免被讀出兩次。
+- 圖片的 `alt` 說明圖片內容；語音訊息的按鈕命名為「播放」和「定位」，定位控制項會以文字說明時間。
+- 附加按鈕有名稱；它的檔案輸入欄位不在 Tab 順序中，因為由按鈕負責開啟。
+
+## 相關內容 \{#related\}
+
+<ComponentLinks slugs={['surface', 'heading', 'avatar', 'scroll-area', 'divider', 'message', 'file', 'figure', 'waveform', 'reaction', 'composer', 'chip', 'button']} />
+
+<ComponentLinks kind="blocks" slugs={['activity-feed', 'sidebar']} />

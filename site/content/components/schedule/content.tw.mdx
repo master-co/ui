@@ -1,13 +1,16 @@
 ---
 title: "日程表"
-description: "沿垂直時間軸呈現一天的時段，每個事件的高度對應其持續時間。"
+description: "將事件依時間排列：單日或一週以垂直時間軸呈現各時段，一個月以各週的事件列呈現，或以議程清單呈現。"
 ---
 
 import ComponentPreview from '~/site/components/ComponentPreview.astro'
 import ComponentSource from '~/site/components/ComponentSource.astro'
 import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
 日程表沿著垂直時間軸排列一天的時段，每個事件的高度對應其持續時間。可用於行事曆的單日檢視、研討會各會議室的議程，或診所的預約。事件以有序清單呈現，每項都用文字標示標題和時間。樣式表依小時刻度配置事件，每個整點都有一條細線和一個標籤。時間重疊的事件會並排顯示。整個版面配置不使用腳本，也不量測任何尺寸。
+
+持續一整天的事件會放在時段上方的橫帶中。月檢視將每天的事件排成多列，議程則依日期列出事件。[日程檢視](#schedule-view)是讀者實際操作的日程表，可依日、週、月或議程切換，由 `schedule` 行為驅動。
 
 <ComponentPreview name="default" height={400} title="日程表" bodyClass="p-lg" html={`<div class="card max-w(480) mx-auto">
   <div class="schedule schedule-now" style="--schedule-from: 9; --schedule-to: 15; --now: 12.45">
@@ -97,9 +100,126 @@ import ContractTable from '~/site/components/ContractTable.astro'
 </li>
 ```
 
+## 全天事件 \{#whole-days\}
+
+持續一天以上的事件放在 `schedule-allday` 中，這條橫帶位於標題下方、時段上方，並在時間軸那一欄顯示它的名稱，例如「全天」。其中每個事件都是 `schedule-event-lane`：從第 `--column` 天開始，橫跨 `--span` 天，位於第 `--lane` 列。橫帶橫跨所有日期，因此每個 `schedule-day` 都要以 `--column` 標明自己是第幾欄，日程表則以 `--schedule-days` 說明共有幾欄。
+
+<ComponentPreview name="all-day" height={344} title="全天事件" bodyClass="p-lg" html={`<div class="card max-w(560) mx-auto">
+  <div class="card-body">
+    <div class="schedule" style="--schedule-from: 9; --schedule-to: 13; --schedule-days: 3">
+      <ol class="schedule-rail" aria-hidden="true"><li>9 AM</li><li>10 AM</li><li>11 AM</li><li>12 PM</li><li>1 PM</li></ol>
+      <div class="schedule-day" style="--column: 1"><h3 class="schedule-heading">Wed 12</h3><ol class="schedule-events" aria-label="Wednesday 12 November"><li class="schedule-event" style="--start: 9.5; --end: 10.5"><p class="schedule-title">Planning</p><p class="schedule-time">9:30 – 10:30</p></li></ol></div>
+      <div class="schedule-day" style="--column: 2" aria-current="date"><h3 class="schedule-heading">Thu 13</h3><ol class="schedule-events" aria-label="Thursday 13 November"><li class="schedule-event" style="--start: 11; --end: 12"><p class="schedule-title">Design review</p><p class="schedule-time">11:00 – 12:00</p></li></ol></div>
+      <div class="schedule-day" style="--column: 3"><h3 class="schedule-heading">Fri 14</h3><ol class="schedule-events" aria-label="Friday 14 November"></ol></div>
+      <div class="schedule-allday" role="group" aria-label="All day">
+        <span class="schedule-allday-label" aria-hidden="true">All day</span>
+        <p class="schedule-event schedule-event-lane" style="--column: 2; --span: 2"><span class="schedule-title">Offsite in Lisbon</span></p>
+        <p class="schedule-event schedule-event-lane schedule-event-continued" style="--column: 1; --lane: 1"><span class="schedule-title">On call</span></p>
+      </div>
+    </div>
+  </div>
+</div>`} />
+
+在顯示範圍之前就已開始的事件片段使用 `schedule-event-continued`，延續到顯示範圍之後的片段則使用 `schedule-event-continues`：在橫列中，它的起點或終點會變成直角並延伸到邊緣；在時段中（跨越午夜時），則是頂端或底端。不是事件起點的片段不會顯示色條。
+
+## 分類色 \{#category\}
+
+`schedule-event-category` 會依事件本身或其外層所設定的[分類色](/components/category)為事件上色：面板使用分類的底面色，色條使用分類的標記色，文字使用分類的文字色。包含多個團隊或專案的行事曆可藉此區分它們；事件的內容仍由標題說明。
+
+<ComponentPreview name="category" height={240} title="分類色" bodyClass="p-lg" html={`<div class="card max-w(480) mx-auto">
+  <div class="card-body">
+    <div class="schedule" style="--schedule-from: 9; --schedule-to: 12">
+      <ol class="schedule-rail" aria-hidden="true"><li>9 AM</li><li>10 AM</li><li>11 AM</li><li>12 PM</li></ol>
+      <ol class="schedule-events" aria-label="Thursday 13 November">
+        <li class="schedule-event schedule-event-category category-violet" style="--start: 9; --end: 10; --lanes: 2"><p class="schedule-title">User interviews</p><p class="schedule-time">9:00 – 10:00</p></li>
+        <li class="schedule-event schedule-event-category category-teal" style="--start: 9.5; --end: 11; --lane: 1; --lanes: 2"><p class="schedule-title">Token audit</p><p class="schedule-time">9:30 – 11:00</p></li>
+        <li class="schedule-event schedule-event-category category-orange" style="--start: 11; --end: 11.75"><p class="schedule-title">Launch check-in</p><p class="schedule-time">11:00 – 11:45</p></li>
+      </ol>
+    </div>
+  </div>
+</div>`} />
+
+## 月檢視 \{#month\}
+
+`schedule-month` 將一個月呈現為數週、每週七天。每個 `schedule-week` 依序寫出某一天、從那天開始的事件，以及那天的「更多」按鈕，因此螢幕閱讀器會依日期順序讀到它們；樣式表則將它們放到各自的欄與列。日期數字 `schedule-date-number` 是一個可開啟該日的圓形按鈕，今天會填上墨色。每天顯示 `--lanes` 個事件（預設三個），其餘事件收進 `schedule-more` 按鈕，按下後會開啟列出這些事件的[彈出面板](/components/popover)。月檢視中的短事件使用不帶面板的簡潔樣式 `schedule-event-plain`：只有圓點、時間和標題。
+
+可用空間窄於 36rem 時，事件列會退讓：每天只在日期數字下方為每個事件顯示一個圓點（最多三個），點按日期數字即可開啟當天。不會把文字硬塞進七個狹窄的欄位中。
+
+`schedule-agenda` 依日期列出相同的事件：每列開頭是日期，旁邊是當天事件的 `schedule-list`；空間較窄時，事件會改放在日期下方。它適合手機、列印，以及偏好閱讀文字而非瀏覽圖面的讀者。
+
+月檢視和議程是依事件資料寫出的，因此由行為或框架元件產生，如下方的檢視所示。
+
+## 日程檢視 \{#schedule-view\}
+
+`schedule-view` 在 [`schedule` 行為](/guide/behaviors)所寫出的內容上方放一列控制項標頭：今天、上一個與下一個、期間名稱，以及切換日、週、月和議程的切換器。上一個與下一個依檢視的期間移動，點按日期數字會開啟該日，期間名稱改變時會被朗讀出來。空間較窄時，名稱會獨占一行。
+
+<ComponentPreview name="view" height={640} narrowHeight={600} title="日程檢視" background="plain" bodyClass="content-start p-lg" behaviors html={`<section class="schedule-view" id="team" aria-labelledby="team-title">
+  <div class="schedule-view-header">
+    <button type="button" class="btn btn-sm schedule-view-today">Today</button>
+    <button type="button" class="btn btn-sm btn-square btn-quiet schedule-view-previous" aria-label="Previous"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button>
+    <button type="button" class="btn btn-sm btn-square btn-quiet schedule-view-next" aria-label="Next"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
+    <h2 class="schedule-view-title" id="team-title" aria-live="polite">November 2026</h2>
+    <div class="segmented segmented-sm schedule-view-switch" role="radiogroup" aria-label="View">
+      <label class="segmented-item"><input type="radio" class="segmented-input" name="team-view" value="day">Day</label>
+      <label class="segmented-item"><input type="radio" class="segmented-input" name="team-view" value="week">Week</label>
+      <label class="segmented-item"><input type="radio" class="segmented-input" name="team-view" value="month" checked>Month</label>
+      <label class="segmented-item"><input type="radio" class="segmented-input" name="team-view" value="agenda">Agenda</label>
+    </div>
+  </div>
+  <div class="schedule-view-body"></div>
+</section>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.schedule(document.getElementById('team'), {
+    today: '2026-11-13', locale: 'en-US', weekStart: 1, value: { date: '2026-11-13', view: 'month' },
+    events: [
+      { id: 'review', title: 'Design review', start: '2026-11-03T10:00', end: '2026-11-03T11:30', category: 'violet' },
+      { id: 'offsite', title: 'Offsite', start: '2026-11-07', end: '2026-11-11', allDay: true, category: 'teal' },
+      { id: 'deploy', title: 'Deploy window', start: '2026-11-12T22:00', end: '2026-11-13T02:00', category: 'red' },
+      { id: 'launch', title: 'Launch', start: '2026-11-13', end: '2026-11-14', allDay: true, category: 'orange' },
+      { id: 'standup', title: 'Standup', start: '2026-11-13T09:00', end: '2026-11-13T09:15' },
+      { id: 'lunch', title: 'Team lunch', start: '2026-11-13T12:00', end: '2026-11-13T13:00', category: 'green' },
+      { id: 'call', title: 'Customer call', start: '2026-11-13T14:00', end: '2026-11-13T15:00', category: 'blue' },
+      { id: 'retro', title: 'Retro', start: '2026-11-13T17:00', end: '2026-11-13T17:45' },
+      { id: 'planning', title: 'Planning', start: '2026-11-17T09:30', end: '2026-11-17T11:00', category: 'blue' },
+      { id: 'conference', title: 'Conference', start: '2026-11-19', end: '2026-11-22', allDay: true, category: 'violet' }
+    ]
+  })
+})
+</script>`} caption="以月為單位移動、點按日期數字開啟該日，或切換到週檢視或議程。" />
+
+### 事件 \{#the-events\}
+
+每個事件都有固定不變的 `id`、`title`、`start` 和 `end`。全天事件設定 `allDay: true`，起訖以日期表示（`YYYY-MM-DD`）；其他事件則使用當地時間（`YYYY-MM-DDTHH:mm`）。`end` 不包含在內：只在 13 日的全天事件結束於 14 日，在午夜結束的事件則算在前一天。`category` 指定一組色盤，例如 `blue` 對應 `category-blue`；`href` 會讓事件成為連結，若沒有 `href`，事件會是一個 `value` 為其 id 的按鈕，由頁面監聽。
+
+時間應已換算成日程表顯示時所在的時區，重複事件則應以各次發生的事件傳入：時區和重複規則由應用程式負責處理。日期依曆法計算並固定在正午，因此日光節約時間的切換不會讓全天事件移到前一天。檢視不會編輯、移動或儲存事件；它只負責顯示事件，並告知哪一個事件被按下。
+
+### 行為 \{#behavior\}
+
+```js name=app.js
+import { schedule } from '@master/ui/behaviors/schedule.js'
+
+const team = schedule(document.querySelector('.schedule-view'), { events, today: '2026-11-13' })
+team.value // { date: '2026-11-13', view: 'month' }
+```
+
+| 選項 | 預設值 | |
+| --- | --- | --- |
+| `events` | `[]` | 事件，格式如上 |
+| `value` | 今天所在的月份 | 一開始要顯示的日期與檢視：`{ date, view }`，檢視為 `day`、`week`、`month` 或 `agenda` 之一 |
+| `today` | 瀏覽器的日期 | 今天，格式為 `YYYY-MM-DD`；由伺服器渲染日程表時請提供，讓兩端的日期一致 |
+| `locale` | 頁面的 `lang` | 用於星期與月份名稱的 BCP 47 標籤 |
+| `weekStart` | 依語言區域 | 一週的第一天，0 為星期日，6 為星期六 |
+| `lanes` | `3` | 月檢視中每天顯示的事件數，其餘收進「更多」按鈕 |
+| `from`、`to` | `8`、`18` | 單日或一週至少顯示的時段；若有更早或更晚的事件，範圍會隨之延伸 |
+| `messages` | 英文 | 橫帶的名稱、「更多」按鈕的文字與名稱，以及議程沒有事件時的句子 |
+| `draw` | 無 | 接手寫出標題和內容，供自行輸出這些內容的渲染程式使用 |
+
+讀者的操作會從根元素觸發 `input` 和 `change`；行為傳回的函式帶有可讀寫的 `value`，以程式設定它則不會觸發任何事件。`scheduleLayout(value, options)` 會以資料形式傳回檢視要顯示的內容：各週及每個事件所在的列、各時段及每個事件的位置、橫帶，以及議程的各天。因此伺服器、框架與行為能以相同方式排列相同的事件。
+
 ## 日程表、甘特圖或行事曆 \{#schedule-gantt-or-calendar\}
 
-日程表用來由上往下查看一天中的各個時段。[甘特圖](/components/gantt)用同一條時間刻度呈現計畫中各項工作的起訖時間，每項工作各占一列。[月曆](/components/calendar)用來從整月檢視中選取日期，[時間軸](/components/timeline)則按發生順序呈現各個時間點。
+日程表用來呈現依時間排列的事件：由上往下查看一天中的各個時段，或查看一個月中的各天。[甘特圖](/components/gantt)用同一條時間刻度呈現計畫中各項工作的起訖時間，每項工作各占一列。[月曆](/components/calendar)用來從整月檢視中選取一個日期或一段日期範圍，[時間軸](/components/timeline)則按發生順序呈現各個時間點。
 
 ## 無障礙 \{#accessibility\}
 
@@ -107,6 +227,14 @@ import ContractTable from '~/site/components/ContractTable.astro'
 - 每個事件都用文字寫出標題和時間，並用 `<time datetime>` 標記時間。即使沒有視覺版面，也能讀出「設計審查，10:00 至 11:30」。時間軸只是同一套刻度的視覺呈現，請用 `aria-hidden="true"` 將它從輔助技術中隱藏。
 - 目前事件與今天都以 `aria-current` 標記，螢幕閱讀器會讀出這些狀態。目前時間線由樣式表繪製，請在需要提供目前時間的地方用文字標示。
 - 在強制色彩模式下，每個事件都有外框，目前事件會填入醒目提示色，整點細線與目前時間線則沿用系統色彩。
+- 月檢視不是日期格線：其中的日期是可開啟該日的數字，事件則是連結或按鈕，各自以標題和時間命名。「更多」按鈕會說明它列出幾個事件，以及是哪一天的事件。分類色從來不是區分事件的唯一方式。
+- 以檢視的控制項切換期間時，焦點會留在控制項上；日期數字會隨月份一起被換掉，因此會將焦點交給它所開啟那一天的名稱。
+
+## React、Svelte 和 Vue \{#frameworks\}
+
+`schedule` 元件以 `scheduleLayout()` 寫出期間內容，因此伺服器送出的第一份 HTML 就已包含它；元件也會掛上行為，由行為回應標頭和日期數字的操作。它的值是 `{ date, view }`；按下沒有 `href` 的事件時，會觸發 `onEventClick`（在 Vue 中為 `eventClick`）。在伺服器上渲染時，請提供 `today` 和 `locale`。使用 `npx master-ui add schedule` 將它複製到專案中；[React、Svelte 和 Vue](/guide/frameworks) 說明了這些元件的建構與使用方式。
+
+<FrameworkSource name="schedule" />
 
 ## 類別 \{#classes\}
 

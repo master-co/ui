@@ -6,6 +6,7 @@ description: "以照片或姓名首字母代表个人或团队，可单独显示
 import ComponentPreview from '~/site/components/ComponentPreview.astro'
 import ComponentSource from '~/site/components/ComponentSource.astro'
 import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
 头像代表个人或团队。有照片时显示照片，否则显示姓名首字母，两种情况下圆形头像的尺寸相同。边缘内侧有一圈淡淡的细线，让浅色照片在浅色表面上也能看清轮廓。
 
@@ -50,6 +51,50 @@ import ContractTable from '~/site/components/ContractTable.astro'
   <span class="avatar-status bg-warning"></span>
 </span>`} />
 
+## 角标 \{#badge\}
+
+`avatar-badge` 在同一个角上放一张小图，表明这个人是谁，而不是他是否在线：已认证、所在公司、项目所属团队。角标的尺寸是头像的五分之二，中心落在圆形边缘的 45° 处，并像状态圆点一样，用一圈与底层表面同色的描边将其与头像隔开。在方形头像上，角标也是圆角方形。角标里可以放一个图标，也可以直接把角标本身作为图片，并在头像的名称中说明它的含义。
+
+<ComponentPreview name="badge" height={112} title="角标" html={`<span class="avatar avatar-lg" role="img" aria-label="Ada Lovelace, verified">
+  <img class="avatar-image" src="/demo/portrait-1.svg" alt="">
+  <span class="avatar-badge"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 12.5 4 4 8-9"/></svg></span>
+</span>
+<span class="avatar avatar-xl" role="img" aria-label="Grace Hopper, verified">
+  <img class="avatar-image" src="/demo/portrait-3.svg" alt="">
+  <span class="avatar-badge"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 12.5 4 4 8-9"/></svg></span>
+</span>
+<span class="avatar avatar-xl avatar-square" role="img" aria-label="Moonstone team, at Master">
+  MT
+  <img class="avatar-badge" src="/demo/moonstone.svg" alt="">
+</span>`} />
+
+一个角只放一个标记。状态圆点、认证角标和公司标志放在同一个角上会互相遮挡。只保留读者需要的那一个，其余信息用文字说明。
+
+## 照片加载失败时 \{#fallback\}
+
+来自服务器的照片可能加载缓慢或根本不存在。在照片下方放一个 `avatar-fallback`，写入姓名首字母或图标。两者共用同一个单元格，因此头像尺寸始终不变。[`avatar` 行为脚本](/guide/behaviors)会跟踪照片的加载情况：加载期间显示后备内容；加载完成后隐藏后备内容；加载失败或没有图片地址时，则隐藏照片，因此永远不会显示损坏的图片。设置新的 `src` 会重新开始这一过程；头像已不再显示的照片即使返回结果，也不会产生任何影响。
+
+<ComponentPreview name="fallback" height={96} title="照片加载失败时" behaviors html={`<span class="avatar avatar-lg" role="img" aria-label="Ada Lovelace">
+  <img class="avatar-image" src="/demo/portrait-1.svg" alt="">
+  <span class="avatar-fallback" aria-hidden="true">AL</span>
+</span>
+<span class="avatar avatar-lg" role="img" aria-label="Alan Turing">
+  <img class="avatar-image" src="data:image/png;base64,AAAA" alt="">
+  <span class="avatar-fallback" aria-hidden="true">AT</span>
+</span>
+<span class="avatar avatar-lg" role="img" aria-label="A guest">
+  <img class="avatar-image" alt="">
+  <span class="avatar-fallback" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12a4 4 0 1 0 0-8a4 4 0 0 0 0 8z"/><path d="M5 20a7 7 0 0 1 14 0"/></svg></span>
+</span>`} />
+
+只在根元素上通过 `role="img"` 和 `aria-label` 为头像命名一次。照片的 `alt` 留空，后备内容设置 `aria-hidden`，避免重复朗读名称。没有脚本时，后备内容会一直显示，直到照片绘制出来覆盖它；照片加载失败时，则显示浏览器绘制的损坏图片图标。
+
+```js name=app.js
+import { avatar } from '@master/ui/behaviors/avatar.js'
+
+for (const root of document.querySelectorAll('.avatar')) avatar(root)
+```
+
 ## 堆叠 \{#stack\}
 
 `avatar-group` 让相邻头像重叠各自尺寸的四分之一。每个头像盖在前一个头像上，并用一圈 2px 宽、与底层表面同色的描边将两者隔开。两种书写方向都遵循标记中的顺序。用最后一个头像显示未展示的人数，并为整个群组提供一个名称。
@@ -78,6 +123,13 @@ import ContractTable from '~/site/components/ContractTable.astro'
 - 照片需要通过 `alt` 提供人物姓名。头像仅显示首字母时，请通过 `role="img"` 和 `aria-label` 提供姓名。
 - 头像旁已写明姓名时，将头像作为装饰处理，使用 `alt=""` 或 `aria-hidden="true"`。
 - 头像堆叠时，只在容器上为群组命名，并将各图片的替代文本留空，避免重复朗读姓名。
+- 角标和状态圆点不会被单独朗读：请在头像的名称中写明已认证、离开或所属公司等信息。
+
+## React、Svelte 和 Vue \{#frameworks\}
+
+`avatar` 组件接收 `src`、`alt` 和 `initials`，将照片叠放在后备内容之上，并接入行为脚本；角上的标记作为其子元素传入。用 `npx master-ui add avatar` 将组件复制到项目中。[React、Svelte 和 Vue](/guide/frameworks) 介绍了这些组件的实现和用法。如果照片不会加载失败，就不需要这个组件，上面的标记就足够了。
+
+<FrameworkSource name="avatar" />
 
 ## 类名 \{#classes\}
 

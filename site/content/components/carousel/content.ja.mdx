@@ -1,12 +1,13 @@
 ---
 title: "カルーセル"
-description: "CSSだけで実装した、スクロールとスナップに対応するスライド列。"
+description: "CSS だけで実装した、スクロールしてスナップする横または縦のスライド列。"
 ---
 import ComponentPreview from '~/site/components/ComponentPreview.astro'
 import ComponentSource from '~/site/components/ComponentSource.astro'
 import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
-カルーセルは、スクロールすると所定の位置にスナップするスライド列です。トラックはCSSだけでスクロールスナップ付きのスクロールコンテナーとして実装されているため、タッチ操作、トラックパッド、キーボード、支援技術で通常のスクロールと同じように操作できます。対応ブラウザーでは、スタイルシートが前後の移動ボタンとスライドごとのドットを追加し、ブラウザーが実際にフォーカスできるコントロールとして生成します。
+カルーセルは、スクロールすると所定の位置にスナップする、横または縦のスライド列です。トラックはCSSだけでスクロールスナップ付きのスクロールコンテナーとして実装されているため、タッチ操作、トラックパッド、キーボード、支援技術で通常のスクロールと同じように操作できます。対応ブラウザーでは、スタイルシートが前後の移動ボタンとスライドごとのドットを追加し、ブラウザーが実際にフォーカスできるコントロールとして生成します。
 
 <ComponentPreview name="default" height={200} narrowHeight={224} title="カルーセル" bodyClass="p-lg" html={`<div class="carousel" role="region" aria-label="Featured projects" tabindex="0">
   <article class="carousel-slide card card-flat">
@@ -70,7 +71,7 @@ import ContractTable from '~/site/components/ContractTable.astro'
 
 ## 次のスライドを一部表示 \{#peek\}
 
-`--carousel-slide`をトラックの幅より小さくすると、次のスライドの端が見えます。次のスライドの端が見えるだけで、ドットに目を向ける前に続きがあると分かります。ドットが表示されないブラウザーでは、その端が唯一の手がかりになります。画像には[図](/components/figure)を使います。トラックに`--figure-ratio`を指定すると、読み込み前からすべての画像の縦横比がそろい、読み込み時にスライド列のレイアウトがずれません。
+`--carousel-slide`をトラックの幅より小さくすると、次のスライドの端が見えます。次のスライドの端が見えるだけで、ドットに目を向ける前に続きがあると分かります。ドットが表示されないブラウザーでは、その端が唯一の手がかりになります。画像には[図版](/components/figure)を使います。トラックに`--figure-ratio`を指定すると、読み込み前からすべての画像の縦横比がそろい、読み込み時にスライド列のレイアウトがずれません。
 
 <ComponentPreview name="peek" height={420} mediumHeight={392} narrowHeight={308} title="次のスライドを一部表示" bodyClass="p-lg" html={`<div class="carousel" style="--carousel-slide: 84%; --figure-ratio: 16 / 10" role="region" aria-label="Field notes" tabindex="0">
   <figure class="carousel-slide figure">
@@ -192,6 +193,77 @@ import ContractTable from '~/site/components/ContractTable.astro'
   </div>
 </div>`} />
 
+## 縦方向 \{#vertical\}
+
+`carousel-vertical`は、スライド列を高さ`--carousel-viewport`（既定は20rem）の縦の列に変え、上下方向にスクロールとスナップを行います。各スライドの高さは`--carousel-slide`で指定した割合になります。ボタンは上端と下端の中央に置かれ、ドットは終端側の辺に沿って縦に並びます。
+
+<ComponentPreview name="vertical" height={296} title="縦方向" bodyClass="p-lg" html={`<div class="carousel carousel-vertical w-full max-w(360)" style="--carousel-viewport: 15rem; --carousel-slide: 50%" role="region" aria-label="This week" tabindex="0">
+  <article class="carousel-slide card card-flat">
+    <header class="card-header">
+      <h3 class="card-title">Monday</h3>
+      <p class="card-description">Planning, then the design review.</p>
+    </header>
+  </article>
+  <article class="carousel-slide card card-flat">
+    <header class="card-header">
+      <h3 class="card-title">Tuesday</h3>
+      <p class="card-description">Pairing on the schedule view.</p>
+    </header>
+  </article>
+  <article class="carousel-slide card card-flat">
+    <header class="card-header">
+      <h3 class="card-title">Wednesday</h3>
+      <p class="card-description">Release notes and the changelog.</p>
+    </header>
+  </article>
+</div>`} />
+
+## 表示中のスライドの取得と設定 \{#view\}
+
+どのスライドが表示中かを知る必要があるページや、特定のスライドを表示したいページでは、トラックを`carousel-view`の中に入れ、独自の前後ボタンとドットの列を置きます。ビューの中では生成されるコントロールが表示されなくなるため、ボタンは1組だけになります。これらは[`carousel`ビヘイビア](/guide/behaviors)が制御します。
+
+- `IntersectionObserver`で、どのスライドが最も多く表示されているかを監視します。表示量が同じスライドが2つある場合は、順序が先のスライドを選びます。スクロールが止まった時点、つまり`scrollend`で、またはブラウザーが`scrollend`に対応していない場合は少し間を置いてから、そのスライドを現在のスライドとします。
+- 前後のボタンとドットは、スライドをそれぞれのスナップ位置までスクロールして表示するようプラットフォームに要求します。動きを抑える設定では即座に移動します。ビヘイビアがスクロール位置を直接設定することはありません。
+- 現在のスライドのドットには`aria-current="true"`が付き、先頭と末尾では前後のボタンが無効になります。複数のスライドが表示されていても、現在のスライドは1つだけで、ほかのスライドが隠されることはありません。
+- スライドは`data-value`、なければ`id`で識別されるため、前にスライドが追加されても現在のスライドは変わりません。読み手の操作による変更では`input`と`change`が発行されます。ビヘイビアが返す関数には読み書きできる`value`があり、値を設定してもイベントは発行されません。
+
+<ComponentPreview name="view" height={232} narrowHeight={256} title="表示中のスライドの取得と設定" bodyClass="p-lg" behaviors html={`<div class="carousel-view w-full">
+  <div class="carousel" role="region" aria-label="Releases" tabindex="0">
+  <article class="carousel-slide card card-flat" id="release-atlas" data-value="atlas">
+    <header class="card-header">
+      <h3 class="card-title">Atlas</h3>
+      <p class="card-description">A map of every deployment, live.</p>
+    </header>
+  </article>
+  <article class="carousel-slide card card-flat" id="release-borealis" data-value="borealis">
+    <header class="card-header">
+      <h3 class="card-title">Borealis</h3>
+      <p class="card-description">Edge functions close to the reader.</p>
+    </header>
+  </article>
+  <article class="carousel-slide card card-flat" id="release-cirrus" data-value="cirrus">
+    <header class="card-header">
+      <h3 class="card-title">Cirrus</h3>
+      <p class="card-description">Storage that follows the project.</p>
+    </header>
+  </article>
+  </div>
+  <button type="button" class="btn btn-square btn-sm btn-pill carousel-previous" aria-label="Previous slide"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button>
+  <button type="button" class="btn btn-square btn-sm btn-pill carousel-next" aria-label="Next slide"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
+  <div class="carousel-dots">
+    <button type="button" class="carousel-dot" aria-controls="release-atlas" aria-label="Slide 1 of 3"></button>
+    <button type="button" class="carousel-dot" aria-controls="release-borealis" aria-label="Slide 2 of 3"></button>
+    <button type="button" class="carousel-dot" aria-controls="release-cirrus" aria-label="Slide 3 of 3"></button>
+  </div>
+</div>`} />
+
+```js name=app.js
+import { carousel } from '@master/ui/behaviors/carousel.js'
+
+const releases = carousel(document.querySelector('.carousel-view'), { value: 'borealis' })
+releases.value // 'borealis'
+```
+
 ## アクセシビリティ \{#accessibility\}
 
 - 矢印キーでスクロールできるように、トラックに`role="region"`、ラベル、`tabindex="0"`を指定します。
@@ -199,6 +271,13 @@ import ContractTable from '~/site/components/ContractTable.astro'
 - カルーセルは自動で切り替わりません。タイマーでコンテンツを切り替える場合は、スクリプトで一時停止用のコントロールを実装する必要があります。
 - 動きを抑える設定では、スライド間を滑らかにスクロールせず、次の位置に即座に移動します。
 - 強制カラーモードでは、ボタンの輪郭はシステムのボタン色で描画されます。ドットもシステム色を使い、表示中のスライドのドットにはハイライト色を使います。
+- `carousel-view`では、ボタンとドットにページの言語で名前を付けます。ドットの名前では、全体の何枚目のスライドに移動するかを示します。
+
+## React、Svelte、Vue \{#frameworks\}
+
+`carousel`コンポーネントは、項目からスライドを描画し、その横にビューのボタンとドットを置きます。各項目には、項目が変わっても同じままの`value`を指定します。コンポーネントの値は現在のスライドです。`npx master-ui add carousel`でプロジェクトにコピーできます。構成と使い方は[React、Svelte、Vue](/guide/frameworks)を参照してください。表示中のスライドを読み取る必要がないカルーセルなら、コンポーネントは不要で、上記のマークアップだけで十分です。
+
+<FrameworkSource name="carousel" />
 
 ## クラス \{#classes\}
 

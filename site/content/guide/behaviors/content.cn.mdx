@@ -32,14 +32,18 @@ import GuideFigure from '../../../components/GuideFigure.astro'
 
 | 模式 | 导入 | 脚本功能 | 脚本 |
 | --- | --- | --- | --- |
+| [头像](/components/avatar#fallback) | `avatar` | 跟踪照片的加载情况：照片加载完成后隐藏后备内容；加载失败或没有图片地址时隐藏照片 | 可选 |
 | [日历](/components/calendar) | `calendar` | 生成所显示月份的各周，标记今天、选中的日期或日期范围以及不可选日期，并支持在网格中移动 | 必需 |
+| [轮播](/components/carousel#view) | `carousel` | 在 `carousel-view` 中：滚动停止后，将显示最多的幻灯片设为当前幻灯片并标记其圆点；点击上一张、下一张按钮或圆点时，将对应幻灯片滚动到视图中 | 可选 |
 | [组合框](/components/combobox) | `combobox` | 隐藏与输入内容不匹配的选项，切换当前活动项，打开和关闭列表，并将选中的选项填入字段；多值列表则为每个选中的选项写入一个胶囊标签 | 必需 |
 | [命令面板](/components/command) | `command` | 筛选命令并切换当前活动项，按 Enter 时触发该选项的点击并关闭对话框。可在任意位置用快捷键打开对话框 | 必需 |
 | [对比](/components/compare) | `compare` | 浏览器不支持滚动驱动动画时，将范围输入控件的值复制到 `--compare-position`。浏览器支持时，脚本不做任何更改 | 必需 |
 | [行内编辑](/components/editable) | `editable` | 在预览的位置显示输入框，按 Enter 或离开输入框时保存，按 Esc 时恢复已保存的值 | 必需 |
+| [渐变](/components/gradient) | `gradient` | 为每个色标生成手柄，支持用指针和键盘移动色标，让颜色选择器、旋钮和当前色标的数值保持同步，并以 CSS 形式输出渐变 | 必需 |
 | [列表框](/components/listbox) | `listbox` | 使用方向键或输入字母切换当前活动项，并勾选选中的选项。列表支持多选时可勾选多个选项，按住 Shift 可勾选一段连续的选项 | 必需 |
 | [菜单](/components/menu) | `menu`, `contextMenu` | 使用方向键或输入字母在菜单项之间移动焦点，按朝向子菜单的方向键打开子菜单。`contextMenu` 在指针位置打开菜单 | 可选 |
 | [一次性验证码](/components/otp) | `otp` | 在输入格之间移动焦点，并将粘贴或自动填充的验证码逐位填入各格 | 必需 |
+| [日程表](/components/schedule#schedule-view) | `schedule` | 在 `schedule-view` 中：根据事件生成日视图、周视图、月视图或日程列表，按时段前后切换，并在点击日期数字时打开当天 | 可选 |
 | [可排序列表](/components/sortable) | `sortable` | 用指针或键盘拖动项目，同时让其他项目让出空间，放下时只移动一次，并在状态区域中播报每一步 | 必需 |
 | [分隔条](/components/splitter) | `splitter` | 拖动手柄或用键盘移动手柄时，将第一个窗格的尺寸写入 `--splitter-size` 和 `aria-valuenow` | 必需 |
 | [步进器](/components/stepper) | `stepper` | 让两个按钮分别在数字输入框上调用 `stepDown()` 和 `stepUp()`，并在达到相应上限或下限时禁用对应的按钮 | 必需 |
@@ -191,6 +195,9 @@ onUnmounted(() => detach?.())
 | `wheel` | 某列滚动停止并停在另一个选项上时派发 `change` | 该列 | `detail.value` 为选项的 `data-value` 或其文本，`detail.option` 为选项元素 |
 | `tree` | 选中带有 `role="treeitem"` 的非分支行时派发 `change` | 根元素 | `detail.item` 为该行 |
 | `tabs` | 选中另一个标签页时派发 `change` | 标签页列表 | `detail.value` 为标签页的 `data-value` 或其文本，`detail.tab` 为标签页元素 |
+| `carousel` | 读者使另一张幻灯片成为当前幻灯片时，先派发 `input`，再派发 `change` | 视图 | 读取返回函数的 `value` |
+| `schedule` | 读者切换到另一个时段或视图时，先派发 `input`，再派发 `change` | 视图 | 读取返回函数的 `value` |
+| `gradient` | 色标或控件移动过程中派发 `input`，移动结束时派发 `change` | 根元素 | 读取返回函数的 `value` |
 
 一次性验证码字段、日历、滚轮选择器、树和标签页列表的 `change` 都是 `CustomEvent`，因为它们的值无法由单个原生控件承载。一次性验证码字段中的每个输入格都是原生输入控件，因此输入格自身的 `change` 也会冒泡经过根元素，但不带 `detail`。命令面板、菜单和对比组件本身不派发事件。命令由其对应选项的 `click` 触发，按 Enter 也会触发该事件。菜单项使用原生按钮、链接和输入控件。
 
@@ -220,6 +227,9 @@ root.addEventListener('change', (event) => {
 | `compare` | 范围输入控件的数值 |
 | `tabs`, `tree` | 所选标签页或行代表的值，未选择时为 `null` |
 | `wheel` | 各列所选选项代表的值，按列顺序排列 |
+| `carousel` | 当前幻灯片代表的值，即其 `data-value` 或 `id`。设置该值会将对应幻灯片滚动到视图中 |
+| `gradient` | `{ type, angle, center, stops }`：各色标及其 id、位置和颜色。设置该值会显示对应的渐变 |
+| `schedule` | `{ date, view }`：视图所针对的日期，格式为 `YYYY-MM-DD`，以及 `day`、`week`、`month` 或 `agenda`。设置该值会显示对应的时段 |
 
 选项、标签页和行均以各自的 `data-value` 为值，未设置该属性时以自身文本为值。如果应用存储的值与显示文本不同，请指定 `data-value`，例如为显示 Tokyo 的选项设置 `data-value="hnd"`。
 

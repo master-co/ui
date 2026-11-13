@@ -1,0 +1,42 @@
+---
+title: "消息对话"
+description: "一段对话：分组的消息、附件、送达状态和消息编辑器。"
+---
+
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import PagePreview from '~/site/components/PagePreview.astro'
+
+消息对话区块呈现一段对话：参与者、按先后顺序排列的发言，以及用来写下一条的[消息编辑器](/components/composer)。每条发言都是一条[消息](/components/message)；文件、图片、语音消息和表情回应也排在同样的行中。
+
+<PagePreview name="default" title="消息对话" example="messaging" touchHeight={{ desktop: 644, tablet: 644, phone: 665 }} caption="输入消息后按 Enter 发送，也可以添加附件、播放语音消息或添加表情回应。" />
+
+区块提供可直接复制的标记，沿用页面的文字颜色和字号。预览在 body 上设置 `fg-text-body text-sm`。每个区块都是尺寸容器，会根据自身宽度重排，无论放在宽页面、侧边栏大小的空间还是对话框中。
+
+## 区块组成 \{#anatomy\}
+
+- **一块[面板](/components/surface#sheet)**：顶部是列出会话成员的标题区，中间的消息串放在独立的[滚动区域](/components/scroll-area)中，底部是消息编辑器。无论消息串多长，消息编辑器都固定在原处。
+- **消息串是一个 `<ol>`。** 顺序本身就是内容。带标签的[分隔线](/components/divider)标出日期。
+- **同一人的连续发言会分组。** 气泡之间相距 4px，只有最后一条显示头像以及名字和时间；其余各条用 `invisible` 头像占住头像位置，让气泡对齐。每条发言仍以视觉隐藏的前缀写明作者和时间，因此即使不看画面，分组读起来也一样。
+- **附件单独成为一条发言。** [文件](/components/file)或[图文块](/components/figure)放在气泡原本的位置：收到的发言靠起始侧，发出的发言靠末尾侧。
+- **语音消息是气泡中的[音频波形](/components/waveform)**，带有播放按钮，并可在波形条上拖动定位。预览中用计时器代替音频。
+- **送达状态用文字表示。** 发出的发言在 `message-meta` 中写明“Read”或“Sent”及时间，不依赖对勾的颜色。
+- [**表情回应**](/components/reaction)跟在所回应的发言之后，位于起始侧或末尾侧，是带名称和计数的复选框。
+- **消息编辑器按 Enter 发送**，Shift+Enter 换行；输入法正在组字时，Enter 留给输入法处理。待发送的文件以可撤回的[胶囊标签](/components/chip)显示在输入框上方。没有可发送的内容时，发送按钮处于禁用状态。
+
+## 哪些操作需要脚本 \{#script\}
+
+`main.js` 把输入的文字和附加的文件作为读者自己的发言添加到消息串末尾，文字始终作为纯文本而不是标记插入，并让最新的发言保持在视野内，然后把焦点还给输入框。发送、排序、已读回执以及与其他参与者保持同步都由应用负责：在这里添加的发言会一直显示“Sent”。没有脚本时，消息编辑器是一个提交到服务器的表单。
+
+## 无障碍 \{#accessibility\}
+
+- 面板是一个以会话名称命名的 `<section>`；消息串是有独立名称的区域，位于 Tab 顺序中，因此可以用键盘滚动。
+- 消息串列表对新增内容设置 `aria-live="polite"`，新发言会被播报，但焦点不会移动。
+- 每条发言的可访问文本都包含作者和时间，与是否绘制头像和元信息无关；因此可见的元信息设置 `aria-hidden`，避免重复朗读。
+- 图片的 `alt` 说明画面内容；语音消息的按钮分别命名为“Play”和“Seek”，定位控件用文字说出时间。
+- 附件按钮有名称；其文件输入框不在 Tab 顺序中，因为它由按钮打开。
+
+## 相关内容 \{#related\}
+
+<ComponentLinks slugs={['surface', 'heading', 'avatar', 'scroll-area', 'divider', 'message', 'file', 'figure', 'waveform', 'reaction', 'composer', 'chip', 'button']} />
+
+<ComponentLinks kind="blocks" slugs={['activity-feed', 'sidebar']} />

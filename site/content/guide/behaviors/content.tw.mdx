@@ -32,14 +32,18 @@ import GuideFigure from '../../../components/GuideFigure.astro'
 
 | 模式 | 匯入 | 腳本功能 | 腳本 |
 | --- | --- | --- | --- |
+| [頭像](/components/avatar#fallback) | `avatar` | 追蹤相片的狀態：相片載入後隱藏備援內容，相片載入失敗或沒有來源時則隱藏相片 | 選用 |
 | [日曆](/components/calendar) | `calendar` | 產生目前顯示月份的各週，標記今天、已選取的日期或日期範圍，以及無法選取的日期，並支援在格線內移動 | 必要 |
+| [輪播](/components/carousel#view) | `carousel` | 在 `carousel-view` 中：捲動停止後，將可見比例最大的投影片設為目前投影片並標示其圓點，並透過上一張、下一張和圓點將投影片捲入可見範圍 | 選用 |
 | [組合方塊](/components/combobox) | `combobox` | 隱藏與輸入內容不符的選項，切換作用中的選項，開啟及關閉清單，並將選取的選項寫入欄位；多值時則為每個選取的值寫入一個膠囊標籤 | 必要 |
 | [指令面板](/components/command) | `command` | 篩選指令並切換作用中的選項。按 Enter 時點擊該選項並關閉對話框，也可在頁面任何位置用快捷鍵開啟對話框 | 必要 |
 | [圖片比較](/components/compare) | `compare` | 瀏覽器不支援捲動驅動動畫時，將範圍輸入欄位的值複製到 `--compare-position`。支援時不做任何變更 | 必要 |
 | [行內編輯](/components/editable) | `editable` | 以欄位取代預覽顯示，按 Enter 或離開欄位時儲存，按 Escape 時還原已儲存的值 | 必要 |
+| [漸層](/components/gradient) | `gradient` | 為每個色標寫出控點，以指標和按鍵移動色標，讓取色器、旋鈕和目前色標的數字保持同步，並以 CSS 公開漸層 | 必要 |
 | [清單方塊](/components/listbox) | `listbox` | 使用方向鍵或輸入字母切換作用中的選項，並勾選選取的選項。清單支援多選時，可勾選多個選項，搭配 Shift 可勾選一段連續的選項 | 必要 |
 | [選單](/components/menu) | `menu`, `contextMenu` | 使用方向鍵或輸入字母在項目間移動焦點，並以指向子選單的方向鍵開啟子選單。`contextMenu` 會在指標所在位置開啟選單 | 選用 |
 | [OTP](/components/otp) | `otp` | 在各輸入格之間移動焦點，並將貼上或自動填入的驗證碼逐字分配到各格 | 必要 |
+| [日程表](/components/schedule#schedule-view) | `schedule` | 在 `schedule-view` 中：依事件寫出日、週、月或議程，依期間移動，並從日期數字開啟該日 | 選用 |
 | [可排序清單](/components/sortable) | `sortable` | 以指標或按鍵搬移項目，同時讓其他項目讓出空間，放下時只移動一次項目，並在狀態區域中朗讀每個步驟 | 必要 |
 | [分隔調整桿](/components/splitter) | `splitter` | 拖曳把手或以按鍵移動把手時，將第一個窗格的尺寸寫入 `--splitter-size` 和 `aria-valuenow` | 必要 |
 | [數字步進器](/components/stepper) | `stepper` | 讓兩個按鈕分別在數字欄位上呼叫 `stepDown()` 和 `stepUp()`，並在數值到達上限或下限時停用對應的按鈕 | 必要 |
@@ -191,6 +195,9 @@ onUnmounted(() => detach?.())
 | `wheel` | 滾輪欄停在另一個選項時觸發 `change` | 該欄 | `detail.value`：選項的 `data-value`，若未設定則取其文字。`detail.option`：該元素 |
 | `tree` | 選取帶有 `role="treeitem"` 的非分支列時觸發 `change` | 根元素 | `detail.item`：該列 |
 | `tabs` | 選取另一個分頁時觸發 `change` | 分頁清單 | `detail.value`：分頁的 `data-value`，若未設定則取其文字。`detail.tab`：該元素 |
+| `carousel` | 讀者將另一張投影片設為目前投影片時，先觸發 `input`，再觸發 `change` | 檢視容器 | 讀取傳回函式的 `value` |
+| `schedule` | 讀者移動到另一個期間或檢視時，先觸發 `input`，再觸發 `change` | 檢視容器 | 讀取傳回函式的 `value` |
+| `gradient` | 色標或控制項移動期間觸發 `input`，移動結束時觸發 `change` | 根元素 | 讀取傳回函式的 `value` |
 
 一次性驗證碼欄位、日曆、滾輪、樹狀檢視和分頁清單的 `change` 都是 `CustomEvent`，因為這些元件的值並非由單一原生控制項持有。一次性驗證碼欄位的每個輸入格都是原生輸入元素，因此它自己的 `change` 也會冒泡經過根元素，且不帶 `detail`。指令面板、選單和比較元件本身都不會派送事件。選項收到 `click` 時會執行對應指令，按 Enter 也會觸發同一事件。選單項目使用原生按鈕、連結和輸入元素。
 
@@ -220,6 +227,9 @@ root.addEventListener('change', (event) => {
 | `compare` | 範圍輸入元素的數值 |
 | `tabs`, `tree` | 所選分頁或列代表的值，未選取時為 `null` |
 | `wheel` | 各欄所選選項代表的值，依各欄的排列順序列出 |
+| `carousel` | 目前投影片代表的值，即其 `data-value` 或 `id`。設定此值會將該投影片捲入可見範圍 |
+| `gradient` | `{ type, angle, center, stops }`：各色標及其 id、位置與色彩。設定此值會顯示該漸層 |
+| `schedule` | `{ date, view }`：檢視所針對的日期（以 `YYYY-MM-DD` 表示），以及 `day`、`week`、`month` 或 `agenda`。設定此值會顯示該期間 |
 
 選項、分頁和列都以各自的 `data-value` 作為值，未設定時則使用其文字。若應用程式儲存的值與顯示文字不同，請設定 `data-value`，例如在顯示 Tokyo 的選項上加上 `data-value="hnd"`。
 

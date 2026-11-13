@@ -6,6 +6,7 @@ description: "以相片或姓名縮寫代表個人或團隊，可單獨顯示或
 import ComponentPreview from '~/site/components/ComponentPreview.astro'
 import ComponentSource from '~/site/components/ComponentSource.astro'
 import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
 頭像代表個人或團隊。有相片時顯示相片，其餘情況顯示姓名縮寫，兩者都放在同樣大小的圓形中。邊緣有一道淡淡的內描邊，讓淺色相片在淺色底面上也能看清輪廓。
 
@@ -39,7 +40,7 @@ import ContractTable from '~/site/components/ContractTable.astro'
 
 ## 狀態 \{#status\}
 
-`avatar-status` 在圓形下緣加上狀態圓點，並用與後方底面同色的環形描邊勾出輪廓。圓點預設為綠色。若要表示其他狀態，可設定 `--avatar-status`，或加上 `bg-warning` 之類的背景 utility。請在無障礙名稱中用文字說明圓點代表的狀態。
+`avatar-status` 在圓形下緣加上狀態圓點，並用與後方底面同色的環形描邊勾出輪廓。圓點預設為綠色。若要表示其他狀態，可設定 `--avatar-status`，或加上 `bg-warning` 之類的背景 utility。單靠圓點無法傳達訊息：請在無障礙名稱中用文字說明狀態。
 
 <ComponentPreview name="status" height={96} title="狀態" html={`<span class="avatar avatar-lg">
   <img class="avatar-image" src="/demo/portrait-1.svg" alt="Ada Lovelace, online">
@@ -49,6 +50,50 @@ import ContractTable from '~/site/components/ContractTable.astro'
   GH
   <span class="avatar-status bg-warning"></span>
 </span>`} />
+
+## 角標 \{#badge\}
+
+`avatar-badge` 在狀態圓點所在的同一個角落放一張小圖，說明這個人的身分，而不是是否在線：已驗證、任職的公司，或專案所屬的團隊。它的大小是頭像的五分之二，中心位於圓形邊緣的 45° 處，並和狀態圓點一樣，以後方底面顏色的環形描邊勾出輪廓。在方形頭像上，它也會是圓角正方形。可以在其中放入圖示，或直接把它當成圖片使用，並在頭像的名稱中說明它的意義。
+
+<ComponentPreview name="badge" height={112} title="角標" html={`<span class="avatar avatar-lg" role="img" aria-label="Ada Lovelace, verified">
+  <img class="avatar-image" src="/demo/portrait-1.svg" alt="">
+  <span class="avatar-badge"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 12.5 4 4 8-9"/></svg></span>
+</span>
+<span class="avatar avatar-xl" role="img" aria-label="Grace Hopper, verified">
+  <img class="avatar-image" src="/demo/portrait-3.svg" alt="">
+  <span class="avatar-badge"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 12.5 4 4 8-9"/></svg></span>
+</span>
+<span class="avatar avatar-xl avatar-square" role="img" aria-label="Moonstone team, at Master">
+  MT
+  <img class="avatar-badge" src="/demo/moonstone.svg" alt="">
+</span>`} />
+
+一個角落只放一個標記。狀態圓點、驗證角標和公司標誌放在同一個角落會互相遮蓋；請選擇讀者最需要的那一個，其餘以文字說明。
+
+## 相片載入失敗時 \{#fallback\}
+
+來自伺服器的相片可能載入緩慢或不存在。請在相片下方的 `avatar-fallback` 中放入姓名縮寫或圖示：兩者共用同一個格子，因此方框的大小不會改變。[`avatar` 行為](/guide/behaviors)會追蹤相片的狀態。載入期間會顯示備援內容；載入完成後隱藏備援內容；載入失敗或沒有來源時則改為隱藏相片，因此永遠不會顯示破圖。設定新的 `src` 會重新開始；若收到的結果屬於頭像已不再顯示的相片，則不會有任何改變。
+
+<ComponentPreview name="fallback" height={96} title="相片載入失敗時" behaviors html={`<span class="avatar avatar-lg" role="img" aria-label="Ada Lovelace">
+  <img class="avatar-image" src="/demo/portrait-1.svg" alt="">
+  <span class="avatar-fallback" aria-hidden="true">AL</span>
+</span>
+<span class="avatar avatar-lg" role="img" aria-label="Alan Turing">
+  <img class="avatar-image" src="data:image/png;base64,AAAA" alt="">
+  <span class="avatar-fallback" aria-hidden="true">AT</span>
+</span>
+<span class="avatar avatar-lg" role="img" aria-label="A guest">
+  <img class="avatar-image" alt="">
+  <span class="avatar-fallback" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12a4 4 0 1 0 0-8a4 4 0 0 0 0 8z"/><path d="M5 20a7 7 0 0 1 14 0"/></svg></span>
+</span>`} />
+
+請只在根元素上用 `role="img"` 和 `aria-label` 為頭像命名一次；相片的 `alt` 留空，備援內容加上 `aria-hidden`，以免名稱被讀出兩次。沒有腳本時，備援內容會一直顯示，直到相片繪製後蓋住它；載入失敗的相片則會以瀏覽器繪製的破圖呈現。
+
+```js name=app.js
+import { avatar } from '@master/ui/behaviors/avatar.js'
+
+for (const root of document.querySelectorAll('.avatar')) avatar(root)
+```
 
 ## 重疊排列 \{#stack\}
 
@@ -78,6 +123,13 @@ import ContractTable from '~/site/components/ContractTable.astro'
 - 相片的 `alt` 須包含當事人的姓名。若頭像顯示姓名縮寫，請加上 `role="img"`，並用 `aria-label` 提供姓名。
 - 如果頭像旁已有姓名，頭像便是裝飾，請使用 `alt=""` 或 `aria-hidden="true"`。
 - 頭像重疊排列時，只在容器上為整組提供一個名稱，並將各圖片的替代文字留空，以免姓名被讀出兩次。
+- 角標與狀態圓點不會被單獨讀出：請在頭像的名稱中說明已驗證、離開或所屬公司。
+
+## React、Svelte 和 Vue \{#frameworks\}
+
+`avatar` 元件接收 `src`、`alt` 和 `initials`，會將相片疊在備援內容上方並掛上行為；角落標記則作為其子元素傳入。使用 `npx master-ui add avatar` 將它複製到專案中；[React、Svelte 和 Vue](/guide/frameworks) 說明了這些元件的建構與使用方式。永遠不會載入失敗的相片不需要元件，上方的標記就足夠了。
+
+<FrameworkSource name="avatar" />
 
 ## 類別 \{#classes\}
 

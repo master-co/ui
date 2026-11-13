@@ -1,0 +1,88 @@
+---
+title: "图表"
+description: "用 Chart.js 以 Master UI 的颜色绘制图表，配上可操作的图例，并以表格提供同样的数字。"
+---
+
+import PagePreview from '~/site/components/PagePreview.astro'
+
+少量数据可以由 Master UI 自己绘制，无需脚本：几根条形、一句话中的趋势、一个仪表、一根条中的占比。如果图表需要能随数据缩放的坐标轴、大量数据点、跟随指针的工具提示，或雷达图之类的形状，就该交给图表引擎。本指南把其中一款引擎 [Chart.js](https://www.chartjs.org/docs/latest/getting-started/integration.html) 套上 Master UI 的颜色，配上可操作的图例，并以表格提供同样的数字；同时说明如何让图表与主题保持同步，以及如何在不再需要时将其释放。
+
+在这些示例中，Chart.js 是本站点的依赖，而不是组件库的依赖：`@master/ui` 并不依赖它，任何在 canvas 或 SVG 中绘图的引擎都能以同样方式接入。
+
+## 用组件库的图表，还是用引擎 \{#choose\}
+
+优先考虑组件。组件都由标记绘制，因此数字以文本形式存在于页面中，无需脚本即可跟随主题，也能正常打印。
+
+| 需求 | 使用 |
+| --- | --- |
+| 同一刻度上的少量数字，例如一周七天 | [条形图](/components/chart) |
+| 一组数据的走向，放在数字旁或一行中 | [迷你趋势线](/components/sparkline) |
+| 单个读数及其距离上限多近 | [仪表盘](/components/gauge)，或半圆[进度环](/components/progress#half-ring) |
+| 某个量在已知范围中的位置 | [计量条](/components/meter) |
+| 总量由哪些部分组成，沿一根条展示 | [占比分布](/components/breakdown) |
+| 大量小数值中呈现的规律 | [热力图](/components/heatmap) |
+
+在以下情况下，引擎的体积才值得：坐标轴必须随数据缩放、数据点多于标签、读者要在指针下查看数值、需要显示和隐藏数据系列，或者所需形状是组件画不出来的，例如跨越数月的折线、环形图、同心圆环、雷达图。下面的示例只在各自的预览中加载 Chart.js，每个约 160 KB，并且只注册该图表实际绘制的部分。
+
+## 折线图与柱状图 \{#lines-and-bars\}
+
+多组数据随时间变化，以折线或柱形呈现。切换控件用另一种方式绘制同一份数据；图例可显示或隐藏某个地区，图表下方的表格列出全部数字。
+
+<PagePreview name="series" title="折线图与柱状图" example="chart-series" caption="切换为柱状图，在图例中隐藏某个地区，或展开查看数字。" />
+
+- **只注册要绘制的部分。** 从 `chart.js` 而不是 `chart.js/auto` 导入并调用 `Chart.register(LineController, LineElement, PointElement, BarController, BarElement, CategoryScale, LinearScale, Tooltip)`，引擎的其余部分就不会进入打包产物。
+- **图形精细。** 折线粗 2px，只在指针下方显示数据点；柱形远离坐标轴的一端为圆角，并以一圈表面色与相邻柱形隔开。网格只有横向细线，没有纵向线。
+- **只用一条数值轴。** 刻度不同的两个指标画成两张图表，绝不做成左右各有一条轴的单张图表。
+
+## 整体的组成 \{#parts-of-a-whole\}
+
+以环形图或饼图显示占比，以同心圆环显示三个目标，每个目标在其浅色轨道上以自身颜色填充。
+
+<PagePreview name="parts" title="整体的组成" example="chart-parts" caption="切换为饼图，隐藏某一类或某个目标，或展开查看数字。" />
+
+点击某一部分的图例标签会隐藏对应扇区，其余扇区随即合拢。圆环的轨道使用该分类的表面色，因此尚未完成的部分仍被看作同一个目标，只是更淡。一个整体最好只分四五个部分，其余归入“其他”，就像存储用量示例那样。
+
+## 雷达图 \{#radar\}
+
+两个版本在六项指标上的对比。每个形状都以其标记色描边，并以同色的淡色填充，因此两个形状可以互相透出。
+
+<PagePreview name="radar" title="雷达图" example="chart-radar" caption="在图例中隐藏某个版本，或展开查看数字。" />
+
+雷达图让人一眼比较几个对象在相同指标上的表现，具体分数由表格给出。各项指标使用同一个范围，这里是 0 到 100。
+
+## 来自主题的颜色 \{#colors\}
+
+每组数据都指定一个[分类色](/components/category)，由分类决定其颜色：无论在列表中排第几，Tokyo 在图表中、在其图例标签中以及在任何写出它名字的徽标中都是蓝色。图形使用各分类的 `-mark` 角色，与表面的对比度保持 3:1；雷达图的填充是同一标记色的淡色版本。网格、刻度和工具提示使用主题的线条、文本和墨色令牌。数据中只存分类名称，从不存颜色。
+
+canvas 无法读取自定义属性，而令牌又是用 `light-dark()` 写的，因此每个示例都在图表所在的位置解析颜色：图表根元素内的一个隐藏探针以该令牌作为颜色，再用这个颜色绘制一个像素，即可得到 `rgba()` 形式的颜色。由于探针与图表处在同一位置，Paper、限定在某个区域的覆盖样式以及配色方案都会生效。
+
+```js name=theme.js
+const probe = document.createElement('span')
+probe.style.cssText = 'position:absolute;visibility:hidden'
+root.append(probe)
+
+function resolve(token) {
+  probe.style.color = `var(${token})`
+  pixel.fillStyle = getComputedStyle(probe).color
+  pixel.fillRect(0, 0, 1, 1)
+  const [r, g, b, a] = pixel.getImageData(0, 0, 1, 1).data
+  return `rgba(${r}, ${g}, ${b}, ${a / 255})`
+}
+```
+
+示例使用四个分类，顺序固定：蓝、橙、青、紫。作为一套调色板检查过，在两种配色方案下，常见类型的色觉障碍者都能区分它们。第五组数据应归入“其他”或另画一张图表，而不是给它一个与这四种颜色过于接近的色相。
+
+## 无障碍 \{#accessibility\}
+
+- **图例是控件。** 每个图例项都是包裹真正复选框的[筛选标签](/components/chip#category)，位于一个按其显示内容命名的组中，因此可以用 Tab 键聚焦、用空格键切换。圆点表示分类，文字写出名称。
+- **数字是文本。** 每张图表都在一个可展开区域中附有同样数值的表格，canvas 设有 `role="img"` 和一句说明图表内容的话。指针下的工具提示只是辅助，绝不是读取数值的唯一途径。
+- **从不只靠颜色。** 每组数据都在图例和表格中写出名称，状态色从不用来代表某组数据。
+- **动画遵从读者设置。** 开启减少动态效果时，图表直接绘制完成，不做缓入动画。
+
+## 保持同步与释放 \{#lifecycle\}
+
+每个示例的 `main.js` 都导出 `mount(root)`，它绘制图表，并返回用于停止图表的函数。
+
+- **尺寸。** canvas 放在由样式表设定高度的容器中，Chart.js 通过 `responsive` 和 `maintainAspectRatio: false` 跟随该容器的宽度。布局无需任何测量。
+- **主题。** 读者的配色方案改变，或根元素上的 class、style、`data-theme` 改变时，图表会以重新解析的颜色再次绘制。
+- **结束。** 卸载时对每张图表调用 `destroy()`，并移除所有监听器和观察器，因此视图离开时，其中的图表不会留下任何东西。在框架中，元素存在时调用 `mount`，元素移除时调用它的返回值：React 中放在 effect 的清理函数里，Svelte 中用 attachment，Vue 中用 `onBeforeUnmount`。

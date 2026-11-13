@@ -31,14 +31,18 @@ import GuideFigure from '../../../components/GuideFigure.astro'
 
 | パターン | インポート名 | スクリプトの動作 | スクリプトの要否 |
 | --- | --- | --- | --- |
+| [アバター](/components/avatar#fallback) | `avatar` | 写真の状態を追跡し、読み込みが完了するとフォールバックを隠し、読み込みに失敗した場合や `src` がない場合は写真を隠す | 任意 |
 | [カレンダー](/components/calendar) | `calendar` | 表示月の各週を生成し、今日、選択した日付や期間、選択できない日付を示し、グリッド内の移動を処理 | 必須 |
+| [カルーセル](/components/carousel#view) | `carousel` | `carousel-view` の中で、スクロールが止まった時点で最も多く表示されているスライドを現在のスライドとしてドットに示し、前後のボタンとドットからスライドをスクロールして表示 | 任意 |
 | [コンボボックス](/components/combobox) | `combobox` | 入力に一致しない選択肢を非表示にし、アクティブな選択肢の移動とリストの開閉を処理し、選択した項目を入力欄に反映。複数選択できるリストでは、選択した各項目をチップとして書き込む | 必須 |
 | [コマンドパレット](/components/command) | `command` | コマンドを絞り込み、アクティブな項目を移動し、Enter キーでその項目をクリックしてダイアログを閉じる。ページ内のどこからでもショートカットで開く | 必須 |
 | [画像比較](/components/compare) | `compare` | スクロール駆動アニメーションに未対応のブラウザーで、範囲入力の値を `--compare-position` にコピー。対応ブラウザーでは変更なし | 必須 |
 | [インライン編集](/components/editable) | `editable` | プレビューの代わりにフィールドを表示し、Enter キーを押すかフィールドから移動すると保存し、Escape キーで保存済みの値に戻す | 必須 |
+| [グラデーション](/components/gradient) | `gradient` | 各ストップのハンドルを書き出し、ポインターとキー操作でストップを移動し、編集中のストップのカラーピッカー、ダイヤル、数値入力を同期させ、グラデーションを CSS として公開 | 必須 |
 | [リストボックス](/components/listbox) | `listbox` | 矢印キーと文字入力でアクティブな選択肢を移動し、選択した項目にチェックを付ける。複数選択できるリストでは選択した複数の項目にチェックを付け、Shift キーで連続した範囲を選ぶ | 必須 |
 | [メニュー](/components/menu) | `menu`, `contextMenu` | 矢印キーと文字入力で項目間のフォーカスを移動し、サブメニューの方向を指す矢印キーでサブメニューを開く。`contextMenu` はポインターの位置にメニューを開く | 任意 |
 | [OTP](/components/otp) | `otp` | スロット間でフォーカスを移動し、貼り付けや自動入力で受け取ったコードを各スロットに振り分ける | 必須 |
+| [スケジュール](/components/schedule#schedule-view) | `schedule` | `schedule-view` の中で、予定から日、週、月、アジェンダを書き出し、期間単位で移動し、日付の数字からその日を開く | 任意 |
 | [並べ替えリスト](/components/sortable) | `sortable` | ほかの項目が場所を空けるなかで、ポインターまたはキー操作で項目を運び、ドロップ時に一度だけ移動し、各操作をステータス領域で伝える | 必須 |
 | [スプリッター](/components/splitter) | `splitter` | ドラッグやキー操作でハンドルを動かすと、先頭ペインのサイズを `--splitter-size` と `aria-valuenow` に書き込む | 必須 |
 | [ステッパー](/components/stepper) | `stepper` | 2 つのボタンで数値入力欄の `stepDown()` と `stepUp()` をそれぞれ呼び出し、上限または下限に達した側のボタンを無効にする | 必須 |
@@ -190,6 +194,9 @@ onUnmounted(() => detach?.())
 | `wheel` | 列が別の選択肢の位置で止まったときに `change` | 列 | `detail.value`：選択肢の `data-value` またはテキスト。`detail.option`：要素 |
 | `tree` | `role="treeitem"` を持つ末端の行が選択されたときに `change` | ルート | `detail.item`：行 |
 | `tabs` | 別のタブが選択されたときに `change` | タブリスト | `detail.value`：タブの `data-value` またはテキスト。`detail.tab`：要素 |
+| `carousel` | 読み手が別のスライドを現在のスライドにしたときに `input`、続いて `change` | ビュー | 返された関数の `value` を参照 |
+| `schedule` | 読み手が別の期間またはビューに移動したときに `input`、続いて `change` | ビュー | 返された関数の `value` を参照 |
+| `gradient` | ストップやコントロールが動いている間は `input`、動きが終わったときに `change` | ルート | 返された関数の `value` を参照 |
 
 OTP 入力欄、カレンダー、ホイール、ツリー、タブリストでは、値を 1 つのネイティブコントロールに保持しないため、`change` は `CustomEvent` です。OTP 入力欄の各スロットはネイティブの入力要素なので、スロット自身の `change` もルートを通ってバブリングし、そのイベントには `detail` がありません。コマンドパレット、メニュー、比較は独自のイベントを発火しません。コマンドは選択肢の `click` で実行され、このイベントは Enter キーでも発火します。メニューの項目にはネイティブのボタン、リンク、入力要素を使います。
 
@@ -219,6 +226,9 @@ root.addEventListener('change', (event) => {
 | `compare` | 範囲入力の数値 |
 | `tabs`, `tree` | 選択したタブまたは行が表す値。選択がなければ `null` |
 | `wheel` | 各列で選択した項目が表す値を列順に並べたもの |
+| `carousel` | 現在のスライドが表す値。スライドの `data-value` または `id`。設定すると、そのスライドをスクロールして表示 |
+| `gradient` | `{ type, angle, center, stops }`。id、位置、色を持つストップを含む。設定すると、そのグラデーションを表示 |
+| `schedule` | `{ date, view }`。ビューが対象とする日付（`YYYY-MM-DD`）と、`day`、`week`、`month`、`agenda` のいずれか。設定すると、その期間を表示 |
 
 選択肢、タブ、行が表す値は、その要素の `data-value` です。指定がなければ、要素のテキストが値になります。表示テキストとアプリケーションが保存する値が異なる場合は、`data-value` を指定します。たとえば、Tokyo と表示する選択肢には `data-value="hnd"` を指定します。
 
