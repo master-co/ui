@@ -123,7 +123,7 @@ Text never wears a series' color: names and values take the text tokens and a ma
 5. Draw it in `chart.css` with tokens and the category roles; add each class and property to `chart.json` in the same change.
 6. Render a new kind of mark in the React, Svelte and Vue components, which follow `plotMarkup` element for element, and extend the `chart` scenario.
 7. Add cases to `tests/behaviors/chart.test.ts`: the layout's numbers, the form's line in the contract check of `chartMarkup`, and the type in the list that is laid out with nothing to draw.
-8. Give a new type a page: `site/content/charts/<type>/{metadata.ts,content.mdx}` with its previews and the options that matter to it, an entry in `charts` in `site/components/catalog.ts`, a cover in `site/components/cover/art/charts/<type>.astro` drawn from `chartLayout()` in steps of ink, and a row in the Forms table and the modules table of `/components/chart`, in the table of `/guide/charts` and in the public skill's `references/charts.md`. A new option goes on the pages of the forms it changes and in the options table of `/components/chart`.
+8. Give a new type a page: `site/content/charts/<type>/{metadata.ts,content.mdx}` with its previews and the options that matter to it, an entry in `charts` in `site/components/catalog.ts`, a cover in `site/components/cover/art/charts/<type>.astro` drawn from `chartLayout()` in ink for one series and in the cover palette's hues for several, as `$master-ui-covers` says, and a row in the Forms table and the modules table of `/components/chart`, in the table of `/guide/charts` and in the public skill's `references/charts.md`. A new option goes on the pages of the forms it changes and in the options table of `/components/chart`.
 
 ## Verification
 

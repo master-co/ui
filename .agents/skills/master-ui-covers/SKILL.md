@@ -9,7 +9,7 @@ metadata:
 
 # Master UI covers
 
-A cover is one drawing of a component on a stage. It is drawn in the library's own materials at their real size, so a reader recognizes the component before reading its name, and fifty covers side by side read as one family. One drawing serves light and dark: it holds no color of its own.
+A cover is one drawing of a component on a stage. It is drawn in the library's own materials at their real size, so a reader recognizes the component before reading its name, and fifty covers side by side read as one family. One drawing serves light and dark: it writes no color value of its own, only tokens. Its color is ink, and a hue only where the data belongs to a category.
 
 Use `$master-design` for craft judgment and `$master-ui-components` for the component being drawn. This skill supplies the rules that keep covers consistent with each other.
 
@@ -38,13 +38,28 @@ A component without a drawing shows a dashed outline on the overview, so a missi
 1. **Real size.** A control is 38px (32px small) and so is a field, a switch 36 × 22, a ring half a pixel, a corner its role token. These come from the primitives; do not resize one to fill the stage. A small control is drawn in the row it lives in (a switch at the end of a settings row), not enlarged.
 2. **Real materials.** Use the primitives and the theme tokens. A drawing never writes a color, a shadow or a radius value; where a mark needs a quieter ink or a nested corner, it names a token (`color: var(--color-text-muted)`, `--r: var(--radius-control-sm)`). Light and dark must both come out right from the same markup.
 3. **Words are bars.** `cover-bar` stands for text: strong for a title or a label, plain for a sentence, faint for a hint or a placeholder. A character is written only where the glyph is the component: a keycap, an avatar's initials, an OTP digit, a page or step number. Keep initials narrow (`AL`, `JT`) so a stack does not clip them.
-4. **One ink mark at most.** Ink goes on what the component is for: the primary action, the on or checked state, the current item. One state may take several marks when it is one fact (four stars of a rating); two different things never do. A component with no such state has no ink. Never hue, never the brand color: a status is drawn in muted ink, and even a swatch's colors are steps of ink.
+4. **One ink mark at most.** Ink goes on what the component is for: the primary action, the on or checked state, the current item. One state may take several marks when it is one fact (four stars of a rating); two different things never do. A component with no such state has no ink. A status is drawn in muted ink, never in its tone. Hue is a separate fact with its own rule, below under Color; it never stands in for ink, and ink never stands in for it.
 5. **One subject, one idea.** Draw the state that names the component: a menu open under its button, a field focused with its caret, a switch on beside one that is off. Leave out everything a reader would not miss.
 6. **Depth tells the story.** The stage is the tray; a sheet stands on it; a float passes over a sheet. A subject with no surface of its own (text, a hairline, a field, a small control, anything chip-toned) stands on a sheet, because that is where it lives and because a well or a chip tone disappears into the tray. A button, a chip and a choice are already faces and stand on the stage. A field that opens a list stands on the stage too, so the list has room under it.
 7. **A page is a sheet that runs off the stage.** A component that belongs to a page's edge (a navbar, a banner, a tab bar) or dims a page (a dialog, a command palette) is drawn on one large sheet that leaves the stage on three sides, with faint bars for the content. Reuse the same sheet so these covers read as one family.
 8. **The subject stays whole.** Context may run off the stage (the page under a dialog); the subject may not, unless running on is the point (a scroll area, a carousel) or it is larger than the safe area at real size (a calendar is 252px across). Then anchor its sheet inside the safe area and let it run off the end and the bottom of the stage; never shrink it to fit.
 9. **Flow before coordinates.** Build with `cover-stack` and `cover-line` and their `--gap`; write sizes in pixels on the element. Use absolute positions only for things that overlap.
 10. **Still.** A drawing has no animation and no interaction. The tile that holds it owns hover and focus.
+
+## Color
+
+Ink says what a component is for; a hue says what a piece of data belongs to. A cover takes a hue in two cases and nowhere else, so most covers stay in ink and the hues that do appear mean the same thing on every cover.
+
+1. **Data of a category.** Only where the component itself reads `--category-*` in `packages/ui`: a category's dot, `badge-category`, `chip-category` (and the tags it makes), `icon-frame-category`, a schedule's event, and the marks of a chart. A component that does not read a category (a breakdown, a gantt, a calendar, a heatmap, an avatar) stays in ink, however categorical its data looks.
+2. **Color as the subject.** A swatch, a color picker and a gradient show colors, and they take them from the same palette. A color picker's hue track is the one place the wheel appears: it runs through the category marks, red to red.
+
+The rules for a hue:
+
+- **The cover palette is the chart's order:** `cover-hue-1` blue, `cover-hue-2` orange, `cover-hue-3` teal, `cover-hue-4` violet, the first four of the chart's fixed palette in `behaviors/chart-core.js`. A drawing never picks a hue by taste: one category is `cover-hue-1`, two are 1 and 2, and so on. Four is the most a cover shows; a fifth is drawn as one more step of the fourth, or left out.
+- **Charts follow the chart.** A chart of one series is ink, as the chart draws it; several series, and the parts of a whole, take the palette in order. The forms whose module says `palette: 'never'` (box, funnel, heatmap, histogram, treemap, waterfall) stay in ink even with several marks. A lighter part of the same series (a sunburst's outer ring, a radar's wash, a ring's track) is a `--tone` of its hue, not the next hue.
+- **The roles, not the colors.** A `cover-hue-<n>` class sets `--category-surface`, `--category-text`, `--category-line` and `--category-mark` for itself and what it holds, and a hue-aware primitive reads the role its component reads: a dot, a legend key, a plot shape or line and a swatch take the mark; a tone, a badge and a value take the surface, the line and the text; a `cover-quote` rail takes the mark; bars inside take the text. A drawing names a category token directly only where a gradient needs several (`var(--color-category-teal-mark)`).
+- **Hue and ink coexist; hue never decorates.** A schedule may show its events in their hues and now in ink; a pie has no ink at all. Never put a hue on chrome (a button, a field, a sheet, a control's state), on the brand, on a status or on a block's or page's plan.
+- **Weight.** Four hues side by side are the loudest a cover may be. A hue fills a small mark or a whole face at its surface tint; a large face at full mark is only for a chart's shapes and a color component's preview.
 
 ## Layouts, blocks and pages
 
@@ -56,7 +71,7 @@ A page has no real size, so its cover is the kind that may be a **plan**: the wh
 - A region holds one or two bars to say what it is, never a drawing of its content. A block of content is a `cover-tone cover-skeleton`.
 - The plan shows the region the page or layout is named for: the sidebar of an app shell, the three columns of a holy grail, the card in the middle of a centered page, the band that runs to the edges of a breakout.
 - A layout that is small enough is drawn at real size instead (arrangements, an auto grid, a bento, masonry, a master-detail panel, a form).
-- No ink on a plan, unless one small mark names the subject.
+- No ink on a plan, unless one small mark names the subject, and no hue unless the block shows category data as the real block does (a schedule view's events).
 
 ## Vocabulary
 
@@ -74,6 +89,7 @@ A page has no real size, so its cover is the kind that may be a **plan**: the wh
 | `cover-texture`, `cover-texture-grid`, `cover-texture-stripes` | On a `cover-well`: dots, a grid or stripes across it, in the texture ink. |
 | `cover-media` | A picture: a tone with an inward outline. |
 | `cover-control` | A button at rest. With `cover-control-sm`, `cover-control-lg`, `cover-square`, `cover-quiet`, `cover-pressed`, `cover-ink`. |
+| `cover-hue-1` … `cover-hue-4` | A category's four roles for the mark or face and what it holds: blue, orange, teal, violet, in that order. See Color. |
 | `cover-ink` | The ink fill; bars and glyphs on it turn to the inverse ink. Also on `cover-chip`, `cover-dot`, `cover-star`, `cover-day`. |
 | `cover-row` | A 32px row in a list. `cover-row-active` is under the pointer, `cover-row-checked` is the chosen value, `cover-row-current` has risen as a small sheet. |
 | `cover-bar`, `cover-bar-strong`, `cover-bar-faint`, `cover-bar-figure` | Words, and a stat's large figure. Width is written on the element. |
@@ -83,15 +99,15 @@ A page has no real size, so its cover is the kind that may be a **plan**: the wh
 | `cover-chip`, `cover-badge`, `cover-key`, `cover-tip` | A filter pill, a badge, a keycap and a tooltip. |
 | `cover-avatar`, `cover-avatar-photo`, `cover-avatars` | Initials, a photo's tone, and a stack. Set `--cover-surface` on the surface they stand on and `--d` for their size. |
 | `cover-dot`, `cover-star`, `cover-marker`, `cover-day`, `cover-spinner` | A marker dot, a rating star, a step's marker (`-current`, `-done`), a calendar day (`-today`) and a spinner at rest. |
-| `cover-swatch`, `cover-swatch-on` | A color disc, set with `--swatch` as a step of ink, and the chosen one in its ring. |
+| `cover-swatch`, `cover-swatch-on` | A color disc in its `cover-hue-<n>` mark (or `--swatch`), and the chosen one in its ring. |
 | `cover-bubble`, `cover-bubble-sent` | A received message and a sent one, each tight at the corner toward its author. |
 | `cover-mark`, `cover-quote`, `cover-band` | A wash of highlighter behind a phrase, a quotation's rail, and a banner's band. |
 | `cover-rail`, `cover-rail-current`, `cover-pill`, `cover-pill-current`, `cover-grip` | A contents rail and its mark, a tab bar's pill, and a splitter's grip on an ink rule. |
 | `cover-caret`, `cover-tab`, `cover-link`, `cover-fade`, `cover-fade-foot`, `cover-thumb`, `cover-scrim` | Shapes that belong to one component family. |
 | `cover-page`, `cover-column`, `cover-marks`, `cover-wheel`, `cover-cell` | A file's folded page, a chart's bar (`--h` tall; `cover-ink` for the one that matters), a window's three marks, a wheel's column of values that fade away from the middle, and a heatmap's cell at `--tone` of ink. |
 | `cover-span`, `cover-divide`, `cover-cite`, `cover-bar-struck` | On a `cover-track`: ink from `--from` to `--to` for a range; the line of a compare at `--fill`; a citation's numbered mark; a finished step's title with a hairline through it. |
-| `cover-arc`, `cover-dial`, `cover-part`, `cover-legend` | A gauge's dial filled to `--fill` (0 to 1); a dial's knob filled to `--fill` (0 to 1) with a `cover-knob` at its end; a breakdown's segment `--w` wide at `--tone` of ink (with `cover-well` for what is left), and the dot of the same tone beside its name. |
-| `cover-plot`, `cover-plot-shape`, `cover-plot-line`, `cover-plot-hair`, `cover-plot-wash` | A chart's plot as an SVG whose paths come from `chartLayout()`: a shape filled at `--tone` of ink, a line stroked at the same and `--w` wide, a hairline of the scale, and the wash that fades under a line. Series are steps of ink, never a category's hue. |
+| `cover-arc`, `cover-dial`, `cover-part`, `cover-legend` | A gauge's dial filled to `--fill` (0 to 1); a dial's knob filled to `--fill` (0 to 1) with a `cover-knob` at its end; a breakdown's segment `--w` wide at `--tone` of ink (with `cover-well` for what is left), and a legend's key in the same tone or its series' `cover-hue-<n>`. |
+| `cover-plot`, `cover-plot-shape`, `cover-plot-line`, `cover-plot-hair`, `cover-plot-wash` | A chart's plot as an SVG whose paths come from `chartLayout()`: a shape filled at `--tone` of its color, a line stroked at the same and `--w` wide, a hairline of the scale, and the wash that fades under a line. The color is ink for one series and `cover-hue-<n>` for each of several. |
 | `cover-ticket`, `cover-stub`, `cover-device` + `cover-screen` | A ticket's two faces, which meet on a perforation between two notches; a phone's body `--d` wide and its screen. |
 | `cover-elbow`, `cover-action`, `cover-mark-inserted` | A thread's line where it turns into a reply; a swipe's action in the well its row has uncovered; on a `cover-mark`: inserted words over a fine underline. |
 | `cover-lane`, `cover-tick`, `cover-pin` | A gantt's bar from `--from` to `--to` of its track (with `cover-ink` for the current one); an uptime's day at `--tone` of ink; a hotspot's pin, placed by its middle on a `cover-media`. |
@@ -102,7 +118,7 @@ Extend the vocabulary before working around it. A new primitive copies its recip
 ## Draw a cover
 
 1. Read the component's stylesheet header and its page. Write one sentence that says what the cover shows; it becomes the comment at the top of the drawing.
-2. Choose the state that names the component and where the ink goes, if anywhere.
+2. Choose the state that names the component, where the ink goes, if anywhere, and whether the component reads a category (see Color); if it does, its categories take the palette in order.
 3. Compose from primitives in `art/<slug>.astro`. Start from a neighbor of the same kind and match its sheet width (168 to 200px) and padding (16px).
 4. Look at it between its neighbors on `/components`, in light and in dark. Its weight should match theirs: no cover is the loudest or the emptiest in its row without a reason.
 5. Verify as below.
@@ -128,7 +144,8 @@ Extend the vocabulary before working around it. A new primitive copies its recip
 
 - Does the reader name the component from the drawing alone?
 - Is everything at real size, in tokens, with no value written in the drawing?
-- Is there at most one ink mark, on the right thing, and no hue?
+- Is there at most one ink mark, on the right thing?
+- Is every hue a category the real component would color, or the subject of a color component, taken from the palette in order, four at most?
 - Are words bars, in no more than three tones?
 - Does the subject sit whole inside the safe area, optically centered?
 - Does it hold up in both schemes and beside its neighbors?
