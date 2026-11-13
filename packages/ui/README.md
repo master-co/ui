@@ -235,7 +235,7 @@ stop.value = 'hnd'                                          // where a pattern h
 
 ## React, Svelte and Vue
 
-A component is a class on a native element, so in a framework most of the library is the same markup in that framework's syntax; there is no `Button` to import. Twenty-one patterns hold state, render rows from data, join parts by id or have a lifetime, and each has a component: calendar, combobox, command, compare, dialog, editable, field, listbox, menu, otp, popover, sortable, splitter, stepper, tabs, tags, toast, toolbar, tooltip, tree and wheel.
+A component is a class on a native element, so in a framework most of the library is the same markup in that framework's syntax; there is no `Button` to import. Thirty-one patterns hold state, render rows from data, join parts by id or have a lifetime, and each has a component: calendar, color-picker, combobox, command, compare, cropper, dial, dialog, editable, field, gantt, listbox, log, menu, otp, panel, player, popover, signature, sortable, splitter, stepper, tabs, tags, toast, toolbar, tooltip, tour, transcript, tree and wheel.
 
 ```sh
 npx master-ui add combobox --framework=react   # ui/combobox.tsx and ui/use-behavior.ts
