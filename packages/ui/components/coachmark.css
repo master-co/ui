@@ -13,6 +13,12 @@
  * A beacon marks where a step is and is the button that opens it: a 10px ink dot that sends out a ring now and
  * then. Under the pointer, with focus, while its step is open and with reduced motion, the ring rests as a halo.
  * Without anchor positioning the card opens where the browser places a popover, centered, with no arrow.
+ * A tour holds its steps in coachmark-tour, which keeps the name of what its arrows point at to itself. Its
+ * spotlight is an empty popover the tour opens over each step's target with that target as its anchor: it
+ * covers the target and 4px around it, so the card's arrow points there wherever the step stands in the
+ * markup. It draws nothing by itself; dimmed, a ring of scrim as wide as the screen leaves the target lit,
+ * and in forced colors, where shadows are gone, a system-color outline marks the target instead. The scrim
+ * is paint only: the page under it still answers the pointer and the keys.
  */
 @layer components {
   .coachmark {
@@ -70,10 +76,34 @@
       --anchored-block: block-start;
     }
 
-    @media (forced-colors: active) {
-      outline: 1px solid CanvasText;
-      outline-offset: -1px;
+    /* A step with no action to focus is focused itself, as a dialog is, and reads as its title. */
+    &:focus-visible {
+      outline: none;
     }
+
+    @media (forced-colors: active) {
+      &, &:focus-visible {
+        outline: 1px solid CanvasText;
+        outline-offset: -1px;
+      }
+    }
+  }
+
+  /*
+   * The spotlight: an empty popover, nothing of the browser's own box. Where anchor positioning is missing it
+   * stays a point, and dims nothing it could not leave a hole in.
+   */
+  .coachmark-spotlight {
+    --coachmark-spotlight-inset: 4px;
+    --coachmark-spotlight-radius: var(--radius-control);
+    width: 0;
+    height: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    overflow: visible;
+    background: none;
+    pointer-events: none;
   }
 
   /*
@@ -159,6 +189,59 @@
     /* The element right before an open coachmark is what its arrow points at. */
     :where(:has(+ .coachmark:popover-open)) {
       anchor-name: --coachmark-target;
+    }
+
+    /* A tour keeps the name to itself, so the arrows of its steps find its spotlight and no other. */
+    .coachmark-tour {
+      anchor-scope: --coachmark-target;
+    }
+
+    /*
+     * Over the target the tour opened it against, and 4px around it, with the corner of a control plus that
+     * inset. It is what the arrow of the open step points at.
+     */
+    .coachmark-spotlight {
+      /* The element it was opened against; anchor() alone does not reach for it as position-area does. */
+      position-anchor: auto;
+      inset: auto;
+      top: anchor(top);
+      right: anchor(right);
+      bottom: anchor(bottom);
+      left: anchor(left);
+      width: auto;
+      height: auto;
+      margin: calc(var(--coachmark-spotlight-inset) * -1);
+      border-radius: calc(var(--coachmark-spotlight-radius) * var(--corner-scale) + var(--coachmark-spotlight-inset));
+      corner-shape: var(--corner-shape);
+      anchor-name: --coachmark-target;
+
+      /*
+       * Dimmed: a scrim as wide as the screen, drawn as the spotlight's ring, so the target stays lit. It
+       * fades in as the tour starts and out as it ends, a fade reduced motion keeps; from one step to the
+       * next the hole moves at once, so there is no travel to take away.
+       */
+      &.coachmark-spotlight-dim {
+        box-shadow: 0 0 0 100vmax var(--color-surface-scrim);
+        opacity: 0;
+        transition-property: opacity, overlay, display;
+        transition-duration: var(--duration-quick);
+        transition-timing-function: var(--easing-glide);
+        transition-behavior: allow-discrete;
+
+        &:popover-open {
+          opacity: 1;
+          transition-duration: var(--duration-base);
+
+          @starting-style {
+            opacity: 0;
+          }
+        }
+
+        /* Shadows are gone in forced colors: the target is marked by an outline of the system's highlight. */
+        @media (forced-colors: active) {
+          outline: 2px solid Highlight;
+        }
+      }
     }
   }
 

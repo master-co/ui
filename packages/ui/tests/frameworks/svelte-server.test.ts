@@ -29,6 +29,7 @@ const others: Record<string, Record<string, unknown>> = {
   'toast': {},
   'toolbar': {},
   'tooltip': {},
+  'tour': { spotlight: true },
   'tree': { nodes: [{ label: 'themes', children: [{ label: 'paper.css', value: 'themes/paper.css' }] }], 'aria-label': 'Files' },
 }
 

@@ -19,6 +19,7 @@ import { Tags } from '../../../frameworks/react/tags.tsx'
 import { toast, Toaster } from '../../../frameworks/react/toast.tsx'
 import { Toolbar, type ToolbarProps } from '../../../frameworks/react/toolbar.tsx'
 import { Tooltip } from '../../../frameworks/react/tooltip.tsx'
+import { Tour, type TourProps } from '../../../frameworks/react/tour.tsx'
 import { Tree } from '../../../frameworks/react/tree.tsx'
 import { Wheel } from '../../../frameworks/react/wheel.tsx'
 import { type CompareProps } from '../../../frameworks/react/compare.tsx'
@@ -56,6 +57,28 @@ function ToolbarExample(props: Omit<ToolbarProps, 'label'>) {
       <span className="toolbar-separator" role="separator" aria-orientation="vertical" />
       <button type="button" className="btn btn-quiet btn-sm">Link</button>
     </Toolbar>
+  )
+}
+
+function TourExample(props: Omit<TourProps, 'steps' | 'trigger'>) {
+  const share = useRef<HTMLButtonElement>(null)
+  return (
+    <>
+      <div className="toolbar" role="toolbar" aria-label="Deployments">
+        <button type="button" className="btn btn-quiet btn-sm" id="tour-search">Search</button>
+        <button type="button" className="btn btn-quiet btn-sm" id="tour-filter">Filter</button>
+        <button type="button" className="btn btn-quiet btn-sm" ref={share}>Share</button>
+      </div>
+      <Tour
+        trigger={attributes => <button type="button" className="btn" {...attributes}>Take the tour</button>}
+        steps={[
+          { target: '#tour-search', title: 'Search every deployment', text: 'Find one by its branch, its commit or the person who shipped it.' },
+          { target: () => document.getElementById('tour-filter'), title: 'Filter the list', text: 'Keep only the deployments of one branch, one author or one status.' },
+          { target: share, title: 'Share a deployment', text: 'Copy a link to it, open for anyone on the team.' },
+        ]}
+        {...props}
+      />
+    </>
   )
 }
 
@@ -139,6 +162,7 @@ export const fixtures = {
   'toast': Toaster,
   'toolbar': ToolbarExample,
   'tooltip': TooltipExample,
+  'tour': TourExample,
   'tree': Tree,
   'wheel': Wheel,
 } as unknown as Record<string, ComponentType<Record<string, unknown>>>

@@ -22,6 +22,7 @@ import SortableExample from './SortableExample.vue'
 import SplitterExample from './SplitterExample.vue'
 import ToolbarExample from './ToolbarExample.vue'
 import TooltipExample from './TooltipExample.vue'
+import TourExample from './TourExample.vue'
 
 /**
  * How each component is used. A component that takes markup of the page's is shown with it: a trigger,
@@ -49,6 +50,7 @@ export const fixtures: Record<string, Component> = {
   'toast': Toaster,
   'toolbar': ToolbarExample,
   'tooltip': TooltipExample,
+  'tour': TourExample,
   'tree': Tree,
   'wheel': Wheel,
 }

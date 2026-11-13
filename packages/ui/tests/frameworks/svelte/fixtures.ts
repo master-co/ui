@@ -22,6 +22,7 @@ import SortableExample from './SortableExample.svelte'
 import SplitterExample from './SplitterExample.svelte'
 import ToolbarExample from './ToolbarExample.svelte'
 import TooltipExample from './TooltipExample.svelte'
+import TourExample from './TourExample.svelte'
 
 /**
  * How each component is used. A component that takes markup of the page's is shown with it: a trigger,
@@ -49,6 +50,7 @@ export const fixtures = {
   'toast': Toaster,
   'toolbar': ToolbarExample,
   'tooltip': TooltipExample,
+  'tour': TourExample,
   'tree': Tree,
   'wheel': Wheel,
 } as unknown as Record<string, Component<Record<string, unknown>>>

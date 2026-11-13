@@ -26,10 +26,11 @@ import { stepper } from './stepper.js'
 import { tabs } from './tabs.js'
 import { tags } from './tags.js'
 import { toolbar } from './toolbar.js'
+import { tour } from './tour.js'
 import { tree } from './tree.js'
 import { wheel } from './wheel.js'
 
-export { calendar, calendarMonth, combobox, command, compare, contextMenu, dial, editable, listbox, menu, otp, range, sortable, splitter, stepper, tabs, tags, toolbar, tree, wheel }
+export { calendar, calendarMonth, combobox, command, compare, contextMenu, dial, editable, listbox, menu, otp, range, sortable, splitter, stepper, tabs, tags, toolbar, tour, tree, wheel }
 
 /**
  * Each pattern's root class and the behavior that drives it.
@@ -53,6 +54,7 @@ const patterns = [
   ['.editable', editable],
   ['.sortable', sortable],
   ['.toolbar[role="toolbar"]', toolbar],
+  ['.coachmark-tour', tour],
 ]
 
 /**

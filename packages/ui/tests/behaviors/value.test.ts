@@ -1,7 +1,7 @@
 import { afterEach, test } from 'node:test'
 import assert from 'node:assert/strict'
 import { dom } from './dom.ts'
-import { calendar, calendarMonth, combobox, command, compare, dial, listbox, otp, splitter, stepper, tree, wheel } from '../../behaviors/index.js'
+import { calendar, calendarMonth, combobox, command, compare, dial, listbox, otp, splitter, stepper, tour, tree, wheel } from '../../behaviors/index.js'
 
 /** happy-dom catches what a listener throws and reports it on the window; a test must not pass over it. */
 const thrown: unknown[] = []
@@ -435,5 +435,27 @@ test('compare: value reads and moves the range input, and setting it says nothin
   handle.value = 80
   assert.equal(one<HTMLInputElement>('.compare-range').value, '80')
   assert.equal(root.style.getPropertyValue('--compare-position'), '80%')
+  assert.deepEqual(heard, [])
+})
+
+test('tour: value reads and opens the step the tour is on, null when it is not running, and setting it says nothing', () => {
+  const { one, isOpen, document } = setup(`<button type="button" id="search">Search</button>
+<button type="button" id="share">Share</button>
+<div class="coachmark-tour">
+  <div class="coachmark" id="first" popover="manual" role="dialog" aria-label="Search" data-target="#search"></div>
+  <div class="coachmark" id="second" popover="manual" role="dialog" aria-label="Share" data-target="#share"></div>
+</div>`)
+  const root = one<HTMLElement>('.coachmark-tour')
+  const heard: string[] = []
+  for (const type of ['change', 'end']) root.addEventListener(type, () => heard.push(type))
+  const handle = tour(root)
+  assert.equal(handle.value, null)
+  handle.value = 1
+  assert.equal(handle.value, 1)
+  assert.equal(isOpen(one('#second')), true)
+  assert.equal(document.activeElement, one('#second'))
+  handle.value = null
+  assert.equal(handle.value, null)
+  assert.equal(isOpen(one('#second')), false)
   assert.deepEqual(heard, [])
 })

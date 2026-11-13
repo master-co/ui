@@ -706,6 +706,46 @@ export const scenarios: Record<string, Scenario> = {
     assert.equal(page.all('.toolbar').length, 0)
   },
 
+  async tour(driver, page) {
+    const ended: boolean[] = []
+    const { mounted, heard } = await owned(driver, 'tour', { spotlight: true, onEnd: (completed: boolean) => ended.push(completed) })
+    conforms(page)
+    const root = page.one<HTMLElement>('.coachmark-tour')
+    const steps = page.all<HTMLElement>('.coachmark')
+    const start = page.one<HTMLButtonElement>('button[command="--start"]')
+    const open = () => steps.filter(step => page.isOpen(step)).map(step => steps.indexOf(step))
+    const action = (index: number, value: string) => steps[index]!.querySelector<HTMLButtonElement>(`button[value="${value}"]`)!
+    assert.equal(start.getAttribute('commandfor'), root.id, 'the trigger names the tour')
+    assert.equal(steps.length, 3, 'a step for each one of the data')
+    assert.ok(page.one('.coachmark-spotlight').classList.contains('coachmark-spotlight-dim'))
+    assert.deepEqual(steps.map(step => step.querySelector('.coachmark-count')?.textContent), ['1 of 3', '2 of 3', '3 of 3'])
+    assert.deepEqual(steps.map(step => step.getAttribute('aria-labelledby')), steps.map(step => step.querySelector('.coachmark-title')!.id), 'each step is named by its title')
+    assert.deepEqual(steps.map(step => [...step.querySelectorAll('button')].map(button => button.value)), [['skip', 'next'], ['skip', 'back', 'next'], ['back', 'done']])
+    assert.deepEqual(open(), [])
+
+    await driver.act(() => { start.focus(); page.click(start) })
+    assert.deepEqual(open(), [0], 'the trigger starts the tour')
+    assert.deepEqual(heard, [0], 'the step comes out')
+    assert.equal(page.document.activeElement, action(0, 'next'), 'focus moves into the step')
+    await driver.act(() => page.click(action(0, 'next')))
+    assert.deepEqual(open(), [1], 'a target found by a function')
+    assert.deepEqual(heard, [0, 1])
+    await driver.act(() => page.key(action(1, 'next'), 'Escape'))
+    assert.deepEqual(open(), [])
+    assert.deepEqual(heard, [0, 1, null], 'the tour ends: null comes out')
+    assert.deepEqual(ended, [false], 'and then that it was left early')
+    assert.equal(page.document.activeElement, start, 'focus goes back to the trigger')
+
+    await driver.act(() => mounted.set({ value: 2 }))
+    assert.deepEqual(open(), [2], 'a step set by the owner opens, against a target the page holds a reference to')
+    assert.deepEqual(heard, [0, 1, null], 'and says nothing')
+    await driver.act(() => page.click(action(2, 'done')))
+    assert.deepEqual(heard, [0, 1, null, null])
+    assert.deepEqual(ended, [false, true], 'Done completes it')
+    conforms(page)
+    await driver.act(() => mounted.unmount())
+    assert.equal(page.all('.coachmark-tour').length, 0)
+  },
 
   async toast(driver, page) {
     const mounted = await driver.mount('toast')
