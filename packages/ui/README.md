@@ -144,6 +144,7 @@ Or import only the theme and the components you use:
 | Odometer | `odometer`, `odometer-value`, `odometer-figures`, `odometer-digit` |
 | Countdown | `countdown`, `countdown-tiles`, `countdown-inline`, `countdown-unit`, `countdown-value`, `countdown-label` |
 | Chart | `chart`, `chart-quiet`, `chart-values`, `chart-horizontal`, `chart-spark`, `chart-item`, `chart-label`, `chart-value` |
+| Sparkline | `sparkline`, `sparkline-success`, `sparkline-warning`, `sparkline-danger`, `sparkline-plot`, `sparkline-line`, `sparkline-area`, `sparkline-baseline`, `sparkline-dot` |
 | Breakdown | `breakdown`, `breakdown-rows`, `breakdown-item`, `breakdown-rest`, `breakdown-label`, `breakdown-value` |
 | Heatmap | `heatmap`, `heatmap-lg`, `heatmap-cell` |
 | Timeline | `timeline`, `timeline-item`, `timeline-marker`, `timeline-body`, `timeline-title`, `timeline-description`, `timeline-time` |

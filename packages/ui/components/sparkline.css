@@ -1,0 +1,111 @@
+/*
+ * Sparkline: a trend as one fine line, small enough for a sentence, a row or a stat.
+ * It is an inline SVG drawn in a box 100 units wide and 100 tall that stretches to the sparkline's size
+ * (preserveAspectRatio="none"), so the points are written once and the line fits whatever room it is given.
+ * The line keeps a 1.5px stroke however far the box stretches (vector-effect: non-scaling-stroke), with round
+ * joins and ends, in the ink of the text around it: a sparkline in a sentence, in a card and on an ink surface
+ * needs no variant. Under it an optional area fades out downward, and an optional hairline marks a baseline
+ * or a target. The latest value is a dot of HTML placed by --x and --y on the same 100 by 100 scale, since a
+ * circle drawn in the SVG would stretch with it; a ring of the surface behind it cuts it out of the line.
+ * It is 4em wide and .75em tall, about the height of a capital, and its middle stands on the middle of the
+ * capitals beside it, so it sits in a line of text like a word; set its size on it, or on a container such as
+ * a table, to stand in a stat or the rows of a column. It is not interactive and has no states. The status
+ * inks are for a trend whose words say the same thing beside it.
+ * The area fades with a mask; a browser that cannot mask an SVG shape shows it as an even tint.
+ */
+@layer components {
+  .sparkline {
+    --sparkline-stroke: 1.5px;
+    --sparkline-dot: 5px;
+    position: relative;
+    display: inline-block;
+    flex: none;
+    box-sizing: border-box;
+    /* Read with a fallback, so a table or a list can size every sparkline it holds at once. */
+    width: var(--sparkline-width, 4em);
+    height: var(--sparkline-height, .75em);
+    margin: 0;
+    /* Its middle stands on the middle of a capital (.355em in Geist), whatever its height. */
+    vertical-align: calc(.355em - var(--sparkline-height, .75em) / 2);
+
+    /* A dot at the end needs half its width beside the line, inside the sparkline's own box. */
+    &:has(.sparkline-dot) {
+      padding-right: calc(var(--sparkline-dot) / 2);
+    }
+
+    &.sparkline-success {
+      color: var(--color-success);
+    }
+
+    &.sparkline-warning {
+      color: var(--color-warning);
+    }
+
+    &.sparkline-danger {
+      color: var(--color-danger);
+    }
+
+    @media (forced-colors: active) {
+      color: CanvasText;
+    }
+  }
+
+  /* The drawing. Strokes may stand half their width past its edge, so nothing at the top or bottom is cut. */
+  .sparkline-plot {
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    fill: none;
+  }
+
+  .sparkline-line {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: var(--sparkline-stroke);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+  }
+
+  /* The area under the line: a tint of its ink that fades out toward the foot. */
+  .sparkline-area {
+    fill: color-mix(in oklab, currentColor 16%, transparent);
+    stroke: none;
+    mask-image: linear-gradient(to bottom, black, transparent);
+
+    @media (forced-colors: active) {
+      fill: none;
+    }
+  }
+
+  /* A baseline or a target: a dotted hairline, quieter than the line. */
+  .sparkline-baseline {
+    fill: none;
+    stroke: color-mix(in oklab, currentColor 32%, transparent);
+    stroke-width: 1px;
+    stroke-dasharray: 1 2;
+    vector-effect: non-scaling-stroke;
+  }
+
+  /* The latest value: a round dot by its middle at --x and --y, cut out of the line by a ring of the surface. */
+  .sparkline-dot {
+    position: absolute;
+    top: calc(var(--y, 50) * 1%);
+    left: calc((100% - var(--sparkline-dot) / 2) * var(--x, 100) / 100);
+    width: var(--sparkline-dot);
+    height: var(--sparkline-dot);
+    margin: calc(var(--sparkline-dot) / -2) 0 0 calc(var(--sparkline-dot) / -2);
+    border-radius: 999px;
+    corner-shape: round;
+    background: currentColor;
+    box-shadow: 0 0 0 1.5px var(--surface-color, var(--color-surface-base));
+    pointer-events: none;
+
+    @media (forced-colors: active) {
+      forced-color-adjust: none;
+      background: CanvasText;
+      box-shadow: none;
+    }
+  }
+}

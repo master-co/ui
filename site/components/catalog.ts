@@ -90,6 +90,7 @@ export const components = [
   { slug: 'countdown', name: 'Countdown', category: 'Data display', description: 'The time left until something, in days, hours, minutes and seconds.' },
   { slug: 'price', name: 'Price', category: 'Data display', description: 'What something costs, set the way a price is read.' },
   { slug: 'chart', name: 'Chart', category: 'Data display', description: 'A few numbers as bars, drawn by the stylesheet from a list.' },
+  { slug: 'sparkline', name: 'Sparkline', category: 'Data display', description: 'A trend as one fine line, small enough for a sentence, a row or a stat.' },
   { slug: 'breakdown', name: 'Breakdown', category: 'Data display', description: 'A whole as its parts along one bar, each as wide as its share.' },
   { slug: 'heatmap', name: 'Heatmap', category: 'Data display', description: 'Many small numbers as a field of cells, each as dark as its value.' },
   { slug: 'uptime', name: 'Uptime', category: 'Data display', description: 'How a service has been, one tick to a day.' },

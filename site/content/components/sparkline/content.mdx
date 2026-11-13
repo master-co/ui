@@ -1,0 +1,105 @@
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+A sparkline is a trend drawn as one fine line, small enough to stand where its words already are: under a figure in a [stat](/components/stat), in a column of a [table](/components/table), inside a sentence. It is an inline SVG that stretches to the room it is given while its line keeps a 1.5px stroke, in the ink of the text around it. A dot marks the latest value and stays round however far the drawing stretches. There is no script.
+
+<ComponentPreview name="default" height={224} narrowHeight={240} title="Sparkline" bodyClass="p-lg" html={`<div class="card max-w(320) mx-auto">
+  <div class="stat">
+    <p class="stat-label">Requests per day</p>
+    <div class="stat-row">
+      <p class="stat-value">61,240</p>
+      <p class="stat-delta stat-delta-up">12.4%</p>
+    </div>
+    <span class="sparkline" style="--sparkline-width: 100%; --sparkline-height: 2.5rem" aria-hidden="true"><svg class="sparkline-plot" viewBox="0 0 100 100" preserveAspectRatio="none"><path class="sparkline-area" d="M0 100 L7.69 90 L15.38 93.3 L23.08 76.7 L30.77 83.3 L38.46 66.7 L46.15 56.7 L53.85 63.3 L61.54 46.7 L69.23 30 L76.92 40 L84.62 20 L92.31 10 L100 0 V100 H0 Z" /><line class="sparkline-baseline" x1="0" y1="55.5" x2="100" y2="55.5" /><path class="sparkline-line" d="M0 100 L7.69 90 L15.38 93.3 L23.08 76.7 L30.77 83.3 L38.46 66.7 L46.15 56.7 L53.85 63.3 L61.54 46.7 L69.23 30 L76.92 40 L84.62 20 L92.31 10 L100 0" /></svg><span class="sparkline-dot" style="--x: 100; --y: 0"></span></span>
+    <p class="stat-description">The last 14 days; the dotted line is their average</p>
+  </div>
+</div>`} />
+
+## How the line is drawn \{#how-the-line-is-drawn\}
+
+The drawing is an `<svg class="sparkline-plot">` with `viewBox="0 0 100 100"` and `preserveAspectRatio="none"`: a box 100 units wide and 100 tall that is stretched to the sparkline's size. Write the points once, in that box, and the line fits a sentence and a card alike.
+
+- **Across**, the first point is at 0 and the last at 100, evenly spaced: for 14 values, one every 100 / 13 units.
+- **Down**, 0 is the top and 100 the foot, as SVG counts. Map your lowest value to 100 and your highest to 0, or to a scale of your own when several sparklines are compared.
+
+`sparkline-line` is a `<path>` (or a `<polyline>`) through the points. Its stroke does not stretch with the box (`vector-effect: non-scaling-stroke`), so it is 1.5px at any size, with round joins and ends.
+
+A sparkline shows a shape, not values. Each one in the table below is drawn on its own scale, from its own lowest to its own highest value, so the lines say which way each project went and not which is larger: the figures beside them do that.
+
+## The latest value \{#the-latest-value\}
+
+`sparkline-dot` is a small HTML dot, not an SVG circle: a circle in a stretched drawing would stretch into an oval. Place it by its middle with `--x` and `--y` on the same 100 by 100 scale, which are the last point's coordinates. A ring of the surface behind it cuts it out of the line, so the line ends at the dot instead of running into it. The sparkline keeps room for half the dot inside its own box, so the dot never crowds the word after it.
+
+## Area and baseline \{#area-and-baseline\}
+
+`sparkline-area` is a `<path>` through the same points, closed along the foot (`V100 H0 Z`): a tint of the line's ink that fades out downward. Put it before the line, so the line is drawn over it.
+
+`sparkline-baseline` is a dotted hairline, a `<line>` from 0 to 100 at the height of an average, a target or last period's value. It is quieter than the line, and the words beside the sparkline say what it marks, as in the stat above.
+
+## In a sentence \{#in-a-sentence\}
+
+A sparkline is 4em wide and .75em tall, about the height of a capital, and its middle stands on the middle of the capitals beside it, so it sits in a line of text like a word. Its ink is the text's: on a page, in a card and on an ink surface alike.
+
+<ComponentPreview name="sentence" height={96} narrowHeight={112} title="In a sentence" background="plain" bodyClass="p-lg" html={`<p class="m(0) max-w(440) mx-auto fg-text-body">Requests rose all fortnight <span class="sparkline" aria-hidden="true"><svg class="sparkline-plot" viewBox="0 0 100 100" preserveAspectRatio="none"><path class="sparkline-line" d="M0 100 L7.69 90 L15.38 93.3 L23.08 76.7 L30.77 83.3 L38.46 66.7 L46.15 56.7 L53.85 63.3 L61.54 46.7 L69.23 30 L76.92 40 L84.62 20 L92.31 10 L100 0" /></svg><span class="sparkline-dot" style="--x: 100; --y: 0"></span></span> to 61,000 a day, while latency fell <span class="sparkline" aria-hidden="true"><svg class="sparkline-plot" viewBox="0 0 100 100" preserveAspectRatio="none"><path class="sparkline-line" d="M0 0 L7.69 11.1 L15.38 3.7 L23.08 20.4 L30.77 25.9 L38.46 22.2 L46.15 42.6 L53.85 55.6 L61.54 50 L69.23 66.7 L76.92 75.9 L84.62 72.2 L92.31 85.2 L100 100" /></svg></span> to 128 ms.</p>`} />
+
+## In a table \{#in-a-table\}
+
+Set `--sparkline-width` and `--sparkline-height` on the sparkline, or once on a container such as the table, and every sparkline inside takes that size. A sparkline that sizes itself to a card, as in the stat above, takes `--sparkline-width: 100%`.
+
+<ComponentPreview name="table" height={196} title="In a table" bodyClass="p-lg" html={`<div class="sheet overflow-hidden max-w(480) mx-auto">
+  <table class="table table-compact" style="--sparkline-width: 5rem; --sparkline-height: 1rem">
+    <thead>
+      <tr class="table-row">
+        <th class="table-heading" scope="col">Project</th>
+        <th class="table-heading" scope="col">Last 14 days</th>
+        <th class="table-heading table-numeric" scope="col">Today</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="table-row">
+        <th class="table-cell table-primary" scope="row">Atlas</th>
+        <td class="table-cell"><span class="sparkline" role="img" aria-label="Rising steadily"><svg class="sparkline-plot" viewBox="0 0 100 100" preserveAspectRatio="none"><path class="sparkline-line" d="M0 100 L7.69 90 L15.38 93.3 L23.08 76.7 L30.77 83.3 L38.46 66.7 L46.15 56.7 L53.85 63.3 L61.54 46.7 L69.23 30 L76.92 40 L84.62 20 L92.31 10 L100 0" /></svg><span class="sparkline-dot" style="--x: 100; --y: 0"></span></span></td>
+        <td class="table-cell table-numeric">61,240</td>
+      </tr>
+      <tr class="table-row">
+        <th class="table-cell table-primary" scope="row">Borealis</th>
+        <td class="table-cell"><span class="sparkline" role="img" aria-label="Falling"><svg class="sparkline-plot" viewBox="0 0 100 100" preserveAspectRatio="none"><path class="sparkline-line" d="M0 5.9 L7.69 17.6 L15.38 0 L23.08 23.5 L30.77 35.3 L38.46 29.4 L46.15 52.9 L53.85 41.2 L61.54 70.6 L69.23 58.8 L76.92 82.4 L84.62 76.5 L92.31 94.1 L100 100" /></svg><span class="sparkline-dot" style="--x: 100; --y: 100"></span></span></td>
+        <td class="table-cell table-numeric">36,018</td>
+      </tr>
+      <tr class="table-row">
+        <th class="table-cell table-primary" scope="row">Cirrus</th>
+        <td class="table-cell"><span class="sparkline" role="img" aria-label="Rising slowly"><svg class="sparkline-plot" viewBox="0 0 100 100" preserveAspectRatio="none"><path class="sparkline-line" d="M0 100 L7.69 79.2 L15.38 91.7 L23.08 58.3 L30.77 66.7 L38.46 45.8 L46.15 54.2 L53.85 33.3 L61.54 41.7 L69.23 20.8 L76.92 29.2 L84.62 12.5 L92.31 16.7 L100 0" /></svg><span class="sparkline-dot" style="--x: 100; --y: 0"></span></span></td>
+        <td class="table-cell table-numeric">16,420</td>
+      </tr>
+    </tbody>
+  </table>
+</div>`} />
+
+## Status inks \{#status-inks\}
+
+`sparkline-success`, `sparkline-warning` and `sparkline-danger` draw the line and its dot in a status ink. Up is not always good: more errors is a rising line in the danger ink. Use them only where the words beside the sparkline say the same thing, so the ink is never the only sign.
+
+<ComponentPreview name="tones" height={96} narrowHeight={136} title="Status inks" background="plain" bodyClass="p-lg" html={`<p class="m(0) max-w(440) mx-auto fg-text-body">After the fix, errors fell by half <span class="sparkline sparkline-success" aria-hidden="true"><svg class="sparkline-plot" viewBox="0 0 100 100" preserveAspectRatio="none"><path class="sparkline-line" d="M0 9.1 L7.69 0 L15.38 15.2 L23.08 6.1 L30.77 21.2 L38.46 39.4 L46.15 60.6 L53.85 72.7 L61.54 78.8 L69.23 87.9 L76.92 81.8 L84.62 90.9 L92.31 97 L100 100" /></svg><span class="sparkline-dot" style="--x: 100; --y: 100"></span></span> to 18 an hour. Checkout got slower <span class="sparkline sparkline-danger" aria-hidden="true"><svg class="sparkline-plot" viewBox="0 0 100 100" preserveAspectRatio="none"><path class="sparkline-line" d="M0 91.7 L7.69 100 L15.38 83.3 L23.08 91.7 L30.77 75 L38.46 83.3 L46.15 66.7 L53.85 58.3 L61.54 66.7 L69.23 41.7 L76.92 33.3 L84.62 25 L92.31 16.7 L100 0" /></svg><span class="sparkline-dot" style="--x: 100; --y: 0"></span></span> and now takes 3.2 seconds.</p>`} />
+
+## Accessibility \{#accessibility\}
+
+- When the trend is not said in words beside it, give the sparkline `role="img"` and an `aria-label` that says it: "Rising from 31,000 to 61,000 a day". The drawing inside is then a single image.
+- When the words or the figures beside it already say the trend, as in a sentence or a stat, hide it with `aria-hidden="true"`, so it is not read twice.
+- In forced colors the line and the dot take the text color and the area is left out.
+
+## Without a mask on SVG \{#platform\}
+
+The area fades out with a CSS mask on the SVG shape. A browser that cannot mask an SVG shape draws the area as an even tint of the same ink.
+
+## Classes \{#classes\}
+
+<ContractTable name="sparkline" />
+
+## Custom properties \{#custom-properties\}
+
+<ContractTable name="sparkline" show="properties" />
+
+## Source \{#source\}
+
+<ComponentSource name="sparkline" />
