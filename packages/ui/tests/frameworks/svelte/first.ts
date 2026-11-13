@@ -19,4 +19,5 @@ export const first: [string, Record<string, unknown>, RegExp][] = [
   ['cropper', { value: { x: 64, y: 48, width: 320, height: 240 }, label: 'Crop the photo' }, /--cropper-x: 0\.1; --cropper-y: 0\.1; --cropper-width: 0\.5; --cropper-height: 0\.5[\s\S]*role="application"/],
   ['context-menu', { items: [{ label: 'Rename' }], 'aria-label': 'Project' }, /class="menu menu-context"/],
   ['tree', { nodes: [{ label: 'themes', value: 'themes', children: [{ label: 'paper.css', value: 'paper' }, { label: 'dark.css', value: 'dark' }] }], checkable: true, value: ['paper'], 'aria-label': 'Files' }, /data-value="themes"[^>]*aria-checked="mixed"[\s\S]*data-value="paper"[^>]*aria-checked="true"[\s\S]*data-value="dark"[^>]*aria-checked="false"/],
+  ['stepper', { value: 1250, format: { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }, locale: 'en-US', decrementLabel: 'Lower the budget', incrementLabel: 'Raise the budget', 'aria-label': 'Monthly budget' }, /value="1250"[^>]*aria-valuetext="\$1,250"[\s\S]*class="stepper-display"[^>]*>(<!--.*?-->)*\$1,250/],
 ]

@@ -102,7 +102,7 @@ Or import only the theme and the components you use:
 | Dropzone | `dropzone`, `dropzone-input`, `dropzone-title`, `dropzone-description` |
 | Signature | `signature`, `signature-readonly`, `signature-label`, `signature-pad`, `signature-ink`, `signature-stroke`, `signature-line`, `signature-placeholder`, `signature-actions`, `signature-undo`, `signature-clear`, `signature-name`, `signature-value`, `signature-status` |
 | OTP | `otp`, `otp-slot`, `otp-separator` |
-| Stepper | `stepper`, `stepper-field` |
+| Stepper | `stepper`, `stepper-field`, `stepper-value`, `stepper-display`, `stepper-scrub` |
 | Wheel | `wheel`, `wheel-sm`, `wheel-column`, `wheel-option`, `wheel-separator` |
 | Composer | `composer`, `composer-field`, `composer-attachments`, `composer-toolbar`, `composer-end`, `composer-hint` |
 | Tabs | `tabs`, `tabs-item`, `tabs-sm` |

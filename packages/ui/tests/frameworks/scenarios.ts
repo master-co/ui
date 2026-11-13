@@ -551,6 +551,22 @@ export const scenarios: Record<string, Scenario> = {
     assert.equal(more.disabled, true, 'the button toward the limit follows a value set by the owner')
     assert.equal(fewer.disabled, false)
     await driver.act(() => mounted.unmount())
+
+    // A formatted figure: written into the first render, kept by the behavior after that, and the value stays a number.
+    const budget = await owned(driver, 'stepper', { value: 1250, min: 0, step: 250, format: { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }, locale: 'en-US', decrementLabel: 'Lower the budget', incrementLabel: 'Raise the budget', 'aria-label': 'Monthly budget' })
+    conforms(page)
+    const display = page.one('.stepper-display')
+    const figure = page.one<HTMLInputElement>('.stepper-field')
+    assert.equal(display.textContent, '$1,250')
+    assert.equal(figure.getAttribute('aria-valuetext'), '$1,250')
+    assert.equal(figure.value, '1250')
+    await driver.act(() => page.click(page.all<HTMLButtonElement>('.stepper button')[1]))
+    assert.deepEqual(budget.heard, [1500], 'the value that comes out is the number')
+    assert.equal(display.textContent, '$1,500')
+    await driver.act(() => budget.mounted.set({ value: 4000 }))
+    assert.equal(display.textContent, '$4,000', 'a value set by the owner is written too')
+    assert.equal(figure.getAttribute('aria-valuetext'), '$4,000')
+    await driver.act(() => budget.mounted.unmount())
   },
 
   async log(driver, page) {
