@@ -72,6 +72,12 @@ export async function verifyComponentGeometry(browser: Browser, { theme, scheme,
         inputRadius: read.radius('.input'),
         childCode: { radius: read.radius('.code-panel .code-block'), shadow: read.style('.code-panel .code-block').boxShadow, background: read.style('.code-panel .code-block').backgroundColor },
         controlHeights: [...document.querySelectorAll('[data-control]')].map(element => element.getBoundingClientRect().height),
+        // Where a finger lands: the point 3px past the top edge of a button and a segment, and what takes it there.
+        reach: ['.btn[data-control]', '.segmented-item'].map(selector => {
+          const element = document.querySelector(selector)!, box = element.getBoundingClientRect()
+          const above = document.elementFromPoint(box.left + box.width / 2, box.top - 3)
+          return { selector, height: box.height, taken: above === element || element.contains(above) }
+        }),
         groupRadiusGap: read.radius('.input-group') - read.radius('.input-group .btn'),
         segmentRadiusGap: read.radius('.segmented') - read.radius('.segmented-item'),
         segmentInset: parseFloat(read.style('.segmented').paddingLeft),
@@ -93,7 +99,9 @@ export async function verifyComponentGeometry(browser: Browser, { theme, scheme,
     assert.match(values.childCode.background, /^rgba\([^)]*, 0\)$/, 'the inner block remains transparent, including in forced colors')
     assert.equal(values.coarse, touch)
     assert.equal(values.forcedColors, forcedColors)
-    for (const height of values.controlHeights) assert.ok(Math.abs(height - (touch ? 44 : 38)) < .5, `native control height: ${height}`)
+    // A control keeps its size at every pointer; on touch only its target grows, past the edge of what is drawn.
+    for (const height of values.controlHeights) assert.ok(Math.abs(height - 38) < .5, `native control height: ${height}`)
+    for (const reach of values.reach) assert.equal(reach.taken, touch, `${reach.selector} (${reach.height}px) takes a touch past its edge only on a coarse pointer`)
     assert.ok(Math.abs(values.groupRadiusGap - 4) < .02, 'input group inset is subtracted after scaling')
     assert.ok(Math.abs(values.segmentRadiusGap - values.segmentInset) < .02, 'segmented inset is added after scaling')
     assert.equal(new Set(values.tabWeights).size, 1, 'tab state never changes label weight')
