@@ -123,6 +123,7 @@ export const components = [
   { slug: 'mention', name: 'Mention', category: 'Typography', description: 'A person, a team or a thing named inside a sentence.' },
   { slug: 'citation', name: 'Citation', category: 'Typography', description: 'A small numbered mark in a sentence that points at its source.' },
   { slug: 'code', name: 'Code', category: 'Typography', description: 'Literal text in the mono face, inline or as a block.' },
+  { slug: 'snippet', name: 'Snippet', category: 'Typography', description: 'A command to copy: the line, its prompt and a button that copies it.' },
   { slug: 'kbd', name: 'Kbd', category: 'Typography', description: 'A keycap for shortcuts in text and menus.' },
 ] as const
 

@@ -1,0 +1,185 @@
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+A snippet is one command to copy: the line a reader runs in a terminal, its prompt, and a button that copies it. It is a [well](/components/surface#well) in the mono face, as a [code block](/components/code#block) is, and as tall as a button, so it can stand beside one. The prompt cannot be selected, the command never wraps, and the button sits 4px in from the end, quiet until it is pointed at.
+
+<ComponentPreview name="default" height={96} title="Snippet" background="plain" bodyClass="p-lg" html={`<div class="snippet max-w(360) mx-auto">
+  <span class="snippet-prompt" aria-hidden="true">$</span>
+  <code class="snippet-command" tabindex="0">npm install @master/ui</code>
+  <button type="button" class="btn btn-quiet btn-square" aria-label="Copy command">
+    <svg class="icon snippet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 8h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
+    <svg class="icon snippet-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>
+  </button>
+  <output class="snippet-status"></output>
+</div>
+<script>
+document.querySelectorAll('.snippet').forEach(function (snippet) {
+  var status = snippet.querySelector('.snippet-status')
+  var timer = 0
+  snippet.querySelector('.btn').addEventListener('click', function () {
+    var command = Array.prototype.find.call(snippet.querySelectorAll('.snippet-command'), function (line) {
+      return line.checkVisibility()
+    })
+    navigator.clipboard.writeText(command.textContent).then(function () {
+      status.textContent = 'Copied'
+      clearTimeout(timer)
+      timer = setTimeout(function () { status.textContent = '' }, 2000)
+    })
+  })
+})
+</script>`} caption="Copy the command: the icon turns into a check for two seconds." />
+
+## The line \{#line\}
+
+`snippet` holds three things in three columns. `snippet-prompt` is the glyph a terminal shows before a command, `$` or `>`, in a quieter ink; it cannot be selected, so a reader who selects the line by hand takes the command alone, and it is marked `aria-hidden` so it is not read aloud. `snippet-command` is the command, on a `<code>`. Then the button, a quiet square [button](/components/button) whose height and corner the snippet sets: the line less 4px on each side.
+
+A command longer than the line does not wrap: it scrolls sideways, without a scrollbar, and the edge where it goes on fades. The fade is read from the scroll position, so the start is clean until the line has been scrolled. Give the command `tabindex="0"`, so the arrow keys can scroll it; the whole line then takes the focus ring.
+
+<ComponentPreview name="long" height={96} title="A long command" background="plain" bodyClass="p-lg" html={`<div class="snippet max-w(360) mx-auto">
+  <span class="snippet-prompt" aria-hidden="true">$</span>
+  <code class="snippet-command" tabindex="0">curl -fsSL https://ui.master.co/install.sh | sh -s -- --yes --prefix ~/.local</code>
+  <button type="button" class="btn btn-quiet btn-square" aria-label="Copy command">
+    <svg class="icon snippet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 8h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
+    <svg class="icon snippet-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>
+  </button>
+  <output class="snippet-status"></output>
+</div>
+<script>
+document.querySelectorAll('.snippet').forEach(function (snippet) {
+  var status = snippet.querySelector('.snippet-status')
+  var timer = 0
+  snippet.querySelector('.btn').addEventListener('click', function () {
+    var command = Array.prototype.find.call(snippet.querySelectorAll('.snippet-command'), function (line) {
+      return line.checkVisibility()
+    })
+    navigator.clipboard.writeText(command.textContent).then(function () {
+      status.textContent = 'Copied'
+      clearTimeout(timer)
+      timer = setTimeout(function () { status.textContent = '' }, 2000)
+    })
+  })
+})
+</script>`} caption="Scroll the command sideways: each edge fades while there is more past it." />
+
+## Copying \{#copying\}
+
+Copying needs a script: hand the command's text to `navigator.clipboard`. The state it leaves is not a class. Beside the button is an empty `<output>`, `snippet-status`, which the reader never sees: the script writes "Copied" into it, which a screen reader announces, and empties it two seconds later. While it is not empty, the stylesheet turns the copy icon into a check, so the eye is told the same thing as the ear.
+
+The script in the previews is the whole of it: find the command that is shown, write it to the clipboard, then fill and empty the status. The clipboard is there only on pages served over HTTPS or from localhost. Where scripting is off the button is not drawn, and the command is still text to select and copy by hand.
+
+## Package managers \{#package-managers\}
+
+To give the same command for npm, pnpm, bun and yarn, put a [segmented control](/components/segmented) of native radios first in the snippet and write one `snippet-command` for each option, in the same order. The control gives up its own well and lies along the top of the snippet, over a hairline; the chosen option rises as a sheet that glides to the next. The command in the chosen option's place is the one shown, with no script, for up to six options.
+
+<ComponentPreview name="managers" height={136} title="Package managers" background="plain" bodyClass="p-lg" html={`<div class="snippet max-w(360) mx-auto">
+  <div class="segmented" role="radiogroup" aria-label="Package manager">
+    <label class="segmented-item"><input class="segmented-input" type="radio" name="manager" checked>npm</label>
+    <label class="segmented-item"><input class="segmented-input" type="radio" name="manager">pnpm</label>
+    <label class="segmented-item"><input class="segmented-input" type="radio" name="manager">bun</label>
+    <label class="segmented-item"><input class="segmented-input" type="radio" name="manager">yarn</label>
+  </div>
+  <span class="snippet-prompt" aria-hidden="true">$</span>
+  <code class="snippet-command" tabindex="0">npm install @master/ui</code>
+  <code class="snippet-command" tabindex="0">pnpm add @master/ui</code>
+  <code class="snippet-command" tabindex="0">bun add @master/ui</code>
+  <code class="snippet-command" tabindex="0">yarn add @master/ui</code>
+  <button type="button" class="btn btn-quiet btn-square" aria-label="Copy command">
+    <svg class="icon snippet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 8h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
+    <svg class="icon snippet-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>
+  </button>
+  <output class="snippet-status"></output>
+</div>
+<script>
+document.querySelectorAll('.snippet').forEach(function (snippet) {
+  var status = snippet.querySelector('.snippet-status')
+  var timer = 0
+  snippet.querySelector('.btn').addEventListener('click', function () {
+    var command = Array.prototype.find.call(snippet.querySelectorAll('.snippet-command'), function (line) {
+      return line.checkVisibility()
+    })
+    navigator.clipboard.writeText(command.textContent).then(function () {
+      status.textContent = 'Copied'
+      clearTimeout(timer)
+      timer = setTimeout(function () { status.textContent = '' }, 2000)
+    })
+  })
+})
+</script>`} caption="Choose a package manager: its command takes the line." />
+
+## Sizes \{#sizes\}
+
+The line is 38px, the height of a button. `snippet-sm` is 32px in 12px type, for a dense page or a table; `snippet-lg` is 44px in 14px type, for the head of a page, where it stands level with a large button. On a touch screen every size is 44px.
+
+<ComponentPreview name="sizes" height={224} narrowHeight={280} title="Sizes" background="plain" bodyClass="p-lg" html={`<div class="flex flex-col items-center gap-lg">
+  <div class="snippet snippet-sm">
+    <span class="snippet-prompt" aria-hidden="true">$</span>
+    <code class="snippet-command" tabindex="0">npx master-ui add button</code>
+    <button type="button" class="btn btn-quiet btn-square" aria-label="Copy command">
+      <svg class="icon snippet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 8h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
+      <svg class="icon snippet-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>
+    </button>
+    <output class="snippet-status"></output>
+  </div>
+  <div class="snippet">
+    <span class="snippet-prompt" aria-hidden="true">$</span>
+    <code class="snippet-command" tabindex="0">npx master-ui add button</code>
+    <button type="button" class="btn btn-quiet btn-square" aria-label="Copy command">
+      <svg class="icon snippet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 8h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
+      <svg class="icon snippet-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>
+    </button>
+    <output class="snippet-status"></output>
+  </div>
+  <div class="flex flex-wrap items-center justify-center gap-sm">
+    <a class="btn btn-primary btn-lg" href="#">Get started</a>
+    <div class="snippet snippet-lg">
+      <span class="snippet-prompt" aria-hidden="true">$</span>
+      <code class="snippet-command" tabindex="0">npm install @master/ui</code>
+      <button type="button" class="btn btn-quiet btn-square" aria-label="Copy command">
+        <svg class="icon snippet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 8h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
+        <svg class="icon snippet-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>
+      </button>
+      <output class="snippet-status"></output>
+    </div>
+  </div>
+</div>
+<script>
+document.querySelectorAll('.snippet').forEach(function (snippet) {
+  var status = snippet.querySelector('.snippet-status')
+  var timer = 0
+  snippet.querySelector('.btn').addEventListener('click', function () {
+    var command = Array.prototype.find.call(snippet.querySelectorAll('.snippet-command'), function (line) {
+      return line.checkVisibility()
+    })
+    navigator.clipboard.writeText(command.textContent).then(function () {
+      status.textContent = 'Copied'
+      clearTimeout(timer)
+      timer = setTimeout(function () { status.textContent = '' }, 2000)
+    })
+  })
+})
+</script>`} />
+
+## Snippet or code \{#snippet-or-code\}
+
+A snippet is one line to run. Several lines, a file or output to read belong in a [code block](/components/code#block), and a command named inside a sentence is inline [code](/components/code). A key to press is a [kbd](/components/kbd).
+
+## Accessibility \{#accessibility\}
+
+- Mark the prompt `aria-hidden="true"`: it is decoration, and the command is what is read.
+- Give the copy button an `aria-label`, such as "Copy command". Its icons are `aria-hidden`.
+- Leave `snippet-status` empty in the markup, with no white space inside it. The script's "Copied" is announced from it; an `<output>` is a polite live region of its own.
+- Give the command `tabindex="0"`, so a command longer than the line can be scrolled from the keyboard.
+- In forced colors the fade is removed, the well is drawn with an outline and the prompt takes the system's gray text.
+
+## Classes \{#classes\}
+
+<ContractTable name="snippet" />
+
+## Custom properties \{#custom-properties\}
+
+<ContractTable name="snippet" show="properties" />
+
+## Source \{#source\}
+
+<ComponentSource name="snippet" />

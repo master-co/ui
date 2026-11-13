@@ -1,0 +1,45 @@
+{
+  "$schema": "../contract.schema.json",
+  "name": "snippet",
+  "title": "Snippet",
+  "tier": "component",
+  "category": "Typography",
+  "description": "A command to copy: the line, its prompt and a button that copies it.",
+  "use": "One command a reader runs in a terminal: an install line under a heading, beside the main action of a hero, or as a step of a guide. The prompt cannot be selected, the command scrolls sideways instead of wrapping, and a quiet button copies it. A segmented control inside holds the same command for each package manager.",
+  "instead": [
+    { "when": "It is several lines, or a file to read rather than a line to run", "use": "code" },
+    { "when": "The reader types or edits the value", "use": "input" },
+    { "when": "It is a key or a shortcut to press", "use": "kbd" }
+  ],
+  "composes": ["button", "icon", "segmented"],
+  "script": "optional",
+  "keyboard": [
+    { "keys": "Tab", "action": "Reaches the command, which scrolls with the arrow keys when it is longer than the line, then the copy button" },
+    { "keys": "Enter, Space", "action": "On the copy button: copy the command, once the page's script is attached" },
+    { "keys": "ArrowLeft, ArrowRight", "action": "In the segmented control: choose another package manager, and its command is shown" }
+  ],
+  "platform": [
+    { "feature": "Scroll-driven animations (animation-timeline: scroll())", "fallback": "A long command scrolls the same, with clean edges instead of a fade where it goes on" },
+    { "feature": "@media (scripting: none)", "fallback": "The copy button is drawn even when scripting is off, and does nothing" }
+  ],
+  "classes": [
+    { "name": "snippet", "kind": "root", "description": "The line: a well 38px tall, in the mono face, with the prompt, the command and the button in three columns" },
+    { "name": "snippet-sm", "kind": "modifier", "of": "snippet", "exclusive": "size", "description": "A 32px line in 12px type; the default is 38px" },
+    { "name": "snippet-lg", "kind": "modifier", "of": "snippet", "exclusive": "size", "description": "A 44px line in 14px type, for the head of a page" },
+    { "name": "snippet-prompt", "kind": "part", "of": "snippet", "description": "The prompt glyph, $ or >, in a quieter ink. It cannot be selected; mark it aria-hidden=\"true\"" },
+    { "name": "snippet-command", "kind": "part", "of": "snippet", "description": "The command, on a <code>: one line that never wraps and scrolls sideways, fading at the edge where it goes on. Give it tabindex=\"0\". With a segmented control, write one per option, in the same order; up to six" },
+    { "name": "snippet-icon", "kind": "part", "of": "snippet", "description": "The copy icon in the button, with icon. It steps aside once the status says the command is copied" },
+    { "name": "snippet-check", "kind": "part", "of": "snippet", "description": "The check in the button, with icon, after the copy icon. It takes the copy icon's place once copied" },
+    { "name": "snippet-status", "kind": "part", "of": "snippet", "elements": ["output"], "description": "An empty <output>, not seen, which announces what the script writes into it. Written to, it turns the copy icon into the check; emptied, it turns it back" }
+  ],
+  "states": [
+    { "on": "snippet-status", "name": "copied", "mark": ":not(:empty)", "description": "The script wrote \"Copied\" into the status: the copy icon turns into the check. Empty it again after a moment" },
+    { "on": "snippet-command", "name": "focus-visible", "mark": ":focus-visible", "description": "The whole line takes the focus ring" }
+  ],
+  "properties": [
+    { "name": "--snippet-height", "on": "snippet", "default": "2.375rem", "description": "Height of the line; the button is 8px less, 4px in" },
+    { "name": "--snippet-radius", "on": "snippet", "default": "var(--radius-control)", "description": "Circular radius of the well before the corner scale; the button and the options take it less their 4px inset" },
+    { "name": "--snippet-fade", "on": "snippet", "default": "1.5rem", "description": "Length of the fade at an edge where a long command goes on" }
+  ],
+  "example": "<div class=\"snippet\">\n  <span class=\"snippet-prompt\" aria-hidden=\"true\">$</span>\n  <code class=\"snippet-command\" tabindex=\"0\">npm install @master/ui</code>\n  <button type=\"button\" class=\"btn btn-quiet btn-square\" aria-label=\"Copy command\">\n    <svg class=\"icon snippet-icon\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M10 8h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2\"/></svg>\n    <svg class=\"icon snippet-check\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m5 12 5 5L20 7\"/></svg>\n  </button>\n  <output class=\"snippet-status\"></output>\n</div>"
+}

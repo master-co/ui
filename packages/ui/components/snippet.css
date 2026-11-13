@@ -1,0 +1,288 @@
+/*
+ * Snippet: a command to copy, on one line: the prompt, the command and a button that copies it.
+ * The line is a well, as a code block is: literal text is cut into the page, and the button that takes it is a
+ * quiet control 4px in from the end, which rises as a sheet under the pointer as it does in a code panel. The
+ * well is as tall as a button (32, 38 and 44px), so a snippet can stand in a row beside one, as an install line
+ * stands beside the main action of a hero.
+ * The prompt is a glyph in the mono face, quieter than the command; it cannot be selected and is not read aloud,
+ * so selecting the line by hand takes the command alone. The command never wraps: a long one scrolls sideways
+ * and fades at the edge where it goes on, read from its own scroll position. Without scroll-driven animations
+ * it scrolls the same, with clean edges.
+ * Copied is not a class: the script writes "Copied" into an <output> beside the button, which announces it, and
+ * the stylesheet reads that the output is no longer empty and turns the copy icon into a check. Emptying it turns
+ * it back. Without scripting the button is not drawn, and the command is still text to select.
+ * With a segmented control in it, the snippet holds one command per package manager: the control gives up its
+ * own well and lies along the top over a hairline, and the command whose place matches the checked option is
+ * the one shown, for up to six, with no script.
+ */
+@property --snippet-fade-start {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+
+@property --snippet-fade-end {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+
+@layer components {
+  .snippet {
+    --snippet-height: 2.375rem;
+    --snippet-radius: var(--radius-control);
+    --snippet-padding-x: .875rem;
+    --snippet-font-size: .8125rem;
+    --snippet-fade: 1.5rem;
+    position: relative;
+    /* Three columns: the prompt, the command and the button. A row of options takes a row of its own above. */
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-auto-rows: minmax(var(--snippet-height), auto);
+    align-items: center;
+    min-width: 0;
+    margin: 0;
+    padding: 0 4px 0 var(--snippet-padding-x);
+    border-radius: calc(var(--snippet-radius) * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    background: var(--color-surface-inset);
+    color: var(--color-text-strong);
+    box-shadow: var(--shadow-pressed);
+    font: 400 var(--snippet-font-size)/1.5 var(--font-family-mono);
+    font-variant-ligatures: none;
+
+    &.snippet-sm {
+      --snippet-height: 2rem;
+      --snippet-radius: var(--radius-control-sm);
+      --snippet-padding-x: .75rem;
+      --snippet-font-size: .75rem;
+    }
+
+    &.snippet-lg {
+      --snippet-height: 2.75rem;
+      --snippet-radius: var(--radius-control-lg);
+      --snippet-padding-x: 1rem;
+      --snippet-font-size: .875rem;
+
+      .btn {
+        --icon-size: 1rem;
+      }
+    }
+
+    /* Focus on the command, which scrolls with the arrow keys, rings the whole line. */
+    &:has(.snippet-command:focus-visible) {
+      @apply --focus-ring;
+    }
+
+    /*
+     * The button in the well sits 4px in, so its corner is the well's corner minus that inset. It does not lift:
+     * it rises out of the well instead.
+     */
+    .btn {
+      --btn-height: calc(var(--snippet-height) - 8px);
+      --btn-radius: calc(var(--snippet-radius) - 4px / var(--corner-scale));
+      --btn-lift: 0px;
+      --icon-size: .875rem;
+      --icon-offset: 0px;
+      grid-column: 3;
+      min-height: var(--btn-height);
+      margin-inline-start: .375rem;
+
+      /* A square one stays square on touch, where a button alone would widen to 44px. */
+      &.btn-square {
+        min-width: var(--btn-height);
+      }
+    }
+
+    /*
+     * Package managers: the segmented control lies along the top of the well, over a hairline, and gives up its
+     * own well; its options rise out of the snippet's, 4px in, as tall and as round as the button below.
+     */
+    .segmented {
+      --segmented-inset: 4px;
+      --segmented-item-height: calc(var(--snippet-height) - 8px);
+      --segmented-item-radius: calc(var(--snippet-radius) - 4px / var(--corner-scale));
+      --segmented-font-size: .75rem;
+      display: flex;
+      grid-column: 1 / -1;
+      align-self: stretch;
+      gap: 2px;
+      max-width: none;
+      margin-inline: calc(-1 * var(--snippet-padding-x)) -4px;
+      border-radius: 0;
+      border-bottom: 1px solid var(--color-line-hair);
+      background: none;
+      box-shadow: none;
+    }
+
+    .segmented-item {
+      flex: none;
+      min-width: 0;
+      padding-inline: .625rem;
+    }
+
+    /* Each option shows the command in its place; the others step aside. */
+    &:has(.segmented) .snippet-command {
+      display: none;
+    }
+
+    &:has(.segmented-item:nth-child(1 of .segmented-item) .segmented-input:checked) .snippet-command:nth-child(1 of .snippet-command),
+    &:has(.segmented-item:nth-child(2 of .segmented-item) .segmented-input:checked) .snippet-command:nth-child(2 of .snippet-command),
+    &:has(.segmented-item:nth-child(3 of .segmented-item) .segmented-input:checked) .snippet-command:nth-child(3 of .snippet-command),
+    &:has(.segmented-item:nth-child(4 of .segmented-item) .segmented-input:checked) .snippet-command:nth-child(4 of .snippet-command),
+    &:has(.segmented-item:nth-child(5 of .segmented-item) .segmented-input:checked) .snippet-command:nth-child(5 of .snippet-command),
+    &:has(.segmented-item:nth-child(6 of .segmented-item) .segmented-input:checked) .snippet-command:nth-child(6 of .snippet-command) {
+      display: block;
+    }
+
+    @media (pointer: coarse) {
+      &:not(.snippet-lg) {
+        --snippet-height: 2.75rem;
+      }
+    }
+
+    /* Copying needs a script; without one the button would do nothing, so it is not drawn. */
+    @media (scripting: none) {
+      .btn {
+        display: none;
+      }
+    }
+
+    @media (forced-colors: active) {
+      outline: 1px solid CanvasText;
+      outline-offset: -1px;
+
+      &:has(.snippet-command:focus-visible) {
+        outline: 2px solid Highlight;
+        outline-offset: 2px;
+      }
+    }
+  }
+
+  /* The prompt: a glyph such as $ or >, quieter than the command. Mark it aria-hidden. */
+  .snippet-prompt {
+    grid-column: 1;
+    margin: 0 1ch 0 0;
+    color: var(--color-text-muted);
+    font: inherit;
+    user-select: none;
+    -webkit-user-select: none;
+
+    @media (forced-colors: active) {
+      color: GrayText;
+    }
+  }
+
+  /*
+   * The command: one line that scrolls sideways and never wraps, with no scrollbar. Give it tabindex="0" so the
+   * keys can scroll it. Where it goes on past an edge, that edge fades.
+   */
+  .snippet-command {
+    display: block;
+    grid-column: 2;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    overflow: auto hidden;
+    background: none;
+    color: inherit;
+    font: inherit;
+    white-space: pre;
+    outline: none;
+    scrollbar-width: none;
+    overscroll-behavior-inline: contain;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+
+    @supports (animation-timeline: scroll()) {
+      mask-image: linear-gradient(to right, transparent, black var(--snippet-fade-start), black calc(100% - var(--snippet-fade-end)), transparent);
+      /* Longhands: tools that fold the timeline into the shorthand write a value no browser reads. */
+      animation-name: snippet-fade-start, snippet-fade-end;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-timeline: scroll(self inline), scroll(self inline);
+      animation-range: 0 var(--snippet-fade), calc(100% - var(--snippet-fade)) 100%;
+    }
+
+    @media (forced-colors: active) {
+      mask-image: none;
+    }
+  }
+
+  /*
+   * The copy icon, and the check that takes its place once copied, in the strong ink. Both sit in the button, one
+   * over the other; the swap is a quick cross-fade, and with motion the check grows into place as the icon shrinks.
+   */
+  .snippet-icon, .snippet-check {
+    transition-property: opacity, scale;
+    transition-duration: var(--duration-quick);
+    transition-timing-function: var(--easing-glide);
+  }
+
+  .snippet-check {
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    color: var(--color-text-strong);
+    opacity: 0;
+  }
+
+  .snippet:has(.snippet-status:not(:empty)) {
+    .snippet-icon {
+      opacity: 0;
+    }
+
+    .snippet-check {
+      opacity: 1;
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .snippet-check {
+      scale: .6;
+    }
+
+    .snippet:has(.snippet-status:not(:empty)) {
+      .snippet-icon {
+        scale: .6;
+      }
+
+      .snippet-check {
+        scale: 1;
+      }
+    }
+  }
+
+  /* An <output> the script writes "Copied" into: announced, never seen. The icon says it to the eye. */
+  .snippet-status {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+@keyframes snippet-fade-start {
+  from {
+    --snippet-fade-start: 0px;
+  }
+
+  to {
+    --snippet-fade-start: var(--snippet-fade);
+  }
+}
+
+@keyframes snippet-fade-end {
+  from {
+    --snippet-fade-end: var(--snippet-fade);
+  }
+
+  to {
+    --snippet-fade-end: 0px;
+  }
+}

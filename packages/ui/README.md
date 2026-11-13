@@ -165,6 +165,7 @@ Or import only the theme and the components you use:
 | Badge | `badge`, `badge-sm`, `badge-lg`, `badge-pill`, `badge-outline`, `badge-raised`, `badge-ink`, `badge-info`, `badge-success`, `badge-warning`, `badge-danger`, `badge-dot`, `badge-live`, `badge-corner` |
 | Heading | `heading`, `heading-xs`, `heading-sm`, `heading-lg`, `heading-xl`, `heading-2xl`, `heading-display`, `eyebrow`, `lead`, `lead-sm`, `lead-lg` |
 | Code | `code`, `code-block`, `code-line`, `code-line-highlight`, `code-line-added`, `code-line-removed`, `code-numbered`, `code-panel`, `code-header`, `code-title` |
+| Snippet | `snippet`, `snippet-sm`, `snippet-lg`, `snippet-prompt`, `snippet-command`, `snippet-icon`, `snippet-check`, `snippet-status` |
 | Kbd | `kbd`, `kbd-raised` |
 | Mark | `mark`, `mark-brand`, `mark-underline` |
 | Revision | `ins`, `del` |
