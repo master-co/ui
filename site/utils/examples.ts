@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync, statSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { build } from 'esbuild'
@@ -66,16 +66,7 @@ export function exampleSetup(id: string) {
   }
 }
 
-const bundles = new Map<string, { stamp: string, bundle: Promise<string> }>()
-
-/** When the example's own files last changed: a bundle is made again after an edit, as a dev server needs. */
-function stamp(id: string) {
-  const folder = join(directory, id)
-  return readdirSync(folder, { recursive: true, withFileTypes: true })
-    .filter(entry => entry.isFile())
-    .map(entry => statSync(join(entry.parentPath, entry.name)).mtimeMs)
-    .join()
-}
+const bundles = new Map<string, Promise<string>>()
 
 /**
  * The example's module and what it imports, bundled for the preview. It mounts on the example's root and
