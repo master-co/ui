@@ -1,0 +1,179 @@
+---
+title: "署名パッド"
+description: "指、ペン、マウスで署名するくぼみ。代わりに名前を入力することもできます。"
+---
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+署名パッドは、指、ペン、マウスで署名するくぼみと、代わりに名前を入力するフィールドで構成されます。パッドは[テキストフィールド](/components/input)と同じくぼみで、署名する位置を示す細い線と、名前を書き始める位置を示す小さな十字が付きます。各ストロークは、ペンの筆圧に応じた太さの塗りつぶした輪郭として、インラインの `<svg>` に書き込まれ、描いたものは SVG ドキュメントとしてフォームに渡されます。全体はネイティブの `<fieldset>` です。凡例（legend）で署名の対象を示し、`<fieldset>` に `disabled` を指定するとパッドが止まり、内部のすべての要素が無効になります。
+
+<ComponentPreview name="default" height={344} title="署名パッド" background="plain" bodyClass="p-lg" behaviors html={`<fieldset class="signature max-w(440) mx-auto">
+  <legend class="signature-label">Sign the lease</legend>
+  <div class="signature-pad">
+    <svg class="signature-ink" viewBox="0 0 400 160" role="img" aria-label="Your drawn signature"></svg>
+    <span class="signature-line" aria-hidden="true"></span>
+    <span class="signature-placeholder" aria-hidden="true">Sign here</span>
+    <div class="signature-actions">
+      <button type="button" class="btn btn-sm btn-quiet signature-undo">Undo</button>
+      <button type="button" class="btn btn-sm btn-quiet signature-clear">Clear</button>
+    </div>
+  </div>
+  <label class="field">Or type your full name
+    <input class="input signature-name" name="signer" autocomplete="name" placeholder="Ada Lovelace">
+  </label>
+  <input type="hidden" class="signature-value" name="signature">
+  <span class="signature-status" role="status"></span>
+</fieldset>`} caption="指、ペン、マウスで署名します。Undo で最後のストロークを、Clear ですべてのストロークを取り消します。名前を入力することもでき、入力した名前は筆記体で表示されます。" />
+
+## ビヘイビア \{#behavior\}
+
+パッドで描画するにはスクリプトが必要です。`signature` の[ビヘイビア](/guide/behaviors)は、`signature` クラスを持つ要素であるルートを受け取り、ビヘイビアを解除する関数を返します。
+
+```js name=app.js
+import { signature } from '@master/ui/behaviors/signature.js'
+
+const pad = signature(document.querySelector('.signature'))
+
+pad.value // [[[x, y, pressure], …], …], one list of points a stroke
+pad.svg   // '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 160" …>…</svg>', or '' when nothing is drawn
+```
+
+- **ストローク**　ストロークは、ポインターが通過した点の集まりです。各点は描画の `viewBox` の単位で表され、0 から 1 までの筆圧を持ちます。ペンは自身の筆圧を伝えますが、指とマウスは筆圧を伝えません。そのため、ペンが留まった場所にインクがたまるように、ゆっくり動かした部分ほどストロークが太く描かれます。各ストロークは `signature-stroke` のパスになります。一定の筆圧で `--signature-weight` の幅を持つ塗りつぶした輪郭で、点を通る曲線でなめらかにし、端は丸めます。ブラウザーがポインターの移動イベントをまとめる場合も、まとめられたイベントまで読み取るため、素早い筆運びでも曲線が保たれます。
+- **値**　`value` はストロークの集まりで、設定するとストロークを描画します。この場合、イベントは発行されません。`svg` は描画内容を SVG ドキュメントにしたものです。`signature-value` フィールドも同じドキュメントを保持するため、フォームがそれを送信します。パスは `currentColor` を使い、画像としては黒になります。
+- **イベント**　フィールドは、ストロークを描いている間に `input` を、描き終えたときに `change` を発行します。Undo や Clear でストロークを取り消したときは両方を発行します。
+- **Undo と Clear**　Undo は最後のストロークを、Clear はすべてのストロークを取り消します。ストロークがないうちは、どちらも表示されません。取り消すものがない間、スクリプトはボタンに `aria-disabled` を付けます。そのため、パッドを空にしたばかりのボタンはフォーカスを保ったまま、その状態を伝えます。
+- **ステータス**　`signature-status` は、最初のストロークを描き終えたときに「Signature drawn」、パッドが空になったときに「Signature cleared」、Undo の後に「Last stroke removed」と読み上げます。
+
+| オプション | 設定する内容 |
+| --- | --- |
+| `drawn` | 最初のストロークを描き終えたときにステータスが読み上げる文言。既定値は「Signature drawn」です |
+| `cleared` | パッドが空になったときに読み上げる文言。既定値は「Signature cleared」です |
+| `undone` | Undo でストロークを取り消したときに読み上げる文言。既定値は「Last stroke removed」です |
+
+ビヘイビアは `signaturePath(stroke, weight)` と `signatureSvg(strokes, { viewBox, weight })` もエクスポートしています。これらはページがなくても、ストロークをパスやドキュメントに変換します。サーバーはこれらを使って、保存済みの署名を最初の HTML に描画できます。
+
+## 名前の入力 \{#a-typed-name\}
+
+描画にはキーボード操作がありません。キーボード、スイッチ、スクリーンリーダーで署名する人や、手でストロークを描けない人は、名前を入力して署名します。そのため、名前の入力はこのパターンの一部であり、おまけではありません。名前の入力は `signature-name` クラスを指定したネイティブの[入力フィールド](/components/input)で、`--signature-font` の筆記体で表示されます。`--signature-font` は各システムに付属する書体（Apple のシステムでは「Snell Roundhand」、Windows では「Segoe Script」）を並べ、最後を `cursive` としたフォントスタックです。プレースホルダーはインターフェースの書体のままです。
+
+スクリプトがない場合、パッドでは描画できないため、入力した名前が署名のすべてになります。フォームは、ほかのフィールドと同様に、入力した名前をそのフィールドの `name` で送信します。
+
+## フォームでの使用 \{#in-a-form\}
+
+署名が必須の場合は、名前の入力に `required` を指定します。描画も同じ必須条件を満たします。ストロークがある間、ビヘイビアは名前の入力から `required` を外し、パッドが空になると元に戻します。どちらもないまま送信すると、名前の入力にブラウザー標準のメッセージが表示されます。一度送信を試みると、`:user-invalid` によってフィールドとパッドにエラーを示す輪郭が描かれ、フィールド内の `field-error` が表示されます。
+
+<ComponentPreview name="form" height={416} title="フォームでの使用" background="plain" bodyClass="p-lg" behaviors html={`<form class="grid gap-md max-w(440) mx-auto" id="lease-form">
+  <fieldset class="signature">
+    <legend class="signature-label">Sign the lease</legend>
+    <div class="signature-pad">
+      <svg class="signature-ink" viewBox="0 0 400 160" role="img" aria-label="Your drawn signature"></svg>
+      <span class="signature-line" aria-hidden="true"></span>
+      <span class="signature-placeholder" aria-hidden="true">Sign here</span>
+      <div class="signature-actions">
+        <button type="button" class="btn btn-sm btn-quiet signature-undo">Undo</button>
+        <button type="button" class="btn btn-sm btn-quiet signature-clear">Clear</button>
+      </div>
+    </div>
+    <label class="field">Or type your full name
+      <input class="input signature-name" name="signer" autocomplete="name" required aria-describedby="lease-error">
+      <span class="field-error" id="lease-error">Sign in the box, or type your name.</span>
+    </label>
+    <input type="hidden" class="signature-value" name="signature">
+    <span class="signature-status" role="status"></span>
+  </fieldset>
+  <div class="flex items-center gap-sm">
+    <button class="btn btn-primary">Sign the lease</button>
+    <output class="text-sm fg-text-muted" id="lease-output"></output>
+  </div>
+</form>
+<script>
+  document.getElementById('lease-form').addEventListener('submit', function (event) {
+    event.preventDefault()
+    var data = new FormData(event.target)
+    var drawn = data.get('signature')
+    document.getElementById('lease-output').textContent = drawn ? 'Signed with a drawing of ' + drawn.length + ' characters of SVG' : 'Signed as ' + data.get('signer')
+  })
+</script>`} caption="何も描かず、何も入力せずに Sign the lease を押すと、ブラウザーが署名を求め、パッドがエラーを示す表示になります。描画すると必須条件を満たします。" />
+
+アプリケーションが署名を受け付けない場合は、名前の入力に `aria-invalid="true"` を指定し、その `field-error` で理由を示します。2 つで 1 つの署名なので、パッドも一緒にエラーを示す輪郭になります。
+
+## 読み取り専用と無効 \{#read-only-and-disabled\}
+
+ルートに `signature-readonly` を指定すると、署名を記入されたとおりに表示します。描画はできず、Undo と Clear は表示されません。名前の入力にも `readonly` を指定するか、名前の入力を省きます。`<fieldset>` に `disabled` を指定すると、パッドが止まり、インクと文字が無効状態の色になり、fieldset の通常の動作どおり内部のすべてのコントロールが無効になります。
+
+<ComponentPreview name="read-only" height={264} title="読み取り専用" background="plain" bodyClass="p-lg" html={`<fieldset class="signature signature-readonly max-w(440) mx-auto">
+  <legend class="signature-label">Signed by the tenant on 12 November</legend>
+  <div class="signature-pad">
+    <svg class="signature-ink" viewBox="0 0 400 160" role="img" aria-label="The tenant's signature">
+      <path class="signature-stroke" d="M62.9 73.4Q61.4 76.1 61.4 78.9Q61.3 81.6 62.5 85.7Q63.6 89.7 66.3 94.2Q68.9 98.7 73 102.7Q77.1 106.7 82.4 109.3Q87.7 112 93.6 112.7Q99.6 113.3 105.4 111.8Q111.3 110.3 116.4 107Q121.5 103.6 125.3 99Q129.1 94.5 131.5 89.6Q133.8 84.8 134.7 80.6Q135.7 76.4 135.5 73.6Q135.3 70.9 133.7 70.1Q132.2 69.3 131.5 71.3Q130.8 73.3 131 76.9Q131.2 80.5 132.6 85.4Q134 90.2 136.8 95.4Q139.6 100.5 143.9 105.1Q148.1 109.6 153.4 112.7Q158.7 115.8 164.5 116.9Q170.3 118 176 116.9Q181.8 115.8 186.7 112.9Q191.6 109.9 195.3 105.8Q199 101.7 201.3 97.3Q203.5 92.9 204.3 89.1Q205.2 85.3 204.9 82.8Q204.6 80.3 202.6 80Q200.5 79.6 199.8 81.9Q199.2 84.2 199.5 88Q199.8 91.8 201.5 96.5Q203.1 101.2 206.2 106Q209.4 110.8 213.9 114.6Q218.4 118.5 224 120.7Q229.5 122.9 235.5 122.9Q241.4 122.8 247 120.6Q252.6 118.4 257.3 114.3Q262 110.3 265.4 105.3Q268.8 100.2 270.7 95.1Q272.6 90 273.1 85.7Q273.7 81.4 273.3 78.6Q272.9 75.9 271.5 75.2Q270.1 74.5 269.5 76.4Q269 78.2 269.5 81.6Q269.9 84.9 271.3 89.1L272.6 93.3A1 1 0 0 0 274.6 92.7Q271.8 84.4 271.3 81.3Q270.8 78.2 271 77Q271.3 75.8 271.3 76.1Q271.3 76.5 271.6 78.9Q272 81.3 271.4 85.4Q270.8 89.5 268.9 94.4Q267 99.3 263.8 104.1Q260.5 108.9 256 112.6Q251.5 116.3 246.2 118.3Q240.9 120.3 235.5 120.2Q230.1 120.1 225 118.1Q220 116 215.8 112.4Q211.7 108.7 208.9 104.3Q206 99.8 204.5 95.4Q203.1 91.1 202.8 87.7Q202.5 84.4 202.8 82.9Q203.1 81.5 202.4 81.5Q201.7 81.5 202 83.3Q202.2 85.1 201.5 88.5Q200.8 91.9 198.9 96.1Q196.9 100.2 193.5 104.2Q190.1 108.1 185.5 111Q181 113.8 175.7 114.9Q170.3 116 164.8 115Q159.3 114.1 154.2 111.2Q149.2 108.3 145.1 103.9Q141 99.6 138.3 94.6Q135.5 89.5 134.2 84.9Q132.9 80.2 132.8 76.8Q132.7 73.4 133.1 72.1Q133.6 70.8 133.3 71.1Q133.1 71.4 133.2 73.8Q133.2 76.1 132.3 80Q131.3 83.9 129 88.4Q126.8 92.9 123.1 97.1Q119.5 101.3 114.7 104.4Q110 107.4 104.7 108.7Q99.3 110.1 94 109.4Q88.6 108.8 83.8 106.4Q79 104 75.2 100.3Q71.4 96.6 68.9 92.5Q66.5 88.4 65.3 84.8Q64.2 81.1 64.2 78.8Q64.1 76.5 64.6 75.6L65.1 74.6A1.3 1.3 0 0 0 62.9 73.4Z"></path>
+      <path class="signature-stroke" d="M96.2 127.6Q127.6 123.9 143.3 122.5Q159 121.1 174.6 120.4Q190.3 119.7 206 120Q221.6 120.2 237.3 121.3Q253 122.5 268.7 124.4Q284.4 126.3 300.1 128.6L315.9 130.9A0.9 0.9 0 0 0 316.1 129.1Q284.7 124.3 269 122.3Q253.2 120.3 237.5 119.1Q221.8 117.8 206 117.5Q190.3 117.2 174.5 117.7Q158.8 118.3 143 119.6Q127.3 121 111.5 122.7L95.8 124.4A1.6 1.6 0 0 0 96.2 127.6Z"></path>
+    </svg>
+    <span class="signature-line" aria-hidden="true"></span>
+  </div>
+</fieldset>`} />
+
+## 比率とインク \{#proportions-and-ink\}
+
+描画の `viewBox` が、パッドの比率とストロークの単位を決めます。パッドの幅は列と同じで、高さは `viewBox` によって決まります。そのため、スマートフォンで描いた署名をデスクトップで表示しても形が保たれます。フォームの 1 行には `0 0 400 160` が適しており、余裕のあるページには `0 0 480 140` のような横長のボックスが適しています。インクの色は `--signature-ink` で、既定値は強調テキストの色です。`--signature-weight` は一定の筆圧でのストロークの幅で、`viewBox` の単位で表し、ストロークを書き込むときに読み取られます。パッドの角丸は `--signature-radius` です。
+
+## 画像への変換 \{#a-picture-of-it\}
+
+描画内容は SVG として出力されます。SVG は拡大縮小でき、サイズも小さく保てます。PDF ライブラリやメールなどで PNG が必要な場合は、アプリケーションが SVG を canvas に描画します。
+
+```js name=png.js
+async function png(svg, scale = 2) {
+  const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }))
+  const image = new Image()
+  image.src = url
+  await image.decode()
+  const canvas = document.createElement('canvas')
+  canvas.width = image.naturalWidth * scale
+  canvas.height = image.naturalHeight * scale
+  canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height)
+  URL.revokeObjectURL(url)
+  return new Promise((resolve) => canvas.toBlob(resolve, 'image/png'))
+}
+
+const blob = await png(pad.svg)
+```
+
+ドキュメントは `viewBox` から取得したサイズを `width` と `height` に持つため、`scale` で解像度を決められます。canvas の何も描かれていない部分は透明です。
+
+## キーボード操作 \{#keyboard\}
+
+<ContractTable name="signature" show="keyboard" />
+
+## アクセシビリティ \{#accessibility\}
+
+- パッドと名前の入力を `<fieldset>` でまとめ、その凡例で署名の対象を示します。
+- 描画には `role="img"` と `aria-label` を指定して画像として名前を付け、線とプレースホルダーは `aria-hidden="true"` で隠します。描画の名前がすでに署名する場所を伝えているためです。
+- キー操作では描画できないため、パッドはフォーカスを受け取りません。名前の入力には、もう 1 つの署名方法であることがわかる、目に見えるラベルを付けます。
+- ステータスは控えめに読み上げます。ストロークのたびではなく、パッドに署名されたときと空になったときに読み上げます。
+- パッド上では、指でページをスクロールする代わりに描画します（`touch-action: none`）。スマートフォンの読者がパッドを通り過ぎてスクロールできるように、パッドの高さは署名に必要な分にとどめます。
+- 強制カラーモードでは、ストロークは `CanvasText`、線と十字は `GrayText` で描画され、パッドには輪郭線が残ります。
+- 同意、署名者の本人確認、日時の記録など、記入されたものを法的な署名にする要件は、コンポーネントではなく、アプリケーションとその法域が担います。
+
+## React、Svelte、Vue \{#frameworks\}
+
+`signature` コンポーネントは全体を描画してビヘイビアを適用し、ストロークの受け渡しを行います。入力した名前は 2 つ目の値 `typed` です。最初の値は初回の描画に反映されるため、サーバーは署名をパッドに描いた状態で送信できます。`npx master-ui add signature` でプロジェクトにコピーできます。コンポーネントの構成と使い方は [React、Svelte、Vue](/guide/frameworks) を参照してください。
+
+<FrameworkSource name="signature" />
+
+## クラス \{#classes\}
+
+<ContractTable name="signature" />
+
+## カスタムプロパティ \{#custom-properties\}
+
+<ContractTable name="signature" show="properties" />
+
+## 関連コンポーネント \{#related\}
+
+<ComponentLinks slugs={['input', 'dropzone', 'otp']} />
+
+## ソース \{#source\}
+
+<ComponentSource name="signature" />

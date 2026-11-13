@@ -1,0 +1,192 @@
+---
+title: "이미지 자르기"
+description: "남길 부분을 상자로 표시하는 이미지입니다."
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+이미지 자르기는 남길 부분을 상자로 표시하는 이미지입니다. 게시하기 전에 사진을 자르거나, 커버 이미지를 배너 비율에 맞춰 다듬거나, 아바타를 원 안에 맞출 때 사용합니다. 이미지는 오목한 영역에 놓입니다. 상자 바깥 부분은 어둡게 처리되고, 상자의 테두리는 이미지 위에 그리는 흰 선이며, 핸들은 모서리의 진주빛 원반과 변의 알약 모양입니다. 상자를 잡고 있거나 키로 조작하는 동안에는 상자 안에 3분할 안내선이 나타납니다.
+
+<ComponentPreview name="default" height={432} narrowHeight={304} title="이미지 자르기" bodyClass="p-lg" behaviors html={`<div class="cropper max-w(480) mx-auto" style="--cropper-x: .16; --cropper-y: .14; --cropper-width: .62; --cropper-height: .66">
+  <img class="cropper-image" src="/demo/harbor.svg" alt="A harbor at dusk" width="640" height="480">
+  <div class="cropper-box" role="application" aria-roledescription="crop box" tabindex="0" aria-label="Crop the photo">
+    <span class="cropper-handle cropper-handle-top cropper-handle-left"></span>
+    <span class="cropper-handle cropper-handle-top"></span>
+    <span class="cropper-handle cropper-handle-top cropper-handle-right"></span>
+    <span class="cropper-handle cropper-handle-right"></span>
+    <span class="cropper-handle cropper-handle-bottom cropper-handle-right"></span>
+    <span class="cropper-handle cropper-handle-bottom"></span>
+    <span class="cropper-handle cropper-handle-bottom cropper-handle-left"></span>
+    <span class="cropper-handle cropper-handle-left"></span>
+  </div>
+  <p class="cropper-status" role="status"></p>
+</div>`} caption="상자나 핸들을 드래그하거나, 이미지 위를 가로질러 새 상자를 그려 보세요. 상자에 포커스를 두고 방향키를 사용하세요. Alt 키와 방향키를 함께 누르면 크기가 바뀝니다." />
+
+위치와 크기는 루트에 있는 네 개의 사용자 지정 속성으로 정하며, 각 값은 이미지에 대한 0부터 1까지의 비율입니다. 이미지의 왼쪽 위 모서리를 기준으로 한 `--cropper-x`와 `--cropper-y`, 그리고 `--cropper-width`와 `--cropper-height`입니다. 스타일시트는 이 값으로 상자를 배치하고, 어둡게 처리한 부분은 상자를 따라갑니다. 스크립트가 없으면 상자는 이 값이 정한 자리에 머무르며, 값을 생략하면 이미지 전체가 됩니다.
+
+애플리케이션이 읽는 값은 같은 사각형을 이미지 자체의 픽셀 단위로 나타낸 `{ x, y, width, height }`입니다. 이미지를 실제로 자르는 일은 애플리케이션이 맡습니다. [이미지 잘라 내기](#cutting-the-picture)를 참고하세요.
+
+## 동작 \{#behavior\}
+
+`cropper`는 `cropper` 클래스가 있는 루트 요소와 옵션 객체를 받아, 연결한 동작을 해제하는 함수를 반환합니다. 이 함수의 `value`가 자르기 영역입니다. 외부에서 자르기 영역을 옮기려면 이 값을 설정하세요. 이때는 이벤트가 발생하지 않습니다.
+
+```js name=app.js
+import { cropper } from '@master/ui/behaviors/cropper.js'
+
+const root = document.querySelector('.cropper')
+const crop = cropper(root, { ratio: 16 / 9 })
+
+root.addEventListener('change', () => {
+  const { x, y, width, height } = crop.value
+  form.elements.crop.value = [x, y, width, height].join(' ')
+})
+```
+
+- **상자.** 상자를 드래그하면 상자가 이동하고, 핸들을 드래그하면 그 핸들이 가리키는 변이 이동하며, 상자 바깥의 이미지 위를 가로질러 드래그하면 새 상자가 그려집니다. 그곳을 드래그 없이 누르면 상자가 그 위치로 옮겨지므로, 드래그하지 않고도 상자를 옮길 수 있습니다. 상자는 이미지 안에 머무르며 최소 크기를 유지합니다.
+- **이미지의 픽셀.** 자르기 영역은 `cropper-image`의 `width`와 `height`를 기준으로 계산합니다. 이 속성에 파일 자체의 크기를 작성하세요. 이 값은 이미지를 불러오는 동안 프레임이 움직이지 않게 하는 역할도 합니다.
+- **키.** 방향키를 누르면 자르기 영역이 한 단계씩, <kbd class="kbd">Shift</kbd> 키와 함께 누르면 열 단계씩 이동합니다. <kbd class="kbd">Alt</kbd> 키(Mac에서는 <kbd class="kbd">Option</kbd> 키)와 함께 누르면 먼 쪽 변을 움직여 크기를 바꿉니다. 오른쪽과 아래쪽은 커지고, 왼쪽과 위쪽은 작아집니다.
+- **이벤트.** 상자는 자르기 영역이 바뀔 때마다 `input`을 발생시키고, 드래그나 키 조작이 끝나면 `change`를 한 번 발생시킵니다. 두 이벤트 모두 버블링됩니다.
+- **안내 문구.** `change`가 발생할 때마다 동작은 자르기 영역의 크기를 polite 라이브 영역인 `cropper-status`에 작성합니다(예: "480 by 270 pixels, 64 from the left and 96 from the top"). 페이지 언어로 안내하려면 `describe`를 전달하세요.
+
+이미지에는 방향이 없으므로, 어떤 쓰기 방향에서든 상자는 왼쪽과 위쪽을 기준으로 배치되며 방향키도 왼쪽과 오른쪽을 그대로 뜻합니다.
+
+| 옵션 | 설정하는 내용 |
+| --- | --- |
+| `ratio` | 상자가 유지하는 너비 대 높이의 비율입니다(예: `16 / 9`). 생략하면 루트의 스타일에 `--cropper-ratio`가 작성되어 있지 않은 한 자유 비율이며, 0을 지정해도 자유 비율이 됩니다 |
+| `step` | 방향키 한 번으로 자르기 영역이 이동하는 거리로, 이미지의 픽셀 단위입니다. 기본값은 이미지의 긴 변의 1/100입니다 |
+| `min` | 최소 너비와 높이로, 이미지의 픽셀 단위입니다. 기본값은 이미지의 짧은 변의 1/10입니다 |
+| `maxZoom` | 범위 입력 요소가 따로 지정하지 않을 때 이동 모드 이미지 자르기가 확대하는 최대 배율입니다. 기본값은 4입니다 |
+| `describe` | 자르기 영역을 받아 상태 영역이 안내할 문구를 반환하는 함수입니다 |
+
+같은 모듈의 `cropperFit(picture, crop, options)`는 동작이 처리하는 방식대로 자르기 영역을 이미지에 맞춥니다. 렌더러는 이 함수로 서버에서 첫 자르기 영역을 그립니다.
+
+## 비율 \{#proportions\}
+
+비율을 지정하면 모서리 핸들은 맞은편 모서리를 고정하고 상자의 비율을 유지하며, 변의 핸들은 상자의 가운데를 기준으로 크기를 바꿉니다. 상자가 갖고 있지 않은 비율로 동작을 연결하면, 동작은 같은 면적을 유지한 채 상자의 가운데를 기준으로 그 비율을 적용하고 `input`과 `change`를 발생시킵니다. 비율 선택은 이렇게 적용됩니다.
+
+<ComponentPreview name="proportions" height={456} narrowHeight={368} title="비율" background="plain" bodyClass="p-lg" behaviors html={`<div class="grid gap-md max-w(480) mx-auto">
+  <div class="segmented segmented-sm mx-auto" role="radiogroup" aria-label="Proportions">
+    <label class="segmented-item"><input type="radio" class="segmented-input" name="banner-ratio" value="0" checked>Free</label>
+    <label class="segmented-item"><input type="radio" class="segmented-input" name="banner-ratio" value="1/1">1:1</label>
+    <label class="segmented-item"><input type="radio" class="segmented-input" name="banner-ratio" value="4/3">4:3</label>
+    <label class="segmented-item"><input type="radio" class="segmented-input" name="banner-ratio" value="16/9">16:9</label>
+  </div>
+  <div class="cropper" id="banner-crop" style="--cropper-x: .1; --cropper-y: .2; --cropper-width: .8; --cropper-height: .6">
+    <img class="cropper-image" src="/demo/tide.svg" alt="The tide coming in over flat sand" width="640" height="400">
+    <div class="cropper-box" role="application" aria-roledescription="crop box" tabindex="0" aria-label="Crop the banner">
+      <span class="cropper-handle cropper-handle-top cropper-handle-left"></span>
+      <span class="cropper-handle cropper-handle-top"></span>
+      <span class="cropper-handle cropper-handle-top cropper-handle-right"></span>
+      <span class="cropper-handle cropper-handle-right"></span>
+      <span class="cropper-handle cropper-handle-bottom cropper-handle-right"></span>
+      <span class="cropper-handle cropper-handle-bottom"></span>
+      <span class="cropper-handle cropper-handle-bottom cropper-handle-left"></span>
+      <span class="cropper-handle cropper-handle-left"></span>
+    </div>
+    <p class="cropper-status" role="status"></p>
+  </div>
+  <p class="m(0) text-sm fg-text-muted text-center" id="banner-crop-value" aria-hidden="true"></p>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  var root = document.getElementById('banner-crop')
+  var readout = document.getElementById('banner-crop-value')
+  var crop = MasterUI.cropper(root)
+  function show() {
+    var value = crop.value
+    readout.textContent = value.width + ' × ' + value.height + ' pixels at ' + value.x + ', ' + value.y
+  }
+  root.addEventListener('input', show)
+  document.querySelectorAll('input[name="banner-ratio"]').forEach(function (input) {
+    input.addEventListener('change', function () {
+      var parts = input.value.split('/')
+      crop = MasterUI.cropper(root, { ratio: parts.length > 1 ? parts[0] / parts[1] : 0 })
+    })
+  })
+  show()
+})
+</script>`} caption="비율을 고른 뒤 모서리나 변을 드래그해 보세요. 이미지 아래의 줄이 값입니다." />
+
+한 루트에서 `cropper`를 다시 호출하면 첫 번째 호출을 대체하므로, 이 미리보기는 새 비율로 동작을 다시 연결합니다. `MasterUI`는 미리보기가 불러오는 번들입니다. 프로젝트에서는 [동작](#behavior) 섹션처럼 `cropper`를 import하세요. 프레임워크 컴포넌트도 `ratio`가 바뀌면 같은 방식으로 처리합니다.
+
+## 아바타 \{#avatar\}
+
+`cropper-pan`은 상자를 `--cropper-ratio`의 비율로 프레임 가운데에 고정하고, 그 대신 아래의 이미지를 움직입니다. 드래그하면 이미지가 이동하고, 두 손가락으로 핀치하면 확대·축소되며, <kbd class="kbd">Control</kbd> 또는 <kbd class="kbd">Command</kbd> 키를 누른 채 휠을 굴리면 확대·축소됩니다. 트랙패드의 핀치도 이 입력을 보냅니다. `cropper-round`는 상자를 원으로 그립니다. 자르기 영역의 값에는 `zoom`이 추가되며, 자르기 영역이 이미지가 허용하는 만큼 클 때 1입니다.
+
+`aria-controls`로 루트의 `id`를 가리키는 범위 입력 요소도 `min`부터 `max`까지 루트를 확대·축소하며, 다른 방법으로 확대·축소해도 그 값을 따라갑니다. 이 입력 요소는 페이지 자체의 [슬라이더](/components/slider)이므로 프레임 아래나 옆, 도구 모음 안 어디에든 둘 수 있습니다.
+
+<ComponentPreview name="avatar" height={392} title="아바타" background="plain" bodyClass="p-lg" behaviors html={`<div class="grid gap-md w(280) mx-auto">
+  <div class="cropper cropper-pan cropper-round" id="avatar-crop" style="--cropper-x: .1; --cropper-y: .18; --cropper-width: .8; --cropper-height: .64">
+    <img class="cropper-image" src="/demo/cairn.svg" alt="A cairn of stones on a ridge" width="480" height="600">
+    <div class="cropper-box" role="application" aria-roledescription="crop box" tabindex="0" aria-label="Frame your picture"></div>
+    <p class="cropper-status" role="status"></p>
+  </div>
+  <div class="flex items-center gap-sm fg-text-muted">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.5-4.5M8.5 11h5"/></svg>
+    <input type="range" class="slider grow(1)" min="1" max="4" step="any" value="1.25" aria-controls="avatar-crop" aria-label="Zoom">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.5-4.5M8.5 11h5M11 8.5v5"/></svg>
+  </div>
+</div>`} caption="이미지를 드래그하거나 핀치하거나 슬라이더를 움직여 보세요. 원에 포커스를 두면 방향키로 이동하고 +와 - 키로 확대·축소합니다." />
+
+이미지는 어떤 배율에서든 상자를 가득 채우므로, 이동 모드의 자르기 영역은 항상 이미지 안에 있습니다. 키 조작에서 방향키는 다른 곳과 마찬가지로 자르기 영역을 옮기며, <kbd class="kbd">Alt</kbd> 키와 방향키, 또는 <kbd class="kbd">+</kbd>와 <kbd class="kbd">-</kbd> 키는 상자의 가운데를 기준으로 확대·축소합니다. 상자에는 핸들이 없으며, 상자 주변의 여백인 `--cropper-inset`에 어둡게 처리한 이미지가 고리 모양으로 보이므로 사용자는 무엇이 잘려 나가는지 알 수 있습니다.
+
+## 이미지 잘라 내기 \{#cutting-the-picture\}
+
+이미지 자르기는 어느 부분을 남길지 알려 줄 뿐, 파일 자체는 건드리지 않습니다. 업로드할 때 네 숫자를 함께 보내 서버에서 자르거나, 페이지에서 캔버스로 자르세요. `drawImage`는 이미지의 일부를 이미지 자체의 픽셀 단위로 받으며, 값이 바로 그 형식입니다.
+
+```js name=crop.js
+/** The part of a loaded picture a crop keeps, as a file. */
+function cut(image, { x, y, width, height }, type = 'image/webp') {
+  const canvas = document.createElement('canvas')
+  canvas.width = width
+  canvas.height = height
+  canvas.getContext('2d').drawImage(image, x, y, width, height, 0, 0, width, height)
+  return new Promise((resolve) => canvas.toBlob(resolve, type))
+}
+
+const file = await cut(document.querySelector('.cropper-image'), crop.value)
+```
+
+- 이미지는 페이지와 같은 출처에서 가져오거나, `crossorigin`을 지정하고 CORS로 제공해야 합니다. 다른 출처의 이미지를 그린 캔버스는 그 내용을 돌려주지 않습니다.
+- 이미지의 `width`와 `height`가 파일 자체의 크기가 아니라면 먼저 자르기 영역에 `image.naturalWidth / width`를 곱해 크기를 맞추세요.
+- 원형 자르기 영역도 정사각형으로 저장됩니다. [아바타](/components/avatar)는 스스로 원형으로 그려지기 때문입니다. 파일 자체가 원형이어야 할 때만 `arc()`로 캔버스를 잘라 내세요.
+
+## 키보드 \{#keyboard\}
+
+<ContractTable name="cropper" show="keyboard" />
+
+## 접근성 \{#accessibility\}
+
+- 탭 순서에서 멈추는 곳은 상자 하나뿐입니다. 상자에는 `role="application"`이 설정됩니다. 다른 어떤 역할로도 설명할 수 없는 자체 키 조작을 가진 단일 컨트롤이며, 이 역할은 스크린 리더에게 방향키를 상자로 넘기라고 알립니다. 무엇을 자르는지를 이름으로 지정하고, 애플리케이션이 아니라 자르기 상자로 안내되도록 페이지 언어로 된 `aria-roledescription`을 지정하세요.
+- 핸들은 포커스를 받지 않습니다. 탭 순서에서 멈추는 곳이 여덟 개 더 늘어나도 키보드 사용자에게 상자가 알려 주지 않는 정보는 없습니다. 방향키로 자르기 영역을 옮기고 <kbd class="kbd">Alt</kbd> 키와 방향키로 크기를 바꾸면 핸들로 만들 수 있는 모든 자르기 영역을 만들 수 있습니다. 시작 쪽 변을 옮기는 것은 이동한 뒤 크기를 바꾸는 것과 같습니다.
+- 변경될 때마다 `cropper-status`가 자르기 영역의 크기를 픽셀 단위로 polite하게 안내합니다. 스크린 리더가 처음 안내하기 전에 이 영역을 인식할 수 있도록 처음부터 마크업에 두세요.
+- 모든 드래그에는 다른 방법이 있습니다. 키 조작, 이미지를 눌러 상자를 그 위치로 옮기기, 확대·축소 슬라이더입니다.
+- 이미지에 무엇을 보여 주는지 설명하는 `alt`를 지정하세요. 사용자는 이미지의 어느 부분을 남길지 결정하는 중입니다.
+- 핸들의 조작 영역은 24px이고 터치 화면에서는 44px이며, 그 안에 그린 원반이나 알약 모양은 크기를 유지합니다. 이미지 주변의 여백도 함께 커집니다. 프레임 전체가 포인터 입력을 받으므로, 대화 상자나 편집기처럼 손가락으로 스크롤해 지나칠 필요가 없는 곳에 이미지 자르기를 두세요.
+- 동작 줄이기 설정이 켜져 있으면 핸들을 잡아도 커지지 않습니다. 강제 색상 모드에서는 상자를 시스템 윤곽선으로, 핸들을 버튼 색으로 그리며 어둡게 처리한 부분은 유지합니다.
+
+## React, Svelte, Vue \{#frameworks\}
+
+`cropper` 컴포넌트는 이미지, 상자, 핸들을 렌더링하고 동작을 연결하며, 자르기 영역을 받아 외부로 전달합니다. 이동 모드 이미지 자르기에서는 페이지의 범위 입력 요소에 프레임과 연결하는 속성을 넘겨줍니다. `npx master-ui add cropper` 명령을 실행해 프로젝트에 복사하세요. 컴포넌트의 구성과 사용 방법은 [React, Svelte, Vue](/guide/frameworks)에서 확인할 수 있습니다.
+
+<FrameworkSource name="cropper" />
+
+## 클래스 \{#classes\}
+
+<ContractTable name="cropper" />
+
+## 사용자 지정 속성 \{#custom-properties\}
+
+<ContractTable name="cropper" show="properties" />
+
+## 관련 항목 \{#related\}
+
+<ComponentLinks slugs={['figure', 'compare', 'avatar', 'slider']} />
+
+## 소스 \{#source\}
+
+<ComponentSource name="cropper" />

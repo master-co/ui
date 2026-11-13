@@ -35,13 +35,49 @@ import ContractTable from '~/site/components/ContractTable.astro'
 
 단일 슬라이더가 채울 구간을 계산할 때와 마찬가지로, 각 손잡이는 해당 입력 요소 안에서 뷰 타임라인을 이룹니다. 그룹은 `timeline-scope`로 두 타임라인을 가져와 각각에 애니메이션을 하나씩 적용해 백분율 두 개를 구합니다. 작은 값부터 큰 값까지 칠하므로 두 손잡이가 서로 지나쳐도 그 사이가 채워지고, 두 값 중 작은 값이 계속 범위의 시작점이 됩니다.
 
-폼 핸들러에서도 두 값 중 작은 값을 하한으로 처리하세요. 두 값 사이에 일정 간격을 유지해야 한다면 `input`에서 값의 범위를 제한하세요. 이런 제한이 없어도 채우기 표시는 동작합니다.
+폼 핸들러에서도 두 값 중 작은 값을 하한으로 처리하세요. 두 값이 서로 교차하면 안 되거나 일정 간격을 유지해야 한다면 [동작](#keeping-a-distance)을 연결하세요. 이런 제한이 없어도 채우기 표시는 동작합니다.
 
 브라우저가 스크롤 기반 애니메이션을 지원하지 않으면 두 손잡이 아래의 트랙은 채워지지 않은 오목한 영역으로 표시되며, 두 입력 요소는 평소대로 동작합니다. Chromium과 Safari 26에서는 손잡이 사이가 채워집니다.
 
 ## 두 손잡이의 트랙 공유 방식 \{#how-the-thumbs-share-a-track\}
 
 두 입력 요소는 같은 그리드 셀에 놓입니다. 각 입력 요소는 자체 트랙을 표시하지 않고 손잡이에서만 포인터 입력을 받습니다. 따라서 손잡이 사이를 눌러도 어느 쪽에도 입력이 전달되지 않으며, 손잡이가 다른 입력 요소의 빈 트랙에 가려지지도 않습니다. 움직이는 손잡이는 맨 앞으로 올라옵니다. 트랙의 빈 부분을 누르면 두 손잡이 중 어느 쪽을 움직여야 할지 알 수 없으므로 아무 동작도 일어나지 않습니다.
+
+## 간격 유지 \{#keeping-a-distance\}
+
+`range` [동작](/guide/behaviors)은 두 손잡이가 서로 떨어져 있게 합니다. `range-start`는 `range-end`를 넘어가지 않으며, `distance`를 지정하면 두 손잡이가 그 간격만큼 떨어진 곳에서 멈춥니다. 움직이는 손잡이가 멈추며, 가만히 있는 손잡이가 밀려나는 일은 없습니다. 동작은 손잡이를 움직일 때 발생하는 `input` 안에서, 입력 요소나 범위를 둘러싼 요소가 이벤트를 받기 전에 값을 보정합니다. 따라서 모든 리스너는 간격이 유지된 값 쌍을 읽고, 손잡이에는 거부된 값이 표시되지 않습니다. 키보드 조작, 드래그, 폼 값은 그대로 입력 요소가 담당합니다.
+
+<ComponentPreview name="distance" height={112} title="간격 유지" background="plain" bodyClass="p-lg" behaviors html={`<div class="flex flex-col gap-sm max-w(360) mx-auto">
+  <div class="flex items-baseline justify-between text-sm">
+    <span class="fg-text-strong" id="hours">Opening hours</span>
+    <output class="fg-text-muted" id="hours-output">9:00 to 17:00</output>
+  </div>
+  <div class="range" id="hours-range" role="group" aria-labelledby="hours">
+    <input type="range" class="slider range-start" min="0" max="24" value="9" aria-label="Opens at">
+    <input type="range" class="slider range-end" min="0" max="24" value="17" aria-label="Closes at">
+  </div>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  var range = document.getElementById('hours-range')
+  MasterUI.range(range, { distance: 2 })
+  range.addEventListener('input', function () {
+    var start = range.querySelector('.range-start').value
+    var end = range.querySelector('.range-end').value
+    document.getElementById('hours-output').textContent = start + ':00 to ' + end + ':00'
+  })
+})
+</script>`} caption="한쪽 손잡이를 다른 손잡이 쪽으로 드래그해 보세요. 두 손잡이는 두 시간 간격을 두고 멈춥니다." />
+
+`attach()`는 범위 슬라이더를 플랫폼 기본 상태 그대로 두므로 두 손잡이가 교차할 수 있습니다. 두 손잡이를 떨어뜨려 두려면 이 미리 보기처럼 범위 슬라이더에 `range`를 호출하고, 일정 간격을 유지하려면 `distance`를 함께 지정하세요. 같은 루트에 두 번째로 호출하면 첫 번째 호출을 대체합니다. `MasterUI`는 미리 보기가 불러오는 번들입니다. 프로젝트에서는 `range`를 가져오세요.
+
+```js name=app.js
+import { range } from '@master/ui/behaviors/range.js'
+
+const detach = range(document.querySelector('.range'), { distance: 2 })
+```
+
+간격은 입력 요소 자체의 단위를 따릅니다. `step`의 배수로 지정하세요. 입력 요소는 기록된 값을 단계에 맞춰 반올림하며, 동작은 간격을 유지하는 가장 가까운 단계 값을 사용합니다.
 
 ## 비활성화 \{#disabled\}
 

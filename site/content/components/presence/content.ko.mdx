@@ -1,0 +1,119 @@
+---
+title: "공동 작업자 커서"
+description: "다른 사람의 포인터, 캐럿, 선택 영역을 그 사람을 나타내는 색으로 표시합니다."
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+공동 작업자 커서는 같은 대상에서 함께 작업하는 다른 사람들이 어디에 있는지 보여 줍니다. 캔버스나 보드에서는 포인터를, 텍스트에서는 캐럿과 선택 영역을 표시합니다. 각 사람은 하나의 식별 색으로 그려지고 그 옆에 이름이 표시되므로, 사용자는 누가 어디에 있는지 한눈에 알 수 있습니다. 포인터가 움직이는 위치 지정 요소 안에서, `presence-name`을 담은 요소에 `presence`와 그 사람의 [식별 색](#identity)인 `presence-1`~`presence-8`을 추가하고, `--presence-x`와 `--presence-y`로 위치를 설정하세요.
+
+<ComponentPreview name="default" height={312} narrowHeight={312} title="공동 작업자 커서" bodyClass="flex items-center justify-center p-lg" html={`<div class="sheet relative overflow-hidden w-full max-w(520) h(264)" id="board">
+  <div class="texture texture-grid absolute inset(0)"></div>
+  <div class="sheet sheet-raised absolute p-md text-sm w(168)" style="top: 32px; left: 28px">
+    <p class="m(0) fg-text-strong">Launch checklist</p>
+    <p class="m(0) mt-xs fg-text-muted">Docs, changelog and the post</p>
+  </div>
+  <div class="sheet sheet-raised absolute p-md text-sm w(168)" style="top: 128px; left: 260px">
+    <p class="m(0) fg-text-strong">Open questions</p>
+    <p class="m(0) mt-xs fg-text-muted">Who writes the release notes?</p>
+  </div>
+  <div class="presence presence-6" style="--presence-x: 150px; --presence-y: 78px" aria-hidden="true">
+    <span class="presence-name">Ada Lovelace</span>
+  </div>
+  <div class="presence presence-4" id="moving" style="--presence-x: 340px; --presence-y: 40px" aria-hidden="true">
+    <span class="presence-name">Alan Turing</span>
+  </div>
+  <div class="presence presence-8" style="--presence-x: 96px; --presence-y: 176px" aria-hidden="true">
+    <span class="presence-name">Grace Hopper</span>
+    <span class="presence-message">I can take the release notes</span>
+  </div>
+</div>
+<script>
+  const pointer = document.getElementById('moving')
+  const path = [[340, 40], [372, 64], [398, 108], [360, 150], [318, 132], [300, 84]]
+  let at = 0
+  setInterval(() => {
+    at = (at + 1) % path.length
+    pointer.style.setProperty('--presence-x', path[at][0] + 'px')
+    pointer.style.setProperty('--presence-y', path[at][1] + 'px')
+  }, 700)
+</script>`} caption="보드 위의 세 사람입니다. Alan의 포인터는 애플리케이션이 알려 주는 대로 움직이며, 주어진 지점 사이를 부드럽게 이동합니다. 동작 줄이기 설정이 켜져 있으면 바로 건너뜁니다." />
+
+## 포인터의 위치 \{#where-a-pointer-stands\}
+
+포인터의 끝이 가리키는 지점입니다. `--presence-x`와 `--presence-y`는 가장 가까운 위치 지정 요소(대개 캔버스나 보드)의 왼쪽 위 모서리로부터의 거리를 픽셀 단위로 나타냅니다. 이 요소에는 `relative`와 `overflow-hidden`을 적용해, 가장자리 근처의 포인터가 그 경계에서 잘리도록 합니다. 각 사람이 어디에 있는지, 언제 떠나는지는 애플리케이션이 알고 있습니다. 누군가 들어오면 `presence`를 추가하고, 포인터가 움직이면 두 속성을 설정하며, 떠나면 제거합니다. 그리기와 움직임은 스타일시트가 처리하며, 자체 스크립트는 없습니다.
+
+```js name=app.js
+function move(person, x, y) {
+  const pointer = board.querySelector(`[data-person="${person.id}"]`)
+  pointer.style.setProperty('--presence-x', `${x}px`)
+  pointer.style.setProperty('--presence-y', `${y}px`)
+}
+```
+
+- **움직임.** 포인터는 새 지점마다 160ms 동안 직선으로 부드럽게 이동하므로, 연결을 통해 초당 몇 번 전달되는 위치가 끊김 없는 움직임으로 바뀝니다. `prefers-reduced-motion: reduce`에서는 바로 건너뜁니다.
+- **방해하지 않기.** 포인터는 포인터 이벤트를 받지 않으므로, 사용자 자신의 포인터와 그 아래 요소 사이를 가로막지 않습니다.
+- **좌표.** 좌표는 캔버스 자체의 단위로 전송하고, 속성을 설정하기 전에 사용자의 화면 기준으로 변환하세요. 그래야 창 크기와 확대 배율이 다른 두 사람이 같은 대상을 가리킵니다.
+
+## 메시지 \{#message\}
+
+이름 아래의 `presence-message`에는 커서 채팅처럼 그 사람이 작성 중인 짧은 문구를 담습니다. 가리키고 있는 대상에 관한 질문 같은 것입니다. 메시지는 15rem에서 줄바꿈됩니다. 작성을 멈추고 몇 초가 지나면 제거하세요.
+
+## 식별 색 \{#identity\}
+
+Master UI에서 색상(hue)은 상태를 나타내며, 여기서는 사람을 나타냅니다. 테마에는 `--color-identity-1`부터 `--color-identity-8`까지 모두 같은 명도인 여덟 가지 식별 색이 있습니다. 한 사람은 세션 동안 그중 하나를 유지하며, 그 옆에는 항상 이름이 표시되므로 색이 사람을 구별하는 유일한 수단이 되는 일은 없습니다. `--color-identity-ink`는 모든 식별 색 위에 놓이는 텍스트 색으로, 밝은 색 구성에서는 최소 4.8:1, 어두운 색 구성에서는 최소 9:1의 대비를 가집니다.
+
+포인터, 캐럿, 선택 영역, 단독으로 쓰이는 이름에 `presence-1`~`presence-8` 수정자를 사용해 색을 고르세요. 사람을 나타내는 자체 색이 있는 제품이라면 그 대신 `--presence-color`를 설정하세요. 이때 `--color-identity-ink`가 읽히는 명도의 색을 지정하거나, 그 토큰도 함께 설정하세요.
+
+<ComponentPreview name="identities" height={136} mediumHeight={176} narrowHeight={216} title="식별 색" html={`<span class="presence-name presence-1">Ada</span>
+<span class="presence-name presence-2">Alan</span>
+<span class="presence-name presence-3">Grace</span>
+<span class="presence-name presence-4">Edsger</span>
+<span class="presence-name presence-5">Barbara</span>
+<span class="presence-name presence-6">Donald</span>
+<span class="presence-name presence-7">Margaret</span>
+<span class="presence-name presence-8">Ken</span>`} caption="세션이 배정하는 순서대로 나열한 여덟 가지 식별 색입니다." />
+
+사람들이 들어오는 순서대로 이 순서에 따라 색을 배정하고, 떠난 사람의 색은 다음에 들어오는 사람에게 주세요. 모든 사용자가 같은 사람을 같은 색으로 보아야 한다면 사람의 id 해시처럼 변하지 않는 숫자로 색을 고르세요. 여덟 명을 넘으면 색이 반복되지만, 이름으로 여전히 구별할 수 있습니다.
+
+## 텍스트에서 \{#in-text\}
+
+함께 편집하는 문서에서 다른 사람의 캐럿은 두 글자 사이에 놓이는 `presence-caret`입니다. 그 사람의 색으로 된 2px 막대로 줄 높이만큼 길며, 그 위에 이름이 적힌 깃발이 섭니다. 공간을 차지하지 않으므로 캐럿이 움직여도 주변 단어는 움직이지 않습니다. 그 사람의 선택 영역은 선택한 단어를 감싸는 `presence-selection`으로, 단어 뒤에 그 사람의 색을 옅게 깔며 여러 줄에 걸쳐 이어집니다.
+
+<ComponentPreview name="text" height={176} narrowHeight={216} title="캐럿과 선택 영역" bodyClass="flex items-center justify-center p-lg" html={`<div class="sheet p-lg max-w(440)">
+  <p class="m(0) text-sm fg-text-body leading-md">The release ships <span class="presence-selection presence-4">on Thursday, after the docs build</span><span class="presence-caret presence-4" aria-hidden="true"><span class="presence-name">Alan</span></span> passes, and the post goes out the same afternoon. Ada writes the changelog<span class="presence-caret presence-6" aria-hidden="true"><span class="presence-name">Ada</span></span> while Grace checks the links.</p>
+</div>`} caption="Alan은 한 구절을 선택했고 그의 캐럿은 그 끝에 있습니다. Ada의 캐럿은 그녀가 입력하고 있는 위치에 있습니다." />
+
+편집기는 공동 작업 계층이 알려 주는 다른 사람들의 위치에 이 표시들을 둡니다. 이 표시들은 편집기가 렌더링하고 제거하는 장식이며, 문서의 일부가 아닙니다. 첫 줄 위에 이름 깃발이 들어갈 공간을 남기거나, 첫 줄에 있는 캐럿의 깃발이 텍스트를 담은 요소의 안쪽 여백까지 올라가도록 두세요.
+
+## 다른 컴포넌트를 써야 할 때 \{#when-to-use-something-else\}
+
+- 어디에 있는지가 아니라 누가 있는지를 보여 주려면 헤더에 [아바타](/components/avatar)를 겹쳐 표시하세요.
+- 애플리케이션이 아직 작성 중인 텍스트 끝의 표시는 [캐럿](/components/caret)입니다.
+- 검색 일치 항목처럼 사용자를 위해 강조한 단어는 [강조 표시](/components/mark)입니다.
+
+## 접근성 \{#accessibility\}
+
+- 포인터와 캐럿은 장식입니다. 캔버스나 문장 중간에 이름이 읽히지 않도록 각각에 `aria-hidden="true"`를 설정하세요. 누가 있는지는 헤더에 이름과 함께 표시한 아바타처럼 다른 곳에서 문구로 알리고, 들어오고 나가는 것이 작업에 중요하다면 polite 라이브 영역에서 안내하세요.
+- 선택 영역은 숨기지 않습니다. 그 안의 단어는 문서의 내용입니다. 옅게 깐 색은 단어의 색을 바꾸지 않으므로 단어의 대비가 유지됩니다.
+- 색이 유일한 단서가 되는 일은 없습니다. 모든 포인터와 캐럿 옆에 이름이 표시됩니다.
+- 강제 색상 모드에서는 화살표와 캐럿을 시스템 색으로 그리고, 깃발과 말풍선에 윤곽선을 추가합니다.
+
+## 클래스 \{#classes\}
+
+<ContractTable name="presence" />
+
+## 사용자 지정 속성 \{#custom-properties\}
+
+<ContractTable name="presence" show="properties" />
+
+## 관련 항목 \{#related\}
+
+<ComponentLinks slugs={['avatar', 'caret', 'mark']} />
+
+## 소스 \{#source\}
+
+<ComponentSource name="presence" />

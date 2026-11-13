@@ -8,7 +8,7 @@ import ComponentSource from '~/site/components/ComponentSource.astro'
 import ContractTable from '~/site/components/ContractTable.astro'
 import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
-轻提示是浮在页面上的简短消息，用来告知用户刚刚发生的事，例如已保存、已部署或已复制。每条轻提示都是固定定位的 `toast-region` 内的非模态 `<dialog>`。轻提示采用对话框，因此无需脚本即可关闭，入场和退场动画均由样式表中的 CSS 实现。
+轻提示是浮在页面上的简短消息，用来告知用户刚刚发生的事（例如已保存、已部署或已复制），或告知正在进行、完成后会报告结果的工作。每条轻提示都是固定定位的 `toast-region` 内的非模态 `<dialog>`。轻提示采用对话框，因此无需脚本即可关闭，入场和退场动画均由样式表中的 CSS 实现。
 
 <ComponentPreview name="default" height={240} title="轻提示" bodyClass="content-start p-lg min-h(240)" html={`<div class="toast-region" role="region" aria-label="Notifications" aria-live="polite">
   <dialog open class="toast toast-success" aria-labelledby="toast-deployed">
@@ -28,12 +28,12 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
 ## 显示与关闭 \{#showing-and-dismissing\}
 
 - 带有 `open` 属性的轻提示会在页面加载时显示，适用于表单提交后由服务器渲染的消息。
-- 在脚本中，对区域内的轻提示调用 `toast.show()`，或向该区域追加一个新的 `<dialog open class="toast">`。两种方式都由 `@starting-style` 定义轻提示入场时的起始帧。
+- 在脚本中，向该区域追加一个新的 `<dialog open class="toast">`，或为区域内已有的轻提示设置 `open`。两种方式都由 `@starting-style` 定义轻提示入场时的起始帧。不要调用 `show()`：它会把焦点移入轻提示，打断用户正在进行的操作。
 - 用 `<form method="dialog">` 包裹按钮，或为按钮设置 `commandfor` 和 `command="close"`，都能关闭轻提示。`display` 通过 `allow-discrete` 进行过渡，因此退场动画会在轻提示释放布局空间前播放完毕。
 
 ## 定时关闭 \{#timed\}
 
-`toast-timed` 让轻提示在六秒后自动消失。计时由一个以 `display: none` 结束的 CSS 动画实现。指针悬停在轻提示上或键盘焦点位于其中时，计时会暂停，让用户有时间读完。轻提示底部的细线随倒计时逐渐缩短，并随计时一起暂停。设置 `--toast-duration` 可调整时长。定时关闭的轻提示应省去用户可能还需要执行的操作。重要内容应放在持续显示的[警告提示](/components/alert)中。
+`toast-timed` 让轻提示在六秒后自动消失。计时由一个以 `display: none` 结束的 CSS 动画实现。指针悬停在轻提示上或键盘焦点位于其中时，计时会暂停，让用户有时间读完。轻提示底部的细线随倒计时逐渐缩短，并随计时一起暂停。设置 `--toast-duration` 可调整时长。处于忙碌状态的轻提示不计时，工作结束后才开始计时。
 
 <ComponentPreview name="timed" height={200} title="定时关闭" bodyClass="content-start p-lg min-h(200)" html={`<div class="toast-region" role="region" aria-label="Notifications" aria-live="polite">
   <dialog open class="toast toast-timed" aria-label="Link copied">
@@ -45,7 +45,9 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
 ## 带操作按钮 \{#with-an-action\}
 
-放在正文后的[按钮](/components/button)位于该行末端。状态修饰类只为图标着色，文字保留墨色。
+轻提示可以在关闭按钮旁提供一个操作，例如“撤销”或“查看”。`toast-action` 位于文字之后：它是包裹 `btn btn-sm` 的 `<form method="dialog">`，因此操作执行后会关闭轻提示。为按钮设置 `value`，对话框的 `returnValue` 就会表明是哪个按钮关闭了它，只需一个 `close` 监听器即可执行相应操作。该操作是真正的按钮，可用 <kbd>Tab</kbd> 键到达；操作按钮持有焦点或指针悬停在轻提示上时，定时关闭的轻提示会等待。
+
+轻提示会自动消失，用户可能根本看不到它，因此其中的操作只是一条捷径，绝不能是唯一的途径。任何重要的操作（恢复已删除的内容、重试保存失败的内容）也要放在持续存在的地方：条目自身的菜单、回收站，或失败表单旁的[行内提示](/components/alert)。状态修饰类只为图标着色，文字保留墨色。
 
 <ComponentPreview name="action" height={304} title="带操作按钮" bodyClass="content-start p-lg min-h(300)" html={`<div class="toast-region" role="region" aria-label="Notifications" aria-live="polite">
   <dialog open class="toast" aria-labelledby="toast-archived">
@@ -53,7 +55,14 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
       <p class="toast-title" id="toast-archived">Project archived</p>
       <p class="toast-description">Atlas is hidden from the dashboard.</p>
     </div>
-    <form method="dialog"><button class="btn btn-sm">Undo</button></form>
+    <form method="dialog" class="toast-action">
+      <button class="btn btn-sm" value="undo">Undo</button>
+    </form>
+    <form method="dialog" class="toast-close">
+      <button class="btn btn-quiet btn-square btn-sm" aria-label="Dismiss">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </form>
   </dialog>
   <dialog open class="toast toast-danger" aria-labelledby="toast-failed">
     <svg class="icon toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16v.01"/></svg>
@@ -61,13 +70,68 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
       <p class="toast-title" id="toast-failed">The build failed</p>
       <p class="toast-description">The install step exited with code 1.</p>
     </div>
+    <form method="dialog" class="toast-action">
+      <button class="btn btn-sm" value="logs">View logs</button>
+    </form>
     <form method="dialog" class="toast-close">
       <button class="btn btn-quiet btn-square btn-sm" aria-label="Dismiss">
         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
       </button>
     </form>
   </dialog>
-</div>`} />
+</div>`} caption="按 Tab 键移到“Undo”再按 Enter，或按“Dismiss”：两者都会通过各自的表单关闭对应的轻提示，无需脚本。" />
+
+## 先显示进行中，再原地更新 \{#pending\}
+
+轻提示可以在工作进行时报告进度，然后在同一位置说明结果。工作进行期间，轻提示带有 `aria-busy="true"`，并在图标的位置放一个带有 `toast-icon` 的[加载指示器](/components/spinner)；无论工作持续多久，其计时都不会开始。工作结束后，修改同一条轻提示：更新文字、状态和图标，并移除 `aria-busy`。轻提示不会再次入场，在堆叠中的位置也保持不变，只有新图标会放大出现。
+
+<ComponentPreview name="pending" height={280} title="进行中" bodyClass="content-start p-lg min-h(280)" html={`<button class="btn" type="button" id="deploy-run">Deploy</button>
+<div class="toast-region" id="deploy-region" role="region" aria-label="Notifications" aria-live="polite"></div>
+<template id="deploy-pending">
+  <dialog open class="toast" aria-labelledby="deploy-title" aria-busy="true" aria-atomic="true">
+    <span class="spinner spinner-inline toast-icon" aria-hidden="true"></span>
+    <div class="toast-body">
+      <p class="toast-title" id="deploy-title">Deploying Atlas</p>
+      <p class="toast-description">Building for 14 regions.</p>
+    </div>
+    <form method="dialog" class="toast-close">
+      <button class="btn btn-quiet btn-square btn-sm" aria-label="Dismiss">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </form>
+    <template>
+      <svg class="icon toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 4.5-5.5"/></svg>
+    </template>
+  </dialog>
+</template>
+<script>
+  var region = document.getElementById('deploy-region')
+  var count = 0
+  document.getElementById('deploy-run').addEventListener('click', function () {
+    var toast = document.getElementById('deploy-pending').content.firstElementChild.cloneNode(true)
+    var title = toast.querySelector('.toast-title')
+    title.id = 'deploy-title-' + ++count
+    toast.setAttribute('aria-labelledby', title.id)
+    region.append(toast)
+    // When the work ends, the same toast says so: its icon, its words and its status change, and it is no longer busy.
+    setTimeout(function () {
+      toast.querySelector('.toast-icon').replaceWith(toast.querySelector('template').content.firstElementChild.cloneNode(true))
+      title.textContent = 'Deployed to production'
+      toast.querySelector('.toast-description').textContent = 'atlas.dev is live in 14 regions.'
+      toast.classList.add('toast-success', 'toast-timed')
+      toast.removeAttribute('aria-busy')
+    }, 2400)
+  })
+  // A toast that has run out, or was dismissed and has left, is removed.
+  region.addEventListener('animationend', function (event) {
+    if (event.animationName === 'toast-expire') event.target.remove()
+  })
+  region.addEventListener('close', function (event) {
+    setTimeout(function () { event.target.remove() }, 300)
+  }, true)
+</script>`} caption="按“Deploy”：轻提示先忙碌两秒，然后在同一位置告知部署完成，六秒后离开。" />
+
+同一条轻提示可以再次变化，例如上传文件时从一个计数变为下一个，或从失败变为重试。每次变化都会重新开始计时，让用户有完整的时间阅读新文字。重要的长时间任务不适合用忙碌的轻提示来跟踪：放在工作旁边的[进度条](/components/progress)会一直留在原处。
 
 ## 富内容 \{#rich-content\}
 
@@ -139,12 +203,29 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
 - 用 `aria-live="polite"` 将该区域设为实时区域，让轻提示出现时得到播报，并用 `aria-label` 为该区域提供无障碍名称。
 - 为每条轻提示提供无障碍名称，可以用 `aria-labelledby` 指向其标题，也可以用 `aria-label`。
+- 为原地更改文字的轻提示设置 `aria-atomic="true"`，使每次变化作为整条轻提示播报一次，而不是逐段播报。轻提示处于忙碌状态时，屏幕阅读器可能会等到工作结束后再播报。
 - 轻提示用于确认操作结果。用户即使错过轻提示，也应能获取所需信息并执行所需操作，因此应将操作入口保留在轻提示之外。
-- 启用减少动态效果时，轻提示会在原地淡入淡出。
+- 轻提示出现时不获取焦点。其操作按钮和关闭按钮位于 Tab 键顺序中，任一按钮持有焦点时，定时关闭的轻提示都会等待。
+- 启用减少动态效果时，轻提示会在原地淡入淡出，新图标会以原尺寸淡入。
 
 ## React、Svelte 和 Vue \{#frameworks\}
 
 `toast` 组件维护一个队列。`toast()` 函数可在任意位置调用，轻提示区域只渲染一次，用于显示队列中的消息。使用 `npx master-ui add toast` 将组件复制到项目中。有关这些组件的实现和用法，请参阅 [React、Svelte 和 Vue](/guide/frameworks)。
+
+- `toast(message)` 显示一条轻提示并返回一个句柄。`update(message)` 在同一条轻提示中显示其他内容，不会再次入场，并重新开始计时；`dismiss()` 让它像点击自身按钮一样离开。消息包含 `title`、`description`、`status`、以毫秒为单位的 `duration`（`false` 表示一直保留）和 `action`；传入字符串时，作为 `description`。
+- `status: 'pending'` 显示加载指示器并设置 `aria-busy`，轻提示会一直保留，直到被更新。
+- `action: { label, onClick }` 是轻提示提供的唯一按钮。它先运行 `onClick`，然后关闭轻提示，除非处理函数调用了 `event.preventDefault()`。
+- `toast.promise(promise, { loading, success, error })` 先将 `loading` 显示为进行中的轻提示，然后把同一条轻提示变为 `success`，或变为带 `danger` 状态的失败提示。两者都可以是接收结果值或失败原因的函数。它返回该 promise，可用于 await 或链式调用。
+
+```tsx
+toast({ title: 'Project archived', action: { label: 'Undo', onClick: () => restore(project) } })
+
+await toast.promise(deploy(project), {
+  loading: { title: 'Deploying Atlas' },
+  success: (release) => ({ title: 'Deployed to production', description: `${release.url} is live.` }),
+  error: (error) => ({ title: 'The deploy failed', description: String(error), duration: false }),
+})
+```
 
 <FrameworkSource name="toast" />
 

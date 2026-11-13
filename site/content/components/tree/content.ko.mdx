@@ -106,24 +106,161 @@ WAI-ARIA 트리 패턴에서 트리 전체는 하나의 Tab 정지점이 되며,
   </li>
 </ul>`} caption="트리에 포커스를 두고 방향키를 사용하세요. Enter나 Space를 누르거나 클릭하면 가지가 펼쳐집니다. 하위 항목이 없는 행에서는 해당 행이 선택됩니다." />
 
-`tree`는 `tree` 클래스가 지정된 루트 요소를 인수로 받습니다. 옵션은 없으며, 동작 연결을 해제하는 함수를 반환합니다.
+`tree`는 `tree` 클래스가 지정된 루트 요소를 인수로 받으며, 동작 연결을 해제하는 함수를 반환합니다. 옵션으로 [이름 바꾸기](#rename)를 켤 수 있습니다. `rename: true`와, 입력 필드의 접근 가능한 이름인 `renameLabel`(기본값 `Rename <label>`)을 사용합니다.
 
 ```js name=app.js
 import { tree } from '@master/ui/behaviors/tree.js'
 
 const root = document.querySelector('.tree')
-tree(root)
+const files = tree(root)
 
-root.addEventListener('change', (event) => console.log(event.detail.item))
+root.addEventListener('change', () => console.log(files.value))
 ```
 
 - **하나의 Tab 정지점.** 이 동작은 `tabindex`를 사용해 Tab 이동 순서에 행 하나만 유지합니다. 마크업에 `tabindex="0"`이 지정된 행, 선택된 행 또는 현재 행, 첫 번째 행 순으로 정지점을 정합니다. 포커스를 받은 행이 새 Tab 정지점이 됩니다. 동작 연결을 해제하면 각 행의 `tabindex`가 원래 상태로 복원됩니다.
 - **행 사이 이동.** 키로 이동할 때는 접힌 가지 안의 행, `hidden` 속성이 지정된 행, 비활성화된 행을 건너뜁니다.
 - **활성화.** summary 요소, 링크, 버튼은 브라우저의 기본 활성화 동작을 유지합니다. 기본 활성화 동작이 없는 행, 즉 `div`에 `role="treeitem"`을 지정한 행은 <kbd>Enter</kbd>, <kbd>Space</kbd> 또는 클릭으로 활성화됩니다. 가지는 펼쳐지거나 접히고, 하위 항목이 없는 행은 선택됩니다. 이전 행에 있던 `aria-selected="true"`는 새로 선택된 행으로 옮겨갑니다.
-- **이벤트.** 행을 선택하면 루트에서 버블링되는 `change` 이벤트가 발생하며, `detail.item`에 선택된 행이 담깁니다.
-- **비활성화.** `disabled` 또는 `aria-disabled="true"`가 지정된 행은 반응하지 않습니다. 링크로 이동하지 않으며 가지의 펼침 상태도 그대로 유지됩니다.
+- **값.** `tree`가 반환하는 함수에는 `value`가 있습니다. 선택된 행이 나타내는 값으로, 행의 `data-value` 또는 텍스트이며, 선택된 행이 없으면 null입니다. [다중 선택 트리](#several)와 [체크박스 트리](#checkbox)에서는 목록입니다. 외부에서 행을 선택하거나 체크하려면 이 값을 설정하세요. 이때 이벤트는 발행하지 않습니다.
+- **이벤트.** 모든 이벤트는 루트에서 버블링되며, `detail.item`에 해당 행이 담깁니다. 행을 선택하거나 체크하면 `change`가 발생합니다. 가지를 펼치면 `expand`가 발생하며, `detail.value`에 행이 나타내는 값이 담깁니다. 이름을 바꾸면 `rename`이 발생하며, `detail.value`와 함께 `detail.label`에 새 레이블이 담깁니다.
+- **비활성화.** `disabled` 또는 `aria-disabled="true"`가 지정된 행은 반응하지 않습니다. 링크로 이동하지 않고, 가지의 펼침 상태도 그대로 유지되며, 선택, 체크, 이름 바꾸기도 되지 않습니다.
 
 이 동작은 `<details>` 기반 트리에도 적용할 수 있습니다. 처음 두 미리보기는 이 동작을 연결하지 않고 실행됩니다. `open`으로 `tree-group`을 펼치거나 접으며, 트리 전체가 하나의 Tab 정지점이 되어 같은 키로 행 사이를 이동할 수 있습니다. `attach()`는 모든 트리에 이 동작을 연결합니다. `<details>` 기반 트리에서 플랫폼 기본 동작을 유지하려면 필요한 동작만 이름으로 가져오세요.
+
+## 여러 행 선택 \{#several\}
+
+트리에 `aria-multiselectable="true"`를 지정하면 파일 목록처럼 하위 항목이 없는 행(말단 행)을 개수 제한 없이 선택할 수 있습니다. 선택할 수 있는 모든 행에는 `aria-selected`가 `true` 또는 `false`로 지정됩니다. 가지는 선택되지 않고 펼치거나 접힙니다. 값은 선택된 행을 트리 순서대로 담은 목록입니다.
+
+<ComponentPreview name="several" height={252} title="여러 행 선택" background="plain" bodyClass="content-start p-lg" behaviors html={`<ul class="tree max-w(260) mx-auto" role="tree" aria-label="Files" aria-multiselectable="true">
+  <li role="none">
+    <div class="tree-item tree-toggle" role="treeitem" aria-expanded="true">components</div>
+    <ul class="tree-sub" role="group">
+      <li role="none"><div class="tree-item" role="treeitem" aria-selected="true">button.css</div></li>
+      <li role="none"><div class="tree-item" role="treeitem" aria-selected="true">input.css</div></li>
+      <li role="none"><div class="tree-item" role="treeitem" aria-selected="false">theme.css</div></li>
+      <li role="none"><div class="tree-item" role="treeitem" aria-selected="false">tree.css</div></li>
+    </ul>
+  </li>
+  <li role="none">
+    <div class="tree-item tree-toggle" role="treeitem" aria-expanded="false">themes</div>
+    <ul class="tree-sub" role="group">
+      <li role="none"><div class="tree-item" role="treeitem" aria-selected="false">paper.css</div></li>
+    </ul>
+  </li>
+  <li role="none"><div class="tree-item" role="treeitem" aria-selected="false">README.md</div></li>
+</ul>`} caption="행 하나를 클릭한 뒤 Shift 키를 누른 채 다른 행을 클릭하면 그 사이의 행이 선택됩니다. Control 또는 Command 키를 누른 채 클릭하면 행 하나를 추가하며, 키보드에서는 Space 키가 같은 역할을 합니다." />
+
+- **클릭**하면 해당 행만 선택합니다. <kbd>Control</kbd> 또는 <kbd>Command</kbd> 키를 누른 채 클릭하면 다른 행의 선택은 유지한 채 행 하나를 선택하거나 선택 해제합니다. <kbd>Enter</kbd> 키는 클릭과 같습니다.
+- **<kbd>Space</kbd>** 키는 포커스가 있는 행을 선택하거나 선택 해제합니다. 방향키는 이동만 합니다.
+- **연속 선택.** 마지막으로 선택한 행이 기준점입니다. <kbd>Shift</kbd> 키를 누른 채 클릭하거나 <kbd>Space</kbd>, <kbd>ArrowDown</kbd>, <kbd>ArrowUp</kbd> 키를 누르면 기준점부터 해당 행까지 보이는 모든 행을 선택합니다. <kbd>Control</kbd> 또는 <kbd>Command</kbd> 키와 <kbd>Shift</kbd> 키를 누른 채 <kbd>Home</kbd> 또는 <kbd>End</kbd> 키를 누르면 첫 행이나 마지막 행까지 선택합니다. 접힌 가지 안의 행과 비활성화된 행은 건너뜁니다.
+- **전체 선택.** <kbd>Control</kbd> 또는 <kbd>Command</kbd> 키와 <kbd>A</kbd> 키를 누르면 보이는 모든 행을 선택하며, 이미 모두 선택되어 있으면 모두 선택 해제합니다.
+
+## 체크박스 트리 \{#checkbox\}
+
+행에 `aria-checked`가 있으면 트리는 체크박스 트리가 됩니다. 각 행에 체크 표시가 있으며, 가지를 체크하면 접힌 가지 안의 행을 포함해 그 아래의 모든 행이 체크됩니다. 가지는 하위 행의 상태를 나타냅니다. 모두 체크되어 있으면 `true`, 하나도 체크되지 않았으면 `false`, 그 밖에는 `mixed`입니다. 각 행에서 꺾쇠 열 뒤, 레이블 앞에 `aria-hidden="true"`를 지정한 `tree-check`를 두세요. 이 요소는 [체크박스](/components/checkbox)와 같은 오목한 영역이며 행의 `aria-checked`에 따라 그려지므로, 행은 자신의 상태를 한 번만 알립니다.
+
+<ComponentPreview name="checkbox" height={252} title="체크박스 트리" background="plain" bodyClass="content-start p-lg" behaviors html={`<ul class="tree max-w(260) mx-auto" role="tree" aria-label="Files to publish" aria-multiselectable="true">
+  <li role="none">
+    <div class="tree-item tree-toggle" role="treeitem" aria-expanded="true" aria-checked="mixed"><span class="tree-check" aria-hidden="true"></span>components</div>
+    <ul class="tree-sub" role="group">
+      <li role="none"><div class="tree-item" role="treeitem" aria-checked="true"><span class="tree-check" aria-hidden="true"></span>button.css</div></li>
+      <li role="none"><div class="tree-item" role="treeitem" aria-checked="true"><span class="tree-check" aria-hidden="true"></span>input.css</div></li>
+      <li role="none"><div class="tree-item" role="treeitem" aria-checked="false"><span class="tree-check" aria-hidden="true"></span>theme.css</div></li>
+      <li role="none"><div class="tree-item" role="treeitem" aria-checked="false"><span class="tree-check" aria-hidden="true"></span>tree.css</div></li>
+    </ul>
+  </li>
+  <li role="none">
+    <div class="tree-item tree-toggle" role="treeitem" aria-expanded="false" aria-checked="false"><span class="tree-check" aria-hidden="true"></span>themes</div>
+    <ul class="tree-sub" role="group">
+      <li role="none"><div class="tree-item" role="treeitem" aria-checked="false"><span class="tree-check" aria-hidden="true"></span>paper.css</div></li>
+    </ul>
+  </li>
+  <li role="none"><div class="tree-item" role="treeitem" aria-checked="true"><span class="tree-check" aria-hidden="true"></span>README.md</div></li>
+</ul>`} caption="themes를 체크해 보세요. 그 안의 paper.css도 체크됩니다. components의 파일 하나를 체크 해제하면 가지가 mixed 상태가 됩니다." />
+
+- **<kbd>Space</kbd>** 키는 포커스가 있는 행을 체크하거나 체크 해제하며, 가지라면 하위 행 전체를 함께 바꿉니다. mixed 상태의 가지는 체크되며, 그 아래에서 바뀔 수 있는 모든 행이 이미 체크되어 있으면 체크 해제됩니다.
+- 말단 행을 **클릭**하면 체크됩니다. 가지에서는 체크 표시를 클릭하면 체크되고, 행의 나머지 부분을 클릭하면 펼치거나 접힙니다. <kbd>Enter</kbd> 키는 행을 클릭한 것과 같습니다.
+- **비활성화된 행**은 가지가 체크되어도 체크 상태를 유지하므로, 가지가 mixed 상태로 남을 수 있습니다.
+- **값**은 체크된 말단 행을 트리 순서대로 담은 목록입니다. **가지는 포함하지 않습니다.** 가지의 체크 표시는 하위 행의 상태를 나타낼 뿐이므로, 값은 폴더가 아니라 각 파일을 가리킵니다. 하위 행을 아직 불러오지 않은 가지도 포함하지 않습니다. 체크된 가지 아래에 하위 행이 도착하면 그 행들이 체크되고 트리가 `change`를 발생시킵니다.
+
+트리에도 `aria-multiselectable="true"`를 지정하세요. 체크박스 트리는 여러 행을 선택할 수 있는 트리이며, 보조 기술도 그렇게 안내합니다.
+
+## 나중에 행 불러오기 \{#loading\}
+
+하위 행을 서버에서 가져오는 가지는 `aria-expanded="false"`와 빈 `tree-sub`를 가진 행입니다. 아래에 행이 없는 상태로 가지를 펼치면 동작이 가지에 `aria-busy="true"`를 지정하고 `expand`를 발생시킵니다. 행의 맨 앞에 [스피너](/components/spinner)를 두세요. 스피너는 기본 상태에서는 그려지지 않고, 행이 작업 중인 동안 꺾쇠 자리에 표시되므로 아무것도 움직이지 않습니다.
+
+<ComponentPreview name="loading" height={200} title="나중에 행 불러오기" background="plain" bodyClass="content-start p-lg" behaviors html={`<ul class="tree max-w(260) mx-auto" role="tree" aria-label="Repositories" id="repositories">
+  <li role="none">
+    <div class="tree-item tree-toggle" role="treeitem" aria-expanded="false"><span class="spinner" aria-hidden="true"></span>master-co/ui</div>
+    <ul class="tree-sub" role="group"></ul>
+  </li>
+  <li role="none">
+    <div class="tree-item tree-toggle" role="treeitem" aria-expanded="false"><span class="spinner" aria-hidden="true"></span>master-co/css</div>
+    <ul class="tree-sub" role="group"></ul>
+  </li>
+</ul>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  document.getElementById('repositories').addEventListener('expand', function (event) {
+    var row = event.detail.item
+    if (row.getAttribute('aria-busy') !== 'true') return
+    // A page fetches the rows here; this one waits a moment instead.
+    setTimeout(function () {
+      row.nextElementSibling.innerHTML = ['packages', 'site', 'README.md'].map(function (name) {
+        return '<li role="none"><div class="tree-item" role="treeitem">' + name + '</div></li>'
+      }).join('')
+    }, 1200)
+  })
+})
+</script>`} caption="저장소를 펼쳐 보세요. 하위 행이 도착할 때까지 스피너가 돌고, 도착하면 방향키로 행 사이를 이동할 수 있습니다." />
+
+페이지는 `expand`를 감지해 계약의 클래스와 역할로 가지의 `tree-sub`에 행을 작성합니다. 동작은 행이 추가된 것을 감지해 `aria-busy`를 제거하고, 새 행에도 바로 키보드 조작을 적용합니다. 새 행은 Tab 이동 순서에서 제외되며 방향키로 이동합니다. `expand`는 동작이 펼치는 모든 가지에서 발생하므로, 행이 필요한지 알려면 `aria-busy`를 확인하세요. 가지에 하위 행이 없는 것으로 확인되면 `aria-busy`와 `aria-expanded`를 제거하세요. 그 행은 말단 행입니다.
+
+```js name=app.js
+root.addEventListener('expand', async (event) => {
+  const row = event.detail.item
+  if (row.getAttribute('aria-busy') !== 'true') return
+  const children = await fetch(`/api/folders/${event.detail.value}`).then((response) => response.json())
+  row.nextElementSibling.replaceChildren(...children.map(rowFor))
+})
+```
+
+## 이름 바꾸기 \{#rename\}
+
+`rename: true`를 지정하면 행에서 <kbd>F2</kbd> 키를 눌러 레이블을 제자리에서 [인라인 편집](/components/editable) 필드로 바꿀 수 있으며, 레이블의 텍스트가 선택된 상태로 표시됩니다. 레이블은 `tree-label`이어야 하며, 이 클래스는 긴 이름의 끝을 말줄임표로 줄이기도 합니다. <kbd>Enter</kbd> 키를 누르면 저장하고 <kbd>Escape</kbd> 키를 누르면 원래 레이블로 되돌리며, 어느 쪽이든 포커스는 행으로 돌아갑니다. 필드를 벗어나면 저장되며, 빈 레이블은 저장되지 않습니다.
+
+<ComponentPreview name="rename" height={168} title="이름 바꾸기" background="plain" bodyClass="content-start p-lg" behaviors html={`<ul class="tree max-w(260) mx-auto" role="tree" aria-label="Pages" id="pages">
+  <li role="none">
+    <div class="tree-item tree-toggle" role="treeitem" aria-expanded="true"><span class="tree-label">Guide</span></div>
+    <ul class="tree-sub" role="group">
+      <li role="none"><div class="tree-item" role="treeitem" data-value="introduction"><span class="tree-label">Introduction</span></div></li>
+      <li role="none"><div class="tree-item" role="treeitem" data-value="installation"><span class="tree-label">Installation</span></div></li>
+    </ul>
+  </li>
+  <li role="none"><div class="tree-item" role="treeitem" data-value="changelog"><span class="tree-label">Changelog</span></div></li>
+</ul>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.tree(document.getElementById('pages'), { rename: true })
+})
+</script>`} caption="행에 포커스를 두고 F2 키를 누른 뒤 이름을 입력하세요. Enter 키를 누르면 저장하고, Escape 키를 누르면 되돌립니다." />
+
+`attach()`는 옵션을 전달하지 않으므로 이 미리보기에서는 `attach()`가 실행된 뒤 `tree`를 직접 호출합니다. 같은 루트에 두 번째로 호출하면 첫 번째 호출을 대체합니다.
+
+동작은 새 레이블을 `tree-label`에 기록하고 루트에서 `rename`을 발생시킵니다. `detail.value`에는 행이 나타내던 값이, `detail.label`에는 새 레이블이 담깁니다. 필드 자체의 `input`과 `change`는 필드 안에서만 처리됩니다. 레이블 저장은 페이지가 담당합니다. 서버가 변경을 거부하면 이전 레이블을 다시 기록하세요. 각 행에는 이름이 바뀌어도 변하지 않는 `data-value`를 지정해, 이름을 바꾼 뒤에도 행이 나타내는 값이 유지되게 하세요.
+
+터치 화면처럼 <kbd>F2</kbd> 키가 없는 사용자에게는 다른 방법이 필요합니다. `tree`가 반환하는 함수의 `edit(row)`는 옵션 지정 여부와 관계없이 <kbd>F2</kbd> 키와 같은 일을 하므로, [컨텍스트 메뉴](/components/menu)의 이름 바꾸기 항목이나 버튼에 사용할 수 있습니다.
+
+```js name=app.js
+const pages = tree(root, { rename: true })
+
+root.addEventListener('rename', async (event) => {
+  const { item, value, label } = event.detail
+  const saved = await fetch(`/api/pages/${value}`, { method: 'PATCH', body: JSON.stringify({ title: label }) })
+  if (!saved.ok) item.querySelector('.tree-label').textContent = previous(value)
+})
+
+renameItem.addEventListener('click', () => pages.edit(selectedRow))
+```
 
 ## 트리와 내비게이션 \{#tree-or-nav\}
 
@@ -137,11 +274,19 @@ root.addEventListener('change', (event) => console.log(event.detail.item))
 
 - `<details>`를 사용할 때는 트리 역할을 추가하지 마세요. 보조 기술은 브라우저 기본 펼침 요소를 그대로 올바르게 안내하며, 동작 스크립트가 없으면 모든 행이 Tab 정지점이 됩니다.
 - 현재 행은 `aria-current="page"`로 표시하세요. 트리 패턴에서는 `aria-selected="true"`로 표시하세요.
+- 여러 행 선택, 체크 표시, 행 불러오기, 이름 바꾸기는 트리 패턴의 기능이므로 `role="tree"`와 동작이 필요합니다.
+- 체크박스 트리에서는 행이 `aria-checked`로 상태를 알립니다. `tree-check`에는 `aria-hidden="true"`가 지정되어 있으므로 상태는 한 번만 안내됩니다.
+- 작업 중인 가지는 `aria-busy="true"`로 이를 알립니다. 스피너에는 `aria-hidden="true"`를 지정합니다.
+- 이름 바꾸기 필드의 이름은 `Rename <label>`입니다. 페이지의 언어로 `renameLabel`을 전달하세요.
 - 터치 화면에서는 행의 높이가 44px입니다.
 
 ## React, Svelte, Vue \{#frameworks\}
 
 `tree` 컴포넌트는 데이터에서 행을 렌더링하고 동작을 연결하며, 선택된 행을 입력으로 받고 외부로 전달합니다. `npx master-ui add tree`로 프로젝트에 복사하세요. 컴포넌트의 구성과 사용법은 [React, Svelte, Vue](/guide/frameworks)에서 확인할 수 있습니다.
+
+- `multiple`은 여러 행을 선택할 수 있게 하고, `checkable`은 모든 행에 체크 표시를 둡니다. 둘 중 하나를 지정하면 값은 목록이 됩니다. 처음 값은 가지의 mixed 체크 표시를 포함해 첫 렌더링에 반영됩니다.
+- `children: []`인 노드는 하위 행을 나중에 불러오는 가지입니다. 이 노드에는 스피너가 있으며, 펼치면 해당 값과 함께 `onExpand`(Vue에서는 `@expand`)가 호출됩니다. 하위 항목은 `nodes`에 넣어 전달하세요.
+- `onRename`(Vue에서는 `@rename`)을 지정하면 이름 바꾸기가 켜지며, 행의 값과 새 레이블과 함께 호출됩니다. 레이블은 `nodes`에 반영해 두세요.
 
 <FrameworkSource name="tree" />
 

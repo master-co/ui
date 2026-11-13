@@ -8,20 +8,30 @@ import ComponentSource from '~/site/components/ComponentSource.astro'
 import ContractTable from '~/site/components/ContractTable.astro'
 import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
-달력에서는 한 달의 날짜 중 하나를 선택할 수 있습니다. 달력은 버튼으로 이루어진 ARIA 그리드입니다. 스타일시트가 각 상태의 모양을 정의하고, `calendar` [동작](/guide/behaviors)이 날짜를 채우고 월 이동 버튼과 방향키를 처리합니다. 달력 자체에는 표면이 없으므로 [카드](/components/card) 안에 배치하거나 [팝오버](/components/popover) 안에 넣어 날짜 선택기로 사용합니다.
+달력에서는 한 달의 날짜를 선택할 수 있습니다. 날짜 하나, [날짜 범위](#range), [여러 날짜](#several-days)를 선택할 수 있으며, 한 달 또는 [두 달을 나란히](#several-months) 표시할 수 있습니다. 달력은 버튼으로 이루어진 ARIA 그리드입니다. 스타일시트가 각 상태의 모양을 정의하고, `calendar` [동작](/guide/behaviors)이 날짜를 채우고 월 이동 버튼과 방향키를 처리합니다. 달력 자체에는 표면이 없으므로 [카드](/components/card) 안에 배치하거나 [팝오버](/components/popover) 안에 넣어 날짜 선택기로 사용합니다.
 
 <ComponentPreview name="default" height={392} title="달력" bodyClass="flex justify-center p-lg" behaviors html={`<div class="sheet p-md">
   <div class="calendar">
     <div class="calendar-header">
       <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Previous month"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button>
-      <h3 class="calendar-title" id="cal-title" aria-live="polite"></h3>
+      <h3 class="calendar-title" id="cal-title" aria-live="polite"><button type="button" class="calendar-title-button" aria-description="Choose a month or a year"></button></h3>
       <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Next month"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
     </div>
     <div class="calendar-grid" role="grid" aria-labelledby="cal-title"></div>
   </div>
-</div>`} caption="날짜를 클릭해 선택하세요. 두 버튼으로 월을 이동하거나, 날짜에 포커스를 두고 방향키를 사용하세요." />
+</div>`} caption="날짜를 클릭해 선택하세요. 두 버튼으로 월을 이동하거나, 날짜에 포커스를 두고 방향키를 사용하세요. 제목을 클릭하면 다른 월이나 연도로 바로 이동할 수 있습니다." />
 
 마크업은 헤더와 빈 그리드로 구성됩니다. 동작은 `calendar-title`에 월 이름을, `calendar-grid`에 요일 이름과 주별 날짜를 채웁니다. 처음에는 오늘이 속한 달을 표시합니다. 스크립트가 없으면 그리드에는 마크업에 있는 내용만 표시됩니다. 스크립트가 실행되기 전에도 날짜를 읽을 수 있어야 한다면 아래 [날짜 범위](#range) 예시처럼 서버에서 주별 날짜까지 렌더링합니다. 동작이 연결되면 이 내용을 교체합니다.
+
+## 월과 연도 \{#months-and-years\}
+
+위 달력의 제목은 `calendar-title` 안에 있는 `calendar-title-button` 버튼입니다. 제목을 클릭하면 그리드가 해당 연도의 12개월로 바뀌고, 다시 클릭하면 해당 10년의 연도로 바뀝니다. 이때 앞뒤 연도는 톤을 낮춘 잉크 색으로 표시합니다. 연도를 선택하면 그 연도의 월이 표시되고, 월을 선택하면 그 달의 날짜가 표시되며 같은 날짜에 포커스가 놓입니다. <kbd>Escape</kbd> 키를 누르면 이전 상태의 날짜 화면으로 돌아갑니다.
+
+월과 연도는 같은 그리드 안의 `calendar-period` 버튼이며, 한 행에 세 개씩 날짜와 같은 재질로 그립니다. 그리드는 6주짜리 달의 높이를 유지하므로 달력의 크기가 갑자기 바뀌지 않습니다. 제목은 항상 그리드가 표시하는 범위를 나타냅니다. 예를 들어 `November 2026`, `2026`, `2020 – 2029`와 같습니다. 월 이동 버튼은 월 화면에서는 1년, 연도 화면에서는 10년 단위로 이동하며, 이때 사용할 버튼 이름은 `labels` 옵션에서 가져옵니다. 연도 화면에서는 10년이 가장 넓은 단위이므로 제목 버튼이 비활성화됩니다.
+
+버튼이 없는 제목은 일반 제목으로 남으며, 달력은 날짜 화면에서 벗어나지 않습니다. 이 이동 기능은 한 달을 표시하는 달력에만 사용합니다.
+
+헤더에 네이티브 월 선택 상자와 연도 선택 상자를 두는 방법도 있었지만 채택하지 않았습니다. 모든 언어에서 선택 상자 두 개와 월 이동 버튼 두 개를 36px 너비의 열 7개 위에 배치할 수는 없고, 100년치 목록은 선택 상자에서 길게 스크롤해야 하며, 스타일을 적용한 선택 상자의 목록은 아직 모든 브라우저에서 지원되지 않기 때문입니다. 월과 연도 그리드는 달력과 같은 재질로 그려지며, 사용자가 이미 쓰고 있는 키로 조작할 수 있습니다.
 
 ## 상태 \{#states\}
 
@@ -33,6 +43,8 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
 | 선택됨 | `aria-selected="true"` | 체크된 [체크박스](/components/checkbox)와 같은 잉크 색 채움 |
 | 표시 중인 달에 속하지 않음 | `calendar-day-outside` | 톤을 낮춘 잉크 색 |
 | 선택 불가 | `disabled` | 비활성 상태의 잉크 색 |
+
+이동 화면의 월과 연도에도 같은 표시를 사용합니다. 오늘이 속한 월이나 연도에는 `aria-current="date"`, 선택한 날짜가 포함된 월이나 연도에는 `aria-selected="true"`, `min`과 `max` 사이에 날짜가 없는 월이나 연도에는 `disabled`를 지정합니다. `calendar-period-outside`는 10년 범위의 앞뒤 연도를 표시합니다.
 
 날짜는 [메뉴](/components/menu) 항목처럼 포인터에 즉시 반응합니다. 오늘을 선택해도 점은 그대로 표시되며, 점의 색은 날짜 숫자의 색을 따릅니다.
 
@@ -134,6 +146,62 @@ addEventListener('DOMContentLoaded', function () {
 
 `attach()`는 옵션을 전달하지 않으므로 이 미리보기에서는 `attach()`가 실행된 뒤 `calendar`를 직접 호출합니다. 같은 루트에서 두 번째로 호출하면 첫 번째 호출로 연결한 동작을 교체합니다. `MasterUI`는 미리보기가 로드하는 번들입니다. 프로젝트에서는 [동작](#behavior) 섹션에 나온 대로 `calendar`를 가져오세요.
 
+## 여러 날짜 \{#several-days\}
+
+`multiple` 옵션을 사용하면 서로 떨어진 날짜를 개수 제한 없이 선택할 수 있습니다. 클릭하거나 <kbd>Enter</kbd> 또는 <kbd>Space</kbd> 키를 누르면 날짜의 선택 상태가 전환됩니다. 선택한 날짜에는 모두 `aria-selected="true"`가 지정되고, 그리드에는 `aria-multiselectable="true"`가 지정됩니다. 선택 값은 선택한 날짜를 `YYYY-MM-DD` 형식으로 정렬한 목록이며, 값이 바뀔 때마다 선택한 날짜 전체를 이벤트로 전달합니다.
+
+<ComponentPreview name="multiple" height={392} title="여러 날짜" bodyClass="flex justify-center p-lg" behaviors html={`<div class="sheet p-md">
+  <div class="calendar" id="shifts">
+    <div class="calendar-header">
+      <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Previous month"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button>
+      <h3 class="calendar-title" id="shifts-title" aria-live="polite"></h3>
+      <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Next month"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
+    </div>
+    <div class="calendar-grid" role="grid" aria-labelledby="shifts-title"></div>
+  </div>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.calendar(document.getElementById('shifts'), {
+    multiple: true,
+    value: ['2026-11-09', '2026-11-12', '2026-11-20'],
+    disabled: function (date) { return date.getDay() === 0 || date.getDay() === 6 }
+  })
+})
+</script>`} caption="평일을 클릭해 선택하거나 선택을 해제하세요. 주말은 선택할 수 없습니다." />
+
+`min`, `max`, `disabled`는 날짜 하나를 선택할 때와 같이 적용됩니다. `range`도 함께 지정하면 `range`가 우선합니다.
+
+## 여러 달 \{#several-months\}
+
+두 달을 나란히 표시하면 한 달에서 다음 달로 이어지는 날짜 범위를 보여 줄 수 있습니다. 각 달은 자체 헤더와 그리드를 가진 `calendar-month`입니다. 첫 번째 헤더에는 이전 달로 이동하는 버튼을, 마지막 헤더에는 다음 달로 이동하는 버튼을 두며, 각 제목은 해당 그리드 위에 놓입니다. 동작은 각 달을 순서대로 채우며, 버튼을 누르면 모든 달이 함께 한 달씩 이동합니다.
+
+<ComponentPreview name="months" height={392} mediumHeight={720} narrowHeight={720} title="두 달" bodyClass="flex justify-center p-lg" behaviors html={`<div class="sheet p-md">
+  <div class="calendar" id="trip">
+    <div class="calendar-month">
+      <div class="calendar-header">
+        <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Previous month"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button>
+        <h3 class="calendar-title" id="trip-first" aria-live="polite"></h3>
+      </div>
+      <div class="calendar-grid" role="grid" aria-labelledby="trip-first"></div>
+    </div>
+    <div class="calendar-month">
+      <div class="calendar-header">
+        <h3 class="calendar-title" id="trip-second" aria-live="polite"></h3>
+        <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Next month"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
+      </div>
+      <div class="calendar-grid" role="grid" aria-labelledby="trip-second"></div>
+    </div>
+  </div>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.calendar(document.getElementById('trip'), { range: true, value: ['2026-11-26', '2026-12-04'] })
+})
+</script>`} caption="두 달에 걸쳐 날짜 범위를 선택하거나, 방향키로 한 달에서 다음 달로 이동해 보세요." />
+
+여러 달은 탭 순서의 한 지점과 하나의 키보드 흐름을 공유합니다. 첫 번째 달의 마지막 날에서 방향키를 누르면 두 번째 달의 첫날로 이동하고, 마지막 달을 넘어 이동하면 두 달이 함께 바뀝니다. 해당 달에 속하지 않는 날짜는 옆의 달이 그 날짜를 표시하므로 빈칸으로 남기며, 이 빈칸으로 요일 열을 유지합니다. 한 행에 공간이 부족하면 달이 세로로 배치됩니다.
+
 ## 날짜 선택기 \{#date-picker\}
 
 날짜 선택기는 입력 필드, 버튼, [팝오버](/components/popover) 안의 달력으로 구성됩니다. 팝오버는 스크립트 없이 열리고 닫히며 버튼을 기준으로 위치를 잡습니다. 동작은 달력을 렌더링하고 선택한 날짜를 알립니다. 페이지의 스크립트는 그 날짜를 입력 필드에 쓰고 팝오버를 닫습니다.
@@ -187,18 +255,20 @@ root.addEventListener('change', (event) => console.log(event.detail.value))
 
 | 옵션 | 설정 내용 |
 | --- | --- |
-| `value` | 선택한 날짜를 나타내는 `YYYY-MM-DD` 값 또는 범위의 시작일과 종료일 |
+| `value` | 선택한 날짜를 나타내는 `YYYY-MM-DD` 값, 범위의 시작일과 종료일, 또는 `multiple`로 선택한 날짜 목록 |
 | `month` | 처음 표시할 월을 나타내는 `YYYY-MM` 값. 기본값은 선택 값이 속한 달이며, 선택 값이 없으면 오늘이 속한 달입니다. |
 | `min`, `max` | 선택할 수 있는 첫날과 마지막 날을 나타내는 `YYYY-MM-DD` 값. 해당 방향으로 이동할 수 있는 달이 없으면 월 이동 버튼이 비활성화됩니다. |
 | `range` | 두 날짜와 그 사이의 모든 날짜를 선택하려면 `true`로 설정합니다. |
+| `multiple` | 서로 떨어진 날짜를 개수 제한 없이 선택하려면 `true`로 설정합니다. `range`가 이 옵션보다 우선합니다. |
+| `labels` | 월 화면과 연도 화면에서 사용할 월 이동 버튼의 이름: `previousYear`, `nextYear`, `previousDecade`, `nextDecade`. 기본값은 영어입니다. |
 | `weekStart` | 첫 열에 표시할 요일. 일요일은 0, 토요일은 6입니다. 기본값은 로캘의 주 시작 요일이며, 브라우저에서 이 값을 확인할 수 없으면 월요일을 사용합니다. |
 | `locale` | 월과 요일 이름에 사용할 BCP 47 태그. 기본값은 달력에 적용되는 `lang`입니다. |
 | `disabled` | `Date` 객체를 받아 해당 날짜가 선택 불가인지 반환하는 함수 |
-| `draw` | 스크립트 대신 그리드를 생성하는 함수. 표시할 월을 `YYYY-MM` 형식으로 전달받습니다. [사용자 지정 그리드](/guide/behaviors#a-grid-of-your-own)를 참고하세요. |
+| `draw` | 스크립트 대신 그리드를 생성하는 함수. 표시할 월을 `YYYY-MM` 형식으로, 화면 종류를 `days`, `months`, `years` 중 하나로 전달받습니다. 날짜 화면에서는 해당 달을 생성하고, 다음 그리드에는 그 뒤의 달을 생성합니다. 각 달은 `calendarMonth(month, { offset })`로 구할 수 있습니다. 월 화면이나 연도 화면에서는 `calendarPeriods(month, { view })`가 반환하는 셀을 생성합니다. [사용자 지정 그리드](/guide/behaviors#a-grid-of-your-own)를 참고하세요. |
 
-- **생성하는 내용.** 표시 중인 달의 요일 이름, 주별 날짜, 월 이름을 채웁니다. 날짜 버튼에는 날짜를 `value`로 설정합니다. 오늘에는 `aria-current="date"`를, 선택된 날짜에는 `aria-selected="true"`와 범위 클래스를, 선택할 수 없는 날짜에는 `disabled`를 지정합니다. 전체 날짜는 `aria-label`에 지정하며, `tabindex`로 날짜 하나만 탭 순서에 포함되도록 합니다. `draw` 옵션을 사용하면 템플릿이나 프레임워크가 날짜를 생성하고 스크립트는 상태만 표시합니다.
-- **이벤트.** 날짜를 선택하면 루트에서 버블링되는 `change` 이벤트를 발행합니다. 이벤트의 `detail.value`에는 날짜가 `YYYY-MM-DD` 형식으로 들어가며, 범위의 양 끝을 모두 선택하면 `[start, end]`가 들어갑니다.
-- **선택 값.** 선택 값은 스크립트에만 저장됩니다. 반환된 함수의 `value` 속성으로 읽을 수 있습니다. 예를 들어 `picker.value`로 읽습니다. 범위의 종료일은 선택하기 전까지 `null`입니다. 외부에서 날짜를 선택하려면 이 값을 설정하세요. `picker.value = '2026-11-20'`는 새 날짜가 속한 달을 표시하며 이벤트를 발행하지 않습니다.
+- **생성하는 내용.** 표시 중인 각 달의 요일 이름, 주별 날짜, 월 이름을 채웁니다. 이동 화면에서는 월이나 연도와 그에 맞는 제목을 채웁니다. 날짜 버튼에는 날짜를 `value`로 설정합니다. 오늘에는 `aria-current="date"`를, 선택된 날짜에는 `aria-selected="true"`와 범위 클래스를, 선택할 수 없는 날짜에는 `disabled`를 지정합니다. 전체 날짜는 `aria-label`에 지정하며, `tabindex`로 날짜 하나만 탭 순서에 포함되도록 합니다. `draw` 옵션을 사용하면 템플릿이나 프레임워크가 날짜를 생성하고 스크립트는 상태만 표시합니다.
+- **이벤트.** 날짜를 선택하면 루트에서 버블링되는 `change` 이벤트를 발행합니다. 이벤트의 `detail.value`에는 날짜가 `YYYY-MM-DD` 형식으로 들어가며, 범위의 양 끝을 모두 선택하면 `[start, end]`가, `multiple`에서는 정렬된 날짜 목록이 들어갑니다. 월 화면이나 연도 화면으로 이동할 때는 이벤트를 발행하지 않습니다.
+- **선택 값.** 선택 값은 스크립트에만 저장됩니다. 반환된 함수의 `value` 속성으로 읽을 수 있습니다. 예를 들어 `picker.value`로 읽습니다. 범위의 종료일은 선택하기 전까지 `null`이며, `multiple`에서 아무것도 선택하지 않은 값은 `[]`입니다. 외부에서 날짜를 선택하려면 이 값을 설정하세요. `picker.value = '2026-11-20'`는 새 날짜가 속한 달을 표시하며 이벤트를 발행하지 않습니다.
 - **날짜 기준.** 날짜는 현지 시간대와 그레고리력을 기준으로 합니다.
 
 ## 구조 \{#structure\}
@@ -206,23 +276,28 @@ root.addEventListener('change', (event) => console.log(event.detail.value))
 - `calendar-grid`에서 열 7개를 한 번 선언합니다. 각 `calendar-week` 행은 이 열을 서브그리드로 사용하므로, 테이블 없이도 요일 이름과 날짜가 같은 열에 정렬됩니다.
 - `calendar-weekday`는 열 머리글입니다. `aria-label`에는 전체 요일 이름을 지정합니다.
 - `calendar-day`는 `role="gridcell"`을 지정한 `<button>`입니다.
+- `calendar-title-button`은 제목에 버튼이 있을 때 `calendar-title` 안에 두는 `<button>`입니다. 동작이 이 버튼에 제목을 씁니다.
+- `calendar-period`는 이동 화면의 월이나 연도입니다. `role="gridcell"`을 지정한 `<button>`이며 값은 `YYYY-MM` 또는 `YYYY`이고, `calendar-week` 하나에 세 개씩 놓입니다.
+- `calendar-month`는 여러 달 중 한 달의 헤더와 그리드를 담습니다.
 
 ## 키보드 \{#keyboard\}
 
-동작은 그리드에 날짜 그리드용 키보드 조작을 추가합니다. 월의 경계를 넘어 이동하면 인접한 달을 표시하고 이동한 날짜에 포커스를 둡니다. 선택할 수 없는 날짜는 건너뛰며, `min`과 `max`에서 이동을 멈춥니다.
+동작은 그리드에 날짜 그리드용 키보드 조작을 추가합니다. 월의 경계를 넘어 이동하면 인접한 달을 표시하고 이동한 날짜에 포커스를 둡니다. 선택할 수 없는 날짜는 건너뛰며, `min`과 `max`에서 이동을 멈춥니다. 월 화면과 연도 화면에서는 방향키로 한 칸씩, 또는 세 칸짜리 한 행씩 이동하며, <kbd>Enter</kbd> 키를 누르면 선택하고 한 단계 아래 화면으로 돌아갑니다.
 
 <ContractTable name="calendar" show="keyboard" />
 
 ## 접근성 \{#accessibility\}
 
 - 그리드는 `role="grid"`이며 월 제목을 접근 가능한 이름으로 사용합니다. 각 주는 `role="row"`입니다.
-- 탭 순서에는 날짜 하나만 포함됩니다. 선택한 날짜가 우선이며, 표시 중인 달에 선택한 날짜가 없으면 오늘을 사용합니다. 둘 다 그 달에 없으면 그 달의 첫날을 사용합니다. 나머지 날짜에는 `tabindex="-1"`을 지정합니다.
+- 탭 순서에는 날짜 하나만 포함됩니다. 선택한 날짜(여러 개라면 첫 번째 날짜)가 우선이며, 표시 중인 달에 선택한 날짜가 없으면 오늘을 사용합니다. 둘 다 없으면 표시 중인 달의 첫날을 사용합니다. 나머지 날짜에는 `tabindex="-1"`을 지정합니다. 나란히 표시한 여러 달은 함께 탭 순서의 한 지점이 되며, 각 그리드는 자체 제목을 접근 가능한 이름으로 사용합니다.
+- 날짜 범위나 여러 날짜를 선택할 수 있는 그리드에는 `aria-multiselectable="true"`를 지정합니다.
+- 제목 버튼의 이름은 버튼에 표시되는 제목이며, 이 제목은 그리드의 레이블이기도 합니다. 버튼의 기능은 `aria-label` 대신 "Choose a month or a year"와 같이 `aria-description`으로 설명하세요. `aria-label`을 사용하면 그리드의 이름까지 바뀝니다.
 - 월이 바뀔 때 변경 내용이 안내되도록 제목에 `aria-live="polite"`를 지정하세요.
 - 터치 화면에서 날짜 칸의 크기는 44px입니다.
 
 ## React, Svelte 및 Vue \{#frameworks\}
 
-`calendar` 컴포넌트는 동작에 사용하는 데이터로 월간 달력을 그려 초기 HTML에 포함하고, 선택한 날짜를 주고받습니다. `npx master-ui add calendar`로 프로젝트에 복사하세요. 컴포넌트의 구성과 사용법은 [React, Svelte 및 Vue](/guide/frameworks)에서 확인할 수 있습니다.
+`calendar` 컴포넌트는 동작에 사용하는 데이터로 월간 달력을 그려 초기 HTML에 포함하고, 선택한 날짜를 주고받습니다. `range`와 `multiple`, 여러 달을 나란히 표시하는 `months`를 받으며, 한 달을 표시할 때는 제목 버튼을 포함합니다. `jumpLabel`은 이 버튼의 설명이고, `labels`는 월 화면과 연도 화면에서 사용할 월 이동 버튼의 이름입니다. `npx master-ui add calendar`로 프로젝트에 복사하세요. 컴포넌트의 구성과 사용법은 [React, Svelte 및 Vue](/guide/frameworks)에서 확인할 수 있습니다.
 
 <FrameworkSource name="calendar" />
 

@@ -8,7 +8,7 @@ import ComponentSource from '~/site/components/ComponentSource.astro'
 import ComponentLinks from '~/site/components/ComponentLinks.astro'
 import ContractTable from '~/site/components/ContractTable.astro'
 
-范围滑块在同一刻度上选取两个值，例如最低价和最高价，或片段的起点和终点。它由同一组内的两个原生[滑块控件](/components/slider)组成。整组共用一条轨道，两个滑柄之间用墨色填充。每个输入控件都保留各自的键盘操作、标签和表单值。
+范围滑块在同一刻度上选取两个值，例如最低价和最高价，或片段的起点和终点。它由同一组内的两个原生[滑块](/components/slider)组成。整组共用一条轨道，两个滑柄之间用墨色填充。每个输入控件都保留各自的键盘操作、标签和表单值。
 
 <ComponentPreview name="default" height={112} title="范围滑块" background="plain" bodyClass="p-lg" html={`<div class="flex flex-col gap-sm max-w(360) mx-auto">
   <div class="flex items-baseline justify-between text-sm">
@@ -35,13 +35,49 @@ import ContractTable from '~/site/components/ContractTable.astro'
 
 和单滑块控件确定填充范围的方式一样，每个滑柄都在所属的输入控件内充当一条视图时间轴。整组通过 `timeline-scope` 引用两条时间轴，各运行一个动画，得到两个百分比。填充从较小百分比延伸到较大百分比，因此两个滑柄可以互相越过，填充仍位于两者之间，较小的值仍是范围的起点。
 
-在表单处理函数中也按同样的规则读取这两个值，将较小值作为下限。如果两个值必须保持一定距离，请在 `input` 事件中限制取值。轨道的绘制独立于这一限制。
+在表单处理函数中也按同样的规则读取这两个值，将较小值作为下限。如果两个值不能交叉，或必须保持一定距离，请绑定[行为脚本](#keeping-a-distance)。轨道的绘制独立于这一限制。
 
 浏览器不支持滚动驱动动画时，两个滑柄下方只显示一条普通的凹槽轨道，两个输入控件仍可照常操作。Chromium 和 Safari 26 会绘制填充。
 
 ## 两个滑柄如何共用轨道 \{#how-the-thumbs-share-a-track\}
 
 两个输入控件位于同一个网格单元格内。两个输入控件都隐藏各自的轨道，只在各自的滑柄上接收指针事件。按下两个滑柄之间的区域时，两个输入控件都收不到该事件，滑柄也不会被另一个输入控件的空轨道遮住。正在移动的滑柄会显示在最上层。按下轨道空白处不会有任何反应，因为无法判断要移动哪个滑柄。
+
+## 保持间距 \{#keeping-a-distance\}
+
+`range` [行为脚本](/guide/behaviors)让两个滑柄保持分开：`range-start` 永远不会越过 `range-end`，设置 `distance` 后，两者会在相距该值时停下。被移动的滑柄停下，静止的滑柄不会被推动。行为脚本在移动滑柄所触发的 `input` 事件中修正取值，赶在该输入控件或范围滑块周围的任何代码收到事件之前完成，因此每个监听器读到的两个值都保持着这个间距，滑柄也不会显示被拒绝的值。键盘操作、拖动和表单值仍由输入控件自身处理。
+
+<ComponentPreview name="distance" height={112} title="保持间距" background="plain" bodyClass="p-lg" behaviors html={`<div class="flex flex-col gap-sm max-w(360) mx-auto">
+  <div class="flex items-baseline justify-between text-sm">
+    <span class="fg-text-strong" id="hours">Opening hours</span>
+    <output class="fg-text-muted" id="hours-output">9:00 to 17:00</output>
+  </div>
+  <div class="range" id="hours-range" role="group" aria-labelledby="hours">
+    <input type="range" class="slider range-start" min="0" max="24" value="9" aria-label="Opens at">
+    <input type="range" class="slider range-end" min="0" max="24" value="17" aria-label="Closes at">
+  </div>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  var range = document.getElementById('hours-range')
+  MasterUI.range(range, { distance: 2 })
+  range.addEventListener('input', function () {
+    var start = range.querySelector('.range-start').value
+    var end = range.querySelector('.range-end').value
+    document.getElementById('hours-output').textContent = start + ':00 to ' + end + ':00'
+  })
+})
+</script>`} caption="把任一滑柄拖向另一个：两者会在相距两小时处停下。" />
+
+`attach()` 让范围滑块保持平台原有的行为，因此两个滑柄可以交叉。要让它们保持分开，请对它调用 `range`；传入 `distance` 可让两者保持该间距，就像这个预览一样。对同一个根元素再次调用会替换上一次的设置。`MasterUI` 是预览加载的打包文件；在项目中，请导入 `range`：
+
+```js name=app.js
+import { range } from '@master/ui/behaviors/range.js'
+
+const detach = range(document.querySelector('.range'), { distance: 2 })
+```
+
+间距使用输入控件自身的单位。请设为其 `step` 的整数倍：输入控件会把写入的值舍入到步长，行为脚本则取能保持间距的最近一个步长值。
 
 ## 禁用 \{#disabled\}
 
@@ -57,7 +93,7 @@ import ContractTable from '~/site/components/ContractTable.astro'
 - 为整组设置 `role="group"` 和名称，并为每个输入控件分别设置 `aria-label`。用“最低价”和“最高价”这样的具体名称代替“起点”和“终点”。
 - 在轨道附近显示两个数值。滑柄本身不显示数值。
 - 按 Tab 键可依次将焦点移到各个滑柄上，键盘操作与原生滑块控件一致。在触摸屏上，滑柄尺寸为 24px。
-- 当精确数值比拖动时对刻度的直观感受更重要时，再提供两个[步进器](/components/stepper)或两个数字输入框。
+- 当精确数值比拖动时对刻度的直观感受更重要时，再提供两个[数字步进器](/components/stepper)或两个数字输入框。
 
 ## 类名 \{#classes\}
 

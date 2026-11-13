@@ -1,0 +1,188 @@
+---
+title: "플로팅 패널"
+description: "사용자가 옮기고, 크기를 바꾸고, 헤더만 남도록 접고, 닫을 수 있는 떠 있는 표면입니다."
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+플로팅 패널은 작업 화면 옆에 열린 채로 머무르면서도 그 아래의 페이지를 계속 사용할 수 있게 하는 떠 있는 표면입니다. 캔버스의 레이어, 색상 선택기, 속성 검사기, 채팅 등에 사용합니다. 사용자는 헤더를 잡아 패널을 드래그하고, 모서리에서 크기를 바꾸고, 헤더만 남도록 접고, 닫을 수 있습니다. 플로팅 패널은 `role="dialog"`가 있는 `popover="manual"`이므로, 브라우저가 버튼에서 패널을 열고 최상위 레이어(top layer)로 올려 페이지의 모든 요소 위에 표시합니다. 순서를 관리할 `z-index`가 필요 없습니다. 나머지인 이동, 크기 조절, 접기, Escape 키, 포커스, 어느 패널이 앞에 오는지는 `panel` [동작](/guide/behaviors)이 처리합니다.
+
+<ComponentPreview name="default" height={440} title="플로팅 패널" background="plain" bodyClass="flex items-end justify-center gap-sm p-lg" behaviors html={`<button type="button" class="btn btn-sm" commandfor="layers" command="toggle-popover">Layers</button>
+<button type="button" class="btn btn-sm" commandfor="comments" command="toggle-popover">Comments</button>
+
+<div id="layers" popover="manual" role="dialog" class="panel" aria-labelledby="layers-title" style="--panel-x: 24px; --panel-y: 24px; --panel-width: 232px">
+  <div class="panel-header">
+    <button type="button" class="panel-handle" aria-label="Move the Layers panel with the arrow keys"></button>
+    <h2 class="panel-title" id="layers-title">Layers</h2>
+    <div class="panel-actions">
+      <button type="button" class="btn btn-quiet btn-sm btn-square panel-minimize" aria-pressed="false" aria-label="Minimize">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><path d="M6 12h12"/></svg>
+      </button>
+      <button type="button" class="btn btn-quiet btn-sm btn-square" commandfor="layers" command="hide-popover" aria-label="Close">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="panel-body">
+    <ol class="list">
+      <li class="list-row"><span class="list-body"><span class="list-title">Header</span></span></li>
+      <li class="list-row"><span class="list-body"><span class="list-title">Hero image</span></span></li>
+      <li class="list-row"><span class="list-body"><span class="list-title">Pricing table</span></span></li>
+      <li class="list-row"><span class="list-body"><span class="list-title">Footer</span></span></li>
+    </ol>
+  </div>
+  <span class="panel-resize" aria-hidden="true"></span>
+</div>
+
+<div id="comments" popover="manual" role="dialog" class="panel" aria-labelledby="comments-title" style="--panel-x: 296px; --panel-y: 64px; --panel-width: 272px">
+  <div class="panel-header">
+    <button type="button" class="panel-handle" aria-label="Move the Comments panel with the arrow keys"></button>
+    <h2 class="panel-title" id="comments-title">Comments</h2>
+    <div class="panel-actions">
+      <button type="button" class="btn btn-quiet btn-sm btn-square panel-minimize" aria-pressed="false" aria-label="Minimize">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><path d="M6 12h12"/></svg>
+      </button>
+      <button type="button" class="btn btn-quiet btn-sm btn-square" commandfor="comments" command="hide-popover" aria-label="Close">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="panel-body">
+    <div class="flex flex-col gap-sm">
+      <p class="m(0)"><span class="fg-text-strong">Mira</span> The hero image crops the product on narrow screens.</p>
+      <p class="m(0)"><span class="fg-text-strong">Jun</span> Fixed in the next build: it keeps the middle third.</p>
+      <input class="input input-sm" type="text" placeholder="Reply" aria-label="Reply">
+    </div>
+  </div>
+  <span class="panel-resize" aria-hidden="true"></span>
+</div>
+
+<script>
+  document.getElementById('layers').showPopover()
+  document.getElementById('comments').showPopover()
+</script>`} caption="헤더를 드래그하거나 헤더 끝쪽 아래의 모서리를 드래그해 보세요. 뒤에 있는 패널 안을 누르면 그 패널이 앞으로 옵니다. Tab 키로 헤더로 이동해 방향키를 사용하세요. Shift 키를 누르면 더 크게 이동하고, Alt 키를 누르면 크기가 바뀌며, Escape 키를 누르면 패널이 닫힙니다." />
+
+## 스타일시트가 그리는 요소 \{#what-the-stylesheet-draws\}
+
+- **시트.** 팝오버와 같은 떠 있는 면에 플로팅 그림자가 적용됩니다. 헤더나 모서리를 잡고 있는 동안에는 오버레이 그림자로 솟아오르며, 드래그해도 텍스트가 선택되지 않습니다. 모서리 반경은 작은 버튼의 모서리 반경에 헤더가 버튼 주위에 두는 6px을 더한 14px입니다.
+- **헤더**는 가는 구분선 위에 놓인 같은 시트의 막대로, 시작 쪽에 제목이, 끝쪽에 동작 버튼이 있습니다. 둘 아래에는 막대 크기의 버튼인 핸들이 깔려 있으므로, 헤더에서 컨트롤이 아닌 곳 어디를 눌러도 패널을 집어 들 수 있으며, 커서는 편 손에서 쥔 손으로 바뀝니다. 제목은 포인터 입력을 받지 않으므로 제목을 눌러도 핸들이 입력을 받습니다.
+- **핸들에 포커스가 있으면** 패널 전체에 포커스 링이 표시됩니다. 키로 움직이는 대상이 패널 전체이기 때문입니다.
+- **접힌 상태.** 최소화 버튼을 누르면 패널에는 헤더만 남습니다. 본문과 모서리는 숨겨지고, 버튼은 오목한 영역 안에 놓입니다.
+- **본문**은 주어진 공간보다 길면 아래 페이지를 움직이지 않고 패널 안에서 스크롤됩니다.
+- **모서리**는 끝쪽 아래에 있는 두 개의 짧은 대각선으로, 조작 영역은 16px이고 터치 화면에서는 44px입니다. 터치 화면에서는 헤더도 44px 버튼을 담을 수 있도록 커집니다.
+
+## 위치 \{#placement\}
+
+위치와 크기는 사용자 지정 속성입니다. 뷰포트의 왼쪽 위 모서리를 기준으로 패널의 왼쪽 위 모서리까지의 거리를 픽셀 단위로 나타내는 `--panel-x`와 `--panel-y`, 그리고 `--panel-width`와 `--panel-height`입니다. 이 값은 이벤트만 알 수 있으므로 동작이 포인터와 키 입력에 따라 작성합니다. 미리보기에서 각 패널의 시작 위치를 정하듯이 페이지에서 직접 작성할 수도 있습니다.
+
+배치와 제한은 스타일시트가 `clamp()`로 처리하며, 기준은 고정 위치 요소의 백분율이 참조하는 뷰포트로, 스크롤바는 제외됩니다.
+
+- 패널은 뷰포트보다 넓어지지 않고 `--panel-min-width`(12rem)보다 좁아지지 않으며, 너비 전체가 뷰포트 안에 머무릅니다.
+- 헤더는 뷰포트를 벗어나지 않으므로 패널을 언제든 찾아 다시 드래그해 올 수 있습니다. 패널은 뷰포트보다 높아지지 않으며, 들어가지 않는 본문은 스크롤됩니다.
+- 창이 좁아지면 패널이 안쪽으로 밀려 들어옵니다. 창이 넓어지면 패널은 지정받았던 위치로 돌아갈 수 있습니다. 패널이 보관하는 위치는 `clamp()`로 바뀌지 않기 때문입니다.
+- 위치를 지정하지 않으면 패널은 끝쪽 위 모서리에서 8px(`--panel-gutter`) 안쪽에 열립니다.
+
+이동과 크기 조절이 끝날 때마다 동작은 스타일시트가 패널을 그린 위치를 읽어 그 값을 보관합니다. 따라서 애플리케이션이 저장하는 값은 사용자가 실제로 본 위치입니다.
+
+## 여러 패널 \{#stacking\}
+
+패널은 표시된 순서대로 최상위 레이어에 놓이며, 마지막에 표시된 패널이 맨 앞에 옵니다. 다른 패널 뒤에 있는 패널 안을 누르거나 그 안에 포커스가 가면 그 패널이 앞으로 옵니다. 동작이 패널을 다시 표시해 최상위 레이어의 마지막에 두기 때문입니다. 브라우저가 그리기 전에 한 작업 안에서 숨겼다가 다시 표시하므로, 패널이 사라지는 모습은 보이지 않고 등장 애니메이션도 재생되지 않으며, 브라우저는 열림에서 열림으로 가는 `toggle` 이벤트를 한 번 보고합니다. 포커스는 사용자가 둔 곳에 그대로 있습니다.
+
+## 동작 \{#behavior\}
+
+`panel`은 `panel` 클래스가 있는 루트 요소를 받아, 연결한 동작을 해제하는 함수를 반환합니다. 이 함수의 `value`는 패널의 위치, 크기, 접힘 여부를 나타내는 `{ x, y, width, height, minimized }`입니다. 네 숫자는 픽셀 단위이며, 스타일시트의 기본값이 적용되는 경우에는 `null`입니다. 이 값을 보관했다가 페이지를 불러올 때 다시 설정하세요.
+
+```js name=app.js
+import { panel } from '@master/ui/behaviors/panel.js'
+
+const root = document.querySelector('#layers')
+const layers = panel(root)
+
+const saved = localStorage.getItem('layers-panel')
+if (saved) layers.value = JSON.parse(saved)
+
+root.addEventListener('change', (event) => {
+  if (event.target === root) localStorage.setItem('layers-panel', JSON.stringify(layers.value))
+})
+```
+
+- **이동.** 핸들을 드래그하면 `--panel-x`와 `--panel-y`를 작성하며, 패널을 집어 든 지점이 포인터 아래에 머무릅니다. 핸들에서 방향키를 누르면 16px씩, <kbd class="kbd">Shift</kbd> 키와 함께 누르면 네 배만큼 이동합니다.
+- **크기 조절.** 모서리를 드래그하면 `--panel-width`와 `--panel-height`를 작성합니다. 핸들에서 <kbd class="kbd">Alt</kbd> 키와 방향키를 누르면 한 단계씩 같은 일을 합니다. 오른쪽에서 왼쪽으로 쓰는 언어에서는 모서리가 왼쪽 아래에 있으므로 패널이 왼쪽으로 넓어지며, <kbd class="kbd">Alt</kbd>+<kbd class="kbd">ArrowLeft</kbd>를 누르면 넓어집니다.
+- **접기.** 최소화 버튼을 클릭하면 버튼의 `aria-pressed`가 전환됩니다.
+- **닫기.** 패널 안에 포커스가 있을 때 <kbd class="kbd">Escape</kbd> 키를 누르면 패널이 닫힙니다. 단, 먼저 닫히는 메뉴처럼 패널 안의 컨트롤이 그 키를 처리한 경우는 예외입니다. 닫기 버튼은 `command="hide-popover"`이므로 스크립트가 필요 없습니다.
+- **포커스.** 컨트롤에서 연 패널은 포커스를 핸들로 옮기며, 포커스가 패널 안에 있는 상태로 닫히면 포커스를 그 컨트롤로 돌려줍니다. 페이지가 불러오면서 연 패널은 포커스를 현재 위치에 그대로 둡니다.
+- **이벤트.** 루트는 패널이 이동하거나 크기가 바뀌는 동안 `input`을 발생시키고, 드래그가 끝나거나 키로 이동했거나 접혔을 때 `change`를 발생시킵니다. 두 이벤트 모두 버블링되므로 본문의 필드에서 발생한 이벤트도 루트에 전달됩니다. `event.target`을 루트와 비교하세요.
+
+| 옵션 | 설정하는 내용 |
+| --- | --- |
+| `step` | 방향키 한 번으로 패널을 이동하거나 크기를 바꾸는 거리로, 픽셀 단위입니다. 기본값은 16입니다 |
+
+동작을 연결하지 않아도 패널은 버튼에서 페이지 위 최상위 레이어로 열리고 닫기 버튼으로 닫힙니다. 패널은 사용자 지정 속성이 정한 위치에 머무릅니다.
+
+## 버튼으로 열기 \{#opened-from-a-button\}
+
+`commandfor`와 `command="toggle-popover"`가 있는 버튼으로 패널을 열고 닫습니다. `popovertarget`도 같은 일을 합니다. 탭 순서에서 패널은 버튼 바로 다음에 오며, 패널이 열리면 포커스가 핸들로 이동하므로 곧바로 방향키로 패널을 옮길 수 있습니다. 버튼, 닫기 버튼, <kbd class="kbd">Escape</kbd> 키 중 하나로 패널을 닫으면 포커스가 버튼으로 돌아갑니다.
+
+<ComponentPreview name="opened" height={360} title="버튼으로 열기" background="plain" behaviors html={`<button type="button" class="btn" commandfor="inspector" command="toggle-popover">Inspect</button>
+
+<div id="inspector" popover="manual" role="dialog" class="panel" aria-labelledby="inspector-title" style="--panel-x: 24px; --panel-y: 24px; --panel-width: 264px">
+  <div class="panel-header">
+    <button type="button" class="panel-handle" aria-label="Move the Inspector panel with the arrow keys"></button>
+    <h2 class="panel-title" id="inspector-title">Inspector</h2>
+    <div class="panel-actions">
+      <button type="button" class="btn btn-quiet btn-sm btn-square panel-minimize" aria-pressed="false" aria-label="Minimize">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><path d="M6 12h12"/></svg>
+      </button>
+      <button type="button" class="btn btn-quiet btn-sm btn-square" commandfor="inspector" command="hide-popover" aria-label="Close">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="panel-body">
+    <dl class="data-list">
+      <div class="data-list-item"><dt class="data-list-term">Element</dt><dd class="data-list-value">Hero image</dd></div>
+      <div class="data-list-item"><dt class="data-list-term">Size</dt><dd class="data-list-value">1280 × 720</dd></div>
+      <div class="data-list-item"><dt class="data-list-term">Format</dt><dd class="data-list-value">AVIF</dd></div>
+    </dl>
+  </div>
+  <span class="panel-resize" aria-hidden="true"></span>
+</div>`} caption="패널을 열어 보세요. 포커스가 헤더로 이동합니다. Escape 키로 닫으면 포커스가 버튼으로 돌아갑니다." />
+
+## 키보드 \{#keyboard\}
+
+<ContractTable name="panel" show="keyboard" />
+
+## 접근성 \{#accessibility\}
+
+- 패널은 `aria-labelledby`로 제목을 이름으로 삼는 `role="dialog"`입니다. 모달이 아니므로 `aria-modal`이 없고, 페이지를 계속 사용할 수 있으며, Tab 키로 패널을 벗어날 수 있습니다. 작업을 먼저 끝내야 한다면 [대화 상자](/components/dialog)를 사용하세요.
+- 핸들은 실제 버튼이므로 버튼으로 안내되고 버튼처럼 접근할 수 있습니다. 무엇을 어떻게 옮기는지를 이름으로 지정하세요(예: "Move the Layers panel with the arrow keys"). 크기 조절은 핸들에서 키로 할 수 있으므로 모서리는 보조 기술에서 숨겨집니다.
+- 모든 드래그에는 대응하는 키가 있습니다. 방향키로 이동하고, Alt 키와 방향키로 크기를 바꿉니다. 포인터를 사용하지만 드래그할 수 없는 사용자를 위해서는 한 번 누르는 방법도 제공하세요. "Dock left"처럼 값을 설정하는 항목이 있는 메뉴를 헤더에 두면 충분합니다.
+- 최소화 버튼은 이름을 유지하며 `aria-pressed`로 상태를 알립니다.
+- 터치 화면에서는 헤더가 44px 버튼을 담을 수 있도록 커지고, 모서리의 조작 영역은 44px입니다.
+- 강제 색상 모드에서는 패널의 윤곽선을 시스템 텍스트 색으로, 핸들의 포커스 표시를 시스템 강조색으로 그립니다.
+
+## React, Svelte, Vue \{#frameworks\}
+
+`panel` 컴포넌트는 헤더, 핸들, 버튼을 렌더링하고, `open`에 따라 패널을 열고 닫으며, 값을 받아 외부로 전달합니다. 이동하는 동안에는 `onValueChange`를, 이동이 끝나면 `onValueCommit`을 호출하며, 이때가 값을 저장할 시점입니다. 트리거와 본문은 페이지 자체의 마크업으로 남습니다. `npx master-ui add panel` 명령을 실행해 프로젝트에 복사하세요. 컴포넌트의 구성과 사용 방법은 [React, Svelte, Vue](/guide/frameworks)에서 확인할 수 있습니다.
+
+<FrameworkSource name="panel" />
+
+## 클래스 \{#classes\}
+
+<ContractTable name="panel" />
+
+## 사용자 지정 속성 \{#custom-properties\}
+
+<ContractTable name="panel" show="properties" />
+
+## 관련 항목 \{#related\}
+
+<ComponentLinks slugs={['dialog', 'popover', 'splitter', 'toolbar']} />
+
+## 소스 \{#source\}
+
+<ComponentSource name="panel" />

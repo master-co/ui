@@ -157,6 +157,100 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
   </footer>
 </dialog>`} />
 
+## スワイプ \{#swipe\}
+
+ドロワーやシートに`dialog-swipe`を追加すると、指、トラックパッド、マウスの動きに追従し、手を離すと閉じるようになります。ダイアログはパネルが移動するトラックになり、透明でビューポートと同じ大きさになります。ダイアログの内容はすべて、質感をまとう`dialog-panel`に入れます。シートには、つかむ位置を示す上端の短い溝`dialog-handle`を付けます。`drawer`ビヘイビアを適用してください。`attach()`はすべての`dialog-swipe`を見つけます。
+
+<ComponentPreview name="swipe" height={420} title="スワイプで閉じるシート" behaviors bodyClass="flex items-center justify-center p-lg min-h(416)" caption="開いたら、溝かタイトルをつかんでシートを下にドラッグするか、はじいて閉じます。半分まで動かさずに離すと元の位置に戻ります。スマートフォンではスワイプします。" html={`<button type="button" class="btn" commandfor="share-swipe" command="show-modal">Share</button>
+
+<dialog id="share-swipe" class="dialog dialog-sheet dialog-swipe" closedby="any" aria-labelledby="share-swipe-title">
+  <div class="dialog-panel">
+    <div class="dialog-handle" aria-hidden="true"></div>
+    <header class="dialog-header">
+      <h2 class="dialog-title" id="share-swipe-title">Share this project</h2>
+      <p class="dialog-description">Anyone with the link can view the latest deployment.</p>
+    </header>
+    <div class="dialog-body">
+      <div class="input-group">
+        <input class="input-group-field" value="https://atlas.dev/p/9f2c" readonly aria-label="Link">
+        <button type="button" class="btn">Copy</button>
+      </div>
+    </div>
+    <footer class="dialog-footer">
+      <button type="button" class="btn btn-primary" commandfor="share-swipe" command="close">Done</button>
+    </footer>
+  </div>
+</dialog>`} />
+
+ドロワーも同じように、配置された端に向かってスワイプします。ハンドルは不要で、パネル全体をつかめます。
+
+<ComponentPreview name="swipe-drawer" height={400} title="スワイプで閉じるドロワー" behaviors bodyClass="flex items-center justify-center p-lg min-h(400)" caption="パネルを端に向かってドラッグするか、横の背景幕を押します。" html={`<button type="button" class="btn" commandfor="filters-swipe" command="show-modal">Filters</button>
+
+<dialog id="filters-swipe" class="dialog dialog-drawer dialog-swipe" closedby="any" aria-labelledby="filters-swipe-title">
+  <div class="dialog-panel">
+    <header class="dialog-header">
+      <h2 class="dialog-title" id="filters-swipe-title">Filters</h2>
+      <p class="dialog-description">Narrow the list of deployments.</p>
+    </header>
+    <div class="dialog-body flex flex-col gap-md">
+      <label class="field">
+        Branch
+        <input class="input" value="main">
+      </label>
+      <label class="check"><input type="checkbox" class="checkbox" checked> Production only</label>
+    </div>
+    <footer class="dialog-footer">
+      <button type="button" class="btn" commandfor="filters-swipe" command="close">Reset</button>
+      <button type="button" class="btn btn-primary" commandfor="filters-swipe" command="close">Apply</button>
+    </footer>
+  </div>
+</dialog>`} />
+
+スワイプの仕組みは次のとおりです。
+
+- **パネルはブラウザーが動かします**。トラックはスナップポイントを持つスクロールコンテナーです。スナップポイントは、開いた状態の位置と、手を離したときにパネルが移動する、端の外側にビューポートと同じ大きさで広がる領域です。指、トラックパッド、ホイールでスクロールするため、手の動きへの追従、はじいたときの慣性、止まる位置の選択はブラウザー自身が行います。トラックは逆向きのフレックスラインで、パネルはその末尾にあるため、スクリプトなしで開いた状態の位置から始まります。
+- **スクロールでできないことはビヘイビアが行います**。パネルがどのような方法でトラックから出た場合でも、ダイアログを閉じます。`closedby="any"`の動作も取り戻します。トラックはブラウザーが反応する背景幕を覆ってしまうため、パネルの横を押したときにビヘイビアがダイアログを閉じます。ドラッグでスクロールできないマウスでも、ハンドル、またはコントロールや本文以外の部分でパネルをつかめるようにし、はじいた方向の位置、または近いほうの位置で離せるようにします。精密なポインターがパネルをつかんでいる間、トラックはスナップしません。残っている背景幕の濃さを`--dialog-scrim`に書き込み、パネルが離れるにつれて背景幕を薄くします。
+- **ダイアログはダイアログのままです。** <kbd>Esc</kbd>、閉じるボタン、フォーカストラップ、トリガーへのフォーカスの復帰、スライドイン・スライドアウトは、通常のドロワーやシートと同じです。
+- **スクロールする本文は独自のスクロールを保ちます**。マウスやホイールでは、`dialog-body`内のドラッグは本文をスクロールするか、テキストを選択します。タッチスクリーンでは、本文の先頭まで達したドラッグはそのままシートを動かします。
+
+スワイプは近道です。閉じるボタンかダイアログを閉じるアクションを残し、<kbd>Esc</kbd>も使えるようにしてください。
+
+### デテント \{#detents\}
+
+スワイプできるシートに`dialog-detents`を追加すると、シートは2つの高さで止まります。開いたときのビューポートの半分の高さと、全体の高さです。ドラッグやはじく操作で2つの高さの間を移動します。全体の高さから下にはじくと半分の高さで止まり、半分の高さからはじいたときだけ閉じます。ハンドルはアクセシブルな名前を持つ`<button>`にします。押す、<kbd>Enter</kbd>、<kbd>Space</kbd>でシートをもう一方の高さに移し、<kbd>↑</kbd>で全体の高さに広げ、<kbd>↓</kbd>で半分の高さに縮めます。ハンドルの`aria-expanded`は、シートが全体の高さにあるかどうかを示します。
+
+<ComponentPreview name="detents" height={480} title="デテント付きのシート" behaviors bodyClass="flex items-center justify-center p-lg min-h(476)" caption="半分の高さで開きます。上にドラッグするか、ハンドルを押すか、Tab キーでハンドルに移動して ↑ と ↓ を押します。" html={`<button type="button" class="btn" commandfor="comments-sheet" command="show-modal">Comments</button>
+
+<dialog id="comments-sheet" class="dialog dialog-sheet dialog-swipe dialog-detents" closedby="any" aria-labelledby="comments-sheet-title">
+  <div class="dialog-panel">
+    <button type="button" class="dialog-handle" aria-label="Sheet height"></button>
+    <header class="dialog-header">
+      <h2 class="dialog-title" id="comments-sheet-title">Comments</h2>
+      <p class="dialog-description">Five people reviewed this deployment.</p>
+    </header>
+    <div class="dialog-body flex flex-col gap-md">
+      <p class="m(0)">Ada: the build on main is green again.</p>
+      <p class="m(0)">Grace: the preview for the pricing page loads in 1.2s.</p>
+      <p class="m(0)">Linus: the cache headers on the fonts are right now.</p>
+      <p class="m(0)">Margaret: the rollback plan is in the runbook.</p>
+      <p class="m(0)">Alan: ship it after the 3pm check.</p>
+    </div>
+    <button type="button" class="btn btn-quiet btn-square btn-sm dialog-close" commandfor="comments-sheet" command="close" aria-label="Close">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+</dialog>`} />
+
+半分の高さのとき、シートの下半分はフッターも含めて画面の端の外で待機します。そのためデテントは、リスト、コメント、地図など、アクションが上部にある閲覧用のシートに向いています。ビューポートの半分より低いシートの停止位置は全体の高さの1つだけで、ハンドルもそれを示します。
+
+### 機能がない場合 \{#swipe-fallbacks\}
+
+- スクリプトが無効な場合、端の外側の領域は停止位置になりません（`@media (scripting: enabled)`）。手を離したパネルは元の位置に戻り、<kbd>Esc</kbd>と閉じるボタンでダイアログを閉じられます。スクリプトが動作する環境では必ずビヘイビアを適用してください。適用しないと、手を離したパネルが画面外で止まり、ページは操作できないままになります。
+- ビヘイビアがない場合、背景幕はダイアログが閉じるまで薄くなりません。これはスクロール駆動アニメーションではありません。逆向きのスクロールコンテナーでは、ChromiumとWebKitでスクロールタイムラインとビュータイムラインの向きが逆になるためです。
+- `scroll-initial-target`に対応したブラウザー（Chromium）では、デテント付きのシートはスクリプトの実行前から半分の高さで開きます。それ以外のブラウザーでは、ビヘイビアが動かすまで全体の高さで開きます。
+
+スワイプは、ChromiumとWebKitでマウスとホイールを使って、またChromiumではタッチ操作でも検証しています。スクロールスナップ、逆向きのフレックスのスクロール、`scrollend`は、現行のすべてのブラウザーで使えます。
+
 ## アニメーション \{#motion\}
 
 ダイアログは、元の大きさの97%で0.5rem下にずれた状態から、280msかけてフェードインします。閉じるときは160msかけて消えます。開閉の両方をスタイルシートのCSSで定義します。`@starting-style`で描画の初期状態を指定し、`display`と`overlay`を`allow-discrete`でトランジションさせることで、閉じるアニメーションが終わってからダイアログがトップレイヤーを離れます。動きを減らす設定では、フェードだけが残ります。
@@ -166,10 +260,11 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
 - `aria-labelledby`でダイアログの`dialog-title`を参照し、ダイアログに名前を付けます。
 - `show-modal`で開くと、フォーカスはダイアログ内に移り、閉じると開いたボタンに戻ります。最初にフォーカスを当てるフィールドに`autofocus`を指定します。削除などの破壊的な操作を確認する場合は、安全な選択肢に指定します。
 - `command`と`commandfor`は、現行のChrome、Edge、Firefox、Safariでサポートされています。古いブラウザーではクリックハンドラーから`dialog.showModal()`を呼び出します。スタイルシートはそのまま使えます。
+- スワイプだけを閉じる手段にしないでください。閉じるボタンか閉じるアクションを残します。<kbd>Esc</kbd>でも引き続き閉じられます。デテント付きのシートでは、ハンドルは「Sheet height」のような名前を持つボタンで、キー操作や押す操作でドラッグと同じように高さを変えます。デテントがない場合、ハンドルは支援技術から隠された溝です。操作領域は64×24pxで、タッチ画面では高さが44pxになります。
 
 ## React、Svelte、Vue \{#frameworks\}
 
-`dialog`コンポーネントは、アプリケーションの状態に応じてダイアログを開閉し、ブラウザーで実際に開閉されたことを通知します。開くための要素とダイアログ内の各部には、ページ側のマークアップをそのまま使います。`npx master-ui add dialog`でプロジェクトにコピーできます。構成と使い方は[React、Svelte、Vue](/guide/frameworks)を参照してください。
+`dialog`コンポーネントは、アプリケーションの状態に応じてダイアログを開閉し、ブラウザーで実際に開閉されたことを通知します。開くための要素とダイアログ内の各部には、ページ側のマークアップをそのまま使います。すべてのダイアログに`drawer`ビヘイビアを適用するため、`dialog-swipe`と`dialog-panel`を持つドロワーやシートは、手を離すと閉じ、ほかの閉じ方と同じように通知されます。`dialog-swipe`のないダイアログでは、ビヘイビアは何もしません。`npx master-ui add dialog`でプロジェクトにコピーできます。構成と使い方は[React、Svelte、Vue](/guide/frameworks)を参照してください。
 
 <FrameworkSource name="dialog" />
 

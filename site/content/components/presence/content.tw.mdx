@@ -1,0 +1,119 @@
+---
+title: "協作者游標"
+description: "以代表某人的顏色顯示他的指標、文字游標或選取範圍。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+協作者游標會顯示正在處理同一份內容的其他人位於何處：他們在畫布或白板上的指標，以及在文字中的文字游標和選取範圍。每個人都以一種識別色繪製，旁邊附上名字，讓讀者一眼就能看出誰在哪裡。請在指標移動範圍所在的定位元素內，為包含 `presence-name` 的元素加上 `presence` 和該人的[識別色](#identity)（`presence-1` 到 `presence-8`），並以 `--presence-x` 和 `--presence-y` 設定它的位置。
+
+<ComponentPreview name="default" height={312} narrowHeight={312} title="協作者游標" bodyClass="flex items-center justify-center p-lg" html={`<div class="sheet relative overflow-hidden w-full max-w(520) h(264)" id="board">
+  <div class="texture texture-grid absolute inset(0)"></div>
+  <div class="sheet sheet-raised absolute p-md text-sm w(168)" style="top: 32px; left: 28px">
+    <p class="m(0) fg-text-strong">Launch checklist</p>
+    <p class="m(0) mt-xs fg-text-muted">Docs, changelog and the post</p>
+  </div>
+  <div class="sheet sheet-raised absolute p-md text-sm w(168)" style="top: 128px; left: 260px">
+    <p class="m(0) fg-text-strong">Open questions</p>
+    <p class="m(0) mt-xs fg-text-muted">Who writes the release notes?</p>
+  </div>
+  <div class="presence presence-6" style="--presence-x: 150px; --presence-y: 78px" aria-hidden="true">
+    <span class="presence-name">Ada Lovelace</span>
+  </div>
+  <div class="presence presence-4" id="moving" style="--presence-x: 340px; --presence-y: 40px" aria-hidden="true">
+    <span class="presence-name">Alan Turing</span>
+  </div>
+  <div class="presence presence-8" style="--presence-x: 96px; --presence-y: 176px" aria-hidden="true">
+    <span class="presence-name">Grace Hopper</span>
+    <span class="presence-message">I can take the release notes</span>
+  </div>
+</div>
+<script>
+  const pointer = document.getElementById('moving')
+  const path = [[340, 40], [372, 64], [398, 108], [360, 150], [318, 132], [300, 84]]
+  let at = 0
+  setInterval(() => {
+    at = (at + 1) % path.length
+    pointer.style.setProperty('--presence-x', path[at][0] + 'px')
+    pointer.style.setProperty('--presence-y', path[at][1] + 'px')
+  }, 700)
+</script>`} caption="白板上的三個人。Alan 的指標會依應用程式回報的位置移動，並在收到的各點之間滑順移動；啟用減少動態效果時則直接跳到定點。" />
+
+## 指標的位置 \{#where-a-pointer-stands\}
+
+指標的尖端就是它所指的點。`--presence-x` 和 `--presence-y` 是它與最近的定位元素左上角之間的距離，以像素計；這個定位元素通常是畫布或白板，會加上 `relative` 和 `overflow-hidden`，讓靠近邊緣的指標在邊緣處被裁切。應用程式知道每個人在哪裡、何時離開：有人加入時加上一個 `presence`，對方指標移動時設定這兩個屬性，對方離開時再將它移除。繪製和動態由樣式表負責；它本身沒有腳本。
+
+```js name=app.js
+function move(person, x, y) {
+  const pointer = board.querySelector(`[data-person="${person.id}"]`)
+  pointer.style.setProperty('--presence-x', `${x}px`)
+  pointer.style.setProperty('--presence-y', `${y}px`)
+}
+```
+
+- **動態。** 指標會以 160ms 沿直線滑到每個新位置，將連線每秒傳來的少數幾個位置轉為平穩的移動。在 `prefers-reduced-motion: reduce` 下則直接跳到定點。
+- **不擋路。** 指標不接收任何指標事件，因此絕不會擋在讀者自己的指標和下方內容之間。
+- **座標。** 請以畫布本身的單位傳送座標，並在設定屬性前轉換為讀者的檢視座標，這樣視窗大小和縮放比例不同的兩個人，才會指向同一個東西。
+
+## 訊息 \{#message\}
+
+名字下方的 `presence-message` 會顯示對方正在輸入的簡短文字，就像游標聊天（cursor chat）一樣，例如針對所指內容提出的問題。它在 15rem 處換行。請在對方停止輸入幾秒後將它移除。
+
+## 識別色 \{#identity\}
+
+在 Master UI 中，色相用來表示狀態，在這裡則用來代表一個人。主題提供八種識別色，從 `--color-identity-1` 到 `--color-identity-8`，明度全都相同：每個人在整個工作階段中保有其中一種，名字也一定顯示在旁邊，因此顏色絕不是區分不同人的唯一方式。`--color-identity-ink` 是所有識別色上的文字顏色，對比度在淺色配色中至少為 4.8:1，在深色配色中至少為 9:1。
+
+在指標、文字游標、選取範圍或單獨顯示的名字上，用修飾類別 `presence-1` 到 `presence-8` 選擇其中一種。若產品有自己用來代表人員的顏色，請改為設定 `--presence-color`；請選擇明度足以讓 `--color-identity-ink` 清楚顯示的顏色，或同時設定該 token。
+
+<ComponentPreview name="identities" height={136} mediumHeight={176} narrowHeight={216} title="識別色" html={`<span class="presence-name presence-1">Ada</span>
+<span class="presence-name presence-2">Alan</span>
+<span class="presence-name presence-3">Grace</span>
+<span class="presence-name presence-4">Edsger</span>
+<span class="presence-name presence-5">Barbara</span>
+<span class="presence-name presence-6">Donald</span>
+<span class="presence-name presence-7">Margaret</span>
+<span class="presence-name presence-8">Ken</span>`} caption="八種識別色，依工作階段分配的順序排列。" />
+
+請在有人加入時依此順序分配顏色，並將離開者的顏色分給下一位加入的人。若每位讀者都必須看到同一個人使用同一種顏色，請從穩定的數字選擇，例如該人 id 的雜湊值。超過八個人時顏色會重複，但名字仍能區分他們。
+
+## 在文字中 \{#in-text\}
+
+在共同編輯的文件中，其他人的文字游標是位於兩個字母之間的 `presence-caret`：一條與行高等高、以對方顏色繪製的 2px 直線，上方立著一面寫著對方名字的旗標。它不占空間，因此它移動時周圍的文字不會跟著移動。對方的選取範圍是包住所選文字的 `presence-selection`：在文字後方以對方顏色的淡色調鋪底，並延續到跨行的部分。
+
+<ComponentPreview name="text" height={176} narrowHeight={216} title="文字游標與選取範圍" bodyClass="flex items-center justify-center p-lg" html={`<div class="sheet p-lg max-w(440)">
+  <p class="m(0) text-sm fg-text-body leading-md">The release ships <span class="presence-selection presence-4">on Thursday, after the docs build</span><span class="presence-caret presence-4" aria-hidden="true"><span class="presence-name">Alan</span></span> passes, and the post goes out the same afternoon. Ada writes the changelog<span class="presence-caret presence-6" aria-hidden="true"><span class="presence-name">Ada</span></span> while Grace checks the links.</p>
+</div>`} caption="Alan 選取了一段文字，他的文字游標位於選取範圍的結尾；Ada 的文字游標則位於她正在輸入的地方。" />
+
+編輯器會依協作層回報的其他人位置放置這些標記，作為它自行算繪和移除的裝飾；它們不屬於文件內容。請在第一行上方保留放置名字旗標的空間，或讓第一行文字游標的旗標延伸到文字容器的內距中。
+
+## 何時改用其他元件 \{#when-to-use-something-else\}
+
+- 若要顯示誰在場，而不是在哪裡，請在標題列使用一疊[頭像](/components/avatar)。
+- 應用程式仍在寫入的文字結尾標記，請使用[文字游標](/components/caret)。
+- 為讀者標示的文字，例如搜尋結果，請使用[醒目標記](/components/mark)。
+
+## 無障礙 \{#accessibility\}
+
+- 指標和文字游標屬於裝飾：請為每一個加上 `aria-hidden="true"`，避免在畫布或句子中間讀出它們的名字。請在其他地方以文字說明誰在場，例如在標題列放上附有名字的頭像；若有人加入或離開對工作很重要，請在 polite 即時區域中宣告。
+- 選取範圍不會隱藏：其中的文字屬於文件內容。淡色調不會改變文字顏色，因此文字仍保有原本的對比度。
+- 顏色絕不是唯一的線索：每個指標和文字游標旁都有名字。
+- 強制色彩模式下，箭頭和文字游標以系統色繪製，旗標和對話泡泡則會加上外框線。
+
+## 類別 \{#classes\}
+
+<ContractTable name="presence" />
+
+## 自訂屬性 \{#custom-properties\}
+
+<ContractTable name="presence" show="properties" />
+
+## 相關元件 \{#related\}
+
+<ComponentLinks slugs={['avatar', 'caret', 'mark']} />
+
+## 原始碼 \{#source\}
+
+<ComponentSource name="presence" />

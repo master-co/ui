@@ -5,8 +5,9 @@ description: "コンテンツが続く側の端がフェードするスクロー
 import ComponentPreview from '~/site/components/ComponentPreview.astro'
 import ComponentSource from '~/site/components/ComponentSource.astro'
 import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
-スクロール領域は、パネル内の長いリスト、幅の広いテーブル、ログなどをページ内でスクロールできるようにする領域です。プラットフォーム標準のスクロール動作を保ち、細く控えめなスクロールバーを表示します。コンテンツが領域の外に続く側の端にはフェードがかかり、コンテンツの終端ではフェードが消えます。
+スクロール領域は、パネル内の長いリスト、幅の広いテーブル、ログなどをページ内でスクロールできるようにする領域です。プラットフォーム標準のスクロール動作を保ち、細く控えめなスクロールバーを表示します。コンテンツが領域の外に続く側の端にはフェードがかかり、コンテンツの終端ではフェードが消えます。チャットやビルドログのように、読んでいる間に末尾が伸びていく領域では、[追加される内容に追従](#follow)させることもできます。
 
 <ComponentPreview name="default" height={248} title="スクロール領域" bodyClass="p-lg" html={`<div class="sheet max-w(360) mx-auto">
   <div class="scroll-area h(200) p-md text-sm fg-text-body leading-md" tabindex="0" role="region" aria-label="Release notes">
@@ -51,11 +52,129 @@ import ContractTable from '~/site/components/ContractTable.astro'
   </div>
 </div>`} />
 
+## 追加される内容への追従 \{#follow\}
+
+チャット、ビルドログ、ストリーミングされる回答は、読んでいる間に末尾が伸びていきます。領域に`role="log"`を指定し、`follow`[ビヘイビア](/guide/behaviors)を適用します。ビヘイビアは、内容が追加される間は末尾を表示し続け、読者が末尾からスクロールして離れた時点で追従をやめ、末尾に戻ると再び追従します。内容の後に`hidden`を指定した`scroll-area-latest`ボタンを置きます。このボタンは領域が追従していない間だけ表示され、押すと末尾までスクロールして再び追従します。
+
+<ComponentPreview name="follow" height={300} title="ビルドログへの追従" bodyClass="p-lg" behaviors html={`<div class="sheet max-w(440) mx-auto">
+  <div class="scroll-area h(240) p-md font-mono text-xs fg-text-body leading-md" tabindex="0" role="log" aria-label="Build log">
+    <div id="build-lines">
+      <p class="m(0)">Cloning master-co/ui at 3041b1c</p>
+      <p class="m(0)">Installing 596 packages</p>
+      <p class="m(0)">Compiling 112 stylesheets</p>
+    </div>
+    <button type="button" class="btn btn-sm btn-pill scroll-area-latest" hidden><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg>Jump to latest</button>
+  </div>
+</div>
+<script>
+  const steps = ['Checking contracts', 'Rendering /components', 'Rendering /blocks', 'Rendering /pages', 'Writing llms.txt', 'Writing the registry', 'Checking 2,914 links', 'Compressing assets', 'Uploading 71 pages']
+  const lines = document.getElementById('build-lines')
+  let count = 0
+  const timer = setInterval(() => {
+    const line = document.createElement('p')
+    line.className = 'm(0)'
+    line.textContent = steps[count % steps.length] + (count >= steps.length ? ' (pass ' + (Math.floor(count / steps.length) + 1) + ')' : '')
+    lines.append(line)
+    if (++count >= 120) clearInterval(timer)
+  }, 800)
+</script>`} caption="行が次々に追加され、ログはそれに追従します。実行中に上にスクロールすると、ログはその位置に留まり、「Jump to latest」が表示されます。それを押すか、末尾までスクロールして戻ると、ログは再び追従します。" />
+
+判断の仕組みは次のとおりです。
+
+- **追従。** ビヘイビアを適用した時点から追従します。領域を末尾までスクロールし、行の追加、最後のメッセージへのストリーミングされた単語の到着、画像の読み込み完了など、内容が増えるたびに再び末尾までスクロールします。
+- **停止。** ホイール、指、スクロールバー、<kbd>↑</kbd>、<kbd>Page Up</kbd>、<kbd>Home</kbd>など、どの方法でも先頭方向にスクロールすると追従をやめます。ホイールを先頭方向に回した場合は、領域が動く前に即座に停止するため、その瞬間に届いた単語が読者を引き戻すことはありません。
+- **再開。** <kbd>End</kbd>、スクロールバー、ボタンのいずれかで再び末尾に達すると、追従を再開します。末尾まで数ピクセル足りない位置も末尾とみなします。
+- **イベント。** 読者の操作で追従を開始または停止するたびに、領域は`change`を発行します。ビヘイビアの`value`は追従しているかどうかを示します。読者がメッセージを送信したときのアプリケーションのように、読者を末尾に移動させるには`true`を設定します。設定してもイベントは発行されません。
+
+```js name=app.js
+import { follow } from '@master/ui/behaviors/follow.js'
+
+const log = document.querySelector('.scroll-area[role="log"]')
+const following = follow(log)
+
+form.addEventListener('submit', () => { following.value = true })
+```
+
+ビヘイビアがない場合、領域は通常のスクロール領域です。読者が離れた位置に留まり、ボタンは非表示のままです。ボタンは領域の下端に固定され、内容の上、フェードした端よりも手前に表示されます。最後の行の後ではなく上に重なるため、ボタンを表示しても内容の高さは変わりません。
+
+## 読んでいる位置の維持 \{#keeping-the-place\}
+
+上部に読み込まれる古いメッセージのように、読者が見ている位置より上に内容が挿入されると、読んでいる内容が下に押し下げられてしまいます。ブラウザーはスクロールアンカーによってこれを自動的に防ぎます。領域は上に追加された内容に合わせて移動するため、読んでいるメッセージは元の位置に留まります。スタイルシートは、領域に`overflow-anchor: auto`、ボタンに`none`を指定します。ボタンがブラウザーの固定する要素になることはありません。スクロールアンカーに対応していないブラウザーでは、`follow`ビヘイビアが、上の内容が動いた分だけ自分で同じ補正を行います。さらに読み込み中であることを示す注記など、行がその下に挿入される上部の行にも`overflow-anchor: none`を指定します。これにより、ブラウザーはその行ではなく、内容の行を固定します。
+
+<ComponentPreview name="earlier" height={380} title="以前のメッセージとストリーミングされる回答" bodyClass="p-lg" behaviors html={`<div class="sheet max-w(440) mx-auto">
+  <div class="scroll-area h(320) p-md" tabindex="0" role="log" aria-label="Conversation with Ada">
+    <p class="m(0) pb-sm text-center text-xs fg-text-muted" style="overflow-anchor: none" id="earlier">Earlier messages load as you scroll up</p>
+    <ol class="m(0) p(0)" id="turns">
+      <li class="message message-sent"><div class="message-bubble">Can the docs build run on every push?</div></li>
+      <li class="message"><div class="message-bubble">Yes. It takes about two minutes.</div></li>
+    </ol>
+    <button type="button" class="btn btn-sm btn-pill scroll-area-latest" hidden><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg>Jump to latest</button>
+  </div>
+</div>
+<script>
+  const turns = document.getElementById('turns')
+  const turn = (text, sent) => {
+    const item = document.createElement('li')
+    item.className = sent ? 'message message-sent' : 'message'
+    const bubble = document.createElement('div')
+    bubble.className = 'message-bubble'
+    bubble.textContent = text
+    item.append(bubble)
+    return item
+  }
+  const older = [['Morning! Is the release still today?', false], ['It is, once the docs build passes.', true], ['Which build?', false], ['The one that checks every page and link.', true], ['Do we wait for it?', false], ['No, it reports here when it is done.', true]]
+  const log = turns.closest('.scroll-area')
+  log.addEventListener('scroll', () => {
+    if (log.scrollTop > 48 || !older.length) return
+    for (const [text, sent] of older.splice(-2).reverse()) turns.prepend(turn(text, sent))
+    if (!older.length) document.getElementById('earlier').textContent = 'The start of the conversation'
+  })
+  const exchanges = [
+    ['What does it check?', 'It renders every page in five languages, checks each preview against the contracts, follows every link and compares the registry with the package, then writes the search index.'],
+    ['And if a link is broken?', 'The build stops and names the page and the link, so nothing half checked reaches the site. Fix it and push again; the next run starts from the beginning.'],
+    ['Thanks!', 'Any time. I will post here when this one is done.']
+  ]
+  let at = 0
+  const next = () => {
+    if (at >= exchanges.length) return
+    const [question, answer] = exchanges[at++]
+    turns.append(turn(question, true))
+    const reply = turn('', false)
+    const bubble = reply.firstChild
+    bubble.setAttribute('aria-busy', 'true')
+    turns.append(reply)
+    const words = answer.split(' ')
+    const stream = setInterval(() => {
+      bubble.textContent += (bubble.textContent ? ' ' : '') + words.shift()
+      if (words.length) return
+      clearInterval(stream)
+      bubble.removeAttribute('aria-busy')
+      setTimeout(next, 2500)
+    }, 140)
+  }
+  setTimeout(next, 1200)
+</script>`} caption="回答がストリーミングで表示され、会話がそれに追従します。上にスクロールすると、先頭付近で古いやり取りが上に追加され、読んでいたやり取りはその位置に留まります。" />
+
 ## アクセシビリティ \{#accessibility\}
 
 - スクロール領域はキーボードでフォーカスできる必要があります。すでにフォーカス可能なコンテンツが含まれている場合を除き、領域に`tabindex="0"`、`region`などの`role`、ラベルを指定します。
 - マスクは、同じ端で領域自体のスクロールバーにもフェードをかけます。強制カラーモードではマスクが解除されます。
 - 領域には高さまたは最大の高さを指定します。指定しないと、領域はコンテンツに合わせて伸び、スクロールしません。
+- `role="log"`は控えめなライブリージョンで、追加された内容はフォーカスを動かさずに読み上げられます。回答がメッセージにストリーミングされている間は、そのメッセージに`aria-busy="true"`を指定し、回答が完了したら削除します。これにより、メッセージは単語ごとではなく、完成した状態で一度だけ読み上げられます。
+- `scroll-area-latest`ボタンは、表示されている間はタブ順序に含まれる実際のボタンです。押すとボタンは非表示になり、フォーカスは領域に移ります。その後はキー操作で領域をスクロールできます。
+- 追従によってフォーカスが動くことはなく、読者がスクロールして離れるとすぐに停止します。そのため、内容が次々に追加されても、読んでいる人の足元からページが奪われることはありません。
+
+## キーボード操作 \{#keyboard\}
+
+キー操作はブラウザー標準のもので、ビヘイビアはそれによるスクロールを監視するだけです。
+
+<ContractTable name="scroll-area" show="keyboard" />
+
+## React、Svelte、Vue \{#frameworks\}
+
+`log`コンポーネントは、子要素の周りに追従するスクロール領域をボタン付きで描画し、ビヘイビアを適用して、`following`を外部とやり取りします。`npx master-ui add log`でプロジェクトにコピーできます。コンポーネントの構成と使い方は[React、Svelte、Vue](/guide/frameworks)を参照してください。
+
+<FrameworkSource name="scroll-area" />
 
 ## クラス \{#classes\}
 

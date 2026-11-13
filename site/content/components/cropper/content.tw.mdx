@@ -1,0 +1,192 @@
+---
+title: "圖片裁切"
+description: "在圖片上方疊一個框，標出要保留的部分。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+圖片裁切是在圖片上方疊一個框，標出要保留的部分：例如發布前裁切照片、將封面修成橫幅的比例，或在圓形中框出頭像。圖片放在凹槽中。框外的部分會變暗，框的邊緣是疊在圖片上的白線，把手則是四個角落的珍珠圓點和四條邊上的膠囊形。按住或以按鍵操作框時，框內會顯示三分法格線。
+
+<ComponentPreview name="default" height={432} narrowHeight={304} title="圖片裁切" bodyClass="p-lg" behaviors html={`<div class="cropper max-w(480) mx-auto" style="--cropper-x: .16; --cropper-y: .14; --cropper-width: .62; --cropper-height: .66">
+  <img class="cropper-image" src="/demo/harbor.svg" alt="A harbor at dusk" width="640" height="480">
+  <div class="cropper-box" role="application" aria-roledescription="crop box" tabindex="0" aria-label="Crop the photo">
+    <span class="cropper-handle cropper-handle-top cropper-handle-left"></span>
+    <span class="cropper-handle cropper-handle-top"></span>
+    <span class="cropper-handle cropper-handle-top cropper-handle-right"></span>
+    <span class="cropper-handle cropper-handle-right"></span>
+    <span class="cropper-handle cropper-handle-bottom cropper-handle-right"></span>
+    <span class="cropper-handle cropper-handle-bottom"></span>
+    <span class="cropper-handle cropper-handle-bottom cropper-handle-left"></span>
+    <span class="cropper-handle cropper-handle-left"></span>
+  </div>
+  <p class="cropper-status" role="status"></p>
+</div>`} caption="拖曳框或把手，或在圖片上拖出新的框。讓框取得焦點後使用方向鍵；按住 Alt 再按方向鍵可調整大小。" />
+
+幾何資訊是根元素上的四個自訂屬性，每個都是占圖片比例的 0 到 1 之間的值：`--cropper-x` 和 `--cropper-y` 從圖片左上角起算，另外還有 `--cropper-width` 和 `--cropper-height`。樣式表依據這些值放置框，變暗的範圍也會跟著框走。沒有腳本時，框會停在這些值指定的位置；省略這些值時，框就是整張圖片。
+
+應用程式讀取的值是以圖片本身像素表示的同一個矩形，即 `{ x, y, width, height }`。實際裁切圖片由應用程式負責，請參閱[裁切圖片](#cutting-the-picture)。
+
+## 行為 \{#behavior\}
+
+`cropper` 接收根元素（帶有 `cropper` 類別的元素）和選項物件，並傳回用來解除行為的函式。它的 `value` 就是裁切範圍；從外部設定這個值即可移動裁切範圍，這樣做不會觸發任何事件。
+
+```js name=app.js
+import { cropper } from '@master/ui/behaviors/cropper.js'
+
+const root = document.querySelector('.cropper')
+const crop = cropper(root, { ratio: 16 / 9 })
+
+root.addEventListener('change', () => {
+  const { x, y, width, height } = crop.value
+  form.elements.crop.value = [x, y, width, height].join(' ')
+})
+```
+
+- **框。** 拖曳框會移動它，拖曳把手會移動該把手所代表的邊，在框外的圖片上拖曳則會畫出新的框。在框外按下但不拖曳時，框會移到該處，因此不必拖曳也能移動框。框會保持在圖片範圍內，並維持最小尺寸。
+- **圖片的像素。** 裁切範圍是以 `cropper-image` 的 `width` 和 `height` 計算。請在這兩個屬性寫入檔案本身的尺寸：這也能避免圖片載入時畫框跳動。
+- **按鍵。** 方向鍵每次將裁切範圍移動一個步距，按住 <kbd class="kbd">Shift</kbd> 時移動十個步距。按住 <kbd class="kbd">Alt</kbd>（Mac 上為 <kbd class="kbd">Option</kbd>）時，方向鍵會從遠端的邊調整大小：右與下放大，左與上縮小。
+- **事件。** 裁切範圍每次變動時，框都會觸發 `input`；拖曳或按鍵操作結束時，觸發一次 `change`。兩者都會冒泡。
+- **朗讀內容。** 每次 `change` 之後，行為會將裁切尺寸寫入 `cropper-status`，這是一個 polite 即時區域：「480 by 270 pixels, 64 from the left and 96 from the top」。傳入 `describe` 即可改用頁面的語言。
+
+圖片沒有方向之分，因此無論書寫方向為何，框都從左邊和上方定位，方向鍵也都表示左與右。
+
+| 選項 | 設定內容 |
+| --- | --- |
+| `ratio` | 框要維持的寬高比，例如 `16 / 9`。省略時為自由比例，除非根元素的樣式寫了 `--cropper-ratio`；設為 0 即為自由比例 |
+| `step` | 方向鍵每次移動裁切範圍的距離，以圖片像素計。預設為圖片長邊的百分之一 |
+| `min` | 最小的寬度與高度，以圖片像素計。預設為圖片短邊的十分之一 |
+| `maxZoom` | 沒有範圍輸入元件指定時，平移式裁切的最大縮放倍率。預設為 4 |
+| `describe` | 將裁切範圍轉為狀態朗讀文字的函式 |
+
+同一模組中的 `cropperFit(picture, crop, options)` 會依照行為保存裁切範圍的方式，讓裁切範圍符合圖片。算繪程式可以用它在伺服器上繪製初始的裁切範圍。
+
+## 比例 \{#proportions\}
+
+設定比例時，拖曳角落的把手會固定對角的角落，框也會維持比例；拖曳邊上的把手則會以框的中心為基準調整大小。若掛上行為時指定的比例與框目前的比例不同，行為會以框的中心為基準、在面積不變的情況下套用該比例，並觸發 `input` 和 `change`：選擇比例就是這樣生效的。
+
+<ComponentPreview name="proportions" height={456} narrowHeight={368} title="比例" background="plain" bodyClass="p-lg" behaviors html={`<div class="grid gap-md max-w(480) mx-auto">
+  <div class="segmented segmented-sm mx-auto" role="radiogroup" aria-label="Proportions">
+    <label class="segmented-item"><input type="radio" class="segmented-input" name="banner-ratio" value="0" checked>Free</label>
+    <label class="segmented-item"><input type="radio" class="segmented-input" name="banner-ratio" value="1/1">1:1</label>
+    <label class="segmented-item"><input type="radio" class="segmented-input" name="banner-ratio" value="4/3">4:3</label>
+    <label class="segmented-item"><input type="radio" class="segmented-input" name="banner-ratio" value="16/9">16:9</label>
+  </div>
+  <div class="cropper" id="banner-crop" style="--cropper-x: .1; --cropper-y: .2; --cropper-width: .8; --cropper-height: .6">
+    <img class="cropper-image" src="/demo/tide.svg" alt="The tide coming in over flat sand" width="640" height="400">
+    <div class="cropper-box" role="application" aria-roledescription="crop box" tabindex="0" aria-label="Crop the banner">
+      <span class="cropper-handle cropper-handle-top cropper-handle-left"></span>
+      <span class="cropper-handle cropper-handle-top"></span>
+      <span class="cropper-handle cropper-handle-top cropper-handle-right"></span>
+      <span class="cropper-handle cropper-handle-right"></span>
+      <span class="cropper-handle cropper-handle-bottom cropper-handle-right"></span>
+      <span class="cropper-handle cropper-handle-bottom"></span>
+      <span class="cropper-handle cropper-handle-bottom cropper-handle-left"></span>
+      <span class="cropper-handle cropper-handle-left"></span>
+    </div>
+    <p class="cropper-status" role="status"></p>
+  </div>
+  <p class="m(0) text-sm fg-text-muted text-center" id="banner-crop-value" aria-hidden="true"></p>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  var root = document.getElementById('banner-crop')
+  var readout = document.getElementById('banner-crop-value')
+  var crop = MasterUI.cropper(root)
+  function show() {
+    var value = crop.value
+    readout.textContent = value.width + ' × ' + value.height + ' pixels at ' + value.x + ', ' + value.y
+  }
+  root.addEventListener('input', show)
+  document.querySelectorAll('input[name="banner-ratio"]').forEach(function (input) {
+    input.addEventListener('change', function () {
+      var parts = input.value.split('/')
+      crop = MasterUI.cropper(root, { ratio: parts.length > 1 ? parts[0] / parts[1] : 0 })
+    })
+  })
+  show()
+})
+</script>`} caption="選擇比例，再拖曳角落或邊。圖片下方那一行就是目前的值。" />
+
+在同一個根元素上再次呼叫 `cropper` 會取代前一次的行為，因此預覽會以新的比例重新掛上行為。`MasterUI` 是預覽載入的套件包；在專案中，請依照[行為](#behavior)一節所示匯入 `cropper`。框架元件在 `ratio` 改變時也會這樣做。
+
+## 頭像 \{#avatar\}
+
+`cropper-pan` 會讓框固定在畫框中央，維持 `--cropper-ratio` 的比例，改為移動框下方的圖片：拖曳可平移，雙指可捏合縮放，按住 <kbd class="kbd">Control</kbd> 或 <kbd class="kbd">Command</kbd> 時滾輪可縮放，觸控板的捏合手勢送出的也正是這種事件。`cropper-round` 會將框繪製成圓形。裁切範圍的值會多出 `zoom`：裁切範圍達到圖片允許的最大尺寸時為 1。
+
+`aria-controls` 指向根元素 `id` 的範圍輸入元件也能縮放，範圍從它的 `min` 到 `max`，並會跟著其他方式造成的縮放更新。它是頁面自己的[滑桿](/components/slider)，因此可以放在畫框下方、旁邊或工具列中。
+
+<ComponentPreview name="avatar" height={392} title="頭像" background="plain" bodyClass="p-lg" behaviors html={`<div class="grid gap-md w(280) mx-auto">
+  <div class="cropper cropper-pan cropper-round" id="avatar-crop" style="--cropper-x: .1; --cropper-y: .18; --cropper-width: .8; --cropper-height: .64">
+    <img class="cropper-image" src="/demo/cairn.svg" alt="A cairn of stones on a ridge" width="480" height="600">
+    <div class="cropper-box" role="application" aria-roledescription="crop box" tabindex="0" aria-label="Frame your picture"></div>
+    <p class="cropper-status" role="status"></p>
+  </div>
+  <div class="flex items-center gap-sm fg-text-muted">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.5-4.5M8.5 11h5"/></svg>
+    <input type="range" class="slider grow(1)" min="1" max="4" step="any" value="1.25" aria-controls="avatar-crop" aria-label="Zoom">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.5-4.5M8.5 11h5M11 8.5v5"/></svg>
+  </div>
+</div>`} caption="拖曳或捏合圖片，或移動滑桿。讓圓形取得焦點：方向鍵可平移，+ 和 - 可縮放。" />
+
+無論縮放倍率為何，圖片都會填滿框，因此平移式的裁切範圍一定在圖片內。在按鍵操作上，方向鍵和其他情況一樣移動裁切範圍，按住 <kbd class="kbd">Alt</kbd> 再按方向鍵，或按 <kbd class="kbd">+</kbd> 和 <kbd class="kbd">-</kbd>，會以框的中心為基準縮放。框沒有把手，而框周圍的空間 `--cropper-inset` 會顯示一圈變暗的圖片，讓讀者看到哪些部分會被捨去。
+
+## 裁切圖片 \{#cutting-the-picture\}
+
+圖片裁切只標出要保留的部分，從不修改檔案本身。可以將這四個數值隨上傳一併送出，在伺服器上裁切；也可以在頁面中用 canvas 裁切：`drawImage` 會以圖片本身的像素擷取圖片的一部分，而這正是值所使用的單位。
+
+```js name=crop.js
+/** The part of a loaded picture a crop keeps, as a file. */
+function cut(image, { x, y, width, height }, type = 'image/webp') {
+  const canvas = document.createElement('canvas')
+  canvas.width = width
+  canvas.height = height
+  canvas.getContext('2d').drawImage(image, x, y, width, height, 0, 0, width, height)
+  return new Promise((resolve) => canvas.toBlob(resolve, type))
+}
+
+const file = await cut(document.querySelector('.cropper-image'), crop.value)
+```
+
+- 圖片必須來自頁面本身的來源，或帶有 `crossorigin` 並透過 CORS 提供：繪製過其他來源圖片的 canvas 會拒絕匯出內容。
+- 若圖片的 `width` 和 `height` 不是檔案本身的尺寸，請先將裁切範圍乘上 `image.naturalWidth / width`。
+- 圓形裁切仍保存為正方形：[頭像](/components/avatar)會自行繪製成圓形。只有當檔案本身必須是圓形時，才用 `arc()` 裁剪 canvas。
+
+## 鍵盤操作 \{#keyboard\}
+
+<ContractTable name="cropper" show="keyboard" />
+
+## 無障礙 \{#accessibility\}
+
+- 框是唯一的 Tab 停駐點。它設有 `role="application"`：它是單一控制項，擁有其他角色都無法描述的專屬按鍵，這個角色會告訴螢幕閱讀器將方向鍵交給它處理。請依裁切的內容為它命名，並以頁面的語言提供 `aria-roledescription`，讓它被讀作裁切框，而不是應用程式。
+- 把手不會取得焦點。多出八個 Tab 停駐點，對鍵盤使用者而言並不會比框本身多提供什麼：方向鍵可移動裁切範圍，按住 <kbd class="kbd">Alt</kbd> 再按方向鍵可調整大小，能達到把手所能達到的每一種裁切範圍。移動起始側的邊，等於先移動再調整大小。
+- 每次變動後，`cropper-status` 會以 polite 方式說出裁切範圍的像素尺寸。請從一開始就將它放在標記中，讓螢幕閱讀器在它第一次發聲前就已經登記它。
+- 每種拖曳都有替代方式：按鍵、在圖片上按一下將框移到該處，以及縮放滑桿。
+- 請為圖片提供說明內容的 `alt`：讀者正在決定要保留圖片的哪個部分。
+- 把手的點擊目標為 24px，在觸控螢幕上為 44px，其中繪製的圓點或膠囊形則維持原本大小；圖片周圍的空間也會跟著變大。整個畫框都會接收指標操作，因此請將圖片裁切放在手指不需要捲動經過它的地方，例如對話框或編輯器中。
+- 啟用減少動態效果時，把手按住時不會放大。強制色彩模式下，框以系統外框線繪製，把手使用按鈕色彩，變暗效果則保留。
+
+## React、Svelte 和 Vue \{#frameworks\}
+
+`cropper` 元件會算繪圖片、框和把手，掛上行為，並支援傳入及傳出裁切範圍。平移式裁切會將連接畫框所需的屬性交給頁面自己的範圍輸入元件。用 `npx master-ui add cropper` 將元件複製到專案中。元件的建置與使用方式請參閱 [React、Svelte 和 Vue](/guide/frameworks)。
+
+<FrameworkSource name="cropper" />
+
+## 類別 \{#classes\}
+
+<ContractTable name="cropper" />
+
+## 自訂屬性 \{#custom-properties\}
+
+<ContractTable name="cropper" show="properties" />
+
+## 相關元件 \{#related\}
+
+<ComponentLinks slugs={['figure', 'compare', 'avatar', 'slider']} />
+
+## 原始碼 \{#source\}
+
+<ComponentSource name="cropper" />

@@ -1,0 +1,188 @@
+---
+title: "浮动面板"
+description: "读者可以移动、调整大小、折叠到标题栏并关闭的浮动表面。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+浮动面板是一块浮动的表面，在工作区旁保持打开，同时其下方的页面仍可使用：画布的图层、颜色选择器、检查器、聊天。读者可以拖动其标题栏来移动它，从角落调整大小，把它折叠到只剩标题栏，或者关闭它。它是带有 `role="dialog"` 的 `popover="manual"`，因此浏览器会从按钮打开它，并把它提升到顶层，位于页面上所有内容之上，无需维护 `z-index` 的顺序。其余工作由 `panel` [行为脚本](/guide/behaviors)完成：移动、调整大小、折叠、Escape、焦点，以及哪个面板位于最前面。
+
+<ComponentPreview name="default" height={440} title="浮动面板" background="plain" bodyClass="flex items-end justify-center gap-sm p-lg" behaviors html={`<button type="button" class="btn btn-sm" commandfor="layers" command="toggle-popover">Layers</button>
+<button type="button" class="btn btn-sm" commandfor="comments" command="toggle-popover">Comments</button>
+
+<div id="layers" popover="manual" role="dialog" class="panel" aria-labelledby="layers-title" style="--panel-x: 24px; --panel-y: 24px; --panel-width: 232px">
+  <div class="panel-header">
+    <button type="button" class="panel-handle" aria-label="Move the Layers panel with the arrow keys"></button>
+    <h2 class="panel-title" id="layers-title">Layers</h2>
+    <div class="panel-actions">
+      <button type="button" class="btn btn-quiet btn-sm btn-square panel-minimize" aria-pressed="false" aria-label="Minimize">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><path d="M6 12h12"/></svg>
+      </button>
+      <button type="button" class="btn btn-quiet btn-sm btn-square" commandfor="layers" command="hide-popover" aria-label="Close">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="panel-body">
+    <ol class="list">
+      <li class="list-row"><span class="list-body"><span class="list-title">Header</span></span></li>
+      <li class="list-row"><span class="list-body"><span class="list-title">Hero image</span></span></li>
+      <li class="list-row"><span class="list-body"><span class="list-title">Pricing table</span></span></li>
+      <li class="list-row"><span class="list-body"><span class="list-title">Footer</span></span></li>
+    </ol>
+  </div>
+  <span class="panel-resize" aria-hidden="true"></span>
+</div>
+
+<div id="comments" popover="manual" role="dialog" class="panel" aria-labelledby="comments-title" style="--panel-x: 296px; --panel-y: 64px; --panel-width: 272px">
+  <div class="panel-header">
+    <button type="button" class="panel-handle" aria-label="Move the Comments panel with the arrow keys"></button>
+    <h2 class="panel-title" id="comments-title">Comments</h2>
+    <div class="panel-actions">
+      <button type="button" class="btn btn-quiet btn-sm btn-square panel-minimize" aria-pressed="false" aria-label="Minimize">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><path d="M6 12h12"/></svg>
+      </button>
+      <button type="button" class="btn btn-quiet btn-sm btn-square" commandfor="comments" command="hide-popover" aria-label="Close">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="panel-body">
+    <div class="flex flex-col gap-sm">
+      <p class="m(0)"><span class="fg-text-strong">Mira</span> The hero image crops the product on narrow screens.</p>
+      <p class="m(0)"><span class="fg-text-strong">Jun</span> Fixed in the next build: it keeps the middle third.</p>
+      <input class="input input-sm" type="text" placeholder="Reply" aria-label="Reply">
+    </div>
+  </div>
+  <span class="panel-resize" aria-hidden="true"></span>
+</div>
+
+<script>
+  document.getElementById('layers').showPopover()
+  document.getElementById('comments').showPopover()
+</script>`} caption="拖动标题栏，或拖动其底部末端的角落。在后方面板内按下可将其移到最前。用 Tab 移到标题栏后使用方向键，按住 Shift 移动更长距离，按住 Alt 调整大小；按 Escape 关闭面板。" />
+
+## 样式表绘制的内容 \{#what-the-stylesheet-draws\}
+
+- **面板表面。** 与弹出层相同的浮起表面，带有浮起阴影。按住标题栏或角落时，它会升高到浮层阴影，拖动时不会选中文本。它的圆角是小按钮的圆角加上标题栏在按钮周围保留的 6px，即 14px。
+- **标题栏**是同一表面上的一条横栏，下方有一条细线，标题位于起始端，操作按钮位于末端。两者之下是拖动手柄，一个与横栏同样大小的按钮，因此在标题栏上任何不是控件的位置按下都会拿起面板，光标先是张开的手，然后是握紧的手。标题不接收指针事件，因此在标题上按下会传到手柄。
+- **手柄获得焦点时**，焦点环围绕整个面板，因为按键移动的是整个面板。
+- **折叠后**，即按下最小化按钮时，面板只剩标题栏：主体和角落被隐藏，按钮呈凹陷状态。
+- **主体**比可用空间长时会在面板内滚动，不会带动下方的页面。
+- **底部末端的角落**由两条短斜线组成，是一个 16px 的点击目标，在触摸屏上为 44px；此时标题栏也会增高，以容纳 44px 的按钮。
+
+## 放置位置 \{#placement\}
+
+位置和尺寸都是自定义属性：`--panel-x` 和 `--panel-y` 表示左上角的位置，以距视口左上角的像素计；另有 `--panel-width` 和 `--panel-height`。行为脚本根据指针和按键写入它们，因为只有事件才知道这些值；页面也可以写入它们，就像预览为每个面板设置初始位置那样。
+
+样式表用 `clamp()` 完成定位和限制，参照的是固定定位元素计算百分比时所依据的视口，其中不包括滚动条：
+
+- 面板的宽度绝不会超过视口，也绝不会小于 `--panel-min-width`（12rem），并且整个宽度都保持在视口之内。
+- 它的标题栏绝不会离开视口，因此面板总能被找到并拖回来；它的高度绝不会超过视口，放不下的主体会滚动。
+- 窗口变窄时，面板会被推进视口。窗口变宽时，面板可以回到原先设定的位置，因为它保存的位置不会被 clamp 改变。
+- 未指定位置时，面板在末端顶部的角落打开，向内缩进 8px（`--panel-gutter`）。
+
+每次移动和调整大小结束时，行为脚本都会读取样式表实际绘制面板的位置并保存下来，因此应用保存的值就是读者看到的位置。
+
+## 多个面板 \{#stacking\}
+
+面板按显示的先后顺序位于顶层：最后显示的位于最前面。在被其他面板遮住的面板内按下或聚焦时，会把它移到最前：行为脚本会再次显示它，使其排在顶层的最后。隐藏和显示在同一个任务中、在浏览器绘制之前完成，因此看不到面板离开，不会播放入场动画，浏览器也只报告一次从打开到打开的 `toggle`。焦点保持在读者放置的位置。
+
+## 行为脚本 \{#behavior\}
+
+`panel` 接收根元素，即带有 `panel` 类的元素，并返回用于解除绑定的函数。它的 `value` 表示面板的位置、大小以及是否折叠：`{ x, y, width, height, minimized }`，四个数值以像素计，使用样式表默认值的项为 `null`。请保存这个值，并在页面加载时设置回去。
+
+```js name=app.js
+import { panel } from '@master/ui/behaviors/panel.js'
+
+const root = document.querySelector('#layers')
+const layers = panel(root)
+
+const saved = localStorage.getItem('layers-panel')
+if (saved) layers.value = JSON.parse(saved)
+
+root.addEventListener('change', (event) => {
+  if (event.target === root) localStorage.setItem('layers-panel', JSON.stringify(layers.value))
+})
+```
+
+- **移动。** 拖动手柄会写入 `--panel-x` 和 `--panel-y`；拿起面板时按住的那一点会保持在指针下方。在手柄上按方向键会移动 16px，按住 <kbd class="kbd">Shift</kbd> 时移动四倍距离。
+- **调整大小。** 拖动角落会写入 `--panel-width` 和 `--panel-height`；在手柄上按住 <kbd class="kbd">Alt</kbd> 再按方向键也能做到，每次一个步长。在从右到左的书写方向中，角落位于左下方，因此面板向左变宽，<kbd class="kbd">Alt</kbd>+<kbd class="kbd">ArrowLeft</kbd> 会让它变宽。
+- **折叠。** 点击最小化按钮会切换其 `aria-pressed`。
+- **关闭。** 焦点在面板内时按 <kbd class="kbd">Escape</kbd> 会关闭面板，除非该按键已被内部的控件处理，例如先关闭的菜单。关闭按钮无需脚本：它是 `command="hide-popover"`。
+- **焦点。** 从控件打开的面板会把焦点移到其手柄上，在焦点位于面板内时关闭面板，焦点会还给该控件。页面加载时打开的面板不会移动焦点。
+- **事件。** 面板移动或调整大小时，根元素派发 `input`；拖动结束、通过按键移动或折叠后派发 `change`。两者都会冒泡，因此主体中输入框派发的同名事件也会到达根元素：请将 `event.target` 与根元素进行比较。
+
+| 选项 | 设置的内容 |
+| --- | --- |
+| `step` | 按一次方向键移动或调整面板大小的距离，以像素计。默认为 16 |
+
+未加载行为脚本时，面板仍然可以从按钮在页面上方打开，位于顶层，也可以用关闭按钮关闭；它会停留在自定义属性指定的位置。
+
+## 从按钮打开 \{#opened-from-a-button\}
+
+带有 `commandfor` 和 `command="toggle-popover"` 的按钮可以打开和关闭面板；`popovertarget` 的效果相同。面板在 Tab 键顺序中紧跟在其按钮之后，打开时焦点移到它的手柄上，因此可以立即用方向键移动它。用按钮、关闭按钮或 <kbd class="kbd">Escape</kbd> 关闭面板后，焦点会回到按钮上。
+
+<ComponentPreview name="opened" height={360} title="从按钮打开" background="plain" behaviors html={`<button type="button" class="btn" commandfor="inspector" command="toggle-popover">Inspect</button>
+
+<div id="inspector" popover="manual" role="dialog" class="panel" aria-labelledby="inspector-title" style="--panel-x: 24px; --panel-y: 24px; --panel-width: 264px">
+  <div class="panel-header">
+    <button type="button" class="panel-handle" aria-label="Move the Inspector panel with the arrow keys"></button>
+    <h2 class="panel-title" id="inspector-title">Inspector</h2>
+    <div class="panel-actions">
+      <button type="button" class="btn btn-quiet btn-sm btn-square panel-minimize" aria-pressed="false" aria-label="Minimize">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><path d="M6 12h12"/></svg>
+      </button>
+      <button type="button" class="btn btn-quiet btn-sm btn-square" commandfor="inspector" command="hide-popover" aria-label="Close">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="panel-body">
+    <dl class="data-list">
+      <div class="data-list-item"><dt class="data-list-term">Element</dt><dd class="data-list-value">Hero image</dd></div>
+      <div class="data-list-item"><dt class="data-list-term">Size</dt><dd class="data-list-value">1280 × 720</dd></div>
+      <div class="data-list-item"><dt class="data-list-term">Format</dt><dd class="data-list-value">AVIF</dd></div>
+    </dl>
+  </div>
+  <span class="panel-resize" aria-hidden="true"></span>
+</div>`} caption="打开面板：焦点会移到它的标题栏。按 Escape 关闭后，焦点回到按钮。" />
+
+## 键盘操作 \{#keyboard\}
+
+<ContractTable name="panel" show="keyboard" />
+
+## 无障碍 \{#accessibility\}
+
+- 面板是 `role="dialog"`，通过 `aria-labelledby` 以其标题命名。它不是模态的：没有 `aria-modal`，页面仍可使用，按 Tab 可以离开面板。如果必须先完成任务，请使用[对话框](/components/dialog)。
+- 手柄是真正的按钮，因此会像按钮一样被播报和访问。请用它移动的对象和移动方式为它命名：“Move the Layers panel with the arrow keys”。角落对辅助技术隐藏，因为可以在手柄上用按键调整大小。
+- 每一种拖动都有对应的按键：方向键移动，按住 Alt 再按方向键调整大小。对于使用指针但无法拖动的读者，也请提供单击即可完成的方式：在标题栏中放一个菜单，用其中的项（例如“停靠到左侧”）设置值即可。
+- 最小化按钮保持名称不变，用 `aria-pressed` 表明状态。
+- 在触摸屏上，标题栏会增高以容纳 44px 的按钮，角落是 44px 的点击目标。
+- 在强制颜色模式下，面板使用系统文字颜色绘制轮廓，手柄的焦点使用系统高亮色。
+
+## React、Svelte 和 Vue \{#frameworks\}
+
+`panel` 组件渲染标题栏及其手柄和按钮，根据 `open` 打开和关闭面板，并接收和传出值：移动过程中调用 `onValueChange`，移动结束时调用 `onValueCommit`，这正是保存值的时机。触发按钮和主体仍是页面自己的标记。使用 `npx master-ui add panel` 将组件复制到项目中。有关这些组件的实现和用法，请参阅 [React、Svelte 和 Vue](/guide/frameworks)。
+
+<FrameworkSource name="panel" />
+
+## 类名 \{#classes\}
+
+<ContractTable name="panel" />
+
+## 自定义属性 \{#custom-properties\}
+
+<ContractTable name="panel" show="properties" />
+
+## 相关内容 \{#related\}
+
+<ComponentLinks slugs={['dialog', 'popover', 'splitter', 'toolbar']} />
+
+## 源码 \{#source\}
+
+<ComponentSource name="panel" />

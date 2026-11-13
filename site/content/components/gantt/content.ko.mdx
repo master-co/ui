@@ -6,8 +6,9 @@ description: "일정 기간 이어지는 항목을 하나의 시간 눈금 위�
 import ComponentPreview from '~/site/components/ComponentPreview.astro'
 import ComponentSource from '~/site/components/ComponentSource.astro'
 import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
-간트 차트는 프로젝트 단계, 당직 교대 근무, 정기 릴리스 일정처럼 일정 기간 이어지는 항목을 하나의 시간 눈금 위에 막대로 표시합니다. 마크업은 목록으로 구성합니다. 각 행에는 막대의 시작과 끝, 항목 이름, 막대가 나타내는 내용을 담은 텍스트가 들어갑니다. 스타일시트가 한 열에는 이름을, 다른 열에는 막대를 배치하고 각 눈금 단위마다 가는 선을 그립니다. 스크립트나 SVG는 사용하지 않습니다.
+간트 차트는 프로젝트 단계, 당직 교대 근무, 정기 릴리스 일정처럼 일정 기간 이어지는 항목을 하나의 시간 눈금 위에 막대로 표시합니다. 마크업은 목록으로 구성합니다. 각 행에는 막대의 시작과 끝, 항목 이름, 막대가 나타내는 내용을 담은 텍스트가 들어갑니다. 스타일시트가 한 열에는 이름을, 다른 열에는 막대를 배치하고 각 눈금 단위마다 가는 선을 그립니다. 차트를 표시하는 데는 스크립트나 SVG가 필요하지 않습니다. 사용자가 일정을 계획하는 화면에서는 `gantt` [동작](/guide/behaviors)으로 [막대를 옮기고 크기를 조절](#moving-the-bars)할 수 있습니다.
 
 <ComponentPreview name="default" height={248} narrowHeight={320} title="간트 차트" bodyClass="p-lg" html={`<div class="card max-w(560) mx-auto">
   <ol class="gantt gantt-now" style="--gantt-from: 0; --gantt-to: 8; --gantt-now: 4.4" aria-label="Launch plan, in weeks">
@@ -58,6 +59,122 @@ import ContractTable from '~/site/components/ContractTable.astro'
 
 간트 차트는 크기 컨테이너입니다. 차트 자체의 너비가 26rem 미만이면 각 이름이 막대 위로 이동해 막대 영역이 전체 너비를 확보합니다. 휴대전화에서는 눈금 범위를 짧게 유지하세요. 8단위는 읽을 수 있지만 30단위는 읽을 수 없습니다.
 
+## 막대 옮기기 \{#moving-the-bars\}
+
+막대에 `role="slider"`를 지정하고 `gantt` 동작을 연결하면 사용자가 막대를 옮길 수 있습니다. 막대 본체를 드래그하면 눈금을 따라 이동하고, 한쪽 끝을 드래그하면 시작이나 종료 시점이 바뀝니다. 막대는 눈금의 정수 단위(이 예시에서는 일)에 맞춰 스냅되며, 잡고 있는 동안 막대의 텍스트는 놓았을 때 적용될 기간을 표시합니다. <kbd class="kbd">Escape</kbd> 키를 누르면 원래 위치로 돌아갑니다. 포인터로 할 수 있는 조작은 모두 키보드로도 할 수 있습니다.
+
+<ComponentPreview name="moving" height={344} narrowHeight={436} title="막대 옮기기" bodyClass="p-lg" behaviors html={`<div class="card max-w(640) mx-auto">
+  <ol class="gantt gantt-now" id="sprint" style="--gantt-from: 0; --gantt-to: 12; --gantt-now: 4.5" aria-label="Sprint plan, November 2 to 13">
+    <li class="gantt-row gantt-scale" aria-hidden="true">
+      <ol class="gantt-ticks"><li>2</li><li>3</li><li>4</li><li>5</li><li>6</li><li>7</li><li>8</li><li>9</li><li>10</li><li>11</li><li>12</li><li>13</li></ol>
+    </li>
+    <li class="gantt-row" data-value="research" style="--from: 0; --to: 3; --progress: 100"><span class="gantt-label">Research</span><span class="gantt-bar" role="slider">Nov 2 – 4 · 3 days</span></li>
+    <li class="gantt-row" data-value="design" aria-current="true" style="--from: 2; --to: 6"><span class="gantt-label">Design</span><span class="gantt-bar" role="slider">Nov 4 – 7 · 4 days</span></li>
+    <li class="gantt-row" data-value="build" style="--from: 5; --to: 10; --progress: 20"><span class="gantt-label">Build</span><span class="gantt-bar" role="slider">Nov 7 – 11 · 5 days</span></li>
+    <li class="gantt-row" data-value="review" style="--from: 9; --to: 11"><span class="gantt-label">Review</span><span class="gantt-bar" role="slider">Nov 11 – 12 · 2 days</span></li>
+    <li class="gantt-row" data-value="launch" style="--from: 11"><span class="gantt-label">Launch</span><span class="gantt-bar gantt-milestone" role="slider">Nov 13</span></li>
+  </ol>
+  <p class="gantt-status" role="status"></p>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  var day = new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric' })
+  var date = function (offset) { return new Date(2026, 10, 2 + offset) }
+  MasterUI.gantt(document.getElementById('sprint'), {
+    format: function (start, end) {
+      if (start === end) return day.format(date(start))
+      var length = end - start
+      return day.formatRange(date(start), date(end - 1)) + ' · ' + length + (length === 1 ? ' day' : ' days')
+    }
+  })
+})
+</script>`} caption="막대나 막대의 한쪽 끝을 드래그해 보세요. 또는 Tab 키로 차트로 이동한 뒤 ArrowUp과 ArrowDown 키로 막대를 고르고, ArrowLeft와 ArrowRight 키로 옮기세요. Shift 키와 함께 누르면 끝이, Alt(Option) 키와 함께 누르면 시작이 움직입니다." />
+
+움직이는 막대는 스타일시트가 다음과 같이 그립니다.
+
+- **기본 상태**에서는 다른 막대와 같은 모양이며, 커서는 잡기 모양입니다. 포인터를 올리거나 포커스가 있으면 양 끝에 짧은 세로 손잡이가 나타나고, 그 위에서 커서가 크기 조절 화살표로 바뀝니다. 호버가 없는 터치 화면에서는 손잡이가 항상 표시되며 막대의 높이는 44px입니다.
+- **포커스가 있으면** 포커스 윤곽선이 표시되며, 주변 행 위에 그려집니다.
+- **잡고 있는 동안**에는 `aria-busy="true"`가 지정됩니다. 막대는 더 진한 색조 위에 들어 올린 그림자를 드리우며 떠오르고, 이징 없이 포인터를 따라가며, 포인터가 어디로 가든 커서는 쥔 손 모양을 유지합니다. 끝을 잡고 있는 동안(`gantt-resize-start`, `gantt-resize-end`)에는 크기 조절 화살표를 유지합니다. 키 입력이나 외부에서 설정한 값으로 이동할 때는 막대가 제자리로 부드럽게 이동하며, 동작 줄이기가 활성화되어 있으면 바로 이동합니다.
+- **읽기 전용**(`aria-readonly="true"`)인 막대는 포커스를 받고 읽히지만 움직이지 않습니다. **비활성화**(`aria-disabled="true"`)된 막대는 움직이지 않고, 키 조작에서 건너뛰며, 텍스트는 비활성 상태의 잉크 색으로 표시됩니다.
+
+마일스톤은 한 지점으로 움직이며, 크기를 조절할 끝이 없습니다.
+
+## 동작 \{#behavior\}
+
+`gantt`는 `gantt` 클래스가 있는 루트 요소를 받아, 연결한 동작을 해제하는 함수를 반환합니다. `role="slider"`가 지정된 막대만 움직이며, 나머지는 그림으로 남습니다. 동작은 각 막대에 슬라이더에 필요하지만 페이지가 지정하지 않은 속성을 기록합니다. 이름은 행의 `gantt-label`에서, 가장 이른 시작과 가장 늦은 끝을 나타내는 `aria-valuemin`과 `aria-valuemax`는 눈금에서 가져옵니다. `aria-valuenow`에는 시작 값을, `aria-valuetext`에는 `format`이 기간을 표현한 텍스트를 기록합니다. 막대를 더 좁은 구간 안에 두려면 막대에 `aria-valuemin`과 `aria-valuemax`를 직접 지정하세요.
+
+```js name=app.js
+import { gantt } from '@master/ui/behaviors/gantt.js'
+
+const plan = gantt(document.querySelector('.gantt'), {
+  // What a bar says for a range, as its text and to assistive technology.
+  format: (start, end) => `Days ${start + 1} to ${end}`,
+})
+
+plan.value // { research: [0, 3], design: [2, 6], … }
+plan.value = { design: [3, 7] }
+```
+
+- **값**은 각 막대의 기간으로, 눈금 단위의 `[start, end]`이며 행의 `data-value` 또는 레이블 텍스트를 키로 사용합니다. 마일스톤의 기간은 같은 지점에서 시작하고 끝납니다. 외부에서 막대를 옮기려면 이 값을 설정하세요. 이때 이벤트는 발행하지 않습니다.
+- **이벤트.** 루트는 드래그하는 동안을 포함해 막대의 기간이 바뀔 때마다 `input`을 발생시키고, 놓거나 키 입력으로 기간이 바뀌면 `change`를 한 번 발생시킵니다.
+- **포인터.** 4px 넘게 움직인 누르기는 드래그이며, 그보다 적게 움직이면 막대에 포커스만 둡니다. 스타일시트가 양 끝에 그리는 손잡이 너비 안을 누르면 해당 끝이 움직이고, 그 밖의 위치를 누르면 막대 전체가 움직입니다. 눈금 한 단위의 크기는 막대가 그려진 너비에서 읽으므로, 어떤 레이아웃에서든 드래그는 `step` 단위(기본값 1)로 스냅됩니다. 손가락을 페이지 아래로 움직이면 여전히 페이지가 스크롤됩니다(`touch-action: pan-y`).
+- **제한.** 막대는 `aria-valuemin`과 `aria-valuemax` 사이에 머무르며, 한 단계보다 짧아지지 않으며, 이미 그보다 짧다면 현재 길이보다 짧아지지 않습니다.
+- **안내하는 내용.** 막대는 놓거나 키 입력으로 기간이 적용되면 슬라이더가 값을 알리듯 `aria-valuetext`로 새 기간을 알립니다. 변경이 거부되었거나 드래그가 취소된 것처럼 값으로 전할 수 없는 내용은 루트 바로 뒤에 있는 `role="status"` 영역인 `gantt-status`에서 알립니다. 페이지의 언어로 안내하려면 `messages`를 전달하세요.
+- **오른쪽에서 왼쪽으로 쓰는 페이지**에서는 눈금도 오른쪽에서 왼쪽으로 진행하며, 포인터와 방향키도 같은 방향을 따릅니다. <kbd class="kbd">ArrowLeft</kbd> 키가 더 늦은 시점입니다.
+
+동작이 없어도 차트는 항목과 날짜를 읽을 수 있는 목록으로 남습니다.
+
+## 페이지의 규칙 \{#rules\}
+
+의존 관계, 리소스, 근무일은 페이지가 판단합니다. 막대가 기간을 적용하기 전에 동작은 취소할 수 있는 `beforechange` 이벤트를 발행하며, 이벤트에는 막대의 `id`, 적용할 `range`, 이전 기간인 `previous`가 들어 있습니다. 변경을 거부하려면 `preventDefault()`를 호출하세요. 키 입력은 아무 효과가 없고, 놓은 막대는 드래그를 시작한 위치로 돌아가며, 상태 영역이 막대가 그대로 있다고 알립니다. 이 예시에서 Build는 Design이 끝나기 전에 시작할 수 없으며, Freeze는 릴리스 팀이 관리하므로 읽기 전용입니다.
+
+<ComponentPreview name="rules" height={268} narrowHeight={332} title="페이지의 규칙" bodyClass="p-lg" behaviors html={`<div class="card max-w(560) mx-auto">
+  <ol class="gantt" id="release" style="--gantt-from: 0; --gantt-to: 12" aria-label="Release plan, November 2 to 13">
+    <li class="gantt-row" data-value="design" style="--from: 0; --to: 4"><span class="gantt-label">Design</span><span class="gantt-bar" role="slider">Nov 2 – 5 · 4 days</span></li>
+    <li class="gantt-row" data-value="build" style="--from: 4; --to: 9"><span class="gantt-label">Build</span><span class="gantt-bar" role="slider">Nov 6 – 10 · 5 days</span></li>
+    <li class="gantt-row" data-value="freeze" style="--from: 9; --to: 11"><span class="gantt-label">Freeze</span><span class="gantt-bar" role="slider" aria-readonly="true">Nov 11 – 12 · 2 days</span></li>
+  </ol>
+  <p class="gantt-status" role="status"></p>
+  <p class="mb(0) mt-sm text-sm fg-text-muted" id="release-note">Build starts once Design is done.</p>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  var day = new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric' })
+  var date = function (offset) { return new Date(2026, 10, 2 + offset) }
+  var root = document.getElementById('release')
+  var note = document.getElementById('release-note')
+  var plan = MasterUI.gantt(root, {
+    format: function (start, end) {
+      var length = end - start
+      return day.formatRange(date(start), date(end - 1)) + ' · ' + length + (length === 1 ? ' day' : ' days')
+    }
+  })
+  root.addEventListener('beforechange', function (event) {
+    var ranges = plan.value
+    ranges[event.detail.id] = event.detail.range
+    if (ranges.build[0] < ranges.design[1]) {
+      event.preventDefault()
+      note.textContent = 'Build starts once Design is done, on ' + day.format(date(ranges.design[1])) + ' at the earliest.'
+    } else note.textContent = 'Build starts once Design is done.'
+  })
+})
+</script>`} caption="Build를 Design이 끝나기 전으로, 또는 Design을 Build 시작 이후로 드래그해 보세요. 막대가 원래 위치로 돌아갑니다." />
+
+```js name=app.js
+root.addEventListener('beforechange', (event) => {
+  const ranges = { ...plan.value, [event.detail.id]: event.detail.range }
+  if (ranges.build[0] < ranges.design[1]) event.preventDefault()
+})
+```
+
+이벤트는 버블링되므로 루트에 리스너 하나만 등록하면 모든 막대의 변경을 받을 수 있습니다. 이 이벤트는 키 입력으로 막대를 옮기려 할 때와 드래그한 막대를 놓을 때 발생하며, 드래그의 각 단계마다 발생하지는 않습니다. 따라서 사용자는 머무를 수 없는 위치를 지나 막대를 옮길 수 있습니다.
+
+## 키보드 \{#keyboard\}
+
+<ContractTable name="gantt" show="keyboard" />
+
+차트는 [도구 모음](/components/toolbar)이나 [트리](/components/tree)처럼 탭 순서에서 한 지점만 차지하므로, 긴 일정표도 탭 정지 지점이 수십 개로 늘어나지 않습니다. 행이 위아래로 쌓여 있으므로 <kbd class="kbd">ArrowUp</kbd>과 <kbd class="kbd">ArrowDown</kbd> 키로 막대 사이를 이동하고, 시간이 가로로 흐르므로 <kbd class="kbd">ArrowLeft</kbd>와 <kbd class="kbd">ArrowRight</kbd> 키로 막대를 옮깁니다. 방향키는 그림의 방향을 따릅니다. 한 행에서 조작할 대상은 막대 하나뿐이므로 차트는 그리드가 아닌 목록으로 둡니다. 그리드로 만들면 막대의 방향키 조작이 별도 모드로 전환한 뒤에야 가능해집니다.
+
 ## 간트 차트, 타임라인, 차트 \{#gantt-timeline-or-chart\}
 
 간트 차트는 시작과 끝이 있는 항목을 표시합니다. 개별 사건을 발생 순서대로 보여 줄 때는 [타임라인](/components/timeline)을 사용합니다. 시간상의 위치와 관계없이 수량을 비교할 때는 [차트](/components/chart)를 사용합니다.
@@ -67,6 +184,16 @@ import ContractTable from '~/site/components/ContractTable.astro'
 - `<ol>` 요소로 작성하고 `aria-label`이나 제목으로 이름을 지정하세요. 각 행은 목록 항목 하나이며, "디자인, 3~6주 차"처럼 이름과 막대 텍스트가 순서대로 읽힙니다.
 - 막대, 가는 눈금선, 현재 시점을 나타내는 선은 스타일시트가 그립니다. 이런 요소가 전달하는 정보는 텍스트에도 적으세요. 막대가 나타내는 날짜를 적고, 필요한 경우 해당 행이 현재 행임을 명시하세요.
 - 현재 행은 색상에 의존하지 않고 구분합니다. 기본 표시에서는 옅은 색조의 막대 사이에서 전경색으로 채운 막대로 구분하고, 강제 색상 모드에서는 윤곽선만 있는 막대 사이에서 채워진 막대로 구분합니다.
+- 움직이는 막대는 행의 이름으로 레이블이 지정된 슬라이더이며, 값은 페이지의 표현으로 나타낸 기간입니다. 예: "Design, slider, Nov 4 – 7 · 4 days". `format`에는 막대 텍스트와 같은 표현을 지정해 두 내용이 일치하게 하세요.
+- `gantt-status` 영역은 처음부터 빈 상태로 페이지에 두세요. 안내하는 순간에 추가한 영역은 읽히지 않는 경우가 많습니다. 이 영역은 슬라이더의 값으로 전할 수 없는 내용만 안내하므로 같은 내용을 두 번 읽지 않습니다.
+- 포인터로 할 수 있는 조작은 모두 키보드로 할 수 있습니다. 포인터를 사용하지만 드래그할 수 없는 사용자를 위해, 행에서 여는 [대화 상자](/components/dialog)의 입력 필드처럼 드래그 없이 날짜를 설정하는 방법도 제공하세요.
+- 위의 캡션처럼 키로 막대를 옮기는 방법을 차트 가까이에 적으세요. Shift와 Alt 키로 끝을 옮기는 슬라이더는 사용자가 짐작할 수 없습니다.
+
+## React, Svelte, Vue \{#frameworks\}
+
+`gantt` 컴포넌트는 데이터로 행을 작성합니다. 각 행에는 `id`, `label`, `start`, `end`가 있으며, `end`가 없는 행은 마일스톤입니다. 각 막대의 위치와 텍스트는 `{ [id]: [start, end] }` 형식의 값으로 작성합니다. 눈금은 `from`과 `to`로, 현재 시점은 `now`로, 눈금 단위의 이름은 `ticks`로 받습니다. 막대가 움직이는 동안 `onValueChange`를, 막대를 놓으면 `onValueCommit`을 호출하며, 막대가 기간을 적용하기 전에 `onBeforeChange`(Vue에서는 `beforeChange` 이벤트 발행)로 확인을 요청합니다. `npx master-ui add gantt`로 프로젝트에 복사하세요. 컴포넌트의 구성과 사용법은 [React, Svelte, Vue](/guide/frameworks)에서 확인할 수 있습니다.
+
+<FrameworkSource name="gantt" />
 
 ## 클래스 \{#classes\}
 

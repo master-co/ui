@@ -41,13 +41,20 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
 ## 行为脚本 \{#behavior\}
 
-`combobox` 接收带有 `combobox` 类的根元素，并返回一个用于解除绑定的函数。它通过 `role="combobox"` 查找输入框，通过 `role="listbox"` 查找列表。如果由页面自行写入匹配的选项，请传入 `filter: false`。
+`combobox` 接收带有 `combobox` 类的根元素和一个选项对象，并返回一个用于解除绑定的函数。它通过 `role="combobox"` 查找输入框，通过 `role="listbox"` 查找列表。`filter` 选项默认为 true；`filter: false` 将选项交由页面处理，如[自动补全](#autocomplete)所示。`name`、`removeLabel` 和 `draw` 用于[多个值](#several-values)。
 
 ```js name=app.js
 import { combobox } from '@master/ui/behaviors/combobox.js'
 
-const detach = combobox(document.querySelector('.combobox'))
+const box = combobox(document.querySelector('.combobox'))
+box.value // what the chosen option stands for, or null
+box.query // the text in the field
 ```
+
+返回的函数有两个属性，可从外部读取和设置。设置其中任何一个都不会派发事件。
+
+- **`value`** 是所选选项代表的值，即其 `data-value` 或文本；输入框中的文字没有对应的已选选项时为 null。设置它会勾选对应的选项，并将其文本写入输入框。
+- **`query`** 是输入框中的文字，即读者要查找的内容。它不是值：每次按键都会变化，选定某个选项后则变为该选项的文本。设置它会写入输入框，并像输入文字时一样筛选选项。
 
 - **输入文字**时，脚本会给文本中不含输入内容的选项设置 `hidden`，匹配时忽略大小写。随后打开列表，并将第一个匹配项设为活动选项。
 - **活动选项**带有 `aria-selected="true"`，输入框通过 `aria-activedescendant` 指向该选项。焦点保留在输入框中。
@@ -89,6 +96,72 @@ const detach = combobox(document.querySelector('.combobox'))
 
 如果值由读者自由输入，而不是从列表中选择，请使用[标签输入](/components/tags)。
 
+## 自动补全 \{#autocomplete\}
+
+匹配项来自服务器或页面自己的搜索时，用 `filter: false` 绑定行为脚本。脚本不会隐藏任何选项：在输入框的每次 `input` 事件中读取 `query`，查找匹配项，并将结果写为列表的选项。即使选项在触发查找的输入之后才到达，仍会设置活动选项，因此 <kbd>Enter</kbd> 和方向键对它们同样有效。
+
+<ComponentPreview name="autocomplete" height={360} title="自动补全" background="plain" bodyClass="content-start p-lg min-h(360)" behaviors html={`<div class="field max-w(320) mx-auto">
+  <label for="city">City</label>
+  <div class="combobox" id="city-combobox">
+    <div class="input-group">
+      <input class="input-group-field" id="city" role="combobox" aria-expanded="false" aria-controls="city-list" aria-autocomplete="list" autocomplete="off" placeholder="Start typing a city">
+      <button type="button" class="combobox-toggle" tabindex="-1" aria-label="Show cities"></button>
+    </div>
+    <div id="city-list" popover="manual" class="listbox" role="listbox" aria-label="Cities">
+      <div class="listbox-empty">No cities start with that.</div>
+    </div>
+  </div>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  var root = document.getElementById('city-combobox')
+  var list = document.getElementById('city-list')
+  var cities = ['Amsterdam', 'Athens', 'Auckland', 'Bangkok', 'Barcelona', 'Berlin', 'Bogotá', 'Boston', 'Brussels', 'Buenos Aires', 'Cairo', 'Cape Town', 'Chicago', 'Copenhagen', 'Dublin', 'Frankfurt', 'Helsinki', 'Hong Kong', 'Istanbul', 'Lisbon', 'London', 'Los Angeles', 'Madrid', 'Melbourne', 'Mexico City', 'Montreal', 'Mumbai', 'Nairobi', 'New York', 'Oslo', 'Paris', 'Prague', 'Rome', 'San Francisco', 'Santiago', 'São Paulo', 'Seoul', 'Singapore', 'Stockholm', 'Sydney', 'Taipei', 'Tokyo', 'Toronto', 'Vienna', 'Warsaw', 'Zurich']
+  var box = MasterUI.combobox(root, { filter: false })
+  var asked = 0
+
+  // Stands for a request to a server: the cities that start with the query, a moment later.
+  function search(query) {
+    return new Promise(function (resolve) {
+      setTimeout(function () {
+        var text = query.trim().toLowerCase()
+        resolve(cities.filter(function (city) { return city.toLowerCase().startsWith(text) }).slice(0, 6))
+      }, 120)
+    })
+  }
+
+  function write(matches) {
+    list.querySelectorAll('.listbox-option').forEach(function (option) { option.remove() })
+    matches.forEach(function (city) {
+      var option = document.createElement('div')
+      option.className = 'listbox-option'
+      option.setAttribute('role', 'option')
+      option.setAttribute('aria-checked', 'false')
+      option.textContent = city
+      list.insertBefore(option, list.querySelector('.listbox-empty'))
+    })
+  }
+
+  root.addEventListener('input', function (event) {
+    // A choice says input too; its text is the option's, with nothing more to look for.
+    if (event.target.getAttribute('role') !== 'combobox' || box.value !== null) return
+    var ticket = ++asked
+    search(box.query).then(function (matches) {
+      // An answer to an older query that arrives late is dropped.
+      if (ticket === asked) write(matches)
+    })
+  })
+  search('').then(write)
+})
+</script>`} caption="输入几个字母：页面会查找该内容，稍后写入选项。用方向键和 Enter 选择其中一个。" />
+
+- **读取 `query`，而不是事件。** 查询内容就是输入框中的文字；无论是读者输入的还是框架写入的，`query` 都以相同方式读取。
+- **选择选项同样会派发 `input`。** 此时文字是所选选项的文本，`value` 也不再为 null：已无需查找，这时写入新选项反而会移除已选的那个。
+- **响应可能乱序到达。** 只保留对最新查询的响应。
+- **空状态由样式表处理。** 列表中没有选项时，`listbox-empty` 会自动显示。
+
+在 React、Svelte 和 Vue 中，组件的 `query` 和 `onQueryChange`（Svelte 中为可绑定的 `query`，Vue 中为 `v-model:query`）传递同样的文字：用它进行查找，再将匹配项作为 `options` 传入，并将 `filter` 设为 false。
+
 ## 选择控件 \{#choosing-a-control\}
 
 对于最多十二个纯文本选项，[下拉选择框](/components/select)无需脚本即可利用平台原生的键入查找功能。如果选项多到需要搜索、需要随输入动态加载，或选项行包含丰富内容，请使用组合框。
@@ -108,7 +181,7 @@ const detach = combobox(document.querySelector('.combobox'))
 
 ## React、Svelte 和 Vue \{#frameworks\}
 
-`combobox` 组件根据选项列表渲染这段标记，绑定行为脚本，并接收和传出选中的值。设置 `multiple` 时，组件会根据值写入胶囊标签，此时值是一个列表。使用 `npx master-ui add combobox` 将组件复制到项目中。有关这些组件的实现和用法，请参阅 [React、Svelte 和 Vue](/guide/frameworks)。
+`combobox` 组件根据选项列表渲染这段标记，绑定行为脚本，并接收和传出选中的值。设置 `multiple` 时，组件会根据值写入胶囊标签，此时值是一个列表。带有 `group` 的选项写在对应的分组标题下，位于带 `role="group"` 的 `listbox-group` 中，并以其中的 `listbox-label` 作为标签；某个分组的选项全部被筛掉时，该分组随之隐藏。除了值，组件还传递查询内容：React 中为 `query` 和 `onQueryChange`，Svelte 中为可绑定的 `query` 和 `onQueryChange`，Vue 中为 `v-model:query`。读者输入时以及做出选择后（在值之后）都会传出查询内容；由所有者传入的查询内容会写入输入框并筛选选项。使用 `npx master-ui add combobox` 将组件复制到项目中。有关这些组件的实现和用法，请参阅 [React、Svelte 和 Vue](/guide/frameworks)。
 
 <FrameworkSource name="combobox" />
 

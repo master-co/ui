@@ -1,0 +1,180 @@
+---
+title: "签名板"
+description: "可以用手指、触控笔或鼠标签名的凹槽，也可以改为输入姓名。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+签名板是一个可以用手指、触控笔或鼠标签名的凹槽，并附带一个可改为输入姓名的输入框。签名区域与[输入框](/components/input)是同样的凹槽，上面有一条用于签名的细线，姓名起始处有一个细小的十字。每一笔都以填充轮廓的形式写入内联 `<svg>`，宽度随笔压而变，绘制结果以 SVG 文档的形式进入表单。整个组是原生 `<fieldset>`：其 legend 说明签署的内容，在它上面设置 `disabled` 会停用签名区域并禁用其中的所有控件。
+
+<ComponentPreview name="default" height={344} title="签名板" background="plain" bodyClass="p-lg" behaviors html={`<fieldset class="signature max-w(440) mx-auto">
+  <legend class="signature-label">Sign the lease</legend>
+  <div class="signature-pad">
+    <svg class="signature-ink" viewBox="0 0 400 160" role="img" aria-label="Your drawn signature"></svg>
+    <span class="signature-line" aria-hidden="true"></span>
+    <span class="signature-placeholder" aria-hidden="true">Sign here</span>
+    <div class="signature-actions">
+      <button type="button" class="btn btn-sm btn-quiet signature-undo">Undo</button>
+      <button type="button" class="btn btn-sm btn-quiet signature-clear">Clear</button>
+    </div>
+  </div>
+  <label class="field">Or type your full name
+    <input class="input signature-name" name="signer" autocomplete="name" placeholder="Ada Lovelace">
+  </label>
+  <input type="hidden" class="signature-value" name="signature">
+  <span class="signature-status" role="status"></span>
+</fieldset>`} caption="用手指、触控笔或鼠标签名。Undo 撤销最后一笔，Clear 清除全部笔画；也可以输入姓名，姓名会以手写体显示。" />
+
+## 行为脚本 \{#behavior\}
+
+签名区域需要脚本才能绘制。`signature` [行为脚本](/guide/behaviors)接收根元素，即带有 `signature` 类的元素，并返回用于解除绑定的函数。
+
+```js name=app.js
+import { signature } from '@master/ui/behaviors/signature.js'
+
+const pad = signature(document.querySelector('.signature'))
+
+pad.value // [[[x, y, pressure], …], …], one list of points a stroke
+pad.svg   // '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 160" …>…</svg>', or '' when nothing is drawn
+```
+
+- **笔画。** 一笔就是指针经过的各个点，以绘图 `viewBox` 的单位表示，每个点带有 0 到 1 的压力值。触控笔会提供自己的压力值；手指和鼠标不提供，因此笔画在移动较慢的地方绘制得更粗，就像笔停留处墨水会积聚一样。每一笔都成为一条 `signature-stroke` 路径：在均匀压力下宽度为 `--signature-weight` 的填充轮廓，用经过各点的曲线平滑处理，端点为圆头。在浏览器合并指针移动事件的情况下，被合并的事件也会被读取，因此手速很快时曲线依然保留。
+- **值。** `value` 是所有笔画，设置它会绘制这些笔画，且不派发任何事件。`svg` 是绘制结果的 SVG 文档，`signature-value` 字段保存同一份文档，因此表单会提交它。路径使用 `currentColor`，在图片中为黑色。
+- **事件。** 绘制笔画时字段派发 `input`，笔画结束时派发 `change`；Undo 或 Clear 撤销笔画时两者都会派发。
+- **Undo 和 Clear。** Undo 撤销最后一笔，Clear 清除全部笔画。在有笔画之前，这两个按钮隐藏不显示；没有可撤销的内容时，脚本将它们标记为 `aria-disabled`，因此刚刚清空签名区域的那个按钮会保留焦点，并表明这一状态。
+- **状态。** 第一笔结束时，`signature-status` 播报“Signature drawn”；签名区域被清空时播报“Signature cleared”；Undo 之后播报“Last stroke removed”。
+
+| 选项 | 设置的内容 |
+| --- | --- |
+| `drawn` | 第一笔结束时状态区域播报的内容。默认为“Signature drawn” |
+| `cleared` | 签名区域被清空时播报的内容。默认为“Signature cleared” |
+| `undone` | Undo 撤销一笔时播报的内容。默认为“Last stroke removed” |
+
+行为脚本还导出 `signaturePath(stroke, weight)` 和 `signatureSvg(strokes, { viewBox, weight })`，它们无需页面即可把笔画转换为路径和文档：服务器可以用它们把已保存的签名绘制到初始 HTML 中。
+
+## 输入姓名 \{#a-typed-name\}
+
+绘图无法用键盘完成。使用键盘、开关设备或屏幕阅读器签名的人，或者手无法稳定画出笔画的人，可以通过输入姓名来签名，因此输入姓名是这一模式的组成部分，而不是附加功能。它是带有 `signature-name` 类的原生[输入框](/components/input)，以 `--signature-font` 中的手写字体显示，这是一组系统自带的字体（Apple 系统上的“Snell Roundhand”，Windows 上的“Segoe Script”），最后回退到 `cursive`。其占位文字保持界面字体。
+
+没有脚本时，签名区域无法绘制，输入的姓名就是完整的签名：表单像提交任何字段一样，以它自己的 `name` 提交它。
+
+## 在表单中 \{#in-a-form\}
+
+签名为必填时，请把输入姓名的输入框标记为 `required`。绘制的签名同样满足这一要求：只要有笔画，行为脚本就会移除输入框上的 `required`，签名区域被清空时再恢复。读者既未绘制也未输入就提交时，会在输入框上看到浏览器自己的提示信息；尝试提交过一次之后，`:user-invalid` 会在输入框和签名区域上绘制危险轮廓，字段中的 `field-error` 也会显示出来。
+
+<ComponentPreview name="form" height={416} title="在表单中" background="plain" bodyClass="p-lg" behaviors html={`<form class="grid gap-md max-w(440) mx-auto" id="lease-form">
+  <fieldset class="signature">
+    <legend class="signature-label">Sign the lease</legend>
+    <div class="signature-pad">
+      <svg class="signature-ink" viewBox="0 0 400 160" role="img" aria-label="Your drawn signature"></svg>
+      <span class="signature-line" aria-hidden="true"></span>
+      <span class="signature-placeholder" aria-hidden="true">Sign here</span>
+      <div class="signature-actions">
+        <button type="button" class="btn btn-sm btn-quiet signature-undo">Undo</button>
+        <button type="button" class="btn btn-sm btn-quiet signature-clear">Clear</button>
+      </div>
+    </div>
+    <label class="field">Or type your full name
+      <input class="input signature-name" name="signer" autocomplete="name" required aria-describedby="lease-error">
+      <span class="field-error" id="lease-error">Sign in the box, or type your name.</span>
+    </label>
+    <input type="hidden" class="signature-value" name="signature">
+    <span class="signature-status" role="status"></span>
+  </fieldset>
+  <div class="flex items-center gap-sm">
+    <button class="btn btn-primary">Sign the lease</button>
+    <output class="text-sm fg-text-muted" id="lease-output"></output>
+  </div>
+</form>
+<script>
+  document.getElementById('lease-form').addEventListener('submit', function (event) {
+    event.preventDefault()
+    var data = new FormData(event.target)
+    var drawn = data.get('signature')
+    document.getElementById('lease-output').textContent = drawn ? 'Signed with a drawing of ' + drawn.length + ' characters of SVG' : 'Signed as ' + data.get('signer')
+  })
+</script>`} caption="不绘制也不输入，直接按 Sign the lease：浏览器会要求签名，签名区域变为危险状态。绘制签名后即满足要求。" />
+
+应用拒绝某个签名时，请把输入框标记为 `aria-invalid="true"`，并在其 `field-error` 中说明原因：签名区域会随之显示危险轮廓，因为两者是同一个签名。
+
+## 只读和禁用 \{#read-only-and-disabled\}
+
+根元素上的 `signature-readonly` 按原样显示已提供的签名：无法在上面绘制，Undo 和 Clear 也会隐藏。请同样给输入姓名的输入框加上 `readonly`，或者将其省略。`<fieldset>` 上的 `disabled` 会停用签名区域，把笔迹和文字变为禁用颜色，并像 fieldset 一贯的做法那样禁用其中的所有控件。
+
+<ComponentPreview name="read-only" height={264} title="只读" background="plain" bodyClass="p-lg" html={`<fieldset class="signature signature-readonly max-w(440) mx-auto">
+  <legend class="signature-label">Signed by the tenant on 12 November</legend>
+  <div class="signature-pad">
+    <svg class="signature-ink" viewBox="0 0 400 160" role="img" aria-label="The tenant's signature">
+      <path class="signature-stroke" d="M62.9 73.4Q61.4 76.1 61.4 78.9Q61.3 81.6 62.5 85.7Q63.6 89.7 66.3 94.2Q68.9 98.7 73 102.7Q77.1 106.7 82.4 109.3Q87.7 112 93.6 112.7Q99.6 113.3 105.4 111.8Q111.3 110.3 116.4 107Q121.5 103.6 125.3 99Q129.1 94.5 131.5 89.6Q133.8 84.8 134.7 80.6Q135.7 76.4 135.5 73.6Q135.3 70.9 133.7 70.1Q132.2 69.3 131.5 71.3Q130.8 73.3 131 76.9Q131.2 80.5 132.6 85.4Q134 90.2 136.8 95.4Q139.6 100.5 143.9 105.1Q148.1 109.6 153.4 112.7Q158.7 115.8 164.5 116.9Q170.3 118 176 116.9Q181.8 115.8 186.7 112.9Q191.6 109.9 195.3 105.8Q199 101.7 201.3 97.3Q203.5 92.9 204.3 89.1Q205.2 85.3 204.9 82.8Q204.6 80.3 202.6 80Q200.5 79.6 199.8 81.9Q199.2 84.2 199.5 88Q199.8 91.8 201.5 96.5Q203.1 101.2 206.2 106Q209.4 110.8 213.9 114.6Q218.4 118.5 224 120.7Q229.5 122.9 235.5 122.9Q241.4 122.8 247 120.6Q252.6 118.4 257.3 114.3Q262 110.3 265.4 105.3Q268.8 100.2 270.7 95.1Q272.6 90 273.1 85.7Q273.7 81.4 273.3 78.6Q272.9 75.9 271.5 75.2Q270.1 74.5 269.5 76.4Q269 78.2 269.5 81.6Q269.9 84.9 271.3 89.1L272.6 93.3A1 1 0 0 0 274.6 92.7Q271.8 84.4 271.3 81.3Q270.8 78.2 271 77Q271.3 75.8 271.3 76.1Q271.3 76.5 271.6 78.9Q272 81.3 271.4 85.4Q270.8 89.5 268.9 94.4Q267 99.3 263.8 104.1Q260.5 108.9 256 112.6Q251.5 116.3 246.2 118.3Q240.9 120.3 235.5 120.2Q230.1 120.1 225 118.1Q220 116 215.8 112.4Q211.7 108.7 208.9 104.3Q206 99.8 204.5 95.4Q203.1 91.1 202.8 87.7Q202.5 84.4 202.8 82.9Q203.1 81.5 202.4 81.5Q201.7 81.5 202 83.3Q202.2 85.1 201.5 88.5Q200.8 91.9 198.9 96.1Q196.9 100.2 193.5 104.2Q190.1 108.1 185.5 111Q181 113.8 175.7 114.9Q170.3 116 164.8 115Q159.3 114.1 154.2 111.2Q149.2 108.3 145.1 103.9Q141 99.6 138.3 94.6Q135.5 89.5 134.2 84.9Q132.9 80.2 132.8 76.8Q132.7 73.4 133.1 72.1Q133.6 70.8 133.3 71.1Q133.1 71.4 133.2 73.8Q133.2 76.1 132.3 80Q131.3 83.9 129 88.4Q126.8 92.9 123.1 97.1Q119.5 101.3 114.7 104.4Q110 107.4 104.7 108.7Q99.3 110.1 94 109.4Q88.6 108.8 83.8 106.4Q79 104 75.2 100.3Q71.4 96.6 68.9 92.5Q66.5 88.4 65.3 84.8Q64.2 81.1 64.2 78.8Q64.1 76.5 64.6 75.6L65.1 74.6A1.3 1.3 0 0 0 62.9 73.4Z"></path>
+      <path class="signature-stroke" d="M96.2 127.6Q127.6 123.9 143.3 122.5Q159 121.1 174.6 120.4Q190.3 119.7 206 120Q221.6 120.2 237.3 121.3Q253 122.5 268.7 124.4Q284.4 126.3 300.1 128.6L315.9 130.9A0.9 0.9 0 0 0 316.1 129.1Q284.7 124.3 269 122.3Q253.2 120.3 237.5 119.1Q221.8 117.8 206 117.5Q190.3 117.2 174.5 117.7Q158.8 118.3 143 119.6Q127.3 121 111.5 122.7L95.8 124.4A1.6 1.6 0 0 0 96.2 127.6Z"></path>
+    </svg>
+    <span class="signature-line" aria-hidden="true"></span>
+  </div>
+</fieldset>`} />
+
+## 比例和笔迹 \{#proportions-and-ink\}
+
+绘图的 `viewBox` 决定签名区域的比例和笔画的单位：签名区域与所在列同宽，高度由 `viewBox` 决定，因此在手机上绘制、在桌面上显示的签名会保持原有形状。`0 0 400 160` 适合表单中的一行；`0 0 480 140` 这样更宽的框适合空间充裕的页面。笔迹颜色为 `--signature-ink`，默认是高强调文字颜色；`--signature-weight` 是笔画在均匀压力下的宽度，以 `viewBox` 的单位表示，在写入笔画时读取。签名区域的圆角为 `--signature-radius`。
+
+## 导出为图片 \{#a-picture-of-it\}
+
+绘制结果以 SVG 导出，可以任意缩放且体积很小。如果需要 PNG，例如供 PDF 库或电子邮件使用，应用可以在 canvas 上绘制这份 SVG：
+
+```js name=png.js
+async function png(svg, scale = 2) {
+  const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }))
+  const image = new Image()
+  image.src = url
+  await image.decode()
+  const canvas = document.createElement('canvas')
+  canvas.width = image.naturalWidth * scale
+  canvas.height = image.naturalHeight * scale
+  canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height)
+  URL.revokeObjectURL(url)
+  return new Promise((resolve) => canvas.toBlob(resolve, 'image/png'))
+}
+
+const blob = await png(pad.svg)
+```
+
+文档在 `width` 和 `height` 中带有取自 `viewBox` 的尺寸，因此 `scale` 决定分辨率。canvas 上未绘制的地方是透明的。
+
+## 键盘操作 \{#keyboard\}
+
+<ContractTable name="signature" show="keyboard" />
+
+## 无障碍 \{#accessibility\}
+
+- 用 `<fieldset>` 把签名区域和输入姓名的输入框组合在一起，其 legend 说明要签署的内容。
+- 把绘图命名为图片，即 `role="img"` 加上 `aria-label`，并用 `aria-hidden="true"` 隐藏细线和占位文字：绘图的名称已经说明了在哪里签名。
+- 签名区域不获取焦点，因为没有任何按键可以绘制。请给输入姓名的输入框一个可见标签，说明这是另一种签名方式。
+- 状态区域是礼貌型的：在签名完成或清空时播报，而不是每一笔都播报。
+- 在签名区域上，手指会绘制而不是滚动页面（`touch-action: none`）。签名区域的高度不要超过签名所需，以便手机上的读者仍能滚动越过它。
+- 在强制颜色模式下，笔画使用 `CanvasText` 绘制，细线和十字使用 `GrayText`，签名区域保留轮廓线。
+- 让一个标记在法律上构成签名的要素，例如同意、签署人身份和时间记录，属于应用及其所在司法管辖区的范畴，而不属于组件。
+
+## React、Svelte 和 Vue \{#frameworks\}
+
+`signature` 组件渲染整个组，绑定行为脚本，并接收和传出笔画；输入的姓名是第二个值 `typed`。初始值会在首次渲染时绘制，因此服务器发送的页面中签名已经在签名区域上。使用 `npx master-ui add signature` 将组件复制到项目中。有关这些组件的实现和用法，请参阅 [React、Svelte 和 Vue](/guide/frameworks)。
+
+<FrameworkSource name="signature" />
+
+## 类名 \{#classes\}
+
+<ContractTable name="signature" />
+
+## 自定义属性 \{#custom-properties\}
+
+<ContractTable name="signature" show="properties" />
+
+## 相关内容 \{#related\}
+
+<ComponentLinks slugs={['input', 'dropzone', 'otp']} />
+
+## 源码 \{#source\}
+
+<ComponentSource name="signature" />

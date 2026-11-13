@@ -39,30 +39,52 @@ import ContractTable from '~/site/components/ContractTable.astro'
   <input type="radio" class="rating-input" name="rating-lg" aria-label="5 stars" checked>
 </fieldset>`} />
 
-## 読み取り専用 \{#read-only\}
+## 半分の星 \{#half-stars\}
 
-評価を表示するだけの場合は、ラジオボタンを無効にします。星の色はそのままで、ポインター操作を受け付けなくなります。星の並びだけでは評価の数値が伝わらないため、横に評価をテキストで表示します。
+`rating-half`を指定すると、星1つにつき2つのラジオボタンを使い、評価を0.5刻みで選べるようになります。各ラジオボタンは星の半分の幅で、ペアの境目に置かれた1つの星の半分ずつを表示します。そのため塗りつぶしとプレビューは上の例と同じ仕組みで動き、3.5の評価では半分の星7つ分が塗られます。矢印キーでは0.5ずつ移動し、各ラジオボタンにはその点数を名前として付けます。
 
-<ComponentPreview name="readonly" height={96} title="読み取り専用" background="plain" html={`<div class="flex items-center gap-xs text-sm fg-text-muted">
-  <fieldset class="rating rating-sm" aria-label="Rated 3 out of 5" disabled>
-    <input type="radio" class="rating-input" name="rating-ro" aria-label="1 star">
-    <input type="radio" class="rating-input" name="rating-ro" aria-label="2 stars">
-    <input type="radio" class="rating-input" name="rating-ro" aria-label="3 stars" checked>
-    <input type="radio" class="rating-input" name="rating-ro" aria-label="4 stars">
-    <input type="radio" class="rating-input" name="rating-ro" aria-label="5 stars">
-  </fieldset>
-  3.0 from 128 reviews
+<ComponentPreview name="half" height={96} title="半分の星" html={`<fieldset class="rating rating-half" aria-label="Rating">
+  <input type="radio" class="rating-input" name="rating-half" value="0.5" aria-label="0.5 stars">
+  <input type="radio" class="rating-input" name="rating-half" value="1" aria-label="1 star">
+  <input type="radio" class="rating-input" name="rating-half" value="1.5" aria-label="1.5 stars">
+  <input type="radio" class="rating-input" name="rating-half" value="2" aria-label="2 stars">
+  <input type="radio" class="rating-input" name="rating-half" value="2.5" aria-label="2.5 stars">
+  <input type="radio" class="rating-input" name="rating-half" value="3" aria-label="3 stars">
+  <input type="radio" class="rating-input" name="rating-half" value="3.5" aria-label="3.5 stars" checked>
+  <input type="radio" class="rating-input" name="rating-half" value="4" aria-label="4 stars">
+  <input type="radio" class="rating-input" name="rating-half" value="4.5" aria-label="4.5 stars">
+  <input type="radio" class="rating-input" name="rating-half" value="5" aria-label="5 stars">
+</fieldset>`} caption="星の上でポインターを動かすと半分ずつの状態を確認でき、矢印キーでは0.5ずつ移動できます。" />
+
+タッチ画面では、半分の星はそれぞれ44pxの行の中で幅24pxになり、星1つ分で48pxの操作領域になります。
+
+## 評価の表示 \{#read-only\}
+
+平均の4.3のように、選択するためではない評価には`rating-display`を使います。`role="img"`を持つ空の要素1つで構成し、評価をテキストで表した名前を付け、`--rating-value`に数値を設定します。星は先頭から評価の値まで塗られ、最後の星は部分的に塗られます。描画する星の数は`--rating-max`で指定し、既定は5つです。サイズはラジオボタンの場合と同じように指定できます。
+
+<ComponentPreview name="display" height={96} title="評価の表示" background="plain" html={`<div class="flex items-center gap-xs text-sm fg-text-muted">
+  <span class="rating rating-sm rating-display" role="img" aria-label="Rated 4.3 out of 5" style="--rating-value: 4.3"></span>
+  4.3 from 128 reviews
 </div>`} />
+
+塗りの範囲は、`round()`を使って、塗りつぶす星の数、間隔の半分、最後の星の割合から求めます。`round()`に対応していないブラウザーでは、行全体に対する評価の割合だけ塗るため、1px程度ずれることがあります。
+
+読者が操作するのと同じラジオボタンで星単位の評価を表示する場合は、ラジオボタンを無効にします。星の色はそのままで、ポインター操作を受け付けなくなります。どちらの場合も、星の並びだけでは評価の数値が伝わらないため、横に評価をテキストで表示します。
 
 ## アクセシビリティ \{#accessibility\}
 
-- `aria-label`または`<legend>`でグループに名前を付け、各ラジオボタンにはその点数を名前として付けます。
+- `aria-label`または`<legend>`でグループに名前を付け、各ラジオボタンにはその点数を名前として付けます。半分の星にも「3.5 stars」のように付けます。
+- `rating-display`には、「Rated 4.3 out of 5」のように評価をテキストで表した名前を付けます。星は数値を表す図なので、`role="img"`を指定して、支援技術がその中に部品を探さないようにします。
 - 星はマスクで形を切り抜くため、星自体に付けたフォーカスリングも切り取られます。そのため、グループ内のラジオボタンにキーボードフォーカスがある間は、グループにリングを表示します。
 - 星には黄色ではなくインク色を使い、色相はステータスの表示に用います。
 
 ## クラス \{#classes\}
 
 <ContractTable name="rating" />
+
+## カスタムプロパティ \{#custom-properties\}
+
+<ContractTable name="rating" show="properties" />
 
 ## ソース \{#source\}
 

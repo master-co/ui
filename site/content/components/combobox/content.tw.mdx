@@ -41,13 +41,20 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
 ## 行為 \{#behavior\}
 
-`combobox` 接收根元素，也就是帶有 `combobox` 類別的元素，並傳回用來解除行為的函式。它會透過 `role="combobox"` 找到欄位，並透過 `role="listbox"` 找到清單。若頁面會自行寫入相符的選項，請傳入 `filter: false`。
+`combobox` 接收根元素（也就是帶有 `combobox` 類別的元素）和選項物件，並傳回用來解除行為的函式。它會透過 `role="combobox"` 找到欄位，並透過 `role="listbox"` 找到清單。`filter` 選項預設為 true；`filter: false` 會把選項交由頁面處理，如[自動完成](#autocomplete)所示。`name`、`removeLabel` 和 `draw` 與[多個值](#several-values)有關。
 
 ```js name=app.js
 import { combobox } from '@master/ui/behaviors/combobox.js'
 
-const detach = combobox(document.querySelector('.combobox'))
+const box = combobox(document.querySelector('.combobox'))
+box.value // what the chosen option stands for, or null
+box.query // the text in the field
 ```
+
+它傳回的函式有兩個屬性，可從外部讀取和設定。設定任一屬性都不會派送事件。
+
+- **`value`** 是所選選項代表的值，也就是它的 `data-value` 或文字；當欄位中的文字並未對應到任何已選選項時為 null。設定它會勾選該選項，並將其文字寫入欄位。
+- **`query`** 是欄位中的文字，也就是讀者正在搜尋的內容。它不是值：每按一個鍵就會改變，選定選項後則是該選項的文字。設定它會寫入欄位，並像輸入文字時一樣篩選選項。
 
 - **輸入文字**時，不包含輸入文字的選項會設為 `hidden`，比對不分大小寫。清單會開啟，第一個相符項目會成為作用中選項。
 - **作用中選項**設為 `aria-selected="true"`，並由欄位上的 `aria-activedescendant` 指向。焦點會留在欄位內。
@@ -89,6 +96,72 @@ const detach = combobox(document.querySelector('.combobox'))
 
 若值是自由輸入、而不是從清單中選取，請使用[標籤輸入](/components/tags)。
 
+## 自動完成 \{#autocomplete\}
+
+當相符項目來自伺服器，或來自頁面自己的搜尋時，請以 `filter: false` 掛載行為。它不會隱藏任何選項：在欄位每次觸發 `input` 時，讀取 `query`、搜尋它，再把相符項目寫成清單的選項。在觸發搜尋的輸入之後才送達的選項，仍會得到作用中選項，因此 <kbd>Enter</kbd> 和方向鍵都能操作它們。
+
+<ComponentPreview name="autocomplete" height={360} title="自動完成" background="plain" bodyClass="content-start p-lg min-h(360)" behaviors html={`<div class="field max-w(320) mx-auto">
+  <label for="city">City</label>
+  <div class="combobox" id="city-combobox">
+    <div class="input-group">
+      <input class="input-group-field" id="city" role="combobox" aria-expanded="false" aria-controls="city-list" aria-autocomplete="list" autocomplete="off" placeholder="Start typing a city">
+      <button type="button" class="combobox-toggle" tabindex="-1" aria-label="Show cities"></button>
+    </div>
+    <div id="city-list" popover="manual" class="listbox" role="listbox" aria-label="Cities">
+      <div class="listbox-empty">No cities start with that.</div>
+    </div>
+  </div>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  var root = document.getElementById('city-combobox')
+  var list = document.getElementById('city-list')
+  var cities = ['Amsterdam', 'Athens', 'Auckland', 'Bangkok', 'Barcelona', 'Berlin', 'Bogotá', 'Boston', 'Brussels', 'Buenos Aires', 'Cairo', 'Cape Town', 'Chicago', 'Copenhagen', 'Dublin', 'Frankfurt', 'Helsinki', 'Hong Kong', 'Istanbul', 'Lisbon', 'London', 'Los Angeles', 'Madrid', 'Melbourne', 'Mexico City', 'Montreal', 'Mumbai', 'Nairobi', 'New York', 'Oslo', 'Paris', 'Prague', 'Rome', 'San Francisco', 'Santiago', 'São Paulo', 'Seoul', 'Singapore', 'Stockholm', 'Sydney', 'Taipei', 'Tokyo', 'Toronto', 'Vienna', 'Warsaw', 'Zurich']
+  var box = MasterUI.combobox(root, { filter: false })
+  var asked = 0
+
+  // Stands for a request to a server: the cities that start with the query, a moment later.
+  function search(query) {
+    return new Promise(function (resolve) {
+      setTimeout(function () {
+        var text = query.trim().toLowerCase()
+        resolve(cities.filter(function (city) { return city.toLowerCase().startsWith(text) }).slice(0, 6))
+      }, 120)
+    })
+  }
+
+  function write(matches) {
+    list.querySelectorAll('.listbox-option').forEach(function (option) { option.remove() })
+    matches.forEach(function (city) {
+      var option = document.createElement('div')
+      option.className = 'listbox-option'
+      option.setAttribute('role', 'option')
+      option.setAttribute('aria-checked', 'false')
+      option.textContent = city
+      list.insertBefore(option, list.querySelector('.listbox-empty'))
+    })
+  }
+
+  root.addEventListener('input', function (event) {
+    // A choice says input too; its text is the option's, with nothing more to look for.
+    if (event.target.getAttribute('role') !== 'combobox' || box.value !== null) return
+    var ticket = ++asked
+    search(box.query).then(function (matches) {
+      // An answer to an older query that arrives late is dropped.
+      if (ticket === asked) write(matches)
+    })
+  })
+  search('').then(write)
+})
+</script>`} caption="輸入幾個字母：頁面會搜尋查詢文字，稍後寫入選項。用方向鍵和 Enter 選取其中一個。" />
+
+- **讀取 `query`，而不是事件。** 查詢文字就是欄位的文字；無論是讀者輸入的還是框架寫入的，`query` 都以相同方式讀取。
+- **選取也會派送 `input`。** 此時文字是所選選項的文字，`value` 也不再是 null：沒有需要搜尋的內容，這時寫入新選項會把已選的選項移除。
+- **回應的順序可能錯亂。** 只保留最新查詢的回應。
+- **空白狀態由樣式表處理。** 清單中沒有任何選項時，`listbox-empty` 會自動顯示。
+
+在 React、Svelte 和 Vue 中，元件的 `query` 和 `onQueryChange`（Svelte 中為可繫結的 `query`，Vue 中為 `v-model:query`）傳遞的是相同的文字：搜尋它，並把相符項目當作 `options` 傳入，同時將 `filter` 設為 false。
+
 ## 選擇控制項 \{#choosing-a-control\}
 
 若純文字選項不超過 12 個，可用[下拉選單](/components/select)，無須腳本即可使用平台內建的鍵入定位功能。當清單很長而需要搜尋、選項會隨輸入載入，或每個選項需要呈現較豐富的內容時，請使用組合方塊。
@@ -108,7 +181,7 @@ const detach = combobox(document.querySelector('.combobox'))
 
 ## React、Svelte 和 Vue \{#frameworks\}
 
-`combobox` 元件會根據選項清單產生這套標記、掛上行為，並支援傳入及傳出選取值。設定 `multiple` 時，元件會根據值寫入膠囊標籤，此時值是一個清單。用 `npx master-ui add combobox` 將元件複製到專案中。元件的建置與使用方式請參閱 [React、Svelte 和 Vue](/guide/frameworks)。
+`combobox` 元件會根據選項清單產生這套標記、掛上行為，並支援傳入及傳出選取值。設定 `multiple` 時，元件會根據值寫入膠囊標籤，此時值是一個清單。帶有 `group` 的選項會寫在該群組的標題下，放在帶有 `role="group"` 的 `listbox-group` 中，並以其 `listbox-label` 作為標籤；群組中的選項全部被篩選掉時，群組也會一併隱藏。除了值之外，元件也會傳遞查詢文字：React 中為 `query` 和 `onQueryChange`，Svelte 中為可繫結的 `query` 搭配 `onQueryChange`，Vue 中為 `v-model:query`。查詢文字會在讀者輸入時傳出，選定後也會在值之後傳出；由擁有者傳入的查詢文字會寫入欄位並篩選選項。用 `npx master-ui add combobox` 將元件複製到專案中。元件的建置與使用方式請參閱 [React、Svelte 和 Vue](/guide/frameworks)。
 
 <FrameworkSource name="combobox" />
 

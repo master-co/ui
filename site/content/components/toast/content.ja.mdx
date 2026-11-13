@@ -7,7 +7,7 @@ import ComponentSource from '~/site/components/ComponentSource.astro'
 import ContractTable from '~/site/components/ContractTable.astro'
 import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
-トーストは、保存、デプロイ、コピーなど、直前に起きたことをページ上で知らせる短いメッセージです。各トーストは、固定配置の `toast-region` 内に置く非モーダルの `<dialog>` です。ダイアログなのでスクリプトなしで閉じられ、表示と終了のアニメーションはスタイルシートの CSS で制御されます。
+トーストは、保存、デプロイ、コピーなど直前に起きたこと、または進行中で終了時に結果を知らせる作業について、ページ上で伝える短いメッセージです。各トーストは、固定配置の `toast-region` 内に置く非モーダルの `<dialog>` です。ダイアログなのでスクリプトなしで閉じられ、表示と終了のアニメーションはスタイルシートの CSS で制御されます。
 
 <ComponentPreview name="default" height={240} title="トースト" bodyClass="content-start p-lg min-h(240)" html={`<div class="toast-region" role="region" aria-label="Notifications" aria-live="polite">
   <dialog open class="toast toast-success" aria-labelledby="toast-deployed">
@@ -27,12 +27,12 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
 ## 表示と終了 \{#showing-and-dismissing\}
 
 - `open` 属性が付いたトーストはページの読み込み時に表示されます。フォーム送信後にサーバーが描画するメッセージに適しています。
-- スクリプトから表示するには、表示領域内のトーストで `toast.show()` を呼び出すか、表示領域に新しい `<dialog open class="toast">` を追加します。どちらの場合も、`@starting-style` が表示アニメーションの開始状態を指定します。
+- スクリプトから表示するには、表示領域に新しい `<dialog open class="toast">` を追加するか、表示領域内のトーストに `open` を設定します。どちらの場合も、`@starting-style` が表示アニメーションの開始状態を指定します。`show()` は呼び出さないでください。フォーカスがトースト内に移り、読者が行っていた作業から離れてしまいます。
 - ボタンを `<form method="dialog">` で囲むか、ボタンに `commandfor` と `command="close"` を指定すると、トーストを閉じられます。`display` は `allow-discrete` で遷移するため、終了アニメーションが完了してからトーストの占有スペースがなくなります。
 
 ## 自動で閉じる \{#timed\}
 
-`toast-timed` を指定すると、トーストは 6 秒後に自動で閉じます。時間の計測には `display: none` で終わる CSS アニメーションを使います。ポインターがトーストに重なっている間や、キーボードフォーカスがトースト内にある間は一時停止するため、操作を急ぐ必要はありません。下端の細い線は残り時間に合わせて短くなり、計測が止まると線も止まります。表示時間は `--toast-duration` で変更できます。自動で閉じるトーストに、後から必要になる操作を置かないでください。重要な内容には、表示が持続する[アラート](/components/alert)を使います。
+`toast-timed` を指定すると、トーストは 6 秒後に自動で閉じます。時間の計測には `display: none` で終わる CSS アニメーションを使います。ポインターがトーストに重なっている間や、キーボードフォーカスがトースト内にある間は一時停止するため、操作を急ぐ必要はありません。下端の細い線は残り時間に合わせて短くなり、計測が止まると線も止まります。表示時間は `--toast-duration` で変更できます。処理中のトーストは時間を計測しません。計測は作業が終わってから始まります。
 
 <ComponentPreview name="timed" height={200} title="自動で閉じる" bodyClass="content-start p-lg min-h(200)" html={`<div class="toast-region" role="region" aria-label="Notifications" aria-live="polite">
   <dialog open class="toast toast-timed" aria-label="Link copied">
@@ -44,7 +44,9 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
 ## アクション付き \{#with-an-action\}
 
-本文の後に置いた[ボタン](/components/button)は、行の末尾に表示されます。ステータス修飾子で色が変わるのはアイコンだけで、テキストは既定の前景色のままです。
+トーストには、閉じるボタンの横に「元に戻す」や「表示」などのアクションを 1 つ置けます。`toast-action` はテキストの後に置き、`btn btn-sm` を `<form method="dialog">` で囲みます。これにより、アクションの実行後にトーストが閉じます。ボタンには `value` を指定してください。ダイアログの `returnValue` でどのボタンで閉じたかがわかるため、1 つの `close` リスナーでアクションを実行できます。アクションは <kbd>Tab</kbd> で移動できる実際のボタンです。自動で閉じるトーストは、アクションにフォーカスがある間やポインターがトーストに重なっている間は待機します。
+
+トーストは自動で閉じ、読者が目にしない可能性もあるため、トースト内のアクションは近道であり、唯一の手段にしてはいけません。削除したものの復元や、失敗した保存の再試行など、重要な操作は、項目自体のメニュー、ゴミ箱、失敗したフォームの横の[アラート](/components/alert)など、表示が持続する場所にも用意してください。ステータス修飾子で色が変わるのはアイコンだけで、テキストは既定の前景色のままです。
 
 <ComponentPreview name="action" height={304} title="アクション付き" bodyClass="content-start p-lg min-h(300)" html={`<div class="toast-region" role="region" aria-label="Notifications" aria-live="polite">
   <dialog open class="toast" aria-labelledby="toast-archived">
@@ -52,7 +54,14 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
       <p class="toast-title" id="toast-archived">Project archived</p>
       <p class="toast-description">Atlas is hidden from the dashboard.</p>
     </div>
-    <form method="dialog"><button class="btn btn-sm">Undo</button></form>
+    <form method="dialog" class="toast-action">
+      <button class="btn btn-sm" value="undo">Undo</button>
+    </form>
+    <form method="dialog" class="toast-close">
+      <button class="btn btn-quiet btn-square btn-sm" aria-label="Dismiss">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </form>
   </dialog>
   <dialog open class="toast toast-danger" aria-labelledby="toast-failed">
     <svg class="icon toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16v.01"/></svg>
@@ -60,13 +69,68 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
       <p class="toast-title" id="toast-failed">The build failed</p>
       <p class="toast-description">The install step exited with code 1.</p>
     </div>
+    <form method="dialog" class="toast-action">
+      <button class="btn btn-sm" value="logs">View logs</button>
+    </form>
     <form method="dialog" class="toast-close">
       <button class="btn btn-quiet btn-square btn-sm" aria-label="Dismiss">
         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
       </button>
     </form>
   </dialog>
-</div>`} />
+</div>`} caption="Tab キーで「Undo」に移動して Enter キーを押すか、「Dismiss」を押します。どちらもスクリプトなしで、フォームを通じてトーストを閉じます。" />
+
+## 処理中の表示と、その場での更新 \{#pending\}
+
+トーストは、進行中の作業を知らせ、その結果を同じ場所で伝えることができます。作業の実行中、トーストは `aria-busy="true"` を持ち、アイコンの位置に `toast-icon` を付けた[スピナー](/components/spinner)を表示します。作業にどれだけ時間がかかっても、時間は計測されません。作業が終わったら、同じトーストのテキスト、ステータス、アイコンを変更し、`aria-busy` を削除します。トーストは再び表示アニメーションを行わず、スタック内の位置も保ちます。新しいアイコンだけが拡大しながら表示されます。
+
+<ComponentPreview name="pending" height={280} title="処理中" bodyClass="content-start p-lg min-h(280)" html={`<button class="btn" type="button" id="deploy-run">Deploy</button>
+<div class="toast-region" id="deploy-region" role="region" aria-label="Notifications" aria-live="polite"></div>
+<template id="deploy-pending">
+  <dialog open class="toast" aria-labelledby="deploy-title" aria-busy="true" aria-atomic="true">
+    <span class="spinner spinner-inline toast-icon" aria-hidden="true"></span>
+    <div class="toast-body">
+      <p class="toast-title" id="deploy-title">Deploying Atlas</p>
+      <p class="toast-description">Building for 14 regions.</p>
+    </div>
+    <form method="dialog" class="toast-close">
+      <button class="btn btn-quiet btn-square btn-sm" aria-label="Dismiss">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </form>
+    <template>
+      <svg class="icon toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 4.5-5.5"/></svg>
+    </template>
+  </dialog>
+</template>
+<script>
+  var region = document.getElementById('deploy-region')
+  var count = 0
+  document.getElementById('deploy-run').addEventListener('click', function () {
+    var toast = document.getElementById('deploy-pending').content.firstElementChild.cloneNode(true)
+    var title = toast.querySelector('.toast-title')
+    title.id = 'deploy-title-' + ++count
+    toast.setAttribute('aria-labelledby', title.id)
+    region.append(toast)
+    // When the work ends, the same toast says so: its icon, its words and its status change, and it is no longer busy.
+    setTimeout(function () {
+      toast.querySelector('.toast-icon').replaceWith(toast.querySelector('template').content.firstElementChild.cloneNode(true))
+      title.textContent = 'Deployed to production'
+      toast.querySelector('.toast-description').textContent = 'atlas.dev is live in 14 regions.'
+      toast.classList.add('toast-success', 'toast-timed')
+      toast.removeAttribute('aria-busy')
+    }, 2400)
+  })
+  // A toast that has run out, or was dismissed and has left, is removed.
+  region.addEventListener('animationend', function (event) {
+    if (event.animationName === 'toast-expire') event.target.remove()
+  })
+  region.addEventListener('close', function (event) {
+    setTimeout(function () { event.target.remove() }, 300)
+  }, true)
+</script>`} caption="「Deploy」を押すと、トーストは 2 秒間処理中になり、同じ場所でデプロイの完了を伝え、その 6 秒後に閉じます。" />
+
+同じトーストは、ファイルのアップロード中に件数を更新したり、失敗から再試行に切り替えたりと、さらに変更できます。変更のたびに時間の計測がやり直されるため、読者は新しいテキストを読む時間を十分に得られます。重要な長い作業を追うのに、処理中のトーストは適していません。作業のそばに置いた[進捗](/components/progress)なら、その場に残ります。
 
 ## リッチコンテンツ \{#rich-content\}
 
@@ -138,12 +202,29 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
 - トーストの表示時に読み上げられるよう、表示領域に `aria-live="polite"` を指定してライブリージョンにし、`aria-label` で名前を付けます。
 - 各トーストには、タイトルを参照する `aria-labelledby` または `aria-label` で名前を付けます。
+- テキストがその場で変わるトーストには `aria-atomic="true"` を指定します。これにより、変更は部分ごとではなく、トースト全体として一度だけ読み上げられます。処理中の間は、スクリーンリーダーが作業の終了まで読み上げを保留することがあります。
 - トーストは、操作の結果を知らせるために使います。見逃しても支障がないように、操作への唯一の導線をトーストに置かないでください。
-- 動きを減らす設定では、トーストは位置を変えずにフェードします。
+- トーストは表示時にフォーカスを受け取りません。アクションボタンと閉じるボタンはタブ順序に含まれ、自動で閉じるトーストは、いずれかにフォーカスがある間は待機します。
+- 動きを減らす設定では、トーストは位置を変えずにフェードし、新しいアイコンは元の大きさのままフェードインします。
 
 ## React、Svelte、Vue \{#frameworks\}
 
 `toast` コンポーネントはトーストをキューで管理します。どこからでも呼び出せる `toast()` 関数と、一度だけレンダリングしてキュー内のトーストを表示する領域で構成されます。`npx master-ui add toast` でプロジェクトにコピーできます。コンポーネントの仕組みと使い方は [React、Svelte、Vue](/guide/frameworks) を参照してください。
+
+- `toast(message)` はトーストを表示し、ハンドルを返します。`update(message)` は、もう一度表示アニメーションを行わずに同じトーストで別の内容を伝え、時間の計測をやり直します。`dismiss()` は、トースト自体のボタンと同じようにトーストを閉じます。メッセージは `title`、`description`、`status`、ミリ秒単位の `duration`（`false` でトーストを閉じずに残します）、`action` を持ちます。文字列を渡した場合は `description` になります。
+- `status: 'pending'` はスピナーを表示して `aria-busy` を設定し、更新されるまでトーストを残します。
+- `action: { label, onClick }` は、トーストが提供する唯一のボタンです。`onClick` を実行した後にトーストを閉じます。ただし、ハンドラーが `event.preventDefault()` を呼び出した場合は閉じません。
+- `toast.promise(promise, { loading, success, error })` は、`loading` を処理中のトーストとして表示し、同じトーストを `success`、または `danger` ステータスの失敗に切り替えます。どちらも、値または理由を受け取る関数にできます。Promise を返すため、`await` やチェーンで使えます。
+
+```tsx
+toast({ title: 'Project archived', action: { label: 'Undo', onClick: () => restore(project) } })
+
+await toast.promise(deploy(project), {
+  loading: { title: 'Deploying Atlas' },
+  success: (release) => ({ title: 'Deployed to production', description: `${release.url} is live.` }),
+  error: (error) => ({ title: 'The deploy failed', description: String(error), duration: false }),
+})
+```
 
 <FrameworkSource name="toast" />
 

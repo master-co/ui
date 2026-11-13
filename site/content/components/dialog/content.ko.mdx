@@ -158,6 +158,100 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
   </footer>
 </dialog>`} />
 
+## 스와이프 \{#swipe\}
+
+드로어나 시트에 `dialog-swipe`를 추가하면 손가락, 트랙패드, 마우스를 따라 움직이고, 놓으면 닫힙니다. 대화 상자는 패널이 움직이는 트랙이 되며, 투명하고 뷰포트만큼 커집니다. 대화 상자에 있던 모든 내용은 재질을 입는 `dialog-panel` 안에 넣으세요. 시트에는 `dialog-handle`을 추가합니다. 이 요소는 위쪽 가장자리에 놓이는 짧은 홈으로, 잡을 위치를 알려 줍니다. `drawer` 동작을 연결하세요. `attach()`는 모든 `dialog-swipe`를 찾아 연결합니다.
+
+<ComponentPreview name="swipe" height={420} title="스와이프로 닫는 시트" behaviors bodyClass="flex items-center justify-center p-lg min-h(416)" caption="시트를 연 뒤 홈이나 제목을 잡고 아래로 드래그하거나 튕기듯 밀어서 놓아 보세요. 절반이 안 되게 끌다가 놓으면 제자리로 돌아갑니다. 휴대전화에서는 스와이프하세요." html={`<button type="button" class="btn" commandfor="share-swipe" command="show-modal">Share</button>
+
+<dialog id="share-swipe" class="dialog dialog-sheet dialog-swipe" closedby="any" aria-labelledby="share-swipe-title">
+  <div class="dialog-panel">
+    <div class="dialog-handle" aria-hidden="true"></div>
+    <header class="dialog-header">
+      <h2 class="dialog-title" id="share-swipe-title">Share this project</h2>
+      <p class="dialog-description">Anyone with the link can view the latest deployment.</p>
+    </header>
+    <div class="dialog-body">
+      <div class="input-group">
+        <input class="input-group-field" value="https://atlas.dev/p/9f2c" readonly aria-label="Link">
+        <button type="button" class="btn">Copy</button>
+      </div>
+    </div>
+    <footer class="dialog-footer">
+      <button type="button" class="btn btn-primary" commandfor="share-swipe" command="close">Done</button>
+    </footer>
+  </div>
+</dialog>`} />
+
+드로어도 놓여 있는 가장자리 쪽으로 같은 방식으로 스와이프하며, 손잡이가 필요 없습니다. 패널 전체를 잡을 수 있습니다.
+
+<ComponentPreview name="swipe-drawer" height={400} title="스와이프로 닫는 드로어" behaviors bodyClass="flex items-center justify-center p-lg min-h(400)" caption="패널을 가장자리 쪽으로 드래그하거나 옆의 배경막을 눌러 보세요." html={`<button type="button" class="btn" commandfor="filters-swipe" command="show-modal">Filters</button>
+
+<dialog id="filters-swipe" class="dialog dialog-drawer dialog-swipe" closedby="any" aria-labelledby="filters-swipe-title">
+  <div class="dialog-panel">
+    <header class="dialog-header">
+      <h2 class="dialog-title" id="filters-swipe-title">Filters</h2>
+      <p class="dialog-description">Narrow the list of deployments.</p>
+    </header>
+    <div class="dialog-body flex flex-col gap-md">
+      <label class="field">
+        Branch
+        <input class="input" value="main">
+      </label>
+      <label class="check"><input type="checkbox" class="checkbox" checked> Production only</label>
+    </div>
+    <footer class="dialog-footer">
+      <button type="button" class="btn" commandfor="filters-swipe" command="close">Reset</button>
+      <button type="button" class="btn btn-primary" commandfor="filters-swipe" command="close">Apply</button>
+    </footer>
+  </div>
+</dialog>`} />
+
+스와이프는 다음과 같이 구성됩니다.
+
+- **패널은 브라우저가 움직입니다.** 트랙은 스냅 지점이 있는 스크롤 컨테이너입니다. 스냅 지점은 열린 상태의 위치와, 가장자리 바깥으로 뷰포트만큼 이어지는 구간입니다. 패널을 놓으면 이 구간으로 이동합니다. 손가락, 트랙패드, 휠로 트랙을 스크롤하므로 손의 움직임을 따라가는 것, 튕기듯 밀었을 때의 관성, 멈출 위치를 정하는 것은 모두 브라우저가 처리합니다. 트랙은 패널을 끝에 둔 역방향 플렉스 라인이므로 스크립트 없이도 열린 상태의 위치에서 시작합니다.
+- **스크롤로 할 수 없는 일은 동작이 처리합니다.** 패널이 어떤 방식으로든 트랙을 벗어나면 대화 상자를 닫습니다. `closedby="any"`의 기능도 되살립니다. 브라우저가 클릭을 감지하는 배경막을 트랙이 덮기 때문에, 패널 옆을 누르면 동작이 대화 상자를 닫습니다. 드래그로 스크롤할 수 없는 마우스로도 손잡이나 컨트롤 또는 본문이 아닌 부분을 잡아 패널을 끌 수 있게 하고, 놓으면 튕긴 방향의 위치나 더 가까운 위치로 보냅니다. 정밀한 포인터가 패널을 잡고 있는 동안에는 트랙의 스냅이 멈춥니다. 남은 배경막의 비율을 `--dialog-scrim`에 기록하므로 패널이 멀어질수록 배경막이 옅어집니다.
+- **대화 상자는 여전히 대화 상자입니다.** <kbd>Esc</kbd> 키, 닫기 버튼, 포커스 가두기, 대화 상자를 연 버튼으로 돌아가는 포커스, 들어오고 나가는 슬라이드 효과는 다른 드로어나 시트와 같습니다.
+- **스크롤되는 본문은 자체 스크롤을 유지합니다.** 마우스나 휠을 사용할 때 `dialog-body` 안에서 드래그하면 본문이 스크롤되거나 텍스트가 선택됩니다. 터치 화면에서는 본문의 맨 위에 닿은 뒤에도 계속 드래그하면 시트가 움직입니다.
+
+스와이프는 바로 가기일 뿐입니다. 닫기 버튼이나 대화 상자를 닫는 동작을 남겨 두고, <kbd>Esc</kbd> 키도 유지하세요.
+
+### 디텐트 \{#detents\}
+
+스와이프하는 시트에 `dialog-detents`를 추가하면 시트가 두 높이에 멈춥니다. 처음 열리는 높이인 뷰포트의 절반과 전체 높이입니다. 드래그하거나 튕기듯 밀면 두 높이 사이를 이동합니다. 전체 높이에서 아래로 튕기면 절반 높이에서 멈추며, 절반 높이에서 튕겨야만 시트가 닫힙니다. 손잡이는 접근 가능한 이름이 있는 `<button>`으로 만드세요. 누르거나 <kbd>Enter</kbd> 또는 <kbd>Space</kbd> 키를 누르면 시트가 다른 높이로 이동하고, <kbd>↑</kbd> 키는 전체 높이로 늘리며, <kbd>↓</kbd> 키는 절반 높이로 줄입니다. 손잡이의 `aria-expanded`는 시트가 전체 높이인지를 나타냅니다.
+
+<ComponentPreview name="detents" height={480} title="디텐트가 있는 시트" behaviors bodyClass="flex items-center justify-center p-lg min-h(476)" caption="시트는 절반 높이로 열립니다. 위로 드래그하거나 손잡이를 누르거나, Tab 키로 손잡이로 이동한 뒤 ↑ 키와 ↓ 키를 눌러 보세요." html={`<button type="button" class="btn" commandfor="comments-sheet" command="show-modal">Comments</button>
+
+<dialog id="comments-sheet" class="dialog dialog-sheet dialog-swipe dialog-detents" closedby="any" aria-labelledby="comments-sheet-title">
+  <div class="dialog-panel">
+    <button type="button" class="dialog-handle" aria-label="Sheet height"></button>
+    <header class="dialog-header">
+      <h2 class="dialog-title" id="comments-sheet-title">Comments</h2>
+      <p class="dialog-description">Five people reviewed this deployment.</p>
+    </header>
+    <div class="dialog-body flex flex-col gap-md">
+      <p class="m(0)">Ada: the build on main is green again.</p>
+      <p class="m(0)">Grace: the preview for the pricing page loads in 1.2s.</p>
+      <p class="m(0)">Linus: the cache headers on the fonts are right now.</p>
+      <p class="m(0)">Margaret: the rollback plan is in the runbook.</p>
+      <p class="m(0)">Alan: ship it after the 3pm check.</p>
+    </div>
+    <button type="button" class="btn btn-quiet btn-square btn-sm dialog-close" commandfor="comments-sheet" command="close" aria-label="Close">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+</dialog>`} />
+
+절반 높이에서는 시트의 아래쪽 절반이 푸터까지 포함해 가장자리 아래에 가려져 있습니다. 따라서 디텐트는 목록, 댓글, 지도처럼 둘러보는 용도이면서 작업 버튼이 위쪽에 있는 시트에 적합합니다. 뷰포트의 절반보다 낮은 시트는 전체 높이 하나에만 멈추며, 손잡이도 이를 알립니다.
+
+### 기능을 지원하지 않을 때 \{#swipe-fallbacks\}
+
+- 스크립트가 실행되지 않으면 가장자리 바깥의 구간은 멈출 위치가 되지 않습니다(`@media (scripting: enabled)`). 패널을 놓으면 원래 위치로 되돌아가며, <kbd>Esc</kbd> 키와 닫기 버튼으로 대화 상자를 닫을 수 있습니다. 스크립트가 실행되는 곳에서는 반드시 동작을 연결하세요. 그렇지 않으면 놓은 패널이 화면 밖에 머무르고 페이지는 계속 비활성 상태로 남습니다.
+- 동작이 없으면 대화 상자가 닫힐 때까지 배경막이 옅어지지 않습니다. 배경막은 스크롤 기반 애니메이션을 사용하지 않습니다. 역방향 스크롤 컨테이너에서는 Chromium과 WebKit이 스크롤 타임라인과 뷰 타임라인을 서로 반대 방향으로 실행하기 때문입니다.
+- `scroll-initial-target`을 지원하는 브라우저(Chromium)에서는 디텐트가 있는 시트가 스크립트 실행 전부터 절반 높이로 열립니다. 다른 브라우저에서는 동작이 시트를 옮길 때까지 전체 높이로 열립니다.
+
+스와이프는 Chromium과 WebKit에서 마우스와 휠로, Chromium에서는 터치로도 검증했습니다. 스크롤 스냅, 역방향 플렉스 스크롤, `scrollend`는 모든 최신 브라우저에서 지원됩니다.
+
 ## 모션 \{#motion\}
 
 대화 상자는 원래 크기의 97%로, 제자리보다 0.5rem 아래에서 시작해 280ms 동안 서서히 나타납니다. 사라지는 데는 160ms가 걸립니다. 스타일시트는 열기와 닫기 전환을 모두 CSS로 정의합니다. `@starting-style`은 처음 렌더링되는 프레임의 상태를 지정하고, `display`와 `overlay`는 `allow-discrete`로 전환되므로 대화 상자가 최상위 레이어를 벗어나기 전에 닫기 애니메이션이 재생됩니다. 동작 줄이기가 활성화되면 페이드 효과만 남습니다.
@@ -167,10 +261,11 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
 - `aria-labelledby` 속성이 대화 상자의 `dialog-title`을 가리키도록 지정해 대화 상자에 접근 가능한 이름을 부여하세요.
 - `show-modal`로 열면 포커스가 대화 상자 안으로 이동하고, 닫으면 대화 상자를 열었던 버튼으로 돌아갑니다. 사용자가 처음 사용할 필드에 `autofocus` 속성을 지정하세요. 데이터를 삭제하는 등 되돌리기 어려운 동작을 확인하는 대화 상자에서는 안전한 동작에 지정하세요.
 - `command`와 `commandfor`는 최신 Chrome, Edge, Firefox, Safari에서 지원됩니다. 이전 브라우저에서는 클릭 핸들러에서 `dialog.showModal()` 메서드를 호출하세요. 스타일시트는 그대로 사용합니다.
+- 스와이프만으로 닫을 수 있게 하지 마세요. 닫기 버튼이나 대화 상자를 닫는 동작을 남겨 두세요. <kbd>Esc</kbd> 키로도 여전히 닫을 수 있습니다. 디텐트가 있는 시트에서 손잡이는 "Sheet height"처럼 이름이 있는 버튼이며, 키와 누르기로 드래그와 같이 높이를 바꿉니다. 디텐트가 없으면 손잡이는 보조 기술에서 숨겨진 홈입니다. 손잡이의 조작 영역은 64×24px이며, 터치 화면에서는 높이가 44px입니다.
 
 ## React, Svelte, Vue \{#frameworks\}
 
-`dialog` 컴포넌트는 애플리케이션 상태에 따라 대화 상자를 열고 닫으며, 브라우저에서 대화 상자가 열리거나 닫히면 이를 알립니다. 대화 상자를 여는 요소와 내부 요소는 페이지의 마크업에서 직접 정의합니다. `npx master-ui add dialog`로 컴포넌트를 프로젝트에 복사하세요. 컴포넌트의 구성과 사용법은 [React, Svelte, Vue](/guide/frameworks)에서 확인할 수 있습니다.
+`dialog` 컴포넌트는 애플리케이션 상태에 따라 대화 상자를 열고 닫으며, 브라우저에서 대화 상자가 열리거나 닫히면 이를 알립니다. 대화 상자를 여는 요소와 내부 요소는 페이지의 마크업에서 직접 정의합니다. 컴포넌트는 모든 대화 상자에 `drawer` 동작을 연결하므로, `dialog-swipe`와 `dialog-panel`이 있는 드로어나 시트는 놓으면 닫히고 다른 방식으로 닫힐 때와 마찬가지로 이를 알립니다. `dialog-swipe`가 없는 대화 상자에서는 이 동작이 아무 일도 하지 않습니다. `npx master-ui add dialog`로 컴포넌트를 프로젝트에 복사하세요. 컴포넌트의 구성과 사용법은 [React, Svelte, Vue](/guide/frameworks)에서 확인할 수 있습니다.
 
 <FrameworkSource name="dialog" />
 

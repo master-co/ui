@@ -6,8 +6,9 @@ description: "在同一时间刻度上用横条表示各事项从何时开始、
 import ComponentPreview from '~/site/components/ComponentPreview.astro'
 import ComponentSource from '~/site/components/ComponentSource.astro'
 import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
-甘特图在同一时间标尺上用条形表示持续一段时间的事项，例如项目阶段、待命值班时段和按固定节奏协调发布的计划。甘特图采用列表结构。每行包含条形的起止位置、事项名称和条形显示的文本。样式表负责排布：名称和条形各占一列，标尺的每个单位都用细线标记。无需脚本或 SVG。
+甘特图在同一时间标尺上用条形表示持续一段时间的事项，例如项目阶段、待命值班时段和按固定节奏协调发布的计划。甘特图采用列表结构。每行包含条形的起止位置、事项名称和条形显示的文本。样式表负责排布：名称和条形各占一列，标尺的每个单位都用细线标记。图表本身无需脚本或 SVG；需要读者做计划时，`gantt` [行为脚本](/guide/behaviors)让读者可以[移动条形并调整其长度](#moving-the-bars)。
 
 <ComponentPreview name="default" height={248} narrowHeight={320} title="甘特图" bodyClass="p-lg" html={`<div class="card max-w(560) mx-auto">
   <ol class="gantt gantt-now" style="--gantt-from: 0; --gantt-to: 8; --gantt-now: 4.4" aria-label="Launch plan, in weeks">
@@ -58,15 +59,141 @@ import ContractTable from '~/site/components/ContractTable.astro'
 
 甘特图本身是一个尺寸容器。自身宽度小于 26rem 时，名称移到对应条形的上方，轨道占满整行。在手机上应减少标尺单位数：8 个单位仍清晰可读，30 个就难以辨认。
 
-## 甘特图、时间线还是图表 \{#gantt-timeline-or-chart\}
+## 移动条形 \{#moving-the-bars\}
 
-用甘特图呈现有起止时间的事项。按发生顺序呈现各个时间点的事件时，用[时间线](/components/timeline)。比较与时间位置无关的数值时，用[图表](/components/chart)。
+将条形标记为 `role="slider"` 并挂载 `gantt` 行为脚本，读者就可以移动它：拖动条形主体可沿标尺移动，拖动其一端可改变开始或结束时间。条形会吸附到标尺的整数单位（此处为天），按住期间，其文本显示它将占用的范围。按 <kbd class="kbd">Escape</kbd> 会让它回到原处。指针能做的一切，按键都能做到。
+
+<ComponentPreview name="moving" height={344} narrowHeight={436} title="移动条形" bodyClass="p-lg" behaviors html={`<div class="card max-w(640) mx-auto">
+  <ol class="gantt gantt-now" id="sprint" style="--gantt-from: 0; --gantt-to: 12; --gantt-now: 4.5" aria-label="Sprint plan, November 2 to 13">
+    <li class="gantt-row gantt-scale" aria-hidden="true">
+      <ol class="gantt-ticks"><li>2</li><li>3</li><li>4</li><li>5</li><li>6</li><li>7</li><li>8</li><li>9</li><li>10</li><li>11</li><li>12</li><li>13</li></ol>
+    </li>
+    <li class="gantt-row" data-value="research" style="--from: 0; --to: 3; --progress: 100"><span class="gantt-label">Research</span><span class="gantt-bar" role="slider">Nov 2 – 4 · 3 days</span></li>
+    <li class="gantt-row" data-value="design" aria-current="true" style="--from: 2; --to: 6"><span class="gantt-label">Design</span><span class="gantt-bar" role="slider">Nov 4 – 7 · 4 days</span></li>
+    <li class="gantt-row" data-value="build" style="--from: 5; --to: 10; --progress: 20"><span class="gantt-label">Build</span><span class="gantt-bar" role="slider">Nov 7 – 11 · 5 days</span></li>
+    <li class="gantt-row" data-value="review" style="--from: 9; --to: 11"><span class="gantt-label">Review</span><span class="gantt-bar" role="slider">Nov 11 – 12 · 2 days</span></li>
+    <li class="gantt-row" data-value="launch" style="--from: 11"><span class="gantt-label">Launch</span><span class="gantt-bar gantt-milestone" role="slider">Nov 13</span></li>
+  </ol>
+  <p class="gantt-status" role="status"></p>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  var day = new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric' })
+  var date = function (offset) { return new Date(2026, 10, 2 + offset) }
+  MasterUI.gantt(document.getElementById('sprint'), {
+    format: function (start, end) {
+      if (start === end) return day.format(date(start))
+      var length = end - start
+      return day.formatRange(date(start), date(end - 1)) + ' · ' + length + (length === 1 ? ' day' : ' days')
+    }
+  })
+})
+</script>`} caption="拖动条形或其一端。也可以按 Tab 键进入图表，用 ArrowUp 和 ArrowDown 选择条形，用 ArrowLeft 和 ArrowRight 移动它；按住 Shift 时移动其结束端，按住 Alt（Option）时移动其起始端。" />
+
+样式表为可移动的条形绘制的状态：
+
+- **静止时**，它与普通条形外观相同，光标为抓取手形。指针悬停或获得焦点时，两端各显示一个短的竖向握柄，光标移到握柄上会变为调整大小的箭头；触摸屏没有悬停，握柄会一直显示，条形高 44px。
+- **获得焦点时**，显示焦点环，并绘制在周围各行之上。
+- **按住时**，它带有 `aria-busy="true"`：以更深的色调和浮起阴影抬起，无缓动地跟随指针；无论指针移到哪里，光标都保持为握紧的手形，按住一端时则为调整大小的箭头（`gantt-resize-start`、`gantt-resize-end`）。通过按键或从外部设置值时，条形会平滑滑到新位置；启用减少动态效果时则直接跳过去。
+- **只读**（`aria-readonly="true"`）时，它可以获得焦点并被朗读，但不能移动。**禁用**（`aria-disabled="true"`）时，它不能移动，按键会跳过它，其文本使用禁用状态的墨色。
+
+里程碑作为一个点移动，没有可调整的两端。
+
+## 行为脚本 \{#behavior\}
+
+`gantt` 接收带有 `gantt` 类的根元素，并返回一个用于解除绑定的函数。只有标记为 `role="slider"` 的条形可以移动，其余条形仍是静态图形。对于每个可移动的条形，脚本会写入滑块需要而页面未提供的内容：取自该行 `gantt-label` 的名称；取自标尺的 `aria-valuemin` 和 `aria-valuemax`，即最早的开始和最晚的结束；表示开始位置的 `aria-valuenow`；以及 `aria-valuetext`，即 `format` 对其范围的描述。在条形上自行写入 `aria-valuemin` 和 `aria-valuemax`，可以把它限制在更窄的范围内。
+
+```js name=app.js
+import { gantt } from '@master/ui/behaviors/gantt.js'
+
+const plan = gantt(document.querySelector('.gantt'), {
+  // What a bar says for a range, as its text and to assistive technology.
+  format: (start, end) => `Days ${start + 1} to ${end}`,
+})
+
+plan.value // { research: [0, 3], design: [2, 6], … }
+plan.value = { design: [3, 7] }
+```
+
+- **值**是每个条形的范围，即以标尺单位表示的 `[start, end]`，以所在行的 `data-value` 或其标签文本为键。里程碑的范围起止于同一个点。设置它可从外部移动条形，且不会派发事件。
+- **事件。** 每当条形的范围发生变化（包括拖动过程中），根元素都会派发 `input`；放下条形或按键改变范围后，派发一次 `change`。
+- **指针。** 按下后移动超过 4px 才算拖动；移动距离更短时只会让条形获得焦点。按在握柄上（即样式表在两端绘制握柄的宽度内）会移动对应的一端；按在其他位置会移动整个条形。标尺的一个单位根据条形的绘制宽度计算，因此在任何布局中，拖动都会吸附到 `step` 个单位，默认为 1。手指沿页面向下移动时仍会滚动页面（`touch-action: pan-y`）。
+- **限制。** 条形始终位于其 `aria-valuemin` 和 `aria-valuemax` 之间，长度不会短于一个步长，也不会短于其当前长度。
+- **播报内容。** 放下条形或按键使其采用新范围后，条形会像滑块播报值一样，通过 `aria-valuetext` 播报新范围。值无法表达的内容，例如某次更改被拒绝或拖动被取消，由 `gantt-status` 区域播报，它是紧跟在根元素之后的 `role="status"`。传入 `messages` 可用页面的语言播报这些内容。
+- **页面从右到左排列时**，标尺、指针和方向键也从右到左：<kbd class="kbd">ArrowLeft</kbd> 表示更晚。
+
+没有行为脚本时，图表仍是一份可读的事项及其日期列表。
+
+## 页面的规则 \{#rules\}
+
+依赖关系、资源和工作日由页面掌握。条形采用新范围之前，会派发可取消的 `beforechange` 事件，携带条形的 `id`、它将采用的 `range` 以及原来的 `previous`。调用 `preventDefault()` 即可拒绝：按键不起作用，放下的条形回到拖动开始的位置，状态区域会说明条形保持未变。此处 Build 必须在 Design 完成后才能开始，冻结期归发布团队管理，因此是只读的。
+
+<ComponentPreview name="rules" height={268} narrowHeight={332} title="页面的规则" bodyClass="p-lg" behaviors html={`<div class="card max-w(560) mx-auto">
+  <ol class="gantt" id="release" style="--gantt-from: 0; --gantt-to: 12" aria-label="Release plan, November 2 to 13">
+    <li class="gantt-row" data-value="design" style="--from: 0; --to: 4"><span class="gantt-label">Design</span><span class="gantt-bar" role="slider">Nov 2 – 5 · 4 days</span></li>
+    <li class="gantt-row" data-value="build" style="--from: 4; --to: 9"><span class="gantt-label">Build</span><span class="gantt-bar" role="slider">Nov 6 – 10 · 5 days</span></li>
+    <li class="gantt-row" data-value="freeze" style="--from: 9; --to: 11"><span class="gantt-label">Freeze</span><span class="gantt-bar" role="slider" aria-readonly="true">Nov 11 – 12 · 2 days</span></li>
+  </ol>
+  <p class="gantt-status" role="status"></p>
+  <p class="mb(0) mt-sm text-sm fg-text-muted" id="release-note">Build starts once Design is done.</p>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  var day = new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric' })
+  var date = function (offset) { return new Date(2026, 10, 2 + offset) }
+  var root = document.getElementById('release')
+  var note = document.getElementById('release-note')
+  var plan = MasterUI.gantt(root, {
+    format: function (start, end) {
+      var length = end - start
+      return day.formatRange(date(start), date(end - 1)) + ' · ' + length + (length === 1 ? ' day' : ' days')
+    }
+  })
+  root.addEventListener('beforechange', function (event) {
+    var ranges = plan.value
+    ranges[event.detail.id] = event.detail.range
+    if (ranges.build[0] < ranges.design[1]) {
+      event.preventDefault()
+      note.textContent = 'Build starts once Design is done, on ' + day.format(date(ranges.design[1])) + ' at the earliest.'
+    } else note.textContent = 'Build starts once Design is done.'
+  })
+})
+</script>`} caption="把 Build 拖到 Design 结束之前，或把 Design 拖过 Build 的开始：条形会回到原处。" />
+
+```js name=app.js
+root.addEventListener('beforechange', (event) => {
+  const ranges = { ...plan.value, [event.detail.id]: event.detail.range }
+  if (ranges.build[0] < ranges.design[1]) event.preventDefault()
+})
+```
+
+该事件会冒泡，因此在根元素上用一个监听器就能处理所有条形。只有在按键将要移动条形时，以及放下拖动的条形时才会询问，而不是在拖动的每一步都询问，因此读者可以拖着条形经过不允许停留的位置。
+
+## 键盘操作 \{#keyboard\}
+
+<ContractTable name="gantt" show="keyboard" />
+
+和[工具栏](/components/toolbar)或[树形视图](/components/tree)一样，图表在 Tab 键顺序中只占一个停靠点，这样长计划不会变成几十个停靠点。<kbd class="kbd">ArrowUp</kbd> 和 <kbd class="kbd">ArrowDown</kbd> 在条形之间移动，因为各行是上下堆叠的；<kbd class="kbd">ArrowLeft</kbd> 和 <kbd class="kbd">ArrowRight</kbd> 移动条形，因为时间沿这个方向延伸：方向键与图形一致。图表仍是列表而不是网格，因为每行只有一个可操作的对象，即条形；若采用网格，条形的方向键就得等切换到某种模式后才能使用。
+
+## 甘特图、时间线还是条形图 \{#gantt-timeline-or-chart\}
+
+用甘特图呈现有起止时间的事项。按发生顺序呈现各个时间点的事件时，用[时间线](/components/timeline)。比较与时间位置无关的数值时，用[条形图](/components/chart)。
 
 ## 无障碍 \{#accessibility\}
 
-- 使用 `<ol>` 编写列表，并用 `aria-label` 或标题为其命名。每行是一个列表项，先朗读名称，再朗读条形文本，例如“设计，第 3 周到第 6 周”。
+- 使用 `<ol>` 编写列表，并用 `aria-label` 或标题为其命名。每行是一个列表项，先朗读名称，再朗读条形文本，例如“Design, Weeks 3 to 6”。
 - 条形、细线和当前时间线均由样式表绘制。用文本写明图形表达的信息，包括条形的起止日期，并在有必要时注明哪一行是当前行。
 - 区分当前行无需辨认色相。常规模式下，当前行用墨色条形，其他行用浅色条形。强制颜色模式下，当前行用实心条形，其他行只显示轮廓。
+- 可移动的条形是以所在行命名的滑块，其值是用页面语言表达的范围，例如“Design, slider, Nov 4 – 7 · 4 days”。为 `format` 提供与条形文本相同的措辞，让两者表达一致。
+- 从一开始就在页面中保留空的 `gantt-status` 区域：在需要播报时才添加的区域，往往不会被读出。它只播报滑块自身的值无法表达的内容，因此不会重复播报。
+- 指针能做的一切，按键都能做到。对于使用指针但无法拖动的读者，还要为该行提供一种无需拖动即可设置日期的方式，例如从该行打开的[对话框](/components/dialog)中的输入框。
+- 像上方说明文字那样，在图表附近说明如何用按键移动条形：通过 Shift 和 Alt 移动两端的滑块，读者不可能猜到。
+
+## React、Svelte 和 Vue \{#frameworks\}
+
+`gantt` 组件根据数据写出各行，每行包含 `id`、`label`、`start` 和 `end`（没有 `end` 的行是里程碑），并根据值 `{ [id]: [start, end] }` 写出每个条形的位置和文本。它通过 `from` 和 `to` 接收标尺，通过 `now` 接收当前时间，通过 `ticks` 接收各单位的名称；条形移动时调用 `onValueChange`，放下后调用 `onValueCommit`，条形采用新范围之前先询问 `onBeforeChange`（Vue 中为派发的 `beforeChange` 事件）。使用 `npx master-ui add gantt` 将组件复制到项目中。[React、Svelte 和 Vue](/guide/frameworks) 介绍这些组件的实现和用法。
+
+<FrameworkSource name="gantt" />
 
 ## 类名 \{#classes\}
 

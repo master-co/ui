@@ -1,0 +1,119 @@
+---
+title: "文字稿"
+description: "录音所说的内容，以随播放进度跟进的字幕片段呈现。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+文字稿是录音所说的内容，以字幕片段列表呈现，每个片段都带有开始时间。它随录音播放跟进：正在播放的片段以醒目的文字显示在凸起的面板上，已经听过的片段变淡，尚未播放的片段保持正文墨色。选择某个片段，录音就会从该处播放。`transcript` [行为脚本](/guide/behaviors)把它与[媒体播放器](/components/player)或普通的 `<audio>`、`<video>` 关联起来，媒体元素通过其 id 在 `aria-controls` 中指定。
+
+<ComponentPreview name="default" height={296} narrowHeight={312} title="文字稿" background="plain" bodyClass="content-start p-lg" behaviors html={`<div class="grid gap-sm max-w(480) mx-auto">
+  <div class="player" id="talk" role="group" aria-label="A short recording">
+    <audio class="player-media" src="/demo/recording.m4a" controls preload="metadata"></audio>
+    <div class="player-controls">
+      <button type="button" class="player-button player-play" aria-label="Play" aria-pressed="false">
+        <svg class="icon player-off" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.8v14.4a1 1 0 0 0 1.5.86l11.5-7.2a1 1 0 0 0 0-1.72L8.5 3.94A1 1 0 0 0 7 4.8"/></svg>
+        <svg class="icon player-on" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+      </button>
+      <span class="player-elapsed">0:00</span>
+      <input type="range" class="slider player-seek" min="0" max="0" step="any" value="0" aria-label="Seek">
+      <span class="player-duration">0:00</span>
+    </div>
+  </div>
+  <section class="transcript" aria-label="Transcript" aria-controls="talk" style="--transcript-height: 12rem">
+    <ol class="transcript-list scroll-area">
+      <li class="transcript-cue" data-start="0.3"><button type="button" class="transcript-time">0:00</button><p class="transcript-text">This is a short recording, made to show the player and its transcript.</p></li>
+      <li class="transcript-cue" data-start="4.7"><button type="button" class="transcript-time">0:04</button><p class="transcript-text">Each line of the transcript is a cue, with the time it begins.</p></li>
+      <li class="transcript-cue" data-start="8.7"><button type="button" class="transcript-time">0:08</button><p class="transcript-text">The line being spoken is marked, and the transcript keeps it in view.</p></li>
+      <li class="transcript-cue" data-start="13.06"><button type="button" class="transcript-time">0:13</button><p class="transcript-text">Lines you have heard turn quiet. The ones still to come wait in plain ink.</p></li>
+      <li class="transcript-cue" data-start="17.65"><button type="button" class="transcript-time">0:17</button><p class="transcript-text">Choose any line to jump to it, or scroll away and come back later.</p></li>
+      <li class="transcript-cue" data-start="21.79"><button type="button" class="transcript-time">0:21</button><p class="transcript-text">That is the whole recording. Thank you for listening.</p></li>
+    </ol>
+    <button type="button" class="btn btn-sm btn-pill transcript-return" hidden>Back to current</button>
+  </section>
+</div>`} caption="播放后选择一行。播放期间把文字稿滚离当前行：它会停止跟进，并提供返回的方式。" />
+
+## 跟进与滚离 \{#following\}
+
+录音播放时，行为脚本用 `aria-current="true"` 标记当前片段：即 `data-start` 已经过去的最后一个片段，因此在两个片段之间的停顿期间，位置仍会保留。它之前的每个片段都由样式表单独绘制为已播放状态。
+
+列表让当前片段保持在其中央。它只滚动自身，不滚动周围的任何内容，因此含有文字稿的页面绝不会在读者眼前移动；滚动是平滑的，对要求减少动态效果的读者则直接跳转。当读者用滚轮、手指、按键或滚动条滚动列表，使当前片段离开视野时，列表会停止跟进，位于列表底部边缘的小胶囊形按钮 `transcript-return` 可以让它回到当前位置。选择某个片段，或把当前片段滚回视野中，都会恢复跟进。
+
+列表在 `--transcript-height` 的高度内滚动，未设置时为 20rem。给列表加上 [`scroll-area`](/components/scroll-area)，可获得细滚动条，以及在内容延续的边缘处的渐隐效果。
+
+## 来自 WebVTT 轨道 \{#from-a-track\}
+
+列表为空时，行为脚本会通过 TextTrack API 读取媒体的第一条 captions 或 subtitles 轨道，并据此写入字幕片段：时间、去掉标签的文字，以及语音标签所指定的说话人（`<v Ana>`）。轨道只有在未被禁用时才会加载其字幕片段，因此行为脚本会把被禁用的轨道设为 `hidden`，这样画面上不会显示任何内容。这里的文字稿跟进的是一个使用浏览器自带控件的普通 `<audio>`。
+
+<ComponentPreview name="track" height={360} title="来自轨道" background="plain" bodyClass="content-start p-lg" behaviors html={`<div class="grid gap-sm max-w(480) mx-auto">
+  <audio id="talk-audio" class="w-full" src="/demo/recording.m4a" controls preload="metadata">
+    <track kind="captions" src="/demo/recording.vtt" srclang="en" label="English">
+  </audio>
+  <section class="transcript" aria-label="Transcript" aria-controls="talk-audio" style="--transcript-height: 15rem">
+    <ol class="transcript-list scroll-area"></ol>
+    <button type="button" class="btn btn-sm btn-pill transcript-return" hidden>Back to current</button>
+  </section>
+</div>`} caption="字幕片段读取自 recording.vtt。没有脚本时这个列表保持为空，因此如果必须在没有脚本的情况下阅读，请把字幕片段写在页面中。" />
+
+## 行为脚本 \{#behavior\}
+
+`transcript` 接收根元素，即带有 `transcript` 类的元素，并返回用于解除绑定的函数。
+
+```js name=app.js
+import { transcript } from '@master/ui/behaviors/transcript.js'
+
+const detach = transcript(document.querySelector('.transcript'))
+```
+
+- **媒体**由 `aria-controls` 指定：可以是媒体播放器（行为脚本使用其 `player-media`），也可以是 `<audio>` 或 `<video>`。每次媒体报告状态时，行为脚本都会重新查找，因此在文字稿之后写入的媒体，或之后另行指定的媒体，也都能被跟进。`media` 选项可改为直接指定一个元素。
+- **字幕片段**是带有 `data-start`（开始的秒数）的 `li`，其中包含一个 `transcript-time` 按钮和一个 `transcript-text`。在片段上任意位置按下都会从其开始处播放，除非读者正在选择其中的文字；在其时间上按 <kbd class="kbd">Enter</kbd> 效果相同。
+- **由其他地方写入的行。** 行为脚本每次都重新读取列表，不保存任何内容，因此渲染器可以写入并修改字幕片段。`draw: false` 会把空列表留给渲染器处理；`track` 选择用于写入字幕片段的轨道。行为脚本写入的行会在解除绑定时移除。
+
+| 选项 | 默认值 | |
+| --- | --- | --- |
+| `media` | 取自 `aria-controls` | 要跟进的媒体元素 |
+| `track` | 第一条 captions 或 subtitles 轨道 | 用于写入空列表的轨道 |
+| `draw` | `true` | 是否根据轨道写入空列表 |
+
+未加载行为脚本时，字幕片段只是一个供读者阅读的列表；不会标记任何片段，不会跟进，选择片段也不会跳转。
+
+## 键盘操作 \{#keyboard\}
+
+所有时间按钮共用一个 Tab 停靠点，即当前片段的时间按钮，用方向键在它们之间移动，因此很长的文字稿不会让 Tab 键导航变得冗长。
+
+<ContractTable name="transcript" show="keyboard" />
+
+## 无障碍 \{#accessibility\}
+
+- 用 `aria-label`，或用 `aria-labelledby` 指向一个标题，为文字稿命名，并在 `aria-controls` 中指定其媒体。
+- 当前片段带有 `aria-current="true"`；样式表用墨色深浅和层次而不是色相来绘制它，在强制颜色模式下则使用系统轮廓线。
+- 录音播放时，文字稿绝不会自行获取焦点。焦点只在读者移动它时移动；选择返回方式时，焦点回到当前片段。
+- 没有画面的录音需要文字稿，才能在没有声音的情况下被理解。如果页面必须在没有脚本的情况下阅读，请把文字稿写在页面中。
+
+## React、Svelte 和 Vue \{#frameworks\}
+
+`transcript` 组件根据 `cues` 写入字幕片段，每个片段包含 `start`、`text` 和可选的 `speaker`，指定通过 `media` 传入的媒体，并绑定行为脚本，由行为脚本负责标记和跟进。使用 `npx master-ui add transcript` 将组件复制到项目中。有关这些组件的实现和用法，请参阅 [React、Svelte 和 Vue](/guide/frameworks)。
+
+<FrameworkSource name="transcript" />
+
+## 类名 \{#classes\}
+
+<ContractTable name="transcript" />
+
+返回按钮是一个[按钮](/components/button)，即 `btn btn-sm btn-pill`，带有 `transcript-return` 部件类。
+
+## 自定义属性 \{#custom-properties\}
+
+<ContractTable name="transcript" show="properties" />
+
+## 相关内容 \{#related\}
+
+<ComponentLinks slugs={['player', 'scroll-area', 'timeline']} />
+
+## 源码 \{#source\}
+
+<ComponentSource name="transcript" />

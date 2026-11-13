@@ -8,20 +8,30 @@ import ComponentSource from '~/site/components/ComponentSource.astro'
 import ContractTable from '~/site/components/ContractTable.astro'
 import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
-月曆以月份呈現可選的日期。它是由按鈕組成的 ARIA 格線：樣式表負責呈現各種狀態，`calendar` [行為](/guide/behaviors)則提供日期、月份切換按鈕和方向鍵操作。月曆本身沒有獨立的背景樣式，可以放在[卡片](/components/card)內，或放進[彈出面板](/components/popover)做成日期選擇器。
+月曆以月份呈現可選的日期：可以選一天、一段[範圍](#range)或[多個日期](#several-days)，可以顯示一個月，也可以[兩個月並排](#several-months)。它是由按鈕組成的 ARIA 格線：樣式表負責呈現各種狀態，`calendar` [行為](/guide/behaviors)則提供日期、月份切換按鈕和方向鍵操作。月曆本身沒有獨立的背景樣式，可以放在[卡片](/components/card)內，或放進[彈出面板](/components/popover)做成日期選擇器。
 
 <ComponentPreview name="default" height={392} title="月曆" bodyClass="flex justify-center p-lg" behaviors html={`<div class="sheet p-md">
   <div class="calendar">
     <div class="calendar-header">
       <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Previous month"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button>
-      <h3 class="calendar-title" id="cal-title" aria-live="polite"></h3>
+      <h3 class="calendar-title" id="cal-title" aria-live="polite"><button type="button" class="calendar-title-button" aria-description="Choose a month or a year"></button></h3>
       <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Next month"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
     </div>
     <div class="calendar-grid" role="grid" aria-labelledby="cal-title"></div>
   </div>
-</div>`} caption="按一下日期即可選取，用兩個按鈕切換月份，也可以將焦點移到日期上，再用方向鍵移動。" />
+</div>`} caption="按一下日期即可選取，用兩個按鈕切換月份，也可以將焦點移到日期上，再用方向鍵移動。按一下標題可以跳到其他月份或年份。" />
 
 標記包含標頭和空白格線。行為會將月份名稱寫入 `calendar-title`，將星期名稱及各週日期寫入 `calendar-grid`，並預設顯示今天所在的月份。沒有腳本時，格線會維持標記原有的內容。如果月曆需要在腳本執行前就能閱讀，請像下方的[日期範圍](#range)範例一樣，在伺服器端產生各週的標記。行為掛載後會取代這些內容。
+
+## 月份與年份 \{#months-and-years\}
+
+上方月曆的標題是一個按鈕，也就是位在 `calendar-title` 內的 `calendar-title-button`。按一下它，格線會變成該年的十二個月；再按一下，會變成該十年間的各個年份，前後各多出一年，以淡化的墨色呈現。選取年份後會顯示該年的月份，選取月份後會顯示該月的日期，焦點會落在同一天。<kbd>Escape</kbd> 會回到原本的日期檢視。
+
+月份與年份都是同一個格線中的 `calendar-period` 按鈕，每列三個，採用與日期相同的材質。格線維持六週月份的高度，因此月曆不會跳動。標題始終說明格線目前的位置：`November 2026`、`2026`、`2020 – 2029`。月份切換按鈕在月份檢視中會切換一年，在年份檢視中會切換十年，其名稱取自 `labels` 選項。在年份檢視中標題按鈕會停用，因為十年已是最上層。
+
+沒有按鈕的標題仍是一般標題，月曆也不會離開日期檢視。這種跳轉適用於只顯示一個月的月曆。
+
+另一種做法是在標頭放原生的月份和年份下拉選單，但我們沒有採用：在每種語言下，兩個下拉選單加上兩個月份按鈕都無法塞進七個 36px 的欄位；一百年的清單在下拉選單中要捲很久；而且自訂樣式下拉選單的清單尚未在所有瀏覽器中提供。月份與年份的格線採用月曆自己的材質，並沿用讀者正在使用的按鍵操作。
 
 ## 狀態 \{#states\}
 
@@ -33,6 +43,8 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
 | 已選取 | `aria-selected="true"` | 以墨色填滿，如同勾選的[核取方塊](/components/checkbox) |
 | 非本月 | `calendar-day-outside` | 淡化的墨色 |
 | 無法選取 | `disabled` | 停用狀態的墨色 |
+
+跳轉中的月份或年份也帶有相同的標記：今天所在的月份或年份加上 `aria-current="date"`，包含已選日期的那一個加上 `aria-selected="true"`，在 `min` 與 `max` 之間沒有任何日期的則加上 `disabled`。`calendar-period-outside` 標示十年範圍前後的年份。
 
 日期會像[選單](/components/menu)的項目一樣，即時回應指標。選取今天時仍會保留圓點，圓點會採用該日期狀態的墨色。
 
@@ -134,6 +146,62 @@ addEventListener('DOMContentLoaded', function () {
 
 `attach()` 不會傳入任何選項，因此這個預覽會在 `attach()` 執行後自行呼叫 `calendar`。對同一個根元素再次呼叫時，第二次掛載的行為會取代第一次。`MasterUI` 是預覽載入的套件組合。在專案中，請依照[行為](#behavior)一節的範例匯入 `calendar`。
 
+## 多個日期 \{#several-days\}
+
+使用 `multiple` 選項時，行為可以選取任意數量的不連續日期。按一下、<kbd>Enter</kbd> 或 <kbd>Space</kbd> 會切換日期的選取狀態，每個已選日期都帶有 `aria-selected="true"`，格線則帶有 `aria-multiselectable="true"`。值是已選日期的清單，格式為 `YYYY-MM-DD` 並經過排序，每次變更都會派送所有已選日期。
+
+<ComponentPreview name="multiple" height={392} title="多個日期" bodyClass="flex justify-center p-lg" behaviors html={`<div class="sheet p-md">
+  <div class="calendar" id="shifts">
+    <div class="calendar-header">
+      <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Previous month"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button>
+      <h3 class="calendar-title" id="shifts-title" aria-live="polite"></h3>
+      <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Next month"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
+    </div>
+    <div class="calendar-grid" role="grid" aria-labelledby="shifts-title"></div>
+  </div>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.calendar(document.getElementById('shifts'), {
+    multiple: true,
+    value: ['2026-11-09', '2026-11-12', '2026-11-20'],
+    disabled: function (date) { return date.getDay() === 0 || date.getDay() === 6 }
+  })
+})
+</script>`} caption="按一下平日即可選取或取消選取。週末無法選取。" />
+
+`min`、`max` 和 `disabled` 的作用與選取單一日期時相同。同時設定 `range` 時，以 `range` 為準。
+
+## 多個月份 \{#several-months\}
+
+兩個月並排可以顯示從一個月跨到另一個月的範圍。每個月都是一個 `calendar-month`，各有自己的標頭和格線：第一個標頭放切換到上個月的按鈕，最後一個標頭放切換到下個月的按鈕，每個標題都位在自己的格線上方。行為會依序填入各個月份，按鈕則一次讓所有月份一起切換一個月。
+
+<ComponentPreview name="months" height={392} mediumHeight={720} narrowHeight={720} title="兩個月份" bodyClass="flex justify-center p-lg" behaviors html={`<div class="sheet p-md">
+  <div class="calendar" id="trip">
+    <div class="calendar-month">
+      <div class="calendar-header">
+        <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Previous month"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button>
+        <h3 class="calendar-title" id="trip-first" aria-live="polite"></h3>
+      </div>
+      <div class="calendar-grid" role="grid" aria-labelledby="trip-first"></div>
+    </div>
+    <div class="calendar-month">
+      <div class="calendar-header">
+        <h3 class="calendar-title" id="trip-second" aria-live="polite"></h3>
+        <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Next month"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
+      </div>
+      <div class="calendar-grid" role="grid" aria-labelledby="trip-second"></div>
+    </div>
+  </div>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.calendar(document.getElementById('trip'), { range: true, value: ['2026-11-26', '2026-12-04'] })
+})
+</script>`} caption="選取跨越兩個月的範圍，或用方向鍵從一個月移到下一個月。" />
+
+這些月份共用一個 Tab 停駐點和同一套按鍵操作：在第一個月的最後一天按方向鍵會移到第二個月的第一天，移動超過最後一個月時兩個月會一起切換。不屬於某個月的日期會留白，因為旁邊的月份已顯示那一天；留白讓星期欄位保持對齊。一列放不下時，月份會換行排成一欄。
+
 ## 日期選擇器 \{#date-picker\}
 
 日期選擇器由一個欄位、一個按鈕，以及放在[彈出面板](/components/popover)內的月曆組成。彈出面板無需腳本即可開啟或關閉，並會相對於按鈕定位。行為會呈現月曆並指出選取的日期，頁面自己的腳本則將日期填入欄位，再關閉彈出面板。
@@ -187,18 +255,20 @@ root.addEventListener('change', (event) => console.log(event.detail.value))
 
 | 選項 | 設定內容 |
 | --- | --- |
-| `value` | 選取的日期，格式為 `YYYY-MM-DD`，或日期範圍的起訖日期 |
+| `value` | 選取的日期，格式為 `YYYY-MM-DD`；日期範圍的起訖日期；或使用 `multiple` 時選取的各個日期 |
 | `month` | 首次顯示的月份，格式為 `YYYY-MM`。預設使用所選日期的月份，未選取時使用今天所在的月份 |
 | `min`, `max` | 最早和最晚可選的日期，格式為 `YYYY-MM-DD`。無法再往某個方向切換月份時，該方向的按鈕會停用 |
 | `range` | 設為 `true` 即可選取兩個日期及其間的所有日期 |
+| `multiple` | 設為 `true` 即可選取任意數量的不連續日期；同時設定時以 `range` 為準 |
+| `labels` | 月份與年份檢視中月份切換按鈕的名稱：`previousYear`、`nextYear`、`previousDecade`、`nextDecade`。預設為英文 |
 | `weekStart` | 第一欄的星期，星期日為 0，星期六為 6。預設採用地區設定中的每週起始日，瀏覽器無法提供時則使用星期一 |
 | `locale` | 指定月份和星期名稱所用的 BCP 47 語言標籤。預設採用月曆所在位置的 `lang` |
 | `disabled` | 接收 `Date` 並判斷該日期是否無法選取的函式 |
-| `draw` | 代替內建腳本產生格線的函式，呼叫時會傳入要顯示的月份，格式為 `YYYY-MM`。請參閱[自訂格線](/guide/behaviors#a-grid-of-your-own) |
+| `draw` | 代替內建腳本產生格線的函式。呼叫時會傳入要顯示的月份（格式為 `YYYY-MM`）和檢視：`days`、`months` 或 `years`。在日期檢視中，它寫入該月，並在後續的格線中寫入之後的月份；`calendarMonth(month, { offset })` 會提供每個月的內容。在月份或年份檢視中，它寫入 `calendarPeriods(month, { view })` 提供的儲存格。請參閱[自訂格線](/guide/behaviors#a-grid-of-your-own) |
 
-- **寫入的內容。** 行為會寫入星期名稱、所顯示月份的各週日期，以及月份名稱。日期按鈕的 `value` 會設為該日期，今天會加上 `aria-current="date"`，選取的日期會加上 `aria-selected="true"` 和適用的範圍類別，無法選取的日期會加上 `disabled`。完整日期會寫入 `aria-label`，並用 `tabindex` 讓其中一天進入 Tab 鍵巡覽順序。使用 `draw` 時，由樣板或框架產生日期，腳本只負責設定日期的標記。
-- **事件。** 選取日期時，根元素會派送可向上冒泡的 `change` 事件。`detail.value` 是 `YYYY-MM-DD` 格式的日期，選齊範圍兩端後則是 `[start, end]`。
-- **值。** 值由腳本保存，標記中沒有這個值。請透過回傳函式的 `value` 讀取，例如 `picker.value`。在選取結束日期前，範圍的終點是 `null`。從外部設定值即可選取日期。例如，`picker.value = '2026-11-20'` 會顯示新日期所在的月份，且不會派送事件。
+- **寫入的內容。** 行為會寫入星期名稱、所顯示的每個月份的各週日期，以及各月份的名稱；在跳轉中則寫入月份或年份及對應的標題。日期按鈕的 `value` 會設為該日期，今天會加上 `aria-current="date"`，選取的日期會加上 `aria-selected="true"` 和適用的範圍類別，無法選取的日期會加上 `disabled`。完整日期會寫入 `aria-label`，並用 `tabindex` 讓其中一天進入 Tab 鍵巡覽順序。使用 `draw` 時，由樣板或框架產生日期，腳本只負責設定日期的標記。
+- **事件。** 選取日期時，根元素會派送可向上冒泡的 `change` 事件。`detail.value` 是 `YYYY-MM-DD` 格式的日期；選齊範圍兩端後是 `[start, end]`；使用 `multiple` 時則是排序後的日期清單。跳轉到月份或年份時不會派送事件。
+- **值。** 值由腳本保存，標記中沒有這個值。請透過回傳函式的 `value` 讀取，例如 `picker.value`。在選取結束日期前，範圍的終點是 `null`；使用 `multiple` 時，未選取任何日期的值是 `[]`。從外部設定值即可選取日期。例如，`picker.value = '2026-11-20'` 會顯示新日期所在的月份，且不會派送事件。
 - **日期。** 採用本地時區與公曆。
 
 ## 結構 \{#structure\}
@@ -206,23 +276,28 @@ root.addEventListener('change', (event) => console.log(event.detail.value))
 - `calendar-grid` 統一定義七欄。每個 `calendar-week` 都是沿用這些欄位的子格線列，因此星期名稱和日期不用表格也能對齊。
 - `calendar-weekday` 是欄標題，其 `aria-label` 使用完整的星期名稱。
 - `calendar-day` 是帶有 `role="gridcell"` 的 `<button>`。
+- `calendar-title-button` 在標題有按鈕時，是位在 `calendar-title` 內的 `<button>`；行為會把標題寫入其中。
+- `calendar-period` 是跳轉中的月份或年份：帶有 `role="gridcell"` 的 `<button>`，值為 `YYYY-MM` 或 `YYYY`，每個 `calendar-week` 放三個。
+- `calendar-month` 包含多個月份中其中一個月的標頭和格線。
 
 ## 鍵盤操作 \{#keyboard\}
 
-行為讓格線支援日期格線的鍵盤操作。移動超出當月時，月曆會切換到相鄰月份，並將焦點留在移動後的日期。焦點不會停在無法選取的日期，也不會越過 `min` 或 `max`。
+行為讓格線支援日期格線的鍵盤操作。移動超出當月時，月曆會切換到相鄰月份，並將焦點留在移動後的日期。焦點不會停在無法選取的日期，也不會越過 `min` 或 `max`。在月份與年份檢視中，方向鍵一次移動一格或一列三格，<kbd>Enter</kbd> 會選取並往下切換一層（從年份到月份、從月份到日期）。
 
 <ContractTable name="calendar" show="keyboard" />
 
 ## 無障礙 \{#accessibility\}
 
 - 格線使用 `role="grid"`，並以月份標題作為標籤。每週使用 `role="row"`。
-- Tab 鍵巡覽順序只包含一天，依序優先使用已選日期、今天，兩者都不在當月時則使用當月第一天。其餘日期設為 `tabindex="-1"`。
+- Tab 鍵巡覽順序只包含一天，依序優先使用已選日期（多個時為第一個）、今天，兩者都不在顯示的月份中時則使用顯示月份的第一天。其餘日期設為 `tabindex="-1"`。多個並排的月份合起來只有一個 Tab 停駐點，每個格線以各自的標題作為標籤。
+- 可選取範圍或多個日期的格線帶有 `aria-multiselectable="true"`。
+- 標題按鈕以它顯示的標題命名，這個標題也是格線的標籤。請用 `aria-description` 說明按鈕的作用，例如「Choose a month or a year」，不要用 `aria-label`，否則格線也會跟著改名。
 - 在標題加上 `aria-live="polite"`，讓螢幕閱讀器在切換月份時播報。
 - 在觸控螢幕上，日期按鈕的尺寸為 44px。
 
 ## React、Svelte 和 Vue \{#frameworks\}
 
-`calendar` 元件使用與行為相同的資料產生月份內容，因此初始 HTML 就包含月曆，也支援從外部設定及讀取所選日期。用 `npx master-ui add calendar` 將它複製到專案中，並參閱 [React、Svelte 和 Vue](/guide/frameworks) 了解元件的實作及用法。
+`calendar` 元件使用與行為相同的資料產生月份內容，因此初始 HTML 就包含月曆，也支援從外部設定及讀取所選日期。它接受 `range` 和 `multiple`，以 `months` 並排顯示多個月份，只顯示一個月時會有標題按鈕；`jumpLabel` 是該按鈕的說明，`labels` 是月份與年份檢視中月份切換按鈕的名稱。用 `npx master-ui add calendar` 將它複製到專案中，並參閱 [React、Svelte 和 Vue](/guide/frameworks) 了解元件的實作及用法。
 
 <FrameworkSource name="calendar" />
 

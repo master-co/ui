@@ -6,8 +6,9 @@ description: "可滚动的区域。对应方向还有内容时，边缘渐隐。
 import ComponentPreview from '~/site/components/ComponentPreview.astro'
 import ComponentSource from '~/site/components/ComponentSource.astro'
 import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
-滚动区域是页面内可独立滚动的区域，可用于面板中的长列表、宽表格或日志。它保留平台原生的滚动行为，使用纤细低调的滚动条。内容延伸到哪一侧的边缘之外，哪一侧就显示渐隐效果。内容到头时，对应边缘清晰可见。
+滚动区域是页面内可独立滚动的区域，可用于面板中的长列表、宽表格或日志。它保留平台原生的滚动行为，使用纤细低调的滚动条。内容延伸到哪一侧的边缘之外，哪一侧就显示渐隐效果。内容到头时，对应边缘清晰可见。在阅读过程中末尾不断增长的区域，例如聊天或构建日志，还可以[跟随新内容](#follow)。
 
 <ComponentPreview name="default" height={248} title="滚动区域" bodyClass="p-lg" html={`<div class="sheet max-w(360) mx-auto">
   <div class="scroll-area h(200) p-md text-sm fg-text-body leading-md" tabindex="0" role="region" aria-label="Release notes">
@@ -52,11 +53,129 @@ import ContractTable from '~/site/components/ContractTable.astro'
   </div>
 </div>`} />
 
+## 跟随新内容 \{#follow\}
+
+聊天、构建日志或流式输出的回答会在阅读过程中从末尾不断增长。为区域设置 `role="log"`，并挂载 `follow` [行为脚本](/guide/behaviors)：新内容到达时，它让末尾保持可见；读者一旦从末尾滚开，就停止跟随；读者回到末尾时，再次跟随。在内容之后放一个带有 `hidden` 的 `scroll-area-latest` 按钮：它只在区域未跟随时出现，按下后会滚动到末尾并重新跟随。
+
+<ComponentPreview name="follow" height={300} title="跟随构建日志" bodyClass="p-lg" behaviors html={`<div class="sheet max-w(440) mx-auto">
+  <div class="scroll-area h(240) p-md font-mono text-xs fg-text-body leading-md" tabindex="0" role="log" aria-label="Build log">
+    <div id="build-lines">
+      <p class="m(0)">Cloning master-co/ui at 3041b1c</p>
+      <p class="m(0)">Installing 596 packages</p>
+      <p class="m(0)">Compiling 112 stylesheets</p>
+    </div>
+    <button type="button" class="btn btn-sm btn-pill scroll-area-latest" hidden><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg>Jump to latest</button>
+  </div>
+</div>
+<script>
+  const steps = ['Checking contracts', 'Rendering /components', 'Rendering /blocks', 'Rendering /pages', 'Writing llms.txt', 'Writing the registry', 'Checking 2,914 links', 'Compressing assets', 'Uploading 71 pages']
+  const lines = document.getElementById('build-lines')
+  let count = 0
+  const timer = setInterval(() => {
+    const line = document.createElement('p')
+    line.className = 'm(0)'
+    line.textContent = steps[count % steps.length] + (count >= steps.length ? ' (pass ' + (Math.floor(count / steps.length) + 1) + ')' : '')
+    lines.append(line)
+    if (++count >= 120) clearInterval(timer)
+  }, 800)
+</script>`} caption="日志行不断到达，日志随之滚动。在运行时向上滚动：日志停在你所在的位置，并出现“Jump to latest”。按下该按钮，或滚回末尾，日志会再次跟随。" />
+
+判断方式如下：
+
+- **跟随。** 从挂载行为脚本的那一刻起，区域就开始跟随：它会滚动到末尾，此后只要内容增长，无论是新增一行、流式输出的词语落入最后一条消息，还是一张图片加载完成，都会再次滚动到末尾。
+- **停止。** 向开头方向滚动会停止跟随，无论由什么引起：滚轮、手指、滚动条、<kbd>↑</kbd>、<kbd>Page Up</kbd> 或 <kbd>Home</kbd>。向开头方向转动滚轮会在区域移动之前立即停止跟随，因此恰在此刻到达的词语也不会把读者拉回去。
+- **再次跟随。** 通过 <kbd>End</kbd>、滚动条或按钮重新到达末尾，就会再次跟随。距离末尾只差几个像素也算作到达末尾。
+- **事件。** 每当读者使区域开始或停止跟随，区域都会派发 `change`。行为脚本的 `value` 表示是否正在跟随；将其设为 `true` 可把读者带到末尾，例如应用在读者发送消息时就会这样做。设置它不会派发事件。
+
+```js name=app.js
+import { follow } from '@master/ui/behaviors/follow.js'
+
+const log = document.querySelector('.scroll-area[role="log"]')
+const following = follow(log)
+
+form.addEventListener('submit', () => { following.value = true })
+```
+
+没有行为脚本时，该区域就是普通的滚动区域：停留在读者离开的位置，按钮保持隐藏。按钮粘性定位在区域底部，位于内容和渐隐边缘之上，并叠放在最后一行上方，而不是排在其后，因此显示按钮不会让内容变高。
+
+## 保持阅读位置 \{#keeping-the-place\}
+
+在读者正在查看的内容上方插入内容，例如在顶部加载更早的消息，会把正在阅读的内容往下推。浏览器会通过滚动锚定自行避免这一点：区域随上方内容一起移动，正在阅读的消息保持在原位。样式表在区域上保留 `overflow-anchor: auto`，在其按钮上设置 `none`，因此浏览器不会把按钮当作固定不动的元素。在不支持滚动锚定的浏览器中，`follow` 行为脚本会按上方内容移动的距离自行完成同样的调整。位于顶部、其下方会插入新行的一行文字，例如提示正在加载更多内容的说明，也要设置 `overflow-anchor: none`，让浏览器固定的是某一行内容，而不是这行文字。
+
+<ComponentPreview name="earlier" height={380} title="更早的消息和流式回答" bodyClass="p-lg" behaviors html={`<div class="sheet max-w(440) mx-auto">
+  <div class="scroll-area h(320) p-md" tabindex="0" role="log" aria-label="Conversation with Ada">
+    <p class="m(0) pb-sm text-center text-xs fg-text-muted" style="overflow-anchor: none" id="earlier">Earlier messages load as you scroll up</p>
+    <ol class="m(0) p(0)" id="turns">
+      <li class="message message-sent"><div class="message-bubble">Can the docs build run on every push?</div></li>
+      <li class="message"><div class="message-bubble">Yes. It takes about two minutes.</div></li>
+    </ol>
+    <button type="button" class="btn btn-sm btn-pill scroll-area-latest" hidden><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg>Jump to latest</button>
+  </div>
+</div>
+<script>
+  const turns = document.getElementById('turns')
+  const turn = (text, sent) => {
+    const item = document.createElement('li')
+    item.className = sent ? 'message message-sent' : 'message'
+    const bubble = document.createElement('div')
+    bubble.className = 'message-bubble'
+    bubble.textContent = text
+    item.append(bubble)
+    return item
+  }
+  const older = [['Morning! Is the release still today?', false], ['It is, once the docs build passes.', true], ['Which build?', false], ['The one that checks every page and link.', true], ['Do we wait for it?', false], ['No, it reports here when it is done.', true]]
+  const log = turns.closest('.scroll-area')
+  log.addEventListener('scroll', () => {
+    if (log.scrollTop > 48 || !older.length) return
+    for (const [text, sent] of older.splice(-2).reverse()) turns.prepend(turn(text, sent))
+    if (!older.length) document.getElementById('earlier').textContent = 'The start of the conversation'
+  })
+  const exchanges = [
+    ['What does it check?', 'It renders every page in five languages, checks each preview against the contracts, follows every link and compares the registry with the package, then writes the search index.'],
+    ['And if a link is broken?', 'The build stops and names the page and the link, so nothing half checked reaches the site. Fix it and push again; the next run starts from the beginning.'],
+    ['Thanks!', 'Any time. I will post here when this one is done.']
+  ]
+  let at = 0
+  const next = () => {
+    if (at >= exchanges.length) return
+    const [question, answer] = exchanges[at++]
+    turns.append(turn(question, true))
+    const reply = turn('', false)
+    const bubble = reply.firstChild
+    bubble.setAttribute('aria-busy', 'true')
+    turns.append(reply)
+    const words = answer.split(' ')
+    const stream = setInterval(() => {
+      bubble.textContent += (bubble.textContent ? ' ' : '') + words.shift()
+      if (words.length) return
+      clearInterval(stream)
+      bubble.removeAttribute('aria-busy')
+      setTimeout(next, 2500)
+    }, 140)
+  }
+  setTimeout(next, 1200)
+</script>`} caption="回答以流式方式输出，对话随之跟随。向上滚动：接近顶部时，更早的对话会加载到上方，而你正在阅读的那条保持在原位。" />
+
 ## 无障碍 \{#accessibility\}
 
 - 滚动区域必须能通过键盘访问。如果区域内没有可聚焦的内容，为区域设置 `tabindex="0"`、一个 `role`（如 `region`）以及无障碍名称。
 - 遮罩也会让区域自身的滚动条在相同的边缘渐隐。强制颜色模式下会移除遮罩。
 - 为区域设置高度或最大高度。两者都未设置时，区域会随内容撑开，始终不会滚动。
+- `role="log"` 是礼貌型实时区域：添加到其中的内容会被播报，而不会移动焦点。回答以流式方式写入某条消息时，为该消息设置 `aria-busy="true"`，回答完成后再移除，使它完整地播报一次，而不是逐词播报。
+- `scroll-area-latest` 按钮显示时是 Tab 键顺序中的真正按钮。按下后按钮隐藏，焦点移到区域上，之后可用按键滚动区域。
+- 跟随从不移动焦点，并且读者一滚开就停止，因此不断到达的内容永远不会把页面从正在阅读的人眼前抽走。
+
+## 键盘操作 \{#keyboard\}
+
+按键都由浏览器原生提供；行为脚本只监听按键引起的滚动。
+
+<ContractTable name="scroll-area" show="keyboard" />
+
+## React、Svelte 和 Vue \{#frameworks\}
+
+`log` 组件在其子元素外渲染一个会跟随的滚动区域，并附带按钮，挂载行为脚本，接收和传出 `following`。使用 `npx master-ui add log` 将组件复制到项目中。[React、Svelte 和 Vue](/guide/frameworks) 介绍这些组件的实现和用法。
+
+<FrameworkSource name="scroll-area" />
 
 ## 类名 \{#classes\}
 

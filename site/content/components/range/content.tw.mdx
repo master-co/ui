@@ -35,13 +35,49 @@ import ContractTable from '~/site/components/ContractTable.astro'
 
 和單一滑桿的填色方式一樣，每個滑塊都在自己的輸入元素內建立檢視時間軸。群組透過 `timeline-scope` 取得兩條時間軸，並各自執行一段動畫，藉此取得兩個百分比。填色會從較小值延伸到較大值，所以兩個滑塊可以交錯。填色仍會落在兩者之間，範圍起點也始終是較小的值。
 
-在表單處理程式中也依照相同方式讀取這組數值，以較小值作為下限。如果兩值必須保持一定間距，請在 `input` 事件中限制數值。填色本身不受此限制影響。
+在表單處理程式中也依照相同方式讀取這組數值，以較小值作為下限。如果兩值不能交錯，或必須保持一定間距，請掛載[行為](#keeping-a-distance)。填色本身不受此限制影響。
 
 瀏覽器若不支援捲動驅動動畫，兩個滑塊下方只會顯示未填色的軌道，兩個輸入元素仍可正常操作。Chromium 和 Safari 26 支援填色。
 
 ## 滑塊如何共用軌道 \{#how-the-thumbs-share-a-track\}
 
 兩個輸入元素位於同一個網格儲存格。各自隱藏自己的軌道，只在滑塊上接收指標操作。按下兩個滑塊之間的區域不會觸發任何一個滑塊，另一個輸入元素的空軌道也不會擋住滑塊。正在移動的滑塊會顯示在最上層。按下軌道空白處不會有任何效果，因為無法判斷要移動哪一個滑塊。
+
+## 保持間距 \{#keeping-a-distance\}
+
+`range` [行為](/guide/behaviors)會讓兩個滑塊保持分開：`range-start` 永遠不會越過 `range-end`，設定 `distance` 時，兩者會在相隔這段距離處停下。停下的是正在移動的滑塊，靜止的滑塊永遠不會被推動。它會在移動滑塊所觸發的 `input` 事件中修正數值，搶在輸入元素本身或範圍周圍的任何元素收到事件之前，因此每個監聽器讀到的都是保持間距的一組數值，滑塊也不會顯示被拒絕的值。鍵盤操作、拖曳和表單值仍由輸入元素自己處理。
+
+<ComponentPreview name="distance" height={112} title="保持間距" background="plain" bodyClass="p-lg" behaviors html={`<div class="flex flex-col gap-sm max-w(360) mx-auto">
+  <div class="flex items-baseline justify-between text-sm">
+    <span class="fg-text-strong" id="hours">Opening hours</span>
+    <output class="fg-text-muted" id="hours-output">9:00 to 17:00</output>
+  </div>
+  <div class="range" id="hours-range" role="group" aria-labelledby="hours">
+    <input type="range" class="slider range-start" min="0" max="24" value="9" aria-label="Opens at">
+    <input type="range" class="slider range-end" min="0" max="24" value="17" aria-label="Closes at">
+  </div>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  var range = document.getElementById('hours-range')
+  MasterUI.range(range, { distance: 2 })
+  range.addEventListener('input', function () {
+    var start = range.querySelector('.range-start').value
+    var end = range.querySelector('.range-end').value
+    document.getElementById('hours-output').textContent = start + ':00 to ' + end + ':00'
+  })
+})
+</script>`} caption="將任一滑塊拖向另一個：兩者會在相隔兩小時處停下。" />
+
+`attach()` 會讓範圍滑桿維持平台原本的行為，因此兩個滑塊可以交錯。若要讓它們保持分開，請對它呼叫 `range`，並像這個預覽一樣用 `distance` 指定要相隔多遠；對同一個根元素再次呼叫會取代前一次。`MasterUI` 是預覽載入的套件；在專案中請匯入 `range`：
+
+```js name=app.js
+import { range } from '@master/ui/behaviors/range.js'
+
+const detach = range(document.querySelector('.range'), { distance: 2 })
+```
+
+間距以輸入元素自己的單位計算。請給 `step` 的倍數：輸入元素會把寫入的值四捨五入到它的步進，行為則會取最接近且能保持間距的步進值。
 
 ## 停用 \{#disabled\}
 

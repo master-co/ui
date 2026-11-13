@@ -33,7 +33,7 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
 ## 동작 \{#behavior\}
 
-`stepper` [동작](/guide/behaviors)을 연결하면 양쪽 버튼으로 그 사이의 숫자를 조절할 수 있습니다. `stepper` 클래스가 있는 루트 요소를 인수로 받습니다. 동작에 별도 옵션은 없으며, 호출하면 동작을 해제하는 함수를 반환합니다.
+`stepper` [동작](/guide/behaviors)을 연결하면 양쪽 버튼으로 그 사이의 숫자를 조절할 수 있습니다. `stepper` 클래스가 있는 루트 요소와 [서식이 적용된 숫자](#formatted) 및 [드래그 조절](#scrub)에 사용할 옵션을 인수로 받으며, 호출하면 동작을 해제하는 함수를 반환합니다.
 
 ```js name=app.js
 import { stepper } from '@master/ui/behaviors/stepper.js'
@@ -90,6 +90,69 @@ root.addEventListener('change', (event) => console.log(event.target.value))
   <button type="button" class="btn btn-square" value="1" tabindex="-1" aria-label="More replicas"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
 </div>`} />
 
+## 서식이 적용된 숫자 \{#formatted\}
+
+가격, 백분율, 큰 수는 `$1,250`, `12%`, `1,250,000`처럼 서식을 적용해 표시하면 읽기 쉽습니다. 필드와 `stepper-display`를 `stepper-value` 안에 넣고, 동작에 [`Intl.NumberFormat`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Intl/NumberFormat/NumberFormat)의 옵션인 `format`을 전달하세요. 페이지의 로캘과 다른 로캘로 표시하려면 `locale`도 전달합니다.
+
+```js name=app.js
+stepper(root, { format: { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }, locale: 'en-US' })
+```
+
+<ComponentPreview name="formatted" height={152} title="서식이 적용된 숫자" bodyClass="flex flex-col items-center gap-md p-lg" behaviors html={`<div class="input-group stepper">
+  <button type="button" class="btn btn-square" value="-1" tabindex="-1" aria-label="Lower the budget"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+  <span class="stepper-value">
+    <input class="input-group-field stepper-field" type="number" min="0" step="250" value="1250" aria-label="Monthly budget">
+    <span class="stepper-display" aria-hidden="true"></span>
+  </span>
+  <button type="button" class="btn btn-square" value="1" tabindex="-1" aria-label="Raise the budget"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+</div>
+<div class="input-group stepper">
+  <button type="button" class="btn btn-square" value="-1" tabindex="-1" aria-label="Fewer requests"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+  <span class="stepper-value">
+    <input class="input-group-field stepper-field" type="number" min="0" step="50000" value="1250000" aria-label="Requests a month">
+    <span class="stepper-display" aria-hidden="true"></span>
+  </span>
+  <button type="button" class="btn btn-square" value="1" tabindex="-1" aria-label="More requests"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  const [budget, requests] = document.querySelectorAll('.stepper')
+  MasterUI.stepper(budget, { format: { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }, locale: 'en-US' })
+  MasterUI.stepper(requests, { locale: 'en-US' })
+})
+</script>`} caption="예산을 조절하거나 필드를 클릭해 보세요. 필드에 포커스가 있는 동안에는 편집할 수 있는 일반 숫자가 표시되고, 포커스가 벗어나면 서식을 적용한 숫자가 다시 표시됩니다. 두 번째 표시는 서식 없이 자릿수만 구분합니다." />
+
+`attach()`는 옵션을 전달하지 않으므로 이 미리 보기에서는 `attach()`가 실행된 뒤 `stepper`를 직접 호출합니다. 같은 루트에 두 번째로 호출하면 첫 번째 호출을 대체합니다. `MasterUI`는 미리 보기가 불러오는 번들입니다. 프로젝트에서는 [동작](#behavior) 섹션에 나온 대로 `stepper`를 가져오세요.
+
+- **숫자는 필드에 그대로 둡니다.** 필드에 포커스가 없는 동안에는 표시 요소가 필드 자리에 놓이고, 필드 자체의 숫자는 투명하게 처리됩니다. 필드에 포커스를 두면 표시 요소가 비켜나므로, 사용자는 `$1,250`이 아니라 `1250`을 편집합니다. 방향키, `min`, `max`, `step`, 유효성 검사, 폼이 전송하는 값은 이전과 같이 숫자 입력 필드가 처리합니다.
+- **읽어 주는 텍스트.** 버튼, 키 입력, 직접 입력, 외부에서 설정한 값 등으로 값이 바뀌면 동작이 서식을 적용한 숫자를 표시 요소와 필드의 `aria-valuetext`에 기록합니다. 따라서 스크린 리더도 "$1,250"으로 읽습니다. 표시 요소에는 `aria-hidden="true"`가 지정되어 있습니다.
+- **서식이 없을 때.** `stepper-display`가 있고 `format`이 없는 스테퍼는 로캘에 따라 자릿수를 구분합니다. `Intl.NumberFormat`으로 표현할 수 없는 숫자에는 `format`에 숫자를 받는 함수를 지정할 수도 있습니다.
+- **너비.** 숫자 영역의 너비는 필드와 표시 요소 중 더 넓은 쪽에 맞춰지며, `--stepper-min`과 `--stepper-max` 사이로 제한됩니다. 따라서 필드에 포커스를 두어도 버튼이 움직이지 않습니다.
+- **스크립트가 없으면** 표시 요소는 비어 있고, 필드는 평소대로 숫자를 표시합니다.
+
+## 드래그로 조절하기 \{#scrub\}
+
+디자인 도구에서는 숫자의 레이블을 드래그해 값을 바꾸는 경우가 많습니다. 페이지 어디에 있든 필드의 `<label>`이나 오목한 영역 안의 손잡이에 `stepper-scrub` 클래스를 지정하세요. 옆으로 드래그하면 4px마다 한 단계씩 숫자가 바뀌며, 줄의 끝 방향으로 드래그하면 값이 커집니다. <kbd>Shift</kbd> 키를 누른 채로 드래그하면 한 번에 열 단계씩 바뀝니다.
+
+<ComponentPreview name="scrub" height={152} title="드래그로 조절하기" bodyClass="flex flex-col items-center gap-md p-lg" behaviors html={`<div class="flex items-center gap-md">
+  <label class="stepper-scrub text-sm fg-text-strong" for="opacity">Opacity</label>
+  <div class="input-group input-group-sm stepper">
+    <input class="input-group-field stepper-field" id="opacity" type="number" min="0" max="100" step="1" value="64">
+    <span class="input-group-addon">%</span>
+  </div>
+</div>
+<div class="input-group input-group-sm stepper" style="--stepper-min: 4ch">
+  <span class="input-group-addon stepper-scrub" aria-hidden="true">W</span>
+  <input class="input-group-field stepper-field" type="number" min="1" max="4096" value="320" aria-label="Width">
+  <span class="input-group-addon">px</span>
+</div>`} caption="Opacity 레이블이나 두 번째 필드 앞의 W를 옆으로 드래그해 보세요. 드래그하지 않고 누르기만 하면 필드에 포커스가 놓입니다." />
+
+- **누르기가 아닌 드래그.** 포인터가 3px 이상 움직여야 드래그가 시작되므로, 레이블을 누르기만 하면 여전히 필드에 포커스가 놓입니다. 드래그가 끝날 때 발생하는 클릭은 무시됩니다.
+- **포인터 잠금.** 마우스를 사용할 때는 브라우저가 지원하면 드래그하는 동안 포인터를 잠급니다. 따라서 길게 드래그해도 화면 가장자리에 걸리지 않으며, 드래그가 끝나면 포인터가 원래 위치로 돌아옵니다. 펜이나 손가락은 대신 손잡이가 포인터를 캡처하며, 터치 화면에서 세로로 스와이프하면 여전히 페이지가 스크롤됩니다.
+- **이벤트.** 필드는 단계마다 `input`을 발생시키고, 드래그가 끝나면 `change`를 한 번 발생시킵니다.
+- **방향.** 오른쪽에서 왼쪽으로 쓰는 페이지에서는 줄의 시작 방향, 즉 왼쪽으로 드래그하면 값이 커집니다.
+- 드래그 조절은 포인터 사용자를 위한 편의 기능입니다. 키보드, 버튼, 직접 입력으로 같은 작업을 모두 할 수 있으므로 별도의 키가 필요 없으며, 손잡이는 Tab 키의 포커스 이동 순서에서 제외됩니다.
+
 ## 비활성화 \{#disabled\}
 
 필드와 양쪽 버튼을 모두 비활성화하세요. 오목한 영역은 제자리를 유지하고 숫자에는 비활성화 상태의 글자색이 적용됩니다. 필드가 비활성 상태이거나 읽기 전용이면 버튼으로 값을 조절할 수 없습니다. 이 미리보기는 스크립트 없이 마크업만 사용합니다.
@@ -108,7 +171,7 @@ root.addEventListener('change', (event) => console.log(event.target.value))
 
 ## 키보드 \{#keyboard\}
 
-숫자 입력 필드의 기본 키보드 조작을 그대로 사용하며, 동작을 연결해도 추가되는 키는 없습니다.
+숫자 입력 필드의 기본 키보드 조작을 그대로 사용하며, 동작을 연결해도 추가되는 키는 없습니다. Shift 키는 드래그 조절에만 영향을 줍니다.
 
 <ContractTable name="stepper" show="keyboard" />
 
@@ -117,10 +180,11 @@ root.addEventListener('change', (event) => console.log(event.target.value))
 - `<label>`, [필드](/components/input#field) 또는 `aria-label`로 입력 필드에 레이블을 지정하세요. 각 버튼에는 어떤 값을 바꾸는지 드러나는 이름이 필요합니다. 예를 들어 ‘더하기’보다 ‘좌석 수 늘리기’가 적합합니다.
 - `min`, `max`, `step`은 필드에 지정합니다. 키보드 조작, 버튼 동작, 보조 기술이 모두 이 값을 참조합니다.
 - 버튼은 Tab 키의 포커스 이동 순서에서 제외됩니다. 키보드 사용자는 필드에서 방향키로 값을 조절합니다. 포인터로 누르는 영역은 30px이며, 44px 크기의 오목한 영역에서 손가락으로 누르는 영역은 36px입니다.
+- 서식이 적용된 숫자는 필드의 `aria-valuetext`로 전달되며, 이를 표시하는 요소는 보조 기술에서 숨겨집니다. 오목한 영역 안의 드래그 손잡이도 키보드로 할 수 있는 조작을 반복할 뿐이므로 숨겨집니다.
 
 ## React, Svelte, Vue \{#frameworks\}
 
-`stepper` 컴포넌트는 동작을 연결하고 숫자 값을 주고받습니다. `npx master-ui add stepper`로 프로젝트에 복사하세요. 컴포넌트의 구성과 사용법은 [React, Svelte, Vue](/guide/frameworks) 문서에서 확인할 수 있습니다.
+`stepper` 컴포넌트는 동작을 연결하고 숫자 값을 주고받습니다. [서식이 적용된 숫자](#formatted)를 표시하려면 `format`과 필요한 경우 `locale`을 전달하세요. 컴포넌트는 첫 숫자를 이미 기록한 상태로 `stepper-value`와 표시 요소를 렌더링하므로, 서버가 보내는 HTML에도 서식이 적용된 숫자가 표시됩니다. 필드의 레이블에 `stepper-scrub` 클래스를 지정하면 프레임워크 없이 사용할 때와 마찬가지로 드래그해 값을 조절할 수 있습니다. `npx master-ui add stepper`로 프로젝트에 복사하세요. 컴포넌트의 구성과 사용법은 [React, Svelte, Vue](/guide/frameworks) 문서에서 확인할 수 있습니다.
 
 <FrameworkSource name="stepper" />
 

@@ -6,8 +6,9 @@ description: "在同一條時間刻度上，以長條呈現各事項的持續時
 import ComponentPreview from '~/site/components/ComponentPreview.astro'
 import ComponentSource from '~/site/components/ComponentSource.astro'
 import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
-甘特圖在同一條時間刻度上以長條呈現有持續時間的事項，例如專案階段、值班時段或定期發行排程。它以清單呈現，每列包含長條的起訖位置、項目名稱和長條上的文字。樣式表負責版面配置，將名稱與長條分成兩欄，並在每個刻度單位的起點畫一條細線。實作未使用腳本或 SVG。
+甘特圖在同一條時間刻度上以長條呈現有持續時間的事項，例如專案階段、值班時段或定期發行排程。它以清單呈現，每列包含長條的起訖位置、項目名稱和長條上的文字。樣式表負責版面配置，將名稱與長條分成兩欄，並在每個刻度單位的起點畫一條細線。圖表本身不需要腳本或 SVG；在讀者需要規劃的地方，`gantt` [行為](/guide/behaviors)讓他們可以[移動長條並調整長度](#moving-the-bars)。
 
 <ComponentPreview name="default" height={248} narrowHeight={320} title="甘特圖" bodyClass="p-lg" html={`<div class="card max-w(560) mx-auto">
   <ol class="gantt gantt-now" style="--gantt-from: 0; --gantt-to: 8; --gantt-now: 4.4" aria-label="Launch plan, in weeks">
@@ -58,6 +59,122 @@ import ContractTable from '~/site/components/ContractTable.astro'
 
 甘特圖本身是尺寸容器。當自身寬度低於 26rem 時，各列名稱會移到長條上方，讓軌道使用整個寬度。在手機上請縮短刻度範圍，八個單位容易閱讀，三十個就太擠。
 
+## 移動長條 \{#moving-the-bars\}
+
+將長條標記為 `role="slider"` 並掛載 `gantt` 行為，讀者就能移動它：拖曳長條本體可沿著刻度移動，拖曳任一端則可改變開始或結束的時間。長條會貼齊刻度的整數單位（這裡是天），按住期間，長條文字會顯示它將取得的範圍。<kbd class="kbd">Escape</kbd> 會讓它回到原位。指標能做的事，按鍵都能做到。
+
+<ComponentPreview name="moving" height={344} narrowHeight={436} title="移動長條" bodyClass="p-lg" behaviors html={`<div class="card max-w(640) mx-auto">
+  <ol class="gantt gantt-now" id="sprint" style="--gantt-from: 0; --gantt-to: 12; --gantt-now: 4.5" aria-label="Sprint plan, November 2 to 13">
+    <li class="gantt-row gantt-scale" aria-hidden="true">
+      <ol class="gantt-ticks"><li>2</li><li>3</li><li>4</li><li>5</li><li>6</li><li>7</li><li>8</li><li>9</li><li>10</li><li>11</li><li>12</li><li>13</li></ol>
+    </li>
+    <li class="gantt-row" data-value="research" style="--from: 0; --to: 3; --progress: 100"><span class="gantt-label">Research</span><span class="gantt-bar" role="slider">Nov 2 – 4 · 3 days</span></li>
+    <li class="gantt-row" data-value="design" aria-current="true" style="--from: 2; --to: 6"><span class="gantt-label">Design</span><span class="gantt-bar" role="slider">Nov 4 – 7 · 4 days</span></li>
+    <li class="gantt-row" data-value="build" style="--from: 5; --to: 10; --progress: 20"><span class="gantt-label">Build</span><span class="gantt-bar" role="slider">Nov 7 – 11 · 5 days</span></li>
+    <li class="gantt-row" data-value="review" style="--from: 9; --to: 11"><span class="gantt-label">Review</span><span class="gantt-bar" role="slider">Nov 11 – 12 · 2 days</span></li>
+    <li class="gantt-row" data-value="launch" style="--from: 11"><span class="gantt-label">Launch</span><span class="gantt-bar gantt-milestone" role="slider">Nov 13</span></li>
+  </ol>
+  <p class="gantt-status" role="status"></p>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  var day = new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric' })
+  var date = function (offset) { return new Date(2026, 10, 2 + offset) }
+  MasterUI.gantt(document.getElementById('sprint'), {
+    format: function (start, end) {
+      if (start === end) return day.format(date(start))
+      var length = end - start
+      return day.formatRange(date(start), date(end - 1)) + ' · ' + length + (length === 1 ? ' day' : ' days')
+    }
+  })
+})
+</script>`} caption="拖曳長條或它的任一端。也可以按 Tab 移到圖表，用 ArrowUp 和 ArrowDown 選擇長條，用 ArrowLeft 和 ArrowRight 移動它；搭配 Shift 時移動結束端，搭配 Alt（Option）時移動開始端。" />
+
+樣式表為可移動的長條繪製的內容：
+
+- **靜止時**外觀與一般長條相同，游標為抓取手勢。指標停在上方或取得焦點時，兩端會出現短短的直立握把，游標移到握把上會變成調整大小的箭頭；觸控螢幕沒有懸停狀態，因此握把會一直顯示，長條高度為 44px。
+- **取得焦點時**會顯示焦點外框，畫在周圍列的上方。
+- **按住時**會帶有 `aria-busy="true"`：長條以抬起的陰影和較深的色調浮起，無緩動地跟隨指標，無論指標移到哪裡，游標都維持握緊的手，按住一端時則維持調整大小的箭頭（`gantt-resize-start`、`gantt-resize-end`）。按鍵或從外部設定的值會讓它滑到定位；啟用減少動態效果時則直接跳到定位。
+- **唯讀**（`aria-readonly="true"`）時，可以取得焦點並被讀出，但不會移動。**停用**（`aria-disabled="true"`）時不會移動，按鍵操作會略過它，文字也改用停用狀態的墨色。
+
+里程碑以單一點的方式移動，沒有可調整的兩端。
+
+## 行為 \{#behavior\}
+
+`gantt` 接收根元素（帶有 `gantt` 類別的元素），並回傳可卸載行為的函式。只有標記為 `role="slider"` 的長條可以移動，其他長條仍只是圖像。行為會在每個可移動的長條上寫入滑桿所需、而頁面未提供的資訊：取自該列 `gantt-label` 的名稱；取自刻度的 `aria-valuemin` 和 `aria-valuemax`，也就是最早的開始與最晚的結束；長條開始處的 `aria-valuenow`；以及 `aria-valuetext`，也就是 `format` 對其範圍的描述。若要讓長條限制在較窄的區間內，請自行在長條上寫入 `aria-valuemin` 和 `aria-valuemax`。
+
+```js name=app.js
+import { gantt } from '@master/ui/behaviors/gantt.js'
+
+const plan = gantt(document.querySelector('.gantt'), {
+  // What a bar says for a range, as its text and to assistive technology.
+  format: (start, end) => `Days ${start + 1} to ${end}`,
+})
+
+plan.value // { research: [0, 3], design: [2, 6], … }
+plan.value = { design: [3, 7] }
+```
+
+- **值**是每個長條的範圍，以刻度單位表示為 `[start, end]`，以該列的 `data-value` 為鍵，沒有時則以標籤文字為鍵。里程碑的範圍起訖都在它所在的點。設定它可從外部移動長條，不會派送事件。
+- **事件。** 每當長條的範圍改變（包括拖曳期間），根元素都會派送 `input`；放開或按鍵改變範圍後，則派送一次 `change`。
+- **指標。** 按下後移動超過 4px 就是拖曳；未超過則只會讓長條取得焦點。按在握把上（樣式表在兩端繪製的寬度）會移動該端，按在其他位置則移動整個長條。刻度單位是從長條繪製的寬度讀出的，因此無論版面如何，拖曳都會貼齊 `step` 個單位，預設為 1。手指往頁面下方移動時仍會捲動頁面（`touch-action: pan-y`）。
+- **限制。** 長條會維持在它的 `aria-valuemin` 和 `aria-valuemax` 之間，長度也絕不會短於一個步進，或短於它目前的長度。
+- **播報內容。** 放開或按鍵套用新範圍後，長條會像滑桿播報其值一樣，透過 `aria-valuetext` 播報新範圍。值無法表達的內容，例如變更遭拒或拖曳已取消，會由 `gantt-status` 區域播報，它是緊接在根元素之後的 `role="status"`。傳入 `messages` 即可用頁面的語言播報。
+- **頁面由右至左排列時**，刻度、指標和方向鍵也都由右至左：<kbd class="kbd">ArrowLeft</kbd> 代表較晚。
+
+沒有行為時，圖表仍是一份可閱讀的事項及其日期清單。
+
+## 頁面的規則 \{#rules\}
+
+相依關係、資源和工作日都由頁面掌握。長條取得某個範圍之前，會派送可取消的 `beforechange` 事件，其中包含長條的 `id`、將取得的 `range`，以及原本的 `previous`。呼叫 `preventDefault()` 即可拒絕：按鍵不會有任何作用，放開的長條會回到拖曳開始的位置，狀態區域也會播報長條維持原狀。這個範例中，Build 不能在 Design 完成前開始，而 Freeze 屬於發行團隊，因此設為唯讀。
+
+<ComponentPreview name="rules" height={268} narrowHeight={332} title="頁面的規則" bodyClass="p-lg" behaviors html={`<div class="card max-w(560) mx-auto">
+  <ol class="gantt" id="release" style="--gantt-from: 0; --gantt-to: 12" aria-label="Release plan, November 2 to 13">
+    <li class="gantt-row" data-value="design" style="--from: 0; --to: 4"><span class="gantt-label">Design</span><span class="gantt-bar" role="slider">Nov 2 – 5 · 4 days</span></li>
+    <li class="gantt-row" data-value="build" style="--from: 4; --to: 9"><span class="gantt-label">Build</span><span class="gantt-bar" role="slider">Nov 6 – 10 · 5 days</span></li>
+    <li class="gantt-row" data-value="freeze" style="--from: 9; --to: 11"><span class="gantt-label">Freeze</span><span class="gantt-bar" role="slider" aria-readonly="true">Nov 11 – 12 · 2 days</span></li>
+  </ol>
+  <p class="gantt-status" role="status"></p>
+  <p class="mb(0) mt-sm text-sm fg-text-muted" id="release-note">Build starts once Design is done.</p>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  var day = new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric' })
+  var date = function (offset) { return new Date(2026, 10, 2 + offset) }
+  var root = document.getElementById('release')
+  var note = document.getElementById('release-note')
+  var plan = MasterUI.gantt(root, {
+    format: function (start, end) {
+      var length = end - start
+      return day.formatRange(date(start), date(end - 1)) + ' · ' + length + (length === 1 ? ' day' : ' days')
+    }
+  })
+  root.addEventListener('beforechange', function (event) {
+    var ranges = plan.value
+    ranges[event.detail.id] = event.detail.range
+    if (ranges.build[0] < ranges.design[1]) {
+      event.preventDefault()
+      note.textContent = 'Build starts once Design is done, on ' + day.format(date(ranges.design[1])) + ' at the earliest.'
+    } else note.textContent = 'Build starts once Design is done.'
+  })
+})
+</script>`} caption="把 Build 拖到 Design 結束之前，或把 Design 拖過 Build 的開始：長條會回到原位。" />
+
+```js name=app.js
+root.addEventListener('beforechange', (event) => {
+  const ranges = { ...plan.value, [event.detail.id]: event.detail.range }
+  if (ranges.build[0] < ranges.design[1]) event.preventDefault()
+})
+```
+
+這個事件會向上冒泡，因此在根元素上用一個監聽器就能收到每個長條的事件。只有在按鍵將移動長條，以及拖曳放開時才會詢問，拖曳的每一步都不會詢問，因此讀者可以把長條拖過不能停留的位置。
+
+## 鍵盤操作 \{#keyboard\}
+
+<ContractTable name="gantt" show="keyboard" />
+
+和[工具列](/components/toolbar)或[樹狀檢視](/components/tree)一樣，整個圖表在 Tab 順序中只占一個停駐點，因此冗長的計畫也不會有幾十個停駐點。<kbd class="kbd">ArrowUp</kbd> 和 <kbd class="kbd">ArrowDown</kbd> 在長條之間移動，因為各列是上下堆疊的；<kbd class="kbd">ArrowLeft</kbd> 和 <kbd class="kbd">ArrowRight</kbd> 移動長條，因為時間是左右延伸的：方向鍵與畫面一致。圖表維持為清單而非格線，因為每列只有一個可操作的對象，也就是長條；否則長條的方向鍵就得等切換模式後才能使用。
+
 ## 甘特圖、時間軸或圖表 \{#gantt-timeline-or-chart\}
 
 甘特圖適合呈現有開始和結束時間的事項。若要依發生順序呈現各個時間點的事件，請用[時間軸](/components/timeline)。若要比較與時間無關的數值，請用[圖表](/components/chart)。
@@ -67,6 +184,16 @@ import ContractTable from '~/site/components/ContractTable.astro'
 - 使用 `<ol>`，並以 `aria-label` 或標題為清單命名。每列都是一個清單項目，會依序讀出名稱和長條文字，例如「設計，第 3 到第 6 週」。
 - 長條、刻度細線和現在時間線由樣式表繪製。請在文字中寫出它們傳達的資訊，例如長條的起訖日期，並在需要時說明哪一列是目前的階段。
 - 辨識目前列無須依賴色相。它以深色長條和其餘列的淺色長條形成明暗對比。在強制色彩模式下，目前列為實心長條，其餘列只有外框。
+- 可移動的長條是以所在列命名的滑桿，其值是以頁面用語描述的範圍，例如「Design, slider, Nov 4 – 7 · 4 days」。請讓 `format` 使用與長條文字相同的措辭，讓兩者說法一致。
+- 從一開始就在頁面中保留空白的 `gantt-status` 區域：在要播報時才加入的區域常常不會被讀出。它只播報滑桿本身的值無法表達的內容，因此不會重複播報。
+- 指標能做的事，按鍵都能做到。對於使用指標但無法拖曳的讀者，也請為該列提供不需拖曳就能設定日期的方式，例如從該列開啟的[對話框](/components/dialog)中的欄位。
+- 在圖表附近說明如何用按鍵移動長條，就像上方的說明文字一樣：以 Shift 和 Alt 移動兩端的滑桿，不是讀者猜得到的操作。
+
+## React、Svelte 和 Vue \{#frameworks\}
+
+`gantt` 元件會根據資料寫出各列，每列包含 `id`、`label`、`start` 和 `end`（沒有 `end` 的列是里程碑），並依值 `{ [id]: [start, end] }` 寫出每個長條的位置與文字。它以 `from` 和 `to` 接收刻度、`now`，以及以 `ticks` 指定的刻度單位名稱；長條移動時回報 `onValueChange`，放開後回報 `onValueCommit`，並在長條取得範圍前詢問 `onBeforeChange`（Vue 中為發出的 `beforeChange` 事件）。使用 `npx master-ui add gantt` 將元件複製到專案中；元件的實作方式與用法請見 [React、Svelte 和 Vue](/guide/frameworks)。
+
+<FrameworkSource name="gantt" />
 
 ## 類別 \{#classes\}
 

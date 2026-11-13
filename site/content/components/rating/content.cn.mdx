@@ -40,30 +40,52 @@ import ContractTable from '~/site/components/ContractTable.astro'
   <input type="radio" class="rating-input" name="rating-lg" aria-label="5 stars" checked>
 </fieldset>`} />
 
-## 只读 \{#read-only\}
+## 半星 \{#half-stars\}
 
-仅展示分值时，禁用单选按钮。星星保留原有墨色，并停止响应指针操作。在星星旁用文字标明具体分值，因为一排星星本身并未直接给出数值。
+`rating-half` 为每颗星提供两个单选按钮，分值以半星为单位变化。每个单选按钮宽半颗星，显示一整颗星的一半，这颗星立在两个单选按钮的接缝上。因此填充和预览与上文相同，3.5 分会填满七个半星。方向键每次移动半颗星，每个单选按钮都以其分值命名。
 
-<ComponentPreview name="readonly" height={96} title="只读" background="plain" html={`<div class="flex items-center gap-xs text-sm fg-text-muted">
-  <fieldset class="rating rating-sm" aria-label="Rated 3 out of 5" disabled>
-    <input type="radio" class="rating-input" name="rating-ro" aria-label="1 star">
-    <input type="radio" class="rating-input" name="rating-ro" aria-label="2 stars">
-    <input type="radio" class="rating-input" name="rating-ro" aria-label="3 stars" checked>
-    <input type="radio" class="rating-input" name="rating-ro" aria-label="4 stars">
-    <input type="radio" class="rating-input" name="rating-ro" aria-label="5 stars">
-  </fieldset>
-  3.0 from 128 reviews
+<ComponentPreview name="half" height={96} title="半星" html={`<fieldset class="rating rating-half" aria-label="Rating">
+  <input type="radio" class="rating-input" name="rating-half" value="0.5" aria-label="0.5 stars">
+  <input type="radio" class="rating-input" name="rating-half" value="1" aria-label="1 star">
+  <input type="radio" class="rating-input" name="rating-half" value="1.5" aria-label="1.5 stars">
+  <input type="radio" class="rating-input" name="rating-half" value="2" aria-label="2 stars">
+  <input type="radio" class="rating-input" name="rating-half" value="2.5" aria-label="2.5 stars">
+  <input type="radio" class="rating-input" name="rating-half" value="3" aria-label="3 stars">
+  <input type="radio" class="rating-input" name="rating-half" value="3.5" aria-label="3.5 stars" checked>
+  <input type="radio" class="rating-input" name="rating-half" value="4" aria-label="4 stars">
+  <input type="radio" class="rating-input" name="rating-half" value="4.5" aria-label="4.5 stars">
+  <input type="radio" class="rating-input" name="rating-half" value="5" aria-label="5 stars">
+</fieldset>`} caption="横向悬停经过一颗星可看到它的两半，或用方向键以半星为单位移动。" />
+
+在触摸屏上，每个半星宽 24px，所在行高 44px，因此一颗星的触控目标为 48px。
+
+## 显示分值 \{#read-only\}
+
+不供选择的分值，例如 4.3 的平均分，使用 `rating-display`：一个带 `role="img"` 的空元素，用文字形式的分值命名，并将 `--rating-value` 设为该数值。星星从起点填充到该分值，最后一颗星按比例部分填充。`--rating-max` 设置绘制的星星数量，默认为五颗。尺寸与单选按钮的用法相同。
+
+<ComponentPreview name="display" height={96} title="显示分值" background="plain" html={`<div class="flex items-center gap-xs text-sm fg-text-muted">
+  <span class="rating rating-sm rating-display" role="img" aria-label="Rated 4.3 out of 5" style="--rating-value: 4.3"></span>
+  4.3 from 128 reviews
 </div>`} />
+
+填充通过 `round()` 计算整颗星、半个间隙以及最后一颗星的比例。浏览器不支持 `round()` 时，填充按分值占整行的比例延伸，可能偏差一个像素。
+
+要用读者可操作的单选按钮显示整星分值，请禁用这些单选按钮：星星保留原有墨色，并停止响应指针操作。无论采用哪种方式，都要在星星旁用文字标明分值，因为一排星星本身并不是数字。
 
 ## 无障碍 \{#accessibility\}
 
-- 使用 `aria-label` 或 `<legend>` 为单选按钮组提供无障碍名称，并用各自的分值为每个单选按钮命名。
+- 使用 `aria-label` 或 `<legend>` 为单选按钮组提供无障碍名称，并用各自的分值为每个单选按钮命名，半星也一样，例如“3.5 stars”。
+- 用文字形式的分值为 `rating-display` 命名，例如“Rated 4.3 out of 5”。星星是该数值的图示，`role="img"` 可避免辅助技术在其中查找子部件。
 - 星形由遮罩裁出，遮罩也会裁掉单颗星的焦点环。因此，只要组内有单选按钮获得键盘焦点，就在整组上显示焦点环。
 - 星星采用墨色而非黄色，界面将彩色留给状态提示。
 
 ## 类名 \{#classes\}
 
 <ContractTable name="rating" />
+
+## 自定义属性 \{#custom-properties\}
+
+<ContractTable name="rating" show="properties" />
 
 ## 源码 \{#source\}
 

@@ -1,0 +1,125 @@
+---
+title: "カラーピッカー"
+description: "明度とクロマのフィールド、色相、不透明度で選ぶか、入力して指定する任意の色。"
+---
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+カラーピッカーは任意の色を選ぶコントロールです。明度とクロマは 1 つのつまみでフィールド上から選び、色相と不透明度は 2 本の[スライダー](/components/slider)で選びます。色そのものは hex、`rgb()`、`oklch()` のテキストとしても扱えます。色はテーマのすべての色が記述されている色空間 OKLCH で選ぶため、明度を 1 段階変えたときの見た目の変化は、どの色相でも同じになります。フィールドはサーフェスにはめ込まれた画像、つまみは真珠調のリングで囲んだ現在の色、トラックはネイティブの範囲入力です。`color-picker` の[ビヘイビア](/guide/behaviors)が各部分の状態をそろえます。
+
+<ComponentPreview name="default" height={384} title="カラーピッカー" behaviors html={`<div class="sheet p-md">
+  <div class="color-picker" style="--color-picker-lightness: .62; --color-picker-chroma: .19; --color-picker-hue: 260">
+    <div class="color-picker-area">
+      <div class="color-picker-thumb" role="slider" tabindex="0" aria-label="Lightness and chroma" aria-valuemin="0" aria-valuemax="100" aria-valuenow="62" aria-valuetext="Lightness 62%, chroma 0.19"></div>
+    </div>
+    <span class="swatch swatch-lg color-picker-swatch"></span>
+    <input type="range" class="slider color-picker-hue" min="0" max="360" value="260" aria-label="Hue">
+    <input type="range" class="slider color-picker-alpha" min="0" max="100" value="100" aria-label="Opacity">
+    <div class="color-picker-fields">
+      <select class="select select-sm color-picker-format" aria-label="Format">
+        <option value="hex">Hex</option>
+        <option value="rgb">RGB</option>
+        <option value="oklch" selected>OKLCH</option>
+      </select>
+      <input class="input input-sm color-picker-text" name="accent" value="oklch(62% 0.19 260)" aria-label="Accent color" spellcheck="false" autocomplete="off">
+    </div>
+  </div>
+</div>`} caption="フィールド上でドラッグするか、つまみで矢印キーを使います。色相を動かしたり、形式を切り替えたり、#e5484d のような色を入力したりもできます。" />
+
+## ボタンから開く \{#popover\}
+
+色は多くの場合、ほかの設定と並ぶ設定の 1 つです。そのため、ピッカーは現在の色を表示するボタンから開くのが一般的です。ボタンと、`color-picker-popover` を指定した[ポップオーバー](/components/popover)をルートの中に置きます。ポップオーバーがピッカーの縦の列になります。ボタン内に `color-picker-swatch` を指定したスウォッチを置くと、ピッカーが閉じている間も色を表示します。どちらも色を保持するルートの中にあるためです。ポップオーバーの開閉、配置、外側での操作による解除はブラウザーが行います。ビヘイビアは同じです。
+
+<ComponentPreview name="popover" height={416} title="ボタンから開く" bodyClass="content-start flex justify-center p-lg" behaviors html={`<div class="color-picker" style="--color-picker-lightness: .6256; --color-picker-chroma: .1933; --color-picker-hue: 23.03">
+  <button type="button" class="btn" popovertarget="brand-picker">
+    <span class="swatch swatch-sm color-picker-swatch"></span>
+    Brand color
+  </button>
+  <div id="brand-picker" popover class="popover color-picker-popover">
+    <div class="color-picker-area">
+      <div class="color-picker-thumb" role="slider" tabindex="0" aria-label="Lightness and chroma" aria-valuemin="0" aria-valuemax="100" aria-valuenow="62.6" aria-valuetext="Lightness 62.6%, chroma 0.193"></div>
+    </div>
+    <span class="swatch swatch-lg color-picker-swatch"></span>
+    <input type="range" class="slider color-picker-hue" min="0" max="360" value="23" aria-label="Hue">
+    <input type="range" class="slider color-picker-alpha" min="0" max="100" value="100" aria-label="Opacity">
+    <div class="color-picker-fields">
+      <select class="select select-sm color-picker-format" aria-label="Format">
+        <option value="hex" selected>Hex</option>
+        <option value="rgb">RGB</option>
+        <option value="oklch">OKLCH</option>
+      </select>
+      <input class="input input-sm color-picker-text" name="brand" value="#e5484d" aria-label="Brand color" spellcheck="false" autocomplete="off">
+    </div>
+  </div>
+</div>`} caption="ピッカーを開いて色を動かすと、ボタン内のスウォッチが追従します。" />
+
+印刷するブランドカラーのように不透明でなければならない色では、`color-picker-alpha` を省きます。その場合、スウォッチは色相のスライダーだけと並び、不透明度付きで入力された色は不透明度を除いて取り込まれます。スウォッチも省くと、トラックが全幅に広がります。
+
+## OKLCH を使う理由 \{#oklch\}
+
+フィールドを、多くのピッカーが描く彩度と明度（HSV）の正方形にすることもできます。sRGB に白と黒を混ぜるだけなので描画は簡単です。しかし、パレットを選ぶフィールドとしては不向きです。同じ明度の値でも青なら暗く、黄色ならまぶしく見え、同じ彩度のまま色相を動かすと色の明るさの見え方が変わります。OKLCH は等しい段階が等しく見えるように設計されています。テーマが色を OKLCH で記述しているのはそのためで、テーマのためのピッカーも OKLCH で選ぶべき理由もそこにあります。
+
+- **明度**は、フィールドの上端の 100% から下端の 0 まで変化し、どの色相でも同じ明度を表します。
+- **クロマ**は、フィールドの始端の無彩色（グレー）から、Display P3 が届く範囲の終端 .37 まで変化します。色は常にクロマの指定どおりに鮮やかになるとは限りません。画面は表示できる最も近い色を表示し、フィールドとつまみも同じ規則でその色を表示します。
+- **色相**は専用のスライダーで円周上を一周します。どの色相も見分けられるように、トラックは 1 つの明度とクロマで描かれます。
+
+値はセレクトで選んだ形式で書き出されます。`oklch()` は保持している値をそのまま書き出します。hex と `rgb()` は sRGB しか表せないため、その範囲を超える色は、CSS Color 4 が色を画面に収めるのと同じ方法で収めます。明度と色相を保ったまま、sRGB で表せる色との差が知覚できる最小の差に収まるまでクロマを下げます。形式を切り替えても保持している色は変わらないため、hex から `oklch()` に変えて hex に戻すと、元と同じ hex になります。
+
+グラデーションは 1 つの軸にしか沿わないため、フィールドは行ごとに描画します。各行は、その行の明度でグレーから .37 までを結ぶグラデーションで、線上では正確です。行と行の中間にある行は、ある行から次の行へフェードするマスクの下でほかの行に重なります。色はテーマのミックスインで、ビヘイビアが公開する色相の関数です。そのため、コンポーネントは独自の色を一切記述しません。
+
+## ビヘイビア \{#behavior\}
+
+`colorPicker` は、`color-picker` クラスを持つ要素であるルートを受け取り、ビヘイビアを解除する関数を返します。
+
+```js name=app.js
+import { colorPicker } from '@master/ui/behaviors/color-picker.js'
+
+const accent = colorPicker(document.querySelector('.color-picker'))
+
+accent.value // 'oklch(62% 0.19 260)'
+accent.value = '#e5484d' // choose a color, and hex as its format
+```
+
+- **色**　初期値はテキストフィールドの値から取得します。3 つの形式のいずれでもよく、形式もその値に合わせます。ビヘイビアは色を 4 つの数値 `--color-picker-lightness`、`--color-picker-chroma`、`--color-picker-hue`、`--color-picker-alpha` としてルートに書き込みます。これらがつまみを配置し、フィールド、トラック、スウォッチを塗ります。スクリプトの実行前からフィールドが正しく表示されるように、最初の色の数値もルートの `style` に記述しておきます。
+- **フィールド**　押すとつまみがポインターの下に移動してフォーカスを受け取り、ドラッグするとつまみが追従します。フィールドの端を越えてもドラッグは続き、色は端で止まります。キー操作は下の表のとおりです。
+- **テキスト**　入力内容が色として解釈できた時点で色を取り込み、テキストは入力したままにします。<kbd class="kbd">Enter</kbd> を押すかフィールドを離れて入力を確定すると、選択中の形式で色を書き直します。色として解釈できないテキストは元に戻します。
+- **イベント**　つまみは、色が動いている間は `input` を、ドラッグが終わったときやキー操作で色が動いたときは `change` を発行します。スライダー、セレクト、テキストフィールドはそれぞれ独自のイベントを発行します。ルートで待ち受ければ、どのイベントでも新しい `value` を読み取れます。
+- **つまみの読み上げ**　`aria-valuetext` は `Lightness 62%, chroma 0.19` となります。ページの言語で読み上げるには、`valueText: (lightness, chroma) => …` を渡します。
+
+ビヘイビアを適用しない場合、フィールドはマークアップに記述した色を表示し、スライダー、セレクト、テキストフィールドは互いに連動しない通常のコントロールになります。
+
+## キーボード操作 \{#keyboard\}
+
+<ContractTable name="color-picker" show="keyboard" />
+
+## アクセシビリティ \{#accessibility\}
+
+- フィールドのつまみは 1 つのスライダーです。<kbd class="kbd">ArrowUp</kbd> と <kbd class="kbd">ArrowDown</kbd> で明度が動くため、値は明度です。`aria-valuetext` は明度とクロマをあわせて示すので、どちらが動いてもスクリーンリーダーは両方を読み上げます。「Lightness and chroma」のように、選ぶ対象を表す名前を付けます。
+- テキストフィールドは、フィールドを使わずに正確な色を指定する手段です。「Brand color」のように、色の名前はテキストフィールドに付けます。フォームが送信するのはテキストフィールドの `name` です。
+- 色相と不透明度のスライダー、形式のセレクトにも名前を付けます。これらのキー操作はプラットフォーム標準のものです。
+- 強制カラーモードでも、フィールドの色は維持されます。読者が見たいのはその色だからです。フィールドの縁とつまみのフォーカスはシステムカラーで描画されます。
+
+## React、Svelte、Vue \{#frameworks\}
+
+`color-picker` コンポーネントは、ルートの 4 つの数値を含めて最初の値を初回の描画に反映し、ビヘイビアを適用します。それ以降は、ビヘイビアがすべての部分を動かします。値は選択中の形式で表した色のテキストで、変更のたびに出力されます。ページ独自のボタンからピッカーを開くには、`trigger`（Svelte ではスニペット、Vue ではスロット）を渡します。`npx master-ui add color-picker` でプロジェクトにコピーできます。コンポーネントの構成と使い方は [React、Svelte、Vue](/guide/frameworks) を参照してください。
+
+<FrameworkSource name="color-picker" />
+
+## クラス \{#classes\}
+
+<ContractTable name="color-picker" />
+
+## カスタムプロパティ \{#custom-properties\}
+
+<ContractTable name="color-picker" show="properties" />
+
+## 関連コンポーネント \{#related\}
+
+<ComponentLinks slugs={['swatch', 'slider', 'popover']} />
+
+## ソース \{#source\}
+
+<ComponentSource name="color-picker" />

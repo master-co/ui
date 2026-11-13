@@ -42,7 +42,7 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
 ## 行 \{#rows\}
 
-- `tree-item` 表示一行，可以是链接、按钮或分支的 `<summary>`。每行高 28px，排列紧凑，样式低调。指针悬停的行和当前行采用与标签块相同的色调。
+- `tree-item` 表示一行，可以是链接、按钮或分支的 `<summary>`。每行高 28px，排列紧凑，样式低调。指针悬停的行和当前行采用胶囊标签的色调。
 - 在分支行上使用 `tree-toggle`，会在行首一列绘制箭头。分支展开时，箭头转为朝下。每行都保留这一列，让叶节点与同级分支对齐。
 - `tree-sub` 容纳分支下的各行，将它们缩进一级，并沿着从箭头向下延伸的细线排列。
 
@@ -86,7 +86,7 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
   </li>
 </ul>`} />
 
-## 行为 \{#behavior\}
+## 行为脚本 \{#behavior\}
 
 WAI-ARIA 树形视图模式提供一个 Tab 停靠点，支持用方向键在各行间移动以及展开或折叠分支。该模式由 `tree` [行为脚本](/guide/behaviors) 实现，并沿用相同的类名。在列表上设置 `role="tree"`，在每个分支行上设置 `role="treeitem"` 和 `aria-expanded`，并在该分支的 `tree-sub` 上设置 `role="group"`。箭头根据 `aria-expanded` 更新方向，带有 `aria-expanded="false"` 的行会隐藏紧随其后的 `tree-sub`，`aria-selected="true"` 标记选中行。
 
@@ -106,28 +106,165 @@ WAI-ARIA 树形视图模式提供一个 Tab 停靠点，支持用方向键在各
   </li>
 </ul>`} caption="将焦点移入树形视图后，用方向键移动。按 Enter、空格键或点击可展开分支，或选中叶节点所在行。" />
 
-`tree` 接收带有 `tree` 类名的根元素，无需传入选项，返回用于解除绑定的函数。
+`tree` 接收带有 `tree` 类名的根元素，返回用于解除绑定的函数。它的选项用于开启[重命名](#rename)：`rename: true` 和 `renameLabel`，后者是输入框的无障碍名称，默认为 `Rename <label>`。
 
 ```js name=app.js
 import { tree } from '@master/ui/behaviors/tree.js'
 
 const root = document.querySelector('.tree')
-tree(root)
+const files = tree(root)
 
-root.addEventListener('change', (event) => console.log(event.detail.item))
+root.addEventListener('change', () => console.log(files.value))
 ```
 
 - **唯一的 Tab 停靠点。** 行为脚本用 `tabindex` 将一行保留在 Tab 导航顺序中，优先采用标记中已设置 `tabindex="0"` 的行，其次采用选中行或当前行，最后采用第一行。哪一行获得焦点，哪一行就成为 Tab 停靠点。解除绑定时，每行都会恢复原来的 `tabindex`。
 - **方向键导航。** 按方向键移动时会跳过折叠分支内的行、带有 `hidden` 属性的行和禁用行。
 - **激活。** summary、链接和按钮沿用浏览器原生的激活方式。对于没有原生激活方式的行，也就是在 `div` 上使用 `role="treeitem"` 的行，可按 <kbd>Enter</kbd>、<kbd>空格键</kbd> 或点击来激活。激活分支会切换其展开或折叠状态，激活叶节点会选中该行。`aria-selected="true"` 会从原先所在的行移到新选中的行。
-- **事件。** 选中一行时，根元素会派发可冒泡的 `change` 事件，`detail.item` 中包含该行。
-- **禁用。** 带有 `disabled` 或 `aria-disabled="true"` 的行不会响应激活。链接不会跳转，分支维持原来的展开或折叠状态。
+- **值。** `tree` 返回的函数带有 `value`：选中行所代表的值，即其 `data-value` 或文本；没有选中行时为 null。在[多选树形视图](#several)和[复选框树形视图](#checkbox)中，它是一个列表。设置它可从外部选中或勾选行，且不会派发事件。
+- **事件。** 所有事件都从根元素冒泡，`detail.item` 中包含该行。选中或勾选时派发 `change`。展开分支时派发 `expand`，`detail.value` 为该行代表的值。重命名时派发 `rename`，附带 `detail.value`，新标签位于 `detail.label`。
+- **禁用。** 带有 `disabled` 或 `aria-disabled="true"` 的行不会响应激活。链接不会跳转，分支维持原来的展开或折叠状态，该行也不会被选中、勾选或重命名。
 
 行为脚本也适用于由 `<details>` 构成的树形视图。前两个预览展示了这类树形视图无需脚本的用法。脚本通过 `open` 展开或折叠 `tree-group`，使整棵树只有一个 Tab 停靠点，并支持用同样的按键导航。`attach()` 会为所有树形视图绑定该脚本。要让由 `<details>` 构成的树形视图保留浏览器原生行为，请按名称导入所需的行为脚本。
 
-## 树形视图或导航 \{#tree-or-nav\}
+## 多选 \{#several\}
 
-[导航](/components/nav) 用简短的列表呈现入口，仅有一级分组，当前行呈现为浮在底面上的面板。树形视图适合多层内容，行排列紧凑，每个分支开头都有一个箭头。
+在树形视图上设置 `aria-multiselectable="true"` 后，可以像文件列表一样选中任意数量的叶节点。每个可选中的行都带有 `aria-selected`，值为 `true` 或 `false`；分支不会被选中，只会展开或折叠。值是已选中行的列表，按它们在树中的顺序排列。
+
+<ComponentPreview name="several" height={252} title="多选" background="plain" bodyClass="content-start p-lg" behaviors html={`<ul class="tree max-w(260) mx-auto" role="tree" aria-label="Files" aria-multiselectable="true">
+  <li role="none">
+    <div class="tree-item tree-toggle" role="treeitem" aria-expanded="true">components</div>
+    <ul class="tree-sub" role="group">
+      <li role="none"><div class="tree-item" role="treeitem" aria-selected="true">button.css</div></li>
+      <li role="none"><div class="tree-item" role="treeitem" aria-selected="true">input.css</div></li>
+      <li role="none"><div class="tree-item" role="treeitem" aria-selected="false">theme.css</div></li>
+      <li role="none"><div class="tree-item" role="treeitem" aria-selected="false">tree.css</div></li>
+    </ul>
+  </li>
+  <li role="none">
+    <div class="tree-item tree-toggle" role="treeitem" aria-expanded="false">themes</div>
+    <ul class="tree-sub" role="group">
+      <li role="none"><div class="tree-item" role="treeitem" aria-selected="false">paper.css</div></li>
+    </ul>
+  </li>
+  <li role="none"><div class="tree-item" role="treeitem" aria-selected="false">README.md</div></li>
+</ul>`} caption="点击一行，再按住 Shift 点击另一行，即可选中两者之间的行。按住 Control 或 Command 点击可添加一行；用键盘时按空格键效果相同。" />
+
+- **点击**只选中该行。按住 <kbd>Control</kbd> 或 <kbd>Command</kbd> 点击，会选中或取消选中一行，同时保留其他已选行。<kbd>Enter</kbd> 的效果与点击相同。
+- **<kbd>空格键</kbd>** 选中或取消选中当前获得焦点的行。方向键只移动焦点。
+- **连续选择。** 最后选择的行是锚点。按住 <kbd>Shift</kbd> 点击，或按 <kbd>Shift</kbd> 加<kbd>空格键</kbd>、<kbd>ArrowDown</kbd> 或 <kbd>ArrowUp</kbd>，会选中从锚点到该行的所有可见行；按 <kbd>Control</kbd> 或 <kbd>Command</kbd> 加 <kbd>Shift</kbd> 和 <kbd>Home</kbd> 或 <kbd>End</kbd>，会一直选到第一行或最后一行。折叠分支内的行和禁用行会被跳过。
+- **全选。** 按 <kbd>Control</kbd> 或 <kbd>Command</kbd> 加 <kbd>A</kbd> 会选中所有可见行；如果它们已全部选中，则全部取消选中。
+
+## 复选框树形视图 \{#checkbox\}
+
+各行带有 `aria-checked` 时，树形视图就是复选框树形视图：每行都有一个勾选框，勾选分支会勾选其下的所有行，包括折叠分支中的行。分支的状态反映其下各行的状态：全部勾选时为 `true`，均未勾选时为 `false`，其他情况为 `mixed`。在每行中放置带有 `aria-hidden="true"` 的 `tree-check`，位于箭头列之后、标签之前：它就是[复选框](/components/checkbox)本身的凹槽，根据该行的 `aria-checked` 绘制，因此该行的状态只播报一次。
+
+<ComponentPreview name="checkbox" height={252} title="复选框树形视图" background="plain" bodyClass="content-start p-lg" behaviors html={`<ul class="tree max-w(260) mx-auto" role="tree" aria-label="Files to publish" aria-multiselectable="true">
+  <li role="none">
+    <div class="tree-item tree-toggle" role="treeitem" aria-expanded="true" aria-checked="mixed"><span class="tree-check" aria-hidden="true"></span>components</div>
+    <ul class="tree-sub" role="group">
+      <li role="none"><div class="tree-item" role="treeitem" aria-checked="true"><span class="tree-check" aria-hidden="true"></span>button.css</div></li>
+      <li role="none"><div class="tree-item" role="treeitem" aria-checked="true"><span class="tree-check" aria-hidden="true"></span>input.css</div></li>
+      <li role="none"><div class="tree-item" role="treeitem" aria-checked="false"><span class="tree-check" aria-hidden="true"></span>theme.css</div></li>
+      <li role="none"><div class="tree-item" role="treeitem" aria-checked="false"><span class="tree-check" aria-hidden="true"></span>tree.css</div></li>
+    </ul>
+  </li>
+  <li role="none">
+    <div class="tree-item tree-toggle" role="treeitem" aria-expanded="false" aria-checked="false"><span class="tree-check" aria-hidden="true"></span>themes</div>
+    <ul class="tree-sub" role="group">
+      <li role="none"><div class="tree-item" role="treeitem" aria-checked="false"><span class="tree-check" aria-hidden="true"></span>paper.css</div></li>
+    </ul>
+  </li>
+  <li role="none"><div class="tree-item" role="treeitem" aria-checked="true"><span class="tree-check" aria-hidden="true"></span>README.md</div></li>
+</ul>`} caption="勾选 themes：其中的 paper.css 也会被勾选。取消勾选 components 中的一个文件，该分支会变为部分勾选。" />
+
+- **<kbd>空格键</kbd>** 勾选或取消勾选当前获得焦点的行；对于分支，会连同其下所有行一起勾选或取消勾选。部分勾选的分支会被勾选；如果其下所有可更改的行都已勾选，则取消勾选。
+- **点击**叶节点会勾选它；对于分支，点击其勾选框会勾选它，点击该行的其他部分会展开或折叠它。<kbd>Enter</kbd> 的效果与点击该行相同。
+- **禁用行**在其分支被勾选时保持原有的勾选状态，因此分支可能仍处于部分勾选状态。
+- **值**是已勾选叶节点的列表，按它们在树中的顺序排列。**分支不包含在内**：分支的勾选状态只反映其下各行，因此值中列出的是每个文件，而不是文件夹。尚未加载下级行的分支也不包含在内；当它的行在已勾选的分支下加载完成时，这些行会被勾选，树形视图会派发 `change`。
+
+同时在树形视图上设置 `aria-multiselectable="true"`：复选框树形视图允许选择任意数量的行，也会作为这样的树形视图来播报。
+
+## 延迟加载行 \{#loading\}
+
+下级行来自服务器的分支，是一个带有 `aria-expanded="false"` 和空 `tree-sub` 的行。它展开时如果下面没有行，行为脚本会将它标记为 `aria-busy="true"` 并派发 `expand`。在该行开头放一个[加载指示器](/components/spinner)：静止时不绘制，该行忙碌时它会占据箭头的位置，因此不会有任何内容移动。
+
+<ComponentPreview name="loading" height={200} title="延迟加载行" background="plain" bodyClass="content-start p-lg" behaviors html={`<ul class="tree max-w(260) mx-auto" role="tree" aria-label="Repositories" id="repositories">
+  <li role="none">
+    <div class="tree-item tree-toggle" role="treeitem" aria-expanded="false"><span class="spinner" aria-hidden="true"></span>master-co/ui</div>
+    <ul class="tree-sub" role="group"></ul>
+  </li>
+  <li role="none">
+    <div class="tree-item tree-toggle" role="treeitem" aria-expanded="false"><span class="spinner" aria-hidden="true"></span>master-co/css</div>
+    <ul class="tree-sub" role="group"></ul>
+  </li>
+</ul>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  document.getElementById('repositories').addEventListener('expand', function (event) {
+    var row = event.detail.item
+    if (row.getAttribute('aria-busy') !== 'true') return
+    // A page fetches the rows here; this one waits a moment instead.
+    setTimeout(function () {
+      row.nextElementSibling.innerHTML = ['packages', 'site', 'README.md'].map(function (name) {
+        return '<li role="none"><div class="tree-item" role="treeitem">' + name + '</div></li>'
+      }).join('')
+    }, 1200)
+  })
+})
+</script>`} caption="展开一个仓库：加载指示器会一直转动，直到下级行到达，之后可用方向键进入这些行。" />
+
+页面监听 `expand`，并按照契约中的类名和角色，将各行写入分支的 `tree-sub`。行为脚本会察觉到这些行的到来：立即移除 `aria-busy`，并让这些行支持按键操作，它们不在 Tab 键顺序中，可用方向键遍历。行为脚本每展开一个分支都会派发 `expand`，因此要检查 `aria-busy`，以判断是否需要加载行。如果该分支最终没有任何行，请移除它的 `aria-busy` 和 `aria-expanded`：它是一个叶节点。
+
+```js name=app.js
+root.addEventListener('expand', async (event) => {
+  const row = event.detail.item
+  if (row.getAttribute('aria-busy') !== 'true') return
+  const children = await fetch(`/api/folders/${event.detail.value}`).then((response) => response.json())
+  row.nextElementSibling.replaceChildren(...children.map(rowFor))
+})
+```
+
+## 重命名 \{#rename\}
+
+设置 `rename: true` 后，在某行上按 <kbd>F2</kbd>，其标签会就地变为[行内编辑](/components/editable)，并选中其中的文字。标签必须是 `tree-label`，它也会让过长的名称以省略号结尾。按 <kbd>Enter</kbd> 保存，按 <kbd>Escape</kbd> 恢复原标签；两种情况下焦点都会回到该行。离开输入框时会保存，空标签不会被保存。
+
+<ComponentPreview name="rename" height={168} title="重命名" background="plain" bodyClass="content-start p-lg" behaviors html={`<ul class="tree max-w(260) mx-auto" role="tree" aria-label="Pages" id="pages">
+  <li role="none">
+    <div class="tree-item tree-toggle" role="treeitem" aria-expanded="true"><span class="tree-label">Guide</span></div>
+    <ul class="tree-sub" role="group">
+      <li role="none"><div class="tree-item" role="treeitem" data-value="introduction"><span class="tree-label">Introduction</span></div></li>
+      <li role="none"><div class="tree-item" role="treeitem" data-value="installation"><span class="tree-label">Installation</span></div></li>
+    </ul>
+  </li>
+  <li role="none"><div class="tree-item" role="treeitem" data-value="changelog"><span class="tree-label">Changelog</span></div></li>
+</ul>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.tree(document.getElementById('pages'), { rename: true })
+})
+</script>`} caption="将焦点移到某一行，按 F2 输入名称，然后按 Enter 保存，或按 Escape 恢复原名称。" />
+
+`attach()` 不传入选项，因此此预览在 `attach()` 运行后自行调用 `tree`：对同一个根元素再次调用会替换上一次的设置。
+
+行为脚本将新标签写入 `tree-label`，并从根元素派发 `rename`，`detail.value` 为该行原本代表的值，`detail.label` 为新标签；输入框自身的 `input` 和 `change` 事件不会传出。保存标签由页面负责：如果服务器拒绝，请写回原标签。为每行设置一个不随名称改变的 `data-value`，这样它代表的值在重命名后依然有效。
+
+没有 <kbd>F2</kbd> 键的读者（例如在触摸屏上）需要其他入口：在 `tree` 返回的函数上调用 `edit(row)`，效果与 <kbd>F2</kbd> 相同，无论是否设置了该选项，都可用于[上下文菜单](/components/menu)中的“重命名”项或按钮。
+
+```js name=app.js
+const pages = tree(root, { rename: true })
+
+root.addEventListener('rename', async (event) => {
+  const { item, value, label } = event.detail
+  const saved = await fetch(`/api/pages/${value}`, { method: 'PATCH', body: JSON.stringify({ title: label }) })
+  if (!saved.ok) item.querySelector('.tree-label').textContent = previous(value)
+})
+
+renameItem.addEventListener('click', () => pages.edit(selectedRow))
+```
+
+## 树形视图或纵向导航 \{#tree-or-nav\}
+
+[纵向导航](/components/nav)用简短的列表呈现入口，仅有一级分组，当前行呈现为浮在底面上的面板。树形视图适合多层内容，行排列紧凑，每个分支开头都有一个箭头。
 
 ## 键盘操作 \{#keyboard\}
 
@@ -137,11 +274,19 @@ root.addEventListener('change', (event) => console.log(event.detail.item))
 
 - 使用 `<details>` 时，请保留其原生语义，避免添加树形视图角色。辅助技术会正确播报原生展开控件。未绑定行为脚本时，每行都是一个 Tab 停靠点。
 - 用 `aria-current="page"` 标记当前行，在树形视图模式内则用 `aria-selected="true"`。
+- 多选、勾选、延迟加载和重命名都属于树形视图模式，需要 `role="tree"` 和行为脚本。
+- 在复选框树形视图中，由行通过 `aria-checked` 表明状态；其 `tree-check` 带有 `aria-hidden="true"`，因此状态只播报一次。
+- 忙碌的分支通过 `aria-busy="true"` 表明状态；其加载指示器带有 `aria-hidden="true"`。
+- 重命名输入框的名称为 `Rename <label>`；请用页面的语言传入 `renameLabel`。
 - 在触摸屏上，每行高 44px。
 
 ## React、Svelte 和 Vue \{#frameworks\}
 
 `tree` 组件根据数据渲染各行，绑定行为脚本，并接收和传出选中行。用 `npx master-ui add tree` 将组件复制到项目中。有关组件的实现和用法，请参阅 [React、Svelte 和 Vue](/guide/frameworks)。
+
+- `multiple` 可选中任意数量的行，`checkable` 为每行添加勾选框；启用其中任何一个时，值都是一个列表。初始值会绘制到首次渲染中，包括分支的部分勾选状态。
+- 带有 `children: []` 的节点是下级行稍后加载的分支：它包含一个加载指示器，展开时会以其值调用 `onExpand`（Vue 中为 `@expand`）。请在 `nodes` 中为它提供子节点。
+- `onRename`（Vue 中为 `@rename`）会开启重命名，并以该行的值和新标签调用。请在 `nodes` 中保存该标签。
 
 <FrameworkSource name="tree" />
 
