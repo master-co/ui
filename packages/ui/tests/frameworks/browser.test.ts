@@ -325,6 +325,61 @@ for (const framework of ['react', 'svelte', 'vue']) {
       }
     })
 
+    await t.test('an avatar whose photo fails shows its initials, never a broken image', async () => {
+      const avatar = example('avatar')
+      await until(() => avatar.locator('.avatar-image').evaluate((image: HTMLImageElement) => image.hidden), Boolean, 'the failed photo is hidden')
+      assert.equal(await avatar.locator('.avatar-fallback').isVisible(), true)
+      assert.equal(await avatar.locator('.avatar').getAttribute('aria-label'), 'Alan Turing')
+    })
+
+    await t.test('a carousel scrolls a slide into view from its buttons and names the slide a scroll rests on', async () => {
+      const view = example('carousel')
+      const track = view.locator('.carousel')
+      const current = () => view.locator('.carousel-dot[aria-current="true"]').getAttribute('aria-controls')
+      const slides = await view.locator('.carousel-slide').evaluateAll((all: HTMLElement[]) => all.map(slide => slide.id))
+      await view.scrollIntoViewIfNeeded()
+      await view.locator('.carousel-next').click()
+      await said('carousel', 'onValueChange: "borealis"')
+      await until(current, value => value === slides[1], 'the second dot is current')
+      await until(() => track.evaluate((element: HTMLElement) => element.scrollLeft), value => value > 0, 'the track has scrolled')
+      await track.evaluate((element: HTMLElement) => element.scrollTo({ left: element.scrollWidth, behavior: 'instant' }))
+      await said('carousel', 'onValueChange: "cirrus"')
+      assert.equal(await view.locator('.carousel-next').isDisabled(), true, 'at the end next has nowhere to go')
+    })
+
+    await t.test('a schedule lists a day past its lanes in a popover, and moves by the month', async () => {
+      const view = example('schedule')
+      await view.scrollIntoViewIfNeeded()
+      const more = view.locator('.schedule-more')
+      assert.equal(await more.innerText(), '+1 more')
+      await more.click()
+      const list = view.locator('.popover:popover-open')
+      await until(() => list.count(), value => value === 1, 'the day\'s list is open')
+      assert.equal(await list.locator('.schedule-event').count(), 4)
+      await page.keyboard.press('Escape')
+      await view.locator('.schedule-view-next').click()
+      await said('schedule', 'onValueChange: {"date":"2026-12-13","view":"month"}')
+      assert.equal(await view.locator('.schedule-view-title').innerText(), 'December 2026')
+    })
+
+    await t.test('a gradient\'s stop is dragged along its bar and moved with the keys', async () => {
+      const editor = example('gradient')
+      await editor.scrollIntoViewIfNeeded()
+      const stop = editor.locator('.gradient-stop[data-id="dawn"]')
+      const bar = await box(editor.locator('.gradient-bar'))
+      const at = await box(stop)
+      await page.mouse.move(at.x + at.width / 2, at.y + at.height / 2)
+      await page.mouse.down()
+      await page.mouse.move(bar.x + bar.width * .4, at.y + at.height / 2, { steps: 6 })
+      await page.mouse.up()
+      const moved = await until(() => stop.getAttribute('aria-valuenow'), value => Number(value) > 30 && Number(value) < 50, 'the stop follows the pointer')
+      await stop.focus()
+      await page.keyboard.press('ArrowRight')
+      assert.equal(Number(await stop.getAttribute('aria-valuenow')), Number(moved) + 1)
+      await until(() => editor.locator('output').innerText(), value => value.includes(`"offset":${Number(moved) + 1}`), 'the value comes out')
+      assert.match(await editor.locator('.gradient-css').innerText(), new RegExp(`#ff6a00 ${Number(moved) + 1}%`))
+    })
+
     await t.test('tabs switch their panels', async () => {
       const tabs = example('tabs')
       await tabs.getByRole('tab', { name: 'Billing' }).click()

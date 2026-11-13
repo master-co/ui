@@ -52,6 +52,19 @@ export const examples: Record<string, Record<string, unknown>> = {
   'log': { rows: ['Cloning master-co/ui', 'Installing packages'], latestLabel: 'Jump to latest', 'aria-label': 'Build log' },
   'tour': { spotlight: true },
   'dialog-sheet': {},
+  'avatar': { src: 'data:image/png;base64,AAAA', alt: 'Alan Turing', initials: 'AT' },
+  'carousel': { value: 'atlas' },
+  'schedule': {
+    today: '2026-11-13', locale: 'en-US', weekStart: 1, value: { date: '2026-11-13', view: 'month' },
+    events: [
+      { id: 'offsite', title: 'Offsite', start: '2026-11-07', end: '2026-11-11', allDay: true, category: 'teal' },
+      { id: 'standup', title: 'Standup', start: '2026-11-13T09:00', end: '2026-11-13T09:15' },
+      { id: 'review', title: 'Design review', start: '2026-11-13T10:00', end: '2026-11-13T11:30', category: 'violet' },
+      { id: 'lunch', title: 'Lunch', start: '2026-11-13T12:00', end: '2026-11-13T13:00', category: 'green' },
+      { id: 'call', title: 'Customer call', start: '2026-11-13T14:00', end: '2026-11-13T15:00', category: 'blue' },
+    ],
+  },
+  'gradient': { value: { type: 'linear', angle: 90, center: [50, 50], stops: [{ id: 'dawn', offset: 0, color: '#ff6a00' }, { id: 'dusk', offset: 100, color: '#4f46e5' }] } },
 }
 
 /** What each component gives out, so the playground listens for that and nothing else. */
@@ -64,6 +77,7 @@ export const outputs: Record<string, string[]> = {
   'dial': ['onValueChange', 'onValueCommit'], 'color-picker': ['onValueChange'], 'signature': ['onValueChange'],
   'cropper': ['onValueChange', 'onValueCommit'], 'gantt': ['onValueChange', 'onValueCommit'], 'panel': ['onValueChange', 'onValueCommit'],
   'tour': ['onValueChange'],
+  'carousel': ['onValueChange'], 'schedule': ['onValueChange'], 'gradient': ['onValueChange'],
 }
 
 export const toasts = [

@@ -38,7 +38,10 @@
   const id = $props.id()
   // The first value is drawn into the first render; after that the behavior marks what is current.
   const first = untrack(() => value ?? items[0]?.value)
-  const at = untrack(() => items.findIndex(item => item.value === first))
+  // Drawn into the first render only; after that the behavior marks the buttons and the dots. The first state is
+  // spread from a constant, so the template's own updates never draw it over the state the behavior gave.
+  const atStart = { disabled: untrack(() => items.findIndex(item => item.value === first) <= 0) }
+  const atEnd = { disabled: untrack(() => items.findIndex(item => item.value === first) >= items.length - 1) }
   const attach = behavior(carousel, () => ({ value: first }), {
     value: () => value,
     // The behavior's value is null only for a carousel with no slides, which never reports a change.
@@ -60,10 +63,10 @@
       <div class={['carousel-slide', slideClass]} id="{id}{item.value}" data-value={item.value}>{@render children(item)}</div>
     {/each}
   </div>
-  <button type="button" class="btn btn-square btn-sm btn-pill carousel-previous" aria-label={previousLabel} disabled={at <= 0}>
+  <button type="button" class="btn btn-square btn-sm btn-pill carousel-previous" aria-label={previousLabel} {...atStart}>
     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={vertical ? 'm6 15 6-6 6 6' : 'm15 6-6 6 6 6'} /></svg>
   </button>
-  <button type="button" class="btn btn-square btn-sm btn-pill carousel-next" aria-label={nextLabel} disabled={at >= items.length - 1}>
+  <button type="button" class="btn btn-square btn-sm btn-pill carousel-next" aria-label={nextLabel} {...atEnd}>
     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={vertical ? 'm6 9 6 6 6-6' : 'm9 6 6 6-6 6'} /></svg>
   </button>
   <div class="carousel-dots">

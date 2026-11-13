@@ -6,7 +6,7 @@
  * when two are equally in view), and once a scroll has come to rest (`scrollend`, or a pause in `scroll`
  * where the browser has no `scrollend`) that slide is the current one. The current slide's dot
  * (`carousel-dot`) is marked `aria-current="true"`; previous and next (`carousel-previous`,
- * `carousel-next`) are disabled at the ends, where there is nowhere to go.
+ * `carousel-next`) are disabled at the first and the last slide, where there is nowhere to go.
  *
  * Previous and next go to the slide before and after the current one, a dot to its slide, and setting the
  * returned function's `value` to its slide; each asks the platform to scroll the slide into view at its own
@@ -92,15 +92,14 @@ export function carousel(root, options = {}) {
       if (slide && key(slide) === current) dot.setAttribute('aria-current', 'true')
       else dot.removeAttribute('aria-current')
     }
-    const whole = (/** @type {HTMLElement | undefined} */ slide) => slide !== undefined && (seen.get(slide) ?? 0) >= .99
     // At an end, the button that has nowhere to go is disabled; focus it held moves to the other one.
     const limit = (/** @type {HTMLButtonElement | null} */ button, /** @type {boolean} */ reached, /** @type {HTMLButtonElement | null} */ other) => {
       if (!button || button.disabled === reached) return
       if (reached && root.ownerDocument.activeElement === button) (other && !other.disabled ? other : track)?.focus()
       button.disabled = reached
     }
-    limit(previous, at <= 0 || whole(all[0]), next)
-    limit(next, at === -1 || at >= all.length - 1 || whole(all.at(-1)), previous)
+    limit(previous, at <= 0, next)
+    limit(next, at === -1 || at >= all.length - 1, previous)
   }
 
   /**
@@ -152,12 +151,21 @@ export function carousel(root, options = {}) {
     commit(key(slide), true)
   }, { signal })
 
-  /** A scroll has come to rest: the slide most in view is the current one. */
-  const settle = () => {
+  /** @type {IntersectionObserver | null} */
+  let observer = null
+
+  /**
+   * A scroll has come to rest: the slide most in view is the current one. The observer measures in the rendering
+   * of the frame after the scroll ends, after that frame's animation callbacks, so this waits two frames and
+   * takes what the observer has not yet delivered.
+   */
+  const settle = () => requestAnimationFrame(() => requestAnimationFrame(() => {
+    if (signal.aborted) return
+    for (const entry of observer?.takeRecords() ?? []) seen.set(entry.target, entry.intersectionRatio)
     const slide = primary()
     if (slide) commit(key(slide), true)
     else paint()
-  }
+  }))
   if ('onscrollend' in /** @type {object} */ (track)) {
     track.addEventListener('scrollend', settle, { signal })
   } else {
@@ -170,7 +178,7 @@ export function carousel(root, options = {}) {
   }
 
   if (typeof IntersectionObserver === 'function') {
-    const observer = new IntersectionObserver((entries) => {
+    observer = new IntersectionObserver((entries) => {
       for (const entry of entries) seen.set(entry.target, entry.intersectionRatio)
       if (current === null) {
         const slide = primary()
@@ -179,13 +187,14 @@ export function carousel(root, options = {}) {
         paint()
       }
     }, { root: track, threshold: [0, .25, .5, .75, .99, 1] })
+    const watching = observer
     const watch = () => {
-      observer.disconnect()
+      watching.disconnect()
       seen.clear()
-      for (const slide of slides()) observer.observe(slide)
+      for (const slide of slides()) watching.observe(slide)
     }
     watch()
-    signal.addEventListener('abort', () => observer.disconnect())
+    signal.addEventListener('abort', () => watching.disconnect())
     // Slides that come and go: watch the new set, and keep the current one if it is still there.
     if (typeof MutationObserver === 'function') {
       const mutations = new MutationObserver(() => {
