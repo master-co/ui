@@ -142,6 +142,7 @@ Or import only the theme and the components you use:
 | File | `file`, `file-failed`, `file-sm`, `file-interactive`, `file-page`, `file-thumb`, `file-body`, `file-name`, `file-meta`, `file-end`, `file-progress` |
 | Stat | `stat`, `stat-label`, `stat-row`, `stat-value`, `stat-delta`, `stat-delta-up`, `stat-delta-down`, `stat-description` |
 | Odometer | `odometer`, `odometer-value`, `odometer-figures`, `odometer-digit` |
+| Countdown | `countdown`, `countdown-tiles`, `countdown-inline`, `countdown-unit`, `countdown-value`, `countdown-label` |
 | Chart | `chart`, `chart-quiet`, `chart-values`, `chart-horizontal`, `chart-spark`, `chart-item`, `chart-label`, `chart-value` |
 | Breakdown | `breakdown`, `breakdown-rows`, `breakdown-item`, `breakdown-rest`, `breakdown-label`, `breakdown-value` |
 | Heatmap | `heatmap`, `heatmap-lg`, `heatmap-cell` |

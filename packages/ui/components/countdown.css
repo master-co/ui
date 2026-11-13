@@ -1,0 +1,145 @@
+/*
+ * Countdown: the time left until something, in days, hours, minutes and seconds.
+ * The root is a <time> whose datetime holds the time left as a duration (P2DT14H5M9S), so the figures are a
+ * time for the platform as well as for the eye. Each unit is a figure over a small quiet label. The units take
+ * equal columns, as wide as the widest, so the figures stand evenly apart whatever their labels say, and a
+ * colon drawn by the stylesheet stands in the middle of each gap, level with the figures and hidden from
+ * assistive technology. Figures are tabular, so a ticking value never moves its neighbors.
+ * countdown-tiles sets each figure in a small raised sheet, 2em square with the large control's corner, and
+ * drops the colons; countdown-inline sets the units on one baseline at the size of the sentence around it.
+ * When the time is up, datetime="PT0S", the figures turn quiet and the tiles sink to a flat well.
+ * Without a script a countdown is the time left when the page was made; a script may tick it. A figure may
+ * be an odometer, so a changing digit rolls.
+ */
+@layer components {
+  .countdown {
+    --countdown-size: 1.75rem;
+    --countdown-gap: 1.25rem;
+    display: inline-grid;
+    grid-auto-columns: 1fr;
+    grid-auto-flow: column;
+    column-gap: var(--countdown-gap);
+    /* As wide as its units, even where the parent would stretch it, so the columns never spread apart. */
+    width: fit-content;
+    margin: 0;
+    color: var(--color-text-strong);
+    font-variant-numeric: tabular-nums;
+    vertical-align: middle;
+
+    /* Tiles: each figure in a small raised sheet, closer together and without colons. */
+    &.countdown-tiles {
+      --countdown-gap: .625rem;
+
+      .countdown-unit::before {
+        display: none;
+      }
+
+      .countdown-value {
+        display: grid;
+        place-items: center;
+        box-sizing: border-box;
+        min-width: 2em;
+        height: 2em;
+        padding: 0 .3125em;
+        border-radius: calc(var(--radius-control-lg) * var(--corner-scale));
+        corner-shape: var(--corner-shape);
+        @apply --surface-sheet;
+        box-shadow: var(--shadow-raised);
+        line-height: 1.15;
+        overflow: clip;
+
+        @media (forced-colors: active) {
+          outline: 1px solid CanvasText;
+          outline-offset: -1px;
+        }
+      }
+    }
+
+    /* Inline: the units on one baseline at the size of the sentence they stand in, the figures in strong ink. */
+    &.countdown-inline {
+      --countdown-gap: .375em;
+      display: inline-flex;
+      align-items: baseline;
+      color: inherit;
+      vertical-align: baseline;
+      white-space: nowrap;
+
+      .countdown-unit {
+        display: inline-flex;
+        align-items: baseline;
+        gap: .125em;
+      }
+
+      .countdown-unit::before {
+        display: none;
+      }
+
+      .countdown-value {
+        font: inherit;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: inherit;
+      }
+
+      .countdown-label {
+        color: var(--color-text-muted);
+        font: inherit;
+        font-size: .875em;
+      }
+    }
+
+    /* Time is up: the figures are quiet and the tiles have sunk to a flat well. */
+    &[datetime="PT0S"] {
+      .countdown-value {
+        color: var(--color-text-muted);
+      }
+
+      &.countdown-tiles .countdown-value {
+        background: var(--color-surface-inset);
+        box-shadow: var(--shadow-flat);
+      }
+    }
+  }
+
+  /* One unit: its figure over its label. */
+  .countdown-unit {
+    position: relative;
+    display: grid;
+    justify-items: center;
+    align-content: start;
+    gap: .375rem;
+    min-width: 0;
+
+    /* The colon in the gap before every unit but the first, level with the figures. */
+    & + .countdown-unit::before {
+      content: ':' / '';
+      position: absolute;
+      top: 0;
+      inset-inline-start: calc(var(--countdown-gap) / -2);
+      translate: -50% -.09em;
+      color: var(--color-text-muted);
+      font: var(--font-weight-control) var(--countdown-size)/1.15 var(--font-family-sans);
+      font-feature-settings: inherit;
+    }
+  }
+
+  /* The figure. */
+  .countdown-value {
+    margin: 0;
+    color: var(--color-text-strong);
+    font: var(--font-weight-control) var(--countdown-size)/1.15 var(--font-family-sans);
+    font-feature-settings: inherit;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -.02em;
+    white-space: nowrap;
+  }
+
+  /* What it counts: days, hours, minutes, seconds. */
+  .countdown-label {
+    margin: 0;
+    color: var(--color-text-muted);
+    font: 400 .75rem/1 var(--font-family-sans);
+    font-feature-settings: inherit;
+    letter-spacing: 0;
+    white-space: nowrap;
+  }
+}

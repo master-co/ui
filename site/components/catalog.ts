@@ -87,6 +87,7 @@ export const components = [
   { slug: 'data-list', name: 'Data list', category: 'Data display', description: 'The facts about one thing, as terms and values.' },
   { slug: 'stat', name: 'Stat', category: 'Data display', description: 'One figure, what it measures and how it moved.' },
   { slug: 'odometer', name: 'Odometer', category: 'Data display', description: 'A number whose digits roll to their new value.' },
+  { slug: 'countdown', name: 'Countdown', category: 'Data display', description: 'The time left until something, in days, hours, minutes and seconds.' },
   { slug: 'price', name: 'Price', category: 'Data display', description: 'What something costs, set the way a price is read.' },
   { slug: 'chart', name: 'Chart', category: 'Data display', description: 'A few numbers as bars, drawn by the stylesheet from a list.' },
   { slug: 'breakdown', name: 'Breakdown', category: 'Data display', description: 'A whole as its parts along one bar, each as wide as its share.' },

@@ -1,0 +1,128 @@
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+A countdown is the time left until something: a launch, the end of a sale, the start of an event. Each unit is a figure over a small quiet label, in equal columns, with a colon in the middle of each gap. The root is a `<time>` whose `datetime` holds the same time left as a duration, so the figures are a time for the platform as well as for the eye. Without a script it is the time left when the page was made; a few lines of script make it tick.
+
+<ComponentPreview name="default" height={128} title="Countdown" background="plain" bodyClass="flex items-center justify-center p-lg" caption="The script ticks it once a second." html={`<time class="countdown" id="launch" datetime="P2DT14H5M9S">
+  <span class="countdown-unit"><span class="countdown-value">02</span> <span class="countdown-label">days</span></span>
+  <span class="countdown-unit"><span class="countdown-value">14</span> <span class="countdown-label">hours</span></span>
+  <span class="countdown-unit"><span class="countdown-value">05</span> <span class="countdown-label">minutes</span></span>
+  <span class="countdown-unit"><span class="countdown-value">09</span> <span class="countdown-label">seconds</span></span>
+</time>
+<script>
+  var launch = document.getElementById('launch')
+  var figures = launch.querySelectorAll('.countdown-value')
+  var start = Array.prototype.map.call(figures, function (figure) { return Number(figure.textContent) })
+  var end = Date.now() + (((start[0] * 24 + start[1]) * 60 + start[2]) * 60 + start[3]) * 1000
+  function tick() {
+    var left = Math.max(0, Math.ceil((end - Date.now()) / 1000))
+    var units = [Math.floor(left / 86400), Math.floor(left / 3600) % 24, Math.floor(left / 60) % 60, left % 60]
+    units.forEach(function (unit, index) { figures[index].textContent = String(unit).padStart(2, '0') })
+    launch.setAttribute('datetime', left ? 'P' + units[0] + 'DT' + units[1] + 'H' + units[2] + 'M' + units[3] + 'S' : 'PT0S')
+    if (left) setTimeout(tick, (end - Date.now()) % 1000 || 1000)
+  }
+  tick()
+</script>`} />
+
+## Ticking \{#ticking\}
+
+The countdown is markup: the figures and the `datetime` say the same thing, and the stylesheet draws them. A script that ticks it finds the end once, from the time left when the page loaded, and then once a second writes each figure and the `datetime` again. It sets the next tick for the moment the next second begins, so the figures do not drift from the clock. When it reaches zero it writes `datetime="PT0S"` and stops.
+
+A page that knows the end as a date and time, such as a sale that closes at midnight in one time zone, should count down to that instant instead of to the time left at load, so the figures agree on every device.
+
+## Tiles \{#tiles\}
+
+`countdown-tiles` sets each figure in a small raised sheet, twice as tall as the figure, with the large control's corner and the label under it. The tiles stand close together and need no colons. Use it where the countdown is the point of the view, such as the page before a launch.
+
+<ComponentPreview name="tiles" height={152} title="Tiles" background="plain" bodyClass="flex items-center justify-center p-lg" html={`<time class="countdown countdown-tiles" datetime="P2DT14H5M9S">
+  <span class="countdown-unit"><span class="countdown-value">02</span> <span class="countdown-label">days</span></span>
+  <span class="countdown-unit"><span class="countdown-value">14</span> <span class="countdown-label">hours</span></span>
+  <span class="countdown-unit"><span class="countdown-value">05</span> <span class="countdown-label">minutes</span></span>
+  <span class="countdown-unit"><span class="countdown-value">09</span> <span class="countdown-label">seconds</span></span>
+</time>`} />
+
+## Rolling figures \{#rolling-figures\}
+
+A figure may be an [odometer](/components/odometer), so its digits roll as they change instead of being replaced. The countdown draws the unit and the odometer draws the digits; neither knows about the other. A countdown's digits go down, so the script steps each one back to its new numeral, and from 0 one step back is -1, which the odometer shows as 9: the seconds roll down past zero as a counter's wheel does.
+
+<ComponentPreview name="rolling" height={152} title="Rolling figures" background="plain" bodyClass="flex items-center justify-center p-lg" caption="The seconds roll down once a second; the minutes when a minute ends." html={`<time class="countdown countdown-tiles" id="doors" datetime="PT4H12M30S">
+  <span class="countdown-unit">
+    <span class="countdown-value"><span class="odometer"><span class="odometer-value">04</span><span class="odometer-figures" aria-hidden="true"><span class="odometer-digit" style="--digit: 0"></span><span class="odometer-digit" style="--digit: 4"></span></span></span></span>
+    <span class="countdown-label">hours</span>
+  </span>
+  <span class="countdown-unit">
+    <span class="countdown-value"><span class="odometer"><span class="odometer-value">12</span><span class="odometer-figures" aria-hidden="true"><span class="odometer-digit" style="--digit: 1"></span><span class="odometer-digit" style="--digit: 2"></span></span></span></span>
+    <span class="countdown-label">minutes</span>
+  </span>
+  <span class="countdown-unit">
+    <span class="countdown-value"><span class="odometer"><span class="odometer-value">30</span><span class="odometer-figures" aria-hidden="true"><span class="odometer-digit" style="--digit: 3"></span><span class="odometer-digit" style="--digit: 0"></span></span></span></span>
+    <span class="countdown-label">seconds</span>
+  </span>
+</time>
+<script>
+  var doors = document.getElementById('doors')
+  var figures = doors.querySelectorAll('.odometer')
+  var start = Array.prototype.map.call(figures, function (figure) { return Number(figure.querySelector('.odometer-value').textContent) })
+  var end = Date.now() + ((start[0] * 60 + start[1]) * 60 + start[2]) * 1000
+  function roll(digit, numeral) {
+    var at = Number(digit.style.getPropertyValue('--digit')) || 0
+    var step = ((numeral - at) % 10 + 10) % 10
+    if (step) digit.style.setProperty('--digit', at + step - 10)
+  }
+  function tick() {
+    var left = Math.max(0, Math.ceil((end - Date.now()) / 1000))
+    var units = [Math.floor(left / 3600), Math.floor(left / 60) % 60, left % 60]
+    units.forEach(function (unit, index) {
+      var digits = figures[index].querySelectorAll('.odometer-digit')
+      figures[index].querySelector('.odometer-value').textContent = String(unit).padStart(2, '0')
+      roll(digits[0], Math.floor(unit / 10))
+      roll(digits[1], unit % 10)
+    })
+    doors.setAttribute('datetime', left ? 'PT' + units[0] + 'H' + units[1] + 'M' + units[2] + 'S' : 'PT0S')
+    if (left) setTimeout(tick, (end - Date.now()) % 1000 || 1000)
+  }
+  tick()
+</script>`} />
+
+## Inline \{#inline\}
+
+`countdown-inline` sets the units on one baseline, each label after its figure, at the size of the sentence around it, for a deadline mentioned in passing. The figures take the strong ink and the labels stay quiet, so the time stands out of the sentence without a weight of its own. A short label such as `h` is read by a screen reader as the letter, so hide it from assistive technology and give the word beside it, clipped out of sight with `sr-only`.
+
+<ComponentPreview name="inline" height={96} title="Inline" background="plain" bodyClass="flex items-center justify-center p-lg" html={`<p class="m(0) text-sm fg-text-body">Early pricing ends in
+  <time class="countdown countdown-inline" datetime="P2DT14H5M">
+    <span class="countdown-unit"><span class="countdown-value">2</span><span class="countdown-label" aria-hidden="true">d</span><span class="sr-only">days</span></span>
+    <span class="countdown-unit"><span class="countdown-value">14</span><span class="countdown-label" aria-hidden="true">h</span><span class="sr-only">hours</span></span>
+    <span class="countdown-unit"><span class="countdown-value">05</span><span class="countdown-label" aria-hidden="true">m</span><span class="sr-only">minutes</span></span>
+  </time>.
+</p>`} />
+
+## When time is up \{#ended\}
+
+When the time left is zero, `datetime="PT0S"`, the figures turn quiet and tiles sink to a flat well: there is nothing left to count. Say what happened next to it in words, such as "Doors are open", and replace the countdown when the page has something better to show.
+
+<ComponentPreview name="ended" height={152} title="Time is up" background="plain" bodyClass="flex items-center justify-center p-lg" html={`<time class="countdown countdown-tiles" datetime="PT0S">
+  <span class="countdown-unit"><span class="countdown-value">00</span> <span class="countdown-label">hours</span></span>
+  <span class="countdown-unit"><span class="countdown-value">00</span> <span class="countdown-label">minutes</span></span>
+  <span class="countdown-unit"><span class="countdown-value">00</span> <span class="countdown-label">seconds</span></span>
+</time>`} />
+
+## Accessibility \{#accessibility\}
+
+- A countdown is never a live region. Announcing a figure that changes every second would talk over everything else the reader is doing, and nothing a reader needs is in any single second. A screen reader reads the countdown when the reader comes to it: the figures and their labels, such as "02 days 14 hours 05 minutes 09 seconds".
+- When the moment itself matters, such as a reservation that is about to expire, announce it once, in words, in a separate `role="status"` region: "Your seats are held for one more minute."
+- The colons are drawn by the stylesheet with empty alternative text, so they are not read.
+- Write the labels as words. Where a label is a letter, as in the inline countdown, hide the letter and give the word with `sr-only`.
+- Under reduced motion an odometer inside the countdown changes its numerals in place. In forced colors the tiles keep their edge as a system-color outline.
+
+## Classes \{#classes\}
+
+<ContractTable name="countdown" />
+
+## Custom properties \{#custom-properties\}
+
+<ContractTable name="countdown" show="properties" />
+
+## Source \{#source\}
+
+<ComponentSource name="countdown" />
