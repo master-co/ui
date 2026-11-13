@@ -1,0 +1,33 @@
+{
+  "$schema": "../contract.schema.json",
+  "name": "odometer",
+  "title": "Odometer",
+  "tier": "component",
+  "category": "Data display",
+  "description": "A number whose digits roll to their new value.",
+  "use": "A figure that changes while it is read, where seeing it move says something: a count going up, a total after a choice, a price as a plan changes, the seconds of a countdown. Write the number once as text in odometer-value, which assistive technology reads, and draw it in odometer-figures, aria-hidden, with one odometer-digit per digit and its numeral in --digit. It takes the type of the place it stands in, so it can be a stat's figure, a heading or a word in a sentence.",
+  "instead": [
+    { "when": "The figure is read once and does not change while the page is open", "use": "stat" },
+    { "when": "It is the time left until something, in days, hours, minutes and seconds", "use": "countdown" },
+    { "when": "It is a value the reader picks by turning a column", "use": "wheel" }
+  ],
+  "script": "optional",
+  "platform": [
+    { "feature": "A registered custom property (@property) that eases from one numeral to the next", "fallback": "The numeral changes in place, with no roll" },
+    { "feature": "mod(), which shows a --digit past 9 or below 0 modulo ten", "fallback": "--digit is drawn as written: keep it between 0 and 9, and a change from 9 to 0 rolls back through the column" },
+    { "feature": "sibling-index(), for a small delay from one digit to the next", "fallback": "The digits roll together" },
+    { "feature": "Alternative text for generated content, content: '…' / ''", "fallback": "Nothing: the column is in odometer-figures, which is aria-hidden" }
+  ],
+  "classes": [
+    { "name": "odometer", "kind": "root", "description": "The number, in the type of the place it stands in, with tabular figures. It has no surface and no size of its own" },
+    { "name": "odometer-value", "kind": "part", "of": "odometer", "description": "The number as text, clipped out of sight: what assistive technology reads, find in page finds and a copy takes" },
+    { "name": "odometer-figures", "kind": "part", "of": "odometer", "attributes": { "aria-hidden": "true" }, "description": "The number as drawn, hidden from assistive technology: digits and, as plain text between them, the marks that stand still, such as a comma, a point, a currency or a unit" },
+    { "name": "odometer-digit", "kind": "part", "of": "odometer", "description": "One digit: an empty element, a window one line tall onto a column of numerals that stands at --digit and rolls when it changes" }
+  ],
+  "properties": [
+    { "name": "--digit", "on": "odometer-digit", "description": "The numeral, from 0 to 9. A value past 9 or below 0 is shown modulo ten, so counting on from 9 to 10 rolls one step to 0. The stylesheet reads 0 when it is not set" },
+    { "name": "--odometer-duration", "default": "calc(var(--duration-base) * 2)", "description": "How long a digit takes to roll to its new numeral" },
+    { "name": "--odometer-stagger", "default": "24ms", "description": "How much later each digit sets off than the one before it" }
+  ],
+  "example": "<span class=\"odometer\">\n  <span class=\"odometer-value\">1,284</span>\n  <span class=\"odometer-figures\" aria-hidden=\"true\">\n    <span class=\"odometer-digit\" style=\"--digit: 1\"></span>,\n    <span class=\"odometer-digit\" style=\"--digit: 2\"></span>\n    <span class=\"odometer-digit\" style=\"--digit: 8\"></span>\n    <span class=\"odometer-digit\" style=\"--digit: 4\"></span>\n  </span>\n</span>"
+}

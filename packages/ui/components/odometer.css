@@ -1,0 +1,109 @@
+/*
+ * Odometer: a number whose digits roll to their new value, like the wheels of a mechanical counter.
+ * It has no surface and no size of its own: it takes the type of the place it stands in, a heading, a stat's
+ * figure or a line of text, and sets tabular figures so every digit is as wide as the next and nothing beside
+ * the number moves while it rolls.
+ * The number is written twice, once for each reader. odometer-value holds it as text, clipped out of sight, so
+ * assistive technology reads one plain string, and find in page and a copy take the number; odometer-figures,
+ * aria-hidden, draws it. In the figures each odometer-digit is a window one line tall onto a column of
+ * numerals drawn by the stylesheet, standing at --digit. A change of --digit eases the column to the new
+ * numeral, and a mask fades it out over and under the line, so numerals roll in and out of sight instead of
+ * being cut. Anything else in the figures, a comma, a point, a currency or a unit, is plain text and stands still.
+ * A wheel goes round: --digit may count on past 9 or below 0, and the window shows it modulo ten, so 9 to 10
+ * rolls on to 0 and 0 to -1 rolls back to 9, one step each, as a counter does.
+ * Platform: the roll eases a registered number (@property) and the wheel reads it with mod(). Without
+ * @property the numeral changes in place; without mod(), write --digit from 0 to 9. Where sibling-index() is
+ * supported, each digit sets off a little after the one before it, so a change reads left to right; elsewhere
+ * they roll together. Under reduced motion the numerals change in place.
+ */
+@property --odometer-at {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+
+@layer components {
+  .odometer {
+    --odometer-duration: calc(var(--duration-base) * 2);
+    --odometer-stagger: 24ms;
+    position: relative;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  /* The number as text, for assistive technology, find in page and copying; clipped out of sight. */
+  .odometer-value {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /*
+   * The drawing. A flex row, so the whitespace between digits in the markup never becomes a space in the
+   * number, and left to right in any direction of text, as numbers are written.
+   */
+  .odometer-figures {
+    display: inline-flex;
+    align-items: baseline;
+    direction: ltr;
+    unicode-bidi: isolate;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  /*
+   * One digit. A hidden zero gives the window a numeral's width and the line's baseline. The window is the
+   * line itself, reaching a hair over and under it, and gives that hair back with a negative margin, so the
+   * line keeps its height and a rolling numeral never crosses into the line above or below. The mask is clear
+   * across a numeral's own height and fades out by the window's edge, as the wheel turns away. The window
+   * clips the column too: a mask hides the other numerals but would leave them making the page scroll.
+   */
+  .odometer-digit {
+    --odometer-reach: .08em;
+    --odometer-at: var(--digit, 0);
+    position: relative;
+    display: block;
+    padding-block: var(--odometer-reach);
+    margin-block: calc(var(--odometer-reach) * -1);
+    overflow: clip;
+    mask-image: linear-gradient(transparent, black calc(50% - .38em), black calc(50% + .38em), transparent);
+    transition: --odometer-at var(--odometer-duration) var(--easing-glide);
+
+    @supports (width: calc(sibling-index() * 1px)) {
+      transition-delay: calc((sibling-index() - 1) * var(--odometer-stagger));
+    }
+
+    /*
+     * The column: 0 to 9 and 0 again, so a roll past 9 ends on a 0 that looks like the first. Numerals are
+     * spaced .4em further apart than lines of text, so the next one waits outside the box, and each stands in
+     * the middle of its line, as the line's own numeral does.
+     */
+    &::before {
+      content: '0\A 1\A 2\A 3\A 4\A 5\A 6\A 7\A 8\A 9\A 0' / '';
+      position: absolute;
+      inset: calc(var(--odometer-reach) - .2em) 0 auto;
+      line-height: calc(1lh + .4em);
+      text-align: center;
+      white-space: pre;
+      translate: 0 calc(var(--odometer-at) * -1lh);
+
+      @supports (width: calc(mod(3px, 2px))) {
+        translate: 0 calc(mod(var(--odometer-at), 10) * -1lh);
+      }
+    }
+
+    &::after {
+      content: '0' / '';
+      visibility: hidden;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: none;
+    }
+  }
+}

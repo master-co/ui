@@ -1,0 +1,148 @@
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+An odometer is a number whose digits roll to their new value, like the wheels of a mechanical counter. Each digit is a window one line tall onto a column of numerals that the stylesheet draws; when the page changes a digit's `--digit`, its column rolls to the new numeral and fades in and out of sight over and under the line. It has no surface and no size of its own, so it can be a [stat](/components/stat)'s figure, a heading or a word in a sentence. The number is also written once as plain text, which is what a screen reader reads.
+
+<ComponentPreview name="default" height={224} title="Odometer" bodyClass="flex items-center justify-center p-lg" caption="Press Add visitors: the digits that change roll up to the new count." html={`<div class="card w-full max-w(320)">
+  <div class="stat">
+    <p class="stat-label">Visitors today</p>
+    <div class="stat-row">
+      <p class="stat-value">
+        <span class="odometer" id="visitors">
+          <span class="odometer-value">12,847</span>
+          <span class="odometer-figures" aria-hidden="true">
+            <span class="odometer-digit" style="--digit: 1"></span>
+            <span class="odometer-digit" style="--digit: 2"></span>,
+            <span class="odometer-digit" style="--digit: 8"></span>
+            <span class="odometer-digit" style="--digit: 4"></span>
+            <span class="odometer-digit" style="--digit: 7"></span>
+          </span>
+        </span>
+      </p>
+      <p class="stat-delta stat-delta-up">3.1%</p>
+    </div>
+  </div>
+  <button class="btn btn-sm self-start" type="button" id="visitors-add">Add visitors</button>
+</div>
+<script>
+  function roll(odometer, text, up) {
+    odometer.querySelector('.odometer-value').textContent = text
+    var numerals = text.split('').filter(function (character) { return character >= '0' && character <= '9' })
+    odometer.querySelectorAll('.odometer-digit').forEach(function (digit, index) {
+      var at = Number(digit.style.getPropertyValue('--digit')) || 0
+      var step = ((numerals[index] - at) % 10 + 10) % 10
+      if (!up && step) step -= 10
+      digit.style.setProperty('--digit', at + step)
+    })
+  }
+  var visitors = 12847
+  document.getElementById('visitors-add').addEventListener('click', function () {
+    visitors += 1 + Math.floor(Math.random() * 240)
+    roll(document.getElementById('visitors'), visitors.toLocaleString('en-US'), true)
+  })
+</script>`} />
+
+## How it is written \{#how-it-is-written\}
+
+The number is written twice, once for each reader:
+
+- `odometer-value` holds it as text, clipped out of sight. A screen reader reads it as one plain string, find in page finds it and a copy takes it.
+- `odometer-figures` draws it, with `aria-hidden="true"`. It holds one empty `odometer-digit` per digit, its numeral in `--digit`, and between them, as plain text, the marks that stand still: a comma, a point, a currency or a unit.
+
+The figures are a flex row, so the line breaks and indentation between digits in the markup never turn into spaces in the number. A mark that is a space, such as the one before a unit, is a no-break space (`&nbsp;`). Digits are always laid out left to right, as numbers are written, even in a right-to-left page.
+
+Each digit shows a hidden zero, so its window is as wide as a numeral and stands on the line's baseline. Figures are tabular, every one as wide as the next, so nothing beside the number moves while it rolls.
+
+## Any type \{#any-type\}
+
+The odometer sets no size, weight or ink. It takes them from the place it stands in, and the window, the spacing of the column and the fade are measured in that type, so it is the same mechanism in a heading, in a stat and in a line of text.
+
+<ComponentPreview name="type" height={200} title="In a heading and a sentence" background="plain" bodyClass="flex flex-col items-start justify-center gap-sm p-lg" caption="Press Add the stand: the total and the tax roll up; press again and they roll back down." html={`<h3 class="m(0) text-4xl font-semibold fg-text-strong">
+  <span class="odometer" id="total">
+    <span class="odometer-value">$1,280.50</span>
+    <span class="odometer-figures" aria-hidden="true">
+      $<span class="odometer-digit" style="--digit: 1"></span>,
+      <span class="odometer-digit" style="--digit: 2"></span>
+      <span class="odometer-digit" style="--digit: 8"></span>
+      <span class="odometer-digit" style="--digit: 0"></span>.
+      <span class="odometer-digit" style="--digit: 5"></span>
+      <span class="odometer-digit" style="--digit: 0"></span>
+    </span>
+  </span>
+</h3>
+<p class="m(0) text-sm fg-text-muted">Includes
+  <span class="odometer" id="tax">
+    <span class="odometer-value">$106.71</span>
+    <span class="odometer-figures" aria-hidden="true">
+      $<span class="odometer-digit" style="--digit: 1"></span>
+      <span class="odometer-digit" style="--digit: 0"></span>
+      <span class="odometer-digit" style="--digit: 6"></span>.
+      <span class="odometer-digit" style="--digit: 7"></span>
+      <span class="odometer-digit" style="--digit: 1"></span>
+    </span>
+  </span>
+  in tax.</p>
+<button class="btn btn-sm mt-sm" type="button" id="stand" aria-pressed="false">Add the stand</button>
+<script>
+  function roll(odometer, text, up) {
+    odometer.querySelector('.odometer-value').textContent = text
+    var numerals = text.split('').filter(function (character) { return character >= '0' && character <= '9' })
+    odometer.querySelectorAll('.odometer-digit').forEach(function (digit, index) {
+      var at = Number(digit.style.getPropertyValue('--digit')) || 0
+      var step = ((numerals[index] - at) % 10 + 10) % 10
+      if (!up && step) step -= 10
+      digit.style.setProperty('--digit', at + step)
+    })
+  }
+  var stand = document.getElementById('stand')
+  stand.addEventListener('click', function () {
+    var added = stand.getAttribute('aria-pressed') !== 'true'
+    stand.setAttribute('aria-pressed', String(added))
+    stand.textContent = added ? 'Remove the stand' : 'Add the stand'
+    roll(document.getElementById('total'), added ? '$1,329.50' : '$1,280.50', added)
+    roll(document.getElementById('tax'), added ? '$110.79' : '$106.71', added)
+  })
+</script>`} />
+
+## Rolling the way the number moved \{#rolling\}
+
+A column holds the numerals 0 to 9, and a digit rolls straight to the numeral it is given, up or down the column. To make every digit roll the way the number moved, as the wheels of a counter do, let `--digit` count on past 9 or below 0: the window shows it modulo ten. From 9, writing 10 rolls one step on to 0; from 0, writing -1 rolls one step back to 9.
+
+The script in the previews above does this. For each digit it reads the value written last, and steps forward to the new numeral when the number went up, or back when it went down, never more than nine steps:
+
+```js
+var at = Number(digit.style.getPropertyValue('--digit')) || 0
+var step = ((numeral - at) % 10 + 10) % 10
+if (!up && step) step -= 10
+digit.style.setProperty('--digit', at + step)
+```
+
+Without a script the odometer is simply the number. A page that only renders it once never needs more than numerals from 0 to 9.
+
+## Timing \{#timing\}
+
+A digit takes `--odometer-duration`, twice the theme's base duration, on the theme's one easing curve: it sets off quickly and settles gently, so the new numeral is legible early. Each digit sets off `--odometer-stagger` after the one before it, so a change reads from left to right. The window's fade is clear across a numeral's own height and the next numeral waits outside it, so at rest only the number is seen.
+
+## Accessibility \{#accessibility\}
+
+- A screen reader reads `odometer-value` and nothing else. Keep it equal to the figures, with its separators and unit, and change it in the same step as the digits.
+- `odometer-figures` must carry `aria-hidden="true"`. The numerals of the column are generated content with empty alternative text, but the marks between digits are real text and would be read a second time.
+- The odometer is not a live region. When the reader needs to hear a new value, such as the total after their own choice, add `aria-live="polite"` to the `odometer` root: the clipped value is its only text, so the new number is announced once. Never do this for a figure that changes by itself every few seconds.
+- Under reduced motion the numerals change in place, with no roll. In forced colors the numerals take the system's text color.
+
+## Platform \{#platform\}
+
+The roll eases a registered custom property (`@property`), and the window reads it modulo ten with `mod()`. In a browser without `@property` the numerals change in place; without `mod()`, keep `--digit` between 0 and 9. The delay from one digit to the next uses `sibling-index()`, where it is supported (Chromium); elsewhere the digits roll together.
+
+## Classes \{#classes\}
+
+<ContractTable name="odometer" />
+
+## Custom properties \{#custom-properties\}
+
+<ContractTable name="odometer" show="properties" />
+
+## Source \{#source\}
+
+<ComponentSource name="odometer" />
