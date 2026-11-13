@@ -8,6 +8,7 @@ import Editable from '../../../frameworks/vue/Editable.vue'
 import Dial from '../../../frameworks/vue/Dial.vue'
 import Gantt from '../../../frameworks/vue/Gantt.vue'
 import Listbox from '../../../frameworks/vue/Listbox.vue'
+import Gradient from '../../../frameworks/vue/Gradient.vue'
 import Otp from '../../../frameworks/vue/Otp.vue'
 import Schedule from '../../../frameworks/vue/Schedule.vue'
 import Signature from '../../../frameworks/vue/Signature.vue'
@@ -61,6 +62,7 @@ export const fixtures: Record<string, Component> = {
   'listbox': Listbox,
   'log': LogExample,
   'menu': MenuExample,
+  'gradient': Gradient,
   'otp': Otp,
   'schedule': Schedule,
   'panel': PanelExample,

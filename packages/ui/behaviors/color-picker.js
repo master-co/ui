@@ -227,6 +227,18 @@ export function colorPickerState(value, { valueText = describe, opaque = false }
   }
 }
 
+/**
+ * A color written again in a format, as the picker writes it: hex and rgb() fitted to sRGB, with the opacity.
+ * Another pattern that holds colors, such as a gradient's stops, keeps them in this one form. Returns undefined
+ * for text that is not a color.
+ * @param {string} value A color in hex, rgb() or oklch().
+ * @param {ColorFormat} format
+ */
+export function colorPickerFormat(value, format) {
+  const read = parse(value)
+  return read ? print(read.color, format) : undefined
+}
+
 /** @param {Oklch} color @returns {Record<string, string>} */
 function properties(color) {
   return {

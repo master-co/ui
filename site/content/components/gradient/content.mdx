@@ -1,0 +1,159 @@
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+A gradient editor makes a gradient: its stops on a bar, the stop in hand in a [color picker](/components/color-picker), and its type, angle and centre. Every control in it is the library's own: the color picker, a [slider](/components/slider) and a number for a stop's place, a [segmented](/components/segmented) control for the type, a [dial](/components/dial) for the angle, numbers for the centre. What the gradient adds is the bar of stops, the preview and the [`gradient` behavior](/guide/behaviors) that keeps them all in step.
+
+<ComponentPreview name="default" height={744} narrowHeight={1040} title="Gradient" background="plain" bodyClass="content-start p-lg" behaviors html={`<div class="gradient max-w(640) mx-auto" id="sunrise" aria-label="Background gradient" style="--gradient-ratio: 3 / 1">
+  <div class="gradient-preview" aria-hidden="true"></div>
+  <div class="gradient-bar"></div>
+  <div class="flex flex-wrap items-center gap-xs">
+    <button type="button" class="btn btn-sm gradient-add"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Add a stop</button>
+    <button type="button" class="btn btn-sm gradient-remove"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg>Remove</button>
+    <button type="button" class="btn btn-sm btn-quiet gradient-reverse"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 3 4 4-4 4M20 7H4M8 21l-4-4 4-4M4 17h16"/></svg>Reverse</button>
+  </div>
+  <div class="gradient-fields">
+    <fieldset class="gradient-color">
+      <legend class="mb(6) text-xs font-medium fg-text-muted">Color of the stop</legend>
+      <div class="color-picker" style="--color-picker-lightness: .7; --color-picker-chroma: .19; --color-picker-hue: 50">
+        <div class="color-picker-area">
+          <div class="color-picker-thumb" role="slider" tabindex="0" aria-label="Lightness and chroma" aria-valuemin="0" aria-valuemax="100" aria-valuenow="70"></div>
+        </div>
+        <span class="swatch swatch-lg color-picker-swatch"></span>
+        <input type="range" class="slider color-picker-hue" min="0" max="360" value="50" aria-label="Hue">
+        <input type="range" class="slider color-picker-alpha" min="0" max="100" value="100" aria-label="Opacity">
+        <div class="color-picker-fields">
+          <select class="select select-sm color-picker-format" aria-label="Format">
+            <option value="hex" selected>Hex</option>
+            <option value="rgb">RGB</option>
+            <option value="oklch">OKLCH</option>
+          </select>
+          <input class="input input-sm color-picker-text" value="#ff6a00" aria-label="Color" spellcheck="false" autocomplete="off">
+        </div>
+      </div>
+    </fieldset>
+    <div class="flex flex-col gap-md min-w(0)">
+      <fieldset class="gradient-offset">
+        <legend class="mb(6) text-xs font-medium fg-text-muted">Position</legend>
+        <input type="range" class="slider" min="0" max="100" step="1" value="0" aria-label="Position of the stop">
+        <input type="number" class="input input-sm w(72)" min="0" max="100" step="1" value="0" aria-label="Position of the stop, in percent">
+      </fieldset>
+      <fieldset class="gradient-type">
+        <legend class="mb(6) text-xs font-medium fg-text-muted">Type</legend>
+        <div class="segmented segmented-sm" role="radiogroup" aria-label="Type">
+          <label class="segmented-item"><input type="radio" class="segmented-input" name="sunrise-type" value="linear" checked>Linear</label>
+          <label class="segmented-item"><input type="radio" class="segmented-input" name="sunrise-type" value="radial">Radial</label>
+          <label class="segmented-item"><input type="radio" class="segmented-input" name="sunrise-type" value="conic">Conic</label>
+        </div>
+      </fieldset>
+      <div class="flex flex-wrap items-start gap-lg">
+        <fieldset class="gradient-angle">
+          <legend class="mb(6) text-xs font-medium fg-text-muted">Angle</legend>
+          <div class="dial dial-sm dial-full" role="slider" tabindex="0" aria-label="Angle" aria-valuenow="135" aria-valuemin="0" aria-valuemax="360" aria-valuetext="135°" style="--dial-value: 135">
+            <span class="dial-value">135°</span>
+            <span class="dial-thumb"></span>
+          </div>
+        </fieldset>
+        <fieldset class="gradient-center">
+          <legend class="mb(6) text-xs font-medium fg-text-muted">Centre</legend>
+          <input type="number" class="input input-sm w(72)" min="0" max="100" value="50" aria-label="Centre across, in percent">
+          <input type="number" class="input input-sm w(72)" min="0" max="100" value="50" aria-label="Centre down, in percent">
+        </fieldset>
+      </div>
+    </div>
+  </div>
+  <pre class="code-block gradient-css" aria-label="The gradient as CSS"></pre>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.gradient(document.getElementById('sunrise'), { value: { type: 'linear', angle: 135, center: [50, 50], stops: [
+    { id: 'dawn', offset: 0, color: '#ff6a00' },
+    { id: 'noon', offset: 55, color: '#ee0979' },
+    { id: 'dusk', offset: 100, color: '#4f46e5' }
+  ] } })
+})
+</script>`} caption="Drag a stop, or take it in hand and use the arrow keys; switch the type and turn the angle." />
+
+## The value \{#the-value\}
+
+The gradient is a value of four parts:
+
+| Part | Is |
+| --- | --- |
+| `type` | `linear`, `radial` or `conic` |
+| `angle` | Degrees, for a linear and a conic gradient |
+| `center` | Two percentages, for a radial and a conic gradient |
+| `stops` | Each with an `id` that stays with it, an `offset` from 0 to 100 and a `color` |
+
+A color is written as the color picker writes it, as sRGB in hex with its opacity. `gradientCss(value)` writes the gradient as CSS, and both the preview and the copied text come from it: interpolated in OKLab where the browser can be told to, after a fallback for where it cannot.
+
+```css name=copied.css
+background-image: linear-gradient(90deg, #ff6a00 0%, #ee0979 100%);
+background-image: linear-gradient(in oklab 90deg, #ff6a00 0%, #ee0979 100%);
+```
+
+No CSS is read back: the editor holds the value, and an application stores the value, not the text.
+
+## The stops \{#the-stops\}
+
+- **A stop's handle is a slider** of its offset, a disc of its color on the bar. A press takes it in hand and a drag moves it; the arrow keys move it by one, by ten with <kbd class="kbd">Shift</kbd>, and <kbd class="kbd">Home</kbd> and <kbd class="kbd">End</kbd> take it to the ends. The stop in hand is `aria-current="true"`; it stands a little forward with an ink ring.
+- **Stops may cross.** A stop moved past another keeps its id and its handle keeps focus; the gradient paints them in the order of their offsets. Two stops at one offset make a hard edge, and keep their order.
+- **Adding** puts a stop of the color in hand ten points after it, at 100 at most. **Removing**, with the button or <kbd class="kbd">Delete</kbd>, hands focus to the next stop on the bar, or the one before. Two stops are the least: at two, removing is disabled.
+- **Reversing** turns the stops round: each offset becomes 100 less itself.
+
+Dragging is never the only way: the offset has a range and a number beside it, and every stop is reached with <kbd class="kbd">Tab</kbd>.
+
+## States \{#states\}
+
+`aria-readonly="true"` on the root shows a gradient that cannot be changed, and `aria-disabled="true"` one that is not in use: the handles stay where they are, and the controls are disabled.
+
+## The behavior \{#behavior\}
+
+```js name=app.js
+import { gradient, gradientCss } from '@master/ui/behaviors/gradient.js'
+
+const editor = gradient(document.querySelector('.gradient'), {
+  value: { type: 'linear', angle: 90, center: [50, 50], stops: [
+    { id: 'from', offset: 0, color: '#ff6a00' },
+    { id: 'to', offset: 100, color: '#ee0979' },
+  ] },
+})
+editor.value                     // the value as above
+gradientCss(editor.value).text   // the two lines to copy
+```
+
+The reader's moves dispatch `input` while they go on and `change` when they end; setting `value` shows another gradient and dispatches nothing. The behavior writes the handles from the value, so a framework that writes them itself gives `draw`. It publishes the gradient as `--gradient` and `--gradient-fallback` on the root, and each stop as `--gradient-offset` and `--gradient-color` on its handle: what the editor paints is its content, and the stylesheet places it.
+
+## Keyboard \{#keyboard\}
+
+<ContractTable name="gradient" show="keyboard" />
+
+## Accessibility \{#accessibility\}
+
+- Each handle is named with its place among the stops and says its offset and its color in `aria-valuetext`.
+- The preview is a picture of the value: hide it from assistive technology, since the stops and the CSS say the same.
+- In forced colors the gradient keeps its own colors, since they are its content, and the handles and the bar are outlined in system colors.
+
+## React, Svelte and Vue \{#frameworks\}
+
+The `gradient` component writes the handles and the controls from the value and attaches the behavior. Copy it into the project with `npx master-ui add gradient`; [React, Svelte and Vue](/guide/frameworks) says how the components are built and used.
+
+<FrameworkSource name="gradient" />
+
+## Classes \{#classes\}
+
+<ContractTable name="gradient" />
+
+## Custom properties \{#custom-properties\}
+
+<ContractTable name="gradient" show="properties" />
+
+## Related \{#related\}
+
+<ComponentLinks slugs={['color-picker', 'dial', 'slider', 'segmented', 'swatch']} />
+
+## Source \{#source\}
+
+<ComponentSource name="gradient" />

@@ -1,0 +1,211 @@
+{
+  "$schema": "../contract.schema.json",
+  "name": "gradient",
+  "title": "Gradient",
+  "tier": "component",
+  "category": "Forms",
+  "description": "A gradient being made: its stops on a bar, the stop in hand in a color picker, and its type, angle and centre.",
+  "use": "A reader makes a linear, radial or conic gradient for a background, a theme or a brand asset. The value is the gradient as data: its type, angle, centre and stops, each stop with an id, an offset and a color; gradientCss() writes it as CSS for the preview and the copy alike. Every control in it is the library's own: color-picker, slider, number input, segmented and dial.",
+  "instead": [
+    {
+      "when": "One color is chosen",
+      "use": "color-picker"
+    },
+    {
+      "when": "A color is chosen from a few the page offers",
+      "use": "swatch"
+    }
+  ],
+  "composes": [
+    "color-picker",
+    "slider",
+    "input",
+    "segmented",
+    "dial",
+    "button"
+  ],
+  "script": "required",
+  "behavior": "gradient",
+  "keyboard": [
+    {
+      "keys": "Tab",
+      "action": "Moves to the stop in hand on the bar, then through the controls; the other stops are reached by taking them in hand with the pointer or from their place in the tab order of the bar"
+    },
+    {
+      "keys": "ArrowRight, ArrowUp",
+      "action": "On a stop: moves it one point toward the end; ten with Shift. ArrowRight goes left where the page runs right to left"
+    },
+    {
+      "keys": "ArrowLeft, ArrowDown",
+      "action": "On a stop: moves it one point toward the start; ten with Shift"
+    },
+    {
+      "keys": "PageUp, PageDown",
+      "action": "On a stop: moves it ten points"
+    },
+    {
+      "keys": "Home, End",
+      "action": "On a stop: moves it to 0 or to 100"
+    },
+    {
+      "keys": "Delete, Backspace",
+      "action": "On a stop: removes it while there are more than two, and hands focus to its neighbor"
+    }
+  ],
+  "platform": [
+    {
+      "feature": "Gradients interpolated in a color space, as in linear-gradient(in oklab …)",
+      "fallback": "The preview and the bar are painted from --gradient-fallback, interpolated in sRGB"
+    },
+    {
+      "feature": "Container queries",
+      "fallback": "The controls stay in one column at every width"
+    }
+  ],
+  "classes": [
+    {
+      "name": "gradient",
+      "kind": "root",
+      "description": "The editor: a preview, a bar of stops and the controls. The gradient behavior writes the stops' handles and publishes the gradient. Mark aria-readonly=\"true\" or aria-disabled=\"true\" on it to keep it from changing"
+    },
+    {
+      "name": "gradient-preview",
+      "kind": "part",
+      "of": "gradient",
+      "description": "The gradient over a checkerboard, 16 : 9 unless --gradient-ratio says otherwise; hide it with aria-hidden, since the stops and the CSS say the same"
+    },
+    {
+      "name": "gradient-bar",
+      "kind": "part",
+      "of": "gradient",
+      "description": "The stops from start to end, whatever the type, as a short well the handles stand on"
+    },
+    {
+      "name": "gradient-stop",
+      "kind": "part",
+      "of": "gradient",
+      "attributes": {
+        "role": "slider"
+      },
+      "label": true,
+      "description": "A stop's handle, written by the behavior: a disc of its color in a pearl ring at --gradient-offset along the bar, a slider of the offset named with its place among the stops"
+    },
+    {
+      "name": "gradient-fields",
+      "kind": "part",
+      "of": "gradient",
+      "description": "The controls, in one column, and two side by side when the room allows"
+    },
+    {
+      "name": "gradient-color",
+      "kind": "part",
+      "of": "gradient",
+      "description": "Holds the color-picker of the stop in hand; the gradient behavior attaches the picker"
+    },
+    {
+      "name": "gradient-offset",
+      "kind": "part",
+      "of": "gradient",
+      "description": "Holds a range and a number input, from 0 to 100, for the offset of the stop in hand"
+    },
+    {
+      "name": "gradient-type",
+      "kind": "part",
+      "of": "gradient",
+      "description": "Holds the radios, linear, radial and conic, that choose the type; a segmented control"
+    },
+    {
+      "name": "gradient-angle",
+      "kind": "part",
+      "of": "gradient",
+      "description": "Holds a dial of the angle, from 0 to 360 degrees, for a linear and a conic gradient"
+    },
+    {
+      "name": "gradient-center",
+      "kind": "part",
+      "of": "gradient",
+      "description": "Holds two number inputs, the centre's x and y in percent, for a radial and a conic gradient"
+    },
+    {
+      "name": "gradient-add",
+      "kind": "part",
+      "of": "gradient",
+      "elements": [
+        "button"
+      ],
+      "description": "Adds a stop of the color in hand ten points after it, 100 at most"
+    },
+    {
+      "name": "gradient-remove",
+      "kind": "part",
+      "of": "gradient",
+      "elements": [
+        "button"
+      ],
+      "description": "Removes the stop in hand; disabled at two stops"
+    },
+    {
+      "name": "gradient-reverse",
+      "kind": "part",
+      "of": "gradient",
+      "elements": [
+        "button"
+      ],
+      "description": "Turns the stops round"
+    },
+    {
+      "name": "gradient-css",
+      "kind": "part",
+      "of": "gradient",
+      "description": "The gradient as CSS to copy, written by the behavior: the fallback, then the line interpolated in OKLab"
+    }
+  ],
+  "states": [
+    {
+      "on": "gradient-stop",
+      "name": "in hand",
+      "mark": "aria-current=\"true\"",
+      "description": "The stop the controls show: it stands a little forward with an ink ring"
+    },
+    {
+      "on": "gradient-stop",
+      "name": "locked",
+      "mark": "aria-disabled=\"true\"",
+      "description": "The gradient is read-only or disabled: the handle does not move"
+    },
+    {
+      "on": "gradient",
+      "name": "disabled",
+      "mark": "aria-disabled=\"true\"",
+      "description": "The editor is not in use: it fades"
+    }
+  ],
+  "properties": [
+    {
+      "name": "--gradient",
+      "default": "none",
+      "description": "The gradient interpolated in OKLab, written by the behavior"
+    },
+    {
+      "name": "--gradient-fallback",
+      "default": "none",
+      "description": "The gradient interpolated in sRGB, for a browser that cannot be told how to interpolate"
+    },
+    {
+      "name": "--gradient-ratio",
+      "on": "gradient-preview",
+      "description": "The preview's shape; 16 / 9 by default"
+    },
+    {
+      "name": "--gradient-offset",
+      "on": "gradient-stop",
+      "description": "Where a handle stands along the bar, from 0 to 100, written by the behavior"
+    },
+    {
+      "name": "--gradient-color",
+      "on": "gradient-stop",
+      "description": "The color of a handle's stop, written by the behavior"
+    }
+  ],
+  "example": "<div class=\"gradient\">\n  <div class=\"gradient-preview\" aria-hidden=\"true\"></div>\n  <div class=\"gradient-bar\"></div>\n  <div class=\"gradient-fields\">\n    <div class=\"gradient-offset\">\n      <input type=\"range\" class=\"slider\" min=\"0\" max=\"100\" aria-label=\"Position\">\n      <input type=\"number\" class=\"input input-sm\" min=\"0\" max=\"100\" aria-label=\"Position in percent\">\n    </div>\n    <button type=\"button\" class=\"btn btn-sm gradient-add\">Add a stop</button>\n    <button type=\"button\" class=\"btn btn-sm gradient-remove\">Remove the stop</button>\n  </div>\n  <pre class=\"gradient-css\"></pre>\n</div>"
+}

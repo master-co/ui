@@ -122,6 +122,7 @@ Or import only the theme and the components you use:
 | Lightbox | `lightbox`, `lightbox-media`, `lightbox-caption`, `lightbox-close` |
 | Popover | `popover`, `popover-end`, `popover-center`, `popover-top` |
 | Color picker | `color-picker`, `color-picker-area`, `color-picker-thumb`, `color-picker-hue`, `color-picker-alpha`, `color-picker-swatch`, `color-picker-fields`, `color-picker-format`, `color-picker-text`, `color-picker-popover` |
+| Gradient | `gradient`, `gradient-preview`, `gradient-bar`, `gradient-stop`, `gradient-fields`, `gradient-color`, `gradient-offset`, `gradient-type`, `gradient-angle`, `gradient-center`, `gradient-add`, `gradient-remove`, `gradient-reverse`, `gradient-css` |
 | Panel | `panel`, `panel-header`, `panel-handle`, `panel-title`, `panel-actions`, `panel-minimize`, `panel-body`, `panel-resize` |
 | Menu | `menu`, `menu-end`, `menu-top`, `menu-sub`, `menu-context`, `menu-item`, `menu-item-danger`, `menu-input`, `menu-shortcut`, `menu-label`, `menu-separator` |
 | Listbox | `listbox`, `listbox-option`, `listbox-body`, `listbox-description`, `listbox-end`, `listbox-group`, `listbox-label`, `listbox-separator`, `listbox-empty` |
@@ -238,7 +239,7 @@ stop.value = 'hnd'                                          // where a pattern h
 
 ## React, Svelte and Vue
 
-A component is a class on a native element, so in a framework most of the library is the same markup in that framework's syntax; there is no `Button` to import. Thirty-four patterns hold state, render rows from data, join parts by id or have a lifetime, and each has a component: avatar, calendar, carousel, color-picker, combobox, command, compare, cropper, dial, dialog, editable, field, gantt, listbox, log, menu, otp, panel, player, popover, schedule, signature, sortable, splitter, stepper, tabs, tags, toast, toolbar, tooltip, tour, transcript, tree and wheel.
+A component is a class on a native element, so in a framework most of the library is the same markup in that framework's syntax; there is no `Button` to import. Thirty-five patterns hold state, render rows from data, join parts by id or have a lifetime, and each has a component: avatar, calendar, carousel, color-picker, combobox, command, compare, cropper, dial, dialog, editable, field, gantt, gradient, listbox, log, menu, otp, panel, player, popover, schedule, signature, sortable, splitter, stepper, tabs, tags, toast, toolbar, tooltip, tour, transcript, tree and wheel.
 
 ```sh
 npx master-ui add combobox --framework=react   # ui/combobox.tsx and ui/use-behavior.ts

@@ -8,6 +8,7 @@ import Editable from '../../../frameworks/svelte/Editable.svelte'
 import Dial from '../../../frameworks/svelte/Dial.svelte'
 import Gantt from '../../../frameworks/svelte/Gantt.svelte'
 import Listbox from '../../../frameworks/svelte/Listbox.svelte'
+import Gradient from '../../../frameworks/svelte/Gradient.svelte'
 import Otp from '../../../frameworks/svelte/Otp.svelte'
 import Schedule from '../../../frameworks/svelte/Schedule.svelte'
 import Signature from '../../../frameworks/svelte/Signature.svelte'
@@ -61,6 +62,7 @@ export const fixtures = {
   'listbox': Listbox,
   'log': LogExample,
   'menu': MenuExample,
+  'gradient': Gradient,
   'otp': Otp,
   'schedule': Schedule,
   'panel': PanelExample,

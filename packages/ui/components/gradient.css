@@ -1,0 +1,189 @@
+/*
+ * Gradient: a gradient being made. A preview of it, a bar of its stops, and the controls of the stop in hand and
+ * of the whole gradient, which are the library's own: a color picker, a range and a number, a segmented
+ * control for the type, a dial for the angle, numbers for the centre.
+ *
+ * What the gradient looks like is its content, not a material: the gradient behavior publishes it as
+ * --gradient (interpolated in OKLab) and --gradient-fallback on the root, and each stop's place and color as
+ * --gradient-offset and --gradient-color on its handle. The stylesheet paints the preview and the bar from
+ * them over a checkerboard, so a stop's opacity shows, and places each handle along the bar.
+ *
+ * The bar is a short pressed track as wide as the gradient; a handle is a disc of its stop's color with a
+ * pearl ring, standing on the bar where its stop is, its middle on the stop. The stop in hand rises and takes an
+ * ink ring; a handle the keys are on draws the focus ring as well. Handles keep their place in the DOM as they
+ * move, so the one in hand never loses focus when it passes another.
+ */
+@layer components {
+  .gradient {
+    --gradient: none;
+    --gradient-fallback: none;
+    --gradient-handle: 1.25rem;
+    --gradient-check: color-mix(in oklab, var(--color-text-strong) 9%, transparent);
+    container: gradient / inline-size;
+    display: grid;
+    gap: 1rem;
+    min-width: 0;
+
+    &[aria-disabled="true"] {
+      opacity: .6;
+    }
+  }
+
+  /*
+   * The preview: the gradient on a sheet-cornered face over a checkerboard, so transparency reads as such. Its
+   * size is the page's to give; it keeps a 16 : 9 shape by default.
+   */
+  .gradient-preview {
+    aspect-ratio: var(--gradient-ratio, 16 / 9);
+    min-height: 0;
+    border-radius: calc(var(--radius-control-lg) * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    background:
+      var(--gradient-fallback),
+      repeating-conic-gradient(var(--gradient-check) 0 25%, transparent 0 50%) 0 0 / 16px 16px,
+      var(--color-surface-raised);
+    box-shadow: inset 0 0 0 .5px var(--color-line-image-strong);
+
+    @supports (background-image: linear-gradient(in oklab, white, black)) {
+      background:
+        var(--gradient),
+        repeating-conic-gradient(var(--gradient-check) 0 25%, transparent 0 50%) 0 0 / 16px 16px,
+        var(--color-surface-raised);
+    }
+
+    @media (forced-colors: active) {
+      forced-color-adjust: none;
+      outline: 1px solid CanvasText;
+    }
+  }
+
+  /*
+   * The bar: the stops from start to end, whatever the type, as a short well. The handles stand on it, half
+   * a handle in from its ends at 0 and 100, so they never hang outside the gradient.
+   */
+  .gradient-bar {
+    position: relative;
+    height: .75rem;
+    margin-inline: calc(var(--gradient-handle) / 2);
+    border-radius: 999px;
+    corner-shape: round;
+    background:
+      var(--gradient-bar, var(--gradient-fallback)),
+      repeating-conic-gradient(var(--gradient-check) 0 25%, transparent 0 50%) 0 0 / 8px 8px,
+      var(--color-surface-raised);
+    box-shadow: var(--shadow-pressed);
+    touch-action: none;
+
+    @media (pointer: coarse) {
+      --gradient-handle: 1.75rem;
+      height: 1rem;
+    }
+
+    @media (forced-colors: active) {
+      forced-color-adjust: none;
+      outline: 1px solid CanvasText;
+    }
+  }
+
+  /* A stop's handle: a disc of its color in a pearl ring, its middle on the stop. */
+  .gradient-stop {
+    position: absolute;
+    top: 50%;
+    inset-inline-start: calc(var(--gradient-offset, 0) * 1%);
+    width: var(--gradient-handle);
+    height: var(--gradient-handle);
+    translate: -50% -50%;
+    border-radius: 999px;
+    corner-shape: round;
+    background: linear-gradient(var(--gradient-color, transparent), var(--gradient-color, transparent)), repeating-conic-gradient(var(--gradient-check) 0 25%, transparent 0 50%) 0 0 / 6px 6px, var(--color-surface-raised);
+    box-shadow: 0 0 0 2px var(--color-thumb-high), 0 0 0 2.5px var(--color-line-strong), 0 1px 3px 1px var(--color-shade-1), 0 2px 6px var(--color-shade-2);
+    cursor: grab;
+    touch-action: none;
+    transition-property: box-shadow, scale;
+    transition-duration: var(--duration-quick);
+    transition-timing-function: var(--easing-glide);
+
+    &:dir(rtl) {
+      translate: 50% -50%;
+    }
+
+    /* The stop in hand stands a little forward, ringed in ink. */
+    &[aria-current="true"] {
+      z-index: 1;
+      scale: 1.12;
+      box-shadow: 0 0 0 2px var(--color-thumb-high), 0 0 0 3.5px var(--color-text-strong), 0 2px 6px 1px var(--color-shade-1), 0 4px 10px var(--color-shade-2);
+    }
+
+    &:active {
+      cursor: grabbing;
+    }
+
+    &:focus-visible {
+      @apply --focus-ring;
+      outline-offset: 4px;
+    }
+
+    &[aria-disabled="true"] {
+      cursor: default;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      transition-property: box-shadow;
+
+      &[aria-current="true"] {
+        scale: none;
+      }
+    }
+
+    @media (forced-colors: active) {
+      forced-color-adjust: none;
+      outline: 2px solid ButtonText;
+
+      &[aria-current="true"] {
+        outline-color: Highlight;
+        outline-width: 3px;
+      }
+    }
+  }
+
+  /*
+   * The controls: the stop in hand (its color, its offset, remove and add) and the gradient (its type, angle and
+   * centre, reverse), in a column that becomes two side by side when the room allows.
+   */
+  .gradient-fields {
+    display: grid;
+    gap: .75rem 1.25rem;
+    align-items: start;
+  }
+
+  @container gradient (width >= 34rem) {
+    .gradient-fields {
+      grid-template-columns: auto minmax(0, 1fr);
+    }
+  }
+
+  /* A labelled group of the gradient's controls: a row of a label over its control. */
+  .gradient-color, .gradient-offset, .gradient-type, .gradient-angle, .gradient-center {
+    display: grid;
+    gap: .375rem;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .gradient-offset, .gradient-center {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
+
+  .gradient-add, .gradient-remove, .gradient-reverse {
+    flex: none;
+  }
+
+  /* The CSS of the gradient, as it is copied: the fallback, then the OKLab line. A code block scrolls it. */
+  .gradient-css {
+    min-width: 0;
+    margin: 0;
+  }
+}

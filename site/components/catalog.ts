@@ -50,6 +50,7 @@ export const components = [
   { slug: 'chip', name: 'Chip', category: 'Forms', description: 'A small pill that is a filter or a removable value.' },
   { slug: 'swatch', name: 'Swatch', category: 'Forms', description: 'A color to look at or to pick, as a disc with a finished edge.' },
   { slug: 'color-picker', name: 'Color picker', category: 'Forms', description: 'Any color, chosen on a field of lightness and chroma, a hue and an opacity, or typed.' },
+  { slug: 'gradient', name: 'Gradient', category: 'Forms', description: 'A gradient being made: its stops on a bar, the stop in hand in a color picker, and its type, angle and centre.' },
   { slug: 'choice', name: 'Choice', category: 'Forms', description: 'A radio or checkbox option large enough to explain itself.' },
   { slug: 'poll', name: 'Poll', category: 'Forms', description: 'A question, a few answers, and how the votes fell once one is chosen.' },
   { slug: 'scale', name: 'Scale', category: 'Forms', description: 'One answer on a row of numbers, from one end to the other.' },

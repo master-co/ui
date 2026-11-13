@@ -15,6 +15,7 @@ import { Gantt } from '../../../frameworks/react/gantt.tsx'
 import { Listbox } from '../../../frameworks/react/listbox.tsx'
 import { Log, type LogProps } from '../../../frameworks/react/log.tsx'
 import { Menu, type MenuProps } from '../../../frameworks/react/menu.tsx'
+import { Gradient } from '../../../frameworks/react/gradient.tsx'
 import { Otp } from '../../../frameworks/react/otp.tsx'
 import { Schedule } from '../../../frameworks/react/schedule.tsx'
 import { Panel, type PanelProps } from '../../../frameworks/react/panel.tsx'
@@ -246,6 +247,7 @@ export const fixtures = {
   'listbox': Listbox,
   'log': LogExample,
   'menu': MenuExample,
+  'gradient': Gradient,
   'otp': Otp,
   'schedule': Schedule,
   'panel': PanelExample,

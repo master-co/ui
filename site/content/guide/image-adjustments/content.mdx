@@ -1,0 +1,57 @@
+import PagePreview from '~/site/components/PagePreview.astro'
+
+A reader chooses a picture, crops it, turns it a quarter at a time and sets its brightness, contrast and saturation, and sees the result as they go. Nothing in the browser changes the picture: what the page hands on is the original file and the adjustments as data, and the application's image pipeline cuts and encodes the picture it stores. This page builds that with the [cropper](/components/cropper), native inputs and CSS filters.
+
+<PagePreview name="default" title="Image adjustments" example="image-adjustments" caption="Choose a picture of your own, or adjust the sample: crop it, turn it, set its tones, then open what the page hands on." />
+
+## Who does what \{#who-does-what\}
+
+| Part | Owns |
+| --- | --- |
+| The [cropper](/components/cropper) and its behavior | The crop box: its edges, the keys, the pointer, the crop in the picture's own pixels |
+| Native inputs | Choosing the file, the ranges of the tones, the radios of the display |
+| Your page | Reading the file, the object URL it is shown by, the preview of the adjustments, and the data it hands on |
+| Your application | Cutting, turning, filtering and encoding the picture it stores, and uploading it |
+
+The page sets a filter and a transform on its own preview; no Master UI behavior paints a picture. That is the one place in this example where data decides a style, and it stays in the page.
+
+## The file \{#the-file\}
+
+- **Choosing.** A file input, inside a button's label, takes `accept="image/*"`. The picture is decoded with `HTMLImageElement.decode()` before it is shown, so a file that is not a picture is refused with a message in an [alert](/components/alert), and the picture on show stays.
+- **Showing.** A chosen file is shown by an object URL. Replacing the picture or clearing it releases the old URL with `URL.revokeObjectURL()`, and so does the function `mount()` returns when the example stops.
+- **Starting over.** The cropper reads the picture's size from the `width` and `height` of `cropper-image`, so a new picture sets both from its natural size and the cropper is attached again, on the whole picture.
+- **Privacy.** The file never leaves the browser; say so beside the button.
+
+## The adjustments \{#the-adjustments\}
+
+- **Crop.** The cropper's `value`, `{ x, y, width, height }` in the picture's pixels, read on each `input` and `change` from the box.
+- **Turn.** A quarter at a time, left or right, as 0, 90, 180 or 270 degrees. The crop is kept in the picture's own orientation; the preview turns the cropped picture about its middle, so its width and height swap at 90 and 270.
+- **Tones.** Brightness, contrast and saturation, from 0% to 200%, with 100% as the picture is. CSS has exactly these three as `brightness()`, `contrast()` and `saturate()`, so the preview is what an image pipeline applying the same three would make.
+- **Display.** Fit shows the whole result in the stage, fill covers the stage with it, and tile repeats it, as a background of that picture would.
+
+Reset puts the tones and the crop back and keeps the picture.
+
+```json name=adjustments.json
+{
+  "file": { "name": "dawn.jpg", "type": "image/jpeg", "size": 482113 },
+  "crop": { "x": 160, "y": 80, "width": 1280, "height": 800 },
+  "rotate": 90,
+  "brightness": 110,
+  "contrast": 100,
+  "saturation": 85,
+  "mode": "fit"
+}
+```
+
+Hand the original `File` and this object to the application together: it can cut, turn and filter the full-resolution picture the same way, and keep the original to adjust again later.
+
+## What this leaves out \{#what-this-leaves-out\}
+
+A full photo editor has more than these three tones: colour temperature, highlights and shadows, curves, and an exported file. CSS has no filter that is any of them, and an approximation would show the reader a result the stored picture would not have, so this example leaves them out rather than imitate them. Encoding the result in the browser, with a canvas or an `OffscreenCanvas`, is the application's choice and is not shown here.
+
+## Accessibility \{#accessibility\}
+
+- The file input is a real input inside a labelled button, reached with <kbd class="kbd">Tab</kbd>; the hint under it says where the picture goes.
+- The crop box has the cropper's keys, and its status region says the crop after each change.
+- Each tone is a labelled range with its value written beside it, and the turns are buttons named by their direction.
+- The preview is named "the picture, adjusted"; what was done to it is in the data the page shows, not only in the drawing.

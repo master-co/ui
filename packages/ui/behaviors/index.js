@@ -14,11 +14,12 @@
 import { avatar } from './avatar.js'
 import { calendar, calendarMonth, calendarPeriods } from './calendar.js'
 import { carousel } from './carousel.js'
-import { colorPicker, colorPickerState } from './color-picker.js'
+import { colorPicker, colorPickerFormat, colorPickerState } from './color-picker.js'
 import { combobox } from './combobox.js'
 import { command } from './command.js'
 import { compare } from './compare.js'
 import { editable } from './editable.js'
+import { gradient, gradientCss } from './gradient.js'
 import { dial } from './dial.js'
 import { follow } from './follow.js'
 import { gantt } from './gantt.js'
@@ -43,7 +44,7 @@ import { transcript } from './transcript.js'
 import { tree } from './tree.js'
 import { wheel } from './wheel.js'
 
-export { avatar, calendar, calendarMonth, calendarPeriods, carousel, colorPicker, colorPickerState, combobox, command, compare, contextMenu, cropper, cropperFit, dial, drawer, editable, follow, gantt, listbox, menu, otp, panel, player, range, schedule, scheduleLayout, signature, signaturePath, signatureSvg, sortable, splitter, stepper, tabs, tags, toolbar, tour, transcript, tree, wheel }
+export { avatar, calendar, calendarMonth, calendarPeriods, carousel, colorPicker, colorPickerFormat, colorPickerState, combobox, command, compare, contextMenu, cropper, cropperFit, dial, drawer, editable, follow, gradient, gradientCss, gantt, listbox, menu, otp, panel, player, range, schedule, scheduleLayout, signature, signaturePath, signatureSvg, sortable, splitter, stepper, tabs, tags, toolbar, tour, transcript, tree, wheel }
 
 /**
  * Each pattern's root class and the behavior that drives it.
@@ -80,6 +81,7 @@ const patterns = [
   ['.avatar', avatar],
   ['.carousel-view', carousel],
   ['.schedule-view', schedule],
+  ['.gradient', gradient],
 ]
 
 /**
@@ -96,6 +98,8 @@ export function attach(root = document) {
     for (const element of found) {
       // A combobox and a command palette drive their own list.
       if (behavior === listbox && element.closest('.combobox, .command')) continue
+      // A gradient drives the color picker of its stop in hand and the dial of its angle.
+      if ((behavior === colorPicker || behavior === dial) && element.closest('.gradient')) continue
       detach.push(behavior(element))
     }
   }

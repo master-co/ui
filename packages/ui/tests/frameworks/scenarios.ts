@@ -1411,6 +1411,28 @@ export const scenarios: Record<string, Scenario> = {
     assert.equal(page.all('.schedule-view').length, 0)
   },
 
+  async gradient(driver, page) {
+    const sunrise = { type: 'linear', angle: 90, center: [50, 50], stops: [{ id: 'dawn', offset: 0, color: '#ff6a00' }, { id: 'dusk', offset: 100, color: '#4f46e5' }] }
+    const { mounted, heard } = await owned(driver, 'gradient', { value: sunrise })
+    conforms(page)
+    const stops = () => page.all('.gradient-stop').map(stop => stop.getAttribute('data-id'))
+    assert.deepEqual(stops(), ['dawn', 'dusk'], 'a handle for each stop from the first render')
+    assert.match(page.one('.gradient-css').textContent!, /linear-gradient\(90deg, #ff6a00 0%, #4f46e5 100%\)/)
+
+    await driver.act(() => page.click(page.one('.gradient-add')))
+    assert.equal(stops().length, 3, 'the framework writes the new handle')
+    assert.deepEqual((heard.at(-1) as typeof sunrise).stops.map(stop => stop.offset), [0, 100, 10], 'the new value comes out')
+
+    await driver.act(() => mounted.set({ value: { ...sunrise, type: 'conic' } }))
+    assert.deepEqual(stops(), ['dawn', 'dusk'], 'a value set by the owner is written')
+    assert.match(page.one('.gradient-css').textContent!, /conic-gradient/)
+    const count = heard.length
+    assert.equal(heard.length, count, 'and says nothing')
+    conforms(page)
+    await driver.act(() => mounted.unmount())
+    assert.equal(page.all('.gradient').length, 0)
+  },
+
   async toast(driver, page) {
     const mounted = await driver.mount('toast')
     assert.equal(page.all('.toast').length, 0)
