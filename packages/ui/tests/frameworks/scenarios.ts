@@ -1411,6 +1411,52 @@ export const scenarios: Record<string, Scenario> = {
     assert.equal(page.all('.schedule-view').length, 0)
   },
 
+  async chart(driver, page) {
+    const series = [{ name: 'Production', values: [42, 58, 36] }, { name: 'Preview', values: [12, 31, 18], category: 'teal' }]
+    const { mounted, heard } = await owned(driver, 'chart', { type: 'line', label: 'Requests per day, in thousands', labels: ['Mon', 'Tue', 'Wed'], series, value: [] })
+    conforms(page)
+    const points = () => page.all<HTMLElement>('.chart-point')
+    const lines = () => page.all('.chart-line').map(line => [...line.classList].find(name => name.startsWith('category-')))
+    const boxes = () => page.all<HTMLInputElement>('.chart-key-input')
+    assert.equal(page.one('.chart-plot').getAttribute('role'), 'list')
+    assert.equal(page.one('.chart-plot').getAttribute('aria-label'), 'Requests per day, in thousands')
+    assert.deepEqual(points().map(point => point.getAttribute('role')), ['listitem', 'listitem', 'listitem'])
+    assert.deepEqual(points().map(point => point.getAttribute('aria-label')), ['Mon: Production 42, Preview 12', 'Tue: Production 58, Preview 31', 'Wed: Production 36, Preview 18'], 'a point says its values in words')
+    assert.deepEqual(points().map(point => point.getAttribute('tabindex')), ['0', '-1', '-1'], 'the first point is the stop in the tab order')
+    assert.deepEqual(lines(), ['category-blue', 'category-teal'], 'a series takes its category, or the next of the palette')
+    assert.deepEqual(page.all('.chart-dot[data-name="Preview"]').map(dot => dot.classList.contains('category-teal')), [true, true, true])
+    assert.equal(page.one('.chart-legend').getAttribute('role'), 'group')
+    assert.deepEqual(boxes().map(box => [box.value, box.checked]), [['Production', true], ['Preview', true]], 'a checkbox for each series')
+    const readout = page.one<HTMLElement>('.chart-tip')
+    assert.equal(readout.hidden, true, 'the readout waits for a point')
+
+    await driver.act(() => { points()[0].focus(); page.key(points()[0], 'ArrowRight') })
+    assert.equal(page.document.activeElement, points()[1], 'an arrow moves the focus to the next point')
+    assert.deepEqual(points().map(point => point.getAttribute('tabindex')), ['-1', '0', '-1'])
+    assert.equal(readout.hidden, false, 'and the readout shows it')
+    assert.equal(readout.querySelector('.chart-tip-title')?.textContent, 'Tue')
+    assert.deepEqual([...readout.querySelectorAll('.chart-tip-row')].map(row => `${row.className}: ${row.querySelector('.chart-tip-name')?.textContent} ${row.querySelector('.chart-tip-value')?.textContent}`), ['chart-tip-row category-blue: Production 58', 'chart-tip-row category-teal: Preview 31'], 'a row for each series')
+    conforms(page)
+    await driver.act(() => page.key(points()[1], 'End'))
+    assert.equal(page.document.activeElement, points()[2])
+    assert.equal(readout.querySelector('.chart-tip-title')?.textContent, 'Wed')
+
+    await driver.act(() => { boxes()[1].checked = false; boxes()[1].dispatchEvent(new page.window.Event('change', { bubbles: true })) })
+    assert.deepEqual(heard, [['Preview']], 'the series the legend hides comes out')
+    assert.deepEqual(lines(), ['category-blue'], 'the framework writes the chart without it')
+    assert.deepEqual(points().map(point => point.getAttribute('aria-label')), ['Mon: 42', 'Tue: 58', 'Wed: 36'])
+    assert.deepEqual(boxes().map(box => box.checked), [true, false], 'its entry stays in the legend')
+    assert.equal(points()[2].getAttribute('tabindex'), '0', 'the stop stays where the reader left it')
+
+    await driver.act(() => mounted.set({ value: ['Production'] }))
+    assert.deepEqual(lines(), ['category-teal'], 'a value set by the owner is written')
+    assert.deepEqual(boxes().map(box => box.checked), [false, true])
+    assert.equal(heard.length, 1, 'and says nothing')
+    conforms(page)
+    await driver.act(() => mounted.unmount())
+    assert.equal(page.all('.chart').length, 0)
+  },
+
   async gradient(driver, page) {
     const sunrise = { type: 'linear', angle: 90, center: [50, 50], stops: [{ id: 'dawn', offset: 0, color: '#ff6a00' }, { id: 'dusk', offset: 100, color: '#4f46e5' }] }
     const { mounted, heard } = await owned(driver, 'gradient', { value: sunrise })

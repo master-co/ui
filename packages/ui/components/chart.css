@@ -1,31 +1,42 @@
 /*
- * Chart: a few numbers as bars, drawn by the stylesheet from a list.
- * Each item of the list is one bar: it carries its number as --value, its name as chart-label and the number
- * again as chart-value, so the list reads as data to anyone who is not looking at it. Bars are ink, the way a
- * progress bar fills with ink; they stand on a divider with hairlines behind them at even steps of the scale.
- * The plot is --chart-height tall and a bar is its share of --chart-max. Under the pointer the other bars
- * step back and the bar's value appears over it as a small ink tip.
- * chart-horizontal turns the list into rows: the name lies on a tint as long as its share, the figure at the end.
- * chart-spark keeps only the bars, small enough for a line of text or the corner of a card.
- * Bars rise from the baseline when they first appear and ease to a new value; reduced motion removes both.
+ * Chart: numbers drawn as lines, areas, bars, a pie, a donut, rings, a radar or a scatter, in one SVG.
+ * The plot is an SVG with no box of its own units: it is as wide as the room it is given and --chart-height
+ * tall, and everything that stands on a scale (a hairline, a tick, a bar, a dot) is placed by percentages of it.
+ * Only what must be a path (a line, an area, a slice) is drawn in chart-canvas, a 100 by 100 box inside the plot
+ * that stretches to it, with strokes that keep their width however far it stretches. So one drawing fits any
+ * width, nothing is measured, and text is never scaled. A pie, a donut and rings are square, --chart-size wide.
+ *
+ * A chart of one series is ink, as a progress bar fills with ink. Several series, and the parts of a whole, are
+ * told apart by category: a mark with a category-<name> class takes that category's mark color, and its name
+ * stands in the legend. The scale is hairlines with the baseline one step firmer, and its figures are muted.
+ * Bars turn their corners at the end away from the baseline, and stacked bars are parted by a gap of
+ * --chart-gap. A line is --chart-stroke wide; the area under it fades out downward.
+ *
+ * Each step of the scale, each slice and each dot is a chart-point: a list item that says its values in words.
+ * Under the pointer, or with the focus, a point shows the hairline through it and its dots, and the bars and
+ * slices of the other points step back to a tint, at once. chart-tip is the readout beside the point: it stands
+ * at --chart-x and --chart-y of the plot, on the side with more room, and never leaves the plot.
+ * In a chart-quiet chart every bar is a tint and the point marked aria-current is ink.
+ *
+ * Marks draw themselves in when they first appear: bars rise from the baseline, lines run in from the start,
+ * slices and shapes open from the center, a ring fills. Reduced motion removes all of it.
+ * The area's fade is a mask and the bars' corners a clip; a browser without either on an SVG shape shows an even
+ * tint and square bars. Labels thin out in a narrow plot with a container query, and stay without one.
  */
 @layer components {
   .chart {
-    --chart-height: 10rem;
-    --chart-max: 100;
-    --chart-gap: .375rem;
-    --chart-lines: 4;
+    --chart-height: 14rem;
+    --chart-size: 12rem;
     --chart-color: var(--color-surface-inverse);
-    --chart-bar-width: 2.5rem;
-    --chart-radius: var(--radius-chip);
-    /* The surface the chart stands on, which a card or a sheet publishes. */
+    --chart-stroke: 2px;
+    --chart-dot: 4px;
+    --chart-bar-radius: .25rem;
+    --chart-gap: 2px;
+    /* The surface the chart stands on, which a card or a sheet publishes: gaps and the rings around dots are cut from it. */
     --chart-surface: var(--surface-color, var(--color-surface-base));
-    position: relative;
     display: grid;
-    grid-template-rows: var(--chart-height) auto;
-    grid-auto-columns: minmax(0, 1fr);
-    grid-auto-flow: column;
-    column-gap: var(--chart-gap);
+    grid-template-columns: minmax(0, 1fr);
+    gap: .875rem;
     min-width: 0;
     margin: 0;
     padding: 0;
@@ -33,255 +44,813 @@
     font: 400 .71875rem/1.4 var(--font-family-sans);
     font-feature-settings: inherit;
     font-variant-numeric: tabular-nums;
-    list-style: none;
 
-    /* The scale: a hairline at each step, and the divider the bars stand on. */
-    &::before {
-      content: '';
-      position: absolute;
-      inset: 0 0 auto;
-      height: var(--chart-height);
-      border-bottom: 1px solid var(--color-line-divider);
-      background: repeating-linear-gradient(to bottom, var(--color-line-hair) 0 1px, transparent 1px calc(100% / var(--chart-lines)));
-      pointer-events: none;
+    /* Split: the legend stands beside the plot as a column of names and figures, and goes under it when there is no room. */
+    &.chart-split {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 1rem 1.75rem;
+
+      .chart-body {
+        flex: 1 1 14rem;
+      }
+
+      .chart-body:has(.chart-plot-radial) {
+        flex: none;
+      }
+
+      .chart-legend {
+        flex: 1 1 9rem;
+        flex-direction: column;
+        gap: .125rem;
+      }
+
+      .chart-key-value {
+        margin-inline-start: auto;
+        padding-inline-start: 1rem;
+      }
     }
 
-    /* Quiet: bars are a tint, and the one marked aria-current is the ink. For a period in which one day matters. */
+    /* Quiet: bars are a tint, and the point marked aria-current is the ink. For a period in which one day matters. */
     &.chart-quiet {
-      .chart-item:not([aria-current]) {
-        --chart-item-color: color-mix(in oklab, var(--chart-color) 15%, var(--chart-surface));
-
-        &::before {
-          box-shadow: inset 0 0 0 .5px color-mix(in oklab, var(--chart-color) 12%, transparent);
-        }
-      }
-    }
-
-    /* Every value is written over its bar, as plain figures. */
-    &.chart-values {
-      .chart-value {
-        padding: 0;
-        background: none;
-        color: var(--color-text-body);
-        box-shadow: none;
-        opacity: 1;
-      }
-    }
-
-    /* Spark: bars alone. The names and the numbers stay in the list for assistive technology. */
-    &.chart-spark {
-      --chart-height: 2rem;
-      --chart-gap: 2px;
-      --chart-radius: 1.5px;
-      --chart-bar-width: .375rem;
-      display: inline-grid;
-      grid-template-rows: var(--chart-height);
-      grid-auto-columns: var(--chart-bar-width);
-      vertical-align: bottom;
-
-      &::before {
-        content: none;
-      }
-
-      .chart-label, .chart-value {
-        position: absolute;
-        width: 1px;
-        height: 1px;
-        overflow: hidden;
-        clip-path: inset(50%);
-        white-space: nowrap;
-      }
-    }
-
-    /*
-     * Horizontal: one row to an item, for a ranking. The name lies on a tint as long as the item's share and
-     * the figure stands at the end of the row, so both are read without the pointer.
-     */
-    &.chart-horizontal {
-      --chart-radius: var(--radius-control-sm);
-      grid-template-rows: none;
-      grid-template-columns: minmax(0, 1fr) auto;
-      grid-auto-flow: row;
-      gap: .25rem 1rem;
-      font-size: .8125rem;
-
-      &::before {
-        content: none;
-      }
-
-      .chart-item {
-        grid-row: auto;
-        grid-column: 1 / -1;
-        grid-template-rows: none;
-        grid-template-columns: subgrid;
-        align-items: center;
-        justify-items: start;
-        min-height: 2rem;
-
-        &::before {
-          grid-row: 1;
-          grid-column: 1;
-          align-self: stretch;
-          justify-self: start;
-          width: calc(var(--chart-share) * 100%);
-          min-width: 2px;
-          max-width: none;
-          height: auto;
-          min-height: 0;
-          border-radius: calc(var(--chart-radius) * var(--corner-scale));
-          background: color-mix(in oklab, var(--chart-color) 9%, transparent);
-          box-shadow: none;
-          transition-property: width;
-
-          @starting-style {
-            width: 0;
-          }
-        }
-      }
-
-      .chart-label {
-        grid-row: 1;
-        grid-column: 1;
-        z-index: 1;
-        max-width: 100%;
-        margin: 0;
-        padding-inline: .625rem;
-        overflow: hidden;
-        color: var(--color-text-strong);
-        text-overflow: ellipsis;
-      }
-
-      .chart-value {
-        grid-row: 1;
-        grid-column: 2;
-        align-self: center;
-        justify-self: end;
-        margin: 0;
-        padding: 0;
-        background: none;
-        color: var(--color-text-muted);
-        box-shadow: none;
-        font-size: inherit;
-        opacity: 1;
+      .chart-point:not([aria-current='true']) .chart-bar {
+        fill: color-mix(in oklab, var(--chart-bar-color) 16%, var(--chart-surface));
       }
 
       @media (hover: hover) {
-        .chart-item:hover::before {
-          background: color-mix(in oklab, var(--chart-color) 15%, transparent);
-        }
-
-        .chart-item:hover .chart-value {
-          color: var(--color-text-strong);
-        }
-      }
-    }
-
-    @media (hover: hover) {
-      /*
-       * A bar answers the pointer at once: the others step back to a tint, with no fade to wait for.
-       * The tint is mixed with the surface behind the chart, so the scale does not show through a bar.
-       */
-      &:not(.chart-quiet, .chart-horizontal):has(.chart-item:hover) .chart-item:not(:hover) {
-        --chart-item-color: color-mix(in oklab, var(--chart-color) 28%, var(--chart-surface));
-
-        &::before {
-          box-shadow: none;
+        .chart-point:not([aria-current='true']):hover .chart-bar {
+          fill: color-mix(in oklab, var(--chart-bar-color) 36%, var(--chart-surface));
         }
       }
 
-      &.chart-quiet .chart-item:not([aria-current]):hover {
-        --chart-item-color: color-mix(in oklab, var(--chart-color) 36%, var(--chart-surface));
-      }
-
-      .chart-item:hover .chart-value {
-        opacity: 1;
+      .chart-point:not([aria-current='true']):focus .chart-bar {
+        fill: color-mix(in oklab, var(--chart-bar-color) 36%, var(--chart-surface));
       }
     }
 
     @media (forced-colors: active) {
       --chart-color: CanvasText;
-    }
-  }
-
-  /* One bar: a column of the plot and, under it, the cell for its name. */
-  .chart-item {
-    /* The bar's share of the scale, between nothing and all of it. */
-    --chart-share: clamp(0, calc(var(--value, 0) / var(--chart-max)), 1);
-    position: relative;
-    display: grid;
-    grid-row: 1 / span 2;
-    grid-template-rows: subgrid;
-    grid-template-columns: minmax(0, 1fr);
-    justify-items: center;
-    min-width: 0;
-    margin: 0;
-    padding: 0;
-
-    /* The bar. Its top corners turn; its foot is square on the baseline. A value of nothing leaves a 1px tick. */
-    &::before {
-      content: '';
-      grid-row: 1;
-      grid-column: 1;
-      align-self: end;
-      width: 100%;
-      max-width: var(--chart-bar-width);
-      height: calc(var(--chart-height) * var(--chart-share));
-      min-height: 1px;
-      border-radius: calc(var(--chart-radius) * var(--corner-scale)) calc(var(--chart-radius) * var(--corner-scale)) 0 0;
-      corner-shape: var(--corner-shape);
-      background: var(--chart-item-color, var(--chart-color));
-      box-shadow: var(--shadow-ink-top);
-      transition-property: height;
-      transition-duration: var(--duration-base);
-      transition-timing-function: var(--easing-glide);
-
-      @starting-style {
-        height: 0;
-      }
-
-      @media (prefers-reduced-motion: reduce) {
-        transition: none;
-      }
-
-      @media (forced-colors: active) {
-        forced-color-adjust: none;
-      }
-    }
-
-    /* The bar that is the point of the chart keeps a firmer name. */
-    &[aria-current] .chart-label {
-      color: var(--color-text-strong);
+      --chart-surface: Canvas;
     }
   }
 
   /*
-   * The name under a bar, centered on it. It may be wider than its column, so in a dense chart name every
-   * fifth or seventh item and leave the others empty; an empty name keeps its column.
+   * The plot's place: the tip is placed against it, and the figures of the scale stand in the room beside and
+   * under it, --chart-gutter digits wide. It is the container the labels' thinning asks about.
    */
-  .chart-label {
-    grid-row: 2;
-    grid-column: 1;
-    margin-top: .5rem;
-    white-space: nowrap;
+  .chart-body {
+    position: relative;
+    container-type: inline-size;
+    min-width: 0;
+    margin-left: calc(var(--chart-gutter, 0) * 1ch + min(var(--chart-gutter, 0), 1) * .625rem);
+
+    &:has(.chart-tick-x) {
+      margin-bottom: 1.375rem;
+    }
+
+    /* Values written over the bars need a line above the plot, and after bars that run across, --chart-tail digits. */
+    &:has(.chart-value) {
+      margin-top: 1rem;
+    }
+
+    &:has(.chart-value-across) {
+      margin-top: 0;
+      margin-right: calc(var(--chart-tail, 0) * 1ch + .625rem);
+    }
+
+    /* A pie, a donut and rings: a square, as wide as --chart-size and no wider than its room. */
+    &:has(.chart-plot-radial) {
+      container-type: normal;
+      width: var(--chart-size);
+      max-width: 100%;
+      margin-inline: auto;
+    }
+
+    /* A radar: a square in the middle of the plot, with room beside it for the names around it. */
+    &:has(.chart-plot-radar) {
+      --chart-side: min(var(--chart-height), 100cqi - 9rem);
+      margin-block: .75rem;
+    }
   }
 
-  /* The number over its bar: a small ink tip, shown while the pointer is on the column. */
+  .chart-plot {
+    display: block;
+    width: 100%;
+    height: var(--chart-height);
+    overflow: visible;
+    /* The scale runs from the left in every language, so a label's anchor means the same side. */
+    direction: ltr;
+    /* A finger moves along the points; the page still scrolls the other way. */
+    touch-action: pan-y;
+    user-select: none;
+
+    &.chart-plot-radial {
+      height: auto;
+      aspect-ratio: 1;
+      touch-action: auto;
+    }
+
+    &.chart-plot-radar {
+      height: var(--chart-side);
+      touch-action: auto;
+    }
+
+    /* Under the pointer or with the focus, the bars and slices of the other points step back to a tint, at once. */
+    @media (hover: hover) {
+      &:has(.chart-point:hover) .chart-point:not(:hover) {
+        .chart-bar {
+          fill: color-mix(in oklab, var(--chart-bar-color) 30%, var(--chart-surface));
+        }
+
+        .chart-slice, .chart-arc {
+          opacity: .32;
+        }
+      }
+    }
+
+    &:has(.chart-point:focus) .chart-point:not(:focus) {
+      .chart-bar {
+        fill: color-mix(in oklab, var(--chart-bar-color) 30%, var(--chart-surface));
+      }
+
+      .chart-slice, .chart-arc {
+        opacity: .32;
+      }
+    }
+  }
+
+  /* The box paths are written in: it stretches to the plot, or keeps its shape in a radial chart. */
+  .chart-canvas {
+    overflow: visible;
+  }
+
+  /* The scale: a hairline at each tick. The baseline is one step firmer. */
+  .chart-grid {
+    stroke: var(--color-line-hair);
+    stroke-width: 1px;
+    shape-rendering: crispEdges;
+
+    &.chart-grid-base {
+      stroke: var(--color-line-divider);
+    }
+
+    @media (forced-colors: active) {
+      stroke: GrayText;
+    }
+  }
+
+  /* A figure of the scale or a name along it, placed on its hairline and moved into the room beside the plot. */
+  .chart-tick {
+    fill: currentColor;
+    stroke: none;
+
+    &.chart-tick-y {
+      text-anchor: end;
+      dominant-baseline: central;
+      transform: translate(-.625rem, 0);
+    }
+
+    &.chart-tick-x {
+      text-anchor: middle;
+      transform: translate(0, 1.25rem);
+    }
+
+    /* Around a radar: moved from the middle of the plot to its place in the square. */
+    &.chart-tick-around {
+      text-anchor: middle;
+      dominant-baseline: central;
+      fill: var(--color-text-body);
+      transform: translate(calc((var(--chart-x) - .5) * var(--chart-side)), calc((var(--chart-y) - .5) * var(--chart-side)));
+    }
+
+    &.chart-tick-start {
+      text-anchor: start;
+    }
+
+    &.chart-tick-end {
+      text-anchor: end;
+    }
+
+    /* A figure of a radar's scale: small, beside the first spoke, in the room between two rings. */
+    &.chart-tick-scale {
+      text-anchor: start;
+      dominant-baseline: auto;
+      fill: currentColor;
+      font-size: .625rem;
+      transform: translate(calc((var(--chart-x) - .5) * var(--chart-side) + .25rem), calc((var(--chart-y) - .5) * var(--chart-side) - .1875rem));
+    }
+
+    /* Every other name gives way when the plot is narrow, and a small radar keeps only its names. */
+    @container (width < 24rem) {
+      &.chart-tick-minor, &.chart-tick-scale {
+        display: none;
+      }
+    }
+  }
+
+  /* A line: one series from point to point. */
+  .chart-line {
+    fill: none;
+    stroke: var(--category-mark, var(--chart-color));
+    stroke-width: var(--chart-stroke);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+    /* It runs in from the start; the clip stays a little outside the line so its round ends are whole. */
+    clip-path: inset(-12% -4% -12% -4%);
+    transition: clip-path 720ms var(--easing-glide);
+
+    @starting-style {
+      clip-path: inset(-12% 100% -12% -4%);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: none;
+    }
+  }
+
+  /* The area under a line: a wash of its color that fades out downward. */
+  .chart-area {
+    /* A wash of a category's color; ink, which is far darker, is thinned first so its wash is as quiet. */
+    fill: color-mix(in oklab, var(--category-mark, color-mix(in oklab, var(--chart-color) 55%, transparent)) 22%, transparent);
+    stroke: none;
+    mask-image: linear-gradient(to bottom, black, transparent);
+    transition: opacity 720ms var(--easing-glide);
+
+    @starting-style {
+      opacity: 0;
+    }
+
+    /* Stacked: each layer is a tint of its own that hides the one under it. */
+    &.chart-area-stacked {
+      fill: color-mix(in oklab, var(--category-mark, var(--chart-color)) 26%, var(--chart-surface));
+      mask-image: none;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: none;
+    }
+  }
+
+  /*
+   * One step of the scale, one slice, one ring or one dot, with its marks: a list item that says its values.
+   * It takes the focus from the keys, and what marks it then is drawn on its marks, not around its box.
+   */
+  .chart-point {
+    outline: none;
+
+    @media (hover: hover) {
+      &:hover {
+        .chart-cursor, .chart-dot {
+          opacity: 1;
+        }
+      }
+    }
+
+    &:focus {
+      .chart-cursor, .chart-dot {
+        opacity: 1;
+      }
+    }
+
+    &:focus-visible {
+      .chart-hit {
+        stroke: var(--color-focus);
+      }
+
+      .chart-slice, .chart-track {
+        stroke: var(--color-focus);
+        stroke-width: 2px;
+      }
+    }
+
+    @media (forced-colors: active) {
+      &:focus-visible .chart-hit {
+        stroke: Highlight;
+      }
+    }
+  }
+
+  /* What the pointer lands on: the whole band of a step, the room around a dot, a radar's wedge. The focus ring is drawn on it. */
+  .chart-hit {
+    fill: transparent;
+    stroke: transparent;
+    stroke-width: 2px;
+    vector-effect: non-scaling-stroke;
+    rx: var(--chart-bar-radius);
+    pointer-events: all;
+  }
+
+  /* The hairline through the point under the pointer. */
+  .chart-cursor {
+    stroke: var(--color-line-mark);
+    stroke-width: 1px;
+    shape-rendering: crispEdges;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /*
+   * A bar. Its corners turn at the end away from the baseline, cut with a clip so the radius is true at any
+   * width, and it rises from the baseline when it first appears, each a moment after the one before it.
+   */
+  .chart-bar {
+    --chart-bar-color: var(--category-mark, var(--chart-color));
+    fill: var(--chart-bar-color);
+    stroke: none;
+    clip-path: inset(0 round var(--chart-bar-radius) var(--chart-bar-radius) 0 0);
+    transition: clip-path 560ms var(--easing-glide) calc(min(var(--chart-index, 0), 30) * 14ms);
+
+    @starting-style {
+      clip-path: inset(100% 0 0 0 round var(--chart-bar-radius) var(--chart-bar-radius) 0 0);
+    }
+
+    /* Under another bar of its stack: square, with the gap above it. */
+    &.chart-bar-inner {
+      clip-path: inset(var(--chart-gap) 0 0 0);
+
+      @starting-style {
+        clip-path: inset(100% 0 0 0);
+      }
+    }
+
+    /* A value under zero: it hangs from the baseline. */
+    &.chart-bar-down {
+      clip-path: inset(0 round 0 0 var(--chart-bar-radius) var(--chart-bar-radius));
+
+      @starting-style {
+        clip-path: inset(0 0 100% 0 round 0 0 var(--chart-bar-radius) var(--chart-bar-radius));
+      }
+    }
+
+    &.chart-bar-down.chart-bar-inner {
+      clip-path: inset(0 0 var(--chart-gap) 0);
+
+      @starting-style {
+        clip-path: inset(0 0 100% 0);
+      }
+    }
+
+    /* Across: a row of a ranking, turned at its far end. */
+    &.chart-bar-across {
+      clip-path: inset(0 round 0 var(--chart-bar-radius) var(--chart-bar-radius) 0);
+
+      @starting-style {
+        clip-path: inset(0 100% 0 0 round 0 var(--chart-bar-radius) var(--chart-bar-radius) 0);
+      }
+    }
+
+    &.chart-bar-across.chart-bar-inner {
+      clip-path: inset(0 var(--chart-gap) 0 0);
+
+      @starting-style {
+        clip-path: inset(0 100% 0 0);
+      }
+    }
+
+    &.chart-bar-across.chart-bar-down {
+      clip-path: inset(0 round var(--chart-bar-radius) 0 0 var(--chart-bar-radius));
+
+      @starting-style {
+        clip-path: inset(0 0 0 100% round var(--chart-bar-radius) 0 0 var(--chart-bar-radius));
+      }
+    }
+
+    &.chart-bar-across.chart-bar-down.chart-bar-inner {
+      clip-path: inset(0 0 0 var(--chart-gap));
+
+      @starting-style {
+        clip-path: inset(0 0 0 100%);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: none;
+    }
+  }
+
+  /* A point of a line or a scatter: a dot of its color with a ring of the surface, so it reads where lines cross. */
+  .chart-dot {
+    r: var(--chart-dot);
+    fill: var(--category-mark, var(--chart-color));
+    stroke: var(--chart-surface);
+    stroke-width: 2px;
+    paint-order: stroke;
+    vector-effect: non-scaling-stroke;
+    pointer-events: none;
+
+    /* Shown only while its point is under the pointer or has the focus. */
+    &.chart-dot-quiet {
+      opacity: 0;
+    }
+  }
+
+  /* In a radial canvas a length is a share of the square: a dot there is drawn by its own r. */
+  .chart-canvas .chart-dot {
+    r: 1.7px;
+  }
+
+  /* A value written at a bar's end. */
   .chart-value {
-    grid-row: 1;
-    grid-column: 1;
+    fill: var(--color-text-body);
+    stroke: none;
+    text-anchor: middle;
+    transform: translate(0, -.4375rem);
+    pointer-events: none;
+
+    &.chart-value-across {
+      text-anchor: start;
+      dominant-baseline: central;
+      transform: translate(.5rem, 0);
+    }
+  }
+
+  /* A slice of a pie or a donut. It opens from the center when it first appears. */
+  .chart-slice {
+    fill: var(--category-mark, var(--chart-color));
+    stroke: transparent;
+    stroke-width: 0;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+    paint-order: stroke;
+    transition: opacity 480ms var(--easing-glide) calc(min(var(--chart-index, 0), 12) * 40ms), scale 640ms var(--easing-glide) calc(min(var(--chart-index, 0), 12) * 40ms);
+
+    @starting-style {
+      opacity: 0;
+      scale: .9;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: none;
+    }
+  }
+
+  /* A ring's track: the whole it is read against, in a tint of its color. */
+  .chart-track {
+    fill: none;
+    stroke: color-mix(in oklab, var(--category-mark, var(--chart-color)) 16%, transparent);
+    pointer-events: stroke;
+  }
+
+  /* A ring's value: it fills from the top, with round ends. */
+  .chart-arc {
+    fill: none;
+    stroke: var(--category-mark, var(--chart-color));
+    stroke-linecap: round;
+    stroke-dasharray: 1;
+    stroke-dashoffset: 0;
+    pointer-events: stroke;
+    transition: stroke-dashoffset 900ms var(--easing-glide) calc(min(var(--chart-index, 0), 12) * 80ms);
+
+    @starting-style {
+      stroke-dashoffset: 1;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: none;
+    }
+  }
+
+  /* A radar's web: a ring at each tick and a spoke to each name. */
+  .chart-web {
+    fill: none;
+    stroke: var(--color-line-contour);
+    stroke-width: 1px;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+
+    @media (forced-colors: active) {
+      stroke: GrayText;
+    }
+  }
+
+  /* A radar's series: its outline, with a wash of the same color that lets the others show through. */
+  .chart-shape {
+    fill: color-mix(in oklab, var(--category-mark, var(--chart-color)) 14%, transparent);
+    stroke: var(--category-mark, var(--chart-color));
+    stroke-width: var(--chart-stroke);
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+    transition: opacity 480ms var(--easing-glide), scale 720ms var(--easing-glide);
+
+    @starting-style {
+      opacity: 0;
+      scale: .6;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: none;
+    }
+  }
+
+  /* What stands in a donut's hole or within rings: a figure and what it counts. */
+  .chart-center {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: .125rem;
+    text-align: center;
+    pointer-events: none;
+  }
+
+  .chart-center-value {
+    margin: 0;
+    color: var(--color-text-strong);
+    font: 400 1.5rem/1.15 var(--font-family-sans);
+    font-feature-settings: inherit;
+    letter-spacing: -.02em;
+  }
+
+  .chart-center-label {
+    margin: 0;
+    font-size: .75rem;
+    line-height: 1.3;
+  }
+
+  /*
+   * The readout beside the point under the pointer: the point's name, then a row for each series with a stroke
+   * of its color, its name and its value. It stands at --chart-x and --chart-y of the plot, past the point's
+   * marks (--chart-reach) on the side with more room, and slides along its own height so it never leaves the plot.
+   */
+  .chart-tip {
+    --chart-tip-gap: .75rem;
+    /* 0 while the point is in the first half of the plot, 1 in the second: which side the readout stands on. */
+    --chart-tip-side: clamp(0, (var(--chart-x, 0) - .5) * 1000, 1);
+    position: absolute;
+    top: calc(var(--chart-y, 0) * 100%);
+    left: calc((var(--chart-x, 0) + var(--chart-reach, 0) * (1 - 2 * var(--chart-tip-side))) * 100%);
     z-index: 1;
-    align-self: end;
-    margin-bottom: calc(var(--chart-height) * var(--chart-share) + .3125rem);
-    padding: .1875rem .375rem;
-    border-radius: calc(var(--radius-chip) * var(--corner-scale));
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    column-gap: .4375rem;
+    row-gap: .1875rem;
+    align-items: center;
+    width: max-content;
+    min-width: 5.5rem;
+    max-width: 16rem;
+    margin: 0;
+    padding: .4375rem .625rem .5rem;
+    border-radius: calc(var(--radius-control-sm) * var(--corner-scale));
     corner-shape: var(--corner-shape);
     background: var(--color-surface-tip);
     color: light-dark(var(--color-text-inverse), var(--color-text-strong));
     box-shadow: var(--shadow-tip);
-    font-size: .71875rem;
-    line-height: 1.2;
+    font-size: .75rem;
+    line-height: 1.35;
     white-space: nowrap;
-    opacity: 0;
+    translate: calc(var(--chart-tip-side) * (-100% - 2 * var(--chart-tip-gap)) + var(--chart-tip-gap)) calc(var(--chart-y, 0) * -100%);
     pointer-events: none;
+    transition-property: opacity, display, top, left, translate;
+    transition-duration: var(--duration-quick);
+    transition-timing-function: var(--easing-glide);
+    transition-behavior: allow-discrete;
+
+    @starting-style {
+      opacity: 0;
+    }
+
+    &[hidden] {
+      display: none;
+      opacity: 0;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      transition-property: opacity, display;
+    }
+
+    @media (forced-colors: active) {
+      outline: 1px solid CanvasText;
+      outline-offset: -1px;
+    }
+  }
+
+  /*
+   * Over bars that run across, the readout stands under the row in the upper half of the plot and over it in the
+   * lower half, clear of the bar by --chart-reach, and slides along its own width.
+   */
+  .chart-body:has(.chart-bar-across) .chart-tip {
+    --chart-tip-gap: .375rem;
+    --chart-tip-under: clamp(0, (.5 - var(--chart-y, 0)) * 1000, 1);
+    top: calc((var(--chart-y, 0) + var(--chart-reach, 0) * (2 * var(--chart-tip-under) - 1)) * 100%);
+    left: calc(var(--chart-x, 0) * 100%);
+    translate: calc(var(--chart-x, 0) * -100%) calc(var(--chart-tip-under) * (100% + 2 * var(--chart-tip-gap)) - 100% - var(--chart-tip-gap));
+  }
+
+  /* In a square the readout stands on the point and slides along both of its sides. */
+  .chart-body:has(.chart-plot-radial) .chart-tip {
+    left: calc(var(--chart-x, 0) * 100%);
+    translate: calc(var(--chart-x, 0) * -100%) calc(var(--chart-y, 0) * -100%);
+  }
+
+  .chart-body:has(.chart-plot-radar) .chart-tip {
+    top: calc(var(--chart-y, 0) * var(--chart-side));
+    left: calc(50% + (var(--chart-x, 0) - .5) * var(--chart-side));
+    translate: calc(var(--chart-x, 0) * -100%) calc(var(--chart-y, 0) * -100%);
+  }
+
+  /*
+   * In a donut or rings the readout takes the middle: the value as the figure and the series' name under it,
+   * in the place of what the middle held, so nothing covers the marks.
+   */
+  .chart-body:has(.chart-center) {
+    .chart-tip {
+      inset: 0;
+      grid-template-columns: auto auto;
+      place-content: center;
+      column-gap: .3125rem;
+      row-gap: .125rem;
+      width: auto;
+      min-width: 0;
+      max-width: none;
+      padding: 0;
+      background: none;
+      color: var(--color-text-muted);
+      box-shadow: none;
+      translate: none;
+      transition-property: opacity, display;
+
+      @media (forced-colors: active) {
+        outline: none;
+      }
+    }
+
+    .chart-tip-value {
+      grid-row: 1;
+      grid-column: 1 / -1;
+      padding: 0;
+      color: var(--color-text-strong);
+      font: 400 1.5rem/1.15 var(--font-family-sans);
+      font-feature-settings: inherit;
+      letter-spacing: -.02em;
+      text-align: center;
+    }
+
+    .chart-tip-key {
+      grid-row: 2;
+      width: .5rem;
+      height: .5rem;
+      border-radius: 50%;
+    }
+
+    .chart-tip-name {
+      grid-row: 2;
+      color: inherit;
+    }
+
+    &:has(.chart-tip:not([hidden])) .chart-center {
+      visibility: hidden;
+    }
+  }
+
+  .chart-tip-title {
+    grid-column: 1 / -1;
+    margin: 0 0 .0625rem;
+    color: color-mix(in oklab, currentColor 64%, transparent);
+    font-size: .6875rem;
+  }
+
+  /* One series of the readout. Its parts stand in the readout's columns. */
+  .chart-tip-row {
+    display: contents;
+    margin: 0;
+  }
+
+  /* A short stroke of the series' color. */
+  .chart-tip-key {
+    width: .625rem;
+    height: .125rem;
+    border-radius: 1px;
+    corner-shape: round;
+    background: var(--category-mark, currentColor);
+  }
+
+  .chart-tip-name {
+    overflow: hidden;
+    color: color-mix(in oklab, currentColor 76%, transparent);
+    text-overflow: ellipsis;
+  }
+
+  .chart-tip-value {
+    padding-inline-start: .625rem;
+    font-weight: var(--font-weight-control);
+    font-variant-numeric: tabular-nums;
+    text-align: end;
+  }
+
+  /* The legend: the name of each series beside a mark of its color. */
+  .chart-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .125rem 1rem;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    color: var(--color-text-body);
+    font-size: .75rem;
+    line-height: 1.35;
+    list-style: none;
+  }
+
+  /* One entry. With a checkbox in it, it shows and hides its series. */
+  .chart-key {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: .4375rem;
+    min-height: 1.5rem;
+    margin: 0;
+    padding: 0;
+
+    &:has(.chart-key-input) {
+      border-radius: calc(var(--radius-chip) * var(--corner-scale));
+      corner-shape: var(--corner-shape);
+      cursor: pointer;
+      user-select: none;
+
+      @media (hover: hover) {
+        &:hover {
+          color: var(--color-text-strong);
+        }
+      }
+
+    }
+
+    /* A hidden series: its name steps back and its mark is an outline. */
+    &:has(.chart-key-input:not(:checked)) {
+      color: var(--color-text-disabled);
+
+      .chart-key-mark {
+        background: transparent;
+        box-shadow: inset 0 0 0 1.5px var(--color-line-mark);
+      }
+
+      .chart-key-value {
+        visibility: hidden;
+      }
+    }
+
+    &:has(.chart-key-input:focus-visible) {
+      @apply --focus-ring;
+    }
+  }
+
+  /* The checkbox: it keeps its place in the tab order and its name, and the entry is what is seen. */
+  .chart-key-input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    appearance: none;
+    opacity: 0;
+    cursor: inherit;
+
+    /* A finger gets a taller target around the same entry, so the legend keeps its height. */
+    @media (pointer: coarse) {
+      inset: -.625rem -.25rem;
+      width: calc(100% + .5rem);
+      height: calc(100% + 1.25rem);
+    }
+  }
+
+  /* The mark: a small block of the series' color, as a bar, an area or a slice is. */
+  .chart-key-mark {
+    flex: none;
+    width: .625rem;
+    height: .625rem;
+    border-radius: calc(.1875rem * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    background: var(--category-mark, var(--chart-color));
+
+    /* A short stroke, as a line is. */
+    &.chart-key-line {
+      width: .875rem;
+      height: .125rem;
+      border-radius: 1px;
+      corner-shape: round;
+    }
+
+    /* A dot, as a scatter's point is. */
+    &.chart-key-dot {
+      width: .5rem;
+      height: .5rem;
+      border-radius: 50%;
+      corner-shape: round;
+    }
+
+    @media (forced-colors: active) {
+      forced-color-adjust: none;
+    }
+  }
+
+  /* A figure after the name: a slice's share, a ring's value. */
+  .chart-key-value {
+    color: var(--color-text-muted);
+    font-variant-numeric: tabular-nums;
   }
 }

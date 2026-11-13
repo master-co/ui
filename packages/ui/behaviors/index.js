@@ -6,7 +6,8 @@
  * document, or under an element, and attach its behavior.
  *
  * A context menu belongs to a target that only the page knows: attach it with `contextMenu(target, menu)`.
- * A gantt is found too, and only its bars marked `role="slider"` move.
+ * A gantt is found too, and only its bars marked `role="slider"` move. A chart is found and worked as the page
+ * wrote it; call `chart(root, { series })` to have it written from data.
  *
  * Where a pattern has a value that no native control holds, the function its behavior returns has a `value`:
  * read it for what is chosen, set it to choose from outside. Setting it dispatches nothing.
@@ -14,6 +15,7 @@
 import { avatar } from './avatar.js'
 import { calendar, calendarMonth, calendarPeriods } from './calendar.js'
 import { carousel } from './carousel.js'
+import { chart, chartLayout, chartMarkup } from './chart.js'
 import { colorPicker, colorPickerFormat, colorPickerState } from './color-picker.js'
 import { combobox } from './combobox.js'
 import { command } from './command.js'
@@ -44,7 +46,7 @@ import { transcript } from './transcript.js'
 import { tree } from './tree.js'
 import { wheel } from './wheel.js'
 
-export { avatar, calendar, calendarMonth, calendarPeriods, carousel, colorPicker, colorPickerFormat, colorPickerState, combobox, command, compare, contextMenu, cropper, cropperFit, dial, drawer, editable, follow, gradient, gradientCss, gantt, listbox, menu, otp, panel, player, range, schedule, scheduleLayout, signature, signaturePath, signatureSvg, sortable, splitter, stepper, tabs, tags, toolbar, tour, transcript, tree, wheel }
+export { avatar, calendar, calendarMonth, calendarPeriods, carousel, chart, chartLayout, chartMarkup, colorPicker, colorPickerFormat, colorPickerState, combobox, command, compare, contextMenu, cropper, cropperFit, dial, drawer, editable, follow, gradient, gradientCss, gantt, listbox, menu, otp, panel, player, range, schedule, scheduleLayout, signature, signaturePath, signatureSvg, sortable, splitter, stepper, tabs, tags, toolbar, tour, transcript, tree, wheel }
 
 /**
  * Each pattern's root class and the behavior that drives it.
@@ -71,6 +73,7 @@ const patterns = [
   ['.editable', editable],
   ['.sortable', sortable],
   ['.gantt', gantt],
+  ['.chart', chart],
   ['.toolbar[role="toolbar"]', toolbar],
   ['.coachmark-tour', tour],
   ['.color-picker', colorPicker],

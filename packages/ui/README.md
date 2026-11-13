@@ -159,7 +159,7 @@ Or import only the theme and the components you use:
 | Stat | `stat`, `stat-label`, `stat-row`, `stat-value`, `stat-delta`, `stat-delta-up`, `stat-delta-down`, `stat-description` |
 | Odometer | `odometer`, `odometer-value`, `odometer-figures`, `odometer-digit` |
 | Countdown | `countdown`, `countdown-tiles`, `countdown-inline`, `countdown-unit`, `countdown-value`, `countdown-label` |
-| Chart | `chart`, `chart-quiet`, `chart-values`, `chart-horizontal`, `chart-spark`, `chart-item`, `chart-label`, `chart-value` |
+| Chart | `chart`, `chart-quiet`, `chart-split`, `chart-body`, `chart-plot`, `chart-plot-radial`, `chart-plot-radar`, `chart-canvas`, `chart-grid`, `chart-grid-base`, `chart-tick`, `chart-tick-y`, `chart-tick-x`, `chart-tick-around`, `chart-tick-start`, `chart-tick-end`, `chart-tick-scale`, `chart-tick-minor`, `chart-line`, `chart-area`, `chart-area-stacked`, `chart-point`, `chart-hit`, `chart-cursor`, `chart-bar`, `chart-bar-inner`, `chart-bar-down`, `chart-bar-across`, `chart-dot`, `chart-dot-quiet`, `chart-value`, `chart-value-across`, `chart-slice`, `chart-track`, `chart-arc`, `chart-web`, `chart-shape`, `chart-center`, `chart-center-value`, `chart-center-label`, `chart-tip`, `chart-tip-title`, `chart-tip-row`, `chart-tip-key`, `chart-tip-name`, `chart-tip-value`, `chart-legend`, `chart-key`, `chart-key-input`, `chart-key-mark`, `chart-key-line`, `chart-key-dot`, `chart-key-value` |
 | Sparkline | `sparkline`, `sparkline-success`, `sparkline-warning`, `sparkline-danger`, `sparkline-plot`, `sparkline-line`, `sparkline-area`, `sparkline-baseline`, `sparkline-dot` |
 | Breakdown | `breakdown`, `breakdown-rows`, `breakdown-item`, `breakdown-rest`, `breakdown-label`, `breakdown-value` |
 | Heatmap | `heatmap`, `heatmap-lg`, `heatmap-cell` |
@@ -239,7 +239,7 @@ stop.value = 'hnd'                                          // where a pattern h
 
 ## React, Svelte and Vue
 
-A component is a class on a native element, so in a framework most of the library is the same markup in that framework's syntax; there is no `Button` to import. Thirty-five patterns hold state, render rows from data, join parts by id or have a lifetime, and each has a component: avatar, calendar, carousel, color-picker, combobox, command, compare, cropper, dial, dialog, editable, field, gantt, gradient, listbox, log, menu, otp, panel, player, popover, schedule, signature, sortable, splitter, stepper, tabs, tags, toast, toolbar, tooltip, tour, transcript, tree and wheel.
+A component is a class on a native element, so in a framework most of the library is the same markup in that framework's syntax; there is no `Button` to import. Thirty-six patterns hold state, render rows from data, join parts by id or have a lifetime, and each has a component: avatar, calendar, carousel, chart, color-picker, combobox, command, compare, cropper, dial, dialog, editable, field, gantt, gradient, listbox, log, menu, otp, panel, player, popover, schedule, signature, sortable, splitter, stepper, tabs, tags, toast, toolbar, tooltip, tour, transcript, tree and wheel.
 
 ```sh
 npx master-ui add combobox --framework=react   # ui/combobox.tsx and ui/use-behavior.ts

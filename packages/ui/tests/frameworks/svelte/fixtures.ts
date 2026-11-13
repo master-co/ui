@@ -1,6 +1,7 @@
 import type { Component } from 'svelte'
 import Avatar from '../../../frameworks/svelte/Avatar.svelte'
 import Calendar from '../../../frameworks/svelte/Calendar.svelte'
+import Chart from '../../../frameworks/svelte/Chart.svelte'
 import ColorPicker from '../../../frameworks/svelte/ColorPicker.svelte'
 import Combobox from '../../../frameworks/svelte/Combobox.svelte'
 import Command from '../../../frameworks/svelte/Command.svelte'
@@ -46,6 +47,7 @@ export const fixtures = {
   'avatar': Avatar,
   'calendar': Calendar,
   'carousel': CarouselExample,
+  'chart': Chart,
   'color-picker': ColorPicker,
   'color-picker-popover': ColorPickerPopoverExample,
   'combobox': Combobox,

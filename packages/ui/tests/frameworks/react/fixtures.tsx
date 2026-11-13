@@ -2,6 +2,7 @@ import { useRef, type ComponentType } from 'react'
 import { Avatar } from '../../../frameworks/react/avatar.tsx'
 import { Calendar } from '../../../frameworks/react/calendar.tsx'
 import { Carousel, type CarouselProps } from '../../../frameworks/react/carousel.tsx'
+import { Chart } from '../../../frameworks/react/chart.tsx'
 import { ColorPicker, type ColorPickerProps } from '../../../frameworks/react/color-picker.tsx'
 import { Combobox } from '../../../frameworks/react/combobox.tsx'
 import { Editable } from '../../../frameworks/react/editable.tsx'
@@ -231,6 +232,7 @@ export const fixtures = {
   'avatar': Avatar,
   'calendar': Calendar,
   'carousel': CarouselExample,
+  'chart': Chart,
   'color-picker': ColorPicker,
   'color-picker-popover': ColorPickerPopoverExample,
   'combobox': Combobox,

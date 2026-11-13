@@ -64,6 +64,14 @@ export const examples: Record<string, Record<string, unknown>> = {
       { id: 'call', title: 'Customer call', start: '2026-11-13T14:00', end: '2026-11-13T15:00', category: 'blue' },
     ],
   },
+  'chart': {
+    type: 'line', label: 'Requests per day, in thousands', labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'], value: [],
+    series: [
+      { name: 'Production', values: [42, 58, 36, 64, 71] },
+      { name: 'Preview', values: [12, 31, 18, 27, 22] },
+      { name: 'Staging', values: [6, 9, 14, 8, 11] },
+    ],
+  },
   'gradient': { value: { type: 'linear', angle: 90, center: [50, 50], stops: [{ id: 'dawn', offset: 0, color: '#ff6a00' }, { id: 'dusk', offset: 100, color: '#4f46e5' }] } },
 }
 
@@ -77,7 +85,7 @@ export const outputs: Record<string, string[]> = {
   'dial': ['onValueChange', 'onValueCommit'], 'color-picker': ['onValueChange'], 'signature': ['onValueChange'],
   'cropper': ['onValueChange', 'onValueCommit'], 'gantt': ['onValueChange', 'onValueCommit'], 'panel': ['onValueChange', 'onValueCommit'],
   'tour': ['onValueChange'],
-  'carousel': ['onValueChange'], 'schedule': ['onValueChange'], 'gradient': ['onValueChange'],
+  'carousel': ['onValueChange'], 'schedule': ['onValueChange'], 'gradient': ['onValueChange'], 'chart': ['onValueChange'],
 }
 
 export const toasts = [

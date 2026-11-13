@@ -2,201 +2,207 @@ import ComponentPreview from '~/site/components/ComponentPreview.astro'
 import ComponentSource from '~/site/components/ComponentSource.astro'
 import ComponentLinks from '~/site/components/ComponentLinks.astro'
 import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
-A chart shows a few numbers as bars. It is a list: every item carries its number once for the drawing and once as text, and the stylesheet draws the bar, the scale behind it and the value under the pointer. Bars are ink, the way a [progress bar](/components/progress) fills with ink. There is no script and no SVG.
+A chart draws numbers as lines, areas, bars, a pie, a donut, rings, a radar or a scatter. It is one SVG that fits the width it is given: what stands on a scale is placed by percentages, the lines keep their weight however far the plot stretches, and the text is never scaled. A chart of one series is ink, as a [progress bar](/components/progress) fills with ink; several series take the colors of a [category](/components/category). Each point is a list item that says its values in words.
 
-<ComponentPreview name="default" height={336} title="Chart" bodyClass="p-lg" html={`<div class="card max-w(420) mx-auto">
-  <div class="card-header">
-    <h3 class="card-title">Deployments</h3>
-    <p class="card-description">311 this week</p>
-  </div>
-  <ol class="chart" aria-label="Deployments per day, this week">
-    <li class="chart-item" style="--value: 42"><span class="chart-label">Mon</span><span class="chart-value">42</span></li>
-    <li class="chart-item" style="--value: 58"><span class="chart-label">Tue</span><span class="chart-value">58</span></li>
-    <li class="chart-item" style="--value: 36"><span class="chart-label">Wed</span><span class="chart-value">36</span></li>
-    <li class="chart-item" style="--value: 71"><span class="chart-label">Thu</span><span class="chart-value">71</span></li>
-    <li class="chart-item" style="--value: 64"><span class="chart-label">Fri</span><span class="chart-value">64</span></li>
-    <li class="chart-item" style="--value: 22"><span class="chart-label">Sat</span><span class="chart-value">22</span></li>
-    <li class="chart-item" style="--value: 18"><span class="chart-label">Sun</span><span class="chart-value">18</span></li>
-  </ol>
-</div>`} caption="Point at a column: the other bars step back and the value appears." />
-
-## How a bar gets its height \{#how-a-bar-gets-its-height\}
-
-Each `chart-item` sets `--value` in its `style`. The chart sets the top of the scale with `--chart-max`, 100 unless you say otherwise, and the plot's height with `--chart-height`. A bar is its share of the maximum; a value above the maximum fills the plot, and a value of nothing leaves a one-pixel tick on the baseline, so an empty day is still a day.
-
-The number is written twice on purpose. `--value` is for the drawing. `chart-value` is the same number as text, formatted the way a person reads it: the tip under the pointer shows it, and so does a screen reader, a search and a copy.
-
-Four hairlines mark even steps of the scale. Set `--chart-lines` to match your maximum: five lines for a scale of 100 put one at every 20.
-
-## One bar that matters \{#quiet\}
-
-`chart-quiet` turns the bars into a tint and keeps the ink for the item marked `aria-current`: today in a week, the plan a reader is on, the release being discussed.
-
-<ComponentPreview name="quiet" height={336} title="Quiet" bodyClass="p-lg" html={`<div class="card max-w(420) mx-auto">
-  <div class="card-header">
-    <h3 class="card-title">Build minutes</h3>
-    <p class="card-description">Thursday so far</p>
-  </div>
-  <ol class="chart chart-quiet" aria-label="Build minutes per day, this week">
-    <li class="chart-item" style="--value: 42"><span class="chart-label">Mon</span><span class="chart-value">42</span></li>
-    <li class="chart-item" style="--value: 58"><span class="chart-label">Tue</span><span class="chart-value">58</span></li>
-    <li class="chart-item" style="--value: 36"><span class="chart-label">Wed</span><span class="chart-value">36</span></li>
-    <li class="chart-item" style="--value: 71" aria-current="true"><span class="chart-label">Thu</span><span class="chart-value">71</span></li>
-    <li class="chart-item" style="--value: 64"><span class="chart-label">Fri</span><span class="chart-value">64</span></li>
-    <li class="chart-item" style="--value: 22"><span class="chart-label">Sat</span><span class="chart-value">22</span></li>
-    <li class="chart-item" style="--value: 18"><span class="chart-label">Sun</span><span class="chart-value">18</span></li>
-  </ol>
-</div>`} />
-
-## Values in view \{#values\}
-
-`chart-values` writes every value over its bar as plain figures. Use it when there are few bars and the exact numbers are the point, or on a touch screen, where nothing hovers.
-
-<ComponentPreview name="values" height={248} title="Values" bodyClass="p-lg" html={`<div class="card max-w(420) mx-auto">
-  <ol class="chart chart-values" style="--chart-height: 8rem" aria-label="Signups per day, this week">
-    <li class="chart-item" style="--value: 42"><span class="chart-label">Mon</span><span class="chart-value">42</span></li>
-    <li class="chart-item" style="--value: 58"><span class="chart-label">Tue</span><span class="chart-value">58</span></li>
-    <li class="chart-item" style="--value: 36"><span class="chart-label">Wed</span><span class="chart-value">36</span></li>
-    <li class="chart-item" style="--value: 71"><span class="chart-label">Thu</span><span class="chart-value">71</span></li>
-    <li class="chart-item" style="--value: 64"><span class="chart-label">Fri</span><span class="chart-value">64</span></li>
-    <li class="chart-item" style="--value: 22"><span class="chart-label">Sat</span><span class="chart-value">22</span></li>
-    <li class="chart-item" style="--value: 18"><span class="chart-label">Sun</span><span class="chart-value">18</span></li>
-  </ol>
-</div>`} />
-
-## Many bars \{#many-bars\}
-
-Columns share the width equally, so a month fits where a week did. Narrow the space between bars with `--chart-gap`. A name is centered on its bar and may be wider than its column: name every seventh item and leave the others empty. An item with an empty name takes an `aria-label` instead, so its value still has something to belong to.
-
-<ComponentPreview name="dense" height={288} title="Thirty days" bodyClass="p-lg" responsive html={`<div class="card max-w(520) mx-auto">
+<ComponentPreview name="default" height={434} title="Chart" bodyClass="p-lg" behaviors html={`<div class="card max-w(560) mx-auto">
   <div class="card-header">
     <h3 class="card-title">Requests</h3>
-    <p class="card-description">Thousands per day, November</p>
+    <p class="card-description">Millions per month, by region</p>
   </div>
-  <ol class="chart" style="--chart-gap: 3px; --chart-height: 7rem" aria-label="Requests per day in November, in thousands">
-    <li class="chart-item" style="--value: 49"><span class="chart-label">Nov 1</span><span class="chart-value">49</span></li>
-    <li class="chart-item" style="--value: 27" aria-label="Nov 2"><span class="chart-label"></span><span class="chart-value">27</span></li>
-    <li class="chart-item" style="--value: 58" aria-label="Nov 3"><span class="chart-label"></span><span class="chart-value">58</span></li>
-    <li class="chart-item" style="--value: 91" aria-label="Nov 4"><span class="chart-label"></span><span class="chart-value">91</span></li>
-    <li class="chart-item" style="--value: 14" aria-label="Nov 5"><span class="chart-label"></span><span class="chart-value">14</span></li>
-    <li class="chart-item" style="--value: 17" aria-label="Nov 6"><span class="chart-label"></span><span class="chart-value">17</span></li>
-    <li class="chart-item" style="--value: 76" aria-label="Nov 7"><span class="chart-label"></span><span class="chart-value">76</span></li>
-    <li class="chart-item" style="--value: 20"><span class="chart-label">Nov 8</span><span class="chart-value">20</span></li>
-    <li class="chart-item" style="--value: 54" aria-label="Nov 9"><span class="chart-label"></span><span class="chart-value">54</span></li>
-    <li class="chart-item" style="--value: 82" aria-label="Nov 10"><span class="chart-label"></span><span class="chart-value">82</span></li>
-    <li class="chart-item" style="--value: 15" aria-label="Nov 11"><span class="chart-label"></span><span class="chart-value">15</span></li>
-    <li class="chart-item" style="--value: 72" aria-label="Nov 12"><span class="chart-label"></span><span class="chart-value">72</span></li>
-    <li class="chart-item" style="--value: 35" aria-label="Nov 13"><span class="chart-label"></span><span class="chart-value">35</span></li>
-    <li class="chart-item" style="--value: 12" aria-label="Nov 14"><span class="chart-label"></span><span class="chart-value">12</span></li>
-    <li class="chart-item" style="--value: 19"><span class="chart-label">Nov 15</span><span class="chart-value">19</span></li>
-    <li class="chart-item" style="--value: 63" aria-label="Nov 16"><span class="chart-label"></span><span class="chart-value">63</span></li>
-    <li class="chart-item" style="--value: 61" aria-label="Nov 17"><span class="chart-label"></span><span class="chart-value">61</span></li>
-    <li class="chart-item" style="--value: 16" aria-label="Nov 18"><span class="chart-label"></span><span class="chart-value">16</span></li>
-    <li class="chart-item" style="--value: 38" aria-label="Nov 19"><span class="chart-label"></span><span class="chart-value">38</span></li>
-    <li class="chart-item" style="--value: 19" aria-label="Nov 20"><span class="chart-label"></span><span class="chart-value">19</span></li>
-    <li class="chart-item" style="--value: 78" aria-label="Nov 21"><span class="chart-label"></span><span class="chart-value">78</span></li>
-    <li class="chart-item" style="--value: 62"><span class="chart-label">Nov 22</span><span class="chart-value">62</span></li>
-    <li class="chart-item" style="--value: 15" aria-label="Nov 23"><span class="chart-label"></span><span class="chart-value">15</span></li>
-    <li class="chart-item" style="--value: 80" aria-label="Nov 24"><span class="chart-label"></span><span class="chart-value">80</span></li>
-    <li class="chart-item" style="--value: 23" aria-label="Nov 25"><span class="chart-label"></span><span class="chart-value">23</span></li>
-    <li class="chart-item" style="--value: 36" aria-label="Nov 26"><span class="chart-label"></span><span class="chart-value">36</span></li>
-    <li class="chart-item" style="--value: 88" aria-label="Nov 27"><span class="chart-label"></span><span class="chart-value">88</span></li>
-    <li class="chart-item" style="--value: 88" aria-label="Nov 28"><span class="chart-label"></span><span class="chart-value">88</span></li>
-    <li class="chart-item" style="--value: 82"><span class="chart-label">Nov 29</span><span class="chart-value">82</span></li>
-    <li class="chart-item" style="--value: 15" aria-label="Nov 30"><span class="chart-label"></span><span class="chart-value">15</span></li>
-  </ol>
-</div>`} />
+  <figure class="chart" id="requests"></figure>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.chart(document.getElementById('requests'), {
+    type: 'area',
+    label: 'Requests per month by region, in millions',
+    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+    series: [
+      { name: 'Tokyo', values: [32, 36, 34, 41, 46, 44, 52, 56, 54, 61, 68, 72] },
+      { name: 'Frankfurt', values: [12, 14, 18, 17, 22, 26, 25, 30, 34, 33, 39, 42] }
+    ]
+  })
+})
+</script>`} caption="Point at a month, or press Tab and the arrow keys, to read its values. A legend's entry hides its series." />
 
-## Horizontal \{#horizontal\}
+## How it is drawn \{#how-it-is-drawn\}
 
-`chart-horizontal` is a ranking: one row to an item. The name lies on a tint as long as the item's share and the figure stands at the end of the row, so both are read without a pointer. Set `--chart-max` to the largest value so the first row spans the column.
+The plot is an `<svg>` with no `viewBox`: it is as wide as its room and `--chart-height` tall, 14rem unless you say otherwise. A hairline, a tick, a bar and a dot are written with percentages of it, so a bar at `x="42%"` stays at 42% at any width while its corners keep their radius and its text keeps its size.
 
-<ComponentPreview name="horizontal" height={328} title="Horizontal" bodyClass="p-lg" html={`<div class="card max-w(420) mx-auto">
-  <div class="card-header">
-    <h3 class="card-title">Top pages</h3>
-    <p class="card-description">Visitors in the last 7 days</p>
+Only what must be a path, a line, an area or a slice, is drawn in `chart-canvas`: a nested SVG whose box is 100 by 100 and stretches to the plot. Its strokes do not scale with it, so a line is `--chart-stroke` wide in a narrow card and in a wide one.
+
+Nothing is measured and nothing is drawn again when the width changes, so the same markup comes from a server, from a [framework component](#frameworks) and from the behavior. A chart fills the width it is given: in a row of things, give it a width or let it grow.
+
+## Draw one \{#draw\}
+
+The behavior writes a chart into an element with the class `chart`. `label` says what the chart shows and in what unit; `labels` names the steps of the scale and each series holds one value for each.
+
+```js name=app.js
+import { chart } from '@master/ui/behaviors/chart.js'
+
+chart(document.querySelector('.chart'), {
+  type: 'line',
+  label: 'Latency by region, in milliseconds',
+  labels: ['Jan', 'Feb', 'Mar', 'Apr'],
+  series: [
+    { name: 'Tokyo', values: [42, 44, 41, 47] },
+    { name: 'Frankfurt', values: [61, 58, 63, 66] },
+  ],
+})
+```
+
+On a server, `chartMarkup()` returns the same chart as a string, with every word in it escaped; put it in the element and the page reads before any script runs. `chartLayout()` returns what the drawing holds as data: the scale and its ticks, each series' path, and every point with its marks and the sentence that says it.
+
+```js name=server.js
+import { chartMarkup } from '@master/ui/behaviors/chart.js'
+
+const html = `<figure class="chart">${chartMarkup({ type: 'bar', label, labels, series })}</figure>`
+```
+
+Calling `chart()` on that element with no series works the chart as it is written, and `attach()` from `@master/ui/behaviors` does so for every chart on the page.
+
+## Forms \{#forms\}
+
+Each form has a page of its own, with its examples and the options that matter to it.
+
+| Form | `type` | Use it for |
+| --- | --- | --- |
+| [Line chart](/charts/line) | `line` | Values that go on from one to the next, as a line from point to point. |
+| [Area chart](/charts/area) | `area` | A line with a wash of its color under it, alone or stacked into a total. |
+| [Bar chart](/charts/bar) | `bar` | Amounts compared as bars on a baseline: side by side, stacked or across. |
+| [Radar chart](/charts/radar) | `radar` | A few things on the same measures, each an outline around one center. |
+| [Pie chart](/charts/pie) | `pie` | What one whole is made of, as slices of a circle. |
+| [Donut chart](/charts/donut) | `donut` | The parts of a whole around one figure that stands in the middle. |
+| [Rings](/charts/rings) | `rings` | A few readings, each filling a ring of its own toward its whole. |
+| [Scatter plot](/charts/scatter) | `scatter` | Two measures against each other, one dot to a thing. |
+
+## The readout and the keys \{#readout\}
+
+`chart-tip` is the readout: the point's name, then a row for each series with a stroke of its color, its name and its value. It stands beside the point on the side with more room and slides along its own height, so it never leaves the plot and never needs to be placed by a script. The behavior fills it from what the point's marks carry and passes the point's place on as `--chart-x`, `--chart-y` and `--chart-reach`.
+
+The plot is one stop in the tab order, however many points it has. The arrow keys move from point to point and show each one's readout; a finger does the same by moving along the chart.
+
+<ContractTable name="chart" show="keyboard" />
+
+## Legend \{#legend\}
+
+A chart of two series or more has a legend: a color is never the only way a series is told apart. Each entry is a label around a checkbox, so it is reached with Tab and toggled with Space; unchecked, its series leaves the chart, the scale fits what is left, and the others keep their colors. A chart of one series has none, since its title already says what is drawn.
+
+`toggle: false` writes the legend as a plain list, and `legend: false` leaves it out, for a chart whose series are named in the words around it. The chart's value is the names of the hidden series: read it from what `chart()` returns, or set it to hide a series from outside.
+
+## Color \{#color\}
+
+A chart with one series is drawn in `--chart-color`, the ink. Series of a chart with several, and the parts of a whole, take a category each in a fixed order: blue, orange, teal, violet, amber, pink, green and sky. Neighbors in that order stay apart for the common kinds of color blindness, in both schemes. Past eight the order begins again, so fold the rest into "Other" or draw a second chart.
+
+Give a series its own `category` when the color follows the thing: Tokyo is blue in the chart, in its [badge](/components/badge) and in its row of a table, wherever it stands in the list. A status color never stands for a series; a series that is failing says so in words.
+
+## Scale and figures \{#scale\}
+
+The scale starts at zero, or under it for a value under zero, and ends at a round number above the highest value, marked in about four steps. `min` and `max` hold either end, and `ticks` asks for another number of steps. A bar's scale should start at zero: a bar's length is its value.
+
+`format` writes a value in the readout and at a bar's end, and `tickFormat` a figure of the scale, which is written in full under 10,000 and compact above it. Both take the number and return a string. `locale` is a BCP 47 tag for the numbers, `en-US` by default; give it when a server writes the chart, so both sides agree.
+
+| Option | Default | |
+| --- | --- | --- |
+| `type` | `'bar'` | `line`, `area`, `bar`, `pie`, `donut`, `rings`, `radar` or `scatter` |
+| `label` | none | What the chart shows and in what unit: the plot's accessible name |
+| `labels` | `[]` | The names along the scale, or around a radar |
+| `series` | `[]` | Each with a `name` and `values`, a `value` for a slice or a ring, or `points` for a scatter; optionally a `category`, a `type` and a ring's `max` |
+| `stacked` | `false` | Bars, or areas, stand on each other |
+| `horizontal` | `false` | Bars run across |
+| `curve` | `'smooth'` | `smooth`, `linear` or `step` |
+| `min`, `max`, `ticks` | fit, `4` | The ends of the scale and about how many steps mark it; `xMin`, `xMax` and `xTicks` for a scatter's scale across |
+| `axis` | `true` | Whether the scale's figures are written; `false` keeps the hairlines alone, for a small chart in a tile |
+| `format`, `tickFormat` | the locale's | How a value and a tick are written; `xFormat` for a scatter's scale across |
+| `dots`, `values` | `false` | Mark every point of a line; write every bar's value |
+| `current` | none | The index of the point marked `aria-current` |
+| `legend`, `toggle` | with two series, `true` | Whether a legend is written, and whether its entries are checkboxes |
+| `hole`, `center` | `.7`, none | A donut's hole, and what stands in the middle of a donut or rings |
+| `hidden` | `[]` | The names of the series left out |
+| `locale` | `'en-US'` | A BCP 47 tag for the numbers |
+| `draw` | none | Takes over the writing: called with the hidden names, for a renderer that writes the chart itself |
+
+## Without a script \{#without-a-script\}
+
+The markup is the chart: written by a server, it is complete with no script. The points still say their values to a screen reader, and the stylesheet alone answers the pointer, with the hairline, the dots and the other bars stepping back. The script adds the readout, the keys and the legend's toggles.
+
+<ComponentPreview name="static" height={230} title="Written as markup" bodyClass="p-lg" html={`<figure class="chart max-w(400) mx-auto" style="--chart-height: 10rem">
+  <div class="chart-body" style="--chart-gutter: 2">
+    <svg class="chart-plot" role="list" aria-label="Deployments per day, Monday to Friday">
+      <g aria-hidden="true">
+        <line class="chart-grid chart-grid-base" x1="0" y1="100%" x2="100%" y2="100%"/>
+        <line class="chart-grid" x1="0" y1="75%" x2="100%" y2="75%"/>
+        <line class="chart-grid" x1="0" y1="50%" x2="100%" y2="50%"/>
+        <line class="chart-grid" x1="0" y1="25%" x2="100%" y2="25%"/>
+        <line class="chart-grid" x1="0" y1="0%" x2="100%" y2="0%"/>
+        <text class="chart-tick chart-tick-y" x="0" y="100%">0</text>
+        <text class="chart-tick chart-tick-y" x="0" y="75%">20</text>
+        <text class="chart-tick chart-tick-y" x="0" y="50%">40</text>
+        <text class="chart-tick chart-tick-y" x="0" y="25%">60</text>
+        <text class="chart-tick chart-tick-y" x="0" y="0%">80</text>
+        <text class="chart-tick chart-tick-x" x="10%" y="100%">Mon</text>
+        <text class="chart-tick chart-tick-x" x="30%" y="100%">Tue</text>
+        <text class="chart-tick chart-tick-x" x="50%" y="100%">Wed</text>
+        <text class="chart-tick chart-tick-x" x="70%" y="100%">Thu</text>
+        <text class="chart-tick chart-tick-x" x="90%" y="100%">Fri</text>
+      </g>
+      <g class="chart-point" role="listitem" aria-label="Mon: 42">
+        <rect class="chart-hit" x="0%" y="0" width="20%" height="100%"/>
+        <rect class="chart-bar" x="3.8%" y="47.5%" width="12.4%" height="52.5%"/>
+      </g>
+      <g class="chart-point" role="listitem" aria-label="Tue: 58">
+        <rect class="chart-hit" x="20%" y="0" width="20%" height="100%"/>
+        <rect class="chart-bar" x="23.8%" y="27.5%" width="12.4%" height="72.5%"/>
+      </g>
+      <g class="chart-point" role="listitem" aria-label="Wed: 36">
+        <rect class="chart-hit" x="40%" y="0" width="20%" height="100%"/>
+        <rect class="chart-bar" x="43.8%" y="55%" width="12.4%" height="45%"/>
+      </g>
+      <g class="chart-point" role="listitem" aria-label="Thu: 71">
+        <rect class="chart-hit" x="60%" y="0" width="20%" height="100%"/>
+        <rect class="chart-bar" x="63.8%" y="11.25%" width="12.4%" height="88.75%"/>
+      </g>
+      <g class="chart-point" role="listitem" aria-label="Fri: 64">
+        <rect class="chart-hit" x="80%" y="0" width="20%" height="100%"/>
+        <rect class="chart-bar" x="83.8%" y="20%" width="12.4%" height="80%"/>
+      </g>
+    </svg>
   </div>
-  <ol class="chart chart-horizontal" style="--chart-max: 4820" aria-label="Pages by visitors">
-    <li class="chart-item" style="--value: 4820"><span class="chart-label">/guide/installation</span><span class="chart-value">4,820</span></li>
-    <li class="chart-item" style="--value: 3112"><span class="chart-label">/components/button</span><span class="chart-value">3,112</span></li>
-    <li class="chart-item" style="--value: 2240"><span class="chart-label">/components/dialog</span><span class="chart-value">2,240</span></li>
-    <li class="chart-item" style="--value: 1360"><span class="chart-label">/guide/theme</span><span class="chart-value">1,360</span></li>
-    <li class="chart-item" style="--value: 412"><span class="chart-label">/components/command</span><span class="chart-value">412</span></li>
-  </ol>
-</div>`} />
-
-## Spark \{#spark\}
-
-`chart-spark` keeps only the bars: 32px tall, 6px wide, with no scale. It is as wide as its bars, so it sits at the end of a [stat](/components/stat) or in a table cell. The names and the values stay in the list, hidden from sight and still read aloud.
-
-<ComponentPreview name="spark" height={192} narrowHeight={216} title="Spark" bodyClass="p-lg" html={`<div class="tray grid grid-cols(2) gap(4) max-w(560) mx-auto">
-  <div class="card card-flat">
-    <div class="stat">
-      <p class="stat-label">Requests</p>
-      <div class="stat-row">
-        <p class="stat-value">1.28M</p>
-        <p class="stat-delta stat-delta-up">12.4%</p>
-        <ol class="chart chart-spark ml-auto" style="--chart-max: 71" aria-label="Requests per day, last 14 days">
-          <li class="chart-item" style="--value: 18"><span class="chart-label">Day 1</span><span class="chart-value">18</span></li>
-          <li class="chart-item" style="--value: 24"><span class="chart-label">Day 2</span><span class="chart-value">24</span></li>
-          <li class="chart-item" style="--value: 22"><span class="chart-label">Day 3</span><span class="chart-value">22</span></li>
-          <li class="chart-item" style="--value: 31"><span class="chart-label">Day 4</span><span class="chart-value">31</span></li>
-          <li class="chart-item" style="--value: 28"><span class="chart-label">Day 5</span><span class="chart-value">28</span></li>
-          <li class="chart-item" style="--value: 36"><span class="chart-label">Day 6</span><span class="chart-value">36</span></li>
-          <li class="chart-item" style="--value: 33"><span class="chart-label">Day 7</span><span class="chart-value">33</span></li>
-          <li class="chart-item" style="--value: 41"><span class="chart-label">Day 8</span><span class="chart-value">41</span></li>
-          <li class="chart-item" style="--value: 38"><span class="chart-label">Day 9</span><span class="chart-value">38</span></li>
-          <li class="chart-item" style="--value: 52"><span class="chart-label">Day 10</span><span class="chart-value">52</span></li>
-          <li class="chart-item" style="--value: 47"><span class="chart-label">Day 11</span><span class="chart-value">47</span></li>
-          <li class="chart-item" style="--value: 58"><span class="chart-label">Day 12</span><span class="chart-value">58</span></li>
-          <li class="chart-item" style="--value: 63"><span class="chart-label">Day 13</span><span class="chart-value">63</span></li>
-          <li class="chart-item" style="--value: 71"><span class="chart-label">Day 14</span><span class="chart-value">71</span></li>
-        </ol>
-      </div>
-    </div>
-  </div>
-  <div class="card card-flat">
-    <div class="stat">
-      <p class="stat-label">Error rate</p>
-      <div class="stat-row">
-        <p class="stat-value">0.02%</p>
-        <p class="stat-delta stat-delta-down">0.4%</p>
-        <ol class="chart chart-spark ml-auto" style="--chart-max: 62" aria-label="Errors per day, last 14 days">
-          <li class="chart-item" style="--value: 62"><span class="chart-label">Day 1</span><span class="chart-value">62</span></li>
-          <li class="chart-item" style="--value: 58"><span class="chart-label">Day 2</span><span class="chart-value">58</span></li>
-          <li class="chart-item" style="--value: 60"><span class="chart-label">Day 3</span><span class="chart-value">60</span></li>
-          <li class="chart-item" style="--value: 51"><span class="chart-label">Day 4</span><span class="chart-value">51</span></li>
-          <li class="chart-item" style="--value: 49"><span class="chart-label">Day 5</span><span class="chart-value">49</span></li>
-          <li class="chart-item" style="--value: 44"><span class="chart-label">Day 6</span><span class="chart-value">44</span></li>
-          <li class="chart-item" style="--value: 46"><span class="chart-label">Day 7</span><span class="chart-value">46</span></li>
-          <li class="chart-item" style="--value: 38"><span class="chart-label">Day 8</span><span class="chart-value">38</span></li>
-          <li class="chart-item" style="--value: 35"><span class="chart-label">Day 9</span><span class="chart-value">35</span></li>
-          <li class="chart-item" style="--value: 31"><span class="chart-label">Day 10</span><span class="chart-value">31</span></li>
-          <li class="chart-item" style="--value: 33"><span class="chart-label">Day 11</span><span class="chart-value">33</span></li>
-          <li class="chart-item" style="--value: 26"><span class="chart-label">Day 12</span><span class="chart-value">26</span></li>
-          <li class="chart-item" style="--value: 22"><span class="chart-label">Day 13</span><span class="chart-value">22</span></li>
-          <li class="chart-item" style="--value: 19"><span class="chart-label">Day 14</span><span class="chart-value">19</span></li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</div>`} />
+</figure>`} caption="No script: the bars are placed by percentages, and the other bars step back under the pointer." />
 
 ## Motion \{#motion\}
 
-A bar rises from the baseline when it first appears, with `@starting-style`, and eases to a new height when `--value` changes. With reduced motion it does neither. A bar under the pointer answers at once, with no fade, because the highlight has to keep up with a hand moving along the columns.
+Marks draw themselves in when they first appear: bars rise from the baseline one after another, a line runs in from the start, slices and a radar's shapes open from the center and a ring fills. The readout glides from point to point, while what marks the point, the hairline, the dots and the stepped-back bars, answers at once, because a highlight has to keep up with a hand. With reduced motion nothing travels: marks appear drawn and the readout changes place at once.
 
-## When a list of bars is not enough \{#limits\}
+## What the platform does \{#platform\}
 
-This is a chart for a handful of numbers on one scale. A line, an area, two series side by side, a zoom or a time axis with gaps need a charting library, and a single reading within a range is a [meter](/components/meter).
+- **Corners and the rise of a bar** are a `clip-path` on the SVG shape. A browser that does not clip an SVG shape with a CSS shape draws square bars at their full length.
+- **The fade of an area** is a `mask-image` on the path. Without it the area is an even tint.
+- **The radius of a dot** is the CSS `r` property, set by `--chart-dot`. Without it a dot keeps the radius its markup carries.
+- **Thinning labels** is a container query on the plot's body. Without one every label stays.
+- **Drawing in** is `@starting-style`. Without it marks appear drawn.
+
+## When a chart is not enough \{#limits\}
+
+A chart is drawn for a few hundred marks, each an element a reader can reach. Thousands of points, values that stream in, a zoom, a brush, a map or a candlestick belong to a charting engine that draws on a canvas. For less than a chart, there are smaller things: a [sparkline](/components/sparkline) for a trend in a sentence, a [stat](/components/stat) for one figure, a [meter](/components/meter) or a [gauge](/components/gauge) for one reading, a [breakdown](/components/breakdown) for the parts of a total along one bar and a [heatmap](/components/heatmap) for a pattern across many small values. [Charts](/guide/charts) says which to choose.
 
 ## Accessibility \{#accessibility\}
 
-- Use `<ol>` when the order means something, such as days, and `<ul>` for a ranking you have already sorted. Give the list an `aria-label` that says what is measured and in what unit.
-- Each item reads as its name and its value. Do not rely on the tip: it appears only under a pointer.
-- Bars are told apart by position and length, never by hue. If you set `--chart-color` to a status color, say the status in words nearby.
-- In forced colors the bars take the system text color.
+- Give `label` a sentence that says what is measured and in what unit: it is the plot's name, and the plot is a list.
+- Each point is a list item named with its values, such as "Thu: Tokyo 71, Osaka 49", so a screen reader reads the chart as it reads a list, with no script and no table. The hairlines, the ticks and the readout are hidden from it: they repeat what the points say.
+- The readout is a convenience for the eye. It appears on hover, on focus and under a finger, and <kbd class="kbd">Esc</kbd> hides it.
+- Color is never alone: a series is named in the legend, and the readout names it beside its value. A category is not a status.
+- A point with the focus is outlined on its band, its dot, its slice or its ring, not around a box.
+- In forced colors the ink and the hairlines take the system's colors, and the focus is drawn in the highlight color. Series keep the colors they were given, so name them in the legend.
+- The scale runs from the left in every language. Names, values and the legend follow the page's direction.
+
+## React, Svelte and Vue \{#frameworks\}
+
+The `chart` component writes the chart from `chartLayout()`, so the first HTML a server sends holds it, and attaches the behavior, which fills the readout and answers the keys. It takes the options above as props, and its value is the names of the hidden series. Copy it into the project with `npx master-ui add chart`; [React, Svelte and Vue](/guide/frameworks) says how the components are built and used.
+
+<FrameworkSource name="chart" />
 
 ## Classes \{#classes\}
 
@@ -208,7 +214,7 @@ This is a chart for a handful of numbers on one scale. A line, an area, two seri
 
 ## Related \{#related\}
 
-<ComponentLinks slugs={['stat', 'meter', 'progress']} />
+<ComponentLinks slugs={['sparkline', 'stat', 'gauge', 'breakdown', 'heatmap', 'category']} />
 
 ## Source \{#source\}
 

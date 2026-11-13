@@ -1,6 +1,7 @@
 import type { Component } from 'vue'
 import Avatar from '../../../frameworks/vue/Avatar.vue'
 import Calendar from '../../../frameworks/vue/Calendar.vue'
+import Chart from '../../../frameworks/vue/Chart.vue'
 import ColorPicker from '../../../frameworks/vue/ColorPicker.vue'
 import Combobox from '../../../frameworks/vue/Combobox.vue'
 import Command from '../../../frameworks/vue/Command.vue'
@@ -46,6 +47,7 @@ export const fixtures: Record<string, Component> = {
   'avatar': Avatar,
   'calendar': Calendar,
   'carousel': CarouselExample,
+  'chart': Chart,
   'color-picker': ColorPicker,
   'color-picker-popover': ColorPickerPopoverExample,
   'combobox': Combobox,

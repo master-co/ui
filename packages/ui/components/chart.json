@@ -4,41 +4,518 @@
   "title": "Chart",
   "tier": "component",
   "category": "Data display",
-  "description": "A few numbers as bars, drawn by the stylesheet from a list.",
-  "use": "A handful of numbers on one scale: a week of days, a ranking of pages. Each item carries its number as --value for the drawing and again as text in chart-value. A line, an area, two series or a time axis need a charting library.",
+  "description": "Numbers drawn as lines, areas, bars, a pie, a donut, rings, a radar or a scatter, in one SVG.",
+  "use": "Values a reader compares or follows: a trend over time, amounts side by side or stacked, the parts of a whole, a few goals, a profile on several measures, two measures against each other. The plot is an SVG placed by percentages, so it fits any width and is written by a server, a framework component or the chart behavior from the same layout. Each point says its values in words, and a series is always named in the legend. It is drawn for up to a few hundred marks; thousands of points, a zoom, a brush, a map or a candlestick belong to a charting engine.",
   "instead": [
-    { "when": "It is one figure and how it moved", "use": "stat" },
-    { "when": "It is a single reading within a known range", "use": "meter" },
-    { "when": "It shows how far one task has come", "use": "progress" },
-    { "when": "There are many small numbers and the pattern matters more than each value", "use": "heatmap" },
-    { "when": "The exact numbers are read and compared in several columns", "use": "table" },
-    { "when": "The parts are read against their sum, not against each other", "use": "breakdown" }
+    {
+      "when": "It is one figure and how it moved",
+      "use": "stat"
+    },
+    {
+      "when": "A trend stands in a sentence, a row or a stat, with no scale",
+      "use": "sparkline"
+    },
+    {
+      "when": "It is a single reading within a known range",
+      "use": "meter"
+    },
+    {
+      "when": "It is one reading and how near its limit it is",
+      "use": "gauge"
+    },
+    {
+      "when": "The parts of a total are read along one bar",
+      "use": "breakdown"
+    },
+    {
+      "when": "There are many small numbers and the pattern matters more than each value",
+      "use": "heatmap"
+    },
+    {
+      "when": "The exact numbers are read and compared in several columns",
+      "use": "table"
+    }
   ],
-  "script": "none",
+  "composes": [
+    "category"
+  ],
+  "script": "optional",
+  "behavior": "chart",
+  "keyboard": [
+    {
+      "keys": "Tab",
+      "action": "Enters the plot at the point last visited, or the first, and shows its readout; then moves to the legend's checkboxes"
+    },
+    {
+      "keys": "ArrowRight, ArrowDown",
+      "action": "Moves to the next point and shows its readout"
+    },
+    {
+      "keys": "ArrowLeft, ArrowUp",
+      "action": "Moves to the point before"
+    },
+    {
+      "keys": "Home, End",
+      "action": "Moves to the first or the last point"
+    },
+    {
+      "keys": "Escape",
+      "action": "Hides the readout and keeps the focus on the point"
+    },
+    {
+      "keys": "Space",
+      "action": "On a legend's checkbox, shows or hides its series"
+    }
+  ],
   "platform": [
-    { "feature": "@starting-style", "fallback": "Bars appear at their full height instead of rising from the baseline" }
+    {
+      "feature": "clip-path on an SVG shape",
+      "fallback": "Bars have square ends and appear at their full length"
+    },
+    {
+      "feature": "mask-image on an SVG shape",
+      "fallback": "The area under a line is an even tint instead of fading out"
+    },
+    {
+      "feature": "SVG geometry properties in CSS (r, rx)",
+      "fallback": "A dot keeps the radius written in its markup, and the band a focused point outlines has square corners"
+    },
+    {
+      "feature": "Container queries",
+      "fallback": "Every label stays at any width, and a radar keeps its height in a narrow room"
+    },
+    {
+      "feature": "@starting-style",
+      "fallback": "Marks appear drawn instead of drawing themselves in"
+    }
   ],
   "classes": [
-    { "name": "chart", "kind": "root", "description": "The list and its plot: bars on a divider, with hairlines at even steps of the scale" },
-    { "name": "chart-quiet", "kind": "modifier", "of": "chart", "description": "Tinted bars; the item with aria-current is ink" },
-    { "name": "chart-values", "kind": "modifier", "of": "chart", "description": "Every value written over its bar as plain figures, with no pointer needed" },
-    { "name": "chart-horizontal", "kind": "modifier", "of": "chart", "exclusive": "form", "description": "Rows for a ranking: the name on a tint as long as the item's share, the figure at the end" },
-    { "name": "chart-spark", "kind": "modifier", "of": "chart", "exclusive": "form", "description": "Bars alone, 32px tall and 6px wide; names and values stay in the list for assistive technology" },
-    { "name": "chart-item", "kind": "part", "of": "chart", "description": "One bar; set --value in its style" },
-    { "name": "chart-label", "kind": "part", "of": "chart", "description": "The item's name, centered under its bar" },
-    { "name": "chart-value", "kind": "part", "of": "chart", "description": "The item's number as text: a small tip over the bar, shown while the pointer is on the column" }
+    {
+      "name": "chart",
+      "kind": "root",
+      "description": "The chart: the plot's body, then the legend under it"
+    },
+    {
+      "name": "chart-quiet",
+      "kind": "modifier",
+      "of": "chart",
+      "description": "Bars are a tint, and the point marked aria-current is ink"
+    },
+    {
+      "name": "chart-split",
+      "kind": "modifier",
+      "of": "chart",
+      "description": "The legend stands beside the plot as a column of names and figures, and goes under it when there is no room"
+    },
+    {
+      "name": "chart-body",
+      "kind": "part",
+      "of": "chart",
+      "description": "The plot's place: the readout is placed against it, and --chart-gutter keeps room beside it for the scale's figures"
+    },
+    {
+      "name": "chart-plot",
+      "kind": "part",
+      "of": "chart",
+      "label": true,
+      "description": "The SVG, as wide as its room and --chart-height tall. Give it role=\"list\" and a name that says what is shown and in what unit"
+    },
+    {
+      "name": "chart-plot-radial",
+      "kind": "modifier",
+      "of": "chart-plot",
+      "exclusive": "shape",
+      "description": "A pie, a donut or rings: a square --chart-size wide"
+    },
+    {
+      "name": "chart-plot-radar",
+      "kind": "modifier",
+      "of": "chart-plot",
+      "exclusive": "shape",
+      "description": "A radar: a square in the middle of the plot, with room beside it for the names around it"
+    },
+    {
+      "name": "chart-canvas",
+      "kind": "part",
+      "of": "chart",
+      "description": "The nested SVG paths are written in: a 100 by 100 box stretched to the plot with preserveAspectRatio=\"none\", or a box centered on 0 that keeps its shape in a radial chart"
+    },
+    {
+      "name": "chart-grid",
+      "kind": "part",
+      "of": "chart",
+      "description": "A hairline of the scale, placed by percentages"
+    },
+    {
+      "name": "chart-grid-base",
+      "kind": "modifier",
+      "of": "chart-grid",
+      "description": "The baseline: one step firmer"
+    },
+    {
+      "name": "chart-tick",
+      "kind": "part",
+      "of": "chart",
+      "description": "A figure of the scale or a name along it"
+    },
+    {
+      "name": "chart-tick-y",
+      "kind": "modifier",
+      "of": "chart-tick",
+      "exclusive": "axis",
+      "description": "Beside the plot, on its hairline"
+    },
+    {
+      "name": "chart-tick-x",
+      "kind": "modifier",
+      "of": "chart-tick",
+      "exclusive": "axis",
+      "description": "Under the plot, centered on its place"
+    },
+    {
+      "name": "chart-tick-around",
+      "kind": "modifier",
+      "of": "chart-tick",
+      "exclusive": "axis",
+      "description": "Around a radar: moved from the middle of the plot to --chart-x and --chart-y of its square"
+    },
+    {
+      "name": "chart-tick-start",
+      "kind": "modifier",
+      "of": "chart-tick",
+      "exclusive": "anchor",
+      "description": "Begins at its place instead of being centered on it: the first name of a line that runs from edge to edge"
+    },
+    {
+      "name": "chart-tick-end",
+      "kind": "modifier",
+      "of": "chart-tick",
+      "exclusive": "anchor",
+      "description": "Ends at its place"
+    },
+    {
+      "name": "chart-tick-scale",
+      "kind": "modifier",
+      "of": "chart-tick",
+      "description": "A figure of a radar's scale: small, beside the first spoke"
+    },
+    {
+      "name": "chart-tick-minor",
+      "kind": "modifier",
+      "of": "chart-tick",
+      "description": "A name that gives way when the plot is narrower than 24rem"
+    },
+    {
+      "name": "chart-line",
+      "kind": "part",
+      "of": "chart",
+      "description": "A series as a line, --chart-stroke wide however far the canvas stretches"
+    },
+    {
+      "name": "chart-area",
+      "kind": "part",
+      "of": "chart",
+      "description": "The area under a line: a wash of its color that fades out downward"
+    },
+    {
+      "name": "chart-area-stacked",
+      "kind": "modifier",
+      "of": "chart-area",
+      "description": "A layer of stacked areas: a tint that hides the layer under it"
+    },
+    {
+      "name": "chart-point",
+      "kind": "part",
+      "of": "chart",
+      "label": true,
+      "description": "One step of the scale, one slice, one ring or one dot, with its marks. Give it role=\"listitem\" and a name that says its values; it carries --chart-x, --chart-y and --chart-reach for the readout"
+    },
+    {
+      "name": "chart-hit",
+      "kind": "part",
+      "of": "chart",
+      "description": "What the pointer lands on when it is more than the marks: the band of a step, the room around a dot, a radar's wedge. The focus ring is drawn on it"
+    },
+    {
+      "name": "chart-cursor",
+      "kind": "part",
+      "of": "chart",
+      "description": "The hairline through the point, shown while the point is under the pointer or has the focus"
+    },
+    {
+      "name": "chart-bar",
+      "kind": "part",
+      "of": "chart",
+      "description": "A bar, placed by percentages, with its corners turned at the end away from the baseline"
+    },
+    {
+      "name": "chart-bar-inner",
+      "kind": "modifier",
+      "of": "chart-bar",
+      "description": "Under another bar of its stack: square, with a gap of --chart-gap before the next"
+    },
+    {
+      "name": "chart-bar-down",
+      "kind": "modifier",
+      "of": "chart-bar",
+      "description": "A value under zero: turned at its lower end, or at its start in a bar that runs across"
+    },
+    {
+      "name": "chart-bar-across",
+      "kind": "modifier",
+      "of": "chart-bar",
+      "description": "A bar that runs across, turned at its far end"
+    },
+    {
+      "name": "chart-dot",
+      "kind": "part",
+      "of": "chart",
+      "description": "A point of a line, a radar or a scatter: a dot of its color with a ring of the surface"
+    },
+    {
+      "name": "chart-dot-quiet",
+      "kind": "modifier",
+      "of": "chart-dot",
+      "description": "Shown only while its point is under the pointer or has the focus"
+    },
+    {
+      "name": "chart-value",
+      "kind": "part",
+      "of": "chart",
+      "description": "A value written at a bar's end"
+    },
+    {
+      "name": "chart-value-across",
+      "kind": "modifier",
+      "of": "chart-value",
+      "description": "After the end of a bar that runs across"
+    },
+    {
+      "name": "chart-slice",
+      "kind": "part",
+      "of": "chart",
+      "description": "A slice of a pie or a donut"
+    },
+    {
+      "name": "chart-track",
+      "kind": "part",
+      "of": "chart",
+      "description": "A ring's track: the whole its value is read against, in a tint of its color"
+    },
+    {
+      "name": "chart-arc",
+      "kind": "part",
+      "of": "chart",
+      "description": "A ring's value, from the top, with round ends. Give it pathLength=\"1\" so it fills when it first appears"
+    },
+    {
+      "name": "chart-web",
+      "kind": "part",
+      "of": "chart",
+      "description": "A radar's web: a ring at each tick and a spoke to each name"
+    },
+    {
+      "name": "chart-shape",
+      "kind": "part",
+      "of": "chart",
+      "description": "A radar's series: its outline with a wash of the same color"
+    },
+    {
+      "name": "chart-center",
+      "kind": "part",
+      "of": "chart",
+      "description": "What stands in a donut's hole or within rings"
+    },
+    {
+      "name": "chart-center-value",
+      "kind": "part",
+      "of": "chart",
+      "description": "The figure in the middle"
+    },
+    {
+      "name": "chart-center-label",
+      "kind": "part",
+      "of": "chart",
+      "description": "What the figure counts"
+    },
+    {
+      "name": "chart-tip",
+      "kind": "part",
+      "of": "chart",
+      "description": "The readout beside the point under the pointer, hidden until the behavior fills it"
+    },
+    {
+      "name": "chart-tip-title",
+      "kind": "part",
+      "of": "chart",
+      "description": "The point's name"
+    },
+    {
+      "name": "chart-tip-row",
+      "kind": "part",
+      "of": "chart",
+      "description": "One series of the readout; it takes the series' category class"
+    },
+    {
+      "name": "chart-tip-key",
+      "kind": "part",
+      "of": "chart",
+      "description": "A short stroke of the series' color"
+    },
+    {
+      "name": "chart-tip-name",
+      "kind": "part",
+      "of": "chart",
+      "description": "The series' name"
+    },
+    {
+      "name": "chart-tip-value",
+      "kind": "part",
+      "of": "chart",
+      "description": "The series' value at the point"
+    },
+    {
+      "name": "chart-legend",
+      "kind": "part",
+      "of": "chart",
+      "description": "The names of the series, each beside a mark of its color"
+    },
+    {
+      "name": "chart-key",
+      "kind": "part",
+      "of": "chart",
+      "description": "One entry of the legend; it takes the series' category class. A label around a checkbox shows and hides the series"
+    },
+    {
+      "name": "chart-key-input",
+      "kind": "part",
+      "of": "chart",
+      "elements": [
+        "input"
+      ],
+      "attributes": {
+        "type": "checkbox"
+      },
+      "description": "The entry's checkbox: unseen, in the tab order, checked while the series is shown"
+    },
+    {
+      "name": "chart-key-mark",
+      "kind": "part",
+      "of": "chart",
+      "description": "The entry's mark: a small block, as a bar, an area or a slice is"
+    },
+    {
+      "name": "chart-key-line",
+      "kind": "modifier",
+      "of": "chart-key-mark",
+      "exclusive": "mark",
+      "description": "A short stroke, as a line is"
+    },
+    {
+      "name": "chart-key-dot",
+      "kind": "modifier",
+      "of": "chart-key-mark",
+      "exclusive": "mark",
+      "description": "A dot, as a scatter's point is"
+    },
+    {
+      "name": "chart-key-value",
+      "kind": "part",
+      "of": "chart",
+      "description": "A figure after the name: a slice's share, a ring's value"
+    }
   ],
   "states": [
-    { "on": "chart-item", "name": "current", "mark": "aria-current=\"true\"", "description": "The bar that is the point of the chart: its name takes strong ink, and in a quiet chart it alone is ink" }
+    {
+      "on": "chart-point",
+      "name": "current",
+      "mark": "aria-current=\"true\"",
+      "description": "The point that is the point of the chart: in a quiet chart its bars alone are ink"
+    },
+    {
+      "on": "chart-key-input",
+      "name": "shown",
+      "mark": ":checked",
+      "description": "The series is shown. Unchecked, its name steps back and its mark is an outline"
+    },
+    {
+      "on": "chart-tip",
+      "name": "hidden",
+      "mark": "hidden",
+      "description": "No point is under the pointer or has the focus"
+    }
   ],
   "properties": [
-    { "name": "--value", "on": "chart-item", "description": "The item's number; the stylesheet reads 0 when it is not set" },
-    { "name": "--chart-max", "default": "100", "description": "The top of the scale; a value above it fills the plot" },
-    { "name": "--chart-height", "default": "10rem", "description": "Height of the plot" },
-    { "name": "--chart-gap", "default": ".375rem", "description": "Space between bars" },
-    { "name": "--chart-lines", "default": "4", "description": "Steps of the scale marked by a hairline" },
-    { "name": "--chart-bar-width", "default": "2.5rem", "description": "The widest a bar gets" },
-    { "name": "--chart-color", "default": "var(--color-surface-inverse)", "description": "The ink of the bars" }
+    {
+      "name": "--chart-height",
+      "default": "14rem",
+      "description": "Height of the plot; a radar's square is no taller"
+    },
+    {
+      "name": "--chart-size",
+      "default": "12rem",
+      "description": "Width of a pie, a donut or rings"
+    },
+    {
+      "name": "--chart-color",
+      "default": "var(--color-surface-inverse)",
+      "description": "The ink of a mark with no category"
+    },
+    {
+      "name": "--chart-stroke",
+      "default": "2px",
+      "description": "Width of a line and of a radar's outline"
+    },
+    {
+      "name": "--chart-dot",
+      "default": "4px",
+      "description": "Radius of a dot"
+    },
+    {
+      "name": "--chart-bar-radius",
+      "default": ".25rem",
+      "description": "Radius of a bar's turned corners"
+    },
+    {
+      "name": "--chart-gap",
+      "default": "2px",
+      "description": "The gap between the bars of a stack"
+    },
+    {
+      "name": "--chart-surface",
+      "default": "var(--surface-color, var(--color-surface-base))",
+      "description": "The surface the chart stands on, which the ring around a dot and a tint are mixed from"
+    },
+    {
+      "name": "--chart-gutter",
+      "on": "chart-body",
+      "description": "How many digits wide the figures beside the plot are; 0 leaves no room"
+    },
+    {
+      "name": "--chart-tail",
+      "on": "chart-body",
+      "description": "How many digits wide the values written after bars that run across are"
+    },
+    {
+      "name": "--chart-x",
+      "on": "chart-tip",
+      "description": "Where the readout stands across the plot, from 0 to 1; a point carries its own for the behavior to pass on, and a name around a radar its place in the square"
+    },
+    {
+      "name": "--chart-y",
+      "on": "chart-tip",
+      "description": "Where the readout stands down the plot, from 0 at the top to 1"
+    },
+    {
+      "name": "--chart-reach",
+      "on": "chart-tip",
+      "description": "How far the point's marks stand from the readout's place, as a share of the plot, so the readout clears them: to either side, or above and below for bars that run across"
+    },
+    {
+      "name": "--chart-index",
+      "on": "chart-point",
+      "description": "The point's place in order, which staggers the marks as they draw themselves in"
+    }
   ],
-  "example": "<ol class=\"chart\" aria-label=\"Deployments per day, Monday to Friday\">\n  <li class=\"chart-item\" style=\"--value: 42\"><span class=\"chart-label\">Mon</span><span class=\"chart-value\">42</span></li>\n  <li class=\"chart-item\" style=\"--value: 58\"><span class=\"chart-label\">Tue</span><span class=\"chart-value\">58</span></li>\n  <li class=\"chart-item\" style=\"--value: 36\"><span class=\"chart-label\">Wed</span><span class=\"chart-value\">36</span></li>\n  <li class=\"chart-item\" style=\"--value: 71\"><span class=\"chart-label\">Thu</span><span class=\"chart-value\">71</span></li>\n  <li class=\"chart-item\" style=\"--value: 64\"><span class=\"chart-label\">Fri</span><span class=\"chart-value\">64</span></li>\n</ol>"
+  "example": "<figure class=\"chart\">\n  <div class=\"chart-body\" style=\"--chart-gutter: 2\">\n    <svg class=\"chart-plot\" role=\"list\" aria-label=\"Deployments per day\">\n      <g aria-hidden=\"true\">\n        <line class=\"chart-grid chart-grid-base\" x1=\"0\" y1=\"100%\" x2=\"100%\" y2=\"100%\"/>\n        <line class=\"chart-grid\" x1=\"0\" y1=\"50%\" x2=\"100%\" y2=\"50%\"/>\n        <line class=\"chart-grid\" x1=\"0\" y1=\"0%\" x2=\"100%\" y2=\"0%\"/>\n        <text class=\"chart-tick chart-tick-y\" x=\"0\" y=\"100%\">0</text>\n        <text class=\"chart-tick chart-tick-y\" x=\"0\" y=\"50%\">40</text>\n        <text class=\"chart-tick chart-tick-y\" x=\"0\" y=\"0%\">80</text>\n        <text class=\"chart-tick chart-tick-x\" x=\"16.667%\" y=\"100%\">Mon</text>\n        <text class=\"chart-tick chart-tick-x\" x=\"50%\" y=\"100%\">Tue</text>\n        <text class=\"chart-tick chart-tick-x\" x=\"83.333%\" y=\"100%\">Wed</text>\n      </g>\n      <g class=\"chart-point\" role=\"listitem\" aria-label=\"Mon: 42\" data-label=\"Mon\" style=\"--chart-x: .1667; --chart-y: .475; --chart-reach: .08\">\n        <rect class=\"chart-hit\" x=\"0%\" y=\"0\" width=\"33.333%\" height=\"100%\"/>\n        <rect class=\"chart-bar\" x=\"8.667%\" y=\"47.5%\" width=\"16%\" height=\"52.5%\" data-name=\"Deployments\" data-value=\"42\"/>\n      </g>\n      <g class=\"chart-point\" role=\"listitem\" aria-label=\"Tue: 58\" data-label=\"Tue\" style=\"--chart-x: .5; --chart-y: .275; --chart-reach: .08\">\n        <rect class=\"chart-hit\" x=\"33.333%\" y=\"0\" width=\"33.333%\" height=\"100%\"/>\n        <rect class=\"chart-bar\" x=\"42%\" y=\"27.5%\" width=\"16%\" height=\"72.5%\" data-name=\"Deployments\" data-value=\"58\"/>\n      </g>\n      <g class=\"chart-point\" role=\"listitem\" aria-label=\"Wed: 36\" data-label=\"Wed\" style=\"--chart-x: .8333; --chart-y: .55; --chart-reach: .08\">\n        <rect class=\"chart-hit\" x=\"66.667%\" y=\"0\" width=\"33.333%\" height=\"100%\"/>\n        <rect class=\"chart-bar\" x=\"75.333%\" y=\"55%\" width=\"16%\" height=\"45%\" data-name=\"Deployments\" data-value=\"36\"/>\n      </g>\n    </svg>\n    <div class=\"chart-tip\" aria-hidden=\"true\" hidden></div>\n  </div>\n</figure>"
 }

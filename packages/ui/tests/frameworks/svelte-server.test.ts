@@ -20,6 +20,7 @@ test('svelte: the first HTML, rendered on a server, holds the state', () => {
 const others: Record<string, Record<string, unknown>> = {
   'avatar': { src: '/people/ada.jpg', alt: 'Ada Lovelace', initials: 'AL' },
   'carousel': {},
+  'chart': { type: 'line', label: 'Requests per day', labels: ['Mon', 'Tue'], series: [{ name: 'Production', values: [42, 58] }, { name: 'Preview', values: [12, 31] }] },
   'gradient': {},
   'color-picker-popover': { value: '#3b82f6', label: 'Accent color' },
   'command': { items: [{ label: 'New project', group: 'Suggestions' }], searchLabel: 'Search commands', listLabel: 'Commands', 'aria-label': 'Command palette' },

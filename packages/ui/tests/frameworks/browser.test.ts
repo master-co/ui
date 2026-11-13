@@ -362,6 +362,25 @@ for (const framework of ['react', 'svelte', 'vue']) {
       assert.equal(await view.locator('.schedule-view-title').innerText(), 'December 2026')
     })
 
+    await t.test('a chart shows the readout of the point under the pointer, and its legend hides a series', async () => {
+      const view = example('chart')
+      await view.scrollIntoViewIfNeeded()
+      const readout = view.locator('.chart-tip')
+      assert.equal(await readout.isVisible(), false, 'the readout waits for a point')
+      await view.locator('.chart-point').nth(1).hover()
+      await until(() => readout.isVisible(), Boolean, 'the readout shows for the point under the pointer')
+      assert.equal(await readout.locator('.chart-tip-title').innerText(), 'Tue')
+      assert.deepEqual(await readout.locator('.chart-tip-row').evaluateAll(rows => rows.map(row => `${row.querySelector('.chart-tip-name')?.textContent} ${row.querySelector('.chart-tip-value')?.textContent}`)), ['Production 58', 'Preview 31', 'Staging 9'])
+      const plot = await box(view.locator('.chart-plot'))
+      const tip = await box(readout)
+      assert.ok(tip.x + tip.width > plot.x && tip.x < plot.x + plot.width && tip.y + tip.height > plot.y && tip.y < plot.y + plot.height, 'it stands by its point, over the plot')
+      await view.locator('.chart-key', { hasText: 'Preview' }).click()
+      await said('chart', 'onValueChange: ["Preview"]')
+      await until(() => view.locator('.chart-line').count(), value => value === 2, 'the series leaves the plot')
+      assert.equal(await view.getByRole('checkbox', { name: 'Preview' }).isChecked(), false)
+      await until(() => readout.isVisible(), value => !value, 'the readout goes when the pointer leaves the plot')
+    })
+
     await t.test('a gradient\'s stop is dragged along its bar and moved with the keys', async () => {
       const editor = example('gradient')
       await editor.scrollIntoViewIfNeeded()
