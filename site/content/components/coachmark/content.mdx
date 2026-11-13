@@ -1,0 +1,148 @@
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+A coachmark is one step of a tour: a small card of ink that points at a control and says what it does. It is a popover, so the browser holds it in the top layer and moves focus into it, and CSS anchor positioning places it against the element that opened it, with an arrow that points there. A beacon, a dot of ink that sends out a ring now and then, marks the place on the page and is the button that opens it.
+
+<ComponentPreview name="default" height={256} narrowHeight={284} title="Coachmark" bodyClass="flex items-end justify-center p-lg" html={`<div class="toolbar" role="toolbar" aria-label="Deployments">
+  <button type="button" class="btn btn-quiet btn-sm btn-square" aria-label="Search">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.35-4.35"/></svg>
+  </button>
+  <span class="relative inline-flex">
+    <button type="button" class="btn btn-quiet btn-sm btn-square" aria-label="Filter">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+    </button>
+    <button type="button" class="coachmark-beacon absolute top(-3) right(-3)" popovertarget="tip-filter" aria-label="What is new in Filter"></button>
+    <div id="tip-filter" popover class="coachmark coachmark-top" role="dialog" aria-labelledby="tip-filter-title">
+      <p class="coachmark-count">New</p>
+      <h2 class="coachmark-title" id="tip-filter-title">Filter by author</h2>
+      <p class="coachmark-text">Narrow the deployments to the ones you shipped, or to anyone on the team.</p>
+      <div class="coachmark-actions">
+        <button type="button" class="btn btn-sm" popovertarget="tip-filter" popovertargetaction="hide" autofocus>Got it</button>
+      </div>
+    </div>
+  </span>
+  <button type="button" class="btn btn-quiet btn-sm btn-square" aria-label="Share">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M8 8l4-4 4 4M5 14v5h14v-5"/></svg>
+  </button>
+</div>`} caption="Press the dot on the filter button." />
+
+The card is ink on moonstone and pearl on obsidian, the inverse surface of [sheet-inverse](/components/surface) laid flat, so it stands apart from the sheets of ordinary popovers and from the page under it, and its arrow joins it without a seam. A default [button](/components/button) on it reads as the action; a quiet one takes the card's ink, and a tint of it under the pointer.
+
+## Anatomy \{#anatomy\}
+
+Each part is optional except the title.
+
+| Class | Holds |
+| --- | --- |
+| `coachmark-count` | Where the step stands in the tour, such as 2 of 4, or a word such as New, in a quieter ink |
+| `coachmark-title` | The heading of the step; give it an id and label the coachmark with it |
+| `coachmark-text` | One or two sentences that say what the control does |
+| `coachmark-actions` | Small buttons along the foot. The first of several stands at the start, such as Skip; the others line up at the end, such as Back and Next |
+
+The actions sit 12px from the card's edges, so a small button's corner nests in the card's: the card's corner is the button's corner plus that inset.
+
+## Placement \{#placement\}
+
+A coachmark opens centered under the element that opened it, with the arrow's point 6px from that element, and flips above when there is no room below. `coachmark-top` prefers the space above, for a control near the foot of the screen or a beacon on a control's top corner, as in the first example.
+
+The arrow points at the element right before the coachmark in the markup, so put the coachmark right after its beacon or the control it explains. While the coachmark is open, that element is named as an anchor, and the arrow follows its middle: it stays on it when an edge of the viewport pushes the card aside, keeps clear of the card's rounded corners, and moves to the other edge of the card when the card flips. One coachmark is open at a time, as in a tour.
+
+## Beacon \{#beacon\}
+
+`coachmark-beacon` is a 10px dot on a button, with a rim of the surface it stands on and a target of 24px, 44px on a touch screen. It opens its coachmark with `popovertarget` and needs an `aria-label` that says what it opens. The page places it: on the top corner of the control it marks, with `absolute` utilities inside a `relative` wrapper, or beside it in a row.
+
+Its ring asks to be noticed. It rests as a halo while the beacon is under the pointer or has focus, while its coachmark is open, and with reduced motion. Remove the beacon once the reader has seen its step.
+
+## A tour \{#tour\}
+
+A tour is a few coachmarks opened one after another. Give each step `popover="manual"`, so a click on the page, such as trying the control a step points at, does not end the tour, and let a short script move between the steps: `showPopover({ source })` opens a step against the element before it, and the step's actions call it for the next or the previous one. A manual popover does not close on <kbd>Esc</kbd> by itself, so the script does that too, and returns focus to where the tour began.
+
+<ComponentPreview name="tour" height={256} narrowHeight={284} title="A tour" bodyClass="flex items-start justify-center gap-sm p-lg" html={`<button type="button" class="btn btn-sm" id="tour-start">Take the tour</button>
+<div class="toolbar" role="toolbar" aria-label="Deployments">
+  <button type="button" class="btn btn-quiet btn-sm btn-square" aria-label="Search">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.35-4.35"/></svg>
+  </button>
+  <div id="tour-search" popover="manual" class="coachmark" role="dialog" aria-labelledby="tour-search-title">
+    <p class="coachmark-count">1 of 3</p>
+    <h2 class="coachmark-title" id="tour-search-title">Search every deployment</h2>
+    <p class="coachmark-text">Find one by its branch, its commit or the person who shipped it.</p>
+    <div class="coachmark-actions">
+      <button type="button" class="btn btn-sm btn-quiet" value="skip">Skip</button>
+      <button type="button" class="btn btn-sm" value="next" autofocus>Next</button>
+    </div>
+  </div>
+  <button type="button" class="btn btn-quiet btn-sm btn-square" aria-label="Filter">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+  </button>
+  <div id="tour-filter" popover="manual" class="coachmark" role="dialog" aria-labelledby="tour-filter-title">
+    <p class="coachmark-count">2 of 3</p>
+    <h2 class="coachmark-title" id="tour-filter-title">Filter the list</h2>
+    <p class="coachmark-text">Keep only the deployments of one branch, one author or one status.</p>
+    <div class="coachmark-actions">
+      <button type="button" class="btn btn-sm btn-quiet" value="skip">Skip</button>
+      <button type="button" class="btn btn-sm btn-quiet" value="back">Back</button>
+      <button type="button" class="btn btn-sm" value="next" autofocus>Next</button>
+    </div>
+  </div>
+  <button type="button" class="btn btn-quiet btn-sm btn-square" aria-label="Share">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M8 8l4-4 4 4M5 14v5h14v-5"/></svg>
+  </button>
+  <div id="tour-share" popover="manual" class="coachmark" role="dialog" aria-labelledby="tour-share-title">
+    <p class="coachmark-count">3 of 3</p>
+    <h2 class="coachmark-title" id="tour-share-title">Share a deployment</h2>
+    <p class="coachmark-text">Copy a link to it, open for anyone on the team.</p>
+    <div class="coachmark-actions">
+      <button type="button" class="btn btn-sm btn-quiet" value="back">Back</button>
+      <button type="button" class="btn btn-sm" value="done" autofocus>Done</button>
+    </div>
+  </div>
+</div>
+<script>
+  var start = document.getElementById('tour-start')
+  var steps = [document.getElementById('tour-search'), document.getElementById('tour-filter'), document.getElementById('tour-share')]
+  function show(index) {
+    steps.forEach(function (step) { if (step.matches(':popover-open')) step.hidePopover() })
+    if (steps[index]) steps[index].showPopover({ source: steps[index].previousElementSibling })
+    else start.focus()
+  }
+  start.addEventListener('click', function () { show(0) })
+  steps.forEach(function (step, index) {
+    step.addEventListener('click', function (event) {
+      var action = event.target.closest('button')
+      if (!action) return
+      show(action.value === 'next' ? index + 1 : action.value === 'back' ? index - 1 : -1)
+    })
+    step.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') show(-1)
+    })
+  })
+</script>`} caption="Take the tour, then try Next, Back and Esc." />
+
+A single coachmark opened by its beacon is `popover="auto"`: the browser closes it on an outside click and on <kbd>Esc</kbd>, and returns focus to the beacon, with no script at all.
+
+## Accessibility \{#accessibility\}
+
+- Give the coachmark `role="dialog"` and label it with its title through `aria-labelledby`. It is not modal: the page stays usable around it.
+- Put `autofocus` on its main action, so focus moves into the card as it opens and a keyboard can go on with <kbd>Enter</kbd>.
+- Every step can be left: a Skip or Done action, <kbd>Esc</kbd>, and for a single coachmark a click elsewhere.
+- Say nothing in a tour that cannot be found without it: a reader who skips it must not miss anything.
+- Placed right after its beacon in the markup, the coachmark is next in the tab order after it, wherever the card is drawn.
+
+## Browser support \{#browser-support\}
+
+The coachmark is placed with CSS anchor positioning: `position-area` and `position-try-fallbacks` for the card, and `anchor()` between the card and the element it points at for the arrow. In a browser without anchor positioning it still opens and closes, centered in the viewport where the browser places any popover, and has no arrow. The `source` option of `showPopover()` gives a tour's step its anchor; without it, a step opens without one. The fade and the short slide use `@starting-style`; without it the card appears and leaves at once.
+
+The card enters with a fade and slides 4px toward its anchor, and leaves with a shorter fade. It does not scale as other popovers do: a scaled card would hold its arrow inside it, out of reach of the element the arrow points at.
+
+## Classes \{#classes\}
+
+<ContractTable name="coachmark" />
+
+## Custom properties \{#custom-properties\}
+
+<ContractTable name="coachmark" show="properties" />
+
+## Source \{#source\}
+
+<ComponentSource name="coachmark" />

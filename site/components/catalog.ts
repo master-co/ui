@@ -73,6 +73,7 @@ export const components = [
   { slug: 'menu', name: 'Menu', category: 'Overlays', description: 'A list of actions in a popover, placed against its button.' },
   { slug: 'command', name: 'Command palette', category: 'Overlays', description: 'A dialog that is one search field over a list of commands.' },
   { slug: 'tooltip', name: 'Tooltip', category: 'Overlays', description: 'A short label in ink, shown on hover, focus and long press.' },
+  { slug: 'coachmark', name: 'Coachmark', category: 'Overlays', description: 'One step of a tour, pointing at the control it explains.' },
   { slug: 'toast', name: 'Toast', category: 'Feedback', description: 'A brief message over the page that can leave by itself.' },
   { slug: 'alert', name: 'Alert', category: 'Feedback', description: 'A message in the flow of the page, with an optional status.' },
   { slug: 'banner', name: 'Banner', category: 'Feedback', description: 'One line across the top of a page for news everyone on it should have.' },

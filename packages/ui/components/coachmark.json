@@ -1,0 +1,151 @@
+{
+  "$schema": "../contract.schema.json",
+  "name": "coachmark",
+  "title": "Coachmark",
+  "tier": "component",
+  "category": "Overlays",
+  "description": "One step of a tour, pointing at the control it explains.",
+  "use": "A short explanation tied to one place on the page: what a new control does, or one step of a tour through a screen. A beacon marks the place and opens it, or a script opens the steps of a tour in turn. Keep it to a title, a sentence and a way on; the reader should be able to leave a tour at any step.",
+  "instead": [
+    {
+      "when": "It is a few words that name a control, with nothing in it to act on",
+      "use": "tooltip"
+    },
+    {
+      "when": "The content belongs to a button and is opened for its own sake, such as a share link or a short form",
+      "use": "popover"
+    },
+    {
+      "when": "The reader must answer before going on",
+      "use": "dialog"
+    },
+    {
+      "when": "It says where the reader is in a sequence of pages or a form",
+      "use": "steps"
+    }
+  ],
+  "composes": [
+    "button"
+  ],
+  "script": "optional",
+  "keyboard": [
+    {
+      "keys": "Enter, Space",
+      "action": "On the beacon: open or close its coachmark. An action inside with autofocus takes focus as it opens"
+    },
+    {
+      "keys": "Tab",
+      "action": "Move between the actions in the coachmark, and from it back to the page after the beacon"
+    },
+    {
+      "keys": "Escape",
+      "action": "Close a coachmark opened with popover=\"auto\" and return focus to the beacon. A tour's steps are popover=\"manual\", so the tour's script closes them on Escape"
+    }
+  ],
+  "platform": [
+    {
+      "feature": "The popover attribute with popovertarget on a beacon, or showPopover({ source }) from a tour's script",
+      "fallback": "Supported in all current browsers. Where the source option of showPopover() is missing, a tour's step opens without an anchor, where the browser places a popover"
+    },
+    {
+      "feature": "CSS anchor positioning (position-area, position-try-fallbacks and anchor() with anchor-name and anchor-scope)",
+      "fallback": "The coachmark still opens and closes; it appears centered in the viewport, where the browser places any popover, and has no arrow"
+    },
+    {
+      "feature": "@starting-style and transition-behavior: allow-discrete",
+      "fallback": "The coachmark appears and leaves at once, without the fade and the short slide"
+    }
+  ],
+  "classes": [
+    {
+      "name": "coachmark",
+      "kind": "root",
+      "attributes": {
+        "popover": true
+      },
+      "description": "The card of ink, on an element with the popover attribute and role=\"dialog\", labelled by its title; without the popover attribute it is never shown. It opens centered under the element that opened it, flips above when there is no room, and is 18rem wide. Its arrow points at the element right before it in the markup, so put it right after its beacon or the control it explains"
+    },
+    {
+      "name": "coachmark-top",
+      "kind": "modifier",
+      "of": "coachmark",
+      "description": "Prefers the space above, for a control near the foot of the screen or a beacon on a control's top corner"
+    },
+    {
+      "name": "coachmark-count",
+      "kind": "part",
+      "of": "coachmark",
+      "description": "A short line over the title in a quieter ink: where the step stands in the tour (2 of 4), or a word such as New"
+    },
+    {
+      "name": "coachmark-title",
+      "kind": "part",
+      "of": "coachmark",
+      "description": "The heading of the step, which labels the coachmark"
+    },
+    {
+      "name": "coachmark-text",
+      "kind": "part",
+      "of": "coachmark",
+      "description": "One or two sentences that say what the control does"
+    },
+    {
+      "name": "coachmark-actions",
+      "kind": "part",
+      "of": "coachmark",
+      "description": "A row of small buttons along the foot, 12px from the card's edges: the first of several stands at the start (Skip), the others at the end (Back, Next). A default button reads as the action on ink, and a quiet one takes the card's ink"
+    },
+    {
+      "name": "coachmark-beacon",
+      "kind": "root",
+      "elements": [
+        "button"
+      ],
+      "label": true,
+      "description": "A 10px dot of ink that marks where a step is and opens it with popovertarget. It sends out a ring now and then, which rests as a halo while it is under the pointer, has focus or its coachmark is open, and under reduced motion. Its target is 24px, and 44px on a touch screen. The page places it, usually on the top corner of the control it marks"
+    }
+  ],
+  "states": [
+    {
+      "on": "coachmark",
+      "name": "open",
+      "mark": ":popover-open",
+      "description": "Shown in the top layer, faded in and slid 4px toward the element that opened it"
+    },
+    {
+      "on": "coachmark-beacon",
+      "name": "found",
+      "mark": ":has(+ .coachmark:popover-open)",
+      "description": "Its coachmark, right after it, is open: the ring rests as a halo"
+    }
+  ],
+  "properties": [
+    {
+      "name": "--coachmark-width",
+      "default": "18rem",
+      "description": "The card's width, never wider than the viewport less a rem"
+    },
+    {
+      "name": "--coachmark-inset",
+      "default": "12px",
+      "description": "Space between the actions and the card's edges; the text has 4px more. The card's corner is a small button's corner plus this inset"
+    },
+    {
+      "name": "--coachmark-arrow",
+      "default": "7px",
+      "description": "How far the arrow's point stands out from the card"
+    },
+    {
+      "name": "--anchored-gap",
+      "default": "calc(var(--coachmark-arrow) + 6px)",
+      "description": "Space between the card and the element that opened it; the arrow's point stands 6px from that element"
+    },
+    {
+      "name": "--coachmark-beacon-size",
+      "on": "coachmark-beacon",
+      "default": ".625rem",
+      "description": "The beacon dot's diameter"
+    }
+  ],
+  "example": "<button type=\"button\" class=\"coachmark-beacon\" popovertarget=\"tip-filter\" aria-label=\"What is new in Filter\"></button>\n<div id=\"tip-filter\" popover class=\"coachmark\" role=\"dialog\" aria-labelledby=\"tip-filter-title\">\n  <p class=\"coachmark-count\">New</p>\n  <h2 class=\"coachmark-title\" id=\"tip-filter-title\">Filter by author</h2>\n  <p class=\"coachmark-text\">Narrow the deployments to the ones you shipped.</p>\n  <div class=\"coachmark-actions\">\n    <button type=\"button\" class=\"btn btn-sm\" popovertarget=\"tip-filter\" popovertargetaction=\"hide\" autofocus>Got it</button>\n  </div>\n</div>"
+}

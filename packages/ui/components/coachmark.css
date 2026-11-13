@@ -1,0 +1,329 @@
+/*
+ * Coachmark: one step of a tour, pointing at the control it explains.
+ * It is a popover of ink: a small card of the inverse surface sheet-inverse is made of, laid flat so its arrow
+ * joins it without a seam. It stands apart from the sheets of ordinary popovers and from the page under it.
+ * Anchor positioning centers it under the element that opened it (popovertarget, commandfor, or the source a
+ * script passes to showPopover) and flips it above at the viewport's edge. It enters with a fade and slides 4px
+ * toward that element.
+ * An arrow of the same ink points at the element right before the coachmark in the markup, which is its beacon
+ * or the control it explains: while the coachmark is open that element is named as an anchor, and the arrow
+ * follows its middle when an edge pushes the card aside and moves to the other edge when the card flips.
+ * Geometry: 12px between the actions and the card's edge, so the card's corner is a small button's corner plus
+ * that inset, and a 7px arrow whose two flanks carry the card's contour into its point.
+ * A beacon marks where a step is and is the button that opens it: a 10px ink dot that sends out a ring now and
+ * then. Under the pointer, with focus, while its step is open and with reduced motion, the ring rests as a halo.
+ * Without anchor positioning the card opens where the browser places a popover, centered, with no arrow.
+ */
+@layer components {
+  .coachmark {
+    --coachmark-inset: 12px;
+    --coachmark-width: 18rem;
+    --coachmark-arrow: 7px;
+    --anchored-gap: calc(var(--coachmark-arrow) + 6px);
+    --anchored-inline: span-all;
+    --surface-color: var(--color-surface-inverse);
+    /* Focus rings stand on ink, so they are drawn in the ink of the words. */
+    --color-focus: var(--color-text-inverse);
+    @apply --on-ink;
+    flex-direction: column;
+    gap: .25rem;
+    width: min(var(--coachmark-width), calc(100vw - 1rem));
+    padding: calc(var(--coachmark-inset) + 4px) calc(var(--coachmark-inset) + 4px) var(--coachmark-inset);
+    border: 0;
+    border-radius: calc(var(--radius-control-sm) * var(--corner-scale) + var(--coachmark-inset));
+    corner-shape: var(--corner-shape);
+    overflow: visible;
+    background: var(--color-surface-inverse);
+    color: var(--color-text-inverse);
+    box-shadow:
+      inset 0 .5px 0 var(--color-ink-highlight),
+      0 0 0 .5px var(--color-ink-edge),
+      0 1px 2px -1px var(--color-shade-1), 0 3px 6px -3px var(--color-shade-2), 0 6px 12px -6px var(--color-shade-3),
+      0 12px 24px -12px var(--color-shade-4), 0 24px 48px -24px var(--color-shade-5);
+    font: 400 .8125rem/1.5 var(--font-family-sans);
+    font-feature-settings: inherit;
+    overflow-wrap: anywhere;
+    overscroll-behavior: contain;
+    @apply --anchored;
+    /*
+     * In and out of the top layer. Not --pop: a scale would make the card the containing block of its arrow,
+     * which could then no longer reach the element it points at. Closed is where it leaves to.
+     */
+    opacity: 0;
+    transition-property: opacity, margin, overlay, display;
+    transition-duration: var(--duration-quick);
+    transition-timing-function: var(--easing-glide);
+    transition-behavior: allow-discrete;
+
+    &:popover-open {
+      display: flex;
+      opacity: 1;
+      transition-duration: var(--duration-base);
+
+      @starting-style {
+        opacity: 0;
+      }
+    }
+
+    /* Prefer the space above. */
+    &.coachmark-top {
+      --anchored-block: block-start;
+    }
+
+    @media (forced-colors: active) {
+      outline: 1px solid CanvasText;
+      outline-offset: -1px;
+    }
+  }
+
+  /*
+   * Placed: a half-rem from the viewport's sides when an edge pushes it aside, and only a flip to the other side
+   * of its anchor. It travels 4px toward the anchor as it enters and 2px away as it leaves; margins are swapped
+   * with the flip, so the travel follows the side it opened on.
+   */
+  @supports (position-area: block-end) {
+    .coachmark {
+      --coachmark-travel: 2px;
+      margin: calc(var(--anchored-gap) + var(--coachmark-travel)) .5rem;
+      position-try-fallbacks: flip-block;
+      anchor-name: --coachmark-card;
+      anchor-scope: --coachmark-card;
+
+      &:popover-open {
+        --coachmark-travel: 0px;
+
+        @starting-style {
+          --coachmark-travel: 4px;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        &, &:popover-open {
+          --coachmark-travel: 0px;
+        }
+      }
+
+      /*
+       * The arrow: a square turned a quarter, its middle on the edge of the card that faces the element it
+       * points at, and a patch of the card's ink over its inner half, so only the point outside the card is
+       * seen. Both lie over the card's face and under its content, so the point covers the card's contour where
+       * they join and its own contour carries the card's into the point.
+       * They are fixed to the viewport and placed with anchor(), between that element and the card itself:
+       * across, at the element's middle, but never into the card's rounded corners; up and down, at whichever
+       * of the card's edges is nearer to it. With no element to point at, they meet in the card's middle, where
+       * the patch hides the arrow.
+       */
+      &::before, &::after {
+        --coachmark-arrow-side: calc(var(--coachmark-arrow) * 1.4142);
+        --coachmark-arrow-reach: calc(var(--radius-control-sm) * var(--corner-scale) + var(--coachmark-inset) + var(--coachmark-arrow));
+        --coachmark-arrow-x: clamp(
+          anchor(--coachmark-card left, 0px) + var(--coachmark-arrow-reach),
+          anchor(--coachmark-target center, anchor(--coachmark-card center, 0px)),
+          anchor(--coachmark-card right, 0px) - var(--coachmark-arrow-reach)
+        );
+        --coachmark-arrow-y: clamp(
+          anchor(--coachmark-card top, 0px),
+          anchor(--coachmark-target center, anchor(--coachmark-card center, 0px)),
+          anchor(--coachmark-card bottom, 0px)
+        );
+        content: '';
+        position: fixed;
+        z-index: -1;
+        background: var(--color-surface-inverse);
+        pointer-events: none;
+      }
+
+      &::before {
+        top: calc(var(--coachmark-arrow-y) - var(--coachmark-arrow-side) / 2);
+        left: calc(var(--coachmark-arrow-x) - var(--coachmark-arrow-side) / 2);
+        width: var(--coachmark-arrow-side);
+        height: var(--coachmark-arrow-side);
+        border-radius: 2px;
+        /* The light catches the two flanks that face up, which the patch hides when the arrow points down. */
+        box-shadow: inset .5px .5px 0 var(--color-ink-highlight), 0 0 0 .5px var(--color-ink-edge);
+        rotate: 45deg;
+      }
+
+      &::after {
+        top: clamp(
+          anchor(--coachmark-card top, 0px),
+          var(--coachmark-arrow-y) - var(--coachmark-arrow) - 1px,
+          anchor(--coachmark-card bottom, 0px) - var(--coachmark-arrow) * 2 - 2px
+        );
+        left: calc(var(--coachmark-arrow-x) - var(--coachmark-arrow) - .5px);
+        width: calc(var(--coachmark-arrow) * 2 + 1px);
+        height: calc(var(--coachmark-arrow) * 2 + 2px);
+      }
+    }
+
+    /* The element right before an open coachmark is what its arrow points at. */
+    :where(:has(+ .coachmark:popover-open)) {
+      anchor-name: --coachmark-target;
+    }
+  }
+
+  /* Where the step stands in the tour: "2 of 4". */
+  .coachmark-count {
+    margin: 0;
+    color: color-mix(in oklab, currentColor 62%, transparent);
+    font-size: .75rem;
+    font-weight: var(--font-weight-control);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.4;
+  }
+
+  .coachmark-title {
+    margin: 0;
+    color: inherit;
+    font: var(--font-weight-control) .875rem/1.4 var(--font-family-sans);
+    font-feature-settings: inherit;
+    text-wrap: balance;
+  }
+
+  .coachmark-text {
+    margin: 0;
+    color: color-mix(in oklab, currentColor 76%, transparent);
+    text-wrap: pretty;
+  }
+
+  /*
+   * The actions, along the foot: 12px from the card's edges, so a small button's corner nests in the card's.
+   * The first of several stands at the start (Skip, or Back), the others at the end.
+   */
+  .coachmark-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: .25rem;
+    margin: .625rem -4px 0;
+
+    .btn:first-child:not(:only-child) {
+      margin-inline-end: auto;
+    }
+  }
+
+  /* A quiet button on ink takes a quieter step of the card's ink, and a tint of it under the pointer. */
+  .coachmark .btn-quiet:not(:disabled, [aria-disabled="true"]) {
+    color: color-mix(in oklab, var(--color-text-inverse) 72%, transparent);
+
+    @media (hover: hover) {
+      &:hover {
+        background: color-mix(in oklab, var(--color-text-inverse) 12%, transparent);
+        color: var(--color-text-inverse);
+        box-shadow: none;
+      }
+    }
+
+    &:active {
+      background: color-mix(in oklab, var(--color-text-inverse) 18%, transparent);
+      color: var(--color-text-inverse);
+      box-shadow: none;
+    }
+  }
+
+  /*
+   * The beacon: a 10px dot of ink with a rim of the surface it stands on, and a ring that leaves it now and then
+   * to say there is something to see. The page places it, beside or on the corner of what it marks; its target
+   * is 24px, and 44px on a touch screen.
+   */
+  .coachmark-beacon {
+    --coachmark-beacon-size: .625rem;
+    position: relative;
+    display: inline-block;
+    flex: none;
+    width: var(--coachmark-beacon-size);
+    height: var(--coachmark-beacon-size);
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    corner-shape: round;
+    background: var(--color-surface-inverse);
+    box-shadow: 0 0 0 2px var(--surface-color, var(--color-surface-base)), 0 1px 3px 1.5px var(--color-shade-1);
+    vertical-align: middle;
+    appearance: none;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: scale var(--duration-quick) var(--easing-glide);
+
+    /* The ring that leaves the dot. */
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      corner-shape: inherit;
+      box-shadow: 0 0 0 0 transparent;
+      pointer-events: none;
+      animation: coachmark-beacon 2.4s var(--easing-glide) infinite;
+    }
+
+    /* The target a pointer and a finger need, around the dot. */
+    &::after {
+      content: '';
+      position: absolute;
+      inset: calc((var(--coachmark-beacon-size) - 1.5rem) / 2);
+
+      @media (pointer: coarse) {
+        inset: calc((var(--coachmark-beacon-size) - 2.75rem) / 2);
+      }
+    }
+
+    @media (hover: hover) {
+      &:hover {
+        scale: 1.2;
+      }
+    }
+
+    &:active {
+      scale: .9;
+      transition-duration: var(--duration-press);
+    }
+
+    &:focus-visible {
+      @apply --focus-ring;
+      outline-offset: 4px;
+    }
+
+    /* Found: while it is under the pointer, has focus or its step is open, the ring rests as a halo. */
+    &:is(:hover, :focus-visible, :has(+ .coachmark:popover-open))::before {
+      box-shadow: 0 0 0 4px color-mix(in oklab, var(--color-surface-inverse) 14%, transparent);
+      animation: none;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: none;
+
+      &::before {
+        box-shadow: 0 0 0 4px color-mix(in oklab, var(--color-surface-inverse) 14%, transparent);
+        animation: none;
+      }
+
+      &:hover, &:active {
+        scale: none;
+      }
+    }
+
+    @media (forced-colors: active) {
+      outline: 2px solid ButtonText;
+      outline-offset: -2px;
+      background: ButtonText;
+
+      &::before {
+        animation: none;
+      }
+    }
+  }
+}
+
+@keyframes coachmark-beacon {
+  0%, 20% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-surface-inverse) 42%, transparent);
+  }
+
+  75%, 100% {
+    box-shadow: 0 0 0 .625rem transparent;
+  }
+}

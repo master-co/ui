@@ -118,6 +118,7 @@ Or import only the theme and the components you use:
 | Combobox | `combobox`, `combobox-toggle` |
 | Command palette | `command`, `command-search`, `command-input`, `command-list`, `command-footer`, `command-hint` |
 | Tooltip | `tooltip`, `tooltip-bottom` |
+| Coachmark | `coachmark`, `coachmark-top`, `coachmark-count`, `coachmark-title`, `coachmark-text`, `coachmark-actions`, `coachmark-beacon` |
 | Toast | `toast-region`, `toast-region-top`, `toast-region-center`, `toast`, `toast-timed`, `toast-info`, `toast-success`, `toast-warning`, `toast-danger`, `toast-icon`, `toast-body`, `toast-title`, `toast-description`, `toast-close` |
 | Alert | `alert`, `alert-info`, `alert-success`, `alert-warning`, `alert-danger`, `alert-icon`, `alert-body`, `alert-title`, `alert-description` |
 | Banner | `banner`, `banner-dismissible`, `banner-info`, `banner-success`, `banner-warning`, `banner-danger`, `banner-inverse`, `banner-brand`, `banner-content`, `banner-title`, `banner-action`, `banner-close` |
