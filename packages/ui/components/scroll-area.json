@@ -4,22 +4,32 @@
   "title": "Scroll area",
   "tier": "component",
   "category": "Structure",
-  "description": "A scrolling region whose edges fade where content continues.",
-  "use": "A region that scrolls inside the page: a long list in a panel, a wide table, a log. Give it a height or a maximum height, and tabindex=\"0\", a role and a label unless it holds focusable content.",
+  "description": "A scrolling region whose edges fade where content continues, and that can follow what arrives at its end.",
+  "use": "A region that scrolls inside the page: a long list in a panel, a wide table, a log. Give it a height or a maximum height, and tabindex=\"0\", a role and a label unless it holds focusable content. A region that grows at its end while it is read (a chat, a build log, a streamed answer) takes role=\"log\" and the follow behavior, which keeps the end in view until the reader scrolls away.",
   "instead": [
     { "when": "The row of items snaps from one slide to the next", "use": "carousel" },
     { "when": "Two regions share the space and each scrolls by itself", "use": "splitter" }
   ],
-  "script": "none",
+  "composes": ["button"],
+  "script": "optional",
+  "behavior": "follow",
   "keyboard": [
-    { "keys": "ArrowUp, ArrowDown, PageUp, PageDown, Home, End", "action": "Scroll the focused region, as the browser does" }
+    { "keys": "ArrowUp, ArrowDown, PageUp, PageDown, Home, End", "action": "Scroll the focused region, as the browser does" },
+    { "keys": "ArrowUp, PageUp, Home", "action": "With the follow behavior: scrolling toward the start stops following and shows the scroll-area-latest button" },
+    { "keys": "End", "action": "With the follow behavior: back at the end, the region follows again" },
+    { "keys": "Enter, Space", "action": "On scroll-area-latest: scroll to the end and follow again, as a button does" }
   ],
   "platform": [
-    { "feature": "Scroll-driven animations (animation-timeline: scroll())", "fallback": "The region scrolls the same and its edges stay clean, with no fade" }
+    { "feature": "Scroll-driven animations (animation-timeline: scroll())", "fallback": "The region scrolls the same and its edges stay clean, with no fade" },
+    { "feature": "Scroll anchoring (overflow-anchor)", "fallback": "The follow behavior keeps the reader's place itself when content is inserted above it" }
   ],
   "classes": [
     { "name": "scroll-area", "kind": "root", "description": "A region that scrolls along the block axis, with a thin scrollbar and edges that fade where content continues" },
-    { "name": "scroll-area-inline", "kind": "modifier", "of": "scroll-area", "description": "Scrolls along the inline axis and fades the start and end edges" }
+    { "name": "scroll-area-inline", "kind": "modifier", "of": "scroll-area", "description": "Scrolls along the inline axis and fades the start and end edges" },
+    { "name": "scroll-area-latest", "kind": "part", "of": "scroll-area", "elements": ["button"], "description": "On a btn after the region's content: the way back to the end of a region that follows. Sticky at the foot over the content, above the fade; the behavior gives it hidden while the region follows" }
+  ],
+  "states": [
+    { "on": "scroll-area-latest", "name": "following", "mark": "hidden", "description": "The region follows its end, so the way back to it is hidden" }
   ],
   "properties": [
     { "name": "--scroll-area-fade", "default": "1.5rem", "description": "Length of the fade at each edge" }

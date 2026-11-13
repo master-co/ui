@@ -553,6 +553,47 @@ export const scenarios: Record<string, Scenario> = {
     await driver.act(() => mounted.unmount())
   },
 
+  async log(driver, page) {
+    const rows = ['Cloning master-co/ui', 'Installing 596 packages']
+    const { mounted, heard } = await owned(driver, 'log', { rows, following: true, latestLabel: 'Jump to latest', 'aria-label': 'Build log' }, 'following', 'onFollowingChange')
+    conforms(page)
+    const root = page.one<HTMLElement>('.scroll-area')
+    const latest = page.one<HTMLButtonElement>('.scroll-area-latest')
+    assert.equal(root.getAttribute('role'), 'log')
+    assert.equal(latest.hidden, true, 'the way back is hidden while the region follows, from the first render')
+    assert.equal(latest.textContent!.trim(), 'Jump to latest')
+
+    // happy-dom has no layout: the region is given a view 100 tall over content 40 tall for each row.
+    let top = 0
+    const content = () => page.all('.scroll-area li').length * 40
+    Object.defineProperty(root, 'clientHeight', { get: () => 100, configurable: true })
+    Object.defineProperty(root, 'scrollHeight', { get: () => content(), configurable: true })
+    Object.defineProperty(root, 'scrollTop', { get: () => top, set: (value: number) => { top = Math.max(0, Math.min(content() - 100, value)) }, configurable: true })
+    root.scrollTo = ((options: ScrollToOptions) => { root.scrollTop = options.top! }) as typeof root.scrollTo
+    const scroll = (to: number) => { root.scrollTop = to; root.dispatchEvent(new page.window.Event('scroll')) }
+
+    await driver.act(() => mounted.set({ rows: [...rows, 'Building 71 pages', 'Checking links', 'Deploying'] }))
+    assert.equal(top, 100, 'rows that arrive are followed')
+
+    await driver.act(() => scroll(20))
+    assert.deepEqual(heard, [false], 'scrolling away comes out')
+    assert.equal(latest.hidden, false)
+    await driver.act(() => mounted.set({ rows: [...rows, 'Building 71 pages', 'Checking links', 'Deploying', 'Done'] }))
+    assert.equal(top, 20, 'and the reader keeps the place')
+
+    await driver.act(() => page.click(latest))
+    assert.deepEqual(heard, [false, true], 'the way back comes out')
+    assert.equal(top, 140)
+    assert.equal(latest.hidden, true)
+
+    await driver.act(() => scroll(0))
+    await driver.act(() => mounted.set({ following: true }))
+    assert.equal(top, 140, 'the owner brings the reader back to the end')
+    assert.equal(latest.hidden, true)
+    assert.deepEqual(heard, [false, true, false], 'and that says nothing')
+    await driver.act(() => mounted.unmount())
+  },
+
   async compare(driver, page) {
     const { mounted, heard } = await owned(driver, 'compare', { value: 50, label: 'Show more of the graded picture' })
     conforms(page)

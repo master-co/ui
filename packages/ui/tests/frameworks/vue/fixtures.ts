@@ -23,6 +23,7 @@ import ContextMenuExample from './ContextMenuExample.vue'
 import DialogExample from './DialogExample.vue'
 import DialogSheetExample from './DialogSheetExample.vue'
 import FieldExample from './FieldExample.vue'
+import LogExample from './LogExample.vue'
 import MenuExample from './MenuExample.vue'
 import PanelExample from './PanelExample.vue'
 import PopoverExample from './PopoverExample.vue'
@@ -53,6 +54,7 @@ export const fixtures: Record<string, Component> = {
   'field': FieldExample,
   'gantt': Gantt,
   'listbox': Listbox,
+  'log': LogExample,
   'menu': MenuExample,
   'otp': Otp,
   'panel': PanelExample,

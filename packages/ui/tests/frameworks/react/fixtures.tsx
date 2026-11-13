@@ -11,6 +11,7 @@ import { Dialog } from '../../../frameworks/react/dialog.tsx'
 import { Field } from '../../../frameworks/react/field.tsx'
 import { Gantt } from '../../../frameworks/react/gantt.tsx'
 import { Listbox } from '../../../frameworks/react/listbox.tsx'
+import { Log, type LogProps } from '../../../frameworks/react/log.tsx'
 import { Menu, type MenuProps } from '../../../frameworks/react/menu.tsx'
 import { Otp } from '../../../frameworks/react/otp.tsx'
 import { Panel, type PanelProps } from '../../../frameworks/react/panel.tsx'
@@ -104,6 +105,14 @@ function CompareExample(props: CompareProps) {
 
 function CropperExample(props: Omit<CropperProps, 'src' | 'alt' | 'width' | 'height'>) {
   return <Cropper src="/demo/harbor.svg" alt="The harbor at dusk" width={640} height={480} zoom={attributes => <input className="slider" aria-label="Zoom" {...attributes} />} {...props} />
+}
+
+function LogExample({ rows = [], ...props }: Omit<LogProps, 'children'> & { rows?: string[] }) {
+  return (
+    <Log {...props}>
+      <ol>{rows.map(row => <li key={row}>{row}</li>)}</ol>
+    </Log>
+  )
 }
 
 function MenuExample(props: MenuProps) {
@@ -211,6 +220,7 @@ export const fixtures = {
   'field': FieldExample,
   'gantt': Gantt,
   'listbox': Listbox,
+  'log': LogExample,
   'menu': MenuExample,
   'otp': Otp,
   'panel': PanelExample,

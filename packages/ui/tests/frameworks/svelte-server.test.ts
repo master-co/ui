@@ -25,6 +25,7 @@ const others: Record<string, Record<string, unknown>> = {
   'dialog-sheet': {},
   'field': { label: 'Work email', hint: 'We only send receipts.' },
   'listbox': { options: [{ value: 'hnd', label: 'Tokyo' }], value: 'hnd', 'aria-label': 'Region' },
+  'log': { rows: ['Cloning master-co/ui'], latestLabel: 'Jump to latest', 'aria-label': 'Build log' },
   'menu': { items: [{ label: 'Rename' }, { separator: true }, { label: 'Settings', href: '#settings' }], 'aria-label': 'Project' },
   'player': { src: '/demo/recording.m4a', label: 'A short recording', time: 65 },
   'popover': {},

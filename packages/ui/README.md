@@ -72,7 +72,7 @@ Or import only the theme and the components you use:
 | Hotspot | `hotspot`, `hotspot-pin` |
 | Divider | `divider`, `divider-vertical`, `divider-label` |
 | Texture | `texture`, `texture-grid`, `texture-stripes`, `texture-crosshatch`, `texture-checker`, `texture-fade` |
-| Scroll area | `scroll-area`, `scroll-area-inline` |
+| Scroll area | `scroll-area`, `scroll-area-inline`, `scroll-area-latest` |
 | Reveal | `reveal` |
 | Icon | `icon` |
 | Button | `btn`, `btn-primary`, `btn-quiet`, `btn-brand`, `btn-danger`, `btn-sm`, `btn-lg`, `btn-square`, `btn-pill`, `btn-group` |

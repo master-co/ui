@@ -23,6 +23,7 @@ import ContextMenuExample from './ContextMenuExample.svelte'
 import DialogExample from './DialogExample.svelte'
 import DialogSheetExample from './DialogSheetExample.svelte'
 import FieldExample from './FieldExample.svelte'
+import LogExample from './LogExample.svelte'
 import MenuExample from './MenuExample.svelte'
 import PanelExample from './PanelExample.svelte'
 import PopoverExample from './PopoverExample.svelte'
@@ -53,6 +54,7 @@ export const fixtures = {
   'field': FieldExample,
   'gantt': Gantt,
   'listbox': Listbox,
+  'log': LogExample,
   'menu': MenuExample,
   'otp': Otp,
   'panel': PanelExample,

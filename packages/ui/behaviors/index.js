@@ -18,6 +18,7 @@ import { command } from './command.js'
 import { compare } from './compare.js'
 import { editable } from './editable.js'
 import { dial } from './dial.js'
+import { follow } from './follow.js'
 import { gantt } from './gantt.js'
 import { drawer } from './drawer.js'
 import { cropper, cropperFit } from './cropper.js'
@@ -39,7 +40,7 @@ import { transcript } from './transcript.js'
 import { tree } from './tree.js'
 import { wheel } from './wheel.js'
 
-export { calendar, calendarMonth, calendarPeriods, colorPicker, colorPickerState, combobox, command, compare, contextMenu, cropper, cropperFit, dial, drawer, editable, gantt, listbox, menu, otp, panel, player, range, signature, signaturePath, signatureSvg, sortable, splitter, stepper, tabs, tags, toolbar, tour, transcript, tree, wheel }
+export { calendar, calendarMonth, calendarPeriods, colorPicker, colorPickerState, combobox, command, compare, contextMenu, cropper, cropperFit, dial, drawer, editable, follow, gantt, listbox, menu, otp, panel, player, range, signature, signaturePath, signatureSvg, sortable, splitter, stepper, tabs, tags, toolbar, tour, transcript, tree, wheel }
 
 /**
  * Each pattern's root class and the behavior that drives it.
@@ -60,6 +61,7 @@ const patterns = [
   ['.dial', dial],
   ['.signature', signature],
   ['.cropper', cropper],
+  ['.scroll-area[role="log"]', follow],
   ['.listbox', listbox],
   ['.tags', tags],
   ['.editable', editable],
