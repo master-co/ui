@@ -1,0 +1,198 @@
+---
+title: "막대 차트"
+description: "기준선 위의 막대로 양을 비교합니다. 나란히, 누적, 가로 방향으로 그릴 수 있습니다."
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+
+막대는 한 주의 요일이나 한 해의 분기처럼 양을 비교합니다. 각 막대는 기준선 위에서 자기 구간의 가운데에 놓이고, 기준선 반대쪽 끝의 모서리가 둥글게 처리됩니다. 포인터 아래에서는 나머지 막대가 즉시 옅은 색으로 물러납니다. 포인터가 닿는 영역은 구간 전체이므로 짧은 막대도 긴 막대만큼 쉽게 읽을 수 있습니다.
+
+<ComponentPreview name="bar" height={348} title="막대" bodyClass="p-lg" behaviors html={`<div class="card max-w(440) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Deployments</h3>
+    <p class="card-description">311 this week</p>
+  </div>
+  <figure class="chart" id="deployments" style="--chart-height: 11rem"></figure>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.chart(document.getElementById('deployments'), {
+    type: 'bar',
+    label: 'Deployments per day, this week',
+    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    series: [{ name: 'Deployments', values: [42, 58, 36, 71, 64, 22, 18] }]
+  })
+})
+</script>`} />
+
+0보다 작은 값은 기준선에 매달리며, 이때 기준선은 0의 위치에 놓입니다. 값이 0이면 기준선에 짧은 표시가 남으므로, 값이 없는 날도 하루로 표시됩니다.
+
+<ComponentPreview name="below" height={348} title="0의 위와 아래" bodyClass="p-lg" behaviors html={`<div class="card max-w(440) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Net change</h3>
+    <p class="card-description">Accounts gained and lost per month</p>
+  </div>
+  <figure class="chart" id="net" style="--chart-height: 11rem"></figure>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.chart(document.getElementById('net'), {
+    type: 'bar',
+    label: 'Net change in accounts per month',
+    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'],
+    series: [{ name: 'Net change', values: [12, -8, 20, -15, 6, 0, 18, 9] }]
+  })
+})
+</script>`} />
+
+## 중요한 막대 하나 \{#quiet\}
+
+차트에 `chart-quiet`을 지정하면 막대가 옅은 색으로 바뀌고 `aria-current`로 표시한 지점에만 잉크색이 유지됩니다. 한 주 중 오늘이나 독자가 이용 중인 요금제가 그 예입니다. 해당 지점의 인덱스를 `current`로 지정하세요. `values: true`는 모든 막대의 끝에 값을 적습니다. 정확한 수치가 핵심인 막대 몇 개를 표시할 때나, 포인터를 올릴 수 없는 터치 화면에 사용하세요.
+
+<ComponentPreview name="quiet" height={348} title="옅은 막대와 값 표시" bodyClass="p-lg" behaviors html={`<div class="card max-w(440) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Build minutes</h3>
+    <p class="card-description">Thursday so far</p>
+  </div>
+  <figure class="chart chart-quiet" id="minutes" style="--chart-height: 10rem"></figure>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.chart(document.getElementById('minutes'), {
+    type: 'bar',
+    current: 3,
+    values: true,
+    label: 'Build minutes per day, this week',
+    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    series: [{ name: 'Minutes', values: [62, 48, 75, 54, 88, 30, 26] }]
+  })
+})
+</script>`} />
+
+## 나란히 또는 누적 \{#stacked\}
+
+여러 계열은 각 구간 안에 나란히 놓이며, 이렇게 하면 계열끼리 비교할 수 있습니다. `stacked`를 설정하면 계열이 서로 위에 쌓이며, 이렇게 하면 합계를 비교하고 각 합계가 무엇으로 이루어지는지 보여 줄 수 있습니다. 누적 막대에서는 가장 바깥쪽 막대만 모서리가 둥글고, 막대 사이는 표면색 간격으로 나뉩니다. 값 표시창은 누적 막대를 눈에 보이는 대로 맨 위부터 나열합니다.
+
+<ComponentPreview name="grouped" height={386} title="나란히" bodyClass="p-lg" behaviors html={`<div class="card max-w(440) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Plan</h3>
+    <p class="card-description">Actual against plan, by quarter</p>
+  </div>
+  <figure class="chart" id="plan" style="--chart-height: 11rem"></figure>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.chart(document.getElementById('plan'), {
+    type: 'bar',
+    label: 'Planned and actual revenue by quarter, in thousands of dollars',
+    labels: ['Q1', 'Q2', 'Q3', 'Q4'],
+    series: [
+      { name: 'Plan', values: [40, 55, 60, 75] },
+      { name: 'Actual', values: [36, 58, 71, 69] }
+    ]
+  })
+})
+</script>`} />
+
+<ComponentPreview name="stacked" height={386} title="누적 막대" bodyClass="p-lg" behaviors html={`<div class="card max-w(440) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Tickets</h3>
+    <p class="card-description">Opened per day, by priority</p>
+  </div>
+  <figure class="chart" id="tickets" style="--chart-height: 11rem"></figure>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.chart(document.getElementById('tickets'), {
+    type: 'bar',
+    stacked: true,
+    label: 'Tickets opened per day by priority',
+    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    series: [
+      { name: 'Low', values: [12, 18, 14, 22, 19, 8, 6] },
+      { name: 'Normal', values: [20, 24, 18, 30, 26, 10, 9] },
+      { name: 'Urgent', values: [5, 9, 4, 12, 10, 3, 2] }
+    ]
+  })
+})
+</script>`} />
+
+## 가로 막대 \{#across\}
+
+`horizontal`은 막대를 가로로 눕혀 이름 하나에 행 하나를 배정합니다. 이름이 세로 막대 한 칸의 너비보다 긴 순위에 사용하세요. 이름은 행 옆에, 눈금은 행 아래에 놓입니다. 18자보다 긴 이름은 잘리고, 값 표시창이 이름 전체를 알려 줍니다.
+
+<ComponentPreview name="across" height={348} title="가로 막대" bodyClass="p-lg" behaviors html={`<div class="card max-w(520) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Top pages</h3>
+    <p class="card-description">Visitors in the last 7 days</p>
+  </div>
+  <figure class="chart" id="pages" style="--chart-height: 11rem"></figure>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.chart(document.getElementById('pages'), {
+    type: 'bar',
+    horizontal: true,
+    values: true,
+    label: 'Pages by visitors in the last 7 days',
+    labels: ['Installation', 'Button', 'Dialog', 'Default theme', 'Command'],
+    series: [{ name: 'Visitors', values: [4820, 3112, 2240, 1360, 412] }]
+  })
+})
+</script>`} />
+
+## 많은 막대와 그 위의 선 \{#many\}
+
+구간은 너비를 나눠 가지므로 한 주가 들어가던 자리에 한 달이 들어갑니다. 그래프 영역 아래에는 이름이 최대 12개까지 놓이고, 그래프 영역이 24rem보다 좁으면 이름이 하나 걸러 하나씩 빠집니다. `type: 'line'`을 지정한 계열은 목표값이나 이동 평균처럼 같은 눈금 위에서 막대 위에 선으로 그려집니다. 눈금이 서로 다른 두 측정값은 차트 두 개로 그리며, 양쪽에 눈금을 하나씩 둔 차트 하나로는 절대 그리지 않습니다.
+
+<ComponentPreview name="many" height={434} narrowHeight={454} title="30일" bodyClass="p-lg" responsive behaviors html={`<div class="card max-w(600) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Requests</h3>
+    <p class="card-description">Thousands per day in November, with the weekly average</p>
+  </div>
+  <figure class="chart" id="november"></figure>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  var requests = [49, 52, 58, 61, 44, 37, 56, 60, 64, 72, 75, 68, 45, 42, 69, 73, 81, 76, 78, 49, 48, 72, 80, 85, 83, 86, 58, 52, 82, 88]
+  var days = requests.map(function (value, index) { return 'Nov ' + (index + 1) })
+  var average = requests.map(function (value, index) {
+    var week = requests.slice(Math.max(0, index - 6), index + 1)
+    return Math.round(week.reduce(function (sum, next) { return sum + next }, 0) / week.length)
+  })
+  MasterUI.chart(document.getElementById('november'), {
+    type: 'bar',
+    label: 'Requests per day in November, in thousands',
+    labels: days,
+    series: [
+      { name: 'Requests', values: requests },
+      { name: 'Weekly average', type: 'line', values: average, category: 'orange' }
+    ]
+  })
+})
+</script>`} />
+
+## 옵션 \{#options\}
+
+| 옵션 | 기본값 | |
+| --- | --- | --- |
+| `label` | 없음 | 차트가 무엇을 어떤 단위로 보여 주는지 알려 주는, 그래프 영역의 접근 가능한 이름 |
+| `labels` | `[]` | 눈금을 따라 놓이는 이름 또는 레이더 둘레에 놓이는 이름 |
+| `series` | `[]` | 각 계열에는 `name`과 `values`를 지정합니다. 조각이나 링에는 `value`를, 산점도에는 `points`를 지정합니다. 선택적으로 `category`, `type`, 링의 `max`를 지정할 수 있습니다 |
+| `stacked` | `false` | 막대 또는 영역이 서로 위에 쌓입니다 |
+| `horizontal` | `false` | 막대가 가로로 놓입니다 |
+| `min`, `max`, `ticks` | 데이터에 맞춤, `4` | 눈금의 양 끝과 눈금을 표시하는 대략적인 단계 수. 산점도의 가로 눈금에는 `xMin`, `xMax`, `xTicks`를 사용합니다 |
+| `axis` | `true` | 눈금 숫자를 적을지 여부. `false`이면 가는 선만 남으며, 타일 안의 작은 차트에 사용합니다 |
+| `format`, `tickFormat` | 로캘의 형식 | 값과 눈금 숫자를 적는 방식. 산점도의 가로 눈금에는 `xFormat`을 사용합니다 |
+| `dots`, `values` | `false` | 선의 모든 지점을 점으로 표시합니다. 모든 막대의 값을 적습니다 |
+| `current` | 없음 | `aria-current`로 표시하는 지점의 인덱스 |
+| `legend`, `toggle` | 계열이 둘이면 작성, `true` | 범례를 작성할지 여부와 범례 항목을 체크박스로 만들지 여부 |
+
+값 표시창, 키 조작, 범례, 색, 눈금은 모든 형식에서 같습니다. [차트](/components/chart) 페이지에 모든 옵션, 클래스, 사용자 정의 속성과 함께 정리되어 있습니다.
+
+## 관련 항목 \{#related\}
+
+<ComponentLinks kind="charts" slugs={['line', 'area', 'radar']} />
+
+<ComponentLinks slugs={['breakdown', 'meter']} />

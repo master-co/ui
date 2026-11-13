@@ -1,0 +1,101 @@
+---
+title: "面グラフ"
+description: "線の下を同じ色で淡く塗ります。単独でも、積み上げて合計を示すこともできます。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+
+面は、折れ線の下にその色の淡い塗りを敷いたもので、塗りは下に向かって薄れていきます。1つか2つの系列に、ページ上でより大きな存在感を与えます。系列がそれより多いと塗りどうしが重なって隠れるため、折れ線のほうが読みやすくなります。
+
+<ComponentPreview name="area" height={434} title="面グラフ" bodyClass="p-lg" behaviors html={`<div class="card max-w(560) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Requests</h3>
+    <p class="card-description">Millions per month, by region</p>
+  </div>
+  <figure class="chart" id="requests"></figure>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.chart(document.getElementById('requests'), {
+    type: 'area',
+    label: 'Requests per month by region, in millions',
+    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+    series: [
+      { name: 'Tokyo', values: [32, 36, 34, 41, 46, 44, 52, 56, 54, 61, 68, 72] },
+      { name: 'Frankfurt', values: [12, 14, 18, 17, 22, 26, 25, 30, 34, 33, 39, 42] }
+    ]
+  })
+})
+</script>`} caption="月にポインターを重ねるか、Tabキーと矢印キーを押すと、その月の値を読めます。凡例の項目で、その系列を非表示にできます。" />
+
+## 積み上げ \{#stacked\}
+
+系列が合計の内訳である場合は、`stacked`を指定します。各層は前の層の上に積み重なるため、上端が合計になります。各層は薄れていく塗りではなく、その層自身の淡い色で塗られます。
+
+<ComponentPreview name="stacked-area" height={434} title="積み上げ面" bodyClass="p-lg" behaviors html={`<div class="card max-w(560) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Visits</h3>
+    <p class="card-description">Thousands per month, by source</p>
+  </div>
+  <figure class="chart" id="visits"></figure>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.chart(document.getElementById('visits'), {
+    type: 'area',
+    stacked: true,
+    label: 'Visits per month by source, in thousands',
+    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+    series: [
+      { name: 'Direct', values: [120, 130, 125, 150, 160, 155, 170, 180, 175, 190, 210, 220] },
+      { name: 'Search', values: [80, 95, 110, 105, 130, 150, 145, 160, 185, 180, 200, 230] },
+      { name: 'Social', values: [40, 45, 60, 55, 70, 65, 90, 85, 100, 120, 110, 140] }
+    ]
+  })
+})
+</script>`} />
+
+## 系列が1つの場合 \{#one\}
+
+系列が1つのチャートはインクで描かれ、系列に `category` を指定したときだけ色が付きます。
+
+<ComponentPreview name="one" height={396} title="系列が1つの場合" bodyClass="p-lg" behaviors html={`<div class="card max-w(560) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Revenue</h3>
+    <p class="card-description">Dollars per month, this year</p>
+  </div>
+  <figure class="chart" id="revenue"></figure>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.chart(document.getElementById('revenue'), {
+    type: 'area',
+    label: 'Revenue per month, in dollars',
+    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+    series: [{ name: 'Revenue', values: [2100, 2400, 2250, 2900, 3300, 3150, 3700, 4100, 3950, 4600, 5200, 5600] }],
+    format: function (value) { return '$' + value.toLocaleString('en-US') }
+  })
+})
+</script>`} />
+
+## オプション \{#options\}
+
+| オプション | 既定値 | |
+| --- | --- | --- |
+| `label` | なし | チャートが何をどの単位で示すか。プロットのアクセシブルな名前になります |
+| `labels` | `[]` | スケールに沿って、またはレーダーチャートの周囲に並ぶ名前 |
+| `series` | `[]` | それぞれが`name`と`values`を持ちます。スライスやリングでは`value`、散布図では`points`を指定します。任意で`category`、`type`、リングの`max`を指定できます |
+| `stacked` | `false` | 棒または面を積み重ねます |
+| `curve` | `'smooth'` | `smooth`、`linear`、`step`のいずれか |
+| `min`、`max`、`ticks` | 自動調整、`4` | スケールの両端と、目盛りのおおよその段階数。散布図の横方向のスケールには`xMin`、`xMax`、`xTicks`を使います |
+| `format`、`tickFormat` | ロケールの書式 | 値と目盛りの書式。散布図の横方向のスケールには`xFormat`を使います |
+| `legend`、`toggle` | 系列が2つ以上あれば表示、`true` | 凡例を書き出すかどうかと、その項目をチェックボックスにするかどうか |
+
+値表示、キー操作、凡例、色、目盛りはどの種類でも共通です。[チャート](/components/chart)のページに、すべてのオプション、クラス、カスタムプロパティとあわせてまとめています。
+
+## 関連項目 \{#related\}
+
+<ComponentLinks kind="charts" slugs={['line', 'bar']} />
+
+<ComponentLinks slugs={['sparkline']} />

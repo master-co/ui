@@ -1,0 +1,107 @@
+---
+title: "折线图"
+description: "用折线连接各点，呈现前后相连的数值变化。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+
+折线呈现前后相续的数值，例如各月的延迟、每天的价格。图表中没有条形时，折线从绘图区的一侧边缘延伸到另一侧边缘。指针所在的刻度位置由一条细线标出，每个数据系列在该位置的数值由一个圆点标出。
+
+<ComponentPreview name="line" height={434} title="折线图" bodyClass="p-lg" behaviors html={`<div class="card max-w(560) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Latency</h3>
+    <p class="card-description">Median by region, in milliseconds</p>
+  </div>
+  <figure class="chart" id="latency"></figure>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.chart(document.getElementById('latency'), {
+    type: 'line',
+    label: 'Median latency per month by region, in milliseconds',
+    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+    series: [
+      { name: 'Tokyo', values: [42, 44, 41, 47, 52, 49, 46, 44, 48, 53, 51, 47] },
+      { name: 'Frankfurt', values: [61, 58, 63, 66, 62, 59, 57, 60, 64, 69, 66, 61] },
+      { name: 'Virginia', values: [78, 74, 71, 75, 80, 86, 83, 79, 76, 81, 85, 82] }
+    ]
+  })
+})
+</script>`} />
+
+## 曲线 \{#curve\}
+
+`curve` 决定折线如何从一个数据点走到下一个数据点。默认值 `smooth` 是一条不会越过数值的曲线：它不会高出数据中不存在的峰值，也不会低于数据中不存在的谷值。`linear` 绘制直线段。`step` 让每个数值保持到下一个数值出现，适用于一次性变化的量，例如套餐的席位数或价格。
+
+<ComponentPreview name="step" height={348} title="阶梯线" bodyClass="p-lg" behaviors html={`<div class="card max-w(560) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Seats</h3>
+    <p class="card-description">On the plan, this year</p>
+  </div>
+  <figure class="chart" id="seats" style="--chart-height: 11rem"></figure>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.chart(document.getElementById('seats'), {
+    type: 'line',
+    curve: 'step',
+    label: 'Seats on the plan per month',
+    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+    series: [{ name: 'Seats', values: [12, 12, 12, 20, 20, 20, 20, 32, 32, 32, 40, 40] }],
+    max: 40
+  })
+})
+</script>`} />
+
+## 缺口与数据点 \{#gaps\}
+
+值为 `null` 时，折线在该处留出缺口，对应的数据点只说明有数值的数据系列。`dots: true` 会标出折线上的每个数据点，而不只是指针所在的那一个；仅在折线只有少数几个数据点时使用。
+
+<ComponentPreview name="gaps" height={348} title="带缺口并标出数据点" bodyClass="p-lg" behaviors html={`<div class="card max-w(560) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Uptime</h3>
+    <p class="card-description">Percent per month; no reading in May</p>
+  </div>
+  <figure class="chart" id="uptime" style="--chart-height: 11rem"></figure>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.chart(document.getElementById('uptime'), {
+    type: 'line',
+    curve: 'linear',
+    dots: true,
+    min: 99,
+    max: 100,
+    label: 'Uptime per month, in percent',
+    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'],
+    series: [{ name: 'Uptime', values: [99.92, 99.97, 99.81, 99.95, null, 99.64, 99.9, 99.98] }],
+    format: function (value) { return value + '%' }
+  })
+})
+</script>`} />
+
+## 叠在条形上的折线 \{#over-bars\}
+
+在[条形图](/charts/bar#many)中，设置了 `type: 'line'` 的系列会以折线叠在条形之上，并使用同一刻度，例如目标值或移动平均。
+
+## 选项 \{#options\}
+
+| 选项 | 默认值 | |
+| --- | --- | --- |
+| `label` | 无 | 图表展示的内容及其单位，即绘图区的无障碍名称 |
+| `labels` | `[]` | 沿刻度排列的名称，或雷达图四周的名称 |
+| `series` | `[]` | 每个系列包含 `name` 和 `values`，扇区或圆环使用 `value`，散点图使用 `points`；还可选填 `category`、`type` 和圆环的 `max` |
+| `curve` | `'smooth'` | `smooth`、`linear` 或 `step` |
+| `min`, `max`, `ticks` | 自动适配，`4` | 刻度的两端，以及大约分几段标出；散点图的横向刻度使用 `xMin`、`xMax` 和 `xTicks` |
+| `format`, `tickFormat` | 按 locale 的格式 | 数值和刻度数字的书写方式；散点图的横向刻度使用 `xFormat` |
+| `dots`, `values` | `false` | 标出折线上的每个数据点；写出每根条形的数值 |
+| `legend`, `toggle` | 有两个数据系列时生成，`true` | 是否生成图例，以及图例项是否为复选框 |
+
+数值提示、键盘操作、图例、颜色和刻度在每种图表类型中都相同：[图表](/components/chart)页面有完整说明，并列出全部选项、类名和自定义属性。
+
+## 相关内容 \{#related\}
+
+<ComponentLinks kind="charts" slugs={['area', 'bar', 'scatter']} />
+
+<ComponentLinks slugs={['sparkline']} />

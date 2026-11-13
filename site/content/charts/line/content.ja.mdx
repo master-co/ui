@@ -1,0 +1,107 @@
+---
+title: "折れ線グラフ"
+description: "連続して変化する値を、点から点へ結ぶ線で表します。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+
+折れ線は、月ごとのレイテンシや日ごとの価格のように、前の値から次の値へと続いていく値をたどります。チャートに棒がなければ、折れ線はプロットの端から端まで伸びます。ポインターを重ねると、細線がその区分を示し、ドットがその区分での各系列の値を示します。
+
+<ComponentPreview name="line" height={434} title="折れ線" bodyClass="p-lg" behaviors html={`<div class="card max-w(560) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Latency</h3>
+    <p class="card-description">Median by region, in milliseconds</p>
+  </div>
+  <figure class="chart" id="latency"></figure>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.chart(document.getElementById('latency'), {
+    type: 'line',
+    label: 'Median latency per month by region, in milliseconds',
+    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+    series: [
+      { name: 'Tokyo', values: [42, 44, 41, 47, 52, 49, 46, 44, 48, 53, 51, 47] },
+      { name: 'Frankfurt', values: [61, 58, 63, 66, 62, 59, 57, 60, 64, 69, 66, 61] },
+      { name: 'Virginia', values: [78, 74, 71, 75, 80, 86, 83, 79, 76, 81, 85, 82] }
+    ]
+  })
+})
+</script>`} />
+
+## 曲線 \{#curve\}
+
+`curve`は、折れ線がポイントからポイントへどう進むかを指定します。既定の`smooth`は、値を行き過ぎることのない曲線です。データにない山より高くなることも、データにない谷より低くなることもありません。`linear`は直線の線分を描きます。`step`は次の値まで各値を保ち、プランの席数や価格のように、一度に切り替わる量に使います。
+
+<ComponentPreview name="step" height={348} title="階段状" bodyClass="p-lg" behaviors html={`<div class="card max-w(560) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Seats</h3>
+    <p class="card-description">On the plan, this year</p>
+  </div>
+  <figure class="chart" id="seats" style="--chart-height: 11rem"></figure>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.chart(document.getElementById('seats'), {
+    type: 'line',
+    curve: 'step',
+    label: 'Seats on the plan per month',
+    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+    series: [{ name: 'Seats', values: [12, 12, 12, 20, 20, 20, 20, 32, 32, 32, 40, 40] }],
+    max: 40
+  })
+})
+</script>`} />
+
+## 欠損と点 \{#gaps\}
+
+値が`null`の箇所では折れ線が途切れ、そのポイントは値のある系列だけを伝えます。`dots: true`は、ポインターを重ねたポイントだけでなく、折れ線のすべてのポイントにドットを付けます。ポイントの少ない折れ線に限って使います。
+
+<ComponentPreview name="gaps" height={348} title="欠損と点の表示" bodyClass="p-lg" behaviors html={`<div class="card max-w(560) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Uptime</h3>
+    <p class="card-description">Percent per month; no reading in May</p>
+  </div>
+  <figure class="chart" id="uptime" style="--chart-height: 11rem"></figure>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.chart(document.getElementById('uptime'), {
+    type: 'line',
+    curve: 'linear',
+    dots: true,
+    min: 99,
+    max: 100,
+    label: 'Uptime per month, in percent',
+    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'],
+    series: [{ name: 'Uptime', values: [99.92, 99.97, 99.81, 99.95, null, 99.64, 99.9, 99.98] }],
+    format: function (value) { return value + '%' }
+  })
+})
+</script>`} />
+
+## 棒の上に重ねる線 \{#over-bars\}
+
+[棒グラフ](/charts/bar#many)の中で `type: 'line'` を指定した系列は、同じ目盛りを使って棒の上に線として描かれます。目標値や移動平均に使います。
+
+## オプション \{#options\}
+
+| オプション | 既定値 | |
+| --- | --- | --- |
+| `label` | なし | チャートが何をどの単位で示すか。プロットのアクセシブルな名前になります |
+| `labels` | `[]` | スケールに沿って、またはレーダーチャートの周囲に並ぶ名前 |
+| `series` | `[]` | それぞれが`name`と`values`を持ちます。スライスやリングでは`value`、散布図では`points`を指定します。任意で`category`、`type`、リングの`max`を指定できます |
+| `curve` | `'smooth'` | `smooth`、`linear`、`step`のいずれか |
+| `min`、`max`、`ticks` | 自動調整、`4` | スケールの両端と、目盛りのおおよその段階数。散布図の横方向のスケールには`xMin`、`xMax`、`xTicks`を使います |
+| `format`、`tickFormat` | ロケールの書式 | 値と目盛りの書式。散布図の横方向のスケールには`xFormat`を使います |
+| `dots`、`values` | `false` | 折れ線のすべてのポイントにドットを付けます。すべての棒の値を書き出します |
+| `legend`、`toggle` | 系列が2つ以上あれば表示、`true` | 凡例を書き出すかどうかと、その項目をチェックボックスにするかどうか |
+
+値表示、キー操作、凡例、色、目盛りはどの種類でも共通です。[チャート](/components/chart)のページに、すべてのオプション、クラス、カスタムプロパティとあわせてまとめています。
+
+## 関連項目 \{#related\}
+
+<ComponentLinks kind="charts" slugs={['area', 'bar', 'scatter']} />
+
+<ComponentLinks slugs={['sparkline']} />

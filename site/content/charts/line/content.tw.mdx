@@ -1,0 +1,107 @@
+---
+title: "折線圖"
+description: "用折線連接各點，呈現前後相連的數值變化。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+
+折線適合呈現前後相連的數值，例如各月的延遲時間、每日的價格。圖表中沒有長條時，折線會從繪圖區的一側延伸到另一側。指標所在處會以一條細線標示該格，並以圓點標示各序列在該格的數值。
+
+<ComponentPreview name="line" height={434} title="折線圖" bodyClass="p-lg" behaviors html={`<div class="card max-w(560) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Latency</h3>
+    <p class="card-description">Median by region, in milliseconds</p>
+  </div>
+  <figure class="chart" id="latency"></figure>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.chart(document.getElementById('latency'), {
+    type: 'line',
+    label: 'Median latency per month by region, in milliseconds',
+    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+    series: [
+      { name: 'Tokyo', values: [42, 44, 41, 47, 52, 49, 46, 44, 48, 53, 51, 47] },
+      { name: 'Frankfurt', values: [61, 58, 63, 66, 62, 59, 57, 60, 64, 69, 66, 61] },
+      { name: 'Virginia', values: [78, 74, 71, 75, 80, 86, 83, 79, 76, 81, 85, 82] }
+    ]
+  })
+})
+</script>`} />
+
+## 曲線 \{#curve\}
+
+`curve` 決定折線如何從一個點連到下一個點。預設的 `smooth` 是絕不超出數值的曲線：它不會高過資料中沒有的波峰，也不會低於資料中沒有的波谷。`linear` 畫出直線段，`step` 則讓每個數值維持到下一個數值為止，適合一次變動到位的數量，例如方案的席次或價格。
+
+<ComponentPreview name="step" height={348} title="階梯線" bodyClass="p-lg" behaviors html={`<div class="card max-w(560) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Seats</h3>
+    <p class="card-description">On the plan, this year</p>
+  </div>
+  <figure class="chart" id="seats" style="--chart-height: 11rem"></figure>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.chart(document.getElementById('seats'), {
+    type: 'line',
+    curve: 'step',
+    label: 'Seats on the plan per month',
+    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+    series: [{ name: 'Seats', values: [12, 12, 12, 20, 20, 20, 20, 32, 32, 32, 40, 40] }],
+    max: 40
+  })
+})
+</script>`} />
+
+## 缺口與資料點 \{#gaps\}
+
+數值為 `null` 時，折線會在該處留下缺口，該資料點也只說出有數值的序列。`dots: true` 會標出折線上的每個點，不只是指標所在的那一點；請只用於點數不多的折線。
+
+<ComponentPreview name="gaps" height={348} title="有缺口並標出資料點" bodyClass="p-lg" behaviors html={`<div class="card max-w(560) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Uptime</h3>
+    <p class="card-description">Percent per month; no reading in May</p>
+  </div>
+  <figure class="chart" id="uptime" style="--chart-height: 11rem"></figure>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.chart(document.getElementById('uptime'), {
+    type: 'line',
+    curve: 'linear',
+    dots: true,
+    min: 99,
+    max: 100,
+    label: 'Uptime per month, in percent',
+    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'],
+    series: [{ name: 'Uptime', values: [99.92, 99.97, 99.81, 99.95, null, 99.64, 99.9, 99.98] }],
+    format: function (value) { return value + '%' }
+  })
+})
+</script>`} />
+
+## 疊在長條上的折線 \{#over-bars\}
+
+在[長條圖](/charts/bar#many)中，設定 `type: 'line'` 的序列會以折線疊在長條上，並使用同一個刻度，例如目標值或移動平均。
+
+## 選項 \{#options\}
+
+| 選項 | 預設值 | |
+| --- | --- | --- |
+| `label` | 無 | 圖表呈現的內容及單位，也就是繪圖區的無障礙名稱 |
+| `labels` | `[]` | 沿著刻度排列的名稱，或環繞雷達圖的名稱 |
+| `series` | `[]` | 每組序列都有 `name` 和 `values`；扇形或圓環改用 `value`，散佈圖改用 `points`；另可選擇性提供 `category`、`type`，以及圓環的 `max` |
+| `curve` | `'smooth'` | `smooth`、`linear` 或 `step` |
+| `min`, `max`, `ticks` | 自動配合、`4` | 刻度的兩端，以及大約用幾格標示；散佈圖的橫向刻度使用 `xMin`、`xMax` 和 `xTicks` |
+| `format`, `tickFormat` | 依語系 | 數值和刻度標記的寫法；散佈圖的橫向刻度使用 `xFormat` |
+| `dots`, `values` | `false` | 標出折線上的每個點；寫出每根長條的數值 |
+| `legend`, `toggle` | 有兩組序列時寫出、`true` | 是否寫出圖例，以及圖例項目是否為核取方塊 |
+
+數值提示、鍵盤操作、圖例、顏色與刻度在每種圖表類型中都相同：[圖表](/components/chart)頁面有完整說明，並列出所有選項、類別與自訂屬性。
+
+## 相關元件 \{#related\}
+
+<ComponentLinks kind="charts" slugs={['area', 'bar', 'scatter']} />
+
+<ComponentLinks slugs={['sparkline']} />

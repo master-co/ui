@@ -1,0 +1,198 @@
+---
+title: "長條圖"
+description: "以立在基線上的長條比較數量，可並排、堆疊或橫向排列。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+
+長條用來比較數量，例如一週的每一天、一年的各季。每根長條都立在基線上、位於所屬那一格的正中央，遠離基線的一端為圓角。指標移到某一格時，其他長條會立即退為淡色，而且指標的感應範圍是整格，因此矮的長條和高的長條一樣容易讀取。
+
+<ComponentPreview name="bar" height={348} title="長條圖" bodyClass="p-lg" behaviors html={`<div class="card max-w(440) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Deployments</h3>
+    <p class="card-description">311 this week</p>
+  </div>
+  <figure class="chart" id="deployments" style="--chart-height: 11rem"></figure>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.chart(document.getElementById('deployments'), {
+    type: 'bar',
+    label: 'Deployments per day, this week',
+    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    series: [{ name: 'Deployments', values: [42, 58, 36, 71, 64, 22, 18] }]
+  })
+})
+</script>`} />
+
+小於零的數值會從基線向下垂掛，此時基線位於零的位置。數值為零時，基線上仍會留下一道短線，因此沒有數值的那一天仍然占有一天的位置。
+
+<ComponentPreview name="below" height={348} title="零值上下" bodyClass="p-lg" behaviors html={`<div class="card max-w(440) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Net change</h3>
+    <p class="card-description">Accounts gained and lost per month</p>
+  </div>
+  <figure class="chart" id="net" style="--chart-height: 11rem"></figure>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.chart(document.getElementById('net'), {
+    type: 'bar',
+    label: 'Net change in accounts per month',
+    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'],
+    series: [{ name: 'Net change', values: [12, -8, 20, -15, 6, 0, 18, 9] }]
+  })
+})
+</script>`} />
+
+## 凸顯單一長條 \{#quiet\}
+
+在圖表上加上 `chart-quiet`，長條會改為淡色，墨色只留給標有 `aria-current` 的資料點，例如一週中的今天，或讀者目前使用的方案。請用 `current` 提供它的索引。`values: true` 會在每根長條的末端寫出數值，適用於長條不多且重點是精確數字的情況，或沒有懸停操作的觸控螢幕。
+
+<ComponentPreview name="quiet" height={348} title="低調樣式並標示數值" bodyClass="p-lg" behaviors html={`<div class="card max-w(440) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Build minutes</h3>
+    <p class="card-description">Thursday so far</p>
+  </div>
+  <figure class="chart chart-quiet" id="minutes" style="--chart-height: 10rem"></figure>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.chart(document.getElementById('minutes'), {
+    type: 'bar',
+    current: 3,
+    values: true,
+    label: 'Build minutes per day, this week',
+    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    series: [{ name: 'Minutes', values: [62, 48, 75, 54, 88, 30, 26] }]
+  })
+})
+</script>`} />
+
+## 並排或堆疊 \{#stacked\}
+
+多組序列會在每一格中並排，方便彼此比較。設定 `stacked` 後，它們會彼此堆疊，用來比較總和並呈現各總和的組成：一疊長條中只有最外側的那根有圓角，長條之間以一道表面色的間隙分開。數值提示會依畫面所見，從堆疊的頂端往下列出。
+
+<ComponentPreview name="grouped" height={386} title="並排" bodyClass="p-lg" behaviors html={`<div class="card max-w(440) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Plan</h3>
+    <p class="card-description">Actual against plan, by quarter</p>
+  </div>
+  <figure class="chart" id="plan" style="--chart-height: 11rem"></figure>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.chart(document.getElementById('plan'), {
+    type: 'bar',
+    label: 'Planned and actual revenue by quarter, in thousands of dollars',
+    labels: ['Q1', 'Q2', 'Q3', 'Q4'],
+    series: [
+      { name: 'Plan', values: [40, 55, 60, 75] },
+      { name: 'Actual', values: [36, 58, 71, 69] }
+    ]
+  })
+})
+</script>`} />
+
+<ComponentPreview name="stacked" height={386} title="堆疊長條圖" bodyClass="p-lg" behaviors html={`<div class="card max-w(440) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Tickets</h3>
+    <p class="card-description">Opened per day, by priority</p>
+  </div>
+  <figure class="chart" id="tickets" style="--chart-height: 11rem"></figure>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.chart(document.getElementById('tickets'), {
+    type: 'bar',
+    stacked: true,
+    label: 'Tickets opened per day by priority',
+    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    series: [
+      { name: 'Low', values: [12, 18, 14, 22, 19, 8, 6] },
+      { name: 'Normal', values: [20, 24, 18, 30, 26, 10, 9] },
+      { name: 'Urgent', values: [5, 9, 4, 12, 10, 3, 2] }
+    ]
+  })
+})
+</script>`} />
+
+## 橫向 \{#across\}
+
+`horizontal` 讓長條改為橫向，每個名稱占一列，適用於名稱比直欄寬度還長的排名。名稱位於各列旁，刻度位於下方；超過十八個字元的名稱會被截斷，數值提示則會顯示完整名稱。
+
+<ComponentPreview name="across" height={348} title="橫向" bodyClass="p-lg" behaviors html={`<div class="card max-w(520) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Top pages</h3>
+    <p class="card-description">Visitors in the last 7 days</p>
+  </div>
+  <figure class="chart" id="pages" style="--chart-height: 11rem"></figure>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.chart(document.getElementById('pages'), {
+    type: 'bar',
+    horizontal: true,
+    values: true,
+    label: 'Pages by visitors in the last 7 days',
+    labels: ['Installation', 'Button', 'Dialog', 'Default theme', 'Command'],
+    series: [{ name: 'Visitors', values: [4820, 3112, 2240, 1360, 412] }]
+  })
+})
+</script>`} />
+
+## 長條較多時，以及疊在上方的折線 \{#many\}
+
+各格平分寬度，因此原本放一週的位置也放得下一個月，繪圖區下方最多顯示十二個名稱；繪圖區窄於 24rem 時，名稱會每隔一個省略一個。帶有 `type: 'line'` 的序列會以折線畫在長條上方，並使用同一刻度，例如目標值或移動平均。兩個刻度不同的量值應分成兩個圖表，絕不要在同一個圖表的兩側各放一個刻度。
+
+<ComponentPreview name="many" height={434} narrowHeight={454} title="三十天" bodyClass="p-lg" responsive behaviors html={`<div class="card max-w(600) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Requests</h3>
+    <p class="card-description">Thousands per day in November, with the weekly average</p>
+  </div>
+  <figure class="chart" id="november"></figure>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  var requests = [49, 52, 58, 61, 44, 37, 56, 60, 64, 72, 75, 68, 45, 42, 69, 73, 81, 76, 78, 49, 48, 72, 80, 85, 83, 86, 58, 52, 82, 88]
+  var days = requests.map(function (value, index) { return 'Nov ' + (index + 1) })
+  var average = requests.map(function (value, index) {
+    var week = requests.slice(Math.max(0, index - 6), index + 1)
+    return Math.round(week.reduce(function (sum, next) { return sum + next }, 0) / week.length)
+  })
+  MasterUI.chart(document.getElementById('november'), {
+    type: 'bar',
+    label: 'Requests per day in November, in thousands',
+    labels: days,
+    series: [
+      { name: 'Requests', values: requests },
+      { name: 'Weekly average', type: 'line', values: average, category: 'orange' }
+    ]
+  })
+})
+</script>`} />
+
+## 選項 \{#options\}
+
+| 選項 | 預設值 | |
+| --- | --- | --- |
+| `label` | 無 | 圖表呈現的內容及單位，也就是繪圖區的無障礙名稱 |
+| `labels` | `[]` | 沿著刻度排列的名稱，或環繞雷達圖的名稱 |
+| `series` | `[]` | 每組序列都有 `name` 和 `values`；扇形或圓環改用 `value`，散佈圖改用 `points`；另可選擇性提供 `category`、`type`，以及圓環的 `max` |
+| `stacked` | `false` | 長條或面積彼此堆疊 |
+| `horizontal` | `false` | 長條橫向延伸 |
+| `min`, `max`, `ticks` | 自動配合、`4` | 刻度的兩端，以及大約用幾格標示；散佈圖的橫向刻度使用 `xMin`、`xMax` 和 `xTicks` |
+| `axis` | `true` | 是否寫出刻度數字；`false` 只保留細線，適用於資訊小卡中的小型圖表 |
+| `format`, `tickFormat` | 依語系 | 數值和刻度標記的寫法；散佈圖的橫向刻度使用 `xFormat` |
+| `dots`, `values` | `false` | 標出折線上的每個點；寫出每根長條的數值 |
+| `current` | 無 | 標有 `aria-current` 的資料點的索引 |
+| `legend`, `toggle` | 有兩組序列時寫出、`true` | 是否寫出圖例，以及圖例項目是否為核取方塊 |
+
+數值提示、鍵盤操作、圖例、顏色與刻度在每種圖表類型中都相同：[圖表](/components/chart)頁面有完整說明，並列出所有選項、類別與自訂屬性。
+
+## 相關元件 \{#related\}
+
+<ComponentLinks kind="charts" slugs={['line', 'area', 'radar']} />
+
+<ComponentLinks slugs={['breakdown', 'meter']} />
