@@ -15,7 +15,7 @@ import { execFileSync } from 'node:child_process'
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join, posix } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { blocks, components, pageOfContract, pages as pageLayouts } from '../components/catalog.ts'
+import { blocks, charts, components, pageOfContract, pages as pageLayouts } from '../components/catalog.ts'
 import { exampleSource } from '../utils/framework-example.ts'
 import { example as exampleOf, exampleFiles, exampleSetup } from '../utils/examples.ts'
 import { previewMarkdown } from '../utils/preview-markdown.ts'
@@ -164,7 +164,7 @@ function mdxMarkdown(source: string, title: string, description: string, locale 
     .replace(/<ComponentSource name="([^"]+)"(?: directory="([^"]+)")? \/>/g, (_, name, directory = 'components') => `\`\`\`css\n${read(join(ui, directory, `${name}.css`)).trim()}\n\`\`\``)
     .replace(/<ComponentLinks slugs=\{\[([^\]]*)\]\}(?: kind="(\w+)")? \/>/g, (_, slugs, kind = 'components') => slugs.split(',').map((slug: string) => slug.trim().replace(/['"]/g, '')).filter(Boolean).map((slug: string) => `- [${slug}](${link(kind, slug)})`).join('\n'))
     .replace(/<Contract\w* [^>]*\/>/g, '')
-    .replace(/\]\(\/(guide|components|blocks|pages)\/([\w-]+)(#[\w-]+)?\)/g, (_, section, slug, hash = '') => `](${link(section, slug, hash)})`)
+    .replace(/\]\(\/(guide|components|charts|blocks|pages)\/([\w-]+)(#[\w-]+)?\)/g, (_, section, slug, hash = '') => `](${link(section, slug, hash)})`)
     .replace(/\n{3,}/g, '\n\n')
     .trim()
   return `# ${title}\n\n${description}\n\n${anchorMarkdown(body)}\n`
@@ -176,7 +176,7 @@ const metadataOf = (file: string) => {
   return { title, description: /description: '((?:[^'\\]|\\.)*)'/.exec(source)?.[1].replace(/\\'/g, '\'') ?? '', order: Number(/order: (\d+)/.exec(source)?.[1] ?? 99), category: /category: '([^']+)'/.exec(source)?.[1] ?? '' }
 }
 
-const pages: Record<string, { slug: string, title: string, description: string }[]> = { guide: [], components: [], blocks: [], pages: [] }
+const pages: Record<string, { slug: string, title: string, description: string }[]> = { guide: [], components: [], charts: [], blocks: [], pages: [] }
 
 for (const slug of readdirSync(join(site, 'content/guide'))) {
   const directory = join(site, 'content/guide', slug)
@@ -200,7 +200,7 @@ for (const item of components) {
     ? contractMarkdown(contract)
     : mdxMarkdown(read(join(site, 'content/components', item.slug, 'content.mdx')), item.name, item.description) + (contract ? `\n---\n\n${contractMarkdown(contract)}` : ''))
 }
-for (const [kind, list] of [['blocks', blocks], ['pages', pageLayouts]] as const) {
+for (const [kind, list] of [['charts', charts], ['blocks', blocks], ['pages', pageLayouts]] as const) {
   for (const item of list) {
     const source = read(join(site, 'content', kind, item.slug, 'content.mdx'))
     const contract = kind === 'pages' ? contractOf.get(item.slug === 'app-shell' ? 'shell' : item.slug) : undefined
@@ -255,6 +255,10 @@ ${links('guide')}
 ## ${t(locale, 'Components')}
 
 ${links('components')}
+
+## ${t(locale, 'Charts')}
+
+${links('charts')}
 
 ## ${t(locale, 'Blocks')}
 

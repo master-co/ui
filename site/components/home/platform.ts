@@ -4,6 +4,8 @@
  * browser without a feature shows is on /guide/browser-support, linked above the bento. Ids are prefixed, since
  * other sections render live markup too.
  */
+import { chartMarkup } from '@master/ui/behaviors/chart.js'
+
 export interface PlatformFeature {
   id: string
   /** The tile's span in the library's bento: one cell, two columns, two rows, or both. */
@@ -125,15 +127,7 @@ ${slides.map(([file, alt]) => `  <figure class="carousel-slide figure">
       <label class="segmented-item"><input type="radio" class="segmented-input" name="platform-period" value="month">Month</label>
     </div>
   </header>
-  <ol class="chart chart-quiet ui-chart-brand" style="--chart-max: 250" aria-label="Requests per day, this week, in thousands">
-    <li class="chart-item" style="--value: 148"><span class="chart-label">Mon</span><span class="chart-value">148k</span></li>
-    <li class="chart-item" style="--value: 176"><span class="chart-label">Tue</span><span class="chart-value">176k</span></li>
-    <li class="chart-item" style="--value: 162"><span class="chart-label">Wed</span><span class="chart-value">162k</span></li>
-    <li class="chart-item" style="--value: 214"><span class="chart-label">Thu</span><span class="chart-value">214k</span></li>
-    <li class="chart-item" aria-current="true" style="--value: 238"><span class="chart-label">Fri</span><span class="chart-value">238k</span></li>
-    <li class="chart-item" style="--value: 171"><span class="chart-label">Sat</span><span class="chart-value">171k</span></li>
-    <li class="chart-item" style="--value: 171"><span class="chart-label">Sun</span><span class="chart-value">171k</span></li>
-  </ol>
+  <figure class="chart chart-quiet ui-chart-brand">${chartMarkup({ type: 'bar', label: 'Requests per day, this week, in thousands', labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], series: [{ name: 'Requests', values: [148, 176, 162, 214, 238, 171, 171] }], max: 250, ticks: 5, current: 4, format: value => `${value}k` })}</figure>
 </section>`,
   },
   {

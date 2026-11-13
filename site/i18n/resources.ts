@@ -21,7 +21,7 @@ export const translatedLocales = locales.filter(locale => locale !== 'en')
 const untranslated = new Set(['GitHub', 'X', 'Discord', 'Master', 'Master CSS', 'Master Design', 'Master UI'])
 
 /** Source files that render product interface copy. */
-const interfaceRoots = ['components', 'layouts', 'sections', 'utils', 'content/page.astro', 'content/components/page.astro', 'content/blocks/page.astro', 'content/pages/page.astro', 'navigation.ts', 'app-config.ts']
+const interfaceRoots = ['components', 'layouts', 'sections', 'utils', 'content/page.astro', 'content/components/page.astro', 'content/charts/page.astro', 'content/blocks/page.astro', 'content/pages/page.astro', 'navigation.ts', 'app-config.ts']
 
 /**
  * Data modules whose strings reach the page through `t(item.property)`. Each lists the properties that are prose;
@@ -97,7 +97,7 @@ export async function productUIKeys(): Promise<string[]> {
   }
   // The guide's sidebar categories, and keys only a dynamic `t(value)` reaches, listed by hand in `en.json`.
   for (const category of JSON.parse(await readFile(path.join(siteRoot, '.categories/guide.json'), 'utf8')) as { name: string }[]) keys.add(category.name)
-  for (const section of ['components', 'blocks', 'pages']) {
+  for (const section of ['components', 'charts', 'blocks', 'pages']) {
     const source = await readFile(path.join(contentRoot, section, 'metadata.ts'), 'utf8')
     for (const text of propertyTexts(source, ['absolute', 'description', 'subject', 'category'])) keys.add(text)
   }

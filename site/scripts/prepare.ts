@@ -1,6 +1,6 @@
 /**
  * Generate the documentation sidebars and the search index from content metadata.
- * Each section of the site (the guide, components, blocks, pages) has a sidebar of its own, so a reader
+ * Each section of the site (the guide, components, charts, blocks, pages) has a sidebar of its own, so a reader
  * of one section is not handed the list of another. Runs before `astro dev`, `astro build` and type checks.
  */
 import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises'
@@ -17,6 +17,8 @@ const categoryOrder = [
   'Getting started', 'Customizing', 'Building', 'Reference', 'Overview',
   // Components: parts with a material, a state or a platform behavior, and the layouts that arrange them in a room.
   'Materials', 'Layouts', 'Structure', 'Actions', 'Forms', 'Navigation', 'Overlays', 'Feedback', 'Data display', 'Media', 'Content', 'Typography',
+  // Charts: the forms of the chart, by what a reader has to see.
+  'Change over time', 'Comparison', 'Parts of a whole', 'Relationship',
   // Blocks: one stretch of a page with a purpose.
   'Marketing blocks', 'Application blocks',
   // Pages: a whole screen, where its regions go and what scrolls.

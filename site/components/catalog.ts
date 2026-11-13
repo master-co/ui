@@ -1,10 +1,12 @@
 /**
- * The library in three sections, each in reading order.
+ * The library in four sections, each in reading order.
  *
  * Components are the parts with a material, a state or a platform behavior; each slug matches
  * `content/components/<slug>` and `@master/ui/components/<slug>.css`. Their Layouts category is the layout tier
  * a room is arranged with: the moves written with utilities, and the classes in `@master/ui/layouts/<slug>.css`
  * for what utilities cannot say.
+ * Charts are the forms the `chart` component draws, one page to a form, in `content/charts/<slug>`: each is
+ * named for its `type` and grouped by what a reader has to see.
  * Blocks are one stretch of a page with a purpose; pages are a whole screen, its regions and what scrolls. Both
  * are published as markup to copy, in `content/blocks/<slug>` and `content/pages/<slug>`.
  */
@@ -102,7 +104,7 @@ export const components = [
   { slug: 'odometer', name: 'Odometer', category: 'Data display', description: 'A number whose digits roll to their new value.' },
   { slug: 'countdown', name: 'Countdown', category: 'Data display', description: 'The time left until something, in days, hours, minutes and seconds.' },
   { slug: 'price', name: 'Price', category: 'Data display', description: 'What something costs, set the way a price is read.' },
-  { slug: 'chart', name: 'Chart', category: 'Data display', description: 'A few numbers as bars, drawn by the stylesheet from a list.' },
+  { slug: 'chart', name: 'Chart', category: 'Data display', description: 'Numbers drawn as lines, areas, bars, a pie, a donut, rings, a radar or a scatter, in one SVG.' },
   { slug: 'sparkline', name: 'Sparkline', category: 'Data display', description: 'A trend as one fine line, small enough for a sentence, a row or a stat.' },
   { slug: 'breakdown', name: 'Breakdown', category: 'Data display', description: 'A whole as its parts along one bar, each as wide as its share.' },
   { slug: 'heatmap', name: 'Heatmap', category: 'Data display', description: 'Many small numbers as a field of cells, each as dark as its value.' },
@@ -146,6 +148,17 @@ export const components = [
   { slug: 'kbd', name: 'Kbd', category: 'Typography', description: 'A keycap for shortcuts in text and menus.' },
 ] as const
 
+export const charts = [
+  { slug: 'line', name: 'Line chart', category: 'Change over time', description: 'Values that go on from one to the next, as a line from point to point.' },
+  { slug: 'area', name: 'Area chart', category: 'Change over time', description: 'A line with a wash of its color under it, alone or stacked into a total.' },
+  { slug: 'bar', name: 'Bar chart', category: 'Comparison', description: 'Amounts compared as bars on a baseline: side by side, stacked or across.' },
+  { slug: 'radar', name: 'Radar chart', category: 'Comparison', description: 'A few things on the same measures, each an outline around one center.' },
+  { slug: 'pie', name: 'Pie chart', category: 'Parts of a whole', description: 'What one whole is made of, as slices of a circle.' },
+  { slug: 'donut', name: 'Donut chart', category: 'Parts of a whole', description: 'The parts of a whole around one figure that stands in the middle.' },
+  { slug: 'rings', name: 'Rings', category: 'Parts of a whole', description: 'A few readings, each filling a ring of its own toward its whole.' },
+  { slug: 'scatter', name: 'Scatter plot', category: 'Relationship', description: 'Two measures against each other, one dot to a thing.' },
+] as const
+
 export const pages = [
   { slug: 'page', name: 'Page', category: 'Site pages', description: 'A header, the main region and a footer in a frame as tall as the viewport.' },
   { slug: 'docs', name: 'Documentation', category: 'Site pages', description: 'Navigation, an article at a reading measure, and the contents of the page.' },
@@ -181,9 +194,9 @@ export const blocks = [
 ] as const
 
 /** The sections by the first segment of their URL. */
-export const library = { components, blocks, pages } as const
+export const library = { components, charts, blocks, pages } as const
 export type LibraryKind = keyof typeof library
-export const kindOf = (pathname: string) => /^\/(components|blocks|pages)\/([^/]+)$/.exec(pathname) as [string, LibraryKind, string] | null
+export const kindOf = (pathname: string) => /^\/(components|charts|blocks|pages)\/([^/]+)$/.exec(pathname) as [string, LibraryKind, string] | null
 
 /**
  * Where the reader's page of a contract is. A layout class is documented with the components, except the two

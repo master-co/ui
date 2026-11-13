@@ -4,6 +4,8 @@
  * so the radio groups of two drawn copies never share a name. No panel uses an id. The whole matrix is
  * decoration, inert and hidden from assistive technology.
  */
+import { chartMarkup } from '@master/ui/behaviors/chart.js'
+
 const icon = (path: string) => `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${path}</svg>`
 const glyph = {
   check: '<circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 4.5-5.5"/>',
@@ -36,10 +38,8 @@ const heat = (seed: number, max: number) => {
   }).join('')
 }
 
-const bars = (values: number[], labels: string, current = -1) => values.map((value, index) => `<li class="chart-item"${index === current ? ' aria-current="true"' : ''} style="--value: ${value}"><span class="chart-label">${labels[index]}</span><span class="chart-value">${value}</span></li>`).join('')
-
 /** A week of bars on a scale a little above its highest day, so the plot is used, not left empty. */
-const chart = (label: string, values: number[], options: { max: number, quiet?: boolean, current?: number }) => `<ol class="chart${options.quiet ? ' chart-quiet' : ''} ui-mx-chart" style="--chart-max: ${options.max}" aria-label="${label}">${bars(values, 'MTWTFSS', options.current)}</ol>`
+const chart = (label: string, values: number[], options: { max: number, quiet?: boolean, current?: number }) => `<figure class="chart${options.quiet ? ' chart-quiet' : ''} ui-mx-chart">${chartMarkup({ type: 'bar', label, labels: [...'MTWTFSS'], series: [{ name: label, values }], max: options.max, axis: false, current: options.current })}</figure>`
 
 const card = (title: string, description: string, body: string, action = '') => `<section class="card">
   <header class="card-header">

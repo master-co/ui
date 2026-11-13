@@ -1,0 +1,52 @@
+# Scatter plot
+
+Two measures against each other, one dot to a thing.
+
+A scatter sets two measures against each other: each dot is one thing, placed by its `x` and its `y`. Both scales fit the dots, between round numbers, and do not start at zero unless a dot is near it; set `xMin`, `xMax`, `min` and `max` to hold them. The pointer lands on the room around a dot, not only on the dot, and a dot's own `label` is the readout's title.
+
+**Scatter**
+
+```html
+<div class="card max-w(560) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Responses</h3>
+    <p class="card-description">Time in milliseconds against size in kilobytes</p>
+  </div>
+  <figure class="chart" id="responses"></figure>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  function points(pairs) { return pairs.map(function (pair) { return { x: pair[0], y: pair[1] } }) }
+  MasterUI.chart(document.getElementById('responses'), {
+    type: 'scatter',
+    label: 'Response time in milliseconds against size in kilobytes',
+    series: [
+      { name: 'API', points: points([[12, 38], [18, 52], [25, 61], [31, 70], [38, 96], [44, 88], [52, 120], [60, 131], [66, 150], [74, 142], [81, 171]]) },
+      { name: 'Pages', points: points([[20, 160], [28, 150], [35, 175], [47, 190], [55, 168], [63, 210], [72, 224], [80, 205], [88, 240]]) }
+    ]
+  })
+})
+</script>
+```
+
+<a id="options"></a>
+
+## Options
+
+| Option | Default | |
+| --- | --- | --- |
+| `label` | none | What the chart shows and in what unit: the plot's accessible name |
+| `series` | `[]` | Each with a `name` and `values`, a `value` for a slice or a ring, or `points` for a scatter; optionally a `category`, a `type` and a ring's `max` |
+| `min`, `max`, `ticks` | fit, `4` | The ends of the scale and about how many steps mark it; `xMin`, `xMax` and `xTicks` for a scatter's scale across |
+| `format`, `tickFormat` | the locale's | How a value and a tick are written; `xFormat` for a scatter's scale across |
+| `legend`, `toggle` | with two series, `true` | Whether a legend is written, and whether its entries are checkboxes |
+
+The readout, the keys, the legend, the colors and the scale are the same in every form: [Chart](https://ui.master.co/components/chart.md) holds them, with every option, class and custom property.
+
+<a id="related"></a>
+
+## Related
+
+<ComponentLinks kind="charts" slugs={['line', 'radar']} />
+
+- [heatmap](https://ui.master.co/components/heatmap.md)

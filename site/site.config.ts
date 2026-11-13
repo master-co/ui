@@ -28,10 +28,10 @@ export default defineSite({
     translations,
     validation: { reviews: new URL('./i18n/reviews.json', import.meta.url), resources: new URL('./i18n/resources.ts', import.meta.url) }
   },
-  // The guide and the three sections of the library share one documentation shell, and each has a sidebar of its own.
+  // The guide and the four sections of the library share one documentation shell, and each has a sidebar of its own.
   // A section's overview leaves the sidebar out, and so does every block and every page, which are shown at full width.
-  sections: { home: section('home'), page: section('page'), guide: section('guide'), components: library, blocks: library, pages: library },
-  navigation: { guide: categories('guide'), components: categories('components'), blocks: categories('blocks'), pages: categories('pages') },
-  documents: { guide: document('guide'), components: document('components'), blocks: document('blocks'), pages: document('pages') },
+  sections: { home: section('home'), page: section('page'), guide: section('guide'), components: library, charts: library, blocks: library, pages: library },
+  navigation: { guide: categories('guide'), components: categories('components'), charts: categories('charts'), blocks: categories('blocks'), pages: categories('pages') },
+  documents: { guide: document('guide'), components: document('components'), charts: document('charts'), blocks: document('blocks'), pages: document('pages') },
   styles: { site: new URL('./styles/site.ts', import.meta.url) }
 })

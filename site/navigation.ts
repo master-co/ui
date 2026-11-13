@@ -2,6 +2,7 @@ import type { AppNavItem } from '@master/internal-site/config'
 import IconBrandGithub from '@tabler/icons-svelte-runes/icons/brand-github'
 import IconBrandX from '@tabler/icons-svelte-runes/icons/brand-x'
 import IconCompass from '@tabler/icons-svelte-runes/icons/compass'
+import IconChartLine from '@tabler/icons-svelte-runes/icons/chart-line'
 import IconComponents from '@tabler/icons-svelte-runes/icons/components'
 import IconLayoutSidebar from '@tabler/icons-svelte-runes/icons/layout-sidebar'
 import IconStack2 from '@tabler/icons-svelte-runes/icons/stack-2'
@@ -17,6 +18,7 @@ const repositoryURL = 'https://github.com/master-co/ui'
 export const primaryNavs = [
   { name: 'Guide', href: '/guide/introduction', Icon: IconCompass },
   { name: 'Components', href: '/components', Icon: IconComponents },
+  { name: 'Charts', href: '/charts', Icon: IconChartLine },
   { name: 'Blocks', href: '/blocks', Icon: IconStack2 },
   { name: 'Pages', href: '/pages', Icon: IconLayoutSidebar },
 ] satisfies AppNavItem[]
@@ -34,6 +36,7 @@ export const footerNavGroups = [
       { name: 'Introduction', href: '/guide/introduction' },
       { name: 'Installation', href: '/guide/installation' },
       { name: 'Components', href: '/components' },
+      { name: 'Charts', href: '/charts' },
       { name: 'Blocks', href: '/blocks' },
       { name: 'Pages', href: '/pages' },
     ]
