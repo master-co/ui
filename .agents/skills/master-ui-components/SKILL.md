@@ -100,7 +100,7 @@ The component's own property holds the circular value (a role token, or a deriva
 Every interactive component covers, in this order of checks: rest, hover, active, focus-visible, selected or checked, disabled, busy or invalid where they apply, and their combinations.
 
 - Gate hover with `@media (hover: hover)`; touch must not stick in a hover state.
-- `@media (pointer: coarse)`: targets grow to 44px; fields use at least 16px text so iOS does not zoom.
+- `@media (pointer: coarse)`: the target grows to 44px, never what is drawn. A control keeps its height, radius, padding and type at every pointer; `@apply --touch-target` (or `--touch-target-block` for parts packed edge to edge) on a free pseudo-element reaches past its edge. Only full-width rows of a list grow, and fields use at least 16px text so iOS does not zoom. See [geometry](references/geometry.md#touch).
 - `@media (prefers-reduced-motion: reduce)`: remove travel (lift, stretch), keep the state change.
 - `@media (forced-colors: active)`: shadows vanish, so draw the edge with a system-color `outline` (never a layout-changing border) and keep checked marks visible with `forced-color-adjust: none` plus system colors.
 - Restyled native inputs reset `margin`, `padding` and `border` so host styles cannot distort them.

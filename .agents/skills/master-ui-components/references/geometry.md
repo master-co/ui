@@ -24,7 +24,18 @@ Height is decided by what a component is, and only the first kind has to match i
 
 A component outside these keeps a scale of its own and says so in its header: a chip is 28px, a badge and a keycap 22px, a switch 22px, a checkbox 18px, an OTP cell 40 × 44px, a command palette's search row 52px. A drawing is sized by one property and derives the rest from it: a gauge is 120px across (88 / 160) with a stroke of a fifteenth, a device is 280px wide with a corner of 14% and a bezel of 3%. A keypad's key is 52px, a thumb's target; a hotspot's pin is a 24px disc in a 44px target on touch; a gantt's bar is 28px and an uptime's row 32px (16 small). Before giving a new component a height, name its kind; a new control that is not 32, 38 or 44px is a mistake.
 
-On a touch screen (`pointer: coarse`) every control and every row is 44px. A control changes the property its parts derive from (`--input-height`), not only its own `min-height`, so a button in a well keeps its 4px inset there; a segmented item is 44px minus twice the inset, so the track is still a button's height.
+### Touch
+
+A pointer changes where a finger may land, never the drawing. On a touch screen (`pointer: coarse`) a control keeps its height, its radius, its padding and its proportions: a 32px segmented track is 32px on a phone, and a row of controls stays level because nothing in it grew. The target grows instead, through `@apply --touch-target` on a pseudo-element the control does not draw with: an empty box 44px across around a positioned control, or as large as the control on an axis where it is already 44px.
+
+- Parts packed edge to edge (segments, scale cells, pages, joined buttons, navbar links, player controls) use `--touch-target-block`, which grows above and below only: a target that reached sideways would take a tap meant for the neighbor. A target reaches sideways only where the gap is at least as wide as the reach.
+- A target cannot reach out of a scroller or a clipped box (`overflow` other than `visible`), and an `<input>`, a `<select>` or a pseudo-element such as `::scroll-button()` cannot carry one. There the control is its own target at its drawn size; at 24px or more that meets WCAG 2.2 AA, which is the floor.
+- A native range input reaches 44px across its track through padding with a matching negative margin (`slider`), so its footprint is unchanged.
+- Full-width rows of a list (menu item, option, list row, nav item, checklist and trace rows) grow to 44px, since rows have no shape to keep and stand too close for a target to reach past them. Rows that draw a structure (a tree, a calendar's days, a wheel, a gantt's bars) keep theirs.
+- Two exceptions grow on purpose and say so in their stylesheet: a range's thumbs (24px), each its own only target, and a rating's choosable stars, which part to 44px instead of reaching over one another; the star keeps its size.
+- Fields keep their height and take at least 16px text, so iOS does not zoom the page on focus.
+
+Check it by measurement, not by eye: in a coarse-pointer context the control's box is the size it has with a mouse, and `document.elementFromPoint` a few pixels past its edge returns the control.
 
 ## Radii
 

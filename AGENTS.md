@@ -77,7 +77,7 @@ Master Design owns general design principles and guidance at `https://design.mas
 - A behavior moves ARIA and native attributes and nothing else: no style, no state class, no measuring to place. Its contract's `keyboard` list is its specification, and it has a test. Where the pattern has a value no native control holds, the function it returns has a `value` to read and to set.
 - Soft edges: a contour is a half-pixel `box-shadow` ring, never a 1px border; shadows fade out instead of ending in a line; radii come from role tokens (`--radius-chip`, `--radius-control*`, `--radius-surface`) and a holder's corner is what it holds plus the inset.
 - Continuous corners: every radius is `calc(<radius> * var(--corner-scale))` with `corner-shape: var(--corner-shape)`, a squircle where supported and a circle elsewhere. Pills, dots, avatars and thumbs set `corner-shape: round`.
-- Gate hover with `(hover: hover)`, grow targets on `(pointer: coarse)`, remove travel under reduced motion, draw system-color outlines in forced colors.
+- Gate hover with `(hover: hover)`; on `(pointer: coarse)` grow the target to 44px with `--touch-target` and never what is drawn (a control keeps its size, radius and proportions at every pointer); remove travel under reduced motion; draw system-color outlines in forced colors.
 - Never `!important`; the `utilities` layer must keep winning.
 - The registry is generated from the package; do not hand-write an item.
 
