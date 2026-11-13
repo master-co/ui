@@ -159,7 +159,7 @@ Or import only the theme and the components you use:
 | Heatmap | `heatmap`, `heatmap-lg`, `heatmap-cell` |
 | Timeline | `timeline`, `timeline-item`, `timeline-marker`, `timeline-body`, `timeline-title`, `timeline-description`, `timeline-time` |
 | Trace | `trace`, `trace-step`, `trace-failed`, `trace-summary`, `trace-marker`, `trace-meta`, `trace-detail` |
-| Calendar | `calendar`, `calendar-header`, `calendar-title`, `calendar-grid`, `calendar-week`, `calendar-weekday`, `calendar-day`, `calendar-day-outside`, `calendar-day-range-start`, `calendar-day-range`, `calendar-day-range-end` |
+| Calendar | `calendar`, `calendar-month`, `calendar-header`, `calendar-title`, `calendar-title-button`, `calendar-grid`, `calendar-week`, `calendar-weekday`, `calendar-day`, `calendar-day-outside`, `calendar-day-range-start`, `calendar-day-range`, `calendar-day-range-end`, `calendar-period`, `calendar-period-outside` |
 | Tree | `tree`, `tree-item`, `tree-label`, `tree-check`, `tree-toggle`, `tree-group`, `tree-sub` |
 | Carousel | `carousel`, `carousel-slide`, `carousel-2`, `carousel-3`, `carousel-center` |
 | Marquee | `marquee`, `marquee-reverse`, `marquee-track` |

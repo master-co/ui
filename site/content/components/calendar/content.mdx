@@ -3,20 +3,30 @@ import ComponentSource from '~/site/components/ComponentSource.astro'
 import ContractTable from '~/site/components/ContractTable.astro'
 import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
-A calendar is a month of days to pick from. It is an ARIA grid of buttons: the stylesheet draws every state, and the `calendar` [behavior](/guide/behaviors) supplies the dates, the month buttons and the arrow keys. It has no surface of its own, so it sits in a [card](/components/card), or in a [popover](/components/popover) to make a date picker.
+A calendar is a month of days to pick from: one day, a [range](#range) or [several days](#several-days), one month or [two side by side](#several-months). It is an ARIA grid of buttons: the stylesheet draws every state, and the `calendar` [behavior](/guide/behaviors) supplies the dates, the month buttons and the arrow keys. It has no surface of its own, so it sits in a [card](/components/card), or in a [popover](/components/popover) to make a date picker.
 
 <ComponentPreview name="default" height={392} title="Calendar" bodyClass="flex justify-center p-lg" behaviors html={`<div class="sheet p-md">
   <div class="calendar">
     <div class="calendar-header">
       <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Previous month"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button>
-      <h3 class="calendar-title" id="cal-title" aria-live="polite"></h3>
+      <h3 class="calendar-title" id="cal-title" aria-live="polite"><button type="button" class="calendar-title-button" aria-description="Choose a month or a year"></button></h3>
       <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Next month"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
     </div>
     <div class="calendar-grid" role="grid" aria-labelledby="cal-title"></div>
   </div>
-</div>`} caption="Click a day to choose it, turn the month with the two buttons, or focus a day and use the arrow keys." />
+</div>`} caption="Click a day to choose it, turn the month with the two buttons, or focus a day and use the arrow keys. Click the title to jump to another month or year." />
 
 The markup is the header and an empty grid. The behavior writes the month's name into `calendar-title`, and the weekday names and the weeks into `calendar-grid`; it opens on the month of today. Without the script the grid stays as the markup has it, so a calendar that must read before the script runs is rendered on the server with its weeks, as the [range](#range) below is written, and the behavior replaces them when it attaches.
+
+## Months and years \{#months-and-years\}
+
+The title of the calendar above is a button, `calendar-title-button`, inside `calendar-title`. Clicking it turns the grid into the twelve months of the year, and clicking it again into the years of the decade, with the year before and the year after it in muted ink. Choosing a year shows its months, and choosing a month shows its days, with focus on the same day. <kbd>Escape</kbd> goes back to the days as they were.
+
+The months and the years are `calendar-period` buttons in the same grid, three to a row and drawn in the day's material. The grid keeps the height of a six-week month, so the calendar does not jump. Throughout, the title says where the grid is: `November 2026`, `2026`, `2020 – 2029`. The month buttons turn a year in the months and a decade in the years, and take names for it from the `labels` option. In the years the title button is disabled, since the decade is as far as it goes.
+
+A title without the button stays a plain title, and the calendar never leaves its days. The jump is for a calendar of one month.
+
+Native month and year selects in the header were the other way to do this. They were not chosen: two selects and two month buttons do not fit over seven 36px columns in every language, a list of a hundred years is a long scroll in a select, and a styled select's list is not yet in every browser. The grid of months and years is in the calendar's own material and works with the keys the reader is already using.
 
 ## States \{#states\}
 
@@ -28,6 +38,8 @@ Every state is an attribute or a class on the day's button. The behavior sets th
 | Chosen | `aria-selected="true"` | Ink, the way a checked [checkbox](/components/checkbox) fills |
 | Outside the month | `calendar-day-outside` | Muted ink |
 | Unavailable | `disabled` | Disabled ink |
+
+A month or a year in the jump carries the same marks: `aria-current="date"` on the month or the year of today, `aria-selected="true"` on the one that holds a chosen day, and `disabled` on one with no day between `min` and `max`. `calendar-period-outside` marks the year before and after a decade.
 
 A day answers the pointer at once, like a row in a [menu](/components/menu). Today keeps its dot when it is chosen, in the ink of the day.
 
@@ -129,6 +141,62 @@ addEventListener('DOMContentLoaded', function () {
 
 `attach()` passes no options, so this preview calls `calendar` itself, after `attach()` has run: a second call on one root replaces the first. `MasterUI` is the bundle a preview loads; in a project, import `calendar` as [the behavior](#behavior) section shows.
 
+## Several days \{#several-days\}
+
+With the `multiple` option the behavior chooses any number of separate days. A click, <kbd>Enter</kbd> or <kbd>Space</kbd> turns a day on or off, every chosen day carries `aria-selected="true"`, and the grid carries `aria-multiselectable="true"`. The value is the list of chosen days as `YYYY-MM-DD`, sorted, and each change dispatches all of them.
+
+<ComponentPreview name="multiple" height={392} title="Several days" bodyClass="flex justify-center p-lg" behaviors html={`<div class="sheet p-md">
+  <div class="calendar" id="shifts">
+    <div class="calendar-header">
+      <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Previous month"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button>
+      <h3 class="calendar-title" id="shifts-title" aria-live="polite"></h3>
+      <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Next month"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
+    </div>
+    <div class="calendar-grid" role="grid" aria-labelledby="shifts-title"></div>
+  </div>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.calendar(document.getElementById('shifts'), {
+    multiple: true,
+    value: ['2026-11-09', '2026-11-12', '2026-11-20'],
+    disabled: function (date) { return date.getDay() === 0 || date.getDay() === 6 }
+  })
+})
+</script>`} caption="Click weekdays to turn them on and off. Weekends cannot be chosen." />
+
+`min`, `max` and `disabled` hold as they do for one day. With `range` too, `range` wins.
+
+## Several months \{#several-months\}
+
+Two months side by side show a range that crosses from one to the other. Each month is a `calendar-month` with its own header and grid: the first header holds the button to the month before, the last one the button to the month after, and each title stays over its grid. The behavior fills the months in order, and the buttons turn them together, one month at a time.
+
+<ComponentPreview name="months" height={392} mediumHeight={720} narrowHeight={720} title="Two months" bodyClass="flex justify-center p-lg" behaviors html={`<div class="sheet p-md">
+  <div class="calendar" id="trip">
+    <div class="calendar-month">
+      <div class="calendar-header">
+        <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Previous month"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button>
+        <h3 class="calendar-title" id="trip-first" aria-live="polite"></h3>
+      </div>
+      <div class="calendar-grid" role="grid" aria-labelledby="trip-first"></div>
+    </div>
+    <div class="calendar-month">
+      <div class="calendar-header">
+        <h3 class="calendar-title" id="trip-second" aria-live="polite"></h3>
+        <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Next month"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
+      </div>
+      <div class="calendar-grid" role="grid" aria-labelledby="trip-second"></div>
+    </div>
+  </div>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.calendar(document.getElementById('trip'), { range: true, value: ['2026-11-26', '2026-12-04'] })
+})
+</script>`} caption="Choose a range across the two months, or move with the arrow keys from one month into the next." />
+
+The months share one tab stop and one flow of keys: an arrow key from the last day of the first month lands on the first day of the second, and a move past the last month turns both. A day outside a month is left blank, since the month beside it shows that day; the blank keeps the weekday columns. Where the row has no room the months wrap into a column.
+
 ## Date picker \{#date-picker\}
 
 A date picker is a field, a button and a calendar in a [popover](/components/popover). The popover opens and closes without script and places itself against its button. The behavior draws the calendar and says which day is chosen; the page's own script writes that day into the field and hides the popover.
@@ -182,18 +250,20 @@ root.addEventListener('change', (event) => console.log(event.detail.value))
 
 | Option | What it sets |
 | --- | --- |
-| `value` | The chosen day as `YYYY-MM-DD`, or the two ends of a range |
+| `value` | The chosen day as `YYYY-MM-DD`, the two ends of a range, or the days chosen with `multiple` |
 | `month` | The month to show first, as `YYYY-MM`. By default the month of the value, or of today |
 | `min`, `max` | The first and the last day that can be chosen, as `YYYY-MM-DD`. A month button is disabled when there is no month to go to |
 | `range` | `true` to choose two days and every day between them |
+| `multiple` | `true` to choose any number of separate days; `range` wins over it |
+| `labels` | The names of the month buttons in the months and the years: `previousYear`, `nextYear`, `previousDecade`, `nextDecade`. English by default |
 | `weekStart` | The day in the first column, 0 for Sunday to 6 for Saturday. By default the locale's own, and Monday where the browser cannot say |
 | `locale` | A BCP 47 tag for the names of months and days. By default the `lang` the calendar stands in |
 | `disabled` | A function that takes a `Date` and says whether that day cannot be chosen |
-| `draw` | A function that writes the grid instead of the script. It is called with the month to show, as `YYYY-MM`; see [a grid of your own](/guide/behaviors#a-grid-of-your-own) |
+| `draw` | A function that writes the grids instead of the script. It is called with the month to show, as `YYYY-MM`, and the view: `days`, `months` or `years`. In the days it writes that month and, in the next grids, the months after it; `calendarMonth(month, { offset })` gives each. In the months or the years it writes the cells `calendarPeriods(month, { view })` gives. See [a grid of your own](/guide/behaviors#a-grid-of-your-own) |
 
-- **What it writes.** The weekday names and the weeks of the shown month, and the month's name. On the days: the date as the button's `value`, `aria-current="date"` on today, `aria-selected="true"` and the range classes on what is chosen, `disabled` on a day that cannot be chosen, a full date as `aria-label`, and `tabindex` so one day is in the tab order. With `draw`, a template or a framework writes the days and the script only marks them.
-- **The event.** Choosing a day dispatches a bubbling `change` from the root with `detail.value`: the day as `YYYY-MM-DD`, or `[start, end]` once both ends of a range are chosen.
-- **The value.** It lives in the script, not in the markup. Read it from the returned function's `value`: `picker.value`. In a range the end is `null` until it is chosen. Set it to choose from outside: `picker.value = '2026-11-20'` shows the month of the new day and dispatches nothing.
+- **What it writes.** The weekday names and the weeks of each month shown, and each month's name; in the jump, the months or the years and the title for them. On the days: the date as the button's `value`, `aria-current="date"` on today, `aria-selected="true"` and the range classes on what is chosen, `disabled` on a day that cannot be chosen, a full date as `aria-label`, and `tabindex` so one day is in the tab order. With `draw`, a template or a framework writes the days and the script only marks them.
+- **The event.** Choosing a day dispatches a bubbling `change` from the root with `detail.value`: the day as `YYYY-MM-DD`, `[start, end]` once both ends of a range are chosen, or the sorted list of days with `multiple`. A jump to the months or the years dispatches nothing.
+- **The value.** It lives in the script, not in the markup. Read it from the returned function's `value`: `picker.value`. In a range the end is `null` until it is chosen; with `multiple` nothing chosen is `[]`. Set it to choose from outside: `picker.value = '2026-11-20'` shows the month of the new day and dispatches nothing.
 - **Days.** They are local and Gregorian.
 
 ## Structure \{#structure\}
@@ -201,23 +271,28 @@ root.addEventListener('change', (event) => console.log(event.detail.value))
 - `calendar-grid` declares seven columns once. Each `calendar-week` is a row on a subgrid of them, so the weekday names and the days share the same columns without a table.
 - `calendar-weekday` is a column heading. Its `aria-label` is the full name.
 - `calendar-day` is a `<button>` with `role="gridcell"`.
+- `calendar-title-button`, when the title has one, is a `<button>` inside `calendar-title`; the behavior writes the title into it.
+- `calendar-period` is a month or a year in the jump: a `<button>` with `role="gridcell"` whose value is `YYYY-MM` or `YYYY`, three to a `calendar-week`.
+- `calendar-month` holds the header and the grid of one of several months.
 
 ## Keyboard \{#keyboard\}
 
-The behavior gives the grid the keys of a date grid. A move past the edge of the month shows the neighboring month and keeps focus on the new day. A move never lands on a day that cannot be chosen, and stops at `min` and `max`.
+The behavior gives the grid the keys of a date grid. A move past the edge of the month shows the neighboring month and keeps focus on the new day. A move never lands on a day that cannot be chosen, and stops at `min` and `max`. In the months and the years the arrow keys move by one and by a row of three, and <kbd>Enter</kbd> chooses and goes back down.
 
 <ContractTable name="calendar" show="keyboard" />
 
 ## Accessibility \{#accessibility\}
 
 - The grid is `role="grid"`, labelled by the month's title; each week is `role="row"`.
-- One day is in the tab order: the chosen one, or today, or the first day of a month that holds neither. The rest have `tabindex="-1"`.
+- One day is in the tab order: the chosen one (the first of several), or today, or the first day of the months shown when they hold neither. The rest have `tabindex="-1"`. Several months side by side are one tab stop together, each grid labelled by its own title.
+- A grid in which a range or several days can be chosen has `aria-multiselectable="true"`.
+- The title button is named by the title it shows, which is also the grid's label. Say what it does with `aria-description`, such as "Choose a month or a year", rather than `aria-label`, which would rename the grid with it.
 - Give the title `aria-live="polite"`, so a change of month is announced.
 - On touch screens a day is 44px.
 
 ## React, Svelte and Vue \{#frameworks\}
 
-The `calendar` component draws the month from the same data as the behavior, so it is in the first HTML, and passes the chosen day in and out. Copy it into the project with `npx master-ui add calendar`; [React, Svelte and Vue](/guide/frameworks) says how the components are built and used.
+The `calendar` component draws the month from the same data as the behavior, so it is in the first HTML, and passes the chosen day in and out. It takes `range` and `multiple`, `months` for several months side by side, and has the title button when it shows one month; `jumpLabel` is the button's description and `labels` the names of the month buttons in the months and the years. Copy it into the project with `npx master-ui add calendar`; [React, Svelte and Vue](/guide/frameworks) says how the components are built and used.
 
 <FrameworkSource name="calendar" />
 

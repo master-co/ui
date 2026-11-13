@@ -1,7 +1,7 @@
 import { afterEach, test } from 'node:test'
 import assert from 'node:assert/strict'
 import { dom } from './dom.ts'
-import { calendar, calendarMonth, combobox, command, compare, dial, gantt, listbox, otp, signature, splitter, stepper, tour, tree, wheel } from '../../behaviors/index.js'
+import { calendar, calendarMonth, calendarPeriods, combobox, command, compare, dial, gantt, listbox, otp, signature, splitter, stepper, tour, tree, wheel } from '../../behaviors/index.js'
 
 /** happy-dom catches what a listener throws and reports it on the window; a test must not pass over it. */
 const thrown: unknown[] = []
@@ -494,4 +494,110 @@ test('signature: value reads and draws the strokes, a copy is given out, and set
   assert.equal(handle.value[0][0][0], 40, 'what is read out does not change the drawing')
   handle.value = [[[40, 80, .5], [90, 70, .6]]]
   assert.deepEqual(heard, [])
+})
+
+test('calendarMonth: several chosen days, the months after a month, and the month of the value by default', () => {
+  const days = (options: Record<string, unknown>) => calendarMonth('2026-11', { locale: 'en-GB', weekStart: 1, ...options }).weeks.flat().filter(day => day.selected || day.tab || day.range)
+  assert.deepEqual(days({ value: ['2026-11-20', '2026-11-13', 'soon'], multiple: true }).map(day => [day.date, day.selected, day.tab, day.range]), [
+    ['2026-11-13', true, true, ''],
+    ['2026-11-20', true, false, ''],
+  ], 'each chosen day is selected, and the first is the tab stop')
+  assert.deepEqual(days({ value: ['2026-11-12', '2026-11-14'], range: true, multiple: true }).map(day => day.range), ['calendar-day-range-start', 'calendar-day-range', 'calendar-day-range-end'], 'range wins over multiple')
+  assert.deepEqual(days({ value: '2026-10-31' }).map(day => [day.date, day.selected, day.tab]), [['2026-10-31', true, false]], 'a day shown only to complete a week is not the tab stop')
+  const next = calendarMonth('2026-11', { locale: 'en-GB', weekStart: 1, offset: 2 })
+  assert.deepEqual([next.month, next.title], ['2027-01', 'January 2027'])
+  assert.equal(calendarMonth(undefined, { value: ['2027-03-09', '2027-02-02'], multiple: true }).month, '2027-02', 'the month of the first chosen day')
+})
+
+test('calendarPeriods: the months of a year and the years of a decade, three to a row', () => {
+  const months = calendarPeriods('2026-11', { locale: 'en-GB' })
+  assert.deepEqual([months.view, months.title, months.rows.length], ['months', '2026', 4])
+  assert.ok(months.rows.every(row => row.length === 3))
+  assert.deepEqual(months.rows[0][0], { value: '2026-01', text: 'Jan', label: 'January 2026', outside: false })
+  assert.equal(calendarPeriods('2026-11-13', { locale: 'de' }).rows[2][2].text, 'Sep', 'the names follow the locale')
+  const years = calendarPeriods('2026', { view: 'years', locale: 'en-GB' })
+  assert.equal(years.view, 'years')
+  assert.match(years.title, /^2020\s?–\s?2029$/u)
+  assert.deepEqual(years.rows.flat().map(cell => cell.value), Array.from({ length: 12 }, (_, index) => String(2019 + index)))
+  assert.deepEqual(years.rows.flat().filter(cell => cell.outside).map(cell => cell.value), ['2019', '2030'])
+  assert.equal(calendarPeriods('2030-01', { view: 'years' }).rows[0][1].value, '2030', 'a year that ends in 0 starts its decade')
+})
+
+const twoMonthsMarkup = `<div class="calendar" lang="en-GB">
+  <div class="calendar-month">
+    <div class="calendar-header">
+      <button type="button" class="btn" aria-label="Previous month"></button>
+      <h3 class="calendar-title" id="first-title" aria-live="polite"></h3>
+    </div>
+    <div class="calendar-grid" role="grid" aria-labelledby="first-title"></div>
+  </div>
+  <div class="calendar-month">
+    <div class="calendar-header">
+      <h3 class="calendar-title" id="second-title" aria-live="polite"></h3>
+      <button type="button" class="btn" aria-label="Next month"></button>
+    </div>
+    <div class="calendar-grid" role="grid" aria-labelledby="second-title"></div>
+  </div>
+</div>`
+
+test('calendar: with draw and two months it asks for the first month, and marks the days of both once they are written', async () => {
+  const { one, all, key, document, settle } = setup(twoMonthsMarkup)
+  const asked: string[] = []
+  /** A renderer: what a framework component does with the first month it is given. */
+  const render = (month: string) => all('.calendar-grid').forEach((grid, offset) => {
+    const view = calendarMonth(month, { locale: 'en-GB', weekStart: 1, offset })
+    all('.calendar-title')[offset].textContent = view.title
+    grid.innerHTML = view.weeks.map(week => `<div class="calendar-week" role="row">${week.map(day => `<button type="button" class="calendar-day${day.outside ? ' calendar-day-outside' : ''}" role="gridcell" tabindex="-1" value="${day.date}" aria-label="${day.label}">${day.text}</button>`).join('')}</div>`).join('')
+  })
+  render('2026-11')
+  calendar(one('.calendar'), { value: ['2026-11-13', '2026-12-24'], multiple: true, draw: month => { asked.push(month); render(month) } })
+  assert.deepEqual(asked, [])
+  const chosen = () => all<HTMLButtonElement>('[aria-selected="true"]:not(.calendar-day-outside)').map(day => day.value)
+  assert.deepEqual(chosen(), ['2026-11-13', '2026-12-24'])
+  const stop = () => one<HTMLButtonElement>('.calendar-day[tabindex="0"]')
+  stop().focus()
+  key(stop(), 'PageDown')
+  assert.deepEqual(asked, [], 'December is shown')
+  key(stop(), 'PageDown')
+  assert.deepEqual(asked, ['2026-12'], 'past the last month it asks for the first of the months to show')
+  await settle()
+  assert.deepEqual(all('.calendar-title').map(title => title.textContent), ['December 2026', 'January 2027'])
+  assert.equal(stop().value, '2027-01-13')
+  assert.equal(document.activeElement, stop())
+  assert.deepEqual(chosen(), ['2026-12-24'])
+})
+
+test('calendar: with draw, a jump asks for the months or the years, and the renderer writes their cells', async () => {
+  const { one, all, click, key, settle, document } = setup(calendarMarkup.replace('aria-live="polite"></h3>', 'aria-live="polite"><button type="button" class="calendar-title-button"></button></h3>'))
+  const asked: [string, string][] = []
+  const grid = one('.calendar-grid')
+  const render = (month: string, view: string) => {
+    const button = one('.calendar-title-button')
+    if (view === 'days') {
+      const data = calendarMonth(month, { locale: 'en-GB', weekStart: 1 })
+      button.textContent = data.title
+      grid.innerHTML = data.weeks.map(week => `<div class="calendar-week" role="row">${week.map(day => `<button type="button" class="calendar-day${day.outside ? ' calendar-day-outside' : ''}" role="gridcell" tabindex="-1" value="${day.date}">${day.text}</button>`).join('')}</div>`).join('')
+      return
+    }
+    const data = calendarPeriods(month, { view: view as 'months' | 'years', locale: 'en-GB' })
+    button.textContent = data.title
+    grid.innerHTML = data.rows.map(row => `<div class="calendar-week" role="row">${row.map(cell => `<button type="button" class="calendar-period${cell.outside ? ' calendar-period-outside' : ''}" role="gridcell" tabindex="-1" value="${cell.value}" aria-label="${cell.label}">${cell.text}</button>`).join('')}</div>`).join('')
+  }
+  render('2026-11', 'days')
+  calendar(one('.calendar'), { value: '2026-11-13', draw: (month, view) => { asked.push([month, view]); render(month, view) } })
+  click(one('.calendar-title-button'))
+  assert.deepEqual(asked, [['2026-11', 'months']])
+  await settle()
+  assert.equal(one('.calendar-title-button').textContent, '2026')
+  assert.equal(one<HTMLButtonElement>('.calendar-period[tabindex="0"]').value, '2026-11', 'the cells it wrote are marked')
+  assert.equal(one<HTMLButtonElement>('.calendar-period[aria-selected="true"]').value, '2026-11')
+  one<HTMLButtonElement>('.calendar-period[tabindex="0"]').focus()
+  key(one('.calendar-period[tabindex="0"]'), 'ArrowRight')
+  assert.equal((document.activeElement as HTMLButtonElement).value, '2026-12')
+  click(one('.calendar-period[value="2026-12"]'))
+  assert.deepEqual(asked.at(-1), ['2026-12', 'days'])
+  await settle()
+  assert.equal(one('.calendar-title-button').textContent, 'December 2026')
+  assert.equal((document.activeElement as HTMLButtonElement).value, '2026-12-13', 'focus follows into the month that was written')
+  assert.equal(all('.calendar-period').length, 0)
 })

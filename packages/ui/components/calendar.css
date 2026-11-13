@@ -4,11 +4,18 @@
  * aria-current="date" and carries a dot, a chosen day is aria-selected and fills with ink the way a checkbox
  * does, and a range is a chip-toned band between two ink days. Weeks are rows on a subgrid, so the seven
  * columns are declared once. It has no surface of its own: put it in a popover for a date picker, or a card.
+ *
+ * The title may hold a button that jumps to the months of the year and the years of a decade: they are cells of
+ * the same grid, three to a row, in the day's material, and the grid keeps the height of a six-week month so the
+ * calendar does not jump with it. Several months side by side are a calendar-month each, wrapping to a column
+ * where the row has no room; there the days outside a month are left blank, since the month beside it shows them.
  */
 @layer components {
   .calendar {
     --calendar-cell: 2.25rem;
     --calendar-day-radius: var(--radius-control-sm);
+    /* The width of a month button, which a title with a button on one side only keeps free on the other. */
+    --calendar-turn: 2rem;
     display: inline-grid;
     gap: .5rem;
     min-width: 0;
@@ -18,6 +25,26 @@
     font-variant-numeric: tabular-nums;
     user-select: none;
     -webkit-user-select: none;
+  }
+
+  /* Several months side by side: a column of them where the row has no room. */
+  .calendar:has(.calendar-month) {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 1rem 1.5rem;
+  }
+
+  /* One month of several: its header and its grid. */
+  .calendar-month {
+    display: grid;
+    gap: .5rem;
+    min-width: 0;
+
+    /* A day of the month before or after is shown by that month, so here it only keeps its column. */
+    & .calendar-day-outside {
+      visibility: hidden;
+    }
   }
 
   /* Previous, the month, next. */
@@ -35,6 +62,56 @@
     font: var(--font-weight-control) .875rem/1.4 var(--font-family-sans);
     font-feature-settings: inherit;
     text-align: center;
+
+    /* In a month of several the title may have a month button on one side only; it stays over the middle. */
+    &:first-child {
+      margin-inline-start: calc(var(--calendar-turn) + .5rem);
+    }
+
+    &:last-child {
+      margin-inline-end: calc(var(--calendar-turn) + .5rem);
+    }
+  }
+
+  /* The title as a button: it shows the months of the year, then the years of the decade. */
+  .calendar-title-button {
+    display: inline-flex;
+    align-items: center;
+    max-width: 100%;
+    min-height: 2rem;
+    margin: 0;
+    padding: 0 .5rem;
+    border: 0;
+    border-radius: calc(var(--calendar-day-radius) * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-feature-settings: inherit;
+    appearance: none;
+    -webkit-tap-highlight-color: transparent;
+    cursor: pointer;
+    touch-action: manipulation;
+
+    /* Like a day, it answers at once. */
+    @media (hover: hover) {
+      &:hover:not(:disabled) {
+        background: var(--color-surface-chip);
+      }
+    }
+
+    &:active:not(:disabled) {
+      background: var(--color-surface-inset-hover);
+    }
+
+    &:focus-visible {
+      @apply --focus-ring;
+    }
+
+    /* At the decade there is nowhere further to go: it reads as the title it is. */
+    &:disabled {
+      cursor: default;
+    }
   }
 
   /* Seven columns; rows keep 2px apart so a range reads as one band per week. */
@@ -42,6 +119,13 @@
     display: grid;
     grid-template-columns: repeat(7, var(--calendar-cell));
     row-gap: 2px;
+
+    /* The months or the years: three columns over the same width. */
+    &:has(.calendar-period) {
+      grid-template-columns: repeat(3, 1fr);
+      width: calc(var(--calendar-cell) * 7);
+      gap: 4px;
+    }
   }
 
   /* A row of the grid: the weekday names, or a week of days, on the grid's own columns. */
@@ -60,8 +144,8 @@
     font-weight: 400;
   }
 
-  /* A day: a button in a grid cell. */
-  .calendar-day {
+  /* A day, or a month or a year: a button in a grid cell. */
+  .calendar-day, .calendar-period {
     position: relative;
     isolation: isolate;
     display: grid;
@@ -111,8 +195,8 @@
       }
     }
 
-    /* A day of the month before or after, shown to complete a week. */
-    &.calendar-day-outside {
+    /* A day of the month before or after, shown to complete a week; a year of the decade before or after. */
+    &.calendar-day-outside, &.calendar-period-outside {
       color: var(--color-text-muted);
     }
 
@@ -209,9 +293,27 @@
     }
   }
 
+  /*
+   * A month or a year: four rows as tall as the weekday names and six weeks, so the grid keeps the height of a
+   * six-week month.
+   */
+  .calendar-period {
+    height: calc((var(--calendar-cell) * 6 + 1.75rem) / 4);
+
+    /* The dot of today's month or year keeps the distance it has under a day's number. */
+    &[aria-current="date"]::after {
+      bottom: calc(50% - .8125rem);
+    }
+  }
+
   @media (pointer: coarse) {
     .calendar {
       --calendar-cell: 2.75rem;
+      --calendar-turn: 2.75rem;
+    }
+
+    .calendar-title-button {
+      min-height: 2.75rem;
     }
   }
 }

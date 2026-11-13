@@ -213,6 +213,28 @@ for (const framework of ['react', 'svelte', 'vue']) {
       assert.equal(await calendar.locator('[aria-selected="true"]').count(), 1)
     })
 
+    await t.test('a calendar\'s title jumps to the months and back with real keys, and focus goes with it', async () => {
+      const calendar = example('calendar')
+      const title = () => calendar.locator('.calendar-title').innerText()
+      const focused = () => page.evaluate(() => (document.activeElement as HTMLButtonElement)?.value)
+      await calendar.locator('.calendar-title-button').click()
+      await until(title, value => value === '2026', 'the title shows the months of the year')
+      await page.keyboard.press('Tab')
+      await page.keyboard.press('Tab')
+      await until(focused, value => value === '2026-12', 'Tab, past the next button, enters the months at the month shown')
+      await page.keyboard.press('ArrowDown')
+      await until(focused, value => value === '2027-03', 'ArrowDown goes three months on, into the next year')
+      await page.keyboard.press('Enter')
+      await until(title, value => value === 'March 2027', 'Enter on a month shows its days')
+      await until(focused, value => value === '2027-03-21', 'with focus on the same day')
+      await calendar.locator('.calendar-title-button').click()
+      await calendar.locator('.calendar-title-button').click()
+      await until(focused, value => value === '2027', 'in the years focus leaves the title for the grid')
+      await page.keyboard.press('Escape')
+      await until(title, value => value === 'March 2027', 'Escape goes back to the days')
+      await until(focused, value => value === '2027-03-21')
+    })
+
     await t.test('a one-time code fills slot by slot and says when it is complete', async () => {
       const slots = example('otp').locator('.otp-slot')
       assert.deepEqual(await slots.evaluateAll((all: HTMLInputElement[]) => all.map(slot => slot.value)), ['4', '8', '', '', '', ''])

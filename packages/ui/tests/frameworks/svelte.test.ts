@@ -130,7 +130,7 @@ test('svelte: a value or another function among the options does not attach a be
   await mounted(Harness, { component: fixtures.calendar, initial: props }, async (app) => {
     const title = () => page.one('.calendar-title').textContent
     const day = (date: string) => page.one<HTMLButtonElement>(`button[value="${date}"]`)
-    await act(() => page.click(page.all('.calendar-header button')[1]))
+    await act(() => page.click(page.one('.calendar-header .btn[aria-label="Next month"]')))
     assert.equal(title(), 'December 2026')
     // Attached again, the calendar would start over from its options and show November.
     await act(() => app.set({ value: '2026-11-13', disabled: (date: Date) => date.getDate() === 15, onValueChange: (value: unknown) => heard.push(value) }))
@@ -172,7 +172,7 @@ test('svelte: the first HTML, rendered on a server, holds the state, and hydrate
   /** What the page holds once the behavior is attached to the server's HTML: the same state. */
   const held: Record<string, [() => unknown, unknown]> = {
     'combobox': [() => [...values('[role="combobox"]'), ...checked()], ['Singapore', 'sin']],
-    'calendar': [() => values('[aria-selected="true"]'), ['2026-11-13']],
+    'calendar': [() => values('[aria-selected="true"]:not(.calendar-day-outside)'), ['2026-11-13', '2026-12-02']],
     'tabs': [() => page.all<HTMLElement>('[role="tabpanel"]').filter(panel => !panel.hidden).map(panel => panel.textContent?.trim()), ['Panel B']],
     'splitter': [() => page.one<HTMLElement>('.splitter').style.getPropertyValue('--splitter-size'), '36%'],
     'dial': [() => [page.one<HTMLElement>('.dial').style.getPropertyValue('--dial-value'), page.one('.dial-value').textContent, values('input[type="hidden"]')[0]], ['90', '90°', '90']],

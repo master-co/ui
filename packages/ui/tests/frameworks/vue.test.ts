@@ -167,7 +167,7 @@ test('vue: rows written again from data are marked from the model, not from the 
 
 test('vue: a function among the options does not attach the behavior again', async () => {
   await rendered('calendar', { value: '2026-11-13', locale: 'en-GB', disabled: () => false }, async (page, mounted) => {
-    await act(() => page.click(page.all<HTMLButtonElement>('.calendar-header button')[1]))
+    await act(() => page.click(page.one<HTMLButtonElement>('.calendar-header .btn[aria-label="Next month"]')))
     assert.equal(page.one('.calendar-title').textContent, 'December 2026')
     // Attached again, the calendar would go back to the month of its value.
     await act(() => mounted.set({ disabled: (date: Date) => date.getDate() === 25 }))

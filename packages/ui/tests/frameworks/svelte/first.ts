@@ -3,7 +3,7 @@ const regions = [{ value: 'hnd', label: 'Tokyo' }, { value: 'sin', label: 'Singa
 /** A fixture, its props, and what its first HTML holds when a server renders it: the state of its first value. */
 export const first: [string, Record<string, unknown>, RegExp][] = [
   ['combobox', { options: regions, value: 'sin', listLabel: 'Regions', toggleLabel: 'Show regions', 'aria-label': 'Region' }, /value="Singapore"[\s\S]*data-value="sin" aria-checked="true"/],
-  ['calendar', { value: '2026-11-13', locale: 'en-GB', weekStart: 1 }, /November 2026[\s\S]*<button[^>]*tabindex="0"[^>]*value="2026-11-13"[^>]*aria-selected="true"/],
+  ['calendar', { value: ['2026-12-02', '2026-11-13'], multiple: true, months: 2, locale: 'en-GB', weekStart: 1 }, /November 2026[\s\S]*aria-multiselectable="true"[\s\S]*<button[^>]*tabindex="0"[^>]*value="2026-11-13"[^>]*aria-selected="true"[\s\S]*December 2026[\s\S]*class="calendar-day"[^>]*value="2026-12-02"[^>]*aria-selected="true"/],
   ['tabs', { tabs: [{ value: 'a', label: 'A', content: 'Panel A' }, { value: 'b', label: 'B', content: 'Panel B' }], value: 'b', 'aria-label': 'Account' }, /data-value="b" aria-selected="true"[\s\S]*hidden=""[^>]*>(<!--.*?-->)*Panel A/],
   ['splitter', { value: 36, label: 'Resize' }, /--splitter-size: 36%[\s\S]*aria-valuenow="36"/],
   ['dial', { value: 90, full: true, label: 'Angle', name: 'angle', text: (value: number) => `${value}°` }, /class="dial dial-full"[\s\S]*aria-valuenow="90"[\s\S]*aria-valuetext="90°"[\s\S]*--dial-value: 90;[\s\S]*--dial-max: 360[\s\S]*>90°<[\s\S]*value="90"/],

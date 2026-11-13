@@ -11,7 +11,7 @@
  * Where a pattern has a value that no native control holds, the function its behavior returns has a `value`:
  * read it for what is chosen, set it to choose from outside. Setting it dispatches nothing.
  */
-import { calendar, calendarMonth } from './calendar.js'
+import { calendar, calendarMonth, calendarPeriods } from './calendar.js'
 import { colorPicker, colorPickerState } from './color-picker.js'
 import { combobox } from './combobox.js'
 import { command } from './command.js'
@@ -34,7 +34,7 @@ import { tour } from './tour.js'
 import { tree } from './tree.js'
 import { wheel } from './wheel.js'
 
-export { calendar, calendarMonth, colorPicker, colorPickerState, combobox, command, compare, contextMenu, dial, editable, gantt, listbox, menu, otp, range, signature, signaturePath, signatureSvg, sortable, splitter, stepper, tabs, tags, toolbar, tour, tree, wheel }
+export { calendar, calendarMonth, calendarPeriods, colorPicker, colorPickerState, combobox, command, compare, contextMenu, dial, editable, gantt, listbox, menu, otp, range, signature, signaturePath, signatureSvg, sortable, splitter, stepper, tabs, tags, toolbar, tour, tree, wheel }
 
 /**
  * Each pattern's root class and the behavior that drives it.
