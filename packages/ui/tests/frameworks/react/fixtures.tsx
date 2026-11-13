@@ -6,6 +6,7 @@ import { Editable } from '../../../frameworks/react/editable.tsx'
 import { Command } from '../../../frameworks/react/command.tsx'
 import { Compare } from '../../../frameworks/react/compare.tsx'
 import { Dial } from '../../../frameworks/react/dial.tsx'
+import { Cropper, type CropperProps } from '../../../frameworks/react/cropper.tsx'
 import { Dialog } from '../../../frameworks/react/dialog.tsx'
 import { Field } from '../../../frameworks/react/field.tsx'
 import { Gantt } from '../../../frameworks/react/gantt.tsx'
@@ -99,6 +100,10 @@ function CompareExample(props: CompareProps) {
   )
 }
 
+function CropperExample(props: Omit<CropperProps, 'src' | 'alt' | 'width' | 'height'>) {
+  return <Cropper src="/demo/harbor.svg" alt="The harbor at dusk" width={640} height={480} zoom={attributes => <input className="slider" aria-label="Zoom" {...attributes} />} {...props} />
+}
+
 function MenuExample(props: MenuProps) {
   return <Menu trigger={attributes => <button type="button" className="btn" {...attributes}>Project</button>} {...props} />
 }
@@ -186,6 +191,7 @@ export const fixtures = {
   'combobox': Combobox,
   'command': Command,
   'compare': CompareExample,
+  'cropper': CropperExample,
   'context-menu': ContextMenuExample,
   'dial': Dial,
   'dialog': DialogExample,

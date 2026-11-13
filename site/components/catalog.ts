@@ -116,6 +116,7 @@ export const components = [
   { slug: 'marquee', name: 'Marquee', category: 'Media', description: 'A row that passes by without end, and stops when you look closely.' },
   { slug: 'waveform', name: 'Waveform', category: 'Media', description: 'A recording as a row of bars, in ink as far as it has played.' },
   { slug: 'compare', name: 'Compare', category: 'Media', description: 'Two pictures of the same thing, and a handle that draws the line between them.' },
+  { slug: 'cropper', name: 'Cropper', category: 'Media', description: 'A picture with a box over it that says what to keep.' },
   { slug: 'window', name: 'Window', category: 'Media', description: 'The frame of an application around a screenshot, a demo or a terminal.' },
   { slug: 'device', name: 'Device', category: 'Media', description: 'The body of a phone around a screenshot, a video or a running demo.' },
   { slug: 'list', name: 'List', category: 'Content', description: 'Rows of things with media, words and something at the end.' },

@@ -168,6 +168,7 @@ Or import only the theme and the components you use:
 | Splitter | `splitter`, `splitter-pane`, `splitter-handle` |
 | Figure | `figure`, `figure-framed`, `figure-center`, `figure-media`, `figure-caption` |
 | Compare | `compare`, `compare-before`, `compare-after`, `compare-range` |
+| Cropper | `cropper`, `cropper-pan`, `cropper-round`, `cropper-image`, `cropper-box`, `cropper-handle`, `cropper-handle-top`, `cropper-handle-bottom`, `cropper-handle-left`, `cropper-handle-right`, `cropper-status` |
 | Quote | `quote`, `quote-lg`, `quote-text`, `quote-source`, `quote-name` |
 | Message | `message`, `message-sent`, `message-avatar`, `message-bubble`, `message-meta`, `message-typing` |
 | Thread | `thread`, `thread-item`, `thread-avatar`, `thread-body`, `thread-header`, `thread-text`, `thread-author`, `thread-meta`, `thread-replies` |

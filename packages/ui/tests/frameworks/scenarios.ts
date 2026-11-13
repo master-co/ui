@@ -615,6 +615,45 @@ export const scenarios: Record<string, Scenario> = {
     await driver.act(() => drawn.unmount())
   },
 
+  async cropper(driver, page) {
+    // The fixture's picture is 640 by 480: an arrow moves the crop 6 pixels.
+    const committed: unknown[] = []
+    const known: unknown[] = []
+    const { mounted, heard } = await owned(driver, 'cropper', { value: { x: 64, y: 48, width: 320, height: 240 }, label: 'Crop the photo', onValueCommit: (crop: unknown) => { committed.push(crop); known.push(heard.at(-1)) } })
+    conforms(page)
+    const root = page.one<HTMLElement>('.cropper')
+    const box = page.one<HTMLElement>('.cropper-box')
+    assert.deepEqual(['x', 'y', 'width', 'height'].map(name => root.style.getPropertyValue(`--cropper-${name}`)), ['0.1', '0.1', '0.5', '0.5'], 'the crop is in the first render')
+    assert.equal(page.all('.cropper-handle').length, 8)
+    assert.equal(page.all('input').length, 0, 'a cropper that is not panned has no zoom')
+
+    await driver.act(() => page.key(box, 'ArrowRight'))
+    assert.deepEqual(heard, [{ x: 70, y: 48, width: 320, height: 240 }])
+    await driver.act(() => page.key(box, 'ArrowDown', { altKey: true }))
+    assert.deepEqual(heard.at(-1), { x: 70, y: 48, width: 320, height: 246 })
+    assert.deepEqual(committed, heard, 'each key is a change')
+    assert.deepEqual(known, heard, 'a crop is committed after it has come out as the value')
+    assert.match(page.one('.cropper-status').textContent ?? '', /^320 by 246 pixels/)
+
+    await driver.act(() => mounted.set({ value: { x: 0, y: 0, width: 640, height: 480 } }))
+    assert.equal(root.style.getPropertyValue('--cropper-width'), '1')
+    assert.equal(heard.length, 2, 'a crop set by the owner says nothing')
+    await driver.act(() => mounted.unmount())
+
+    const panned = await owned(driver, 'cropper', { pan: true, round: true, label: 'Crop the avatar' })
+    conforms(page)
+    const frame = page.one<HTMLElement>('.cropper')
+    const slider = page.one<HTMLInputElement>('input.slider')
+    assert.equal(page.all('.cropper-handle').length, 0, 'a panned box has no handles')
+    assert.equal(slider.getAttribute('aria-controls'), frame.id, 'the zoom names the frame')
+    assert.equal(slider.value, '1')
+    await driver.act(() => page.type(slider, '2'))
+    assert.deepEqual(panned.heard, [{ x: 200, y: 120, width: 240, height: 240, zoom: 2 }], 'the largest square, zoomed about its middle')
+    await driver.act(() => panned.mounted.set({ value: { x: 0, y: 0, width: 480, height: 480, zoom: 1 } }))
+    assert.equal(slider.value, '1', 'a crop set by the owner moves the zoom')
+    await driver.act(() => panned.mounted.unmount())
+  },
+
   async menu(driver, page) {
     const ran: string[] = []
     const items = [

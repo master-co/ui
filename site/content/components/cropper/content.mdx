@@ -1,0 +1,187 @@
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+A cropper is a picture with a box over it that says what to keep: a photo cropped before it is posted, a cover trimmed to a banner's proportions, an avatar framed in a circle. The picture rests in a well. What lies outside the box is dimmed, the box's edge is the white line drawn over a picture, and its handles are pearl discs at the corners and pills on the edges. While the box is held, or keyed, the rule of thirds shows inside it.
+
+<ComponentPreview name="default" height={432} narrowHeight={304} title="Cropper" bodyClass="p-lg" behaviors html={`<div class="cropper max-w(480) mx-auto" style="--cropper-x: .16; --cropper-y: .14; --cropper-width: .62; --cropper-height: .66">
+  <img class="cropper-image" src="/demo/harbor.svg" alt="A harbor at dusk" width="640" height="480">
+  <div class="cropper-box" role="application" aria-roledescription="crop box" tabindex="0" aria-label="Crop the photo">
+    <span class="cropper-handle cropper-handle-top cropper-handle-left"></span>
+    <span class="cropper-handle cropper-handle-top"></span>
+    <span class="cropper-handle cropper-handle-top cropper-handle-right"></span>
+    <span class="cropper-handle cropper-handle-right"></span>
+    <span class="cropper-handle cropper-handle-bottom cropper-handle-right"></span>
+    <span class="cropper-handle cropper-handle-bottom"></span>
+    <span class="cropper-handle cropper-handle-bottom cropper-handle-left"></span>
+    <span class="cropper-handle cropper-handle-left"></span>
+  </div>
+  <p class="cropper-status" role="status"></p>
+</div>`} caption="Drag the box or a handle, or draw a new box across the picture. Focus the box and use the arrows; Alt with an arrow sizes it." />
+
+The geometry is four custom properties on the root, each a share of the picture from 0 to 1: `--cropper-x` and `--cropper-y` from its top left corner, `--cropper-width` and `--cropper-height`. The stylesheet places the box from them, and the dim follows the box. Without a script the box stays where they put it, the whole picture when they are left out.
+
+The value an application reads is the same rectangle in the picture's own pixels, `{ x, y, width, height }`. Cutting the picture is the application's: see [cutting the picture](#cutting-the-picture).
+
+## The behavior \{#behavior\}
+
+`cropper` takes the root, the element with the `cropper` class, and an object of options, and returns the function that detaches it. Its `value` is the crop; set it to move the crop from outside, which dispatches nothing.
+
+```js name=app.js
+import { cropper } from '@master/ui/behaviors/cropper.js'
+
+const root = document.querySelector('.cropper')
+const crop = cropper(root, { ratio: 16 / 9 })
+
+root.addEventListener('change', () => {
+  const { x, y, width, height } = crop.value
+  form.elements.crop.value = [x, y, width, height].join(' ')
+})
+```
+
+- **The box.** A drag of the box moves it, a drag of a handle moves the edges the handle names, and a drag across the picture outside the box draws a new one. A press there without a drag brings the box to it, so the box can be moved without dragging. The box stays inside the picture and keeps a least size.
+- **The picture's pixels.** The crop is counted in the `width` and `height` of `cropper-image`. Write the file's own size there: it is also what keeps the frame from moving while the picture loads.
+- **The keys.** The arrows move the crop by a step, ten steps with <kbd class="kbd">Shift</kbd>. With <kbd class="kbd">Alt</kbd> (<kbd class="kbd">Option</kbd> on a Mac) they size it from its far edges: right and down larger, left and up smaller.
+- **Events.** The box dispatches `input` each time the crop changes and `change` once a drag or a key has ended. Both bubble.
+- **What is said.** After each `change` the behavior writes the crop's size into `cropper-status`, a polite live region: "480 by 270 pixels, 64 from the left and 96 from the top". Pass `describe` to say it in the page's language.
+
+A picture has no direction, so the box is placed from the left and the top, and the arrows mean left and right, in every writing direction.
+
+| Option | What it sets |
+| --- | --- |
+| `ratio` | Width over height the box keeps, such as `16 / 9`. Free when left out, unless the root's style writes `--cropper-ratio`; 0 makes it free |
+| `step` | How far an arrow moves the crop, in the picture's pixels. A hundredth of its longer side by default |
+| `min` | The least width and height, in the picture's pixels. A tenth of its shorter side by default |
+| `maxZoom` | How far a panned cropper zooms when no range input says so. 4 by default |
+| `describe` | A function from the crop to the words the status says |
+
+`cropperFit(picture, crop, options)`, from the same module, fits a crop to a picture as the behavior holds it. A renderer uses it to draw the first crop on a server.
+
+## Proportions \{#proportions\}
+
+With a ratio, a corner's handle keeps the corner across from it and the box keeps its proportions; an edge's handle sizes the box about its middle. When the behavior is attached with a ratio the box does not have, it gives the box that ratio about its middle, at the same area, and says `input` and `change`: that is how a choice of proportions takes effect.
+
+<ComponentPreview name="proportions" height={456} narrowHeight={368} title="Proportions" background="plain" bodyClass="p-lg" behaviors html={`<div class="grid gap-md max-w(480) mx-auto">
+  <div class="segmented segmented-sm mx-auto" role="radiogroup" aria-label="Proportions">
+    <label class="segmented-item"><input type="radio" class="segmented-input" name="banner-ratio" value="0" checked>Free</label>
+    <label class="segmented-item"><input type="radio" class="segmented-input" name="banner-ratio" value="1/1">1:1</label>
+    <label class="segmented-item"><input type="radio" class="segmented-input" name="banner-ratio" value="4/3">4:3</label>
+    <label class="segmented-item"><input type="radio" class="segmented-input" name="banner-ratio" value="16/9">16:9</label>
+  </div>
+  <div class="cropper" id="banner-crop" style="--cropper-x: .1; --cropper-y: .2; --cropper-width: .8; --cropper-height: .6">
+    <img class="cropper-image" src="/demo/tide.svg" alt="The tide coming in over flat sand" width="640" height="400">
+    <div class="cropper-box" role="application" aria-roledescription="crop box" tabindex="0" aria-label="Crop the banner">
+      <span class="cropper-handle cropper-handle-top cropper-handle-left"></span>
+      <span class="cropper-handle cropper-handle-top"></span>
+      <span class="cropper-handle cropper-handle-top cropper-handle-right"></span>
+      <span class="cropper-handle cropper-handle-right"></span>
+      <span class="cropper-handle cropper-handle-bottom cropper-handle-right"></span>
+      <span class="cropper-handle cropper-handle-bottom"></span>
+      <span class="cropper-handle cropper-handle-bottom cropper-handle-left"></span>
+      <span class="cropper-handle cropper-handle-left"></span>
+    </div>
+    <p class="cropper-status" role="status"></p>
+  </div>
+  <p class="m(0) text-sm fg-text-muted text-center" id="banner-crop-value" aria-hidden="true"></p>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  var root = document.getElementById('banner-crop')
+  var readout = document.getElementById('banner-crop-value')
+  var crop = MasterUI.cropper(root)
+  function show() {
+    var value = crop.value
+    readout.textContent = value.width + ' × ' + value.height + ' pixels at ' + value.x + ', ' + value.y
+  }
+  root.addEventListener('input', show)
+  document.querySelectorAll('input[name="banner-ratio"]').forEach(function (input) {
+    input.addEventListener('change', function () {
+      var parts = input.value.split('/')
+      crop = MasterUI.cropper(root, { ratio: parts.length > 1 ? parts[0] / parts[1] : 0 })
+    })
+  })
+  show()
+})
+</script>`} caption="Choose a ratio, then drag a corner or an edge. The line under the picture is the value." />
+
+A second call of `cropper` on one root replaces the first, so the preview attaches it again with the new ratio. `MasterUI` is the bundle a preview loads; in a project, import `cropper` as [the behavior](#behavior) section shows. A framework component does the same when its `ratio` changes.
+
+## An avatar \{#avatar\}
+
+`cropper-pan` keeps the box in the middle of the frame, at the proportions of `--cropper-ratio`, and moves the picture under it instead: a drag pans, two fingers pinch, and the wheel zooms with <kbd class="kbd">Control</kbd> or <kbd class="kbd">Command</kbd> held, which is also what a trackpad's pinch sends. `cropper-round` draws the box as a circle. The crop's value gains `zoom`: 1 where the crop is as large as the picture allows.
+
+A range input whose `aria-controls` names the root's `id` zooms it too, from its `min` to its `max`, and follows a zoom made any other way. It is the page's own [slider](/components/slider), so it can stand under the frame, beside it or in a toolbar.
+
+<ComponentPreview name="avatar" height={392} title="An avatar" background="plain" bodyClass="p-lg" behaviors html={`<div class="grid gap-md w(280) mx-auto">
+  <div class="cropper cropper-pan cropper-round" id="avatar-crop" style="--cropper-x: .1; --cropper-y: .18; --cropper-width: .8; --cropper-height: .64">
+    <img class="cropper-image" src="/demo/cairn.svg" alt="A cairn of stones on a ridge" width="480" height="600">
+    <div class="cropper-box" role="application" aria-roledescription="crop box" tabindex="0" aria-label="Frame your picture"></div>
+    <p class="cropper-status" role="status"></p>
+  </div>
+  <div class="flex items-center gap-sm fg-text-muted">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.5-4.5M8.5 11h5"/></svg>
+    <input type="range" class="slider grow(1)" min="1" max="4" step="any" value="1.25" aria-controls="avatar-crop" aria-label="Zoom">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.5-4.5M8.5 11h5M11 8.5v5"/></svg>
+  </div>
+</div>`} caption="Drag the picture, pinch it, or move the slider. Focus the circle: the arrows pan, + and - zoom." />
+
+The picture fills the box at every zoom, so a panned crop is always inside it. On the keys, the arrows move the crop as they do elsewhere, and <kbd class="kbd">Alt</kbd> with an arrow, or <kbd class="kbd">+</kbd> and <kbd class="kbd">-</kbd>, zoom about the middle of the box. The box has no handles, and `--cropper-inset`, the room around it, shows a ring of the dimmed picture so the reader sees what is left out.
+
+## Cutting the picture \{#cutting-the-picture\}
+
+The cropper says which part to keep; it never touches the file. Send the four numbers with the upload and cut on the server, or cut in the page with a canvas: `drawImage` takes a part of a picture in its own pixels, which is what the value is.
+
+```js name=crop.js
+/** The part of a loaded picture a crop keeps, as a file. */
+function cut(image, { x, y, width, height }, type = 'image/webp') {
+  const canvas = document.createElement('canvas')
+  canvas.width = width
+  canvas.height = height
+  canvas.getContext('2d').drawImage(image, x, y, width, height, 0, 0, width, height)
+  return new Promise((resolve) => canvas.toBlob(resolve, type))
+}
+
+const file = await cut(document.querySelector('.cropper-image'), crop.value)
+```
+
+- The picture must come from the page's own origin, or carry `crossorigin` and be served with CORS: a canvas that has drawn a picture from elsewhere refuses to give it back.
+- When the `width` and `height` of the image are not the file's own size, scale the crop by `image.naturalWidth / width` first.
+- A round crop is kept square: an [avatar](/components/avatar) draws itself round. Clip the canvas with an `arc()` only when the file itself must be round.
+
+## Keyboard \{#keyboard\}
+
+<ContractTable name="cropper" show="keyboard" />
+
+## Accessibility \{#accessibility\}
+
+- The box is the one tab stop. It has `role="application"`: it is a single control with keys of its own that no other role describes, and the role tells a screen reader to pass the arrows to it. Name it for what is cropped, and give it `aria-roledescription` in the page's language so it is announced as a crop box rather than an application.
+- The handles take no focus. Eight more tab stops would tell a keyboard nothing the box does not: the arrows move the crop and <kbd class="kbd">Alt</kbd> with an arrow sizes it, which reaches every crop a handle reaches. Moving the start edges is a move followed by a resize.
+- After each change `cropper-status` says the crop's size in pixels, politely. Keep it in the markup from the start, so a screen reader has registered it before it first speaks.
+- Every drag has another way: the keys, a press on the picture to bring the box there, and the zoom's slider.
+- Give the picture an `alt` that says what it shows: the reader is deciding what to keep of it.
+- A handle's target is 24px, 44px on a touch screen, while the disc or the pill drawn in it keeps its size; the room around the picture grows with it. The whole frame takes the pointer, so place a cropper where a finger does not need to scroll past it, as in a dialog or an editor.
+- Under reduced motion the handles do not grow when held. In forced colors the box is drawn with a system outline, the handles in button colors and the dim kept.
+
+## React, Svelte and Vue \{#frameworks\}
+
+The `cropper` component renders the picture, the box and its handles, attaches the behavior and passes the crop in and out. A panned cropper hands the page's own range input the attributes that join it to the frame. Copy it into the project with `npx master-ui add cropper`; [React, Svelte and Vue](/guide/frameworks) says how the components are built and used.
+
+<FrameworkSource name="cropper" />
+
+## Classes \{#classes\}
+
+<ContractTable name="cropper" />
+
+## Custom properties \{#custom-properties\}
+
+<ContractTable name="cropper" show="properties" />
+
+## Related \{#related\}
+
+<ComponentLinks slugs={['figure', 'compare', 'avatar', 'slider']} />
+
+## Source \{#source\}
+
+<ComponentSource name="cropper" />

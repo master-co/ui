@@ -20,6 +20,7 @@ import { editable } from './editable.js'
 import { dial } from './dial.js'
 import { gantt } from './gantt.js'
 import { drawer } from './drawer.js'
+import { cropper, cropperFit } from './cropper.js'
 import { listbox } from './listbox.js'
 import { contextMenu, menu } from './menu.js'
 import { otp } from './otp.js'
@@ -36,7 +37,7 @@ import { tour } from './tour.js'
 import { tree } from './tree.js'
 import { wheel } from './wheel.js'
 
-export { calendar, calendarMonth, calendarPeriods, colorPicker, colorPickerState, combobox, command, compare, contextMenu, dial, drawer, editable, gantt, listbox, menu, otp, panel, range, signature, signaturePath, signatureSvg, sortable, splitter, stepper, tabs, tags, toolbar, tour, tree, wheel }
+export { calendar, calendarMonth, calendarPeriods, colorPicker, colorPickerState, combobox, command, compare, contextMenu, cropper, cropperFit, dial, drawer, editable, gantt, listbox, menu, otp, panel, range, signature, signaturePath, signatureSvg, sortable, splitter, stepper, tabs, tags, toolbar, tour, tree, wheel }
 
 /**
  * Each pattern's root class and the behavior that drives it.
@@ -56,6 +57,7 @@ const patterns = [
   ['.compare', compare],
   ['.dial', dial],
   ['.signature', signature],
+  ['.cropper', cropper],
   ['.listbox', listbox],
   ['.tags', tags],
   ['.editable', editable],

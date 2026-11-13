@@ -17,6 +17,7 @@ import Tree from '../../../frameworks/svelte/Tree.svelte'
 import Wheel from '../../../frameworks/svelte/Wheel.svelte'
 import ColorPickerPopoverExample from './ColorPickerPopoverExample.svelte'
 import CompareExample from './CompareExample.svelte'
+import CropperExample from './CropperExample.svelte'
 import ContextMenuExample from './ContextMenuExample.svelte'
 import DialogExample from './DialogExample.svelte'
 import DialogSheetExample from './DialogSheetExample.svelte'
@@ -41,6 +42,7 @@ export const fixtures = {
   'combobox': Combobox,
   'command': Command,
   'compare': CompareExample,
+  'cropper': CropperExample,
   'context-menu': ContextMenuExample,
   'dial': Dial,
   'dialog': DialogExample,

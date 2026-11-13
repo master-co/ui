@@ -1,0 +1,55 @@
+{
+  "$schema": "../contract.schema.json",
+  "name": "cropper",
+  "title": "Cropper",
+  "tier": "component",
+  "category": "Media",
+  "description": "A picture with a box over it that says what to keep.",
+  "use": "A reader chooses the part of a picture to keep: a photo cropped before it is posted, a cover trimmed to a banner's proportions, an avatar framed in a circle. The value is a rectangle in the picture's own pixels; cutting the picture is the application's.",
+  "instead": [
+    { "when": "The picture is shown, not cropped", "use": "figure" },
+    { "when": "Two versions of one picture are compared", "use": "compare" },
+    { "when": "A picture is opened large to look at", "use": "lightbox" }
+  ],
+  "script": "required",
+  "behavior": "cropper",
+  "keyboard": [
+    { "keys": "ArrowLeft, ArrowRight, ArrowUp, ArrowDown", "action": "Move the crop by a step of the picture's pixels, a hundredth of its longer side by default; ten steps with Shift" },
+    { "keys": "Alt + ArrowRight, Alt + ArrowDown", "action": "Make the crop wider or taller from its far edge, both at a ratio; on a panned cropper, zoom out" },
+    { "keys": "Alt + ArrowLeft, Alt + ArrowUp", "action": "Make the crop narrower or shorter from its far edge, both at a ratio; on a panned cropper, zoom in" },
+    { "keys": "+, -", "action": "On a panned cropper, zoom in or out about the middle of the box" }
+  ],
+  "platform": [
+    { "feature": "Size container queries on the box", "fallback": "The handles of the edges stay on a box too small to hold them apart from the corners; the corners are still on top" },
+    { "feature": "corner-shape on the frame, through --corner-shape", "fallback": "A circular corner" }
+  ],
+  "classes": [
+    { "name": "cropper", "kind": "root", "description": "The frame: a well that holds the picture --cropper-inset in from its edge, and the box over it. The whole frame takes the pointer" },
+    { "name": "cropper-pan", "kind": "modifier", "of": "cropper", "description": "The box stays in the middle of the frame, at the proportions of --cropper-ratio, and the picture pans and zooms under it" },
+    { "name": "cropper-round", "kind": "modifier", "of": "cropper", "description": "The box is a circle, or an ellipse inside a box that is not square: for an avatar" },
+    { "name": "cropper-image", "kind": "part", "of": "cropper", "elements": ["img"], "attributes": { "width": true, "height": true }, "description": "The picture. Its width and height are the file's own size in pixels: the crop is counted in them" },
+    { "name": "cropper-box", "kind": "part", "of": "cropper", "attributes": { "role": "application", "tabindex": ["0", "-1"] }, "label": true, "description": "The crop: one tab stop that the arrow keys move and size, placed from the four properties. It dims the picture outside it and shows the rule of thirds while it is held or keyed" },
+    { "name": "cropper-handle", "kind": "part", "of": "cropper", "description": "A handle a pointer drags: a 24px target, 44px on a coarse pointer, with a pearl pill on an edge and a pearl disc on a corner. Its modifiers name the edges it moves" },
+    { "name": "cropper-handle-top", "kind": "modifier", "of": "cropper-handle", "exclusive": "block", "description": "The handle moves the top edge" },
+    { "name": "cropper-handle-bottom", "kind": "modifier", "of": "cropper-handle", "exclusive": "block", "description": "The handle moves the bottom edge" },
+    { "name": "cropper-handle-left", "kind": "modifier", "of": "cropper-handle", "exclusive": "inline", "description": "The handle moves the left edge" },
+    { "name": "cropper-handle-right", "kind": "modifier", "of": "cropper-handle", "exclusive": "inline", "description": "The handle moves the right edge" },
+    { "name": "cropper-status", "kind": "part", "of": "cropper", "attributes": { "role": "status" }, "description": "A polite live region, hidden but read: the script writes the crop's size into it after each change" }
+  ],
+  "states": [
+    { "on": "cropper", "name": "held", "mark": ":active", "description": "While the box, a handle or the panned picture is held, the rule of thirds shows" },
+    { "on": "cropper-box", "name": "focused", "mark": ":focus-visible", "description": "A white ring outside the box, and the rule of thirds" },
+    { "on": "cropper-box", "name": "disabled", "mark": "aria-disabled=\"true\"", "description": "The handles leave and the crop takes no pointer and no key" }
+  ],
+  "properties": [
+    { "name": "--cropper-x", "default": "0", "description": "The crop's left edge, as a share of the picture's width from 0 to 1; the script writes it" },
+    { "name": "--cropper-y", "default": "0", "description": "The crop's top edge, as a share of the picture's height" },
+    { "name": "--cropper-width", "default": "1", "description": "The crop's width, as a share of the picture's width" },
+    { "name": "--cropper-height", "default": "1", "description": "The crop's height, as a share of the picture's height" },
+    { "name": "--cropper-ratio", "default": "1", "description": "Width over height of a panned box. The script writes the ratio it keeps here, and reads one written in markup" },
+    { "name": "--cropper-inset", "default": "1rem", "description": "The room between the picture and the frame: 1.375rem on a coarse pointer, so a handle on the picture's edge stays whole, and 1.5rem around a panned box" },
+    { "name": "--cropper-radius", "default": "var(--radius-surface)", "description": "Corner of the frame" },
+    { "name": "--cropper-target", "default": "1.5rem", "description": "The size of a handle's target; 2.75rem on a coarse pointer. The mark drawn in it keeps its size" }
+  ],
+  "example": "<div class=\"cropper\" style=\"--cropper-x: .1; --cropper-y: .1; --cropper-width: .8; --cropper-height: .8\">\n  <img class=\"cropper-image\" src=\"/photos/harbor.jpg\" alt=\"The harbor at dusk\" width=\"1600\" height=\"1200\">\n  <div class=\"cropper-box\" role=\"application\" aria-roledescription=\"crop box\" tabindex=\"0\" aria-label=\"Crop the photo\">\n    <span class=\"cropper-handle cropper-handle-top cropper-handle-left\"></span>\n    <span class=\"cropper-handle cropper-handle-top\"></span>\n    <span class=\"cropper-handle cropper-handle-top cropper-handle-right\"></span>\n    <span class=\"cropper-handle cropper-handle-right\"></span>\n    <span class=\"cropper-handle cropper-handle-bottom cropper-handle-right\"></span>\n    <span class=\"cropper-handle cropper-handle-bottom\"></span>\n    <span class=\"cropper-handle cropper-handle-bottom cropper-handle-left\"></span>\n    <span class=\"cropper-handle cropper-handle-left\"></span>\n  </div>\n  <p class=\"cropper-status\" role=\"status\"></p>\n</div>"
+}

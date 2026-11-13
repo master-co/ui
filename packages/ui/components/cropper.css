@@ -1,0 +1,351 @@
+/*
+ * Cropper: a picture with a box over it that says what to keep.
+ * The picture rests in a well, --cropper-inset in from its edge, so the handles of a box that reaches the
+ * picture's edge still have room. What lies outside the box is dimmed: the box casts a wide shadow of
+ * --color-image-dim, clipped to the picture, so the dim follows the box's corner, round included, and never
+ * spills past the picture. The box's own edge is the line drawn over a picture (white with a dark shade,
+ * in both themes, as on a comparison), its handles are pearl discs at the corners and pills on the edges,
+ * and the rule of thirds appears inside it while it is held or focused from the keyboard.
+ *
+ * The geometry is four custom properties, shares of the picture from 0 to 1: --cropper-x and --cropper-y
+ * from its top left corner, --cropper-width and --cropper-height. A script writes them; the stylesheet
+ * places the box from them, and with no script the box stays where they put it, the whole picture by default.
+ * A picture has no direction, so the box is placed from the left and the top in every writing direction.
+ *
+ * Panned (cropper-pan): the box stays in the middle of the frame, at the proportions of --cropper-ratio, and
+ * the picture moves and scales under it from the same four properties. Round (cropper-round) draws the box
+ * as a circle, for an avatar.
+ *
+ * A handle's target is 24px, 44px on a coarse pointer, while the disc or the pill drawn in it keeps its
+ * size; the inset grows with the target. Edge handles step aside when the box is too small to hold them.
+ */
+@layer components {
+  .cropper {
+    --cropper-x: 0;
+    --cropper-y: 0;
+    --cropper-width: 1;
+    --cropper-height: 1;
+    --cropper-ratio: 1;
+    --cropper-inset: 1rem;
+    --cropper-radius: var(--radius-surface);
+    --cropper-target: 1.5rem;
+    position: relative;
+    display: block;
+    box-sizing: border-box;
+    min-width: 0;
+    margin: 0;
+    padding: var(--cropper-inset);
+    overflow: clip;
+    border-radius: calc(var(--cropper-radius) * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    background: var(--color-surface-inset);
+    box-shadow: inset 0 0 0 .5px var(--color-line-contour);
+    cursor: crosshair;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+    isolation: isolate;
+
+    @media (pointer: coarse) {
+      --cropper-target: 2.75rem;
+      --cropper-inset: 1.375rem;
+    }
+
+    /*
+     * Panned: the frame holds the box, --cropper-inset in from every edge, and the picture is placed under it
+     * so that the part the four properties name fills the box exactly.
+     */
+    &.cropper-pan {
+      --cropper-inset: 1.5rem;
+      display: grid;
+      cursor: grab;
+
+      &:active {
+        cursor: grabbing;
+      }
+
+      /* The inward line every picture gets, over the picture that now runs to the frame's edge. */
+      &::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        border-radius: inherit;
+        corner-shape: inherit;
+        box-shadow: inset 0 0 0 1px var(--color-line-image);
+        pointer-events: none;
+      }
+
+      .cropper-image {
+        position: absolute;
+        top: var(--cropper-inset);
+        left: var(--cropper-inset);
+        width: calc((100% - var(--cropper-inset) * 2) / var(--cropper-width));
+        max-width: none;
+        translate: calc(var(--cropper-x) * -100%) calc(var(--cropper-y) * -100%);
+        outline: 0;
+      }
+
+      .cropper-box {
+        position: relative;
+        inset: auto;
+        width: 100%;
+        height: auto;
+        aspect-ratio: var(--cropper-ratio);
+        cursor: inherit;
+      }
+    }
+
+    &.cropper-round .cropper-box {
+      border-radius: 50%;
+      corner-shape: round;
+    }
+
+    &:has(.cropper-box[aria-disabled="true"]) {
+      cursor: default;
+    }
+
+    @media (forced-colors: active) {
+      outline: 1px solid CanvasText;
+      outline-offset: -1px;
+    }
+  }
+
+  /* The picture: as wide as the well, at its own proportions, from the width and height it is given. */
+  .cropper-image {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    margin: 0;
+    border: 0;
+    outline: .5px solid var(--color-line-image-strong);
+    outline-offset: -.5px;
+    pointer-events: none;
+    -webkit-user-drag: none;
+  }
+
+  /*
+   * The box: placed from the four properties, inside the well's inset. Its edge is a white line with a
+   * dark shade; ::before casts the dim over the rest of the picture and ::after holds the thirds.
+   */
+  .cropper-box {
+    position: absolute;
+    top: calc(var(--cropper-inset) + var(--cropper-y) * (100% - var(--cropper-inset) * 2));
+    left: calc(var(--cropper-inset) + var(--cropper-x) * (100% - var(--cropper-inset) * 2));
+    width: calc(var(--cropper-width) * (100% - var(--cropper-inset) * 2));
+    height: calc(var(--cropper-height) * (100% - var(--cropper-inset) * 2));
+    box-sizing: border-box;
+    container: cropper-box / size;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    outline: none;
+    box-shadow: inset 0 0 0 1px var(--color-on-image), 0 0 0 .5px var(--color-on-image-shade), 0 0 6px var(--color-on-image-shade);
+    cursor: move;
+    touch-action: none;
+    /* Its own layer: the dim it casts lies under its focus ring, and over the picture. */
+    isolation: isolate;
+
+    /*
+     * The dim: a shadow wide enough for any picture, clipped to the picture. The clip is the picture's own
+     * edge, measured from the box: it starts x / width box-widths to the left, and so on for each side.
+     */
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      border-radius: inherit;
+      corner-shape: inherit;
+      box-shadow: 0 0 0 9999px var(--color-image-dim);
+      clip-path: polygon(
+        calc(var(--cropper-x) / var(--cropper-width) * -100%) calc(var(--cropper-y) / var(--cropper-height) * -100%),
+        calc((1 - var(--cropper-x)) / var(--cropper-width) * 100%) calc(var(--cropper-y) / var(--cropper-height) * -100%),
+        calc((1 - var(--cropper-x)) / var(--cropper-width) * 100%) calc((1 - var(--cropper-y)) / var(--cropper-height) * 100%),
+        calc(var(--cropper-x) / var(--cropper-width) * -100%) calc((1 - var(--cropper-y)) / var(--cropper-height) * 100%)
+      );
+      pointer-events: none;
+    }
+
+    /* The rule of thirds: two fine lines each way, shown while the box is held or keyed. */
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      corner-shape: inherit;
+      background:
+        linear-gradient(to right, transparent calc(100% / 3 - .5px), var(--color-on-image) 0 calc(100% / 3 + .5px), transparent 0 calc(200% / 3 - .5px), var(--color-on-image) 0 calc(200% / 3 + .5px), transparent 0),
+        linear-gradient(to bottom, transparent calc(100% / 3 - .5px), var(--color-on-image) 0 calc(100% / 3 + .5px), transparent 0 calc(200% / 3 - .5px), var(--color-on-image) 0 calc(200% / 3 + .5px), transparent 0);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity var(--duration-quick) var(--easing-glide);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--color-on-image);
+      outline-offset: 2px;
+    }
+
+    &:focus-visible::after {
+      opacity: .6;
+    }
+
+    &[aria-disabled="true"] {
+      cursor: default;
+
+      .cropper-handle {
+        display: none;
+      }
+    }
+
+    @media (forced-colors: active) {
+      outline: 2px solid CanvasText;
+      outline-offset: -1px;
+
+      &::before {
+        forced-color-adjust: none;
+      }
+
+      &:focus-visible {
+        outline-color: Highlight;
+      }
+    }
+  }
+
+  /* While the box, a handle or the picture under a panned box is held, the thirds show. */
+  .cropper:active .cropper-box::after {
+    opacity: .6;
+  }
+
+  /*
+   * A handle: a target as large as --cropper-target, centered on a corner or on the middle of an edge, and
+   * a mark drawn in it that keeps its size. Its modifiers name the edges it moves: one for an edge, two for
+   * a corner.
+   */
+  .cropper-handle {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: var(--cropper-target);
+    height: var(--cropper-target);
+    translate: -50% -50%;
+    touch-action: none;
+
+    /* The mark: a pill on an edge, turned with the edge. */
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      width: 1.25rem;
+      height: .375rem;
+      margin: auto;
+      border-radius: 999px;
+      corner-shape: round;
+      @apply --surface-thumb;
+      box-shadow: 0 0 0 .5px var(--color-on-image-shade), 0 1px 2px -.5px var(--color-on-image-shade), 0 2px 6px -1px var(--color-on-image-shade);
+      transition: scale var(--duration-quick) var(--easing-glide);
+    }
+
+    &.cropper-handle-top {
+      top: 0;
+      cursor: ns-resize;
+    }
+
+    &.cropper-handle-bottom {
+      top: 100%;
+      cursor: ns-resize;
+    }
+
+    &.cropper-handle-left {
+      left: 0;
+      cursor: ew-resize;
+    }
+
+    &.cropper-handle-right {
+      left: 100%;
+      cursor: ew-resize;
+    }
+
+    &.cropper-handle-left::after, &.cropper-handle-right::after {
+      width: .375rem;
+      height: 1.25rem;
+    }
+
+    /* A corner: a disc, over the edges it meets. */
+    &:is(.cropper-handle-top, .cropper-handle-bottom):is(.cropper-handle-left, .cropper-handle-right) {
+      z-index: 1;
+
+      &::after {
+        width: .75rem;
+        height: .75rem;
+      }
+    }
+
+    &.cropper-handle-top.cropper-handle-left, &.cropper-handle-bottom.cropper-handle-right {
+      cursor: nwse-resize;
+    }
+
+    &.cropper-handle-top.cropper-handle-right, &.cropper-handle-bottom.cropper-handle-left {
+      cursor: nesw-resize;
+    }
+
+    @media (hover: hover) {
+      &:hover::after {
+        scale: 1.2;
+      }
+    }
+
+    &:active::after {
+      scale: 1.2;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      &::after {
+        transition: none;
+      }
+
+      &:hover::after, &:active::after {
+        scale: none;
+      }
+    }
+
+    @media (forced-colors: active) {
+      &::after {
+        forced-color-adjust: none;
+        background: ButtonText;
+        box-shadow: 0 0 0 1px ButtonFace;
+      }
+    }
+  }
+
+  /* An edge's handle steps aside when the box is too small to hold it apart from the corners. */
+  @container cropper-box (width < 4.5rem) {
+    .cropper-handle.cropper-handle-top:not(.cropper-handle-left, .cropper-handle-right),
+    .cropper-handle.cropper-handle-bottom:not(.cropper-handle-left, .cropper-handle-right) {
+      display: none;
+    }
+  }
+
+  @container cropper-box (height < 4.5rem) {
+    .cropper-handle.cropper-handle-left:not(.cropper-handle-top, .cropper-handle-bottom),
+    .cropper-handle.cropper-handle-right:not(.cropper-handle-top, .cropper-handle-bottom) {
+      display: none;
+    }
+  }
+
+  /* What the script says after a change, for assistive technology only. */
+  .cropper-status {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}

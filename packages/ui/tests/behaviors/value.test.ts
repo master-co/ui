@@ -1,7 +1,7 @@
 import { afterEach, test } from 'node:test'
 import assert from 'node:assert/strict'
 import { dom } from './dom.ts'
-import { calendar, calendarMonth, calendarPeriods, combobox, command, compare, dial, gantt, listbox, otp, panel, signature, splitter, stepper, tour, tree, wheel } from '../../behaviors/index.js'
+import { calendar, calendarMonth, calendarPeriods, combobox, command, compare, cropper, dial, gantt, listbox, otp, panel, signature, splitter, stepper, tour, tree, wheel } from '../../behaviors/index.js'
 
 /** happy-dom catches what a listener throws and reports it on the window; a test must not pass over it. */
 const thrown: unknown[] = []
@@ -619,4 +619,21 @@ test('calendar: with draw, a jump asks for the months or the years, and the rend
   assert.equal(one('.calendar-title-button').textContent, 'December 2026')
   assert.equal((document.activeElement as HTMLButtonElement).value, '2026-12-13', 'focus follows into the month that was written')
   assert.equal(all('.calendar-period').length, 0)
+})
+
+test('cropper: value reads and sets the crop in the picture\'s pixels, fitted inside it, and setting it says nothing', () => {
+  const { one, heard } = setup(`<div class="cropper" style="--cropper-x: .1; --cropper-y: .1; --cropper-width: .5; --cropper-height: .5">
+  <img class="cropper-image" src="/a.jpg" alt="A harbor" width="800" height="600">
+  <div class="cropper-box" role="application" tabindex="0" aria-label="Crop"></div>
+</div>`)
+  const root = one<HTMLElement>('.cropper')
+  const handle = cropper(root)
+  assert.deepEqual(handle.value, { x: 80, y: 60, width: 400, height: 300 })
+  handle.value = { x: 200, y: 150, width: 400, height: 300 }
+  assert.equal(root.style.getPropertyValue('--cropper-x'), '0.25')
+  assert.equal(root.style.getPropertyValue('--cropper-y'), '0.25')
+  handle.value = { x: 700, y: 0, width: 400, height: 300 }
+  assert.deepEqual(handle.value, { x: 400, y: 0, width: 400, height: 300 }, 'a crop past the edge is kept inside the picture')
+  handle.value = { ...handle.value }
+  assert.deepEqual(heard, [])
 })

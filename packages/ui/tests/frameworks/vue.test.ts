@@ -196,6 +196,7 @@ test('vue: the first HTML, rendered on a server, holds the state, and hydrates w
     ['wheel', { columns: [{ label: 'Hour', options: ['09', '10'] }], value: ['10'], 'aria-label': 'Time' }, /data-value="10" aria-selected="true"/],
     ['otp', { length: 4, value: '48', 'aria-label': 'Verification code' }, /value="4"[\s\S]*value="8"/],
     ['gantt', { rows: [{ id: 'research', label: 'Research', start: 0, end: 3 }, { id: 'design', label: 'Design', start: 2, end: 6 }], from: 0, to: 10, value: { design: [3, 7] }, 'aria-label': 'Plan' }, /data-value="design"[^>]*--from:3;--to:7[\s\S]*aria-valuenow="3" aria-valuetext="3 to 7"[^>]*>3 to 7</],
+    ['cropper', { value: { x: 64, y: 48, width: 320, height: 240 }, label: 'Crop the photo' }, /--cropper-x:0\.1;--cropper-y:0\.1;--cropper-width:0\.5;--cropper-height:0\.5[\s\S]*role="application"/],
   ]
   for (const [name, props, expected] of examples) {
     const html = await renderToString(createSSRApp({ render: () => h(fixtures[name], translate(props)) }))

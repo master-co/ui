@@ -178,6 +178,7 @@ test('svelte: the first HTML, rendered on a server, holds the state, and hydrate
     'dial': [() => [page.one<HTMLElement>('.dial').style.getPropertyValue('--dial-value'), page.one('.dial-value').textContent, values('input[type="hidden"]')[0]], ['90', '90°', '90']],
     'wheel': [() => page.all('[aria-selected="true"]').map(option => option.getAttribute('data-value')), ['10']],
     'otp': [() => values('.otp-slot'), ['4', '8', '', '']],
+    'cropper': [() => ['x', 'y', 'width', 'height'].map(name => page.one<HTMLElement>('.cropper').style.getPropertyValue(`--cropper-${name}`)), ['0.1', '0.1', '0.5', '0.5']],
     'context-menu': [() => page.all('.menu.menu-context').length, 1],
     'tree': [() => page.all('.tree-item').map(row => row.getAttribute('aria-checked')), ['mixed', 'true', 'false']],
     'tags': [() => page.all('.chip').map(chip => chip.getAttribute('data-value')), ['design', 'research']],

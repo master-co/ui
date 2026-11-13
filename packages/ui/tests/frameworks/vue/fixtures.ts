@@ -17,6 +17,7 @@ import Tree from '../../../frameworks/vue/Tree.vue'
 import Wheel from '../../../frameworks/vue/Wheel.vue'
 import ColorPickerPopoverExample from './ColorPickerPopoverExample.vue'
 import CompareExample from './CompareExample.vue'
+import CropperExample from './CropperExample.vue'
 import ContextMenuExample from './ContextMenuExample.vue'
 import DialogExample from './DialogExample.vue'
 import DialogSheetExample from './DialogSheetExample.vue'
@@ -41,6 +42,7 @@ export const fixtures: Record<string, Component> = {
   'combobox': Combobox,
   'command': Command,
   'compare': CompareExample,
+  'cropper': CropperExample,
   'context-menu': ContextMenuExample,
   'dial': Dial,
   'dialog': DialogExample,
