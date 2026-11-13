@@ -5,8 +5,9 @@ description: "操作ガイドの1ステップとして、説明対象のコン�
 import ComponentPreview from '~/site/components/ComponentPreview.astro'
 import ComponentSource from '~/site/components/ComponentSource.astro'
 import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
-コーチマークは操作ガイドの1ステップです。インク色の小さなカードがコントロールを指し、その機能を説明します。ポップオーバーなので、ブラウザーがトップレイヤーに表示し、フォーカスを内部に移します。CSSアンカー配置で、開くきっかけとなった要素のそばに配置し、矢印でその要素を指します。ビーコンは、時折リングが広がるインク色の点で、ページ上の対象を示すとともに、コーチマークを開くボタンとして機能します。
+コーチマークは操作ガイドの1ステップです。インク色の小さなカードがコントロールを指し、その機能を説明します。ポップオーバーなので、ブラウザーがトップレイヤーに表示し、フォーカスを内部に移します。CSSアンカー配置で、開くきっかけとなった要素のそばに配置し、矢印でその要素を指します。ビーコンは、時折リングが広がるインク色の点で、ページ上の対象を示すとともに、コーチマークを開くボタンとして機能します。ツアーでは、`tour`ビヘイビアを使って複数のコーチマークを順に開きます。
 
 <ComponentPreview name="default" height={256} narrowHeight={284} title="コーチマーク" bodyClass="flex items-end justify-center p-lg" html={`<div class="toolbar" role="toolbar" aria-label="Deployments">
   <button type="button" class="btn btn-quiet btn-sm btn-square" aria-label="Search">
@@ -50,7 +51,7 @@ import ContractTable from '~/site/components/ContractTable.astro'
 
 コーチマークは、開くきっかけとなった要素の真下に中央揃えで表示され、矢印の先端はその要素から6px離れます。下に十分な空間がなければ、上に切り替わります。`coachmark-top`は上側を優先します。画面下部のコントロールや、最初の例のようにコントロールの上隅にビーコンがある場合に使います。
 
-矢印はマークアップ上でコーチマークの直前にある要素を指すため、コーチマークはビーコンか説明対象のコントロールの直後に置きます。表示中はその要素がアンカーとして指定され、矢印はその中央を追従します。カードがビューポートの端を避けてずれても対象を指し続け、カードの角丸を避け、カードの配置が反転すると反対側の辺に移ります。ツアーと同様、一度に開くコーチマークは1つです。
+矢印はマークアップ上でコーチマークの直前にある要素を指すため、コーチマークはビーコンか説明対象のコントロールの直後に置きます。ツアーでは、ステップの対象の上に重なるツアーのスポットライトを指します。表示中はその要素がアンカーとして指定され、矢印はその中央を追従します。カードがビューポートの端を避けてずれても対象を指し続け、カードの角丸を避け、カードの配置が反転すると反対側の辺に移ります。ツアーと同様、一度に開くコーチマークは1つです。
 
 ## ビーコン \{#beacon\}
 
@@ -60,82 +61,180 @@ import ContractTable from '~/site/components/ContractTable.astro'
 
 ## ツアー \{#tour\}
 
-ツアーでは複数のコーチマークを順に開きます。各ステップに`popover="manual"`を指定すると、説明対象のコントロールを試すなど、ページ内をクリックしてもツアーが終了しません。ステップ間の移動には短いスクリプトを使います。`showPopover({ source })`で直前の要素を基準にステップを開き、各ステップのアクションから呼び出して、次や前のステップに移動します。手動制御のポップオーバーは<kbd>Esc</kbd>で自動的に閉じないため、スクリプトで閉じて、ツアー開始時の位置にフォーカスを戻します。
+ツアーでは、複数のコーチマークを、それぞれが説明するコントロールに合わせて順に開きます。ステップは進む順に`coachmark-tour`内に置き、それぞれに`popover="manual"`を指定します。これにより、説明対象のコントロールを試すなど、ページ内をクリックしてもツアーが終了しません。ステップの対象は`data-target`にセレクターで指定します。指定がなければ、マークアップ上でステップの直前にある要素を指します。ステップのボタンは、`value`で役割を示します。`next`、`back`、`skip`、そして最後のステップでは`done`を使います。
 
-<ComponentPreview name="tour" height={256} narrowHeight={284} title="ツアー" bodyClass="flex items-start justify-center gap-sm p-lg" html={`<button type="button" class="btn btn-sm" id="tour-start">Take the tour</button>
-<div class="toolbar" role="toolbar" aria-label="Deployments">
-  <button type="button" class="btn btn-quiet btn-sm btn-square" aria-label="Search">
-    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.35-4.35"/></svg>
-  </button>
-  <div id="tour-search" popover="manual" class="coachmark" role="dialog" aria-labelledby="tour-search-title">
+残りは`tour` [ビヘイビア](/guide/behaviors)が担います。`command="--start"`を持ち、`commandfor`でツアーを指定したボタンでツアーを開始します。ビヘイビアは`showPopover({ source })`で各ステップを対象に合わせて開くため、ブラウザーがカードをそこにアンカーし、CSSが配置を決めます。さらに、フォーカスをステップ内の「次へ」または「完了」に移します。ツアー内に`coachmark-spotlight`がある場合は、まずそれを対象の上に開きます。ステップがマークアップ上のどこにあっても、ステップの矢印はこのスポットライトを指します。
+
+<ComponentPreview name="tour" height={272} title="ツアー" bodyClass="flex items-start justify-center p-lg" behaviors html={`<div class="coachmark-tour flex items-center gap-sm" id="deploys-tour">
+  <button type="button" class="btn btn-sm" commandfor="deploys-tour" command="--start">Take the tour</button>
+  <div class="toolbar" role="toolbar" aria-label="Deployments">
+    <button type="button" class="btn btn-quiet btn-sm btn-square" id="deploys-search" aria-label="Search">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.35-4.35"/></svg>
+    </button>
+    <button type="button" class="btn btn-quiet btn-sm btn-square" id="deploys-filter" aria-label="Filter">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+    </button>
+    <button type="button" class="btn btn-quiet btn-sm btn-square" id="deploys-share" aria-label="Share">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M8 8l4-4 4 4M5 14v5h14v-5"/></svg>
+    </button>
+  </div>
+  <div class="coachmark-spotlight" popover="manual"></div>
+  <div class="coachmark" popover="manual" role="dialog" aria-labelledby="deploys-search-title" data-target="#deploys-search">
     <p class="coachmark-count">1 of 3</p>
-    <h2 class="coachmark-title" id="tour-search-title">Search every deployment</h2>
+    <h2 class="coachmark-title" id="deploys-search-title">Search every deployment</h2>
     <p class="coachmark-text">Find one by its branch, its commit or the person who shipped it.</p>
     <div class="coachmark-actions">
       <button type="button" class="btn btn-sm btn-quiet" value="skip">Skip</button>
-      <button type="button" class="btn btn-sm" value="next" autofocus>Next</button>
+      <button type="button" class="btn btn-sm" value="next">Next</button>
     </div>
   </div>
-  <button type="button" class="btn btn-quiet btn-sm btn-square" aria-label="Filter">
-    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
-  </button>
-  <div id="tour-filter" popover="manual" class="coachmark" role="dialog" aria-labelledby="tour-filter-title">
+  <div class="coachmark" popover="manual" role="dialog" aria-labelledby="deploys-filter-title" data-target="#deploys-filter">
     <p class="coachmark-count">2 of 3</p>
-    <h2 class="coachmark-title" id="tour-filter-title">Filter the list</h2>
+    <h2 class="coachmark-title" id="deploys-filter-title">Filter the list</h2>
     <p class="coachmark-text">Keep only the deployments of one branch, one author or one status.</p>
     <div class="coachmark-actions">
       <button type="button" class="btn btn-sm btn-quiet" value="skip">Skip</button>
       <button type="button" class="btn btn-sm btn-quiet" value="back">Back</button>
-      <button type="button" class="btn btn-sm" value="next" autofocus>Next</button>
+      <button type="button" class="btn btn-sm" value="next">Next</button>
     </div>
   </div>
-  <button type="button" class="btn btn-quiet btn-sm btn-square" aria-label="Share">
-    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M8 8l4-4 4 4M5 14v5h14v-5"/></svg>
-  </button>
-  <div id="tour-share" popover="manual" class="coachmark" role="dialog" aria-labelledby="tour-share-title">
+  <div class="coachmark" popover="manual" role="dialog" aria-labelledby="deploys-share-title" data-target="#deploys-share">
     <p class="coachmark-count">3 of 3</p>
-    <h2 class="coachmark-title" id="tour-share-title">Share a deployment</h2>
+    <h2 class="coachmark-title" id="deploys-share-title">Share a deployment</h2>
     <p class="coachmark-text">Copy a link to it, open for anyone on the team.</p>
     <div class="coachmark-actions">
       <button type="button" class="btn btn-sm btn-quiet" value="back">Back</button>
-      <button type="button" class="btn btn-sm" value="done" autofocus>Done</button>
+      <button type="button" class="btn btn-sm" value="done">Done</button>
+    </div>
+  </div>
+</div>`} caption="ツアーを開始し、「次へ」「戻る」とEscキーを試します。" />
+
+ツアーには、この例のように説明対象の領域を含めることも、ステップとスポットライトだけを含めることもできます。ステップは文書内のどこにある対象でも見つけられます。閉じている間、ステップとスポットライトは場所を取らないため、ツアーの要素自体をそれが置かれた行として使えます。
+
+ビーコンから開く単独のコーチマークには、これらはどれも必要ありません。`popover="auto"`なので、スクリプトなしで、外側のクリックや<kbd>Esc</kbd>でブラウザーが閉じ、フォーカスをビーコンに戻します。
+
+## 待機するステップ \{#waiting\}
+
+ステップは、読者の操作や対象の出現を待つことができます。
+
+- **操作。** `data-advance`を持つステップは、ツアーを先に進める対象のイベント（`click`など）を指定します。このステップには「次へ」を置きません。読者自身に操作を促し、ページが応答した時点でツアーが進みます。「スキップ」や<kbd>Esc</kbd>では引き続き終了できます。
+- **後から現れる対象**。ステップの対象がページ内にない場合や描画されていない場合、ステップは対象を待ち、現れるとすぐに開きます。ボタンで表示されるフィールドや、読み込み中の行などが該当します。3秒後（またはビヘイビアに渡した`wait`の時間が経過した後）も現れない対象のステップは飛ばされ、最後のステップを過ぎるとツアーは完了します。何も指していないカードでツアーが止まることはありません。表示できない可能性のあるステップには、それがなくても読者が見つけられる内容だけを含めてください。
+
+<ComponentPreview name="waiting" height={336} title="待機するステップ" bodyClass="flex items-start justify-center p-lg" behaviors html={`<div class="coachmark-tour flex flex-col items-center gap-md" id="projects-tour">
+  <div class="flex items-center gap-sm">
+    <button type="button" class="btn btn-sm" commandfor="projects-tour" command="--start">Take the tour</button>
+    <button type="button" class="btn btn-sm btn-primary" id="projects-new">New project</button>
+  </div>
+  <input class="input w(240)" id="projects-name" placeholder="Project name" aria-label="Project name" hidden>
+  <div class="coachmark-spotlight" popover="manual"></div>
+  <div class="coachmark" popover="manual" role="dialog" aria-labelledby="projects-new-title" data-target="#projects-new" data-advance="click">
+    <p class="coachmark-count">1 of 2</p>
+    <h2 class="coachmark-title" id="projects-new-title">Start a project</h2>
+    <p class="coachmark-text">Press New project. The tour goes on once its form is open.</p>
+    <div class="coachmark-actions">
+      <button type="button" class="btn btn-sm btn-quiet" value="skip">Skip</button>
+    </div>
+  </div>
+  <div class="coachmark" popover="manual" role="dialog" aria-labelledby="projects-name-title" data-target="#projects-name">
+    <p class="coachmark-count">2 of 2</p>
+    <h2 class="coachmark-title" id="projects-name-title">Name it</h2>
+    <p class="coachmark-text">Use the name your team already calls it by. You can change it later.</p>
+    <div class="coachmark-actions">
+      <button type="button" class="btn btn-sm btn-quiet" value="back">Back</button>
+      <button type="button" class="btn btn-sm" value="done">Done</button>
     </div>
   </div>
 </div>
 <script>
-  var start = document.getElementById('tour-start')
-  var steps = [document.getElementById('tour-search'), document.getElementById('tour-filter'), document.getElementById('tour-share')]
-  function show(index) {
-    steps.forEach(function (step) { if (step.matches(':popover-open')) step.hidePopover() })
-    if (steps[index]) steps[index].showPopover({ source: steps[index].previousElementSibling })
-    else start.focus()
-  }
-  start.addEventListener('click', function () { show(0) })
-  steps.forEach(function (step, index) {
-    step.addEventListener('click', function (event) {
-      var action = event.target.closest('button')
-      if (!action) return
-      show(action.value === 'next' ? index + 1 : action.value === 'back' ? index - 1 : -1)
-    })
-    step.addEventListener('keydown', function (event) {
-      if (event.key === 'Escape') show(-1)
-    })
+  document.getElementById('projects-new').addEventListener('click', function () {
+    setTimeout(function () { document.getElementById('projects-name').hidden = false }, 400)
   })
-</script>`} caption="ツアーを開始し、「次へ」「戻る」とEscキーを試します。" />
+</script>`} caption="ツアーを開始し、「New project」を押します。次のステップはフィールドが現れるのを待ちます。" />
 
-ビーコンから開く単独のコーチマークは`popover="auto"`です。スクリプトなしで、外側のクリックや<kbd>Esc</kbd>でブラウザーが閉じ、フォーカスをビーコンに戻します。
+## スポットライト \{#spotlight\}
+
+`coachmark-spotlight-dim`は、[ダイアログ](/components/dialog)と同じ背景幕でステップの対象の周囲を暗くし、対象とその周囲4pxを明るいまま残します。明るい部分の角は、コントロールの角丸にこの余白を足した値です。背景幕は画面の幅いっぱいに広がる影のリングで、アンカー配置で対象の上に重なるスポットライトが描画します。そのため、ページをスクロールしても対象に追従します。ツアーの開始時にフェードインし、終了時にフェードアウトします。ステップ間では、明るい部分が即座に移動します。
+
+背景幕は見た目を塗るだけで、操作を遮る壁ではありません。下にあるページは引き続きポインターやキー操作に反応するため、読者はステップが指すものを試せますし、ツアーがほかの操作の妨げになることもありません。画面の最初のツアーなど、視線を導く必要がある場合に使い、新しいコントロール1つについてのヒントには使わないでください。
+
+<ComponentPreview name="spotlight" height={352} title="スポットライト" bodyClass="flex items-start justify-center p-lg" behaviors html={`<div class="coachmark-tour flex flex-col items-center gap-md" id="release-tour">
+  <button type="button" class="btn btn-sm" commandfor="release-tour" command="--start">Take the tour</button>
+  <div class="card flex-row items-center gap-md p-md w(300)">
+    <div class="flex flex-col grow(1)">
+      <span class="text-sm fg-text-strong">atlas.dev</span>
+      <span class="text-xs fg-text-muted" id="release-status">Ready, 2 minutes ago</span>
+    </div>
+    <button type="button" class="btn btn-sm btn-primary" id="release-deploy">Deploy</button>
+  </div>
+  <div class="coachmark-spotlight coachmark-spotlight-dim" popover="manual"></div>
+  <div class="coachmark" popover="manual" role="dialog" aria-labelledby="release-status-title" data-target="#release-status">
+    <p class="coachmark-count">1 of 2</p>
+    <h2 class="coachmark-title" id="release-status-title">See where it stands</h2>
+    <p class="coachmark-text">Each project says whether its last build is ready and when it ran.</p>
+    <div class="coachmark-actions">
+      <button type="button" class="btn btn-sm btn-quiet" value="skip">Skip</button>
+      <button type="button" class="btn btn-sm" value="next">Next</button>
+    </div>
+  </div>
+  <div class="coachmark" popover="manual" role="dialog" aria-labelledby="release-deploy-title" data-target="#release-deploy">
+    <p class="coachmark-count">2 of 2</p>
+    <h2 class="coachmark-title" id="release-deploy-title">Ship it</h2>
+    <p class="coachmark-text">Deploy sends the ready build to production.</p>
+    <div class="coachmark-actions">
+      <button type="button" class="btn btn-sm btn-quiet" value="back">Back</button>
+      <button type="button" class="btn btn-sm" value="done">Done</button>
+    </div>
+  </div>
+</div>`} caption="ツアーを開始します。各ステップの対象の周囲が暗くなります。" />
+
+強制カラーモードでは影が描画されないため、代わりにシステムのハイライト色のアウトラインで対象を示します。
+
+## ビヘイビア \{#behavior\}
+
+`tour`は、`coachmark-tour`クラスを持つルート要素を受け取り、ビヘイビアを解除する関数を返します。`@master/ui/behaviors`の`attach()`は、ページ内のすべてのツアーを見つけます。
+
+```js name=app.js
+import { tour } from '@master/ui/behaviors/tour.js'
+
+const root = document.querySelector('#deploys-tour')
+const deploys = tour(root)
+
+deploys.value = 0 // starts the tour, as the button does
+root.addEventListener('end', (event) => {
+  if (event.detail.completed) localStorage.setItem('deploys-tour', 'seen')
+})
+```
+
+- **値**は、ツアーが表示しているステップの0から始まるインデックスで、ツアーが実行されていない間は`null`です。値を設定するとそのステップが開き、`null`を設定するとツアーが終了します。このときイベントは発行されません。
+- **イベント**。ツアーが別のステップに移るたびに、ルートはバブリングする`change`を発行し、`detail.value`にインデックスを入れます。読者がツアーを終えると、`null`を値とする`change`を発行した後に`end`を発行します。`end`の`detail.completed`は、読者が最後のステップまで進んだ場合はtrue、「スキップ」、<kbd>Esc</kbd>、その他ステップを閉じる操作でそれより前に離れた場合はfalseです。
+- **フォーカス**は、各ステップが開くとその内部に移ります。移動先は`autofocus`を持つアクション、なければ「次へ」または「完了」、それもなければステップ自体です。ツアーが終わると、読者がその後フォーカスをページ内に移していない限り、ツアー開始時の位置にフォーカスが戻ります。
+- **オプション。** `target(step, index)`はステップの対象を見つける関数で、ページ側で対象を管理する場合に使います。`wait`はステップが対象を待つ時間で、単位はミリ秒、既定は3000です。
+- **呼び出しコマンド**。ブラウザーが`command`と`commandfor`に対応していない場合は、ビヘイビアが開始ボタンのクリックを直接受け取ります。
+
+ビヘイビアがなければツアーは開始されません。ステップは閉じたままで、ページはそれらがなくても完全に機能します。`end`イベントで読者がツアーを終えたことを記録し、同じツアーを自動で再び開始しないでください。後から見つけられるボタンから開始できるようにします。
+
+## キーボード操作 \{#keyboard\}
+
+<ContractTable name="coachmark" show="keyboard" />
 
 ## アクセシビリティ \{#accessibility\}
 
-- コーチマークに`role="dialog"`を指定し、`aria-labelledby`でタイトルをラベルとして参照します。コーチマークは非モーダルなので、表示中も周囲のページを操作できます。
-- 主アクションに`autofocus`を指定すると、カードを開いたときにフォーカスが内部に移り、キーボードの<kbd>Enter</kbd>で先に進めます。
+- コーチマークに`role="dialog"`を指定し、`aria-labelledby`でタイトルをラベルとして参照します。コーチマークは非モーダルなので、表示中も周囲のページを操作できます。ツアーでは、スポットライトの下にあるページも操作できます。
+- ビーコンから開くコーチマークでは、主アクションに`autofocus`を指定すると、カードを開いたときにフォーカスが内部に移り、キーボードの<kbd>Enter</kbd>で先に進めます。ツアーのステップには、ビヘイビアがフォーカスを移します。
 - どのステップからでも、「スキップ」や「完了」などのアクション、または<kbd>Esc</kbd>で終了できます。単独のコーチマークは、外側をクリックしても閉じられます。
-- ツアーで説明する内容はすべて、ツアーをスキップした読者も確認できるようにします。
+- ツアーは、ボタンなど読者の操作をきっかけに開始し、ページの読み込み時には開始しないでください。ツアーは補助であり、読者が本来の目的としている作業からフォーカスを奪うべきではありません。
+- ツアーで説明する内容はすべて、ツアーをスキップした読者や、飛ばされたステップがあった場合でも確認できるようにします。
 - コーチマークをマークアップ上でビーコンの直後に置くと、カードの表示位置にかかわらず、Tabキーの移動順でもビーコンの次になります。
+
+## React、Svelte、Vue \{#frameworks\}
+
+`tour`コンポーネントは、データの各項目からステップを1つずつ生成し、それぞれにタイトル、テキスト、進行状況、必要なアクションを書き出します。開いているステップのインデックスを外部から受け取り、変更を外部に通知します。ツアーの終了は`onEnd`で受け取ります。ステップの対象には、セレクター、要素、ref、または対象を見つける関数を指定できます。`npx master-ui add tour`でプロジェクトにコピーできます。コンポーネントの構成と使い方は[React、Svelte、Vue](/guide/frameworks)を参照してください。
+
+<FrameworkSource name="coachmark" />
 
 ## ブラウザーの対応状況 \{#browser-support\}
 
-コーチマークの配置にはCSSアンカー配置を使います。カードには`position-area`と`position-try-fallbacks`を使い、矢印にはカードと参照先の要素の間に`anchor()`を使います。アンカー配置に対応していないブラウザーでも開閉でき、通常のポップオーバーと同じくビューポート中央に表示されます。この場合、矢印は表示されません。ツアーのステップには、`showPopover()`の`source`オプションでアンカーを指定します。このオプションがなければ、ステップはアンカーなしで開きます。フェードと短いスライドには`@starting-style`を使います。対応していない場合、カードはアニメーションなしで表示・非表示が切り替わります。
+コーチマークの配置にはCSSアンカー配置を使います。カードには`position-area`と`position-try-fallbacks`を使い、矢印とツアーのスポットライトにはカードと参照先の要素の間に`anchor()`を使います。アンカー配置に対応していないブラウザーでも開閉でき、通常のポップオーバーと同じくビューポート中央に表示されます。この場合、矢印は表示されません。スポットライトは対象を明るく残せないため、何も暗くしません。ツアーのステップには、`showPopover()`の`source`オプションでアンカーを指定します。このオプションがなければ、ステップはアンカーなしで開きます。開始ボタンは呼び出しコマンドを使い、未対応のブラウザーではビヘイビアが代わりを務めます。フェードと短いスライドには`@starting-style`を使います。対応していない場合、カードと背景幕はアニメーションなしで表示・非表示が切り替わります。
 
 カードはフェードインしながらアンカーに向かって4px移動し、閉じるときはより短いフェードアウトで消えます。ほかのポップオーバーと違い、拡大・縮小は行いません。拡大・縮小すると矢印がカードの内側に収まり、指し示す要素に届かなくなるためです。
 

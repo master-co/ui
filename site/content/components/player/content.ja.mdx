@@ -1,0 +1,158 @@
+---
+title: "メディアプレーヤー"
+description: "ネイティブの audio 要素や video 要素の上に重ねる、ページ独自のコントロール。"
+---
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+メディアプレーヤーは、ネイティブの `<audio>` または `<video>` に、ページ独自のコントロールを重ねます。再生を担うのは引き続きメディア要素です。メディア要素はそのセマンティクス、ブラウザーのメディアコントロールにおける位置付け、そしてフォールバックとなる `controls` 属性を保持します。`player` の[ビヘイビア](/guide/behaviors)は、適用時にその属性を取り除き、以降はメディアの状態をコントロールの行に反映します。再生ボタンは再生中に押された状態になります。シークトラックは[スライダー](/components/slider)と同じ範囲入力で、再生済みの部分の下に読み込み済みの部分が描かれます。時間は、桁が変わっても幅が変わらない小さな等幅数字で表示されます。
+
+<ComponentPreview name="default" height={296} title="メディアプレーヤー" bodyClass="flex flex-col justify-end items-center p-lg" behaviors html={`<div class="player w-full max-w(480)" role="group" aria-label="A short recording">
+  <audio class="player-media" src="/demo/recording.m4a" controls preload="metadata"></audio>
+  <div class="player-controls">
+    <button type="button" class="player-button player-play" aria-label="Play" aria-pressed="false">
+      <svg class="icon player-off" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.8v14.4a1 1 0 0 0 1.5.86l11.5-7.2a1 1 0 0 0 0-1.72L8.5 3.94A1 1 0 0 0 7 4.8"/></svg>
+      <svg class="icon player-on" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+    </button>
+    <span class="player-elapsed">0:00</span>
+    <input type="range" class="slider player-seek" min="0" max="0" step="any" value="0" aria-label="Seek">
+    <span class="player-duration">0:00</span>
+    <button type="button" class="player-button player-mute" aria-label="Mute" aria-pressed="false">
+      <svg class="icon player-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>
+      <svg class="icon player-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="m16 9 6 6M22 9l-6 6"/></svg>
+    </button>
+    <input type="range" class="slider player-volume" min="0" max="1" step="0.05" value="1" aria-label="Volume">
+    <button type="button" class="player-button player-speed" popovertarget="recording-speed" aria-label="Playback speed">1×</button>
+    <div id="recording-speed" popover class="menu menu-top menu-end">
+      <label class="menu-item"><input class="menu-input" type="radio" name="recording-speed" value="0.75">0.75×</label>
+      <label class="menu-item"><input class="menu-input" type="radio" name="recording-speed" value="1" checked>1×</label>
+      <label class="menu-item"><input class="menu-input" type="radio" name="recording-speed" value="1.25">1.25×</label>
+      <label class="menu-item"><input class="menu-input" type="radio" name="recording-speed" value="1.5">1.5×</label>
+      <label class="menu-item"><input class="menu-input" type="radio" name="recording-speed" value="2">2×</label>
+    </div>
+  </div>
+</div>`} caption="再生ボタンを押すか、トラックに沿ってドラッグします。または、コントロールにフォーカスして Space、矢印キー、J と L、M、Home、End を使います。速度ボタンは、その上にメニューを開きます。" />
+
+## 動画 \{#video\}
+
+`player-video` を指定すると、メディアプレーヤーが動画の枠になります。映像はサーフェスと同じ角丸の暗い領域を埋め、同じコントロールの行が、下端から立ち上がる影の上で映像の下端に重なります。画面は暗いものなので、コントロールの行はどちらのテーマでもダークスキームで描画されます。動画では 3 つのコントロールが加わり、それぞれ動作できる場合にのみ表示されます。字幕ボタンは動画に captions または subtitles のトラックがある場合、ピクチャーインピクチャーはブラウザーが対応している場合、全画面表示はブラウザーが許可している場合に表示されます。映像をクリックすると再生と一時停止を切り替え、ダブルクリックすると全画面表示になります。
+
+動画の再生中にポインターが 2.5 秒間動かないか、ポインターが枠の外に出ると、コントロールの行は映像からフェードアウトし、ポインターも消えます。ポインターを少しでも動かすと元に戻ります。コントロールにキーボードフォーカスがある間や速度メニューが開いている間は、フェードアウトしません。動きを抑える設定をしている読者に対しても、フェードアウトしません。タッチスクリーンでは、コントロールがフェードアウトした映像をタップすると、コントロールが元に戻るだけです。
+
+<ComponentPreview name="video" height={400} mediumHeight={360} narrowHeight={224} title="動画" bodyClass="flex items-center justify-center p-lg" behaviors html={`<div class="player player-video w-full max-w(560)" role="group" aria-label="Moonrise" style="--player-ratio: 16 / 9">
+  <video class="player-media" src="/demo/moonrise.mp4" poster="/demo/moonrise.jpg" controls preload="metadata" playsinline>
+    <track kind="captions" src="/demo/recording.vtt" srclang="en" label="English">
+  </video>
+  <div class="player-controls">
+    <button type="button" class="player-button player-play" aria-label="Play" aria-pressed="false">
+      <svg class="icon player-off" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.8v14.4a1 1 0 0 0 1.5.86l11.5-7.2a1 1 0 0 0 0-1.72L8.5 3.94A1 1 0 0 0 7 4.8"/></svg>
+      <svg class="icon player-on" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+    </button>
+    <span class="player-elapsed">0:00</span>
+    <input type="range" class="slider player-seek" min="0" max="0" step="any" value="0" aria-label="Seek">
+    <span class="player-duration">0:00</span>
+    <button type="button" class="player-button player-mute" aria-label="Mute" aria-pressed="false">
+      <svg class="icon player-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>
+      <svg class="icon player-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="m16 9 6 6M22 9l-6 6"/></svg>
+    </button>
+    <button type="button" class="player-button player-captions" aria-label="Captions" aria-pressed="false">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 15h4M15 15h2M7 11h2M13 11h4"/></svg>
+    </button>
+    <button type="button" class="player-button player-pip" aria-label="Picture in picture" aria-pressed="false">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4"/><rect x="13" y="14" width="9" height="6" rx="1.5"/></svg>
+    </button>
+    <button type="button" class="player-button player-fullscreen" aria-label="Full screen" aria-pressed="false">
+      <svg class="icon player-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+      <svg class="icon player-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3v3a2 2 0 0 1-2 2H3M21 8h-3a2 2 0 0 1-2-2V3M3 16h3a2 2 0 0 1 2 2v3M16 21v-3a2 2 0 0 1 2-2h3"/></svg>
+    </button>
+  </div>
+</div>`} caption="再生してポインターを動かさずにいると、コントロールの行がフェードアウトします。字幕はボタンか C キーでオンにします。" />
+
+動画の読み込み前から枠がその形を保つように、`--player-ratio` に動画の縦横比を設定します。コントロールの行は、メディアプレーヤーに与えられた幅に応じて変わります。幅が 26rem より狭いと音量スライダーが行から外れ、ミュートボタンは残ります。24rem より狭いとピクチャーインピクチャーと経過時間も外れます。そのため、スマートフォンでもすべてのコントロールが指での操作に必要な 44px を保ちます。
+
+## スクリプトなしの場合 \{#without-the-script\}
+
+ビヘイビアが適用されるまで、メディア要素は `controls` 属性を保持し、スタイルシートはメディアプレーヤーのコントロールの行を非表示にします。そのため、録音はブラウザー標準のコントロールで再生されます。これは最初の例と同じマークアップで、スクリプトはありません。
+
+<ComponentPreview name="native" height={120} title="スクリプトなしの場合" bodyClass="flex items-center justify-center p-lg" html={`<div class="player w-full max-w(480)" role="group" aria-label="A short recording">
+  <audio class="player-media" src="/demo/recording.m4a" controls preload="metadata"></audio>
+  <div class="player-controls">
+    <button type="button" class="player-button player-play" aria-label="Play" aria-pressed="false">
+      <svg class="icon player-off" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.8v14.4a1 1 0 0 0 1.5.86l11.5-7.2a1 1 0 0 0 0-1.72L8.5 3.94A1 1 0 0 0 7 4.8"/></svg>
+      <svg class="icon player-on" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+    </button>
+    <span class="player-elapsed">0:00</span>
+    <input type="range" class="slider player-seek" min="0" max="0" step="any" value="0" aria-label="Seek">
+    <span class="player-duration">0:00</span>
+  </div>
+</div>`} />
+
+## ビヘイビア \{#behavior\}
+
+`player` は、`player` クラスを持つ要素であるルートを受け取り、関数を返します。この関数はビヘイビアを解除し、メディア要素にコントロールを戻します。
+
+```js name=app.js
+import { player } from '@master/ui/behaviors/player.js'
+
+const detach = player(document.querySelector('.player'))
+```
+
+信頼できる唯一の情報源はメディア要素です。ビヘイビアはメディア要素を監視し、その状態をスタイルシートが読み取る属性に反映します。各コントロールは自身の状態を変えるのではなく、メディア要素に変更を依頼します。そのため、システムのメディアキーやほかのスクリプトなど、別の場所から再生された録音も同じように描画されます。
+
+- **トグル**　再生ボタンはメディアの再生中、ミュートボタンはミュート中、字幕ボタンは最初の captions または subtitles のトラックが表示されている間、ピクチャーインピクチャーボタンと全画面表示ボタンは動画がそれぞれの状態にある間、`aria-pressed="true"` になります。トグルは「Play」「Mute」のように 1 つの名前を保ち、状態は `aria-pressed` が示します。`player-off` と `player-on` の 2 つの表示を持つトグルは、状態に応じた方を表示します。表示が 1 つのトグルは、オンの間くぼんだ表示になります。
+- **時間**　シークトラックの `max` は再生時間の長さ、`value` は現在の再生位置で、文章による `aria-valuetext` を持ちます。経過時間と再生時間の長さはそれぞれの部分に書き込まれ、録音が 1 時間以上になると時間の桁も表示されます。読者がトラックをドラッグしている間は、メディア要素が指の下のつまみを動かすことはありません。
+- **読み込み済み**　現在の再生位置の前後で読み込み済みの範囲は、0 から 1 までの値の `--player-buffered` としてルートに書き込まれ、トラック上の再生済みの部分の下に描かれます。
+- **音量と速度**　音量スライダーは音量を保持し、ミュート中も値を保ったまま、一段控えめな表示になります。音量を本体のボタンでしか設定できないデバイスでは非表示になります。速度ボタンは、`popovertarget` が指定するメニューを開きます。メニュー内の各 `menu-input` ラジオボタンが再生速度を表し、ビヘイビアは選んだ速度をボタンに書き込み、対応するラジオボタンをチェックします。
+- **字幕**　オフにしたトラックは `disabled` ではなく `hidden` になります。そのため、同じトラックを読み取る[トランスクリプト](/components/transcript)はキューを保持できます。
+- **全画面表示**は動画ではなくメディアプレーヤー全体に適用されるため、コントロールの行は映像の上に残ります。動画しか全画面表示できない iPhone では、システム標準のプレーヤーが使われます。
+- **値**　返される関数は、現在の再生位置を秒で表す `value` を持ちます。設定するとシークします。
+
+| オプション | 既定値 | |
+| --- | --- | --- |
+| `step` | `5` | 矢印キーでシークする秒数 |
+| `jump` | `10` | <kbd class="kbd">J</kbd> と <kbd class="kbd">L</kbd> でシークする秒数 |
+| `volumeStep` | `0.1` | <kbd class="kbd">ArrowUp</kbd> と <kbd class="kbd">ArrowDown</kbd> で音量が変わる量 |
+| `idle` | `2500` | 再生中の動画のコントロールがフェードアウトするまでの、ポインターが静止している時間（ミリ秒） |
+| `valueText` | 英語 | 再生位置と再生時間の長さから作る、シークトラックの `aria-valuetext`。ページの言語で指定します |
+| `rateText` | `1.5×` | 速度ボタンに表示する、再生速度の文言 |
+
+## キーボード操作 \{#keyboard\}
+
+キー操作は、メディアプレーヤー内のどこにフォーカスがあっても、また動画の映像をクリックした後でも機能します。コントロールが必要とするキーは、そのコントロールが優先して処理します。<kbd class="kbd">Space</kbd> はフォーカスのあるボタンを押し、矢印キーは音量スライダーを動かし、速度メニューでは[メニュー](/components/menu)のキー操作が使えます。
+
+<ContractTable name="player" show="keyboard" />
+
+## アクセシビリティ \{#accessibility\}
+
+- ルートに `role="group"` と録音の名前を示す `aria-label` を指定し、各コントロールがその録音のコントロールとして読み上げられるようにします。
+- すべてのボタンに、その働きを表す名前をページの言語で付けます。状態が変わっても名前は変えず、状態は `aria-pressed` で示します。
+- 音声を含む動画には字幕が必要です。`<track kind="captions">` を追加します。映像のない録音には[トランスクリプト](/components/transcript)が必要です。
+- 音声付きの録音を自動で再生しないでください。メディアプレーヤーは読者が求めたときに再生します。
+- ボタンは 32px で、タッチスクリーンでは 44px です。時間の表示は桁が変わっても幅が変わらないため、再生中にトラックがずれません。
+
+## React、Svelte、Vue \{#frameworks\}
+
+`player` コンポーネントは、`src`、`video`、`poster`、`tracks` からメディア要素とコントロールの行を描画してビヘイビアを適用し、現在の再生位置と再生中かどうかの受け渡しを行います。React では `time` と `playing` に `onTimeChange` と `onPlayingChange`、Svelte ではバインド可能なプロパティ、Vue では `v-model:time` と `v-model:playing` を使います。外部から設定した時間でシークし、`playing` で再生と一時停止を切り替えます。`npx master-ui add player` でプロジェクトにコピーできます。コンポーネントの構成と使い方は [React、Svelte、Vue](/guide/frameworks) を参照してください。
+
+<FrameworkSource name="player" />
+
+## クラス \{#classes\}
+
+<ContractTable name="player" />
+
+シークトラックと音量は [`slider`](/components/slider) の入力です。速度メニューは、`menu-input` ラジオボタンを含むラベル項目で構成した [`menu`](/components/menu) です。
+
+## カスタムプロパティ \{#custom-properties\}
+
+<ContractTable name="player" show="properties" />
+
+## 関連コンポーネント \{#related\}
+
+<ComponentLinks slugs={['transcript', 'waveform', 'slider', 'figure']} />
+
+## ソース \{#source\}
+
+<ComponentSource name="player" />

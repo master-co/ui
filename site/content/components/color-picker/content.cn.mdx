@@ -1,0 +1,126 @@
+---
+title: "颜色选择器"
+description: "可选择任意颜色：在明度与色度平面上选取，调整色相和不透明度，或直接输入。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+颜色选择器可以选择任意颜色：在一块色域平面上用一个滑钮同时选取明度和色度，用两个[滑块](/components/slider)调整色相和不透明度，颜色本身则以 hex、`rgb()` 或 `oklch()` 文本表示。它在 OKLCH 中选色，主题的所有颜色都用这个色彩空间书写，因此无论色相如何，同样幅度的明度变化看起来都一样。色域平面是嵌入表面的一幅画面；滑钮是套在珍珠质感圆环里的当前颜色；轨道是原生范围输入控件。`color-picker` [行为脚本](/guide/behaviors)让各部分保持同步。
+
+<ComponentPreview name="default" height={384} title="颜色选择器" behaviors html={`<div class="sheet p-md">
+  <div class="color-picker" style="--color-picker-lightness: .62; --color-picker-chroma: .19; --color-picker-hue: 260">
+    <div class="color-picker-area">
+      <div class="color-picker-thumb" role="slider" tabindex="0" aria-label="Lightness and chroma" aria-valuemin="0" aria-valuemax="100" aria-valuenow="62" aria-valuetext="Lightness 62%, chroma 0.19"></div>
+    </div>
+    <span class="swatch swatch-lg color-picker-swatch"></span>
+    <input type="range" class="slider color-picker-hue" min="0" max="360" value="260" aria-label="Hue">
+    <input type="range" class="slider color-picker-alpha" min="0" max="100" value="100" aria-label="Opacity">
+    <div class="color-picker-fields">
+      <select class="select select-sm color-picker-format" aria-label="Format">
+        <option value="hex">Hex</option>
+        <option value="rgb">RGB</option>
+        <option value="oklch" selected>OKLCH</option>
+      </select>
+      <input class="input input-sm color-picker-text" name="accent" value="oklch(62% 0.19 260)" aria-label="Accent color" spellcheck="false" autocomplete="off">
+    </div>
+  </div>
+</div>`} caption="在色域平面上拖动，或在其滑钮上使用方向键；移动色相，切换格式，或输入 #e5484d 这样的颜色。" />
+
+## 从按钮打开 \{#popover\}
+
+颜色通常只是多项设置中的一项，此时选择器从一个显示该颜色的按钮打开。把按钮和带有 `color-picker-popover` 的[弹出层](/components/popover)放在根元素内：弹出层成为纵向排列的容器，按钮中带有 `color-picker-swatch` 的色样在选择器关闭时显示当前颜色，因为两者都位于保存颜色的根元素之内。弹出层的打开、定位和关闭由浏览器负责；行为脚本的行为不变。
+
+<ComponentPreview name="popover" height={416} title="从按钮打开" bodyClass="content-start flex justify-center p-lg" behaviors html={`<div class="color-picker" style="--color-picker-lightness: .6256; --color-picker-chroma: .1933; --color-picker-hue: 23.03">
+  <button type="button" class="btn" popovertarget="brand-picker">
+    <span class="swatch swatch-sm color-picker-swatch"></span>
+    Brand color
+  </button>
+  <div id="brand-picker" popover class="popover color-picker-popover">
+    <div class="color-picker-area">
+      <div class="color-picker-thumb" role="slider" tabindex="0" aria-label="Lightness and chroma" aria-valuemin="0" aria-valuemax="100" aria-valuenow="62.6" aria-valuetext="Lightness 62.6%, chroma 0.193"></div>
+    </div>
+    <span class="swatch swatch-lg color-picker-swatch"></span>
+    <input type="range" class="slider color-picker-hue" min="0" max="360" value="23" aria-label="Hue">
+    <input type="range" class="slider color-picker-alpha" min="0" max="100" value="100" aria-label="Opacity">
+    <div class="color-picker-fields">
+      <select class="select select-sm color-picker-format" aria-label="Format">
+        <option value="hex" selected>Hex</option>
+        <option value="rgb">RGB</option>
+        <option value="oklch">OKLCH</option>
+      </select>
+      <input class="input input-sm color-picker-text" name="brand" value="#e5484d" aria-label="Brand color" spellcheck="false" autocomplete="off">
+    </div>
+  </div>
+</div>`} caption="打开选择器并调整颜色：按钮中的色样会随之变化。" />
+
+颜色必须不透明时（例如需要印刷的品牌色），省去 `color-picker-alpha`：此时色样只与色相滑块并排，输入的带不透明度的颜色会被去掉不透明度后采用。如果连色样也省去，轨道会占满整个宽度。
+
+## 为什么用 OKLCH \{#oklch\}
+
+色域平面也可以采用饱和度和明度值（HSV 中的 S 与 V），也就是大多数选择器绘制的那种方块。它很容易绘制，因为只是 sRGB 与白色和黑色的混合。但在这种平面上很难挑选调色板：同一个 V 值，可能是深蓝色，也可能是刺眼的黄色；在相同饱和度下改变色相，颜色看起来的明暗也会改变。OKLCH 的设计让相同的步长看起来相同，所以主题用它书写颜色，为主题服务的选择器也应该在其中选色。
+
+- **明度**从平面顶端的 100% 到底端的 0，并且在任何色相下都是相同的明度。
+- **色度**从平面起始端的无色度（灰色）到末端的 .37，达到 Display P3 的范围上限。颜色并不总能像其色度要求的那样鲜艳：屏幕会显示它能显示的最接近的颜色，色域平面和滑钮也按同一规则显示。
+- **色相**在自己的滑块上绕色环一周，以同一明度和色度绘制，以便区分每个色相。
+
+值按下拉选择框所示的格式写出。`oklch()` 按保存的值原样写出。Hex 和 `rgb()` 只能表示 sRGB，因此超出 sRGB 的颜色会按 CSS Color 4 将颜色适配到屏幕的方式处理：在保持明度和色相不变的前提下降低色度，直到颜色与某个 sRGB 可表示的颜色之间的差异在最小可觉差之内。切换格式绝不会改变保存的颜色，因此一个颜色从 hex 转为 `oklch()` 再转回来，仍是同一个 hex 值。
+
+渐变只能沿一个轴变化，所以色域平面按行绘制：每一行都是在该行明度下从灰色到 .37 的渐变，沿这条线是精确的；位于两行中间的各行叠在其他行之上，并带有从一行渐隐到下一行的遮罩。这些颜色是主题的 mixin，即以行为脚本发布的色相为参数的函数，因此组件本身不写入任何颜色。
+
+## 行为脚本 \{#behavior\}
+
+`colorPicker` 接收根元素，即带有 `color-picker` 类的元素，并返回用于解除绑定的函数。
+
+```js name=app.js
+import { colorPicker } from '@master/ui/behaviors/color-picker.js'
+
+const accent = colorPicker(document.querySelector('.color-picker'))
+
+accent.value // 'oklch(62% 0.19 260)'
+accent.value = '#e5484d' // choose a color, and hex as its format
+```
+
+- **颜色**取自文本框的值，可以是三种格式中的任意一种，格式也随之确定。行为脚本把颜色以四个数值写在根元素上：`--color-picker-lightness`、`--color-picker-chroma`、`--color-picker-hue` 和 `--color-picker-alpha`，它们决定滑钮的位置，并用于绘制色域平面、轨道和色样。请同时把初始颜色的数值写在根元素的 `style` 中，这样在脚本运行前色域平面就能正确显示。
+- **色域平面。** 按下时，滑钮移到指针下方并获得焦点；拖动时滑钮跟随指针，即使指针越过平面边缘也是如此，此时颜色停在边缘。按键见下表。
+- **文本**一旦输入的内容构成有效颜色就会立即采用，文本保持输入时的样子。按 <kbd class="kbd">Enter</kbd> 或离开文本框提交时，颜色会按所选格式重新写出；不是有效颜色的文本会被还原。
+- **事件。** 颜色移动时滑钮派发 `input`，拖动结束或通过按键移动后派发 `change`；滑块、下拉选择框和文本框各自派发自己的事件。在根元素上监听的代码可以在每个事件中读取新的 `value`。
+- **滑钮的描述文字。** 其 `aria-valuetext` 为 `Lightness 62%, chroma 0.19`；传入 `valueText: (lightness, chroma) => …` 可用页面的语言表述。
+
+未加载行为脚本时，色域平面显示标记中写入的颜色，滑块、下拉选择框和文本框都是互不联动的普通控件。
+
+## 键盘操作 \{#keyboard\}
+
+<ContractTable name="color-picker" show="keyboard" />
+
+## 无障碍 \{#accessibility\}
+
+- 色域平面上的滑钮是一个滑块。它的值是明度，因为 <kbd class="kbd">ArrowUp</kbd> 和 <kbd class="kbd">ArrowDown</kbd> 调整的是明度；它的 `aria-valuetext` 同时说明明度和色度，因此无论哪个值变化，屏幕阅读器都会播报两者。请按它所选择的内容命名，例如“明度和色度”。
+- 文本框是不借助色域平面给出精确颜色的方式，颜色的名称应放在文本框上，例如“品牌色”。表单提交的是它的 `name`。
+- 为色相和不透明度滑块以及格式下拉选择框命名；它们的按键操作由平台提供。
+- 强制颜色模式下保留色域平面的颜色，因为那正是读者要选择的内容；平面的边缘和滑钮的焦点使用系统颜色绘制。
+
+## React、Svelte 和 Vue \{#frameworks\}
+
+`color-picker` 组件在首次渲染时就绘制初始值（包括根元素上的四个数值），并绑定行为脚本，之后各部分都由行为脚本更新。它的值是以所选格式表示的颜色文本，每次变化时都会传出；传入 `trigger`（在 Svelte 中是 snippet，在 Vue 中是 slot）即可从页面自己的按钮打开选择器。使用 `npx master-ui add color-picker` 将组件复制到项目中。有关这些组件的实现和用法，请参阅 [React、Svelte 和 Vue](/guide/frameworks)。
+
+<FrameworkSource name="color-picker" />
+
+## 类名 \{#classes\}
+
+<ContractTable name="color-picker" />
+
+## 自定义属性 \{#custom-properties\}
+
+<ContractTable name="color-picker" show="properties" />
+
+## 相关内容 \{#related\}
+
+<ComponentLinks slugs={['swatch', 'slider', 'popover']} />
+
+## 源码 \{#source\}
+
+<ComponentSource name="color-picker" />

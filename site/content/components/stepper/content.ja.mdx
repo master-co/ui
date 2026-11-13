@@ -32,7 +32,7 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
 ## ビヘイビア \{#behavior\}
 
-`stepper` [ビヘイビア](/guide/behaviors)を使うと、2つのボタンでその間の数値を増減できます。`stepper` クラスを持つルート要素を引数に取ります。オプションはなく、ビヘイビアを解除する関数を返します。
+`stepper` [ビヘイビア](/guide/behaviors)を使うと、2つのボタンでその間の数値を増減できます。`stepper` クラスを持つルート要素と、[書式付きの数値](#formatted)および[スクラブ](#scrub)のオプションを受け取り、ビヘイビアを解除する関数を返します。
 
 ```js name=app.js
 import { stepper } from '@master/ui/behaviors/stepper.js'
@@ -89,6 +89,69 @@ root.addEventListener('change', (event) => console.log(event.target.value))
   <button type="button" class="btn btn-square" value="1" tabindex="-1" aria-label="More replicas"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
 </div>`} />
 
+## 書式付きの数値 \{#formatted\}
+
+価格、割合、大きな数は、`$1,250`、`12%`、`1,250,000` のように書式を整えたほうが読みやすくなります。入力欄と `stepper-display` を `stepper-value` に入れ、ビヘイビアに `format`（[`Intl.NumberFormat`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Intl/NumberFormat/NumberFormat) のオプション）を渡します。ページの言語以外の書式で表示する場合は、`locale` も渡します。
+
+```js name=app.js
+stepper(root, { format: { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }, locale: 'en-US' })
+```
+
+<ComponentPreview name="formatted" height={152} title="書式付きの数値" bodyClass="flex flex-col items-center gap-md p-lg" behaviors html={`<div class="input-group stepper">
+  <button type="button" class="btn btn-square" value="-1" tabindex="-1" aria-label="Lower the budget"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+  <span class="stepper-value">
+    <input class="input-group-field stepper-field" type="number" min="0" step="250" value="1250" aria-label="Monthly budget">
+    <span class="stepper-display" aria-hidden="true"></span>
+  </span>
+  <button type="button" class="btn btn-square" value="1" tabindex="-1" aria-label="Raise the budget"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+</div>
+<div class="input-group stepper">
+  <button type="button" class="btn btn-square" value="-1" tabindex="-1" aria-label="Fewer requests"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+  <span class="stepper-value">
+    <input class="input-group-field stepper-field" type="number" min="0" step="50000" value="1250000" aria-label="Requests a month">
+    <span class="stepper-display" aria-hidden="true"></span>
+  </span>
+  <button type="button" class="btn btn-square" value="1" tabindex="-1" aria-label="More requests"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  const [budget, requests] = document.querySelectorAll('.stepper')
+  MasterUI.stepper(budget, { format: { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }, locale: 'en-US' })
+  MasterUI.stepper(requests, { locale: 'en-US' })
+})
+</script>`} caption="予算を増減するか、クリックして入力します。入力欄にフォーカスがある間は編集用の書式なしの数値が表示され、フォーカスが外れると書式付きの数値が再び表示されます。2つ目の表示には書式がなく、桁区切りだけを行います。" />
+
+`attach()` はオプションを渡さないため、このプレビューでは `attach()` の実行後に `stepper` を明示的に呼び出します。同じルートに対して 2 回呼び出すと、2 回目が 1 回目を置き換えます。`MasterUI` はプレビューが読み込むバンドルです。プロジェクトでは、[ビヘイビア](#behavior)セクションの例に従って `stepper` をインポートします。
+
+- **数値は入力欄が保持します。** 入力欄にフォーカスがない間は表示部が入力欄の位置に表示され、入力欄自体の数字は透明になります。入力欄にフォーカスすると表示部は退き、読者は `$1,250` ではなく `1250` を編集します。矢印キー、`min`、`max`、`step`、入力検証、フォームが送信する値は、これまでどおり数値入力欄のものです。
+- **読み上げる言葉。** ボタン、キー操作、入力、外部からの値の設定など、値が変わるたびに、ビヘイビアは書式付きの数値を表示部と入力欄の `aria-valuetext` に書き込みます。そのため、スクリーンリーダーも「$1,250」と読み上げます。表示部には `aria-hidden="true"` を指定します。
+- **書式を指定しない場合。** `stepper-display` があり `format` がないステッパーは、ロケールに従って桁区切りだけを行います。`Intl.NumberFormat` では書けない表記には、`format` に数値を受け取る関数を指定することもできます。
+- **幅。** 数値部分の幅は、入力欄と表示部のうち広いほうに合わせ、`--stepper-min` から `--stepper-max` の範囲に収まります。そのため、入力欄にフォーカスしてもボタンの位置は変わりません。
+- **スクリプトがない場合**、表示部は空のままで、入力欄が通常どおり数値を表示します。
+
+## スクラブ \{#scrub\}
+
+デザインツールでは、ラベルをドラッグして数値を変更することがよくあります。ページ内のどこにあってもかまわない入力欄の `<label>`、またはウェル内のハンドルに `stepper-scrub` クラスを付けます。横にドラッグすると 4px ごとに 1 ステップずつ数値が変わり、行の終端方向で値が増えます。<kbd>Shift</kbd> を押している間は、10 ステップずつ変わります。
+
+<ComponentPreview name="scrub" height={152} title="スクラブ" bodyClass="flex flex-col items-center gap-md p-lg" behaviors html={`<div class="flex items-center gap-md">
+  <label class="stepper-scrub text-sm fg-text-strong" for="opacity">Opacity</label>
+  <div class="input-group input-group-sm stepper">
+    <input class="input-group-field stepper-field" id="opacity" type="number" min="0" max="100" step="1" value="64">
+    <span class="input-group-addon">%</span>
+  </div>
+</div>
+<div class="input-group input-group-sm stepper" style="--stepper-min: 4ch">
+  <span class="input-group-addon stepper-scrub" aria-hidden="true">W</span>
+  <input class="input-group-field stepper-field" type="number" min="1" max="4096" value="320" aria-label="Width">
+  <span class="input-group-addon">px</span>
+</div>`} caption="「Opacity」ラベル、または 2 つ目の入力欄の先頭にある「W」を横にドラッグします。ドラッグせずに押した場合は、入力欄にフォーカスが移ります。" />
+
+- **押すのではなくドラッグ。** ドラッグはポインターが 3px 動いた時点で始まるため、ラベルを押すだけなら入力欄にフォーカスが移ります。ドラッグを終えたときのクリックは無視されます。
+- **ポインターロック。** マウスでは、ブラウザーが対応していればドラッグ中にポインターをロックするため、長くドラッグしても画面の端にぶつかりません。ポインターは元の位置に戻ります。ペンや指の場合は代わりにハンドルがポインターをキャプチャーし、タッチ画面での縦方向のスワイプでは引き続きページがスクロールします。
+- **イベント。** 入力欄はステップごとに `input` を発行し、ドラッグが終わったときに `change` を一度発行します。
+- **方向。** 右から左に書くページでは、行の先頭方向、つまり左へのドラッグで値が増えます。
+- スクラブはポインター向けの便利な機能です。キー操作、ボタン、入力でスクラブと同じことがすべてできるため、専用のキー操作は不要で、ハンドルはタブ順序に含めません。
+
 ## 無効 \{#disabled\}
 
 入力欄と両方のボタンを無効にします。ウェルの配置はそのままで、数値は無効状態の文字色になります。入力欄が無効または読み取り専用の場合、ビヘイビアは値を増減しません。このプレビューはマークアップのみで、スクリプトは適用していません。
@@ -107,7 +170,7 @@ root.addEventListener('change', (event) => console.log(event.target.value))
 
 ## キーボード操作 \{#keyboard\}
 
-数値入力欄の標準のキー操作を使います。ビヘイビアによるキー操作の追加はありません。
+数値入力欄の標準のキー操作を使います。ビヘイビアによるキー操作の追加はありません。Shift はスクラブでのみ意味を持ちます。
 
 <ContractTable name="stepper" show="keyboard" />
 
@@ -116,10 +179,11 @@ root.addEventListener('change', (event) => console.log(event.target.value))
 - `<label>`、[フィールド](/components/input#field)、または `aria-label` で入力欄にラベルを付けます。各ボタンには、何を変更するかがわかる名前を付けます。たとえば「プラス」ではなく「座席数を増やす」とします。
 - `min`、`max`、`step` は入力欄に指定します。キー操作、ボタン、支援技術はいずれもこの設定を参照します。
 - ボタンはタブ順序から外します。キーボードでは入力欄の矢印キーで値を増減できます。ポインター操作では 30px、タッチ操作では高さ 44px のウェル内に 36px の操作領域を確保します。
+- 書式付きの数値は入力欄の `aria-valuetext` で伝え、それを表示する表示部は支援技術から隠します。ウェル内のスクラブ用ハンドルも、キー操作と同じことを繰り返すだけなので隠します。
 
 ## React、Svelte、Vue \{#frameworks\}
 
-`stepper` コンポーネントはビヘイビアを適用し、数値の受け渡しを行います。`npx master-ui add stepper` でプロジェクトにコピーできます。コンポーネントの仕組みと使い方は、[React、Svelte、Vue](/guide/frameworks)を参照してください。
+`stepper` コンポーネントはビヘイビアを適用し、数値の受け渡しを行います。[書式付きの数値](#formatted)には `format` と、必要に応じて `locale` を渡します。コンポーネントは `stepper-value` と表示部を描画し、最初の数値を書き込んだ状態にするため、サーバーが送る HTML にも数値が表示されます。`stepper-scrub` クラスを付けた入力欄のラベルは、フレームワークを使わない場合と同じようにスクラブで値を変更します。`npx master-ui add stepper` でプロジェクトにコピーできます。コンポーネントの仕組みと使い方は、[React、Svelte、Vue](/guide/frameworks)を参照してください。
 
 <FrameworkSource name="stepper" />
 

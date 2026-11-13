@@ -1,0 +1,187 @@
+---
+title: "フローティングパネル"
+description: "読者が移動、サイズ変更、ヘッダーへの折りたたみ、閉じる操作を行える浮動サーフェス。"
+---
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+フローティングパネルは、作業中の内容の横に開いたまま置いておける浮動サーフェスで、その下のページも引き続き操作できます。キャンバスのレイヤー、カラーピッカー、インスペクター、チャットなどに使います。読者はヘッダーをドラッグして移動し、隅からサイズを変え、ヘッダーだけに折りたたみ、閉じることができます。`role="dialog"` を指定した `popover="manual"` なので、ブラウザーがボタンからパネルを開き、トップレイヤーに持ち上げてページ上のすべての要素より手前に表示します。`z-index` の順序を管理する必要はありません。移動、サイズ変更、折りたたみ、Escape キー、フォーカス、どのパネルを手前に表示するかといった残りの処理は、`panel` の[ビヘイビア](/guide/behaviors)が行います。
+
+<ComponentPreview name="default" height={440} title="フローティングパネル" background="plain" bodyClass="flex items-end justify-center gap-sm p-lg" behaviors html={`<button type="button" class="btn btn-sm" commandfor="layers" command="toggle-popover">Layers</button>
+<button type="button" class="btn btn-sm" commandfor="comments" command="toggle-popover">Comments</button>
+
+<div id="layers" popover="manual" role="dialog" class="panel" aria-labelledby="layers-title" style="--panel-x: 24px; --panel-y: 24px; --panel-width: 232px">
+  <div class="panel-header">
+    <button type="button" class="panel-handle" aria-label="Move the Layers panel with the arrow keys"></button>
+    <h2 class="panel-title" id="layers-title">Layers</h2>
+    <div class="panel-actions">
+      <button type="button" class="btn btn-quiet btn-sm btn-square panel-minimize" aria-pressed="false" aria-label="Minimize">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><path d="M6 12h12"/></svg>
+      </button>
+      <button type="button" class="btn btn-quiet btn-sm btn-square" commandfor="layers" command="hide-popover" aria-label="Close">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="panel-body">
+    <ol class="list">
+      <li class="list-row"><span class="list-body"><span class="list-title">Header</span></span></li>
+      <li class="list-row"><span class="list-body"><span class="list-title">Hero image</span></span></li>
+      <li class="list-row"><span class="list-body"><span class="list-title">Pricing table</span></span></li>
+      <li class="list-row"><span class="list-body"><span class="list-title">Footer</span></span></li>
+    </ol>
+  </div>
+  <span class="panel-resize" aria-hidden="true"></span>
+</div>
+
+<div id="comments" popover="manual" role="dialog" class="panel" aria-labelledby="comments-title" style="--panel-x: 296px; --panel-y: 64px; --panel-width: 272px">
+  <div class="panel-header">
+    <button type="button" class="panel-handle" aria-label="Move the Comments panel with the arrow keys"></button>
+    <h2 class="panel-title" id="comments-title">Comments</h2>
+    <div class="panel-actions">
+      <button type="button" class="btn btn-quiet btn-sm btn-square panel-minimize" aria-pressed="false" aria-label="Minimize">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><path d="M6 12h12"/></svg>
+      </button>
+      <button type="button" class="btn btn-quiet btn-sm btn-square" commandfor="comments" command="hide-popover" aria-label="Close">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="panel-body">
+    <div class="flex flex-col gap-sm">
+      <p class="m(0)"><span class="fg-text-strong">Mira</span> The hero image crops the product on narrow screens.</p>
+      <p class="m(0)"><span class="fg-text-strong">Jun</span> Fixed in the next build: it keeps the middle third.</p>
+      <input class="input input-sm" type="text" placeholder="Reply" aria-label="Reply">
+    </div>
+  </div>
+  <span class="panel-resize" aria-hidden="true"></span>
+</div>
+
+<script>
+  document.getElementById('layers').showPopover()
+  document.getElementById('comments').showPopover()
+</script>`} caption="ヘッダーか、その末尾側の下隅をドラッグします。後ろにあるパネルの中を押すと、そのパネルが手前に来ます。Tab キーでヘッダーに移動して矢印キーを使います。Shift キーで移動幅が大きくなり、Alt キーでサイズを変えます。Escape キーでパネルを閉じます。" />
+
+## スタイルシートの描画内容 \{#what-the-stylesheet-draws\}
+
+- **シート**　ポップオーバーと同じ浮動面に、浮動時の影が付きます。ヘッダーや隅をつかんでいる間はオーバーレイの影まで浮き上がり、ドラッグしてもテキストは選択されません。角丸は、小さいボタンの角丸に、ヘッダーがボタンの周囲に確保する 6px を加えた 14px です。
+- **ヘッダー**は、同じシートの上に細い区切り線を伴って置かれるバーで、先頭にタイトル、末尾にアクションが並びます。その両方の下に、バーと同じ大きさのボタンであるハンドルがあります。そのため、ヘッダー上のコントロール以外の場所を押すとパネルをつかめ、カーソルは開いた手から握った手に変わります。タイトルはポインター操作を受け取らないため、タイトルを押してもハンドルに届きます。
+- **ハンドルにフォーカス**すると、パネル全体にリングが表示されます。キー操作で動くのはパネル全体だからです。
+- **折りたたみ**　最小化ボタンを押すと、パネルはヘッダーだけになります。本文と隅は非表示になり、ボタンはくぼんだ表示になります。
+- **本文**は、使える領域より長い場合、下のページを動かさずにパネルの中でスクロールします。
+- **隅**は末尾側の下にある 2 本の短い斜線で、ターゲットの大きさは 16px です。タッチスクリーンでは 44px になり、ヘッダーも 44px のボタンが収まるように広がります。
+
+## 配置 \{#placement\}
+
+位置とサイズはカスタムプロパティで表します。`--panel-x` と `--panel-y` は左上隅の位置で、ビューポートの左上隅からのピクセル数です。`--panel-width` と `--panel-height` は幅と高さです。これらの値はイベントからしかわからないため、ビヘイビアがポインターとキー操作に応じて書き込みます。プレビューで各パネルの初期位置を指定しているように、ページ側で書き込むこともできます。
+
+配置と制限はスタイルシートが `clamp()` で行います。基準は、固定配置の要素がパーセンテージを読み取るビューポートで、スクロールバーは含みません。
+
+- パネルはビューポートより広くならず、`--panel-min-width`（12rem）より狭くならず、幅全体がビューポート内に収まります。
+- ヘッダーがビューポートの外に出ることはないため、パネルは常に見つけてドラッグで戻せます。パネルはビューポートより高くならず、収まらない本文はスクロールします。
+- ウィンドウが狭くなると、パネルは内側に押し込まれます。広くなると、指定された位置に戻ります。`clamp()` によって、保持している位置自体は変わらないためです。
+- 位置を指定しない場合、パネルは末尾側の上隅に、そこから 8px（`--panel-gutter`）内側の位置で開きます。
+
+移動とサイズ変更が終わるたびに、ビヘイビアはスタイルシートがパネルを描画した位置を読み取って保持します。そのため、アプリケーションが保存する値は、読者が見ていた位置になります。
+
+## 複数のパネル \{#stacking\}
+
+パネルは、表示された順にトップレイヤーに並びます。最後に表示したパネルが最も手前です。別のパネルの後ろにあるパネルの中を押すかフォーカスすると、そのパネルが手前に来ます。ビヘイビアがそのパネルを表示し直し、トップレイヤーの最後に置くためです。非表示と表示は、ブラウザーが描画する前に 1 つのタスク内で行われるため、パネルが消えたようには見えず、表示時のアニメーションも再生されません。ブラウザーは、開いた状態から開いた状態への `toggle` を 1 回だけ通知します。フォーカスは読者が置いた場所に留まります。
+
+## ビヘイビア \{#behavior\}
+
+`panel` は、`panel` クラスを持つ要素であるルートを受け取り、ビヘイビアを解除する関数を返します。`value` は、パネルの位置、大きさ、折りたたまれているかどうかを表す `{ x, y, width, height, minimized }` です。4 つの数値はピクセル単位で、スタイルシートの既定値が適用されている場合は `null` です。この値を保存しておき、ページの読み込み時に設定し直します。
+
+```js name=app.js
+import { panel } from '@master/ui/behaviors/panel.js'
+
+const root = document.querySelector('#layers')
+const layers = panel(root)
+
+const saved = localStorage.getItem('layers-panel')
+if (saved) layers.value = JSON.parse(saved)
+
+root.addEventListener('change', (event) => {
+  if (event.target === root) localStorage.setItem('layers-panel', JSON.stringify(layers.value))
+})
+```
+
+- **移動**　ハンドルをドラッグすると `--panel-x` と `--panel-y` を書き込みます。パネルをつかんだ位置はポインターの下に留まります。ハンドル上で矢印キーを押すと 16px、<kbd class="kbd">Shift</kbd> キーを押しながらだとその 4 倍移動します。
+- **サイズ変更**　隅をドラッグすると `--panel-width` と `--panel-height` を書き込みます。ハンドル上で <kbd class="kbd">Alt</kbd> キーを押しながら矢印キーを押しても、1 ステップずつ同じ操作ができます。右から左に書く言語では隅が左下にあるため、パネルは左に広がり、<kbd class="kbd">Alt</kbd>+<kbd class="kbd">ArrowLeft</kbd> で幅が広くなります。
+- **折りたたみ**　最小化ボタンをクリックすると、その `aria-pressed` が切り替わります。
+- **閉じる**　パネル内にフォーカスがあるときに <kbd class="kbd">Escape</kbd> を押すと、パネルが閉じます。ただし、先に閉じるメニューのように、内部のコントロールがそのキーを処理した場合は閉じません。閉じるボタンにスクリプトは不要で、`command="hide-popover"` を指定するだけです。
+- **フォーカス**　コントロールから開いたパネルは、フォーカスをハンドルに移します。パネル内にフォーカスがある状態で閉じると、フォーカスをそのコントロールに戻します。ページの読み込み時に開くパネルは、フォーカスを移動しません。
+- **イベント**　ルートは、パネルの移動中やサイズ変更中に `input` を、ドラッグが終わったとき、キー操作で動いたとき、折りたたまれたときに `change` を発行します。どちらもバブリングするため、本文内のフィールドのイベントもルートに届きます。`event.target` とルートを比較して区別します。
+
+| オプション | 設定する内容 |
+| --- | --- |
+| `step` | 矢印キーでパネルを移動またはサイズ変更する量。ピクセル単位です。既定値は 16 です |
+
+ビヘイビアを適用しない場合でも、パネルはボタンからページの上のトップレイヤーに開き、閉じるボタンで閉じます。位置は、カスタムプロパティが指定した場所に留まります。
+
+## ボタンから開く \{#opened-from-a-button\}
+
+`commandfor` と `command="toggle-popover"` を指定したボタンで、パネルを開閉します。`popovertarget` でも同じことができます。パネルはタブ移動の順序でボタンの次に位置し、開くとフォーカスがハンドルに移るため、すぐに矢印キーで移動できます。開閉ボタン、閉じるボタン、<kbd class="kbd">Escape</kbd> のいずれかで閉じると、フォーカスはボタンに戻ります。
+
+<ComponentPreview name="opened" height={360} title="ボタンから開く" background="plain" behaviors html={`<button type="button" class="btn" commandfor="inspector" command="toggle-popover">Inspect</button>
+
+<div id="inspector" popover="manual" role="dialog" class="panel" aria-labelledby="inspector-title" style="--panel-x: 24px; --panel-y: 24px; --panel-width: 264px">
+  <div class="panel-header">
+    <button type="button" class="panel-handle" aria-label="Move the Inspector panel with the arrow keys"></button>
+    <h2 class="panel-title" id="inspector-title">Inspector</h2>
+    <div class="panel-actions">
+      <button type="button" class="btn btn-quiet btn-sm btn-square panel-minimize" aria-pressed="false" aria-label="Minimize">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><path d="M6 12h12"/></svg>
+      </button>
+      <button type="button" class="btn btn-quiet btn-sm btn-square" commandfor="inspector" command="hide-popover" aria-label="Close">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="panel-body">
+    <dl class="data-list">
+      <div class="data-list-item"><dt class="data-list-term">Element</dt><dd class="data-list-value">Hero image</dd></div>
+      <div class="data-list-item"><dt class="data-list-term">Size</dt><dd class="data-list-value">1280 × 720</dd></div>
+      <div class="data-list-item"><dt class="data-list-term">Format</dt><dd class="data-list-value">AVIF</dd></div>
+    </dl>
+  </div>
+  <span class="panel-resize" aria-hidden="true"></span>
+</div>`} caption="パネルを開くと、フォーカスがヘッダーに移ります。Escape キーで閉じると、フォーカスはボタンに戻ります。" />
+
+## キーボード操作 \{#keyboard\}
+
+<ContractTable name="panel" show="keyboard" />
+
+## アクセシビリティ \{#accessibility\}
+
+- パネルは `role="dialog"` で、`aria-labelledby` でタイトルを名前にします。モーダルではありません。`aria-modal` は指定せず、ページは操作可能なままで、Tab キーでパネルの外に移動できます。先にタスクを完了させる必要がある場合は、[ダイアログ](/components/dialog)を使います。
+- ハンドルは実際のボタンなので、ボタンとして読み上げられ、同じ方法で到達できます。「Move the Layers panel with the arrow keys」のように、何をどのように動かすかを名前にします。隅は支援技術から隠します。キー操作ではハンドルからサイズを変えられるためです。
+- すべてのドラッグ操作にキー操作があります。矢印キーで移動し、Alt キーを押しながら矢印キーでサイズを変えます。ポインターを使う読者がドラッグできない場合に備えて、1 回押すだけの操作も用意します。ヘッダーに「Dock left」のように値を設定する項目を持つメニューを置くだけで十分です。
+- 最小化ボタンは名前を変えず、`aria-pressed` で状態を伝えます。
+- タッチスクリーンでは、ヘッダーが 44px のボタンを収められる大きさに広がり、隅も 44px のターゲットになります。
+- 強制カラーモードでは、パネルはシステムのテキスト色で輪郭が描かれ、ハンドルのフォーカスはシステムのハイライト色で示されます。
+
+## React、Svelte、Vue \{#frameworks\}
+
+`panel` コンポーネントは、ヘッダー、ハンドル、ボタンを描画し、`open` に応じてパネルを開閉し、値の受け渡しを行います。移動中は `onValueChange`、移動が終わったときは `onValueCommit` が呼ばれ、後者が値を保存するタイミングです。開くボタンと本文は、ページ独自のマークアップのままです。`npx master-ui add panel` でプロジェクトにコピーできます。コンポーネントの構成と使い方は [React、Svelte、Vue](/guide/frameworks) を参照してください。
+
+<FrameworkSource name="panel" />
+
+## クラス \{#classes\}
+
+<ContractTable name="panel" />
+
+## カスタムプロパティ \{#custom-properties\}
+
+<ContractTable name="panel" show="properties" />
+
+## 関連コンポーネント \{#related\}
+
+<ComponentLinks slugs={['dialog', 'popover', 'splitter', 'toolbar']} />
+
+## ソース \{#source\}
+
+<ComponentSource name="panel" />

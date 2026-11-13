@@ -33,7 +33,7 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
 ## 行為 \{#behavior\}
 
-`stepper` [行為](/guide/behaviors)讓兩側的按鈕能逐步增減中間的數值。它接受帶有 `stepper` 類別的根元素，沒有可設定的選項，並回傳用來解除綁定的函式。
+`stepper` [行為](/guide/behaviors)讓兩側的按鈕能逐步增減中間的數值。它接受帶有 `stepper` 類別的根元素，以及[格式化數字](#formatted)和[拖曳調整](#scrub)的選項，並回傳用來解除綁定的函式。
 
 ```js name=app.js
 import { stepper } from '@master/ui/behaviors/stepper.js'
@@ -90,6 +90,69 @@ root.addEventListener('change', (event) => console.log(event.target.value))
   <button type="button" class="btn btn-square" value="1" tabindex="-1" aria-label="More replicas"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
 </div>`} />
 
+## 格式化數字 \{#formatted\}
+
+價格、百分比或大數目寫成格式化的樣子較易閱讀：`$1,250`、`12%`、`1,250,000`。請把欄位和 `stepper-display` 放進 `stepper-value`，並將 `format`（[`Intl.NumberFormat`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Intl/NumberFormat/NumberFormat) 的選項）傳給行為；若不應以頁面的語言書寫，再傳入 `locale`。
+
+```js name=app.js
+stepper(root, { format: { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }, locale: 'en-US' })
+```
+
+<ComponentPreview name="formatted" height={152} title="格式化數字" bodyClass="flex flex-col items-center gap-md p-lg" behaviors html={`<div class="input-group stepper">
+  <button type="button" class="btn btn-square" value="-1" tabindex="-1" aria-label="Lower the budget"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+  <span class="stepper-value">
+    <input class="input-group-field stepper-field" type="number" min="0" step="250" value="1250" aria-label="Monthly budget">
+    <span class="stepper-display" aria-hidden="true"></span>
+  </span>
+  <button type="button" class="btn btn-square" value="1" tabindex="-1" aria-label="Raise the budget"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+</div>
+<div class="input-group stepper">
+  <button type="button" class="btn btn-square" value="-1" tabindex="-1" aria-label="Fewer requests"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+  <span class="stepper-value">
+    <input class="input-group-field stepper-field" type="number" min="0" step="50000" value="1250000" aria-label="Requests a month">
+    <span class="stepper-display" aria-hidden="true"></span>
+  </span>
+  <button type="button" class="btn btn-square" value="1" tabindex="-1" aria-label="More requests"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  const [budget, requests] = document.querySelectorAll('.stepper')
+  MasterUI.stepper(budget, { format: { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }, locale: 'en-US' })
+  MasterUI.stepper(requests, { locale: 'en-US' })
+})
+</script>`} caption="調整預算或點進欄位：欄位取得焦點時會顯示可編輯的純數字，離開時再重新寫成格式化數字。第二個顯示沒有設定格式，只會將位數分組。" />
+
+`attach()` 不會傳入任何選項，因此這個預覽會在 `attach()` 執行後自行呼叫 `stepper`；對同一個根元素再次呼叫會取代前一次。`MasterUI` 是預覽載入的套件；在專案中，請依照[行為](#behavior)一節的範例匯入 `stepper`。
+
+- **欄位保留數字。** 欄位未取得焦點時，顯示元素會取代欄位的位置，欄位本身的數字則為透明。欄位取得焦點時，顯示元素會讓開：讀者編輯的是 `1250` 而不是 `$1,250`，方向鍵、`min`、`max`、`step`、驗證和表單送出的值都和以往一樣由數字輸入欄位處理。
+- **文字。** 每當數值改變，無論來自按鈕、按鍵、輸入或從外部設定的值，行為都會把格式化數字寫入顯示元素和欄位的 `aria-valuetext`，因此螢幕閱讀器也會讀出「$1,250」。顯示元素帶有 `aria-hidden="true"`。
+- **沒有格式時。** 帶有 `stepper-display` 但沒有 `format` 的步進器，會依地區設定將位數分組。`format` 也可以是接收數字的函式，用於 `Intl.NumberFormat` 無法寫出的數字格式。
+- **寬度。** 數字方框的寬度取欄位與顯示元素中較寬者，介於 `--stepper-min` 和 `--stepper-max` 之間，因此欄位取得焦點時按鈕不會移動。
+- **沒有腳本時**，顯示元素是空的，欄位照常顯示數字。
+
+## 拖曳調整 \{#scrub\}
+
+在設計工具中，常會透過拖曳標籤來改變數字。為欄位的 `<label>`（可在頁面任何位置），或輸入槽中的把手加上 `stepper-scrub` 類別：往側邊拖曳時，每 4px 會調整一個步進，往行尾方向拖曳會增加。按住 <kbd>Shift</kbd> 則一次調整十個步進。
+
+<ComponentPreview name="scrub" height={152} title="拖曳調整" bodyClass="flex flex-col items-center gap-md p-lg" behaviors html={`<div class="flex items-center gap-md">
+  <label class="stepper-scrub text-sm fg-text-strong" for="opacity">Opacity</label>
+  <div class="input-group input-group-sm stepper">
+    <input class="input-group-field stepper-field" id="opacity" type="number" min="0" max="100" step="1" value="64">
+    <span class="input-group-addon">%</span>
+  </div>
+</div>
+<div class="input-group input-group-sm stepper" style="--stepper-min: 4ch">
+  <span class="input-group-addon stepper-scrub" aria-hidden="true">W</span>
+  <input class="input-group-field stepper-field" type="number" min="1" max="4096" value="320" aria-label="Width">
+  <span class="input-group-addon">px</span>
+</div>`} caption="將 Opacity 標籤或第二個欄位開頭的 W 往側邊拖曳。按下但不拖曳時，仍會讓欄位取得焦點。" />
+
+- **是拖曳，不是按下。** 指標移動 3px 後才開始拖曳，因此按下標籤仍會讓欄位取得焦點。結束拖曳時的點擊會被吞掉。
+- **指標鎖定。** 使用滑鼠時，若瀏覽器支援，拖曳期間會鎖定指標，因此長距離拖曳永遠不會碰到螢幕邊緣；結束後指標會回到原本的位置。觸控筆或手指則改由把手擷取，在觸控螢幕上垂直滑動仍會捲動頁面。
+- **事件。** 欄位每調整一步就派送 `input`，拖曳結束時派送一次 `change`。
+- **方向。** 在由右至左的頁面中，往行首方向（向左）拖曳會增加。
+- 拖曳調整是為指標提供的便利功能。按鍵、按鈕和輸入都能完成它能做的事，因此它不需要自己的按鍵，把手也不列入 Tab 順序。
+
 ## 停用 \{#disabled\}
 
 請同時停用欄位與兩個按鈕。輸入槽會保留原本占用的空間，數值則會以停用色顯示。若欄位已停用或為唯讀，行為不會調整數值。這個預覽只有標記，未掛載腳本。
@@ -108,7 +171,7 @@ root.addEventListener('change', (event) => console.log(event.target.value))
 
 ## 鍵盤操作 \{#keyboard\}
 
-鍵盤操作由數字輸入欄位原生提供，行為不會新增按鍵操作。
+鍵盤操作由數字輸入欄位原生提供，行為不會新增按鍵操作。Shift 只對拖曳調整有作用。
 
 <ContractTable name="stepper" show="keyboard" />
 
@@ -117,10 +180,11 @@ root.addEventListener('change', (event) => console.log(event.target.value))
 - 請使用 `<label>`、[表單欄位](/components/input#field)或 `aria-label` 為欄位加上標籤。每個按鈕都需要有自己的名稱，清楚說明會調整什麼，例如「增加座位數」，避免只寫「加號」。
 - 請將 `min`、`max` 和 `step` 設在欄位上。鍵盤操作、按鈕和輔助科技都會讀取這些設定。
 - 按鈕不列入 Tab 鍵的焦點順序。鍵盤使用者可在欄位中按方向鍵調整數值。指標操作區為 30px，44px 高的輸入槽內則有 36px 的手指觸控區。
+- 格式化數字透過欄位的 `aria-valuetext` 播報，顯示它的元素則對輔助科技隱藏。輸入槽中的拖曳把手也會隱藏：它重複的是按鍵的功能。
 
 ## React、Svelte 和 Vue \{#frameworks\}
 
-`stepper` 元件會掛載行為，並接收與回傳數值。執行 `npx master-ui add stepper` 將元件複製到專案中。元件的實作與用法請參閱 [React、Svelte 和 Vue](/guide/frameworks)。
+`stepper` 元件會掛載行為，並接收與回傳數值。傳入 `format`（必要時再加上 `locale`）即可顯示[格式化數字](#formatted)：它會算繪 `stepper-value` 和顯示元素，並預先寫好第一個數字，讓伺服器送出的 HTML 就能顯示。欄位的標籤加上 `stepper-scrub` 類別後，拖曳調整的方式與不使用框架時相同。執行 `npx master-ui add stepper` 將元件複製到專案中。元件的實作與用法請參閱 [React、Svelte 和 Vue](/guide/frameworks)。
 
 <FrameworkSource name="stepper" />
 

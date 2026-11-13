@@ -34,13 +34,49 @@ import ContractTable from '~/site/components/ContractTable.astro'
 
 単一のスライダーが塗りの範囲を求める場合と同じように、それぞれのつまみは自身の入力要素内でビュータイムラインの基準になります。グループは`timeline-scope`で二つのタイムラインを参照し、それぞれでアニメーションを実行して二つの割合を求めます。小さい方から大きい方までを塗るため、つまみが交差しても塗りはつまみの間に収まり、小さい方の値が引き続き範囲の下限になります。
 
-フォームの処理でも同じように、小さい方の値を下限として扱います。二つの値の間に間隔を確保する必要がある場合は、`input`イベントで値を制限します。描画はこの制限に依存しません。
+フォームの処理でも同じように、小さい方の値を下限として扱います。二つの値を交差させたくない場合や、間隔を確保する必要がある場合は、[ビヘイビア](#keeping-a-distance)を適用します。描画はこれに依存しません。
 
 スクロール駆動アニメーションに対応していないブラウザーでは、二つのつまみの下に塗りのないトラックが表示され、各入力要素は通常どおり操作できます。ChromiumとSafari 26では、つまみの間の塗りが描画されます。
 
 ## つまみがトラックを共有する仕組み \{#how-the-thumbs-share-a-track\}
 
 二つの入力要素を同じグリッドセルに重ねます。それぞれ固有のトラックは表示せず、つまみだけがポインター操作を受け付けます。そのため、つまみの間を押しても入力要素には届かず、片方のつまみがもう片方の透明なトラックに覆われることもありません。操作中のつまみは前面に表示されます。つまみのない部分のトラックを押しても、どちらを動かすか特定できないため反応しません。
+
+## 間隔の確保 \{#keeping-a-distance\}
+
+`range`[ビヘイビア](/guide/behaviors)は、つまみ同士が離れた状態を保ちます。`range-start`が`range-end`を越えることはなく、`distance`を指定すると、二つのつまみはその間隔で止まります。止まるのは動かしているつまみで、静止しているつまみが押されて動くことはありません。ビヘイビアは、つまみを動かした`input`イベントの中で、その入力要素や範囲スライダーの周囲の要素がイベントを受け取る前に値を補正します。そのため、どのリスナーも間隔が保たれた値の組を読み取り、つまみが拒否された値を表示することもありません。キー操作、ドラッグ、フォームの値は、入力要素本来の動作のままです。
+
+<ComponentPreview name="distance" height={112} title="間隔の確保" background="plain" bodyClass="p-lg" behaviors html={`<div class="flex flex-col gap-sm max-w(360) mx-auto">
+  <div class="flex items-baseline justify-between text-sm">
+    <span class="fg-text-strong" id="hours">Opening hours</span>
+    <output class="fg-text-muted" id="hours-output">9:00 to 17:00</output>
+  </div>
+  <div class="range" id="hours-range" role="group" aria-labelledby="hours">
+    <input type="range" class="slider range-start" min="0" max="24" value="9" aria-label="Opens at">
+    <input type="range" class="slider range-end" min="0" max="24" value="17" aria-label="Closes at">
+  </div>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  var range = document.getElementById('hours-range')
+  MasterUI.range(range, { distance: 2 })
+  range.addEventListener('input', function () {
+    var start = range.querySelector('.range-start').value
+    var end = range.querySelector('.range-end').value
+    document.getElementById('hours-output').textContent = start + ':00 to ' + end + ':00'
+  })
+})
+</script>`} caption="どちらかのつまみをもう一方に向かってドラッグすると、2時間の間隔で止まります。" />
+
+`attach()`は範囲スライダーをプラットフォームの動作のままにするため、つまみは交差できます。つまみを離しておくには、このプレビューのように範囲スライダーに対して`range`を呼び出し、間隔を保つ場合は`distance`を指定します。同じルートに対して2回呼び出すと、2回目が1回目を置き換えます。`MasterUI`はプレビューが読み込むバンドルです。プロジェクトでは`range`をインポートします。
+
+```js name=app.js
+import { range } from '@master/ui/behaviors/range.js'
+
+const detach = range(document.querySelector('.range'), { distance: 2 })
+```
+
+間隔は入力要素自身の単位で指定します。`step`の倍数を指定してください。入力要素は書き込まれた値をステップに丸めるため、ビヘイビアは間隔を保てる最も近いステップを選びます。
 
 ## 無効状態 \{#disabled\}
 

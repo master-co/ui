@@ -1,0 +1,119 @@
+---
+title: "트랜스크립트"
+description: "녹음의 내용을 재생에 맞춰 따라가는 큐로 보여 줍니다."
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+트랜스크립트는 녹음의 내용을 큐 목록으로 보여 주며, 각 큐에는 시작 시간이 있습니다. 트랜스크립트는 재생에 맞춰 따라갑니다. 지금 말하고 있는 큐는 솟은 시트 위에 강하게 표시되고, 이미 들은 큐는 흐려지며, 아직 나오지 않은 큐는 본문 잉크 색으로 대기합니다. 큐를 고르면 녹음이 그 위치부터 재생됩니다. `transcript` [동작](/guide/behaviors)은 `aria-controls`에 id로 지정한 [미디어 플레이어](/components/player)나 일반 `<audio>`, `<video>`에 트랜스크립트를 연결합니다.
+
+<ComponentPreview name="default" height={296} narrowHeight={312} title="트랜스크립트" background="plain" bodyClass="content-start p-lg" behaviors html={`<div class="grid gap-sm max-w(480) mx-auto">
+  <div class="player" id="talk" role="group" aria-label="A short recording">
+    <audio class="player-media" src="/demo/recording.m4a" controls preload="metadata"></audio>
+    <div class="player-controls">
+      <button type="button" class="player-button player-play" aria-label="Play" aria-pressed="false">
+        <svg class="icon player-off" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.8v14.4a1 1 0 0 0 1.5.86l11.5-7.2a1 1 0 0 0 0-1.72L8.5 3.94A1 1 0 0 0 7 4.8"/></svg>
+        <svg class="icon player-on" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+      </button>
+      <span class="player-elapsed">0:00</span>
+      <input type="range" class="slider player-seek" min="0" max="0" step="any" value="0" aria-label="Seek">
+      <span class="player-duration">0:00</span>
+    </div>
+  </div>
+  <section class="transcript" aria-label="Transcript" aria-controls="talk" style="--transcript-height: 12rem">
+    <ol class="transcript-list scroll-area">
+      <li class="transcript-cue" data-start="0.3"><button type="button" class="transcript-time">0:00</button><p class="transcript-text">This is a short recording, made to show the player and its transcript.</p></li>
+      <li class="transcript-cue" data-start="4.7"><button type="button" class="transcript-time">0:04</button><p class="transcript-text">Each line of the transcript is a cue, with the time it begins.</p></li>
+      <li class="transcript-cue" data-start="8.7"><button type="button" class="transcript-time">0:08</button><p class="transcript-text">The line being spoken is marked, and the transcript keeps it in view.</p></li>
+      <li class="transcript-cue" data-start="13.06"><button type="button" class="transcript-time">0:13</button><p class="transcript-text">Lines you have heard turn quiet. The ones still to come wait in plain ink.</p></li>
+      <li class="transcript-cue" data-start="17.65"><button type="button" class="transcript-time">0:17</button><p class="transcript-text">Choose any line to jump to it, or scroll away and come back later.</p></li>
+      <li class="transcript-cue" data-start="21.79"><button type="button" class="transcript-time">0:21</button><p class="transcript-text">That is the whole recording. Thank you for listening.</p></li>
+    </ol>
+    <button type="button" class="btn btn-sm btn-pill transcript-return" hidden>Back to current</button>
+  </section>
+</div>`} caption="재생한 뒤 줄을 하나 골라 보세요. 재생 중에 현재 줄에서 벗어나도록 트랜스크립트를 스크롤하면 따라가기를 멈추고 돌아갈 방법을 제공합니다." />
+
+## 따라가기와 스크롤해 벗어나기 \{#following\}
+
+녹음이 재생되는 동안 동작은 현재 큐에 `aria-current="true"`를 설정합니다. 현재 큐는 `data-start`가 지난 마지막 큐이므로, 두 큐 사이의 말 없는 구간에서도 위치가 유지됩니다. 그 앞의 모든 큐는 스타일시트만으로 재생된 상태로 그려집니다.
+
+목록은 현재 큐를 가운데에 유지합니다. 목록은 자기 자신만 스크롤하고 주변은 스크롤하지 않으므로, 트랜스크립트가 있는 페이지가 사용자 아래에서 움직이는 일은 없습니다. 스크롤은 부드럽게 이동하며, 동작 줄이기를 요청한 사용자에게는 바로 건너뜁니다. 사용자가 휠, 손가락, 키, 스크롤바로 목록을 스크롤해 현재 큐가 보이지 않게 되면 목록은 따라가기를 멈추고, 아래 가장자리에 작은 알약 모양의 `transcript-return`이 나타나 다시 돌아가게 해 줍니다. 큐를 고르거나 현재 큐가 다시 보이도록 스크롤하면 다시 따라갑니다.
+
+목록은 `--transcript-height` 안에서 스크롤되며, 설정하지 않으면 20rem입니다. 얇은 스크롤바와 내용이 이어지는 가장자리의 페이드 효과가 필요하면 목록에 [`scroll-area`](/components/scroll-area)를 추가하세요.
+
+## WebVTT 트랙에서 가져오기 \{#from-a-track\}
+
+목록이 비어 있으면 동작은 TextTrack API로 미디어의 첫 번째 captions 또는 subtitles 트랙을 읽어 큐를 작성합니다. 시간, 태그를 제외한 문구, 그리고 음성 태그(`<v Ana>`)가 지정하는 화자를 작성합니다. 트랙은 비활성화 상태가 아닐 때만 큐를 불러오므로, 동작은 비활성화된 트랙을 `hidden`으로 설정합니다. `hidden` 트랙은 영상 위에 아무것도 표시하지 않습니다. 이 예시에서는 트랜스크립트가 브라우저 자체의 컨트롤이 있는 일반 `<audio>`를 따라갑니다.
+
+<ComponentPreview name="track" height={360} title="트랙에서 가져오기" background="plain" bodyClass="content-start p-lg" behaviors html={`<div class="grid gap-sm max-w(480) mx-auto">
+  <audio id="talk-audio" class="w-full" src="/demo/recording.m4a" controls preload="metadata">
+    <track kind="captions" src="/demo/recording.vtt" srclang="en" label="English">
+  </audio>
+  <section class="transcript" aria-label="Transcript" aria-controls="talk-audio" style="--transcript-height: 15rem">
+    <ol class="transcript-list scroll-area"></ol>
+    <button type="button" class="btn btn-sm btn-pill transcript-return" hidden>Back to current</button>
+  </section>
+</div>`} caption="큐는 recording.vtt에서 읽어 옵니다. 스크립트가 없으면 이 목록은 비어 있으므로, 스크립트 없이도 읽어야 하는 경우에는 큐를 페이지에 작성하세요." />
+
+## 동작 \{#behavior\}
+
+`transcript`는 `transcript` 클래스가 있는 루트 요소를 받아, 연결한 동작을 해제하는 함수를 반환합니다.
+
+```js name=app.js
+import { transcript } from '@master/ui/behaviors/transcript.js'
+
+const detach = transcript(document.querySelector('.transcript'))
+```
+
+- **미디어**는 `aria-controls`가 가리키는 요소입니다. 미디어 플레이어라면 그 `player-media`를 사용하며, `<audio>`나 `<video>`일 수도 있습니다. 동작은 미디어가 이벤트를 알릴 때마다 대상을 다시 찾으므로, 트랜스크립트보다 나중에 작성된 미디어나 나중에 지정한 다른 미디어도 따라갑니다. `media` 옵션을 사용하면 대신 다른 요소를 지정할 수 있습니다.
+- **큐**는 시작 시점을 초 단위로 나타내는 `data-start`가 있는 `li`로, `transcript-time` 버튼과 `transcript-text`를 담습니다. 사용자가 문구를 선택하는 중이 아니라면 큐의 어디를 눌러도 그 시작 지점부터 재생됩니다. 시간 버튼에서 <kbd class="kbd">Enter</kbd> 키를 눌러도 같습니다.
+- **다른 곳에서 작성한 행.** 동작은 매번 목록을 읽고 아무것도 보관하지 않으므로, 렌더러가 큐를 작성하고 변경해도 됩니다. `draw: false`를 지정하면 빈 목록을 렌더러에 맡깁니다. `track`은 큐를 작성할 트랙을 고릅니다. 동작이 작성한 행은 동작을 해제할 때 제거됩니다.
+
+| 옵션 | 기본값 | |
+| --- | --- | --- |
+| `media` | `aria-controls`에서 가져옴 | 따라갈 미디어 요소 |
+| `track` | 첫 번째 captions 또는 subtitles 트랙 | 빈 목록을 작성할 때 사용하는 트랙 |
+| `draw` | `true` | 빈 목록을 트랙에서 작성할지 여부 |
+
+동작을 연결하지 않으면 큐는 사용자가 읽는 목록일 뿐입니다. 아무것도 표시되지 않고, 따라가지 않으며, 큐를 눌러도 해당 위치로 이동하지 않습니다.
+
+## 키보드 \{#keyboard\}
+
+시간 버튼은 현재 큐의 버튼 하나만 탭 순서에 들어가며, 방향키로 버튼 사이를 이동합니다. 따라서 트랜스크립트가 길어도 탭 순서를 오래 거쳐 가지 않아도 됩니다.
+
+<ContractTable name="transcript" show="keyboard" />
+
+## 접근성 \{#accessibility\}
+
+- `aria-label`이나, `aria-labelledby`로 가리키는 제목으로 트랜스크립트에 이름을 지정하고, `aria-controls`에 미디어를 지정하세요.
+- 현재 큐에는 `aria-current="true"`가 설정됩니다. 스타일시트는 현재 큐를 색상(hue)이 아니라 잉크와 깊이로 그리며, 강제 색상 모드에서는 시스템 윤곽선으로 그립니다.
+- 녹음이 재생되는 동안 트랜스크립트가 스스로 포커스를 가져가는 일은 없습니다. 포커스는 사용자가 옮길 때만 이동하며, 돌아가기 버튼을 고르면 현재 큐로 돌아갑니다.
+- 영상이 없는 녹음을 소리 없이 이해하려면 트랜스크립트가 필요합니다. 스크립트 없이도 페이지를 읽을 수 있어야 한다면 트랜스크립트를 페이지에 작성하세요.
+
+## React, Svelte, Vue \{#frameworks\}
+
+`transcript` 컴포넌트는 각각 `start`, `text`, 선택 사항인 `speaker`로 이루어진 `cues`로 큐를 작성하고, `media`로 지정한 미디어를 연결 대상으로 지정한 뒤 동작을 연결합니다. 큐를 표시하고 따라가는 일은 동작이 처리합니다. `npx master-ui add transcript` 명령을 실행해 프로젝트에 복사하세요. 컴포넌트의 구성과 사용 방법은 [React, Svelte, Vue](/guide/frameworks)에서 확인할 수 있습니다.
+
+<FrameworkSource name="transcript" />
+
+## 클래스 \{#classes\}
+
+<ContractTable name="transcript" />
+
+돌아가기 버튼은 `transcript-return` 구성 요소가 적용된 `btn btn-sm btn-pill` [버튼](/components/button)입니다.
+
+## 사용자 지정 속성 \{#custom-properties\}
+
+<ContractTable name="transcript" show="properties" />
+
+## 관련 항목 \{#related\}
+
+<ComponentLinks slugs={['player', 'scroll-area', 'timeline']} />
+
+## 소스 \{#source\}
+
+<ComponentSource name="transcript" />

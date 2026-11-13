@@ -1,0 +1,119 @@
+---
+title: "逐字稿"
+description: "以字幕片段呈現錄音的內容，並在播放時跟著進度移動。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+逐字稿以字幕片段（cue）清單呈現錄音的內容，每個片段都標有開始時間。播放錄音時，逐字稿會跟著進度移動：正在說的片段以強調文字顯示在凸起的表面上，已經聽過的片段轉為淡色，尚未播到的片段則維持內文墨色。選擇某個片段，錄音就會從該處開始播放。`transcript` [行為](/guide/behaviors)會將它連接到[媒體播放器](/components/player)或一般的 `<audio>`、`<video>`，連接對象由 `aria-controls` 中的 id 指定。
+
+<ComponentPreview name="default" height={296} narrowHeight={312} title="逐字稿" background="plain" bodyClass="content-start p-lg" behaviors html={`<div class="grid gap-sm max-w(480) mx-auto">
+  <div class="player" id="talk" role="group" aria-label="A short recording">
+    <audio class="player-media" src="/demo/recording.m4a" controls preload="metadata"></audio>
+    <div class="player-controls">
+      <button type="button" class="player-button player-play" aria-label="Play" aria-pressed="false">
+        <svg class="icon player-off" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.8v14.4a1 1 0 0 0 1.5.86l11.5-7.2a1 1 0 0 0 0-1.72L8.5 3.94A1 1 0 0 0 7 4.8"/></svg>
+        <svg class="icon player-on" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+      </button>
+      <span class="player-elapsed">0:00</span>
+      <input type="range" class="slider player-seek" min="0" max="0" step="any" value="0" aria-label="Seek">
+      <span class="player-duration">0:00</span>
+    </div>
+  </div>
+  <section class="transcript" aria-label="Transcript" aria-controls="talk" style="--transcript-height: 12rem">
+    <ol class="transcript-list scroll-area">
+      <li class="transcript-cue" data-start="0.3"><button type="button" class="transcript-time">0:00</button><p class="transcript-text">This is a short recording, made to show the player and its transcript.</p></li>
+      <li class="transcript-cue" data-start="4.7"><button type="button" class="transcript-time">0:04</button><p class="transcript-text">Each line of the transcript is a cue, with the time it begins.</p></li>
+      <li class="transcript-cue" data-start="8.7"><button type="button" class="transcript-time">0:08</button><p class="transcript-text">The line being spoken is marked, and the transcript keeps it in view.</p></li>
+      <li class="transcript-cue" data-start="13.06"><button type="button" class="transcript-time">0:13</button><p class="transcript-text">Lines you have heard turn quiet. The ones still to come wait in plain ink.</p></li>
+      <li class="transcript-cue" data-start="17.65"><button type="button" class="transcript-time">0:17</button><p class="transcript-text">Choose any line to jump to it, or scroll away and come back later.</p></li>
+      <li class="transcript-cue" data-start="21.79"><button type="button" class="transcript-time">0:21</button><p class="transcript-text">That is the whole recording. Thank you for listening.</p></li>
+    </ol>
+    <button type="button" class="btn btn-sm btn-pill transcript-return" hidden>Back to current</button>
+  </section>
+</div>`} caption="開始播放，再選擇一行。播放期間將逐字稿捲離目前那一行：它會停止跟隨，並提供返回的方式。" />
+
+## 跟隨與捲離 \{#following\}
+
+錄音播放時，行為會以 `aria-current="true"` 標示目前的片段：也就是 `data-start` 已經過去的最後一個片段，因此在兩個片段之間的停頓期間，位置仍會保留。在它之前的每個片段都會以已播放的樣式繪製，這完全由樣式表負責。
+
+清單會讓目前的片段保持在中央。它只捲動自己，不會捲動周圍的任何內容，因此放有逐字稿的頁面絕不會在讀者眼前移動；捲動時會滑順移動，讀者要求減少動態效果時則直接跳到定點。當讀者用滾輪、手指、按鍵或捲軸捲動清單，使目前的片段離開視野時，清單會停止跟隨，並在下緣顯示一顆小型膠囊按鈕 `transcript-return`，可將清單帶回目前位置。選擇某個片段，或將目前的片段捲回視野內，都會恢復跟隨。
+
+清單在 `--transcript-height` 的高度內捲動，未設定時為 20rem。為清單加上 [`scroll-area`](/components/scroll-area)，即可使用纖細的捲軸，並在內容延續的邊緣顯示淡出效果。
+
+## 從 WebVTT 軌道產生 \{#from-a-track\}
+
+清單為空時，行為會透過 TextTrack API 讀取媒體的第一條 captions 或 subtitles 軌道，寫入字幕片段：包括時間、去除標籤後的文字，以及語音標籤所指名的說話者（`<v Ana>`）。軌道只有在未停用時才會載入字幕片段，因此行為會將停用的軌道設為 `hidden`，這樣不會在畫面上顯示任何內容。下面的逐字稿跟隨的是一個使用瀏覽器控制項的一般 `<audio>`。
+
+<ComponentPreview name="track" height={360} title="從軌道產生" background="plain" bodyClass="content-start p-lg" behaviors html={`<div class="grid gap-sm max-w(480) mx-auto">
+  <audio id="talk-audio" class="w-full" src="/demo/recording.m4a" controls preload="metadata">
+    <track kind="captions" src="/demo/recording.vtt" srclang="en" label="English">
+  </audio>
+  <section class="transcript" aria-label="Transcript" aria-controls="talk-audio" style="--transcript-height: 15rem">
+    <ol class="transcript-list scroll-area"></ol>
+    <button type="button" class="btn btn-sm btn-pill transcript-return" hidden>Back to current</button>
+  </section>
+</div>`} caption="字幕片段讀取自 recording.vtt。沒有腳本時這份清單會保持空白，因此若必須在沒有腳本的情況下閱讀，請將字幕片段寫在頁面中。" />
+
+## 行為 \{#behavior\}
+
+`transcript` 接收根元素，也就是帶有 `transcript` 類別的元素，並傳回用來解除行為的函式。
+
+```js name=app.js
+import { transcript } from '@master/ui/behaviors/transcript.js'
+
+const detach = transcript(document.querySelector('.transcript'))
+```
+
+- **媒體**是 `aria-controls` 所指的元素：若是媒體播放器，會取用其中的 `player-media`；也可以是 `<audio>` 或 `<video>`。每次媒體發出事件時，行為都會重新查找，因此在逐字稿之後才寫入的媒體，或之後改指定的其他媒體，都能被跟隨。`media` 選項則可改為直接指定元素。
+- **字幕片段**是帶有 `data-start`（開始的秒數）的 `li`，內含一個 `transcript-time` 按鈕和一個 `transcript-text`。在片段上任一處按下都會從它的開頭播放，除非讀者正在選取其中的文字；在它的時間上按 <kbd class="kbd">Enter</kbd> 也有相同效果。
+- **由其他程式寫入的列。** 行為每次都會重新讀取清單，不保存任何內容，因此算繪程式可以寫入並變更字幕片段。`draw: false` 會將空清單留給算繪程式處理；`track` 用來選擇寫入字幕片段的來源軌道。行為解除時，會移除它所寫入的列。
+
+| 選項 | 預設值 | |
+| --- | --- | --- |
+| `media` | 取自 `aria-controls` | 要跟隨的媒體元素 |
+| `track` | 第一條 captions 或 subtitles 軌道 | 用來寫入空清單的軌道 |
+| `draw` | `true` | 是否從軌道寫入空清單 |
+
+未掛上行為時，字幕片段就是供讀者閱讀的清單；不會標示任何片段，不會跟隨，選擇片段也不會跳轉。
+
+## 鍵盤操作 \{#keyboard\}
+
+所有時間按鈕共用一個 Tab 停駐點，也就是目前片段的時間按鈕，並以方向鍵在它們之間移動，因此很長的逐字稿也不會讓 Tab 鍵的巡覽順序變得冗長。
+
+<ContractTable name="transcript" show="keyboard" />
+
+## 無障礙 \{#accessibility\}
+
+- 請以 `aria-label`，或以 `aria-labelledby` 指向的標題為逐字稿命名，並在 `aria-controls` 中指定它的媒體。
+- 目前的片段設有 `aria-current="true"`；樣式表以墨色和深度、而不是色相來繪製它，強制色彩模式下則使用系統外框線。
+- 錄音播放時，逐字稿絕不會自行取得焦點。只有讀者移動焦點時焦點才會移動，選擇返回方式時則會回到目前的片段。
+- 沒有畫面的錄音需要逐字稿，才能在沒有聲音的情況下被理解。若頁面必須能在沒有腳本的情況下閱讀，請將逐字稿寫在頁面中。
+
+## React、Svelte 和 Vue \{#frameworks\}
+
+`transcript` 元件會根據 `cues` 寫入字幕片段，每個片段包含 `start`、它的 `text`，以及選用的 `speaker`；它會指定以 `media` 傳入的媒體，並掛上行為，由行為負責標示和跟隨。用 `npx master-ui add transcript` 將元件複製到專案中。元件的建置與使用方式請參閱 [React、Svelte 和 Vue](/guide/frameworks)。
+
+<FrameworkSource name="transcript" />
+
+## 類別 \{#classes\}
+
+<ContractTable name="transcript" />
+
+返回按鈕是帶有 `transcript-return` 部件的[按鈕](/components/button)，即 `btn btn-sm btn-pill`。
+
+## 自訂屬性 \{#custom-properties\}
+
+<ContractTable name="transcript" show="properties" />
+
+## 相關元件 \{#related\}
+
+<ComponentLinks slugs={['player', 'scroll-area', 'timeline']} />
+
+## 原始碼 \{#source\}
+
+<ComponentSource name="transcript" />

@@ -41,13 +41,20 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
 ## 동작 \{#behavior\}
 
-`combobox` 동작은 `combobox` 클래스가 있는 루트 요소를 받아, 연결한 동작을 해제하는 함수를 반환합니다. `role="combobox"`로 필드를 찾고 `role="listbox"`로 목록을 찾습니다. 일치하는 옵션을 페이지에서 직접 작성한다면 `filter: false`를 전달하세요.
+`combobox` 동작은 `combobox` 클래스가 있는 루트 요소와 옵션 객체를 받아, 연결한 동작을 해제하는 함수를 반환합니다. `role="combobox"`로 필드를 찾고 `role="listbox"`로 목록을 찾습니다. `filter` 옵션의 기본값은 true입니다. `filter: false`를 지정하면 [자동 완성](#autocomplete)에서 보듯이 옵션을 페이지가 처리합니다. `name`, `removeLabel`, `draw`는 [여러 값 선택](#several-values)에 사용합니다.
 
 ```js name=app.js
 import { combobox } from '@master/ui/behaviors/combobox.js'
 
-const detach = combobox(document.querySelector('.combobox'))
+const box = combobox(document.querySelector('.combobox'))
+box.value // what the chosen option stands for, or null
+box.query // the text in the field
 ```
+
+반환된 함수에는 외부에서 읽고 설정할 수 있는 속성이 두 개 있습니다. 어느 속성을 설정해도 이벤트는 발행하지 않습니다.
+
+- **`value`** 속성은 선택한 옵션이 나타내는 값으로, 옵션의 `data-value` 또는 텍스트입니다. 필드에 어떤 옵션도 선택되지 않은 텍스트가 들어 있는 동안에는 null입니다. 값을 설정하면 해당 옵션에 체크 표시를 하고 그 텍스트를 필드에 입력합니다.
+- **`query`** 속성은 필드의 텍스트, 즉 사용자가 찾고 있는 내용입니다. 선택 값과는 다릅니다. 키를 누를 때마다 바뀌며, 옵션을 선택하면 그 옵션의 텍스트가 됩니다. 값을 설정하면 필드에 입력하고, 직접 입력할 때와 마찬가지로 옵션을 필터링합니다.
 
 - **텍스트를 입력하면** 대소문자를 구분하지 않고 입력한 문자열이 포함되어 있는지 확인합니다. 텍스트에 해당 문자열이 없는 옵션에 `hidden` 속성을 설정하고 목록을 연 뒤, 첫 번째 일치 항목을 활성 옵션으로 지정합니다.
 - **활성 옵션**에는 `aria-selected="true"`가 설정되며, 필드의 `aria-activedescendant` 속성이 해당 옵션을 가리킵니다. 포커스는 필드에 유지됩니다.
@@ -89,6 +96,72 @@ const detach = combobox(document.querySelector('.combobox'))
 
 목록에서 고르지 않고 값을 자유롭게 입력해야 한다면 [태그 입력](/components/tags)을 사용하세요.
 
+## 자동 완성 \{#autocomplete\}
+
+일치 항목을 서버에서 가져오거나 페이지 자체의 검색으로 찾는다면 `filter: false`로 동작을 연결하세요. 동작은 아무것도 숨기지 않습니다. 필드에서 `input`이 발생할 때마다 `query`를 읽어 검색하고, 일치 항목을 목록의 옵션으로 작성하세요. 입력 후 시간이 지나서 도착한 옵션에도 활성 옵션이 지정되므로, <kbd>Enter</kbd> 키와 방향키로 조작할 수 있습니다.
+
+<ComponentPreview name="autocomplete" height={360} title="자동 완성" background="plain" bodyClass="content-start p-lg min-h(360)" behaviors html={`<div class="field max-w(320) mx-auto">
+  <label for="city">City</label>
+  <div class="combobox" id="city-combobox">
+    <div class="input-group">
+      <input class="input-group-field" id="city" role="combobox" aria-expanded="false" aria-controls="city-list" aria-autocomplete="list" autocomplete="off" placeholder="Start typing a city">
+      <button type="button" class="combobox-toggle" tabindex="-1" aria-label="Show cities"></button>
+    </div>
+    <div id="city-list" popover="manual" class="listbox" role="listbox" aria-label="Cities">
+      <div class="listbox-empty">No cities start with that.</div>
+    </div>
+  </div>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  var root = document.getElementById('city-combobox')
+  var list = document.getElementById('city-list')
+  var cities = ['Amsterdam', 'Athens', 'Auckland', 'Bangkok', 'Barcelona', 'Berlin', 'Bogotá', 'Boston', 'Brussels', 'Buenos Aires', 'Cairo', 'Cape Town', 'Chicago', 'Copenhagen', 'Dublin', 'Frankfurt', 'Helsinki', 'Hong Kong', 'Istanbul', 'Lisbon', 'London', 'Los Angeles', 'Madrid', 'Melbourne', 'Mexico City', 'Montreal', 'Mumbai', 'Nairobi', 'New York', 'Oslo', 'Paris', 'Prague', 'Rome', 'San Francisco', 'Santiago', 'São Paulo', 'Seoul', 'Singapore', 'Stockholm', 'Sydney', 'Taipei', 'Tokyo', 'Toronto', 'Vienna', 'Warsaw', 'Zurich']
+  var box = MasterUI.combobox(root, { filter: false })
+  var asked = 0
+
+  // Stands for a request to a server: the cities that start with the query, a moment later.
+  function search(query) {
+    return new Promise(function (resolve) {
+      setTimeout(function () {
+        var text = query.trim().toLowerCase()
+        resolve(cities.filter(function (city) { return city.toLowerCase().startsWith(text) }).slice(0, 6))
+      }, 120)
+    })
+  }
+
+  function write(matches) {
+    list.querySelectorAll('.listbox-option').forEach(function (option) { option.remove() })
+    matches.forEach(function (city) {
+      var option = document.createElement('div')
+      option.className = 'listbox-option'
+      option.setAttribute('role', 'option')
+      option.setAttribute('aria-checked', 'false')
+      option.textContent = city
+      list.insertBefore(option, list.querySelector('.listbox-empty'))
+    })
+  }
+
+  root.addEventListener('input', function (event) {
+    // A choice says input too; its text is the option's, with nothing more to look for.
+    if (event.target.getAttribute('role') !== 'combobox' || box.value !== null) return
+    var ticket = ++asked
+    search(box.query).then(function (matches) {
+      // An answer to an older query that arrives late is dropped.
+      if (ticket === asked) write(matches)
+    })
+  })
+  search('').then(write)
+})
+</script>`} caption="몇 글자를 입력해 보세요. 페이지가 검색어로 검색한 뒤 잠시 후 옵션을 작성합니다. 방향키와 Enter 키로 옵션을 선택하세요." />
+
+- **이벤트가 아니라 `query`를 읽으세요.** 검색어는 필드의 텍스트입니다. 사용자가 입력했든 프레임워크가 작성했든 `query`는 같은 방식으로 이 텍스트를 읽습니다.
+- **옵션을 선택해도 `input`이 발생합니다.** 이때 텍스트는 선택한 옵션의 텍스트이며, `value`는 더 이상 null이 아닙니다. 검색할 내용이 없으며, 이때 새 옵션을 작성하면 선택한 옵션이 사라집니다.
+- **응답은 순서가 뒤바뀌어 도착할 수 있습니다.** 가장 최근 검색어에 대한 응답만 사용하세요.
+- **빈 상태는 스타일시트가 처리합니다.** 목록에 옵션이 없는 동안 `listbox-empty`가 자동으로 표시됩니다.
+
+React, Svelte, Vue에서는 컴포넌트의 `query`와 `onQueryChange`(Svelte에서는 바인딩 가능한 `query`, Vue에서는 `v-model:query`)가 같은 텍스트를 전달합니다. 이 텍스트로 검색하고, `filter`를 false로 설정한 뒤 일치 항목을 `options`로 전달하세요.
+
 ## 컨트롤 선택 기준 \{#choosing-a-control\}
 
 단순한 옵션이 12개 이하라면 [셀렉트](/components/select)에서 스크립트 없이 플랫폼 기본 기능으로 글자를 입력해 옵션을 찾을 수 있습니다. 목록이 길어 검색이 필요하거나, 입력에 따라 옵션을 불러오거나, 각 행에 부가 설명 등 다양한 콘텐츠를 표시해야 할 때는 콤보박스를 사용하세요.
@@ -108,7 +181,7 @@ const detach = combobox(document.querySelector('.combobox'))
 
 ## React, Svelte, Vue \{#frameworks\}
 
-`combobox` 컴포넌트는 옵션 목록을 바탕으로 이 마크업을 렌더링하고 동작을 연결하며, 선택한 값을 받아 외부로 전달할 수 있습니다. `multiple`을 지정하면 값이 목록이 되고, 컴포넌트가 그 값으로 칩을 작성합니다. `npx master-ui add combobox` 명령을 실행해 프로젝트에 복사하세요. 컴포넌트의 구성과 사용 방법은 [React, Svelte, Vue](/guide/frameworks)에서 확인할 수 있습니다.
+`combobox` 컴포넌트는 옵션 목록을 바탕으로 이 마크업을 렌더링하고 동작을 연결하며, 선택한 값을 받아 외부로 전달할 수 있습니다. `multiple`을 지정하면 값이 목록이 되고, 컴포넌트가 그 값으로 칩을 작성합니다. `group`이 있는 옵션은 해당 캡션 아래, `listbox-label`로 레이블이 지정되고 `role="group"`이 있는 `listbox-group` 안에 작성됩니다. 그룹의 옵션이 모두 필터링되면 그룹도 함께 숨겨집니다. 컴포넌트는 값 외에 검색어도 전달합니다. React에서는 `query`와 `onQueryChange`, Svelte에서는 `onQueryChange`와 함께 쓰는 바인딩 가능한 `query`, Vue에서는 `v-model:query`를 사용합니다. 검색어는 사용자가 입력할 때, 그리고 옵션을 선택했을 때 값 다음으로 전달됩니다. 소유자가 지정한 검색어는 필드에 입력되고 옵션을 필터링합니다. `npx master-ui add combobox` 명령을 실행해 프로젝트에 복사하세요. 컴포넌트의 구성과 사용 방법은 [React, Svelte, Vue](/guide/frameworks)에서 확인할 수 있습니다.
 
 <FrameworkSource name="combobox" />
 

@@ -1,0 +1,182 @@
+---
+title: "旋钮"
+description: "绕圆周转动滑钮来设置数值。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+旋钮通过绕圆周转动滑钮来设置数值：像调节旋钮那样设定的强度、一个角度、一个方向。它是[仪表盘](/components/gauge)的输入版：圆形轨道使用填充色本身的墨色并调淡，从起点到当前值填满墨色，[滑块](/components/slider)那种珍珠质感的滑钮立在轨道上数值对应的角度处。数字位于中央，使用等宽数字。没有对应的原生元素，因此旋钮是一个带有 `role="slider"` 的元素，由 `dial` [行为脚本](/guide/behaviors)负责转动。
+
+<ComponentPreview name="default" height={176} title="旋钮" bodyClass="flex flex-wrap items-center justify-center gap-xl p-lg" behaviors html={`<div class="dial" role="slider" tabindex="0" aria-label="Volume" aria-valuenow="40" aria-valuemin="0" aria-valuemax="100" style="--dial-value: 40">
+  <span class="dial-value">40%</span>
+  <span class="dial-thumb"></span>
+</div>`} caption="绕圈拖动滑钮，在轨道上任意位置按下，或聚焦旋钮后使用方向键、Page Up、Page Down、Home 和 End。" />
+
+默认情况下，旋钮是一个调节旋钮：跨度 270 度，底部开口，最小值在左下方，最大值在右下方。在轨道上按下会把数值移到该处；在滑钮上按下则会在原位抓住它，因此转动时不会跳变。拖动越过一端时，即使指针穿过底部的缺口，数值也会停在该端，直到指针回来为止。
+
+## 角度 \{#angle\}
+
+`dial-full` 是完整的圆周，从顶部开始：用于角度或方向，`aria-valuemin` 为 0，`aria-valuemax` 为 360。无论是用按键还是拖动经过顶部，越过最大值后都会回到最小值，360 写作 0，因为两者是同一位置。<kbd class="kbd">End</kbd> 会停在最大值前一个步长处。
+
+<ComponentPreview name="angle" height={176} title="角度" bodyClass="flex flex-wrap items-center justify-center gap-xl p-lg" behaviors html={`<div class="dial dial-full" role="slider" tabindex="0" aria-label="Gradient angle" aria-valuenow="135" aria-valuemin="0" aria-valuemax="360" aria-valuetext="135°" style="--dial-value: 135; --dial-max: 360">
+  <span class="dial-value">135°</span>
+  <span class="dial-thumb"></span>
+</div>`} caption="转过顶部，或在 359 时按向上方向键。" />
+
+标签和 `aria-valuetext` 会保留数字周围原有的文字，因此无需页面编写脚本，“135°”就会变为“136°”。如需其他形式的文字，请向行为脚本传入 `text` 函数，参见[行为脚本](#behavior)。
+
+## 刻度和标记 \{#ticks-and-marks\}
+
+`dial-ticks` 元素会在转动范围内绘制 `--dial-ticks` 个等分步长，以细线显示在滑钮路径的外侧：调节旋钮显示的刻度比步数多一个，两端各一个；完整圆周显示的刻度与步数相同。`dial-mark` 是位于外圈的简短文字或数字，样式表把它放在其 `--dial-at` 所代表的数值处。两者都会在旋钮的盒子内占用一圈外圈，因此轨道会相应缩小；带标记的旋钮请使用大尺寸。
+
+<ComponentPreview name="ticks-and-marks" height={224} narrowHeight={400} title="刻度和标记" bodyClass="flex flex-wrap items-center justify-center gap-xl p-lg" behaviors html={`<div class="dial dial-lg" role="slider" tabindex="0" aria-label="Volume" aria-valuenow="6" aria-valuemin="0" aria-valuemax="10" style="--dial-value: 6; --dial-max: 10">
+  <span class="dial-ticks" style="--dial-ticks: 10"></span>
+  <span class="dial-mark" style="--dial-at: 0">0</span>
+  <span class="dial-mark" style="--dial-at: 5">5</span>
+  <span class="dial-mark" style="--dial-at: 10">10</span>
+  <span class="dial-value">6</span>
+  <span class="dial-thumb"></span>
+</div>
+<div class="dial dial-lg dial-full" role="slider" tabindex="0" aria-label="Wind direction" aria-valuenow="225" aria-valuemin="0" aria-valuemax="360" aria-valuetext="225°" style="--dial-value: 225; --dial-max: 360">
+  <span class="dial-ticks" style="--dial-ticks: 12"></span>
+  <span class="dial-mark" style="--dial-at: 0">N</span>
+  <span class="dial-mark" style="--dial-at: 90">E</span>
+  <span class="dial-mark" style="--dial-at: 180">S</span>
+  <span class="dial-mark" style="--dial-at: 270">W</span>
+  <span class="dial-value">225°</span>
+  <span class="dial-thumb"></span>
+</div>`} />
+
+刻度和标记只是绘图：在 `role="slider"` 内部它们不会被播报，因此标记所表达的一切都必须由数值及其文字表达出来。
+
+## 尺寸 \{#sizes\}
+
+旋钮直径为 120px。`dial-sm` 为 88px，用于一排控件；`dial-lg` 为 160px，用于面板的核心数值或带标记的旋钮。轨道宽度为直径的二十分之一，数字随轨道缩放；滑钮保持滑块的 18px，在触摸屏上增大到 24px。
+
+<ComponentPreview name="sizes" height={208} narrowHeight={400} title="尺寸" bodyClass="flex flex-wrap items-center justify-center gap-xl p-lg" behaviors html={`<div class="dial dial-sm" role="slider" tabindex="0" aria-label="Treble" aria-valuenow="30" aria-valuemin="0" aria-valuemax="100" style="--dial-value: 30">
+  <span class="dial-value">30</span>
+  <span class="dial-thumb"></span>
+</div>
+<div class="dial" role="slider" tabindex="0" aria-label="Mid" aria-valuenow="55" aria-valuemin="0" aria-valuemax="100" style="--dial-value: 55">
+  <span class="dial-value">55</span>
+  <span class="dial-thumb"></span>
+</div>
+<div class="dial dial-lg" role="slider" tabindex="0" aria-label="Bass" aria-valuenow="70" aria-valuemin="0" aria-valuemax="100" style="--dial-value: 70">
+  <span class="dial-value">70</span>
+  <span class="dial-thumb"></span>
+</div>`} />
+
+## 在表单中 \{#form\}
+
+`role="slider"` 不是表单控件，因此旋钮内含一个隐藏输入框。每次变化时，行为脚本都会把数值写入旋钮内的第一个 `<input type="hidden">`，表单以该输入框的 `name` 提交它。旋钮的 `input` 和 `change` 事件会像原生控件一样冒泡到表单。表单重置不会作用于隐藏输入框，因此旋钮保持原位；如果重置时应移动旋钮，请由页面重新设置它的值。
+
+<ComponentPreview name="form" height={232} title="在表单中" background="plain" bodyClass="flex items-center justify-center p-lg" behaviors html={`<form class="flex flex-col items-center gap-sm">
+  <span class="text-sm fg-text-strong" id="heating-label">Heating</span>
+  <div class="dial" role="slider" tabindex="0" aria-labelledby="heating-label" aria-valuenow="21" aria-valuemin="16" aria-valuemax="30" style="--dial-value: 21; --dial-min: 16; --dial-max: 30">
+    <span class="dial-value">21°</span>
+    <span class="dial-thumb"></span>
+    <input type="hidden" name="temperature" value="21">
+  </div>
+  <span class="text-xs fg-text-muted">16° to 30°</span>
+</form>`} />
+
+可见的标签是一个独立元素，用 `aria-labelledby` 指向它：`<label>` 只能为表单控件命名。如果从数字无法明显看出取值范围，请在旋钮旁用文字说明。
+
+## 禁用 \{#disabled\}
+
+`aria-disabled="true"` 会让旋钮变淡，并使其不响应任何按键、指针和滚轮操作。请用 `tabindex="-1"` 将它移出 Tab 键顺序，并给它的隐藏输入框也加上 `disabled`，使表单不提交该值。
+
+<ComponentPreview name="disabled" height={176} title="禁用" bodyClass="flex flex-wrap items-center justify-center gap-xl p-lg" behaviors html={`<div class="dial" role="slider" tabindex="-1" aria-label="Volume" aria-valuenow="40" aria-valuemin="0" aria-valuemax="100" aria-disabled="true" style="--dial-value: 40">
+  <span class="dial-value">40%</span>
+  <span class="dial-thumb"></span>
+  <input type="hidden" name="volume" value="40" disabled>
+</div>`} />
+
+## 转动方向 \{#direction\}
+
+在任何书写方向下，顺时针都表示增大。旋钮像时钟或设备上的旋钮一样转动，而这些在从右到左的语言中不会镜像，所以旋钮也不镜像，其方向键也不反转：<kbd class="kbd">→</kbd> 和 <kbd class="kbd">↑</kbd> 始终使数值增大。在视线起始的旋钮顶部，顺时针就是向右，所以在那里转动旋钮的正是向右方向键。
+
+## 行为脚本 \{#behavior\}
+
+`dial` 接收根元素，即带有 `dial` 类的元素，并返回用于解除绑定的函数。该函数带有 `value`，即当前数值：设置它可从外部转动旋钮，此时不会派发任何事件。
+
+```js name=app.js
+import { dial } from '@master/ui/behaviors/dial.js'
+
+const root = document.querySelector('.dial')
+const turn = dial(root, { step: 15, text: (value) => `${value}°` })
+
+root.addEventListener('change', () => save(turn.value))
+```
+
+- **每次变化**都会把数值写入根元素的 `aria-valuenow` 和 `--dial-value`、`dial-value` 的文本、`aria-valuetext`（若已存在或传入了 `text`），以及隐藏输入框。绑定时，它以同样方式写入初始值，并把 `aria-valuemin` 和 `aria-valuemax` 复制到 `--dial-min` 和 `--dial-max`，供无法读取这些属性的浏览器使用。
+- **数值**始终对齐到从 `aria-valuemin` 起算的步长，并介于它与 `aria-valuemax` 之间，两者省略时分别为 0 和 100；在完整圆周上，数值会循环而不是停住。
+- **拖动。** 在 `pointerdown` 时，脚本捕获指针，读取指针相对旋钮中心的角度，再用样式表绘制时所用的同一组 `--dial-start` 和 `--dial-sweep` 将其换算为数值。转动范围为 360 度的旋钮无论是否带有 `dial-full` 都会循环。在中心附近（数字上）按下不会改变数值。
+- **按键。** 方向键按一个步长转动，<kbd class="kbd">Page Up</kbd> 和 <kbd class="kbd">Page Down</kbd> 按更大的步长转动，<kbd class="kbd">Home</kbd> 和 <kbd class="kbd">End</kbd> 跳到两端。
+- **滚轮**在启用后，每滚动一格转动一个步长，但只在按住 <kbd class="kbd">Alt</kbd>（<kbd class="kbd">Option</kbd>）时生效：滚动页面经过旋钮时绝不会转动它。
+- **事件。** 每次数值变化时，根元素派发 `input`；拖动结束或通过按键、滚轮转动后派发 `change`。两者都会冒泡。
+- **禁用。** 带有 `aria-disabled="true"` 的旋钮不响应任何按键、指针和滚轮操作。
+
+| 选项 | 设置的内容 |
+| --- | --- |
+| `step` | 按一次方向键转动的数值，以及拖动时数值取整到的单位。默认为 1 |
+| `page` | Page Up 和 Page Down 转动的幅度。默认为取值范围的十分之一，并对齐到步长 |
+| `text` | 一个函数，接收数值，返回写入 `dial-value` 和 `aria-valuetext` 的文字 |
+| `wheel` | `true` 允许在按住 Alt 时用滚轮转动旋钮。默认为 `false` |
+
+`attach()` 不传入任何选项。需要选项的旋钮应在 `attach()` 运行之后单独绑定：对同一个根元素的第二次调用会替换第一次，本预览的脚本就是这样做的。`MasterUI` 是预览加载的脚本包；在项目中，请按上文所示导入 `dial`。
+
+<ComponentPreview name="options" height={176} title="步长、文字和滚轮" bodyClass="flex flex-wrap items-center justify-center gap-xl p-lg" behaviors html={`<div class="dial dial-full" id="hue" role="slider" tabindex="0" aria-label="Hue" aria-valuenow="210" aria-valuemin="0" aria-valuemax="360" style="--dial-value: 210; --dial-max: 360">
+  <span class="dial-ticks" style="--dial-ticks: 24"></span>
+  <span class="dial-value">210°</span>
+  <span class="dial-thumb"></span>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.dial(document.getElementById('hue'), {
+    step: 15,
+    wheel: true,
+    text: function (value) { return value + '°' }
+  })
+})
+</script>`} caption="每次按键和每格滚轮都是 15 度。按住 Alt（Option）并在旋钮上滚动即可转动。" />
+
+未加载行为脚本时，旋钮显示其初始值，在支持带类型 `attr()` 的浏览器中取自属性，在其他浏览器中取自 `--dial-value`，并且不能转动。
+
+## 键盘操作 \{#keyboard\}
+
+<ContractTable name="dial" show="keyboard" />
+
+## 无障碍 \{#accessibility\}
+
+- 根元素是可获得焦点的 `role="slider"`，通过 `aria-label` 或 `aria-labelledby` 获得无障碍名称，`aria-valuenow` 中的数值介于 `aria-valuemin` 和 `aria-valuemax` 之间。对于绕圆周的滑块，方向没有任何意义，因此请省略 `aria-orientation`。
+- 如果数字需要单位或文字才能理解，请写入 `aria-valuetext`：“135°”“21 度”“响亮”。行为脚本会让它与数值保持同步。
+- 滑块内部的一切，包括数字、刻度和标记，对辅助技术而言都只是展示内容。按键可以完成拖动能做的一切，在轨道上单击一次即可设置数值，因此拖动转动从来不是唯一的方式。
+- 与滑块一样，焦点环绘制在滑钮上。在触摸屏上，滑钮增大到 24px，手指放在旋钮上时会转动旋钮而不是滚动页面。
+- 启用减少动态效果时，按住的滑钮不会放大。在强制颜色模式下，填充使用系统高亮色，轨道和刻度使用系统灰色，滑钮使用按钮文字颜色。
+
+## React、Svelte 和 Vue \{#frameworks\}
+
+`dial` 组件绑定行为脚本，并接收和传出数值。它根据数据渲染刻度和标记，传入 `name` 时还会渲染隐藏输入框。使用 `npx master-ui add dial` 将组件复制到项目中。有关这些组件的实现和用法，请参阅 [React、Svelte 和 Vue](/guide/frameworks)。
+
+<FrameworkSource name="dial" />
+
+## 相关内容 \{#related\}
+
+<ComponentLinks slugs={['slider', 'gauge', 'stepper']} />
+
+## 类名 \{#classes\}
+
+<ContractTable name="dial" />
+
+## 自定义属性 \{#custom-properties\}
+
+<ContractTable name="dial" show="properties" />
+
+## 源码 \{#source\}
+
+<ComponentSource name="dial" />

@@ -158,6 +158,100 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
   </footer>
 </dialog>`} />
 
+## 滑動關閉 \{#swipe\}
+
+在抽屜或底部面板加上 `dialog-swipe`，它就會跟隨手指、觸控板或滑鼠移動，放開後即可關閉。對話框會成為面板移動的軌道：透明，且與檢視區一樣大。把對話框原本的所有內容放進帶有材質的 `dialog-panel`，並為底部面板加上 `dialog-handle`，也就是頂端的一道短凹槽，標示可以從哪裡抓住它。掛載 `drawer` 行為；`attach()` 會找出每個 `dialog-swipe`。
+
+<ComponentPreview name="swipe" height={420} title="可滑動關閉的底部面板" behaviors bodyClass="flex items-center justify-center p-lg min-h(416)" caption="開啟後，從凹槽或標題往下拖曳底部面板，或快速往下撥，放開即可關閉。拖曳不到一半就放開時，面板會回到原位。在手機上用手指滑動即可。" html={`<button type="button" class="btn" commandfor="share-swipe" command="show-modal">Share</button>
+
+<dialog id="share-swipe" class="dialog dialog-sheet dialog-swipe" closedby="any" aria-labelledby="share-swipe-title">
+  <div class="dialog-panel">
+    <div class="dialog-handle" aria-hidden="true"></div>
+    <header class="dialog-header">
+      <h2 class="dialog-title" id="share-swipe-title">Share this project</h2>
+      <p class="dialog-description">Anyone with the link can view the latest deployment.</p>
+    </header>
+    <div class="dialog-body">
+      <div class="input-group">
+        <input class="input-group-field" value="https://atlas.dev/p/9f2c" readonly aria-label="Link">
+        <button type="button" class="btn">Copy</button>
+      </div>
+    </div>
+    <footer class="dialog-footer">
+      <button type="button" class="btn btn-primary" commandfor="share-swipe" command="close">Done</button>
+    </footer>
+  </div>
+</dialog>`} />
+
+抽屜的滑動方式相同，朝它停靠的邊緣滑動，而且不需要把手：整個面板都可以抓住。
+
+<ComponentPreview name="swipe-drawer" height={400} title="可滑動關閉的抽屜" behaviors bodyClass="flex items-center justify-center p-lg min-h(400)" caption="將面板拖向邊緣，或按下旁邊的遮罩。" html={`<button type="button" class="btn" commandfor="filters-swipe" command="show-modal">Filters</button>
+
+<dialog id="filters-swipe" class="dialog dialog-drawer dialog-swipe" closedby="any" aria-labelledby="filters-swipe-title">
+  <div class="dialog-panel">
+    <header class="dialog-header">
+      <h2 class="dialog-title" id="filters-swipe-title">Filters</h2>
+      <p class="dialog-description">Narrow the list of deployments.</p>
+    </header>
+    <div class="dialog-body flex flex-col gap-md">
+      <label class="field">
+        Branch
+        <input class="input" value="main">
+      </label>
+      <label class="check"><input type="checkbox" class="checkbox" checked> Production only</label>
+    </div>
+    <footer class="dialog-footer">
+      <button type="button" class="btn" commandfor="filters-swipe" command="close">Reset</button>
+      <button type="button" class="btn btn-primary" commandfor="filters-swipe" command="close">Apply</button>
+    </footer>
+  </div>
+</dialog>`} />
+
+滑動由以下部分組成：
+
+- **由瀏覽器移動面板。** 軌道是帶有貼齊點的捲動容器：一個是開啟時的停駐位置，另一個是超出邊緣、與檢視區一樣大的區段，面板放開後會移到那裡。手指、觸控板和滾輪都能捲動它，因此跟隨手部動作、快速撥動的慣性，以及決定停在哪裡，都由瀏覽器自己處理。軌道是反向的 flex 排列，面板位在末端，因此不需要腳本就會從開啟時的停駐位置開始。
+- **由行為處理捲動做不到的事。** 無論面板以何種方式離開軌道，行為都會在它離開後關閉對話框。它讓 `closedby="any"` 重新生效：軌道蓋住了瀏覽器監聽的遮罩，因此改由行為在使用者按下面板旁邊的區域時關閉對話框。滑鼠無法透過拖曳來捲動，因此行為讓滑鼠可以從把手或任何不是控制項、也不是內文的部分抓住面板，放開時移到它被甩向的停駐位置或較近的那一個；精確指標按住面板期間，軌道會停止貼齊。它會把剩下多少遮罩寫入 `--dialog-scrim`，讓遮罩隨面板離開而變淡。
+- **對話框仍是對話框。** <kbd>Esc</kbd>、關閉按鈕、焦點限制、焦點回到觸發元件，以及滑入滑出的動畫，都與一般的抽屜或底部面板相同。
+- **可捲動的內文保有自己的捲動。** 使用滑鼠或滾輪時，在 `dialog-body` 中拖曳會捲動它或選取文字。在觸控螢幕上，拖曳到內文頂端後會接著移動底部面板。
+
+滑動只是捷徑：請保留關閉按鈕或可關閉對話框的操作，並保留 <kbd>Esc</kbd>。
+
+### 停駐高度 \{#detents\}
+
+在可滑動的底部面板加上 `dialog-detents`，它就會停在兩個高度：檢視區的一半（開啟時的高度）和全高。拖曳或快速撥動會在兩者之間移動；從全高往下快速撥動會停在一半，只有從一半高度撥動才會放開它。請把把手做成具有可存取名稱的 `<button>`：按下它、<kbd>Enter</kbd> 或 <kbd>Space</kbd> 會把底部面板移到另一個高度，<kbd>↑</kbd> 會展開到全高，<kbd>↓</kbd> 會縮回一半。它的 `aria-expanded` 表示底部面板是否位於全高。
+
+<ComponentPreview name="detents" height={480} title="有停駐高度的底部面板" behaviors bodyClass="flex items-center justify-center p-lg min-h(476)" caption="開啟時為一半高度。往上拖曳、按下把手，或按 Tab 移到把手後按 ↑ 和 ↓。" html={`<button type="button" class="btn" commandfor="comments-sheet" command="show-modal">Comments</button>
+
+<dialog id="comments-sheet" class="dialog dialog-sheet dialog-swipe dialog-detents" closedby="any" aria-labelledby="comments-sheet-title">
+  <div class="dialog-panel">
+    <button type="button" class="dialog-handle" aria-label="Sheet height"></button>
+    <header class="dialog-header">
+      <h2 class="dialog-title" id="comments-sheet-title">Comments</h2>
+      <p class="dialog-description">Five people reviewed this deployment.</p>
+    </header>
+    <div class="dialog-body flex flex-col gap-md">
+      <p class="m(0)">Ada: the build on main is green again.</p>
+      <p class="m(0)">Grace: the preview for the pricing page loads in 1.2s.</p>
+      <p class="m(0)">Linus: the cache headers on the fonts are right now.</p>
+      <p class="m(0)">Margaret: the rollback plan is in the runbook.</p>
+      <p class="m(0)">Alan: ship it after the 3pm check.</p>
+    </div>
+    <button type="button" class="btn btn-quiet btn-square btn-sm dialog-close" commandfor="comments-sheet" command="close" aria-label="Close">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+</dialog>`} />
+
+在一半高度時，底部面板的下半部（包括頁尾）會留在邊緣下方：停駐高度適合用來瀏覽的底部面板，例如清單、留言或地圖，其操作按鈕位在頂端。比檢視區一半還矮的底部面板只有一個停駐位置，也就是全高，它的把手也會這樣表示。
+
+### 缺少某項功能時 \{#swipe-fallbacks\}
+
+- 沒有腳本時，超出邊緣的區段不是停駐位置（`@media (scripting: enabled)`）：放開的面板會彈回原位，<kbd>Esc</kbd> 和關閉按鈕仍可關閉對話框。請在所有會執行腳本的地方掛載行為，否則放開的面板會停在畫面外，而頁面仍維持無法操作。
+- 沒有行為時，遮罩會維持完整，直到對話框關閉。它不是捲動驅動動畫：在反向的捲動容器中，Chromium 和 WebKit 執行捲動與檢視時間軸的方向相反。
+- 支援 `scroll-initial-target` 的瀏覽器（Chromium）中，有停駐高度的底部面板在任何腳本執行前就會以一半高度開啟；其他瀏覽器則會以全高開啟，直到行為移動它。
+
+滑動已在 Chromium 和 WebKit 中以滑鼠、滾輪驗證，並在 Chromium 中以觸控驗證。捲動貼齊、反向 flex 捲動和 `scrollend` 在所有目前的瀏覽器中都可使用。
+
 ## 動態效果 \{#motion\}
 
 對話框從原尺寸的 97%、下移半個 rem 的位置開始淡入，進場耗時 280ms，退場耗時 160ms。進場與退場都由樣式表中的 CSS 控制。`@starting-style` 定義首次繪製時的樣式，`display` 和 `overlay` 則透過 `allow-discrete` 套用轉場，讓退場動畫播完後，對話框才離開頂層。啟用減少動態效果時，只保留淡入淡出。
@@ -167,10 +261,11 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
 - 將 `aria-labelledby` 指向對話框的 `dialog-title`，為對話框提供可存取名稱。
 - 用 `show-modal` 開啟時，焦點會移入對話框，關閉時則移回開啟它的按鈕。請在使用者應先操作的欄位上設定 `autofocus`。如果是確認破壞性操作，請將該屬性設在安全的選項上。
 - 目前版本的 Chrome、Edge、Firefox 和 Safari 支援 `command` 和 `commandfor`。在較舊的瀏覽器中，可從點擊事件處理函式呼叫 `dialog.showModal()`，並沿用同一份樣式表。
+- 滑動絕不是唯一的關閉方式：請保留關閉按鈕或可關閉的操作，<kbd>Esc</kbd> 也仍然有效。在有停駐高度的底部面板中，把手是具有名稱（例如「Sheet height」）的按鈕，其按鍵與按下動作會改變拖曳所改變的高度；沒有停駐高度時，它是對輔助技術隱藏的凹槽。它的操作目標為 64 × 24px，在觸控螢幕上高 44px。
 
 ## React、Svelte 和 Vue \{#frameworks\}
 
-`dialog` 元件會依應用程式的狀態開啟或關閉對話框，也會回報瀏覽器何時開啟或關閉它。觸發元件和對話框內的各個部分仍由頁面自己的標記定義。執行 `npx master-ui add dialog` 將元件複製到專案中。[React、Svelte 和 Vue](/guide/frameworks) 說明元件的建置與使用方式。
+`dialog` 元件會依應用程式的狀態開啟或關閉對話框，也會回報瀏覽器何時開啟或關閉它。觸發元件和對話框內的各個部分仍由頁面自己的標記定義。它會在每個對話框上掛載 `drawer` 行為，因此加上 `dialog-swipe` 和 `dialog-panel` 的抽屜或底部面板放開後即可關閉，並像其他關閉方式一樣回報；對沒有 `dialog-swipe` 的對話框，這個行為不會做任何事。執行 `npx master-ui add dialog` 將元件複製到專案中。[React、Svelte 和 Vue](/guide/frameworks) 說明元件的建置與使用方式。
 
 <FrameworkSource name="dialog" />
 

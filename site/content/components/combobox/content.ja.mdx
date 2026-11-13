@@ -40,13 +40,20 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
 ## ビヘイビア \{#behavior\}
 
-`combobox` は、`combobox` クラスを持つルート要素を受け取り、ビヘイビアを解除する関数を返します。フィールドは `role="combobox"`、リストは `role="listbox"` で探します。一致する選択肢をページ側で書き込む場合は、`filter: false` を渡します。
+`combobox` は、`combobox` クラスを持つルート要素とオプションのオブジェクトを受け取り、ビヘイビアを解除する関数を返します。フィールドは `role="combobox"`、リストは `role="listbox"` で探します。`filter` オプションの既定は true です。`filter: false` を指定すると、[オートコンプリート](#autocomplete)の例のように選択肢をページ側に任せます。`name`、`removeLabel`、`draw` は[複数の値](#several-values)に関するオプションです。
 
 ```js name=app.js
 import { combobox } from '@master/ui/behaviors/combobox.js'
 
-const detach = combobox(document.querySelector('.combobox'))
+const box = combobox(document.querySelector('.combobox'))
+box.value // what the chosen option stands for, or null
+box.query // the text in the field
 ```
+
+返される関数には 2 つのプロパティがあり、外部から読み取りと設定ができます。どちらを設定してもイベントは発行されません。
+
+- **`value`**　選択した選択肢が表す値で、その `data-value` またはテキストです。フィールドにどの選択肢も選ばれていないテキストが入っている間は null です。設定すると、その選択肢にチェックを付け、そのテキストをフィールドに書き込みます。
+- **`query`**　フィールドのテキストで、読者が探しているものです。値とは異なり、キーを押すたびに変わり、選択肢を選ぶとその選択肢のテキストになります。設定するとフィールドに書き込まれ、文字入力時と同じように選択肢が絞り込まれます。
 
 - **文字入力**　大文字と小文字を区別せず、テキストに入力文字列を含まない選択肢に `hidden` を設定します。リストを開き、最初に一致した選択肢をアクティブにします。
 - **アクティブな選択肢**　アクティブな選択肢には `aria-selected="true"` が付き、フィールドの `aria-activedescendant` がその選択肢を参照します。フォーカスはフィールドに留まります。
@@ -88,6 +95,72 @@ const detach = combobox(document.querySelector('.combobox'))
 
 値をリストから選ぶのではなく自由に入力する場合は、[タグ入力](/components/tags)を使います。
 
+## オートコンプリート \{#autocomplete\}
+
+一致する候補をサーバーやページ独自の検索から取得する場合は、`filter: false` を指定してビヘイビアを適用します。ビヘイビアは何も非表示にしません。フィールドの `input` のたびに `query` を読み取って検索し、一致した候補をリストの選択肢として書き込みます。入力から遅れて届いた選択肢にもアクティブな選択肢が設定されるため、<kbd>Enter</kbd> と矢印キーで操作できます。
+
+<ComponentPreview name="autocomplete" height={360} title="オートコンプリート" background="plain" bodyClass="content-start p-lg min-h(360)" behaviors html={`<div class="field max-w(320) mx-auto">
+  <label for="city">City</label>
+  <div class="combobox" id="city-combobox">
+    <div class="input-group">
+      <input class="input-group-field" id="city" role="combobox" aria-expanded="false" aria-controls="city-list" aria-autocomplete="list" autocomplete="off" placeholder="Start typing a city">
+      <button type="button" class="combobox-toggle" tabindex="-1" aria-label="Show cities"></button>
+    </div>
+    <div id="city-list" popover="manual" class="listbox" role="listbox" aria-label="Cities">
+      <div class="listbox-empty">No cities start with that.</div>
+    </div>
+  </div>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  var root = document.getElementById('city-combobox')
+  var list = document.getElementById('city-list')
+  var cities = ['Amsterdam', 'Athens', 'Auckland', 'Bangkok', 'Barcelona', 'Berlin', 'Bogotá', 'Boston', 'Brussels', 'Buenos Aires', 'Cairo', 'Cape Town', 'Chicago', 'Copenhagen', 'Dublin', 'Frankfurt', 'Helsinki', 'Hong Kong', 'Istanbul', 'Lisbon', 'London', 'Los Angeles', 'Madrid', 'Melbourne', 'Mexico City', 'Montreal', 'Mumbai', 'Nairobi', 'New York', 'Oslo', 'Paris', 'Prague', 'Rome', 'San Francisco', 'Santiago', 'São Paulo', 'Seoul', 'Singapore', 'Stockholm', 'Sydney', 'Taipei', 'Tokyo', 'Toronto', 'Vienna', 'Warsaw', 'Zurich']
+  var box = MasterUI.combobox(root, { filter: false })
+  var asked = 0
+
+  // Stands for a request to a server: the cities that start with the query, a moment later.
+  function search(query) {
+    return new Promise(function (resolve) {
+      setTimeout(function () {
+        var text = query.trim().toLowerCase()
+        resolve(cities.filter(function (city) { return city.toLowerCase().startsWith(text) }).slice(0, 6))
+      }, 120)
+    })
+  }
+
+  function write(matches) {
+    list.querySelectorAll('.listbox-option').forEach(function (option) { option.remove() })
+    matches.forEach(function (city) {
+      var option = document.createElement('div')
+      option.className = 'listbox-option'
+      option.setAttribute('role', 'option')
+      option.setAttribute('aria-checked', 'false')
+      option.textContent = city
+      list.insertBefore(option, list.querySelector('.listbox-empty'))
+    })
+  }
+
+  root.addEventListener('input', function (event) {
+    // A choice says input too; its text is the option's, with nothing more to look for.
+    if (event.target.getAttribute('role') !== 'combobox' || box.value !== null) return
+    var ticket = ++asked
+    search(box.query).then(function (matches) {
+      // An answer to an older query that arrives late is dropped.
+      if (ticket === asked) write(matches)
+    })
+  })
+  search('').then(write)
+})
+</script>`} caption="数文字入力すると、ページがその文字列を検索し、少し後に選択肢を書き込みます。矢印キーと Enter で選択します。" />
+
+- **イベントではなく `query` を読み取る**　クエリはフィールドのテキストです。`query` は、読者が入力した場合もフレームワークが書き込んだ場合も同じように読み取れます。
+- **選択でも `input` が発行される**　そのときのテキストは選択した選択肢のもので、`value` は null ではなくなります。検索する必要はなく、この時点で新しい選択肢を書き込むと、選択した選択肢が消えてしまいます。
+- **応答の順序は前後する**　最新のクエリに対する応答だけを使います。
+- **空の状態はスタイルシートが担う**　リストに選択肢がない間は、`listbox-empty` が自動で表示されます。
+
+React、Svelte、Vue では、コンポーネントの `query` と `onQueryChange`（Svelte ではバインド可能な `query`、Vue では `v-model:query`）が同じテキストを受け渡します。そのテキストで検索し、一致した候補を `options` として渡し、`filter` を false にします。
+
 ## コントロールの選び方 \{#choosing-a-control\}
 
 単純な選択肢が 12 個程度までなら、[セレクト](/components/select)を使うと、スクリプトなしでプラットフォーム標準の文字入力による候補選択が使えます。検索が必要な長いリスト、入力に応じて候補を読み込むリスト、複数の要素を含む行には、コンボボックスを使います。
@@ -107,7 +180,7 @@ const detach = combobox(document.querySelector('.combobox'))
 
 ## React、Svelte、Vue \{#frameworks\}
 
-`combobox` コンポーネントは、選択肢のリストからこのマークアップを生成し、ビヘイビアを適用します。選択値の受け渡しにも対応します。`multiple` を指定すると値はリストになり、その値からチップを描画します。`npx master-ui add combobox` でプロジェクトにコピーできます。コンポーネントの構成と使い方は [React、Svelte、Vue](/guide/frameworks) を参照してください。
+`combobox` コンポーネントは、選択肢のリストからこのマークアップを生成し、ビヘイビアを適用します。選択値の受け渡しにも対応します。`multiple` を指定すると値はリストになり、その値からチップを描画します。`group` を持つ選択肢は、その見出しの下に、`role="group"` を持ち `listbox-label` でラベル付けされた `listbox-group` 内に書き出されます。選択肢がすべて絞り込みで除外されたグループは、選択肢と一緒に非表示になります。値のほかにクエリも受け渡します。React では `query` と `onQueryChange`、Svelte ではバインド可能な `query` と `onQueryChange`、Vue では `v-model:query` を使います。クエリは読者の入力に合わせて、また選択時には値の後に外部へ通知されます。所有側が渡したクエリはフィールドに書き込まれ、選択肢を絞り込みます。`npx master-ui add combobox` でプロジェクトにコピーできます。コンポーネントの構成と使い方は [React、Svelte、Vue](/guide/frameworks) を参照してください。
 
 <FrameworkSource name="combobox" />
 

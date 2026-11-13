@@ -6,8 +6,9 @@ description: "內容超出哪一側的邊緣，該側就會淡出。"
 import ComponentPreview from '~/site/components/ComponentPreview.astro'
 import ComponentSource from '~/site/components/ComponentSource.astro'
 import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
-捲動區域是頁面內可獨立捲動的範圍，例如面板中的長清單、寬表格或記錄。它沿用平台的原生捲動行為，搭配纖細低調的捲動條。內容超出哪一側，該側邊緣就會淡出。捲到內容盡頭時，該側邊緣會恢復清晰。
+捲動區域是頁面內可獨立捲動的範圍，例如面板中的長清單、寬表格或記錄。它沿用平台的原生捲動行為，搭配纖細低調的捲動條。內容超出哪一側，該側邊緣就會淡出。捲到內容盡頭時，該側邊緣會恢復清晰。閱讀期間內容會在結尾持續增加的區域，例如聊天或建置記錄，也可以[跟隨新內容](#follow)。
 
 <ComponentPreview name="default" height={248} title="捲動區域" bodyClass="p-lg" html={`<div class="sheet max-w(360) mx-auto">
   <div class="scroll-area h(200) p-md text-sm fg-text-body leading-md" tabindex="0" role="region" aria-label="Release notes">
@@ -52,11 +53,129 @@ import ContractTable from '~/site/components/ContractTable.astro'
   </div>
 </div>`} />
 
+## 跟隨新內容 \{#follow\}
+
+聊天、建置記錄或串流產生的回答，會在閱讀期間於結尾持續增加。為區域加上 `role="log"` 並掛載 `follow` [行為](/guide/behaviors)：內容送達時，它會讓結尾保持在視野內；讀者一捲離結尾就停止跟隨，回到結尾時再恢復跟隨。在內容之後放一個帶有 `hidden` 的 `scroll-area-latest` 按鈕：它只在區域未跟隨時出現，按下後會捲到結尾並恢復跟隨。
+
+<ComponentPreview name="follow" height={300} title="跟隨建置記錄" bodyClass="p-lg" behaviors html={`<div class="sheet max-w(440) mx-auto">
+  <div class="scroll-area h(240) p-md font-mono text-xs fg-text-body leading-md" tabindex="0" role="log" aria-label="Build log">
+    <div id="build-lines">
+      <p class="m(0)">Cloning master-co/ui at 3041b1c</p>
+      <p class="m(0)">Installing 596 packages</p>
+      <p class="m(0)">Compiling 112 stylesheets</p>
+    </div>
+    <button type="button" class="btn btn-sm btn-pill scroll-area-latest" hidden><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg>Jump to latest</button>
+  </div>
+</div>
+<script>
+  const steps = ['Checking contracts', 'Rendering /components', 'Rendering /blocks', 'Rendering /pages', 'Writing llms.txt', 'Writing the registry', 'Checking 2,914 links', 'Compressing assets', 'Uploading 71 pages']
+  const lines = document.getElementById('build-lines')
+  let count = 0
+  const timer = setInterval(() => {
+    const line = document.createElement('p')
+    line.className = 'm(0)'
+    line.textContent = steps[count % steps.length] + (count >= steps.length ? ' (pass ' + (Math.floor(count / steps.length) + 1) + ')' : '')
+    lines.append(line)
+    if (++count >= 120) clearInterval(timer)
+  }, 800)
+</script>`} caption="新的記錄行持續送達，記錄也隨之跟上。在執行期間往上捲：記錄會停在你所在的位置，並出現 Jump to latest。按下它，或捲回結尾，記錄就會再次跟隨。" />
+
+判斷方式：
+
+- **跟隨。** 從掛載行為的那一刻起，區域就會跟隨：它會捲到結尾，而每當內容增加，無論是新增一列、串流的文字落在最後一則訊息中，或圖片載入完成，都會再次捲到結尾。
+- **停止。** 往起點方向捲動就會停止跟隨，無論是由滑鼠滾輪、手指、捲動條、<kbd>↑</kbd>、<kbd>Page Up</kbd> 或 <kbd>Home</kbd> 造成。往起點方向轉動滾輪時，會在區域移動之前立即停止，因此在那一瞬間送達的文字不會把讀者拉回去。
+- **恢復跟隨。** 用 <kbd>End</kbd>、捲動條或按鈕再次到達結尾時，就會恢復跟隨。距離結尾只差幾個像素也算是結尾。
+- **事件。** 每當讀者讓區域開始或停止跟隨，區域都會派送 `change`。行為的 `value` 表示是否正在跟隨；將它設為 `true` 可讓讀者回到結尾，就像應用程式在讀者送出訊息時所做的那樣。設定它不會派送事件。
+
+```js name=app.js
+import { follow } from '@master/ui/behaviors/follow.js'
+
+const log = document.querySelector('.scroll-area[role="log"]')
+const following = follow(log)
+
+form.addEventListener('submit', () => { following.value = true })
+```
+
+沒有行為時，區域就是一般的捲動區域：它會停在讀者離開的位置，按鈕也會保持隱藏。按鈕以 sticky 定位固定在區域底部，位於內容和淡出邊緣上方，並疊在最後一列上而不是排在它後面，因此顯示按鈕永遠不會讓內容變高。
+
+## 保留讀者的位置 \{#keeping-the-place\}
+
+在讀者正在看的內容上方插入內容，例如在頂端載入較早的訊息，會把正在閱讀的內容往下推。瀏覽器本身會用捲動錨定避免這種情況：區域會隨著上方的內容移動，讓正在閱讀的訊息留在原處。樣式表在區域上保留 `overflow-anchor: auto`，並在其按鈕上設定 `none`，按鈕永遠不會是瀏覽器固定不動的元素。瀏覽器不支援捲動錨定時，`follow` 行為會自行處理，移動的距離與上方內容移動的距離相同。頂端若有一行內容，新的列會插入在它下方，例如提示正在載入更多內容的說明，也請設定 `overflow-anchor: none`，讓瀏覽器固定某一列而不是這行說明。
+
+<ComponentPreview name="earlier" height={380} title="較早的訊息與串流回答" bodyClass="p-lg" behaviors html={`<div class="sheet max-w(440) mx-auto">
+  <div class="scroll-area h(320) p-md" tabindex="0" role="log" aria-label="Conversation with Ada">
+    <p class="m(0) pb-sm text-center text-xs fg-text-muted" style="overflow-anchor: none" id="earlier">Earlier messages load as you scroll up</p>
+    <ol class="m(0) p(0)" id="turns">
+      <li class="message message-sent"><div class="message-bubble">Can the docs build run on every push?</div></li>
+      <li class="message"><div class="message-bubble">Yes. It takes about two minutes.</div></li>
+    </ol>
+    <button type="button" class="btn btn-sm btn-pill scroll-area-latest" hidden><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg>Jump to latest</button>
+  </div>
+</div>
+<script>
+  const turns = document.getElementById('turns')
+  const turn = (text, sent) => {
+    const item = document.createElement('li')
+    item.className = sent ? 'message message-sent' : 'message'
+    const bubble = document.createElement('div')
+    bubble.className = 'message-bubble'
+    bubble.textContent = text
+    item.append(bubble)
+    return item
+  }
+  const older = [['Morning! Is the release still today?', false], ['It is, once the docs build passes.', true], ['Which build?', false], ['The one that checks every page and link.', true], ['Do we wait for it?', false], ['No, it reports here when it is done.', true]]
+  const log = turns.closest('.scroll-area')
+  log.addEventListener('scroll', () => {
+    if (log.scrollTop > 48 || !older.length) return
+    for (const [text, sent] of older.splice(-2).reverse()) turns.prepend(turn(text, sent))
+    if (!older.length) document.getElementById('earlier').textContent = 'The start of the conversation'
+  })
+  const exchanges = [
+    ['What does it check?', 'It renders every page in five languages, checks each preview against the contracts, follows every link and compares the registry with the package, then writes the search index.'],
+    ['And if a link is broken?', 'The build stops and names the page and the link, so nothing half checked reaches the site. Fix it and push again; the next run starts from the beginning.'],
+    ['Thanks!', 'Any time. I will post here when this one is done.']
+  ]
+  let at = 0
+  const next = () => {
+    if (at >= exchanges.length) return
+    const [question, answer] = exchanges[at++]
+    turns.append(turn(question, true))
+    const reply = turn('', false)
+    const bubble = reply.firstChild
+    bubble.setAttribute('aria-busy', 'true')
+    turns.append(reply)
+    const words = answer.split(' ')
+    const stream = setInterval(() => {
+      bubble.textContent += (bubble.textContent ? ' ' : '') + words.shift()
+      if (words.length) return
+      clearInterval(stream)
+      bubble.removeAttribute('aria-busy')
+      setTimeout(next, 2500)
+    }, 140)
+  }
+  setTimeout(next, 1200)
+</script>`} caption="回答以串流方式送達，對話也隨之跟上。往上捲：接近頂端時，較早的對話會出現在上方，你正在閱讀的那則對話會留在原處。" />
+
 ## 無障礙 \{#accessibility\}
 
 - 使用者必須能透過鍵盤將焦點移到可捲動區域。若區域內沒有可取得焦點的內容，請加上 `tabindex="0"`、適當的 `role`（例如 `region`）和標籤。
 - 遮罩也會讓區域自己的捲動條在相同的邊緣淡出。強制色彩模式下會移除遮罩。
 - 為區域設定高度或最大高度，否則它會隨內容增高，不會產生捲動。
+- `role="log"` 是禮貌型即時區域：新增到其中的內容會被播報，但不會移動焦點。回答正在串流進某則訊息時，請為該訊息加上 `aria-busy="true"`，並在回答完成後移除，讓它完整地播報一次，而不是逐字播報。
+- `scroll-area-latest` 按鈕顯示時，是位於 Tab 順序中的真正按鈕。按下後它會隱藏，焦點會移到區域，之後即可用按鍵捲動區域。
+- 跟隨永遠不會移動焦點，而且讀者一捲離就會停止，因此持續送達的內容永遠不會讓正在閱讀的人失去所在的位置。
+
+## 鍵盤操作 \{#keyboard\}
+
+按鍵都是瀏覽器原生的；行為只監聽按鍵造成的捲動。
+
+<ContractTable name="scroll-area" show="keyboard" />
+
+## React、Svelte 和 Vue \{#frameworks\}
+
+`log` 元件會在子元素周圍算繪一個會跟隨的捲動區域並附上按鈕，掛載行為，並接收和傳出 `following`。使用 `npx master-ui add log` 將元件複製到專案中；元件的實作方式與用法請見 [React、Svelte 和 Vue](/guide/frameworks)。
+
+<FrameworkSource name="scroll-area" />
 
 ## 類別 \{#classes\}
 

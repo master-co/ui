@@ -7,20 +7,30 @@ import ComponentSource from '~/site/components/ComponentSource.astro'
 import ContractTable from '~/site/components/ContractTable.astro'
 import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
-カレンダーは、1 か月分の日付から選択するためのコンポーネントです。ボタンを並べた ARIA グリッドで、各状態の見た目はスタイルシートが担い、日付の生成、月の切り替えボタン、矢印キーの操作は `calendar` の [ビヘイビア](/guide/behaviors) が担います。カレンダー自体に背景面はありません。[カード](/components/card) に配置したり、[ポップオーバー](/components/popover) に配置して日付ピッカーにしたりできます。
+カレンダーは、1 か月分の日付から選択するためのコンポーネントです。選べるのは 1 日、[期間](#range)、[複数の日付](#several-days)で、表示できるのは 1 か月、または[2 か月の横並び](#several-months)です。ボタンを並べた ARIA グリッドで、各状態の見た目はスタイルシートが担い、日付の生成、月の切り替えボタン、矢印キーの操作は `calendar` の [ビヘイビア](/guide/behaviors) が担います。カレンダー自体に背景面はありません。[カード](/components/card) に配置したり、[ポップオーバー](/components/popover) に配置して日付ピッカーにしたりできます。
 
 <ComponentPreview name="default" height={392} title="カレンダー" bodyClass="flex justify-center p-lg" behaviors html={`<div class="sheet p-md">
   <div class="calendar">
     <div class="calendar-header">
       <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Previous month"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button>
-      <h3 class="calendar-title" id="cal-title" aria-live="polite"></h3>
+      <h3 class="calendar-title" id="cal-title" aria-live="polite"><button type="button" class="calendar-title-button" aria-description="Choose a month or a year"></button></h3>
       <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Next month"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
     </div>
     <div class="calendar-grid" role="grid" aria-labelledby="cal-title"></div>
   </div>
-</div>`} caption="日付をクリックして選択します。月の切り替えには 2 つのボタンを使います。日付にフォーカスして矢印キーで移動することもできます。" />
+</div>`} caption="日付をクリックして選択します。月の切り替えには 2 つのボタンを使います。日付にフォーカスして矢印キーで移動することもできます。タイトルをクリックすると、別の月や年に移動できます。" />
 
 マークアップはヘッダーと空のグリッドで構成します。ビヘイビアは月名を `calendar-title` に、曜日名と週ごとの日付を `calendar-grid` に書き込み、初期表示には今月を使います。スクリプトが動作するまではグリッドのマークアップがそのまま表示されます。実行前から日付を表示する必要がある場合は、下の [期間](#range) の例のように、週ごとの日付を含めてサーバーでレンダリングします。ビヘイビアが適用されると、グリッドの内容が置き換わります。
+
+## 月と年 \{#months-and-years\}
+
+上のカレンダーのタイトルは、`calendar-title` 内のボタン `calendar-title-button` です。クリックするとグリッドがその年の 12 か月に切り替わり、もう一度クリックすると 10 年分の年に切り替わります。年の一覧では、その 10 年の前年と翌年も控えめな文字色で表示されます。年を選ぶとその年の月が、月を選ぶとその月の日付が表示され、フォーカスは同じ日に置かれます。<kbd>Escape</kbd> を押すと、元の日付の表示に戻ります。
+
+月と年は、同じグリッド内の `calendar-period` ボタンで、1 行に 3 つずつ並び、日付ボタンと同じ質感で描画されます。グリッドは 6 週ある月の高さを保つため、カレンダーの高さは変わりません。タイトルは常にグリッドが表示している範囲を示します（`November 2026`、`2026`、`2020 – 2029`）。月の切り替えボタンは、月の一覧では 1 年、年の一覧では 10 年単位で移動し、その名前は `labels` オプションで指定します。年の一覧ではそれ以上の階層がないため、タイトルボタンは無効になります。
+
+ボタンを含まないタイトルは通常のタイトルのままで、カレンダーは日付の表示から切り替わりません。この移動機能は、1 か月表示のカレンダー向けです。
+
+ヘッダーにネイティブの月と年のセレクトを置く方法もありましたが、採用していません。2 つのセレクトと 2 つの月切り替えボタンは、どの言語でも 36px の列 7 つ分の幅に収まるとは限りません。また、100 年分のリストはセレクトでは長いスクロールになり、スタイルを適用したセレクトのリストはまだすべてのブラウザーで使えるわけではありません。月と年のグリッドはカレンダー自体の質感で描画され、読み手がすでに使っているキー操作で扱えます。
 
 ## 状態 \{#states\}
 
@@ -32,6 +42,8 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
 | 選択済み | `aria-selected="true"` | 選択済みの [チェックボックス](/components/checkbox) と同じインク色の塗りつぶし |
 | 表示月の範囲外 | `calendar-day-outside` | 控えめな文字色 |
 | 選択不可 | `disabled` | 無効状態の文字色 |
+
+移動先の月や年にも同じ印が付きます。今日を含む月や年には `aria-current="date"`、選択した日付を含むものには `aria-selected="true"`、`min` と `max` の間に日付がないものには `disabled` が付きます。`calendar-period-outside` は、10 年の前年と翌年を示します。
 
 日付ボタンは、[メニュー](/components/menu) の項目と同じように、ポインターを重ねるとすぐに反応します。今日の日付を選択したときもドットは残り、その日付の文字色に揃います。
 
@@ -133,6 +145,62 @@ addEventListener('DOMContentLoaded', function () {
 
 `attach()` はオプションを渡さないため、このプレビューでは `attach()` の実行後に `calendar` を明示的に呼び出します。同じルートに対して 2 回呼び出すと、2 回目に適用したビヘイビアが 1 回目のものを置き換えます。`MasterUI` はプレビューが読み込むバンドルです。プロジェクトでは、[ビヘイビア](#behavior) セクションの例に従って `calendar` をインポートします。
 
+## 複数の日付 \{#several-days\}
+
+`multiple` オプションを指定すると、ビヘイビアで任意の数の離れた日付を選択できます。クリック、<kbd>Enter</kbd>、<kbd>Space</kbd> で日付の選択を切り替えます。選択されたすべての日付に `aria-selected="true"` が付き、グリッドには `aria-multiselectable="true"` が付きます。値は選択した日付を `YYYY-MM-DD` 形式で並べ替えたリストで、変更のたびにそのすべてがイベントで渡されます。
+
+<ComponentPreview name="multiple" height={392} title="複数の日付" bodyClass="flex justify-center p-lg" behaviors html={`<div class="sheet p-md">
+  <div class="calendar" id="shifts">
+    <div class="calendar-header">
+      <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Previous month"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button>
+      <h3 class="calendar-title" id="shifts-title" aria-live="polite"></h3>
+      <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Next month"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
+    </div>
+    <div class="calendar-grid" role="grid" aria-labelledby="shifts-title"></div>
+  </div>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.calendar(document.getElementById('shifts'), {
+    multiple: true,
+    value: ['2026-11-09', '2026-11-12', '2026-11-20'],
+    disabled: function (date) { return date.getDay() === 0 || date.getDay() === 6 }
+  })
+})
+</script>`} caption="平日をクリックして選択を切り替えます。週末は選択できません。" />
+
+`min`、`max`、`disabled` は、1 日を選ぶ場合と同じように機能します。`range` も指定した場合は、`range` が優先されます。
+
+## 複数の月 \{#several-months\}
+
+2 か月を横に並べると、月をまたぐ期間を表示できます。各月は、それぞれのヘッダーとグリッドを持つ `calendar-month` です。最初のヘッダーに前の月へのボタン、最後のヘッダーに次の月へのボタンを置き、各タイトルはそれぞれのグリッドの上に配置します。ビヘイビアは各月を順に埋め、ボタンですべての月を 1 か月ずつまとめて切り替えます。
+
+<ComponentPreview name="months" height={392} mediumHeight={720} narrowHeight={720} title="2 か月" bodyClass="flex justify-center p-lg" behaviors html={`<div class="sheet p-md">
+  <div class="calendar" id="trip">
+    <div class="calendar-month">
+      <div class="calendar-header">
+        <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Previous month"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button>
+        <h3 class="calendar-title" id="trip-first" aria-live="polite"></h3>
+      </div>
+      <div class="calendar-grid" role="grid" aria-labelledby="trip-first"></div>
+    </div>
+    <div class="calendar-month">
+      <div class="calendar-header">
+        <h3 class="calendar-title" id="trip-second" aria-live="polite"></h3>
+        <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Next month"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
+      </div>
+      <div class="calendar-grid" role="grid" aria-labelledby="trip-second"></div>
+    </div>
+  </div>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.calendar(document.getElementById('trip'), { range: true, value: ['2026-11-26', '2026-12-04'] })
+})
+</script>`} caption="2 か月にまたがる期間を選ぶか、矢印キーで前の月から次の月へ移動します。" />
+
+複数の月は 1 つのタブストップとひと続きのキー操作を共有します。最初の月の最終日から矢印キーを押すと次の月の 1 日に移り、最後の月を越えて移動すると両方の月が切り替わります。月の範囲外の日付は空欄になります。隣の月にその日付が表示されるためです。空欄によって曜日の列は保たれます。行に十分な幅がない場合、月は縦に並びます。
+
 ## 日付ピッカー \{#date-picker\}
 
 日付ピッカーは、入力フィールド、ボタン、[ポップオーバー](/components/popover) 内のカレンダーで構成します。ポップオーバーはスクリプトなしで開閉し、ボタンに接する位置に自動で配置されます。ビヘイビアはカレンダーを描画し、選択された日付を通知します。ページ側のスクリプトはその日付をフィールドに書き込み、ポップオーバーを閉じます。
@@ -186,18 +254,20 @@ root.addEventListener('change', (event) => console.log(event.detail.value))
 
 | オプション | 設定内容 |
 | --- | --- |
-| `value` | `YYYY-MM-DD` 形式の選択日、または期間の開始日と終了日 |
+| `value` | `YYYY-MM-DD` 形式の選択日、期間の開始日と終了日、または `multiple` で選択した日付 |
 | `month` | 最初に表示する月を `YYYY-MM` 形式で指定。既定は値が属する月、値がなければ今月 |
 | `min`, `max` | 選択可能な最初と最後の日付を `YYYY-MM-DD` 形式で指定。移動先の月がなければ、対応する月切り替えボタンは無効 |
 | `range` | `true` を指定すると、2 つの日付を選んで、その間のすべての日付を含む期間を選択できます。 |
+| `multiple` | `true` を指定すると、任意の数の離れた日付を選択できます。`range` のほうが優先されます。 |
+| `labels` | 月と年の一覧で使う月切り替えボタンの名前：`previousYear`、`nextYear`、`previousDecade`、`nextDecade`。既定は英語 |
 | `weekStart` | 最初の列の曜日。日曜の 0 から土曜の 6 まで。既定はロケールの週の開始曜日で、ブラウザーから取得できない場合は月曜 |
 | `locale` | 月名と曜日名に使う BCP 47 言語タグ。既定はカレンダーに適用される `lang` 属性の値 |
 | `disabled` | `Date` を受け取り、その日付が選択不可かどうかを返す関数 |
-| `draw` | スクリプトに代わってグリッドを生成する関数。表示する月が `YYYY-MM` 形式で渡されます。[独自のグリッド](/guide/behaviors#a-grid-of-your-own) を参照してください。 |
+| `draw` | スクリプトに代わってグリッドを生成する関数。表示する月が `YYYY-MM` 形式で、表示の種類が `days`、`months`、`years` のいずれかで渡されます。日付の表示では、その月と、続くグリッドにはその後の月を書き込みます。各月は `calendarMonth(month, { offset })` で取得できます。月や年の表示では、`calendarPeriods(month, { view })` が返すセルを書き込みます。[独自のグリッド](/guide/behaviors#a-grid-of-your-own) を参照してください。 |
 
-- **生成する内容。** 曜日名、表示月の週ごとの日付、月名を書き込みます。日付ボタンでは、`value` に日付を設定し、今日には `aria-current="date"`、選択された日付には `aria-selected="true"` と期間用のクラス、選択できない日付には `disabled` を設定します。さらに、`aria-label` に完全な日付を指定し、`tabindex` でタブ順に含まれる日付を 1 つに絞ります。`draw` を指定した場合は、テンプレートやフレームワークが日付ボタンを生成し、スクリプトは状態などの属性やクラスだけを設定します。
-- **イベント。** 日付を選択すると、ルートからバブリングする `change` が発行されます。イベントの `detail.value` には、選んだ日付が `YYYY-MM-DD` 形式で入ります。期間の両端を選択すると `[start, end]` が入ります。
-- **値。** 値の保持先はスクリプト内です。返された関数の `value` から、`picker.value` のように読み取ります。期間の終了日は、選択されるまで `null` です。外部から選択を変更するには値を設定します。`picker.value = '2026-11-20'` は新しく選んだ日付が属する月を表示し、イベントは発行しません。
+- **生成する内容。** 曜日名、表示する各月の週ごとの日付、各月の名前を書き込みます。月や年へ移動した表示では、月や年とそのタイトルを書き込みます。日付ボタンでは、`value` に日付を設定し、今日には `aria-current="date"`、選択された日付には `aria-selected="true"` と期間用のクラス、選択できない日付には `disabled` を設定します。さらに、`aria-label` に完全な日付を指定し、`tabindex` でタブ順に含まれる日付を 1 つに絞ります。`draw` を指定した場合は、テンプレートやフレームワークが日付ボタンを生成し、スクリプトは状態などの属性やクラスだけを設定します。
+- **イベント。** 日付を選択すると、ルートからバブリングする `change` が発行されます。イベントの `detail.value` には、選んだ日付が `YYYY-MM-DD` 形式で入ります。期間の両端を選択すると `[start, end]` が、`multiple` では並べ替えた日付のリストが入ります。月や年の表示への移動ではイベントは発行されません。
+- **値。** 値の保持先はスクリプト内です。返された関数の `value` から、`picker.value` のように読み取ります。期間の終了日は、選択されるまで `null` です。`multiple` で何も選択されていない場合は `[]` です。外部から選択を変更するには値を設定します。`picker.value = '2026-11-20'` は新しく選んだ日付が属する月を表示し、イベントは発行しません。
 - **日付。** ローカルのタイムゾーンとグレゴリオ暦に従います。
 
 ## 構造 \{#structure\}
@@ -205,23 +275,28 @@ root.addEventListener('change', (event) => console.log(event.detail.value))
 - `calendar-grid` で 7 列を一度だけ定義します。各 `calendar-week` はその列を引き継ぐサブグリッド上の行なので、テーブルを使わずに曜日名と日付の列を揃えられます。
 - `calendar-weekday` は列見出しです。`aria-label` には省略していない曜日名を指定します。
 - `calendar-day` は、`role="gridcell"` を持つ `<button>` です。
+- `calendar-title-button` は、タイトルにボタンがある場合に `calendar-title` 内に置く `<button>` です。ビヘイビアがタイトルをこのボタンに書き込みます。
+- `calendar-period` は、移動先の一覧に表示される月や年です。`role="gridcell"` を持つ `<button>` で、値は `YYYY-MM` または `YYYY` です。1 つの `calendar-week` に 3 つずつ並びます。
+- `calendar-month` は、複数の月のうち 1 か月分のヘッダーとグリッドを含みます。
 
 ## キーボード操作 \{#keyboard\}
 
-ビヘイビアは、日付グリッドのキーボード操作を提供します。月の境界を越えて移動すると、隣の月が表示され、移動先の日付にフォーカスが移ります。選択できない日付は飛ばし、`min` と `max` の境界で移動が止まります。
+ビヘイビアは、日付グリッドのキーボード操作を提供します。月の境界を越えて移動すると、隣の月が表示され、移動先の日付にフォーカスが移ります。選択できない日付は飛ばし、`min` と `max` の境界で移動が止まります。月と年の一覧では、矢印キーで 1 つずつ、または 3 つ並んだ 1 行分ずつ移動し、<kbd>Enter</kbd> で選択して 1 つ下の階層に戻ります。
 
 <ContractTable name="calendar" show="keyboard" />
 
 ## アクセシビリティ \{#accessibility\}
 
 - グリッドには `role="grid"` を指定し、月のタイトルをラベルにします。各週には `role="row"` を指定します。
-- タブ順に含まれる日付は 1 つです。表示中の月に選択済みの日付があればその日、なければ今日を使い、どちらも含まれない月では 1 日を使います。ほかの日付には `tabindex="-1"` を指定します。
+- タブ順に含まれる日付は 1 つです。選択済みの日付（複数ある場合は最初の日付）があればその日、なければ今日を使い、表示中の月がどちらも含まない場合は表示中の月の 1 日を使います。ほかの日付には `tabindex="-1"` を指定します。横に並んだ複数の月は全体で 1 つのタブストップになり、各グリッドはそれぞれのタイトルをラベルにします。
+- 期間や複数の日付を選択できるグリッドには、`aria-multiselectable="true"` を指定します。
+- タイトルボタンの名前は、ボタンに表示されるタイトルです。これはグリッドのラベルにもなります。ボタンの役割は、「Choose a month or a year」のように `aria-description` で伝えてください。`aria-label` を使うと、グリッドの名前も変わってしまいます。
 - 月の切り替えが読み上げられるよう、タイトルに `aria-live="polite"` を指定します。
 - タッチスクリーンでは、日付ボタンのサイズは 44px です。
 
 ## React、Svelte、Vue \{#frameworks\}
 
-`calendar` コンポーネントは、ビヘイビアと同じデータから月の表示を生成するため、最初の HTML にカレンダーが含まれます。選択日は外部から受け取り、選択の変更を外部に通知します。`npx master-ui add calendar` でプロジェクトにコピーできます。構成と使い方は [React、Svelte、Vue](/guide/frameworks) を参照してください。
+`calendar` コンポーネントは、ビヘイビアと同じデータから月の表示を生成するため、最初の HTML にカレンダーが含まれます。選択日は外部から受け取り、選択の変更を外部に通知します。`range` と `multiple` を受け取り、`months` で複数の月を横に並べます。1 か月を表示するときはタイトルボタンを持ちます。`jumpLabel` はボタンの説明、`labels` は月と年の一覧で使う月切り替えボタンの名前です。`npx master-ui add calendar` でプロジェクトにコピーできます。構成と使い方は [React、Svelte、Vue](/guide/frameworks) を参照してください。
 
 <FrameworkSource name="calendar" />
 

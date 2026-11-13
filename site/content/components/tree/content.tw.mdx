@@ -106,24 +106,161 @@ WAI-ARIA 樹狀檢視模式只設一個 Tab 停駐點，並可用方向鍵在樹
   </li>
 </ul>`} caption="將焦點移到樹狀檢視後，使用方向鍵操作。按 Enter、空白鍵或點一下可展開分支，或選取沒有子項目的列。" />
 
-`tree` 接收帶有 `tree` 類別的根元素，不提供任何選項，並傳回用來移除行為的函式。
+`tree` 接收帶有 `tree` 類別的根元素，並傳回用來移除行為的函式。它的選項用來開啟[重新命名](#rename)功能：`rename: true`，以及欄位的可存取名稱 `renameLabel`，預設為 `Rename <label>`。
 
 ```js name=app.js
 import { tree } from '@master/ui/behaviors/tree.js'
 
 const root = document.querySelector('.tree')
-tree(root)
+const files = tree(root)
 
-root.addEventListener('change', (event) => console.log(event.detail.item))
+root.addEventListener('change', () => console.log(files.value))
 ```
 
 - **單一 Tab 停駐點。** 此行為透過 `tabindex` 只保留一列在 Tab 巡覽順序中。優先採用標記中設有 `tabindex="0"` 的列，其次是已選取或目前所在的列，最後才是第一列。取得焦點的列會成為新的 Tab 停駐點。卸除行為時，各列會恢復原有的 `tabindex`。
 - **移動。** 使用方向鍵移動時，會跳過收合分支內的列、標記為 `hidden` 的列，以及停用的列。
 - **啟用。** 摘要列、連結和按鈕沿用瀏覽器原有的啟用方式。若列本身沒有原生啟用方式，例如加上 `role="treeitem"` 的 `div`，可用 <kbd>Enter</kbd>、<kbd>Space</kbd> 或點擊啟用。分支會展開或收合，末端項目則會成為已選取的列，`aria-selected="true"` 也會從原先選取的列移到該列。
-- **事件。** 選取一列時，根元素會派發可冒泡的 `change` 事件，並在 `detail.item` 中提供該列。
-- **停用。** 帶有 `disabled` 或 `aria-disabled="true"` 的列不會回應操作，連結不會開啟，分支也會維持原狀。
+- **值。** `tree` 傳回的函式帶有 `value`：已選取的列所代表的值，也就是它的 `data-value` 或文字，沒有選取任何列時為 null。在[可多選的樹狀檢視](#several)和[核取方塊樹狀檢視](#checkbox)中，它是一個清單。從外部設定它即可選取或勾選列，不會派發事件。
+- **事件。** 每個事件都會從根元素向上冒泡，並在 `detail.item` 中提供該列。選取或勾選時派發 `change`。展開分支時派發 `expand`，並在 `detail.value` 中提供該列所代表的值。重新命名時派發 `rename`，附帶 `detail.value`，以及放在 `detail.label` 中的新標籤。
+- **停用。** 帶有 `disabled` 或 `aria-disabled="true"` 的列不會回應操作：連結不會開啟，分支會維持原狀，也不會被選取、勾選或重新命名。
 
 此行為也適用於以 `<details>` 建立的樹狀檢視，例如前兩個未套用此行為的預覽。它透過 `open` 展開或收合 `tree-group`，並讓整棵樹只保留一個 Tab 停駐點，沿用同一套方向鍵操作。`attach()` 會將此行為套用到所有樹狀檢視。若要保留 `<details>` 樹狀檢視的原生操作方式，請依名稱匯入所需的行為。
+
+## 多列 \{#several\}
+
+在樹狀檢視上設定 `aria-multiselectable="true"` 後，就能像檔案清單一樣選取任意數量的末端項目。每個可選取的列都會標示 `aria-selected`，值為 `true` 或 `false`；分支不會被選取，只會展開或收合。值是已選取的列組成的清單，依樹狀檢視中的順序排列。
+
+<ComponentPreview name="several" height={252} title="多列" background="plain" bodyClass="content-start p-lg" behaviors html={`<ul class="tree max-w(260) mx-auto" role="tree" aria-label="Files" aria-multiselectable="true">
+  <li role="none">
+    <div class="tree-item tree-toggle" role="treeitem" aria-expanded="true">components</div>
+    <ul class="tree-sub" role="group">
+      <li role="none"><div class="tree-item" role="treeitem" aria-selected="true">button.css</div></li>
+      <li role="none"><div class="tree-item" role="treeitem" aria-selected="true">input.css</div></li>
+      <li role="none"><div class="tree-item" role="treeitem" aria-selected="false">theme.css</div></li>
+      <li role="none"><div class="tree-item" role="treeitem" aria-selected="false">tree.css</div></li>
+    </ul>
+  </li>
+  <li role="none">
+    <div class="tree-item tree-toggle" role="treeitem" aria-expanded="false">themes</div>
+    <ul class="tree-sub" role="group">
+      <li role="none"><div class="tree-item" role="treeitem" aria-selected="false">paper.css</div></li>
+    </ul>
+  </li>
+  <li role="none"><div class="tree-item" role="treeitem" aria-selected="false">README.md</div></li>
+</ul>`} caption="按一下某一列，再按住 Shift 按另一列，即可選取兩者之間的列。按住 Control 或 Command 再點擊可加選一列；用鍵盤時按 Space 也有相同效果。" />
+
+- **點擊**只會選取該列。按住 <kbd>Control</kbd> 或 <kbd>Command</kbd> 再點擊，會選取或取消選取一列，並保留其他列的選取狀態。<kbd>Enter</kbd> 的作用與點擊相同。
+- **<kbd>Space</kbd>** 會選取或取消選取取得焦點的列。方向鍵只會移動。
+- **連續範圍。** 最後選擇的列是錨點。按住 <kbd>Shift</kbd> 再點擊、按 <kbd>Space</kbd>，或按 <kbd>ArrowDown</kbd>、<kbd>ArrowUp</kbd>，會選取從錨點到該列之間所有可見的列；按住 <kbd>Control</kbd> 或 <kbd>Command</kbd> 加上 <kbd>Shift</kbd>，再按 <kbd>Home</kbd> 或 <kbd>End</kbd>，會一路選到第一列或最後一列。收合分支內的列和停用的列會被略過。
+- **全部。** 按住 <kbd>Control</kbd> 或 <kbd>Command</kbd> 再按 <kbd>A</kbd>，會選取所有可見的列；若已全部選取，則全部取消。
+
+## 核取方塊樹狀檢視 \{#checkbox\}
+
+當各列帶有 `aria-checked` 時，樹狀檢視就是核取方塊樹狀檢視：每列都有一個勾選框，勾選分支會勾選其下的每一列，包括收合分支內的列。分支會反映其下各列的狀態：全部勾選時為 `true`，全部未勾選時為 `false`，其餘情況為 `mixed`。在每列中放一個帶有 `aria-hidden="true"` 的 `tree-check`，位置在箭頭欄之後、標籤之前：它就是[核取方塊](/components/checkbox)本身的方框，依該列的 `aria-checked` 繪製，因此該列的狀態只會播報一次。
+
+<ComponentPreview name="checkbox" height={252} title="核取方塊樹狀檢視" background="plain" bodyClass="content-start p-lg" behaviors html={`<ul class="tree max-w(260) mx-auto" role="tree" aria-label="Files to publish" aria-multiselectable="true">
+  <li role="none">
+    <div class="tree-item tree-toggle" role="treeitem" aria-expanded="true" aria-checked="mixed"><span class="tree-check" aria-hidden="true"></span>components</div>
+    <ul class="tree-sub" role="group">
+      <li role="none"><div class="tree-item" role="treeitem" aria-checked="true"><span class="tree-check" aria-hidden="true"></span>button.css</div></li>
+      <li role="none"><div class="tree-item" role="treeitem" aria-checked="true"><span class="tree-check" aria-hidden="true"></span>input.css</div></li>
+      <li role="none"><div class="tree-item" role="treeitem" aria-checked="false"><span class="tree-check" aria-hidden="true"></span>theme.css</div></li>
+      <li role="none"><div class="tree-item" role="treeitem" aria-checked="false"><span class="tree-check" aria-hidden="true"></span>tree.css</div></li>
+    </ul>
+  </li>
+  <li role="none">
+    <div class="tree-item tree-toggle" role="treeitem" aria-expanded="false" aria-checked="false"><span class="tree-check" aria-hidden="true"></span>themes</div>
+    <ul class="tree-sub" role="group">
+      <li role="none"><div class="tree-item" role="treeitem" aria-checked="false"><span class="tree-check" aria-hidden="true"></span>paper.css</div></li>
+    </ul>
+  </li>
+  <li role="none"><div class="tree-item" role="treeitem" aria-checked="true"><span class="tree-check" aria-hidden="true"></span>README.md</div></li>
+</ul>`} caption="勾選 themes：其中的 paper.css 也會被勾選。取消勾選 components 中的一個檔案，該分支就會變成部分勾選。" />
+
+- **<kbd>Space</kbd>** 會勾選或取消勾選取得焦點的列；若是分支，則連同其下所有列一起變更。部分勾選的分支會被勾選；若其下所有可變更的列都已勾選，則改為取消勾選。
+- **點擊**末端項目會勾選它；點擊分支時，點擊勾選框會勾選分支，點擊該列其他位置則會展開或收合。<kbd>Enter</kbd> 的作用與點擊該列相同。
+- **停用的列**在其分支被勾選時會維持原本的勾選狀態，因此分支可能仍為部分勾選。
+- **值**是已勾選的末端項目組成的清單，依樹狀檢視中的順序排列。**分支不包含在內**：分支的勾選狀態只是反映其下各列，因此值會列出每個檔案，而不會列出資料夾。尚未載入列的分支也不包含在內；當它的列在已勾選的分支下送達時，這些列會被勾選，樹狀檢視也會派發 `change`。
+
+也請在樹狀檢視上設定 `aria-multiselectable="true"`：核取方塊樹狀檢視可以選擇任意數量的列，也應該被這樣播報。
+
+## 稍後載入列 \{#loading\}
+
+列來自伺服器的分支，是一個帶有 `aria-expanded="false"` 和空白 `tree-sub` 的列。當它展開而其下沒有任何列時，行為會將它標記為 `aria-busy="true"` 並派發 `expand`。請在該列最前面放一個[旋轉指示器](/components/spinner)：平時不會繪製，該列忙碌時則會取代箭頭的位置，因此版面不會移動。
+
+<ComponentPreview name="loading" height={200} title="稍後載入列" background="plain" bodyClass="content-start p-lg" behaviors html={`<ul class="tree max-w(260) mx-auto" role="tree" aria-label="Repositories" id="repositories">
+  <li role="none">
+    <div class="tree-item tree-toggle" role="treeitem" aria-expanded="false"><span class="spinner" aria-hidden="true"></span>master-co/ui</div>
+    <ul class="tree-sub" role="group"></ul>
+  </li>
+  <li role="none">
+    <div class="tree-item tree-toggle" role="treeitem" aria-expanded="false"><span class="spinner" aria-hidden="true"></span>master-co/css</div>
+    <ul class="tree-sub" role="group"></ul>
+  </li>
+</ul>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  document.getElementById('repositories').addEventListener('expand', function (event) {
+    var row = event.detail.item
+    if (row.getAttribute('aria-busy') !== 'true') return
+    // A page fetches the rows here; this one waits a moment instead.
+    setTimeout(function () {
+      row.nextElementSibling.innerHTML = ['packages', 'site', 'README.md'].map(function (name) {
+        return '<li role="none"><div class="tree-item" role="treeitem">' + name + '</div></li>'
+      }).join('')
+    }, 1200)
+  })
+})
+</script>`} caption="展開一個儲存庫：它會持續旋轉，直到列送達，之後即可用方向鍵移入其中。" />
+
+頁面監聽 `expand`，並依照契約的類別與角色，把列寫入分支的 `tree-sub`。行為會察覺列已送達：它會移除 `aria-busy`，並立即讓這些列支援按鍵操作，不列入 Tab 順序，以方向鍵瀏覽。行為展開的每個分支都會派發 `expand`，因此請檢查 `aria-busy` 來判斷是否需要載入列。如果分支最後其實沒有任何列，請移除它的 `aria-busy` 和 `aria-expanded`：它是末端項目。
+
+```js name=app.js
+root.addEventListener('expand', async (event) => {
+  const row = event.detail.item
+  if (row.getAttribute('aria-busy') !== 'true') return
+  const children = await fetch(`/api/folders/${event.detail.value}`).then((response) => response.json())
+  row.nextElementSibling.replaceChildren(...children.map(rowFor))
+})
+```
+
+## 重新命名 \{#rename\}
+
+設定 `rename: true` 後，在列上按 <kbd>F2</kbd> 會把它的標籤原地變成[行內編輯](/components/editable)欄位，並選取其中的文字。標籤必須是 `tree-label`，它也會讓過長的名稱以省略號結尾。<kbd>Enter</kbd> 會儲存，<kbd>Escape</kbd> 會還原標籤；兩種情況下焦點都會回到該列。離開欄位時會儲存，空白的標籤則不會儲存。
+
+<ComponentPreview name="rename" height={168} title="重新命名" background="plain" bodyClass="content-start p-lg" behaviors html={`<ul class="tree max-w(260) mx-auto" role="tree" aria-label="Pages" id="pages">
+  <li role="none">
+    <div class="tree-item tree-toggle" role="treeitem" aria-expanded="true"><span class="tree-label">Guide</span></div>
+    <ul class="tree-sub" role="group">
+      <li role="none"><div class="tree-item" role="treeitem" data-value="introduction"><span class="tree-label">Introduction</span></div></li>
+      <li role="none"><div class="tree-item" role="treeitem" data-value="installation"><span class="tree-label">Installation</span></div></li>
+    </ul>
+  </li>
+  <li role="none"><div class="tree-item" role="treeitem" data-value="changelog"><span class="tree-label">Changelog</span></div></li>
+</ul>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.tree(document.getElementById('pages'), { rename: true })
+})
+</script>`} caption="將焦點移到某一列，按 F2 並輸入名稱，再按 Enter 儲存或按 Escape 還原。" />
+
+`attach()` 不會傳入任何選項，因此這個預覽會在 `attach()` 執行後自行呼叫 `tree`；對同一個根元素再次呼叫會取代前一次。
+
+行為會把新標籤寫入 `tree-label`，並從根元素派發 `rename`，在 `detail.value` 中提供該列所代表的值，在 `detail.label` 中提供新標籤；欄位本身的 `input` 和 `change` 不會傳出欄位。儲存標籤由頁面負責：如果伺服器拒絕，請把舊標籤寫回去。請為每列設定不會隨名稱改變的 `data-value`，讓它所代表的值在重新命名後仍然有效。
+
+沒有 <kbd>F2</kbd> 的讀者（例如使用觸控螢幕）需要其他入口：無論有沒有設定這個選項，對 `tree` 傳回的函式呼叫 `edit(row)` 都能達到與 <kbd>F2</kbd> 相同的效果，適合用於[快顯選單](/components/menu)中的「重新命名」項目或按鈕。
+
+```js name=app.js
+const pages = tree(root, { rename: true })
+
+root.addEventListener('rename', async (event) => {
+  const { item, value, label } = event.detail
+  const saved = await fetch(`/api/pages/${value}`, { method: 'PATCH', body: JSON.stringify({ title: label }) })
+  if (!saved.ok) item.querySelector('.tree-label').textContent = previous(value)
+})
+
+renameItem.addEventListener('click', () => pages.edit(selectedRow))
+```
 
 ## 樹狀檢視或導覽 \{#tree-or-nav\}
 
@@ -137,11 +274,19 @@ root.addEventListener('change', (event) => console.log(event.detail.item))
 
 - 使用 `<details>` 時，請勿加上樹狀檢視角色。輔助技術已能正確讀出原生展開與收合控制項。未套用行為時，每列都是 Tab 停駐點。
 - 使用 `aria-current="page"` 標記目前所在列。在樹狀檢視模式中則使用 `aria-selected="true"`。
+- 多列選取、勾選、載入和重新命名都屬於樹狀檢視模式，需要 `role="tree"` 和行為。
+- 在核取方塊樹狀檢視中，由列標示 `aria-checked`；它的 `tree-check` 設為 `aria-hidden="true"`，因此狀態只會播報一次。
+- 忙碌中的分支以 `aria-busy="true"` 表示；它的旋轉指示器設為 `aria-hidden="true"`。
+- 重新命名欄位的名稱為 `Rename <label>`；請以頁面的語言傳入 `renameLabel`。
 - 在觸控螢幕上，每列高 44px。
 
 ## React、Svelte 和 Vue \{#frameworks\}
 
 `tree` 元件會依資料呈現各列、附加行為，並支援傳入及傳出已選取的列。執行 `npx master-ui add tree` 即可將元件複製到專案中。元件的實作與用法請見 [React、Svelte 和 Vue](/guide/frameworks)。
+
+- `multiple` 可選取任意數量的列，`checkable` 則讓每列都有勾選框；兩者任一設定時，值都是清單。初始值會在第一次算繪時就畫出來，包括分支的部分勾選狀態。
+- 帶有 `children: []` 的節點是稍後才載入列的分支：它會顯示旋轉指示器，展開時會以它的值呼叫 `onExpand`（Vue 中為 `@expand`）。請在 `nodes` 中提供它的子節點。
+- `onRename`（Vue 中為 `@rename`）會開啟重新命名功能，並以該列的值和新標籤呼叫。請在 `nodes` 中保存標籤。
 
 <FrameworkSource name="tree" />
 

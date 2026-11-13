@@ -1,0 +1,191 @@
+---
+title: "画像トリミング"
+description: "残す範囲を示すボックスを重ねた画像。"
+---
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+画像トリミングは、残す範囲を示すボックスを重ねた画像です。投稿前の写真の切り抜き、バナーの比率に合わせたカバー画像のトリミング、円形に収めるアバターの構図決めなどに使います。画像はくぼみの中に置かれます。ボックスの外側は暗くなり、ボックスの縁は画像の上に描く白い線です。ハンドルは、四隅が真珠調の円、各辺がピル形です。ボックスをつかんでいる間やキー操作中は、ボックス内に三分割線が表示されます。
+
+<ComponentPreview name="default" height={432} narrowHeight={304} title="画像トリミング" bodyClass="p-lg" behaviors html={`<div class="cropper max-w(480) mx-auto" style="--cropper-x: .16; --cropper-y: .14; --cropper-width: .62; --cropper-height: .66">
+  <img class="cropper-image" src="/demo/harbor.svg" alt="A harbor at dusk" width="640" height="480">
+  <div class="cropper-box" role="application" aria-roledescription="crop box" tabindex="0" aria-label="Crop the photo">
+    <span class="cropper-handle cropper-handle-top cropper-handle-left"></span>
+    <span class="cropper-handle cropper-handle-top"></span>
+    <span class="cropper-handle cropper-handle-top cropper-handle-right"></span>
+    <span class="cropper-handle cropper-handle-right"></span>
+    <span class="cropper-handle cropper-handle-bottom cropper-handle-right"></span>
+    <span class="cropper-handle cropper-handle-bottom"></span>
+    <span class="cropper-handle cropper-handle-bottom cropper-handle-left"></span>
+    <span class="cropper-handle cropper-handle-left"></span>
+  </div>
+  <p class="cropper-status" role="status"></p>
+</div>`} caption="ボックスやハンドルをドラッグするか、画像上をドラッグして新しいボックスを描きます。ボックスにフォーカスして矢印キーで動かし、Alt キーを押しながら矢印キーで大きさを変えます。" />
+
+範囲は、ルートに指定する 4 つのカスタムプロパティで表します。どれも画像に対する割合で、0 から 1 までの値です。`--cropper-x` と `--cropper-y` は画像の左上隅からの位置、`--cropper-width` と `--cropper-height` は幅と高さです。スタイルシートはこれらからボックスを配置し、暗い部分はボックスに追従します。スクリプトがない場合、ボックスはこれらが示す位置に留まります。これらを省くと、画像全体が範囲になります。
+
+アプリケーションが読み取る値は、同じ矩形を画像自体のピクセルで表した `{ x, y, width, height }` です。画像の切り出しはアプリケーションが行います。[画像の切り出し](#cutting-the-picture)を参照してください。
+
+## ビヘイビア \{#behavior\}
+
+`cropper` は、`cropper` クラスを持つ要素であるルートと、オプションのオブジェクトを受け取り、ビヘイビアを解除する関数を返します。`value` がトリミング範囲です。外部から範囲を動かすには `value` を設定します。この場合、イベントは発行されません。
+
+```js name=app.js
+import { cropper } from '@master/ui/behaviors/cropper.js'
+
+const root = document.querySelector('.cropper')
+const crop = cropper(root, { ratio: 16 / 9 })
+
+root.addEventListener('change', () => {
+  const { x, y, width, height } = crop.value
+  form.elements.crop.value = [x, y, width, height].join(' ')
+})
+```
+
+- **ボックス**　ボックスをドラッグすると移動し、ハンドルをドラッグするとそのハンドルが示す辺が動きます。ボックスの外側で画像上をドラッグすると、新しいボックスを描きます。ボックスの外側をドラッグせずに押すと、ボックスがその位置に移動するため、ドラッグせずにボックスを動かせます。ボックスは画像の内側に留まり、最小サイズを保ちます。
+- **画像のピクセル**　トリミング範囲は `cropper-image` の `width` と `height` を基準に数えます。そこにはファイル自体のサイズを記述します。これは、画像の読み込み中に枠が動かないようにするためにも必要です。
+- **キー操作**　矢印キーで範囲を 1 ステップ、<kbd class="kbd">Shift</kbd> キーを押しながらだと 10 ステップ動かします。<kbd class="kbd">Alt</kbd> キー（Mac では <kbd class="kbd">Option</kbd> キー）を押しながら矢印キーを押すと、右辺または下辺を動かして大きさを変えます。右矢印キーと下矢印キーで大きく、左矢印キーと上矢印キーで小さくなります。
+- **イベント**　ボックスは、範囲が変わるたびに `input` を、ドラッグやキー操作が終わったときに一度 `change` を発行します。どちらもバブリングします。
+- **読み上げ内容**　`change` のたびに、ビヘイビアは範囲のサイズを、控えめなライブリージョンである `cropper-status` に書き込みます。たとえば「480 by 270 pixels, 64 from the left and 96 from the top」です。ページの言語で読み上げるには `describe` を渡します。
+
+画像には向きがないため、どの書字方向でも、ボックスは左と上を基準に配置され、矢印キーは左右をそのまま意味します。
+
+| オプション | 設定する内容 |
+| --- | --- |
+| `ratio` | ボックスが保つ幅と高さの比（`16 / 9` など）。省略すると自由になります。ただし、ルートの style で `--cropper-ratio` が記述されている場合を除きます。0 で自由になります |
+| `step` | 矢印キーで範囲が動く距離。画像のピクセル単位です。既定値は画像の長辺の 100 分の 1 です |
+| `min` | 最小の幅と高さ。画像のピクセル単位です。既定値は画像の短辺の 10 分の 1 です |
+| `maxZoom` | 範囲入力で指定されていない場合に、パン方式の画像トリミングが拡大できる上限。既定値は 4 です |
+| `describe` | トリミング範囲を受け取り、ステータスで読み上げる文言を返す関数 |
+
+同じモジュールの `cropperFit(picture, crop, options)` は、ビヘイビアが保持するのと同じ方法でトリミング範囲を画像に合わせます。レンダラーはこれを使って、最初の範囲をサーバー上で描画します。
+
+## 比率 \{#proportions\}
+
+比率を指定すると、隅のハンドルは対角の隅を固定したまま、ボックスの比率を保って動きます。辺のハンドルは、ボックスの中央を基準に大きさを変えます。ボックスと異なる比率を指定してビヘイビアを適用すると、ボックスの中央を基準に、面積を保ったままその比率にし、`input` と `change` を発行します。比率の選択はこの仕組みで反映されます。
+
+<ComponentPreview name="proportions" height={456} narrowHeight={368} title="比率" background="plain" bodyClass="p-lg" behaviors html={`<div class="grid gap-md max-w(480) mx-auto">
+  <div class="segmented segmented-sm mx-auto" role="radiogroup" aria-label="Proportions">
+    <label class="segmented-item"><input type="radio" class="segmented-input" name="banner-ratio" value="0" checked>Free</label>
+    <label class="segmented-item"><input type="radio" class="segmented-input" name="banner-ratio" value="1/1">1:1</label>
+    <label class="segmented-item"><input type="radio" class="segmented-input" name="banner-ratio" value="4/3">4:3</label>
+    <label class="segmented-item"><input type="radio" class="segmented-input" name="banner-ratio" value="16/9">16:9</label>
+  </div>
+  <div class="cropper" id="banner-crop" style="--cropper-x: .1; --cropper-y: .2; --cropper-width: .8; --cropper-height: .6">
+    <img class="cropper-image" src="/demo/tide.svg" alt="The tide coming in over flat sand" width="640" height="400">
+    <div class="cropper-box" role="application" aria-roledescription="crop box" tabindex="0" aria-label="Crop the banner">
+      <span class="cropper-handle cropper-handle-top cropper-handle-left"></span>
+      <span class="cropper-handle cropper-handle-top"></span>
+      <span class="cropper-handle cropper-handle-top cropper-handle-right"></span>
+      <span class="cropper-handle cropper-handle-right"></span>
+      <span class="cropper-handle cropper-handle-bottom cropper-handle-right"></span>
+      <span class="cropper-handle cropper-handle-bottom"></span>
+      <span class="cropper-handle cropper-handle-bottom cropper-handle-left"></span>
+      <span class="cropper-handle cropper-handle-left"></span>
+    </div>
+    <p class="cropper-status" role="status"></p>
+  </div>
+  <p class="m(0) text-sm fg-text-muted text-center" id="banner-crop-value" aria-hidden="true"></p>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  var root = document.getElementById('banner-crop')
+  var readout = document.getElementById('banner-crop-value')
+  var crop = MasterUI.cropper(root)
+  function show() {
+    var value = crop.value
+    readout.textContent = value.width + ' × ' + value.height + ' pixels at ' + value.x + ', ' + value.y
+  }
+  root.addEventListener('input', show)
+  document.querySelectorAll('input[name="banner-ratio"]').forEach(function (input) {
+    input.addEventListener('change', function () {
+      var parts = input.value.split('/')
+      crop = MasterUI.cropper(root, { ratio: parts.length > 1 ? parts[0] / parts[1] : 0 })
+    })
+  })
+  show()
+})
+</script>`} caption="比率を選んでから、隅や辺をドラッグします。画像の下の行が値です。" />
+
+1 つのルートに対して `cropper` をもう一度呼び出すと、最初の呼び出しが置き換えられます。そのため、このプレビューは新しい比率でビヘイビアを適用し直しています。`MasterUI` はプレビューが読み込むバンドルです。プロジェクトでは、[ビヘイビア](#behavior)のセクションに示すように `cropper` をインポートします。フレームワークのコンポーネントも、`ratio` が変わったときに同じことを行います。
+
+## アバター \{#avatar\}
+
+`cropper-pan` は、ボックスを `--cropper-ratio` の比率で枠の中央に固定し、代わりにその下の画像を動かします。ドラッグでパンし、2 本指でピンチし、<kbd class="kbd">Control</kbd> キーまたは <kbd class="kbd">Command</kbd> キーを押しながらホイールを回すと拡大・縮小します。トラックパッドのピンチも同じ入力として送られます。`cropper-round` はボックスを円で描きます。トリミング範囲の値には `zoom` が加わります。範囲が画像の許す最大の大きさのとき、`zoom` は 1 です。
+
+`aria-controls` でルートの `id` を指定した範囲入力でも、`min` から `max` までの範囲で拡大・縮小でき、ほかの方法で行った拡大・縮小にも追従します。この範囲入力はページ独自の[スライダー](/components/slider)なので、枠の下、横、ツールバーの中など、どこにでも置けます。
+
+<ComponentPreview name="avatar" height={392} title="アバター" background="plain" bodyClass="p-lg" behaviors html={`<div class="grid gap-md w(280) mx-auto">
+  <div class="cropper cropper-pan cropper-round" id="avatar-crop" style="--cropper-x: .1; --cropper-y: .18; --cropper-width: .8; --cropper-height: .64">
+    <img class="cropper-image" src="/demo/cairn.svg" alt="A cairn of stones on a ridge" width="480" height="600">
+    <div class="cropper-box" role="application" aria-roledescription="crop box" tabindex="0" aria-label="Frame your picture"></div>
+    <p class="cropper-status" role="status"></p>
+  </div>
+  <div class="flex items-center gap-sm fg-text-muted">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.5-4.5M8.5 11h5"/></svg>
+    <input type="range" class="slider grow(1)" min="1" max="4" step="any" value="1.25" aria-controls="avatar-crop" aria-label="Zoom">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.5-4.5M8.5 11h5M11 8.5v5"/></svg>
+  </div>
+</div>`} caption="画像をドラッグするか、ピンチするか、スライダーを動かします。円にフォーカスすると、矢印キーでパンし、+ と - で拡大・縮小します。" />
+
+画像はどの拡大率でもボックスを埋めるため、パン方式のトリミング範囲は常に画像の内側にあります。キー操作では、矢印キーはほかの場合と同様に範囲を動かします。<kbd class="kbd">Alt</kbd> キーを押しながら矢印キー、または <kbd class="kbd">+</kbd> と <kbd class="kbd">-</kbd> で、ボックスの中央を基準に拡大・縮小します。ボックスにはハンドルがありません。ボックスの周囲の余白である `--cropper-inset` には暗くした画像が輪のように表示されるため、何が除かれるかを読者が確認できます。
+
+## 画像の切り出し \{#cutting-the-picture\}
+
+画像トリミングは残す部分を示すだけで、ファイルには一切手を加えません。4 つの数値をアップロードと一緒に送信してサーバーで切り出すか、ページ内で canvas を使って切り出します。`drawImage` は画像自体のピクセルで画像の一部を受け取ります。これは値の単位と同じです。
+
+```js name=crop.js
+/** The part of a loaded picture a crop keeps, as a file. */
+function cut(image, { x, y, width, height }, type = 'image/webp') {
+  const canvas = document.createElement('canvas')
+  canvas.width = width
+  canvas.height = height
+  canvas.getContext('2d').drawImage(image, x, y, width, height, 0, 0, width, height)
+  return new Promise((resolve) => canvas.toBlob(resolve, type))
+}
+
+const file = await cut(document.querySelector('.cropper-image'), crop.value)
+```
+
+- 画像はページと同じオリジンから読み込むか、`crossorigin` を指定して CORS 付きで配信する必要があります。別のオリジンの画像を描画した canvas は、その画像を返すことを拒否します。
+- 画像の `width` と `height` がファイル自体のサイズと異なる場合は、先にトリミング範囲を `image.naturalWidth / width` 倍に拡大縮小します。
+- 円形のトリミング範囲は正方形のまま保持します。[アバター](/components/avatar)は自身を円形に描画するためです。ファイル自体を円形にする必要がある場合に限り、`arc()` で canvas をクリップします。
+
+## キーボード操作 \{#keyboard\}
+
+<ContractTable name="cropper" show="keyboard" />
+
+## アクセシビリティ \{#accessibility\}
+
+- タブ移動で止まるのはボックスだけです。ボックスには `role="application"` を指定します。ほかのロールでは表せない独自のキー操作を持つ単一のコントロールであり、このロールによってスクリーンリーダーが矢印キーをボックスに渡すためです。トリミングする対象を表す名前を付け、`aria-roledescription` をページの言語で指定して、アプリケーションではなくトリミングボックスとして読み上げられるようにします。
+- ハンドルはフォーカスを受け取りません。タブ移動の停止位置が 8 つ増えても、キーボード利用者にとってボックスでできること以上の情報はありません。矢印キーで範囲を動かし、<kbd class="kbd">Alt</kbd> キーを押しながら矢印キーで大きさを変えれば、ハンドルで作れるすべての範囲に到達できます。始端側の辺を動かすには、移動してから大きさを変えます。
+- 変更のたびに、`cropper-status` が範囲のサイズをピクセル単位で控えめに読み上げます。最初の読み上げ前にスクリーンリーダーが認識できるように、最初からマークアップに含めておきます。
+- ドラッグ操作にはすべて別の手段があります。キー操作、画像を押してボックスをその位置に移動する操作、拡大・縮小用のスライダーです。
+- 画像には内容を説明する `alt` を付けます。読者は画像のどこを残すかを決めているからです。
+- ハンドルのターゲットは 24px で、タッチスクリーンでは 44px になります。内部に描かれる円やピル形の大きさは変わらず、画像の周囲の余白がそれに合わせて広がります。枠全体がポインター操作を受け取るため、ダイアログやエディターの中など、指でスクロールして通り過ぎる必要がない場所に画像トリミングを置きます。
+- 動きを抑える設定では、つかんだときにハンドルが大きくなりません。強制カラーモードでは、ボックスはシステムカラーのアウトラインで、ハンドルはボタンの色で描画され、暗い部分は維持されます。
+
+## React、Svelte、Vue \{#frameworks\}
+
+`cropper` コンポーネントは、画像、ボックス、ハンドルを描画してビヘイビアを適用し、トリミング範囲の受け渡しを行います。パン方式の場合は、ページ独自の範囲入力に、枠と結び付けるための属性を渡します。`npx master-ui add cropper` でプロジェクトにコピーできます。コンポーネントの構成と使い方は [React、Svelte、Vue](/guide/frameworks) を参照してください。
+
+<FrameworkSource name="cropper" />
+
+## クラス \{#classes\}
+
+<ContractTable name="cropper" />
+
+## カスタムプロパティ \{#custom-properties\}
+
+<ContractTable name="cropper" show="properties" />
+
+## 関連コンポーネント \{#related\}
+
+<ComponentLinks slugs={['figure', 'compare', 'avatar', 'slider']} />
+
+## ソース \{#source\}
+
+<ComponentSource name="cropper" />

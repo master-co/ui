@@ -6,8 +6,9 @@ description: "콘텐츠가 이어지는 가장자리에 페이드가 적용되�
 import ComponentPreview from '~/site/components/ComponentPreview.astro'
 import ComponentSource from '~/site/components/ComponentSource.astro'
 import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
-스크롤 영역은 페이지 안에서 따로 스크롤할 수 있는 영역입니다. 패널 안의 긴 목록이나 폭이 넓은 표, 로그 등에 사용합니다. 플랫폼 기본 스크롤 동작을 유지하면서 가늘고 눈에 덜 띄는 스크롤바를 표시합니다. 콘텐츠가 가장자리 너머로 이어지는 곳은 서서히 흐려지고, 콘텐츠가 끝나는 곳은 선명하게 유지됩니다.
+스크롤 영역은 페이지 안에서 따로 스크롤할 수 있는 영역입니다. 패널 안의 긴 목록이나 폭이 넓은 표, 로그 등에 사용합니다. 플랫폼 기본 스크롤 동작을 유지하면서 가늘고 눈에 덜 띄는 스크롤바를 표시합니다. 콘텐츠가 가장자리 너머로 이어지는 곳은 서서히 흐려지고, 콘텐츠가 끝나는 곳은 선명하게 유지됩니다. 채팅이나 빌드 로그처럼 읽는 동안 끝부분에 내용이 추가되는 영역은 [새로 추가되는 내용을 따라갈](#follow) 수도 있습니다.
 
 <ComponentPreview name="default" height={248} title="스크롤 영역" bodyClass="p-lg" html={`<div class="sheet max-w(360) mx-auto">
   <div class="scroll-area h(200) p-md text-sm fg-text-body leading-md" tabindex="0" role="region" aria-label="Release notes">
@@ -52,11 +53,129 @@ import ContractTable from '~/site/components/ContractTable.astro'
   </div>
 </div>`} />
 
+## 새로 추가되는 내용 따라가기 \{#follow\}
+
+채팅, 빌드 로그, 스트리밍되는 답변은 읽는 동안 끝부분에 내용이 추가됩니다. 영역에 `role="log"`를 지정하고 `follow` [동작](/guide/behaviors)을 연결하세요. 동작은 콘텐츠가 추가되는 동안 끝부분을 계속 보이게 하고, 사용자가 끝에서 벗어나도록 스크롤하는 즉시 따라가기를 멈추며, 다시 끝으로 돌아오면 따라가기를 재개합니다. 콘텐츠 뒤에 `hidden`을 지정한 `scroll-area-latest` 버튼을 두세요. 이 버튼은 영역이 따라가지 않는 동안에만 나타나며, 누르면 끝으로 스크롤하고 다시 따라갑니다.
+
+<ComponentPreview name="follow" height={300} title="빌드 로그 따라가기" bodyClass="p-lg" behaviors html={`<div class="sheet max-w(440) mx-auto">
+  <div class="scroll-area h(240) p-md font-mono text-xs fg-text-body leading-md" tabindex="0" role="log" aria-label="Build log">
+    <div id="build-lines">
+      <p class="m(0)">Cloning master-co/ui at 3041b1c</p>
+      <p class="m(0)">Installing 596 packages</p>
+      <p class="m(0)">Compiling 112 stylesheets</p>
+    </div>
+    <button type="button" class="btn btn-sm btn-pill scroll-area-latest" hidden><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg>Jump to latest</button>
+  </div>
+</div>
+<script>
+  const steps = ['Checking contracts', 'Rendering /components', 'Rendering /blocks', 'Rendering /pages', 'Writing llms.txt', 'Writing the registry', 'Checking 2,914 links', 'Compressing assets', 'Uploading 71 pages']
+  const lines = document.getElementById('build-lines')
+  let count = 0
+  const timer = setInterval(() => {
+    const line = document.createElement('p')
+    line.className = 'm(0)'
+    line.textContent = steps[count % steps.length] + (count >= steps.length ? ' (pass ' + (Math.floor(count / steps.length) + 1) + ')' : '')
+    lines.append(line)
+    if (++count >= 120) clearInterval(timer)
+  }, 800)
+</script>`} caption="줄이 계속 추가되고 로그가 이를 따라갑니다. 실행 중에 위로 스크롤해 보세요. 로그는 현재 위치에 머무르고 Jump to latest 버튼이 나타납니다. 버튼을 누르거나 끝으로 다시 스크롤하면 로그가 다시 따라갑니다." />
+
+동작은 다음과 같이 판단합니다.
+
+- **따라가기.** 동작을 연결한 순간부터 영역은 따라가기 상태입니다. 영역을 끝까지 스크롤하고, 행이 추가되거나 스트리밍된 단어가 마지막 메시지에 들어오거나 이미지 로딩이 끝나는 등 담긴 내용이 늘어날 때마다 다시 끝까지 스크롤합니다.
+- **멈추기.** 휠, 손가락, 스크롤바, <kbd>↑</kbd>, <kbd>Page Up</kbd>, <kbd>Home</kbd> 등 무엇으로든 시작 방향으로 스크롤하면 따라가기가 멈춥니다. 휠을 시작 방향으로 돌리면 영역이 움직이기 전에 즉시 멈추므로, 그 순간 단어가 추가되어도 사용자를 다시 끝으로 끌어당기지 않습니다.
+- **다시 따라가기.** <kbd>End</kbd> 키, 스크롤바, 버튼으로 다시 끝에 도달하면 따라가기를 재개합니다. 끝에서 몇 픽셀 모자란 위치도 끝으로 간주합니다.
+- **이벤트.** 사용자의 조작으로 따라가기가 시작되거나 멈출 때마다 영역은 `change`를 발생시킵니다. 동작의 `value`는 따라가기 여부를 나타냅니다. 사용자가 메시지를 보냈을 때처럼 사용자를 끝으로 데려가려면 `true`로 설정하세요. 값을 설정해도 이벤트는 발행하지 않습니다.
+
+```js name=app.js
+import { follow } from '@master/ui/behaviors/follow.js'
+
+const log = document.querySelector('.scroll-area[role="log"]')
+const following = follow(log)
+
+form.addEventListener('submit', () => { following.value = true })
+```
+
+동작이 없으면 영역은 일반 스크롤 영역으로, 사용자가 둔 위치에 머무르며 버튼은 숨겨진 상태로 남습니다. 버튼은 영역 아래쪽에 고정되어 콘텐츠와 흐려지는 가장자리 위에 표시되며, 마지막 행 뒤가 아니라 그 위에 겹쳐 놓이므로 버튼이 나타나도 콘텐츠의 높이가 늘어나지 않습니다.
+
+## 읽던 위치 유지 \{#keeping-the-place\}
+
+위쪽에서 이전 메시지를 불러오는 것처럼 사용자가 보고 있는 부분보다 위에 콘텐츠를 삽입하면, 읽고 있던 내용이 아래로 밀려납니다. 브라우저는 스크롤 앵커링으로 이를 자체적으로 방지합니다. 영역이 위쪽 콘텐츠와 함께 움직이므로 읽고 있던 메시지가 제자리에 머무릅니다. 스타일시트는 영역에 `overflow-anchor: auto`를 유지하고, 브라우저가 고정 기준으로 삼지 않아야 하는 버튼에는 `none`을 지정합니다. 스크롤 앵커링을 지원하지 않는 브라우저에서는 `follow` 동작이 위쪽 콘텐츠가 움직인 만큼 직접 같은 처리를 합니다. 추가 내용을 불러오는 중이라는 안내처럼 그 아래에 행이 삽입되는 맨 위의 줄에도 `overflow-anchor: none`을 지정하세요. 그러면 브라우저가 그 줄 대신 행을 고정 기준으로 삼습니다.
+
+<ComponentPreview name="earlier" height={380} title="이전 메시지와 스트리밍되는 답변" bodyClass="p-lg" behaviors html={`<div class="sheet max-w(440) mx-auto">
+  <div class="scroll-area h(320) p-md" tabindex="0" role="log" aria-label="Conversation with Ada">
+    <p class="m(0) pb-sm text-center text-xs fg-text-muted" style="overflow-anchor: none" id="earlier">Earlier messages load as you scroll up</p>
+    <ol class="m(0) p(0)" id="turns">
+      <li class="message message-sent"><div class="message-bubble">Can the docs build run on every push?</div></li>
+      <li class="message"><div class="message-bubble">Yes. It takes about two minutes.</div></li>
+    </ol>
+    <button type="button" class="btn btn-sm btn-pill scroll-area-latest" hidden><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg>Jump to latest</button>
+  </div>
+</div>
+<script>
+  const turns = document.getElementById('turns')
+  const turn = (text, sent) => {
+    const item = document.createElement('li')
+    item.className = sent ? 'message message-sent' : 'message'
+    const bubble = document.createElement('div')
+    bubble.className = 'message-bubble'
+    bubble.textContent = text
+    item.append(bubble)
+    return item
+  }
+  const older = [['Morning! Is the release still today?', false], ['It is, once the docs build passes.', true], ['Which build?', false], ['The one that checks every page and link.', true], ['Do we wait for it?', false], ['No, it reports here when it is done.', true]]
+  const log = turns.closest('.scroll-area')
+  log.addEventListener('scroll', () => {
+    if (log.scrollTop > 48 || !older.length) return
+    for (const [text, sent] of older.splice(-2).reverse()) turns.prepend(turn(text, sent))
+    if (!older.length) document.getElementById('earlier').textContent = 'The start of the conversation'
+  })
+  const exchanges = [
+    ['What does it check?', 'It renders every page in five languages, checks each preview against the contracts, follows every link and compares the registry with the package, then writes the search index.'],
+    ['And if a link is broken?', 'The build stops and names the page and the link, so nothing half checked reaches the site. Fix it and push again; the next run starts from the beginning.'],
+    ['Thanks!', 'Any time. I will post here when this one is done.']
+  ]
+  let at = 0
+  const next = () => {
+    if (at >= exchanges.length) return
+    const [question, answer] = exchanges[at++]
+    turns.append(turn(question, true))
+    const reply = turn('', false)
+    const bubble = reply.firstChild
+    bubble.setAttribute('aria-busy', 'true')
+    turns.append(reply)
+    const words = answer.split(' ')
+    const stream = setInterval(() => {
+      bubble.textContent += (bubble.textContent ? ' ' : '') + words.shift()
+      if (words.length) return
+      clearInterval(stream)
+      bubble.removeAttribute('aria-busy')
+      setTimeout(next, 2500)
+    }, 140)
+  }
+  setTimeout(next, 1200)
+</script>`} caption="답변이 스트리밍되고 대화가 이를 따라갑니다. 위로 스크롤해 보세요. 맨 위 가까이에 이르면 이전 대화가 위쪽에 추가되고, 읽고 있던 대화는 제자리에 머무릅니다." />
+
 ## 접근성 \{#accessibility\}
 
 - 스크롤할 수 있는 영역에는 키보드로 접근할 수 있어야 합니다. 영역 안에 포커스를 받을 수 있는 콘텐츠가 없다면 영역에 `tabindex="0"`과 `region` 같은 `role`, 그리고 레이블을 지정하세요.
 - 마스크는 같은 가장자리에서 영역 자체의 스크롤바도 흐리게 표시합니다. 강제 색상 모드에서는 마스크를 제거합니다.
 - 영역의 높이나 최대 높이를 지정하세요. 둘 다 지정하지 않으면 콘텐츠에 맞춰 영역이 늘어나므로 스크롤이 생기지 않습니다.
+- `role="log"`는 정중한(polite) 라이브 영역입니다. 여기에 추가된 내용은 포커스를 옮기지 않고 안내됩니다. 메시지에 답변이 스트리밍되는 동안 해당 메시지에 `aria-busy="true"`를 지정하고 답변이 완료되면 제거하세요. 그러면 단어 하나하나가 아니라 완성된 메시지가 한 번에 읽힙니다.
+- `scroll-area-latest` 버튼은 표시되는 동안 탭 순서에 포함되는 실제 버튼입니다. 누르면 버튼이 숨겨지고 포커스가 영역으로 이동하므로, 이후 키보드로 영역을 스크롤할 수 있습니다.
+- 따라가기는 포커스를 옮기지 않으며 사용자가 스크롤해 벗어나는 즉시 멈춥니다. 따라서 계속 추가되는 콘텐츠 때문에 읽던 내용이 사용자 눈앞에서 사라지지 않습니다.
+
+## 키보드 \{#keyboard\}
+
+키 조작은 브라우저의 기본 동작이며, 동작은 키 입력으로 생긴 스크롤만 감지합니다.
+
+<ContractTable name="scroll-area" show="keyboard" />
+
+## React, Svelte, Vue \{#frameworks\}
+
+`log` 컴포넌트는 자식 요소를 감싸는 따라가기 스크롤 영역을 버튼과 함께 렌더링하고, 동작을 연결하며, `following`을 주고받습니다. `npx master-ui add log`로 프로젝트에 복사하세요. 컴포넌트의 구성과 사용법은 [React, Svelte, Vue](/guide/frameworks)에서 확인할 수 있습니다.
+
+<FrameworkSource name="scroll-area" />
 
 ## 클래스 \{#classes\}
 

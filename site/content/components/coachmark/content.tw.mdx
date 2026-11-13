@@ -6,8 +6,9 @@ description: "操作導覽中的一個步驟，指向要說明的控制項。"
 import ComponentPreview from '~/site/components/ComponentPreview.astro'
 import ComponentSource from '~/site/components/ComponentSource.astro'
 import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
-導覽提示是操作導覽中的一個步驟，用一張小卡片指向控制項並說明其用途。它是彈出視窗，因此瀏覽器會將它放在頂層，並把焦點移入其中。CSS 錨點定位會將卡片放在開啟它的元素旁，並以箭頭指向該元素。提示點是個不時向外擴散圓環的小圓點，用來標示頁面上的位置，也是開啟卡片的按鈕。
+導覽提示是操作導覽中的一個步驟，用一張小卡片指向控制項並說明其用途。它是彈出視窗，因此瀏覽器會將它放在頂層，並把焦點移入其中。CSS 錨點定位會將卡片放在開啟它的元素旁，並以箭頭指向該元素。提示點是個不時向外擴散圓環的小圓點，用來標示頁面上的位置，也是開啟卡片的按鈕。操作導覽則透過 `tour` 行為依序開啟多則導覽提示。
 
 <ComponentPreview name="default" height={256} narrowHeight={284} title="導覽提示" bodyClass="flex items-end justify-center p-lg" html={`<div class="toolbar" role="toolbar" aria-label="Deployments">
   <button type="button" class="btn btn-quiet btn-sm btn-square" aria-label="Search">
@@ -51,7 +52,7 @@ import ContractTable from '~/site/components/ContractTable.astro'
 
 導覽提示預設在觸發元素正下方置中開啟，箭頭尖端距離該元素 6px。下方空間不足時，卡片會翻到上方。`coachmark-top` 優先使用上方空間，適合靠近畫面底部的控制項，或像第一個範例那樣把提示點放在控制項的上角。
 
-箭頭會指向標記中緊接在導覽提示前面的元素，因此請把導覽提示放在提示點或所要說明的控制項之後。導覽提示開啟時，該元素會成為具名錨點，箭頭會對準其中央。即使檢視區邊緣把卡片推向一旁，箭頭也會維持對準，同時避開卡片的圓角。卡片翻轉時，箭頭會移到另一側。和操作導覽一樣，一次只會開啟一則導覽提示。
+箭頭會指向標記中緊接在導覽提示前面的元素，因此請把導覽提示放在提示點或所要說明的控制項之後；在操作導覽中，箭頭則指向導覽的聚光燈，聚光燈會覆蓋在該步驟的目標上。導覽提示開啟時，該元素會成為具名錨點，箭頭會對準其中央。即使檢視區邊緣把卡片推向一旁，箭頭也會維持對準，同時避開卡片的圓角。卡片翻轉時，箭頭會移到另一側。和操作導覽一樣，一次只會開啟一則導覽提示。
 
 ## 提示點 \{#beacon\}
 
@@ -61,82 +62,180 @@ import ContractTable from '~/site/components/ContractTable.astro'
 
 ## 操作導覽 \{#tour\}
 
-操作導覽會依序開啟數則導覽提示。為每個步驟設定 `popover="manual"`，讓使用者點擊頁面（例如試用箭頭指向的控制項）時仍能繼續導覽。用一小段腳本切換步驟。`showPopover({ source })` 會以步驟前方的元素為錨點開啟該步驟，各步驟的操作按鈕則呼叫它開啟下一步或上一步。手動彈出視窗需要由腳本處理 <kbd>Esc</kbd>，關閉視窗後再將焦點移回導覽的起點。
+操作導覽會依序開啟數則導覽提示，每則都以它所說明的控制項為錨點。將各步驟依進行順序放在 `coachmark-tour` 中，並為每個步驟設定 `popover="manual"`，讓使用者點擊頁面（例如試用步驟所指的控制項）時不會結束導覽。步驟以 `data-target` 中的選擇器指定目標；沒有指定時，會指向標記中緊接在它前面的元素。步驟的按鈕以 `value` 表示其作用：`next`、`back`、`skip`，最後一個步驟則用 `done`。
 
-<ComponentPreview name="tour" height={256} narrowHeight={284} title="操作導覽" bodyClass="flex items-start justify-center gap-sm p-lg" html={`<button type="button" class="btn btn-sm" id="tour-start">Take the tour</button>
-<div class="toolbar" role="toolbar" aria-label="Deployments">
-  <button type="button" class="btn btn-quiet btn-sm btn-square" aria-label="Search">
-    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.35-4.35"/></svg>
-  </button>
-  <div id="tour-search" popover="manual" class="coachmark" role="dialog" aria-labelledby="tour-search-title">
+其餘工作由 `tour` [行為](/guide/behaviors)處理。帶有 `command="--start"` 且以 `commandfor` 指向導覽的按鈕會開始導覽；行為會用 `showPopover({ source })` 以目標為錨點開啟每個步驟，讓瀏覽器把卡片錨定在那裡並由 CSS 定位，再把焦點移入卡片中的「下一步」或「完成」。導覽中的 `coachmark-spotlight` 會先在目標上方開啟：無論步驟位在標記中的哪個位置，步驟的箭頭都會指向它。
+
+<ComponentPreview name="tour" height={272} title="操作導覽" bodyClass="flex items-start justify-center p-lg" behaviors html={`<div class="coachmark-tour flex items-center gap-sm" id="deploys-tour">
+  <button type="button" class="btn btn-sm" commandfor="deploys-tour" command="--start">Take the tour</button>
+  <div class="toolbar" role="toolbar" aria-label="Deployments">
+    <button type="button" class="btn btn-quiet btn-sm btn-square" id="deploys-search" aria-label="Search">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.35-4.35"/></svg>
+    </button>
+    <button type="button" class="btn btn-quiet btn-sm btn-square" id="deploys-filter" aria-label="Filter">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+    </button>
+    <button type="button" class="btn btn-quiet btn-sm btn-square" id="deploys-share" aria-label="Share">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M8 8l4-4 4 4M5 14v5h14v-5"/></svg>
+    </button>
+  </div>
+  <div class="coachmark-spotlight" popover="manual"></div>
+  <div class="coachmark" popover="manual" role="dialog" aria-labelledby="deploys-search-title" data-target="#deploys-search">
     <p class="coachmark-count">1 of 3</p>
-    <h2 class="coachmark-title" id="tour-search-title">Search every deployment</h2>
+    <h2 class="coachmark-title" id="deploys-search-title">Search every deployment</h2>
     <p class="coachmark-text">Find one by its branch, its commit or the person who shipped it.</p>
     <div class="coachmark-actions">
       <button type="button" class="btn btn-sm btn-quiet" value="skip">Skip</button>
-      <button type="button" class="btn btn-sm" value="next" autofocus>Next</button>
+      <button type="button" class="btn btn-sm" value="next">Next</button>
     </div>
   </div>
-  <button type="button" class="btn btn-quiet btn-sm btn-square" aria-label="Filter">
-    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
-  </button>
-  <div id="tour-filter" popover="manual" class="coachmark" role="dialog" aria-labelledby="tour-filter-title">
+  <div class="coachmark" popover="manual" role="dialog" aria-labelledby="deploys-filter-title" data-target="#deploys-filter">
     <p class="coachmark-count">2 of 3</p>
-    <h2 class="coachmark-title" id="tour-filter-title">Filter the list</h2>
+    <h2 class="coachmark-title" id="deploys-filter-title">Filter the list</h2>
     <p class="coachmark-text">Keep only the deployments of one branch, one author or one status.</p>
     <div class="coachmark-actions">
       <button type="button" class="btn btn-sm btn-quiet" value="skip">Skip</button>
       <button type="button" class="btn btn-sm btn-quiet" value="back">Back</button>
-      <button type="button" class="btn btn-sm" value="next" autofocus>Next</button>
+      <button type="button" class="btn btn-sm" value="next">Next</button>
     </div>
   </div>
-  <button type="button" class="btn btn-quiet btn-sm btn-square" aria-label="Share">
-    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M8 8l4-4 4 4M5 14v5h14v-5"/></svg>
-  </button>
-  <div id="tour-share" popover="manual" class="coachmark" role="dialog" aria-labelledby="tour-share-title">
+  <div class="coachmark" popover="manual" role="dialog" aria-labelledby="deploys-share-title" data-target="#deploys-share">
     <p class="coachmark-count">3 of 3</p>
-    <h2 class="coachmark-title" id="tour-share-title">Share a deployment</h2>
+    <h2 class="coachmark-title" id="deploys-share-title">Share a deployment</h2>
     <p class="coachmark-text">Copy a link to it, open for anyone on the team.</p>
     <div class="coachmark-actions">
       <button type="button" class="btn btn-sm btn-quiet" value="back">Back</button>
-      <button type="button" class="btn btn-sm" value="done" autofocus>Done</button>
+      <button type="button" class="btn btn-sm" value="done">Done</button>
+    </div>
+  </div>
+</div>`} caption="開始導覽，試試「下一步」、「上一步」和 Esc。" />
+
+導覽可以像這裡一樣包住它所說明的區域，也可以只包含步驟和聚光燈：步驟可以在文件中的任何位置找到目標。關閉時，步驟和聚光燈不占空間，因此導覽本身可以就是它所在的那一列。
+
+由提示點開啟的單則導覽提示不需要這些。它使用 `popover="auto"`：點擊外部或按下 <kbd>Esc</kbd> 時，瀏覽器會關閉它並將焦點移回提示點，全程無須腳本。
+
+## 等待中的步驟 \{#waiting\}
+
+步驟可以等待讀者，也可以等待它的目標。
+
+- **操作。** 帶有 `data-advance` 的步驟會指定目標上的某個事件（例如 `click`），觸發時導覽便繼續。不要給它「下一步」：它要求讀者親自操作，等頁面回應後導覽才會繼續。「略過」和 <kbd>Esc</kbd> 仍可離開。
+- **稍後才出現的目標。** 當步驟的目標不在頁面中或尚未算繪時，步驟會等待它，並在它出現後立即開啟，例如由按鈕顯示的欄位，或仍在載入的列。目標在三秒後（或依行為的 `wait` 設定的時間）仍未出現時，該步驟會被跳過；越過最後一個步驟時，導覽即算完成。導覽不會停在一張什麼都沒指到的卡片上，而無法顯示的步驟所包含的內容，應該讓讀者不靠它也能找到。
+
+<ComponentPreview name="waiting" height={336} title="等待中的步驟" bodyClass="flex items-start justify-center p-lg" behaviors html={`<div class="coachmark-tour flex flex-col items-center gap-md" id="projects-tour">
+  <div class="flex items-center gap-sm">
+    <button type="button" class="btn btn-sm" commandfor="projects-tour" command="--start">Take the tour</button>
+    <button type="button" class="btn btn-sm btn-primary" id="projects-new">New project</button>
+  </div>
+  <input class="input w(240)" id="projects-name" placeholder="Project name" aria-label="Project name" hidden>
+  <div class="coachmark-spotlight" popover="manual"></div>
+  <div class="coachmark" popover="manual" role="dialog" aria-labelledby="projects-new-title" data-target="#projects-new" data-advance="click">
+    <p class="coachmark-count">1 of 2</p>
+    <h2 class="coachmark-title" id="projects-new-title">Start a project</h2>
+    <p class="coachmark-text">Press New project. The tour goes on once its form is open.</p>
+    <div class="coachmark-actions">
+      <button type="button" class="btn btn-sm btn-quiet" value="skip">Skip</button>
+    </div>
+  </div>
+  <div class="coachmark" popover="manual" role="dialog" aria-labelledby="projects-name-title" data-target="#projects-name">
+    <p class="coachmark-count">2 of 2</p>
+    <h2 class="coachmark-title" id="projects-name-title">Name it</h2>
+    <p class="coachmark-text">Use the name your team already calls it by. You can change it later.</p>
+    <div class="coachmark-actions">
+      <button type="button" class="btn btn-sm btn-quiet" value="back">Back</button>
+      <button type="button" class="btn btn-sm" value="done">Done</button>
     </div>
   </div>
 </div>
 <script>
-  var start = document.getElementById('tour-start')
-  var steps = [document.getElementById('tour-search'), document.getElementById('tour-filter'), document.getElementById('tour-share')]
-  function show(index) {
-    steps.forEach(function (step) { if (step.matches(':popover-open')) step.hidePopover() })
-    if (steps[index]) steps[index].showPopover({ source: steps[index].previousElementSibling })
-    else start.focus()
-  }
-  start.addEventListener('click', function () { show(0) })
-  steps.forEach(function (step, index) {
-    step.addEventListener('click', function (event) {
-      var action = event.target.closest('button')
-      if (!action) return
-      show(action.value === 'next' ? index + 1 : action.value === 'back' ? index - 1 : -1)
-    })
-    step.addEventListener('keydown', function (event) {
-      if (event.key === 'Escape') show(-1)
-    })
+  document.getElementById('projects-new').addEventListener('click', function () {
+    setTimeout(function () { document.getElementById('projects-name').hidden = false }, 400)
   })
-</script>`} caption="開始導覽，試試「下一步」、「上一步」和 Esc。" />
+</script>`} caption="開始導覽，再按下 New project：下一個步驟會等待欄位出現。" />
 
-由提示點開啟的單則導覽提示使用 `popover="auto"`。點擊外部或按下 <kbd>Esc</kbd> 時，瀏覽器會關閉它並將焦點移回提示點，全程無須腳本。
+## 聚光燈 \{#spotlight\}
+
+`coachmark-spotlight-dim` 會用[對話框](/components/dialog)的遮罩讓步驟目標周圍的頁面變暗，並讓目標及其周圍 4px 保持明亮，圓角為控制項的圓角加上這段內距。遮罩是一圈與畫面同寬的陰影，由聚光燈繪製，錨點定位讓聚光燈維持在目標上方，因此頁面捲動時遮罩會跟著目標移動。導覽開始時遮罩淡入，結束時淡出；從一個步驟換到下一個步驟時，明亮的位置會直接移動。
+
+遮罩只是視覺效果，並不會阻擋操作：底下的頁面仍會回應指標和按鍵，讀者可以試用步驟所指的控制項，導覽也不會妨礙他們做其他事。第一次導覽某個畫面、需要引導視線時使用它；只是介紹一個新控制項的提示則不要使用。
+
+<ComponentPreview name="spotlight" height={352} title="聚光燈" bodyClass="flex items-start justify-center p-lg" behaviors html={`<div class="coachmark-tour flex flex-col items-center gap-md" id="release-tour">
+  <button type="button" class="btn btn-sm" commandfor="release-tour" command="--start">Take the tour</button>
+  <div class="card flex-row items-center gap-md p-md w(300)">
+    <div class="flex flex-col grow(1)">
+      <span class="text-sm fg-text-strong">atlas.dev</span>
+      <span class="text-xs fg-text-muted" id="release-status">Ready, 2 minutes ago</span>
+    </div>
+    <button type="button" class="btn btn-sm btn-primary" id="release-deploy">Deploy</button>
+  </div>
+  <div class="coachmark-spotlight coachmark-spotlight-dim" popover="manual"></div>
+  <div class="coachmark" popover="manual" role="dialog" aria-labelledby="release-status-title" data-target="#release-status">
+    <p class="coachmark-count">1 of 2</p>
+    <h2 class="coachmark-title" id="release-status-title">See where it stands</h2>
+    <p class="coachmark-text">Each project says whether its last build is ready and when it ran.</p>
+    <div class="coachmark-actions">
+      <button type="button" class="btn btn-sm btn-quiet" value="skip">Skip</button>
+      <button type="button" class="btn btn-sm" value="next">Next</button>
+    </div>
+  </div>
+  <div class="coachmark" popover="manual" role="dialog" aria-labelledby="release-deploy-title" data-target="#release-deploy">
+    <p class="coachmark-count">2 of 2</p>
+    <h2 class="coachmark-title" id="release-deploy-title">Ship it</h2>
+    <p class="coachmark-text">Deploy sends the ready build to production.</p>
+    <div class="coachmark-actions">
+      <button type="button" class="btn btn-sm btn-quiet" value="back">Back</button>
+      <button type="button" class="btn btn-sm" value="done">Done</button>
+    </div>
+  </div>
+</div>`} caption="開始導覽：頁面會在每個步驟的目標周圍變暗。" />
+
+在強制色彩模式下不會繪製陰影，改以系統醒目提示色的外框標示目標。
+
+## 行為 \{#behavior\}
+
+`tour` 接收根元素（帶有 `coachmark-tour` 類別的元素），並回傳可卸載行為的函式。從 `@master/ui/behaviors` 匯入的 `attach()` 會找出頁面上的每個導覽。
+
+```js name=app.js
+import { tour } from '@master/ui/behaviors/tour.js'
+
+const root = document.querySelector('#deploys-tour')
+const deploys = tour(root)
+
+deploys.value = 0 // starts the tour, as the button does
+root.addEventListener('end', (event) => {
+  if (event.detail.completed) localStorage.setItem('deploys-tour', 'seen')
+})
+```
+
+- **值**是導覽目前所在步驟的索引，從 0 開始；導覽未執行時為 `null`。設定它可開啟某個步驟，設為 `null` 則結束導覽；這兩種做法都不會派送事件。
+- **事件。** 每當導覽移到另一個步驟，根元素都會派送可向上冒泡的 `change` 事件，索引放在 `detail.value`。讀者結束導覽時，會先派送值為 `null` 的 `change`，再派送 `end`；讀者走完最後一個步驟時，其 `detail.completed` 為 true，在那之前透過「略過」、<kbd>Esc</kbd> 或其他關閉步驟的方式離開時則為 false。
+- **焦點**會在每個步驟開啟時移入其中：移到帶有 `autofocus` 的操作，否則移到「下一步」或「完成」，再否則移到步驟本身。導覽結束時，焦點會回到導覽開始時的位置，除非讀者之後已把焦點移到頁面中的其他地方。
+- **選項。** `target(step, index)` 會找出步驟的目標，適用於自行持有目標的頁面；`wait` 是步驟等待目標的時間，單位為毫秒，預設為 3000。
+- **觸發指令。** 瀏覽器不支援 `command` 和 `commandfor` 時，行為會自行監聽開始按鈕的點擊。
+
+沒有行為時，導覽不會開始；步驟保持關閉，頁面少了它們依然完整。請從 `end` 事件記住讀者已看完導覽，之後不要再自動開始：改由讀者日後找得到的按鈕提供。
+
+## 鍵盤操作 \{#keyboard\}
+
+<ContractTable name="coachmark" show="keyboard" />
 
 ## 無障礙 \{#accessibility\}
 
-- 為導覽提示設定 `role="dialog"`，並透過 `aria-labelledby` 以其標題作為名稱。這是非模態對話框，使用者仍可操作周圍的頁面。
-- 在主要操作按鈕上加上 `autofocus`，讓卡片開啟時焦點移入其中，使用者便可按 <kbd>Enter</kbd> 繼續。
+- 為導覽提示設定 `role="dialog"`，並透過 `aria-labelledby` 以其標題作為名稱。這是非模態對話框，使用者仍可操作周圍的頁面；在操作導覽中，聚光燈下的頁面也一樣。
+- 在由提示點開啟的導覽提示的主要操作按鈕上加上 `autofocus`，讓卡片開啟時焦點移入其中，使用者便可按 <kbd>Enter</kbd> 繼續。操作導覽的步驟則由行為移入焦點。
 - 每個步驟都應能退出，可透過「略過」或「完成」按鈕，也可按 <kbd>Esc</kbd>。單則導覽提示還可透過點擊外部關閉。
-- 導覽中的所有資訊都應能從其他地方取得，讓略過導覽的使用者也能找到完整資訊。
+- 從讀者的操作開始導覽，例如按下按鈕，絕不要在頁面載入時開始：導覽是輔助說明，不應搶走讀者原本要處理的工作的焦點。
+- 導覽中的所有資訊都應能從其他地方取得，讓略過導覽的使用者，或遇到步驟被跳過時，也不會錯過任何內容。
 - 在標記中將導覽提示緊接在提示點之後，這樣無論卡片顯示在哪裡，Tab 鍵都會在提示點之後進入導覽提示。
+
+## React、Svelte 和 Vue \{#frameworks\}
+
+`tour` 元件會依資料中的每個項目寫出一個步驟，各含標題、文字、計數和所需的操作按鈕，並接收和傳出開啟中步驟的索引，以 `onEnd` 回報導覽結束。步驟的目標可以是選擇器、元素、ref，或找出目標的函式。使用 `npx master-ui add tour` 將元件複製到專案中；元件的實作方式與用法請見 [React、Svelte 和 Vue](/guide/frameworks)。
+
+<FrameworkSource name="coachmark" />
 
 ## 瀏覽器支援 \{#browser-support\}
 
-導覽提示使用 CSS 錨點定位。卡片的位置由 `position-area` 和 `position-try-fallbacks` 決定，箭頭則使用 `anchor()` 相對於卡片與所指向的元素定位。瀏覽器若不支援錨點定位，導覽提示仍可開關，會依瀏覽器的彈出視窗預設位置在檢視區置中顯示，並省略箭頭。`showPopover()` 的 `source` 選項為導覽步驟指定錨點。未提供此選項時，步驟會在沒有錨點的情況下開啟。淡入與短距離滑動使用 `@starting-style`，缺少支援時卡片會立即出現或消失。
+導覽提示使用 CSS 錨點定位。卡片的位置由 `position-area` 和 `position-try-fallbacks` 決定，箭頭和操作導覽的聚光燈則使用 `anchor()` 相對於卡片與所指向的元素定位。瀏覽器若不支援錨點定位，導覽提示仍可開關，會依瀏覽器的彈出視窗預設位置在檢視區置中顯示，並省略箭頭；聚光燈不會讓任何區域變暗，因為它無法讓目標保持明亮。`showPopover()` 的 `source` 選項為導覽步驟指定錨點。未提供此選項時，步驟會在沒有錨點的情況下開啟。開始按鈕使用觸發指令，瀏覽器不支援時由行為代為處理。淡入與短距離滑動使用 `@starting-style`，缺少支援時卡片和遮罩會立即出現或消失。
 
 卡片進場時會淡入並朝錨點滑動 4px，退場時則以較短的時間淡出。卡片維持原尺寸，因為套用其他彈出視窗的縮放效果會把箭頭縮進卡片範圍內，使箭頭無法伸向所指的元素。
 

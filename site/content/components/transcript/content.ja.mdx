@@ -1,0 +1,118 @@
+---
+title: "トランスクリプト"
+description: "録音の内容を、再生に合わせて追従するキューで表示します。"
+---
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+トランスクリプトは、録音で話されている内容を、それぞれ開始時刻を持つキューのリストとして示します。再生に合わせて追従し、話されているキューは浮き上がったシートの上に強調して表示され、すでに聞いたキューは控えめになり、これから来るキューは本文のインクのまま待機します。キューを選ぶと、録音がそこから再生されます。`transcript` の[ビヘイビア](/guide/behaviors)が、`aria-controls` で ID を指定した[メディアプレーヤー](/components/player)、または通常の `<audio>` や `<video>` とトランスクリプトを結び付けます。
+
+<ComponentPreview name="default" height={296} narrowHeight={312} title="トランスクリプト" background="plain" bodyClass="content-start p-lg" behaviors html={`<div class="grid gap-sm max-w(480) mx-auto">
+  <div class="player" id="talk" role="group" aria-label="A short recording">
+    <audio class="player-media" src="/demo/recording.m4a" controls preload="metadata"></audio>
+    <div class="player-controls">
+      <button type="button" class="player-button player-play" aria-label="Play" aria-pressed="false">
+        <svg class="icon player-off" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.8v14.4a1 1 0 0 0 1.5.86l11.5-7.2a1 1 0 0 0 0-1.72L8.5 3.94A1 1 0 0 0 7 4.8"/></svg>
+        <svg class="icon player-on" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+      </button>
+      <span class="player-elapsed">0:00</span>
+      <input type="range" class="slider player-seek" min="0" max="0" step="any" value="0" aria-label="Seek">
+      <span class="player-duration">0:00</span>
+    </div>
+  </div>
+  <section class="transcript" aria-label="Transcript" aria-controls="talk" style="--transcript-height: 12rem">
+    <ol class="transcript-list scroll-area">
+      <li class="transcript-cue" data-start="0.3"><button type="button" class="transcript-time">0:00</button><p class="transcript-text">This is a short recording, made to show the player and its transcript.</p></li>
+      <li class="transcript-cue" data-start="4.7"><button type="button" class="transcript-time">0:04</button><p class="transcript-text">Each line of the transcript is a cue, with the time it begins.</p></li>
+      <li class="transcript-cue" data-start="8.7"><button type="button" class="transcript-time">0:08</button><p class="transcript-text">The line being spoken is marked, and the transcript keeps it in view.</p></li>
+      <li class="transcript-cue" data-start="13.06"><button type="button" class="transcript-time">0:13</button><p class="transcript-text">Lines you have heard turn quiet. The ones still to come wait in plain ink.</p></li>
+      <li class="transcript-cue" data-start="17.65"><button type="button" class="transcript-time">0:17</button><p class="transcript-text">Choose any line to jump to it, or scroll away and come back later.</p></li>
+      <li class="transcript-cue" data-start="21.79"><button type="button" class="transcript-time">0:21</button><p class="transcript-text">That is the whole recording. Thank you for listening.</p></li>
+    </ol>
+    <button type="button" class="btn btn-sm btn-pill transcript-return" hidden>Back to current</button>
+  </section>
+</div>`} caption="再生してから行を選びます。再生中にトランスクリプトをスクロールして現在の行から離れると、追従が止まり、元に戻るためのボタンが表示されます。" />
+
+## 追従とスクロール \{#following\}
+
+録音の再生中、ビヘイビアは現在のキューに `aria-current="true"` を付けます。現在のキューは、`data-start` を過ぎた最後のキューです。そのため、2 つのキューの間に間があっても位置が保たれます。それより前のキューは、スタイルシートだけで再生済みとして描画されます。
+
+リストは現在のキューを中央に保ちます。スクロールするのはリスト自身だけで、周囲の要素はスクロールしないため、トランスクリプトを置いたページが読者の操作中に動くことはありません。スクロールは滑らかに行われ、動きを抑える設定をしている読者には瞬時に移動します。読者がホイール、指、キー、スクロールバーでリストをスクロールし、現在のキューが表示範囲から外れると、リストは追従を止めます。リストの下端に表示される小さなピル形の `transcript-return` で、元に戻せます。キューを選ぶか、現在のキューが再び表示範囲に入るまでスクロールすると、追従が再開します。
+
+リストは `--transcript-height` の範囲内でスクロールします。指定しない場合は 20rem です。リストに [`scroll-area`](/components/scroll-area) を追加すると、細いスクロールバーと、続きがある端のフェードが付きます。
+
+## WebVTT トラックから生成する \{#from-a-track\}
+
+リストが空の場合、ビヘイビアは TextTrack API を通じてメディアの最初の captions または subtitles のトラックを読み取り、キューを書き込みます。書き込むのは、時刻、タグを除いた文言、そして声タグ（`<v Ana>`）が示す話者です。トラックは disabled でなくなって初めてキューを読み込むため、ビヘイビアは disabled のトラックを `hidden` にします。`hidden` のトラックは映像の上に何も表示しません。この例では、トランスクリプトはブラウザー標準のコントロールを持つ通常の `<audio>` に追従しています。
+
+<ComponentPreview name="track" height={360} title="トラックから生成する" background="plain" bodyClass="content-start p-lg" behaviors html={`<div class="grid gap-sm max-w(480) mx-auto">
+  <audio id="talk-audio" class="w-full" src="/demo/recording.m4a" controls preload="metadata">
+    <track kind="captions" src="/demo/recording.vtt" srclang="en" label="English">
+  </audio>
+  <section class="transcript" aria-label="Transcript" aria-controls="talk-audio" style="--transcript-height: 15rem">
+    <ol class="transcript-list scroll-area"></ol>
+    <button type="button" class="btn btn-sm btn-pill transcript-return" hidden>Back to current</button>
+  </section>
+</div>`} caption="キューは recording.vtt から読み取ります。スクリプトがない場合、このリストは空のままです。スクリプトなしで読める必要がある場合は、キューをページに記述します。" />
+
+## ビヘイビア \{#behavior\}
+
+`transcript` は、`transcript` クラスを持つ要素であるルートを受け取り、ビヘイビアを解除する関数を返します。
+
+```js name=app.js
+import { transcript } from '@master/ui/behaviors/transcript.js'
+
+const detach = transcript(document.querySelector('.transcript'))
+```
+
+- **メディア**は、`aria-controls` が指定する要素です。メディアプレーヤーの場合はその `player-media` を使い、`<audio>` や `<video>` の場合はそれ自体を使います。ビヘイビアはメディアがイベントを発行するたびに参照し直すため、トランスクリプトより後に書き込まれたメディアや、後から別のメディアを指定した場合にも追従します。`media` オプションを使うと、代わりに要素を直接指定できます。
+- **キュー**は、開始時刻の秒数を表す `data-start` を持つ `li` で、`transcript-time` ボタンと `transcript-text` を含みます。キューのどこを押しても、その開始位置から再生します。ただし、読者がキューの文言を選択している場合は除きます。時刻の上で <kbd class="kbd">Enter</kbd> を押しても同じです。
+- **ほかの場所で書き込まれた行**　ビヘイビアはリストを毎回読み取り、内容を保持しません。そのため、レンダラーがキューを書き込んだり変更したりできます。`draw: false` を指定すると、空のリストをレンダラーに任せます。`track` は、キューを書き込む元のトラックを選びます。ビヘイビアが書き込んだ行は、解除時に削除されます。
+
+| オプション | 既定値 | |
+| --- | --- | --- |
+| `media` | `aria-controls` から取得 | 追従するメディア要素 |
+| `track` | 最初の captions または subtitles のトラック | 空のリストを書き込む元のトラック |
+| `draw` | `true` | 空のリストをトラックから書き込むかどうか |
+
+ビヘイビアを適用しない場合、キューは読者が読むためのリストになります。何も強調されず、追従もせず、キューを選んでもシークしません。
+
+## キーボード操作 \{#keyboard\}
+
+時刻のボタン群はタブ移動で 1 か所だけ止まり、その位置は現在のキューの時刻です。ボタン間は矢印キーで移動します。そのため、長いトランスクリプトでもタブ移動の順序が長くなりません。
+
+<ContractTable name="transcript" show="keyboard" />
+
+## アクセシビリティ \{#accessibility\}
+
+- トランスクリプトには、`aria-label` または `aria-labelledby` で参照する見出しで名前を付け、`aria-controls` でメディアを指定します。
+- 現在のキューは `aria-current="true"` です。スタイルシートは色相ではなくインクの濃さと奥行きで描画し、強制カラーモードではシステムカラーのアウトラインで描画します。
+- 録音の再生中に、トランスクリプトが自らフォーカスを取ることはありません。フォーカスは読者が動かしたときにだけ移動し、元に戻るボタンを選んだときには現在のキューに戻ります。
+- 映像のない録音を音声なしで理解するには、トランスクリプトが必要です。スクリプトなしでページを読める必要がある場合は、トランスクリプトをページに記述します。
+
+## React、Svelte、Vue \{#frameworks\}
+
+`transcript` コンポーネントは、`cues` からキューを書き込みます。各キューは `start`、`text`、省略可能な `speaker` を持ちます。`media` として渡したメディアを指定し、キューの強調と追従を行うビヘイビアを適用します。`npx master-ui add transcript` でプロジェクトにコピーできます。コンポーネントの構成と使い方は [React、Svelte、Vue](/guide/frameworks) を参照してください。
+
+<FrameworkSource name="transcript" />
+
+## クラス \{#classes\}
+
+<ContractTable name="transcript" />
+
+元に戻るボタンは、`transcript-return` パーツを付けた `btn btn-sm btn-pill` の[ボタン](/components/button)です。
+
+## カスタムプロパティ \{#custom-properties\}
+
+<ContractTable name="transcript" show="properties" />
+
+## 関連コンポーネント \{#related\}
+
+<ComponentLinks slugs={['player', 'scroll-area', 'timeline']} />
+
+## ソース \{#source\}
+
+<ComponentSource name="transcript" />

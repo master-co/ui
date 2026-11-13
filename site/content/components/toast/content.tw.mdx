@@ -8,7 +8,7 @@ import ComponentSource from '~/site/components/ComponentSource.astro'
 import ContractTable from '~/site/components/ContractTable.astro'
 import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
-浮動通知是在頁面上方短暫顯示的訊息，用來告知使用者剛發生的事，例如已儲存、已部署或已複製。每則通知都是固定定位的 `toast-region` 內的非模態 `<dialog>`，可透過對話框的原生機制關閉，無須腳本，進出場動畫則由 CSS 樣式表處理。
+浮動通知是在頁面上方短暫顯示的訊息，用來告知使用者剛發生的事（例如已儲存、已部署或已複製），或告知正在進行、之後會回報結果的工作。每則通知都是固定定位的 `toast-region` 內的非模態 `<dialog>`，可透過對話框的原生機制關閉，無須腳本，進出場動畫則由 CSS 樣式表處理。
 
 <ComponentPreview name="default" height={240} title="浮動通知" bodyClass="content-start p-lg min-h(240)" html={`<div class="toast-region" role="region" aria-label="Notifications" aria-live="polite">
   <dialog open class="toast toast-success" aria-labelledby="toast-deployed">
@@ -28,12 +28,12 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
 ## 顯示與關閉 \{#showing-and-dismissing\}
 
 - 帶有 `open` 屬性的通知會在頁面載入時顯示，適合在表單以 POST 送出後，由伺服器直接算繪訊息。
-- 在腳本中，對通知區域內的通知呼叫 `toast.show()`，或在區域內附加新的 `<dialog open class="toast">`。兩種做法都會透過 `@starting-style` 設定通知進場時的起始樣式。
+- 在腳本中，在區域內附加新的 `<dialog open class="toast">`，或為區域內現有的通知設定 `open`。兩種做法都會透過 `@starting-style` 設定通知進場時的起始樣式。請勿呼叫 `show()`：它會把焦點移入通知，讓使用者離開正在進行的操作。
 - 將按鈕放在 `<form method="dialog">` 裡，或在按鈕上設定 `commandfor` 和 `command="close"`，都能關閉通知。`display` 透過 `allow-discrete` 進行轉場，讓退場動畫播完後，通知才停止占用空間。
 
 ## 限時 \{#timed\}
 
-`toast-timed` 會讓通知在六秒後自動消失。計時由 CSS 動畫控制，動畫結束時套用 `display: none`。指標停在通知上或鍵盤焦點位於通知內時，計時會暫停，讓使用者有足夠時間閱讀。通知底部的細線會隨剩餘時間縮短，並與計時同步暫停。用 `--toast-duration` 調整顯示時間。請勿在限時通知中放入使用者可能仍需執行的操作。重要內容應放在會持續顯示的[提示訊息](/components/alert)中。
+`toast-timed` 會讓通知在六秒後自動消失。計時由 CSS 動畫控制，動畫結束時套用 `display: none`。指標停在通知上或鍵盤焦點位於通知內時，計時會暫停，讓使用者有足夠時間閱讀。通知底部的細線會隨剩餘時間縮短，並與計時同步暫停。用 `--toast-duration` 調整顯示時間。忙碌中的通知不會計時；工作結束後才開始計時。
 
 <ComponentPreview name="timed" height={200} title="限時" bodyClass="content-start p-lg min-h(200)" html={`<div class="toast-region" role="region" aria-label="Notifications" aria-live="polite">
   <dialog open class="toast toast-timed" aria-label="Link copied">
@@ -45,7 +45,9 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
 ## 附操作按鈕 \{#with-an-action\}
 
-放在正文後方的[按鈕](/components/button)會排在該列末端。狀態修飾類別只改變圖示的顏色，文字維持原本的前景色。
+通知可以在關閉按鈕旁提供一個操作，例如「復原」或「檢視」。`toast-action` 放在文字之後：用 `<form method="dialog">` 包住一個 `btn btn-sm`，讓操作執行後關閉通知。請為按鈕設定 `value`：對話框的 `returnValue` 就會指出是哪個按鈕關閉了它，只需一個 `close` 監聽器即可執行操作。操作是真正的按鈕，可用 <kbd>Tab</kbd> 移到它；當操作取得焦點或指標停在通知上時，限時通知會暫停計時。
+
+通知會自動消失，使用者可能根本沒看到，因此通知中的操作只是捷徑，絕不能是唯一的途徑。重要的操作（例如還原已刪除的項目、重試儲存失敗的內容）也要放在會持續存在的地方：項目本身的選單、垃圾桶，或失敗表單旁的[提示訊息](/components/alert)。狀態修飾類別只改變圖示的顏色，文字維持原本的前景色。
 
 <ComponentPreview name="action" height={304} title="附操作按鈕" bodyClass="content-start p-lg min-h(300)" html={`<div class="toast-region" role="region" aria-label="Notifications" aria-live="polite">
   <dialog open class="toast" aria-labelledby="toast-archived">
@@ -53,7 +55,14 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
       <p class="toast-title" id="toast-archived">Project archived</p>
       <p class="toast-description">Atlas is hidden from the dashboard.</p>
     </div>
-    <form method="dialog"><button class="btn btn-sm">Undo</button></form>
+    <form method="dialog" class="toast-action">
+      <button class="btn btn-sm" value="undo">Undo</button>
+    </form>
+    <form method="dialog" class="toast-close">
+      <button class="btn btn-quiet btn-square btn-sm" aria-label="Dismiss">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </form>
   </dialog>
   <dialog open class="toast toast-danger" aria-labelledby="toast-failed">
     <svg class="icon toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16v.01"/></svg>
@@ -61,13 +70,68 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
       <p class="toast-title" id="toast-failed">The build failed</p>
       <p class="toast-description">The install step exited with code 1.</p>
     </div>
+    <form method="dialog" class="toast-action">
+      <button class="btn btn-sm" value="logs">View logs</button>
+    </form>
     <form method="dialog" class="toast-close">
       <button class="btn btn-quiet btn-square btn-sm" aria-label="Dismiss">
         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
       </button>
     </form>
   </dialog>
-</div>`} />
+</div>`} caption="按 Tab 移到 Undo 再按 Enter，或按下 Dismiss：兩者都會透過各自的表單關閉通知，無須腳本。" />
+
+## 先顯示進行中，再原地更新 \{#pending\}
+
+通知可以在工作進行時回報狀態，並在同一個位置說明結果。工作進行期間，通知帶有 `aria-busy="true"`，並在圖示的位置放一個帶有 `toast-icon` 的[旋轉指示器](/components/spinner)；無論工作進行多久，計時都不會開始。工作結束時，請直接修改同一則通知：更換文字、狀態和圖示，並移除 `aria-busy`。通知不會再次進場，在堆疊中的位置也不變；只有新的圖示會放大出現。
+
+<ComponentPreview name="pending" height={280} title="進行中" bodyClass="content-start p-lg min-h(280)" html={`<button class="btn" type="button" id="deploy-run">Deploy</button>
+<div class="toast-region" id="deploy-region" role="region" aria-label="Notifications" aria-live="polite"></div>
+<template id="deploy-pending">
+  <dialog open class="toast" aria-labelledby="deploy-title" aria-busy="true" aria-atomic="true">
+    <span class="spinner spinner-inline toast-icon" aria-hidden="true"></span>
+    <div class="toast-body">
+      <p class="toast-title" id="deploy-title">Deploying Atlas</p>
+      <p class="toast-description">Building for 14 regions.</p>
+    </div>
+    <form method="dialog" class="toast-close">
+      <button class="btn btn-quiet btn-square btn-sm" aria-label="Dismiss">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </form>
+    <template>
+      <svg class="icon toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 4.5-5.5"/></svg>
+    </template>
+  </dialog>
+</template>
+<script>
+  var region = document.getElementById('deploy-region')
+  var count = 0
+  document.getElementById('deploy-run').addEventListener('click', function () {
+    var toast = document.getElementById('deploy-pending').content.firstElementChild.cloneNode(true)
+    var title = toast.querySelector('.toast-title')
+    title.id = 'deploy-title-' + ++count
+    toast.setAttribute('aria-labelledby', title.id)
+    region.append(toast)
+    // When the work ends, the same toast says so: its icon, its words and its status change, and it is no longer busy.
+    setTimeout(function () {
+      toast.querySelector('.toast-icon').replaceWith(toast.querySelector('template').content.firstElementChild.cloneNode(true))
+      title.textContent = 'Deployed to production'
+      toast.querySelector('.toast-description').textContent = 'atlas.dev is live in 14 regions.'
+      toast.classList.add('toast-success', 'toast-timed')
+      toast.removeAttribute('aria-busy')
+    }, 2400)
+  })
+  // A toast that has run out, or was dismissed and has left, is removed.
+  region.addEventListener('animationend', function (event) {
+    if (event.animationName === 'toast-expire') event.target.remove()
+  })
+  region.addEventListener('close', function (event) {
+    setTimeout(function () { event.target.remove() }, 300)
+  }, true)
+</script>`} caption="按下 Deploy：通知會忙碌兩秒，接著在同一個位置說明部署已完成，並在六秒後消失。" />
+
+同一則通知可以再次變更，例如在上傳檔案時從一個數量更新到下一個，或從失敗變成重試。每次變更都會重新開始計時，讓使用者有完整的時間閱讀新文字。忙碌中的通知不適合用來追蹤重要的長時間工作：放在工作旁邊的[進度](/components/progress)會持續留在原處。
 
 ## 通知區域 \{#the-region\}
 
@@ -85,12 +149,29 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
 - 用 `aria-live="polite"` 將通知區域設為即時區域，讓通知出現時能由輔助技術朗讀，並以 `aria-label` 為區域命名。
 - 每則通知都應設定名稱，可用 `aria-labelledby` 指向標題，或直接設定 `aria-label`。
+- 為原地更新文字的通知設定 `aria-atomic="true"`，讓每次變更都以整則通知的形式播報一次，而不是逐一播報片段。通知忙碌期間，螢幕閱讀器可能會等到工作結束才播報。
 - 浮動通知用來確認結果。使用者即使錯過通知，也應能取得所需資訊或完成操作，因此請在通知之外保留操作入口。
-- 啟用減少動態效果時，通知會在原地淡入淡出。
+- 通知出現時不會取得焦點。它的操作按鈕和關閉按鈕都在 Tab 順序中，其中任一個取得焦點時，限時通知會暫停計時。
+- 啟用減少動態效果時，通知會在原地淡入淡出，新的圖示也會以原尺寸淡入。
 
 ## React、Svelte 和 Vue \{#frameworks\}
 
 `toast` 元件以佇列管理通知。你可以從任何地方呼叫 `toast()` 函式，只需算繪一次通知區域，即可顯示佇列中的通知。使用 `npx master-ui add toast` 將元件複製到專案中，並參閱 [React、Svelte 和 Vue](/guide/frameworks) 瞭解元件的建構方式和用法。
+
+- `toast(message)` 會顯示一則通知並傳回一個控制代碼。`update(message)` 會在同一則通知中顯示其他內容，不會再次進場，並重新開始計時；`dismiss()` 會讓通知像按下它自己的關閉按鈕一樣離開。訊息包含 `title`、`description`、`status`、以毫秒為單位的 `duration`（設為 `false` 會讓通知保留）以及 `action`；傳入字串時視為 description。
+- `status: 'pending'` 會顯示旋轉指示器並設定 `aria-busy`，通知會保留到被更新為止。
+- `action: { label, onClick }` 是通知提供的唯一按鈕。它會執行 `onClick`，接著關閉通知，除非處理函式呼叫了 `event.preventDefault()`。
+- `toast.promise(promise, { loading, success, error })` 會以進行中的通知顯示 `loading`，再把同一則通知變成 `success`，或變成帶有 `danger` 狀態的失敗訊息。兩者都可以是接收值或失敗原因的函式。它會傳回該 promise，可供 await 或串接。
+
+```tsx
+toast({ title: 'Project archived', action: { label: 'Undo', onClick: () => restore(project) } })
+
+await toast.promise(deploy(project), {
+  loading: { title: 'Deploying Atlas' },
+  success: (release) => ({ title: 'Deployed to production', description: `${release.url} is live.` }),
+  error: (error) => ({ title: 'The deploy failed', description: String(error), duration: false }),
+})
+```
 
 <FrameworkSource name="toast" />
 

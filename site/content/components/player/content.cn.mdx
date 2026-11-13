@@ -1,0 +1,159 @@
+---
+title: "媒体播放器"
+description: "在原生音频或视频元素上使用页面自己的控件。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+媒体播放器在原生 `<audio>` 或 `<video>` 上叠加页面自己的控件。负责播放的仍然是媒体元素本身：它保留自己的语义、在浏览器媒体控制中的位置，以及作为后备方案的 `controls` 属性。`player` [行为脚本](/guide/behaviors)在绑定时移除这个属性，此后把媒体的状态同步到控件栏：播放时播放按钮呈按下状态；进度轨道就是[滑块](/components/slider)本身的范围输入控件，已加载的部分绘制在已播放部分的下方；时间以小号等宽数字显示，宽度保持不变。
+
+<ComponentPreview name="default" height={296} title="媒体播放器" bodyClass="flex flex-col justify-end items-center p-lg" behaviors html={`<div class="player w-full max-w(480)" role="group" aria-label="A short recording">
+  <audio class="player-media" src="/demo/recording.m4a" controls preload="metadata"></audio>
+  <div class="player-controls">
+    <button type="button" class="player-button player-play" aria-label="Play" aria-pressed="false">
+      <svg class="icon player-off" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.8v14.4a1 1 0 0 0 1.5.86l11.5-7.2a1 1 0 0 0 0-1.72L8.5 3.94A1 1 0 0 0 7 4.8"/></svg>
+      <svg class="icon player-on" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+    </button>
+    <span class="player-elapsed">0:00</span>
+    <input type="range" class="slider player-seek" min="0" max="0" step="any" value="0" aria-label="Seek">
+    <span class="player-duration">0:00</span>
+    <button type="button" class="player-button player-mute" aria-label="Mute" aria-pressed="false">
+      <svg class="icon player-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>
+      <svg class="icon player-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="m16 9 6 6M22 9l-6 6"/></svg>
+    </button>
+    <input type="range" class="slider player-volume" min="0" max="1" step="0.05" value="1" aria-label="Volume">
+    <button type="button" class="player-button player-speed" popovertarget="recording-speed" aria-label="Playback speed">1×</button>
+    <div id="recording-speed" popover class="menu menu-top menu-end">
+      <label class="menu-item"><input class="menu-input" type="radio" name="recording-speed" value="0.75">0.75×</label>
+      <label class="menu-item"><input class="menu-input" type="radio" name="recording-speed" value="1" checked>1×</label>
+      <label class="menu-item"><input class="menu-input" type="radio" name="recording-speed" value="1.25">1.25×</label>
+      <label class="menu-item"><input class="menu-input" type="radio" name="recording-speed" value="1.5">1.5×</label>
+      <label class="menu-item"><input class="menu-input" type="radio" name="recording-speed" value="2">2×</label>
+    </div>
+  </div>
+</div>`} caption="按下播放，沿轨道拖动，或聚焦某个控件后使用空格键、方向键、J 和 L、M、Home 和 End。播放速度按钮会在其上方打开一个菜单。" />
+
+## 视频 \{#video\}
+
+`player-video` 让播放器成为视频的外框。画面填满一块带有表面圆角的深色区域，同样的控件栏覆盖在画面底边上，下方衬着一层从底边向上渐隐的阴影。无论在哪种主题下，控件栏都以深色配色绘制，就像屏幕本身是暗的一样。视频会多出三个控件，每个都只在能起作用时显示：视频带有 captions 或 subtitles 轨道时显示字幕按钮，浏览器支持时显示画中画按钮，浏览器允许时显示全屏按钮。单击画面可播放和暂停，双击则进入全屏。
+
+视频播放期间，如果指针静止了两秒半，或已离开外框，控件栏会从画面上淡出，指针也一并隐藏。任何移动都会让它们重新出现。当某个控件拥有键盘焦点或速度菜单处于打开状态时，控件栏绝不会淡出；对于要求减少动态效果的读者也绝不会淡出。在触摸屏上，如果画面的控件已经淡出，轻触画面只会让控件重新出现。
+
+<ComponentPreview name="video" height={400} mediumHeight={360} narrowHeight={224} title="视频" bodyClass="flex items-center justify-center p-lg" behaviors html={`<div class="player player-video w-full max-w(560)" role="group" aria-label="Moonrise" style="--player-ratio: 16 / 9">
+  <video class="player-media" src="/demo/moonrise.mp4" poster="/demo/moonrise.jpg" controls preload="metadata" playsinline>
+    <track kind="captions" src="/demo/recording.vtt" srclang="en" label="English">
+  </video>
+  <div class="player-controls">
+    <button type="button" class="player-button player-play" aria-label="Play" aria-pressed="false">
+      <svg class="icon player-off" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.8v14.4a1 1 0 0 0 1.5.86l11.5-7.2a1 1 0 0 0 0-1.72L8.5 3.94A1 1 0 0 0 7 4.8"/></svg>
+      <svg class="icon player-on" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+    </button>
+    <span class="player-elapsed">0:00</span>
+    <input type="range" class="slider player-seek" min="0" max="0" step="any" value="0" aria-label="Seek">
+    <span class="player-duration">0:00</span>
+    <button type="button" class="player-button player-mute" aria-label="Mute" aria-pressed="false">
+      <svg class="icon player-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>
+      <svg class="icon player-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="m16 9 6 6M22 9l-6 6"/></svg>
+    </button>
+    <button type="button" class="player-button player-captions" aria-label="Captions" aria-pressed="false">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 15h4M15 15h2M7 11h2M13 11h4"/></svg>
+    </button>
+    <button type="button" class="player-button player-pip" aria-label="Picture in picture" aria-pressed="false">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4"/><rect x="13" y="14" width="9" height="6" rx="1.5"/></svg>
+    </button>
+    <button type="button" class="player-button player-fullscreen" aria-label="Full screen" aria-pressed="false">
+      <svg class="icon player-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+      <svg class="icon player-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3v3a2 2 0 0 1-2 2H3M21 8h-3a2 2 0 0 1-2-2V3M3 16h3a2 2 0 0 1 2 2v3M16 21v-3a2 2 0 0 1 2-2h3"/></svg>
+    </button>
+  </div>
+</div>`} caption="播放视频并保持指针不动：控件栏会淡出。用按钮或 C 键打开字幕。" />
+
+请把 `--player-ratio` 设为视频的宽高比，这样外框在视频加载前就能占好位置。控件栏会适应播放器获得的空间：宽度小于 26rem 时，音量滑块隐藏，静音按钮保留；小于 24rem 时，画中画和已播放时间也会隐藏，因此在手机上每个控件都能保持手指所需的 44px。
+
+## 没有脚本时 \{#without-the-script\}
+
+在行为脚本绑定之前，媒体保留其 `controls` 属性，样式表隐藏播放器的控件栏，因此录音以浏览器自带的控件播放。下面是与第一个示例相同的标记，但没有脚本。
+
+<ComponentPreview name="native" height={120} title="没有脚本时" bodyClass="flex items-center justify-center p-lg" html={`<div class="player w-full max-w(480)" role="group" aria-label="A short recording">
+  <audio class="player-media" src="/demo/recording.m4a" controls preload="metadata"></audio>
+  <div class="player-controls">
+    <button type="button" class="player-button player-play" aria-label="Play" aria-pressed="false">
+      <svg class="icon player-off" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.8v14.4a1 1 0 0 0 1.5.86l11.5-7.2a1 1 0 0 0 0-1.72L8.5 3.94A1 1 0 0 0 7 4.8"/></svg>
+      <svg class="icon player-on" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+    </button>
+    <span class="player-elapsed">0:00</span>
+    <input type="range" class="slider player-seek" min="0" max="0" step="any" value="0" aria-label="Seek">
+    <span class="player-duration">0:00</span>
+  </div>
+</div>`} />
+
+## 行为脚本 \{#behavior\}
+
+`player` 接收根元素，即带有 `player` 类的元素，并返回一个函数，用于解除绑定并把控件还给媒体元素。
+
+```js name=app.js
+import { player } from '@master/ui/behaviors/player.js'
+
+const detach = player(document.querySelector('.player'))
+```
+
+媒体元素是唯一的事实来源。行为脚本监听它，把它报告的状态同步到样式表读取的属性上；每个控件都是请求媒体元素改变，而不是自行改变，因此从其他地方（系统的媒体键、其他脚本）播放的录音也会以同样的方式绘制。
+
+- **切换按钮。** 媒体播放时，播放按钮为 `aria-pressed="true"`；静音时，静音按钮为该状态；第一条 captions 或 subtitles 轨道正在显示时，字幕按钮为该状态；视频处于画中画或全屏时，相应按钮为该状态。切换按钮保持同一个名称，如 Play 或 Mute，由 `aria-pressed` 表明状态。如果按钮带有 `player-off` 和 `player-on` 两种外观，它会显示与状态对应的那一种；只有一种外观时，开启状态下按钮会呈凹陷状。
+- **时间。** 进度轨道的 `max` 是时长，`value` 是当前时间，并带有文字形式的 `aria-valuetext`。已播放时间和时长写入各自的部件，录音长达一小时后会显示小时。读者拖动轨道时，媒体不会移动手指下方的滑钮。
+- **已加载部分。** 当前时间附近已加载的部分以根元素上的 `--player-buffered` 表示，取值 0 到 1，绘制在轨道上已播放部分的下方。
+- **音量和速度。** 音量滑块保存音量，媒体静音时滑块仍保留该音量，只是显示得淡一些；在音量只能由设备自身按键设置的设备上，音量滑块会被隐藏。速度按钮打开其 `popovertarget` 指定的菜单；菜单中每个 `menu-input` 单选按钮代表一种播放速率，行为脚本把速率写在按钮上，并勾选对应的单选按钮。
+- **字幕。** 关闭时，轨道设为 `hidden` 而不是 `disabled`，因此读取同一轨道的[文字稿](/components/transcript)仍能保留其字幕片段。
+- **全屏**作用于播放器而不是视频，因此控件栏仍覆盖在画面上。在只允许视频填满屏幕的 iPhone 上，全屏使用系统自带的播放器。
+- **值。** 返回的函数带有 `value`，即以秒计的当前时间；设置它即可跳转。
+
+| 选项 | 默认值 | |
+| --- | --- | --- |
+| `step` | `5` | 方向键每次跳转的秒数 |
+| `jump` | `10` | <kbd class="kbd">J</kbd> 和 <kbd class="kbd">L</kbd> 每次跳转的秒数 |
+| `volumeStep` | `0.1` | <kbd class="kbd">ArrowUp</kbd> 和 <kbd class="kbd">ArrowDown</kbd> 每次改变的音量 |
+| `idle` | `2500` | 视频播放时，指针静止多少毫秒后控件淡出 |
+| `valueText` | 英文 | 进度轨道的 `aria-valuetext`，根据当前时间和时长生成，使用页面的语言 |
+| `rateText` | `1.5×` | 速度按钮对某个速率显示的文字 |
+
+## 键盘操作 \{#keyboard\}
+
+焦点位于播放器内任意位置时，以及单击视频画面之后，这些按键都有效。控件自身需要的按键仍归该控件处理：<kbd class="kbd">Space</kbd> 按下获得焦点的按钮，方向键调整音量滑块，速度菜单使用[菜单](/components/menu)的按键操作。
+
+<ContractTable name="player" show="keyboard" />
+
+## 无障碍 \{#accessibility\}
+
+- 给根元素设置 `role="group"` 和说明录音名称的 `aria-label`，这样控件会被理解为这段录音的控件。
+- 用页面的语言按功能为每个按钮命名，状态变化时保持名称不变：状态由 `aria-pressed` 表示。
+- 含有语音的视频需要字幕：添加 `<track kind="captions">`。没有画面的录音需要[文字稿](/components/transcript)。
+- 绝不要自动开始播放有声音的录音。播放器只在读者要求时播放。
+- 按钮为 32px，在触摸屏上为 44px。时间在数字变化时保持宽度不变，因此播放过程中轨道不会移动。
+
+## React、Svelte 和 Vue \{#frameworks\}
+
+`player` 组件根据 `src`、`video`、`poster` 和 `tracks` 渲染媒体元素及其控件栏，绑定行为脚本，并接收和传出当前时间与播放状态：在 React 中是 `time` 和 `playing` 加上 `onTimeChange` 和 `onPlayingChange`，在 Svelte 中是可绑定的 props，在 Vue 中是 `v-model:time` 和 `v-model:playing`。从外部设置时间会跳转；`playing` 控制播放和暂停。使用 `npx master-ui add player` 将组件复制到项目中。有关这些组件的实现和用法，请参阅 [React、Svelte 和 Vue](/guide/frameworks)。
+
+<FrameworkSource name="player" />
+
+## 类名 \{#classes\}
+
+<ContractTable name="player" />
+
+进度轨道和音量是 [`slider`](/components/slider) 输入控件；速度菜单是由标签项和 `menu-input` 单选按钮组成的 [`menu`](/components/menu)。
+
+## 自定义属性 \{#custom-properties\}
+
+<ContractTable name="player" show="properties" />
+
+## 相关内容 \{#related\}
+
+<ComponentLinks slugs={['transcript', 'waveform', 'slider', 'figure']} />
+
+## 源码 \{#source\}
+
+<ComponentSource name="player" />

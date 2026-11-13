@@ -5,8 +5,9 @@ description: "各項目の期間を、共通の時間軸上にバーで表示し
 import ComponentPreview from '~/site/components/ComponentPreview.astro'
 import ComponentSource from '~/site/components/ComponentSource.astro'
 import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
-ガントチャートは、プロジェクトの各工程、オンコールのシフト、定期リリースの各サイクルなどの期間を、共通の時間軸上にバーで表示します。リストの各行には、バーの開始位置と終了位置、項目名、バーが伝える内容を記したテキストを持たせます。スタイルシートが項目名とバーを別々の列に配置し、時間軸の各単位を極細の目盛線で区切ります。スクリプトもSVGも使いません。
+ガントチャートは、プロジェクトの各工程、オンコールのシフト、定期リリースの各サイクルなどの期間を、共通の時間軸上にバーで表示します。リストの各行には、バーの開始位置と終了位置、項目名、バーが伝える内容を記したテキストを持たせます。スタイルシートが項目名とバーを別々の列に配置し、時間軸の各単位を極細の目盛線で区切ります。チャートの表示にはスクリプトもSVGも必要ありません。読者が計画を立てる場面では、`gantt`[ビヘイビア](/guide/behaviors)を使って[バーを移動・リサイズ](#moving-the-bars)できるようにします。
 
 <ComponentPreview name="default" height={248} narrowHeight={320} title="ガントチャート" bodyClass="p-lg" html={`<div class="card max-w(560) mx-auto">
   <ol class="gantt gantt-now" style="--gantt-from: 0; --gantt-to: 8; --gantt-now: 4.4" aria-label="Launch plan, in weeks">
@@ -57,6 +58,122 @@ import ContractTable from '~/site/components/ContractTable.astro'
 
 ガントチャートはサイズコンテナーです。コンテナー自体の幅が26rem未満になると、各項目名がバーの横から上に移り、トラックが横幅いっぱいに広がります。スマートフォンでは目盛りを少なめにします。8目盛りなら読み取れますが、30目盛りでは読み取れません。
 
+## バーの移動 \{#moving-the-bars\}
+
+バーに`role="slider"`を指定して`gantt`ビヘイビアを適用すると、読者がバーを動かせるようになります。バー本体をドラッグすると時間軸に沿って移動し、端をドラッグすると開始または終了の時点を変更できます。バーは時間軸の単位（この例では日）ごとにスナップし、つかんでいる間はバーのテキストに変更後の期間が表示されます。<kbd class="kbd">Escape</kbd>で元に戻ります。ポインターでできる操作は、すべてキー操作でも行えます。
+
+<ComponentPreview name="moving" height={344} narrowHeight={436} title="バーの移動" bodyClass="p-lg" behaviors html={`<div class="card max-w(640) mx-auto">
+  <ol class="gantt gantt-now" id="sprint" style="--gantt-from: 0; --gantt-to: 12; --gantt-now: 4.5" aria-label="Sprint plan, November 2 to 13">
+    <li class="gantt-row gantt-scale" aria-hidden="true">
+      <ol class="gantt-ticks"><li>2</li><li>3</li><li>4</li><li>5</li><li>6</li><li>7</li><li>8</li><li>9</li><li>10</li><li>11</li><li>12</li><li>13</li></ol>
+    </li>
+    <li class="gantt-row" data-value="research" style="--from: 0; --to: 3; --progress: 100"><span class="gantt-label">Research</span><span class="gantt-bar" role="slider">Nov 2 – 4 · 3 days</span></li>
+    <li class="gantt-row" data-value="design" aria-current="true" style="--from: 2; --to: 6"><span class="gantt-label">Design</span><span class="gantt-bar" role="slider">Nov 4 – 7 · 4 days</span></li>
+    <li class="gantt-row" data-value="build" style="--from: 5; --to: 10; --progress: 20"><span class="gantt-label">Build</span><span class="gantt-bar" role="slider">Nov 7 – 11 · 5 days</span></li>
+    <li class="gantt-row" data-value="review" style="--from: 9; --to: 11"><span class="gantt-label">Review</span><span class="gantt-bar" role="slider">Nov 11 – 12 · 2 days</span></li>
+    <li class="gantt-row" data-value="launch" style="--from: 11"><span class="gantt-label">Launch</span><span class="gantt-bar gantt-milestone" role="slider">Nov 13</span></li>
+  </ol>
+  <p class="gantt-status" role="status"></p>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  var day = new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric' })
+  var date = function (offset) { return new Date(2026, 10, 2 + offset) }
+  MasterUI.gantt(document.getElementById('sprint'), {
+    format: function (start, end) {
+      if (start === end) return day.format(date(start))
+      var length = end - start
+      return day.formatRange(date(start), date(end - 1)) + ' · ' + length + (length === 1 ? ' day' : ' days')
+    }
+  })
+})
+</script>`} caption="バーまたはその端をドラッグします。または、Tabキーでチャートに移動し、ArrowUpとArrowDownでバーを選び、ArrowLeftとArrowRightで移動します。Shiftを押しながらだと終了位置、Alt（Option）を押しながらだと開始位置が動きます。" />
+
+動かせるバーについて、スタイルシートは次のように描画します。
+
+- **通常時**は、ほかのバーと同じ見た目で、カーソルはつかむ形になります。ホバー時とフォーカス時は両端に短い縦のグリップが表示され、その上ではカーソルがリサイズの矢印に変わります。ホバーのないタッチスクリーンではグリップが常に表示され、バーの高さは44pxになります。
+- **フォーカス時**は、フォーカスリングが周囲の行の上に重ねて描画されます。
+- **つかんでいる間**は`aria-busy="true"`になります。より濃い淡色の上で持ち上がった影をまとって浮き上がり、イージングなしでポインターに追従します。ポインターがどこにあっても、カーソルは握った手の形のままか、端をつかんでいる間（`gantt-resize-start`、`gantt-resize-end`）はリサイズの矢印のままです。キー操作や外部から設定した値では、バーは新しい位置まで滑らかに移動します。動きを減らす設定では即座に移動します。
+- **読み取り専用**（`aria-readonly="true"`）のバーは、フォーカスを受けて読み上げられますが、動きません。**無効**（`aria-disabled="true"`）のバーは動かず、キー操作でも飛ばされ、テキストは無効状態の文字色になります。
+
+マイルストーンは点として移動し、リサイズする端はありません。
+
+## ビヘイビア \{#behavior\}
+
+`gantt`は、`gantt`クラスを持つルート要素を受け取り、ビヘイビアを解除する関数を返します。動くのは`role="slider"`を指定したバーだけで、それ以外のバーは図のままです。動かせる各バーには、スライダーに必要でページ側が省略した情報を書き込みます。行の`gantt-label`から名前を、時間軸から最も早い開始と最も遅い終了として`aria-valuemin`と`aria-valuemax`を、開始位置として`aria-valuenow`を、期間について`format`が返す文字列として`aria-valuetext`を書き込みます。より狭い範囲内にバーを収めるには、バーに`aria-valuemin`と`aria-valuemax`を自分で指定します。
+
+```js name=app.js
+import { gantt } from '@master/ui/behaviors/gantt.js'
+
+const plan = gantt(document.querySelector('.gantt'), {
+  // What a bar says for a range, as its text and to assistive technology.
+  format: (start, end) => `Days ${start + 1} to ${end}`,
+})
+
+plan.value // { research: [0, 3], design: [2, 6], … }
+plan.value = { design: [3, 7] }
+```
+
+- **値**は各バーの期間で、時間軸の単位での`[start, end]`です。キーは行の`data-value`、なければラベルのテキストです。マイルストーンの期間は、その点で始まりその点で終わります。値を設定すると外部からバーを動かせます。このときイベントは発行されません。
+- **イベント。** バーの期間が変わるたびに、ドラッグ中も含めて、ルートが`input`を発行します。ドロップまたはキー操作で期間が変わったときには、`change`を一度発行します。
+- **ポインター。** 押したまま4pxを超えて動かすとドラッグになり、それ未満ならバーにフォーカスするだけです。スタイルシートが両端に描画する幅のグリップを押すとその端が動き、それ以外の場所ではバー全体が動きます。時間軸の1単位は描画されたバーの幅から読み取るため、どのレイアウトでもドラッグは`step`単位（既定は1）でスナップします。ページを下方向に動かす指の操作では、引き続きページがスクロールします（`touch-action: pan-y`）。
+- **制限。** バーは`aria-valuemin`と`aria-valuemax`の間に収まり、1ステップより短くなることも、現在の長さより短くなることもありません。
+- **読み上げ。** バーは、ドロップやキー操作で新しい期間が確定した時点で、スライダーが値を伝えるのと同じように`aria-valuetext`で新しい期間を伝えます。変更が拒否された、ドラッグが取り消されたなど、値だけでは伝えられないことは、ルートの直後にある`role="status"`の`gantt-status`領域で伝えます。ページの言語で伝えるには`messages`を渡します。
+- **右から左に書くページ**では、時間軸も、ポインターと矢印キーの向きも右から左になります。<kbd class="kbd">ArrowLeft</kbd>が後の時点に進みます。
+
+ビヘイビアがない場合でも、チャートは項目と日付を読み取れるリストのままです。
+
+## ページ側のルール \{#rules\}
+
+依存関係、リソース、稼働日はページ側が管理します。バーが新しい期間を確定する前に、キャンセル可能な`beforechange`イベントが発行されます。イベントには、バーの`id`、確定しようとしている`range`、それまでの`previous`が含まれます。`preventDefault()`を呼び出すと変更を拒否できます。キー操作では何も起こらず、ドロップではドラッグ開始時の位置に戻り、ステータス領域がバーは動かなかったことを伝えます。この例では、BuildはDesignが終わるまで開始できず、Freezeはリリースチームの管轄なので読み取り専用です。
+
+<ComponentPreview name="rules" height={268} narrowHeight={332} title="ページ側のルール" bodyClass="p-lg" behaviors html={`<div class="card max-w(560) mx-auto">
+  <ol class="gantt" id="release" style="--gantt-from: 0; --gantt-to: 12" aria-label="Release plan, November 2 to 13">
+    <li class="gantt-row" data-value="design" style="--from: 0; --to: 4"><span class="gantt-label">Design</span><span class="gantt-bar" role="slider">Nov 2 – 5 · 4 days</span></li>
+    <li class="gantt-row" data-value="build" style="--from: 4; --to: 9"><span class="gantt-label">Build</span><span class="gantt-bar" role="slider">Nov 6 – 10 · 5 days</span></li>
+    <li class="gantt-row" data-value="freeze" style="--from: 9; --to: 11"><span class="gantt-label">Freeze</span><span class="gantt-bar" role="slider" aria-readonly="true">Nov 11 – 12 · 2 days</span></li>
+  </ol>
+  <p class="gantt-status" role="status"></p>
+  <p class="mb(0) mt-sm text-sm fg-text-muted" id="release-note">Build starts once Design is done.</p>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  var day = new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric' })
+  var date = function (offset) { return new Date(2026, 10, 2 + offset) }
+  var root = document.getElementById('release')
+  var note = document.getElementById('release-note')
+  var plan = MasterUI.gantt(root, {
+    format: function (start, end) {
+      var length = end - start
+      return day.formatRange(date(start), date(end - 1)) + ' · ' + length + (length === 1 ? ' day' : ' days')
+    }
+  })
+  root.addEventListener('beforechange', function (event) {
+    var ranges = plan.value
+    ranges[event.detail.id] = event.detail.range
+    if (ranges.build[0] < ranges.design[1]) {
+      event.preventDefault()
+      note.textContent = 'Build starts once Design is done, on ' + day.format(date(ranges.design[1])) + ' at the earliest.'
+    } else note.textContent = 'Build starts once Design is done.'
+  })
+})
+</script>`} caption="BuildをDesignの終了より前に、またはDesignをBuildの開始より後にドラッグすると、バーが元に戻ります。" />
+
+```js name=app.js
+root.addEventListener('beforechange', (event) => {
+  const ranges = { ...plan.value, [event.detail.id]: event.detail.range }
+  if (ranges.build[0] < ranges.design[1]) event.preventDefault()
+})
+```
+
+イベントはバブリングするため、ルートに登録した1つのリスナーですべてのバーを扱えます。確認が行われるのは、キー操作でバーが動こうとしたときと、ドラッグがドロップされたときで、ドラッグの途中の各ステップでは行われません。そのため読者は、留まることが許されない位置を越えてバーを運べます。
+
+## キーボード操作 \{#keyboard\}
+
+<ContractTable name="gantt" show="keyboard" />
+
+チャートは、[ツールバー](/components/toolbar)や[ツリー](/components/tree)と同じく、タブ順序の中で1つのストップです。長い計画が何十ものストップにならないようにするためです。行は縦に積み重なっているので<kbd class="kbd">ArrowUp</kbd>と<kbd class="kbd">ArrowDown</kbd>でバー間を移動し、時間は横に流れるので<kbd class="kbd">ArrowLeft</kbd>と<kbd class="kbd">ArrowRight</kbd>でバーを動かします。矢印キーは図の向きに従います。チャートはグリッドではなくリストのままです。各行で操作できるのはバー1つだけで、グリッドにするとバーの矢印キーをモードの切り替えの後ろに置く必要があるためです。
+
 ## ガントチャート・タイムライン・チャートの使い分け \{#gantt-timeline-or-chart\}
 
 開始と終了がある項目にはガントチャートを使います。出来事を発生順に並べるには[タイムライン](/components/timeline)、時間軸を使わずに数量を比較するには[チャート](/components/chart)を使います。
@@ -66,6 +183,16 @@ import ContractTable from '~/site/components/ContractTable.astro'
 - `<ol>`として記述し、`aria-label`または見出しで名前を付けます。各行は1つの項目で、「デザイン、第3週から第6週」のように、項目名、バーのテキストの順に読み上げられます。
 - バー、細い罫線、現在時点を示す線はスタイルシートで描画します。バーが示す開始日と終了日をテキストに記載し、必要に応じて、どの行が現在の項目かも明記します。
 - 現在の行は、色相を使わず、淡い背景に濃いバーを重ねて区別します。強制カラーモードでは、現在の行のバーを塗りつぶし、ほかのバーは輪郭だけを表示します。
+- 動かせるバーは、行の名前を持つスライダーで、その値はページの言葉で表した期間です（例：「Design、スライダー、Nov 4 – 7 · 4 days」）。`format`にはバーのテキストと同じ言葉を渡し、両者が同じ内容を伝えるようにします。
+- `gantt-status`領域は、最初から空の状態でページに置いておきます。読み上げる時点で追加した領域は、読み上げられないことがよくあります。この領域はスライダー自体の値では伝えられないことだけを伝えるため、同じ内容が二度読み上げられることはありません。
+- ポインターでできる操作は、すべてキー操作でも行えます。ポインターは使えてもドラッグができない読者のために、行から開く[ダイアログ](/components/dialog)のフィールドなど、ドラッグせずに日付を設定する方法も用意してください。
+- 上のキャプションのように、キー操作でバーを動かす方法をチャートの近くに記載してください。ShiftやAltで端が動くスライダーは、読者が推測できるものではありません。
+
+## React、Svelte、Vue \{#frameworks\}
+
+`gantt`コンポーネントは、データから行を生成します。各行は`id`、`label`、`start`、`end`を持ちます（`end`のない行はマイルストーンです）。各バーの位置とテキストは値`{ [id]: [start, end] }`から書き出します。時間軸は`from`と`to`、`now`、単位の名前の`ticks`で受け取ります。バーの移動中は`onValueChange`、ドロップ後は`onValueCommit`で通知し、バーが期間を確定する前に`onBeforeChange`（Vueでは発行される`beforeChange`）で確認します。`npx master-ui add gantt`でプロジェクトにコピーできます。コンポーネントの構成と使い方は[React、Svelte、Vue](/guide/frameworks)を参照してください。
+
+<FrameworkSource name="gantt" />
 
 ## クラス \{#classes\}
 

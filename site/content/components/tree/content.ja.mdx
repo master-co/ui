@@ -105,24 +105,161 @@ WAI-ARIA のツリーパターンでは、Tab キーで止まる行は1つで、
   </li>
 </ul>`} caption="ツリーにフォーカスを移し、矢印キーで操作します。Enter、Space、またはクリックで枝を展開し、末端の行ではその行を選択します。" />
 
-`tree` は、`tree` クラスを持つルート要素を受け取ります。オプションはなく、ビヘイビアを解除する関数を返します。
+`tree` は、`tree` クラスを持つルート要素を受け取り、ビヘイビアを解除する関数を返します。オプションで[名前の変更](#rename)を有効にできます。`rename: true` と、入力欄のアクセシブルな名前である `renameLabel`（既定は `Rename <label>`）を指定します。
 
 ```js name=app.js
 import { tree } from '@master/ui/behaviors/tree.js'
 
 const root = document.querySelector('.tree')
-tree(root)
+const files = tree(root)
 
-root.addEventListener('change', (event) => console.log(event.detail.item))
+root.addEventListener('change', () => console.log(files.value))
 ```
 
 - **Tab キーで止まる行は1つ。** ビヘイビアは `tabindex` を使って、Tab 順序に1行だけを含めます。マークアップで `tabindex="0"` が指定された行を優先し、該当する行がなければ選択中または現在の行、いずれもなければ先頭行を使います。フォーカスを受けた行が、Tab 順序に含まれる唯一の行になります。ビヘイビアを解除すると、各行の `tabindex` が元に戻ります。
 - **移動。** 矢印キーで移動すると、閉じた枝の中の行、`hidden` の行、無効な行はスキップされます。
 - **アクティブ化。** summary、リンク、ボタンには、ブラウザー標準の操作が適用されます。標準の操作を持たない行（`div` に `role="treeitem"` を指定した行）は、<kbd>Enter</kbd>、<kbd>Space</kbd>、クリックで操作できます。枝の行を操作すると枝が開閉し、末端の行を操作するとその行が選択されます。`aria-selected="true"` は、それまで選択されていた行から新たに選択された行に移ります。
-- **イベント。** 行を選択すると、ルート要素からバブリングする `change` イベントが発火します。`detail.item` には選択した行が入ります。
-- **無効な行。** `disabled` または `aria-disabled="true"` が指定された行は操作を受け付けません。リンク先への移動も、枝の開閉も行いません。
+- **値。** `tree` が返す関数は `value` を持ちます。選択中の行が表す値で、その行の `data-value` またはテキストです。選択中の行がなければ null です。[複数選択できるツリー](#several)と[チェックボックスツリー](#checkbox)ではリストになります。値を設定すると、外部から行を選択またはチェックできます。このときイベントは発火しません。
+- **イベント。** いずれもルート要素からバブリングし、`detail.item` に対象の行が入ります。選択またはチェックすると `change` が発火します。枝を開くと `expand` が発火し、`detail.value` にその行が表す値が入ります。名前を変更すると `rename` が発火し、`detail.value` と、新しいラベルを入れた `detail.label` が渡されます。
+- **無効な行。** `disabled` または `aria-disabled="true"` が指定された行は操作を受け付けません。リンク先への移動も、枝の開閉も行わず、選択、チェック、名前の変更もできません。
 
 このビヘイビアは、最初の2つのプレビューで使っている `<details>` のツリーにも適用できます。これらのプレビューはビヘイビアなしで動作します。適用すると、`open` を介して `tree-group` を開閉し、Tab キーで止まる行が1つになります。ツリー内は同じキーで移動できます。`attach()` はすべてのツリーにビヘイビアを適用します。`<details>` のツリーでブラウザー標準の操作を維持するには、必要なビヘイビアを名前でインポートします。
+
+## 複数の行 \{#several\}
+
+ツリーに `aria-multiselectable="true"` を指定すると、ファイルの一覧と同じように、任意の数の末端の行を選択できます。選択できるすべての行は、`aria-selected` に `true` または `false` を持ちます。枝の行は選択されず、開閉します。値は選択中の行のリストで、ツリー内の順序に並びます。
+
+<ComponentPreview name="several" height={252} title="複数の行" background="plain" bodyClass="content-start p-lg" behaviors html={`<ul class="tree max-w(260) mx-auto" role="tree" aria-label="Files" aria-multiselectable="true">
+  <li role="none">
+    <div class="tree-item tree-toggle" role="treeitem" aria-expanded="true">components</div>
+    <ul class="tree-sub" role="group">
+      <li role="none"><div class="tree-item" role="treeitem" aria-selected="true">button.css</div></li>
+      <li role="none"><div class="tree-item" role="treeitem" aria-selected="true">input.css</div></li>
+      <li role="none"><div class="tree-item" role="treeitem" aria-selected="false">theme.css</div></li>
+      <li role="none"><div class="tree-item" role="treeitem" aria-selected="false">tree.css</div></li>
+    </ul>
+  </li>
+  <li role="none">
+    <div class="tree-item tree-toggle" role="treeitem" aria-expanded="false">themes</div>
+    <ul class="tree-sub" role="group">
+      <li role="none"><div class="tree-item" role="treeitem" aria-selected="false">paper.css</div></li>
+    </ul>
+  </li>
+  <li role="none"><div class="tree-item" role="treeitem" aria-selected="false">README.md</div></li>
+</ul>`} caption="行をクリックし、別の行を Shift キーを押しながらクリックすると、その間の行が選択されます。Control キーまたは Command キーを押しながらクリックすると 1 行追加されます。キー操作では Space キーで同じことができます。" />
+
+- **クリック**すると、その行だけが選択されます。<kbd>Control</kbd> または <kbd>Command</kbd> を押しながらクリックすると、ほかの行の選択を保ったまま 1 行の選択を切り替えます。<kbd>Enter</kbd> はクリックと同じ動作です。
+- **<kbd>Space</kbd>** は、フォーカスのある行の選択を切り替えます。矢印キーは移動だけを行います。
+- **範囲選択。** 最後に選んだ行が起点になります。<kbd>Shift</kbd> を押しながらクリック、<kbd>Space</kbd>、<kbd>ArrowDown</kbd>、<kbd>ArrowUp</kbd> を使うと、起点からその行までの表示されているすべての行を選択します。<kbd>Control</kbd> または <kbd>Command</kbd> と <kbd>Shift</kbd> を押しながら <kbd>Home</kbd> または <kbd>End</kbd> を押すと、先頭または末尾の行まで選択します。閉じた枝の中の行と無効な行はスキップされます。
+- **すべて。** <kbd>Control</kbd> または <kbd>Command</kbd> を押しながら <kbd>A</kbd> を押すと、表示されているすべての行を選択します。すべてが選択済みの場合は、選択を解除します。
+
+## チェックボックスツリー \{#checkbox\}
+
+行が `aria-checked` を持つ場合、ツリーはチェックボックスツリーになります。各行にチェックが付き、枝をチェックすると、閉じた枝の中も含めて、その下のすべての行がチェックされます。枝は配下の行の状態を示します。すべてチェックされていれば `true`、1 つもなければ `false`、それ以外は `mixed` です。各行のシェブロンの列の後、ラベルの前に、`aria-hidden="true"` を付けた `tree-check` を置きます。これは[チェックボックス](/components/checkbox)と同じくぼみで、行の `aria-checked` から描画されるため、行の状態は一度だけ読み上げられます。
+
+<ComponentPreview name="checkbox" height={252} title="チェックボックスツリー" background="plain" bodyClass="content-start p-lg" behaviors html={`<ul class="tree max-w(260) mx-auto" role="tree" aria-label="Files to publish" aria-multiselectable="true">
+  <li role="none">
+    <div class="tree-item tree-toggle" role="treeitem" aria-expanded="true" aria-checked="mixed"><span class="tree-check" aria-hidden="true"></span>components</div>
+    <ul class="tree-sub" role="group">
+      <li role="none"><div class="tree-item" role="treeitem" aria-checked="true"><span class="tree-check" aria-hidden="true"></span>button.css</div></li>
+      <li role="none"><div class="tree-item" role="treeitem" aria-checked="true"><span class="tree-check" aria-hidden="true"></span>input.css</div></li>
+      <li role="none"><div class="tree-item" role="treeitem" aria-checked="false"><span class="tree-check" aria-hidden="true"></span>theme.css</div></li>
+      <li role="none"><div class="tree-item" role="treeitem" aria-checked="false"><span class="tree-check" aria-hidden="true"></span>tree.css</div></li>
+    </ul>
+  </li>
+  <li role="none">
+    <div class="tree-item tree-toggle" role="treeitem" aria-expanded="false" aria-checked="false"><span class="tree-check" aria-hidden="true"></span>themes</div>
+    <ul class="tree-sub" role="group">
+      <li role="none"><div class="tree-item" role="treeitem" aria-checked="false"><span class="tree-check" aria-hidden="true"></span>paper.css</div></li>
+    </ul>
+  </li>
+  <li role="none"><div class="tree-item" role="treeitem" aria-checked="true"><span class="tree-check" aria-hidden="true"></span>README.md</div></li>
+</ul>`} caption="themes をチェックすると、その中の paper.css もチェックされます。components 内のファイルを 1 つチェック解除すると、枝は mixed になります。" />
+
+- **<kbd>Space</kbd>** は、フォーカスのある行のチェックを切り替えます。枝の場合は配下のすべての行も切り替えます。mixed の枝はチェックされます。ただし、配下の変更できる行がすべてチェック済みの場合は、チェックが外れます。
+- **クリック**すると、末端の行はチェックされます。枝の行では、チェックをクリックするとチェックされ、行のそれ以外の部分をクリックすると開閉します。<kbd>Enter</kbd> は行のクリックと同じ動作です。
+- **無効な行**は、枝がチェックされてもチェックの状態を保ちます。そのため、枝が mixed のまま残ることがあります。
+- **値**は、チェックされた末端の行のリストで、ツリー内の順序に並びます。**枝は値に含まれません。** 枝のチェックは配下の行の状態を示すだけなので、値はフォルダーではなく各ファイルを示します。行がまだ読み込まれていない枝も含まれません。チェックされた枝の下に行が読み込まれると、それらの行はチェックされ、ツリーは `change` を発火します。
+
+ツリーにも `aria-multiselectable="true"` を指定してください。チェックボックスツリーは任意の数の行を選ぶツリーであり、そのように読み上げられます。
+
+## 行の遅延読み込み \{#loading\}
+
+サーバーから行を取得する枝は、`aria-expanded="false"` と空の `tree-sub` を持つ行です。配下に行がない状態で開かれると、ビヘイビアはその行に `aria-busy="true"` を付け、`expand` を発火します。行の先頭に[スピナー](/components/spinner)を置いてください。通常時は描画されず、行が処理中の間はシェブロンの位置に表示されるため、何も動きません。
+
+<ComponentPreview name="loading" height={200} title="行の遅延読み込み" background="plain" bodyClass="content-start p-lg" behaviors html={`<ul class="tree max-w(260) mx-auto" role="tree" aria-label="Repositories" id="repositories">
+  <li role="none">
+    <div class="tree-item tree-toggle" role="treeitem" aria-expanded="false"><span class="spinner" aria-hidden="true"></span>master-co/ui</div>
+    <ul class="tree-sub" role="group"></ul>
+  </li>
+  <li role="none">
+    <div class="tree-item tree-toggle" role="treeitem" aria-expanded="false"><span class="spinner" aria-hidden="true"></span>master-co/css</div>
+    <ul class="tree-sub" role="group"></ul>
+  </li>
+</ul>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  document.getElementById('repositories').addEventListener('expand', function (event) {
+    var row = event.detail.item
+    if (row.getAttribute('aria-busy') !== 'true') return
+    // A page fetches the rows here; this one waits a moment instead.
+    setTimeout(function () {
+      row.nextElementSibling.innerHTML = ['packages', 'site', 'README.md'].map(function (name) {
+        return '<li role="none"><div class="tree-item" role="treeitem">' + name + '</div></li>'
+      }).join('')
+    }, 1200)
+  })
+})
+</script>`} caption="リポジトリを開くと、行が届くまでスピナーが回り、その後は矢印キーで行の中に移動できます。" />
+
+ページは `expand` を監視し、コントラクトのクラスとロールを使って、枝の `tree-sub` に行を書き込みます。ビヘイビアは行の追加を検知し、`aria-busy` を外して、すぐにキー操作の対象にします。追加された行は Tab 順序に含まれず、矢印キーで移動できます。`expand` はビヘイビアが開くすべての枝で発火するため、行が必要かどうかは `aria-busy` で判断します。枝に行がないとわかった場合は、`aria-busy` と `aria-expanded` を削除します。その行は末端の行になります。
+
+```js name=app.js
+root.addEventListener('expand', async (event) => {
+  const row = event.detail.item
+  if (row.getAttribute('aria-busy') !== 'true') return
+  const children = await fetch(`/api/folders/${event.detail.value}`).then((response) => response.json())
+  row.nextElementSibling.replaceChildren(...children.map(rowFor))
+})
+```
+
+## 名前の変更 \{#rename\}
+
+`rename: true` を指定すると、行で <kbd>F2</kbd> を押したときに、そのラベルがその場で[インライン編集](/components/editable)に変わり、テキストが選択された状態になります。ラベルは `tree-label` にする必要があります。これにより、長い名前の末尾は省略記号になります。<kbd>Enter</kbd> で保存し、<kbd>Escape</kbd> でラベルを元に戻します。どちらの場合もフォーカスは行に戻ります。入力欄から離れると保存されます。空のラベルは保存されません。
+
+<ComponentPreview name="rename" height={168} title="名前の変更" background="plain" bodyClass="content-start p-lg" behaviors html={`<ul class="tree max-w(260) mx-auto" role="tree" aria-label="Pages" id="pages">
+  <li role="none">
+    <div class="tree-item tree-toggle" role="treeitem" aria-expanded="true"><span class="tree-label">Guide</span></div>
+    <ul class="tree-sub" role="group">
+      <li role="none"><div class="tree-item" role="treeitem" data-value="introduction"><span class="tree-label">Introduction</span></div></li>
+      <li role="none"><div class="tree-item" role="treeitem" data-value="installation"><span class="tree-label">Installation</span></div></li>
+    </ul>
+  </li>
+  <li role="none"><div class="tree-item" role="treeitem" data-value="changelog"><span class="tree-label">Changelog</span></div></li>
+</ul>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.tree(document.getElementById('pages'), { rename: true })
+})
+</script>`} caption="行にフォーカスし、F2 キーを押して名前を入力します。Enter キーで保存し、Escape キーで元に戻します。" />
+
+`attach()` はオプションを渡さないため、このプレビューでは `attach()` の実行後に `tree` を明示的に呼び出します。同じルートに対して2回呼び出すと、2回目が1回目を置き換えます。
+
+ビヘイビアは新しいラベルを `tree-label` に書き込み、ルート要素から `rename` を発火します。`detail.value` にはその行が表していた値、`detail.label` には新しいラベルが入ります。入力欄自体の `input` と `change` は、入力欄の外には伝わりません。ラベルの保存はページ側が行います。サーバーが変更を拒否した場合は、古いラベルを書き戻してください。各行には名前に合わせて変わらない `data-value` を指定し、名前を変更しても行が表す値が保たれるようにします。
+
+タッチスクリーンなど <kbd>F2</kbd> を使えない読者には、別の手段が必要です。`tree` が返す関数の `edit(row)` は、オプションの有無にかかわらず <kbd>F2</kbd> と同じ動作をします。[コンテキストメニュー](/components/menu)の「名前の変更」項目やボタンから使えます。
+
+```js name=app.js
+const pages = tree(root, { rename: true })
+
+root.addEventListener('rename', async (event) => {
+  const { item, value, label } = event.detail
+  const saved = await fetch(`/api/pages/${value}`, { method: 'PATCH', body: JSON.stringify({ title: label }) })
+  if (!saved.ok) item.querySelector('.tree-label').textContent = previous(value)
+})
+
+renameItem.addEventListener('click', () => pages.edit(selectedRow))
+```
 
 ## ツリーとナビゲーションの使い分け \{#tree-or-nav\}
 
@@ -136,11 +273,19 @@ root.addEventListener('change', (event) => console.log(event.detail.item))
 
 - `<details>` を使う場合、ツリー用のロールは追加しないでください。ネイティブの開閉コントロールはそのままで正しく読み上げられます。ビヘイビアを使わない場合は、すべての行に Tab キーで移動できます。
 - 現在の行は `aria-current="page"` で示します。ツリーパターン内では `aria-selected="true"` を使います。
+- 複数の行の選択、チェック、遅延読み込み、名前の変更はツリーパターンの機能で、`role="tree"` とビヘイビアが必要です。
+- チェックボックスツリーでは、行が `aria-checked` を持ちます。その `tree-check` には `aria-hidden="true"` を指定するため、状態は一度だけ読み上げられます。
+- 処理中の枝は `aria-busy="true"` でそれを示します。スピナーには `aria-hidden="true"` を指定します。
+- 名前を変更する入力欄の名前は `Rename <label>` です。ページの言語に合わせて `renameLabel` を渡してください。
 - タッチスクリーンでは行の高さが 44px になります。
 
 ## React、Svelte、Vue \{#frameworks\}
 
 `tree` コンポーネントはデータから行を描画し、ビヘイビアを適用します。選択中の行を外部から指定でき、選択結果も外部に渡します。`npx master-ui add tree` でプロジェクトにコピーできます。コンポーネントの仕組みと使い方は [React、Svelte、Vue](/guide/frameworks) を参照してください。
+
+- `multiple` を指定すると任意の数の行を選択でき、`checkable` を指定するとすべての行にチェックが付きます。どちらの場合も、値はリストになります。最初の値は、枝の mixed のチェックも含めて、最初のレンダリングに反映されます。
+- `children: []` を持つノードは、行が後から届く枝です。スピナーを持ち、開かれると `onExpand`（Vue では `@expand`）がその値で呼び出されます。子要素は `nodes` で渡します。
+- `onRename`（Vue では `@rename`）を指定すると名前の変更が有効になり、行の値と新しいラベルで呼び出されます。ラベルは `nodes` 内で保持します。
 
 <FrameworkSource name="tree" />
 

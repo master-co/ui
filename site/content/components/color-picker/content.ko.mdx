@@ -1,0 +1,126 @@
+---
+title: "색상 선택기"
+description: "명도와 채도의 영역, 색상, 불투명도로 고르거나 직접 입력해 어떤 색이든 정합니다."
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+색상 선택기는 어떤 색이든 고를 수 있습니다. 명도와 채도는 하나의 손잡이로 영역 위에서 고르고, 색상(hue)과 불투명도는 두 개의 [슬라이더](/components/slider)로 고르며, 색 자체는 hex, `rgb()`, `oklch()` 형식의 텍스트로 나타냅니다. 테마의 모든 색이 작성되는 색 공간인 OKLCH에서 색을 고르므로, 명도를 한 단계 바꾸면 어떤 색상에서든 같은 정도로 바뀐 것처럼 보입니다. 영역은 표면에 박혀 있는 그림이고, 손잡이는 진주빛 링 안에 담긴 현재 색이며, 트랙은 네이티브 range 입력 요소입니다. `color-picker` [동작](/guide/behaviors)은 이 구성 요소들이 서로 맞물려 움직이도록 합니다.
+
+<ComponentPreview name="default" height={384} title="색상 선택기" behaviors html={`<div class="sheet p-md">
+  <div class="color-picker" style="--color-picker-lightness: .62; --color-picker-chroma: .19; --color-picker-hue: 260">
+    <div class="color-picker-area">
+      <div class="color-picker-thumb" role="slider" tabindex="0" aria-label="Lightness and chroma" aria-valuemin="0" aria-valuemax="100" aria-valuenow="62" aria-valuetext="Lightness 62%, chroma 0.19"></div>
+    </div>
+    <span class="swatch swatch-lg color-picker-swatch"></span>
+    <input type="range" class="slider color-picker-hue" min="0" max="360" value="260" aria-label="Hue">
+    <input type="range" class="slider color-picker-alpha" min="0" max="100" value="100" aria-label="Opacity">
+    <div class="color-picker-fields">
+      <select class="select select-sm color-picker-format" aria-label="Format">
+        <option value="hex">Hex</option>
+        <option value="rgb">RGB</option>
+        <option value="oklch" selected>OKLCH</option>
+      </select>
+      <input class="input input-sm color-picker-text" name="accent" value="oklch(62% 0.19 260)" aria-label="Accent color" spellcheck="false" autocomplete="off">
+    </div>
+  </div>
+</div>`} caption="영역 위에서 드래그하거나 손잡이에서 방향키를 사용하고, 색상을 옮기고, 형식을 바꾸거나 #e5484d 같은 색을 입력해 보세요." />
+
+## 버튼으로 열기 \{#popover\}
+
+대개 색은 여러 설정 중 하나이므로, 선택기는 그 색을 보여 주는 버튼에서 열립니다. 루트 안에 버튼과 `color-picker-popover`가 있는 [팝오버](/components/popover)를 두세요. 팝오버가 세로 열이 되며, 버튼과 팝오버 모두 색을 담고 있는 루트 안에 있으므로 버튼 안의 `color-picker-swatch` 견본이 선택기가 닫혀 있는 동안에도 색을 보여 줍니다. 팝오버를 열고, 배치하고, 닫는 일은 브라우저가 처리하며, 동작은 동일합니다.
+
+<ComponentPreview name="popover" height={416} title="버튼으로 열기" bodyClass="content-start flex justify-center p-lg" behaviors html={`<div class="color-picker" style="--color-picker-lightness: .6256; --color-picker-chroma: .1933; --color-picker-hue: 23.03">
+  <button type="button" class="btn" popovertarget="brand-picker">
+    <span class="swatch swatch-sm color-picker-swatch"></span>
+    Brand color
+  </button>
+  <div id="brand-picker" popover class="popover color-picker-popover">
+    <div class="color-picker-area">
+      <div class="color-picker-thumb" role="slider" tabindex="0" aria-label="Lightness and chroma" aria-valuemin="0" aria-valuemax="100" aria-valuenow="62.6" aria-valuetext="Lightness 62.6%, chroma 0.193"></div>
+    </div>
+    <span class="swatch swatch-lg color-picker-swatch"></span>
+    <input type="range" class="slider color-picker-hue" min="0" max="360" value="23" aria-label="Hue">
+    <input type="range" class="slider color-picker-alpha" min="0" max="100" value="100" aria-label="Opacity">
+    <div class="color-picker-fields">
+      <select class="select select-sm color-picker-format" aria-label="Format">
+        <option value="hex" selected>Hex</option>
+        <option value="rgb">RGB</option>
+        <option value="oklch">OKLCH</option>
+      </select>
+      <input class="input input-sm color-picker-text" name="brand" value="#e5484d" aria-label="Brand color" spellcheck="false" autocomplete="off">
+    </div>
+  </div>
+</div>`} caption="선택기를 열고 색을 바꿔 보세요. 버튼 안의 견본이 그 색을 따라갑니다." />
+
+인쇄되는 브랜드 색처럼 불투명해야 하는 색이라면 `color-picker-alpha`를 빼세요. 그러면 견본이 색상 슬라이더 옆에만 놓이고, 불투명도를 포함해 입력한 색은 불투명도 없이 적용됩니다. 견본까지 빼면 트랙이 전체 너비를 차지합니다.
+
+## OKLCH를 사용하는 이유 \{#oklch\}
+
+영역을 대부분의 선택기가 그리는 사각형인 포화도(saturation)와 밝기(value)로 구성할 수도 있습니다. 이 사각형은 sRGB에 흰색과 검은색을 섞은 것에 불과하므로 그리기 쉽습니다. 하지만 팔레트를 고르기에는 좋지 않은 영역입니다. 같은 밝기 값이 어두운 파란색이 되기도 하고 눈부신 노란색이 되기도 하며, 같은 포화도에서 색상을 옮기면 색이 밝아 보이는 정도가 달라집니다. OKLCH는 같은 간격이 같게 보이도록 설계되었습니다. 그래서 테마는 색을 OKLCH로 작성하며, 테마에 쓸 색을 고르는 선택기도 OKLCH로 골라야 합니다.
+
+- **명도(lightness)** 는 영역의 위쪽 100%에서 아래쪽 0까지 이어지며, 어떤 색상에서든 같은 명도입니다.
+- **채도(chroma)** 는 영역의 시작 쪽에서 채도가 없는 회색으로 시작해 끝쪽에서 Display P3가 표현할 수 있는 한계인 .37까지 이어집니다. 색이 항상 채도가 요구하는 만큼 선명하지는 않습니다. 화면은 표시할 수 있는 가장 가까운 색을 보여 주며, 영역과 손잡이도 같은 규칙에 따라 그렇게 합니다.
+- **색상(hue)** 은 별도의 슬라이더에서 원을 따라 한 바퀴 돌며, 모든 색상을 구별할 수 있도록 하나의 명도와 채도로 그려집니다.
+
+값은 셀렉트가 가리키는 형식으로 작성됩니다. `oklch()`는 보관된 값 그대로 작성됩니다. hex와 `rgb()`는 sRGB만 담을 수 있으므로, sRGB를 벗어난 색은 CSS Color 4가 색을 화면에 맞추는 방식으로 맞춥니다. 즉 명도와 색상은 그대로 둔 채, sRGB로 작성할 수 있는 색과의 차이가 겨우 알아챌 수 있는 수준 이내가 될 때까지 채도를 줄입니다. 형식을 바꿔도 보관된 색은 바뀌지 않으므로, 색을 hex에서 `oklch()`로 바꿨다가 다시 hex로 돌려도 같은 hex 값이 됩니다.
+
+그레이디언트는 한 축으로만 이어지므로 영역은 행 단위로 그려집니다. 각 행은 자기 명도에서 회색부터 .37까지 이어지는 그레이디언트로, 그 선 위에서는 정확합니다. 그리고 행과 행 사이 중간 지점의 행들이 한 행에서 다음 행으로 흐려지는 마스크를 통해 다른 행들 위에 겹쳐집니다. 색은 동작이 게시하는 색상 값의 함수인 테마의 믹스인이므로, 컴포넌트는 자체 색을 하나도 작성하지 않습니다.
+
+## 동작 \{#behavior\}
+
+`colorPicker`는 `color-picker` 클래스가 있는 루트 요소를 받아, 연결한 동작을 해제하는 함수를 반환합니다.
+
+```js name=app.js
+import { colorPicker } from '@master/ui/behaviors/color-picker.js'
+
+const accent = colorPicker(document.querySelector('.color-picker'))
+
+accent.value // 'oklch(62% 0.19 260)'
+accent.value = '#e5484d' // choose a color, and hex as its format
+```
+
+- **색**은 세 가지 형식 중 어느 것으로든 작성된 텍스트 필드의 값에서 시작하며, 형식도 그 값을 따릅니다. 동작은 색을 루트에 `--color-picker-lightness`, `--color-picker-chroma`, `--color-picker-hue`, `--color-picker-alpha`의 네 숫자로 작성하며, 이 숫자들이 손잡이의 위치를 정하고 영역, 트랙, 견본을 칠합니다. 스크립트가 실행되기 전에도 영역이 올바르게 보이도록 첫 색의 숫자를 루트의 `style`에도 작성하세요.
+- **영역.** 누르면 손잡이가 포인터 아래로 오고 포커스를 받습니다. 드래그하면 손잡이가 따라오며, 영역의 가장자리를 넘어가도 따라오고 색은 가장자리에서 멈춥니다. 키 조작은 아래 표에 있습니다.
+- **텍스트.** 입력한 내용이 색이 되는 즉시 그 색을 적용하며, 텍스트는 입력한 그대로 둡니다. <kbd class="kbd">Enter</kbd> 키를 누르거나 필드를 벗어나 입력을 확정하면 선택한 형식으로 색을 다시 작성합니다. 색이 아닌 텍스트는 이전 값으로 되돌립니다.
+- **이벤트.** 손잡이는 색이 움직이는 동안 `input`을 발생시키고, 드래그가 끝나거나 키로 색을 옮겼을 때 `change`를 발생시킵니다. 슬라이더, 셀렉트, 텍스트 필드는 각자의 이벤트를 발생시킵니다. 루트에서 수신하는 쪽은 각 이벤트에서 새 `value`를 읽습니다.
+- **손잡이의 문구.** 손잡이의 `aria-valuetext`는 `Lightness 62%, chroma 0.19`라고 말합니다. 페이지 언어로 말하게 하려면 `valueText: (lightness, chroma) => …`를 전달하세요.
+
+동작을 연결하지 않으면 영역은 마크업에 작성된 색을 보여 주며, 슬라이더, 셀렉트, 텍스트 필드는 서로를 따라 움직이지 않는 일반 컨트롤입니다.
+
+## 키보드 \{#keyboard\}
+
+<ContractTable name="color-picker" show="keyboard" />
+
+## 접근성 \{#accessibility\}
+
+- 영역의 손잡이는 하나의 슬라이더입니다. <kbd class="kbd">ArrowUp</kbd>과 <kbd class="kbd">ArrowDown</kbd> 키로 명도를 움직이므로 손잡이의 값은 명도이며, `aria-valuetext`가 명도와 채도를 함께 알려 주므로 어느 쪽이 움직이든 스크린 리더는 둘 다 읽어 줍니다. "Lightness and chroma"처럼 무엇을 고르는지를 이름으로 지정하세요.
+- 텍스트 필드는 영역을 쓰지 않고 정확한 색을 지정하는 방법이며, 색의 이름은 텍스트 필드에 붙입니다(예: "Brand color"). 폼이 제출하는 값은 텍스트 필드의 `name`입니다.
+- 색상 슬라이더, 불투명도 슬라이더, 형식 셀렉트에 이름을 지정하세요. 이들의 키 조작은 플랫폼 기본 동작을 따릅니다.
+- 강제 색상 모드에서도 영역의 색은 유지됩니다. 사용자가 보러 온 것이 바로 그 색이기 때문입니다. 영역의 테두리와 손잡이의 포커스 표시는 시스템 색으로 그려집니다.
+
+## React, Svelte, Vue \{#frameworks\}
+
+`color-picker` 컴포넌트는 루트의 네 숫자를 포함해 첫 값을 첫 렌더링에 그려 넣고 동작을 연결하며, 그 뒤로는 동작이 모든 구성 요소를 움직입니다. 값은 선택한 형식으로 된 색 텍스트이며, 바뀔 때마다 외부로 전달됩니다. 페이지의 버튼에서 선택기를 열려면 `trigger`(Svelte에서는 snippet, Vue에서는 slot)를 지정하세요. `npx master-ui add color-picker` 명령을 실행해 프로젝트에 복사하세요. 컴포넌트의 구성과 사용 방법은 [React, Svelte, Vue](/guide/frameworks)에서 확인할 수 있습니다.
+
+<FrameworkSource name="color-picker" />
+
+## 클래스 \{#classes\}
+
+<ContractTable name="color-picker" />
+
+## 사용자 지정 속성 \{#custom-properties\}
+
+<ContractTable name="color-picker" show="properties" />
+
+## 관련 항목 \{#related\}
+
+<ComponentLinks slugs={['swatch', 'slider', 'popover']} />
+
+## 소스 \{#source\}
+
+<ComponentSource name="color-picker" />
