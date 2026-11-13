@@ -25,8 +25,25 @@ Repository skills live in `.agents/skills/` (linked as `.claude/skills/`).
 - `master-writing` (managed by the same package and sync command): shared technical writing, evidence and editing guidance.
 - `master-ui-writing` (owned here): reader tasks, Guide organization, technical sources and the documentation/export workflow. Use for writing, restructuring or reviewing guides and library documentation.
 - `master-ui-doc-illustrations` (owned here): technical explanation figures, their composition, text equivalents and verification. Use when a relationship benefits from a drawing; a working preview or a concise explanation may already be sufficient.
+- `modern-web-guidance` (upstream snapshot): web platform capabilities, browser compatibility and implementation pitfalls. Its use in this repository follows the policy below.
 
 Select managed skills in `.agents/master-skills.json`, then run `bun run skills:sync` and commit the generated managed files and lock. Keep product-specific extensions in the repository-owned skills rather than editing synchronized copies.
+
+### Modern Web Guidance
+
+`.agents/skills/modern-web-guidance/` contains the unmodified `skills/modern-web-guidance/SKILL.md` and root `LICENSE` from [GoogleChrome/modern-web-guidance at commit `4dd968349e54ca45a05dd5c818fb035c9054b022`](https://github.com/GoogleChrome/modern-web-guidance/tree/4dd968349e54ca45a05dd5c818fb035c9054b022). The Apache-2.0 license is retained beside the skill. Guides are retrieved on demand; this snapshot is independent of `@master/internal-skills` and its configuration and lock. The existing `.claude/skills` link exposes the same files.
+
+The following project policy overrides the upstream skill's broader activation, runner, fallback, update and reporting requirements:
+
+- **Consult before choosing an approach** when adding or changing native interactions, layout mechanisms, animation, accessibility, performance or browser compatibility. Adding a popover calls for a query; changing a button's spacing does not. Changes limited to token values, copy or existing visual styling do not require a query unless they also change one of those behaviors.
+- **Search one capability at a time**, using a short English query, then retrieve the matching guide IDs. Rephrase a weak or empty search once; if there is still no relevant result, consult official platform documentation. Do not retrieve unrelated guides or run a repository-wide `legacy-scan` automatically.
+- **Use the latest CLI on demand** with `DISABLE_TELEMETRY=1 npx -y modern-web-guidance@latest search "<query>"`, retaining the `--skill-version` value from the installed skill, and `DISABLE_TELEMETRY=1 npx -y modern-web-guidance@latest retrieve "<id>"`. Set the environment variable on each invocation only. Do not add a package dependency or put online queries in CI. Use the environment's existing execution permissions; this integration adds no separate approval step.
+- **Adapt the examples to Master UI.** Use platform facts and compatibility data as technical evidence; retain our design choices, class selectors, tokens, contracts, behavior responsibilities and framework idioms. An upstream example must still satisfy the component contract. If the evidence exposes a problem in our implementation, identify a concrete correction rather than treating a project convention as a platform fact.
+- **Keep our progressive-enhancement policy:** a usable baseline, feature detection and documented fallbacks. Consulting a guide does not authorize adding a polyfill, changing browser support or enabling Origin Trial or volatile features wholesale.
+- **If the network fails**, retry using `DISABLE_TELEMETRY=1 npx --offline -y modern-web-guidance@latest ...`. If no cached copy is usable, consult official documentation and state which information could not be verified. Do not block an ordinary change solely because the CLI is unavailable, and do not claim unverified compatibility.
+- **Report useful evidence concisely.** Link to guidance that actually shaped the delivered changes within the normal explanation; the upstream fixed report section and per-guide quotations are not required.
+
+Update the snapshot deliberately: select an upstream commit, replace only `SKILL.md` and `LICENSE` with those two source files byte for byte, review the diff, and update the commit link above in the same change. Keep local policy here rather than editing the imported files. Ordinary development and CLI update notices must not automatically rewrite the snapshot. After an update, check source equality and skill discovery, then run a search and retrieve smoke check with telemetry disabled and record the CLI version in the change's validation notes. The initial import was smoke-tested with CLI `1.0.0` using `light dismiss dialog`; this records validation, not a version pin.
 
 ## Documentation
 
