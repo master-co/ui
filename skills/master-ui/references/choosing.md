@@ -98,7 +98,7 @@ Read the row that matches the job, then the contract of the component it names.
 | The facts about one thing | `data-list` |
 | One figure and how it moved | `stat` |
 | What something costs, with its currency and its period | `price` |
-| A few numbers compared | `chart` |
+| Values compared, followed over time or read as parts of a whole: lines, areas, bars, a pie, a donut, rings, a radar, a scatter | `chart`, written from series by the `chart` behavior, by `chartMarkup()` on a server or by the framework component |
 | What a total is made of, as parts of one bar | `breakdown` |
 | Many small numbers over time or a grid | `heatmap` |
 | A service's days, each up, degraded or down | `uptime` |

@@ -1,6 +1,6 @@
 ---
 name: master-ui-covers
-description: Draw, review and place Master UI covers, the small drawings of a component, a layout, a block or a page shown on the /components, /blocks and /pages overviews and on documentation pages. Use when one needs a cover, when redrawing or reviewing one, when adding a primitive or a glyph to the cover vocabulary, or when placing covers on a page.
+description: Draw, review and place Master UI covers, the small drawings of a component, a layout, a block or a page shown on the /components, /charts, /blocks and /pages overviews and on documentation pages. Use when one needs a cover, when redrawing or reviewing one, when adding a primitive or a glyph to the cover vocabulary, or when placing covers on a page.
 license: MIT
 metadata:
   author: master-co
@@ -22,7 +22,7 @@ Use `$master-design` for craft judgment and `$master-ui-components` for the comp
 | `site/components/cover/theme.ts` | Scopes the published `@master/ui` theme to `.cover`. Never copy a token value into the site. |
 | `site/components/cover/Glyph.astro` | The icons a cover may use. |
 | `site/components/cover/art/<slug>.astro` | One drawing per component, a layout among them; the slug matches `site/components/catalog.ts`. |
-| `site/components/cover/art/blocks/<slug>.astro`, `art/pages/<slug>.astro` | One drawing per block and per page. `<Cover slug="hero" kind="blocks" />` finds it. |
+| `site/components/cover/art/charts/<slug>.astro`, `art/blocks/<slug>.astro`, `art/pages/<slug>.astro` | One drawing per chart, per block and per page. `<Cover slug="hero" kind="blocks" />` finds it. |
 
 A component without a drawing shows a dashed outline on the overview, so a missing cover is plain to see.
 
@@ -91,6 +91,7 @@ A page has no real size, so its cover is the kind that may be a **plan**: the wh
 | `cover-page`, `cover-column`, `cover-marks`, `cover-wheel`, `cover-cell` | A file's folded page, a chart's bar (`--h` tall; `cover-ink` for the one that matters), a window's three marks, a wheel's column of values that fade away from the middle, and a heatmap's cell at `--tone` of ink. |
 | `cover-span`, `cover-divide`, `cover-cite`, `cover-bar-struck` | On a `cover-track`: ink from `--from` to `--to` for a range; the line of a compare at `--fill`; a citation's numbered mark; a finished step's title with a hairline through it. |
 | `cover-arc`, `cover-dial`, `cover-part`, `cover-legend` | A gauge's dial filled to `--fill` (0 to 1); a dial's knob filled to `--fill` (0 to 1) with a `cover-knob` at its end; a breakdown's segment `--w` wide at `--tone` of ink (with `cover-well` for what is left), and the dot of the same tone beside its name. |
+| `cover-plot`, `cover-plot-shape`, `cover-plot-line`, `cover-plot-hair`, `cover-plot-wash` | A chart's plot as an SVG whose paths come from `chartLayout()`: a shape filled at `--tone` of ink, a line stroked at the same and `--w` wide, a hairline of the scale, and the wash that fades under a line. Series are steps of ink, never a category's hue. |
 | `cover-ticket`, `cover-stub`, `cover-device` + `cover-screen` | A ticket's two faces, which meet on a perforation between two notches; a phone's body `--d` wide and its screen. |
 | `cover-elbow`, `cover-action`, `cover-mark-inserted` | A thread's line where it turns into a reply; a swipe's action in the well its row has uncovered; on a `cover-mark`: inserted words over a fine underline. |
 | `cover-lane`, `cover-tick`, `cover-pin` | A gantt's bar from `--from` to `--to` of its track (with `cover-ink` for the current one); an uptime's day at `--tone` of ink; a hotspot's pin, placed by its middle on a `cover-media`. |

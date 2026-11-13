@@ -43,12 +43,14 @@ Then:
 Read [frameworks](references/frameworks.md) before writing a component in one of them. In short:
 
 - Most of the library is the same markup, in the framework's syntax: `className` and `htmlFor` in JSX, nothing else changes. Do not wrap a class in a component to rename it: `<Button variant="primary">` hides `btn btn-primary` from the checker and from the next reader. Wrap markup only when the project already does, and keep the contract's classes as literal strings.
-- Thirty-five patterns hold state and have a component to copy: avatar, calendar, carousel, color-picker, combobox, command, compare, cropper, dial, dialog, editable, field, gantt, gradient, listbox, log, menu, otp, panel, player, popover, schedule, signature, sortable, splitter, stepper, tabs, tags, toast, toolbar, tooltip, tour, transcript, tree, wheel. `npx master-ui add <name>` copies it into `ui/`; `npx master-ui add` lists them. Look in `ui/` first: the project may already have it, edited.
+- Thirty-six patterns hold state and have a component to copy: avatar, calendar, carousel, chart, color-picker, combobox, command, compare, cropper, dial, dialog, editable, field, gantt, gradient, listbox, log, menu, otp, panel, player, popover, schedule, signature, sortable, splitter, stepper, tabs, tags, toast, toolbar, tooltip, tour, transcript, tree, wheel. `npx master-ui add <name>` copies it into `ui/`; `npx master-ui add` lists them. Look in `ui/` first: the project may already have it, edited.
 - Never write the keys, the focus or the state attributes of one of those patterns in a component. They are in `@master/ui/behaviors`; the component gives the behavior a root and passes the value.
 
 ## Choose the component
 
 Read [choosing](references/choosing.md) when more than one component could do the job: an overlay, a message, a choice among options, a number, navigation, a set of records. Each contract's `use` and `instead` say the same for one component.
+
+Read [charts](references/charts.md) before drawing numbers: which form does the job, how a chart is written from its series, and how its colors are given.
 
 A block or a page is markup, not a class: copy it from `https://ui.master.co/blocks/<slug>.md` or `/pages/<slug>.md` and edit the copy. A layout class (`auto-grid`, `bento`, `masonry`, `breakout`, `sticky-stack`, `form`, and the frames `page` and `shell`) has a contract like a component's: read `https://ui.master.co/components/<name>.md`, or `/pages/page.md` and `/pages/app-shell.md` for the frames.
 
