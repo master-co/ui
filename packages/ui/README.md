@@ -119,6 +119,7 @@ Or import only the theme and the components you use:
 | Lightbox | `lightbox`, `lightbox-media`, `lightbox-caption`, `lightbox-close` |
 | Popover | `popover`, `popover-end`, `popover-center`, `popover-top` |
 | Color picker | `color-picker`, `color-picker-area`, `color-picker-thumb`, `color-picker-hue`, `color-picker-alpha`, `color-picker-swatch`, `color-picker-fields`, `color-picker-format`, `color-picker-text`, `color-picker-popover` |
+| Panel | `panel`, `panel-header`, `panel-handle`, `panel-title`, `panel-actions`, `panel-minimize`, `panel-body`, `panel-resize` |
 | Menu | `menu`, `menu-end`, `menu-top`, `menu-sub`, `menu-context`, `menu-item`, `menu-item-danger`, `menu-input`, `menu-shortcut`, `menu-label`, `menu-separator` |
 | Listbox | `listbox`, `listbox-option`, `listbox-body`, `listbox-description`, `listbox-end`, `listbox-group`, `listbox-label`, `listbox-separator`, `listbox-empty` |
 | Combobox | `combobox`, `combobox-toggle` |

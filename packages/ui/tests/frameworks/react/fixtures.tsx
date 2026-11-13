@@ -12,6 +12,7 @@ import { Gantt } from '../../../frameworks/react/gantt.tsx'
 import { Listbox } from '../../../frameworks/react/listbox.tsx'
 import { Menu, type MenuProps } from '../../../frameworks/react/menu.tsx'
 import { Otp } from '../../../frameworks/react/otp.tsx'
+import { Panel, type PanelProps } from '../../../frameworks/react/panel.tsx'
 import { Popover, type PopoverProps } from '../../../frameworks/react/popover.tsx'
 import { Signature } from '../../../frameworks/react/signature.tsx'
 import { Sortable, type SortableProps } from '../../../frameworks/react/sortable.tsx'
@@ -127,6 +128,14 @@ function DialogExample(props: DialogProps) {
   )
 }
 
+function PanelExample(props: Omit<PanelProps, 'title' | 'handleLabel'>) {
+  return (
+    <Panel id="layers" title="Layers" handleLabel="Move the Layers panel with the arrow keys" trigger={attributes => <button type="button" className="btn" {...attributes}>Layers</button>} {...props}>
+      <p>Header, Hero image, Pricing table</p>
+    </Panel>
+  )
+}
+
 function PopoverExample(props: PopoverProps) {
   return (
     <Popover trigger={attributes => <button type="button" className="btn" {...attributes}>Share</button>} {...props}>
@@ -168,6 +177,7 @@ export const fixtures = {
   'listbox': Listbox,
   'menu': MenuExample,
   'otp': Otp,
+  'panel': PanelExample,
   'popover': PopoverExample,
   'signature': Signature,
   'sortable': SortableExample,

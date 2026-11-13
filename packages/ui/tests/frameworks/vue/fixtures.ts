@@ -21,6 +21,7 @@ import ContextMenuExample from './ContextMenuExample.vue'
 import DialogExample from './DialogExample.vue'
 import FieldExample from './FieldExample.vue'
 import MenuExample from './MenuExample.vue'
+import PanelExample from './PanelExample.vue'
 import PopoverExample from './PopoverExample.vue'
 import SortableExample from './SortableExample.vue'
 import SplitterExample from './SplitterExample.vue'
@@ -48,6 +49,7 @@ export const fixtures: Record<string, Component> = {
   'listbox': Listbox,
   'menu': MenuExample,
   'otp': Otp,
+  'panel': PanelExample,
   'popover': PopoverExample,
   'signature': Signature,
   'sortable': SortableExample,

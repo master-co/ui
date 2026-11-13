@@ -1,7 +1,7 @@
 import { afterEach, test } from 'node:test'
 import assert from 'node:assert/strict'
 import { dom } from './dom.ts'
-import { calendar, calendarMonth, calendarPeriods, combobox, command, compare, dial, gantt, listbox, otp, signature, splitter, stepper, tour, tree, wheel } from '../../behaviors/index.js'
+import { calendar, calendarMonth, calendarPeriods, combobox, command, compare, dial, gantt, listbox, otp, panel, signature, splitter, stepper, tour, tree, wheel } from '../../behaviors/index.js'
 
 /** happy-dom catches what a listener throws and reports it on the window; a test must not pass over it. */
 const thrown: unknown[] = []
@@ -250,6 +250,25 @@ test('dial: value reads and sets the number on a step within the ends, and setti
   assert.equal(one<HTMLInputElement>('input[type="hidden"]').value, '63')
   handle.value = -5
   assert.equal(handle.value, 0, 'it stops at aria-valuemin')
+  assert.deepEqual(heard, [])
+})
+
+test('panel: value reads and sets the place, the size and the fold, and setting it says nothing', () => {
+  const { one, heard } = setup(`<div id="layers" popover="manual" role="dialog" class="panel" aria-labelledby="layers-title">
+  <div class="panel-header">
+    <button type="button" class="panel-handle" aria-label="Move the Layers panel with the arrow keys"></button>
+    <h2 class="panel-title" id="layers-title">Layers</h2>
+    <div class="panel-actions"><button type="button" class="btn btn-quiet btn-sm btn-square panel-minimize" aria-pressed="false" aria-label="Minimize"></button></div>
+  </div>
+  <div class="panel-body">Header</div>
+</div>`)
+  const root = one<HTMLElement>('.panel')
+  const handle = panel(root)
+  assert.deepEqual(handle.value, { x: null, y: null, width: null, height: null, minimized: false })
+  handle.value = { x: 40, y: 96, width: 288, height: 360, minimized: true }
+  assert.deepEqual(handle.value, { x: 40, y: 96, width: 288, height: 360, minimized: true })
+  assert.equal(root.style.getPropertyValue('--panel-x'), '40px')
+  assert.equal(one('.panel-minimize').getAttribute('aria-pressed'), 'true')
   assert.deepEqual(heard, [])
 })
 

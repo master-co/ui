@@ -21,6 +21,7 @@ import ContextMenuExample from './ContextMenuExample.svelte'
 import DialogExample from './DialogExample.svelte'
 import FieldExample from './FieldExample.svelte'
 import MenuExample from './MenuExample.svelte'
+import PanelExample from './PanelExample.svelte'
 import PopoverExample from './PopoverExample.svelte'
 import SortableExample from './SortableExample.svelte'
 import SplitterExample from './SplitterExample.svelte'
@@ -48,6 +49,7 @@ export const fixtures = {
   'listbox': Listbox,
   'menu': MenuExample,
   'otp': Otp,
+  'panel': PanelExample,
   'popover': PopoverExample,
   'signature': Signature,
   'sortable': SortableExample,

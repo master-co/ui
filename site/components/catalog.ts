@@ -77,6 +77,7 @@ export const components = [
   { slug: 'dialog', name: 'Dialog', category: 'Overlays', description: 'A native modal on an overlay sheet, opened and closed without script.' },
   { slug: 'lightbox', name: 'Lightbox', category: 'Overlays', description: 'A picture opened large over the page, in a native dialog.' },
   { slug: 'popover', name: 'Popover', category: 'Overlays', description: 'A floating sheet anchored to the button that opens it.' },
+  { slug: 'panel', name: 'Panel', category: 'Overlays', description: 'A floating surface the reader moves, resizes, folds to its header and closes.' },
   { slug: 'menu', name: 'Menu', category: 'Overlays', description: 'A list of actions in a popover, placed against its button.' },
   { slug: 'command', name: 'Command palette', category: 'Overlays', description: 'A dialog that is one search field over a list of commands.' },
   { slug: 'tooltip', name: 'Tooltip', category: 'Overlays', description: 'A short label in ink, shown on hover, focus and long press.' },

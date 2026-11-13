@@ -23,6 +23,7 @@ import { listbox } from './listbox.js'
 import { contextMenu, menu } from './menu.js'
 import { otp } from './otp.js'
 import { signature, signaturePath, signatureSvg } from './signature.js'
+import { panel } from './panel.js'
 import { sortable } from './sortable.js'
 import { range } from './range.js'
 import { splitter } from './splitter.js'
@@ -34,7 +35,7 @@ import { tour } from './tour.js'
 import { tree } from './tree.js'
 import { wheel } from './wheel.js'
 
-export { calendar, calendarMonth, calendarPeriods, colorPicker, colorPickerState, combobox, command, compare, contextMenu, dial, editable, gantt, listbox, menu, otp, range, signature, signaturePath, signatureSvg, sortable, splitter, stepper, tabs, tags, toolbar, tour, tree, wheel }
+export { calendar, calendarMonth, calendarPeriods, colorPicker, colorPickerState, combobox, command, compare, contextMenu, dial, editable, gantt, listbox, menu, otp, panel, range, signature, signaturePath, signatureSvg, sortable, splitter, stepper, tabs, tags, toolbar, tour, tree, wheel }
 
 /**
  * Each pattern's root class and the behavior that drives it.
@@ -62,6 +63,7 @@ const patterns = [
   ['.toolbar[role="toolbar"]', toolbar],
   ['.coachmark-tour', tour],
   ['.color-picker', colorPicker],
+  ['.panel', panel],
 ]
 
 /**

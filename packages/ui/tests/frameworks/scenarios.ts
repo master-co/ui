@@ -778,6 +778,53 @@ export const scenarios: Record<string, Scenario> = {
     await driver.act(() => hint.mounted.unmount())
   },
 
+  async panel(driver, page) {
+    const committed: unknown[] = []
+    const known: unknown[] = []
+    const opened: boolean[] = []
+    const start = { x: 120, y: 80, width: 288, height: null, minimized: false }
+    const { mounted, heard } = await owned(driver, 'panel', { value: start, open: false, onOpenChange: (open: boolean) => opened.push(open), onValueCommit: (value: unknown) => { committed.push(value); known.push(heard.at(-1)) } })
+    conforms(page)
+    const root = page.one<HTMLElement>('.panel')
+    const handle = page.one<HTMLElement>('.panel-handle')
+    const style = (name: string) => root.style.getPropertyValue(`--panel-${name}`)
+    assert.equal(page.one('button.btn[command="toggle-popover"]').getAttribute('commandfor'), root.id, 'the trigger names the panel')
+    assert.equal(root.getAttribute('popover'), 'manual')
+    assert.equal(root.getAttribute('aria-labelledby'), page.one('.panel-title').id, 'the title names the panel')
+    assert.equal(page.one('.panel-actions [command="hide-popover"]').getAttribute('commandfor'), root.id, 'the close button names the panel')
+    assert.deepEqual([style('x'), style('y'), style('width'), style('height')], ['120px', '80px', '288px', ''], 'the place is in the first render')
+    assert.equal(page.one('.panel-minimize').getAttribute('aria-pressed'), 'false')
+
+    await driver.act(() => mounted.set({ open: true }))
+    assert.equal(page.isOpen(root), true, 'open opens it')
+    assert.deepEqual(opened, [], 'and its owner, who said so, is not told')
+
+    // happy-dom draws nothing: the panel is drawn where it was put, 200 tall.
+    root.getBoundingClientRect = () => {
+      const [x, y, width] = ['x', 'y', 'width'].map(name => parseFloat(style(name)))
+      return { left: x, top: y, width, height: 200, right: x + width, bottom: y + 200, x, y } as DOMRect
+    }
+    await driver.act(() => page.key(handle, 'ArrowRight'))
+    assert.deepEqual(heard, [{ x: 136, y: 80, width: 288, height: null, minimized: false }], 'a key moves it and the place comes out')
+    assert.deepEqual(committed, heard)
+    assert.deepEqual(known, heard, 'a place is committed after it has come out as the value')
+    await driver.act(() => page.click(page.one('.panel-minimize')))
+    assert.deepEqual(heard.at(-1), { x: 136, y: 80, width: 288, height: null, minimized: true }, 'folding it comes out')
+    assert.equal(committed.length, 2)
+    await driver.act(() => page.one('.panel-body').dispatchEvent(new page.window.Event('change', { bubbles: true })))
+    assert.equal(committed.length, 2, 'a field in the body that says change is not the panel')
+
+    await driver.act(() => mounted.set({ value: { x: 40, y: 48, width: null, height: 320, minimized: false } }))
+    assert.deepEqual([style('x'), style('y'), style('width'), style('height')], ['40px', '48px', '', '320px'], 'a place set by the owner is written')
+    assert.equal(page.one('.panel-minimize').getAttribute('aria-pressed'), 'false')
+    assert.equal(heard.length, 2, 'and says nothing')
+
+    await driver.act(() => root.hidePopover())
+    assert.deepEqual(opened, [false], 'a panel the browser closed says so')
+    await driver.act(() => mounted.unmount())
+    assert.equal(page.all('.panel').length, 0)
+  },
+
   async tooltip(driver, page) {
     const mounted = await driver.mount('tooltip')
     conforms(page)
