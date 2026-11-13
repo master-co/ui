@@ -1,0 +1,141 @@
+---
+title: "可延伸欄"
+description: "維持適合閱讀的欄寬，讓圖片或橫幅可以超出欄位，甚至延伸至兩側邊緣。"
+---
+
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import PagePreview from '~/site/components/PagePreview.astro'
+
+可延伸欄會在可用空間內置中，欄寬以舒適閱讀為準。圖片、表格或橫幅可以稍微超出文字欄，也可以延伸至兩側邊緣。長篇文章、變更紀錄或故事都適合這種版面配置，文字維持好讀的行長，其他內容則可使用更寬的空間。
+
+子元素無須加上類別，預設就會排在閱讀欄中。需要向外延伸的項目才加上 `breakout-wide` 或 `breakout-full`。這個版面配置本身不提供視覺樣式，滿版橫幅的外觀由 utility 或元件提供。
+
+<PagePreview name="default" title="可延伸欄" height={1576} tabletHeight={1500} phoneHeight={1800} caption="捲動閱讀文章，再切換到平板和手機。文字維持適合閱讀的欄寬，圖片和表格依欄位兩側的可用空間調整寬度，橫幅則始終延伸至兩側邊緣。" html={`<article class="breakout py-2xl bg-surface-base fg-text-body text-md leading-lg">
+  <header class="flex flex-col gap-xs">
+    <p class="eyebrow">Changelog · 12 November</p>
+    <h1 class="heading heading-2xl">Faster cold builds, and comments on previews</h1>
+    <p class="lead">Dependency caches are now restored before the install step, and anyone with the link to a preview can leave a comment on it.</p>
+  </header>
+  <p>A cold build is one that starts with nothing: a new branch, a cleared cache, a project that has not built in a week. Until this release it downloaded every dependency again before it could restore anything, which made the first build of a branch the slowest one, and the one people waited for most.</p>
+  <figure class="figure breakout-wide">
+    <img class="figure-media" src="/demo/harbor.svg" alt="A wooden jetty running out over calm water" style="--figure-ratio: 21 / 9">
+    <figcaption class="figure-caption">The cache now waits at the end of the jetty, not the start: it is there before the install begins.</figcaption>
+  </figure>
+  <h2 class="heading heading-lg mt-md">Caches before the install</h2>
+  <p>The cache of a project is now keyed by its lockfile and restored before the install step runs. The install finds what it needs already in place and only fetches what changed. A branch that changes no dependency builds as fast as the one it came from.</p>
+  <div class="breakout breakout-full py-xl bg-surface-tray">
+    <dl class="auto-grid" style="--auto-grid-min: 9rem">
+      <div class="stat">
+        <dt class="stat-label">Cold builds</dt>
+        <dd class="stat-row m(0)"><span class="stat-value">38s</span><span class="stat-delta">21% faster</span></dd>
+      </div>
+      <div class="stat">
+        <dt class="stat-label">Installs skipped</dt>
+        <dd class="stat-row m(0)"><span class="stat-value">64%</span></dd>
+      </div>
+      <div class="stat">
+        <dt class="stat-label">Data fetched</dt>
+        <dd class="stat-row m(0)"><span class="stat-value">1.9 GB</span><span class="stat-delta">48% less</span></dd>
+      </div>
+    </dl>
+  </div>
+  <h2 class="heading heading-lg mt-md">Comments on previews</h2>
+  <p>Anyone with the link to a preview can now leave a comment on it, pinned to the place they mean. Comments are kept with the deploy, so they are still there when someone opens the same preview next week, and they are listed on the pull request.</p>
+  <div class="scroll-area scroll-area-inline breakout-wide" tabindex="0" role="region" aria-label="Who can comment, by plan">
+    <table class="table">
+      <thead>
+        <tr class="table-row">
+          <th class="table-heading" scope="col">Plan</th>
+          <th class="table-heading" scope="col">Who can comment</th>
+          <th class="table-heading" scope="col">Kept for</th>
+          <th class="table-heading table-numeric" scope="col">Previews</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="table-row">
+          <th class="table-cell table-primary" scope="row">Free</th>
+          <td class="table-cell">Members of the team</td>
+          <td class="table-cell">30 days</td>
+          <td class="table-cell table-numeric">10</td>
+        </tr>
+        <tr class="table-row">
+          <th class="table-cell table-primary" scope="row">Pro</th>
+          <td class="table-cell">Anyone with the link</td>
+          <td class="table-cell">One year</td>
+          <td class="table-cell table-numeric">Unlimited</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Both changes are on for every project today. There is nothing to turn on.</p>
+</article>`} />
+
+## 版面配置原理 \{#how-it-is-built\}
+
+- **單一欄軌。** 可延伸欄是只有一欄的格線。欄寬取 `--breakout-measure`（預設為 40rem）與可用寬度扣除兩側各一個 `--breakout-gutter` 後的寬度，兩者取較小值。閱讀欄置中，子元素無須加上類別就會排進欄內。
+- **以外距向欄外延伸。** 可延伸欄是行內尺寸容器。對子元素而言，`100cqi` 是容器寬度，`100%` 是欄寬，因此欄位任一側的可用空間就是兩者差值的一半。`breakout-wide` 以負外距向兩側延伸，每側最多 `--breakout-wide`，並保留邊距。`breakout-full` 則延伸至容器邊緣。
+- **滿版橫幅內的文字與正文對齊。** 滿版子元素也可以套用 `breakout`，讓橫幅延伸至兩側邊緣，同時把自己的子元素排在同樣欄寬的欄位裡。上方範例中，橫幅裡的數字與橫幅前後的正文對齊。
+- **用列間距統一垂直間隔。** 格線中的外距不會合併，因此子元素以 1.25rem 的列間距隔開。標題加上 `mt-md`，讓標題與上方內容的間距略大於與下方內容的間距。
+- **寬表格可獨立捲動。** 將表格放在加上 `scroll-area-inline` 和 `breakout-wide` 的[捲動區域](/components/scroll-area)內。這樣在手機上就能於欄內橫向捲動表格，避免撐寬頁面。
+
+## 加寬與滿版 \{#wide-and-full\}
+
+子元素能延伸多遠，取決於欄位兩側還有多少空間，也就是頁面的寬度。
+
+| 可用寬度 | 閱讀欄 | `breakout-wide` | `breakout-full` |
+| --- | --- | --- | --- |
+| 大於欄寬上限加上兩側的最大延伸量 | 40rem，置中 | 每側多 8rem，共 56rem | 整個可用寬度 |
+| 介於上述與下述兩種情況之間 | 40rem，置中 | 可用寬度扣除兩側邊距 | 整個可用寬度 |
+| 小於欄寬上限 | 可用寬度扣除兩側邊距 | 與閱讀欄同寬 | 整個可用寬度 |
+
+<ComponentPreview name="widths" background="stripes" height={332} narrowHeight={332} title="寬度" bodyClass="p(0)" html={`<div class="breakout py-lg fg-text-muted text-sm" style="--breakout-measure: 20rem; --breakout-wide: 5rem">
+  <div class="well flex items-center justify-center h(56)">The column</div>
+  <div class="well flex items-center justify-center h(56) breakout-wide">breakout-wide</div>
+  <div class="well flex items-center justify-center h(56) breakout-full">breakout-full</div>
+  <div class="well flex items-center justify-center h(56)">The column</div>
+</div>`} />
+
+`--breakout-measure` 設定閱讀欄的最大寬度。欄寬為 40rem 時，每行約可容納 70 個正文文字字元。字級較大時可調低這個值，程式碼欄則可調高。`--breakout-wide` 設定加寬項目在每側最多可延伸多遠，`--breakout-gutter` 則設定非滿版項目與容器邊緣之間至少要保留多少空間。
+
+## 滿版橫幅 \{#full-band\}
+
+滿版橫幅通常以色塊或圖片為底，上面的文字仍應對齊閱讀欄。將橫幅本身也設為可延伸欄。它作為 `breakout-full` 子元素延伸至兩側邊緣，裡面的子元素則排在與前後正文同寬的欄位內。
+
+```html
+<div class="breakout breakout-full py-xl bg-surface-tray">
+  <p>These words line up with the column above and below the band.</p>
+</div>
+```
+
+可延伸欄本身不提供視覺樣式，因此橫幅的底色由 utility `bg-surface-tray` 提供。若要讓圖片延伸至兩側邊緣，請在[圖文呈現](/components/figure)上使用 `breakout-full` 並設定 `--figure-radius: 0`，讓圖片的直角貼齊視窗邊緣。
+
+## 使用時機 \{#when\}
+
+文章、貼文、變更紀錄或指南等以單欄閱讀為主的頁面，適合使用可延伸欄。如果閱讀欄旁還有導覽、目錄等區域，請使用[文件頁面](/pages/docs)，其中的文章欄仍可設為可延伸欄。若所有內容都留在欄內，直接用 utility `max-w(640) mx-auto` 加上兩側邊距即可。
+
+## 無障礙 \{#accessibility\}
+
+- 可延伸欄只調整寬度，閱讀順序仍依標記中的排列。
+- 欄寬以 rem 設定，因此會隨讀者的文字大小調整。字級放大時，欄位也會加寬，每行仍約可容納 70 個字元。當視窗容不下這個寬度時，欄位會隨視窗縮窄，避免頁面出現橫向捲動。
+- 表格超出欄寬時，請將它放在有名稱並設有 `tabindex="0"` 的[捲動區域](/components/scroll-area)中，讓使用者也能以鍵盤捲動。
+
+## 類別 \{#classes\}
+
+<ContractTable name="breakout" directory="layouts" />
+
+## 自訂屬性 \{#custom-properties\}
+
+<ContractTable name="breakout" show="properties" directory="layouts" />
+
+## 相關項目 \{#related\}
+
+<ComponentLinks slugs={['figure', 'heading', 'table', 'scroll-area', 'quote', 'arrangements']} />
+
+<ComponentLinks kind="pages" slugs={['docs', 'page']} />
+
+## 原始碼 \{#source\}
+
+<ComponentSource name="breakout" directory="layouts" />

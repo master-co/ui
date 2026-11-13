@@ -1,0 +1,76 @@
+---
+title: "目次"
+description: "ページの見出しをリンクにし、表示中のセクションを CSS で示します。"
+---
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+目次は、ページの見出しを控えめなリンクの一覧にし、細い縦線に沿って並べます。表示中のセクションへのリンクは前景色で強調され、縦線上のマーカーがリンク間をなめらかに移動します。ブラウザーが `scroll-target-group` に対応していれば、スクロールに応じて、リンク先が表示範囲に入ったリンクが `:target-current` に一致し、自動で強調されます。オブザーバーもスクリプトも不要です。
+
+<ComponentPreview name="default" height={288} title="目次" background="plain" bodyClass="p-lg" html={`<div class="grid grid-cols(2) gap-lg">
+  <div class="h(240) overflow-y-auto scroll-area text-sm leading-md fg-text-body">
+    <h3 class="m(0) fg-text-strong" id="toc-install">Install</h3>
+    <p>Add the package and import it after the preset. The stylesheet has no build step of its own.</p>
+    <p>It ships as plain CSS files, one per component.</p>
+    <h3 class="fg-text-strong" id="toc-theme">Theme</h3>
+    <p>Moonstone and obsidian share one set of tokens. Override a token and every component follows.</p>
+    <p>The brand color is one token.</p>
+    <h3 class="fg-text-strong" id="toc-corners">Corners</h3>
+    <p>Corners turn with continuous curvature where the browser can draw them, and nest by their inset.</p>
+    <p>Elsewhere they are circular.</p>
+    <h3 class="fg-text-strong" id="toc-motion">Motion</h3>
+    <p>One easing family. Interaction is quick, explanation calm, and reduced motion keeps the fade.</p>
+    <p class="mb(160)">That is the whole system.</p>
+  </div>
+  <nav class="toc self-start" aria-label="On this page">
+    <p class="toc-title">On this page</p>
+    <ul class="toc-list">
+      <li><a class="toc-link" href="#toc-install">Install</a></li>
+      <li><a class="toc-link" href="#toc-theme">Theme</a></li>
+      <li><a class="toc-link" href="#toc-corners">Corners</a></li>
+      <li><a class="toc-link" href="#toc-motion">Motion</a></li>
+    </ul>
+  </nav>
+</div>`} caption="本文をスクロールすると、マーカーが表示中のセクションに追従します。scroll-target-group に対応していないブラウザーでは、スクリプトが aria-current を設定するまで、リンクの強調もマーカーの表示も行われません。" />
+
+## 階層 \{#levels\}
+
+リスト項目の中に `toc-list` を置くと、1 段深い階層になります。縦線は共有し、リンクは 1 段インデントします。1 ページの目次は 2 階層で十分です。3 階層目が必要なら、ページを分割する目安です。
+
+<ComponentPreview name="levels" height={224} title="階層" background="plain" bodyClass="p-lg" html={`<nav class="toc max-w(220)" aria-label="On this page">
+  <ul class="toc-list">
+    <li><a class="toc-link" href="#">Overview</a></li>
+    <li>
+      <a class="toc-link" href="#" aria-current="true">Theme</a>
+      <ul class="toc-list">
+        <li><a class="toc-link" href="#">Surfaces</a></li>
+        <li><a class="toc-link" href="#">Lines and shadows</a></li>
+        <li><a class="toc-link" href="#">The brand color</a></li>
+      </ul>
+    </li>
+    <li><a class="toc-link" href="#">Accessibility</a></li>
+  </ul>
+</nav>`} />
+
+## 現在のセクションを明示的に指定 \{#marking\}
+
+リンクに `aria-current="true"` を付けると、`:target-current` と同じ表示になります。静的なリストではサーバー側で指定し、scroll-target-group に対応していない環境では `IntersectionObserver` から設定します。両方が有効な場合も、表示中のセクションに追従するため、同じリンクを示します。
+
+## アクセシビリティ \{#accessibility\}
+
+- リストには `<nav>` を使い、「このページの目次」などのラベルを付けます。これにより、ページのランドマークから見つけやすくなり、メインナビゲーションとも区別できます。
+- リンクは `id` で見出しを参照します。[ナビゲーションバー](/components/navbar)がスクロール領域の上部に固定されている場合は、その領域に `scroll-padding-top` を指定し、移動先の見出しがバーの下に隠れないようにします。
+- 現在のリンクは文字が前景色に変わり、その横に前景色の幅 1.5px のマーカーが付きます。どちらも色相に頼らず現在位置を示します。動きを減らす設定では、マーカーはアニメーションなしで移動します。
+
+## クラス \{#classes\}
+
+<ContractTable name="toc" />
+
+## カスタムプロパティ \{#custom-properties\}
+
+<ContractTable name="toc" show="properties" />
+
+## ソース \{#source\}
+
+<ComponentSource name="toc" />

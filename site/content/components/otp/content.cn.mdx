@@ -1,0 +1,91 @@
+---
+title: "验证码输入框"
+description: "逐格输入短验证码，每格一个字符。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+一次性验证码（OTP）输入框用于输入简短的验证码，每格输入一个字符，例如短信或身份验证器提供的六位数字。每格都是原生输入框，呈小凹槽状，材质与[文本输入框](/components/input)相同。聚焦时，输入格升至面板表面，并显示墨色轮廓。在触屏上，可以通过页面上的[数字键盘](/components/keypad)填写。
+
+<ComponentPreview name="default" height={96} title="一次性验证码" background="plain" behaviors html={`<fieldset class="otp" aria-label="Verification code">
+  <input class="otp-slot" inputmode="numeric" pattern="[0-9]" maxlength="1" autocomplete="one-time-code" aria-label="Digit 1" value="4">
+  <input class="otp-slot" inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="Digit 2" value="2">
+  <input class="otp-slot" inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="Digit 3">
+  <span class="otp-separator" aria-hidden="true"></span>
+  <input class="otp-slot" inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="Digit 4">
+  <input class="otp-slot" inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="Digit 5">
+  <input class="otp-slot" inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="Digit 6">
+</fieldset>`} caption="输入一位数字后，焦点移到下一格。按 Backspace 可退回上一格，粘贴的验证码会分填到各格。" />
+
+## 交互行为 \{#behavior\}
+
+未加载脚本时，每格都是普通输入框。输入一个字符后，按 <kbd>Tab</kbd> 切换到下一格。`otp` [行为脚本](/guide/behaviors)让多个输入格用起来像一个输入框。脚本接收带有 `otp` 类的根元素，并返回一个用于解除绑定的函数。
+
+```js name=app.js
+import { otp } from '@master/ui/behaviors/otp.js'
+
+const root = document.querySelector('.otp')
+otp(root)
+
+root.addEventListener('change', (event) => {
+  if (event.detail) verify(event.detail.value)
+})
+```
+
+- **输入。** 输入一个字符后，焦点移到下一格。输入格会拒绝不允许的字符。聚焦时，格内已有的字符会被选中，继续输入即可替换。
+- **退格。** 按 <kbd>Backspace</kbd> 清空当前格。如果当前格为空，焦点会移到上一格并清空该格。
+- **粘贴和自动填充。** 粘贴或自动填充的验证码会分填到各格。完整验证码从第一格开始填，部分验证码从接收内容的那一格开始填。
+- **事件。** 脚本写入某一格时，该格会像键入时一样触发 `input`。所有格都填满后，根元素会触发一个冒泡的 `change` 事件，验证码放在 `detail.value` 中。输入格自身的 `change` 事件也会冒泡经过根元素，但没有 `detail`，所以上面的监听器会检查该字段。
+
+| 选项 | 设置内容 |
+| --- | --- |
+| `pattern` | 单个字符必须匹配的正则表达式。默认使用第一格的 `pattern` 属性，未设置该属性时只接受数字 |
+
+第一格设置 `autocomplete="one-time-code"` 是为了支持自动填充。手机提供短信验证码时，会将整串验证码填入同一个输入框。`maxlength="1"` 会在脚本读取前将其截断为一个字符。绑定期间，行为脚本会移除各格的 `maxlength`，自行将每格限制为一个字符。解除绑定时会恢复该属性。没有脚本时，该属性会保留，自动填充只能填入验证码的第一个字符。因此，通过短信接收验证码时，建议使用[单个输入框](#one-field-is-enough)。
+
+## 无效状态 \{#invalid\}
+
+验证码错误时，将各格标记为 `aria-invalid="true"`，并在输入组下方说明原因。
+
+<ComponentPreview name="invalid" height={128} title="无效状态" background="plain" bodyClass="flex flex-col items-center gap-xs p-lg" html={`<fieldset class="otp" aria-label="Verification code" aria-describedby="otp-error">
+  <input class="otp-slot" inputmode="numeric" maxlength="1" aria-label="Digit 1" aria-invalid="true" value="4">
+  <input class="otp-slot" inputmode="numeric" maxlength="1" aria-label="Digit 2" aria-invalid="true" value="2">
+  <input class="otp-slot" inputmode="numeric" maxlength="1" aria-label="Digit 3" aria-invalid="true" value="0">
+  <input class="otp-slot" inputmode="numeric" maxlength="1" aria-label="Digit 4" aria-invalid="true" value="9">
+</fieldset>
+<p class="m(0) text-xs fg-danger" id="otp-error">That code has expired. Request a new one.</p>`} />
+
+## 单个输入框即可 \{#one-field-is-enough\}
+
+分格输入是一种可选的视觉惯例。为单个 [input](/components/input) 设置 `autocomplete="one-time-code"`、`inputmode="numeric"` 和 `maxlength="6"`，无需脚本即可接收同样的验证码，支持直接粘贴，也更便于使用屏幕阅读器。如果分格形式符合产品风格，可以采用分格输入。
+
+## 键盘操作 \{#keyboard\}
+
+<ContractTable name="otp" show="keyboard" />
+
+## 无障碍 \{#accessibility\}
+
+- 用带标签的 `<fieldset>` 将各格归为一组。每格没有可见标签，因此要为每格提供无障碍名称。
+- `inputmode="numeric"` 会调出数字键盘，不会将输入格变成数字类型的输入框。
+- 出错时保留已填内容，将各格标记为无效，让用户更正或重新粘贴。
+
+## React、Svelte 和 Vue \{#frameworks\}
+
+`otp` 组件渲染各个输入格，绑定行为脚本，接收和传出验证码，并在填写完成时发出通知。使用 `npx master-ui add otp` 将它复制到项目中。[React、Svelte 和 Vue](/guide/frameworks)介绍了这些组件的实现和用法。
+
+<FrameworkSource name="otp" />
+
+## 类名 \{#classes\}
+
+<ContractTable name="otp" />
+
+## 自定义属性 \{#custom-properties\}
+
+<ContractTable name="otp" show="properties" />
+
+## 源码 \{#source\}
+
+<ComponentSource name="otp" />

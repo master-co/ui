@@ -1,0 +1,85 @@
+---
+title: "스크롤 등장 효과"
+description: "스크롤을 따라 화면에 들어올 때 나타나는 콘텐츠입니다."
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+스크롤 등장 효과는 콘텐츠가 스크롤을 따라 화면에 들어올 때 적용됩니다. 요소의 앞부분이 뷰포트 경계를 통과하는 동안 콘텐츠가 서서히 나타나면서 마지막 몇 픽셀만큼 위로 움직인 뒤 제자리에 멈춥니다. 클래스 하나와 스크롤 기반 애니메이션으로 구현합니다. 요소를 감시하거나 동적으로 클래스를 추가할 필요 없이 스크롤 위치가 애니메이션의 진행을 결정합니다.
+
+<ComponentPreview name="default" height={360} title="스크롤 등장 효과" bodyClass="block p-lg" caption="미리보기를 스크롤하면 카드가 화면에 들어올 때마다 등장합니다." html={`<div class="flex flex-col gap-md max-w(420) mx-auto">
+  <p class="m(0) fg-text-muted text-sm text-center py-xl">Scroll down</p>
+  <article class="card mt(240)">
+    <header class="card-header">
+      <h3 class="card-title">Native first</h3>
+      <p class="card-description">Every overlay is a dialog or a popover, opened without script.</p>
+    </header>
+  </article>
+  <article class="card reveal">
+    <header class="card-header">
+      <h3 class="card-title">One material</h3>
+      <p class="card-description">Surfaces step apart on a ladder of light, in both themes.</p>
+    </header>
+  </article>
+  <article class="card reveal">
+    <header class="card-header">
+      <h3 class="card-title">Contracts</h3>
+      <p class="card-description">Each stylesheet says what it promises in a file beside it.</p>
+    </header>
+  </article>
+  <article class="card reveal" style="--reveal-scale: .96">
+    <header class="card-header">
+      <h3 class="card-title">Yours to change</h3>
+      <p class="card-description">Tokens retune every component; the source is there to own.</p>
+    </header>
+  </article>
+  <p class="m(0) fg-text-muted text-sm text-center py-xl">The end</p>
+</div>`} />
+
+## 동작 방식 \{#how-it-works\}
+
+애니메이션은 요소 자체의 뷰 타임라인인 `animation-timeline: view()`에서 요소가 스크롤 영역에 들어오는 구간에 실행됩니다. 스크롤 위치가 애니메이션의 진행을 결정하므로 다음 세 가지 동작이 따릅니다.
+
+- 페이지를 열었을 때 이미 화면에 보이는 요소는 전혀 움직이지 않습니다. 첫 프레임이 그려지기 전에 진입 구간이 끝나기 때문입니다.
+- 반대 방향으로 스크롤하면 애니메이션도 역재생됩니다. 별도로 초기화할 필요가 없습니다.
+- 지연 시간을 조정하거나 요소마다 시작 시점을 따로 지정할 필요가 없습니다. 요소가 화면에 들어오는 순서대로 등장합니다.
+
+애니메이션은 요소가 화면에 들어오기 시작한 뒤 처음 12rem 안에 끝납니다. 이 진입 구간의 길이는 `--reveal-range` 값으로 조정할 수 있습니다. 따라서 높이가 큰 섹션도 화면 한 높이를 스크롤하는 내내 서서히 나타나지는 않습니다. 높이가 이 구간보다 작은 요소는 전체가 보이는 순간 등장이 끝나므로 페이지의 마지막 요소도 항상 완전히 나타납니다.
+
+## 효과 조정 \{#tuning\}
+
+세 가지 속성으로 효과를 조정할 수 있습니다. 요소 자체에 설정하거나 여러 요소의 공통 부모에 설정하세요.
+
+- `--reveal-distance`는 요소가 위로 이동하는 거리이며 기본값은 16px입니다. 이동 없이 서서히 나타나게 하려면 `0`을 설정하세요.
+- `--reveal-scale`은 요소가 등장하기 시작할 때의 크기입니다. `.96`은 이미지나 카드에 적합합니다. 텍스트의 크기는 바꾸지 마세요.
+- `--reveal-range`는 요소가 화면에 얼마나 들어왔을 때 등장 효과가 끝나는지 정합니다.
+
+## 사용 시점 \{#when-to-use-it\}
+
+긴 페이지에서 랜딩 페이지의 섹션, 카드 한 줄, 그림처럼 블록 전체에 등장 효과를 적용하세요. 효과는 꼭 필요한 곳에만 사용하세요. 모든 요소에 적용하면 스크롤할 때마다 무언가가 움직이고, 빠르게 스크롤하는 독자는 콘텐츠가 나타날 때까지 기다려야 합니다.
+
+독자가 즉시 읽어야 하는 텍스트, 대화 상자나 메뉴 안의 요소, 로드 중에 크기가 바뀌는 콘텐츠에는 적용하지 마세요.
+
+## 스크롤 기반 애니메이션 미지원 환경 \{#fallback\}
+
+브라우저가 `animation-timeline: view()`를 지원하지 않거나 독자가 시스템에서 동작 줄이기를 설정하면 클래스에 따른 효과 없이 콘텐츠가 그대로 표시됩니다. 인쇄할 때도 마찬가지입니다. 불투명도는 애니메이션 안에서만 설정하므로 콘텐츠 표시는 애니메이션에 의존하지 않습니다.
+
+## 접근성 \{#accessibility\}
+
+- 콘텐츠는 처음부터 문서와 접근성 트리에 포함됩니다. 화면에 들어오는 동안에는 불투명도와 위치만 바뀝니다.
+- `prefers-reduced-motion: reduce`가 적용되면 불투명도와 위치가 모두 그대로 유지됩니다.
+- 이동 거리를 짧게 유지하세요. 큰 블록이 멀리 움직이면 뷰포트의 넓은 영역에서 움직임이 일어나 일부 독자가 화면을 보기 어려울 수 있습니다.
+
+## 클래스 \{#classes\}
+
+<ContractTable name="reveal" />
+
+## 사용자 지정 속성 \{#custom-properties\}
+
+<ContractTable name="reveal" show="properties" />
+
+## 소스 \{#source\}
+
+<ComponentSource name="reveal" />

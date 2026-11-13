@@ -1,0 +1,122 @@
+---
+title: "투표"
+description: "독자가 점수를 1점 올리거나 내릴 수 있는 컴포넌트입니다."
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+투표 컴포넌트는 독자가 답변, 게시물, 댓글의 점수를 1점 올리거나 내릴 수 있게 합니다. 두 화살표는 같은 그룹에 속한 네이티브 라디오 버튼이며, 눈에 띄지 않는 정사각형 버튼으로 표시됩니다. 두 버튼 사이의 점수는 CSS 카운터로 표시되므로 스크립트 없이도 버튼을 누르면 숫자가 바뀝니다.
+
+<ComponentPreview name="default" height={160} narrowHeight={192} title="투표" background="plain" html={`<article class="sheet max-w(440) w-full flex items-start gap-sm p(12)">
+  <fieldset class="vote" aria-label="Vote on this answer" style="--votes: 41">
+    <input type="radio" class="vote-up" name="answer-vote" value="up" aria-label="Upvote">
+    <output class="vote-score"></output>
+    <input type="radio" class="vote-down" name="answer-vote" value="down" aria-label="Downvote">
+  </fieldset>
+  <div class="flex flex-col gap(4) pt(6) pr(8)">
+    <p class="m(0) text-sm font-medium fg-text-strong">Put the focus ring on the group</p>
+    <p class="m(0) text-sm fg-text-body">A mask cuts the element it is drawn on, ring and all. Draw the ring on the container while one of its inputs has focus.</p>
+  </div>
+</article>`} caption="화살표를 눌러 투표합니다. 반대쪽 화살표를 누르면 투표를 바꿀 수 있습니다." />
+
+## 점수 \{#score\}
+
+그룹의 `--votes`에는 현재 독자의 투표를 제외한 점수를 설정합니다. 위쪽 화살표가 선택되면 1점이 더해지고 아래쪽 화살표가 선택되면 1점이 빠집니다. 페이지에서 독자가 어느 쪽에 투표했는지 알고 있다면 해당 화살표를 선택하고 나머지 독자의 투표만 반영한 점수를 설정합니다. `vote-score` 요소를 비워 두면 카운터가 점수를 표시하며, 음수에는 마이너스 기호(−)를 사용합니다. 1점 단위로 표시하기에는 점수가 너무 크다면 `1.4k`처럼 표시할 텍스트를 요소 안에 직접 작성합니다.
+
+## 가로 배치 \{#horizontal\}
+
+`vote-horizontal`은 점수 양옆에 화살표를 배치합니다. 댓글 아래에 여러 동작을 한 줄로 배치할 때 사용할 수 있습니다. 점수 영역은 숫자 세 자리 너비를 유지하므로 점수가 바뀌어도 화살표가 움직이지 않습니다.
+
+<ComponentPreview name="horizontal" height={208} title="가로 배치" background="plain" bodyClass="p-lg" html={`<div class="card max-w(480) mx-auto">
+  <ol class="thread">
+    <li class="thread-item">
+      <span class="thread-avatar"><span class="avatar">KJ</span></span>
+      <div class="thread-body">
+        <p class="thread-header"><span class="thread-author">Katherine Johnson</span> <time class="thread-meta" datetime="2026-11-12T10:54">12m</time></p>
+        <p class="thread-text">The figures in the second table are right. The third needs another pass.</p>
+        <div class="flex items-center gap(4) mt(6) ml(-8)">
+          <fieldset class="vote vote-horizontal" aria-label="Vote on this comment" style="--votes: 12">
+            <input type="radio" class="vote-up" name="comment-vote" value="up" aria-label="Upvote" checked>
+            <output class="vote-score"></output>
+            <input type="radio" class="vote-down" name="comment-vote" value="down" aria-label="Downvote">
+          </fieldset>
+          <button type="button" class="btn btn-quiet btn-sm">Reply</button>
+        </div>
+      </div>
+    </li>
+  </ol>
+</div>`} />
+
+## 상태 \{#states\}
+
+기본 상태에서는 배경 없이 옅은 잉크색 윤곽선으로 화살표를 표시합니다. 포인터를 올리면 작은 판처럼 떠오르고, 누르는 동안에는 오목하게 들어가며, 선택되면 잉크색으로 채워집니다. 위쪽과 아래쪽 화살표는 색상 대신 방향으로 구분합니다. 독자 본인의 게시물처럼 투표할 수 없는 점수를 표시하려면 fieldset을 비활성화합니다. 화살표는 흐려지고 점수는 그대로 표시됩니다.
+
+<ComponentPreview name="states" height={136} title="상태" background="plain" bodyClass="flex flex-wrap items-center justify-center gap-xl p-lg" html={`<fieldset class="vote" aria-label="Vote on this answer" style="--votes: 3">
+  <input type="radio" class="vote-up" name="vote-down-state" value="up" aria-label="Upvote">
+  <output class="vote-score"></output>
+  <input type="radio" class="vote-down" name="vote-down-state" value="down" aria-label="Downvote" checked>
+</fieldset>
+<fieldset class="vote" aria-label="Vote on this answer" style="--votes: -2">
+  <input type="radio" class="vote-up" name="vote-negative" value="up" aria-label="Upvote">
+  <output class="vote-score"></output>
+  <input type="radio" class="vote-down" name="vote-negative" value="down" aria-label="Downvote">
+</fieldset>
+<fieldset class="vote" aria-label="Votes on your answer" disabled>
+  <input type="radio" class="vote-up" name="vote-own" value="up" aria-label="Upvote">
+  <output class="vote-score">1.4k</output>
+  <input type="radio" class="vote-down" name="vote-own" value="down" aria-label="Downvote">
+</fieldset>`} />
+
+## 투표 취소 \{#taking-back\}
+
+라디오 버튼은 다시 눌러도 선택이 해제되지 않으므로 스크립트 없이는 투표를 바꿀 수만 있습니다. 다음 코드를 사용하면 선택된 화살표를 다시 누르거나 해당 화살표에서 스페이스바를 눌러 투표를 취소할 수 있습니다. 점수는 `--votes`에 설정한 값으로 돌아갑니다.
+
+<ComponentPreview name="taking-back" height={136} title="투표 취소" background="plain" html={`<fieldset class="vote" id="vote-clear" aria-label="Vote on this answer" style="--votes: 7">
+  <input type="radio" class="vote-up" name="vote-clear" value="up" aria-label="Upvote" checked>
+  <output class="vote-score"></output>
+  <input type="radio" class="vote-down" name="vote-clear" value="down" aria-label="Downvote">
+</fieldset>
+<script>
+  const vote = document.getElementById('vote-clear')
+  let chosen = vote.querySelector(':checked')
+
+  vote.addEventListener('click', function (event) {
+    const arrow = event.target.closest('.vote-up, .vote-down')
+    if (!arrow) return
+    if (arrow === chosen) {
+      arrow.checked = false
+      arrow.dispatchEvent(new Event('change', { bubbles: true }))
+      chosen = null
+    } else {
+      chosen = arrow
+    }
+  })
+
+  vote.addEventListener('keydown', function (event) {
+    if (event.key === ' ' && event.target === chosen) {
+      event.preventDefault()
+      chosen.click()
+    }
+  })
+</script>`} caption="채워진 화살표를 다시 누르면 투표가 취소됩니다." />
+
+## 접근성 \{#accessibility\}
+
+- `aria-label` 또는 `<legend>`를 사용해 그룹에 이름을 지정하고, 위쪽과 아래쪽 라디오 버튼에는 각각 ‘추천’과 ‘비추천’이라는 이름을 지정합니다.
+- 점수를 `<output>`에 넣습니다. 스크린 리더는 읽기 순서상 두 화살표 사이에서 점수를 읽고, 투표로 점수가 바뀌면 새 점수를 상태 메시지로 알립니다.
+- 화살표의 포커스 링은 온전히 표시됩니다. 화살표 기호를 가상 요소에 그리므로 마스크가 링을 잘라내지 않습니다. 일반적인 라디오 그룹과 마찬가지로 방향키를 누르면 두 라디오 버튼 사이에서 선택이 이동합니다.
+- 각 화살표 버튼의 크기는 32px이며, 터치스크린에서는 44px입니다. 강제 색상 모드에서는 화살표 기호에 버튼 텍스트 색상을 사용하고, 선택된 화살표에는 강조 색상을 사용합니다.
+
+## 클래스 \{#classes\}
+
+<ContractTable name="vote" />
+
+## 사용자 지정 속성 \{#custom-properties\}
+
+<ContractTable name="vote" show="properties" />
+
+## 소스 \{#source\}
+
+<ComponentSource name="vote" />

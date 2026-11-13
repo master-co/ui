@@ -1,0 +1,81 @@
+---
+title: "간트 차트"
+description: "일정 기간 이어지는 항목을 하나의 시간 눈금 위에 막대로 표시합니다."
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+간트 차트는 프로젝트 단계, 당직 교대 근무, 정기 릴리스 일정처럼 일정 기간 이어지는 항목을 하나의 시간 눈금 위에 막대로 표시합니다. 마크업은 목록으로 구성합니다. 각 행에는 막대의 시작과 끝, 항목 이름, 막대가 나타내는 내용을 담은 텍스트가 들어갑니다. 스타일시트가 한 열에는 이름을, 다른 열에는 막대를 배치하고 각 눈금 단위마다 가는 선을 그립니다. 스크립트나 SVG는 사용하지 않습니다.
+
+<ComponentPreview name="default" height={248} narrowHeight={320} title="간트 차트" bodyClass="p-lg" html={`<div class="card max-w(560) mx-auto">
+  <ol class="gantt gantt-now" style="--gantt-from: 0; --gantt-to: 8; --gantt-now: 4.4" aria-label="Launch plan, in weeks">
+    <li class="gantt-row gantt-scale" aria-hidden="true">
+      <ol class="gantt-ticks"><li>W1</li><li>W2</li><li>W3</li><li>W4</li><li>W5</li><li>W6</li><li>W7</li><li>W8</li></ol>
+    </li>
+    <li class="gantt-row" style="--from: 0; --to: 3; --progress: 100"><span class="gantt-label">Research</span><span class="gantt-bar">Weeks 1 to 3</span></li>
+    <li class="gantt-row" aria-current="true" style="--from: 2; --to: 6"><span class="gantt-label">Design</span><span class="gantt-bar">Weeks 3 to 6</span></li>
+    <li class="gantt-row" style="--from: 4; --to: 7.5; --progress: 15"><span class="gantt-label">Build</span><span class="gantt-bar">Weeks 5 to 8</span></li>
+    <li class="gantt-row" style="--from: 7.5"><span class="gantt-label">Launch</span><span class="gantt-bar gantt-milestone">Middle of week 8</span></li>
+  </ol>
+</div>`} />
+
+## 막대 배치 방식 \{#how-a-bar-gets-its-place\}
+
+눈금의 시작값 `--gantt-from`과 끝값 `--gantt-to`는 목록에 지정합니다. 일, 주, 시간, 스프린트 등 원하는 단위를 사용하세요. 각 `gantt-row`에는 같은 단위로 `--from`과 `--to`를 지정합니다. 해당 `gantt-bar`의 양 끝은 전체 눈금 범위에서 두 값이 차지하는 비율에 맞춰 배치됩니다. 소수 값도 사용할 수 있어 막대가 한 눈금 단위의 중간에서 끝날 수 있습니다.
+
+이름 열의 너비는 가장 긴 이름에 맞춰지고, 막대 영역은 남은 너비를 모두 차지합니다. 모든 행이 두 열을 공유하므로 너비를 따로 지정하지 않아도 막대가 정렬됩니다. 막대 뒤에는 눈금 단위마다 가는 선이 표시됩니다.
+
+막대 텍스트에는 날짜, 기간, 담당자 등 막대가 나타내는 정보를 적습니다. 막대가 짧아 텍스트를 표시할 공간이 부족해도 스크린 리더가 읽을 수 있도록 작성하세요. 공간에 맞지 않는 텍스트는 끝에 줄임표가 표시됩니다.
+
+## 진행률, 현재 행, 현재 시점 \{#progress\}
+
+행에 `--progress`를 0부터 100까지의 값으로 지정하면 그 비율만큼 막대가 한층 진한 색조로 채워집니다. `aria-current="true"`로 표시한 행의 막대에는 전경색이 적용됩니다. 독자가 현재 진행 중인 단계나 화면에서 중점적으로 보여 주는 단계를 표시할 때 사용합니다.
+
+목록에 `gantt-now`를 지정하면 오늘을 나타내는 `--gantt-now` 위치에 모든 행을 가로지르는 세로선이 전경색으로 표시됩니다. 행에 포인터를 올리면 막대가 한 단계 진해지고 이름에 강조 전경색이 적용되어, 넓은 차트에서도 해당 행을 가로로 따라가기 쉽습니다.
+
+## 마일스톤 \{#milestones\}
+
+마일스톤은 한 시점을 나타냅니다. `--from`만 지정한 행의 막대에 `gantt-milestone`을 붙이면 해당 지점에 전경색으로 채운 작은 마름모가 표시됩니다. 막대 텍스트는 보조 기술을 위해 목록에 남아 있지만 화면에 표시되지 않으므로, 그 시점에 일어나는 일을 행 이름에 담으세요.
+
+## 시간 눈금 \{#the-scale\}
+
+`gantt-scale`이 지정된 행은 각 눈금 단위에 이름을 붙입니다. 이 행에는 단위별 항목을 하나씩 담은 `gantt-ticks` 목록 하나를 넣습니다. 각 이름은 해당 단위가 시작되는 가는 선 위에 표시됩니다. 막대 텍스트가 이미 전달하는 정보를 시각적으로 보여 주므로 `aria-hidden`으로 보조 기술에서 숨기세요.
+
+<ComponentPreview name="shifts" height={212} narrowHeight={280} title="하루의 시간대" bodyClass="p-lg" html={`<div class="card max-w(560) mx-auto">
+  <ol class="gantt" style="--gantt-from: 0; --gantt-to: 24" aria-label="On call today">
+    <li class="gantt-row gantt-scale" aria-hidden="true">
+      <ol class="gantt-ticks"><li>00</li><li></li><li></li><li></li><li></li><li></li><li>06</li><li></li><li></li><li></li><li></li><li></li><li>12</li><li></li><li></li><li></li><li></li><li></li><li>18</li><li></li><li></li><li></li><li></li><li></li></ol>
+    </li>
+    <li class="gantt-row" style="--from: 0; --to: 8"><span class="gantt-label">Grace</span><span class="gantt-bar">00:00 to 08:00</span></li>
+    <li class="gantt-row" aria-current="true" style="--from: 8; --to: 16"><span class="gantt-label">Ada</span><span class="gantt-bar">08:00 to 16:00</span></li>
+    <li class="gantt-row" style="--from: 16; --to: 24"><span class="gantt-label">Alan</span><span class="gantt-bar">16:00 to 24:00</span></li>
+  </ol>
+</div>`} />
+
+## 좁은 컨테이너 \{#narrow\}
+
+간트 차트는 크기 컨테이너입니다. 차트 자체의 너비가 26rem 미만이면 각 이름이 막대 위로 이동해 막대 영역이 전체 너비를 확보합니다. 휴대전화에서는 눈금 범위를 짧게 유지하세요. 8단위는 읽을 수 있지만 30단위는 읽을 수 없습니다.
+
+## 간트 차트, 타임라인, 차트 \{#gantt-timeline-or-chart\}
+
+간트 차트는 시작과 끝이 있는 항목을 표시합니다. 개별 사건을 발생 순서대로 보여 줄 때는 [타임라인](/components/timeline)을 사용합니다. 시간상의 위치와 관계없이 수량을 비교할 때는 [차트](/components/chart)를 사용합니다.
+
+## 접근성 \{#accessibility\}
+
+- `<ol>` 요소로 작성하고 `aria-label`이나 제목으로 이름을 지정하세요. 각 행은 목록 항목 하나이며, "디자인, 3~6주 차"처럼 이름과 막대 텍스트가 순서대로 읽힙니다.
+- 막대, 가는 눈금선, 현재 시점을 나타내는 선은 스타일시트가 그립니다. 이런 요소가 전달하는 정보는 텍스트에도 적으세요. 막대가 나타내는 날짜를 적고, 필요한 경우 해당 행이 현재 행임을 명시하세요.
+- 현재 행은 색상에 의존하지 않고 구분합니다. 기본 표시에서는 옅은 색조의 막대 사이에서 전경색으로 채운 막대로 구분하고, 강제 색상 모드에서는 윤곽선만 있는 막대 사이에서 채워진 막대로 구분합니다.
+
+## 클래스 \{#classes\}
+
+<ContractTable name="gantt" />
+
+## 사용자 지정 속성 \{#custom-properties\}
+
+<ContractTable name="gantt" show="properties" />
+
+## 소스 \{#source\}
+
+<ComponentSource name="gantt" />

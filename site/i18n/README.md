@@ -16,12 +16,15 @@ from `@master/internal-site/common/locales.js`.
   calls in the site's source, the prose properties of the data modules named in
   `dataModules`, the guide's categories and the few keys only a dynamic `t(value)`
   reaches, which are listed by hand in `en.json`. Shell controls come from
-  `@master/internal-site/common/translations.js` and are not repeated here.
-- **Sections.** The guide and the home page are translated. `components`,
-  `blocks` and `pages` are still English only (`i18n/sections.ts`): they have no
-  translated routes, search entries or Markdown, and links to them from a
-  translated page stay unprefixed. Translate a whole section, then remove it from
-  that list and add its root to `localizablePathnameRoots` in `site.config.ts`.
+  `@master/internal-site/common/translations.js`. The review includes any local
+  overrides of those controls because the site renders the override when present.
+- **Contracts and figures.** Contract prose is keyed by its exact English text in
+  `i18n/contracts.<locale>.json`. The site uses it for tables and portable
+  Markdown. The published JSON keeps the original contract and its API
+  identifiers. Labels in guide diagrams live in `i18n/figures.<locale>.json`.
+  The introductory rules for `llms.txt` live in `i18n/llms/<locale>.md`.
+- **Sections.** The home page, guide, components, blocks and pages have localized
+  routes. Search and Markdown use the same article editions.
 
 ## How to translate
 
@@ -38,12 +41,14 @@ samples, the agent prompt of `DocumentPrompt`, file names and the library's own
 names (Master UI, moonstone, obsidian, Paper). Keep every heading's explicit ID
 (`\{#stable-id\}`) identical and in the same order; the gate fails an edition
 whose IDs differ. Keep links as they are (`/guide/theming#scope`); the site
-points a guide link at the reader's language by itself.
+points these links at the reader's language.
 
 Translate the prose, table cells, list items, and the reader-facing props:
 `title` and `caption` of previews and figures, the words inside a `GuideFigure`,
-and `alt` text. A preview `title` that is a file name stays as it is. The
-diagrams themselves stay shared in English.
+and `alt` text. A preview `title` that is a file name stays as it is.
+Write homepage copy for the local audience with short headings and direct
+language. Guide articles lead with the reader's task. Reference pages keep
+class names and browser behavior precise and put conditions before actions.
 
 ## Reviews
 

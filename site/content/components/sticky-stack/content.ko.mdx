@@ -1,0 +1,158 @@
+---
+title: "스티키 스택"
+description: "페이지를 스크롤하면 패널이 앞 패널보다 조금씩 낮은 위치에 겹쳐 쌓입니다."
+---
+
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import PagePreview from '~/site/components/PagePreview.astro'
+
+스티키 스택은 페이지를 스크롤할 때 몇 개의 패널이 순서대로 겹쳐 쌓이는 레이아웃입니다. 각 패널은 화면 위쪽에 닿으면 앞 패널보다 조금 아래에서 멈추고, 다음 패널이 그 위로 미끄러지듯 올라와 덮습니다. 이미 읽은 패널의 가장자리는 읽고 있는 패널 위쪽에 계속 보입니다. 스택 끝까지 스크롤하면 패널이 함께 화면 밖으로 나가고 페이지의 다음 내용이 이어집니다.
+
+스티키 스택은 어떤 요소가 어디에 고정되는지를 정하는 레이아웃이며, 자체적으로 그리는 요소는 없습니다. 패널에는 [카드](/components/card) 또는 [시트](/components/surface)를 사용합니다. 각 패널의 표면이 그 아래 패널을 가립니다. 스크립트 없이 동작합니다. 각 패널에는 `position: sticky`가 적용되며, 스타일시트가 패널마다 누적되는 간격을 계산합니다.
+
+<PagePreview name="default" title="스티키 스택" height={640} tabletHeight={720} phoneHeight={720} caption="미리보기를 클릭한 뒤 스크롤하세요. 각 단계는 바 아래에서 앞 단계보다 조금 낮은 위치에 멈춥니다. ‘휴대폰’을 선택하면 좁은 열에서도 같은 방식으로 동작하는 모습을 볼 수 있습니다." html={`<div class="bg-surface-base fg-text-body text-sm">
+  <header class="navbar">
+    <a class="navbar-brand" href="#top">Atlas</a>
+    <nav class="navbar-nav" aria-label="Main">
+      <a class="navbar-link" href="#product">Product</a>
+      <a class="navbar-link" href="#start" aria-current="page">Get started</a>
+      <a class="navbar-link" href="#pricing">Pricing</a>
+    </nav>
+    <div class="navbar-end">
+      <a class="btn btn-primary btn-sm" href="#sign-up">Sign up</a>
+      <button type="button" class="btn btn-quiet btn-square btn-sm navbar-toggle" popovertarget="stack-menu" aria-label="Open the menu"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h16M4 16h16"/></svg></button>
+      <div class="menu menu-end" id="stack-menu" popover>
+        <a class="menu-item" href="#product">Product</a>
+        <a class="menu-item" href="#start">Get started</a>
+        <a class="menu-item" href="#pricing">Pricing</a>
+      </div>
+    </div>
+  </header>
+  <main class="flex flex-col gap-2xl max-w(720) mx-auto px-lg py-2xl">
+    <header class="flex flex-col gap-xs">
+      <p class="eyebrow">Get started</p>
+      <h1 class="heading heading-2xl">From a repository to a live site</h1>
+      <p class="lead">Four steps, about five minutes. Each one is undone as easily as it is done.</p>
+    </header>
+    <ol class="sticky-stack" style="--sticky-stack-top: 4.5rem">
+      <li class="sticky-stack-item">
+        <article class="card min-h(256)">
+          <p class="eyebrow">Step 1</p>
+          <header class="card-header">
+            <h2 class="card-title">Connect a repository</h2>
+            <p class="card-description">Choose one you have, or start from a template.</p>
+          </header>
+          <div class="card-body well flex items-center justify-between gap-sm p-md">
+            <code class="code">atlas/site</code>
+            <span class="badge">main</span>
+          </div>
+          <footer class="card-footer">
+            <a class="btn btn-sm" href="#repositories">Choose another</a>
+          </footer>
+        </article>
+      </li>
+      <li class="sticky-stack-item">
+        <article class="card min-h(256)">
+          <p class="eyebrow">Step 2</p>
+          <header class="card-header">
+            <h2 class="card-title">Set the build</h2>
+            <p class="card-description">The command that builds the site, and the folder it writes.</p>
+          </header>
+          <div class="card-body well flex flex-col gap-3xs p-md">
+            <code class="code">bun run build</code>
+            <code class="code">dist/</code>
+          </div>
+          <footer class="card-footer">
+            <a class="btn btn-sm" href="#build">Edit the build</a>
+          </footer>
+        </article>
+      </li>
+      <li class="sticky-stack-item">
+        <article class="card min-h(256)">
+          <p class="eyebrow">Step 3</p>
+          <header class="card-header">
+            <h2 class="card-title">Preview every branch</h2>
+            <p class="card-description">A pull request gets a link of its own, rebuilt on every push.</p>
+          </header>
+          <div class="card-body well flex items-center justify-between gap-sm p-md">
+            <code class="code">pr-142.atlas.dev</code>
+            <span class="badge badge-success badge-dot">Ready</span>
+          </div>
+          <footer class="card-footer">
+            <a class="btn btn-sm" href="#preview">Open the preview</a>
+          </footer>
+        </article>
+      </li>
+      <li class="sticky-stack-item">
+        <article class="card min-h(256)">
+          <p class="eyebrow">Step 4</p>
+          <header class="card-header">
+            <h2 class="card-title">Ship</h2>
+            <p class="card-description">Merge to main, and the preview you approved is what goes live.</p>
+          </header>
+          <div class="card-body well flex items-center justify-between gap-sm p-md">
+            <code class="code">atlas.dev</code>
+            <span class="badge badge-success badge-live">Live</span>
+          </div>
+          <footer class="card-footer">
+            <a class="btn btn-sm btn-primary" href="#ship">Merge and ship</a>
+          </footer>
+        </article>
+      </li>
+    </ol>
+    <section class="flex flex-col gap-xs" aria-labelledby="stack-next">
+      <h2 class="heading heading-lg" id="stack-next">Then it is yours</h2>
+      <p class="m(0) leading-md">Add a domain, invite the team, or leave it as it is. The stack has ended, so the steps scrolled away together, and the page goes on as a page.</p>
+    </section>
+  </main>
+</div>`} />
+
+## 구성 방식 \{#how-it-is-built\}
+
+- **모든 패널이 고정됩니다.** `sticky-stack-item`에는 `position: sticky`가 적용됩니다. 스티키 박스는 가장 가까운 스크롤 컨테이너의 위쪽에서 `inset-block-start`만큼 떨어진 위치에 멈추며, 부모 요소 안에서만 움직입니다. 여기서 스크롤 컨테이너는 페이지이고 부모 요소는 스택입니다. 따라서 각 단계는 바 아래에 멈춰 있다가 스택의 끝이 올라오면 네 단계가 함께 화면 밖으로 나갑니다.
+- **패널마다 조금 더 낮은 위치에 멈춥니다.** 각 패널의 정지 위치는 `--sticky-stack-top`에 앞선 패널 하나당 `--sticky-stack-peek` 값을 더한 값입니다. 스타일시트가 `sibling-index()`로 앞선 패널 수를 세므로 마크업에 번호를 매길 필요가 없습니다.
+- **바 아래에서 멈춥니다.** 바는 높이가 3.5rem이고 자체적으로 고정되는 [탐색 막대](/components/navbar)입니다. 따라서 스택의 `--sticky-stack-top` 값은 바 높이에 1rem의 여유를 더한 4.5rem으로 설정합니다.
+- **카드 표면이 아래 단계를 가립니다.** 각 항목에는 [카드](/components/card)가 들어 있습니다. 마크업에서 나중에 나오는 패널이 먼저 나오는 패널 위에 그려집니다.
+- **단계를 목록으로 구성합니다.** 순서가 중요하므로 `<ol>` 요소를 사용하세요. 카드를 목록 항목 안에 넣으면 카드는 항목 안에서 자기 위치를 유지하고, 목록 항목이 고정됩니다.
+
+## 드러나는 패널 가장자리 \{#peek\}
+
+사용자 지정 속성 `--sticky-stack-peek`의 값은 각 패널이 앞 패널보다 얼마나 아래에서 멈추는지를 정합니다. 기본값인 .75rem에서는 가려진 패널의 가장자리가 조금씩 드러나 현재 패널 뒤에 몇 단계가 있는지 셀 수 있습니다. 값을 높이면 가려진 패널이 더 많이 보이며, 2.5rem이면 제목이 들어갈 정도로 드러납니다. 0이면 모든 패널이 같은 높이에서 멈추고 바로 앞 패널을 완전히 덮습니다.
+
+`sibling-index()`를 지원하지 않는 환경에서는 값이 0일 때처럼 모든 패널이 같은 높이에서 멈춥니다. 각 단계가 올라오면서 앞 단계를 덮는 동작은 유지되며, 가려진 패널의 가장자리만 보이지 않습니다.
+
+## 스크롤 컨테이너 \{#scroller\}
+
+스티키 패널은 가장 가까운 스크롤 컨테이너를 기준으로 고정되며 부모 요소 안에서만 움직입니다. 이 동작에는 세 가지 특성이 있습니다.
+
+- 항목은 스택의 직접 자식이어야 합니다. 다른 요소로 항목을 감싸면 그 요소가 부모가 되어 항목이 움직일 공간이 없어집니다. 이 예시에서는 항목 안에 카드를 넣었지만, 다른 콘텐츠를 넣어도 됩니다.
+- 스택과 스크롤 컨테이너 사이에 스택의 표시 영역을 잘라 내는 요소가 있어서는 안 됩니다. 조상 요소에 `overflow: hidden`을 적용하면 해당 요소가 스크롤 컨테이너가 되어 패널이 고정되지 않습니다.
+- 패널이 고정되는 시간은 스택에서 그 뒤에 무엇이 오는지에 따라 달라집니다. 마지막 패널은 스택의 끝이 그 패널에 닿을 때까지만 고정됩니다. 더 오래 고정하려면 마무리 패널을 추가하는 등 마지막 패널 아래로 스택의 높이를 늘리세요.
+
+## 사용 사례 \{#when\}
+
+페이지를 스크롤하며 차례대로 읽는 짧은 콘텐츠에 스티키 스택을 사용하세요. 하나씩 살펴볼 만한 단계, 장, 요금제 3~6개가 적당합니다. 패널을 나란히 보여 주거나 사용자가 원하는 패널로 자유롭게 이동해야 한다면 [캐러셀](/components/carousel)을 사용하세요. 사용자가 필요할 때 하나씩 펼쳐 보는 참고 자료라면 [아코디언](/components/accordion)을 사용하세요. 패널이 20개나 되면 가장자리가 빽빽하게 쌓이므로 긴 목록에는 적합하지 않습니다.
+
+## 접근성 \{#accessibility\}
+
+- 스택은 패널의 표시 위치만 바꿉니다. 마크업을 읽는 순서와 키보드로 탐색하는 순서는 모두 그대로 유지됩니다. 가려진 패널의 링크가 포커스를 받으면 해당 패널이 보일 때까지 페이지가 스크롤됩니다.
+- 패널이 처음 제 위치에 도달했을 때는 전체가 보이므로, 다른 패널에 가려진 상태에서 내용을 읽을 필요가 없습니다. 패널 높이는 뷰포트 높이에서 `--sticky-stack-top` 값을 뺀 것보다 작게 유지하세요. 이보다 높으면 사용자가 끝까지 읽기 전에 다음 패널이 덮습니다.
+- 패널은 사용자가 스크롤한 거리만큼만 움직입니다. 자동으로 움직이거나 애니메이션이 재생되는 요소가 없어 동작 줄이기 설정에 따라 줄일 움직임이 없습니다.
+
+## 클래스 \{#classes\}
+
+<ContractTable name="sticky-stack" directory="layouts" />
+
+## 사용자 지정 속성 \{#custom-properties\}
+
+<ContractTable name="sticky-stack" show="properties" directory="layouts" />
+
+## 관련 항목 \{#related\}
+
+<ComponentLinks slugs={['card', 'navbar', 'carousel', 'accordion', 'steps']} />
+
+## 소스 \{#source\}
+
+<ComponentSource name="sticky-stack" directory="layouts" />

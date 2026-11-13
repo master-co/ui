@@ -1,0 +1,80 @@
+---
+title: "ガントチャート"
+description: "各項目の期間を、共通の時間軸上にバーで表示します。"
+---
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+ガントチャートは、プロジェクトの各工程、オンコールのシフト、定期リリースの各サイクルなどの期間を、共通の時間軸上にバーで表示します。リストの各行には、バーの開始位置と終了位置、項目名、バーが伝える内容を記したテキストを持たせます。スタイルシートが項目名とバーを別々の列に配置し、時間軸の各単位を極細の目盛線で区切ります。スクリプトもSVGも使いません。
+
+<ComponentPreview name="default" height={248} narrowHeight={320} title="ガントチャート" bodyClass="p-lg" html={`<div class="card max-w(560) mx-auto">
+  <ol class="gantt gantt-now" style="--gantt-from: 0; --gantt-to: 8; --gantt-now: 4.4" aria-label="Launch plan, in weeks">
+    <li class="gantt-row gantt-scale" aria-hidden="true">
+      <ol class="gantt-ticks"><li>W1</li><li>W2</li><li>W3</li><li>W4</li><li>W5</li><li>W6</li><li>W7</li><li>W8</li></ol>
+    </li>
+    <li class="gantt-row" style="--from: 0; --to: 3; --progress: 100"><span class="gantt-label">Research</span><span class="gantt-bar">Weeks 1 to 3</span></li>
+    <li class="gantt-row" aria-current="true" style="--from: 2; --to: 6"><span class="gantt-label">Design</span><span class="gantt-bar">Weeks 3 to 6</span></li>
+    <li class="gantt-row" style="--from: 4; --to: 7.5; --progress: 15"><span class="gantt-label">Build</span><span class="gantt-bar">Weeks 5 to 8</span></li>
+    <li class="gantt-row" style="--from: 7.5"><span class="gantt-label">Launch</span><span class="gantt-bar gantt-milestone">Middle of week 8</span></li>
+  </ol>
+</div>`} />
+
+## バーの位置の指定 \{#how-a-bar-gets-its-place\}
+
+時間軸の範囲は、リストに指定する`--gantt-from`から`--gantt-to`までです。単位には日、週、時間、スプリントなどを自由に使えます。各`gantt-row`に同じ単位で`--from`と`--to`を指定すると、その値に対応する位置で`gantt-bar`が始まり、終わります。小数も使えるので、単位の途中でバーを終えられます。
+
+項目名の列は最も長い名前に合わせ、残りの幅をバーの列に割り当てます。全行で2列を共有するため、幅を明示しなくてもバーの位置がそろいます。バーの背後には、時間軸の単位ごとに極細の目盛線が入ります。
+
+バーのテキストには、日付、期間、担当者など、バーが伝える内容を記述します。スクリーンリーダーが読み上げるため、バーが短くテキストを表示しきれない場合も記述してください。収まりきらないテキストの末尾には省略記号が付きます。
+
+## 進捗、現在の行、現在位置 \{#progress\}
+
+行に0〜100の値で`--progress`を指定すると、バーの該当する割合が濃い色で塗られます。`aria-current="true"`を付けた行のバーは、文字色と同じ濃い色で表示されます。読者が現在取り組んでいる工程や、ビューで取り上げている工程を示すのに使います。
+
+リストに`gantt-now`を指定すると、今日に当たる`--gantt-now`の位置に、全行を貫く縦線が文字色で引かれます。行にポインターを重ねるとバーの色が一段濃くなり、項目名にも強調用の文字色が適用されるため、幅の広いチャートでも同じ行を追いやすくなります。
+
+## マイルストーン \{#milestones\}
+
+マイルストーンは時間軸上の一点を示します。`--from`だけを指定した行のバーに`gantt-milestone`を付けると、その位置に文字色の小さなひし形が表示されます。バーのテキストは支援技術向けにリスト内に残り、画面には表示されないため、行の名前でその時点に何が起きるかを示します。
+
+## 時間軸の目盛り \{#the-scale\}
+
+`gantt-scale`を付けた行は、時間軸の各単位にラベルを付けます。この行には`gantt-ticks`のリストを1つ置き、単位ごとに項目を1つ入れます。各ラベルは対応する単位の始点を示す目盛線の上に表示されます。バーのテキストにある情報を視覚的に示すものなので、`aria-hidden`で支援技術から隠します。
+
+<ComponentPreview name="shifts" height={212} narrowHeight={280} title="1日の時間帯" bodyClass="p-lg" html={`<div class="card max-w(560) mx-auto">
+  <ol class="gantt" style="--gantt-from: 0; --gantt-to: 24" aria-label="On call today">
+    <li class="gantt-row gantt-scale" aria-hidden="true">
+      <ol class="gantt-ticks"><li>00</li><li></li><li></li><li></li><li></li><li></li><li>06</li><li></li><li></li><li></li><li></li><li></li><li>12</li><li></li><li></li><li></li><li></li><li></li><li>18</li><li></li><li></li><li></li><li></li><li></li></ol>
+    </li>
+    <li class="gantt-row" style="--from: 0; --to: 8"><span class="gantt-label">Grace</span><span class="gantt-bar">00:00 to 08:00</span></li>
+    <li class="gantt-row" aria-current="true" style="--from: 8; --to: 16"><span class="gantt-label">Ada</span><span class="gantt-bar">08:00 to 16:00</span></li>
+    <li class="gantt-row" style="--from: 16; --to: 24"><span class="gantt-label">Alan</span><span class="gantt-bar">16:00 to 24:00</span></li>
+  </ol>
+</div>`} />
+
+## 狭いコンテナーでの表示 \{#narrow\}
+
+ガントチャートはサイズコンテナーです。コンテナー自体の幅が26rem未満になると、各項目名がバーの横から上に移り、トラックが横幅いっぱいに広がります。スマートフォンでは目盛りを少なめにします。8目盛りなら読み取れますが、30目盛りでは読み取れません。
+
+## ガントチャート・タイムライン・チャートの使い分け \{#gantt-timeline-or-chart\}
+
+開始と終了がある項目にはガントチャートを使います。出来事を発生順に並べるには[タイムライン](/components/timeline)、時間軸を使わずに数量を比較するには[チャート](/components/chart)を使います。
+
+## アクセシビリティ \{#accessibility\}
+
+- `<ol>`として記述し、`aria-label`または見出しで名前を付けます。各行は1つの項目で、「デザイン、第3週から第6週」のように、項目名、バーのテキストの順に読み上げられます。
+- バー、細い罫線、現在時点を示す線はスタイルシートで描画します。バーが示す開始日と終了日をテキストに記載し、必要に応じて、どの行が現在の項目かも明記します。
+- 現在の行は、色相を使わず、淡い背景に濃いバーを重ねて区別します。強制カラーモードでは、現在の行のバーを塗りつぶし、ほかのバーは輪郭だけを表示します。
+
+## クラス \{#classes\}
+
+<ContractTable name="gantt" />
+
+## カスタムプロパティ \{#custom-properties\}
+
+<ContractTable name="gantt" show="properties" />
+
+## ソース \{#source\}
+
+<ComponentSource name="gantt" />

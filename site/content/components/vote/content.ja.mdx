@@ -1,0 +1,121 @@
+---
+title: "投票"
+description: "ユーザーの投票でスコアを1増減できます。"
+---
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+投票では、ユーザーが回答、投稿、コメントなどのスコアを1増減できます。2つの矢印は、同じグループに属するネイティブのラジオボタンを、控えめな正方形のボタンとして表示したものです。間にあるスコアは CSS カウンターで表示するため、スクリプトなしで押した結果が数値に反映されます。
+
+<ComponentPreview name="default" height={160} narrowHeight={192} title="投票" background="plain" html={`<article class="sheet max-w(440) w-full flex items-start gap-sm p(12)">
+  <fieldset class="vote" aria-label="Vote on this answer" style="--votes: 41">
+    <input type="radio" class="vote-up" name="answer-vote" value="up" aria-label="Upvote">
+    <output class="vote-score"></output>
+    <input type="radio" class="vote-down" name="answer-vote" value="down" aria-label="Downvote">
+  </fieldset>
+  <div class="flex flex-col gap(4) pt(6) pr(8)">
+    <p class="m(0) text-sm font-medium fg-text-strong">Put the focus ring on the group</p>
+    <p class="m(0) text-sm fg-text-body">A mask cuts the element it is drawn on, ring and all. Draw the ring on the container while one of its inputs has focus.</p>
+  </div>
+</article>`} caption="矢印を押して投票します。もう一方の矢印を押すと、投票を変更できます。" />
+
+## スコア \{#score\}
+
+グループの `--votes` には、ユーザー本人の票を除いたスコアを設定します。上矢印を選ぶと1増え、下矢印を選ぶと1減ります。ページ側で本人の投票を把握している場合は、対応する矢印を選択済みにし、ほかのユーザーの票だけを集計したスコアを設定します。`vote-score` を空にすると、カウンターがスコアを表示し、負の値にはマイナス記号（−）を使います。1票単位で表示するには大きすぎるスコアは、`1.4k` のようなテキストを中に記述します。
+
+## 横並び \{#horizontal\}
+
+`vote-horizontal` はスコアの左右に矢印を配置します。コメント下部の操作を横に並べる場合に使えます。スコアには数字3桁分の幅を確保するため、値が変わっても矢印の位置は変わりません。
+
+<ComponentPreview name="horizontal" height={208} title="横並び" background="plain" bodyClass="p-lg" html={`<div class="card max-w(480) mx-auto">
+  <ol class="thread">
+    <li class="thread-item">
+      <span class="thread-avatar"><span class="avatar">KJ</span></span>
+      <div class="thread-body">
+        <p class="thread-header"><span class="thread-author">Katherine Johnson</span> <time class="thread-meta" datetime="2026-11-12T10:54">12m</time></p>
+        <p class="thread-text">The figures in the second table are right. The third needs another pass.</p>
+        <div class="flex items-center gap(4) mt(6) ml(-8)">
+          <fieldset class="vote vote-horizontal" aria-label="Vote on this comment" style="--votes: 12">
+            <input type="radio" class="vote-up" name="comment-vote" value="up" aria-label="Upvote" checked>
+            <output class="vote-score"></output>
+            <input type="radio" class="vote-down" name="comment-vote" value="down" aria-label="Downvote">
+          </fieldset>
+          <button type="button" class="btn btn-quiet btn-sm">Reply</button>
+        </div>
+      </div>
+    </li>
+  </ol>
+</div>`} />
+
+## 状態 \{#states\}
+
+通常時はボタンの背景がなく、矢印は控えめな色の輪郭で表示されます。ホバー時はボタンの面が浮き上がり、押している間はくぼんだ表示になり、選択すると矢印が塗りつぶされます。上票と下票は色を変えず、矢印の向きで区別します。ユーザー自身の投稿など、投票できないスコアを表示する場合は fieldset を無効にします。矢印は薄くなり、スコアは表示されたままになります。
+
+<ComponentPreview name="states" height={136} title="状態" background="plain" bodyClass="flex flex-wrap items-center justify-center gap-xl p-lg" html={`<fieldset class="vote" aria-label="Vote on this answer" style="--votes: 3">
+  <input type="radio" class="vote-up" name="vote-down-state" value="up" aria-label="Upvote">
+  <output class="vote-score"></output>
+  <input type="radio" class="vote-down" name="vote-down-state" value="down" aria-label="Downvote" checked>
+</fieldset>
+<fieldset class="vote" aria-label="Vote on this answer" style="--votes: -2">
+  <input type="radio" class="vote-up" name="vote-negative" value="up" aria-label="Upvote">
+  <output class="vote-score"></output>
+  <input type="radio" class="vote-down" name="vote-negative" value="down" aria-label="Downvote">
+</fieldset>
+<fieldset class="vote" aria-label="Votes on your answer" disabled>
+  <input type="radio" class="vote-up" name="vote-own" value="up" aria-label="Upvote">
+  <output class="vote-score">1.4k</output>
+  <input type="radio" class="vote-down" name="vote-own" value="down" aria-label="Downvote">
+</fieldset>`} />
+
+## 投票の取り消し \{#taking-back\}
+
+ラジオボタンは再度押しても選択が解除されないため、スクリプトなしでできるのは投票の変更までです。以下のコードを使うと、選択済みの矢印をもう一度押すか、フォーカスを合わせて Space キーを押すと投票が取り消され、スコアが `--votes` に戻ります。
+
+<ComponentPreview name="taking-back" height={136} title="投票の取り消し" background="plain" html={`<fieldset class="vote" id="vote-clear" aria-label="Vote on this answer" style="--votes: 7">
+  <input type="radio" class="vote-up" name="vote-clear" value="up" aria-label="Upvote" checked>
+  <output class="vote-score"></output>
+  <input type="radio" class="vote-down" name="vote-clear" value="down" aria-label="Downvote">
+</fieldset>
+<script>
+  const vote = document.getElementById('vote-clear')
+  let chosen = vote.querySelector(':checked')
+
+  vote.addEventListener('click', function (event) {
+    const arrow = event.target.closest('.vote-up, .vote-down')
+    if (!arrow) return
+    if (arrow === chosen) {
+      arrow.checked = false
+      arrow.dispatchEvent(new Event('change', { bubbles: true }))
+      chosen = null
+    } else {
+      chosen = arrow
+    }
+  })
+
+  vote.addEventListener('keydown', function (event) {
+    if (event.key === ' ' && event.target === chosen) {
+      event.preventDefault()
+      chosen.click()
+    }
+  })
+</script>`} caption="塗りつぶされた矢印をもう一度押すと、投票を取り消せます。" />
+
+## アクセシビリティ \{#accessibility\}
+
+- `aria-label` または `<legend>` でグループに名前を付け、各ラジオボタンにも「賛成票を投じる」「反対票を投じる」と名前を付けます。
+- スコアは `<output>` に入れます。スコアは2つの矢印の間で読み上げられ、投票で値が変わるとステータスとして通知されます。
+- 矢印は疑似要素で描画するため、マスクでフォーカスリングが欠けることはありません。通常のラジオグループと同様に、矢印キーで2つのラジオボタンの選択を切り替えられます。
+- 各矢印ボタンは 32px で、タッチスクリーンでは 44px です。強制カラーモードでは矢印にボタンのテキスト色を使い、選択中の矢印には強調色を使います。
+
+## クラス \{#classes\}
+
+<ContractTable name="vote" />
+
+## カスタムプロパティ \{#custom-properties\}
+
+<ContractTable name="vote" show="properties" />
+
+## ソース \{#source\}
+
+<ComponentSource name="vote" />

@@ -1,0 +1,97 @@
+---
+title: "게이지"
+description: "측정값에 해당하는 지점까지 원호를 채워 눈금판에 값을 표시합니다."
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+게이지는 눈금판에 측정값을 표시합니다. 아래쪽이 열린 원호는 원의 3분의 2를 이루며, 값이 가리키는 지점까지 잉크 색으로 채워집니다. 가운데에 숫자가 표시되고, 그 아래 원호의 양 끝 사이에 단어 하나가 놓입니다. 요소에 `role="meter"`를 지정하고 사람이 읽을 수 있는 형태로 값을 적으면 스타일시트가 원호를 그립니다. 스크립트와 SVG는 사용하지 않습니다.
+
+<ComponentPreview name="default" height={184} narrowHeight={296} title="게이지" bodyClass="p-lg" html={`<div class="card max-w(480) mx-auto">
+  <div class="flex flex-wrap justify-around gap-md">
+    <div class="gauge" role="meter" aria-label="CPU" aria-valuenow="38" style="--gauge-value: 38">
+      <span class="gauge-value">38%</span>
+      <span class="gauge-label">CPU</span>
+    </div>
+    <div class="gauge" role="meter" aria-label="Memory" aria-valuenow="72" style="--gauge-value: 72">
+      <span class="gauge-value">72%</span>
+      <span class="gauge-label">Memory</span>
+    </div>
+    <div class="gauge" role="meter" aria-label="Disk" aria-valuenow="91" style="--gauge-value: 91">
+      <span class="gauge-value">91%</span>
+      <span class="gauge-label">Disk</span>
+    </div>
+  </div>
+</div>`} />
+
+## 원호의 채움 길이 계산 \{#how-the-arc-gets-its-length\}
+
+측정값은 `aria-valuenow`에 지정하며, 범위는 `aria-valuemin`부터 `aria-valuemax`까지입니다. 범위를 생략하면 0부터 100까지입니다. 브라우저가 타입을 지정하는 `attr()`를 지원하면 게이지가 해당 속성을 직접 읽으므로 값은 한 번만 적으면 됩니다. 지원하지 않는 브라우저에서는 폴백으로 `--gauge-value`를 읽고, 범위가 다르면 `--gauge-min`과 `--gauge-max`도 읽습니다. 모든 브라우저 엔진이 타입을 지정하는 `attr()`를 지원할 때까지는 여기의 예제처럼 두 방식으로 모두 지정하세요.
+
+트랙과 채움 부분의 양 끝은 각각 둥글게 처리되며, 값이 바뀌면 채움 길이가 부드럽게 변합니다. 채움 길이가 0이면 채움 부분의 둥근 끝에도 크기가 없어 빈 트랙만 보입니다.
+
+<ComponentPreview name="range" height={152} narrowHeight={272} title="사용자 지정 범위" background="plain" bodyClass="flex flex-wrap items-end justify-center gap-xl p-lg" html={`<div class="gauge" role="meter" aria-label="Engine speed" aria-valuenow="4200" aria-valuemin="0" aria-valuemax="8000" style="--gauge-value: 4200; --gauge-max: 8000">
+  <span class="gauge-value">4,200</span>
+  <span class="gauge-label">rpm</span>
+</div>
+<div class="gauge" role="meter" aria-label="Rating" aria-valuenow="4.6" aria-valuemin="1" aria-valuemax="5" style="--gauge-value: 4.6; --gauge-min: 1; --gauge-max: 5">
+  <span class="gauge-value">4.6</span>
+  <span class="gauge-label">of 5</span>
+</div>
+<div class="gauge" role="meter" aria-label="Queue" aria-valuenow="0" style="--gauge-value: 0">
+  <span class="gauge-value">0</span>
+  <span class="gauge-label">Queued</span>
+</div>`} />
+
+## 크기 \{#sizes\}
+
+게이지의 기본 너비는 120px입니다. `gauge-sm`은 88px로, 정보가 빽빽한 대시보드의 타일에 적합합니다. `gauge-lg`는 160px로, 화면에서 측정값 하나를 강조할 때 적합합니다. 선 두께는 너비의 15분의 1이며 숫자 크기도 너비에 비례합니다. `gauge-label`이 없으면 숫자는 눈금판 중앙에 놓입니다.
+
+<ComponentPreview name="sizes" height={192} narrowHeight={320} title="크기" background="plain" bodyClass="flex flex-wrap items-end justify-center gap-xl p-lg" html={`<div class="gauge gauge-sm" role="meter" aria-label="Battery" aria-valuenow="64" style="--gauge-value: 64">
+  <span class="gauge-value">64%</span>
+  <span class="gauge-label">Battery</span>
+</div>
+<div class="gauge" role="meter" aria-label="Battery" aria-valuenow="64" style="--gauge-value: 64">
+  <span class="gauge-value">64%</span>
+  <span class="gauge-label">Battery</span>
+</div>
+<div class="gauge gauge-lg" role="meter" aria-label="Battery" aria-valuenow="64" style="--gauge-value: 64">
+  <span class="gauge-value">64%</span>
+</div>`} />
+
+## 측정값의 상태 표시 \{#status\}
+
+채움 부분의 기본 색은 잉크 색입니다. 측정값 자체가 경고를 뜻하면 `--gauge-color`에 상태 색상을 지정하고 경고임을 텍스트로도 표시하세요. 색상만으로 의미를 전달해서는 안 됩니다. 트랙에는 같은 색을 옅게 적용하므로 채움 색을 바꾸면 트랙 색도 함께 바뀝니다.
+
+<ComponentPreview name="status" height={152} title="상태" background="plain" bodyClass="flex flex-wrap items-end justify-center gap-xl p-lg" html={`<div class="gauge" role="meter" aria-label="Storage" aria-valuenow="84" aria-valuetext="84%, nearly full" style="--gauge-value: 84; --gauge-color: var(--color-warning)">
+  <span class="gauge-value">84%</span>
+  <span class="gauge-label">Nearly full</span>
+</div>
+<div class="gauge" role="meter" aria-label="Error budget" aria-valuenow="97" aria-valuetext="97% spent, over budget soon" style="--gauge-value: 97; --gauge-color: var(--color-danger)">
+  <span class="gauge-value">97%</span>
+  <span class="gauge-label">Spent</span>
+</div>`} />
+
+## 게이지, 미터, 진행률 \{#gauge-meter-or-progress\}
+
+게이지와 [미터](/components/meter)는 모두 정해진 범위 안의 측정값을 표시합니다. 대시보드처럼 측정값이 핵심이고 값을 표시할 별도 공간이 있으면 게이지를 사용하세요. 폼의 한 줄이나 표의 한 행에는 미터를 사용하세요. [진행률](/components/progress)은 완료되는 작업에 사용하며, 원형 표시에는 닫힌 고리를 사용합니다. 게이지의 원호는 항상 열린 상태입니다.
+
+## 접근성 \{#accessibility\}
+
+- 요소에 `role="meter"`를 지정하고, `aria-label` 또는 `aria-labelledby`로 접근 가능한 이름을 제공한 뒤 `aria-valuenow`에 측정값을 지정하세요. 범위가 0부터 100까지가 아니면 `aria-valuemin`과 `aria-valuemax`를 추가하세요.
+- `gauge-value`의 텍스트에도 측정값을 단위와 함께 적으세요. 숫자를 이해하는 데 설명이 필요하면 `aria-valuetext`를 추가하세요.
+- 스타일시트가 그린 원호는 스크린 리더가 읽지 않습니다. 강제 색상 모드에서는 채움 부분에 시스템 강조 색상을, 트랙에 시스템 회색을 적용합니다.
+
+## 클래스 \{#classes\}
+
+<ContractTable name="gauge" />
+
+## 사용자 지정 속성 \{#custom-properties\}
+
+<ContractTable name="gauge" show="properties" />
+
+## 소스 \{#source\}
+
+<ComponentSource name="gauge" />

@@ -1,0 +1,159 @@
+---
+title: "自動網格"
+description: "在可用空間內排入最多等寬欄，由網格自行計算欄數。"
+---
+
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import PagePreview from '~/site/components/PagePreview.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+自動網格會在可用空間內排入最多等寬欄，每欄都至少有指定的寬度。網格會依可用空間自行計算欄數，無須撰寫查詢。同一份標記可在儀表板上橫排四個區塊，在側邊欄排成兩欄，在手機上排成一欄。
+
+這項版面配置需要專用的類別，因為背後的 `repeat(auto-fill, minmax(min(100%, 16rem), 1fr))` 無法用 utility 表達，手寫時也容易忽略細節。`min(100%, …)` 可避免只剩一欄時，欄寬超出較窄的螢幕。
+
+<PagePreview name="default" title="自動網格" height={240} tabletHeight={336} phoneHeight={640} caption="依序選擇「平板」和「手機」，四欄會先變成兩欄，再變成一欄。整個過程無須撰寫查詢。" html={`<div class="auto-grid p-lg bg-surface-base">
+  <article class="card">
+    <header class="card-header">
+      <h3 class="card-title">Atlas</h3>
+      <p class="card-description">atlas.dev</p>
+    </header>
+  </article>
+  <article class="card">
+    <header class="card-header">
+      <h3 class="card-title">Borealis</h3>
+      <p class="card-description">borealis.app</p>
+    </header>
+  </article>
+  <article class="card">
+    <header class="card-header">
+      <h3 class="card-title">Cinder</h3>
+      <p class="card-description">cinder.io</p>
+    </header>
+  </article>
+  <article class="card">
+    <header class="card-header">
+      <h3 class="card-title">Drift</h3>
+      <p class="card-description">drift.so</p>
+    </header>
+  </article>
+  <article class="card">
+    <header class="card-header">
+      <h3 class="card-title">Ember</h3>
+      <p class="card-description">ember.dev</p>
+    </header>
+  </article>
+  <article class="card">
+    <header class="card-header">
+      <h3 class="card-title">Fathom</h3>
+      <p class="card-description">fathom.app</p>
+    </header>
+  </article>
+</div>`} />
+
+## 最小欄寬 \{#minimum\}
+
+`--auto-grid-min` 指定最小欄寬，預設為 16rem。調低這個值可排入更多、更窄的欄。圖片或圖表適合用 11rem，內含一段文字的卡片則適合用 20rem。
+
+<PagePreview name="min" title="較小的最小欄寬" height={144} tabletHeight={248} phoneHeight={664} html={`<div class="auto-grid p-lg bg-surface-base" style="--auto-grid-min: 11rem">
+  <section class="sheet p-md">
+    <div class="stat">
+      <p class="stat-label">Requests</p>
+      <div class="stat-row">
+        <p class="stat-value">1.28M</p>
+        <p class="stat-delta stat-delta-up">12.4%</p>
+      </div>
+    </div>
+  </section>
+  <section class="sheet p-md">
+    <div class="stat">
+      <p class="stat-label">Visitors</p>
+      <div class="stat-row">
+        <p class="stat-value">84.2K</p>
+        <p class="stat-delta stat-delta-up">3.1%</p>
+      </div>
+    </div>
+  </section>
+  <section class="sheet p-md">
+    <div class="stat">
+      <p class="stat-label">Bandwidth</p>
+      <div class="stat-row">
+        <p class="stat-value">74 GB</p>
+      </div>
+    </div>
+  </section>
+  <section class="sheet p-md">
+    <div class="stat">
+      <p class="stat-label">Builds</p>
+      <div class="stat-row">
+        <p class="stat-value">212</p>
+      </div>
+    </div>
+  </section>
+  <section class="sheet p-md">
+    <div class="stat">
+      <p class="stat-label">Domains</p>
+      <div class="stat-row">
+        <p class="stat-value">9</p>
+      </div>
+    </div>
+  </section>
+  <section class="sheet p-md">
+    <div class="stat">
+      <p class="stat-label">Members</p>
+      <div class="stat-row">
+        <p class="stat-value">4</p>
+      </div>
+    </div>
+  </section>
+</div>`} />
+
+間距為 1rem。若要調整，請在網格上加上 `gap-lg` 之類的間距 utility。utility 的宣告排在元件庫的類別之後。
+
+## 保留空欄或填滿整列 \{#fill-or-fit\}
+
+預設會保留空欄，所以即使寬網格只有兩個區塊，也會維持原本的欄寬。`auto-grid-fit` 會收起空欄，讓現有區塊共同填滿整列。項目會陸續增加時，請使用預設行為。項目數固定且這組項目應一律填滿所在列時，請使用填滿模式。
+
+<PagePreview name="fit" title="填滿整列" height={232} phoneHeight={368} html={`<div class="flex flex-col gap-lg p-lg bg-surface-base fg-text-body text-sm">
+  <div class="flex flex-col gap-xs">
+    <p class="eyebrow">auto-grid</p>
+    <div class="auto-grid">
+      <div class="well p-md">One</div>
+      <div class="well p-md">Two</div>
+    </div>
+  </div>
+  <div class="flex flex-col gap-xs">
+    <p class="eyebrow">auto-grid auto-grid-fit</p>
+    <div class="auto-grid auto-grid-fit">
+      <div class="well p-md">One</div>
+      <div class="well p-md">Two</div>
+    </div>
+  </div>
+</div>`} />
+
+## 何時改用固定欄數 \{#when-not\}
+
+如果欄數是設計的一部分，請用 `grid grid-cols(3)` 明確指定欄數，並視需要搭配 `grid-cols(3)@container(--4xl)` 這類容器變體。自動網格自行決定欄數，適合排列一組同類項目。若第三欄有特定用途，請明確指定欄數。
+
+## 無障礙 \{#accessibility\}
+
+- 網格只調整欄數。項目仍依原始標記的順序，從左到右、由上而下閱讀。
+- 如果這些區塊是一組同類項目，請使用 `<ul class="auto-grid">` 清單，讓螢幕閱讀器讀出項目數量。
+
+## 類別 \{#classes\}
+
+<ContractTable name="auto-grid" directory="layouts" />
+
+## 自訂屬性 \{#custom-properties\}
+
+<ContractTable name="auto-grid" show="properties" directory="layouts" />
+
+## 相關內容 \{#related\}
+
+<ComponentLinks slugs={['bento', 'masonry', 'arrangements', 'card']} />
+
+<ComponentLinks kind="pages" slugs={['dashboard']} />
+
+## 原始碼 \{#source\}
+
+<ComponentSource name="auto-grid" directory="layouts" />

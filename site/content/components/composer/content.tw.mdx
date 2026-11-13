@@ -1,0 +1,93 @@
+---
+title: "訊息編輯器"
+description: "用來撰寫訊息或提示詞，上方是會自動增高的欄位，下方是一排工具。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+訊息編輯器用來撰寫訊息或提示詞。略微浮起的面板上有一個無框欄位，會隨文字增高。下方是一排低調的工具，最末端是傳送按鈕。欄位取得焦點時，面板會像[輸入欄位](/components/input)一樣，以一道深色輪廓和柔和的光暈顯示焦點。
+
+<ComponentPreview name="default" height={368} title="訊息編輯器" bodyClass="p-lg" html={`<form class="composer max-w(480) mx-auto">
+  <textarea class="composer-field" name="message" aria-label="Message" placeholder="Ask anything"></textarea>
+  <div class="composer-toolbar">
+    <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Attach a file"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+    <button type="button" class="btn btn-quiet btn-sm"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4c3 3 3 13 0 16M12 4c-3 3-3 13 0 16"/></svg>Search</button>
+    <div class="composer-end">
+      <span class="composer-hint">Enter to send</span>
+      <button class="btn btn-primary btn-square btn-sm" aria-label="Send"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg></button>
+    </div>
+  </div>
+</form>`} caption="輸入幾行文字，欄位會隨內容增高。" />
+
+欄位是套用 `field-sizing: content` 的 `<textarea>`，從一行開始，最多增高到十行，之後便在欄位內捲動。用 `--composer-rows` 和 `--composer-max-rows` 分別調整起始與最大行數。如果瀏覽器無法依內容調整欄位大小，欄位會固定顯示三行，超出的內容可捲動查看。
+
+按鈕距離面板邊緣 8px，並採用同心圓角，因此傳送按鈕的弧度會貼合面板的圓角。
+
+## 附件 \{#attachments\}
+
+`composer-attachments` 是欄位上方可換行的一排附件，可用[標籤](/components/chip)顯示檔案，也可放縮圖。
+
+<ComponentPreview name="attachments" height={400} title="附件" bodyClass="p-lg" html={`<form class="composer max-w(480) mx-auto">
+  <div class="composer-attachments">
+    <span class="chip">brief.pdf<button type="button" class="chip-remove" aria-label="Remove brief.pdf"></button></span>
+    <span class="chip">notes.md<button type="button" class="chip-remove" aria-label="Remove notes.md"></button></span>
+  </div>
+  <textarea class="composer-field" name="message" aria-label="Message">Summarise the brief against these notes, and list what the notes leave out. Keep it to one page so the team can read it before the review on Thursday.</textarea>
+  <div class="composer-toolbar">
+    <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Attach a file"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+    <div class="composer-end">
+      <span class="composer-hint">138 / 2000</span>
+      <button class="btn btn-primary btn-sm">Send</button>
+    </div>
+  </div>
+</form>`} />
+
+## 停用 \{#disabled\}
+
+欄位停用時，面板會呈現內嵌的外觀，也不再浮起。請一併停用傳送按鈕，並在預留文字或編輯器旁說明原因。
+
+<ComponentPreview name="disabled" height={152} narrowHeight={176} title="停用" bodyClass="p-lg" html={`<form class="composer max-w(480) mx-auto">
+  <textarea class="composer-field" name="message" aria-label="Message" placeholder="Replies are closed for this thread" disabled></textarea>
+  <div class="composer-toolbar">
+    <div class="composer-end">
+      <button class="btn btn-primary btn-square btn-sm" aria-label="Send" disabled><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg></button>
+    </div>
+  </div>
+</form>`} />
+
+## 按 Enter 傳送 \{#enter\}
+
+在多行文字欄位中，按 Enter 預設會換行。若要讓 Enter 傳送、Shift+Enter 換行，只需加上一個事件監聽器，並在輸入法組字期間略過這項處理。
+
+```js
+field.addEventListener('keydown', event => {
+  if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) {
+    event.preventDefault()
+    field.form.requestSubmit()
+  }
+})
+```
+
+各產品的按鍵慣例不同，請在工具列旁用 `composer-hint` 說明操作方式。
+
+## 無障礙 \{#accessibility\}
+
+- 請用 `aria-label` 或編輯器上方可見的 `<label for>` 為欄位提供可存取名稱。預留文字無法提供這個名稱。
+- 編輯器是 `<form>`，因此傳送按鈕可以送出表單，密碼管理工具或擴充功能也能辨識它。
+- 圖示按鈕應提供 `aria-label`。按 Tab 會先到欄位，再依閱讀順序移到各項工具。
+- 點擊面板的內距區域時，欄位不會自動取得焦點。若要讓使用者點擊面板任一處時，欄位都能取得焦點，請用 `<label>` 包住欄位。
+- 在觸控螢幕上，欄位的文字大小為 16px，因此 iOS 不會在欄位取得焦點時放大頁面。
+
+## 類別 \{#classes\}
+
+<ContractTable name="composer" />
+
+## 自訂屬性 \{#custom-properties\}
+
+<ContractTable name="composer" show="properties" />
+
+## 原始碼 \{#source\}
+
+<ComponentSource name="composer" />

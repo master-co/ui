@@ -1,0 +1,219 @@
+---
+title: "チャート"
+description: "リストにある少数の数値をスタイルシートで棒グラフに表示。"
+---
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+チャートは少数の数値を棒グラフで表示します。元になるリストの各項目には、描画用の値とテキスト表示用の値を1つずつ記述します。スタイルシートが棒と背後の目盛りを描画し、ポインターを重ねると値を表示します。棒の色には、[プログレスバー](/components/progress)の塗りと同じインク色を使います。スクリプトやSVGは使いません。
+
+<ComponentPreview name="default" height={336} title="チャート" bodyClass="p-lg" html={`<div class="card max-w(420) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Deployments</h3>
+    <p class="card-description">311 this week</p>
+  </div>
+  <ol class="chart" aria-label="Deployments per day, this week">
+    <li class="chart-item" style="--value: 42"><span class="chart-label">Mon</span><span class="chart-value">42</span></li>
+    <li class="chart-item" style="--value: 58"><span class="chart-label">Tue</span><span class="chart-value">58</span></li>
+    <li class="chart-item" style="--value: 36"><span class="chart-label">Wed</span><span class="chart-value">36</span></li>
+    <li class="chart-item" style="--value: 71"><span class="chart-label">Thu</span><span class="chart-value">71</span></li>
+    <li class="chart-item" style="--value: 64"><span class="chart-label">Fri</span><span class="chart-value">64</span></li>
+    <li class="chart-item" style="--value: 22"><span class="chart-label">Sat</span><span class="chart-value">22</span></li>
+    <li class="chart-item" style="--value: 18"><span class="chart-label">Sun</span><span class="chart-value">18</span></li>
+  </ol>
+</div>`} caption="棒にポインターを重ねると、その値が表示され、ほかの棒は目立たなくなります。" />
+
+## 棒の高さ \{#how-a-bar-gets-its-height\}
+
+各`chart-item`は、その`style`に`--value`を指定します。チャートの目盛りの上限は`--chart-max`で指定し、既定値は100です。描画領域の高さは`--chart-height`で指定します。棒の高さは上限に対する値の割合で決まり、上限を超える値では棒が描画領域の上端まで達します。値がゼロでも基準線上に1pxの印が残るため、値のない日もチャート上で確認できます。
+
+同じ数値を用途別に2回記述します。`--value`は描画用です。`chart-value`には、同じ値を読みやすい形式のテキストで記述します。ポインターを重ねたときのツールチップに表示されるほか、スクリーンリーダーで読み上げられ、検索やコピーの対象にもなります。
+
+4本の細い線が等間隔の目盛りを示します。`--chart-lines`は上限に合わせて指定します。たとえば上限が100なら、線を5本にすると20刻みになります。
+
+## 1本の棒を強調 \{#quiet\}
+
+`chart-quiet`は棒を淡い色で表示し、`aria-current`を付けた項目だけインク色で強調します。週の中の今日、利用中のプラン、説明の対象となるリリースなどを示すのに使えます。
+
+<ComponentPreview name="quiet" height={336} title="控えめ" bodyClass="p-lg" html={`<div class="card max-w(420) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Build minutes</h3>
+    <p class="card-description">Thursday so far</p>
+  </div>
+  <ol class="chart chart-quiet" aria-label="Build minutes per day, this week">
+    <li class="chart-item" style="--value: 42"><span class="chart-label">Mon</span><span class="chart-value">42</span></li>
+    <li class="chart-item" style="--value: 58"><span class="chart-label">Tue</span><span class="chart-value">58</span></li>
+    <li class="chart-item" style="--value: 36"><span class="chart-label">Wed</span><span class="chart-value">36</span></li>
+    <li class="chart-item" style="--value: 71" aria-current="true"><span class="chart-label">Thu</span><span class="chart-value">71</span></li>
+    <li class="chart-item" style="--value: 64"><span class="chart-label">Fri</span><span class="chart-value">64</span></li>
+    <li class="chart-item" style="--value: 22"><span class="chart-label">Sat</span><span class="chart-value">22</span></li>
+    <li class="chart-item" style="--value: 18"><span class="chart-label">Sun</span><span class="chart-value">18</span></li>
+  </ol>
+</div>`} />
+
+## 値を常時表示 \{#values\}
+
+`chart-values`は各棒の上に値を数字で表示します。棒が少なく正確な値を伝えたい場合や、ホバー操作がないタッチ画面で使います。
+
+<ComponentPreview name="values" height={248} title="値を表示" bodyClass="p-lg" html={`<div class="card max-w(420) mx-auto">
+  <ol class="chart chart-values" style="--chart-height: 8rem" aria-label="Signups per day, this week">
+    <li class="chart-item" style="--value: 42"><span class="chart-label">Mon</span><span class="chart-value">42</span></li>
+    <li class="chart-item" style="--value: 58"><span class="chart-label">Tue</span><span class="chart-value">58</span></li>
+    <li class="chart-item" style="--value: 36"><span class="chart-label">Wed</span><span class="chart-value">36</span></li>
+    <li class="chart-item" style="--value: 71"><span class="chart-label">Thu</span><span class="chart-value">71</span></li>
+    <li class="chart-item" style="--value: 64"><span class="chart-label">Fri</span><span class="chart-value">64</span></li>
+    <li class="chart-item" style="--value: 22"><span class="chart-label">Sat</span><span class="chart-value">22</span></li>
+    <li class="chart-item" style="--value: 18"><span class="chart-label">Sun</span><span class="chart-value">18</span></li>
+  </ol>
+</div>`} />
+
+## 棒が多い場合 \{#many-bars\}
+
+棒に幅を均等に割り当てるため、1週間分と同じ幅に1か月分を収められます。`--chart-gap`で棒の間隔を狭められます。項目名は棒の中央にそろえられ、カラムの幅を超えることもあります。たとえば、7項目ごとに名前を表示し、ほかは空欄にできます。名前を空欄にした項目には代わりに`aria-label`を指定し、その値が何を示すのか分かるようにします。
+
+<ComponentPreview name="dense" height={288} title="30日間" bodyClass="p-lg" responsive html={`<div class="card max-w(520) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Requests</h3>
+    <p class="card-description">Thousands per day, November</p>
+  </div>
+  <ol class="chart" style="--chart-gap: 3px; --chart-height: 7rem" aria-label="Requests per day in November, in thousands">
+    <li class="chart-item" style="--value: 49"><span class="chart-label">Nov 1</span><span class="chart-value">49</span></li>
+    <li class="chart-item" style="--value: 27" aria-label="Nov 2"><span class="chart-label"></span><span class="chart-value">27</span></li>
+    <li class="chart-item" style="--value: 58" aria-label="Nov 3"><span class="chart-label"></span><span class="chart-value">58</span></li>
+    <li class="chart-item" style="--value: 91" aria-label="Nov 4"><span class="chart-label"></span><span class="chart-value">91</span></li>
+    <li class="chart-item" style="--value: 14" aria-label="Nov 5"><span class="chart-label"></span><span class="chart-value">14</span></li>
+    <li class="chart-item" style="--value: 17" aria-label="Nov 6"><span class="chart-label"></span><span class="chart-value">17</span></li>
+    <li class="chart-item" style="--value: 76" aria-label="Nov 7"><span class="chart-label"></span><span class="chart-value">76</span></li>
+    <li class="chart-item" style="--value: 20"><span class="chart-label">Nov 8</span><span class="chart-value">20</span></li>
+    <li class="chart-item" style="--value: 54" aria-label="Nov 9"><span class="chart-label"></span><span class="chart-value">54</span></li>
+    <li class="chart-item" style="--value: 82" aria-label="Nov 10"><span class="chart-label"></span><span class="chart-value">82</span></li>
+    <li class="chart-item" style="--value: 15" aria-label="Nov 11"><span class="chart-label"></span><span class="chart-value">15</span></li>
+    <li class="chart-item" style="--value: 72" aria-label="Nov 12"><span class="chart-label"></span><span class="chart-value">72</span></li>
+    <li class="chart-item" style="--value: 35" aria-label="Nov 13"><span class="chart-label"></span><span class="chart-value">35</span></li>
+    <li class="chart-item" style="--value: 12" aria-label="Nov 14"><span class="chart-label"></span><span class="chart-value">12</span></li>
+    <li class="chart-item" style="--value: 19"><span class="chart-label">Nov 15</span><span class="chart-value">19</span></li>
+    <li class="chart-item" style="--value: 63" aria-label="Nov 16"><span class="chart-label"></span><span class="chart-value">63</span></li>
+    <li class="chart-item" style="--value: 61" aria-label="Nov 17"><span class="chart-label"></span><span class="chart-value">61</span></li>
+    <li class="chart-item" style="--value: 16" aria-label="Nov 18"><span class="chart-label"></span><span class="chart-value">16</span></li>
+    <li class="chart-item" style="--value: 38" aria-label="Nov 19"><span class="chart-label"></span><span class="chart-value">38</span></li>
+    <li class="chart-item" style="--value: 19" aria-label="Nov 20"><span class="chart-label"></span><span class="chart-value">19</span></li>
+    <li class="chart-item" style="--value: 78" aria-label="Nov 21"><span class="chart-label"></span><span class="chart-value">78</span></li>
+    <li class="chart-item" style="--value: 62"><span class="chart-label">Nov 22</span><span class="chart-value">62</span></li>
+    <li class="chart-item" style="--value: 15" aria-label="Nov 23"><span class="chart-label"></span><span class="chart-value">15</span></li>
+    <li class="chart-item" style="--value: 80" aria-label="Nov 24"><span class="chart-label"></span><span class="chart-value">80</span></li>
+    <li class="chart-item" style="--value: 23" aria-label="Nov 25"><span class="chart-label"></span><span class="chart-value">23</span></li>
+    <li class="chart-item" style="--value: 36" aria-label="Nov 26"><span class="chart-label"></span><span class="chart-value">36</span></li>
+    <li class="chart-item" style="--value: 88" aria-label="Nov 27"><span class="chart-label"></span><span class="chart-value">88</span></li>
+    <li class="chart-item" style="--value: 88" aria-label="Nov 28"><span class="chart-label"></span><span class="chart-value">88</span></li>
+    <li class="chart-item" style="--value: 82"><span class="chart-label">Nov 29</span><span class="chart-value">82</span></li>
+    <li class="chart-item" style="--value: 15" aria-label="Nov 30"><span class="chart-label"></span><span class="chart-value">15</span></li>
+  </ol>
+</div>`} />
+
+## 横向き \{#horizontal\}
+
+`chart-horizontal`は、1項目を1行で表示するランキングです。項目名は値の割合に応じた長さの淡い帯に重なり、数値は行末に表示されます。どちらもポインターを重ねずに読めます。`--chart-max`に最大値を指定すると、先頭行の帯がカラムの全幅に広がります。
+
+<ComponentPreview name="horizontal" height={328} title="横向き" bodyClass="p-lg" html={`<div class="card max-w(420) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Top pages</h3>
+    <p class="card-description">Visitors in the last 7 days</p>
+  </div>
+  <ol class="chart chart-horizontal" style="--chart-max: 4820" aria-label="Pages by visitors">
+    <li class="chart-item" style="--value: 4820"><span class="chart-label">/guide/installation</span><span class="chart-value">4,820</span></li>
+    <li class="chart-item" style="--value: 3112"><span class="chart-label">/components/button</span><span class="chart-value">3,112</span></li>
+    <li class="chart-item" style="--value: 2240"><span class="chart-label">/components/dialog</span><span class="chart-value">2,240</span></li>
+    <li class="chart-item" style="--value: 1360"><span class="chart-label">/guide/theme</span><span class="chart-value">1,360</span></li>
+    <li class="chart-item" style="--value: 412"><span class="chart-label">/components/command</span><span class="chart-value">412</span></li>
+  </ol>
+</div>`} />
+
+## スパークチャート \{#spark\}
+
+`chart-spark`は目盛りを省き、高さ32px、幅6pxの棒だけを表示します。チャートの幅は棒が並ぶ分だけなので、[統計値](/components/stat)の末尾や表のセルに収まります。項目名と値はリストに残り、画面には表示されませんが、スクリーンリーダーで読み上げられます。
+
+<ComponentPreview name="spark" height={192} narrowHeight={216} title="スパークチャート" bodyClass="p-lg" html={`<div class="tray grid grid-cols(2) gap(4) max-w(560) mx-auto">
+  <div class="card card-flat">
+    <div class="stat">
+      <p class="stat-label">Requests</p>
+      <div class="stat-row">
+        <p class="stat-value">1.28M</p>
+        <p class="stat-delta stat-delta-up">12.4%</p>
+        <ol class="chart chart-spark ml-auto" style="--chart-max: 71" aria-label="Requests per day, last 14 days">
+          <li class="chart-item" style="--value: 18"><span class="chart-label">Day 1</span><span class="chart-value">18</span></li>
+          <li class="chart-item" style="--value: 24"><span class="chart-label">Day 2</span><span class="chart-value">24</span></li>
+          <li class="chart-item" style="--value: 22"><span class="chart-label">Day 3</span><span class="chart-value">22</span></li>
+          <li class="chart-item" style="--value: 31"><span class="chart-label">Day 4</span><span class="chart-value">31</span></li>
+          <li class="chart-item" style="--value: 28"><span class="chart-label">Day 5</span><span class="chart-value">28</span></li>
+          <li class="chart-item" style="--value: 36"><span class="chart-label">Day 6</span><span class="chart-value">36</span></li>
+          <li class="chart-item" style="--value: 33"><span class="chart-label">Day 7</span><span class="chart-value">33</span></li>
+          <li class="chart-item" style="--value: 41"><span class="chart-label">Day 8</span><span class="chart-value">41</span></li>
+          <li class="chart-item" style="--value: 38"><span class="chart-label">Day 9</span><span class="chart-value">38</span></li>
+          <li class="chart-item" style="--value: 52"><span class="chart-label">Day 10</span><span class="chart-value">52</span></li>
+          <li class="chart-item" style="--value: 47"><span class="chart-label">Day 11</span><span class="chart-value">47</span></li>
+          <li class="chart-item" style="--value: 58"><span class="chart-label">Day 12</span><span class="chart-value">58</span></li>
+          <li class="chart-item" style="--value: 63"><span class="chart-label">Day 13</span><span class="chart-value">63</span></li>
+          <li class="chart-item" style="--value: 71"><span class="chart-label">Day 14</span><span class="chart-value">71</span></li>
+        </ol>
+      </div>
+    </div>
+  </div>
+  <div class="card card-flat">
+    <div class="stat">
+      <p class="stat-label">Error rate</p>
+      <div class="stat-row">
+        <p class="stat-value">0.02%</p>
+        <p class="stat-delta stat-delta-down">0.4%</p>
+        <ol class="chart chart-spark ml-auto" style="--chart-max: 62" aria-label="Errors per day, last 14 days">
+          <li class="chart-item" style="--value: 62"><span class="chart-label">Day 1</span><span class="chart-value">62</span></li>
+          <li class="chart-item" style="--value: 58"><span class="chart-label">Day 2</span><span class="chart-value">58</span></li>
+          <li class="chart-item" style="--value: 60"><span class="chart-label">Day 3</span><span class="chart-value">60</span></li>
+          <li class="chart-item" style="--value: 51"><span class="chart-label">Day 4</span><span class="chart-value">51</span></li>
+          <li class="chart-item" style="--value: 49"><span class="chart-label">Day 5</span><span class="chart-value">49</span></li>
+          <li class="chart-item" style="--value: 44"><span class="chart-label">Day 6</span><span class="chart-value">44</span></li>
+          <li class="chart-item" style="--value: 46"><span class="chart-label">Day 7</span><span class="chart-value">46</span></li>
+          <li class="chart-item" style="--value: 38"><span class="chart-label">Day 8</span><span class="chart-value">38</span></li>
+          <li class="chart-item" style="--value: 35"><span class="chart-label">Day 9</span><span class="chart-value">35</span></li>
+          <li class="chart-item" style="--value: 31"><span class="chart-label">Day 10</span><span class="chart-value">31</span></li>
+          <li class="chart-item" style="--value: 33"><span class="chart-label">Day 11</span><span class="chart-value">33</span></li>
+          <li class="chart-item" style="--value: 26"><span class="chart-label">Day 12</span><span class="chart-value">26</span></li>
+          <li class="chart-item" style="--value: 22"><span class="chart-label">Day 13</span><span class="chart-value">22</span></li>
+          <li class="chart-item" style="--value: 19"><span class="chart-label">Day 14</span><span class="chart-value">19</span></li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>`} />
+
+## アニメーション \{#motion\}
+
+初回表示時は、`@starting-style`によって棒が基準線から伸び、`--value`が変わると新しい高さへ滑らかに移行します。動きを抑える設定では、どちらのアニメーションも実行しません。棒にポインターを重ねると、棒の間を移動するポインターに追従できるよう、フェードを挟まず即座に強調します。
+
+## 棒グラフで表せる範囲 \{#limits\}
+
+このチャートは、少数の数値を1つの目盛りで表示するためのものです。折れ線グラフ、面グラフ、2系列の並列表示、ズーム、欠測区間のある時間軸には、チャートライブラリーが必要です。一定の範囲内にある単一の測定値には[メーター](/components/meter)を使います。
+
+## アクセシビリティ \{#accessibility\}
+
+- 日付順など、並び順に意味がある場合は`<ol>`を使い、あらかじめ並べ替えたランキングには`<ul>`を使います。リストには、測定対象と単位が分かる`aria-label`を指定します。
+- 各項目では名前と値が読み上げられます。ツールチップはポインターを重ねたときにしか表示されないため、値の確認をツールチップに頼らないでください。
+- 棒は色相ではなく、位置と長さで区別します。`--chart-color`にステータス色を指定する場合は、近くにステータスをテキストでも表示します。
+- 強制カラーモードでは、棒にシステムのテキスト色を使います。
+
+## クラス \{#classes\}
+
+<ContractTable name="chart" />
+
+## カスタムプロパティ \{#custom-properties\}
+
+<ContractTable name="chart" show="properties" />
+
+## 関連項目 \{#related\}
+
+<ComponentLinks slugs={['stat', 'meter', 'progress']} />
+
+## ソース \{#source\}
+
+<ComponentSource name="chart" />

@@ -1,0 +1,78 @@
+---
+title: "키패드"
+description: "엄지로 코드나 금액을 입력할 수 있는 전화기 형태의 키패드입니다."
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+키패드는 엄지로 코드나 금액을 입력하는 전화기 키를 본뜬 컴포넌트로, 버튼 12개를 3열로 배치합니다. 각 키는 볼록한 표면을 가지며, 누르는 즉시 오목한 영역으로 들어갑니다. 키에는 큰 숫자가 표시되고, 그 아래에는 전화기 키에서 볼 수 있는 작은 문자가 표시됩니다. 키패드 자체는 아무 값도 입력하지 않습니다. 각 키는 버튼이며, 해당 숫자를 필요한 곳에 입력하는 일은 페이지에서 처리합니다.
+
+<ComponentPreview name="default" height={344} title="키패드" bodyClass="flex flex-col items-center justify-center gap-md p-lg" caption="키를 누르면 스크립트가 해당 숫자를 입력 필드에 넣습니다." html={`<input class="input input-lg text-center w-full max-w(272)" id="pad-amount" type="text" inputmode="none" value="" placeholder="0" aria-label="Amount" readonly>
+<div class="keypad" id="pad" role="group" aria-label="Keypad">
+  <button class="keypad-key" type="button" value="1">1</button>
+  <button class="keypad-key" type="button" value="2">2<span class="keypad-letters">abc</span></button>
+  <button class="keypad-key" type="button" value="3">3<span class="keypad-letters">def</span></button>
+  <button class="keypad-key" type="button" value="4">4<span class="keypad-letters">ghi</span></button>
+  <button class="keypad-key" type="button" value="5">5<span class="keypad-letters">jkl</span></button>
+  <button class="keypad-key" type="button" value="6">6<span class="keypad-letters">mno</span></button>
+  <button class="keypad-key" type="button" value="7">7<span class="keypad-letters">pqrs</span></button>
+  <button class="keypad-key" type="button" value="8">8<span class="keypad-letters">tuv</span></button>
+  <button class="keypad-key" type="button" value="9">9<span class="keypad-letters">wxyz</span></button>
+  <button class="keypad-key keypad-key-quiet" type="button" value=".">.</button>
+  <button class="keypad-key" type="button" value="0">0</button>
+  <button class="keypad-key keypad-key-quiet" type="button" value="delete" aria-label="Delete">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H9l-5-6zM12 10l4 4m0-4-4 4"/></svg>
+  </button>
+</div>
+<script>
+  var amount = document.getElementById('pad-amount')
+  document.getElementById('pad').addEventListener('click', function (event) {
+    var key = event.target.closest('button')
+    if (!key) return
+    amount.value = key.value === 'delete' ? amount.value.slice(0, -1) : amount.value + key.value
+  })
+</script>`} />
+
+## 키 \{#a-key\}
+
+`keypad-key`는 높이가 52px인 버튼입니다. [버튼](/components/button)과 같은 볼록한 표면을 가지지만, 눌릴 때 이동하는 과정은 없습니다. 엄지로 여섯 자리 숫자를 연달아 입력할 때는 한 자리만 누를 때보다 손이 빠르게 움직이므로, 키를 누르면 전환 효과 없이 즉시 오목한 영역으로 들어갑니다. 포인터를 올리면 호버 상태의 컨트롤처럼 윤곽이 더 뚜렷해집니다.
+
+`keypad-letters`는 숫자 아래에 표시하는 문자 줄입니다. 코드를 단어로 기억하는 데 도움이 되며, 금액 입력용 키패드에서는 생략하세요.
+
+`keypad-key-quiet`은 삭제, 소수점, 부호처럼 숫자 이외의 키에 사용합니다. 누르기 전에는 키 표면이 드러나지 않아 숫자 키 10개가 키패드의 본체로 보이고 나머지 키는 그 주변에 놓인 것처럼 보입니다. 키가 없는 모서리에는 빈 `<span>`을 넣어 그리드를 유지하세요.
+
+## 키패드 배치 \{#the-pad\}
+
+키패드는 같은 너비의 3열로 구성되며 열 사이는 8px입니다. 너비는 컨테이너에 맞춰 최대 17rem까지 늘어납니다. 일반 버튼으로 키패드를 만들 때는 다음 두 가지 동작을 놓치기 쉽습니다.
+
+- `touch-action: manipulation`을 설정하므로 브라우저는 확대 제스처인지 판단하기 위해 두 번째 탭을 기다리지 않습니다. 같은 키를 빠르게 두 번 눌러도 각각 별개의 누름으로 처리됩니다.
+- 숫자 텍스트는 선택되지 않으므로 키를 누르다가 손가락이 조금 미끄러져도 텍스트가 강조 표시되지 않습니다.
+
+`--keypad-key`는 키의 높이를, `--keypad-gap`은 키 사이의 간격을 설정합니다.
+
+## 페이지의 입력 처리 \{#script\}
+
+각 키의 의미는 페이지에서 정하므로 키패드에는 자체 동작이 없습니다. 페이지는 금액에 숫자를 덧붙이거나, [OTP 입력 필드](/components/otp)의 한 칸을 채우거나, 전화를 걸 수 있습니다. 예제처럼 키패드에 이벤트 리스너 하나만 등록하면 됩니다. 누른 버튼에서 `value` 값을 읽어 필요한 곳에 쓰세요.
+
+페이지에 실제 입력 필드를 두세요. 사용자는 물리 키보드로 이 필드에 입력할 수 있고, 비밀번호 관리자는 값을 채울 수 있으며, 스크린 리더는 값의 변경을 읽어 줍니다. 이 필드에 `inputmode="none"`을 설정하면 휴대전화에서 시스템 키보드가 열려 키패드를 가리는 일을 막을 수 있습니다.
+
+## 접근성 \{#accessibility\}
+
+- 키패드에 `role="group"`과 `aria-label`을 지정하세요. 각 키는 표시된 숫자를 이름으로 사용하는 버튼입니다. 아이콘만 표시하는 키에는 `aria-label`이 필요합니다.
+- 숫자 아래의 문자는 버튼 텍스트에 포함됩니다. 스크린 리더 사용자가 "2 abc"까지 들을 필요가 없다면, 해당 문자를 `aria-hidden="true"`로 설정된 요소로 감싸세요.
+- 키를 누를 때마다 알리는 대신 입력 결과를 알리세요. 스크린 리더가 숫자를 받는 입력 필드의 값 변화를 읽도록 하세요.
+- 포인터 유형에 관계없이 키 높이는 52px로, 터치 대상에 필요한 44px보다 큽니다.
+
+## 클래스 \{#classes\}
+
+<ContractTable name="keypad" />
+
+## 사용자 지정 속성 \{#custom-properties\}
+
+<ContractTable name="keypad" show="properties" />
+
+## 소스 \{#source\}
+
+<ComponentSource name="keypad" />

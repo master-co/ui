@@ -1,114 +1,114 @@
 ---
-title: "ブラウザーサポート"
-description: "ベースラインの要件を確認し、自動的なフォールバックとアプリケーション側の作業を見分け、対象ブラウザーでコンポーネントを検証します。"
+title: "ブラウザー対応"
+description: "基本要件を確認し、自動で適用されるフォールバックとアプリケーション側の対応を把握したうえで、対象ブラウザーでコンポーネントを検証します。"
 ---
 import GuideFigure from '../../../components/GuideFigure.astro'
 
-アプリケーションで使うコンポーネントについて、ブラウザーサポートを確認してください。Master UI は、ベースラインの見た目にはモダンな CSS を、振る舞いにはネイティブ要素を使っています。追加の機能は配置、モーション、コントロールを改善します。そのフォールバックは自動で働く場合もあれば、アプリケーション側にハンドラーが必要な場合もあります。
+アプリケーションで使うコンポーネントのブラウザー対応を確認します。Master UI は、基本の外観にモダン CSS を使い、動作にはネイティブ要素を使います。追加機能は配置や動き、コントロールを改善します。フォールバックは自動で適用される場合と、アプリケーション側でハンドラーが必要な場合があります。
 
-まず以下のベースラインを確認し、次に使用するコンポーネントのエンハンスメントの行を読んでください。CI では、固定バージョンの Playwright 依存関係に同梱された Chromium、Firefox、WebKit でフレームワークのシナリオを実行しており、invoker commands、interest invokers、アンカー位置指定について記載したフォールバックもそこに含まれます。表は機能の要件を示すものであり、リリースされたすべてのブラウザーバージョンでの動作を保証するものではありません。サポートする各ブラウザーで[機能と結果を確認](#checking-a-feature)してください。
+まず以下の基本要件を確認し、次に使用するコンポーネントに該当する拡張機能の行を確認します。CI では、バージョンを固定した Playwright に同梱される Chromium、Firefox、WebKit で、フレームワークの利用シナリオをテストします。テストには、呼び出しコマンド、関心ベースの呼び出し、アンカー配置について、ドキュメントに記載されたフォールバックも含まれます。表は機能要件を示すもので、公開済みのすべてのブラウザーバージョンでの動作を保証するものではありません。サポート対象の各ブラウザーで[機能への対応と実際の動作を確認します](#checking-a-feature)。
 
-## ベースラインの要件 \{#baseline\}
+## 基本要件 \{#baseline\}
 
-以下の機能は、記載した箇所でライブラリ側のフォールバックなしに使われています。レイヤー、ネスト、色関数はライブラリ全体に影響します。`subgrid` や `<dialog>` のような機能は、それを使うコンポーネントでのみ問題になります。
+以下に示す箇所では、ライブラリーによるフォールバックなしでこれらの機能を使います。レイヤー、ネスト、色関数はライブラリー全体に広く影響します。`subgrid`や`<dialog>`などは、それを使うコンポーネントで必要です。
 
-| 機能 | 使われている箇所 |
+| 機能 | 使用箇所 |
 | --- | --- |
-| カスタムプロパティ | すべてのトークンと、コントラクトが公開するすべてのプロパティ |
-| カスケードレイヤー（`@layer`） | すべてのコンポーネントとレイアウトのルールは `components` レイヤーに、トークンは `theme` にあります。これにより、ユーティリティが `!important` なしでコンポーネントより優先されます |
-| CSS ネスト | ルールはネストして書かれており、コンパイル後のスタイルシートもネストを保持します |
-| `light-dark()` | カラースキームに応じて変わるテーマカラー |
+| カスタムプロパティ | すべてのトークンと、コントラクトで公開されるすべてのプロパティ |
+| カスケードレイヤー（`@layer`） | コンポーネントとレイアウトのルールはすべて`components`レイヤーにあり、トークンは`theme`にあります。この構成により、`!important`を使わずにユーティリティをコンポーネントより優先できます。 |
+| CSS ネスト | ルールは入れ子で記述され、コンパイル後のスタイルシートにもネストが残ります。 |
+| `light-dark()` | 配色に応じて切り替わるテーマカラー |
 | `oklch()` | カラートークンの値 |
-| `color-mix()` | ティント、トーン付きのボタン、ガラス、インクのサーフェス上のインラインチップ |
-| `:has()` | 子の状態を読み取る親：[input group](/components/input)、フィールド、[segmented control](/components/segmented)、[rating](/components/rating)、[steps](/components/steps)、[listbox](/components/listbox) の空状態 |
-| コンテナーサイズクエリー（`@container`） | [Card](/components/card)、[dialog](/components/dialog)、[data list](/components/data-list)、[navbar](/components/navbar)、および [form](/components/form)、[bento](/components/bento)、[shell](/pages/app-shell) の各レイアウト |
-| `subgrid` | [Calendar](/components/calendar)、[chart](/components/chart)、[data list](/components/data-list) |
-| 個別のトランスフォームプロパティ（`translate`、`scale`） | 持ち上がるコントロールの状態と、オーバーレイの登場 |
-| `:focus-visible` | コントロールのキーボードフォーカスリング |
-| `:dir()` | ドロワー、パンくずの区切り、カレンダーの範囲など、右から左へのテキストで向きが反転するパーツ |
-| 論理プロパティと `inset` | テキストの方向に従う余白と配置 |
-| 動的ビューポート単位（`dvh`） | [dialog](/components/dialog) と [command palette](/components/command) の高さの上限。`page` と `shell` のレイアウトは先に `vh` の値を書いています |
-| `popover` 属性 | [Popover](/components/popover)、[menu](/components/menu)、[tooltip](/components/tooltip)、[combobox](/components/combobox) のリスト |
-| `<dialog>` | [Dialog](/components/dialog)、[command palette](/components/command)、[toast](/components/toast)、閉じられる [banner](/components/banner) |
+| `color-mix()` | 淡い色付け、色付きボタン、ガラス調の質感、インク色のサーフェス上のインラインチップ |
+| `:has()` | 子要素の状態を参照する親要素。該当するのは[入力グループ](/components/input)、フィールド、[セグメントコントロール](/components/segmented)、[評価](/components/rating)、[ステップ](/components/steps)、[リストボックス](/components/listbox)の空状態です。 |
+| コンテナーのサイズクエリー（`@container`） | [カード](/components/card)、[ダイアログ](/components/dialog)、[データリスト](/components/data-list)、[ナビゲーションバー](/components/navbar)の各コンポーネントと、[フォーム](/components/form)、[ベントー](/components/bento)、[シェル](/pages/app-shell)の各レイアウト |
+| `subgrid` | [カレンダー](/components/calendar)、[チャート](/components/chart)、[データリスト](/components/data-list) |
+| 個別の変形プロパティ（`translate`、`scale`） | コントロールが浮き上がる状態と、オーバーレイの表示アニメーション |
+| `:focus-visible` | キーボード操作時のコントロールのフォーカスリング |
+| `:dir()` | 右から左に書く場合に向きが反転する部分（ドロワー、パンくずリストの区切り、カレンダーの範囲表示など） |
+| 論理プロパティと`inset` | テキストの方向に応じた余白と配置 |
+| 動的ビューポート単位（`dvh`） | [ダイアログ](/components/dialog)と[コマンドパレット](/components/command)の高さの上限。`page`と`shell`のレイアウトでは、先に`vh`の値を指定します。 |
+| `popover`属性 | [ポップオーバー](/components/popover)、[メニュー](/components/menu)、[ツールチップ](/components/tooltip)、[コンボボックス](/components/combobox)のリスト |
+| `<dialog>` | [ダイアログ](/components/dialog)、[コマンドパレット](/components/command)、[トースト](/components/toast)、閉じられる[バナー](/components/banner) |
 
-サポートされない構文は、宣言、セレクター、またはルール全体を無効にすることがあります。レイヤーやネストが使えないとスタイルシートの大部分に影響し、色関数が使えないと、その色を使う宣言に有効な値がなくなることがあります。エンハンスメントのフォールバックは、ベースラインの機能の欠如を補うものではありません。
+未対応の構文があると、宣言やセレクター、ルール全体が無効になることがあります。レイヤーやネストが使えないとスタイルシートの広い範囲に影響し、色関数が使えないと、その色を参照する宣言に有効な値が渡らないことがあります。拡張機能のフォールバックでは、基本機能への未対応は補えません。
 
-## エンハンスメント \{#enhancements\}
+## 拡張機能 \{#enhancements\}
 
-以下の各機能は、2 つの方法のどちらかで条件付けされています。ほとんどは `@supports (anchor-scope: --segmented-thumb)` や `@supports selector(::scroll-marker)` のような `@supports` ルールの中にあり、フォールバックを描画するルールの後に書かれています。残りは、`interpolate-size`、`@starting-style`、`closedby` のように、その機能のないブラウザーが無視する単一の宣言、アットルール、または属性です。
+以下の機能は、対応状況に応じて 2 通りの方法で適用されます。大半は、フォールバックの表示を定義するルールの後に、`@supports (anchor-scope: --segmented-thumb)`や`@supports selector(::scroll-marker)`などの条件を使った`@supports`ルール内に記述されています。残りは`interpolate-size`、`@starting-style`、`closedby`などの単独の宣言、アットルール、属性で、未対応のブラウザーでは無視されます。
 
-最後の列は、フォールバック、または必要な統合作業を示しています。コンポーネント固有の振る舞いは、各[コントラクト](/guide/contracts)の `platform` リストに記録されています。特に、`commandfor` だけを持つダイアログは、以下で説明するハンドラーを用意するまで、invoker commands のないブラウザーでは開きません。
+最後の列では、フォールバックや組み込み時に必要な対応を説明します。各[コントラクト](/guide/contracts)の`platform`一覧には、コンポーネントごとの動作が記載されています。特に、`commandfor`だけを指定したダイアログは、呼び出しコマンドに未対応のブラウザーでは開きません。その場合は、以下に示すハンドラーを用意します。
 
-<GuideFigure name="browser-support" title="ベースラインとエンハンスメントによる配置">
+<GuideFigure name="browser-support" title="基本機能と拡張機能での配置">
 
-**エンハンスメントは、機能するベースラインの上で結果を変えます。** ネイティブのポップオーバーに対応していれば、どちらの場合も同じサーフェスが開閉します。CSS アンカー位置指定はそれをトリガーの隣に配置し、このエンハンスメントがなければ、通常のポップオーバーはビューポートの中央に置かれたままです。2 つの模式的なビューポートで変わるのは配置だけです。どちらの分岐も、ポップオーバーに対応していないブラウザー向けのフォールバックは提供しません。
+**拡張機能は、基本機能が動作する状態で表示や動作を変えます。** ブラウザーがネイティブのポップオーバーに対応していれば、どちらの場合も同じサーフェスが開閉します。CSS アンカー配置が使える場合はトリガーの隣に配置され、使えない場合は通常のポップオーバーとしてビューポートの中央に表示されます。2 つの模式図で異なるのは配置だけです。どちらも、ポップオーバー自体に未対応のブラウザー向けのフォールバックは提供しません。
 
 </GuideFigure>
 
 ### オーバーレイと配置 \{#overlays-and-placement\}
 
-| 機能 | 使用するもの | ない場合 |
+| 機能 | 使用箇所 | 未対応時 |
 | --- | --- | --- |
-| Invoker commands：`command` と `commandfor` | [Dialog](/components/dialog)、[command palette](/components/command) | クリックハンドラーから `showModal()` と `close()` を呼び出します。スタイルシートは同じです |
-| `closedby="any"` | [Dialog](/components/dialog)、[command palette](/components/command) | スクリムをクリックしても何も起きません。Escape と閉じるボタンでは引き続き閉じられます |
-| Interest invokers：`popover="hint"` と `interestfor` | [Tooltip](/components/tooltip)、プレビューとして使う [popover](/components/popover) | ツールチップやプレビューは表示されません。コントロールはアクセシブルな名前を保ち、リンクやボタンとして引き続き機能します |
-| CSS アンカー位置指定：`position-area`、`position-try-fallbacks` | [Popover](/components/popover)、[menu](/components/menu)、[tooltip](/components/tooltip)、`popover` 属性を持つ [listbox](/components/listbox) | サーフェスは同じように開閉します。ブラウザーがあらゆるポップオーバーを置く位置、つまりビューポートの中央に表示されます |
-| `anchor-scope` と `anchor-size()` | [Combobox](/components/combobox) | リストはフローの中でフィールドの直下に、自身の幅で配置されます |
-| `anchor()` と組み合わせた `anchor-scope`（移動する 1 つのインジケーター用） | [Segmented control](/components/segmented)、[tabs](/components/tabs)、[table of contents](/components/toc) | 現在のオプションがそれぞれ自分のマークを描画し、マークは滑らかに移動せず即座に切り替わります |
-| `anchor()` と組み合わせた `anchor-scope`（文字の位置から始まる罫線用） | [List](/components/list) | 行の下の細線が行全体に伸びます |
-| `@position-try` | [Context menu](/components/menu) | ポインターの下方向・行末方向に開き、ビューポートの端で向きを変えません |
-| `@starting-style` と `transition-behavior: allow-discrete` | [Dialog](/components/dialog)、[popover](/components/popover)、[menu](/components/menu)、[tooltip](/components/tooltip)、[toast](/components/toast)、[chart](/components/chart) | オーバーレイはフェードなしで即座に表示・消去されます。チャートのバーは最初から完全な高さで表示されます |
+| 呼び出しコマンド（`command`と`commandfor`） | [ダイアログ](/components/dialog)、[コマンドパレット](/components/command) | クリックハンドラーから`showModal()`と`close()`を呼び出します。スタイルシートは共通です。 |
+| `closedby="any"` | [ダイアログ](/components/dialog)、[コマンドパレット](/components/command) | ダイアログの背後を覆う背景をクリックしても反応しません。Escape キーや閉じるボタンで閉じられます。 |
+| 関心ベースの呼び出し（`interestfor`を指定した`popover="hint"`） | [ツールチップ](/components/tooltip)、プレビューとして使う[ポップオーバー](/components/popover) | ツールチップやプレビューは表示されません。コントロールのアクセシブルな名前は維持され、リンクやボタンとして引き続き機能します。 |
+| CSS アンカー配置（`position-area`、`position-try-fallbacks`） | [ポップオーバー](/components/popover)、[メニュー](/components/menu)、[ツールチップ](/components/tooltip)、`popover`属性を持つ[リストボックス](/components/listbox) | サーフェスの開閉は同じように動作します。ブラウザーの通常のポップオーバー配置に従い、ビューポートの中央に表示されます。 |
+| `anchor-scope`と`anchor-size()` | [コンボボックス](/components/combobox) | リストは通常のフローでフィールドのすぐ下に配置され、リスト自体の幅で表示されます。 |
+| 1 つのインジケーターを移動させるための`anchor-scope`と`anchor()` | [セグメントコントロール](/components/segmented)、[タブ](/components/tabs)、[目次](/components/toc) | 現在の項目に個別のマークが表示されます。項目が変わると、マークはスライドせずに即座に切り替わります。 |
+| 区切り線をテキストの先頭から引くための`anchor-scope`と`anchor()` | [リスト](/components/list) | 行の下の細い区切り線が行全体に伸びます。 |
+| `@position-try` | [コンテキストメニュー](/components/menu) | ポインターの位置を基準に、下方向かつインライン軸の終端側に開き、ビューポートの端でも開く向きは反転しません。 |
+| `@starting-style`と`transition-behavior: allow-discrete` | [ダイアログ](/components/dialog)、[ポップオーバー](/components/popover)、[メニュー](/components/menu)、[ツールチップ](/components/tooltip)、[トースト](/components/toast)、[チャート](/components/chart) | オーバーレイはフェードせずに即座に表示・非表示が切り替わります。チャートの棒は最初から最終的な高さで表示されます。 |
 
 ### フィールド \{#fields\}
 
-| 機能 | 使用するもの | ない場合 |
+| 機能 | 使用箇所 | 未対応時 |
 | --- | --- | --- |
-| `appearance: base-select` | [Select](/components/select) | セレクトはウェルとシェブロンを保ち、プラットフォーム独自のオプションリストを開きます。`select-option` は効果を持ちません |
-| `field-sizing: content` | [input](/components/input)、[composer](/components/composer)、[stepper](/components/stepper) の `input-auto` テキストエリア | テキストエリアは最小の高さとリサイズハンドルを保ちます。composer は 3 行を保ってスクロールします。stepper は `--stepper-min` の幅を保ちます |
-| `:user-invalid` | [Input](/components/input) | ネイティブの制約によるフィールドの検証は引き続き行われますが、このカスタムのエラー表示にはなりません。`aria-invalid="true"` では引き続きエラー表示になります |
-| ネイティブフィールドのパーツ：`::-webkit-calendar-picker-indicator`、`::-webkit-inner-spin-button`、`::-webkit-search-cancel-button` | [Input](/components/input) | 日付、時刻、数値、検索フィールドでは、ブラウザー独自のマークが残ります |
-| ネイティブの `<meter>` のパーツ | [Meter](/components/meter) | ブラウザー独自のメーターが残り、同じ値と同じ 3 つのトーンを独自のスタイルで示します |
+| `appearance: base-select` | [セレクト](/components/select) | セレクトは入力面と下向きの山形アイコンを維持し、プラットフォーム標準の選択肢リストを開きます。`select-option`は効果がありません。 |
+| `field-sizing: content` | [入力](/components/input)の`input-auto`付きテキストエリア、[コンポーザー](/components/composer)、[ステッパー](/components/stepper) | テキストエリアは最小の高さとサイズ変更ハンドルを維持します。コンポーザーは 3 行の高さを維持し、内容が収まらない場合はスクロールします。ステッパーは`--stepper-min`の幅を維持します。 |
+| `:user-invalid` | [入力](/components/input) | ネイティブの制約による入力検証は引き続き行われます。カスタムのエラー表示は、ネイティブの制約では適用されず、`aria-invalid="true"`では引き続き適用されます。 |
+| ネイティブフィールドの部品（`::-webkit-calendar-picker-indicator`、`::-webkit-inner-spin-button`、`::-webkit-search-cancel-button`） | [入力](/components/input) | 日付、時刻、数値、検索の各フィールドには、ブラウザー標準のアイコンや操作部品が表示されます。 |
+| ネイティブの`<meter>`の部品 | [メーター](/components/meter) | ブラウザー標準のメーターが使われ、同じ値と 3 種類のトーンがブラウザー独自のスタイルで表示されます。 |
 
-### ディスクロージャー \{#disclosure\}
+### 展開と折りたたみ \{#disclosure\}
 
-| 機能 | 使用するもの | ない場合 |
+| 機能 | 使用箇所 | 未対応時 |
 | --- | --- | --- |
-| `<details>` 上の `::details-content` と組み合わせた `interpolate-size` | [Accordion](/components/accordion)、[nav](/components/nav)、[expand](/components/expand)、[banner](/components/banner) | パネルやグループは即座に開閉します。閉じたバナーは即座に消えます |
-| 閉じたテキストのプレビューとしての `::details-content` | [Expand](/components/expand) | 通常の `<details>` と同様に、閉じている間テキストは隠れます。トグルでは引き続き開けます |
-| `<details>` の `name` 属性 | [Accordion](/components/accordion) | 各行は独立して開閉します |
+| `interpolate-size`と、`<details>`に指定する`::details-content` | [アコーディオン](/components/accordion)、[ナビゲーション](/components/nav)、[展開](/components/expand)、[バナー](/components/banner) | パネルやグループは即座に開閉し、閉じたバナーは即座に消えます。 |
+| 折りたたみ時のテキストをプレビューする`::details-content` | [展開](/components/expand) | 通常の`<details>`と同様に、閉じている間はテキストが非表示になります。切り替えコントロールで引き続き開けます。 |
+| `<details>`の`name`属性 | [アコーディオン](/components/accordion) | 各行は個別に開閉します。 |
 
 ### スクロール \{#scrolling\}
 
-| 機能 | 使用するもの | ない場合 |
+| 機能 | 使用箇所 | 未対応時 |
 | --- | --- | --- |
-| スクロール駆動アニメーション：`animation-timeline: scroll()` | [Scroll area](/components/scroll-area)、[navbar](/components/navbar) の `navbar-progress` | 領域は同じようにスクロールし、端はフェードなしのすっきりした状態を保ちます。進捗ラインは描画されません |
-| スクロール駆動アニメーション：`view-timeline` と `timeline-scope` | [Slider](/components/slider)、[range](/components/range)、[compare](/components/compare) | スライダーやレンジのトラックはただのウェルのままで、つまみは引き続き値を示します。[compare のビヘイビア](/guide/behaviors)が input の値を `--compare-position` にコピーします |
-| スクロール駆動アニメーション：`animation-timeline: view()` | [Wheel](/components/wheel) | オプションは平坦に描画され、`aria-selected="true"` のものが強いインクになります |
-| `::scroll-button()` と `::scroll-marker` | [Carousel](/components/carousel) | ボタンもドットもありません。カルーセルはスワイプ、スクロール、スナップする行になります |
-| スクロール状態コンテナークエリー：`container-type: scroll-state` | [Navbar](/components/navbar) | バーのペインは、ページの最上部でも常に描画されます |
-| `scroll-target-group` と `:target-current` | [Table of contents](/components/toc) | スクリプトやサーバーが `aria-current` を設定するまで、どのリンクにもマークが付きません |
+| スクロール駆動アニメーション（`animation-timeline: scroll()`） | [スクロール領域](/components/scroll-area)、[ナビゲーションバー](/components/navbar)の`navbar-progress` | スクロール領域は同じように動作します。端のフェードと進捗を示す線は表示されません。 |
+| スクロール駆動アニメーション（`view-timeline`と`timeline-scope`） | [スライダー](/components/slider)、[範囲選択](/components/range)、[比較](/components/compare) | スライダーや範囲選択のトラックには値に応じた塗り分けがなく、つまみは引き続き値を示します。[比較のビヘイビア](/guide/behaviors)は入力値を`--compare-position`にコピーします。 |
+| スクロール駆動アニメーション（`animation-timeline: view()`） | [ホイール](/components/wheel) | 選択肢は平面的に表示され、`aria-selected="true"`が付いた項目には強調用のインク色が使われます。 |
+| `::scroll-button()`と`::scroll-marker` | [カルーセル](/components/carousel) | ボタンとドットは表示されません。カルーセルは横一列に並び、スワイプやスクロールができ、所定の位置にスナップします。 |
+| スクロール状態のコンテナークエリー（`container-type: scroll-state`） | [ナビゲーションバー](/components/navbar) | ナビゲーションバーの背景は、ページの先頭にいるときも含め、常に表示されます。 |
+| `scroll-target-group`と`:target-current` | [目次](/components/toc) | スクリプトまたはサーバーがリンクに`aria-current`を設定するまで、現在位置を示すマークは表示されません。 |
 
 ### レイアウト \{#layout\}
 
-| 機能 | 使用するもの | ない場合 |
+| 機能 | 使用箇所 | 未対応時 |
 | --- | --- | --- |
-| グリッドレーン：`display: grid-lanes` | [Masonry](/components/masonry) | マルチカラムのボックスが同じタイルを詰めます。タイルはレーンを横切るのではなく、各列を上から下へ埋めます |
-| `sibling-index()` | [Sticky stack](/components/sticky-stack) | すべてのパネルが同じ位置に固定され、前のパネルを完全に覆うため、端が見えません |
-| コンテナークエリー単位（`cqi`） | [Breakout](/components/breakout) | 幅の広い子や全幅の子が、本文の列内にとどまります |
+| グリッドレーン（`display: grid-lanes`） | [メイソンリー](/components/masonry) | 複数列レイアウトに同じタイルが並びます。レーンを横断する順序ではなく、各列を上から下へ埋めていきます。 |
+| `sibling-index()` | [スティッキースタック](/components/sticky-stack) | 各パネルが同じ位置に固定され、直前のパネルを完全に覆うため、背後のパネルの端は見えません。 |
+| コンテナークエリー単位（`cqi`） | [ブレイクアウト](/components/breakout) | 幅広または全幅に指定した子要素も、本文カラム内に収まります。 |
 
 ### 描画 \{#drawing\}
 
-| 機能 | 使用するもの | ない場合 |
+| 機能 | 使用箇所 | 未対応時 |
 | --- | --- | --- |
-| `corner-shape: squircle` | `--corner-shape` と `--corner-scale` を通じて、すべてのコンポーネント | 見た目の大きさが同じ円形の角になります |
-| `corner-shape: bevel` | [File](/components/file) | ページは 4 つの丸い角を保ち、折り返しのフラップがありません |
-| 型付きの `attr()` | [progress](/components/progress) のリング | リングは `aria-valuenow` を読み取りません。`style` 属性で `--progress-ring-value` も設定してください |
-| `sibling-index()` | [Skeleton](/components/skeleton) | ブロック内のすべてのスケルトンが、同じ瞬間に光の帯を始めます |
-| `text-wrap: balance` と `text-wrap: pretty` | [Heading](/components/heading) | テキストは通常どおり折り返されます |
+| `corner-shape: squircle` | すべてのコンポーネント（`--corner-shape`と`--corner-scale`経由） | 見た目の大きさが同じ円弧状の角丸 |
+| `corner-shape: bevel` | [ファイル](/components/file) | 用紙の四隅は丸いままで、折り返しは表示されません。 |
+| 型付きの`attr()` | [進捗](/components/progress)のリング | リングは`aria-valuenow`を参照できないため、`--progress-ring-value`を`style`属性にも設定します。 |
+| `sibling-index()` | [スケルトン](/components/skeleton) | ブロック内のすべてのスケルトンで、帯状のハイライトのアニメーションが同時に始まります。 |
+| `text-wrap: balance`と`text-wrap: pretty` | [見出し](/components/heading) | テキストは通常どおりに折り返されます。 |
 
-## 機能を確認する \{#checking-a-feature\}
+## 機能への対応を確認する \{#checking-a-feature\}
 
-最新の互換性情報は、正確な機能名で調べてください。CSS については、スタイルシートが判定するのと同じ条件を使い、手元のブラウザーに問い合わせることもできます。
+機能の正確な名前で、最新の対応状況を調べます。CSS の場合は、スタイルシートと同じ条件を使って、使用中のブラウザーでも確認できます。
 
 ```js
 CSS.supports('(anchor-scope: --mark)')
@@ -116,39 +116,39 @@ CSS.supports('(appearance: base-select)')
 CSS.supports('selector(::scroll-marker)')
 ```
 
-[`CSS.supports()`](https://drafts.csswg.org/css-conditional-3/#dom-css-supports) は CSS のサポート条件を評価します。肯定的な結果は CSS の分岐を選ぶのに役立ちますが、レンダリングや操作のテストではありません。また、`commandfor` のような HTML 属性は判定しません。
+[`CSS.supports()`](https://drafts.csswg.org/css-conditional-3/#dom-css-supports)は CSS の対応条件を評価します。条件が成立すれば適用する CSS を選ぶ判断材料になりますが、描画や操作の動作までは確認できません。`commandfor`などの HTML 属性も確認の対象外です。
 
-機能を確認したら、対象ブラウザーでコンポーネントを検証します。
+機能への対応を確認したら、対象ブラウザーでコンポーネントの動作を検証します。
 
-1. アプリケーションが提供する経路で、開く、閉じる、選択する、編集するといった操作を行います。オーバーレイでは、キーボード操作とフォーカスの戻りも確認します。
-2. ビューポートの端付近での配置、幅の狭いレイアウト、スクロールするコンテンツを確認します。
-3. 出荷するつもりのフォールバックを確認します。アニメーションがないことは許容できる場合もありますが、開くためのハンドラーがないことや、表示されないツールチップに重要な説明が隠れていることは許容できません。
+1. アプリケーションが提供する操作手順に沿って、開く、閉じる、選択する、編集するなどの操作を試します。オーバーレイでは、キーボード操作と、閉じた後にフォーカスが戻ることも確認します。
+2. ビューポートの端に近い位置での配置、幅の狭いレイアウト、コンテンツがスクロールする場合の動作を確認します。
+3. 実際に提供するフォールバックを確認します。アニメーションの省略は許容できる場合がありますが、開くためのハンドラーがなかったり、必須の案内が表示できないツールチップにしかなかったりすると、操作に支障が出ます。
 
-重要な説明は、見えるテキストに置いてください。ツールチップが省かれても使えるフォールバックになるのは、元のコントロールがすでに名前と目的を備えている場合だけです。
+必須の案内は、常に見えるテキストに記載します。ツールチップの省略が実用的なフォールバックになるのは、元のコントロールだけで名前と用途が分かる場合に限ります。
 
 ## ユーザー設定とデバイス \{#preferences-and-devices\}
 
-サポートは機能だけの問題ではありません。各スタイルシートは、コンポーネントに変えるべきものがある箇所で、読み手のデバイスと設定を表すクエリーにも対応しています。
+ブラウザー対応には、機能の有無に加えてデバイスやユーザー設定への対応も含まれます。各スタイルシートでは、コンポーネントに調整が必要な箇所で、それらの条件を表すクエリーに応じてスタイルを切り替えます。
 
-| クエリー | 変わるもの |
+| クエリー | 変化する箇所 |
 | --- | --- |
-| `(hover: hover)` | ホバー状態はこの中に書かれているため、ポインターがホバーできる環境でのみ適用されます。タッチ操作の後にコントロールがホバー状態に見えることはありません |
-| `(pointer: coarse)` | ターゲットが 44px に大きくなります。ボタンの最小の高さは `2.75rem` になり、チェックボックスのラベルは周囲のものを動かさずに、行のまわりで大きくなります |
-| `(prefers-reduced-motion: reduce)` | 移動が取り除かれます。コントロールの持ち上がり、オーバーレイの拡大縮小とスライド、インジケーターの滑らかな移動です。フェードは残るため、変化は引き続き見て取れます |
-| `(forced-colors: active)` | ブラウザーが影を取り除き色を置き換えるため、端と状態は `ButtonText`、`CanvasText`、`Highlight` などのシステムカラーによるアウトラインと塗りで改めて描画されます |
-| `(prefers-contrast: more)` | テーマが細線、区切り線、輪郭のトークンと、控えめなインクおよび無効状態のインクを強めます。それらのトークンを読むコンポーネントも追従します |
-| `(prefers-reduced-transparency: reduce)` | [navbar](/components/navbar) と [tab bar](/components/tabbar) のガラスが、ぼかしのない不透明なサーフェスになります |
+| `(hover: hover)` | ホバー時のスタイルはこのクエリー内で定義され、ポインターでホバーできる場合にのみ適用されます。タッチ操作の後にコントロールがホバー状態の見た目のまま残ることはありません。 |
+| `(pointer: coarse)` | 操作対象のサイズは 44px まで広がります。ボタンの最小の高さは`2.75rem`になり、チェックボックスのラベルは周囲の要素を動かさずにテキスト行の周りに広がります。 |
+| `(prefers-reduced-motion: reduce)` | コントロールの浮き上がり、オーバーレイの拡大・縮小やスライド、インジケーターのスライドが省かれます。フェードは残るため、状態の変化は視覚的に分かります。 |
+| `(forced-colors: active)` | ブラウザーが影を取り除き、色を置き換えるため、境界や状態は`ButtonText`、`CanvasText`、`Highlight`などのシステムカラーを使ったアウトラインや塗りで表します。 |
+| `(prefers-contrast: more)` | テーマでは、細線、区切り線、輪郭のトークンと、控えめな表示や無効状態に使うインク色を強調します。これらのトークンを参照するコンポーネントにも変更が反映されます。 |
+| `(prefers-reduced-transparency: reduce)` | [ナビゲーションバー](/components/navbar)と[タブバー](/components/tabbar)のガラス調のサーフェスは、ぼかしのない不透明なサーフェスに変わります。 |
 
-テーマカラーは、スキーム間で異なる箇所に `light-dark()` を使い、ページまたはサブツリーの `color-scheme` に従います。[既定のテーマ](/guide/theme#color-schemes)を参照してください。
+テーマカラーは、配色ごとに色が異なる箇所で`light-dark()`を使い、ページまたはサブツリーの`color-scheme`に従います。[既定のテーマ](/guide/theme#color-schemes)を参照してください。
 
 ## スタンドアロンのスタイルシート \{#standalone\}
 
-`@master/ui/standalone.css` は、Master CSS を使わないプロジェクト向けに、同じソースをプレーンな CSS にコンパイルしたものです。リンク方法は[インストール](/guide/installation#without-master-css)で説明しています。
+`@master/ui/standalone.css`は、Master CSS を使わないプロジェクト向けに、同じソースをプレーンな CSS にコンパイルしたものです。読み込み方は[インストール](/guide/installation#without-master-css)を参照してください。
 
 ```css name=app.css
 @import '@master/ui/standalone.css';
 ```
 
-コンパイルではミックスインが解決され、トークンがカスタムプロパティとして書き出されます。CSS のダウンレベル変換は行いません。このファイルは同じレイヤーを宣言し、ネスト、`light-dark()`、`oklch()` を保持し、同じ `@supports` ルールを含みます。その要件とフォールバックは、このページに記載したものと同じです。`@master/ui/dist/themes/paper.css` のようなコンパイル済みテーマについても同様です。
+コンパイルでは、ミックスインを展開し、トークンをカスタムプロパティとして出力します。古い CSS 構文への変換は行わず、同じレイヤーを宣言し、ネスト、`light-dark()`、`oklch()`、同じ`@supports`ルールを維持します。要件とフォールバックは、このページに記載されているとおりです。`@master/ui/dist/themes/paper.css`などのコンパイル済みテーマにも同じことが当てはまります。
 
-コンパイル済みファイルは `color-scheme: light dark` も宣言し、`data-theme="light"` と `data-theme="dark"` に対応しています。この後に別のビルドツールが CSS を変換する場合は、アプリケーションが実際に配信する CSS をテストしてください。
+コンパイル済みファイルは`color-scheme: light dark`も宣言し、`data-theme="light"`と`data-theme="dark"`に対応しています。この後に別のビルドツールで変換する場合は、アプリケーションが実際に配信する CSS をテストしてください。

@@ -1,0 +1,66 @@
+---
+title: "ライトボックス"
+description: "ネイティブダイアログで、ページの上に画像を拡大表示します。"
+---
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+ライトボックスは、ページの上に画像を拡大表示するコンポーネントです。ネイティブの`<dialog>`に`.lightbox`を指定する構成で、サムネイルのボタンに付けた`commandfor`と`command="show-modal"`で開きます。ブラウザーがトップレイヤー、フォーカストラップ、<kbd>Esc</kbd>キーの操作を提供するため、スクリプトは不要です。ダイアログ自体に背景面はなく、サイズは画像とぴったり一致します。背後のページは暗くなり、強くぼかされます。
+
+<ComponentPreview name="default" height={440} narrowHeight={400} title="ライトボックス" bodyClass="flex items-center justify-center p-lg" caption="カードを押すと開きます。画像の外側をクリックするか、閉じるボタンまたはEscキーを押すと閉じます。" html={`<button class="card card-interactive w(240)" type="button" commandfor="moonstone" command="show-modal">
+  <img class="card-media" src="/demo/moonstone.svg" alt="">
+  <span class="card-header">
+    <span class="card-title">Moonstone</span>
+    <span class="card-description">View the picture</span>
+  </span>
+</button>
+
+<dialog class="lightbox" id="moonstone" closedby="any" aria-label="Moonstone" style="--lightbox-ratio: 16 / 9">
+  <img class="lightbox-media" src="/demo/moonstone.svg" alt="A pale stone over grey hills">
+  <p class="lightbox-caption">Moonstone, the stone the light theme is named for.</p>
+  <button class="btn btn-sm btn-square lightbox-close" type="button" commandfor="moonstone" command="close" aria-label="Close">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+  </button>
+</dialog>`} />
+
+## 開く・閉じる \{#opening-and-closing\}
+
+- サムネイルのボタンに`commandfor="id"`と`command="show-modal"`を指定すると、ライトボックスを開けます。閉じるボタンの`command="close"`は、ライトボックスを閉じてフォーカスをサムネイルに戻します。
+- `closedby="any"`を指定すると、外側をクリックして閉じられます。ダイアログは画像と同じサイズなので、画像の外側はすべて閉じる操作の対象です。この属性に対応していないブラウザーでも、<kbd>Esc</kbd>キーと閉じるボタンは使えます。
+- ボタンからダイアログを操作するHTMLのコマンド機能に対応していないブラウザーでは、クリックハンドラーから`dialog.showModal()`と`dialog.close()`を呼び出します。スタイルシートは共通です。
+
+`@starting-style`と離散トランジションにより、画像は少し小さい状態から拡大しながらフェードインし、閉じるときは開くときより短い時間で消えます。これらが使えない場合は、即座に表示・非表示が切り替わります。
+
+## サイズ \{#size\}
+
+`lightbox-media`は`<img>`、`<video>`、`<iframe>`のいずれかに指定します。表示サイズはファイル自体の寸法に依存しません。幅は最大64remで、ビューポートの上下左右に24pxずつ余白を確保し、幅と高さの両方に収まるように縮みます。縦横比は`--lightbox-ratio`で指定し、既定は`3 / 2`です。画像、動画、フレームはいずれも同じ方法でサイズが決まるため、読み込み時にレイアウトがずれません。
+
+例の`16 / 9`のように、ダイアログの`--lightbox-ratio`に画像本来の縦横比を指定します。縦横比が異なる画像は、枠に合わせて切り抜かれます。`--lightbox-width`は最大幅、`--lightbox-gutter`は外周の余白を指定します。
+
+## キャプションと閉じるボタン \{#caption-and-close\}
+
+`lightbox-caption`は画像の下に浮かぶ、画像と同じ幅のバーです。画像の配置時にバーの分のスペースが確保されます。キャプションは1〜2行に収めてください。小さな正方形の[ボタン](/components/button)に`lightbox-close`を指定すると、画像の上隅から8px内側に配置されます。立体感と独立した輪郭があるので、どの画像の上でも見つけやすくなります。
+
+## ライトボックスとダイアログの使い分け \{#lightbox-or-dialog\}
+
+画像を1点だけ表示し、ユーザーに判断を求めない場合はライトボックスを使います。タイトル、本文、フォームなどを重ねて表示する場合は[ダイアログ](/components/dialog)を使います。画像をキャプションとともにページ内に置く場合は[図版](/components/figure)を使います。
+
+## アクセシビリティ \{#accessibility\}
+
+- `aria-label`でダイアログに名前を付けるか、`aria-labelledby`でキャプションを参照します。
+- 拡大画像には、内容を伝える`alt`を指定します。何が開くかをボタンのテキストで伝えている場合は、ボタン内のサムネイルの代替テキストを空にできます。
+- 外側のクリックや<kbd>Esc</kbd>キーで閉じられることに気づかないユーザーもいるため、アクセシブルな名前を持つ閉じるボタンを必ず設けてください。
+- 開くとフォーカスがライトボックス内に移り、閉じるとサムネイルに戻ります。動きを減らす設定では、画像のサイズを変えずにフェードします。
+
+## クラス \{#classes\}
+
+<ContractTable name="lightbox" />
+
+## カスタムプロパティ \{#custom-properties\}
+
+<ContractTable name="lightbox" show="properties" />
+
+## ソース \{#source\}
+
+<ComponentSource name="lightbox" />

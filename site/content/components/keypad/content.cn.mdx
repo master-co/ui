@@ -1,0 +1,78 @@
+---
+title: "数字键盘"
+description: "仿手机的数字键盘，方便用拇指输入数字码或金额。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+数字键盘采用手机拨号键盘的排布，十二个按钮分为三列，方便用拇指输入数字码或金额。键面凸起，按下时立即下沉。键面上有大号数字，下方印着手机按键上常见的小字母。每个键都是一个按钮，按键本身不会输入内容，由页面将对应数字填到相应位置。
+
+<ComponentPreview name="default" height={344} title="数字键盘" bodyClass="flex flex-col items-center justify-center gap-md p-lg" caption="按下按键，脚本会将对应的数字填入输入框。" html={`<input class="input input-lg text-center w-full max-w(272)" id="pad-amount" type="text" inputmode="none" value="" placeholder="0" aria-label="Amount" readonly>
+<div class="keypad" id="pad" role="group" aria-label="Keypad">
+  <button class="keypad-key" type="button" value="1">1</button>
+  <button class="keypad-key" type="button" value="2">2<span class="keypad-letters">abc</span></button>
+  <button class="keypad-key" type="button" value="3">3<span class="keypad-letters">def</span></button>
+  <button class="keypad-key" type="button" value="4">4<span class="keypad-letters">ghi</span></button>
+  <button class="keypad-key" type="button" value="5">5<span class="keypad-letters">jkl</span></button>
+  <button class="keypad-key" type="button" value="6">6<span class="keypad-letters">mno</span></button>
+  <button class="keypad-key" type="button" value="7">7<span class="keypad-letters">pqrs</span></button>
+  <button class="keypad-key" type="button" value="8">8<span class="keypad-letters">tuv</span></button>
+  <button class="keypad-key" type="button" value="9">9<span class="keypad-letters">wxyz</span></button>
+  <button class="keypad-key keypad-key-quiet" type="button" value=".">.</button>
+  <button class="keypad-key" type="button" value="0">0</button>
+  <button class="keypad-key keypad-key-quiet" type="button" value="delete" aria-label="Delete">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H9l-5-6zM12 10l4 4m0-4-4 4"/></svg>
+  </button>
+</div>
+<script>
+  var amount = document.getElementById('pad-amount')
+  document.getElementById('pad').addEventListener('click', function (event) {
+    var key = event.target.closest('button')
+    if (!key) return
+    amount.value = key.value === 'delete' ? amount.value.slice(0, -1) : amount.value + key.value
+  })
+</script>`} />
+
+## 按键 \{#a-key\}
+
+`keypad-key` 是高 52px 的按钮，采用[按钮](/components/button)的凸起键面。用拇指连输六位数字比单按一键更快，所以按下时键面会立即落入凹槽，没有位移过程或过渡动画。指针悬停时，轮廓会像其他控件悬停时一样更清晰。
+
+`keypad-letters` 是数字下方的一行字母，方便把数字码记成单词。用于输入金额时可省略这一行。
+
+`keypad-key-quiet` 用于删除、小数点、正负号等非数字键。这些键在按下时才显出键面，让十个数字键在视觉上组成主体，其余键退居边缘。如果键盘一角没有按键，放一个空的 `<span>` 来保持网格排列。
+
+## 键盘布局 \{#the-pad\}
+
+键盘分为三个等宽列，列间距为 8px，键盘与容器等宽，最大为 17rem。用普通按钮搭建数字键盘时，容易漏掉以下两项设置：
+
+- 键盘设置了 `touch-action: manipulation`，浏览器无需等待判断第二次轻触是否要触发双击缩放。快速连按同一个键两次会记作两次按键。
+- 键盘上的数字不可选中，按键时手指稍有滑动也不会高亮文字。
+
+`--keypad-key` 设置按键高度，`--keypad-gap` 设置按键间距。
+
+## 页面负责的行为 \{#script\}
+
+数字键盘本身不处理按键行为。每个键的作用由页面决定，可以将数字追加到金额末尾、填入[一次性验证码输入框](/components/otp)中的一格，或发起呼叫。像示例那样，在键盘上加一个事件监听器即可。读取被按下按钮的 `value`，再将值写入对应位置。
+
+在页面上保留一个实际的输入框。用户可以通过实体键盘输入，密码管理器可以自动填充，屏幕阅读器也能读出值的变化。在该输入框上设置 `inputmode="none"`，可避免手机弹出系统键盘并遮挡数字键盘。
+
+## 无障碍 \{#accessibility\}
+
+- 为数字键盘设置 `role="group"` 和 `aria-label`。每个键都是按钮，数字键以显示的数字作为无障碍名称。只显示图标的键需要设置 `aria-label`。
+- 数字下方的字母也是按钮文本的一部分。如果用户听到“2 abc”只会受到干扰，就用带有 `aria-hidden="true"` 的元素包住这些字母。
+- 让屏幕阅读器跟踪接收数字的输入框，读出输入结果即可，无需逐次播报按键。
+- 无论使用哪种指针设备，按键高度均为 52px，高于触控目标所需的 44px。
+
+## 类名 \{#classes\}
+
+<ContractTable name="keypad" />
+
+## 自定义属性 \{#custom-properties\}
+
+<ContractTable name="keypad" show="properties" />
+
+## 源码 \{#source\}
+
+<ComponentSource name="keypad" />

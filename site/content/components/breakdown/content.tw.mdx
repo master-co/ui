@@ -1,0 +1,91 @@
+---
+title: "占比分布"
+description: "以單一長條呈現整體的組成，各區段的寬度反映其占比。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+占比分布用一條長條呈現整體的組成，各區段按占比分配寬度，例如依類型劃分的儲存空間、依服務拆分的帳單，或預算支出與餘額。底層是一份清單，每個項目只需提供一次繪圖用的數值，並以文字列出名稱與數值。樣式表用這份清單繪製長條和下方的圖例，無須腳本或 SVG。
+
+<ComponentPreview name="default" height={220} narrowHeight={248} title="占比分布" bodyClass="p-lg" html={`<div class="card max-w(440) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Storage</h3>
+    <p class="card-description">90 GB of 128 GB used</p>
+  </div>
+  <ul class="breakdown" aria-label="Storage by kind">
+    <li class="breakdown-item" style="--value: 42"><span class="breakdown-label">Photos <span class="breakdown-value">42 GB</span></span></li>
+    <li class="breakdown-item" style="--value: 28"><span class="breakdown-label">Apps <span class="breakdown-value">28 GB</span></span></li>
+    <li class="breakdown-item" style="--value: 14"><span class="breakdown-label">Mail <span class="breakdown-value">14 GB</span></span></li>
+    <li class="breakdown-item" style="--value: 6"><span class="breakdown-label">System <span class="breakdown-value">6 GB</span></span></li>
+    <li class="breakdown-item breakdown-rest" style="--value: 38"><span class="breakdown-label">Free <span class="breakdown-value">38 GB</span></span></li>
+  </ul>
+</div>`} caption="將指標移到任一區段上，其餘區段就會淡化。" />
+
+## 區段寬度如何決定 \{#how-a-part-gets-its-width\}
+
+在每個 `breakdown-item` 的行內樣式中設定 `--value`。區段依這個數值伸展，寬度取決於該數值占總和的比例。數值無須換算成百分比，也無須湊成特定總和，直接使用 GB、金額或計數值即可。占比為零的項目仍會保留一條 2px 的短線，讓它在長條上看得見。
+
+項目本身不會產生版面方框。區段會排入長條，`breakdown-label` 則排入長條下方可換行的圖例。清單仍保有原本的項目結構，輔助科技可以照常讀取這些資料。
+
+區段使用同一顏色的不同深淺，最深的排在最前面。將各部分依數值由大到小排列，並控制在五個左右，因為五階色調容易辨識，八階就難以分辨。
+
+## 剩餘部分 \{#what-is-left\}
+
+`breakdown-rest` 標記尚未使用的部分，例如可用空間、預算餘額或空位。它在長條上呈現為凹槽，圖例則以空心圓標記，讓使用者依長條的填色與凹槽，以及圖例的實心圓與空心圓，辨識已用與未用的部分，無須分辨灰階深淺。把它排在最後。
+
+## 逐列顯示 \{#rows\}
+
+`breakdown-rows` 將圖例排成一列一個項目，列間以細線分隔，數值放在列尾。帳單等需要逐一讀取並比較數值的情境適合這種呈現方式。用 `--breakdown-height` 可加粗長條。
+
+<ComponentPreview name="rows" height={308} title="逐列顯示" bodyClass="p-lg" html={`<div class="card max-w(340) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">November</h3>
+    <p class="card-description">$3,074 so far</p>
+  </div>
+  <ul class="breakdown breakdown-rows" style="--breakdown-height: .625rem" aria-label="Spend by service">
+    <li class="breakdown-item" style="--value: 1840"><span class="breakdown-label">Compute <span class="breakdown-value">$1,840</span></span></li>
+    <li class="breakdown-item" style="--value: 920"><span class="breakdown-label">Storage <span class="breakdown-value">$920</span></span></li>
+    <li class="breakdown-item" style="--value: 310"><span class="breakdown-label">Network <span class="breakdown-value">$310</span></span></li>
+    <li class="breakdown-item" style="--value: 4"><span class="breakdown-label">Support <span class="breakdown-value">$4</span></span></li>
+  </ul>
+</div>`} />
+
+## 帶有狀態的區段 \{#status\}
+
+長條預設採單色呈現。如果某個區段代表特定狀態，例如失敗的請求，請在該項目上用 `--breakdown-fill` 設定狀態色，並在標籤中寫明狀態，讓使用者光看文字就能理解。`--breakdown-color` 可調整所有區段用來衍生深淺的基準色。
+
+<ComponentPreview name="status" height={188} narrowHeight={220} title="狀態" bodyClass="p-lg" html={`<div class="card max-w(440) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Requests</h3>
+    <p class="card-description">1.28M in the last hour</p>
+  </div>
+  <ul class="breakdown" aria-label="Requests by result">
+    <li class="breakdown-item" style="--value: 962"><span class="breakdown-label">Succeeded <span class="breakdown-value">96.2%</span></span></li>
+    <li class="breakdown-item" style="--value: 31"><span class="breakdown-label">Redirected <span class="breakdown-value">3.1%</span></span></li>
+    <li class="breakdown-item" style="--value: 7; --breakdown-fill: var(--color-danger)"><span class="breakdown-label">Failed <span class="breakdown-value">0.7%</span></span></li>
+  </ul>
+</div>`} />
+
+## 占比分布與圖表 \{#breakdown-or-chart\}
+
+占比分布回答「整體由哪些部分組成」，重點是各部分占總和的比例。[圖表](/components/chart)回答「哪個比較大」，讀者可以依刻度比較各長條。若要呈現單一數值在某個範圍內的位置，請用[量表](/components/meter)。
+
+## 無障礙 \{#accessibility\}
+
+- 使用 `<ul>` 標記清單，若順序代表名次則使用 `<ol>`，並以 `aria-label` 或標題為清單命名。
+- 在每個項目的 `breakdown-label` 中寫出名稱、數值與單位。長條由樣式表繪製，螢幕閱讀器不會朗讀它。
+- 請避免僅靠色調區分各區段。圖例會依長條上的順序列出各項名稱。在強制色彩模式下，所有區段都使用文字色，並以 2px 的間距分隔。
+
+## 類別 \{#classes\}
+
+<ContractTable name="breakdown" />
+
+## 自訂屬性 \{#custom-properties\}
+
+<ContractTable name="breakdown" show="properties" />
+
+## 原始碼 \{#source\}
+
+<ComponentSource name="breakdown" />

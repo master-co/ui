@@ -1,0 +1,153 @@
+---
+title: "滚动数字"
+description: "数值更新时，各数位滚动到新数字。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+滚动数字像机械计数器一样，各数位会滚动到新的数字。样式表为每个数位绘制一列数字，通过一行高的窗口显示其中一个数字。页面更改某个数位的 `--digit` 时，数字列会滚动到新值，数字在该行上下逐渐显现或隐去。组件自身没有表面，也没有自带的尺寸，可以用作[统计项](/components/stat)的数值，或放在标题或句子中。完整数值还会以纯文本写一次，供屏幕阅读器读取。
+
+<ComponentPreview name="default" height={224} title="滚动数字" bodyClass="flex items-center justify-center p-lg" caption="按下“增加访客”，发生变化的数位会向上滚动到新的计数。" html={`<div class="card w-full max-w(320)">
+  <div class="stat">
+    <p class="stat-label">Visitors today</p>
+    <div class="stat-row">
+      <p class="stat-value">
+        <span class="odometer" id="visitors">
+          <span class="odometer-value">12,847</span>
+          <span class="odometer-figures" aria-hidden="true">
+            <span class="odometer-digit" style="--digit: 1"></span>
+            <span class="odometer-digit" style="--digit: 2"></span>,
+            <span class="odometer-digit" style="--digit: 8"></span>
+            <span class="odometer-digit" style="--digit: 4"></span>
+            <span class="odometer-digit" style="--digit: 7"></span>
+          </span>
+        </span>
+      </p>
+      <p class="stat-delta stat-delta-up">3.1%</p>
+    </div>
+  </div>
+  <button class="btn btn-sm self-start" type="button" id="visitors-add">Add visitors</button>
+</div>
+<script>
+  function roll(odometer, text, up) {
+    odometer.querySelector('.odometer-value').textContent = text
+    var numerals = text.split('').filter(function (character) { return character >= '0' && character <= '9' })
+    odometer.querySelectorAll('.odometer-digit').forEach(function (digit, index) {
+      var at = Number(digit.style.getPropertyValue('--digit')) || 0
+      var step = ((numerals[index] - at) % 10 + 10) % 10
+      if (!up && step) step -= 10
+      digit.style.setProperty('--digit', at + step)
+    })
+  }
+  var visitors = 12847
+  document.getElementById('visitors-add').addEventListener('click', function () {
+    visitors += 1 + Math.floor(Math.random() * 240)
+    roll(document.getElementById('visitors'), visitors.toLocaleString('en-US'), true)
+  })
+</script>`} />
+
+## 标记写法 \{#how-it-is-written\}
+
+同一个数值写两遍，分别供读取和显示：
+
+- `odometer-value` 保存数值的纯文本，并将其裁剪到不可见。屏幕阅读器会将它作为一个完整字符串读取，页内查找可以找到它，复制时也会复制这段文本。
+- `odometer-figures` 绘制数值，并带有 `aria-hidden="true"`。每个数位对应一个空的 `odometer-digit`，数字值写在 `--digit` 中。逗号、小数点、货币符号和单位等静止标记以纯文本写在数位之间。
+
+各数位排列在同一条 flex 行中，因此标记里数位之间的换行和缩进不会在数值中产生空格。需要空格时，例如单位前的空格，使用不换行空格（`&nbsp;`）。即使页面从右向左排版，数位也始终按数字的书写顺序从左向右排列。
+
+每个数位都用一个不可见的 0 撑开窗口，使窗口与单个数字等宽，并与当前行的基线对齐。数字采用等宽字形，因此滚动时不会带动数值旁边的内容移动。
+
+## 适配不同文字样式 \{#any-type\}
+
+滚动数字沿用所在位置的字号、字重和墨色。窗口尺寸、数字列的间距和渐隐范围均以当前文字样式为基准，因此标题、统计项和行内文字使用同一套滚动机制。
+
+<ComponentPreview name="type" height={200} title="标题和句子中的滚动数字" background="plain" bodyClass="flex flex-col items-start justify-center gap-sm p-lg" caption="按下“添加支架”，总额和税额会向上滚动，再按一次就会向下滚回。" html={`<h3 class="m(0) text-4xl font-semibold fg-text-strong">
+  <span class="odometer" id="total">
+    <span class="odometer-value">$1,280.50</span>
+    <span class="odometer-figures" aria-hidden="true">
+      $<span class="odometer-digit" style="--digit: 1"></span>,
+      <span class="odometer-digit" style="--digit: 2"></span>
+      <span class="odometer-digit" style="--digit: 8"></span>
+      <span class="odometer-digit" style="--digit: 0"></span>.
+      <span class="odometer-digit" style="--digit: 5"></span>
+      <span class="odometer-digit" style="--digit: 0"></span>
+    </span>
+  </span>
+</h3>
+<p class="m(0) text-sm fg-text-muted">Includes
+  <span class="odometer" id="tax">
+    <span class="odometer-value">$106.71</span>
+    <span class="odometer-figures" aria-hidden="true">
+      $<span class="odometer-digit" style="--digit: 1"></span>
+      <span class="odometer-digit" style="--digit: 0"></span>
+      <span class="odometer-digit" style="--digit: 6"></span>.
+      <span class="odometer-digit" style="--digit: 7"></span>
+      <span class="odometer-digit" style="--digit: 1"></span>
+    </span>
+  </span>
+  in tax.</p>
+<button class="btn btn-sm mt-sm" type="button" id="stand" aria-pressed="false">Add the stand</button>
+<script>
+  function roll(odometer, text, up) {
+    odometer.querySelector('.odometer-value').textContent = text
+    var numerals = text.split('').filter(function (character) { return character >= '0' && character <= '9' })
+    odometer.querySelectorAll('.odometer-digit').forEach(function (digit, index) {
+      var at = Number(digit.style.getPropertyValue('--digit')) || 0
+      var step = ((numerals[index] - at) % 10 + 10) % 10
+      if (!up && step) step -= 10
+      digit.style.setProperty('--digit', at + step)
+    })
+  }
+  var stand = document.getElementById('stand')
+  stand.addEventListener('click', function () {
+    var added = stand.getAttribute('aria-pressed') !== 'true'
+    stand.setAttribute('aria-pressed', String(added))
+    stand.textContent = added ? 'Remove the stand' : 'Add the stand'
+    roll(document.getElementById('total'), added ? '$1,329.50' : '$1,280.50', added)
+    roll(document.getElementById('tax'), added ? '$110.79' : '$106.71', added)
+  })
+</script>`} />
+
+## 让滚动方向随数值增减 \{#rolling\}
+
+每列包含 0 到 9，各数位沿列向上或向下直接滚到指定数字。要像机械计数器一样，让每个数位的滚动方向都随整体数值的增减变化，可以让 `--digit` 继续递增到 9 以上或递减到 0 以下，窗口会显示其对 10 取模后的数字。从 9 写入 10，会向前滚动一格到 0。从 0 写入 -1，会向后滚动一格到 9。
+
+上方预览中的脚本采用了这种方式。它读取每个数位上次写入的值，整体数值增加时向前滚到新数字，减少时向后滚，每个数位最多滚动九格：
+
+```js
+var at = Number(digit.style.getPropertyValue('--digit')) || 0
+var step = ((numeral - at) % 10 + 10) % 10
+if (!up && step) step -= 10
+digit.style.setProperty('--digit', at + step)
+```
+
+没有脚本时，滚动数字直接显示数值。页面只渲染一次时，各数位使用 0 到 9 即可。
+
+## 动画时序 \{#timing\}
+
+每个数位的滚动时长为 `--odometer-duration`，是主题基础时长的两倍。动画采用主题统一的缓动曲线，起步快，收尾平缓，新数字很快就能看清。每个数位比前一位晚 `--odometer-stagger` 开始滚动，因此可以从左到右看出变化。窗口的渐隐区域避开当前数字所占的高度，相邻数字留在窗口外，所以静止时只看得到当前数值。
+
+## 无障碍 \{#accessibility\}
+
+- 屏幕阅读器只读取 `odometer-value`。让它与显示的数值一致，包含相同的分隔符和单位，并与各数位同步更新。
+- `odometer-figures` 必须带有 `aria-hidden="true"`。数字列中的数字属于生成内容，替代文本为空。数位之间的标记是实际文本，缺少该属性时会被重复朗读。
+- 滚动数字默认没有实时区域。读者需要听到新值时，例如需要知道自己做出选择后的总额，可为 `odometer` 根元素添加 `aria-live="polite"`。裁剪隐藏的数值是其中唯一的文本，因此新数值只会播报一次。对于每隔几秒自动变化的数值，切勿启用此设置。
+- 启用减少动态效果时，数字直接在原位更新。启用强制颜色时，数字使用系统文本颜色。
+
+## 浏览器特性 \{#platform\}
+
+滚动动画对已注册的自定义属性（`@property`）应用缓动，窗口用 `mod()` 对属性值取模，模数为 10。浏览器缺少 `@property` 支持时，数字直接在原位更新。缺少 `mod()` 支持时，将 `--digit` 保持在 0 到 9 之间。支持 `sibling-index()` 的浏览器（Chromium）用它设置相邻数位的启动间隔，其他浏览器中的各数位同时滚动。
+
+## 类名 \{#classes\}
+
+<ContractTable name="odometer" />
+
+## 自定义属性 \{#custom-properties\}
+
+<ContractTable name="odometer" show="properties" />
+
+## 源码 \{#source\}
+
+<ComponentSource name="odometer" />

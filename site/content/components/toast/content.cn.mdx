@@ -1,0 +1,107 @@
+---
+title: "轻提示"
+description: "浮在页面上方的简短消息，可自动关闭。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+轻提示是浮在页面上的简短消息，用来告知用户刚刚发生的事，例如已保存、已部署或已复制。每条轻提示都是固定定位的 `toast-region` 内的非模态 `<dialog>`。轻提示采用对话框，因此无需脚本即可关闭，入场和退场动画均由样式表中的 CSS 实现。
+
+<ComponentPreview name="default" height={240} title="轻提示" bodyClass="content-start p-lg min-h(240)" html={`<div class="toast-region" role="region" aria-label="Notifications" aria-live="polite">
+  <dialog open class="toast toast-success" aria-labelledby="toast-deployed">
+    <svg class="icon toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 4.5-5.5"/></svg>
+    <div class="toast-body">
+      <p class="toast-title" id="toast-deployed">Deployed to production</p>
+      <p class="toast-description">atlas.dev is live in 14 regions.</p>
+    </div>
+    <form method="dialog" class="toast-close">
+      <button class="btn btn-quiet btn-square btn-sm" aria-label="Dismiss">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </form>
+  </dialog>
+</div>`} caption="使用轻提示上的按钮即可关闭，无需脚本。" />
+
+## 显示与关闭 \{#showing-and-dismissing\}
+
+- 带有 `open` 属性的轻提示会在页面加载时显示，适用于表单提交后由服务器渲染的消息。
+- 在脚本中，对区域内的轻提示调用 `toast.show()`，或向该区域追加一个新的 `<dialog open class="toast">`。两种方式都由 `@starting-style` 定义轻提示入场时的起始帧。
+- 用 `<form method="dialog">` 包裹按钮，或为按钮设置 `commandfor` 和 `command="close"`，都能关闭轻提示。`display` 通过 `allow-discrete` 进行过渡，因此退场动画会在轻提示释放布局空间前播放完毕。
+
+## 定时关闭 \{#timed\}
+
+`toast-timed` 让轻提示在六秒后自动消失。计时由一个以 `display: none` 结束的 CSS 动画实现。指针悬停在轻提示上或键盘焦点位于其中时，计时会暂停，让用户有时间读完。轻提示底部的细线随倒计时逐渐缩短，并随计时一起暂停。设置 `--toast-duration` 可调整时长。定时关闭的轻提示应省去用户可能还需要执行的操作。重要内容应放在持续显示的[警告提示](/components/alert)中。
+
+<ComponentPreview name="timed" height={200} title="定时关闭" bodyClass="content-start p-lg min-h(200)" html={`<div class="toast-region" role="region" aria-label="Notifications" aria-live="polite">
+  <dialog open class="toast toast-timed" aria-label="Link copied">
+    <div class="toast-body">
+      <p class="toast-description">Link copied to the clipboard.</p>
+    </div>
+  </dialog>
+</div>`} caption="这条轻提示会在六秒后消失。重新加载页面即可再次看到。" />
+
+## 带操作按钮 \{#with-an-action\}
+
+放在正文后的[按钮](/components/button)位于该行末端。状态修饰类只为图标着色，文字保留墨色。
+
+<ComponentPreview name="action" height={304} title="带操作按钮" bodyClass="content-start p-lg min-h(300)" html={`<div class="toast-region" role="region" aria-label="Notifications" aria-live="polite">
+  <dialog open class="toast" aria-labelledby="toast-archived">
+    <div class="toast-body">
+      <p class="toast-title" id="toast-archived">Project archived</p>
+      <p class="toast-description">Atlas is hidden from the dashboard.</p>
+    </div>
+    <form method="dialog"><button class="btn btn-sm">Undo</button></form>
+  </dialog>
+  <dialog open class="toast toast-danger" aria-labelledby="toast-failed">
+    <svg class="icon toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16v.01"/></svg>
+    <div class="toast-body">
+      <p class="toast-title" id="toast-failed">The build failed</p>
+      <p class="toast-description">The install step exited with code 1.</p>
+    </div>
+    <form method="dialog" class="toast-close">
+      <button class="btn btn-quiet btn-square btn-sm" aria-label="Dismiss">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </form>
+  </dialog>
+</div>`} />
+
+## 轻提示区域 \{#the-region\}
+
+`toast-region` 固定在底边与行内末端边缘相交的角落，轻提示在其中堆叠，最新一条位于底部。区域本身不接收指针事件，因此其空白处下方的页面仍可操作。在窄屏上，区域横跨整个屏幕宽度。
+
+| 类名 | 位置 |
+| --- | --- |
+| `toast-region` | 底部，靠行内末端边缘 |
+| `toast-region-top` | 顶部，轻提示向下入场，最新一条位于最上方 |
+| `toast-region-center` | 沿行内方向居中 |
+
+该区域是带有 `z-index` 的普通固定定位元素。要让轻提示显示在已打开的模态[对话框](/components/dialog)上方，为该区域设置 `popover="manual"`，再对其调用一次 `showPopover()`，即可将区域放入顶层。
+
+## 无障碍 \{#accessibility\}
+
+- 用 `aria-live="polite"` 将该区域设为实时区域，让轻提示出现时得到播报，并用 `aria-label` 为该区域提供无障碍名称。
+- 为每条轻提示提供无障碍名称，可以用 `aria-labelledby` 指向其标题，也可以用 `aria-label`。
+- 轻提示用于确认操作结果。用户即使错过轻提示，也应能获取所需信息并执行所需操作，因此应将操作入口保留在轻提示之外。
+- 启用减少动态效果时，轻提示会在原地淡入淡出。
+
+## React、Svelte 和 Vue \{#frameworks\}
+
+`toast` 组件维护一个队列。`toast()` 函数可在任意位置调用，轻提示区域只渲染一次，用于显示队列中的消息。使用 `npx master-ui add toast` 将组件复制到项目中。有关这些组件的实现和用法，请参阅 [React、Svelte 和 Vue](/guide/frameworks)。
+
+<FrameworkSource name="toast" />
+
+## 类名 \{#classes\}
+
+<ContractTable name="toast" />
+
+## 自定义属性 \{#custom-properties\}
+
+<ContractTable name="toast" show="properties" />
+
+## 源码 \{#source\}
+
+<ComponentSource name="toast" />

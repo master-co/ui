@@ -1,0 +1,71 @@
+---
+title: "ドック"
+description: "ポインターを置いた位置に向かって拡大するランチャーの列です。"
+---
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+ドックは、すりガラス調のトレイにランチャーを並べたものです。各ランチャーは画像やアイコンが入った正方形のタイルで、リンクまたはボタンとして機能します。ポインターの下では、タイルの列がレンズのように膨らみます。ポインターを置いたタイルは50%、その両隣は25%強、さらにその外側は10%拡大し、列はポインターに向かってなだらかな弧を描きます。タイルの上にはラベルが現れ、現在の項目はタイルの下のドットで示します。すべてCSSで実装しており、`:hover`、隣接兄弟結合子、`:has()`で周囲のタイルを特定するため、スクリプトでポインターの位置を計測する必要はありません。
+
+<ComponentPreview name="default" height={152} title="ドック" bodyClass="flex items-end justify-center p-lg" html={`<nav class="dock" aria-label="Spaces">
+  <a class="dock-item" href="#harbor" aria-current="page"><img class="dock-image" src="/demo/harbor.svg" alt=""><span class="dock-label">Harbor</span></a>
+  <a class="dock-item" href="#dunes"><img class="dock-image" src="/demo/dunes.svg" alt=""><span class="dock-label">Dunes</span></a>
+  <a class="dock-item" href="#pines"><img class="dock-image" src="/demo/pines.svg" alt=""><span class="dock-label">Pines</span></a>
+  <a class="dock-item" href="#lighthouse"><img class="dock-image" src="/demo/lighthouse.svg" alt=""><span class="dock-label">Lighthouse</span></a>
+  <span class="dock-divider" role="separator" aria-orientation="vertical"></span>
+  <button type="button" class="dock-item"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.35-4.35"/></svg><span class="dock-label">Search</span></button>
+  <button type="button" class="dock-item"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16l-1 13H5zM10 11h4M3 4h18v3H3z"/></svg><span class="dock-label">Archive</span></button>
+</nav>`} caption="ドックに沿ってポインターを動かすか、Tabキーでフォーカスを移動してください。" />
+
+## タイルの拡大 \{#lens\}
+
+タイルの一辺は通常40pxです。ポインターの下では60px、その両隣は51px、さらにその外側は44pxになります。最大サイズは`--dock-magnify`で指定し、ほかのサイズはその値に連動します。タイル自体の寸法が変わるため、タイルは互いに重ならず、ポインターの周囲で列が広がり、トレイもそれに合わせて広がります。タイルはトレイの下部を起点に上端を越えて広がり、テーマのイージングに従ってなめらかに動きます。各タイルのポインター判定範囲は隣との隙間の半分まで広がるため、タイル間を移動しても拡大が途切れません。
+
+タイルの拡大はホバー可能なポインターで有効です。タッチ画面では44pxのタイルがそのまま並びます。動きを減らす設定でもタイルのサイズは変わらず、ラベルは表示されます。タイルを並べる幅が足りない場合は、すべてのタイルが正方形のまま縮みます。
+
+## タイル \{#tiles\}
+
+タイルは浮き上がった面で、一辺の半分の大きさのアイコンか、全面を覆う`dock-image`を表示します。ランチャーの名前はラベルで示すため、`alt`は空にします。タイルの角丸の半径は一辺の4分の1で、40pxのときはコントロールと同じ10pxです。トレイの角丸の半径はこれに内側の余白8pxを足した値なので、角でも両者の間隔が一定になります。
+
+リンク型のランチャーでは、現在の場所を示すリンクに`aria-current="page"`を指定します。パネルなどを切り替えるボタンには`aria-pressed`を指定します。どちらも該当するタイルの下にドットを表示します。ボタンで構成するドックには、`role="toolbar"`と名前を指定します。
+
+<ComponentPreview name="panels" height={152} title="切り替えボタン" bodyClass="flex items-end justify-center p-lg" html={`<div class="dock" id="panels" role="toolbar" aria-label="Panels">
+  <button type="button" class="dock-item" aria-pressed="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 4 8 4-8 4-8-4z"/><path d="m4 12 8 4 8-4"/><path d="m4 16 8 4 8-4"/></svg><span class="dock-label">Layers</span></button>
+  <button type="button" class="dock-item" aria-pressed="false"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5h14v10H10l-5 4z"/></svg><span class="dock-label">Comments</span></button>
+  <button type="button" class="dock-item" aria-pressed="false"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg><span class="dock-label">History</span></button>
+  <span class="dock-divider" role="separator" aria-orientation="vertical"></span>
+  <button type="button" class="dock-item"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg><span class="dock-label">Settings</span></button>
+</div>
+<script>
+  document.querySelectorAll('#panels [aria-pressed]').forEach(function (button) {
+    button.addEventListener('click', function () {
+      button.setAttribute('aria-pressed', button.getAttribute('aria-pressed') === 'true' ? 'false' : 'true')
+    })
+  })
+</script>`} caption="タイルを押して、対応するパネルを表示または非表示にします。" />
+
+`dock-divider`はグループを短い細線で区切ります。タイルの拡大は区切り線をまたいで連続します。
+
+## 配置 \{#placing\}
+
+ドックの配置はページ側で決めます。通常は画面下部の中央に専用の領域を設けるか、`fixed`または`sticky`のユーティリティでその位置に配置します。拡大したタイルとラベルのために、ドックの上に約48pxの余白を確保します。
+
+## アクセシビリティ \{#accessibility\}
+
+- 移動先へのリンクで構成する場合は、ランチャーを`aria-label`付きの`nav`で囲みます。ボタンで構成する場合は、ドックに`role="toolbar"`とラベルを指定します。
+- ラベルは各ランチャーのアクセシブルな名前になります。タイルをホバーするかキーボードでフォーカスするまで画面には表示されませんが、ページ内には残るため、スクリーンリーダーで読み上げられます。
+- すべてのランチャーにTabキーで移動できます。フォーカスが当たると、ラベルとフォーカスリングが表示されます。
+- 画像だけでランチャーの名前を伝えず、唯一のテキストであるラベルに名前を記載します。
+
+## クラス \{#classes\}
+
+<ContractTable name="dock" />
+
+## カスタムプロパティ \{#custom-properties\}
+
+<ContractTable name="dock" show="properties" />
+
+## ソース \{#source\}
+
+<ComponentSource name="dock" />

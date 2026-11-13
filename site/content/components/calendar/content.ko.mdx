@@ -1,0 +1,239 @@
+---
+title: "달력"
+description: "한 달의 날짜와 날짜 범위를 선택하는 달력입니다."
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+달력에서는 한 달의 날짜 중 하나를 선택할 수 있습니다. 달력은 버튼으로 이루어진 ARIA 그리드입니다. 스타일시트가 각 상태의 모양을 정의하고, `calendar` [동작](/guide/behaviors)이 날짜를 채우고 월 이동 버튼과 방향키를 처리합니다. 달력 자체에는 표면이 없으므로 [카드](/components/card) 안에 배치하거나 [팝오버](/components/popover) 안에 넣어 날짜 선택기로 사용합니다.
+
+<ComponentPreview name="default" height={392} title="달력" bodyClass="flex justify-center p-lg" behaviors html={`<div class="sheet p-md">
+  <div class="calendar">
+    <div class="calendar-header">
+      <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Previous month"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button>
+      <h3 class="calendar-title" id="cal-title" aria-live="polite"></h3>
+      <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Next month"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
+    </div>
+    <div class="calendar-grid" role="grid" aria-labelledby="cal-title"></div>
+  </div>
+</div>`} caption="날짜를 클릭해 선택하세요. 두 버튼으로 월을 이동하거나, 날짜에 포커스를 두고 방향키를 사용하세요." />
+
+마크업은 헤더와 빈 그리드로 구성됩니다. 동작은 `calendar-title`에 월 이름을, `calendar-grid`에 요일 이름과 주별 날짜를 채웁니다. 처음에는 오늘이 속한 달을 표시합니다. 스크립트가 없으면 그리드에는 마크업에 있는 내용만 표시됩니다. 스크립트가 실행되기 전에도 날짜를 읽을 수 있어야 한다면 아래 [날짜 범위](#range) 예시처럼 서버에서 주별 날짜까지 렌더링합니다. 동작이 연결되면 이 내용을 교체합니다.
+
+## 상태 \{#states\}
+
+각 상태는 날짜 버튼의 속성이나 클래스로 표시합니다. 동작이 이를 설정하며, 직접 작성하거나 서버에서 생성하는 마크업에도 같은 속성과 클래스를 사용합니다.
+
+| 상태 | 지정 방법 | 표시 방식 |
+| --- | --- | --- |
+| 오늘 | `aria-current="date"` | 숫자 아래의 점 |
+| 선택됨 | `aria-selected="true"` | 체크된 [체크박스](/components/checkbox)와 같은 잉크 색 채움 |
+| 표시 중인 달에 속하지 않음 | `calendar-day-outside` | 톤을 낮춘 잉크 색 |
+| 선택 불가 | `disabled` | 비활성 상태의 잉크 색 |
+
+날짜는 [메뉴](/components/menu) 항목처럼 포인터에 즉시 반응합니다. 오늘을 선택해도 점은 그대로 표시되며, 점의 색은 날짜 숫자의 색을 따릅니다.
+
+## 날짜 범위 \{#range\}
+
+날짜 범위는 잉크 색으로 채운 두 날짜를 칩과 같은 색조의 띠로 연결해 표시합니다. 시작일에는 `calendar-day-range-start`, 종료일에는 `calendar-day-range-end`, 그 사이 날짜에는 `calendar-day-range`를 지정합니다. 이 날짜는 모두 `aria-selected="true"`입니다.
+
+이 미리보기는 마크업만 사용하므로 코드 보기에서 상태 표시를 확인할 수 있습니다. 동작이 생성하는 형식으로 한 달 전체를 작성했으며, 날짜 범위와 오늘, 선택할 수 없는 날짜 두 개를 포함합니다.
+
+<ComponentPreview name="range" height={392} title="날짜 범위" bodyClass="flex justify-center p-lg" html={`<div class="sheet p-md">
+  <div class="calendar">
+    <div class="calendar-header">
+      <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Previous month"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button>
+      <h3 class="calendar-title" id="range-title" aria-live="polite">November 2026</h3>
+      <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Next month"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
+    </div>
+    <div class="calendar-grid" role="grid" aria-labelledby="range-title">
+      <div class="calendar-week" role="row">
+        <span class="calendar-weekday" role="columnheader" aria-label="Sunday">Sun</span>
+        <span class="calendar-weekday" role="columnheader" aria-label="Monday">Mon</span>
+        <span class="calendar-weekday" role="columnheader" aria-label="Tuesday">Tue</span>
+        <span class="calendar-weekday" role="columnheader" aria-label="Wednesday">Wed</span>
+        <span class="calendar-weekday" role="columnheader" aria-label="Thursday">Thu</span>
+        <span class="calendar-weekday" role="columnheader" aria-label="Friday">Fri</span>
+        <span class="calendar-weekday" role="columnheader" aria-label="Saturday">Sat</span>
+      </div>
+      <div class="calendar-week" role="row">
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Sunday, November 1, 2026">1</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Monday, November 2, 2026">2</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Tuesday, November 3, 2026">3</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Wednesday, November 4, 2026">4</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Thursday, November 5, 2026">5</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Friday, November 6, 2026" disabled>6</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Saturday, November 7, 2026" disabled>7</button>
+      </div>
+      <div class="calendar-week" role="row">
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Sunday, November 8, 2026">8</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Monday, November 9, 2026">9</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Tuesday, November 10, 2026">10</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Wednesday, November 11, 2026" aria-current="date">11</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Thursday, November 12, 2026">12</button>
+        <button type="button" class="calendar-day calendar-day-range-start" role="gridcell" tabindex="0" aria-label="Friday, November 13, 2026" aria-selected="true">13</button>
+        <button type="button" class="calendar-day calendar-day-range" role="gridcell" tabindex="-1" aria-label="Saturday, November 14, 2026" aria-selected="true">14</button>
+      </div>
+      <div class="calendar-week" role="row">
+        <button type="button" class="calendar-day calendar-day-range" role="gridcell" tabindex="-1" aria-label="Sunday, November 15, 2026" aria-selected="true">15</button>
+        <button type="button" class="calendar-day calendar-day-range" role="gridcell" tabindex="-1" aria-label="Monday, November 16, 2026" aria-selected="true">16</button>
+        <button type="button" class="calendar-day calendar-day-range" role="gridcell" tabindex="-1" aria-label="Tuesday, November 17, 2026" aria-selected="true">17</button>
+        <button type="button" class="calendar-day calendar-day-range-end" role="gridcell" tabindex="-1" aria-label="Wednesday, November 18, 2026" aria-selected="true">18</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Thursday, November 19, 2026">19</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Friday, November 20, 2026">20</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Saturday, November 21, 2026">21</button>
+      </div>
+      <div class="calendar-week" role="row">
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Sunday, November 22, 2026">22</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Monday, November 23, 2026">23</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Tuesday, November 24, 2026">24</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Wednesday, November 25, 2026">25</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Thursday, November 26, 2026">26</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Friday, November 27, 2026">27</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Saturday, November 28, 2026">28</button>
+      </div>
+      <div class="calendar-week" role="row">
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Sunday, November 29, 2026">29</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Monday, November 30, 2026">30</button>
+        <button type="button" class="calendar-day calendar-day-outside" role="gridcell" tabindex="-1" aria-label="Tuesday, December 1, 2026">1</button>
+        <button type="button" class="calendar-day calendar-day-outside" role="gridcell" tabindex="-1" aria-label="Wednesday, December 2, 2026">2</button>
+        <button type="button" class="calendar-day calendar-day-outside" role="gridcell" tabindex="-1" aria-label="Thursday, December 3, 2026">3</button>
+        <button type="button" class="calendar-day calendar-day-outside" role="gridcell" tabindex="-1" aria-label="Friday, December 4, 2026">4</button>
+        <button type="button" class="calendar-day calendar-day-outside" role="gridcell" tabindex="-1" aria-label="Saturday, December 5, 2026">5</button>
+      </div>
+    </div>
+  </div>
+</div>`} />
+
+띠가 하나의 도형처럼 보이도록 다음과 같이 표시합니다.
+
+- 열 사이에는 간격이 없어 띠가 셀에서 셀로 이어집니다. 행 사이는 2px씩 떨어져 있어 주마다 별도의 띠가 생깁니다.
+- 날짜 범위가 주 경계를 넘어 이어지는 곳에서는 띠의 끝을 둥글게 처리합니다.
+- 범위의 양 끝에서 띠는 범위 안쪽을 향한 셀의 절반을 덮습니다. 잉크 색으로 채운 날짜는 그 위에 별도 레이어로 표시합니다. 따라서 띠는 날짜 표시의 중앙에 맞닿습니다.
+
+`range` 옵션을 사용하면 날짜 범위를 선택할 수 있습니다. 첫 번째 클릭으로 시작일을, 두 번째 클릭으로 종료일을 정하고, 세 번째 클릭으로 새 범위 선택을 시작합니다. 두 번째로 클릭한 날짜가 더 이르면 두 날짜를 시간순으로 정렬합니다.
+
+<ComponentPreview name="range-live" height={392} title="날짜 범위 선택" bodyClass="flex justify-center p-lg" behaviors html={`<div class="sheet p-md">
+  <div class="calendar" id="stay">
+    <div class="calendar-header">
+      <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Previous month"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button>
+      <h3 class="calendar-title" id="stay-title" aria-live="polite"></h3>
+      <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Next month"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
+    </div>
+    <div class="calendar-grid" role="grid" aria-labelledby="stay-title"></div>
+  </div>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.calendar(document.getElementById('stay'), { range: true, value: ['2026-11-13', '2026-11-18'] })
+})
+</script>`} caption="날짜 하나를 클릭해 범위를 시작하고, 다른 날짜를 클릭해 범위를 끝내세요." />
+
+`attach()`는 옵션을 전달하지 않으므로 이 미리보기에서는 `attach()`가 실행된 뒤 `calendar`를 직접 호출합니다. 같은 루트에서 두 번째로 호출하면 첫 번째 호출로 연결한 동작을 교체합니다. `MasterUI`는 미리보기가 로드하는 번들입니다. 프로젝트에서는 [동작](#behavior) 섹션에 나온 대로 `calendar`를 가져오세요.
+
+## 날짜 선택기 \{#date-picker\}
+
+날짜 선택기는 입력 필드, 버튼, [팝오버](/components/popover) 안의 달력으로 구성됩니다. 팝오버는 스크립트 없이 열리고 닫히며 버튼을 기준으로 위치를 잡습니다. 동작은 달력을 렌더링하고 선택한 날짜를 알립니다. 페이지의 스크립트는 그 날짜를 입력 필드에 쓰고 팝오버를 닫습니다.
+
+<ComponentPreview name="picker" height={480} title="날짜 선택기" background="plain" bodyClass="content-start p-lg min-h(480)" behaviors html={`<div class="field max-w(280) mx-auto">
+  <label for="starts">Starts</label>
+  <div class="input-group">
+    <input class="input-group-field" id="starts" value="2026-11-04" readonly>
+    <button type="button" class="btn btn-quiet btn-square" popovertarget="starts-calendar" aria-label="Choose a date">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M8 3v4M16 3v4"/></svg>
+    </button>
+    <div id="starts-calendar" popover class="popover popover-end">
+      <div class="calendar">
+        <div class="calendar-header">
+          <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Previous month"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button>
+          <h3 class="calendar-title" id="picker-title" aria-live="polite"></h3>
+          <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Next month"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
+        </div>
+        <div class="calendar-grid" role="grid" aria-labelledby="picker-title"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  var popover = document.getElementById('starts-calendar')
+  MasterUI.calendar(popover.querySelector('.calendar'), { value: '2026-11-04' })
+  popover.addEventListener('change', function (event) {
+    document.getElementById('starts').value = event.detail.value
+    popover.hidePopover()
+  })
+})
+</script>`} />
+
+달력의 `change` 이벤트는 버블링되므로 팝오버에 리스너를 등록합니다. 이벤트의 `detail.value`에는 날짜가 `YYYY-MM-DD` 형식으로 들어 있으며, 폼도 날짜 값에 같은 형식을 사용합니다.
+
+휴대전화에서 사용하거나 폼에 날짜 값만 필요하다면 네이티브 [`<input type="date">`](/components/input#date-time-and-color) 요소로 기기에 내장된 날짜 선택기를 제공할 수 있습니다.
+
+## 동작 \{#behavior\}
+
+`calendar`는 루트와 옵션 객체를 받아 동작을 해제하는 함수를 반환합니다.
+
+```js name=app.js
+import { calendar } from '@master/ui/behaviors/calendar.js'
+
+const root = document.querySelector('.calendar')
+const picker = calendar(root, { value: '2026-11-04', min: '2026-11-01', max: '2026-12-31' })
+
+root.addEventListener('change', (event) => console.log(event.detail.value))
+```
+
+| 옵션 | 설정 내용 |
+| --- | --- |
+| `value` | 선택한 날짜를 나타내는 `YYYY-MM-DD` 값 또는 범위의 시작일과 종료일 |
+| `month` | 처음 표시할 월을 나타내는 `YYYY-MM` 값. 기본값은 선택 값이 속한 달이며, 선택 값이 없으면 오늘이 속한 달입니다. |
+| `min`, `max` | 선택할 수 있는 첫날과 마지막 날을 나타내는 `YYYY-MM-DD` 값. 해당 방향으로 이동할 수 있는 달이 없으면 월 이동 버튼이 비활성화됩니다. |
+| `range` | 두 날짜와 그 사이의 모든 날짜를 선택하려면 `true`로 설정합니다. |
+| `weekStart` | 첫 열에 표시할 요일. 일요일은 0, 토요일은 6입니다. 기본값은 로캘의 주 시작 요일이며, 브라우저에서 이 값을 확인할 수 없으면 월요일을 사용합니다. |
+| `locale` | 월과 요일 이름에 사용할 BCP 47 태그. 기본값은 달력에 적용되는 `lang`입니다. |
+| `disabled` | `Date` 객체를 받아 해당 날짜가 선택 불가인지 반환하는 함수 |
+| `draw` | 스크립트 대신 그리드를 생성하는 함수. 표시할 월을 `YYYY-MM` 형식으로 전달받습니다. [사용자 지정 그리드](/guide/behaviors#a-grid-of-your-own)를 참고하세요. |
+
+- **생성하는 내용.** 표시 중인 달의 요일 이름, 주별 날짜, 월 이름을 채웁니다. 날짜 버튼에는 날짜를 `value`로 설정합니다. 오늘에는 `aria-current="date"`를, 선택된 날짜에는 `aria-selected="true"`와 범위 클래스를, 선택할 수 없는 날짜에는 `disabled`를 지정합니다. 전체 날짜는 `aria-label`에 지정하며, `tabindex`로 날짜 하나만 탭 순서에 포함되도록 합니다. `draw` 옵션을 사용하면 템플릿이나 프레임워크가 날짜를 생성하고 스크립트는 상태만 표시합니다.
+- **이벤트.** 날짜를 선택하면 루트에서 버블링되는 `change` 이벤트를 발행합니다. 이벤트의 `detail.value`에는 날짜가 `YYYY-MM-DD` 형식으로 들어가며, 범위의 양 끝을 모두 선택하면 `[start, end]`가 들어갑니다.
+- **선택 값.** 선택 값은 스크립트에만 저장됩니다. 반환된 함수의 `value` 속성으로 읽을 수 있습니다. 예를 들어 `picker.value`로 읽습니다. 범위의 종료일은 선택하기 전까지 `null`입니다. 외부에서 날짜를 선택하려면 이 값을 설정하세요. `picker.value = '2026-11-20'`는 새 날짜가 속한 달을 표시하며 이벤트를 발행하지 않습니다.
+- **날짜 기준.** 날짜는 현지 시간대와 그레고리력을 기준으로 합니다.
+
+## 구조 \{#structure\}
+
+- `calendar-grid`에서 열 7개를 한 번 선언합니다. 각 `calendar-week` 행은 이 열을 서브그리드로 사용하므로, 테이블 없이도 요일 이름과 날짜가 같은 열에 정렬됩니다.
+- `calendar-weekday`는 열 머리글입니다. `aria-label`에는 전체 요일 이름을 지정합니다.
+- `calendar-day`는 `role="gridcell"`을 지정한 `<button>`입니다.
+
+## 키보드 \{#keyboard\}
+
+동작은 그리드에 날짜 그리드용 키보드 조작을 추가합니다. 월의 경계를 넘어 이동하면 인접한 달을 표시하고 이동한 날짜에 포커스를 둡니다. 선택할 수 없는 날짜는 건너뛰며, `min`과 `max`에서 이동을 멈춥니다.
+
+<ContractTable name="calendar" show="keyboard" />
+
+## 접근성 \{#accessibility\}
+
+- 그리드는 `role="grid"`이며 월 제목을 접근 가능한 이름으로 사용합니다. 각 주는 `role="row"`입니다.
+- 탭 순서에는 날짜 하나만 포함됩니다. 선택한 날짜가 우선이며, 표시 중인 달에 선택한 날짜가 없으면 오늘을 사용합니다. 둘 다 그 달에 없으면 그 달의 첫날을 사용합니다. 나머지 날짜에는 `tabindex="-1"`을 지정합니다.
+- 월이 바뀔 때 변경 내용이 안내되도록 제목에 `aria-live="polite"`를 지정하세요.
+- 터치 화면에서 날짜 칸의 크기는 44px입니다.
+
+## React, Svelte 및 Vue \{#frameworks\}
+
+`calendar` 컴포넌트는 동작에 사용하는 데이터로 월간 달력을 그려 초기 HTML에 포함하고, 선택한 날짜를 주고받습니다. `npx master-ui add calendar`로 프로젝트에 복사하세요. 컴포넌트의 구성과 사용법은 [React, Svelte 및 Vue](/guide/frameworks)에서 확인할 수 있습니다.
+
+<FrameworkSource name="calendar" />
+
+## 클래스 \{#classes\}
+
+<ContractTable name="calendar" />
+
+## 사용자 지정 속성 \{#custom-properties\}
+
+<ContractTable name="calendar" show="properties" />
+
+## 소스 \{#source\}
+
+<ComponentSource name="calendar" />

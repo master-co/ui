@@ -1,0 +1,204 @@
+---
+title: "マスター・詳細"
+description: "一覧と選択項目の詳細を横に並べ、それぞれ独立してスクロール。"
+---
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import PagePreview from '~/site/components/PagePreview.astro'
+
+マスター・詳細レイアウトでは、キー、メッセージ、ファイルなどの一覧と、選択した項目の詳細を横に並べます。ペインはそれぞれ独立してスクロールするため、詳細を読み進めても一覧の位置は変わりません。
+
+この構成はユーティリティだけで実装できます。ページの一部にも組み込める規模で、コンテナークエリーで自身の幅に応じて切り替わるため、幅広のページでも狭いパネルでも使えます。
+
+<PagePreview name="default" title="マスター・詳細" height={488} bodyClass="p-lg" caption="TabletとPhoneでは詳細ペインが非表示になり、一覧が全幅を使います。このとき、各行から独立した詳細ページに移動できます。" html={`<section class="sheet container-inline overflow-hidden text-sm fg-text-body" aria-labelledby="keys-title">
+  <div class="flex h(440)">
+    <div class="flex flex-col w-full w(300)@container(--3xl) shrink(0) bxe(1)@container(--3xl) bxe-solid@container(--3xl) b-line-hair">
+      <header class="flex flex-wrap items-center justify-between gap-sm p-md bb(1) bb-solid b-line-hair">
+        <h2 class="heading heading-sm" id="keys-title">API keys</h2>
+        <button type="button" class="btn btn-sm"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>New key</button>
+      </header>
+      <ul class="list list-interactive grow(1) overflow-y-auto">
+        <li><a class="list-row" href="#" aria-current="true">
+          <div class="list-body">
+            <p class="list-title">Production</p>
+            <p class="list-description">Created 2 Mar · last used today</p>
+          </div>
+        </a></li>
+        <li><a class="list-row" href="#">
+          <div class="list-body">
+            <p class="list-title">Staging</p>
+            <p class="list-description">Created 14 Jan · last used yesterday</p>
+          </div>
+        </a></li>
+        <li><a class="list-row" href="#">
+          <div class="list-body">
+            <p class="list-title">CI</p>
+            <p class="list-description">Created 9 Dec · last used 3 days ago</p>
+          </div>
+        </a></li>
+        <li><a class="list-row" href="#">
+          <div class="list-body">
+            <p class="list-title">Local, Ada</p>
+            <p class="list-description">Created 1 Nov · last used 2 weeks ago</p>
+          </div>
+        </a></li>
+        <li><a class="list-row" href="#">
+          <div class="list-body">
+            <p class="list-title">Local, Alan</p>
+            <p class="list-description">Created 28 Oct · never used</p>
+          </div>
+        </a></li>
+        <li><a class="list-row" href="#">
+          <div class="list-body">
+            <p class="list-title">Legacy importer</p>
+            <p class="list-description">Created 4 Jun · last used in July</p>
+          </div>
+        </a></li>
+      </ul>
+    </div>
+    <article class="hidden flex@container(--3xl) flex-col gap-lg grow(1) basis(0) min-w(0) overflow-y-auto p-lg">
+      <header class="flex flex-wrap items-start justify-between gap-sm">
+        <div class="flex flex-col gap-3xs">
+          <h3 class="heading">Production</h3>
+          <p class="m(0) fg-text-muted">Used by the deploy workflow on the main branch.</p>
+        </div>
+        <span class="badge badge-success badge-dot">Active</span>
+      </header>
+      <dl class="data-list">
+        <div class="data-list-item">
+          <dt class="data-list-term">Key</dt>
+          <dd class="data-list-value"><code class="code">atl_live_••••••••4f2a</code></dd>
+        </div>
+        <div class="data-list-item">
+          <dt class="data-list-term">Scope</dt>
+          <dd class="data-list-value">Deploy, read logs</dd>
+        </div>
+        <div class="data-list-item">
+          <dt class="data-list-term">Created</dt>
+          <dd class="data-list-value">2 March by Ada Lovelace</dd>
+        </div>
+        <div class="data-list-item">
+          <dt class="data-list-term">Last used</dt>
+          <dd class="data-list-value">Today at 09:41, from Tokyo</dd>
+        </div>
+      </dl>
+      <div class="flex gap-xs mt-auto">
+        <button type="button" class="btn btn-sm">Rotate key</button>
+        <button type="button" class="btn btn-sm btn-danger">Revoke</button>
+      </div>
+    </article>
+  </div>
+</section>`} />
+
+## 構成 \{#how-it-is-built\}
+
+- **外枠に`container-inline`** を指定して、サイズコンテナーにします。内側のすべての`@container(…)`ユーティリティは、外枠の幅を基準にします。
+- **高さを固定した行。** `flex h(440)`で両ペインの高さを揃え、それぞれに`overflow-y-auto`を指定して独立してスクロールできるようにします。ビューポートの高さ全体を使うアプリでは、数値で指定する代わりに[固定シェル](/pages/app-shell#fixed)の高さを使います。
+- **一覧は固定幅、詳細は可変幅です。** 外枠の幅が48remに達するまでは一覧に`w-full`を使い、48rem以上では`shrink(0)`を指定した`w(300)@container(--3xl)`を使います。詳細には`grow(1) basis(0) min-w(0)`を使い、一覧の幅を圧迫せずに残りの幅を使います。
+- **48rem未満では1ペインになります。** 詳細ペインは`hidden`で非表示になり、`flex@container(--3xl)`で再表示されます。幅が狭いときは一覧が表示され、行を選ぶと独立した詳細ページに移動します。この画面遷移はルーターで処理します。
+- **ペイン間の区切り線**には`bxe(1)@container(--3xl) bxe-solid@container(--3xl)`を使います。区切り線は両方のペインが表示されているときだけ現れます。
+
+現在の行は、[`list-interactive`](/components/list)内の`list-row`に`aria-current="true"`を指定して示します。
+
+## 幅の調整 \{#resizable\}
+
+利用者がペインの幅の配分を変えられるようにするには、[スプリッター](/components/splitter)を使います。同じ2つのペインの間にハンドルを置く構成です。ハンドルには状態とキーボード操作のコントラクトがあるため、スプリッターはコンポーネントとして提供されます。ハンドルの移動は`splitter`[ビヘイビア](/guide/behaviors)が担い、使えるキーはスプリッターのページに記載されています。
+
+<PagePreview name="resizable" title="幅の調整" height={488} bodyClass="p-lg" behaviors caption="ペイン間の区切り線をドラッグするか、区切り線にフォーカスして矢印キー、Homeキー、Endキーのいずれかを押します。" html={`<section class="splitter sheet overflow-hidden h(440) text-sm fg-text-body" style="--splitter-size: 36%" aria-labelledby="keys-split-title">
+  <div class="splitter-pane flex flex-col">
+    <header class="flex flex-wrap items-center justify-between gap-sm p-md bb(1) bb-solid b-line-hair">
+      <h2 class="heading heading-sm" id="keys-split-title">API keys</h2>
+      <button type="button" class="btn btn-sm"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>New key</button>
+    </header>
+    <ul class="list list-interactive">
+      <li><a class="list-row" href="#" aria-current="true">
+        <div class="list-body">
+          <p class="list-title">Production</p>
+          <p class="list-description">Created 2 Mar · last used today</p>
+        </div>
+      </a></li>
+      <li><a class="list-row" href="#">
+        <div class="list-body">
+          <p class="list-title">Staging</p>
+          <p class="list-description">Created 14 Jan · last used yesterday</p>
+        </div>
+      </a></li>
+      <li><a class="list-row" href="#">
+        <div class="list-body">
+          <p class="list-title">CI</p>
+          <p class="list-description">Created 9 Dec · last used 3 days ago</p>
+        </div>
+      </a></li>
+      <li><a class="list-row" href="#">
+        <div class="list-body">
+          <p class="list-title">Local, Ada</p>
+          <p class="list-description">Created 1 Nov · last used 2 weeks ago</p>
+        </div>
+      </a></li>
+      <li><a class="list-row" href="#">
+        <div class="list-body">
+          <p class="list-title">Local, Alan</p>
+          <p class="list-description">Created 28 Oct · never used</p>
+        </div>
+      </a></li>
+      <li><a class="list-row" href="#">
+        <div class="list-body">
+          <p class="list-title">Legacy importer</p>
+          <p class="list-description">Created 4 Jun · last used in July</p>
+        </div>
+      </a></li>
+    </ul>
+  </div>
+  <div class="splitter-handle" role="separator" tabindex="0" aria-label="Resize the list" aria-valuenow="36" aria-valuemin="25" aria-valuemax="60"></div>
+  <article class="splitter-pane flex flex-col gap-lg p-lg">
+    <header class="flex flex-wrap items-start justify-between gap-sm">
+      <div class="flex flex-col gap-3xs">
+        <h3 class="heading">Production</h3>
+        <p class="m(0) fg-text-muted">Used by the deploy workflow on the main branch.</p>
+      </div>
+      <span class="badge badge-success badge-dot">Active</span>
+    </header>
+    <dl class="data-list">
+      <div class="data-list-item">
+        <dt class="data-list-term">Key</dt>
+        <dd class="data-list-value"><code class="code">atl_live_••••••••4f2a</code></dd>
+      </div>
+      <div class="data-list-item">
+        <dt class="data-list-term">Scope</dt>
+        <dd class="data-list-value">Deploy, read logs</dd>
+      </div>
+      <div class="data-list-item">
+        <dt class="data-list-term">Created</dt>
+        <dd class="data-list-value">2 March by Ada Lovelace</dd>
+      </div>
+      <div class="data-list-item">
+        <dt class="data-list-term">Last used</dt>
+        <dd class="data-list-value">Today at 09:41, from Tokyo</dd>
+      </div>
+    </dl>
+    <div class="flex gap-xs mt-auto">
+      <button type="button" class="btn btn-sm">Rotate key</button>
+      <button type="button" class="btn btn-sm btn-danger">Revoke</button>
+    </div>
+  </article>
+</section>`} />
+
+## 3つの実装方法 \{#three-ways\}
+
+| 用途 | 使うもの |
+| --- | --- |
+| ページの一部にペインを置く | 上記のユーティリティとコンテナー |
+| 利用者がペインの幅を調整する | [スプリッター](/components/splitter) |
+| ペインでアプリ全体を構成する | 一覧をサイドバーにした[固定シェル](/pages/app-shell#fixed) |
+
+## アクセシビリティ \{#accessibility\}
+
+- 一覧は、各詳細へのリンクで構成します。現在表示している詳細へのリンクは`aria-current="true"`で示します。
+- フレームにラベルを付け、詳細ペインには選択した項目の名前を見出しとして表示します。詳細ペインに直接移動した場合でも、何の詳細を見ているかが分かります。
+- スクロール可能なペイン内にフォーカスできる要素がない場合は、キーボードでスクロールできるように `tabindex="0"` を指定します。
+- 狭い画面で詳細ペインを非表示にすると、`display: none` によってアクセシビリティツリーから除外されます。そのペインを参照する操作要素も残さないでください。
+
+## 関連項目 \{#related\}
+
+<ComponentLinks slugs={['list', 'data-list', 'splitter', 'surface', 'badge']} />
+
+<ComponentLinks kind="pages" slugs={['app-shell']} />

@@ -11,7 +11,7 @@ Master UI publishes native HTML and CSS components for Master CSS v2, a contract
 
 ## Translations
 
-The site is published in English (unprefixed), `/tw`, `/ja`, `/ko` and `/cn`, following Master CSS. A translated page is a complete sibling `content.<locale>.mdx` with its `title` and `description` in frontmatter; `metadata.ts` stays English. Interface copy goes through `t()` and `site/i18n/<locale>.json`. The guide and the home page are translated; `components`, `blocks` and `pages` are English only until a whole section is translated (`site/i18n/sections.ts`). Every edition needs an independent review recorded in `site/i18n/reviews.json`, and a production build refuses a missing or stale one: a change to an English page or interface string needs its four translations updated and reviewed in the same change. `site/i18n/README.md` holds the policy and the commands (`node --import tsx scripts/i18n.ts audit|keys|review`).
+The site is published in English (unprefixed), `/tw`, `/ja`, `/ko` and `/cn`, following Master CSS. A translated page is a complete sibling `content.<locale>.mdx` with its `title` and `description` in frontmatter; `metadata.ts` stays English. Interface copy goes through `t()` and `site/i18n/<locale>.json`. The home page, guide, components, blocks and pages are localized. Contract prose, guide figure labels and portable index copy live in `site/i18n`. Every edition needs an independent review recorded in `site/i18n/reviews.json`, and a production build refuses a missing or stale one: a change to an English page or interface string needs its four translations updated and reviewed in the same change. `site/i18n/README.md` holds the policy and the commands (`node --import tsx scripts/i18n.ts audit|keys|review`).
 
 ## Skills
 

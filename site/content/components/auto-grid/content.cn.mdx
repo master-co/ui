@@ -1,0 +1,159 @@
+---
+title: "自动网格"
+description: "根据可用宽度自动安排尽可能多的等宽列。"
+---
+
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import PagePreview from '~/site/components/PagePreview.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+自动网格会在可用空间内放入尽可能多的等宽列，每列宽度至少达到设定的最小值。网格直接根据可用空间计算列数，无需查询。同一份标记在仪表板中一行排四项，在侧栏中一行排两项，在手机上则逐项向下排列。
+
+自动网格使用布局类，因为核心规则 `repeat(auto-fill, minmax(min(100%, 16rem), 1fr))` 无法用工具类表达，手写时也容易出错。`min(100%, …)` 确保在窄屏上单列也不会超出屏幕宽度。
+
+<PagePreview name="default" title="自动网格" height={240} tabletHeight={336} phoneHeight={640} caption="先选择平板，再选择手机，四列会先变成两列，再变成一列。整个过程无需编写查询。" html={`<div class="auto-grid p-lg bg-surface-base">
+  <article class="card">
+    <header class="card-header">
+      <h3 class="card-title">Atlas</h3>
+      <p class="card-description">atlas.dev</p>
+    </header>
+  </article>
+  <article class="card">
+    <header class="card-header">
+      <h3 class="card-title">Borealis</h3>
+      <p class="card-description">borealis.app</p>
+    </header>
+  </article>
+  <article class="card">
+    <header class="card-header">
+      <h3 class="card-title">Cinder</h3>
+      <p class="card-description">cinder.io</p>
+    </header>
+  </article>
+  <article class="card">
+    <header class="card-header">
+      <h3 class="card-title">Drift</h3>
+      <p class="card-description">drift.so</p>
+    </header>
+  </article>
+  <article class="card">
+    <header class="card-header">
+      <h3 class="card-title">Ember</h3>
+      <p class="card-description">ember.dev</p>
+    </header>
+  </article>
+  <article class="card">
+    <header class="card-header">
+      <h3 class="card-title">Fathom</h3>
+      <p class="card-description">fathom.app</p>
+    </header>
+  </article>
+</div>`} />
+
+## 最小列宽 \{#minimum\}
+
+`--auto-grid-min` 指定列的最小宽度，默认为 16rem。最小列宽越小，能容纳的列就越多，每列也可以更窄。11rem 适合图示，20rem 适合含一段正文的卡片。
+
+<PagePreview name="min" title="降低最小列宽" height={144} tabletHeight={248} phoneHeight={664} html={`<div class="auto-grid p-lg bg-surface-base" style="--auto-grid-min: 11rem">
+  <section class="sheet p-md">
+    <div class="stat">
+      <p class="stat-label">Requests</p>
+      <div class="stat-row">
+        <p class="stat-value">1.28M</p>
+        <p class="stat-delta stat-delta-up">12.4%</p>
+      </div>
+    </div>
+  </section>
+  <section class="sheet p-md">
+    <div class="stat">
+      <p class="stat-label">Visitors</p>
+      <div class="stat-row">
+        <p class="stat-value">84.2K</p>
+        <p class="stat-delta stat-delta-up">3.1%</p>
+      </div>
+    </div>
+  </section>
+  <section class="sheet p-md">
+    <div class="stat">
+      <p class="stat-label">Bandwidth</p>
+      <div class="stat-row">
+        <p class="stat-value">74 GB</p>
+      </div>
+    </div>
+  </section>
+  <section class="sheet p-md">
+    <div class="stat">
+      <p class="stat-label">Builds</p>
+      <div class="stat-row">
+        <p class="stat-value">212</p>
+      </div>
+    </div>
+  </section>
+  <section class="sheet p-md">
+    <div class="stat">
+      <p class="stat-label">Domains</p>
+      <div class="stat-row">
+        <p class="stat-value">9</p>
+      </div>
+    </div>
+  </section>
+  <section class="sheet p-md">
+    <div class="stat">
+      <p class="stat-label">Members</p>
+      <div class="stat-row">
+        <p class="stat-value">4</p>
+      </div>
+    </div>
+  </section>
+</div>`} />
+
+默认间距为 1rem。要调整间距，可在网格上添加 `gap-lg` 等间距工具类。工具类的样式排在库的类之后。
+
+## 保留或收起空列 \{#fill-or-fit\}
+
+默认保留空列的位置，因此宽网格中即使只有两个网格项，它们也会保持通常的大小。`auto-grid-fit` 会收起空列，让现有网格项平分整行。会持续增加项目的集合适合使用默认行为，项目数量固定且始终要占满一行时使用 fit。
+
+<PagePreview name="fit" title="收起空列" height={232} phoneHeight={368} html={`<div class="flex flex-col gap-lg p-lg bg-surface-base fg-text-body text-sm">
+  <div class="flex flex-col gap-xs">
+    <p class="eyebrow">auto-grid</p>
+    <div class="auto-grid">
+      <div class="well p-md">One</div>
+      <div class="well p-md">Two</div>
+    </div>
+  </div>
+  <div class="flex flex-col gap-xs">
+    <p class="eyebrow">auto-grid auto-grid-fit</p>
+    <div class="auto-grid auto-grid-fit">
+      <div class="well p-md">One</div>
+      <div class="well p-md">Two</div>
+    </div>
+  </div>
+</div>`} />
+
+## 何时不适合使用 \{#when-not\}
+
+如果设计对列数有明确要求，请用 `grid grid-cols(3)` 指定列数，并使用 `grid-cols(3)@container(--4xl)` 等容器变体。自动网格自行决定列数，适合展示一组同类项目。如果第三列在布局中承担特定作用，就应明确指定列数。
+
+## 无障碍 \{#accessibility\}
+
+- 网格只调整列数，始终保留源码顺序。各项按从左到右、从上到下的顺序读取。
+- 如果网格中是一组同类项目，请使用列表 `<ul class="auto-grid">`，让屏幕阅读器读出项目数量。
+
+## 类名 \{#classes\}
+
+<ContractTable name="auto-grid" directory="layouts" />
+
+## 自定义属性 \{#custom-properties\}
+
+<ContractTable name="auto-grid" show="properties" directory="layouts" />
+
+## 相关内容 \{#related\}
+
+<ComponentLinks slugs={['bento', 'masonry', 'arrangements', 'card']} />
+
+<ComponentLinks kind="pages" slugs={['dashboard']} />
+
+## 源码 \{#source\}
+
+<ComponentSource name="auto-grid" directory="layouts" />

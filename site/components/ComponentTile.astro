@@ -2,6 +2,8 @@
 import Cover from '~/site/components/cover/Cover.astro'
 import { library, type LibraryKind } from '~/site/components/catalog'
 import { siteOf } from '@master/internal-site/astro/site-context'
+import { localizePathname } from '@master/internal-site/utils/i18n-pathname'
+import editions from 'virtual:master-site/localized-metadata'
 
 interface Props {
   /** A slug in the catalog; the tile links to its page. */
@@ -20,15 +22,18 @@ interface Props {
 
 /** A component, a block or a page as a link: its cover, its name and, on request, what it is. */
 const { slug, kind = 'components', label, name, description = false, rel, class: className } = Astro.props
-const { t } = siteOf(Astro)
+const { t, locale, i18n } = siteOf(Astro)
 const component = (library[kind] as readonly { slug: string, name: string, description: string }[]).find(component => component.slug === slug)
+const pathname = `/${kind}/${slug}`
+const metadata = editions[pathname]?.[locale]
+const href = metadata ? localizePathname(pathname, { ...i18n, locale }) : pathname
 ---
 
-<a class:list={['component-tile', className]} href={`/${kind}/${slug}`} rel={rel}>
+<a class:list={['component-tile', className]} href={href} rel={rel}>
   <Cover slug={slug} kind={kind} />
   {label && <span class="component-tile-label">{label}</span>}
-  <span class="component-tile-name">{t(name ?? component?.name ?? slug)}</span>
-  {description && component && <span class="component-tile-description">{t(component.description)}</span>}
+  <span class="component-tile-name">{t(name ?? metadata?.title ?? component?.name ?? slug)}</span>
+  {description && component && <span class="component-tile-description">{t(metadata?.description ?? component.description)}</span>}
 </a>
 
 <style is:global>

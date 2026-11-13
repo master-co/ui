@@ -1,0 +1,110 @@
+---
+title: "トレース"
+description: "エージェントやジョブの処理をステップごとに表示します。各ステップは控えめな1行にまとまり、詳細があれば展開できます。"
+---
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+トレースは、エージェントやジョブが何を考え、検索し、読み取り、実行したかをステップごとに示します。各ステップは控えめな1行で、縦に並ぶマーカーを細い線でつなぎます。詳細があるステップにはネイティブの `<details>` を使うため、スクリプトなしで行を展開できます。詳細がないステップは通常の行として表示されます。
+
+<ComponentPreview name="default" height={368} narrowHeight={440} title="トレース" bodyClass="p-lg" html={`<div class="card max-w(440) mx-auto">
+  <div class="trace">
+    <details class="trace-step">
+      <summary class="trace-summary"><span class="trace-marker"></span>Thought about the migration<span class="trace-meta">8s</span></summary>
+      <div class="trace-detail">The table has two million rows, so the column is added as nullable first and filled in batches.</div>
+    </details>
+    <details class="trace-step" open>
+      <summary class="trace-summary"><span class="trace-marker"></span>Searched the codebase<span class="trace-meta">12 files</span></summary>
+      <div class="trace-detail"><code class="code">orders.status</code> is read in 12 files, 3 of them in the billing service.</div>
+    </details>
+    <div class="trace-step">
+      <p class="trace-summary"><span class="trace-marker"></span>Read schema.prisma<span class="trace-meta">0.4s</span></p>
+    </div>
+    <div class="trace-step" aria-busy="true">
+      <p class="trace-summary"><span class="trace-marker"></span>Writing the migration</p>
+    </div>
+  </div>
+</div>`} />
+
+## ステップ \{#a-step\}
+
+ステップは `trace-step` の中に `trace-summary` を置いて構成します。行にはマーカーとテキストを配置し、所要時間や検出件数などの数値を示す場合は、行末に `trace-meta` を追加します。
+
+詳細があるステップは `<details>` で記述し、行を `<summary>` に、その後に続く詳細を `trace-detail` に入れます。スタイルシートは詳細の有無を判定し、行を開閉できる表示にします。テキストの後ろに小さなシェブロンが付き、展開中は下を向きます。ブラウザーが `::details-content` のトランジションに対応していれば、詳細は内容に応じた高さまで滑らかに開きます。それ以外のブラウザーでは即座に開きます。ページ内検索で閉じたステップ内に一致が見つかると、他の `<details>` と同様にそのステップが開きます。
+
+## マーカー \{#markers\}
+
+空の `trace-marker` は小さな点になります。ステップの種類を示すには、代わりにマーカーに[アイコン](/components/icon)を入れます。実行中は `spinner-inline` を指定した[スピナー](/components/spinner)も使えます。
+
+<ComponentPreview name="markers" height={264} narrowHeight={312} title="マーカー" bodyClass="p-lg" html={`<div class="card max-w(440) mx-auto">
+  <div class="trace">
+    <div class="trace-step">
+      <p class="trace-summary"><span class="trace-marker"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.5-4.5"/></svg></span>Searched for "rate limit"<span class="trace-meta">4 results</span></p>
+    </div>
+    <div class="trace-step">
+      <p class="trace-summary"><span class="trace-marker"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h7l4 4v12H7zM14 4v4h4"/></svg></span>Read limits.ts<span class="trace-meta">214 lines</span></p>
+    </div>
+    <div class="trace-step">
+      <p class="trace-summary"><span class="trace-marker"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 8 4 4-4 4M12 17h7"/></svg></span>Ran the tests<span class="trace-meta">48 passed</span></p>
+    </div>
+    <div class="trace-step" aria-busy="true">
+      <p class="trace-summary"><span class="trace-marker"><span class="spinner spinner-inline"></span></span>Writing the answer</p>
+    </div>
+  </div>
+</div>`} />
+
+## 実行中と失敗 \{#running-and-failed\}
+
+実行中のステップには `aria-busy="true"` を付けます。テキストは強調色になり、点だけのマーカーからは輪が広がります。動きを抑える設定では、点の周囲に静止した輪が表示されます。ステップが終わったら属性を外します。
+
+失敗したステップには `trace-failed` を付けます。マーカーと行末の数値が危険色になります。ARIA にはリスト項目の失敗を表す状態がないため、クラスで指定します。色だけに頼らず、何が失敗したかを行または詳細のテキストで伝えてください。
+
+<ComponentPreview name="failed" height={272} narrowHeight={312} title="失敗" bodyClass="p-lg" html={`<div class="card max-w(440) mx-auto">
+  <div class="trace">
+    <div class="trace-step">
+      <p class="trace-summary"><span class="trace-marker"></span>Installed dependencies<span class="trace-meta">14s</span></p>
+    </div>
+    <div class="trace-step">
+      <p class="trace-summary"><span class="trace-marker"></span>Compiled 38 routes<span class="trace-meta">48s</span></p>
+    </div>
+    <details class="trace-step trace-failed" open>
+      <summary class="trace-summary"><span class="trace-marker"></span>Ran the test suite<span class="trace-meta">2 failed</span></summary>
+      <div class="trace-detail">orders.spec.ts expected the status to be "paid" and received "pending", twice.</div>
+    </details>
+  </div>
+</div>`} />
+
+## 1行のトレース \{#one-line\}
+
+ステップが1つだけのトレースは、アシスタントが回答の上に表示する1行です。何をしたかと所要時間を示し、展開するとその作業に至った思考過程を確認できます。
+
+<ComponentPreview name="one" height={168} narrowHeight={208} title="1ステップ" background="plain" bodyClass="p-lg" html={`<div class="trace max-w(440) mx-auto">
+  <details class="trace-step">
+    <summary class="trace-summary"><span class="trace-marker"></span>Thought for 12 seconds</summary>
+    <div class="trace-detail">The question is about the fallback, not the feature, so the answer starts from a browser without anchor positioning.</div>
+  </details>
+</div>`} />
+
+## トレース、タイムライン、ステップの使い分け \{#trace-timeline-or-steps\}
+
+トレースは作業の経過を示します。各ステップは実行中や失敗の状態を持つことがあり、展開すると詳細を確認できます。[タイムライン](/components/timeline)は、出来事を発生時刻とともに記録します。[ステップ](/components/steps)は、ユーザーが決まった順序で進む手順を示します。
+
+## アクセシビリティ \{#accessibility\}
+
+- 展開できるステップには `<details>` を使います。ブラウザーが行に開閉コントロールのロールと状態を設定し、キーボード操作も提供します。
+- マーカーはスタイルシートで描画され、読み上げられません。マーカー内のアイコンは装飾として扱い、ステップの内容は行のテキストで伝えてください。
+- 表示中にステップが追加されるトレースは、`aria-live="polite"` を指定した領域に置きます。新しいステップが追加されるたびに読み上げられます。実行中のステップに `aria-busy` を指定すると、見た目に加え、支援技術にもその状態が伝わります。
+- タッチスクリーンでは各行の高さが 44px になります。
+
+## クラス \{#classes\}
+
+<ContractTable name="trace" />
+
+## カスタムプロパティ \{#custom-properties\}
+
+<ContractTable name="trace" show="properties" />
+
+## ソース \{#source\}
+
+<ComponentSource name="trace" />

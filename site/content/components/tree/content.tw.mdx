@@ -1,0 +1,158 @@
+---
+title: "樹狀清單"
+description: "以巢狀列呈現有層級的項目。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+樹狀清單以巢狀列呈現有層級的項目，例如資料夾、大綱或分類。沒有腳本時，分支使用原生 `<details>`，並以 `<summary>` 作為該列，因此可以用瀏覽器原本支援的按鍵展開或收合。在頁面中搜尋時，瀏覽器也會展開包含相符結果的分支。
+
+<ComponentPreview name="default" height={456} title="樹狀清單" background="plain" bodyClass="p-lg" html={`<ul class="tree max-w(260) mx-auto">
+  <li>
+    <details class="tree-group" open>
+      <summary class="tree-item tree-toggle">packages</summary>
+      <ul class="tree-sub">
+        <li>
+          <details class="tree-group" open>
+            <summary class="tree-item tree-toggle">ui</summary>
+            <ul class="tree-sub">
+              <li><a class="tree-item" href="#button" aria-current="page">button.css</a></li>
+              <li><a class="tree-item" href="#input">input.css</a></li>
+              <li><a class="tree-item" href="#theme">theme.css</a></li>
+            </ul>
+          </details>
+        </li>
+        <li>
+          <details class="tree-group">
+            <summary class="tree-item tree-toggle">tests</summary>
+            <ul class="tree-sub">
+              <li><a class="tree-item" href="#test">master.test.ts</a></li>
+            </ul>
+          </details>
+        </li>
+      </ul>
+    </details>
+  </li>
+  <li><a class="tree-item" href="#readme">README.md</a></li>
+  <li><a class="tree-item" href="#license">LICENSE</a></li>
+</ul>`} />
+
+## 列 \{#rows\}
+
+- `tree-item` 代表一列，可以是連結、按鈕或分支的 `<summary>`。每列高 28px，排列緊湊、色調低調。指標停留的列和目前所在列會套用標籤色調。
+- 在分支列加上 `tree-toggle`，即可在最前方的欄位顯示箭頭。分支展開時，箭頭會轉向下方。每列都保留這一欄，因此末端項目會與同層分支對齊。
+- `tree-sub` 容納分支下一層的列，並沿著從箭頭向下延伸的細線縮排。
+
+## 搭配圖示 \{#with-icons\}
+
+在箭頭欄後方放入套用 [`icon`](/components/icon) 的圖示。圖示平時維持低調色調，直到該列成為目前所在列。
+
+<ComponentPreview name="icons" height={272} title="搭配圖示" background="plain" bodyClass="p-lg" html={`<ul class="tree max-w(260) mx-auto">
+  <li>
+    <details class="tree-group" open>
+      <summary class="tree-item tree-toggle">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/></svg>
+        Design
+      </summary>
+      <ul class="tree-sub">
+        <li>
+          <a class="tree-item" href="#tokens" aria-current="page">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2Z"/></svg>
+            Tokens
+          </a>
+        </li>
+        <li>
+          <a class="tree-item" href="#materials">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2Z"/></svg>
+            Materials
+          </a>
+        </li>
+      </ul>
+    </details>
+  </li>
+  <li>
+    <details class="tree-group">
+      <summary class="tree-item tree-toggle">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/></svg>
+        Engineering
+      </summary>
+      <ul class="tree-sub">
+        <li><a class="tree-item" href="#api">API</a></li>
+      </ul>
+    </details>
+  </li>
+</ul>`} />
+
+## 行為 \{#behavior\}
+
+WAI-ARIA 樹狀清單模式只設一個 Tab 停駐點，並可用方向鍵在樹中移動及展開或收合分支。這需要透過腳本套用 `tree` [行為](/guide/behaviors)，並沿用相同的類別。為清單加上 `role="tree"`，為每個分支的列加上 `role="treeitem"` 和 `aria-expanded`，再為其 `tree-sub` 加上 `role="group"`。箭頭會依 `aria-expanded` 改變方向，設為 `aria-expanded="false"` 的列會隱藏緊接在後的 `tree-sub`，而 `aria-selected="true"` 會標記已選取的列。
+
+<ComponentPreview name="aria" height={272} title="由 ARIA 控制" background="plain" bodyClass="p-lg" behaviors html={`<ul class="tree max-w(260) mx-auto" role="tree" aria-label="Outline">
+  <li role="none">
+    <div class="tree-item tree-toggle" role="treeitem" aria-expanded="true" tabindex="0">Introduction</div>
+    <ul class="tree-sub" role="group">
+      <li role="none"><div class="tree-item" role="treeitem" aria-selected="true" tabindex="-1">How it fits together</div></li>
+      <li role="none"><div class="tree-item" role="treeitem" tabindex="-1">Principles</div></li>
+    </ul>
+  </li>
+  <li role="none">
+    <div class="tree-item tree-toggle" role="treeitem" aria-expanded="false" tabindex="-1">Theme</div>
+    <ul class="tree-sub" role="group">
+      <li role="none"><div class="tree-item" role="treeitem" tabindex="-1">Surfaces</div></li>
+    </ul>
+  </li>
+</ul>`} caption="將焦點移到樹狀清單後，使用方向鍵操作。按 Enter、空白鍵或點一下可展開分支，或選取沒有子項目的列。" />
+
+`tree` 接收帶有 `tree` 類別的根元素，不提供任何選項，並傳回用來移除行為的函式。
+
+```js name=app.js
+import { tree } from '@master/ui/behaviors/tree.js'
+
+const root = document.querySelector('.tree')
+tree(root)
+
+root.addEventListener('change', (event) => console.log(event.detail.item))
+```
+
+- **單一 Tab 停駐點。** 此行為透過 `tabindex` 只保留一列在 Tab 巡覽順序中。優先採用標記中設有 `tabindex="0"` 的列，其次是已選取或目前所在的列，最後才是第一列。取得焦點的列會成為新的 Tab 停駐點。卸除行為時，各列會恢復原有的 `tabindex`。
+- **移動。** 使用方向鍵移動時，會跳過收合分支內的列、標記為 `hidden` 的列，以及停用的列。
+- **啟用。** 摘要列、連結和按鈕沿用瀏覽器原有的啟用方式。若列本身沒有原生啟用方式，例如加上 `role="treeitem"` 的 `div`，可用 <kbd>Enter</kbd>、<kbd>Space</kbd> 或點擊啟用。分支會展開或收合，末端項目則會成為已選取的列，`aria-selected="true"` 也會從原先選取的列移到該列。
+- **事件。** 選取一列時，根元素會派發可冒泡的 `change` 事件，並在 `detail.item` 中提供該列。
+- **停用。** 帶有 `disabled` 或 `aria-disabled="true"` 的列不會回應操作，連結不會開啟，分支也會維持原狀。
+
+此行為也適用於以 `<details>` 建立的樹狀清單，例如前兩個未套用此行為的預覽。它透過 `open` 展開或收合 `tree-group`，並讓整棵樹只保留一個 Tab 停駐點，沿用同一套方向鍵操作。`attach()` 會將此行為套用到所有樹狀清單。若要保留 `<details>` 樹狀清單的原生操作方式，請依名稱匯入所需的行為。
+
+## 樹狀清單或導覽 \{#tree-or-nav\}
+
+[導覽](/components/nav) 是一份簡短的目的地清單，只有一層分組，目前所在列會以帶有層次感的面板樣式突顯。樹狀清單適合呈現多層結構，列與列之間排列緊湊，每個分支前方都有箭頭。
+
+## 鍵盤操作 \{#keyboard\}
+
+<ContractTable name="tree" show="keyboard" />
+
+## 無障礙 \{#accessibility\}
+
+- 使用 `<details>` 時，請勿加上樹狀清單角色。輔助技術已能正確讀出原生展開與收合控制項。未套用行為時，每列都是 Tab 停駐點。
+- 使用 `aria-current="page"` 標記目前所在列。在樹狀清單模式中則使用 `aria-selected="true"`。
+- 在觸控螢幕上，每列高 44px。
+
+## React、Svelte 和 Vue \{#frameworks\}
+
+`tree` 元件會依資料呈現各列、附加行為，並支援傳入及傳出已選取的列。執行 `npx master-ui add tree` 即可將元件複製到專案中。元件的實作與用法請見 [React、Svelte 和 Vue](/guide/frameworks)。
+
+<FrameworkSource name="tree" />
+
+## 類別 \{#classes\}
+
+<ContractTable name="tree" />
+
+## 自訂屬性 \{#custom-properties\}
+
+<ContractTable name="tree" show="properties" />
+
+## 原始碼 \{#source\}
+
+<ComponentSource name="tree" />

@@ -1,0 +1,140 @@
+---
+title: "ステッパー"
+description: "両端のボタンで数値を増減できる入力欄。"
+---
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+ステッパーは、席数、数量、文字サイズなど、直接入力するより少しずつ増減することの多い数値に使います。ネイティブの`<input type="number">`を囲む[入力グループ](/components/input#input-group)で、入力欄の両端に[ボタン](/components/button)を配置します。グループには`stepper`、入力フィールドには`stepper-field`を追加します。
+
+<ComponentPreview name="default" height={128} title="ステッパー" bodyClass="flex items-center justify-center p-lg" behaviors html={`<div class="sheet flex items-center gap-lg p-md pl-lg">
+  <label class="text-sm fg-text-strong" for="seats">Seats</label>
+  <div class="input-group stepper">
+    <button type="button" class="btn btn-square" value="-1" tabindex="-1" aria-label="Fewer seats"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+    <input class="input-group-field stepper-field" id="seats" type="number" min="1" max="12" value="4">
+    <button type="button" class="btn btn-square" value="1" tabindex="-1" aria-label="More seats"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+  </div>
+</div>`} caption="ボタンを押すか長押しするほか、数値を直接入力したり、入力欄で矢印キーを使ったりできます。値が1または12に達すると、それ以上増減できない側のボタンが平坦な表示になります。" />
+
+## 入力欄の標準機能 \{#what-the-field-already-does\}
+
+数値入力フィールドを使うため、ステッパーの基本機能の多くは、スクリプトを実行する前からプラットフォームが提供します。
+
+- <kbd>↑</kbd>と<kbd>↓</kbd>で値を`step`ずつ増減でき、`min`と`max`で止まります。
+- 入力欄はスピンボタンとして、現在の値と上下限とともに読み上げられます。
+- スマートフォンでは数字キーボードが表示されます。
+- 入力した値が範囲外の場合は`:user-invalid`が適用され、ウェルにエラーを示す輪郭が付きます。
+
+両端のボタンで増減を操作するため、スタイルシートでブラウザー標準のスピンボタンを非表示にします。
+
+## ビヘイビア \{#behavior\}
+
+`stepper` [ビヘイビア](/guide/behaviors)を使うと、2つのボタンでその間の数値を増減できます。`stepper` クラスを持つルート要素を引数に取ります。オプションはなく、ビヘイビアを解除する関数を返します。
+
+```js name=app.js
+import { stepper } from '@master/ui/behaviors/stepper.js'
+
+const root = document.querySelector('.stepper')
+stepper(root)
+
+root.addEventListener('change', (event) => console.log(event.target.value))
+```
+
+- **増減。** ボタンは入力欄の `stepDown()` または `stepUp()` を呼び出します。矢印キーも同じメソッドを使うため、`min`、`max`、`step` は入力欄に一度指定するだけで済みます。
+- **上限と下限。** 値がボタンの増減方向の限界に達すると、そのボタンは `disabled` になります。無効になったボタンはウェル内でフラットに表示されます。入力欄が空の場合は、どちらの限界にも達していないものとして扱います。ビヘイビアを解除すると、各ボタンの `disabled` は適用前の状態に戻ります。
+- **長押し。** ボタンを押し続けると、短い待ち時間のあとに増減を繰り返します。押下を解除するか、ポインターがボタンの外に出るか、ポインター操作がキャンセルされるか、値が限界に達すると停止します。
+- **増減方向。** 各ボタンの `value` で増減方向を指定します。負の値を指定すると減少します。指定がなければ、入力欄の前のボタンは減少、後ろのボタンは増加に割り当てられます。
+- **イベント。** ボタンで数値が変わると、直接入力した場合と同じように、入力欄は `input`、続いて `change` を発火します。値は入力欄の `value` です。
+
+ボタンには `tabindex="-1"` を指定します。タブ移動でフォーカスが止まるのは入力欄だけで、キー操作でもボタンと同じように増減できます。ビヘイビアを適用しなくても入力欄は[標準の機能](#what-the-field-already-does)を保ちますが、ボタンは動作しません。
+
+## サイズ \{#sizes\}
+
+ステッパーはグループのサイズに従います。`input-group-sm` は 32px、`input-group-lg` は 44px で、同じサイズのボタンと高さが揃います。内側のボタンはウェルより 8px 低く、角の丸みはウェルと同心になります。
+
+<ComponentPreview name="sizes" height={96} mediumHeight={152} narrowHeight={216} title="サイズ" behaviors html={`<div class="input-group input-group-sm stepper">
+  <button type="button" class="btn btn-square" value="-1" tabindex="-1" aria-label="Decrease"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+  <input class="input-group-field stepper-field" type="number" value="2" aria-label="Small">
+  <button type="button" class="btn btn-square" value="1" tabindex="-1" aria-label="Increase"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+</div>
+<div class="input-group stepper">
+  <button type="button" class="btn btn-square" value="-1" tabindex="-1" aria-label="Decrease"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+  <input class="input-group-field stepper-field" type="number" value="16" aria-label="Medium">
+  <button type="button" class="btn btn-square" value="1" tabindex="-1" aria-label="Increase"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+</div>
+<div class="input-group input-group-lg stepper">
+  <button type="button" class="btn btn-square" value="-1" tabindex="-1" aria-label="Decrease"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+  <input class="input-group-field stepper-field" type="number" value="128" aria-label="Large">
+  <button type="button" class="btn btn-square" value="1" tabindex="-1" aria-label="Increase"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+</div>`} />
+
+## 幅 \{#width\}
+
+ウェルの幅は数値の桁数に合わせて決まります。ブラウザーが `field-sizing: content` に対応している場合、入力欄は入力された桁数に応じて 3 桁分から 9 桁分まで広がります。それ以外では 3 桁分の幅になります。別の桁数に合わせるには `--stepper-min` と `--stepper-max` を設定します。ステッパー自体に幅を指定すると、ボタンを除いた残りの幅を入力欄が使います。
+
+単位は入力欄の後ろに `input-group-addon` で表示します。`step` を大きくすると、一度に増減する量が増えます。
+
+<ComponentPreview name="unit" height={152} title="単位と増減幅" bodyClass="flex flex-col items-center gap-md p-lg" behaviors html={`<div class="input-group stepper" style="--stepper-min: 5ch">
+  <button type="button" class="btn btn-square" value="-1" tabindex="-1" aria-label="Lower the budget"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+  <input class="input-group-field stepper-field" type="number" min="0" step="250" value="1250" aria-label="Monthly budget">
+  <span class="input-group-addon">USD</span>
+  <button type="button" class="btn btn-square" value="1" tabindex="-1" aria-label="Raise the budget"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+</div>
+<div class="input-group stepper w(280)">
+  <button type="button" class="btn btn-square" value="-1" tabindex="-1" aria-label="Fewer replicas"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+  <input class="input-group-field stepper-field" type="number" min="1" max="64" value="8" aria-label="Replicas">
+  <button type="button" class="btn btn-square" value="1" tabindex="-1" aria-label="More replicas"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+</div>`} />
+
+## 無効 \{#disabled\}
+
+入力欄と両方のボタンを無効にします。ウェルの配置はそのままで、数値は無効状態の文字色になります。入力欄が無効または読み取り専用の場合、ビヘイビアは値を増減しません。このプレビューはマークアップのみで、スクリプトは適用していません。
+
+<ComponentPreview name="disabled" height={96} title="無効" html={`<div class="input-group stepper">
+  <button type="button" class="btn btn-square" tabindex="-1" aria-label="Decrease" disabled><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+  <input class="input-group-field stepper-field" type="number" value="3" aria-label="Seats included in your plan" disabled>
+  <button type="button" class="btn btn-square" tabindex="-1" aria-label="Increase" disabled><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+</div>`} />
+
+## ほかのコンポーネントを使う場面 \{#when-to-use-something-else\}
+
+- ポート番号や価格のように、一度入力したあとで調整することが少ない数値には、`type="number"` を指定した通常の[入力欄](/components/input)を使います。
+- 広い範囲の中で、正確な数値よりも感覚的な調整を重視する場合は、[スライダー](/components/slider)を使います。
+- ラベル付きの少数の数量から選ぶ場合は、[セグメントコントロール](/components/segmented)を使います。
+
+## キーボード操作 \{#keyboard\}
+
+数値入力欄の標準のキー操作を使います。ビヘイビアによるキー操作の追加はありません。
+
+<ContractTable name="stepper" show="keyboard" />
+
+## アクセシビリティ \{#accessibility\}
+
+- `<label>`、[フィールド](/components/input#field)、または `aria-label` で入力欄にラベルを付けます。各ボタンには、何を変更するかがわかる名前を付けます。たとえば「プラス」ではなく「座席数を増やす」とします。
+- `min`、`max`、`step` は入力欄に指定します。キー操作、ボタン、支援技術はいずれもこの設定を参照します。
+- ボタンはタブ順序から外します。キーボードでは入力欄の矢印キーで値を増減できます。ポインター操作では 30px、タッチ操作では高さ 44px のウェル内に 36px の操作領域を確保します。
+
+## React、Svelte、Vue \{#frameworks\}
+
+`stepper` コンポーネントはビヘイビアを適用し、数値の受け渡しを行います。`npx master-ui add stepper` でプロジェクトにコピーできます。コンポーネントの仕組みと使い方は、[React、Svelte、Vue](/guide/frameworks)を参照してください。
+
+<FrameworkSource name="stepper" />
+
+## クラス \{#classes\}
+
+<ContractTable name="stepper" />
+
+## カスタムプロパティ \{#custom-properties\}
+
+<ContractTable name="stepper" show="properties" />
+
+## 関連項目 \{#related\}
+
+<ComponentLinks slugs={['input', 'slider', 'button']} />
+
+## ソース \{#source\}
+
+<ComponentSource name="stepper" />

@@ -1,0 +1,141 @@
+---
+title: "出栏布局"
+description: "正文保持适合阅读的栏宽，图文容器或横幅可适度加宽或延伸至页面边缘。"
+---
+
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import PagePreview from '~/site/components/PagePreview.astro'
+
+出栏布局将正文栏居中放在可用空间内，并将行长控制在适合阅读的范围。图片、表格或横幅可以比正文栏略宽，也可以一直延伸到两侧边缘。这种布局适合长文、更新日志或故事，既让正文保持舒适的行长，也给其他内容留出更多空间。
+
+子元素默认排在正文栏内。需要出栏的元素才使用 `breakout-wide` 或 `breakout-full`。布局本身不绘制表面，通栏横幅的外观由工具类或组件提供。
+
+<PagePreview name="default" title="出栏布局" height={1576} tabletHeight={1500} phoneHeight={1800} caption="滚动浏览文章，再切换到平板和手机视图。正文保持适合阅读的行长，图片和表格随栏侧的可用空间调整宽度，横幅始终延伸到两侧边缘。" html={`<article class="breakout py-2xl bg-surface-base fg-text-body text-md leading-lg">
+  <header class="flex flex-col gap-xs">
+    <p class="eyebrow">Changelog · 12 November</p>
+    <h1 class="heading heading-2xl">Faster cold builds, and comments on previews</h1>
+    <p class="lead">Dependency caches are now restored before the install step, and anyone with the link to a preview can leave a comment on it.</p>
+  </header>
+  <p>A cold build is one that starts with nothing: a new branch, a cleared cache, a project that has not built in a week. Until this release it downloaded every dependency again before it could restore anything, which made the first build of a branch the slowest one, and the one people waited for most.</p>
+  <figure class="figure breakout-wide">
+    <img class="figure-media" src="/demo/harbor.svg" alt="A wooden jetty running out over calm water" style="--figure-ratio: 21 / 9">
+    <figcaption class="figure-caption">The cache now waits at the end of the jetty, not the start: it is there before the install begins.</figcaption>
+  </figure>
+  <h2 class="heading heading-lg mt-md">Caches before the install</h2>
+  <p>The cache of a project is now keyed by its lockfile and restored before the install step runs. The install finds what it needs already in place and only fetches what changed. A branch that changes no dependency builds as fast as the one it came from.</p>
+  <div class="breakout breakout-full py-xl bg-surface-tray">
+    <dl class="auto-grid" style="--auto-grid-min: 9rem">
+      <div class="stat">
+        <dt class="stat-label">Cold builds</dt>
+        <dd class="stat-row m(0)"><span class="stat-value">38s</span><span class="stat-delta">21% faster</span></dd>
+      </div>
+      <div class="stat">
+        <dt class="stat-label">Installs skipped</dt>
+        <dd class="stat-row m(0)"><span class="stat-value">64%</span></dd>
+      </div>
+      <div class="stat">
+        <dt class="stat-label">Data fetched</dt>
+        <dd class="stat-row m(0)"><span class="stat-value">1.9 GB</span><span class="stat-delta">48% less</span></dd>
+      </div>
+    </dl>
+  </div>
+  <h2 class="heading heading-lg mt-md">Comments on previews</h2>
+  <p>Anyone with the link to a preview can now leave a comment on it, pinned to the place they mean. Comments are kept with the deploy, so they are still there when someone opens the same preview next week, and they are listed on the pull request.</p>
+  <div class="scroll-area scroll-area-inline breakout-wide" tabindex="0" role="region" aria-label="Who can comment, by plan">
+    <table class="table">
+      <thead>
+        <tr class="table-row">
+          <th class="table-heading" scope="col">Plan</th>
+          <th class="table-heading" scope="col">Who can comment</th>
+          <th class="table-heading" scope="col">Kept for</th>
+          <th class="table-heading table-numeric" scope="col">Previews</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="table-row">
+          <th class="table-cell table-primary" scope="row">Free</th>
+          <td class="table-cell">Members of the team</td>
+          <td class="table-cell">30 days</td>
+          <td class="table-cell table-numeric">10</td>
+        </tr>
+        <tr class="table-row">
+          <th class="table-cell table-primary" scope="row">Pro</th>
+          <td class="table-cell">Anyone with the link</td>
+          <td class="table-cell">One year</td>
+          <td class="table-cell table-numeric">Unlimited</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Both changes are on for every project today. There is nothing to turn on.</p>
+</article>`} />
+
+## 布局原理 \{#how-it-is-built\}
+
+- **单列网格。** 出栏布局只有一列，列宽取 `--breakout-measure`（默认 40rem）与可用宽度扣除两侧各一个 `--breakout-gutter` 后的值中的较小者。这一列居中，所有子元素默认排入其中，无需添加类名。
+- **用外边距向栏外延伸。** 出栏布局是一个行内尺寸容器。在子元素中，`100cqi` 是出栏布局的宽度，`100%` 是正文栏的宽度，因此单侧可用空间是两者宽度差的一半。`breakout-wide` 用负外边距占用这部分空间，每侧最多延伸 `--breakout-wide`，并保留边缘留白。`breakout-full` 则占满两侧空间。
+- **横幅内的文字与正文栏对齐。** 通栏子元素也可以设为 `breakout`，让自身延伸到两侧边缘，同时把子元素排在与正文栏等宽的一列中。上方示例里，横幅中的数字与前后的正文对齐。
+- **用网格行间距统一节奏。** 网格中的外边距不会折叠，因此用 1.25rem 的网格行间距分隔子元素。标题用 `mt-md` 让它与前文的距离比与后文的距离略大。
+- **宽表格可独立滚动。** 表格放在同时应用 `scroll-area-inline` 和 `breakout-wide` 的[滚动区域](/components/scroll-area)内，因此在手机上，表格会在栏内滚动，不会撑宽页面。
+
+## 加宽与通栏 \{#wide-and-full\}
+
+子元素能加宽多少，取决于正文栏两侧的可用空间，也就取决于页面宽度。
+
+| 可用宽度 | 正文栏 | `breakout-wide` | `breakout-full` |
+| --- | --- | --- | --- |
+| 大于正文栏最大宽度加两侧最大加宽量之和 | 40rem，居中 | 每侧增加 8rem，总宽 56rem | 占满可用宽度 |
+| 介于两个阈值之间 | 40rem，居中 | 可用宽度扣除边缘留白 | 占满可用宽度 |
+| 小于正文栏的最大宽度 | 可用宽度扣除两侧留白 | 与正文栏等宽 | 占满可用宽度 |
+
+<ComponentPreview name="widths" background="stripes" height={332} narrowHeight={332} title="宽度" bodyClass="p(0)" html={`<div class="breakout py-lg fg-text-muted text-sm" style="--breakout-measure: 20rem; --breakout-wide: 5rem">
+  <div class="well flex items-center justify-center h(56)">The column</div>
+  <div class="well flex items-center justify-center h(56) breakout-wide">breakout-wide</div>
+  <div class="well flex items-center justify-center h(56) breakout-full">breakout-full</div>
+  <div class="well flex items-center justify-center h(56)">The column</div>
+</div>`} />
+
+`--breakout-measure` 设定正文栏的最大宽度。40rem 大约能容纳 70 个正文字符。字号较大时可调小此值，主要放代码时可调大。`--breakout-wide` 设定加宽子元素每侧最多能延伸多远，`--breakout-gutter` 设定除通栏子元素外，内容与边缘之间至少要保留多少空间。
+
+## 通栏横幅 \{#full-band\}
+
+通栏横幅通常在色块或图片上叠放文字，文字仍应留在正文栏内。将横幅本身设为出栏布局。它作为 `breakout-full` 子元素延伸到两侧边缘，内部的子元素则排在与前后正文等宽的一列中。
+
+```html
+<div class="breakout breakout-full py-xl bg-surface-tray">
+  <p>These words line up with the column above and below the band.</p>
+</div>
+```
+
+出栏布局本身不绘制表面，横幅的颜色由工具类 `bg-surface-tray` 提供。图片要延伸到两侧边缘时，使用带有 `--figure-radius: 0` 的 `breakout-full` [媒体图注](/components/figure)，让图片在窗口边缘保持直角。
+
+## 何时使用 \{#when\}
+
+文章、帖子、更新日志和指南等以单栏阅读为主的页面适合使用出栏布局。如果正文栏旁还有导航、目录等区域，可使用[文档页](/pages/docs)，其中的文章栏也可以采用出栏布局。如果所有内容都留在栏内，只需用工具类 `max-w(640) mx-auto` 限制栏的最大宽度并将其居中，并留出边缘空白。
+
+## 无障碍 \{#accessibility\}
+
+- 出栏布局只调整宽度，阅读顺序始终遵循标记中的元素顺序。
+- 栏宽以 rem 为单位，随读者的文字大小变化。字号增大时，栏也会变宽，每行仍约有 70 个字符。当窗口比栏窄时，栏宽会随窗口收窄，页面无需横向滚动。
+- 宽于正文栏的表格放在带有无障碍名称和 `tabindex="0"` 的[滚动区域](/components/scroll-area)中，以便用键盘滚动。
+
+## 类名 \{#classes\}
+
+<ContractTable name="breakout" directory="layouts" />
+
+## 自定义属性 \{#custom-properties\}
+
+<ContractTable name="breakout" show="properties" directory="layouts" />
+
+## 相关内容 \{#related\}
+
+<ComponentLinks slugs={['figure', 'heading', 'table', 'scroll-area', 'quote', 'arrangements']} />
+
+<ComponentLinks kind="pages" slugs={['docs', 'page']} />
+
+## 源码 \{#source\}
+
+<ComponentSource name="breakout" directory="layouts" />

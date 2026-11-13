@@ -1,0 +1,63 @@
+---
+title: "핫스팟"
+description: "이미지 속 지점을 표시하고 각 지점에 무엇이 있는지 설명합니다."
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+핫스팟은 제품의 부품, 도면의 위치, 스크린샷에서 눈여겨볼 부분처럼 이미지 속 지점을 표시하고 설명합니다. 핫스팟은 이미지를 감싸는 틀이며, 각 핀은 그 위에 백분율 좌표로 배치하는 버튼입니다. 핀은 일반 버튼과 같은 방식으로 동작하므로 스크립트 없이 [팝오버](/components/popover)를 열 수 있습니다.
+
+<ComponentPreview name="default" height={320} narrowHeight={240} title="핫스팟" bodyClass="flex items-start justify-center p-lg" caption="핀을 누르세요." html={`<figure class="figure hotspot w-full max-w(480)">
+  <img class="figure-media" src="/demo/moonstone.svg" alt="A pale stone hanging over two ranges of grey hills" style="--figure-ratio: 16 / 9">
+  <button class="hotspot-pin" type="button" style="--x: 72%; --y: 32%" popovertarget="spot-stone" aria-label="The stone">1</button>
+  <button class="hotspot-pin" type="button" style="--x: 30%; --y: 62%" popovertarget="spot-hills" aria-label="The far hills">2</button>
+  <div class="popover" id="spot-stone" popover>
+    <p class="m(0) fg-text-strong font-medium">The stone</p>
+    <p class="m(0) fg-text-muted">Moonstone, lit from above and slightly left, as every surface in the theme is.</p>
+  </div>
+  <div class="popover" id="spot-hills" popover>
+    <p class="m(0) fg-text-strong font-medium">The far hills</p>
+    <p class="m(0) fg-text-muted">One step of the same grey lighter than the near ones.</p>
+  </div>
+</figure>`} />
+
+## 핀 배치 \{#placing-a-pin\}
+
+`hotspot`은 이미지를 감싸는 요소의 너비를 이미지와 같게 맞추고, 그 요소를 핀의 배치 기준으로 삼습니다. 각 `hotspot-pin`의 스타일에서 `--x`와 `--y`를 설정합니다. 이미지 왼쪽 위 모서리를 기준으로 가로 위치는 이미지 너비의 백분율로, 세로 위치는 이미지 높이의 백분율로 지정합니다. 핀의 중심은 이 좌표에 놓입니다. 백분율을 사용하면 이미지 크기가 달라져도 핀이 같은 지점을 가리킵니다.
+
+핀에는 `<button>`을 사용하며, 다른 위치로 이동하는 경우에는 링크를 사용합니다. `popovertarget`을 사용하면 팝오버가 열립니다. 브라우저가 앵커 위치 지정을 지원하면 핀을 기준으로 팝오버를 배치하고, 지원하지 않으면 뷰포트 중앙에 배치합니다. `interestfor` 속성을 사용하면 호버 또는 포커스 상태에서 [툴팁](/components/tooltip)이 표시됩니다.
+
+## 핀 \{#the-pin\}
+
+핀은 지름 24px의 잉크색 원으로, 흰색 테두리와 그 바깥쪽의 어두운 그림자로 둘러싸여 있습니다. 이미지는 테마에 따라 바뀌지 않으므로 두 테마에서 같은 테두리와 그림자를 사용합니다. 이 조합 덕분에 밝은 이미지와 어두운 이미지 모두에서 핀을 알아볼 수 있습니다. 핀에 번호를 넣어 본문의 목록에서 같은 지점을 찾게 할 수 있으며, 번호를 생략할 수도 있습니다.
+
+핀을 누를 수 있음을 알리기 위해 몇 초마다 핀에서 바깥쪽으로 원형 테두리가 퍼집니다. 동작을 줄이도록 설정하면 테두리는 움직이지 않습니다. 터치스크린에서는 핀의 크기를 유지하면서 터치 영역을 44px로 넓힙니다.
+
+<ComponentPreview name="plain" height={256} narrowHeight={224} title="번호 없는 핀" bodyClass="flex items-start justify-center p-lg" html={`<figure class="figure hotspot w-full max-w(360)">
+  <img class="figure-media" src="/demo/moonstone.svg" alt="A pale stone hanging over two ranges of grey hills" style="--figure-ratio: 16 / 9">
+  <button class="hotspot-pin" type="button" style="--x: 72%; --y: 32%" popovertarget="plain-stone" aria-label="The stone"></button>
+  <button class="hotspot-pin" type="button" style="--x: 22%; --y: 78%" popovertarget="plain-hills" aria-label="The near hills"></button>
+  <div class="popover" id="plain-stone" popover>The stone the light theme is named for.</div>
+  <div class="popover" id="plain-hills" popover>The near hills, in the ink of the page.</div>
+</figure>`} />
+
+## 접근성 \{#accessibility\}
+
+- 모든 핀에는 가리키는 대상을 설명하는 접근 가능한 이름이 필요합니다. "핀 1" 대신 `aria-label="The arm"`처럼 지정하세요. 핀 안의 번호만으로는 이름을 대신할 수 없습니다.
+- <kbd>Tab</kbd> 키를 누르면 마크업에 작성된 순서대로 핀에 포커스가 이동합니다. 핀을 추가한 순서 대신 사용자가 이미지를 살펴보는 순서에 맞춰 작성하세요.
+- 이미지의 `alt`에는 이미지 전체에 대한 설명을 작성합니다. 핀을 사용하지 않고도 같은 정보를 확인할 수 있도록 이미지 아래에 각 지점을 동일한 번호로 나열하세요.
+- 휴대전화에서도 볼 수 있는 이미지라면 두 터치 영역이 겹치지 않도록 핀 사이의 간격을 최소 44px로 유지하세요.
+
+## 클래스 \{#classes\}
+
+<ContractTable name="hotspot" />
+
+## 사용자 지정 속성 \{#custom-properties\}
+
+<ContractTable name="hotspot" show="properties" />
+
+## 소스 \{#source\}
+
+<ComponentSource name="hotspot" />

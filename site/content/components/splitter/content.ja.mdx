@@ -1,0 +1,98 @@
+---
+title: "スプリッター"
+description: "2つのペインと、その領域配分を調整するハンドル。"
+---
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+スプリッターは、2つのペインと、その間で領域配分を調整するハンドルで構成されます。ファイル一覧の横にエディターを置いたり、端末の上にエディターを置いたりするときに使います。ペインの境界は細い線で表示されます。ポインターを重ねるかフォーカスすると、線がインク色になり、小さなグリップが現れます。
+
+スプリッターはレイアウト内で使うコンポーネントです。ハンドルには質感や状態があり、キーボード操作のコントラクトも定められています。サイズ変更が不要な2ペイン構成には、[マスター・ディテール](/pages/master-detail)を参照してください。
+
+スタイルシートがスプリッターの見た目と配置を定め、`splitter`の[ビヘイビア](/guide/behaviors)がハンドルを動かします。ビヘイビアが更新するのは、先頭ペインのサイズを保持するコンテナーの`--splitter-size`と、同じ数値を保持するハンドルの`aria-valuenow`の2か所です。
+
+<ComponentPreview name="default" height={288} title="スプリッター" bodyClass="p-lg" behaviors html={`<div class="splitter sheet overflow-hidden h(240)" style="--splitter-size: 36%">
+  <div class="splitter-pane p-md text-sm fg-text-body">
+    <p class="m(0) fg-text-strong">Files</p>
+    <p class="mt-sm m(0)">theme.css</p>
+    <p class="m(0)">master.css</p>
+    <p class="m(0)">components/</p>
+  </div>
+  <div class="splitter-handle" role="separator" tabindex="0" aria-label="Resize the file list" aria-valuenow="36" aria-valuemin="15" aria-valuemax="85"></div>
+  <div class="splitter-pane p-md text-sm fg-text-body">
+    <p class="m(0) fg-text-strong">Editor</p>
+    <p class="mt-sm m(0)">Drag the line between the panes, or focus it and press the arrow keys.</p>
+  </div>
+</div>`} caption="境界線をドラッグするか、フォーカスして矢印キー、Homeキー、Endキーで操作します。" />
+
+## ビヘイビア \{#behavior\}
+
+`splitter`は`splitter`クラスが付いたルート要素を受け取り、ビヘイビアを解除する関数を返します。操作対象はルートの直下にある`splitter-handle`なので、ペイン内に別のスプリッターを入れ子にできます。
+
+```js name=app.js
+import { splitter } from '@master/ui/behaviors/splitter.js'
+
+const root = document.querySelector('.splitter')
+splitter(root, { step: 10 })
+
+root.addEventListener('change', (event) => {
+  localStorage.setItem('files-width', event.target.getAttribute('aria-valuenow'))
+})
+```
+
+- **ドラッグ。** `pointerdown`でハンドルがポインターをキャプチャし、ポインターが移動する間、コンテナー内での位置をパーセントで書き込みます。
+- **キー操作。** ハンドルの移動方向に対応する矢印キーで1ステップずつ動かせます。<kbd class="kbd">Home</kbd>で最小サイズ、<kbd class="kbd">End</kbd>で最大サイズになります。
+- **変更の反映。** サイズが変わるたびに、ルートの`--splitter-size`とハンドルの`aria-valuenow`を更新します。サイズはハンドルの`aria-valuemin`と`aria-valuemax`の範囲に収まります。指定がない場合、下限は0、上限は100です。
+- **イベント。** ハンドルは、サイズが変わるたびに`input`を発行し、ドラッグが終わったときやキー操作で移動したときに`change`を発行します。どちらもバブリングします。値はハンドルの`aria-valuenow`から読み取れます。
+- **無効時。** `aria-disabled="true"`が指定されたハンドルは移動しません。
+
+| オプション | 設定内容 |
+| --- | --- |
+| `step` | 矢印キー1回でハンドルが移動する割合（%）。既定値は5。 |
+
+スタイルシートは、指定されたサイズにかかわらず、ペインの境界がコンテナーの両端からそれぞれ`--splitter-min`以上離れるようにします。また、ハンドルを押している間はテキストの選択を抑止し、ハンドルの向きに応じてレイアウトを切り替えます。ビヘイビアがない場合、ペインの配分は`--splitter-size`の指定で固定され、ハンドルは動きません。
+
+## ペインの縦並び \{#stacked\}
+
+`aria-orientation`で区切り線の向きを指定します。既定ではペインが横に並び、区切り線は縦向きです。`aria-orientation="horizontal"`を指定するとペインが縦に並び、ハンドルは横向きになります。コンテナーはこの属性に応じて配置を変えるため、修飾クラスを同期させる必要はありません。
+
+<ComponentPreview name="stacked" height={328} title="ペインの縦並び" bodyClass="p-lg" behaviors html={`<div class="splitter sheet overflow-hidden h(280) max-w(420) mx-auto" style="--splitter-size: 60%">
+  <div class="splitter-pane p-md text-sm fg-text-body">
+    <p class="m(0) fg-text-strong">Editor</p>
+  </div>
+  <div class="splitter-handle" role="separator" tabindex="0" aria-orientation="horizontal" aria-label="Resize the editor" aria-valuenow="60" aria-valuemin="15" aria-valuemax="85"></div>
+  <div class="splitter-pane p-md text-sm fg-text-body">
+    <p class="m(0) fg-text-strong">Terminal</p>
+  </div>
+</div>`} />
+
+## キーボード操作 \{#keyboard\}
+
+<ContractTable name="splitter" show="keyboard" />
+
+## アクセシビリティ \{#accessibility\}
+
+- ハンドルをフォーカス可能にし、`role="separator"`、サイズ変更の対象を示すラベル、先頭ペインの現在値・下限・上限をパーセントで表す`aria-valuenow`、`aria-valuemin`、`aria-valuemax`を指定します。これにより、支援技術がウィンドウのスプリッターとして認識します。
+- ポインターでできる操作は、すべてキーボードでも行える必要があります。ビヘイビアは、矢印キーでの移動と、HomeキーとEndキーでの最小・最大サイズへの移動に対応しています。
+- 区切り線はレイアウト上では1pxですが、線に直交する方向に9pxの操作領域を確保します。タッチ画面では操作領域が25pxになり、グリップが常に表示されます。
+- 各ペインは個別にスクロールできます。スクロール可能なペインにフォーカスできる要素がない場合は、ラベルと`tabindex="0"`を指定して、キーボードでペインにフォーカスできるようにします。
+
+## React、Svelte、Vue \{#frameworks\}
+
+`splitter`コンポーネントはビヘイビアを適用し、サイズの指定と変更の受け取りを仲介します。2つのペインは、ページ側のマークアップで記述します。`npx master-ui add splitter`でコンポーネントをプロジェクトにコピーできます。コンポーネントの構成と使い方は[React、Svelte、Vue](/guide/frameworks)を参照してください。
+
+<FrameworkSource name="splitter" />
+
+## クラス \{#classes\}
+
+<ContractTable name="splitter" />
+
+## カスタムプロパティ \{#custom-properties\}
+
+<ContractTable name="splitter" show="properties" />
+
+## ソース \{#source\}
+
+<ComponentSource name="splitter" />

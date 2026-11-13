@@ -1,0 +1,152 @@
+---
+title: "ホイール"
+description: "列を回し、選択マーカーの位置で値を選ぶピッカー。"
+---
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+ホイールでは、列を回して選択マーカーに合わせ、時、分、単位などの値を選びます。スマートフォンのピッカーをプラットフォームの標準機能で実現します。各列は、選択肢の一つが列の中央にスナップするスクロールコンテナーです。くぼんだ領域の中央を横切る小さなシートが、どの行が選択されているかを示します。
+
+<ComponentPreview name="default" height={272} title="ホイール" bodyClass="flex items-center justify-center p-lg" behaviors html={`<div class="wheel" role="group" aria-label="Reminder time">
+  <div class="wheel-column" role="listbox" aria-label="Hour" tabindex="0">
+    <div class="wheel-option" role="option" aria-selected="false">01</div>
+    <div class="wheel-option" role="option" aria-selected="false">02</div>
+    <div class="wheel-option" role="option" aria-selected="false">03</div>
+    <div class="wheel-option" role="option" aria-selected="false">04</div>
+    <div class="wheel-option" role="option" aria-selected="false">05</div>
+    <div class="wheel-option" role="option" aria-selected="false">06</div>
+    <div class="wheel-option" role="option" aria-selected="false">07</div>
+    <div class="wheel-option" role="option" aria-selected="false">08</div>
+    <div class="wheel-option" role="option" aria-selected="true">09</div>
+    <div class="wheel-option" role="option" aria-selected="false">10</div>
+    <div class="wheel-option" role="option" aria-selected="false">11</div>
+    <div class="wheel-option" role="option" aria-selected="false">12</div>
+  </div>
+  <span class="wheel-separator" aria-hidden="true">:</span>
+  <div class="wheel-column" role="listbox" aria-label="Minute" tabindex="0">
+    <div class="wheel-option" role="option" aria-selected="false">00</div>
+    <div class="wheel-option" role="option" aria-selected="false">05</div>
+    <div class="wheel-option" role="option" aria-selected="false">10</div>
+    <div class="wheel-option" role="option" aria-selected="false">15</div>
+    <div class="wheel-option" role="option" aria-selected="false">20</div>
+    <div class="wheel-option" role="option" aria-selected="false">25</div>
+    <div class="wheel-option" role="option" aria-selected="true">30</div>
+    <div class="wheel-option" role="option" aria-selected="false">35</div>
+    <div class="wheel-option" role="option" aria-selected="false">40</div>
+    <div class="wheel-option" role="option" aria-selected="false">45</div>
+    <div class="wheel-option" role="option" aria-selected="false">50</div>
+    <div class="wheel-option" role="option" aria-selected="false">55</div>
+  </div>
+  <div class="wheel-column" role="listbox" aria-label="Period" tabindex="0">
+    <div class="wheel-option" role="option" aria-selected="true">AM</div>
+    <div class="wheel-option" role="option" aria-selected="false">PM</div>
+  </div>
+</div>`} caption="列をスクロールするか、タッチ画面でドラッグします。選択肢をクリックするか、列にフォーカスを当てて矢印キーを使うこともできます。" />
+
+## プラットフォームの標準機能 \{#what-the-platform-does\}
+
+- **列の回転**にはスクロールを使います。マウスホイール、指、トラックパッドで、通常のスクロールコンテナーと同じように操作できます。
+- **停止位置の調整**にはスクロールスナップを使います。列に `scroll-snap-type: y mandatory`、各選択肢に `scroll-snap-align: center` を指定すると、列が 2 つの値の間で止まることはありません。両端に余白を設け、最初と最後の選択肢もマーカーまで移動できるようにします。
+- **ホイールの見た目**はスクロール駆動アニメーションで作ります。列内の選択肢はそれぞれ独自のビュータイムラインを持ち、中央では最も濃く表示され、中央から離れるほど薄くなり、わずかに奥へ傾きます。この描画のためにスクリプトでスクロール位置を読み取る必要はありません。
+
+ビュータイムラインに対応していないブラウザーでは、すべての選択肢を傾けずに表示し、`aria-selected="true"` が付いた選択肢を濃い色で強調します。
+
+## ビヘイビア \{#behavior\}
+
+スタイルシートだけでは、マーカーに合った値をフォームに渡せません。`wheel` [ビヘイビア](/guide/behaviors)は、列のスクロール量からその値を読み取ります。ルートとして `wheel` クラスが付いた要素を受け取り、オプションはなく、ビヘイビアを解除する関数を返します。
+
+```js name=app.js
+import { wheel } from '@master/ui/behaviors/wheel.js'
+
+const root = document.querySelector('.wheel')
+wheel(root)
+
+root.addEventListener('change', (event) => {
+  // event.target is the column that came to rest.
+  console.log(event.target.getAttribute('aria-label'), event.detail.value)
+})
+```
+
+- **スクロールの停止。** 列が停止すると、ビヘイビアは `aria-selected="true"` をマーカーの位置にある選択肢に移します。
+- **イベント。** 選択肢が変わると、列はバブリングする `change` イベントを発行します。イベントの `detail.value` には選択肢の `data-value`、それがなければ選択肢のテキストが入り、`detail.option` には選択肢の要素が入ります。
+- **初期位置の設定。** ビヘイビアを適用したときや、ポップオーバーを開くなどして列のレイアウトが再計算されたときに、各列で選択済みの項目をマーカーの位置に合わせます。
+- **クリック。** 選択肢をクリックすると、その項目がマーカーの位置まで移動します。
+- **キー操作。** フォーカスのある列では、リストボックスと同じキー操作で選択肢を 1 つずつ移動できます。
+- **無効な選択肢。** 列が `aria-disabled="true"` の付いた選択肢で止まると、最も近い有効な選択肢まで移動します。
+
+フォームで値を送信するには、`change` のリスナーで `detail.value` を非表示の入力にコピーします。ビヘイビアがなくても列はスクロールしてスナップしますが、最初の選択肢から始まり、`aria-selected` はマークアップで指定した位置に留まります。
+
+## 1 列 \{#one-column\}
+
+ホイールは 1 列でも使えます。`wheel-sm` は表示を 5 行から 3 行に減らすため、[ポップオーバー](/components/popover)内や設定項目の行に適しています。
+
+<ComponentPreview name="single" height={272} title="1 列" bodyClass="flex items-center justify-center gap-lg p-lg" behaviors html={`<div class="wheel" role="group" aria-label="Repeat every">
+  <div class="wheel-column" role="listbox" aria-label="Interval" tabindex="0">
+    <div class="wheel-option" role="option" aria-selected="false">Hour</div>
+    <div class="wheel-option" role="option" aria-selected="false">Day</div>
+    <div class="wheel-option" role="option" aria-selected="true">Week</div>
+    <div class="wheel-option" role="option" aria-selected="false">Fortnight</div>
+    <div class="wheel-option" role="option" aria-selected="false">Month</div>
+    <div class="wheel-option" role="option" aria-selected="false">Quarter</div>
+    <div class="wheel-option" role="option" aria-selected="false">Year</div>
+  </div>
+</div>
+<div class="wheel wheel-sm" role="group" aria-label="Font size">
+  <div class="wheel-column" role="listbox" aria-label="Size" tabindex="0">
+    <div class="wheel-option" role="option" aria-selected="false">12</div>
+    <div class="wheel-option" role="option" aria-selected="false">13</div>
+    <div class="wheel-option" role="option" aria-selected="true">14</div>
+    <div class="wheel-option" role="option" aria-selected="false">15</div>
+    <div class="wheel-option" role="option" aria-selected="false">16</div>
+    <div class="wheel-option" role="option" aria-selected="false">18</div>
+    <div class="wheel-option" role="option" aria-selected="false">20</div>
+    <div class="wheel-option" role="option" aria-selected="false">24</div>
+  </div>
+  <span class="wheel-separator" aria-hidden="true">px</span>
+</div>`} />
+
+## 選択マーカー \{#the-mark\}
+
+中央を横切るシートはホイール全体に属するため、時と分の列で同じシートを共有できます。シートはくぼみの縁から 4px 内側にあり、角の丸みは外側の輪郭と同心です。`wheel-separator` は 2 列の間でシートに重ねる固定テキストです。時刻のコロンや、数値の後に付く単位などを置けます。
+
+行の高さは 36px、タッチ画面では 44px です。表示行数を増やすには、`--wheel-rows` に奇数を設定します。
+
+## ほかのコンポーネントが適する場合 \{#when-to-use-something-else\}
+
+ホイールは、順序が決まっていて利用者がよく知っている少数の選択肢を、タッチ端末で選ぶのに適しています。キーボードとポインターでは、[セレクト](/components/select)や[ステッパー](/components/stepper)の方が素早く操作できます。日付を選ぶなら、[カレンダー](/components/calendar)で選択する日がどの週にあるかも確認できます。スマートフォンではネイティブの `<input type="time">` で端末標準のホイールが開きます。ピッカーをページ内に組み込む必要がある場合は、このコンポーネントを使います。
+
+## キーボード操作 \{#keyboard\}
+
+ビヘイビアを適用すると、キー操作でフォーカスのある列が選択肢単位で移動し、無効な選択肢は飛ばします。ビヘイビアがない場合、同じキーで通常のスクロールコンテナーと同様に列がスクロールし、最後にスナップで位置が揃います。
+
+<ContractTable name="wheel" show="keyboard" />
+
+## アクセシビリティ \{#accessibility\}
+
+- 各列は `aria-label` と `tabindex="0"` を持つ `role="listbox"` で、各選択肢は `role="option"` です。ビヘイビアは、マーカーの位置にある選択肢に `aria-selected` が付くように更新します。
+- 選択肢の傾きと透明度は、利用者のスクロールに連動します。動きを抑える設定では、透明度の変化だけが残ります。
+
+## React、Svelte、Vue \{#frameworks\}
+
+`wheel` コンポーネントは、データから列を描画し、ビヘイビアを適用して、各列の値を受け渡します。`npx master-ui add wheel` でプロジェクトにコピーできます。コンポーネントの構成と使い方は [React、Svelte、Vue](/guide/frameworks) を参照してください。
+
+<FrameworkSource name="wheel" />
+
+## クラス \{#classes\}
+
+<ContractTable name="wheel" />
+
+## カスタムプロパティ \{#custom-properties\}
+
+<ContractTable name="wheel" show="properties" />
+
+## 関連項目 \{#related\}
+
+<ComponentLinks slugs={['select', 'stepper', 'calendar']} />
+
+## ソース \{#source\}
+
+<ComponentSource name="wheel" />

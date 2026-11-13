@@ -1,0 +1,153 @@
+---
+title: "오도미터"
+description: "각 자리의 숫자가 굴러 새 값으로 바뀌는 숫자 표시입니다."
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+오도미터는 기계식 계수기의 숫자판처럼 각 자리의 숫자가 굴러 새 값으로 바뀌는 숫자 표시입니다. 각 자리에는 스타일시트가 그린 숫자 열을 한 줄 높이로 보여 주는 창이 있습니다. 페이지에서 해당 자리의 `--digit` 값을 바꾸면 숫자 열이 새 숫자로 굴러가고, 숫자는 줄 위아래에서 서서히 나타나거나 사라집니다. 자체 표면이나 크기가 없어 [통계](/components/stat)의 수치나 제목으로 쓰거나 문장 안에 넣을 수 있습니다. 숫자 전체를 일반 텍스트로도 한 번 적어 두며, 스크린 리더는 이 텍스트를 읽습니다.
+
+<ComponentPreview name="default" height={224} title="오도미터" bodyClass="flex items-center justify-center p-lg" caption="방문자 추가를 누르면 값이 바뀌는 자릿수가 위로 굴러 새 방문자 수를 표시합니다." html={`<div class="card w-full max-w(320)">
+  <div class="stat">
+    <p class="stat-label">Visitors today</p>
+    <div class="stat-row">
+      <p class="stat-value">
+        <span class="odometer" id="visitors">
+          <span class="odometer-value">12,847</span>
+          <span class="odometer-figures" aria-hidden="true">
+            <span class="odometer-digit" style="--digit: 1"></span>
+            <span class="odometer-digit" style="--digit: 2"></span>,
+            <span class="odometer-digit" style="--digit: 8"></span>
+            <span class="odometer-digit" style="--digit: 4"></span>
+            <span class="odometer-digit" style="--digit: 7"></span>
+          </span>
+        </span>
+      </p>
+      <p class="stat-delta stat-delta-up">3.1%</p>
+    </div>
+  </div>
+  <button class="btn btn-sm self-start" type="button" id="visitors-add">Add visitors</button>
+</div>
+<script>
+  function roll(odometer, text, up) {
+    odometer.querySelector('.odometer-value').textContent = text
+    var numerals = text.split('').filter(function (character) { return character >= '0' && character <= '9' })
+    odometer.querySelectorAll('.odometer-digit').forEach(function (digit, index) {
+      var at = Number(digit.style.getPropertyValue('--digit')) || 0
+      var step = ((numerals[index] - at) % 10 + 10) % 10
+      if (!up && step) step -= 10
+      digit.style.setProperty('--digit', at + step)
+    })
+  }
+  var visitors = 12847
+  document.getElementById('visitors-add').addEventListener('click', function () {
+    visitors += 1 + Math.floor(Math.random() * 240)
+    roll(document.getElementById('visitors'), visitors.toLocaleString('en-US'), true)
+  })
+</script>`} />
+
+## 마크업 구성 \{#how-it-is-written\}
+
+숫자는 읽는 방식에 맞춰 두 번 작성합니다.
+
+- `odometer-value`에는 숫자를 텍스트로 넣고 화면에서는 잘라 숨깁니다. 스크린 리더는 이를 하나의 일반 문자열로 읽으며, 페이지 내 검색과 복사에서도 이 문자열을 사용합니다.
+- `odometer-figures`는 화면에 숫자를 그리며 `aria-hidden="true"` 속성이 지정됩니다. 각 자리에는 빈 `odometer-digit` 요소를 하나씩 두고 그 자리의 숫자는 `--digit`에 지정합니다. 자릿수 사이에 들어가는 쉼표, 소수점, 통화 기호, 단위처럼 움직이지 않는 표기는 일반 텍스트로 넣습니다.
+
+숫자를 플렉스 행으로 배치하므로 마크업에서 자릿수 사이에 넣은 줄바꿈과 들여쓰기는 표시되는 숫자에 공백을 만들지 않습니다. 단위 앞처럼 공백이 필요한 곳에는 줄바꿈 없는 공백(`&nbsp;`)을 사용합니다. 오른쪽에서 왼쪽으로 읽는 페이지에서도 자릿수는 숫자 표기 순서대로 항상 왼쪽에서 오른쪽으로 배치합니다.
+
+각 자리에는 보이지 않는 0이 있어 창의 너비가 숫자 한 글자의 너비와 같고 창이 줄의 기준선에 맞춰집니다. 모든 숫자의 너비가 같으므로 숫자가 굴러가는 동안에도 주변 요소는 움직이지 않습니다.
+
+## 글꼴 스타일 상속 \{#any-type\}
+
+오도미터는 글자 크기, 굵기, 색상을 상위 요소에서 물려받습니다. 창의 크기, 열의 숫자 간격, 페이드 범위도 해당 글꼴 스타일을 기준으로 정해지므로 제목, 통계, 본문에서 모두 같은 방식으로 동작합니다.
+
+<ComponentPreview name="type" height={200} title="제목과 문장 속 오도미터" background="plain" bodyClass="flex flex-col items-start justify-center gap-sm p-lg" caption="스탠드 추가를 누르면 합계와 세금의 숫자가 위로 굴러가고, 다시 누르면 아래로 굴러 원래 값으로 돌아갑니다." html={`<h3 class="m(0) text-4xl font-semibold fg-text-strong">
+  <span class="odometer" id="total">
+    <span class="odometer-value">$1,280.50</span>
+    <span class="odometer-figures" aria-hidden="true">
+      $<span class="odometer-digit" style="--digit: 1"></span>,
+      <span class="odometer-digit" style="--digit: 2"></span>
+      <span class="odometer-digit" style="--digit: 8"></span>
+      <span class="odometer-digit" style="--digit: 0"></span>.
+      <span class="odometer-digit" style="--digit: 5"></span>
+      <span class="odometer-digit" style="--digit: 0"></span>
+    </span>
+  </span>
+</h3>
+<p class="m(0) text-sm fg-text-muted">Includes
+  <span class="odometer" id="tax">
+    <span class="odometer-value">$106.71</span>
+    <span class="odometer-figures" aria-hidden="true">
+      $<span class="odometer-digit" style="--digit: 1"></span>
+      <span class="odometer-digit" style="--digit: 0"></span>
+      <span class="odometer-digit" style="--digit: 6"></span>.
+      <span class="odometer-digit" style="--digit: 7"></span>
+      <span class="odometer-digit" style="--digit: 1"></span>
+    </span>
+  </span>
+  in tax.</p>
+<button class="btn btn-sm mt-sm" type="button" id="stand" aria-pressed="false">Add the stand</button>
+<script>
+  function roll(odometer, text, up) {
+    odometer.querySelector('.odometer-value').textContent = text
+    var numerals = text.split('').filter(function (character) { return character >= '0' && character <= '9' })
+    odometer.querySelectorAll('.odometer-digit').forEach(function (digit, index) {
+      var at = Number(digit.style.getPropertyValue('--digit')) || 0
+      var step = ((numerals[index] - at) % 10 + 10) % 10
+      if (!up && step) step -= 10
+      digit.style.setProperty('--digit', at + step)
+    })
+  }
+  var stand = document.getElementById('stand')
+  stand.addEventListener('click', function () {
+    var added = stand.getAttribute('aria-pressed') !== 'true'
+    stand.setAttribute('aria-pressed', String(added))
+    stand.textContent = added ? 'Remove the stand' : 'Add the stand'
+    roll(document.getElementById('total'), added ? '$1,329.50' : '$1,280.50', added)
+    roll(document.getElementById('tax'), added ? '$110.79' : '$106.71', added)
+  })
+</script>`} />
+
+## 값의 증감에 따른 회전 방향 \{#rolling\}
+
+각 열에는 0부터 9까지의 숫자가 있으며, 각 자리는 열을 따라 위나 아래로 굴러 지정된 숫자로 바로 이동합니다. 기계식 계수기처럼 모든 자리를 전체 값의 증감 방향으로 굴리려면 `--digit` 값을 9를 넘어 계속 증가시키거나 0 아래로 계속 감소시킵니다. 창에는 그 값의 10을 법으로 한 나머지(0~9)가 표시됩니다. 9에서 10을 지정하면 한 칸 앞으로 굴러 0이 되고, 0에서 -1을 지정하면 한 칸 뒤로 굴러 9가 됩니다.
+
+위 미리보기의 스크립트는 각 자리에 마지막으로 지정한 값을 읽습니다. 전체 값이 증가하면 앞으로, 감소하면 뒤로 굴려 새 숫자로 이동하며, 각 자리는 최대 아홉 칸까지 움직입니다.
+
+```js
+var at = Number(digit.style.getPropertyValue('--digit')) || 0
+var step = ((numeral - at) % 10 + 10) % 10
+if (!up && step) step -= 10
+digit.style.setProperty('--digit', at + step)
+```
+
+스크립트가 없으면 오도미터는 숫자만 표시합니다. 한 번만 렌더링하는 페이지에서는 각 자리에 0부터 9까지의 값만 있으면 됩니다.
+
+## 애니메이션 타이밍 \{#timing\}
+
+각 자리의 전환에는 테마 기본 지속 시간의 두 배인 `--odometer-duration`이 걸리며, 테마의 단일 이징 곡선을 따릅니다. 빠르게 출발해 부드럽게 멈추므로 새 숫자를 일찍 알아볼 수 있습니다. 각 자리는 바로 앞 자리보다 `--odometer-stagger`만큼 늦게 움직이기 시작하므로 변화가 왼쪽에서 오른쪽으로 이어집니다. 창에서 숫자 한 글자 높이만큼은 페이드 없이 선명하게 보이고 다음 숫자는 그 범위 밖에 있으므로, 멈춰 있을 때는 현재 값만 보입니다.
+
+## 접근성 \{#accessibility\}
+
+- 스크린 리더는 `odometer-value`만 읽습니다. 구분 기호와 단위까지 화면에 표시되는 값과 일치시키고, 각 자리의 숫자를 갱신할 때 함께 갱신하세요.
+- `odometer-figures`에는 `aria-hidden="true"` 속성을 반드시 지정합니다. 열의 숫자는 대체 텍스트가 비어 있는 생성 콘텐츠지만, 자릿수 사이의 기호는 실제 텍스트이므로 이 속성이 없으면 두 번 읽힙니다.
+- 오도미터는 라이브 영역으로 동작하지 않습니다. 사용자가 항목을 선택한 뒤 합계가 바뀌는 경우처럼 새 값을 음성으로 안내해야 할 때는 `odometer` 루트에 `aria-live="polite"` 속성을 추가합니다. 화면에서 잘라 숨긴 값이 루트의 유일한 텍스트이므로 새 숫자는 한 번만 안내됩니다. 몇 초마다 자동으로 바뀌는 수치에는 이 속성을 사용하지 마세요.
+- 동작 줄이기 설정에서는 숫자가 굴러가지 않고 제자리에서 바뀝니다. 강제 색상 모드에서는 시스템 텍스트 색상을 사용합니다.
+
+## 플랫폼 지원 \{#platform\}
+
+회전 애니메이션은 등록된 사용자 지정 속성(`@property`)의 값을 이징 곡선에 따라 바꾸고, 창은 `mod()` 함수로 그 값을 0~9 범위의 나머지로 바꿔 표시합니다. `@property`를 지원하지 않는 브라우저에서는 숫자가 제자리에서 바뀝니다. `mod()` 함수를 지원하지 않는 브라우저에서는 `--digit` 값을 0부터 9까지로 제한합니다. 자릿수 간 지연은 이를 지원하는 브라우저(Chromium)에서 `sibling-index()`를 사용해 적용합니다. 그 외 브라우저에서는 모든 자리가 동시에 굴러갑니다.
+
+## 클래스 \{#classes\}
+
+<ContractTable name="odometer" />
+
+## 사용자 지정 속성 \{#custom-properties\}
+
+<ContractTable name="odometer" show="properties" />
+
+## 소스 코드 \{#source\}
+
+<ComponentSource name="odometer" />

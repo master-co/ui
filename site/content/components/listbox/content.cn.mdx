@@ -1,0 +1,153 @@
+---
+title: "列表框"
+description: "供用户选择的选项列表，也是组合框和命令面板打开时显示的列表。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+列表框提供一组选项供用户选择。[组合框](/components/combobox)和[命令面板](/components/command)打开时都会显示列表框，列表框也可以独立放在页面中。样式表根据 ARIA 属性呈现各个状态，脚本更新属性，管理当前活动项、按键行为和选中项。独立列表框由 `listbox` [行为脚本](/guide/behaviors)驱动，组合框和命令面板则通过各自的输入字段控制列表。
+
+<ComponentPreview name="default" height={232} title="列表框" bodyClass="p-lg" behaviors html={`<div class="sheet sheet-flat max-w(320) mx-auto">
+  <div class="listbox" role="listbox" aria-label="Framework" tabindex="0" aria-activedescendant="fw-astro">
+    <div class="listbox-option" role="option" id="fw-astro" aria-selected="true" aria-checked="true">Astro</div>
+    <div class="listbox-option" role="option" id="fw-next" aria-checked="false">Next.js</div>
+    <div class="listbox-option" role="option" id="fw-svelte" aria-checked="false">SvelteKit</div>
+    <div class="listbox-option" role="option" id="fw-nuxt" aria-checked="false" aria-disabled="true">Nuxt</div>
+  </div>
+</div>`} caption="点击选项，或聚焦列表后用方向键移动，再按 Enter 或空格键选择。" />
+
+## 两种状态与对应的属性 \{#two-states\}
+
+列表框分别标记键盘当前指向的选项和已经选中的选项。
+
+- **活动项**由 `aria-selected="true"` 标记，是方向键当前指向、按 <kbd>Enter</kbd> 即可选中的选项。该选项使用标签底色。指针所在的行也会立即显示相同的底色，无淡入效果。
+- **选中项**由 `aria-checked="true"` 标记，表示已设置的值，行尾显示对勾。带有 `aria-checked` 的选项在两种状态下都为对勾预留空间，标签位置因此保持不变。
+
+焦点通常留在列表或文本字段上，由 `aria-activedescendant` 指明当前活动项。选项本身获得焦点时，还会显示墨色轮廓。
+
+## 带附加内容的选项 \{#rich-options\}
+
+将 [`icon`](/components/icon) 用于行首图标。`listbox-body` 将标题放在 `listbox-description` 上方，`listbox-end` 在行尾放置快捷键或提示。`listbox-group` 将一组选项及其 `listbox-label` 包在一起，`listbox-separator` 在组之间绘制分隔线。
+
+<ComponentPreview name="rich" height={296} title="带附加内容的选项" bodyClass="p-lg" html={`<div class="sheet sheet-flat max-w(360) mx-auto">
+  <div class="listbox" role="listbox" aria-label="Commands">
+    <div class="listbox-group" role="group" aria-labelledby="rich-suggestions">
+    <div class="listbox-label" id="rich-suggestions">Suggestions</div>
+    <div class="listbox-option" role="option" aria-selected="true">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      New project
+      <span class="listbox-end"><kbd class="kbd">⌘</kbd><kbd class="kbd">N</kbd></span>
+    </div>
+    <div class="listbox-option" role="option">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.35-4.35"/></svg>
+      <span class="listbox-body">
+        <span>Search deployments</span>
+        <span class="listbox-description">By branch, commit or author</span>
+      </span>
+    </div>
+    </div>
+    <hr class="listbox-separator">
+    <div class="listbox-group" role="group" aria-labelledby="rich-team">
+    <div class="listbox-label" id="rich-team">Team</div>
+    <div class="listbox-option" role="option">
+      <span class="avatar avatar-xs"><img class="avatar-image" src="/demo/portrait-1.svg" alt=""></span>
+      Ada Lovelace
+    </div>
+    <div class="listbox-option" role="option">
+      <span class="avatar avatar-xs"><img class="avatar-image" src="/demo/portrait-2.svg" alt=""></span>
+      Alan Turing
+    </div>
+    </div>
+  </div>
+</div>`} />
+
+## 筛选 \{#filtering\}
+
+脚本为不匹配的选项设置 `hidden` 属性来筛选。随后，`:has()` 会自动处理以下两种情况，无需额外脚本：
+
+- 所有选项都隐藏时，`listbox-empty` 会显示。只要有一个选项重新显示，它就会再次隐藏。
+- `listbox-group` 是一个包住组标题及其选项的 `role="group"` 元素。组内所有选项都隐藏时，该元素也会隐藏，避免组标题单独显示。
+
+<ComponentPreview name="empty" height={128} title="没有匹配项" bodyClass="p-lg" html={`<div class="sheet sheet-flat max-w(320) mx-auto">
+  <div class="listbox" role="listbox" aria-label="Regions">
+    <div class="listbox-option" role="option" hidden>Tokyo</div>
+    <div class="listbox-option" role="option" hidden>Frankfurt</div>
+    <div class="listbox-empty">No regions match "zz".</div>
+  </div>
+</div>`} />
+
+## 行为脚本 \{#behavior\}
+
+`listbox` 驱动独立放在页面中、由自身持有焦点的列表框，因此列表框带有 `tabindex="0"`。它接收带有 `role="listbox"` 的元素，没有配置项，并返回用于解除绑定的函数。
+
+```js name=app.js
+import { listbox } from '@master/ui/behaviors/listbox.js'
+
+const list = document.querySelector('.listbox')
+listbox(list)
+
+list.addEventListener('change', () => {
+  const chosen = list.querySelectorAll('[aria-checked="true"]')
+})
+```
+
+- **活动项。** 按键或点击会将 `aria-selected="true"` 移到某个选项，在列表框的 `aria-activedescendant` 中指明该选项，并将其滚动到可见区域。焦点始终留在列表框上。脚本会为缺少 `id` 的选项补上该属性。列表框获得焦点时，如果没有活动项，就将已选中的选项设为活动项。若没有选中项，则激活第一项。
+- **选择。** 按 <kbd>Enter</kbd>、<kbd>空格键</kbd>或点击选项时，脚本会为该选项设置 `aria-checked="true"`，并为其余选项设置 `false`。
+- **事件。** 每当选中项发生变化，列表框都会先派发 `input`，再派发 `change`。通过 `aria-checked="true"` 读取选项。
+- **跳过的选项。** 隐藏的选项和带有 `aria-disabled="true"` 的选项都不能成为活动项，也不能被选中。
+
+列表框带有 `aria-multiselectable="true"` 时，可以独立选中或取消选中某个选项，其他选项保留各自的状态。
+
+<ComponentPreview name="multiple" height={232} title="多选" bodyClass="p-lg" behaviors html={`<div class="sheet sheet-flat max-w(320) mx-auto">
+  <div class="listbox" role="listbox" aria-label="Notify me about" aria-multiselectable="true" tabindex="0">
+    <div class="listbox-option" role="option" id="notify-deploys" aria-checked="true">Deployments</div>
+    <div class="listbox-option" role="option" id="notify-comments" aria-checked="false">Comments</div>
+    <div class="listbox-option" role="option" id="notify-billing" aria-checked="true">Billing</div>
+    <div class="listbox-option" role="option" id="notify-digest" aria-checked="false" aria-disabled="true">Weekly digest</div>
+  </div>
+</div>`} />
+
+文本字段控制的列表框由该字段的行为脚本驱动。`listbox` 会跳过由 `role="combobox"` 字段的 `aria-controls` 指定的列表框，`attach()` 则会跳过[组合框](/components/combobox)或[命令面板](/components/command)内的列表框。没有脚本时，列表框按现有属性呈现，状态保持不变。
+
+## 浮动列表框 \{#floating\}
+
+带有 `popover` 属性时，列表框呈现为浮动面板，外层圆角为 12px，选项行圆角为 8px。面板贴着锚点放置，遇到视口边缘时翻转，进入和退出的动效与[菜单](/components/menu)相同。如果列表框由文本字段控制，请使用 `popover="manual"`，让输入时列表框保持打开。[组合框](/components/combobox)展示了这种用法。
+
+## 列表框、菜单或选择框 \{#listbox-menu-or-select\}
+
+- [选择框](/components/select)是从列表中选取单个值的原生控件。选项为纯文本时可使用它，无需脚本。
+- [菜单](/components/menu)使用原生按钮和链接提供操作。
+- 列表框承载由脚本筛选、分组或加载的值或结果，适用于组合框、命令面板和多选控件。
+
+## 键盘操作 \{#keyboard\}
+
+以下按键适用于列表框自身持有焦点时的 `listbox` 行为。方向键移动到首项或末项时停止。组合框和命令面板的按键由各自的输入字段处理，遵循各自的键盘操作规则。
+
+<ContractTable name="listbox" show="keyboard" />
+
+## 无障碍 \{#accessibility\}
+
+- 为容器设置 `role="listbox"` 并提供标签，为每个选项设置 `role="option"`。将 `listbox-group` 设为 `role="group"`，并通过 `aria-labelledby` 将组标题用作标签。
+- 行为脚本同步更新 `aria-selected` 和 `aria-activedescendant`，并将当前活动选项滚动到可见范围内。选项设有滚动外边距，与列表边缘留出间距。
+- 禁用的选项带有 `aria-disabled="true"`，键盘导航会跳过这些选项。
+
+## React、Svelte 和 Vue \{#frameworks\}
+
+`listbox` 组件根据数据渲染选项，挂载行为脚本，并支持传入和读出选中值。使用 `npx master-ui add listbox` 将组件复制到项目中。[React、Svelte 和 Vue](/guide/frameworks) 介绍这些组件的实现和用法。
+
+<FrameworkSource name="listbox" />
+
+## 类名 \{#classes\}
+
+<ContractTable name="listbox" />
+
+## 自定义属性 \{#custom-properties\}
+
+<ContractTable name="listbox" show="properties" />
+
+## 源码 \{#source\}
+
+<ComponentSource name="listbox" />

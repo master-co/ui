@@ -1,0 +1,133 @@
+---
+title: "카운트다운"
+description: "특정 시점까지 남은 시간을 일, 시간, 분, 초 단위로 표시합니다."
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+카운트다운은 출시, 할인 종료, 행사 시작 등 특정 시점까지 남은 시간을 표시합니다. 시간 단위마다 너비가 같은 열을 배정해 숫자 아래에 작고 눈에 덜 띄는 레이블을 놓고, 열 사이에는 콜론을 가운데에 배치합니다. 루트 요소는 `<time>`이며, `datetime`에 같은 남은 시간을 기간 값으로 담아 플랫폼도 화면에 표시된 시간을 해석할 수 있게 합니다. 스크립트가 없으면 페이지를 만들 당시의 남은 시간이 표시되며, 몇 줄의 스크립트를 추가하면 시간이 줄어듭니다.
+
+<ComponentPreview name="default" height={128} title="카운트다운" background="plain" bodyClass="flex items-center justify-center p-lg" caption="스크립트가 1초마다 남은 시간을 갱신합니다." html={`<time class="countdown" id="launch" datetime="P2DT14H5M9S">
+  <span class="countdown-unit"><span class="countdown-value">02</span> <span class="countdown-label">days</span></span>
+  <span class="countdown-unit"><span class="countdown-value">14</span> <span class="countdown-label">hours</span></span>
+  <span class="countdown-unit"><span class="countdown-value">05</span> <span class="countdown-label">minutes</span></span>
+  <span class="countdown-unit"><span class="countdown-value">09</span> <span class="countdown-label">seconds</span></span>
+</time>
+<script>
+  var launch = document.getElementById('launch')
+  var figures = launch.querySelectorAll('.countdown-value')
+  var start = Array.prototype.map.call(figures, function (figure) { return Number(figure.textContent) })
+  var end = Date.now() + (((start[0] * 24 + start[1]) * 60 + start[2]) * 60 + start[3]) * 1000
+  function tick() {
+    var left = Math.max(0, Math.ceil((end - Date.now()) / 1000))
+    var units = [Math.floor(left / 86400), Math.floor(left / 3600) % 24, Math.floor(left / 60) % 60, left % 60]
+    units.forEach(function (unit, index) { figures[index].textContent = String(unit).padStart(2, '0') })
+    launch.setAttribute('datetime', left ? 'P' + units[0] + 'DT' + units[1] + 'H' + units[2] + 'M' + units[3] + 'S' : 'PT0S')
+    if (left) setTimeout(tick, (end - Date.now()) % 1000 || 1000)
+  }
+  tick()
+</script>`} />
+
+## 초 단위 갱신 \{#ticking\}
+
+카운트다운은 마크업으로 구성합니다. 숫자와 `datetime`은 같은 시간을 나타내며, 스타일시트가 표시 방식을 정합니다. 스크립트는 페이지가 로드된 시점의 남은 시간으로 종료 시점을 한 번 계산한 뒤, 1초마다 각 숫자와 `datetime`을 갱신합니다. 다음 초가 시작되는 시점에 맞춰 갱신을 예약하므로 표시 시간이 실제 시계와 어긋나지 않습니다. 남은 시간이 0이 되면 `datetime="PT0S"`를 기록하고 멈춥니다.
+
+특정 시간대의 자정에 할인이 끝나는 경우처럼 페이지가 종료 날짜와 시각을 알고 있다면, 그 시점까지 남은 시간을 계산하세요. 그러면 페이지를 불러온 시점과 관계없이 모든 기기에서 같은 시간에 같은 숫자가 표시됩니다.
+
+## 타일 \{#tiles\}
+
+`countdown-tiles`를 적용하면 각 숫자가 숫자 높이의 두 배인 작고 도드라진 타일에 놓입니다. 타일의 모서리는 큰 컨트롤과 같은 곡률로 둥글게 처리하며, 레이블은 타일 아래에 놓습니다. 타일은 서로 가까이 배치되므로 콜론이 필요 없습니다. 출시 예고 페이지처럼 카운트다운이 화면의 중심인 곳에 사용하세요.
+
+<ComponentPreview name="tiles" height={152} title="타일" background="plain" bodyClass="flex items-center justify-center p-lg" html={`<time class="countdown countdown-tiles" datetime="P2DT14H5M9S">
+  <span class="countdown-unit"><span class="countdown-value">02</span> <span class="countdown-label">days</span></span>
+  <span class="countdown-unit"><span class="countdown-value">14</span> <span class="countdown-label">hours</span></span>
+  <span class="countdown-unit"><span class="countdown-value">05</span> <span class="countdown-label">minutes</span></span>
+  <span class="countdown-unit"><span class="countdown-value">09</span> <span class="countdown-label">seconds</span></span>
+</time>`} />
+
+## 회전하는 숫자 \{#rolling-figures\}
+
+숫자 표시에 [오도미터](/components/odometer)를 사용하면 각 자리의 숫자가 바뀔 때 굴러가듯 전환됩니다. 카운트다운은 단위를 표시하고 오도미터는 숫자를 표시하며, 두 컴포넌트는 서로 독립적으로 동작합니다. 카운트다운에서는 숫자가 감소하므로 스크립트가 각 자리의 숫자를 새 숫자에 이를 때까지 역방향으로 이동시킵니다. 0에서 한 칸 뒤로 가면 -1이고, 오도미터는 이를 9로 표시합니다. 이렇게 초를 표시하는 숫자는 계수기의 숫자 휠처럼 0을 지나 아래로 굴러갑니다.
+
+<ComponentPreview name="rolling" height={152} title="회전하는 숫자" background="plain" bodyClass="flex items-center justify-center p-lg" caption="초는 1초마다, 분은 1분이 끝날 때마다 아래로 굴러갑니다." html={`<time class="countdown countdown-tiles" id="doors" datetime="PT4H12M30S">
+  <span class="countdown-unit">
+    <span class="countdown-value"><span class="odometer"><span class="odometer-value">04</span><span class="odometer-figures" aria-hidden="true"><span class="odometer-digit" style="--digit: 0"></span><span class="odometer-digit" style="--digit: 4"></span></span></span></span>
+    <span class="countdown-label">hours</span>
+  </span>
+  <span class="countdown-unit">
+    <span class="countdown-value"><span class="odometer"><span class="odometer-value">12</span><span class="odometer-figures" aria-hidden="true"><span class="odometer-digit" style="--digit: 1"></span><span class="odometer-digit" style="--digit: 2"></span></span></span></span>
+    <span class="countdown-label">minutes</span>
+  </span>
+  <span class="countdown-unit">
+    <span class="countdown-value"><span class="odometer"><span class="odometer-value">30</span><span class="odometer-figures" aria-hidden="true"><span class="odometer-digit" style="--digit: 3"></span><span class="odometer-digit" style="--digit: 0"></span></span></span></span>
+    <span class="countdown-label">seconds</span>
+  </span>
+</time>
+<script>
+  var doors = document.getElementById('doors')
+  var figures = doors.querySelectorAll('.odometer')
+  var start = Array.prototype.map.call(figures, function (figure) { return Number(figure.querySelector('.odometer-value').textContent) })
+  var end = Date.now() + ((start[0] * 60 + start[1]) * 60 + start[2]) * 1000
+  function roll(digit, numeral) {
+    var at = Number(digit.style.getPropertyValue('--digit')) || 0
+    var step = ((numeral - at) % 10 + 10) % 10
+    if (step) digit.style.setProperty('--digit', at + step - 10)
+  }
+  function tick() {
+    var left = Math.max(0, Math.ceil((end - Date.now()) / 1000))
+    var units = [Math.floor(left / 3600), Math.floor(left / 60) % 60, left % 60]
+    units.forEach(function (unit, index) {
+      var digits = figures[index].querySelectorAll('.odometer-digit')
+      figures[index].querySelector('.odometer-value').textContent = String(unit).padStart(2, '0')
+      roll(digits[0], Math.floor(unit / 10))
+      roll(digits[1], unit % 10)
+    })
+    doors.setAttribute('datetime', left ? 'PT' + units[0] + 'H' + units[1] + 'M' + units[2] + 'S' : 'PT0S')
+    if (left) setTimeout(tick, (end - Date.now()) % 1000 || 1000)
+  }
+  tick()
+</script>`} />
+
+## 인라인 \{#inline\}
+
+문장 중간에 마감 시점을 짧게 언급할 때는 `countdown-inline`을 사용합니다. 주변 문장과 같은 글자 크기로 각 숫자 바로 뒤에 단위 레이블을 붙이고, 모든 숫자와 레이블을 같은 기준선에 맞춥니다. 숫자는 대비가 높은 색으로, 레이블은 덜 도드라지는 색으로 표시하므로 글자 굵기를 따로 조정하지 않아도 문장 속에서 시간이 눈에 띕니다. 스크린 리더는 `h`처럼 짧은 레이블을 글자 이름 그대로 읽습니다. 이런 레이블은 보조 기술에서 숨기고, 옆에 단위의 전체 이름을 넣은 뒤 `sr-only`로 화면에서만 보이지 않게 하세요.
+
+<ComponentPreview name="inline" height={96} title="인라인" background="plain" bodyClass="flex items-center justify-center p-lg" html={`<p class="m(0) text-sm fg-text-body">Early pricing ends in
+  <time class="countdown countdown-inline" datetime="P2DT14H5M">
+    <span class="countdown-unit"><span class="countdown-value">2</span><span class="countdown-label" aria-hidden="true">d</span><span class="sr-only">days</span></span>
+    <span class="countdown-unit"><span class="countdown-value">14</span><span class="countdown-label" aria-hidden="true">h</span><span class="sr-only">hours</span></span>
+    <span class="countdown-unit"><span class="countdown-value">05</span><span class="countdown-label" aria-hidden="true">m</span><span class="sr-only">minutes</span></span>
+  </time>.
+</p>`} />
+
+## 시간 종료 \{#ended\}
+
+남은 시간이 0인 `datetime="PT0S"` 상태에서는 더 셀 시간이 없으므로 숫자의 대비가 낮아지고 타일은 바닥이 평평한 오목한 영역으로 바뀝니다. 옆에 “입장이 시작되었습니다”처럼 무슨 일이 일어났는지 글로 안내하고, 페이지에 더 적절한 내용이 생기면 카운트다운을 그 내용으로 바꾸세요.
+
+<ComponentPreview name="ended" height={152} title="시간 종료" background="plain" bodyClass="flex items-center justify-center p-lg" html={`<time class="countdown countdown-tiles" datetime="PT0S">
+  <span class="countdown-unit"><span class="countdown-value">00</span> <span class="countdown-label">hours</span></span>
+  <span class="countdown-unit"><span class="countdown-value">00</span> <span class="countdown-label">minutes</span></span>
+  <span class="countdown-unit"><span class="countdown-value">00</span> <span class="countdown-label">seconds</span></span>
+</time>`} />
+
+## 접근성 \{#accessibility\}
+
+- 카운트다운에는 라이브 영역을 사용하지 않습니다. 초마다 바뀌는 숫자를 알리면 사용자가 듣고 있는 다른 안내를 방해하며, 매초 따로 알려야 할 정보도 없습니다. 스크린 리더는 사용자가 카운트다운에 도달했을 때 “02일 14시간 05분 09초”처럼 숫자와 레이블을 함께 읽습니다.
+- 예약이 곧 만료되는 경우처럼 시점 자체가 중요하면, 별도의 `role="status"` 영역에서 “좌석 예약은 1분 뒤에 만료됩니다”처럼 문장으로 한 번만 알리세요.
+- 스타일시트에서 콜론을 빈 대체 텍스트와 함께 표시하므로 스크린 리더가 콜론을 읽지 않습니다.
+- 레이블에는 단위의 전체 이름을 쓰세요. 인라인 카운트다운처럼 레이블이 한 글자라면 그 글자를 보조 기술에서 숨기고 `sr-only`로 단위의 전체 이름을 제공하세요.
+- 동작 줄이기가 설정되면 카운트다운 안의 오도미터 숫자는 회전 없이 제자리에서 바뀝니다. 강제 색상 모드에서는 타일의 가장자리가 시스템 색상의 윤곽선으로 유지됩니다.
+
+## 클래스 \{#classes\}
+
+<ContractTable name="countdown" />
+
+## 사용자 지정 속성 \{#custom-properties\}
+
+<ContractTable name="countdown" show="properties" />
+
+## 소스 \{#source\}
+
+<ComponentSource name="countdown" />

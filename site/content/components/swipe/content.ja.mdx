@@ -1,0 +1,102 @@
+---
+title: "スワイプ"
+description: "行を横にスライドすると、その行で使える操作が表示されます。"
+---
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+スワイプは、行を横にずらして操作を表示するコンポーネントです。行はスクロール領域になっており、行と同じ幅のコンテンツを表示する位置と、行の末尾側に隠れた操作を表示する位置の 2 か所で止まります。ブラウザー標準のスクロールを使うため、指、トラックパッド、<kbd>Tab</kbd> キーのいずれでも操作を表示でき、スクリプトは不要です。
+
+<ComponentPreview name="default" height={256} title="スワイプ" bodyClass="flex items-center justify-center p-lg" caption="行を横にドラッグするか、トラックパッドで横にスクロールするか、Tab キーを押します。" html={`<div class="sheet sheet-raised overflow-hidden w-full max-w(360)">
+  <div class="swipe">
+    <div class="swipe-content flex items-center gap-sm p(12)">
+      <span class="avatar">AL</span>
+      <div class="min-w(0)">
+        <p class="m(0) fg-text-strong font-medium">Ada Lovelace</p>
+        <p class="m(0) fg-text-muted">The notes on the engine are ready.</p>
+      </div>
+    </div>
+    <div class="swipe-actions">
+      <button class="swipe-action" type="button">Archive</button>
+      <button class="swipe-action swipe-action-danger" type="button">Delete</button>
+    </div>
+  </div>
+  <div class="swipe bt(1) bt-solid b-line-hair">
+    <div class="swipe-content flex items-center gap-sm p(12)">
+      <span class="avatar">AT</span>
+      <div class="min-w(0)">
+        <p class="m(0) fg-text-strong font-medium">Alan Turing</p>
+        <p class="m(0) fg-text-muted">Can machines think? A short reply.</p>
+      </div>
+    </div>
+    <div class="swipe-actions">
+      <button class="swipe-action" type="button">Archive</button>
+      <button class="swipe-action swipe-action-danger" type="button">Delete</button>
+    </div>
+  </div>
+  <div class="swipe bt(1) bt-solid b-line-hair">
+    <div class="swipe-content flex items-center gap-sm p(12)">
+      <span class="avatar">GH</span>
+      <div class="min-w(0)">
+        <p class="m(0) fg-text-strong font-medium">Grace Hopper</p>
+        <p class="m(0) fg-text-muted">The compiler passes every test.</p>
+      </div>
+    </div>
+    <div class="swipe-actions">
+      <button class="swipe-action" type="button">Archive</button>
+      <button class="swipe-action swipe-action-danger" type="button">Delete</button>
+    </div>
+  </div>
+</div>`} />
+
+## 仕組み \{#how-it-works\}
+
+`swipe` は、スクロールバーを表示せず、スナップを必須とする横スクロール領域です。`swipe-content` は行と同じ幅で、先頭側の端でスナップします。その後ろに続く `swipe-actions` は、末尾側の端でスナップします。途中でスクロールを止めると近い方の位置に収まり、元の位置まで戻すと行が閉じます。
+
+コンテンツの背景は不透明です。[シート](/components/surface) やカードが公開する `--surface-color` から配置先の背景色を取得し、操作が現れるくぼみに浅い影を落とします。スクロール駆動アニメーションに対応するブラウザーでは、操作が現れるにつれてフェードインします。非対応のブラウザーでは、そのまま表示されます。
+
+別の行を開いたときに元の行を閉じる処理や、操作を実行したときに行を削除する処理は、ページ側で実装します。スクリプトで行を閉じるには、その行の `scrollLeft` を 0 に設定します。
+
+## 操作 \{#actions\}
+
+操作にはボタンまたはリンクを使い、ラベルだけを表示するか、ラベルの上に [アイコン](/components/icon) を配置します。各セルは幅 72px 以上で行全体の高さを占めるため、行の高さにかかわらずセル全体がタッチ領域になります。`swipe-action-danger` は取り消せない操作を示し、専用の淡い背景色と危険を示す前景色を使います。操作は 1 つか 2 つに絞り、破壊的な操作は最後に置きます。
+
+<ComponentPreview name="icons" height={128} title="アイコン付き" bodyClass="flex items-center justify-center p-lg" html={`<div class="sheet sheet-raised overflow-hidden w-full max-w(360)">
+  <div class="swipe" id="swipe-open">
+    <div class="swipe-content flex items-center gap-sm p(16)">
+      <div class="min-w(0)">
+        <p class="m(0) fg-text-strong font-medium">Quarterly report.pdf</p>
+        <p class="m(0) fg-text-muted">2.4 MB · Edited yesterday</p>
+      </div>
+    </div>
+    <div class="swipe-actions">
+      <button class="swipe-action" type="button">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 19h14"/></svg>
+        Save
+      </button>
+      <button class="swipe-action swipe-action-danger" type="button">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13"/></svg>
+        Delete
+      </button>
+    </div>
+  </div>
+</div>
+<script>
+  document.getElementById('swipe-open').scrollLeft = 999
+</script>`} caption="この例では、スクリプトで行を開閉するときと同じように、scrollLeft を設定して行を開いています。" />
+
+## アクセシビリティ \{#accessibility\}
+
+- **スワイプはショートカットとして使い、必ず別の操作手段も用意します。** トラックパッドを使わずマウスだけで操作するユーザーは、行を横にスクロールできません。行内または項目を開いた先にある [メニュー](/components/menu) など、ポインターで操作できる場所にも同じ操作を用意します。
+- 操作には、タブ順序に含まれるボタン要素を使います。ボタンにフォーカスが移ると、ブラウザーが自動でスクロールして表示するため、キーボード操作に追加の実装は不要です。フォーカスリングはセルの内側に描画されるため、スクロール領域の端で切れません。
+- アイコンだけで表示する操作には、アクセシブルな名前が必要です。アイコンの下にラベルを添えると、文字を読んで操作を見つけやすくなります。
+- 破壊的な操作は実行前に確認するか、[トースト](/components/toast) から取り消せるようにします。
+
+## クラス \{#classes\}
+
+<ContractTable name="swipe" />
+
+## ソース \{#source\}
+
+<ComponentSource name="swipe" />

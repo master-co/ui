@@ -1,0 +1,163 @@
+---
+title: "ファイル"
+description: "添付、アップロード、ダウンロードの各ファイルを名前付きの項目として表示します。"
+---
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+ファイル1件を独立した項目として表示します。拡張子を記した小さな書類アイコン、ファイル名とその下に控えめに表示する詳細情報、末尾の操作コントロール1つで構成します。各項目は平坦な面を持ち、[ドロップゾーン](/components/dropzone)の下や[ダイアログ](/components/dialog)内に縦に並べても、ファイルごとの区切りがわかります。
+
+<ComponentPreview name="default" height={288} title="ファイル" bodyClass="p-lg" html={`<ul class="flex flex-col gap-xs max-w(400) mx-auto">
+  <li class="file">
+    <span class="file-page" aria-hidden="true">pdf</span>
+    <div class="file-body">
+      <p class="file-name">Q3 infrastructure report.pdf</p>
+      <p class="file-meta">2.4 MB · PDF document</p>
+    </div>
+    <div class="file-end">
+      <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Remove Q3 infrastructure report.pdf"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+  </li>
+  <li class="file">
+    <img class="file-thumb" src="/demo/moonstone.svg" alt="">
+    <div class="file-body">
+      <p class="file-name">moonstone-cover.png</p>
+      <p class="file-meta">1,920 × 1,200 · 840 KB</p>
+    </div>
+    <div class="file-end">
+      <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Remove moonstone-cover.png"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+  </li>
+  <li class="file">
+    <span class="file-page" aria-hidden="true">csv</span>
+    <div class="file-body">
+      <p class="file-name">members-export-2026-11.csv</p>
+      <p class="file-meta">312 rows · 18 KB</p>
+    </div>
+    <div class="file-end">
+      <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Remove members-export-2026-11.csv"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+  </li>
+</ul>`} />
+
+## 書類アイコン \{#the-page\}
+
+`file-page`は少し浮き上がった28 × 36の書類アイコンです。下部に記した拡張子は、入力時の大文字・小文字にかかわらず大文字で表示されます。拡張子は4文字以内に収めてください。隣のファイル名からも拡張子がわかるため、`aria-hidden`でアイコンを支援技術から隠します。
+
+折り返しはブラウザーが描画します。`corner-shape`で上端の末尾側の角を斜めに切り落とし、小さな正方形のうち、その斜辺で切り取られずに残る部分を折り返しとして表示します。`corner-shape`に対応していないブラウザーでは、折り返しのない角丸の書類アイコンが表示されます。
+
+画像ファイルの場合は、`<img>`に`file-thumb`を指定して、書類アイコンの代わりに表示します。
+
+## アップロード中 \{#uploading\}
+
+ファイル項目の中に、`progress file-progress`を指定したネイティブの`<progress>`を置きます。進捗バーはファイル項目そのものです。テキストの背面で項目の端から端まで伸び、アップロードが進んだ分だけ項目に色を付けます。塗りは項目の角の形に沿います。`value`がない場合は進捗量が不明なため、同じ色の帯が項目を横切ります。
+
+進捗量は`file-meta`にも記述し、アップロード中はファイル項目に`aria-busy="true"`を付けます。
+
+<ComponentPreview name="uploading" height={208} title="アップロード中" bodyClass="p-lg" html={`<ul class="flex flex-col gap-xs max-w(400) mx-auto">
+  <li class="file" aria-busy="true">
+    <span class="file-page" aria-hidden="true">zip</span>
+    <div class="file-body">
+      <p class="file-name">atlas-build-2026-11-11.zip</p>
+      <p class="file-meta">Uploading · 64% of 182 MB</p>
+    </div>
+    <div class="file-end">
+      <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Cancel the upload of atlas-build-2026-11-11.zip"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <progress class="progress file-progress" max="100" value="64" aria-label="Upload of atlas-build-2026-11-11.zip">64%</progress>
+  </li>
+  <li class="file" aria-busy="true">
+    <span class="file-page" aria-hidden="true">mp4</span>
+    <div class="file-body">
+      <p class="file-name">onboarding-walkthrough.mp4</p>
+      <p class="file-meta">Scanning for viruses…</p>
+    </div>
+    <progress class="progress file-progress" aria-label="Scan of onboarding-walkthrough.mp4"></progress>
+  </li>
+</ul>`} />
+
+## 失敗 \{#failed\}
+
+`file-failed`はファイルに危険を示す輪郭を付け、`file-meta`の文字色も危険を示す色に変えます。そこに失敗の内容を書き、末尾に対処するための操作を置きます。ARIAにはリスト項目の失敗を示す属性がないため、この状態はクラスで表し、失敗の内容は文言で伝えます。その文言に`role="alert"`を付けると、閲覧中に発生した失敗が通知されます。
+
+<ComponentPreview name="failed" height={112} title="失敗" bodyClass="p-lg" html={`<div class="file file-failed max-w(400) mx-auto">
+  <span class="file-page" aria-hidden="true">mov</span>
+  <div class="file-body">
+    <p class="file-name">walkthrough-final-v2.mov</p>
+    <p class="file-meta" role="alert">Larger than the 100 MB limit</p>
+  </div>
+  <div class="file-end">
+    <button type="button" class="btn btn-sm">Replace</button>
+  </div>
+</div>`} />
+
+## コンパクト \{#compact\}
+
+`file-sm`は高さ32pxの1行表示で、幅はファイル名に応じて決まります。[コンポーザー](/components/composer)の上に添付ファイルを表示したり、行内でファイルを示したりするのに使います。小サイズのボタンと高さが同じなので、同じ行に並べられます。書類アイコンは小さく拡張子を表示できないため、隣のファイル名と詳細情報で伝えます。末尾の操作コントロールは24pxで、項目の縁から4px内側に配置します。タッチ画面ではファイル項目が44px、操作コントロールが36pxになります。
+
+<ComponentPreview name="compact" height={200} narrowHeight={256} title="コンパクト" bodyClass="p-lg" html={`<form class="composer max-w(480) mx-auto">
+  <div class="composer-attachments">
+    <span class="file file-sm">
+      <span class="file-page" aria-hidden="true"></span>
+      <span class="file-body"><span class="file-name">report.pdf</span><span class="file-meta">2.4 MB</span></span>
+      <span class="file-end"><button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Remove report.pdf"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></span>
+    </span>
+    <span class="file file-sm">
+      <img class="file-thumb" src="/demo/moonstone.svg" alt="">
+      <span class="file-body"><span class="file-name">cover.png</span></span>
+      <span class="file-end"><button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Remove cover.png"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></span>
+    </span>
+  </div>
+  <textarea class="composer-field" rows="1" placeholder="Add a note about these files" aria-label="Message"></textarea>
+  <div class="composer-toolbar">
+    <div class="composer-end">
+      <button type="submit" class="btn btn-primary btn-sm">Send</button>
+    </div>
+  </div>
+</form>`} />
+
+## 項目全体から開くファイル \{#a-file-that-opens\}
+
+ファイル項目全体をリンクやボタンにする場合は、`file-interactive`を追加します。[ボタン](/components/button)と同様に、通常時は浮き上がって見え、ポインターを重ねるとさらに浮き、押すと沈みます。リンク内の各部には`<span>`を使います。
+
+<ComponentPreview name="interactive" height={104} title="項目全体から開くファイル" bodyClass="p-lg" html={`<div class="grid grid-cols(2) gap-sm max-w(520) mx-auto">
+  <a class="file file-interactive" href="#" download>
+    <span class="file-page" aria-hidden="true">docx</span>
+    <span class="file-body">
+      <span class="file-name">Master services agreement.docx</span>
+      <span class="file-meta">48 KB · Download</span>
+    </span>
+  </a>
+  <a class="file file-interactive" href="#" download>
+    <span class="file-page" aria-hidden="true">xlsx</span>
+    <span class="file-body">
+      <span class="file-name">Pricing schedule.xlsx</span>
+      <span class="file-meta">22 KB · Download</span>
+    </span>
+  </a>
+</div>`} />
+
+## アクセシビリティ \{#accessibility\}
+
+- 複数のファイルはリストとして扱います。`<ul>`を使い、各`<li>`に`file`を付けます。
+- 操作コントロールの名前には、対象のファイルを含めます。「削除」だけで済ませず、「report.pdfを削除」のように指定します。
+- `<progress>`にラベルを付け、進捗率はテキストにもパーセントで表示します。色の付いた領域は進捗率を視覚的に表したものです。
+- 長いファイル名は末尾が省略されます。拡張子など末尾の情報が重要な場合は、`title`にファイル名全体を指定します。
+
+## クラス \{#classes\}
+
+<ContractTable name="file" />
+
+## カスタムプロパティ \{#custom-properties\}
+
+<ContractTable name="file" show="properties" />
+
+## 関連項目 \{#related\}
+
+<ComponentLinks slugs={['dropzone', 'composer', 'list']} />
+
+## ソース \{#source\}
+
+<ComponentSource name="file" />

@@ -1,0 +1,186 @@
+---
+title: "输入框"
+description: "嵌入表面的输入框，支持标签、提示、错误信息和输入框组。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+文本输入框嵌在表面的凹槽中，边缘由半像素轮廓勾勒。聚焦时，输入框抬升至面板层级，显示一道墨色轮廓和柔和的光晕。在 `<input>` 和 `<textarea>` 上使用 `.input`，并在包裹输入框的 `<label>` 上使用 `.field`。
+
+<ComponentPreview name="default" height={120} title="输入框" background="plain" bodyClass="p-lg" html={`<label class="field">
+  Email
+  <input class="input" type="email" placeholder="you@example.com">
+</label>`} />
+
+## 提示与错误 \{#hint-and-error\}
+
+用 `aria-describedby` 将提示或错误信息关联到对应字段，用 `aria-invalid="true"` 标记无效值。`field-error` 仅在字段无效时显示，并在显示期间替代提示，因此两者都可以预先写入标记。
+
+<ComponentPreview name="hint" height={264} title="提示与错误" background="plain" bodyClass="grid gap-lg p-lg" html={`<label class="field">
+  Project name
+  <input class="input" value="atlas" aria-describedby="name-hint">
+  <span class="field-hint" id="name-hint">Lowercase letters, numbers and dashes.</span>
+</label>
+<label class="field">
+  Domain
+  <input class="input" value="atlas" aria-invalid="true" aria-describedby="domain-error">
+  <span class="field-error" id="domain-error">Enter a full domain, such as atlas.dev.</span>
+</label>`} />
+
+## 原生验证 \{#native-validation\}
+
+浏览器的原生约束也能触发这些状态，无需脚本。带有 `required`、`type` 或 `pattern` 的字段通过 `:user-invalid` 显示错误轮廓。该选择器在用户编辑字段或尝试提交后才会匹配，表单初始状态下不会匹配。`field-error` 会随错误轮廓一同显示。
+
+<ComponentPreview name="validation" height={208} narrowHeight={224} title="原生验证" background="plain" bodyClass="p-lg" html={`<form class="flex flex-col gap-md">
+  <label class="field">
+    Work email
+    <input class="input" type="email" required placeholder="you@company.com" aria-describedby="work-email-hint work-email-error">
+    <span class="field-hint" id="work-email-hint">Type something that is not an email, then leave the field.</span>
+    <span class="field-error" id="work-email-error">Enter an email address, such as ada@example.com.</span>
+  </label>
+  <button type="submit" class="btn btn-primary self-start">Continue</button>
+</form>`} />
+
+## 尺寸 \{#sizes\}
+
+输入框的高度为 32、38 或 44px，与[按钮](/components/button)、[选择框](/components/select)和[分段控件](/components/segmented)的尺寸一致。同尺寸的控件可以在同一行齐平排列。在触摸屏上，所有尺寸的高度均为 44px。
+
+<ComponentPreview name="sizes" height={216} title="尺寸" background="plain" bodyClass="grid gap-md p-lg" html={`<input class="input input-sm" placeholder="Small" aria-label="Small">
+<input class="input" placeholder="Medium" aria-label="Medium">
+<input class="input input-lg" placeholder="Large" aria-label="Large">`} />
+
+## 多行文本框 \{#textarea\}
+
+带有 `.input` 的 `<textarea>` 保留指定的行数，并提供垂直调整大小的手柄。添加 `input-auto` 可让它随内容增高。`field-sizing: content` 将高度限制在 3 到 12 行之间，超过 12 行后可滚动。设置 `--input-rows` 和 `--input-max-rows` 可调整此范围。浏览器不支持 `field-sizing` 时，文本框会保留最小高度和调整手柄。
+
+<ComponentPreview name="textarea" height={512} title="多行文本框" background="plain" bodyClass="grid gap-lg p-lg" html={`<label class="field">
+  Message
+  <textarea class="input" rows="3" placeholder="A fixed height with a resize handle"></textarea>
+</label>
+<label class="field">
+  Notes
+  <textarea class="input input-auto" placeholder="Keep typing: this one grows with its content"></textarea>
+</label>`} />
+
+## 输入框组 \{#input-group\}
+
+`input-group` 用一个凹槽容纳无外框的输入框及其附属元素，例如图标、单位、快捷键或按钮。输入框组通过 `:has()` 呈现内部字段的悬停、聚焦、无效和禁用状态。字段本身是 `input-group-field`，保留输入语义和文本光标。将输入框组设为 `<label>`，点击凹槽任意位置即可聚焦字段。
+
+<ComponentPreview name="group" height={216} title="输入框组" background="plain" bodyClass="grid gap-md p-lg" html={`<label class="input-group">
+  <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.35-4.35"/></svg>
+  <input class="input-group-field" type="search" placeholder="Search projects" aria-label="Search projects">
+  <kbd class="kbd">⌘K</kbd>
+</label>
+<label class="input-group">
+  <span class="input-group-addon">https://</span>
+  <input class="input-group-field" value="atlas" aria-label="Subdomain">
+  <span class="input-group-addon">.master.co</span>
+</label>
+<label class="input-group">
+  <input class="input-group-field" type="number" value="24" aria-label="Timeout">
+  <span class="input-group-addon">seconds</span>
+</label>`} />
+
+组内的[按钮](/components/button)距凹槽边缘 4px，圆角半径比凹槽小 4px，因此两者在各种尺寸下都保持同心。组内有按钮时，用 `<div>` 作为容器。
+
+<ComponentPreview name="inline" height={152} title="带按钮" background="plain" bodyClass="grid gap-md p-lg" html={`<form class="input-group">
+  <input class="input-group-field" type="email" placeholder="you@example.com" aria-label="Email">
+  <button type="submit" class="btn btn-primary">Subscribe</button>
+</form>
+<div class="input-group input-group-sm">
+  <input class="input-group-field" value="https://atlas.dev/p/9f2c" readonly aria-label="Share link">
+  <button type="button" class="btn">Copy</button>
+</div>`} />
+
+如果要将输入框和按钮分开，用 flex 将它们排在同一行，如 `<form class="flex gap-xs">` 所示。
+
+## 输入多个值 \{#several-values\}
+
+`input-group-wrap` 让输入框组可以接收多个值，例如收件人、标签或筛选条件。每个值在凹槽中显示为一个[条目标签](/components/chip)，输入框占据最后一行的剩余空间，值排不下时凹槽就增加一行。条目标签距凹槽边缘 6px，圆角与凹槽同心。
+
+样式表负责排列各个值。按 <kbd class="kbd">Enter</kbd> 添加一个值、按 <kbd class="kbd">Backspace</kbd> 删除最后一个值，只需自行编写几行脚本，或通过一次服务器请求往返来处理。
+
+<ComponentPreview name="wrap" height={160} narrowHeight={192} title="输入多个值" background="plain" bodyClass="p-lg" html={`<div class="field max-w(420) mx-auto">
+  <label for="input-teams">Teams</label>
+  <div class="input-group input-group-wrap">
+    <span class="chip">Design<button type="button" class="chip-remove" aria-label="Remove Design"></button></span>
+    <span class="chip">Research<button type="button" class="chip-remove" aria-label="Remove Research"></button></span>
+    <span class="chip">Engineering<button type="button" class="chip-remove" aria-label="Remove Engineering"></button></span>
+    <span class="chip">Operations<button type="button" class="chip-remove" aria-label="Remove Operations"></button></span>
+    <input class="input-group-field" id="input-teams" placeholder="Add a team">
+  </div>
+</div>`} />
+
+## 搜索与自动填充 \{#search-and-autofill\}
+
+`type="search"` 字段保留浏览器的清除按钮，并用图标的墨色将其绘制为纤细的叉号。浏览器自动填充字段时，凹槽改用淡淡的信息色，覆盖浏览器引擎默认的黄色或蓝色，使填充后的表单保持原有风格。
+
+<ComponentPreview name="search" height={96} title="搜索" background="plain" bodyClass="p-lg" html={`<input class="input max-w(360) mx-auto" type="search" value="moonstone" aria-label="Search">`} caption="在 Chromium 和 Safari 中，将指针悬停在字段上或聚焦字段，即可看到清除按钮。" />
+
+## 文件 \{#file\}
+
+在 `<input type="file">` 上，浏览器自带的按钮呈现为小型凸起控件，嵌在凹槽中，如同分段控件轨道中的一个选项。
+
+<ComponentPreview name="file" height={120} title="文件" background="plain" bodyClass="p-lg" html={`<label class="field">
+  Attachment
+  <input class="input" type="file">
+</label>`} />
+
+## 日期、时间、数字和颜色 \{#date-time-and-color\}
+
+`.input` 为浏览器原生的日期、时间、数字和颜色字段绘制相同的凹槽。字段继续使用用户熟悉的设备原生选择器。颜色字段呈正方形，色样向内缩进 4px，圆角与外框同心。
+
+浏览器在这些字段中显示的小标记按图标的线宽和墨色重新绘制。日历或时钟图标用于打开选择器，数字字段用一对折角符号逐步调整数值，上方的增大数值，下方的减小数值。Chromium 和 Safari 开放这些部件供样式定制，Firefox 保留原生样式。如果用户需要频繁逐步调整数值，请使用[步进器](/components/stepper)。
+
+<ComponentPreview name="native" height={208} narrowHeight={232} title="日期、时间、数字和颜色" background="plain" bodyClass="grid grid-cols(2) gap-md p-lg" html={`<label class="field">
+  Starts
+  <input class="input" type="date" value="2026-11-11">
+</label>
+<label class="field">
+  At
+  <input class="input" type="time" value="09:30">
+</label>
+<label class="field">
+  Timeout in seconds
+  <input class="input" type="number" min="0" step="5" value="30">
+</label>
+<label class="field">
+  Accent
+  <input class="input" type="color" value="#5b4fe0">
+</label>`} />
+
+## 字段集 \{#fieldset\}
+
+在 `<fieldset>` 上使用 `fieldset`，可将相关控件归到同一个组标题下，并去掉浏览器默认的凹槽边框。`fieldset-legend` 让 `<legend>` 采用字段标签的样式。用它包住一组[复选框](/components/checkbox)、[单选按钮](/components/radio)或[选项](/components/choice)，为这组控件命名。
+
+<ComponentPreview name="fieldset" height={168} title="字段集" background="plain" bodyClass="p-lg" html={`<fieldset class="fieldset">
+  <legend class="fieldset-legend">Notify me about</legend>
+  <label class="check"><input type="checkbox" class="checkbox" checked> Failed deployments</label>
+  <label class="check"><input type="checkbox" class="checkbox" checked> Expiring certificates</label>
+  <label class="check"><input type="checkbox" class="checkbox"> Product news</label>
+</fieldset>`} />
+
+## 禁用 \{#disabled\}
+
+<ComponentPreview name="disabled" height={96} title="禁用" background="plain" bodyClass="p-lg" html={`<input class="input" value="Read only in this plan" aria-label="Plan" disabled>`} />
+
+## React、Svelte 和 Vue \{#frameworks\}
+
+`field` 组件通过 ID 将标签、控件、提示和错误信息关联起来。控件仍由页面提供自己的标记，本页其余示例也都直接使用标记。用 `npx master-ui add field` 将组件复制到项目中。组件的构建和用法见 [React、Svelte 和 Vue](/guide/frameworks)。
+
+<FrameworkSource name="input" />
+
+## 类名 \{#classes\}
+
+<ContractTable name="input" />
+
+## 自定义属性 \{#custom-properties\}
+
+<ContractTable name="input" show="properties" />
+
+## 源码 \{#source\}
+
+<ComponentSource name="input" />

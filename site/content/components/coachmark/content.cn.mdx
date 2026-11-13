@@ -1,0 +1,153 @@
+---
+title: "引导提示"
+description: "功能导览中的一个步骤，指向它所说明的控件。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+引导提示是功能导览中的一个步骤，用一张采用墨色前景的小卡片指向控件并说明其用途。它采用弹出层，浏览器将其置于顶层并把焦点移入其中。CSS 锚点定位将卡片放在打开它的元素旁，并让箭头指向该元素。信标是一个不时向外扩散圆环的墨色圆点，既标出页面上的位置，也是打开引导提示的按钮。
+
+<ComponentPreview name="default" height={256} narrowHeight={284} title="引导提示" bodyClass="flex items-end justify-center p-lg" html={`<div class="toolbar" role="toolbar" aria-label="Deployments">
+  <button type="button" class="btn btn-quiet btn-sm btn-square" aria-label="Search">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.35-4.35"/></svg>
+  </button>
+  <span class="relative inline-flex">
+    <button type="button" class="btn btn-quiet btn-sm btn-square" aria-label="Filter">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+    </button>
+    <button type="button" class="coachmark-beacon absolute top(-3) right(-3)" popovertarget="tip-filter" aria-label="What is new in Filter"></button>
+    <div id="tip-filter" popover class="coachmark coachmark-top" role="dialog" aria-labelledby="tip-filter-title">
+      <p class="coachmark-count">New</p>
+      <h2 class="coachmark-title" id="tip-filter-title">Filter by author</h2>
+      <p class="coachmark-text">Narrow the deployments to the ones you shipped, or to anyone on the team.</p>
+      <div class="coachmark-actions">
+        <button type="button" class="btn btn-sm" popovertarget="tip-filter" popovertargetaction="hide" autofocus>Got it</button>
+      </div>
+    </div>
+  </span>
+  <button type="button" class="btn btn-quiet btn-sm btn-square" aria-label="Share">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M8 8l4-4 4 4M5 14v5h14v-5"/></svg>
+  </button>
+</div>`} caption="按下筛选按钮上的圆点。" />
+
+卡片在 Moonstone 中使用墨色前景，在 Obsidian 中使用珍珠色前景。它采用 [sheet-inverse](/components/surface) 的平坦反色表面，与普通弹出层的面板及下方页面区分开来，箭头与卡片无缝衔接。卡片上的默认 [按钮](/components/button) 突出操作，低强调按钮沿用卡片的前景色，指针悬停时以同一颜色淡淡着色。
+
+## 组成 \{#anatomy\}
+
+标题必填，其余部分可选。
+
+| 类名 | 内容 |
+| --- | --- |
+| `coachmark-count` | 用较淡的前景色显示当前导览进度，例如第 2 步，共 4 步，也可显示简短标签，例如新功能 |
+| `coachmark-title` | 步骤标题。为标题设置 id，并用它为引导提示提供无障碍名称 |
+| `coachmark-text` | 用一两句话说明控件的用途 |
+| `coachmark-actions` | 沿卡片底部排列的小按钮。有多个按钮时，第一个放在起始侧，例如跳过，其余按钮排列在末尾侧，例如上一步和下一步 |
+
+操作按钮距卡片边缘 12px。卡片的圆角半径等于小按钮的圆角半径加上这段内距，让两者的圆角相互贴合。
+
+## 位置 \{#placement\}
+
+引导提示默认在触发元素下方居中打开，箭头尖端距该元素 6px。下方空间不足时，卡片翻到上方。`coachmark-top` 优先放在上方，适用于靠近屏幕底部的控件，或信标位于控件上方一角的情况，如第一个示例所示。
+
+箭头指向标记中紧挨在引导提示之前的元素，因此应把引导提示紧接在信标或它所说明的控件之后。引导提示打开时，该元素会被设为具名锚点，箭头对准它的中心。视口边缘把卡片推向一侧时，箭头仍指向锚点中心，同时避开卡片圆角。卡片翻转时，箭头移到另一侧边缘。和导览中一样，每次只打开一个引导提示。
+
+## 信标 \{#beacon\}
+
+`coachmark-beacon` 是按钮上的一个 10px 圆点，外圈与所在表面同色。其点击目标为 24px，在触摸屏上为 44px。它通过 `popovertarget` 打开对应的引导提示，并需要用 `aria-label` 说明会打开什么。信标由页面定位。可在 `relative` 包裹元素内使用 `absolute` 工具类，把信标放在所标记控件的上方一角，也可将它与控件并排放在同一行。
+
+扩散的圆环用来吸引注意。指针悬停在信标上、信标获得焦点、对应引导提示打开，或启用减少动态效果时，圆环会停留为静态光环。读者看过该步骤后，移除信标。
+
+## 功能导览 \{#tour\}
+
+功能导览依次打开几个引导提示。为每一步设置 `popover="manual"`，这样，点击页面（例如试用当前步骤指向的控件）也不会结束导览。用一小段脚本切换步骤。`showPopover({ source })` 将步骤打开在其前一个元素旁，该步骤的操作按钮调用它来打开下一步或上一步。手动弹出层在按下 <kbd>Esc</kbd> 时需要由脚本关闭，并由脚本将焦点恢复到导览开始的位置。
+
+<ComponentPreview name="tour" height={256} narrowHeight={284} title="功能导览" bodyClass="flex items-start justify-center gap-sm p-lg" html={`<button type="button" class="btn btn-sm" id="tour-start">Take the tour</button>
+<div class="toolbar" role="toolbar" aria-label="Deployments">
+  <button type="button" class="btn btn-quiet btn-sm btn-square" aria-label="Search">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.35-4.35"/></svg>
+  </button>
+  <div id="tour-search" popover="manual" class="coachmark" role="dialog" aria-labelledby="tour-search-title">
+    <p class="coachmark-count">1 of 3</p>
+    <h2 class="coachmark-title" id="tour-search-title">Search every deployment</h2>
+    <p class="coachmark-text">Find one by its branch, its commit or the person who shipped it.</p>
+    <div class="coachmark-actions">
+      <button type="button" class="btn btn-sm btn-quiet" value="skip">Skip</button>
+      <button type="button" class="btn btn-sm" value="next" autofocus>Next</button>
+    </div>
+  </div>
+  <button type="button" class="btn btn-quiet btn-sm btn-square" aria-label="Filter">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+  </button>
+  <div id="tour-filter" popover="manual" class="coachmark" role="dialog" aria-labelledby="tour-filter-title">
+    <p class="coachmark-count">2 of 3</p>
+    <h2 class="coachmark-title" id="tour-filter-title">Filter the list</h2>
+    <p class="coachmark-text">Keep only the deployments of one branch, one author or one status.</p>
+    <div class="coachmark-actions">
+      <button type="button" class="btn btn-sm btn-quiet" value="skip">Skip</button>
+      <button type="button" class="btn btn-sm btn-quiet" value="back">Back</button>
+      <button type="button" class="btn btn-sm" value="next" autofocus>Next</button>
+    </div>
+  </div>
+  <button type="button" class="btn btn-quiet btn-sm btn-square" aria-label="Share">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M8 8l4-4 4 4M5 14v5h14v-5"/></svg>
+  </button>
+  <div id="tour-share" popover="manual" class="coachmark" role="dialog" aria-labelledby="tour-share-title">
+    <p class="coachmark-count">3 of 3</p>
+    <h2 class="coachmark-title" id="tour-share-title">Share a deployment</h2>
+    <p class="coachmark-text">Copy a link to it, open for anyone on the team.</p>
+    <div class="coachmark-actions">
+      <button type="button" class="btn btn-sm btn-quiet" value="back">Back</button>
+      <button type="button" class="btn btn-sm" value="done" autofocus>Done</button>
+    </div>
+  </div>
+</div>
+<script>
+  var start = document.getElementById('tour-start')
+  var steps = [document.getElementById('tour-search'), document.getElementById('tour-filter'), document.getElementById('tour-share')]
+  function show(index) {
+    steps.forEach(function (step) { if (step.matches(':popover-open')) step.hidePopover() })
+    if (steps[index]) steps[index].showPopover({ source: steps[index].previousElementSibling })
+    else start.focus()
+  }
+  start.addEventListener('click', function () { show(0) })
+  steps.forEach(function (step, index) {
+    step.addEventListener('click', function (event) {
+      var action = event.target.closest('button')
+      if (!action) return
+      show(action.value === 'next' ? index + 1 : action.value === 'back' ? index - 1 : -1)
+    })
+    step.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') show(-1)
+    })
+  })
+</script>`} caption="启动导览，然后试试“下一步”“上一步”和 Esc 键。" />
+
+由信标打开的单个引导提示采用 `popover="auto"`。点击外部或按下 <kbd>Esc</kbd> 时，浏览器会自动关闭引导提示并将焦点还给信标，全程无需脚本。
+
+## 无障碍 \{#accessibility\}
+
+- 为引导提示设置 `role="dialog"`，并通过 `aria-labelledby` 用标题为它提供无障碍名称。引导提示以非模态方式打开，周围的页面仍可操作。
+- 在主要操作上设置 `autofocus`，使卡片打开时焦点移入卡片，键盘用户可按 <kbd>Enter</kbd> 继续。
+- 每一步都可通过跳过、完成或按下 <kbd>Esc</kbd> 退出。单个引导提示还可通过点击其他位置关闭。
+- 确保导览中的所有信息都能从其他地方找到，让跳过导览的读者也能获取完整信息。
+- 在标记中将引导提示紧接在信标之后。无论卡片显示在哪里，引导提示在 Tab 导航顺序中都紧跟在信标之后。
+
+## 浏览器支持 \{#browser-support\}
+
+引导提示使用 CSS 锚点定位。卡片通过 `position-area` 和 `position-try-fallbacks` 定位，箭头通过 `anchor()` 定位在卡片与所指元素之间。在不支持锚点定位的浏览器中，卡片仍可打开和关闭，会按浏览器的默认弹出层位置居中显示在视口中，且不显示箭头。`showPopover()` 的 `source` 选项为导览步骤指定锚点。省略该选项时，步骤会在没有锚点的情况下打开。淡入淡出和短距离滑动使用 `@starting-style`。不支持该特性时，卡片会立即出现或消失。
+
+卡片淡入时朝锚点滑动 4px，退出时以更短的时间淡出。其他弹出层带有缩放动画，引导提示卡片保持原尺寸，因为缩放会让箭头缩进卡片内，够不到它所指的元素。
+
+## 类名 \{#classes\}
+
+<ContractTable name="coachmark" />
+
+## 自定义属性 \{#custom-properties\}
+
+<ContractTable name="coachmark" show="properties" />
+
+## 源码 \{#source\}
+
+<ComponentSource name="coachmark" />

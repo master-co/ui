@@ -1,0 +1,91 @@
+---
+title: "OTP"
+description: "輸入短驗證碼，每格一個字元。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+OTP 欄位用來輸入簡短的驗證碼，例如簡訊或驗證器應用程式提供的六位數字，每格輸入一個字元。每格都是原生輸入欄位，外觀看起來像一個小凹槽，採用與[文字欄位](/components/input)相同的樣式。取得焦點時，欄位會由凹陷變為平面，並顯示深色輪廓線。在觸控螢幕上，也可以用頁面上的[數字鍵盤](/components/keypad)填寫。
+
+<ComponentPreview name="default" height={96} title="OTP" background="plain" behaviors html={`<fieldset class="otp" aria-label="Verification code">
+  <input class="otp-slot" inputmode="numeric" pattern="[0-9]" maxlength="1" autocomplete="one-time-code" aria-label="Digit 1" value="4">
+  <input class="otp-slot" inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="Digit 2" value="2">
+  <input class="otp-slot" inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="Digit 3">
+  <span class="otp-separator" aria-hidden="true"></span>
+  <input class="otp-slot" inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="Digit 4">
+  <input class="otp-slot" inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="Digit 5">
+  <input class="otp-slot" inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="Digit 6">
+</fieldset>`} caption="輸入一個數字後，焦點會移到下一格。按退格鍵可往回移動，貼上的驗證碼則會分配到各格。" />
+
+## 行為 \{#behavior\}
+
+沒有腳本時，每格都是一般的輸入欄位。使用者輸入一個字元後，可以按 <kbd>Tab</kbd> 移到下一格。`otp` [行為](/guide/behaviors)讓多格操作起來像同一個欄位。它接受帶有 `otp` 類別的根元素，並回傳用於解除綁定的函式。
+
+```js name=app.js
+import { otp } from '@master/ui/behaviors/otp.js'
+
+const root = document.querySelector('.otp')
+otp(root)
+
+root.addEventListener('change', (event) => {
+  if (event.detail) verify(event.detail.value)
+})
+```
+
+- **輸入。** 輸入一個字元後，焦點會移到下一格。欄位會拒絕不符合規則的字元。欄位取得焦點時，原有字元會被選取，直接輸入即可取代。
+- **往回刪除。** 按 <kbd>Backspace</kbd> 會清空目前這一格。如果這一格已是空白，焦點會移到上一格並清除那一格的內容。
+- **貼上與自動填入。** 貼上或自動填入的驗證碼會分配到各格。完整驗證碼從第一格開始填，部分驗證碼則從接收內容的那一格開始填。
+- **事件。** 腳本寫入欄位時，該欄位會派送 `input`，和手動輸入時一樣。所有格子都填滿後，根元素會派送會冒泡的 `change`，並將驗證碼放在 `detail.value`。各格自己的 `change` 也會冒泡經過根元素，但沒有 `detail`，所以上方的監聽器會檢查事件是否帶有這個屬性。
+
+| 選項 | 設定內容 |
+| --- | --- |
+| `pattern` | 單一字元必須符合的正規表示式。預設採用第一格的 `pattern` 屬性，若未設定則只接受數字 |
+
+第一格使用 `autocomplete="one-time-code"` 是為了支援自動填入。手機若提供簡訊中的驗證碼，會將整組驗證碼填入單一欄位，而 `maxlength="1"` 會在腳本讀到驗證碼之前將它截成一個字元。綁定期間，這項行為會移除各格的 `maxlength`，自行限制每格只能保留一個字元，解除綁定時則會還原屬性。沒有腳本時，屬性會保留，自動填入的驗證碼只會留下第一個字元。因此，驗證碼若透過簡訊傳送，較適合使用[單一欄位](#one-field-is-enough)。
+
+## 無效狀態 \{#invalid\}
+
+驗證碼錯誤時，請為各格加上 `aria-invalid="true"`，並在整組欄位下方說明原因。
+
+<ComponentPreview name="invalid" height={128} title="無效" background="plain" bodyClass="flex flex-col items-center gap-xs p-lg" html={`<fieldset class="otp" aria-label="Verification code" aria-describedby="otp-error">
+  <input class="otp-slot" inputmode="numeric" maxlength="1" aria-label="Digit 1" aria-invalid="true" value="4">
+  <input class="otp-slot" inputmode="numeric" maxlength="1" aria-label="Digit 2" aria-invalid="true" value="2">
+  <input class="otp-slot" inputmode="numeric" maxlength="1" aria-label="Digit 3" aria-invalid="true" value="0">
+  <input class="otp-slot" inputmode="numeric" maxlength="1" aria-label="Digit 4" aria-invalid="true" value="9">
+</fieldset>
+<p class="m(0) text-xs fg-danger" id="otp-error">That code has expired. Request a new one.</p>`} />
+
+## 單一欄位就夠了 \{#one-field-is-enough\}
+
+分格是一種常見的視覺設計，可依需求採用。單一[輸入欄位](/components/input)加上 `autocomplete="one-time-code"`、`inputmode="numeric"` 和 `maxlength="6"`，即使沒有腳本也能接收相同的驗證碼，能直接貼上，螢幕閱讀器也更容易讀取。產品的設計風格適合分格時，再使用分格欄位。
+
+## 鍵盤操作 \{#keyboard\}
+
+<ContractTable name="otp" show="keyboard" />
+
+## 無障礙 \{#accessibility\}
+
+- 用有標籤的 `<fieldset>` 將各格分成一組。由於各格沒有可見標籤，請分別為每一格命名。
+- `inputmode="numeric"` 會叫出數字鍵盤，同時保留欄位原本的輸入類型。
+- 發生錯誤時，請保留各格的內容，將它們標為無效，讓使用者自行修正或重新貼上。
+
+## React、Svelte 和 Vue \{#frameworks\}
+
+`otp` 元件會呈現各格、綁定行為、接收並回傳驗證碼，並在輸入完成時發出通知。執行 `npx master-ui add otp` 即可將它複製到專案。元件的建構與用法請參閱 [React、Svelte 和 Vue](/guide/frameworks)。
+
+<FrameworkSource name="otp" />
+
+## 類別 \{#classes\}
+
+<ContractTable name="otp" />
+
+## 自訂屬性 \{#custom-properties\}
+
+<ContractTable name="otp" show="properties" />
+
+## 原始程式碼 \{#source\}
+
+<ComponentSource name="otp" />

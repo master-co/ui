@@ -1,0 +1,69 @@
+---
+title: "跳转高亮"
+description: "链接跳转后，用渐隐的轮廓突出落点。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+跳转高亮标出链接跳转的目标。给任何带有 id 的元素加上 `flash`，例如标题、表格行、评论或卡片。当地址的片段与该 id 一致时，元素周围会出现一圈墨色轮廓，并在两秒内淡出。这样，即使页面上有多个类似的元素，读者也能认出链接指向的是哪一个。状态由地址决定，无需脚本添加任何内容。
+
+<ComponentPreview name="default" height={272} narrowHeight={292} title="跳转高亮" bodyClass="p-lg" caption="打开链接后，目标评论周围会出现一圈轮廓，随后淡出。" html={`<div class="card max-w(480) mx-auto">
+  <p class="m(0) text-sm">Jump to <a class="link" href="#comment-ada">Ada's comment</a> or <a class="link" href="#comment-grace">Grace's reply</a>.</p>
+  <ol class="thread">
+    <li class="thread-item flash" id="comment-ada" style="--flash-offset: 1rem">
+      <span class="thread-avatar"><span class="avatar">AL</span></span>
+      <div class="thread-body">
+        <p class="thread-header"><span class="thread-author">Ada Lovelace</span> <time class="thread-meta" datetime="2026-11-12T09:12">2h</time></p>
+        <p class="thread-text">The focus ring is cut by the mask. Should it move to the group?</p>
+      </div>
+    </li>
+    <li class="thread-item flash" id="comment-grace" style="--flash-offset: 1rem">
+      <span class="thread-avatar"><span class="avatar">GH</span></span>
+      <div class="thread-body">
+        <p class="thread-header"><span class="thread-author">Grace Hopper</span> <time class="thread-meta" datetime="2026-11-12T10:31">35m</time></p>
+        <p class="thread-text">I will make the change this afternoon.</p>
+      </div>
+    </li>
+  </ol>
+</div>`} />
+
+## 工作原理 \{#how-it-works\}
+
+浏览器将 id 与地址片段匹配的元素标记为页面的 `:target`。`flash` 在该元素周围画出一圈轮廓，再让它淡出。由地址决定状态会带来两种行为：
+
+- 无论是从其他页面打开链接、点击当前页面上的链接，还是粘贴地址访问，只要地址片段相同，都会高亮同一个元素。
+- 打开指向另一片段的链接时，高亮会移到新目标。再次打开指向同一片段的链接时，高亮不会重新播放。
+
+高亮环由轮廓绘制，不占用布局空间，沿用元素自身的圆角，无需伪元素，也不会影响元素的表面、阴影或悬停效果。因此，卡片、表格行、标题和评论都可以使用同一个类名。
+
+## 避开导航栏 \{#offset\}
+
+片段链接会把目标滚动到视口最顶部。如果页面有粘性[导航栏](/components/navbar)，目标就会被它遮住。`flash` 还通过 `--flash-offset` 设置浏览器滚动停止时目标距视口顶部的距离，默认值为 5rem。将它设为页面顶部固定内容的高度，再留一点间距。
+
+## 减少动态效果 \{#reduced-motion\}
+
+读者启用减少动态效果后，轮廓不会淡出。只要该元素仍是目标，周围的细线就会一直保留，用静态方式传达同样的信息。
+
+## 跳转高亮与文本标记 \{#flash-or-mark\}
+
+跳转高亮会短暂标出一个位置。要让一段文字在显示期间始终保持强调，使用[文本标记](/components/mark)。要告知用户刚刚发生的事，使用[轻提示](/components/toast)。
+
+## 无障碍 \{#accessibility\}
+
+- 跳转高亮提供视觉提示。如果目标元素既不是链接也不是控件，请为它加上 `tabindex="-1"`，使焦点随跳转移到目标，再按 <kbd>Tab</kbd> 时便从该目标继续导航。
+- 轮廓位于元素外侧 4px 处，不会遮挡内容，因此文字的对比度保持不变。
+- 在强制颜色模式下，目标轮廓使用系统高亮色，且不会淡出。
+
+## 类名 \{#classes\}
+
+<ContractTable name="flash" />
+
+## 自定义属性 \{#custom-properties\}
+
+<ContractTable name="flash" show="properties" />
+
+## 源码 \{#source\}
+
+<ComponentSource name="flash" />

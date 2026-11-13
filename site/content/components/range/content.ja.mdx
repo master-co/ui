@@ -1,0 +1,75 @@
+---
+title: "範囲スライダー"
+description: "一本のトラックで二つの値を選び、その間を色で示します。"
+---
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+範囲スライダーは、最低価格と最高価格、クリップの開始位置と終了位置など、同じ尺度上の二つの値を選ぶためのコントロールです。二つのネイティブ[スライダー](/components/slider)を一つのグループにまとめます。グループは一本のトラックを描画し、つまみの間を色で塗ります。各入力要素は、個別のキー操作、ラベル、フォームの値を保持します。
+
+<ComponentPreview name="default" height={112} title="範囲スライダー" background="plain" bodyClass="p-lg" html={`<div class="flex flex-col gap-sm max-w(360) mx-auto">
+  <div class="flex items-baseline justify-between text-sm">
+    <span class="fg-text-strong" id="price">Price</span>
+    <output class="fg-text-muted" id="price-output">$120 to $380</output>
+  </div>
+  <div class="range" role="group" aria-labelledby="price">
+    <input type="range" class="slider range-start" min="0" max="500" step="10" value="120" aria-label="Lowest price">
+    <input type="range" class="slider range-end" min="0" max="500" step="10" value="380" aria-label="Highest price">
+  </div>
+</div>
+<script>
+(function () {
+  var range = document.querySelector('.range')
+  var output = document.getElementById('price-output')
+  range.addEventListener('input', function () {
+    var values = Array.from(range.querySelectorAll('.slider'), function (slider) { return Number(slider.value) })
+    output.textContent = '$' + Math.min.apply(null, values) + ' to $' + Math.max.apply(null, values)
+  })
+})()
+</script>`} caption="どちらかのつまみをドラッグするか、フォーカスを合わせて矢印キーで操作します。スクリプトが行うのは、トラックの上に二つの数値を表示することだけです。" />
+
+## スクリプトを使わない塗りの描画 \{#no-script-for-the-fill\}
+
+単一のスライダーが塗りの範囲を求める場合と同じように、それぞれのつまみは自身の入力要素内でビュータイムラインの基準になります。グループは`timeline-scope`で二つのタイムラインを参照し、それぞれでアニメーションを実行して二つの割合を求めます。小さい方から大きい方までを塗るため、つまみが交差しても塗りはつまみの間に収まり、小さい方の値が引き続き範囲の下限になります。
+
+フォームの処理でも同じように、小さい方の値を下限として扱います。二つの値の間に間隔を確保する必要がある場合は、`input`イベントで値を制限します。描画はこの制限に依存しません。
+
+スクロール駆動アニメーションに対応していないブラウザーでは、二つのつまみの下に塗りのないトラックが表示され、各入力要素は通常どおり操作できます。ChromiumとSafari 26では、つまみの間の塗りが描画されます。
+
+## つまみがトラックを共有する仕組み \{#how-the-thumbs-share-a-track\}
+
+二つの入力要素を同じグリッドセルに重ねます。それぞれ固有のトラックは表示せず、つまみだけがポインター操作を受け付けます。そのため、つまみの間を押しても入力要素には届かず、片方のつまみがもう片方の透明なトラックに覆われることもありません。操作中のつまみは前面に表示されます。つまみのない部分のトラックを押しても、どちらを動かすか特定できないため反応しません。
+
+## 無効状態 \{#disabled\}
+
+両方の入力要素を無効にします。つまみと塗りがともに薄く表示されます。
+
+<ComponentPreview name="disabled" height={96} title="無効状態" background="plain" bodyClass="p-lg" html={`<div class="range max-w(360) mx-auto" role="group" aria-label="Seats, set by your plan">
+  <input type="range" class="slider range-start" value="20" aria-label="Fewest seats" disabled>
+  <input type="range" class="slider range-end" value="60" aria-label="Most seats" disabled>
+</div>`} />
+
+## アクセシビリティ \{#accessibility\}
+
+- グループに`role="group"`と名前を指定し、各入力要素にも個別の`aria-label`を設定します。「開始」「終了」ではなく、「最低価格」「最高価格」のように、何の値かが伝わる名前を使います。
+- つまみ自体には数値が表示されないため、二つの値をトラックの近くに表示してください。
+- 各つまみにはTabキーで個別にフォーカスでき、ネイティブスライダーと同じキーで操作できます。タッチ画面でのつまみのサイズは24pxです。
+- スライダーで値の位置を直感的に把握することよりも、正確な数値が重要な場合は、[ステッパー](/components/stepper)または数値入力欄を二つ用意してください。
+
+## クラス \{#classes\}
+
+<ContractTable name="range" />
+
+## カスタムプロパティ \{#custom-properties\}
+
+<ContractTable name="range" show="properties" />
+
+## 関連項目 \{#related\}
+
+<ComponentLinks slugs={['slider', 'stepper', 'calendar']} />
+
+## ソース \{#source\}
+
+<ComponentSource name="range" />

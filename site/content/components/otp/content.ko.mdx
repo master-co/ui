@@ -1,0 +1,91 @@
+---
+title: "OTP"
+description: "짧은 코드를 한 칸에 한 글자씩 입력하는 필드입니다."
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+OTP 필드에는 문자 메시지나 인증 앱에서 받은 여섯 자리 숫자처럼 짧은 코드를 한 칸에 한 글자씩 입력합니다. 각 칸은 [텍스트 필드](/components/input)와 같은 질감의 작은 오목한 영역으로 표현한 기본 HTML 입력 요소입니다. 포커스가 있는 동안에는 입력 칸이 주변 표면과 같은 높이로 올라오고 짙은 윤곽선이 나타납니다. 터치 화면에서는 페이지에 표시된 [키패드](/components/keypad)로 코드를 입력할 수 있습니다.
+
+<ComponentPreview name="default" height={96} title="OTP" background="plain" behaviors html={`<fieldset class="otp" aria-label="Verification code">
+  <input class="otp-slot" inputmode="numeric" pattern="[0-9]" maxlength="1" autocomplete="one-time-code" aria-label="Digit 1" value="4">
+  <input class="otp-slot" inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="Digit 2" value="2">
+  <input class="otp-slot" inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="Digit 3">
+  <span class="otp-separator" aria-hidden="true"></span>
+  <input class="otp-slot" inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="Digit 4">
+  <input class="otp-slot" inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="Digit 5">
+  <input class="otp-slot" inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="Digit 6">
+</fieldset>`} caption="숫자를 입력하면 포커스가 다음 칸으로 이동합니다. 백스페이스로 이전 칸으로 돌아갈 수 있고, 코드를 붙여넣으면 각 칸에 한 글자씩 채워집니다." />
+
+## 동작 \{#behavior\}
+
+스크립트가 없으면 각 칸이 일반 입력 요소로 동작합니다. 한 글자를 입력한 뒤 <kbd>Tab</kbd>을 눌러 다음 칸으로 이동합니다. `otp` [동작](/guide/behaviors)을 연결하면 여러 칸을 하나의 필드처럼 사용할 수 있습니다. `otp` 클래스가 지정된 루트 요소를 인수로 받아 동작을 해제하는 함수를 반환합니다.
+
+```js name=app.js
+import { otp } from '@master/ui/behaviors/otp.js'
+
+const root = document.querySelector('.otp')
+otp(root)
+
+root.addEventListener('change', (event) => {
+  if (event.detail) verify(event.detail.value)
+})
+```
+
+- **입력.** 한 글자를 입력하면 포커스가 다음 칸으로 이동합니다. 해당 칸에서 허용하지 않는 문자는 입력되지 않습니다. 포커스를 받은 칸에 글자가 있으면 그 글자가 선택되므로 새로 입력한 글자로 바뀝니다.
+- **이전 칸으로 이동.** <kbd>Backspace</kbd>를 누르면 현재 칸의 글자가 지워집니다. 현재 칸이 비어 있으면 이전 칸으로 이동해 그 칸의 글자를 지웁니다.
+- **붙여넣기 및 자동 완성.** 붙여넣거나 자동 완성한 코드는 한 칸에 한 글자씩 들어갑니다. 전체 코드라면 첫 칸부터, 일부라면 코드가 입력된 칸부터 채웁니다.
+- **이벤트.** 스크립트가 칸에 값을 쓰면 직접 입력할 때와 마찬가지로 해당 칸에서 `input` 이벤트가 발생합니다. 모든 칸이 채워지면 루트 요소에서 버블링하는 `change` 이벤트가 발생하며, 코드는 `detail.value`에 담깁니다. 각 칸에서 발생한 `change` 이벤트도 루트 요소를 거쳐 버블링하지만 `detail`은 없으므로, 위 리스너는 이 값이 있는지 확인합니다.
+
+| 옵션 | 설정 내용 |
+| --- | --- |
+| `pattern` | 한 글자가 일치해야 하는 정규 표현식입니다. 기본값은 첫 칸의 `pattern` 속성값이며, 이 속성이 없으면 숫자 한 자리를 허용합니다. |
+
+첫 칸의 `autocomplete="one-time-code"` 속성은 자동 완성에 쓰입니다. 휴대전화에서 문자 메시지로 받은 코드를 제안하면 전체 코드가 한 필드에 입력됩니다. 이때 `maxlength="1"`이 있으면 스크립트가 코드를 읽기 전에 한 글자로 잘립니다. 동작이 연결되어 있는 동안에는 각 칸에서 `maxlength` 속성을 제거하고 스크립트가 직접 한 글자씩만 유지합니다. 동작을 해제하면 속성이 복원됩니다. 스크립트가 없으면 속성이 그대로 유지되어 제안된 코드의 첫 글자만 입력됩니다. 문자 메시지로 코드를 받는 경우 [단일 필드](#one-field-is-enough)를 선호할 수 있는 이유입니다.
+
+## 유효하지 않은 코드 \{#invalid\}
+
+코드가 틀리면 각 칸을 `aria-invalid="true"`로 표시하고, 그룹 아래에 오류 이유를 안내하세요.
+
+<ComponentPreview name="invalid" height={128} title="유효하지 않은 코드" background="plain" bodyClass="flex flex-col items-center gap-xs p-lg" html={`<fieldset class="otp" aria-label="Verification code" aria-describedby="otp-error">
+  <input class="otp-slot" inputmode="numeric" maxlength="1" aria-label="Digit 1" aria-invalid="true" value="4">
+  <input class="otp-slot" inputmode="numeric" maxlength="1" aria-label="Digit 2" aria-invalid="true" value="2">
+  <input class="otp-slot" inputmode="numeric" maxlength="1" aria-label="Digit 3" aria-invalid="true" value="0">
+  <input class="otp-slot" inputmode="numeric" maxlength="1" aria-label="Digit 4" aria-invalid="true" value="9">
+</fieldset>
+<p class="m(0) text-xs fg-danger" id="otp-error">That code has expired. Request a new one.</p>`} />
+
+## 필드 하나로 충분 \{#one-field-is-enough\}
+
+칸을 나누는 것은 시각적 관례이며 필수는 아닙니다. `autocomplete="one-time-code"`, `inputmode="numeric"`, `maxlength="6"`을 지정한 단일 [입력 필드](/components/input)에서도 스크립트 없이 같은 코드를 입력할 수 있습니다. 코드 전체를 그대로 붙여넣을 수 있고 스크린 리더로도 사용하기 더 쉽습니다. 제품의 표현 방식에 어울릴 때 칸을 나누세요.
+
+## 키보드 \{#keyboard\}
+
+<ContractTable name="otp" show="keyboard" />
+
+## 접근성 \{#accessibility\}
+
+- 레이블이 있는 `<fieldset>`로 칸을 묶으세요. 각 칸에는 화면에 표시되는 레이블이 없으므로 접근성 이름을 각각 지정하세요.
+- `inputmode="numeric"`을 사용하면 각 칸을 숫자 입력 필드로 바꾸지 않고도 숫자 키패드를 표시할 수 있습니다.
+- 오류가 발생해도 입력값을 지우지 마세요. 각 칸을 유효하지 않은 상태로 표시하고 사용자가 값을 수정하거나 다시 붙여넣을 수 있게 하세요.
+
+## React, Svelte, Vue \{#frameworks\}
+
+`otp` 컴포넌트는 입력 칸을 렌더링하고 동작을 연결하며, 코드를 전달받거나 내보내고 입력이 완료되면 알립니다. `npx master-ui add otp`로 컴포넌트를 프로젝트에 복사하세요. 컴포넌트의 구조와 사용법은 [React, Svelte, Vue](/guide/frameworks)에서 확인할 수 있습니다.
+
+<FrameworkSource name="otp" />
+
+## 클래스 \{#classes\}
+
+<ContractTable name="otp" />
+
+## 사용자 지정 속성 \{#custom-properties\}
+
+<ContractTable name="otp" show="properties" />
+
+## 소스 \{#source\}
+
+<ComponentSource name="otp" />

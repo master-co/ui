@@ -1,0 +1,187 @@
+---
+title: "대화상자"
+description: "스크립트 없이 열고 닫는 오버레이 시트 형태의 네이티브 모달입니다."
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+대화상자는 표면 계층에서 가장 높은 표면입니다. 페이지를 어둡고 흐릿하게 만드는 배경막 위에 오버레이 시트가 놓입니다. 네이티브 `<dialog>`에 `.dialog` 클래스를 적용하세요. `commandfor`와 `command="show-modal"`이 지정된 버튼으로 열면 브라우저가 대화상자를 최상위 레이어에 표시하고, 포커스를 대화상자 안에 유지하며, <kbd>Esc</kbd> 키로 닫을 수 있게 하므로 스크립트가 필요 없습니다.
+
+<ComponentPreview name="default" height={304} title="대화상자" bodyClass="flex items-center justify-center p-lg min-h(300)" html={`<button type="button" class="btn" commandfor="delete-project" command="show-modal">Delete project</button>
+
+<dialog id="delete-project" class="dialog" closedby="any" aria-labelledby="delete-project-title">
+  <header class="dialog-header">
+    <h2 class="dialog-title" id="delete-project-title">Delete this project?</h2>
+    <p class="dialog-description">Atlas and its 14 deployments are removed, and its domains stop resolving at once.</p>
+  </header>
+  <footer class="dialog-footer">
+    <button type="button" class="btn" commandfor="delete-project" command="close">Cancel</button>
+    <button type="button" class="btn btn-primary" commandfor="delete-project" command="close">Delete project</button>
+  </footer>
+</dialog>`} />
+
+## 열기와 닫기 \{#opening-and-closing\}
+
+속성 세 개로 모달에 필요했던 스크립트를 대체할 수 있습니다.
+
+- 버튼에 `commandfor="id"`와 `command="show-modal"`을 함께 지정하면 대화상자가 모달로 열립니다. `command="close"`는 대화상자를 닫고 처음 열었던 버튼으로 포커스를 돌려보냅니다.
+- 대화상자에 `closedby="any"`를 지정하면 배경막을 클릭해 닫을 수 있습니다. <kbd>Esc</kbd> 키로는 이 속성과 관계없이 항상 닫을 수 있습니다. 실수로 클릭했을 때 작업 내용이 사라지면 안 되는 경우에는 이 속성을 생략하세요. 이 속성을 지원하지 않는 브라우저에서도 <kbd>Esc</kbd> 키와 닫기 버튼은 동작합니다.
+- 대화상자 안의 `<form method="dialog">` 폼을 제출하면 대화상자가 닫힙니다. 어느 버튼으로 제출했는지는 대화상자의 `returnValue`로 확인할 수 있습니다.
+
+모달 대화상자가 열려 있는 동안에는 뒤쪽 페이지와 상호작용하거나 페이지를 스크롤할 수 없습니다.
+
+## 폼이 있는 대화상자 \{#with-a-form\}
+
+`dialog-body`에는 헤더와 푸터 사이의 콘텐츠가 들어갑니다. 이 영역은 남은 높이를 채우며, 콘텐츠가 뷰포트에 들어갈 수 있는 높이를 넘으면 시트 안에서 스크롤됩니다. `dialog-close`는 모서리에 눈에 잘 띄지 않는 정사각형 버튼을 배치합니다. 이 버튼에 접근 가능한 이름을 지정하세요.
+
+<ComponentPreview name="form" height={520} title="폼이 있는 대화상자" bodyClass="flex items-center justify-center p-lg min-h(520)" html={`<button type="button" class="btn btn-primary" commandfor="invite" command="show-modal">Invite member</button>
+
+<dialog id="invite" class="dialog" closedby="any" aria-labelledby="invite-title">
+  <header class="dialog-header">
+    <h2 class="dialog-title" id="invite-title">Invite a member</h2>
+    <p class="dialog-description">They receive an email with a link that expires in seven days.</p>
+  </header>
+  <form class="dialog-body flex flex-col gap-md" method="dialog" id="invite-form">
+    <label class="field">
+      Email
+      <input class="input" type="email" placeholder="ada@example.com" required autofocus>
+    </label>
+    <label class="field">
+      Role
+      <select class="select">
+        <option class="select-option">Member</option>
+        <option class="select-option">Admin</option>
+        <option class="select-option">Billing</option>
+      </select>
+    </label>
+  </form>
+  <footer class="dialog-footer">
+    <button type="button" class="btn" commandfor="invite" command="close">Cancel</button>
+    <button type="submit" class="btn btn-primary" form="invite-form">Send invite</button>
+  </footer>
+  <button type="button" class="btn btn-quiet btn-square btn-sm dialog-close" commandfor="invite" command="close" aria-label="Close">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+  </button>
+</dialog>`} />
+
+## 크기 \{#sizes\}
+
+대화상자의 기본 너비는 28rem입니다. 한 문장으로 확인을 요청할 때 쓰는 `dialog-sm`의 너비는 22rem이며, `dialog-lg`의 너비는 40rem입니다. 좁은 화면에서는 모든 크기가 뷰포트 가장자리에서 1rem의 여백을 유지합니다. 푸터는 컨테이너 쿼리를 통해 대화상자 자체의 너비에 맞춰 배치를 바꿉니다. 너비가 22rem 미만이면 주 동작 버튼을 맨 위에 두고, 각 버튼이 전체 너비를 차지하도록 세로로 배치합니다.
+
+<ComponentPreview name="sizes" height={304} title="크기" bodyClass="flex flex-wrap items-center justify-center gap-md p-lg min-h(300)" html={`<button type="button" class="btn" commandfor="size-sm" command="show-modal">Small</button>
+<button type="button" class="btn" commandfor="size-lg" command="show-modal">Large</button>
+
+<dialog id="size-sm" class="dialog dialog-sm" closedby="any" aria-labelledby="size-sm-title">
+  <header class="dialog-header">
+    <h2 class="dialog-title" id="size-sm-title">Sign out?</h2>
+    <p class="dialog-description">Unsaved drafts stay on this device.</p>
+  </header>
+  <footer class="dialog-footer">
+    <button type="button" class="btn" commandfor="size-sm" command="close">Stay</button>
+    <button type="button" class="btn btn-primary" commandfor="size-sm" command="close">Sign out</button>
+  </footer>
+</dialog>
+
+<dialog id="size-lg" class="dialog dialog-lg" closedby="any" aria-labelledby="size-lg-title">
+  <header class="dialog-header">
+    <h2 class="dialog-title" id="size-lg-title">Release notes</h2>
+    <p class="dialog-description">Version 2.1 adds overlays that need no script: dialogs, popovers, menus and tooltips.</p>
+  </header>
+  <footer class="dialog-footer">
+    <button type="button" class="btn btn-primary" commandfor="size-lg" command="close">Done</button>
+  </footer>
+</dialog>`} />
+
+## 드로어 \{#drawer\}
+
+`dialog-drawer`는 페이지를 계속 볼 수 있도록 필터, 상세 정보, 설정을 인라인 끝 가장자리에 표시하는 패널입니다. 모서리와 그림자가 잘리지 않도록 뷰포트 가장자리에서 안쪽으로 8px 떨어져 떠 있으며, 배치된 쪽 가장자리에서 슬라이드되어 들어옵니다.
+
+<ComponentPreview name="drawer" height={400} title="드로어" bodyClass="flex items-center justify-center p-lg min-h(400)" html={`<button type="button" class="btn" commandfor="filters" command="show-modal">Filters</button>
+
+<dialog id="filters" class="dialog dialog-drawer" closedby="any" aria-labelledby="filters-title">
+  <header class="dialog-header">
+    <h2 class="dialog-title" id="filters-title">Filters</h2>
+    <p class="dialog-description">Narrow the list of deployments.</p>
+  </header>
+  <div class="dialog-body flex flex-col gap-md">
+    <label class="field">
+      Branch
+      <input class="input" value="main">
+    </label>
+    <label class="check"><input type="checkbox" class="checkbox" checked> Production only</label>
+  </div>
+  <footer class="dialog-footer">
+    <button type="button" class="btn" commandfor="filters" command="close">Reset</button>
+    <button type="button" class="btn btn-primary" commandfor="filters" command="close">Apply</button>
+  </footer>
+</dialog>`} />
+
+### 인라인 시작 위치 \{#drawer-start\}
+
+`dialog-drawer-start` 클래스를 추가하면 드로어가 인라인 시작 가장자리에 배치되며 너비는 18rem입니다. 탐색 메뉴를 배치하기에 알맞은 위치입니다. 좁은 레이아웃에서 숨겨진 사이드바는 이 드로어로 다시 표시됩니다. [앱 셸](/pages/app-shell)을 참고하세요.
+
+<ComponentPreview name="drawer-start" height={400} title="인라인 시작 드로어" bodyClass="flex items-center justify-center p-lg min-h(400)" html={`<button type="button" class="btn" commandfor="nav-drawer" command="show-modal">Open navigation</button>
+
+<dialog id="nav-drawer" class="dialog dialog-drawer dialog-drawer-start" closedby="any" aria-label="Navigation">
+  <div class="dialog-body">
+    <nav class="nav" aria-label="Workspace">
+      <a class="nav-item" href="#" aria-current="page">Overview</a>
+      <a class="nav-item" href="#">Projects</a>
+      <a class="nav-item" href="#">Domains</a>
+      <a class="nav-item" href="#">Settings</a>
+    </nav>
+  </div>
+</dialog>`} />
+
+## 시트 \{#sheet\}
+
+`dialog-sheet`는 작은 화면에서 짧은 작업을 처리하거나 선택지 목록을 보여 줄 때 사용하며, 엄지손가락이 닿기 쉬운 화면 하단에서 올라옵니다. 시트는 `--dialog-width`로 정한 최대 너비까지 가로 공간을 채우며, 화면 가장자리에 닿는 아래쪽 모서리는 직각입니다. `env(safe-area-inset-bottom)` 값을 사용해 홈 인디케이터와 겹치지 않도록 여백을 확보합니다.
+
+<ComponentPreview name="sheet" height={384} title="시트" bodyClass="flex items-center justify-center p-lg min-h(380)" html={`<button type="button" class="btn" commandfor="share-sheet" command="show-modal">Share</button>
+
+<dialog id="share-sheet" class="dialog dialog-sheet" closedby="any" aria-labelledby="share-sheet-title">
+  <header class="dialog-header">
+    <h2 class="dialog-title" id="share-sheet-title">Share this project</h2>
+    <p class="dialog-description">Anyone with the link can view the latest deployment.</p>
+  </header>
+  <div class="dialog-body">
+    <div class="input-group">
+      <input class="input-group-field" value="https://atlas.dev/p/9f2c" readonly aria-label="Link">
+      <button type="button" class="btn">Copy</button>
+    </div>
+  </div>
+  <footer class="dialog-footer">
+    <button type="button" class="btn btn-primary" commandfor="share-sheet" command="close">Done</button>
+  </footer>
+</dialog>`} />
+
+## 모션 \{#motion\}
+
+대화상자는 원래 크기의 97%로, 제자리보다 0.5rem 아래에서 시작해 280ms 동안 서서히 나타납니다. 사라지는 데는 160ms가 걸립니다. 스타일시트는 열기와 닫기 전환을 모두 CSS로 정의합니다. `@starting-style`은 처음 렌더링되는 프레임의 상태를 지정하고, `display`와 `overlay`는 `allow-discrete`로 전환되므로 대화상자가 최상위 레이어를 벗어나기 전에 닫기 애니메이션이 재생됩니다. 동작 줄이기가 활성화되면 페이드 효과만 남습니다.
+
+## 접근성 \{#accessibility\}
+
+- `aria-labelledby` 속성이 대화상자의 `dialog-title`을 가리키도록 지정해 대화상자에 접근 가능한 이름을 부여하세요.
+- `show-modal`로 열면 포커스가 대화상자 안으로 이동하고, 닫으면 대화상자를 열었던 버튼으로 돌아갑니다. 사용자가 처음 사용할 필드에 `autofocus` 속성을 지정하세요. 데이터를 삭제하는 등 되돌리기 어려운 동작을 확인하는 대화상자에서는 안전한 동작에 지정하세요.
+- `command`와 `commandfor`는 최신 Chrome, Edge, Firefox, Safari에서 지원됩니다. 이전 브라우저에서는 클릭 핸들러에서 `dialog.showModal()` 메서드를 호출하세요. 스타일시트는 그대로 사용합니다.
+
+## React, Svelte, Vue \{#frameworks\}
+
+`dialog` 컴포넌트는 애플리케이션 상태에 따라 대화상자를 열고 닫으며, 브라우저에서 대화상자가 열리거나 닫히면 이를 알립니다. 대화상자를 여는 요소와 내부 요소는 페이지의 마크업에서 직접 정의합니다. `npx master-ui add dialog`로 컴포넌트를 프로젝트에 복사하세요. 컴포넌트의 구성과 사용법은 [React, Svelte, Vue](/guide/frameworks)에서 확인할 수 있습니다.
+
+<FrameworkSource name="dialog" />
+
+## 클래스 \{#classes\}
+
+<ContractTable name="dialog" />
+
+## 사용자 지정 속성 \{#custom-properties\}
+
+<ContractTable name="dialog" show="properties" />
+
+## 소스 \{#source\}
+
+<ComponentSource name="dialog" />

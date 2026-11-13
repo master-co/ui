@@ -1,0 +1,67 @@
+---
+title: "燈箱"
+description: "在原生對話框中放大圖片，顯示於頁面上方。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+燈箱會在頁面上方放大顯示圖片。在原生 `<dialog>` 上使用 `.lightbox`。縮圖按鈕本身透過 `commandfor` 和 `command="show-modal"` 開啟燈箱，由瀏覽器將對話框放在頂層、將焦點限制在對話框內，並支援按 <kbd>Esc</kbd> 關閉，全程無須腳本。對話框本身沒有底色，大小與圖片完全相同。圖片後方的頁面會變暗並大幅模糊。
+
+<ComponentPreview name="default" height={440} narrowHeight={400} title="燈箱" bodyClass="flex items-center justify-center p-lg" caption="按下卡片即可開啟。點擊圖片外側、按下關閉按鈕或按 Esc 即可關閉。" html={`<button class="card card-interactive w(240)" type="button" commandfor="moonstone" command="show-modal">
+  <img class="card-media" src="/demo/moonstone.svg" alt="">
+  <span class="card-header">
+    <span class="card-title">Moonstone</span>
+    <span class="card-description">View the picture</span>
+  </span>
+</button>
+
+<dialog class="lightbox" id="moonstone" closedby="any" aria-label="Moonstone" style="--lightbox-ratio: 16 / 9">
+  <img class="lightbox-media" src="/demo/moonstone.svg" alt="A pale stone over grey hills">
+  <p class="lightbox-caption">Moonstone, the stone the light theme is named for.</p>
+  <button class="btn btn-sm btn-square lightbox-close" type="button" commandfor="moonstone" command="close" aria-label="Close">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+  </button>
+</dialog>`} />
+
+## 開啟與關閉 \{#opening-and-closing\}
+
+- 在縮圖按鈕上使用 `commandfor="id"` 搭配 `command="show-modal"` 即可開啟燈箱。在關閉按鈕上使用 `command="close"` 即可關閉燈箱，並將焦點移回縮圖。
+- `closedby="any"` 讓使用者可以點擊外側關閉。由於對話框與圖片大小完全相同，點擊圖片以外的任何位置都等於點擊對話框外側，因此會關閉燈箱。不支援這個屬性的瀏覽器仍可透過 <kbd>Esc</kbd> 或關閉按鈕關閉燈箱。
+- 如果瀏覽器不支援按鈕上的觸發指令，請在點擊事件處理函式中呼叫 `dialog.showModal()` 和 `dialog.close()`。樣式表維持相同。
+
+透過 `@starting-style` 和離散轉場，圖片會從略小的尺寸淡入，退場速度則比進場快。缺少這些轉場時，圖片會立即顯示或消失。
+
+## 尺寸 \{#size\}
+
+將 `lightbox-media` 套用至 `<img>`、`<video>` 或 `<iframe>`。尺寸由版面配置決定。寬度上限為 64rem，並依檢視區的寬度與高度縮小，四周各留 24px。長寬比由 `--lightbox-ratio` 設定，預設為 `3 / 2`。因此，圖片、影片和內嵌框架都以相同方式決定尺寸，載入時也不會造成版面位移。
+
+在對話框上設定 `--lightbox-ratio`，使其符合圖片本身的長寬比，如範例中的 `16 / 9`。長寬比不同的圖片會裁切至符合設定。`--lightbox-width` 設定最大寬度，`--lightbox-gutter` 設定四周的留白。
+
+## 說明與關閉按鈕 \{#caption-and-close\}
+
+`lightbox-caption` 是浮在圖片下方的說明列，寬度與圖片相同，圖片會為它預留空間。說明以一到兩行為宜。將 `lightbox-close` 套用至小型方形[按鈕](/components/button)，即可將按鈕放在圖片上緣一角的內側，距相鄰兩邊各 8px。按鈕有凸起效果和獨立邊框，在任何圖片上都容易辨識。
+
+## 燈箱或對話框 \{#lightbox-or-dialog\}
+
+燈箱只顯示一張圖片，使用者無須做任何決定。包含標題、文字或表單的覆蓋層屬於[對話框](/components/dialog)。留在頁面內並附有說明的圖片屬於[圖文元件](/components/figure)。
+
+## 無障礙 \{#accessibility\}
+
+- 使用 `aria-label` 為對話框命名，或用 `aria-labelledby` 指向圖片說明。
+- 為大圖提供有意義的 `alt`。如果按鈕本身的文字已說明會開啟什麼，按鈕內縮圖的替代文字就可以留空。
+- 務必提供具有無障礙名稱的關閉按鈕，因為有些使用者可能不知道可以點擊外側或按 <kbd>Esc</kbd> 關閉。
+- 燈箱開啟時，焦點會移入燈箱，關閉時則移回縮圖。啟用減少動態效果的偏好設定時，圖片只會淡入淡出，尺寸維持不變。
+
+## 類別 \{#classes\}
+
+<ContractTable name="lightbox" />
+
+## 自訂屬性 \{#custom-properties\}
+
+<ContractTable name="lightbox" show="properties" />
+
+## 原始碼 \{#source\}
+
+<ComponentSource name="lightbox" />

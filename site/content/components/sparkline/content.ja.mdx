@@ -1,0 +1,109 @@
+---
+title: "スパークライン"
+description: "文中やテーブルの行、統計指標に収まる、細い線1本の推移グラフ。"
+---
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+スパークラインは、推移を細い線1本で示す小さなグラフです。[統計指標](/components/stat)の数値の下や、[テーブル](/components/table)の列、文中など、関連するテキストのそばに置けます。線を描くインラインSVGは与えられた領域に合わせて伸縮します。線は周囲のテキストと同じ色で、太さは1.5pxのままです。最新値を示す点は、グラフが伸縮しても円形のままです。スクリプトは不要です。
+
+<ComponentPreview name="default" height={224} narrowHeight={240} title="スパークライン" bodyClass="p-lg" html={`<div class="card max-w(320) mx-auto">
+  <div class="stat">
+    <p class="stat-label">Requests per day</p>
+    <div class="stat-row">
+      <p class="stat-value">61,240</p>
+      <p class="stat-delta stat-delta-up">12.4%</p>
+    </div>
+    <span class="sparkline" style="--sparkline-width: 100%; --sparkline-height: 2.5rem" aria-hidden="true"><svg class="sparkline-plot" viewBox="0 0 100 100" preserveAspectRatio="none"><path class="sparkline-area" d="M0 100 L7.69 90 L15.38 93.3 L23.08 76.7 L30.77 83.3 L38.46 66.7 L46.15 56.7 L53.85 63.3 L61.54 46.7 L69.23 30 L76.92 40 L84.62 20 L92.31 10 L100 0 V100 H0 Z" /><line class="sparkline-baseline" x1="0" y1="55.5" x2="100" y2="55.5" /><path class="sparkline-line" d="M0 100 L7.69 90 L15.38 93.3 L23.08 76.7 L30.77 83.3 L38.46 66.7 L46.15 56.7 L53.85 63.3 L61.54 46.7 L69.23 30 L76.92 40 L84.62 20 L92.31 10 L100 0" /></svg><span class="sparkline-dot" style="--x: 100; --y: 0"></span></span>
+    <p class="stat-description">The last 14 days; the dotted line is their average</p>
+  </div>
+</div>`} />
+
+## 線の描画 \{#how-the-line-is-drawn\}
+
+グラフは`viewBox="0 0 100 100"`と`preserveAspectRatio="none"`を指定した`<svg class="sparkline-plot">`で描画します。幅と高さがともに100単位の座標領域を、スパークラインの表示サイズに合わせて伸縮させます。この領域で点の座標を一度指定すれば、文中でもカード内でも表示サイズに収まります。
+
+- **横軸**では、最初の点を0、最後の点を100に置き、点を等間隔に並べます。値が14個なら、間隔は100 / 13単位です。
+- **縦軸**はSVGの座標系に従い、上端が0、下端が100です。最小値を100、最大値を0に割り当てます。複数のスパークラインを比較する場合は、独自の尺度を使うこともできます。
+
+`sparkline-line`は、各点を通る`<path>`（または`<polyline>`）です。線幅は座標領域の伸縮に連動せず（`vector-effect: non-scaling-stroke`）、どのサイズでも1.5pxです。線の継ぎ目と端は丸く描画します。
+
+スパークラインは推移の形を示します。下のテーブルでは、各プロジェクトの最小値から最大値までを個別の尺度で描いています。線からは各プロジェクトの推移が分かり、値の大小は隣の数値で比較できます。
+
+## 最新値 \{#the-latest-value\}
+
+`sparkline-dot`はHTMLで描く小さな点です。SVGの円はグラフの伸縮で楕円になるため、HTMLで円形を保ちます。同じ100 × 100の座標系で、最後の点の座標を`--x`と`--y`に指定し、点の中心を配置します。背景と同じ色のリングで線を隠し、線が点に重ならず、その手前で終わるようにします。スパークラインの領域内には点の半分が収まる余白を確保し、後ろの単語に点が近づきすぎないようにします。
+
+## 塗りつぶしと基準線 \{#area-and-baseline\}
+
+`sparkline-area`は、同じ点を通り、下端に沿って閉じた`<path>`（`V100 H0 Z`）です。線と同じ色で淡く塗り、下に向かって透明にします。線の前に配置すると、その上に線が描画されます。
+
+`sparkline-baseline`は、平均値、目標値、前期の値などの高さで、0から100まで引く細い点線の`<line>`です。推移を示す線より控えめに表示します。上の統計指標の例のように、基準線が何を示すかをスパークラインの隣に記載します。
+
+## 文中で使う \{#in-a-sentence\}
+
+スパークラインの幅は4em、高さは大文字とほぼ同じ.75emです。中心を周囲の大文字の高さの中央にそろえるため、単語のように行内に収まります。ページ上でもカード内でも、インク色の背景面でも、周囲のテキスト色を使います。
+
+<ComponentPreview name="sentence" height={96} narrowHeight={112} title="文中で使う" background="plain" bodyClass="p-lg" html={`<p class="m(0) max-w(440) mx-auto fg-text-body">Requests rose all fortnight <span class="sparkline" aria-hidden="true"><svg class="sparkline-plot" viewBox="0 0 100 100" preserveAspectRatio="none"><path class="sparkline-line" d="M0 100 L7.69 90 L15.38 93.3 L23.08 76.7 L30.77 83.3 L38.46 66.7 L46.15 56.7 L53.85 63.3 L61.54 46.7 L69.23 30 L76.92 40 L84.62 20 L92.31 10 L100 0" /></svg><span class="sparkline-dot" style="--x: 100; --y: 0"></span></span> to 61,000 a day, while latency fell <span class="sparkline" aria-hidden="true"><svg class="sparkline-plot" viewBox="0 0 100 100" preserveAspectRatio="none"><path class="sparkline-line" d="M0 0 L7.69 11.1 L15.38 3.7 L23.08 20.4 L30.77 25.9 L38.46 22.2 L46.15 42.6 L53.85 55.6 L61.54 50 L69.23 66.7 L76.92 75.9 L84.62 72.2 L92.31 85.2 L100 100" /></svg></span> to 128 ms.</p>`} />
+
+## テーブルで使う \{#in-a-table\}
+
+`--sparkline-width`と`--sparkline-height`を個々のスパークラインに指定するか、テーブルなどのコンテナーにまとめて指定して、内側のすべてのスパークラインに同じサイズを適用します。上の統計指標の例のように、カードに合わせてサイズを調整する場合は`--sparkline-width: 100%`を指定します。
+
+<ComponentPreview name="table" height={196} title="テーブルで使う" bodyClass="p-lg" html={`<div class="sheet overflow-hidden max-w(480) mx-auto">
+  <table class="table table-compact" style="--sparkline-width: 5rem; --sparkline-height: 1rem">
+    <thead>
+      <tr class="table-row">
+        <th class="table-heading" scope="col">Project</th>
+        <th class="table-heading" scope="col">Last 14 days</th>
+        <th class="table-heading table-numeric" scope="col">Today</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="table-row">
+        <th class="table-cell table-primary" scope="row">Atlas</th>
+        <td class="table-cell"><span class="sparkline" role="img" aria-label="Rising steadily"><svg class="sparkline-plot" viewBox="0 0 100 100" preserveAspectRatio="none"><path class="sparkline-line" d="M0 100 L7.69 90 L15.38 93.3 L23.08 76.7 L30.77 83.3 L38.46 66.7 L46.15 56.7 L53.85 63.3 L61.54 46.7 L69.23 30 L76.92 40 L84.62 20 L92.31 10 L100 0" /></svg><span class="sparkline-dot" style="--x: 100; --y: 0"></span></span></td>
+        <td class="table-cell table-numeric">61,240</td>
+      </tr>
+      <tr class="table-row">
+        <th class="table-cell table-primary" scope="row">Borealis</th>
+        <td class="table-cell"><span class="sparkline" role="img" aria-label="Falling"><svg class="sparkline-plot" viewBox="0 0 100 100" preserveAspectRatio="none"><path class="sparkline-line" d="M0 5.9 L7.69 17.6 L15.38 0 L23.08 23.5 L30.77 35.3 L38.46 29.4 L46.15 52.9 L53.85 41.2 L61.54 70.6 L69.23 58.8 L76.92 82.4 L84.62 76.5 L92.31 94.1 L100 100" /></svg><span class="sparkline-dot" style="--x: 100; --y: 100"></span></span></td>
+        <td class="table-cell table-numeric">36,018</td>
+      </tr>
+      <tr class="table-row">
+        <th class="table-cell table-primary" scope="row">Cirrus</th>
+        <td class="table-cell"><span class="sparkline" role="img" aria-label="Rising slowly"><svg class="sparkline-plot" viewBox="0 0 100 100" preserveAspectRatio="none"><path class="sparkline-line" d="M0 100 L7.69 79.2 L15.38 91.7 L23.08 58.3 L30.77 66.7 L38.46 45.8 L46.15 54.2 L53.85 33.3 L61.54 41.7 L69.23 20.8 L76.92 29.2 L84.62 12.5 L92.31 16.7 L100 0" /></svg><span class="sparkline-dot" style="--x: 100; --y: 0"></span></span></td>
+        <td class="table-cell table-numeric">16,420</td>
+      </tr>
+    </tbody>
+  </table>
+</div>`} />
+
+## ステータス色 \{#status-inks\}
+
+`sparkline-success`、`sparkline-warning`、`sparkline-danger`は、線と点にステータス色を適用します。値の上昇が好ましいとは限りません。たとえば、エラーの増加を示す右上がりの線には危険を示す色を使います。色だけに頼らず意味を伝えられるよう、同じ意味が隣のテキストにも示されている場合に限って使います。
+
+<ComponentPreview name="tones" height={96} narrowHeight={136} title="ステータス色" background="plain" bodyClass="p-lg" html={`<p class="m(0) max-w(440) mx-auto fg-text-body">After the fix, errors fell by half <span class="sparkline sparkline-success" aria-hidden="true"><svg class="sparkline-plot" viewBox="0 0 100 100" preserveAspectRatio="none"><path class="sparkline-line" d="M0 9.1 L7.69 0 L15.38 15.2 L23.08 6.1 L30.77 21.2 L38.46 39.4 L46.15 60.6 L53.85 72.7 L61.54 78.8 L69.23 87.9 L76.92 81.8 L84.62 90.9 L92.31 97 L100 100" /></svg><span class="sparkline-dot" style="--x: 100; --y: 100"></span></span> to 18 an hour. Checkout got slower <span class="sparkline sparkline-danger" aria-hidden="true"><svg class="sparkline-plot" viewBox="0 0 100 100" preserveAspectRatio="none"><path class="sparkline-line" d="M0 91.7 L7.69 100 L15.38 83.3 L23.08 91.7 L30.77 75 L38.46 83.3 L46.15 66.7 L53.85 58.3 L61.54 66.7 L69.23 41.7 L76.92 33.3 L84.62 25 L92.31 16.7 L100 0" /></svg><span class="sparkline-dot" style="--x: 100; --y: 0"></span></span> and now takes 3.2 seconds.</p>`} />
+
+## アクセシビリティ \{#accessibility\}
+
+- 隣のテキストに推移の説明がない場合は、スパークラインに`role="img"`を指定し、「1日あたり31,000から61,000に増加」など、推移を説明する`aria-label`を付けます。グラフ全体が1つの画像として扱われます。
+- 文中や統計指標のように、隣のテキストや数値ですでに推移が伝わる場合は、重複して読み上げられないよう`aria-hidden="true"`で非表示にします。
+- 強制カラーモードでは、線と点にテキスト色が適用され、塗りつぶしは表示されません。
+
+## SVGマスクのフォールバック \{#platform\}
+
+塗りつぶしのフェードには、SVGの図形にCSSマスクを適用します。SVGの図形にマスクを適用できないブラウザーでは、線と同じ色で均一に淡く塗りつぶします。
+
+## クラス \{#classes\}
+
+<ContractTable name="sparkline" />
+
+## カスタムプロパティ \{#custom-properties\}
+
+<ContractTable name="sparkline" show="properties" />
+
+## ソース \{#source\}
+
+<ComponentSource name="sparkline" />

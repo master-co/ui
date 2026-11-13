@@ -3,7 +3,7 @@
  *
  *   /llms.txt                         the index: how to use the library, and a link to every page as Markdown
  *   /<section>/<slug>.md              each page as Markdown; a component's page is written from its contract
- *   /<locale>/llms.txt, /<locale>/guide/<slug>.md   the same for each translated edition of the guide
+ *   /<locale>/llms.txt, /<locale>/<section>/<slug>.md   the same for each translated edition
  *   /contracts.json, /theme.json      the contracts and the tokens, as data
  *   /contract.schema.json             the schema every contract follows
  *   /standalone.css, /themes/*.css    the library compiled to plain CSS
@@ -23,6 +23,9 @@ import { figureMarkdown } from '../utils/figure-markdown.ts'
 import { promptMarkdown } from '../utils/prompt-markdown.ts'
 import { locales } from '@master/internal-site/common/locales.js'
 import { readLocalizedDocument } from '@master/internal-site/build/localization.ts'
+import translations from '../i18n/translations.ts'
+import { localizedContract } from '../i18n/contract-copy.ts'
+import { documentSections } from '../i18n/sections.ts'
 
 const site = fileURLToPath(new URL('../', import.meta.url))
 const ui = join(site, '../packages/ui')
@@ -43,7 +46,6 @@ const contractOf = new Map(contracts.map(contract => [contract.name, contract]))
 
 /** The framework components: what each renders, and its file in each framework. */
 const manifest = JSON.parse(read(join(ui, 'frameworks/manifest.json'))) as { frameworks: Record<string, { title: string, package: string }>, components: Record<string, Record<string, string>> }
-const frameworkTitles = Object.values(manifest.frameworks).map(framework => framework.title)
 const componentsOf = (contract: string) => Object.entries(manifest.components).filter(([, entry]) => entry.contract === contract).map(([name]) => name)
 /** A framework component's files: the component and what it imports from beside it. */
 function frameworkFiles(framework: string, entry: string) {
@@ -64,10 +66,10 @@ function frameworkFiles(framework: string, entry: string) {
 
 // `layouts/` is the retired section: its pages moved to the components and the pages, and `_redirects` sends them there.
 for (const generated of ['r', 'themes', 'layouts']) rmSync(join(out, generated), { recursive: true, force: true })
-/** The languages other than English; each has its own `llms.txt` and the guide pages translated into it. */
+/** The languages other than English; each has its own `llms.txt` and Markdown pages. */
 const translatedLocales = locales.filter(locale => locale !== 'en')
 for (const locale of translatedLocales) rmSync(join(out, locale), { recursive: true, force: true })
-for (const section of ['guide', 'components', 'blocks', 'pages']) {
+for (const section of documentSections) {
   if (existsSync(join(out, section))) for (const file of readdirSync(join(out, section))) if (file.endsWith('.md')) rmSync(join(out, section, file))
 }
 cpSync(join(ui, 'dist/contracts.json'), join(out, 'contracts.json'))
@@ -83,50 +85,70 @@ const row = (cells: string[]) => `| ${cells.map(cell => cell.replaceAll('|', '\\
 const table = (head: string[], rows: string[][]) => [row(head), row(head.map(() => '---')), ...rows.map(row)].join('\n')
 const code = (text: string) => `\`${text}\``
 const owners = (entry: any): string[] => entry.of === undefined ? [] : Array.isArray(entry.of) ? entry.of : [entry.of]
+const prefixOf = (locale: string) => locale === 'en' ? '' : `/${locale}`
+const t = (locale: string, key: string) => translations[locale]?.[key] ?? key
+const fills = (text: string, values: Record<string, string>) => text.replace(/\{(\w+)\}/g, (match, name: string) => values[name] ?? match)
 
 /** A contract as a page: everything an agent needs to write the markup, in the order it needs it. */
-function contractMarkdown(contract: any) {
+function contractMarkdown(source: any, locale = 'en') {
+  const contract = localizedContract(source, locale)
+  const tr = (text: string, values: Record<string, string> = {}) => fills(t(locale, text), values)
+  const heading = (title: string) => `## ${tr(title)}`
+  const list = (items: string[]) => items.join(` ${tr('or')} `)
+  const markdownLink = (name: string) => {
+    const pathname = pageOfContract(name)
+    const hasEdition = existsSync(join(site, 'content', pathname, `content.${locale}.mdx`))
+    return `${origin}${hasEdition ? prefixOf(locale) : ''}/${pathname}.md`
+  }
+  const contractPathname = `${origin}${prefixOf(locale)}/${pageOfContract(contract.name)}`
   const constraints = (entry: any) => [
-    entry.kind === 'root' ? 'root' : `${entry.kind} of ${owners(entry).map(code).join(' or ')}`,
-    entry.elements && `on ${entry.elements.map((tag: string) => code(`<${tag}>`)).join(' or ')}`,
-    entry.attributes && `needs ${Object.entries(entry.attributes).map(([name, value]) => code(value === true ? name : `${name}="${Array.isArray(value) ? value.join('|') : value}"`)).join(', ')}`,
-    entry.label && 'needs an accessible name',
-    entry.exclusive && `one ${entry.exclusive} at a time`,
+    entry.kind === 'root' ? tr('Root class') : tr(entry.kind === 'part' ? 'Part of {classes}' : 'Modifier of {classes}', { classes: list(owners(entry).map(code)) }),
+    entry.elements && tr('Use on {elements}', { elements: list(entry.elements.map((tag: string) => code(`<${tag}>`))) }),
+    entry.attributes && tr('Requires {attributes}', { attributes: Object.entries(entry.attributes).map(([name, value]) => code(value === true ? name : `${name}="${Array.isArray(value) ? value.join('|') : value}"`)).join(', ') }),
+    entry.label && tr('Requires an accessible name'),
+    entry.exclusive && tr('One {group} at a time', { group: entry.exclusive })
   ].filter(Boolean).join('; ')
+  const columns = (labels: string[]) => labels.map(label => tr(label))
+  const behavior = contract.behavior && `@master/ui/behaviors/${contract.behavior}.js`
+  const frameworks = componentsOf(contract.name)
+  const frameworkGuide = `${origin}${prefixOf(locale)}/guide/frameworks.md`
+  const frameworkInstructions = frameworks.length
+    ? tr('Copy these framework components into the project: {commands}. Each renders the same markup, attaches the behavior where needed, and passes the value in and out. Check the project’s `ui/` directory first for a local copy. See {guide}.', { commands: frameworks.map(name => code(`npx master-ui add ${name}`)).join(', '), guide: frameworkGuide })
+    : tr('Write the markup in the framework’s syntax (`className` and `htmlFor` in JSX). Use the published classes directly.')
   return [
     `# ${contract.title}`,
     contract.description,
-    `**Use it for:** ${contract.use}`,
-    contract.instead?.length && `**Use something else when:**\n\n${contract.instead.map((item: any) => `- ${item.when}: use [${item.use}](${origin}/${pageOfContract(item.use)}.md).`).join('\n')}`,
-    `## Markup\n\n\`\`\`html\n${contract.example}\n\`\`\``,
-    `## Classes\n\n${table(['Class', 'Where it goes', 'What it is'], contract.classes.map((entry: any) => [code(entry.name), constraints(entry), entry.description]))}`,
-    contract.states?.length && `## States\n\nMark a state with the attribute; the stylesheet draws it. Never add a class for a state.\n\n${table(['State', 'On', 'Mark it with', 'Notes'], contract.states.map((state: any) => [state.name, code(state.on), code(state.mark), state.description ?? '']))}`,
-    contract.properties?.length && `## Custom properties\n\nThese are the public ones. A property with a default is declared on the class itself, so set it on that element: a class of your own beside it, a \`style\` attribute, or a rule such as \`.toolbar .btn { --btn-height: 2rem }\` that sets nothing else.\n\n${table(['Property', 'On', 'Default', 'What it sets'], contract.properties.map((property: any) => [code(property.name), property.on ? code(property.on) : '', property.default ? code(property.default) : '', property.description]))}`,
-    `## Script\n\n${contract.script === 'none' ? 'None. Every state works without script.' : contract.script === 'optional' ? 'Optional. The component works without script; a script adds a convenience.' : 'Required. The pattern has no native element, so a script moves its attributes.'}${contract.behavior ? ` The reference script is \`@master/ui/behaviors/${contract.behavior}.js\`:\n\n\`\`\`js\nimport { ${contract.behavior.replace(/-(\w)/g, (_: string, letter: string) => letter.toUpperCase())} } from '@master/ui/behaviors/${contract.behavior}.js'\n\`\`\`` : ''}`,
-    contract.keyboard?.length && `## Keyboard\n\n${table(['Keys', 'Action'], contract.keyboard.map((item: any) => [item.keys, item.action]))}`,
-    `## In ${frameworkTitles.slice(0, -1).join(', ')} and ${frameworkTitles.at(-1)}\n\n${componentsOf(contract.name).length
-      ? `${componentsOf(contract.name).map((name: string) => `\`${name}\``).join(' and ')} ${componentsOf(contract.name).length > 1 ? 'are components' : 'is a component'} to copy into the project: ${componentsOf(contract.name).map((name: string) => `\`npx master-ui add ${name}\``).join(', ')}. It renders this markup, attaches the behavior where there is one and passes the value in and out. Look in the project's \`ui/\` directory first: a copy may already be there. See ${origin}/guide/frameworks.md.${componentsOf(contract.name).includes(contract.name) ? '' : ' Every other class of this contract is written as markup.'}`
-      : `No component: write this markup in the framework's own syntax (\`className\` and \`htmlFor\` in JSX). Do not wrap a class in a component to rename it.`}`,
-    contract.platform?.length && `## Platform\n\n${table(['Feature', 'Without it'], contract.platform.map((item: any) => [item.feature, item.fallback]))}`,
-    contract.composes?.length && `## Used with\n\n${contract.composes.map((name: string) => `- [${name}](${origin}/${pageOfContract(name)}.md)`).join('\n')}`,
-    `## Install\n\n\`\`\`css\n@import '@master/ui/theme.css';\n${[...(contract.composes ?? []), contract.name].map((name: string) => `@import '@master/ui/${contractOf.get(name)?.tier === 'layout' ? 'layouts' : 'components'}/${name}.css';`).join('\n')}\n\`\`\`\n\nTheme tokens it reads: ${contract.tokens.length ? contract.tokens.map(code).join(', ') : 'none'}.\n\nHuman page: ${origin}/${pageOfContract(contract.name)}`,
+    `**${tr('Use it for')}**\n\n${contract.use}`,
+    contract.instead?.length && `**${tr('Alternatives')}**\n\n${contract.instead.map((item: any) => `- ${item.when} → [${item.use}](${markdownLink(item.use)})`).join('\n')}`,
+    `${heading('Markup')}\n\n\`\`\`html\n${contract.example}\n\`\`\``,
+    `${heading('Classes')}\n\n${table(columns(['Class', 'Where it goes', 'Description']), contract.classes.map((entry: any) => [code(entry.name), constraints(entry), entry.description]))}`,
+    contract.states?.length && `${heading('States')}\n\n${tr('Mark a state with the attribute; the stylesheet draws it. Never add a class for a state.')}\n\n${table(columns(['State', 'On', 'Mark it with', 'Notes']), contract.states.map((state: any) => [state.name, code(state.on), code(state.mark), state.description ?? '']))}`,
+    contract.properties?.length && `${heading('Custom properties')}\n\n${tr('Set a public custom property that has a default on the element itself. Use a class of your own, a `style` attribute, or a rule such as `.toolbar .btn { --btn-height: 2rem }`.')}\n\n${table(columns(['Property', 'On', 'Default', 'Description']), contract.properties.map((property: any) => [code(property.name), property.on ? code(property.on) : '', property.default ? code(property.default) : '', property.description]))}`,
+    `${heading('Script')}\n\n${contract.script === 'none' ? tr('None. Every state works without script.') : contract.script === 'optional' ? tr('Optional. The component works without script; a script adds a convenience.') : tr('Required. The pattern has no native element, so a script moves its attributes.')}${behavior ? `\n\n${tr('Reference script: {path}', { path: code(behavior) })}\n\n\`\`\`js\nimport { ${contract.behavior.replace(/-(\w)/g, (_: string, letter: string) => letter.toUpperCase())} } from '${behavior}'\n\`\`\`` : ''}`,
+    contract.keyboard?.length && `${heading('Keyboard')}\n\n${table(columns(['Keys', 'Action']), contract.keyboard.map((item: any) => [item.keys, item.action]))}`,
+    `${heading('Frameworks')}\n\n${frameworkInstructions}${frameworks.length && !frameworks.includes(contract.name) ? ` ${tr('Write the other classes in this contract as markup.')}` : ''}`,
+    contract.platform?.length && `${heading('Platform')}\n\n${table(columns(['Feature', 'Fallback']), contract.platform.map((item: any) => [item.feature, item.fallback]))}`,
+    contract.composes?.length && `${heading('Used with')}\n\n${contract.composes.map((name: string) => `- [${name}](${markdownLink(name)})`).join('\n')}`,
+    `${heading('Install')}\n\n\`\`\`css\n@import '@master/ui/theme.css';\n${[...(contract.composes ?? []), contract.name].map((name: string) => `@import '@master/ui/${contractOf.get(name)?.tier === 'layout' ? 'layouts' : 'components'}/${name}.css';`).join('\n')}\n\`\`\`\n\n${tr('Theme tokens: {tokens}', { tokens: contract.tokens.length ? contract.tokens.map(code).join(', ') : tr('none') })}\n\n${tr('Web page: {url}', { url: contractPathname })}`
   ].filter(Boolean).join('\n\n') + '\n'
 }
 
 /**
- * An MDX page as Markdown: previews become fenced markup, components that only draw are dropped. A translated
- * edition links to the guide in its own language; the library is linked in English, the only edition it has.
+ * An MDX page as Markdown: previews become fenced markup, components that only draw are dropped.
  */
 function mdxMarkdown(source: string, title: string, description: string, locale = 'en') {
-  const prefix = locale === 'en' ? '' : `/${locale}`
+  const link = (section: string, slug: string, hash = '') => {
+    const translated = locale !== 'en' && existsSync(join(site, 'content', section, slug, `content.${locale}.mdx`))
+    return `${origin}${translated ? prefixOf(locale) : ''}/${section}/${slug}.md${hash}`
+  }
   const body = figureMarkdown(promptMarkdown(previewMarkdown(source.trimStart())))
     // The imports of the page itself, at its top. An import inside a code sample is part of the sample.
     .replace(/^(?:import .*\n)+/, '')
     .replace(/<FrameworkPreview name="([^"]+)"[\s\S]*?\/>/g, (_, name) => `\`\`\`svelte\n${exampleSource(name)}\n\`\`\``)
     .replace(/<ComponentSource name="([^"]+)"(?: directory="([^"]+)")? \/>/g, (_, name, directory = 'components') => `\`\`\`css\n${read(join(ui, directory, `${name}.css`)).trim()}\n\`\`\``)
-    .replace(/<ComponentLinks slugs=\{\[([^\]]*)\]\}(?: kind="(\w+)")? \/>/g, (_, slugs, kind = 'components') => slugs.split(',').map((slug: string) => slug.trim().replace(/['"]/g, '')).filter(Boolean).map((slug: string) => `- [${slug}](${origin}/${kind}/${slug}.md)`).join('\n'))
+    .replace(/<ComponentLinks slugs=\{\[([^\]]*)\]\}(?: kind="(\w+)")? \/>/g, (_, slugs, kind = 'components') => slugs.split(',').map((slug: string) => slug.trim().replace(/['"]/g, '')).filter(Boolean).map((slug: string) => `- [${slug}](${link(kind, slug)})`).join('\n'))
     .replace(/<Contract\w* [^>]*\/>/g, '')
-    .replace(/\]\(\/(guide|components|blocks|pages)\/([\w-]+)(#[\w-]+)?\)/g, (_, section, slug, hash = '') => `](${origin}${section === 'guide' ? prefix : ''}/${section}/${slug}.md${hash})`)
+    .replace(/\]\(\/(guide|components|blocks|pages)\/([\w-]+)(#[\w-]+)?\)/g, (_, section, slug, hash = '') => `](${link(section, slug, hash)})`)
     .replace(/\n{3,}/g, '\n\n')
     .trim()
   return `# ${title}\n\n${description}\n\n${anchorMarkdown(body)}\n`
@@ -150,18 +172,6 @@ for (const slug of readdirSync(join(site, 'content/guide'))) {
 const categoryRank = ['Getting started', 'Customizing', 'Building', 'Reference']
 pages.guide.sort((a: any, b: any) => categoryRank.indexOf(a.category) - categoryRank.indexOf(b.category) || a.order - b.order)
 
-/** Each translated guide page: its title and description come from the edition's frontmatter. */
-const translatedGuide: Record<string, { slug: string, title: string, description: string }[]> = {}
-for (const locale of translatedLocales) {
-  translatedGuide[locale] = (await Promise.all(pages.guide.map(async page => {
-    if (!existsSync(join(site, 'content/guide', page.slug, `content.${locale}.mdx`))) return []
-    const { content, frontmatter } = await readLocalizedDocument({ sourceFile: join(site, 'content/guide', page.slug, 'content.mdx'), locale })
-    const { title, description } = frontmatter as { title: string, description: string }
-    write(`${locale}/guide/${page.slug}.md`, mdxMarkdown(content, title, description, locale))
-    return [{ slug: page.slug, title, description }]
-  }))).flat()
-}
-
 /*
  * A component's page is its contract. A layout among the components is read for its page first, the way it is built
  * and when to use it, with its contract after; the arrangements have no contract and are their page alone. A block or
@@ -183,51 +193,64 @@ for (const [kind, list] of [['blocks', blocks], ['pages', pageLayouts]] as const
   }
 }
 
-/** The index for one language: the rules, then every page, the guide in that language where it has been translated. */
+/** The translated prose comes from MDX and the translated contract from the same data as the rendered tables. */
+const translatedPages: Record<string, typeof pages> = {}
+for (const locale of translatedLocales) {
+  translatedPages[locale] = Object.fromEntries(await Promise.all(Object.entries(pages).map(async ([section, entries]) => {
+    const localized = await Promise.all(entries.map(async ({ slug }) => {
+      const directory = join(site, 'content', section, slug)
+      if (!existsSync(join(directory, `content.${locale}.mdx`))) return []
+      const { content, frontmatter } = await readLocalizedDocument({ sourceFile: join(directory, 'content.mdx'), locale })
+      if (frontmatter.draft) return []
+      const { title, description } = frontmatter as { title: string, description: string }
+      const contract = section === 'components' || section === 'pages' ? contractOf.get(slug === 'app-shell' ? 'shell' : slug) : undefined
+      const authored = mdxMarkdown(content, title, description, locale)
+      const reference = contract && contractMarkdown(contract, locale)
+      write(`${locale}/${section}/${slug}.md`, contract?.tier === 'component' ? reference : authored + (reference ? `\n---\n\n${reference}` : ''))
+      return [{ slug, title, description }]
+    }))
+    return [section, localized.flat()]
+  })))
+}
+
+/** The index for one language: the rules, then links to the published Markdown editions. */
+const englishIndex = read(join(site, 'i18n/llms/en.md')).trim()
+const localizedIndex = Object.fromEntries(translatedLocales.flatMap(locale => {
+  const filename = join(site, 'i18n/llms', `${locale}.md`)
+  return existsSync(filename) ? [[locale, read(filename).trim()]] : []
+}))
+
 const llms = (locale: string) => {
-  const guide = locale === 'en' ? pages.guide : translatedGuide[locale]
-  const prefix = locale === 'en' ? '' : `/${locale}`
+  const prefix = prefixOf(locale)
   const list = (section: string, items: typeof pages.guide, at = '') => items.map(page => `- [${page.title}](${origin}${at}/${section}/${page.slug}.md): ${page.description}`).join('\n')
-  const links = (section: string) => section === 'guide' ? list('guide', guide, prefix) : list(section, pages[section])
+  const links = (section: string) => {
+    const editions = translatedPages[locale]?.[section]
+    return editions?.length ? list(section, editions, prefix) : list(section, pages[section])
+  }
+  const introduction = locale === 'en' ? englishIndex : localizedIndex[locale] ?? englishIndex
   return `# Master UI
 
-> Native HTML and CSS interface components for Master CSS, with a contract for each: the classes, where they go, the states the stylesheet draws, the public custom properties and the smallest correct markup. Blocks and pages are markup to copy.
+${introduction.replaceAll('{origin}', origin).replace('{frameworkComponents}', Object.keys(manifest.components).join(', '))}
 
-Rules for writing Master UI markup:
-
-- A component is a class on a native element: \`<button class="btn btn-primary">\`, \`<dialog class="dialog">\`, \`<input type="checkbox" role="switch" class="switch">\`. Use the element the contract names.
-- A modifier goes with its base on the same element (\`btn btn-sm\`, never \`btn-sm\` alone). A part goes inside its root (\`dialog-title\` inside \`dialog\`).
-- Mark a state with the native or ARIA attribute the contract lists (\`disabled\`, \`aria-pressed="true"\`, \`aria-selected="true"\`, \`open\`). Never add a class for a state, and never write a class that is not in a contract: there is no \`btn-secondary\` or \`btn-outline\`.
-- Lay out with Master CSS utilities in the markup (\`flex gap-md p-lg\`). Do not write CSS for a component's face, edge or shadow; set a theme token or a public custom property instead.
-- Overlays use the platform: \`<dialog>\` with \`command="show-modal"\` and \`commandfor\`, the \`popover\` attribute with \`popovertarget\`. Do not add a positioning or focus-trapping script.
-- A pattern whose contract says \`"script": "required"\` needs its reference script from \`@master/ui/behaviors\`.
-- In React, Svelte or Vue the markup is the same, in the framework's syntax. Do not wrap a class in a component to rename it (\`<Button variant="primary">\`). Only the patterns that hold state have a component, copied into the project with \`npx master-ui add <name>\`: ${Object.keys(manifest.components).join(', ')}.
-- Check the result: \`npx master-ui check\` reports markup that breaks a contract.
-- To change how something looks, take the lowest step that works: a utility on the element, a theme token, a public custom property, a theme file, and only then own the component's source (\`npx master-ui own <name>\`). See the customization guide.
-
-[Licensing](${origin}/license.txt): the library and reusable code examples are MIT licensed.
-
-Data: [every contract](${origin}/contracts.json), [the contract schema](${origin}/contract.schema.json), [the theme's tokens](${origin}/theme.json), [the registry](${origin}/r/registry.json), [the library as plain CSS](${origin}/standalone.css).
-
-## Guide
+## ${t(locale, 'Guide')}
 
 ${links('guide')}
 
-## Components
+## ${t(locale, 'Components')}
 
 ${links('components')}
 
-## Blocks
+## ${t(locale, 'Blocks')}
 
 ${links('blocks')}
 
-## Pages
+## ${t(locale, 'Pages')}
 
 ${links('pages')}
 `
 }
 write('llms.txt', llms('en'))
-for (const locale of translatedLocales) if (translatedGuide[locale].length) write(`${locale}/llms.txt`, llms(locale))
+for (const locale of translatedLocales) if (translatedPages[locale].guide.length) write(`${locale}/llms.txt`, llms(locale))
 
 /* ---------------------------------------------------------------- Registry */
 
@@ -316,4 +339,5 @@ write('r/registry.json', `${JSON.stringify({
   items: items.map(({ files, $schema, ...entry }) => ({ ...entry, files: files.map(({ content, ...rest }: any) => rest) })),
 }, null, 2)}\n`)
 
-console.log(`Generated llms.txt, ${Object.values(pages).flat().length + Object.values(translatedGuide).flat().length} Markdown pages, contracts.json, theme.json, standalone.css and a registry of ${items.length} items`)
+const markdownCount = [pages, ...Object.values(translatedPages)].reduce((count, edition) => count + Object.values(edition).flat().length, 0)
+console.log(`Generated llms.txt, ${markdownCount} Markdown pages, contracts.json, theme.json, standalone.css and a registry of ${items.length} items`)

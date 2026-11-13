@@ -1,0 +1,190 @@
+---
+title: "스니펫"
+description: "한 줄짜리 명령어와 프롬프트, 명령어 복사 버튼으로 구성된 컴포넌트입니다."
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+스니펫은 터미널에서 실행할 한 줄짜리 명령어와 프롬프트, 명령어를 복사하는 버튼으로 구성됩니다. [오목한 영역](/components/surface#well)에 [코드 블록](/components/code#block)과 같은 고정폭 글꼴을 사용하며, 버튼과 높이가 같아 나란히 배치할 수 있습니다. 프롬프트는 선택할 수 없고 명령어는 줄바꿈되지 않습니다. 복사 버튼은 끝에서 4px 안쪽에 있으며, 평소에는 눈에 띄지 않다가 포인터를 올리면 강조됩니다.
+
+<ComponentPreview name="default" height={96} title="스니펫" background="plain" bodyClass="p-lg" html={`<div class="snippet max-w(360) mx-auto">
+  <span class="snippet-prompt" aria-hidden="true">$</span>
+  <code class="snippet-command" tabindex="0">npm install @master/ui</code>
+  <button type="button" class="btn btn-quiet btn-square" aria-label="Copy command">
+    <svg class="icon snippet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 8h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
+    <svg class="icon snippet-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>
+  </button>
+  <output class="snippet-status"></output>
+</div>
+<script>
+document.querySelectorAll('.snippet').forEach(function (snippet) {
+  var status = snippet.querySelector('.snippet-status')
+  var timer = 0
+  snippet.querySelector('.btn').addEventListener('click', function () {
+    var command = Array.prototype.find.call(snippet.querySelectorAll('.snippet-command'), function (line) {
+      return line.checkVisibility()
+    })
+    navigator.clipboard.writeText(command.textContent).then(function () {
+      status.textContent = 'Copied'
+      clearTimeout(timer)
+      timer = setTimeout(function () { status.textContent = '' }, 2000)
+    })
+  })
+})
+</script>`} caption="명령어를 복사하면 아이콘이 2초 동안 체크 표시로 바뀝니다." />
+
+## 명령어 줄 구성 \{#line\}
+
+`snippet`은 세 요소를 각각 한 열에 배치합니다. `snippet-prompt`는 터미널에서 명령어 앞에 표시하는 `$` 또는 `>` 기호로, 명령어보다 옅은 색으로 표시합니다. 프롬프트는 선택할 수 없으므로 줄을 직접 선택해도 명령어만 선택됩니다. 스크린 리더가 프롬프트를 읽지 않도록 `aria-hidden` 속성을 지정합니다. `snippet-command`로 표시하는 명령어는 `<code>`에 넣습니다. 마지막에는 눈에 띄지 않는 정사각형 [버튼](/components/button)이 놓입니다. 스니펫이 버튼의 높이와 모서리 둥글기를 정하며, 버튼 높이는 줄 높이에서 위아래로 4px씩 뺀 값입니다.
+
+명령어가 한 줄의 표시 영역보다 길면 줄바꿈 없이 가로로 스크롤됩니다. 스크롤바는 표시되지 않으며, 명령어가 더 이어지는 쪽 가장자리가 흐려집니다. 가장자리의 흐림 효과는 스크롤 위치에 따라 달라지므로 스크롤하기 전에는 시작 부분이 선명하게 보입니다. 방향키로 스크롤할 수 있도록 명령어에 `tabindex="0"`를 지정하세요. 명령어에 포커스가 있으면 줄 전체에 포커스 윤곽선이 표시됩니다.
+
+<ComponentPreview name="long" height={96} title="긴 명령어" background="plain" bodyClass="p-lg" html={`<div class="snippet max-w(360) mx-auto">
+  <span class="snippet-prompt" aria-hidden="true">$</span>
+  <code class="snippet-command" tabindex="0">curl -fsSL https://ui.master.co/install.sh | sh -s -- --yes --prefix ~/.local</code>
+  <button type="button" class="btn btn-quiet btn-square" aria-label="Copy command">
+    <svg class="icon snippet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 8h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
+    <svg class="icon snippet-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>
+  </button>
+  <output class="snippet-status"></output>
+</div>
+<script>
+document.querySelectorAll('.snippet').forEach(function (snippet) {
+  var status = snippet.querySelector('.snippet-status')
+  var timer = 0
+  snippet.querySelector('.btn').addEventListener('click', function () {
+    var command = Array.prototype.find.call(snippet.querySelectorAll('.snippet-command'), function (line) {
+      return line.checkVisibility()
+    })
+    navigator.clipboard.writeText(command.textContent).then(function () {
+      status.textContent = 'Copied'
+      clearTimeout(timer)
+      timer = setTimeout(function () { status.textContent = '' }, 2000)
+    })
+  })
+})
+</script>`} caption="명령어를 가로로 스크롤해 보세요. 각 가장자리는 그 너머에 내용이 더 있을 때 흐려집니다." />
+
+## 복사 \{#copying\}
+
+복사에는 스크립트가 필요합니다. 명령어 텍스트를 `navigator.clipboard`에 전달하세요. 복사 상태는 클래스로 표시하지 않습니다. 버튼 옆에는 화면에 표시되지 않는 빈 `<output>` 요소(`snippet-status`)가 있습니다. 스크립트가 여기에 ‘복사됨’을 쓰면 스크린 리더가 이를 읽어 주고, 2초 뒤 스크립트가 내용을 비웁니다. 내용이 있는 동안 스타일시트가 복사 아이콘을 체크 표시로 바꾸므로 화면에서도 같은 상태를 확인할 수 있습니다.
+
+미리보기의 스크립트는 화면에 표시된 명령어를 찾아 클립보드에 쓴 뒤 상태 메시지를 채웠다가 비웁니다. 이 스크립트가 전체 구현입니다. 클립보드 기능은 HTTPS로 제공되거나 localhost에서 제공되는 페이지에서만 사용할 수 있습니다. 스크립트가 비활성화되어 있으면 버튼이 표시되지 않으며, 명령어는 텍스트로 남아 직접 선택해 복사할 수 있습니다.
+
+## 패키지 관리자 \{#package-managers\}
+
+같은 작업을 실행하는 명령어를 npm, pnpm, bun, yarn별로 제공하려면 네이티브 라디오 버튼으로 구성한 [세그먼트 컨트롤](/components/segmented)을 스니펫 맨 앞에 배치하고, 각 옵션에 해당하는 `snippet-command`를 옵션과 같은 순서로 작성하세요. 컨트롤 자체의 오목한 영역은 사라지고, 컨트롤은 스니펫 상단의 아주 얇은 구분선 위에 놓입니다. 선택한 옵션은 한 층 위에 놓인 표면으로 표시되며, 다른 옵션을 선택하면 그 표면이 새 위치로 부드럽게 이동합니다. 최대 6개 옵션까지 스크립트 없이 선택한 옵션에 해당하는 명령어가 표시됩니다.
+
+<ComponentPreview name="managers" height={136} title="패키지 관리자" background="plain" bodyClass="p-lg" html={`<div class="snippet max-w(360) mx-auto">
+  <div class="segmented" role="radiogroup" aria-label="Package manager">
+    <label class="segmented-item"><input class="segmented-input" type="radio" name="manager" checked>npm</label>
+    <label class="segmented-item"><input class="segmented-input" type="radio" name="manager">pnpm</label>
+    <label class="segmented-item"><input class="segmented-input" type="radio" name="manager">bun</label>
+    <label class="segmented-item"><input class="segmented-input" type="radio" name="manager">yarn</label>
+  </div>
+  <span class="snippet-prompt" aria-hidden="true">$</span>
+  <code class="snippet-command" tabindex="0">npm install @master/ui</code>
+  <code class="snippet-command" tabindex="0">pnpm add @master/ui</code>
+  <code class="snippet-command" tabindex="0">bun add @master/ui</code>
+  <code class="snippet-command" tabindex="0">yarn add @master/ui</code>
+  <button type="button" class="btn btn-quiet btn-square" aria-label="Copy command">
+    <svg class="icon snippet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 8h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
+    <svg class="icon snippet-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>
+  </button>
+  <output class="snippet-status"></output>
+</div>
+<script>
+document.querySelectorAll('.snippet').forEach(function (snippet) {
+  var status = snippet.querySelector('.snippet-status')
+  var timer = 0
+  snippet.querySelector('.btn').addEventListener('click', function () {
+    var command = Array.prototype.find.call(snippet.querySelectorAll('.snippet-command'), function (line) {
+      return line.checkVisibility()
+    })
+    navigator.clipboard.writeText(command.textContent).then(function () {
+      status.textContent = 'Copied'
+      clearTimeout(timer)
+      timer = setTimeout(function () { status.textContent = '' }, 2000)
+    })
+  })
+})
+</script>`} caption="패키지 관리자를 선택하면 해당 명령어가 표시됩니다." />
+
+## 크기 \{#sizes\}
+
+기본 줄 높이는 버튼과 같은 38px입니다. `snippet-sm`의 줄 높이는 32px, 글자 크기는 12px로, 정보가 촘촘한 페이지나 표에 사용합니다. `snippet-lg`의 줄 높이는 44px, 글자 크기는 14px로, 페이지 상단에서 큰 버튼과 높이를 맞출 때 사용합니다. 터치 화면에서는 모든 크기의 줄 높이가 44px입니다.
+
+<ComponentPreview name="sizes" height={224} narrowHeight={280} title="크기" background="plain" bodyClass="p-lg" html={`<div class="flex flex-col items-center gap-lg">
+  <div class="snippet snippet-sm">
+    <span class="snippet-prompt" aria-hidden="true">$</span>
+    <code class="snippet-command" tabindex="0">npx master-ui add button</code>
+    <button type="button" class="btn btn-quiet btn-square" aria-label="Copy command">
+      <svg class="icon snippet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 8h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
+      <svg class="icon snippet-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>
+    </button>
+    <output class="snippet-status"></output>
+  </div>
+  <div class="snippet">
+    <span class="snippet-prompt" aria-hidden="true">$</span>
+    <code class="snippet-command" tabindex="0">npx master-ui add button</code>
+    <button type="button" class="btn btn-quiet btn-square" aria-label="Copy command">
+      <svg class="icon snippet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 8h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
+      <svg class="icon snippet-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>
+    </button>
+    <output class="snippet-status"></output>
+  </div>
+  <div class="flex flex-wrap items-center justify-center gap-sm">
+    <a class="btn btn-primary btn-lg" href="#">Get started</a>
+    <div class="snippet snippet-lg">
+      <span class="snippet-prompt" aria-hidden="true">$</span>
+      <code class="snippet-command" tabindex="0">npm install @master/ui</code>
+      <button type="button" class="btn btn-quiet btn-square" aria-label="Copy command">
+        <svg class="icon snippet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 8h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
+        <svg class="icon snippet-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>
+      </button>
+      <output class="snippet-status"></output>
+    </div>
+  </div>
+</div>
+<script>
+document.querySelectorAll('.snippet').forEach(function (snippet) {
+  var status = snippet.querySelector('.snippet-status')
+  var timer = 0
+  snippet.querySelector('.btn').addEventListener('click', function () {
+    var command = Array.prototype.find.call(snippet.querySelectorAll('.snippet-command'), function (line) {
+      return line.checkVisibility()
+    })
+    navigator.clipboard.writeText(command.textContent).then(function () {
+      status.textContent = 'Copied'
+      clearTimeout(timer)
+      timer = setTimeout(function () { status.textContent = '' }, 2000)
+    })
+  })
+})
+</script>`} />
+
+## 스니펫과 코드의 용도 \{#snippet-or-code\}
+
+실행할 한 줄짜리 명령어에는 스니펫을 사용합니다. 여러 줄이나 읽어야 할 파일 또는 출력에는 [코드 블록](/components/code#block)을 사용하고, 문장 속에서 언급하는 명령어에는 인라인 [코드](/components/code)를 사용합니다. 눌러야 할 키는 [kbd](/components/kbd)로 표시합니다.
+
+## 접근성 \{#accessibility\}
+
+- 프롬프트는 장식이므로 명령어 줄에서 스크린 리더가 명령어만 읽도록 프롬프트에 `aria-hidden="true"`를 지정하세요.
+- 복사 버튼에 ‘명령어 복사’와 같은 `aria-label` 값을 지정하세요. 버튼 아이콘에는 `aria-hidden` 속성이 지정되어 있습니다.
+- 마크업에서 `snippet-status`를 비워 두고 내부에 공백도 넣지 마세요. 스크립트가 여기에 ‘복사됨’을 쓰면 스크린 리더가 이를 읽어 줍니다. `<output>` 자체가 현재 읽기를 방해하지 않는 라이브 영역입니다.
+- 한 줄의 표시 영역보다 긴 명령어를 키보드로 스크롤할 수 있도록 명령어에 `tabindex="0"`를 지정하세요.
+- 강제 색상 모드에서는 흐림 효과가 사라지고, 오목한 영역에 윤곽선이 표시되며, 프롬프트에는 시스템의 회색 텍스트 색상이 적용됩니다.
+
+## 클래스 \{#classes\}
+
+<ContractTable name="snippet" />
+
+## 사용자 지정 속성 \{#custom-properties\}
+
+<ContractTable name="snippet" show="properties" />
+
+## 소스 \{#source\}
+
+<ComponentSource name="snippet" />

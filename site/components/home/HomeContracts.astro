@@ -3,13 +3,16 @@ import '@master/ui/components/checkbox.css'
 import '@master/ui/components/switch.css'
 import '../../styles/home-contracts.css'
 import IconArrowRight from '@tabler/icons-svelte-runes/icons/arrow-right'
+import Link from '@master/internal-site/components/Link.svelte'
 import { siteOf } from '@master/internal-site/astro/site-context'
+import { localizedContract } from '~/site/i18n/contract-copy'
 import { highlight } from './forge'
 import { contractRun, type Finding } from './contracts/run'
 
-const { t } = siteOf(Astro)
+const { t, locale, i18n } = siteOf(Astro)
 const run = contractRun()
-const spec = run.contract
+const spec = localizedContract(run.contract, locale)
+const indexPath = locale === i18n.defaultLocale ? '/llms.txt' : `/${locale}/llms.txt`
 
 /** Callout letters join each diagnostic to the entry of the contract it enforces. */
 const cited = run.findings.map((finding, at) => ({ ...finding, letter: 'ABCDEFGH'[at] }))
@@ -66,8 +69,8 @@ const secondRunHtml = command + `<span class="ui-contract-out ui-contract-summar
       <h2 id="contracts-title" class="home-lit home-section-heading home-stone-type"><span>{t('Written for people,')}</span>{' '}<span>{t('checked for agents.')}</span></h2>
       <p class="home-section-body">{t('Every component ships a contract: its classes, states and keys, when to use it, and one correct example. Agents read it before they write; the checker flags markup that breaks it.')}</p>
       <div class="ui-contracts-links">
-        <a class="home-section-link" href="/guide/contracts">{t('How contracts work')}<IconArrowRight aria-hidden="true" size={14} stroke={1.75} /></a>
-        <a class="home-section-link" href="/guide/ai">{t('Working with AI')}<IconArrowRight aria-hidden="true" size={14} stroke={1.75} /></a>
+        <Link class="home-section-link" href="/guide/contracts">{t('How contracts work')}<IconArrowRight aria-hidden="true" size={14} stroke={1.75} /></Link>
+        <Link class="home-section-link" href="/guide/ai">{t('Working with AI')}<IconArrowRight aria-hidden="true" size={14} stroke={1.75} /></Link>
       </div>
     </header>
 
@@ -88,13 +91,13 @@ const secondRunHtml = command + `<span class="ui-contract-out ui-contract-summar
 
           {use ? (
             <section class="ui-contract-group" aria-labelledby="contract-use">
-              <h4 id="contract-use" class="ui-contract-label home-annotation">use</h4>
+              <h4 id="contract-use" class="ui-contract-label home-annotation">{t('Use it for')}</h4>
               <p class="ui-contract-use">{use}</p>
             </section>
           ) : null}
 
           <section class="ui-contract-group" aria-labelledby="contract-classes">
-            <h4 id="contract-classes" class="ui-contract-label home-annotation">classes</h4>
+            <h4 id="contract-classes" class="ui-contract-label home-annotation">{t('Classes')}</h4>
             <dl class="ui-contract-rows">
               {spec.classes.map(entry => (
                 <div class="ui-contract-row" data-callout={classLetters(entry.name)}>
@@ -108,7 +111,7 @@ const secondRunHtml = command + `<span class="ui-contract-out ui-contract-summar
 
           {spec.states?.length ? (
             <section class="ui-contract-group" aria-labelledby="contract-states">
-              <h4 id="contract-states" class="ui-contract-label home-annotation">states</h4>
+              <h4 id="contract-states" class="ui-contract-label home-annotation">{t('States')}</h4>
               <dl class="ui-contract-rows">
                 {spec.states.map((state, index) => (
                   <div class="ui-contract-row" data-callout={index === 0 ? stateLetters : undefined}>
@@ -124,7 +127,7 @@ const secondRunHtml = command + `<span class="ui-contract-out ui-contract-summar
 
           {spec.keyboard?.length ? (
             <section class="ui-contract-group" aria-labelledby="contract-keyboard">
-              <h4 id="contract-keyboard" class="ui-contract-label home-annotation">keyboard</h4>
+              <h4 id="contract-keyboard" class="ui-contract-label home-annotation">{t('Keyboard')}</h4>
               <dl class="ui-contract-rows">
                 {spec.keyboard.map(key => (
                   <div class="ui-contract-row ui-contract-row-key">
@@ -137,7 +140,7 @@ const secondRunHtml = command + `<span class="ui-contract-out ui-contract-summar
           ) : null}
 
           <section class="ui-contract-group" aria-labelledby="contract-example">
-            <h4 id="contract-example" class="ui-contract-label home-annotation">example</h4>
+            <h4 id="contract-example" class="ui-contract-label home-annotation">{t('Example')}</h4>
             <div class="ui-contract-specimen" set:html={spec.example} />
           </section>
 
@@ -161,7 +164,7 @@ const secondRunHtml = command + `<span class="ui-contract-out ui-contract-summar
     <h3 id="contracts-outputs-title" class="ui-contract-outputs-title home-annotation">{t('What the site publishes for programs')}</h3>
     <ul class="ui-contract-outputs" aria-labelledby="contracts-outputs-title">
       <li class="ui-contract-output">
-        <a href="/llms.txt"><code>/llms.txt</code></a>
+        <a href={indexPath}><code>{indexPath}</code></a>
         <p>{t('The rules for writing Master UI markup, and a link to every page as Markdown.')}</p>
       </li>
       <li class="ui-contract-output">
@@ -169,11 +172,11 @@ const secondRunHtml = command + `<span class="ui-contract-out ui-contract-summar
         <p>{t('Every contract as data, for programs that write markup.')}</p>
       </li>
       <li class="ui-contract-output">
-        <a href="/guide/ai#the-skill"><code>npx skills add master-co/ui --skill master-ui</code></a>
+        <Link href="/guide/ai#the-skill"><code>npx skills add master-co/ui --skill master-ui</code></Link>
         <p>{t('A skill that has an agent read the contracts, check its markup and verify the result in a browser.')}</p>
       </li>
       <li class="ui-contract-output">
-        <a href="/guide/registry"><code>npx master-ui add &lt;name&gt;</code></a>
+        <Link href="/guide/registry"><code>npx master-ui add &lt;name&gt;</code></Link>
         <p>{t('React, Svelte and Vue components copied into the project as source, also served as a shadcn-style registry.')}</p>
       </li>
     </ul>

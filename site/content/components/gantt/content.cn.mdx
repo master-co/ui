@@ -1,0 +1,81 @@
+---
+title: "甘特图"
+description: "在同一时间刻度上用横条表示各事项从何时开始、到何时结束。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+甘特图在同一时间标尺上用条形表示持续一段时间的事项，例如项目阶段、待命值班时段和按固定节奏协调发布的计划。甘特图采用列表结构。每行包含条形的起止位置、事项名称和条形显示的文本。样式表负责排布：名称和条形各占一列，标尺的每个单位都用细线标记。无需脚本或 SVG。
+
+<ComponentPreview name="default" height={248} narrowHeight={320} title="甘特图" bodyClass="p-lg" html={`<div class="card max-w(560) mx-auto">
+  <ol class="gantt gantt-now" style="--gantt-from: 0; --gantt-to: 8; --gantt-now: 4.4" aria-label="Launch plan, in weeks">
+    <li class="gantt-row gantt-scale" aria-hidden="true">
+      <ol class="gantt-ticks"><li>W1</li><li>W2</li><li>W3</li><li>W4</li><li>W5</li><li>W6</li><li>W7</li><li>W8</li></ol>
+    </li>
+    <li class="gantt-row" style="--from: 0; --to: 3; --progress: 100"><span class="gantt-label">Research</span><span class="gantt-bar">Weeks 1 to 3</span></li>
+    <li class="gantt-row" aria-current="true" style="--from: 2; --to: 6"><span class="gantt-label">Design</span><span class="gantt-bar">Weeks 3 to 6</span></li>
+    <li class="gantt-row" style="--from: 4; --to: 7.5; --progress: 15"><span class="gantt-label">Build</span><span class="gantt-bar">Weeks 5 to 8</span></li>
+    <li class="gantt-row" style="--from: 7.5"><span class="gantt-label">Launch</span><span class="gantt-bar gantt-milestone">Middle of week 8</span></li>
+  </ol>
+</div>`} />
+
+## 条形如何定位 \{#how-a-bar-gets-its-place\}
+
+在列表上用 `--gantt-from` 和 `--gantt-to` 设置标尺的起止值。单位可自行选择，例如天、周、小时或迭代周期。每个 `gantt-row` 都用同一单位设置 `--from` 和 `--to`，其 `gantt-bar` 按对应比例在轨道上起止。支持小数值，因此条形可以在一个单位的中途结束。
+
+名称列的宽度由最长的名称决定，轨道占据剩余宽度。所有行共用这两列，无需显式指定宽度即可对齐条形。条形后方的细线标出标尺的每个单位。
+
+用条形文本写明条形表达的信息，例如起止日期、时长和负责人。即使条形太短也要写这段文本，屏幕阅读器会朗读它。超出可用空间的文本会以省略号结尾。
+
+## 进度、当前行和当前时间 \{#progress\}
+
+在行上将 `--progress` 设为 0 到 100 之间的值，条形就会按相应比例填入更深的色调。用 `aria-current="true"` 标记的行采用墨色条形，表示读者当前所处的阶段，或当前视图所关注的阶段。
+
+在列表上设置 `gantt-now`，会在 `--gantt-now` 处画一条贯穿所有行的墨色竖线，标出今天。指针悬停在某行时，该行的条形会加深一级，名称也会使用更深的墨色，方便读者在宽图中沿着同一行查看。
+
+## 里程碑 \{#milestones\}
+
+里程碑表示单个时间点。在仅设置了 `--from` 的行中，将 `gantt-milestone` 加到条形上，该时间点就会显示一个墨色小菱形。条形文本保留在列表中供辅助技术读取，视觉上隐藏，因此请用该时间点发生的事件为这一行命名。
+
+## 时间标尺 \{#the-scale\}
+
+带有 `gantt-scale` 的行用来标注各个单位。该行包含一个 `gantt-ticks` 列表，每个单位对应一个列表项，名称位于该单位起始细线的上方。条形文本已经传达了这些信息，因此用 `aria-hidden` 将标尺对辅助技术隐藏。
+
+<ComponentPreview name="shifts" height={212} narrowHeight={280} title="一天中的各个小时" bodyClass="p-lg" html={`<div class="card max-w(560) mx-auto">
+  <ol class="gantt" style="--gantt-from: 0; --gantt-to: 24" aria-label="On call today">
+    <li class="gantt-row gantt-scale" aria-hidden="true">
+      <ol class="gantt-ticks"><li>00</li><li></li><li></li><li></li><li></li><li></li><li>06</li><li></li><li></li><li></li><li></li><li></li><li>12</li><li></li><li></li><li></li><li></li><li></li><li>18</li><li></li><li></li><li></li><li></li><li></li></ol>
+    </li>
+    <li class="gantt-row" style="--from: 0; --to: 8"><span class="gantt-label">Grace</span><span class="gantt-bar">00:00 to 08:00</span></li>
+    <li class="gantt-row" aria-current="true" style="--from: 8; --to: 16"><span class="gantt-label">Ada</span><span class="gantt-bar">08:00 to 16:00</span></li>
+    <li class="gantt-row" style="--from: 16; --to: 24"><span class="gantt-label">Alan</span><span class="gantt-bar">16:00 to 24:00</span></li>
+  </ol>
+</div>`} />
+
+## 窄容器中的布局 \{#narrow\}
+
+甘特图本身是一个尺寸容器。自身宽度小于 26rem 时，名称移到对应条形的上方，轨道占满整行。在手机上应减少标尺单位数：8 个单位仍清晰可读，30 个就难以辨认。
+
+## 甘特图、时间线还是图表 \{#gantt-timeline-or-chart\}
+
+用甘特图呈现有起止时间的事项。按发生顺序呈现各个时间点的事件时，用[时间线](/components/timeline)。比较与时间位置无关的数值时，用[图表](/components/chart)。
+
+## 无障碍 \{#accessibility\}
+
+- 使用 `<ol>` 编写列表，并用 `aria-label` 或标题为其命名。每行是一个列表项，先朗读名称，再朗读条形文本，例如“设计，第 3 周到第 6 周”。
+- 条形、细线和当前时间线均由样式表绘制。用文本写明图形表达的信息，包括条形的起止日期，并在有必要时注明哪一行是当前行。
+- 区分当前行无需辨认色相。常规模式下，当前行用墨色条形，其他行用浅色条形。强制颜色模式下，当前行用实心条形，其他行只显示轮廓。
+
+## 类名 \{#classes\}
+
+<ContractTable name="gantt" />
+
+## 自定义属性 \{#custom-properties\}
+
+<ContractTable name="gantt" show="properties" />
+
+## 源码 \{#source\}
+
+<ComponentSource name="gantt" />

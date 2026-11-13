@@ -1,0 +1,187 @@
+---
+title: "对话框"
+description: "以浮层面板呈现的原生模态对话框，打开和关闭均无需脚本。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+对话框是层次最高的表面。浮层面板位于遮罩上方，遮罩压暗页面并弱化背景细节。在原生 `<dialog>` 上使用 `.dialog`。带有 `commandfor` 和 `command="show-modal"` 的按钮可以打开对话框，浏览器会将对话框置于顶层，将焦点限制在框内，并支持按 <kbd>Esc</kbd> 关闭，全程无需脚本。
+
+<ComponentPreview name="default" height={304} title="对话框" bodyClass="flex items-center justify-center p-lg min-h(300)" html={`<button type="button" class="btn" commandfor="delete-project" command="show-modal">Delete project</button>
+
+<dialog id="delete-project" class="dialog" closedby="any" aria-labelledby="delete-project-title">
+  <header class="dialog-header">
+    <h2 class="dialog-title" id="delete-project-title">Delete this project?</h2>
+    <p class="dialog-description">Atlas and its 14 deployments are removed, and its domains stop resolving at once.</p>
+  </header>
+  <footer class="dialog-footer">
+    <button type="button" class="btn" commandfor="delete-project" command="close">Cancel</button>
+    <button type="button" class="btn btn-primary" commandfor="delete-project" command="close">Delete project</button>
+  </footer>
+</dialog>`} />
+
+## 打开和关闭 \{#opening-and-closing\}
+
+三个属性即可实现过去需要脚本处理的模态对话框行为：
+
+- 在按钮上将 `commandfor="id"` 与 `command="show-modal"` 搭配使用，即可将对话框以模态方式打开。`command="close"` 关闭对话框，并将焦点还给打开它的按钮。
+- 在对话框上添加 `closedby="any"` 后，点击遮罩也能关闭对话框。按 <kbd>Esc</kbd> 始终可以关闭。如果误点可能导致工作成果丢失，请省略此属性。在不支持此属性的浏览器中，<kbd>Esc</kbd> 和关闭按钮仍然有效。
+- 对话框内的 `<form method="dialog">` 会在提交时关闭对话框，并通过对话框的 `returnValue` 报告使用了哪个按钮。
+
+模态对话框打开时，后方页面无法交互，也不会滚动。
+
+## 包含表单 \{#with-a-form\}
+
+`dialog-body` 容纳头部和底部之间的内容，并占用剩余高度。当内容超出视口允许的高度时，可在面板内滚动。`dialog-close` 在角落放置一个低调的方形按钮，请为它提供无障碍名称。
+
+<ComponentPreview name="form" height={520} title="包含表单" bodyClass="flex items-center justify-center p-lg min-h(520)" html={`<button type="button" class="btn btn-primary" commandfor="invite" command="show-modal">Invite member</button>
+
+<dialog id="invite" class="dialog" closedby="any" aria-labelledby="invite-title">
+  <header class="dialog-header">
+    <h2 class="dialog-title" id="invite-title">Invite a member</h2>
+    <p class="dialog-description">They receive an email with a link that expires in seven days.</p>
+  </header>
+  <form class="dialog-body flex flex-col gap-md" method="dialog" id="invite-form">
+    <label class="field">
+      Email
+      <input class="input" type="email" placeholder="ada@example.com" required autofocus>
+    </label>
+    <label class="field">
+      Role
+      <select class="select">
+        <option class="select-option">Member</option>
+        <option class="select-option">Admin</option>
+        <option class="select-option">Billing</option>
+      </select>
+    </label>
+  </form>
+  <footer class="dialog-footer">
+    <button type="button" class="btn" commandfor="invite" command="close">Cancel</button>
+    <button type="submit" class="btn btn-primary" form="invite-form">Send invite</button>
+  </footer>
+  <button type="button" class="btn btn-quiet btn-square btn-sm dialog-close" commandfor="invite" command="close" aria-label="Close">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+  </button>
+</dialog>`} />
+
+## 尺寸 \{#sizes\}
+
+对话框默认宽 28rem。`dialog-sm` 宽 22rem，适合一句话的确认提示。`dialog-lg` 宽 40rem。在窄屏上，各尺寸的对话框与视口左右边缘各留出 1rem。底部通过容器查询响应对话框自身的宽度。宽度小于 22rem 时，按钮纵向排列并占满可用宽度，主要操作排在最上方。
+
+<ComponentPreview name="sizes" height={304} title="尺寸" bodyClass="flex flex-wrap items-center justify-center gap-md p-lg min-h(300)" html={`<button type="button" class="btn" commandfor="size-sm" command="show-modal">Small</button>
+<button type="button" class="btn" commandfor="size-lg" command="show-modal">Large</button>
+
+<dialog id="size-sm" class="dialog dialog-sm" closedby="any" aria-labelledby="size-sm-title">
+  <header class="dialog-header">
+    <h2 class="dialog-title" id="size-sm-title">Sign out?</h2>
+    <p class="dialog-description">Unsaved drafts stay on this device.</p>
+  </header>
+  <footer class="dialog-footer">
+    <button type="button" class="btn" commandfor="size-sm" command="close">Stay</button>
+    <button type="button" class="btn btn-primary" commandfor="size-sm" command="close">Sign out</button>
+  </footer>
+</dialog>
+
+<dialog id="size-lg" class="dialog dialog-lg" closedby="any" aria-labelledby="size-lg-title">
+  <header class="dialog-header">
+    <h2 class="dialog-title" id="size-lg-title">Release notes</h2>
+    <p class="dialog-description">Version 2.1 adds overlays that need no script: dialogs, popovers, menus and tooltips.</p>
+  </header>
+  <footer class="dialog-footer">
+    <button type="button" class="btn btn-primary" commandfor="size-lg" command="close">Done</button>
+  </footer>
+</dialog>`} />
+
+## 抽屉 \{#drawer\}
+
+`dialog-drawer` 是位于行内结束侧的面板，适合在保持页面可见的同时提供筛选、详情和设置。它距视口边缘 8px，使圆角和阴影完整可见，并从所在边缘滑入。
+
+<ComponentPreview name="drawer" height={400} title="抽屉" bodyClass="flex items-center justify-center p-lg min-h(400)" html={`<button type="button" class="btn" commandfor="filters" command="show-modal">Filters</button>
+
+<dialog id="filters" class="dialog dialog-drawer" closedby="any" aria-labelledby="filters-title">
+  <header class="dialog-header">
+    <h2 class="dialog-title" id="filters-title">Filters</h2>
+    <p class="dialog-description">Narrow the list of deployments.</p>
+  </header>
+  <div class="dialog-body flex flex-col gap-md">
+    <label class="field">
+      Branch
+      <input class="input" value="main">
+    </label>
+    <label class="check"><input type="checkbox" class="checkbox" checked> Production only</label>
+  </div>
+  <footer class="dialog-footer">
+    <button type="button" class="btn" commandfor="filters" command="close">Reset</button>
+    <button type="button" class="btn btn-primary" commandfor="filters" command="close">Apply</button>
+  </footer>
+</dialog>`} />
+
+### 行内起始侧 \{#drawer-start\}
+
+添加 `dialog-drawer-start` 后，抽屉位于行内起始侧，宽 18rem，适合放置导航。侧边栏在窄布局中收起后，可以此抽屉的形式重新打开。参见[应用页面框架](/pages/app-shell)。
+
+<ComponentPreview name="drawer-start" height={400} title="行内起始侧的抽屉" bodyClass="flex items-center justify-center p-lg min-h(400)" html={`<button type="button" class="btn" commandfor="nav-drawer" command="show-modal">Open navigation</button>
+
+<dialog id="nav-drawer" class="dialog dialog-drawer dialog-drawer-start" closedby="any" aria-label="Navigation">
+  <div class="dialog-body">
+    <nav class="nav" aria-label="Workspace">
+      <a class="nav-item" href="#" aria-current="page">Overview</a>
+      <a class="nav-item" href="#">Projects</a>
+      <a class="nav-item" href="#">Domains</a>
+      <a class="nav-item" href="#">Settings</a>
+    </nav>
+  </div>
+</dialog>`} />
+
+## 底部面板 \{#sheet\}
+
+`dialog-sheet` 从底边升起，位于小屏幕上拇指容易触及的位置，适合简短任务或选项列表。它铺满可用宽度，最大宽度由 `--dialog-width` 指定，底部两角以直角贴合边缘，并用 `env(safe-area-inset-bottom)` 为主屏幕指示条留出空间。
+
+<ComponentPreview name="sheet" height={384} title="底部面板" bodyClass="flex items-center justify-center p-lg min-h(380)" html={`<button type="button" class="btn" commandfor="share-sheet" command="show-modal">Share</button>
+
+<dialog id="share-sheet" class="dialog dialog-sheet" closedby="any" aria-labelledby="share-sheet-title">
+  <header class="dialog-header">
+    <h2 class="dialog-title" id="share-sheet-title">Share this project</h2>
+    <p class="dialog-description">Anyone with the link can view the latest deployment.</p>
+  </header>
+  <div class="dialog-body">
+    <div class="input-group">
+      <input class="input-group-field" value="https://atlas.dev/p/9f2c" readonly aria-label="Link">
+      <button type="button" class="btn">Copy</button>
+    </div>
+  </div>
+  <footer class="dialog-footer">
+    <button type="button" class="btn btn-primary" commandfor="share-sheet" command="close">Done</button>
+  </footer>
+</dialog>`} />
+
+## 动效 \{#motion\}
+
+对话框从正常尺寸的 97%、向下偏移 0.5rem 的位置淡入，入场耗时 280ms，退场耗时 160ms。样式表用 CSS 实现入场和退场。`@starting-style` 定义首个渲染帧，`display` 和 `overlay` 使用 `allow-discrete` 进行过渡，使退场动画在对话框离开顶层前播完。启用减少动态效果时，仅保留淡入淡出。
+
+## 无障碍 \{#accessibility\}
+
+- 让 `aria-labelledby` 指向对话框的 `dialog-title`，为对话框提供无障碍名称。
+- 通过 `show-modal` 打开对话框时，焦点会移入对话框，关闭后则返回触发按钮。将 `autofocus` 加到应首先获得焦点的字段上。确认破坏性操作时，将它加到安全的操作上。
+- 当前版本的 Chrome、Edge、Firefox 和 Safari 均支持 `command` 和 `commandfor`。在旧版浏览器中，从点击事件处理函数调用 `dialog.showModal()`，继续使用同一份样式表。
+
+## React、Svelte 和 Vue \{#frameworks\}
+
+`dialog` 组件根据应用状态打开和关闭对话框，并在浏览器打开或关闭对话框时发出通知。触发控件和对话框内部各部分的标记由页面自行编写。使用 `npx master-ui add dialog` 将组件复制到项目中。参见 [React、Svelte 和 Vue](/guide/frameworks) 了解组件的实现和用法。
+
+<FrameworkSource name="dialog" />
+
+## 类名 \{#classes\}
+
+<ContractTable name="dialog" />
+
+## 自定义属性 \{#custom-properties\}
+
+<ContractTable name="dialog" show="properties" />
+
+## 源码 \{#source\}
+
+<ComponentSource name="dialog" />

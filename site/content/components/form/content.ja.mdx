@@ -1,0 +1,103 @@
+---
+title: "フォーム"
+description: "フォームの幅に応じて行、セクション、操作ボタンを配置するレイアウト。"
+---
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+フォームレイアウトは、[フィールド](/components/input)の縦方向の間隔をそろえ、短いフィールドを横に並べ、末尾に操作ボタンを配置します。レイアウト専用で、独自の背景面や状態を持たず、幅に応じて縦並びに切り替えます。
+
+フォームはサイズコンテナーです。行やセクションの配置は、ビューポートではなくフォームに割り当てられた幅に従います。同じマークアップでも、設定ページでは2列、狭いダイアログでは1列になります。この切り替え幅をまとめて扱うため、複数のユーティリティを組み合わせる代わりに専用クラスを使います。
+
+<ComponentPreview name="default" background="plain" height={440} narrowHeight={584} title="フォーム" bodyClass="p-lg" html={`<form class="form max-w(480) mx-auto">
+  <div class="form-row">
+    <label class="field">First name<input class="input" name="given-name" autocomplete="given-name" value="Ada"></label>
+    <label class="field">Last name<input class="input" name="family-name" autocomplete="family-name" value="Lovelace"></label>
+  </div>
+  <label class="field">Email<input class="input" type="email" name="email" autocomplete="email" value="ada@example.com"><span class="field-hint">We send a receipt here.</span></label>
+  <label class="field">Message<textarea class="input input-auto" name="message"></textarea></label>
+  <div class="form-actions">
+    <button class="btn" type="button">Cancel</button>
+    <button class="btn btn-primary">Send</button>
+  </div>
+</form>`} />
+
+## 行 \{#rows\}
+
+`form-row`には、姓と名、市区町村と郵便番号など、ひとまとまりで読めるフィールドを配置します。フォームの幅が28rem以上なら同じ幅の列に横並びになり、28rem未満なら縦に並びます。1行に並べる短いフィールドは2〜3個に収めます。
+
+## セクション \{#sections\}
+
+`form-section`は見出しと、それに対応するフィールドを横に並べます。フォームの幅が40rem以上なら、設定ページのように見出しが幅の3分の1を占め、残りにフィールドを配置します。40rem未満では、見出しがフィールドの上に移ります。セクション同士は極細の線で区切ります。
+
+<ComponentPreview name="sections" background="plain" height={552} narrowHeight={712} title="セクション" bodyClass="flex items-center justify-center p-lg" html={`<form class="form w-full">
+  <section class="form-section" aria-labelledby="form-profile">
+    <div class="form-heading">
+      <h3 class="form-title" id="form-profile">Profile</h3>
+      <p class="form-description">Shown on your public page and next to your comments.</p>
+    </div>
+    <div class="form-fields">
+      <div class="form-row">
+        <label class="field">First name<input class="input" value="Ada"></label>
+        <label class="field">Last name<input class="input" value="Lovelace"></label>
+      </div>
+      <label class="field">Bio<textarea class="input input-auto"></textarea></label>
+    </div>
+  </section>
+  <section class="form-section" aria-labelledby="form-notify">
+    <div class="form-heading">
+      <h3 class="form-title" id="form-notify">Notifications</h3>
+      <p class="form-description">Choose what reaches your inbox.</p>
+    </div>
+    <div class="form-fields">
+      <label class="check"><input type="checkbox" class="checkbox" checked> Mentions and replies</label>
+      <label class="check"><input type="checkbox" class="checkbox"> A weekly summary</label>
+    </div>
+  </section>
+  <div class="form-actions">
+    <button class="btn" type="button">Discard</button>
+    <button class="btn btn-primary">Save changes</button>
+  </div>
+</form>`} />
+
+## 操作ボタン \{#actions\}
+
+`form-actions`はフォームの末尾に置きます。ボタンを行の末尾に寄せ、確定ボタンを最後に配置します。フォームの幅が24rem未満になると、各ボタンが全幅で縦に並び、親指で押しやすい先頭に確定ボタンが来ます。マークアップでは読み順に従い、キャンセル、確定の順に記述します。縦並びのときはスタイルシートが表示順を反転します。
+
+<ComponentPreview name="narrow" background="plain" height={336} title="狭い列での表示" bodyClass="p-lg" html={`<form class="form max-w(300) mx-auto">
+  <div class="form-row">
+    <label class="field">City<input class="input" value="London"></label>
+    <label class="field">Postcode<input class="input" value="N1 9GU"></label>
+  </div>
+  <div class="form-actions">
+    <button class="btn" type="button">Cancel</button>
+    <button class="btn btn-primary">Save address</button>
+  </div>
+</form>`} caption="同じクラスを幅300pxで使った例です。行内のフィールドと操作ボタンは自動で縦に並びます。" />
+
+## アクセシビリティ \{#accessibility\}
+
+- フォームのクラスはレイアウト専用です。ラベル、ヒント、エラーメッセージには[`field`](/components/input#hint-and-error)を使い、関連するコントロールのグループ化には`fieldset`を使います。
+- 各セクションに見出しを付け、`<section>`から`aria-labelledby`でその見出しを参照すると、グループに名前が付きます。
+- 操作ボタンを縦に並べると、画面上の順序だけが変わります。文書内の順序とTabキーでの移動順は、キャンセル、確定のままです。
+- コンテナーには、配置先に応じた幅が必要です。inline-flexの親要素や幅を指定していないポップオーバーなど、内容に合わせて幅が縮むボックス内では、フォームに幅を指定します。
+
+## クラス \{#classes\}
+
+<ContractTable name="form" directory="layouts" />
+
+## カスタムプロパティ \{#custom-properties\}
+
+<ContractTable name="form" show="properties" directory="layouts" />
+
+## 関連項目 \{#related\}
+
+<ComponentLinks slugs={['input', 'checkbox', 'button']} />
+
+<ComponentLinks kind="pages" slugs={['settings', 'centered']} />
+
+## ソース \{#source\}
+
+<ComponentSource name="form" directory="layouts" />

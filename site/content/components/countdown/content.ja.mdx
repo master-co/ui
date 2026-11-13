@@ -1,0 +1,132 @@
+---
+title: "カウントダウン"
+description: "指定の時点までの残り時間を、日・時・分・秒で表示します。"
+---
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+カウントダウンは、製品の公開、セールの終了、イベントの開始などまでの残り時間を表示します。単位ごとに数字と、その下に小さく控えめなラベルを置き、等幅の列に並べます。隣り合う列の間の中央にコロンを置きます。ルート要素は `<time>` で、その `datetime` にも同じ残り時間を期間として指定するため、プラットフォームも表示内容を時間として扱えます。スクリプトがない場合はページ生成時点の残り時間を表示します。数行のスクリプトで表示を更新できます。
+
+<ComponentPreview name="default" height={128} title="カウントダウン" background="plain" bodyClass="flex items-center justify-center p-lg" caption="スクリプトで 1 秒ごとに更新します。" html={`<time class="countdown" id="launch" datetime="P2DT14H5M9S">
+  <span class="countdown-unit"><span class="countdown-value">02</span> <span class="countdown-label">days</span></span>
+  <span class="countdown-unit"><span class="countdown-value">14</span> <span class="countdown-label">hours</span></span>
+  <span class="countdown-unit"><span class="countdown-value">05</span> <span class="countdown-label">minutes</span></span>
+  <span class="countdown-unit"><span class="countdown-value">09</span> <span class="countdown-label">seconds</span></span>
+</time>
+<script>
+  var launch = document.getElementById('launch')
+  var figures = launch.querySelectorAll('.countdown-value')
+  var start = Array.prototype.map.call(figures, function (figure) { return Number(figure.textContent) })
+  var end = Date.now() + (((start[0] * 24 + start[1]) * 60 + start[2]) * 60 + start[3]) * 1000
+  function tick() {
+    var left = Math.max(0, Math.ceil((end - Date.now()) / 1000))
+    var units = [Math.floor(left / 86400), Math.floor(left / 3600) % 24, Math.floor(left / 60) % 60, left % 60]
+    units.forEach(function (unit, index) { figures[index].textContent = String(unit).padStart(2, '0') })
+    launch.setAttribute('datetime', left ? 'P' + units[0] + 'DT' + units[1] + 'H' + units[2] + 'M' + units[3] + 'S' : 'PT0S')
+    if (left) setTimeout(tick, (end - Date.now()) % 1000 || 1000)
+  }
+  tick()
+</script>`} />
+
+## 残り時間の更新 \{#ticking\}
+
+カウントダウンのマークアップでは、数字と `datetime` に同じ残り時間を記述し、スタイルシートで表示を整えます。更新用のスクリプトは、ページ読み込み時の残り時間から終了時刻を一度だけ求め、その後は 1 秒ごとに各単位の数字と `datetime` を更新します。次の秒が始まる時刻に更新を予約するため、表示が時計からずれていくことはありません。残り時間がゼロになると、`datetime="PT0S"` を書き込んで停止します。
+
+特定のタイムゾーンの午前 0 時に終了するセールなど、終了日時がわかっているページでは、その日時を直接カウントダウンの基準にしてください。読み込み時点の残り時間に頼らずに済み、どの端末でも同じ残り時間が表示されます。
+
+## タイル \{#tiles\}
+
+`countdown-tiles` を指定すると、各単位の数字が、数字の高さの 2 倍ある小さな浮き上がったタイルに収まります。タイルの角には大サイズのコントロールと同じ丸みを付け、各タイルの下に単位ラベルを置きます。タイル同士の間隔が狭いため、コロンは不要です。公開前のページなど、カウントダウンを主役にする画面で使います。
+
+<ComponentPreview name="tiles" height={152} title="タイル" background="plain" bodyClass="flex items-center justify-center p-lg" html={`<time class="countdown countdown-tiles" datetime="P2DT14H5M9S">
+  <span class="countdown-unit"><span class="countdown-value">02</span> <span class="countdown-label">days</span></span>
+  <span class="countdown-unit"><span class="countdown-value">14</span> <span class="countdown-label">hours</span></span>
+  <span class="countdown-unit"><span class="countdown-value">05</span> <span class="countdown-label">minutes</span></span>
+  <span class="countdown-unit"><span class="countdown-value">09</span> <span class="countdown-label">seconds</span></span>
+</time>`} />
+
+## 数字のロール表示 \{#rolling-figures\}
+
+各単位の数値に [オドメーター](/components/odometer) を使うと、値が変わるときに各桁が回転して切り替わります。カウントダウンが単位を表示し、オドメーターが数字を表示します。両者は独立して動作します。カウントダウンでは数字が減っていくため、スクリプトは各桁を新しい数字まで逆方向に進めます。0 から 1 つ戻った値は -1 で、オドメーターには 9 と表示されます。これにより、秒の桁はカウンターの歯車のように、0 を越えて逆方向に回ります。
+
+<ComponentPreview name="rolling" height={152} title="数字のロール表示" background="plain" bodyClass="flex items-center justify-center p-lg" caption="秒の数字は 1 秒ごとに、分の数字は分が切り替わるたびに、回転しながら減っていきます。" html={`<time class="countdown countdown-tiles" id="doors" datetime="PT4H12M30S">
+  <span class="countdown-unit">
+    <span class="countdown-value"><span class="odometer"><span class="odometer-value">04</span><span class="odometer-figures" aria-hidden="true"><span class="odometer-digit" style="--digit: 0"></span><span class="odometer-digit" style="--digit: 4"></span></span></span></span>
+    <span class="countdown-label">hours</span>
+  </span>
+  <span class="countdown-unit">
+    <span class="countdown-value"><span class="odometer"><span class="odometer-value">12</span><span class="odometer-figures" aria-hidden="true"><span class="odometer-digit" style="--digit: 1"></span><span class="odometer-digit" style="--digit: 2"></span></span></span></span>
+    <span class="countdown-label">minutes</span>
+  </span>
+  <span class="countdown-unit">
+    <span class="countdown-value"><span class="odometer"><span class="odometer-value">30</span><span class="odometer-figures" aria-hidden="true"><span class="odometer-digit" style="--digit: 3"></span><span class="odometer-digit" style="--digit: 0"></span></span></span></span>
+    <span class="countdown-label">seconds</span>
+  </span>
+</time>
+<script>
+  var doors = document.getElementById('doors')
+  var figures = doors.querySelectorAll('.odometer')
+  var start = Array.prototype.map.call(figures, function (figure) { return Number(figure.querySelector('.odometer-value').textContent) })
+  var end = Date.now() + ((start[0] * 60 + start[1]) * 60 + start[2]) * 1000
+  function roll(digit, numeral) {
+    var at = Number(digit.style.getPropertyValue('--digit')) || 0
+    var step = ((numeral - at) % 10 + 10) % 10
+    if (step) digit.style.setProperty('--digit', at + step - 10)
+  }
+  function tick() {
+    var left = Math.max(0, Math.ceil((end - Date.now()) / 1000))
+    var units = [Math.floor(left / 3600), Math.floor(left / 60) % 60, left % 60]
+    units.forEach(function (unit, index) {
+      var digits = figures[index].querySelectorAll('.odometer-digit')
+      figures[index].querySelector('.odometer-value').textContent = String(unit).padStart(2, '0')
+      roll(digits[0], Math.floor(unit / 10))
+      roll(digits[1], unit % 10)
+    })
+    doors.setAttribute('datetime', left ? 'PT' + units[0] + 'H' + units[1] + 'M' + units[2] + 'S' : 'PT0S')
+    if (left) setTimeout(tick, (end - Date.now()) % 1000 || 1000)
+  }
+  tick()
+</script>`} />
+
+## インライン \{#inline\}
+
+文中で締め切りに触れるときは、`countdown-inline`を使います。周囲の文と同じ文字サイズで、数値の後ろに単位ラベルを置き、すべてを同じベースラインに揃えます。数値には濃い文字色を、ラベルには控えめな文字色を使い、太さを変えずに残り時間を目立たせます。`h`のような略記はスクリーンリーダーが文字名で読み上げるため、支援技術から隠し、隣に単位の正式な表記を添えて`sr-only`で視覚的に隠します。
+
+<ComponentPreview name="inline" height={96} title="インライン" background="plain" bodyClass="flex items-center justify-center p-lg" html={`<p class="m(0) text-sm fg-text-body">Early pricing ends in
+  <time class="countdown countdown-inline" datetime="P2DT14H5M">
+    <span class="countdown-unit"><span class="countdown-value">2</span><span class="countdown-label" aria-hidden="true">d</span><span class="sr-only">days</span></span>
+    <span class="countdown-unit"><span class="countdown-value">14</span><span class="countdown-label" aria-hidden="true">h</span><span class="sr-only">hours</span></span>
+    <span class="countdown-unit"><span class="countdown-value">05</span><span class="countdown-label" aria-hidden="true">m</span><span class="sr-only">minutes</span></span>
+  </time>.
+</p>`} />
+
+## 残り時間がゼロになったら \{#ended\}
+
+残り時間がゼロになると（`datetime="PT0S"`）、数値の色が控えめになり、タイルは平らな凹面に変わって、カウントの終了を示します。「開場しました」など、何が起きたかを隣に表示します。次に表示すべき内容があれば、カウントダウンをその内容に差し替えます。
+
+<ComponentPreview name="ended" height={152} title="カウント終了" background="plain" bodyClass="flex items-center justify-center p-lg" html={`<time class="countdown countdown-tiles" datetime="PT0S">
+  <span class="countdown-unit"><span class="countdown-value">00</span> <span class="countdown-label">hours</span></span>
+  <span class="countdown-unit"><span class="countdown-value">00</span> <span class="countdown-label">minutes</span></span>
+  <span class="countdown-unit"><span class="countdown-value">00</span> <span class="countdown-label">seconds</span></span>
+</time>`} />
+
+## アクセシビリティ \{#accessibility\}
+
+- カウントダウンにはライブリージョンを使いません。毎秒変わる数値を読み上げると、利用者の操作やほかの読み上げを妨げます。個々の秒の変化をその都度伝える必要はありません。スクリーンリーダーは、利用者がカウントダウンに移動したときに「02日14時間05分09秒」のように数値と単位を読み上げます。
+- 予約の有効期限が迫っているなど、残り時間を知らせる必要がある場合は、別の`role="status"`リージョンで「お席の確保は残り1分です」のように、一度だけ文章で通知します。
+- コロンはスタイルシートで描画し、代替テキストを空にして読み上げから除外します。
+- ラベルには単位名を使います。インラインのカウントダウンのように1文字で略記する場合は、その文字を支援技術から隠し、`sr-only`で単位名を補います。
+- 動きを減らす設定では、カウントダウン内のオドメーターは数字をその場で切り替えます。強制カラーモードでは、システムカラーのアウトラインでタイルの輪郭を保ちます。
+
+## クラス \{#classes\}
+
+<ContractTable name="countdown" />
+
+## カスタムプロパティ \{#custom-properties\}
+
+<ContractTable name="countdown" show="properties" />
+
+## ソース \{#source\}
+
+<ComponentSource name="countdown" />

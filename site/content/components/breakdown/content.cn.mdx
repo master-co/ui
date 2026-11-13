@@ -1,0 +1,91 @@
+---
+title: "构成条"
+description: "在同一条形中显示各部分，各段宽度反映占比。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+构成条用一根条形展示整体的各个部分，每段的宽度对应其占比，例如各类数据占用的存储空间、账单中的各项服务费用，或预算的已用和剩余金额。它采用列表结构。每个列表项只需为绘图提供一次数值，并以文本写出名称和数值。样式表根据同一份列表绘制条形及其下方的图例，无需脚本或 SVG。
+
+<ComponentPreview name="default" height={220} narrowHeight={248} title="构成条" bodyClass="p-lg" html={`<div class="card max-w(440) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Storage</h3>
+    <p class="card-description">90 GB of 128 GB used</p>
+  </div>
+  <ul class="breakdown" aria-label="Storage by kind">
+    <li class="breakdown-item" style="--value: 42"><span class="breakdown-label">Photos <span class="breakdown-value">42 GB</span></span></li>
+    <li class="breakdown-item" style="--value: 28"><span class="breakdown-label">Apps <span class="breakdown-value">28 GB</span></span></li>
+    <li class="breakdown-item" style="--value: 14"><span class="breakdown-label">Mail <span class="breakdown-value">14 GB</span></span></li>
+    <li class="breakdown-item" style="--value: 6"><span class="breakdown-label">System <span class="breakdown-value">6 GB</span></span></li>
+    <li class="breakdown-item breakdown-rest" style="--value: 38"><span class="breakdown-label">Free <span class="breakdown-value">38 GB</span></span></li>
+  </ul>
+</div>`} caption="将指针移到某一段上，其余各段会淡化。" />
+
+## 各段的宽度如何确定 \{#how-a-part-gets-its-width\}
+
+在每个 `breakdown-item` 的内联样式中设置 `--value`，对应条段按该数值伸展，宽度取决于该数值占总和的比例。数值可以直接使用 GB、美元或计数，无需换算成百分比，也无需凑成固定总和。占比为零的部分仍会显示为 2px 宽的短标记。
+
+列表项本身不生成盒子。它的条段并入条形，`breakdown-label` 则并入条形下方可自动换行的图例。列表仍保留各项，辅助技术可以将其作为数据读取。
+
+各段采用同一种墨色的不同深浅，最深的一段排在首位。按数值从大到小排列各部分，数量控制在五个左右。肉眼能分辨五档深浅，八档就难以区分。
+
+## 剩余部分 \{#what-is-left\}
+
+`breakdown-rest` 标记未使用的部分，例如可用空间、剩余预算或空余座位。这一段显示为凹槽，图例中的圆点显示为空心圆环。已用和未用部分靠填充与凹槽的外观区分，无需辨别灰度深浅。将它放在最后。
+
+## 分行显示 \{#rows\}
+
+`breakdown-rows` 将图例按行排列，用细线分隔，每个部分占一行，数值放在行末。需要逐项查看和比较数值时使用这种布局，例如在账单中。`--breakdown-height` 会加粗条形。
+
+<ComponentPreview name="rows" height={308} title="分行显示" bodyClass="p-lg" html={`<div class="card max-w(340) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">November</h3>
+    <p class="card-description">$3,074 so far</p>
+  </div>
+  <ul class="breakdown breakdown-rows" style="--breakdown-height: .625rem" aria-label="Spend by service">
+    <li class="breakdown-item" style="--value: 1840"><span class="breakdown-label">Compute <span class="breakdown-value">$1,840</span></span></li>
+    <li class="breakdown-item" style="--value: 920"><span class="breakdown-label">Storage <span class="breakdown-value">$920</span></span></li>
+    <li class="breakdown-item" style="--value: 310"><span class="breakdown-label">Network <span class="breakdown-value">$310</span></span></li>
+    <li class="breakdown-item" style="--value: 4"><span class="breakdown-label">Support <span class="breakdown-value">$4</span></span></li>
+  </ul>
+</div>`} />
+
+## 标记某一部分的状态 \{#status\}
+
+条形采用单色。某一部分表示特定状态时，例如失败的请求，在该项上将 `--breakdown-fill` 设为对应的状态颜色，并在标签中写明状态，让用户也能通过文字识别。`--breakdown-color` 可更改各段共用的基础墨色。
+
+<ComponentPreview name="status" height={188} narrowHeight={220} title="状态" bodyClass="p-lg" html={`<div class="card max-w(440) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Requests</h3>
+    <p class="card-description">1.28M in the last hour</p>
+  </div>
+  <ul class="breakdown" aria-label="Requests by result">
+    <li class="breakdown-item" style="--value: 962"><span class="breakdown-label">Succeeded <span class="breakdown-value">96.2%</span></span></li>
+    <li class="breakdown-item" style="--value: 31"><span class="breakdown-label">Redirected <span class="breakdown-value">3.1%</span></span></li>
+    <li class="breakdown-item" style="--value: 7; --breakdown-fill: var(--color-danger)"><span class="breakdown-label">Failed <span class="breakdown-value">0.7%</span></span></li>
+  </ul>
+</div>`} />
+
+## 构成条与图表 \{#breakdown-or-chart\}
+
+构成条回答“整体由哪些部分组成”，看的是各部分占总量的比例。[图表](/components/chart) 回答“哪一项更大”，可对照刻度比较各条。要表示某个数值在给定范围内的位置，使用[计量条](/components/meter)。
+
+## 无障碍 \{#accessibility\}
+
+- 使用 `<ul>`，按名次排列时使用 `<ol>`。通过 `aria-label` 或标题为列表提供无障碍名称。
+- 在每个部分的 `breakdown-label` 中写明名称和数值，并带上单位。条形由样式表绘制，辅助技术不会朗读它。
+- 不要仅凭颜色深浅区分各部分。图例列出每个部分的名称，顺序与条形一致。强制颜色模式下，各段统一使用文本颜色，并以 2px 的间隙隔开。
+
+## 类名 \{#classes\}
+
+<ContractTable name="breakdown" />
+
+## 自定义属性 \{#custom-properties\}
+
+<ContractTable name="breakdown" show="properties" />
+
+## 源码 \{#source\}
+
+<ComponentSource name="breakdown" />

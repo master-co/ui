@@ -1,0 +1,98 @@
+---
+title: "コンボボックス"
+description: "入力に一致する候補をリストボックスに表示するテキストフィールド。"
+---
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+コンボボックスは、入力に一致する候補の[リストボックス](/components/listbox)を開くテキストフィールドです。文字を入力して選択肢を探せます。既存の[入力グループ](/components/input#input-group)とフローティングリストボックスを、`combobox`ラッパーでひとまとめにします。スタイルシートが配置と見た目を担い、`combobox`の[ビヘイビア](/guide/behaviors)が候補の絞り込み、候補間の移動、選択した値のフィールドへの反映を行います。
+
+<ComponentPreview name="default" height={320} title="コンボボックス" background="plain" bodyClass="content-start p-lg min-h(320)" behaviors html={`<div class="field max-w(320) mx-auto">
+  <label for="region">Region</label>
+  <div class="combobox">
+    <div class="input-group">
+      <input class="input-group-field" id="region" role="combobox" aria-expanded="false" aria-controls="region-list" aria-autocomplete="list" autocomplete="off" placeholder="Search regions">
+      <button type="button" class="combobox-toggle" tabindex="-1" aria-label="Show regions"></button>
+    </div>
+    <div id="region-list" popover="manual" class="listbox" role="listbox" aria-label="Regions">
+      <div class="listbox-option" role="option" id="region-hnd" aria-checked="false">Tokyo</div>
+      <div class="listbox-option" role="option" id="region-sin" aria-checked="false">Singapore</div>
+      <div class="listbox-option" role="option" id="region-fra" aria-checked="false">Frankfurt</div>
+      <div class="listbox-option" role="option" id="region-lhr" aria-checked="false">London</div>
+      <div class="listbox-option" role="option" id="region-iad" aria-checked="false">Virginia</div>
+      <div class="listbox-option" role="option" id="region-pdx" aria-checked="false" aria-disabled="true">Oregon</div>
+      <div class="listbox-empty">No regions match.</div>
+    </div>
+  </div>
+</div>`} caption="文字を入力して候補を絞り込み、矢印キーで移動し、Enterキーかクリックで選択します。" />
+
+## スタイルシートの役割 \{#what-the-stylesheet-does\}
+
+- **配置**　`combobox` ラッパーは自身にアンカー名を付け、その名前のスコープを自身に限定します。リストボックスはフィールド全体の下端から 6px 下に開き、`anchor-size()` によって少なくともフィールドと同じ幅を確保します。基準となるのはキャレットやボタンではなくフィールド全体です。寸法の計測は不要で、同じページに複数のコンボボックスがあっても互いに干渉しません。
+- **開閉ボタン**　`combobox-toggle` はフィールドの端にある小さなボタンです。フィールドが `aria-expanded="true"` の間は、山形アイコンの向きが反転します。
+- **空の状態**　すべての選択肢が `hidden` になると、`listbox-empty` が自動で表示されます。
+- **フィールドの状態**　ホバー、フォーカス、無効な入力、操作不可の各状態は、入力グループが管理します。
+
+アンカー位置指定に対応していないブラウザーでも、リストボックスは通常のポップオーバーと同様にビューポートの中央に開きます。
+
+## ビヘイビア \{#behavior\}
+
+`combobox` は、`combobox` クラスを持つルート要素を受け取り、ビヘイビアを解除する関数を返します。オプションはありません。フィールドは `role="combobox"`、リストは `role="listbox"` で探します。
+
+```js name=app.js
+import { combobox } from '@master/ui/behaviors/combobox.js'
+
+const detach = combobox(document.querySelector('.combobox'))
+```
+
+- **文字入力**　大文字と小文字を区別せず、テキストに入力文字列を含まない選択肢に `hidden` を設定します。リストを開き、最初に一致した選択肢をアクティブにします。
+- **アクティブな選択肢**　アクティブな選択肢には `aria-selected="true"` が付き、フィールドの `aria-activedescendant` がその選択肢を参照します。フォーカスはフィールドに留まります。
+- **選択の確定**　<kbd>Enter</kbd> またはポインターで確定すると、選択肢のテキストから `listbox-description` と `listbox-end` を除いた内容がフィールドに入ります。確定した選択肢を `aria-checked="true"`、残りを `false` にして、リストを閉じます。確定した値を上書き入力すると、その選択肢のチェック状態が解除されます。
+- **開閉**　リストボックスは `popover="manual"` なので、フィールドへの入力やフィールド内のクリックで開いているリストが閉じることはありません。フィールドや開閉ボタンをクリックするか、矢印キーを押すと開きます。<kbd>Esc</kbd> を押すか、フォーカスがコンボボックスの外に移ると閉じます。`aria-expanded` は開閉状態に合わせて更新されます。
+- **イベント**　選択肢を確定すると、文字入力時と同様に、フィールドが `input`、`change` の順にイベントを発行します。値はフィールドの `value` で取得できます。
+
+無効または非表示の選択肢はスキップされます。入力メソッドで文字が未確定の間は、<kbd>Enter</kbd> と矢印キーを入力メソッドが処理します。
+
+ビヘイビアを適用しない場合、フィールドは通常のテキスト入力として機能します。値は入力できますが、リストは開きません。
+
+## コントロールの選び方 \{#choosing-a-control\}
+
+単純な選択肢が 12 個程度までなら、[セレクト](/components/select)を使うと、スクリプトなしでプラットフォーム標準の文字入力による候補選択が使えます。検索が必要な長いリスト、入力に応じて候補を読み込むリスト、複数の要素を含む行には、コンボボックスを使います。
+
+## キーボード操作 \{#keyboard\}
+
+キー操作はビヘイビアが処理します。リストが閉じていて <kbd>Shift</kbd> を押している間は、通常の入力欄と同様に <kbd>Home</kbd> と <kbd>End</kbd> でキャレットを移動できます。アクティブな選択肢がないときは <kbd>Enter</kbd> の既定の動作が維持され、フォームを送信できます。
+
+<ContractTable name="combobox" show="keyboard" />
+
+## アクセシビリティ \{#accessibility\}
+
+- 入力欄には `role="combobox"`、リストボックスを参照する `aria-controls`、`aria-autocomplete="list"`、`aria-expanded` を指定します。
+- フォーカスは入力欄に留まり、アクティブな選択肢は `aria-activedescendant` を通じて読み上げられます。
+- フィールドから矢印キーでリストを開けるため、開閉ボタンは `tabindex="-1"` で Tab キーの移動順序から外します。
+- ブラウザーの入力候補がリストに重ならないように、`autocomplete="off"` を設定します。
+
+## React、Svelte、Vue \{#frameworks\}
+
+`combobox` コンポーネントは、選択肢のリストからこのマークアップを生成し、ビヘイビアを適用します。選択値の受け渡しにも対応します。`npx master-ui add combobox` でプロジェクトにコピーできます。コンポーネントの構成と使い方は [React、Svelte、Vue](/guide/frameworks) を参照してください。
+
+<FrameworkSource name="combobox" />
+
+## クラス \{#classes\}
+
+<ContractTable name="combobox" />
+
+[`input-group`](/components/input#input-group)、`input-group-field`、および `popover` 属性を持つ [`listbox`](/components/listbox) と組み合わせて使います。
+
+## 関連コンポーネント \{#related\}
+
+コンボボックスは、以下のコンポーネントを組み合わせて構成します。それぞれが固有のクラスと状態を持ちます。
+
+<ComponentLinks slugs={['input', 'listbox', 'select']} />
+
+## ソース \{#source\}
+
+<ComponentSource name="combobox" />

@@ -27,3 +27,7 @@ declare module '*.mdx' {
   export default Content
   export const toc: { id: string, title: string, level: number }[] | undefined
 }
+declare module 'virtual:master-ui/preview-output' {
+  const output: string
+  export default output
+}

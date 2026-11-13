@@ -1,0 +1,77 @@
+---
+title: "キーパッド"
+description: "コードや金額を親指で入力できる、電話機のようなキーパッド。"
+---
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+キーパッドは、コードや金額を親指で入力するための、電話機と同じ3列12ボタンの配列です。各キーは立体的で、押すとすぐに沈み込みます。大きな数字の下には、電話機と同じ小さな英字が並びます。キー自体は入力処理を行いません。各キーはボタンで、数字の入力先はページ側で指定します。
+
+<ComponentPreview name="default" height={344} title="キーパッド" bodyClass="flex flex-col items-center justify-center gap-md p-lg" caption="キーを押すと、スクリプトが対応する数字をフィールドに入力します。" html={`<input class="input input-lg text-center w-full max-w(272)" id="pad-amount" type="text" inputmode="none" value="" placeholder="0" aria-label="Amount" readonly>
+<div class="keypad" id="pad" role="group" aria-label="Keypad">
+  <button class="keypad-key" type="button" value="1">1</button>
+  <button class="keypad-key" type="button" value="2">2<span class="keypad-letters">abc</span></button>
+  <button class="keypad-key" type="button" value="3">3<span class="keypad-letters">def</span></button>
+  <button class="keypad-key" type="button" value="4">4<span class="keypad-letters">ghi</span></button>
+  <button class="keypad-key" type="button" value="5">5<span class="keypad-letters">jkl</span></button>
+  <button class="keypad-key" type="button" value="6">6<span class="keypad-letters">mno</span></button>
+  <button class="keypad-key" type="button" value="7">7<span class="keypad-letters">pqrs</span></button>
+  <button class="keypad-key" type="button" value="8">8<span class="keypad-letters">tuv</span></button>
+  <button class="keypad-key" type="button" value="9">9<span class="keypad-letters">wxyz</span></button>
+  <button class="keypad-key keypad-key-quiet" type="button" value=".">.</button>
+  <button class="keypad-key" type="button" value="0">0</button>
+  <button class="keypad-key keypad-key-quiet" type="button" value="delete" aria-label="Delete">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H9l-5-6zM12 10l4 4m0-4-4 4"/></svg>
+  </button>
+</div>
+<script>
+  var amount = document.getElementById('pad-amount')
+  document.getElementById('pad').addEventListener('click', function (event) {
+    var key = event.target.closest('button')
+    if (!key) return
+    amount.value = key.value === 'delete' ? amount.value.slice(0, -1) : amount.value + key.value
+  })
+</script>`} />
+
+## キー \{#a-key\}
+
+`keypad-key`は高さ52pxのボタンです。[ボタン](/components/button)と同じ立体感がありますが、押したときのトランジションはなく、すぐに沈んだ表示に切り替わります。親指で6桁を続けて入力するときの素早い操作に合わせるためです。ポインターを重ねると、コントロールのホバー時と同じく輪郭が強調されます。
+
+`keypad-letters`は数字の下に表示する英字の行です。コードを単語として覚えるときに役立ちます。金額の入力には不要です。
+
+`keypad-key-quiet`は、削除、小数点、符号など、数字以外のキーに使います。押すまでは背景が付かないため、10個の数字キーがひとまとまりに見え、ほかのキーは補助操作として区別できます。キーパッドの角にキーがない場合は、空の`<span>`を置いてグリッドを保ちます。
+
+## キーパッドの配置 \{#the-pad\}
+
+キーパッドは等幅の3列を8px間隔で並べ、コンテナーの幅いっぱいに広がります。最大幅は17remです。通常のボタンでキーパッドを組むと見落としやすい設定が2つあります。
+
+- `touch-action: manipulation`を設定すると、ブラウザーはダブルタップによるズームかどうかを判定するために、次のタップを待ちません。同じキーをすばやく2回押しても、別々の押下として扱われます。
+- 数字は選択できないため、キーを押すときに指が少し滑っても、テキストが選択状態になりません。
+
+`--keypad-key`でキーの高さを、`--keypad-gap`でキー間の間隔を設定します。
+
+## ページ側の入力処理 \{#script\}
+
+キーパッド自体にビヘイビアはありません。金額に数字を追加する、[OTPフィールド](/components/otp)の1桁を埋める、発信するといったキーの処理は、ページ側で定義します。例のように、キーパッドにリスナーを1つ置くだけで十分です。押されたボタンの`value`を読み取り、対応する入力先に書き込みます。
+
+ページには実際の入力フィールドを用意してください。ハードウェアキーボードから入力でき、パスワードマネージャーも値を入力でき、スクリーンリーダーは値の変化を読み上げられます。そのフィールドに`inputmode="none"`を設定すると、スマートフォンでシステムキーボードが開いてキーパッドを覆うのを防げます。
+
+## アクセシビリティ \{#accessibility\}
+
+- キーパッドに`role="group"`と`aria-label`を指定します。各キーは、表示する数字をアクセシブルな名前とするボタンです。アイコンだけを表示するキーには`aria-label`が必要です。
+- 数字の下の英字もボタンのテキストに含まれます。「2 abc」という読み上げが不要なら、英字を`aria-hidden="true"`を指定した要素で囲みます。
+- スクリーンリーダーには、キーを押すたびに通知するのではなく、数字が入力されるフィールドの値の変化を伝えます。
+- ポインターの種類を問わず、キーの高さは52pxで、タッチターゲットに必要な44pxを上回ります。
+
+## クラス \{#classes\}
+
+<ContractTable name="keypad" />
+
+## カスタムプロパティ \{#custom-properties\}
+
+<ContractTable name="keypad" show="properties" />
+
+## ソース \{#source\}
+
+<ComponentSource name="keypad" />

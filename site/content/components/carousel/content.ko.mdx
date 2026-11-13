@@ -1,0 +1,214 @@
+---
+title: "캐러셀"
+description: "CSS만으로 구현한 스크롤 및 스냅 방식의 가로 슬라이드 목록입니다."
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+캐러셀은 가로로 나열된 슬라이드를 스크롤하고 스냅하는 컴포넌트입니다. CSS만으로 구현하며, 트랙은 스크롤 스냅이 적용된 스크롤 컨테이너입니다. 따라서 터치, 트랙패드, 키보드, 보조 기술로 일반 스크롤 영역과 같은 방식으로 조작할 수 있습니다. 브라우저가 지원하는 경우 스타일시트는 이전·다음 버튼과 슬라이드별 점을 추가합니다. 브라우저는 이를 포커스할 수 있는 실제 컨트롤로 생성합니다.
+
+<ComponentPreview name="default" height={200} narrowHeight={224} title="캐러셀" bodyClass="p-lg" html={`<div class="carousel" role="region" aria-label="Featured projects" tabindex="0">
+  <article class="carousel-slide card card-flat">
+    <header class="card-header">
+      <h3 class="card-title">Atlas</h3>
+      <p class="card-description">A map of every deployment, live.</p>
+    </header>
+    <div class="card-body">1.28M requests in the last 24 hours.</div>
+  </article>
+  <article class="carousel-slide card card-flat">
+    <header class="card-header">
+      <h3 class="card-title">Borealis</h3>
+      <p class="card-description">Edge functions close to the reader.</p>
+    </header>
+    <div class="card-body">Served from 14 regions.</div>
+  </article>
+  <article class="carousel-slide card card-flat">
+    <header class="card-header">
+      <h3 class="card-title">Cirrus</h3>
+      <p class="card-description">Storage that follows the project.</p>
+    </header>
+    <div class="card-body">7.4 of 10 GB in use.</div>
+  </article>
+</div>`} />
+
+## 캐러셀 컨트롤 \{#the-controls\}
+
+버튼과 점에 해당하는 요소는 마크업에 없으며, 다음과 같은 의사 요소로 생성됩니다.
+
+- `::scroll-button(inline-start)`과 `::scroll-button(inline-end)`은 트랙을 한 페이지씩 스크롤합니다. 다른 버튼처럼 볼록한 표면으로 표시되며, 호버하면 떠오르고 누르면 내려갑니다. 브라우저는 트랙의 양 끝에서 해당 방향의 버튼을 비활성화합니다. 스타일시트는 비활성화된 버튼을 서서히 흐리게 한 뒤 숨겨, 버튼 아래에 있는 슬라이드를 가리지 않게 합니다.
+- 각 슬라이드의 `::scroll-marker`는 점으로 표시되며, `::scroll-marker-group`은 이 점들을 트랙 아래에 모읍니다. 현재 표시 중인 슬라이드의 점은 `:target-current`와 일치하며, 길어지고 전경색으로 표시됩니다. 각 점에 안쪽 여백을 넣어 조작 영역을 넓힙니다. 터치 화면에서는 이 영역이 더 넓어져 손가락으로 6픽셀 크기의 점을 정확히 누를 필요가 없습니다.
+
+컨트롤은 앵커 위치 지정을 통해 자신이 속한 캐러셀을 기준으로 배치됩니다. 앵커 이름의 범위가 캐러셀별로 제한되므로 한 페이지에 캐러셀이 여러 개 있어도 컨트롤을 공유하지 않습니다. 이 의사 요소를 지원하지 않는 브라우저에서는 컨트롤만 빠지며, 슬라이드는 그대로 스와이프하고 스크롤할 수 있습니다.
+
+## 여러 슬라이드 동시 표시 \{#several-in-view\}
+
+`carousel-2`와 `carousel-3`은 한 번에 슬라이드 두 장 또는 세 장을 표시합니다. 트랙 너비에서 슬라이드 사이의 간격을 뺀 뒤 표시할 슬라이드 수로 나누면, 화면에 보이는 마지막 슬라이드가 트랙 가장자리에 맞습니다.
+
+<ComponentPreview name="several" height={184} title="여러 슬라이드 동시 표시" bodyClass="p-lg" html={`<div class="carousel carousel-3" role="region" aria-label="Team" tabindex="0">
+  <div class="carousel-slide sheet sheet-flat flex flex-col items-center gap-xs p-md">
+    <span class="avatar avatar-lg"><img class="avatar-image" src="/demo/portrait-1.svg" alt=""></span>
+    <span class="text-sm fg-text-strong">Ada</span>
+  </div>
+  <div class="carousel-slide sheet sheet-flat flex flex-col items-center gap-xs p-md">
+    <span class="avatar avatar-lg"><img class="avatar-image" src="/demo/portrait-2.svg" alt=""></span>
+    <span class="text-sm fg-text-strong">Alan</span>
+  </div>
+  <div class="carousel-slide sheet sheet-flat flex flex-col items-center gap-xs p-md">
+    <span class="avatar avatar-lg"><img class="avatar-image" src="/demo/portrait-3.svg" alt=""></span>
+    <span class="text-sm fg-text-strong">Katherine</span>
+  </div>
+  <div class="carousel-slide sheet sheet-flat flex flex-col items-center gap-xs p-md">
+    <span class="avatar avatar-lg" role="img" aria-label="Grace">GH</span>
+    <span class="text-sm fg-text-strong">Grace</span>
+  </div>
+  <div class="carousel-slide sheet sheet-flat flex flex-col items-center gap-xs p-md">
+    <span class="avatar avatar-lg" role="img" aria-label="Margaret">MH</span>
+    <span class="text-sm fg-text-strong">Margaret</span>
+  </div>
+</div>`} />
+
+## 다음 슬라이드 일부 노출 \{#peek\}
+
+`--carousel-slide` 값을 트랙 너비보다 작게 설정하면 다음 슬라이드의 가장자리가 보입니다. 점을 확인하기 전에도 슬라이드가 더 있다는 것을 알 수 있고, 점이 표시되지 않는 브라우저에서는 이 가장자리가 유일한 시각적 단서입니다. 이미지는 [그림](/components/figure)으로 구성합니다. 트랙에 `--figure-ratio`를 지정하면 이미지가 로드되기 전부터 모두 같은 비율로 공간을 차지하므로 슬라이드 줄이 갑자기 움직이지 않습니다.
+
+<ComponentPreview name="peek" height={420} mediumHeight={392} narrowHeight={308} title="다음 슬라이드 일부 노출" bodyClass="p-lg" html={`<div class="carousel" style="--carousel-slide: 84%; --figure-ratio: 16 / 10" role="region" aria-label="Field notes" tabindex="0">
+  <figure class="carousel-slide figure">
+    <img class="figure-media" src="/demo/harbor.svg" alt="A wooden jetty running out over calm water">
+    <figcaption class="figure-caption">The jetty at high water</figcaption>
+  </figure>
+  <figure class="carousel-slide figure">
+    <img class="figure-media" src="/demo/tide.svg" alt="A pale sun low over flat water">
+    <figcaption class="figure-caption">Low tide at seven</figcaption>
+  </figure>
+  <figure class="carousel-slide figure">
+    <img class="figure-media" src="/demo/moonstone.svg" alt="A full moon above two ridges">
+    <figcaption class="figure-caption">Moonrise over the ridges</figcaption>
+  </figure>
+  <figure class="carousel-slide figure">
+    <img class="figure-media" src="/demo/pines.svg" alt="A line of pines in mist">
+    <figcaption class="figure-caption">Pines in the morning fog</figcaption>
+  </figure>
+</div>`} />
+
+## 슬라이드 중앙 정렬 \{#centered\}
+
+`carousel-center`는 현재 슬라이드를 중앙에 배치하고 양옆에 인접 슬라이드의 가장자리를 보여 줍니다. 첫 슬라이드 앞과 마지막 슬라이드 뒤에도 공간을 두어 두 슬라이드 모두 중앙에 올 수 있게 합니다. 슬라이드 하나는 트랙 너비의 80%를 차지합니다. `--carousel-slide` 값을 설정해 양옆 슬라이드가 보이는 정도를 조절하세요. 양 끝의 공간은 안쪽 여백 대신 빈 플렉스 항목 두 개로 확보하므로 슬라이드 너비는 전체 트랙 너비를 기준으로 계산됩니다.
+
+<ComponentPreview name="centered" height={408} mediumHeight={380} narrowHeight={300} title="슬라이드 중앙 정렬" bodyClass="p-lg" html={`<div class="carousel carousel-center" style="--figure-ratio: 16 / 10" role="region" aria-label="Material studies" tabindex="0">
+  <figure class="carousel-slide figure">
+    <img class="figure-media" src="/home/slides/pearl.svg" alt="A pearl on a stone plinth, in soft morning light">
+    <figcaption class="figure-caption">Pearl, in morning light</figcaption>
+  </figure>
+  <figure class="carousel-slide figure">
+    <img class="figure-media" src="/home/slides/obsidian.svg" alt="A polished obsidian sphere on a dark glossy floor, a softbox reflected in it">
+    <figcaption class="figure-caption">Obsidian, under a softbox</figcaption>
+  </figure>
+  <figure class="carousel-slide figure">
+    <img class="figure-media" src="/home/slides/dune.svg" alt="Dunes at first light, their ridges catching a low sun">
+    <figcaption class="figure-caption">Dunes, at first light</figcaption>
+  </figure>
+  <figure class="carousel-slide figure">
+    <img class="figure-media" src="/home/slides/tide.svg" alt="A still sea at dusk, the moon low over the horizon and its light broken on the water">
+    <figcaption class="figure-caption">Tide, at dusk</figcaption>
+  </figure>
+  <figure class="carousel-slide figure">
+    <img class="figure-media" src="/home/slides/arches.svg" alt="A plaster hall with three arched openings, low sun laying their shapes across the floor">
+    <figcaption class="figure-caption">Arches, in low sun</figcaption>
+  </figure>
+</div>`} />
+
+## 고정 너비 슬라이드 목록 \{#shelf\}
+
+모든 슬라이드의 너비를 같은 고정값으로 지정하면 트랙에 들어가는 만큼 표시되고, 그다음 슬라이드는 트랙 가장자리에서 일부가 잘립니다. 근접 스냅을 적용하면 빠르게 밀었을 때 슬라이드마다 멈추지 않고 여러 장을 지나갈 수 있으며, 스크롤이 멈추는 지점에서 가까운 슬라이드에 맞춰 정렬됩니다.
+
+<ComponentPreview name="shelf" height={296} title="고정 너비 슬라이드 목록" bodyClass="p-lg" html={`<div class="carousel (scroll-snap-type:x|proximity)" style="--carousel-slide: 8.5rem; --carousel-gap: .75rem; --figure-ratio: 4 / 5" role="region" aria-label="Prints" tabindex="0">
+  <figure class="carousel-slide figure">
+    <img class="figure-media" src="/demo/cairn.svg" alt="Five stones balanced on a beach">
+    <figcaption class="figure-caption"><span class="block fg-text-strong">Cairn</span>$48</figcaption>
+  </figure>
+  <figure class="carousel-slide figure">
+    <img class="figure-media" src="/demo/dunes.svg" alt="Dunes in the afternoon, their lee sides in shadow">
+    <figcaption class="figure-caption"><span class="block fg-text-strong">Dunes</span>$56</figcaption>
+  </figure>
+  <figure class="carousel-slide figure">
+    <img class="figure-media" src="/demo/lighthouse.svg" alt="A lighthouse on a dark headland, its beam over the sea">
+    <figcaption class="figure-caption"><span class="block fg-text-strong">Headland</span>$64</figcaption>
+  </figure>
+  <figure class="carousel-slide figure">
+    <img class="figure-media" src="/demo/pines.svg" alt="Rows of pines fading into fog">
+    <figcaption class="figure-caption"><span class="block fg-text-strong">Pines</span>$48</figcaption>
+  </figure>
+  <figure class="carousel-slide figure">
+    <img class="figure-media" src="/demo/steps.svg" alt="Concrete steps half in shadow">
+    <figcaption class="figure-caption"><span class="block fg-text-strong">Steps</span>$40</figcaption>
+  </figure>
+  <figure class="carousel-slide figure">
+    <img class="figure-media" src="/demo/harbor.svg" alt="Jetty posts standing in the water">
+    <figcaption class="figure-caption"><span class="block fg-text-strong">Jetty</span>$56</figcaption>
+  </figure>
+  <figure class="carousel-slide figure">
+    <img class="figure-media" src="/demo/tide.svg" alt="The sea at slack tide">
+    <figcaption class="figure-caption"><span class="block fg-text-strong">Slack tide</span>$48</figcaption>
+  </figure>
+</div>`} />
+
+## 컨테이너 너비에 따른 표시 개수 \{#as-many-as-fit\}
+
+표시할 슬라이드 수는 창 너비 대신 캐러셀에 주어진 공간에 맞춰 바꿀 수 있습니다. 부모 요소를 쿼리 컨테이너로 지정하고, 너비 구간마다 트랙 너비에서 간격을 뺀 값을 표시할 슬라이드 수로 나누어 `--carousel-slide`에 설정하세요. `carousel-2`와 `carousel-3`도 이 방식으로 값을 설정합니다. 미리보기 너비를 줄이면 슬라이드가 세 장에서 두 장, 다시 한 장으로 줄어드는 것을 확인할 수 있습니다.
+
+<ComponentPreview name="as-many-as-fit" height={184} title="컨테이너 너비에 따른 표시 개수" responsive bodyClass="p-lg" html={`<div class="container-inline">
+  <div class="carousel (--carousel-slide:calc((100%-1rem)/2))@container(--sm) (--carousel-slide:calc((100%-2rem)/3))@container(--xl)" role="region" aria-label="Projects" tabindex="0">
+    <article class="carousel-slide card card-flat">
+      <header class="card-header">
+        <h3 class="card-title">Atlas</h3>
+        <p class="card-description">A map of every deployment.</p>
+      </header>
+    </article>
+    <article class="carousel-slide card card-flat">
+      <header class="card-header">
+        <h3 class="card-title">Borealis</h3>
+        <p class="card-description">Edge functions near the reader.</p>
+      </header>
+    </article>
+    <article class="carousel-slide card card-flat">
+      <header class="card-header">
+        <h3 class="card-title">Cirrus</h3>
+        <p class="card-description">Storage that follows the project.</p>
+      </header>
+    </article>
+    <article class="carousel-slide card card-flat">
+      <header class="card-header">
+        <h3 class="card-title">Delta</h3>
+        <p class="card-description">Previews for every branch.</p>
+      </header>
+    </article>
+    <article class="carousel-slide card card-flat">
+      <header class="card-header">
+        <h3 class="card-title">Ember</h3>
+        <p class="card-description">Logs that keep a week.</p>
+      </header>
+    </article>
+  </div>
+</div>`} />
+
+## 접근성 \{#accessibility\}
+
+- 방향키로 트랙을 스크롤할 수 있도록 트랙에 `role="region"`과 레이블, `tabindex="0"`을 지정하세요.
+- 스타일시트는 생성된 버튼에 각각 "이전 슬라이드"와 "다음 슬라이드"라는 이름을 지정합니다. 각 점의 이름은 해당 슬라이드 콘텐츠의 이름을 따릅니다.
+- 캐러셀은 자동으로 이동하지 않습니다. 타이머에 따라 콘텐츠가 넘어가도록 구현하려면 스크립트로 일시정지 컨트롤을 제공해야 합니다.
+- 동작 줄이기 설정이 켜져 있으면 트랙은 부드럽게 스크롤하는 대신 슬라이드 사이를 즉시 이동합니다.
+- 강제 색상 모드에서는 버튼에 버튼 색상의 윤곽선이 표시되고, 점에는 시스템 색상이 유지됩니다. 현재 표시 중인 슬라이드의 점에는 시스템 강조 색상이 적용됩니다.
+
+## 클래스 \{#classes\}
+
+<ContractTable name="carousel" />
+
+## 사용자 지정 속성 \{#custom-properties\}
+
+<ContractTable name="carousel" show="properties" />
+
+## 소스 \{#source\}
+
+<ComponentSource name="carousel" />

@@ -1,0 +1,190 @@
+---
+title: "指令片段"
+description: "一行可複製的指令，附有終端機提示符號和複製按鈕。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+指令片段包含一行可在終端機執行的指令、終端機提示符號，以及複製指令的按鈕。它和[程式碼區塊](/components/code#block)一樣採用等寬字型和[凹槽](/components/surface#well)樣式，高度則與按鈕相同，可與按鈕並排。提示符號無法選取，指令維持單行，複製按鈕距尾端 4px，指標移上去時才會更醒目。
+
+<ComponentPreview name="default" height={96} title="指令片段" background="plain" bodyClass="p-lg" html={`<div class="snippet max-w(360) mx-auto">
+  <span class="snippet-prompt" aria-hidden="true">$</span>
+  <code class="snippet-command" tabindex="0">npm install @master/ui</code>
+  <button type="button" class="btn btn-quiet btn-square" aria-label="Copy command">
+    <svg class="icon snippet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 8h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
+    <svg class="icon snippet-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>
+  </button>
+  <output class="snippet-status"></output>
+</div>
+<script>
+document.querySelectorAll('.snippet').forEach(function (snippet) {
+  var status = snippet.querySelector('.snippet-status')
+  var timer = 0
+  snippet.querySelector('.btn').addEventListener('click', function () {
+    var command = Array.prototype.find.call(snippet.querySelectorAll('.snippet-command'), function (line) {
+      return line.checkVisibility()
+    })
+    navigator.clipboard.writeText(command.textContent).then(function () {
+      status.textContent = 'Copied'
+      clearTimeout(timer)
+      timer = setTimeout(function () { status.textContent = '' }, 2000)
+    })
+  })
+})
+</script>`} caption="複製指令後，圖示會變成勾號並維持兩秒。" />
+
+## 指令列 \{#line\}
+
+`snippet` 分成三欄。第一欄的 `snippet-prompt` 是終端機顯示在指令前的符號，例如 `$` 或 `>`，以較淡的顏色呈現。這個符號無法選取，手動選取整行時只會選到指令，也會用 `aria-hidden` 避免螢幕閱讀器讀出。第二欄是套用在 `<code>` 上的 `snippet-command`。最後一欄放低調的方形[按鈕](/components/button)，高度和圓角都由指令片段設定，按鈕在指令列上下各留 4px。
+
+指令超出可用寬度時會維持單行，並可左右捲動，捲動條則隱藏。還有內容的那一側會淡出。淡出效果取決於捲動位置，因此在開始捲動前，起始側會保持清晰。為指令加上 `tabindex="0"`，讓使用者能用方向鍵捲動。指令取得焦點時，整列都會顯示焦點外框。
+
+<ComponentPreview name="long" height={96} title="較長的指令" background="plain" bodyClass="p-lg" html={`<div class="snippet max-w(360) mx-auto">
+  <span class="snippet-prompt" aria-hidden="true">$</span>
+  <code class="snippet-command" tabindex="0">curl -fsSL https://ui.master.co/install.sh | sh -s -- --yes --prefix ~/.local</code>
+  <button type="button" class="btn btn-quiet btn-square" aria-label="Copy command">
+    <svg class="icon snippet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 8h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
+    <svg class="icon snippet-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>
+  </button>
+  <output class="snippet-status"></output>
+</div>
+<script>
+document.querySelectorAll('.snippet').forEach(function (snippet) {
+  var status = snippet.querySelector('.snippet-status')
+  var timer = 0
+  snippet.querySelector('.btn').addEventListener('click', function () {
+    var command = Array.prototype.find.call(snippet.querySelectorAll('.snippet-command'), function (line) {
+      return line.checkVisibility()
+    })
+    navigator.clipboard.writeText(command.textContent).then(function () {
+      status.textContent = 'Copied'
+      clearTimeout(timer)
+      timer = setTimeout(function () { status.textContent = '' }, 2000)
+    })
+  })
+})
+</script>`} caption="左右捲動指令。哪一側還有內容，該側邊緣就會淡出。" />
+
+## 複製指令 \{#copying\}
+
+複製功能需要透過腳本將指令文字交給 `navigator.clipboard`。複製狀態不靠切換類別，而是由按鈕旁起初為空的 `<output>` 元素 `snippet-status` 表示。使用者看不到這個元素。腳本寫入「已複製」後，螢幕閱讀器會朗讀，兩秒後腳本再清空文字。只要狀態有文字，樣式表就會把複製圖示換成勾號，讓畫面和朗讀傳達相同的訊息。
+
+預覽中的腳本包含完整流程：找出目前顯示的指令、寫入剪貼簿，再填入並清空狀態訊息。只有透過 HTTPS 提供的頁面或來自 localhost 的頁面可存取剪貼簿。腳本停用時，複製按鈕會隱藏，仍可手動選取並複製指令文字。
+
+## 套件管理工具 \{#package-managers\}
+
+若要為 npm、pnpm、bun 和 yarn 提供同一項操作的指令，請在片段開頭放入由原生單選按鈕組成的[分段控制項](/components/segmented)，再依照選項順序為每個選項寫一個 `snippet-command`。分段控制項會省略自己的凹槽，沿片段頂部排列，下方以細線分隔。選取的選項會凸起，切換時凸起面板會滑到新選項。元件只顯示與選取位置對應的指令，無需腳本，最多支援六個選項。
+
+<ComponentPreview name="managers" height={136} title="套件管理工具" background="plain" bodyClass="p-lg" html={`<div class="snippet max-w(360) mx-auto">
+  <div class="segmented" role="radiogroup" aria-label="Package manager">
+    <label class="segmented-item"><input class="segmented-input" type="radio" name="manager" checked>npm</label>
+    <label class="segmented-item"><input class="segmented-input" type="radio" name="manager">pnpm</label>
+    <label class="segmented-item"><input class="segmented-input" type="radio" name="manager">bun</label>
+    <label class="segmented-item"><input class="segmented-input" type="radio" name="manager">yarn</label>
+  </div>
+  <span class="snippet-prompt" aria-hidden="true">$</span>
+  <code class="snippet-command" tabindex="0">npm install @master/ui</code>
+  <code class="snippet-command" tabindex="0">pnpm add @master/ui</code>
+  <code class="snippet-command" tabindex="0">bun add @master/ui</code>
+  <code class="snippet-command" tabindex="0">yarn add @master/ui</code>
+  <button type="button" class="btn btn-quiet btn-square" aria-label="Copy command">
+    <svg class="icon snippet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 8h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
+    <svg class="icon snippet-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>
+  </button>
+  <output class="snippet-status"></output>
+</div>
+<script>
+document.querySelectorAll('.snippet').forEach(function (snippet) {
+  var status = snippet.querySelector('.snippet-status')
+  var timer = 0
+  snippet.querySelector('.btn').addEventListener('click', function () {
+    var command = Array.prototype.find.call(snippet.querySelectorAll('.snippet-command'), function (line) {
+      return line.checkVisibility()
+    })
+    navigator.clipboard.writeText(command.textContent).then(function () {
+      status.textContent = 'Copied'
+      clearTimeout(timer)
+      timer = setTimeout(function () { status.textContent = '' }, 2000)
+    })
+  })
+})
+</script>`} caption="選擇套件管理工具，即可切換這一行顯示的指令。" />
+
+## 尺寸 \{#sizes\}
+
+指令列高 38px，與按鈕同高。`snippet-sm` 高 32px，字級為 12px，適合資訊密集的頁面或表格。`snippet-lg` 高 44px，字級為 14px，適合放在頁面頂部與大型按鈕並排。在觸控螢幕上，所有尺寸的高度都是 44px。
+
+<ComponentPreview name="sizes" height={224} narrowHeight={280} title="尺寸" background="plain" bodyClass="p-lg" html={`<div class="flex flex-col items-center gap-lg">
+  <div class="snippet snippet-sm">
+    <span class="snippet-prompt" aria-hidden="true">$</span>
+    <code class="snippet-command" tabindex="0">npx master-ui add button</code>
+    <button type="button" class="btn btn-quiet btn-square" aria-label="Copy command">
+      <svg class="icon snippet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 8h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
+      <svg class="icon snippet-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>
+    </button>
+    <output class="snippet-status"></output>
+  </div>
+  <div class="snippet">
+    <span class="snippet-prompt" aria-hidden="true">$</span>
+    <code class="snippet-command" tabindex="0">npx master-ui add button</code>
+    <button type="button" class="btn btn-quiet btn-square" aria-label="Copy command">
+      <svg class="icon snippet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 8h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
+      <svg class="icon snippet-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>
+    </button>
+    <output class="snippet-status"></output>
+  </div>
+  <div class="flex flex-wrap items-center justify-center gap-sm">
+    <a class="btn btn-primary btn-lg" href="#">Get started</a>
+    <div class="snippet snippet-lg">
+      <span class="snippet-prompt" aria-hidden="true">$</span>
+      <code class="snippet-command" tabindex="0">npm install @master/ui</code>
+      <button type="button" class="btn btn-quiet btn-square" aria-label="Copy command">
+        <svg class="icon snippet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 8h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
+        <svg class="icon snippet-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>
+      </button>
+      <output class="snippet-status"></output>
+    </div>
+  </div>
+</div>
+<script>
+document.querySelectorAll('.snippet').forEach(function (snippet) {
+  var status = snippet.querySelector('.snippet-status')
+  var timer = 0
+  snippet.querySelector('.btn').addEventListener('click', function () {
+    var command = Array.prototype.find.call(snippet.querySelectorAll('.snippet-command'), function (line) {
+      return line.checkVisibility()
+    })
+    navigator.clipboard.writeText(command.textContent).then(function () {
+      status.textContent = 'Copied'
+      clearTimeout(timer)
+      timer = setTimeout(function () { status.textContent = '' }, 2000)
+    })
+  })
+})
+</script>`} />
+
+## 指令片段與程式碼的用途 \{#snippet-or-code\}
+
+指令片段用於可直接執行的單行指令。多行內容、檔案或供閱讀的輸出適合放在[程式碼區塊](/components/code#block)中。句子中提到指令時，請使用行內[程式碼](/components/code)。要標示使用者應按下的按鍵，請使用[按鍵元件](/components/kbd)。
+
+## 無障礙 \{#accessibility\}
+
+- 終端機提示符號僅供裝飾，請加上 `aria-hidden="true"`，讓螢幕閱讀器只朗讀指令。
+- 為複製按鈕加上 `aria-label`，例如「複製指令」。按鈕內的圖示使用 `aria-hidden`。
+- 在標記中讓 `snippet-status` 保持完全空白，連空白字元也不要放入。`<output>` 本身就是會在適當時機朗讀的即時區域，因此腳本填入的「已複製」會由螢幕閱讀器朗讀。
+- 為指令加上 `tabindex="0"`，讓使用者能以鍵盤捲動超出可用寬度的指令。
+- 在強制色彩模式下，淡出效果會移除，凹槽會加上外框，提示符號則使用系統的灰色文字色。
+
+## 類別 \{#classes\}
+
+<ContractTable name="snippet" />
+
+## 自訂屬性 \{#custom-properties\}
+
+<ContractTable name="snippet" show="properties" />
+
+## 原始碼 \{#source\}
+
+<ComponentSource name="snippet" />

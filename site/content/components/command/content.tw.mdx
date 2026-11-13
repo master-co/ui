@@ -1,0 +1,118 @@
+---
+title: "指令面板"
+description: "在指令清單上方放置搜尋欄位的對話框。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+指令面板由搜尋欄位和下方的指令清單組成，可從文件中的任何位置用快速鍵開啟。它使用[對話框](/components/dialog)作為外框。在 `dialog` 旁加上 `command`，並在內部放入 `command-search` 列、[清單方塊](/components/listbox)及選用的 `command-footer`。由於使用原生 `<dialog>`，按鈕可透過 `command="show-modal"` 開啟面板，瀏覽器則會提供背景遮罩、將焦點限制在對話框內，並支援按 <kbd>Esc</kbd> 關閉。
+
+<ComponentPreview name="default" height={560} title="指令面板" bodyClass="flex items-start justify-center p-lg min-h(560)" behaviors html={`<button type="button" class="btn" commandfor="palette" command="show-modal">
+  Search commands
+  <kbd class="kbd">⌘K</kbd>
+</button>
+
+<dialog id="palette" class="dialog command" closedby="any" aria-label="Command palette">
+  <label class="command-search">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.35-4.35"/></svg>
+    <input class="command-input" id="palette-input" type="search" role="combobox" aria-expanded="true" aria-controls="palette-list" aria-activedescendant="cmd-new" aria-autocomplete="list" autocomplete="off" placeholder="Type a command or search" autofocus>
+    <kbd class="kbd">Esc</kbd>
+  </label>
+  <div class="listbox command-list" id="palette-list" role="listbox" aria-label="Commands">
+    <div class="listbox-group" role="group" aria-labelledby="group-suggestions">
+    <div class="listbox-label" id="group-suggestions">Suggestions</div>
+    <div class="listbox-option" role="option" id="cmd-new" aria-selected="true">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      New project
+      <span class="listbox-end"><kbd class="kbd">⌘</kbd><kbd class="kbd">N</kbd></span>
+    </div>
+    <div class="listbox-option" role="option" id="cmd-deploy">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M5 20h14"/></svg>
+      Deploy to production
+    </div>
+    <div class="listbox-option" role="option" id="cmd-invite">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M3 20a6 6 0 0 1 12 0M18 8v6M15 11h6"/></svg>
+      Invite a member
+    </div>
+    </div>
+    <div class="listbox-group" role="group" aria-labelledby="group-go">
+    <div class="listbox-label" id="group-go">Go to</div>
+    <div class="listbox-option" role="option" id="cmd-settings">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h2M10 12h10M4 18h10M18 18h2"/><circle cx="16" cy="6" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="16" cy="18" r="2"/></svg>
+      Settings
+      <span class="listbox-end"><kbd class="kbd">G</kbd><kbd class="kbd">S</kbd></span>
+    </div>
+    <div class="listbox-option" role="option" id="cmd-billing">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/></svg>
+      Billing
+    </div>
+    </div>
+    <div class="listbox-empty">No commands match.</div>
+  </div>
+  <footer class="command-footer">
+    <span class="command-hint"><kbd class="kbd">↑</kbd><kbd class="kbd">↓</kbd> to move</span>
+    <span class="command-hint"><kbd class="kbd">↵</kbd> to run</span>
+    <span class="command-hint"><kbd class="kbd">Esc</kbd> to close</span>
+  </footer>
+</dialog>`} caption="按下按鈕即可開啟面板，焦點在預覽區內時也可按 ⌘K 或 Ctrl K。輸入文字來篩選，用方向鍵移動，再按 Enter 執行指令。" />
+
+## 結構 \{#parts\}
+
+- `command-search` 使用 `<label>`，所以點擊整列的任何位置都會讓輸入欄位取得焦點。這一列包含 [`icon`](/components/icon)、`command-input` 和選用的提示文字。
+- `command-input` 本身沒有獨立的背景，會顯示對話框的背景，並以一道細線與搜尋結果區隔。
+- 將 `command-list` 套用在清單方塊上。它會占用剩餘高度，並在對話框內捲動。
+- `command-footer` 容納多組 `command-hint`，每組先用 [`kbd`](/components/kbd) 標記按鍵，再說明按鍵的用途。
+
+面板會在靠近檢視區頂端的位置開啟，並向下延伸，因此下方清單的長度改變時，搜尋欄位的位置會保持固定。
+
+## 行為 \{#behavior\}
+
+對話框無須腳本即可開關。`command` [行為](/guide/behaviors)提供指令面板專用的操作功能。它接收對話框，並傳回用來解除行為的函式。
+
+```js name=app.js
+import { command } from '@master/ui/behaviors/command.js'
+
+command(document.querySelector('.command'))
+
+document.getElementById('cmd-new').addEventListener('click', () => {
+  // Create the project.
+})
+```
+
+- **快速鍵。** 在文件中的任何位置都可按 <kbd>⌘K</kbd> 或 <kbd>Ctrl</kbd> <kbd>K</kbd> 開啟面板，再按一次即可關閉。
+- **篩選。** 在 `command-input` 中輸入文字時，會將不相符的選項設為 `hidden`，並將第一個相符項目設為作用中選項。[清單方塊](/components/listbox#filtering)會自動顯示空白狀態，也會隱藏所有指令都被篩除的群組。
+- **作用中選項**設為 `aria-selected="true"`，並由欄位上的 `aria-activedescendant` 指向。用方向鍵可切換作用中選項。面板一開啟就有作用中選項，因此可直接按 <kbd>Enter</kbd> 執行。
+- **執行指令。** <kbd>Enter</kbd> 會觸發作用中選項的點擊，效果與使用指標相同。若選項是連結，就會前往連結目的地。若選項有 `click` 事件監聽器，也會執行。無論透過 <kbd>Enter</kbd> 或指標點擊選項，面板都會關閉。應用程式可直接監聽 `click`，這個行為不會另外派發事件。
+
+| 選項 | 設定內容 |
+| --- | --- |
+| `shortcut` | 搭配 Command 或 Control 開關面板的按鍵。預設為 `'k'`，設為 `false` 可停用快速鍵 |
+
+未掛上行為時，按鈕仍可開啟對話框，欄位仍可輸入文字，也可按 <kbd>Esc</kbd> 關閉。輸入文字不會篩選清單，方向鍵也無法在清單中切換選項。
+
+## 鍵盤操作 \{#keyboard\}
+
+<ContractTable name="command" show="keyboard" />
+
+## 無障礙 \{#accessibility\}
+
+- 用 `aria-label` 為對話框命名。在輸入欄位上加上 `autofocus`，讓使用者一開啟面板就能輸入。
+- 輸入欄位本身是[組合方塊](/components/combobox#accessibility)，用來控制清單方塊。此處的清單會一直保持展開。
+- 面板中的每個指令都必須能透過其他方式執行，讓使用者可以把面板當作捷徑。
+
+## React、Svelte 和 Vue \{#frameworks\}
+
+`command` 元件會根據指令清單產生面板、掛上行為，並在面板開啟或關閉時通知應用程式。用 `npx master-ui add command` 將元件複製到專案中。元件的建置與使用方式請參閱 [React、Svelte 和 Vue](/guide/frameworks)。
+
+<FrameworkSource name="command" />
+
+## 類別 \{#classes\}
+
+<ContractTable name="command" />
+
+## 原始碼 \{#source\}
+
+<ComponentSource name="command" />

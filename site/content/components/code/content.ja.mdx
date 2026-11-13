@@ -1,0 +1,97 @@
+---
+title: "コード"
+description: "文字列をそのまま等幅フォントで表示します。インラインとブロックに対応します。"
+---
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+コードは、コマンドや値、ファイル名などの文字列をそのまま等幅フォントで表示するコンポーネントです。インラインでは、`<code>`に`.code`を指定して、行内に収まる小さなチップとして表示します。ブロックでは、`<pre>`に`code-block`を指定して[くぼみ](/components/surface#well)として表示し、長い行があればブロック内でスクロールできます。
+
+<ComponentPreview name="default" height={96} narrowHeight={120} title="コード" background="plain" bodyClass="p-lg" html={`<p class="m(0) text-sm fg-text-body leading-md">Install the package with <code class="code">npm install @master/ui</code>, then import it after <code class="code">@master/css</code>.</p>`} />
+
+## ブロック \{#block\}
+
+`<pre>`に`code-block`を指定し、コードとしての意味を保つために内部に`<code>`を置きます。元の改行は保持され、長い行は折り返さず、ブロックを横にスクロールできます。ブロックの幅を超える行があり得る場合は、キーボードでスクロールできるように`tabindex="0"`を指定します。
+
+<ComponentPreview name="block" height={208} title="ブロック" background="plain" bodyClass="p-lg" html={`<pre class="code-block" tabindex="0"><code>@import '@master/css';
+@import '@master/ui';
+
+@theme {
+  --color-brand: var(--color-indigo-50);
+}</code></pre>`} />
+
+## 行 \{#lines\}
+
+特定の行を示すには、各行を`code-line`にします。ブロックは各行をグリッドに配置し、すべての行の幅を最長行に揃えます。これにより、行の帯はスクロールできる範囲全体に伸びます。グリッド項目間の空白は描画されないため、要素間で改行しても余分な空白は生じません。コード1行につき1要素を記述します。
+
+注目させたい行には`code-line-highlight`を指定します。行の背景に淡い色が付き、行頭に文字色の線が入ります。ブロックに`code-numbered`を指定すると、CSSカウンターで生成した行番号が、コードの脇に設けた余白に表示されます。行番号はコードと一緒に選択されたりコピーされたりしません。
+
+<ComponentPreview name="lines" height={208} title="行番号とハイライト" background="plain" bodyClass="p-lg" html={`<pre class="code-block code-numbered" tabindex="0"><code class="code-line">.btn {</code>
+<code class="code-line">  --btn-height: 2.375rem;</code>
+<code class="code-line code-line-highlight">  --btn-radius: var(--radius-control);</code>
+<code class="code-line">  border-radius: calc(var(--btn-radius) * var(--corner-scale));</code>
+<code class="code-line">  corner-shape: var(--corner-shape);</code>
+<code class="code-line">}</code></pre>`} />
+
+## 差分 \{#diff\}
+
+`code-line-added`と`code-line-removed`で変更行を示します。色は行頭の記号に対応します。パッチと同様に、`+`と`-`はテキストに残します。色がなくても変更を判別でき、そのままパッチとしてコピーできます。
+
+<ComponentPreview name="diff" height={184} title="差分" background="plain" bodyClass="p-lg" html={`<pre class="code-block" tabindex="0"><code class="code-line">  @theme {</code>
+<code class="code-line code-line-removed">-   --radius-control: .5rem;</code>
+<code class="code-line code-line-added">+   --radius-control: .625rem;</code>
+<code class="code-line">    --radius-surface: 1rem;</code>
+<code class="code-line">  }</code></pre>`} />
+
+## パネル \{#panel\}
+
+`code-panel`はブロックの上にヘッダーを追加し、全体をひとつのくぼみに収めます。`code-title`にはファイル名を表示し、末尾にはコントロールを配置します。コントロールは端から4px内側に置き、パネルと角丸の中心を揃えます。内側のブロックには、独立したくぼみがなくなります。
+
+`--code-radius`は単独の`code-block`か、それを内包する`code-panel`に指定します。既定値は`var(--radius-control)`です。[トレイ](/components/surface#tray)の直下に置くルート要素には`var(--radius-surface)`を使い、親要素の内側の余白に角丸を合わせます。パネル内のブロックは角丸なしの透明な面になり、全体をひとつの輪郭で囲みます。
+
+コピーにはスクリプトが必要です。ブロックのテキストを読み取り、クリップボードに渡すだけなので、3行で実装できます。
+
+<ComponentPreview name="panel" height={248} title="パネル" background="plain" bodyClass="p-lg" html={`<div class="code-panel">
+  <div class="code-header">
+    <span class="code-title">app.css</span>
+    <button type="button" class="btn btn-quiet btn-sm" id="copy-app-css"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 9h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V10a1 1 0 0 1 1-1M16 9V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>Copy</button>
+  </div>
+  <pre class="code-block" tabindex="0"><code>@import '@master/css';
+@import '@master/ui';
+
+@theme {
+  --color-brand: var(--color-indigo-50);
+}</code></pre>
+</div>
+<script>
+document.getElementById('copy-app-css').addEventListener('click', function (event) {
+  var button = event.currentTarget
+  navigator.clipboard.writeText(button.closest('.code-panel').querySelector('.code-block').textContent).then(function () {
+    button.lastChild.textContent = 'Copied'
+    setTimeout(function () { button.lastChild.textContent = 'Copy' }, 1600)
+  })
+})
+</script>`} />
+
+## コードとkbdの使い分け \{#code-or-kbd\}
+
+読者が文字列として入力する内容や、プログラムから読み取る内容には`code`を使い、押すキーを示すには[`kbd`](/components/kbd)を使います。スタイルシートは構文の強調表示を行いません。ハイライターが生成したspan要素の色は、ブロック内でも保持されます。
+
+## クラス \{#classes\}
+
+<ContractTable name="code" />
+
+## カスタムプロパティ \{#custom-properties\}
+
+<ContractTable name="code" show="properties" />
+
+## アクセシビリティ \{#accessibility\}
+
+- ブロックの幅を超える行があり得る場合は、キーボードでスクロールできるように、ブロックに`tabindex="0"`を指定します。
+- 行番号は生成コンテンツです。読み上げ、選択、コピーの対象にはなりません。
+- ハイライトは視覚的な目印です。ブロックの前後の文章で特定の行に言及するときは、色や行番号に頼らず、その行に何が書かれているかを示します。
+
+## ソース \{#source\}
+
+<ComponentSource name="code" />

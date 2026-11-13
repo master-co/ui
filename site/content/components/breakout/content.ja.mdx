@@ -1,0 +1,140 @@
+---
+title: "Breakout"
+description: "図や帯を本文より広く配置したり、両端まで広げたりできる 1 カラムレイアウトです。"
+---
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import PagePreview from '~/site/components/PagePreview.astro'
+
+breakout は、読みやすい行幅の本文カラムを、利用できる領域の中央に配置します。画像、表、帯は、本文より少し広くしたり、領域の両端まで広げたりできます。長文記事、変更履歴、読み物などで、本文の読みやすさを保ちながら、図表などにより広いスペースを取れます。
+
+クラスを指定しなくても、内容は本文カラムに収まります。カラムの外まで広げる要素にだけ、`breakout-wide` または `breakout-full` を指定します。breakout 自体に背景などの装飾はないため、両端まで広がる帯の外観は、ユーティリティやコンポーネントで指定します。
+
+<PagePreview name="default" title="Breakout" height={1576} tabletHeight={1500} phoneHeight={1800} caption="記事をスクロールしてから、「タブレット」と「スマートフォン」を選んでください。本文は読みやすい行幅を保ち、画像と表は両脇に空きがある分だけ広がります。帯はどの幅でも両端に届きます。" html={`<article class="breakout py-2xl bg-surface-base fg-text-body text-md leading-lg">
+  <header class="flex flex-col gap-xs">
+    <p class="eyebrow">Changelog · 12 November</p>
+    <h1 class="heading heading-2xl">Faster cold builds, and comments on previews</h1>
+    <p class="lead">Dependency caches are now restored before the install step, and anyone with the link to a preview can leave a comment on it.</p>
+  </header>
+  <p>A cold build is one that starts with nothing: a new branch, a cleared cache, a project that has not built in a week. Until this release it downloaded every dependency again before it could restore anything, which made the first build of a branch the slowest one, and the one people waited for most.</p>
+  <figure class="figure breakout-wide">
+    <img class="figure-media" src="/demo/harbor.svg" alt="A wooden jetty running out over calm water" style="--figure-ratio: 21 / 9">
+    <figcaption class="figure-caption">The cache now waits at the end of the jetty, not the start: it is there before the install begins.</figcaption>
+  </figure>
+  <h2 class="heading heading-lg mt-md">Caches before the install</h2>
+  <p>The cache of a project is now keyed by its lockfile and restored before the install step runs. The install finds what it needs already in place and only fetches what changed. A branch that changes no dependency builds as fast as the one it came from.</p>
+  <div class="breakout breakout-full py-xl bg-surface-tray">
+    <dl class="auto-grid" style="--auto-grid-min: 9rem">
+      <div class="stat">
+        <dt class="stat-label">Cold builds</dt>
+        <dd class="stat-row m(0)"><span class="stat-value">38s</span><span class="stat-delta">21% faster</span></dd>
+      </div>
+      <div class="stat">
+        <dt class="stat-label">Installs skipped</dt>
+        <dd class="stat-row m(0)"><span class="stat-value">64%</span></dd>
+      </div>
+      <div class="stat">
+        <dt class="stat-label">Data fetched</dt>
+        <dd class="stat-row m(0)"><span class="stat-value">1.9 GB</span><span class="stat-delta">48% less</span></dd>
+      </div>
+    </dl>
+  </div>
+  <h2 class="heading heading-lg mt-md">Comments on previews</h2>
+  <p>Anyone with the link to a preview can now leave a comment on it, pinned to the place they mean. Comments are kept with the deploy, so they are still there when someone opens the same preview next week, and they are listed on the pull request.</p>
+  <div class="scroll-area scroll-area-inline breakout-wide" tabindex="0" role="region" aria-label="Who can comment, by plan">
+    <table class="table">
+      <thead>
+        <tr class="table-row">
+          <th class="table-heading" scope="col">Plan</th>
+          <th class="table-heading" scope="col">Who can comment</th>
+          <th class="table-heading" scope="col">Kept for</th>
+          <th class="table-heading table-numeric" scope="col">Previews</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="table-row">
+          <th class="table-cell table-primary" scope="row">Free</th>
+          <td class="table-cell">Members of the team</td>
+          <td class="table-cell">30 days</td>
+          <td class="table-cell table-numeric">10</td>
+        </tr>
+        <tr class="table-row">
+          <th class="table-cell table-primary" scope="row">Pro</th>
+          <td class="table-cell">Anyone with the link</td>
+          <td class="table-cell">One year</td>
+          <td class="table-cell table-numeric">Unlimited</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Both changes are on for every project today. There is nothing to turn on.</p>
+</article>`} />
+
+## 仕組み \{#how-it-is-built\}
+
+- **1 列のグリッド。** breakout は 1 列のグリッドです。列の幅は `--breakout-measure` の値（既定は 40rem）と、利用できる幅から両側の `--breakout-gutter` を引いた幅のうち、狭い方になります。列は中央に配置され、すべての子要素がクラス指定なしでこの列に入ります。
+- **負のマージンでカラムを広げる。** breakout はインラインサイズコンテナーです。子要素から見た `100cqi` は breakout 全体の幅、`100%` は本文カラムの幅です。差の半分が片側の空き幅になります。`breakout-wide` は負のマージンでこの空きを使い、左右それぞれ `--breakout-wide` を上限として、外側の余白を残します。`breakout-full` は外側の余白も含めて空き幅をすべて使います。
+- **テキストを本文幅にそろえた帯。** 全幅の子要素に `breakout` も指定すると、帯は両端まで広がり、その中の子要素は本文と同じ幅のカラムに並びます。上の例では、帯の中の数値が、その上下の本文とそろっています。
+- **行間隔でそろえる縦の余白。** グリッドではマージンが相殺されないため、子要素の間隔はグリッドの行間隔で 1.25rem にそろえます。見出しには `mt-md` を指定し、直前の内容との間隔を、見出しが導く内容との間隔より少し広くします。
+- **幅の広い表は表だけをスクロール。** 表は `scroll-area-inline`（`breakout-wide`）を指定した[スクロール領域](/components/scroll-area)に置きます。スマートフォンでもページ全体の幅は広がらず、カラム内で表をスクロールできます。
+
+## ワイドと全幅 \{#wide-and-full\}
+
+子要素がどこまで広がるかは、本文カラムの両脇に取れるスペース、つまりページの幅によって決まります。
+
+| 利用できる幅 | 本文カラム | `breakout-wide` | `breakout-full` |
+| --- | --- | --- | --- |
+| 本文幅と左右の拡張幅の合計より広い | 40rem、中央寄せ | 左右に 8rem ずつ拡張して 56rem | 領域の全幅 |
+| 上下の条件の間 | 40rem、中央寄せ | カラムの両脇の空きから外側の余白を引いた分だけ拡張 | 領域の全幅 |
+| 本文幅より狭い | 左右の余白を除いた幅 | 本文カラムと同じ幅 | 領域の全幅 |
+
+<ComponentPreview name="widths" background="stripes" height={332} narrowHeight={332} title="幅の設定" bodyClass="p(0)" html={`<div class="breakout py-lg fg-text-muted text-sm" style="--breakout-measure: 20rem; --breakout-wide: 5rem">
+  <div class="well flex items-center justify-center h(56)">The column</div>
+  <div class="well flex items-center justify-center h(56) breakout-wide">breakout-wide</div>
+  <div class="well flex items-center justify-center h(56) breakout-full">breakout-full</div>
+  <div class="well flex items-center justify-center h(56)">The column</div>
+</div>`} />
+
+`--breakout-measure` は本文カラムの最大幅です。40rem なら本文が 1 行に約 70 文字収まります。文字サイズが大きい場合は値を小さくし、コード用のカラムでは大きくします。`--breakout-wide` はワイドな子要素が片側に広がる最大幅、`--breakout-gutter` は全幅以外の子要素と端の間に確保する最小余白です。
+
+## 全幅の帯 \{#full-band\}
+
+両端まで広がる帯には、通常、背景色や画像の上にテキストを載せます。テキストは本文と同じ幅に収めます。帯自体を breakout にし、親の中で `breakout-full` を指定した子要素として両端まで広げると、帯の中の子要素は前後の本文と同じ幅のカラムに並びます。
+
+```html
+<div class="breakout breakout-full py-xl bg-surface-tray">
+  <p>These words line up with the column above and below the band.</p>
+</div>
+```
+
+breakout 自体には装飾がないため、帯の背景色はユーティリティ `bg-surface-tray` で指定します。両端まで広がる画像には `breakout-full` の[図版](/components/figure)を使い、ウィンドウの端に接する角は `--figure-radius: 0` で丸みをなくします。
+
+## 使い分け \{#when\}
+
+記事、投稿、変更履歴、ガイドなど、1 カラムで読むページに breakout を使います。ナビゲーションや目次などを本文カラムの隣に配置する場合は、[ドキュメントページ](/pages/docs)を使い、その記事カラムに breakout を適用できます。すべての要素がカラム内に収まる場合は、`max-w(640) mx-auto` と外側の余白を指定するユーティリティだけで構成できます。
+
+## アクセシビリティ \{#accessibility\}
+
+- breakout が調整するのは幅だけです。読み順はマークアップ順に従います。
+- 本文幅は rem で指定するため、読者の文字サイズ設定に追従します。文字が大きくなると、1 行あたり約 70 文字を保つようにカラムも広がります。ウィンドウがそれより狭い場合は、ウィンドウ幅に合わせてカラムが縮むため、横スクロールは発生しません。
+- カラムより幅の広い表は、アクセシブルな名前と `tabindex="0"` を指定した[スクロール領域](/components/scroll-area)に入れ、キーボードでスクロールできるようにします。
+
+## クラス \{#classes\}
+
+<ContractTable name="breakout" directory="layouts" />
+
+## カスタムプロパティ \{#custom-properties\}
+
+<ContractTable name="breakout" show="properties" directory="layouts" />
+
+## 関連項目 \{#related\}
+
+<ComponentLinks slugs={['figure', 'heading', 'table', 'scroll-area', 'quote', 'arrangements']} />
+
+<ComponentLinks kind="pages" slugs={['docs', 'page']} />
+
+## ソース \{#source\}
+
+<ComponentSource name="breakout" directory="layouts" />

@@ -1,0 +1,91 @@
+---
+title: "구성 내역"
+description: "전체의 구성을 하나의 막대로 표시하며, 각 구간의 너비는 해당 항목의 비중에 비례합니다."
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+구성 내역은 하나의 막대에 전체를 구성하는 항목을 표시하며, 각 구간의 너비는 해당 항목의 비중에 비례합니다. 유형별 저장 공간, 서비스별 청구 금액, 예산의 사용액과 잔액을 표시하는 데 쓸 수 있습니다. 구성 내역은 목록으로 작성합니다. 각 항목에는 막대를 그리는 데 쓸 수치를 한 번 지정하고, 항목 이름과 수치를 텍스트로도 적습니다. 스타일시트는 이 목록 하나로 막대와 그 아래 범례를 그립니다. 스크립트와 SVG는 사용하지 않습니다.
+
+<ComponentPreview name="default" height={220} narrowHeight={248} title="구성 내역" bodyClass="p-lg" html={`<div class="card max-w(440) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Storage</h3>
+    <p class="card-description">90 GB of 128 GB used</p>
+  </div>
+  <ul class="breakdown" aria-label="Storage by kind">
+    <li class="breakdown-item" style="--value: 42"><span class="breakdown-label">Photos <span class="breakdown-value">42 GB</span></span></li>
+    <li class="breakdown-item" style="--value: 28"><span class="breakdown-label">Apps <span class="breakdown-value">28 GB</span></span></li>
+    <li class="breakdown-item" style="--value: 14"><span class="breakdown-label">Mail <span class="breakdown-value">14 GB</span></span></li>
+    <li class="breakdown-item" style="--value: 6"><span class="breakdown-label">System <span class="breakdown-value">6 GB</span></span></li>
+    <li class="breakdown-item breakdown-rest" style="--value: 38"><span class="breakdown-label">Free <span class="breakdown-value">38 GB</span></span></li>
+  </ul>
+</div>`} caption="한 구간에 포인터를 올리면 나머지 구간이 흐려집니다." />
+
+## 구간 너비 계산 \{#how-a-part-gets-its-width\}
+
+각 `breakdown-item`의 스타일에서 `--value`를 설정하면 해당 구간이 그 값에 비례해 늘어납니다. 따라서 각 구간의 너비는 전체 합계에서 해당 항목이 차지하는 비중에 비례합니다. 값을 백분율로 환산하거나 합계를 특정 값에 맞출 필요는 없습니다. 기가바이트, 달러, 개수 등을 그대로 사용할 수 있습니다. 비중이 0이어도 2px 눈금이 남아 해당 항목이 표시됩니다.
+
+각 항목은 자체 박스를 만들지 않습니다. 항목의 구간은 막대를 이루고 `breakdown-label`은 막대 아래에서 줄바꿈되는 범례에 들어갑니다. 목록 구조는 유지되므로 보조 기술은 항목을 데이터로 읽을 수 있습니다.
+
+구간에는 한 가지 색의 농도를 달리해 가장 진한 색부터 적용합니다. 항목은 큰 값부터 작은 값 순으로 배치하고 5개 정도로 제한하세요. 눈으로는 5단계를 구분할 수 있지만 8단계는 구분하기 어렵습니다.
+
+## 남은 분량 \{#what-is-left\}
+
+`breakdown-rest`는 여유 공간, 예산 잔액, 빈 좌석처럼 아직 사용하지 않은 부분을 표시합니다. 남은 구간은 색으로 채우지 않고 오목한 영역으로 표시하며, 범례에서는 점 대신 고리를 사용합니다. 이렇게 하면 회색의 농도 차이에 기대지 않고 표시 방식만으로 사용한 부분과 남은 부분을 구분할 수 있습니다. 이 항목은 맨 뒤에 배치하세요.
+
+## 행형 범례 \{#rows\}
+
+`breakdown-rows`는 범례를 항목당 한 행으로 배치하고 가는 선으로 행을 구분하며, 각 수치를 행 끝에 표시합니다. 청구서처럼 수치를 읽고 비교해야 할 때 사용하세요. `--breakdown-height`로 막대를 더 두껍게 표시할 수 있습니다.
+
+<ComponentPreview name="rows" height={308} title="행형 범례" bodyClass="p-lg" html={`<div class="card max-w(340) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">November</h3>
+    <p class="card-description">$3,074 so far</p>
+  </div>
+  <ul class="breakdown breakdown-rows" style="--breakdown-height: .625rem" aria-label="Spend by service">
+    <li class="breakdown-item" style="--value: 1840"><span class="breakdown-label">Compute <span class="breakdown-value">$1,840</span></span></li>
+    <li class="breakdown-item" style="--value: 920"><span class="breakdown-label">Storage <span class="breakdown-value">$920</span></span></li>
+    <li class="breakdown-item" style="--value: 310"><span class="breakdown-label">Network <span class="breakdown-value">$310</span></span></li>
+    <li class="breakdown-item" style="--value: 4"><span class="breakdown-label">Support <span class="breakdown-value">$4</span></span></li>
+  </ul>
+</div>`} />
+
+## 상태가 있는 항목 \{#status\}
+
+막대는 기본적으로 한 가지 색의 농도를 달리해 표시합니다. 실패한 요청처럼 특정 상태를 나타내는 항목은 해당 항목의 `--breakdown-fill`을 상태 색상으로 설정하고 레이블에도 상태 이름을 적으세요. 색상만으로 상태를 전달해서는 안 됩니다. `--breakdown-color`로 구간의 농도 단계를 만드는 기준 색을 바꿀 수 있습니다.
+
+<ComponentPreview name="status" height={188} narrowHeight={220} title="상태" bodyClass="p-lg" html={`<div class="card max-w(440) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Requests</h3>
+    <p class="card-description">1.28M in the last hour</p>
+  </div>
+  <ul class="breakdown" aria-label="Requests by result">
+    <li class="breakdown-item" style="--value: 962"><span class="breakdown-label">Succeeded <span class="breakdown-value">96.2%</span></span></li>
+    <li class="breakdown-item" style="--value: 31"><span class="breakdown-label">Redirected <span class="breakdown-value">3.1%</span></span></li>
+    <li class="breakdown-item" style="--value: 7; --breakdown-fill: var(--color-danger)"><span class="breakdown-label">Failed <span class="breakdown-value">0.7%</span></span></li>
+  </ul>
+</div>`} />
+
+## 구성 내역과 차트 \{#breakdown-or-chart\}
+
+구성 내역은 "무엇으로 이루어져 있나요?"라는 질문에 답합니다. 전체 합계에서 각 항목이 차지하는 비중을 읽습니다. [차트](/components/chart)는 "어느 쪽이 더 큰가요?"라는 질문에 답합니다. 막대를 서로 비교하고 눈금에 맞춰 값을 읽습니다. 정해진 범위 안에서 값 하나를 표시할 때는 [미터](/components/meter)를 사용합니다.
+
+## 접근성 \{#accessibility\}
+
+- `<ul>`로 작성하고, 항목의 순서가 순위를 나타낼 때는 `<ol>`을 사용하세요. `aria-label` 또는 제목으로 목록에 이름을 붙이세요.
+- 각 항목의 `breakdown-label`에 이름과 수치를 적고 단위도 함께 표시하세요. 막대는 스타일시트가 그리며 스크린 리더가 읽지 않습니다.
+- 항목을 구분할 때 색의 농도 차이에만 의존하지 마세요. 범례에는 막대와 같은 순서로 각 항목의 이름을 표시합니다. 강제 색상 모드에서는 모든 구간에 텍스트 색상이 적용되고 2px 간격으로 구간이 구분됩니다.
+
+## 클래스 \{#classes\}
+
+<ContractTable name="breakdown" />
+
+## 사용자 지정 속성 \{#custom-properties\}
+
+<ContractTable name="breakdown" show="properties" />
+
+## 소스 \{#source\}
+
+<ComponentSource name="breakdown" />

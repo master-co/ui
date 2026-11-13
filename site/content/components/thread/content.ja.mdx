@@ -1,0 +1,113 @@
+---
+title: "スレッド"
+description: "コメントと返信を表示し、各返信を返信先のコメントと線で結びます。"
+---
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+スレッドは、ドキュメントやレビュー、Issue に寄せられたコメントと返信をまとめたものです。各コメントでは、[アバター](/components/avatar)を配置する列を設け、その横に本文を表示します。返信は本文の下に並び、返信先のアバターから伸びる細い線が各返信へ折れ曲がります。インデントを見比べなくても、線をたどれば返信先がわかります。
+
+<ComponentPreview name="default" height={376} narrowHeight={440} title="スレッド" bodyClass="p-lg" html={`<div class="card max-w(480) mx-auto">
+  <ol class="thread">
+    <li class="thread-item">
+      <span class="thread-avatar"><span class="avatar">AL</span></span>
+      <div class="thread-body">
+        <p class="thread-header"><span class="thread-author">Ada Lovelace</span> <time class="thread-meta" datetime="2026-11-12T09:12">2h</time></p>
+        <p class="thread-text">The focus ring is cut by the mask. Should it move to the group?</p>
+      </div>
+      <ol class="thread-replies">
+        <li class="thread-item">
+          <span class="thread-avatar"><span class="avatar avatar-sm">AT</span></span>
+          <div class="thread-body">
+            <p class="thread-header"><span class="thread-author">Alan Turing</span> <time class="thread-meta" datetime="2026-11-12T10:05">1h</time></p>
+            <p class="thread-text">Yes. The group already has the corner, so the ring follows it.</p>
+          </div>
+        </li>
+        <li class="thread-item">
+          <span class="thread-avatar"><span class="avatar avatar-sm">GH</span></span>
+          <div class="thread-body">
+            <p class="thread-header"><span class="thread-author">Grace Hopper</span> <time class="thread-meta" datetime="2026-11-12T10:31">35m</time></p>
+            <p class="thread-text">I will make the change this afternoon.</p>
+          </div>
+        </li>
+      </ol>
+    </li>
+    <li class="thread-item">
+      <span class="thread-avatar"><span class="avatar">KJ</span></span>
+      <div class="thread-body">
+        <p class="thread-header"><span class="thread-author">Katherine Johnson</span> <time class="thread-meta" datetime="2026-11-12T10:54">12m</time></p>
+        <p class="thread-text">The figures in the second table are right.</p>
+      </div>
+    </li>
+  </ol>
+</div>`} />
+
+## 構造 \{#structure\}
+
+`thread` はリストです。各 `thread-item` は 1 件のコメントを表し、次の 3 つの子要素をこの順に持ちます。
+
+1. `thread-avatar` はアバターを囲みます。この列に沿って線が下へ伸びます。
+2. `thread-body` は本文です。`thread-header` に `thread-author` と、その名前に添える `thread-meta` を入れ、その後に段落ごとに `thread-text` を置きます。ページ側の段落スタイルにかかわらず、ヘッダーと各段落にマージンは付きません。続けて[引用](/components/quote)や控えめなスタイルのボタン列なども置けます。
+3. 返信がある場合は、`thread-replies` にこのコメントへの返信を表す `thread-item` を並べます。
+
+コメントに返信があると線が自動で表示され、各返信に向かって折れ曲がり、アバターの手前で止まります。半透明の線は重なると濃く見えるため、線の各部分は重ならないように描画されます。
+
+## 入れ子 \{#nesting\}
+
+返信にも返信できます。返信の中に `thread-replies` を置くと、線が 1 階層内側に続きます。コメントには既定の 32px の[アバター](/components/avatar)を使い、返信には深さにかかわらず 24px の `avatar-sm` を使います。
+
+階層は 2〜3 段で十分です。1 段深くなるごとに幅が 36px 狭くなり、スマートフォンでは本文の表示幅が足りなくなります。それより深い返信は、冒頭に返信相手の名前を書き、同じ階層に置きます。
+
+<ComponentPreview name="nesting" height={284} narrowHeight={304} title="入れ子" bodyClass="p-lg" html={`<div class="card max-w(480) mx-auto">
+  <ol class="thread">
+    <li class="thread-item">
+      <span class="thread-avatar"><span class="avatar">GH</span></span>
+      <div class="thread-body">
+        <p class="thread-header"><span class="thread-author">Grace Hopper</span> <time class="thread-meta" datetime="2026-11-12T08:02">3h</time></p>
+        <p class="thread-text">Can we ship the contracts before the framework components?</p>
+      </div>
+      <ol class="thread-replies">
+        <li class="thread-item">
+          <span class="thread-avatar"><span class="avatar avatar-sm">AL</span></span>
+          <div class="thread-body">
+            <p class="thread-header"><span class="thread-author">Ada Lovelace</span> <time class="thread-meta" datetime="2026-11-12T08:40">2h</time></p>
+            <p class="thread-text">Yes, they do not depend on each other.</p>
+          </div>
+          <ol class="thread-replies">
+            <li class="thread-item">
+              <span class="thread-avatar"><span class="avatar avatar-sm">GH</span></span>
+              <div class="thread-body">
+                <p class="thread-header"><span class="thread-author">Grace Hopper</span> <time class="thread-meta" datetime="2026-11-12T08:44">2h</time></p>
+                <p class="thread-text">Then Tuesday.</p>
+              </div>
+            </li>
+          </ol>
+        </li>
+      </ol>
+    </li>
+  </ol>
+</div>`} />
+
+## スレッドとメッセージの使い分け \{#thread-or-message\}
+
+スレッドは、ある話題についての議論です。コメントは対等に扱われ、どれにでも返信できます。[メッセージ](/components/message)は、二者間の会話での一つひとつの発言を、発言者を指す吹き出しで表示します。返信の対象にならないイベントには[タイムライン](/components/timeline)を使います。
+
+## アクセシビリティ \{#accessibility\}
+
+- スレッドには `<ol>` を使い、返信は `<ol>` を入れ子にして表します。スクリーンリーダーはこの構造から階層と返信数を読み上げます。画面上では、線がその関係を示します。
+- 「2h」のような短い時刻表記にも正確な値を持たせるため、各時刻に `<time>` を使い、`datetime` を指定します。
+- 線はスタイルシートで描画され、読み上げの対象外です。強制カラーモードではテキストと同じ色になります。
+- 投稿者名の横にイニシャルや写真を表示するアバターは、名前がテキストで示されているため、装飾として扱います。
+
+## クラス \{#classes\}
+
+<ContractTable name="thread" />
+
+## カスタムプロパティ \{#custom-properties\}
+
+<ContractTable name="thread" show="properties" />
+
+## ソース \{#source\}
+
+<ComponentSource name="thread" />

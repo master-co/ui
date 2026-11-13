@@ -1,0 +1,114 @@
+---
+title: "스레드"
+description: "댓글과 답글을 표시하고, 각 답글을 해당 댓글에 선으로 연결합니다."
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+스레드는 문서, 리뷰, 이슈 아래에서 오가는 댓글과 답글을 묶어 보여 줍니다. 댓글은 한 열에 놓인 [아바타](/components/avatar)와 그 옆의 본문으로 구성됩니다. 답글은 본문 아래에 놓입니다. 댓글의 아바타에서 아래로 뻗은 가는 선이 각 답글 쪽으로 꺾여 이어지므로, 들여쓰기에 의존하지 않고 선을 따라 어느 댓글에 달린 답글인지 알 수 있습니다.
+
+<ComponentPreview name="default" height={376} narrowHeight={440} title="스레드" bodyClass="p-lg" html={`<div class="card max-w(480) mx-auto">
+  <ol class="thread">
+    <li class="thread-item">
+      <span class="thread-avatar"><span class="avatar">AL</span></span>
+      <div class="thread-body">
+        <p class="thread-header"><span class="thread-author">Ada Lovelace</span> <time class="thread-meta" datetime="2026-11-12T09:12">2h</time></p>
+        <p class="thread-text">The focus ring is cut by the mask. Should it move to the group?</p>
+      </div>
+      <ol class="thread-replies">
+        <li class="thread-item">
+          <span class="thread-avatar"><span class="avatar avatar-sm">AT</span></span>
+          <div class="thread-body">
+            <p class="thread-header"><span class="thread-author">Alan Turing</span> <time class="thread-meta" datetime="2026-11-12T10:05">1h</time></p>
+            <p class="thread-text">Yes. The group already has the corner, so the ring follows it.</p>
+          </div>
+        </li>
+        <li class="thread-item">
+          <span class="thread-avatar"><span class="avatar avatar-sm">GH</span></span>
+          <div class="thread-body">
+            <p class="thread-header"><span class="thread-author">Grace Hopper</span> <time class="thread-meta" datetime="2026-11-12T10:31">35m</time></p>
+            <p class="thread-text">I will make the change this afternoon.</p>
+          </div>
+        </li>
+      </ol>
+    </li>
+    <li class="thread-item">
+      <span class="thread-avatar"><span class="avatar">KJ</span></span>
+      <div class="thread-body">
+        <p class="thread-header"><span class="thread-author">Katherine Johnson</span> <time class="thread-meta" datetime="2026-11-12T10:54">12m</time></p>
+        <p class="thread-text">The figures in the second table are right.</p>
+      </div>
+    </li>
+  </ol>
+</div>`} />
+
+## 구조 \{#structure\}
+
+`thread`는 목록이며, 각 `thread-item`은 댓글 하나를 나타냅니다. 자식 요소 세 개는 다음 순서로 배치합니다.
+
+1. `thread-avatar`는 아바타를 감쌉니다. 이 열을 따라 선이 아래로 이어집니다.
+2. `thread-body`에는 글 내용을 넣습니다. `thread-header`에 `thread-author`를 넣고 이름 옆에 `thread-meta`를 배치한 다음, 문단마다 `thread-text`를 하나씩 넣습니다. 페이지에서 문단에 어떤 여백을 지정하든 두 요소 모두 자체 여백이 없습니다. 그 뒤에는 [인용문](/components/quote)이나 시각적 강조를 줄인 버튼 행 등 원하는 내용을 추가할 수 있습니다.
+3. 답글이 있으면 `thread-replies`에 이 댓글에 답하는 `thread-item`을 목록으로 담습니다.
+
+댓글에 답글이 달리면 선이 자동으로 나타납니다. 각 답글은 세로선에서 직각으로 꺾여 나온 선으로 연결되며, 이 연결선은 답글의 아바타에 닿기 전에 끝납니다. 선은 반투명해서 두 겹이 되면 그 구간이 더 진하게 보이므로, 선분이 서로 겹치지 않게 그립니다.
+
+## 중첩 \{#nesting\}
+
+답글에도 답글을 달 수 있습니다. 답글 안에 `thread-replies`를 넣으면 선이 한 단계 안쪽으로 이어집니다. 댓글에는 기본 크기인 32px [아바타](/components/avatar)를 사용합니다. 답글의 아바타는 깊이에 관계없이 24px인 `avatar-sm`을 사용합니다.
+
+두세 단계면 충분합니다. 단계가 하나 늘어날 때마다 본문에 쓸 수 있는 너비가 36px씩 줄어들어, 휴대전화에서는 중첩이 깊어지면 글을 표시할 공간이 부족해집니다. 그보다 깊어지면 답글 첫머리에 답하는 상대의 이름을 쓰고 같은 단계에 배치하세요.
+
+<ComponentPreview name="nesting" height={284} narrowHeight={304} title="중첩" bodyClass="p-lg" html={`<div class="card max-w(480) mx-auto">
+  <ol class="thread">
+    <li class="thread-item">
+      <span class="thread-avatar"><span class="avatar">GH</span></span>
+      <div class="thread-body">
+        <p class="thread-header"><span class="thread-author">Grace Hopper</span> <time class="thread-meta" datetime="2026-11-12T08:02">3h</time></p>
+        <p class="thread-text">Can we ship the contracts before the framework components?</p>
+      </div>
+      <ol class="thread-replies">
+        <li class="thread-item">
+          <span class="thread-avatar"><span class="avatar avatar-sm">AL</span></span>
+          <div class="thread-body">
+            <p class="thread-header"><span class="thread-author">Ada Lovelace</span> <time class="thread-meta" datetime="2026-11-12T08:40">2h</time></p>
+            <p class="thread-text">Yes, they do not depend on each other.</p>
+          </div>
+          <ol class="thread-replies">
+            <li class="thread-item">
+              <span class="thread-avatar"><span class="avatar avatar-sm">GH</span></span>
+              <div class="thread-body">
+                <p class="thread-header"><span class="thread-author">Grace Hopper</span> <time class="thread-meta" datetime="2026-11-12T08:44">2h</time></p>
+                <p class="thread-text">Then Tuesday.</p>
+              </div>
+            </li>
+          </ol>
+        </li>
+      </ol>
+    </li>
+  </ol>
+</div>`} />
+
+## 스레드와 메시지 \{#thread-or-message\}
+
+스레드는 특정 주제를 다루는 토론입니다. 댓글은 모두 동등하며 어느 댓글에든 답글을 달 수 있습니다. [메시지](/components/message)는 양쪽이 주고받는 대화에서 한 차례의 발화를 나타내며, 작성자 쪽을 가리키는 말풍선으로 표시합니다. 답글이 달리지 않는 이벤트는 [타임라인](/components/timeline)으로 표시합니다.
+
+## 접근성 \{#accessibility\}
+
+- 스레드는 `<ol>`로 작성하고, 답글은 `<ol>`을 중첩해 작성하세요. 중첩 구조가 댓글과 답글의 관계를 나타냅니다. 화면에서 선으로 보이는 관계를 스크린 리더는 중첩 단계와 답글 수를 읽어 전달합니다.
+- “2h”는 정확한 시각을 줄여 표시한 것이므로, 각 시각은 `<time>`으로 마크업하고 `datetime`을 지정하세요.
+- 선은 스타일시트에서 그리며 스크린 리더가 읽지 않습니다. 강제 색상 모드에서는 텍스트 색상으로 표시됩니다.
+- 작성자 이름 옆에 이니셜이나 사진을 표시하는 아바타는 장식입니다. 이름이 이미 텍스트로 표시되어 있기 때문입니다.
+
+## 클래스 \{#classes\}
+
+<ContractTable name="thread" />
+
+## 사용자 지정 속성 \{#custom-properties\}
+
+<ContractTable name="thread" show="properties" />
+
+## 소스 \{#source\}
+
+<ComponentSource name="thread" />

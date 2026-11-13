@@ -1,0 +1,205 @@
+---
+title: "主从布局"
+description: "列表与选中项的详情并排，并各自滚动。"
+---
+
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import PagePreview from '~/site/components/PagePreview.astro'
+
+主从布局将列表与所选条目的详情并排显示，例如密钥列表与选中的密钥、消息列表与选中的消息、文件列表与选中的文件。两个窗格独立滚动，浏览详情时，列表会保留原来的滚动位置。
+
+此布局仅用工具类实现，可以嵌入页面。容器查询根据布局自身的宽度调整排列，因此它在宽页面和窄面板中都能使用。
+
+<PagePreview name="default" title="主从布局" height={488} bodyClass="p-lg" caption="在平板和手机预览中，详情窗格隐藏，列表占满可用宽度。每一行都链接到对应的独立详情页。" html={`<section class="sheet container-inline overflow-hidden text-sm fg-text-body" aria-labelledby="keys-title">
+  <div class="flex h(440)">
+    <div class="flex flex-col w-full w(300)@container(--3xl) shrink(0) bxe(1)@container(--3xl) bxe-solid@container(--3xl) b-line-hair">
+      <header class="flex flex-wrap items-center justify-between gap-sm p-md bb(1) bb-solid b-line-hair">
+        <h2 class="heading heading-sm" id="keys-title">API keys</h2>
+        <button type="button" class="btn btn-sm"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>New key</button>
+      </header>
+      <ul class="list list-interactive grow(1) overflow-y-auto">
+        <li><a class="list-row" href="#" aria-current="true">
+          <div class="list-body">
+            <p class="list-title">Production</p>
+            <p class="list-description">Created 2 Mar · last used today</p>
+          </div>
+        </a></li>
+        <li><a class="list-row" href="#">
+          <div class="list-body">
+            <p class="list-title">Staging</p>
+            <p class="list-description">Created 14 Jan · last used yesterday</p>
+          </div>
+        </a></li>
+        <li><a class="list-row" href="#">
+          <div class="list-body">
+            <p class="list-title">CI</p>
+            <p class="list-description">Created 9 Dec · last used 3 days ago</p>
+          </div>
+        </a></li>
+        <li><a class="list-row" href="#">
+          <div class="list-body">
+            <p class="list-title">Local, Ada</p>
+            <p class="list-description">Created 1 Nov · last used 2 weeks ago</p>
+          </div>
+        </a></li>
+        <li><a class="list-row" href="#">
+          <div class="list-body">
+            <p class="list-title">Local, Alan</p>
+            <p class="list-description">Created 28 Oct · never used</p>
+          </div>
+        </a></li>
+        <li><a class="list-row" href="#">
+          <div class="list-body">
+            <p class="list-title">Legacy importer</p>
+            <p class="list-description">Created 4 Jun · last used in July</p>
+          </div>
+        </a></li>
+      </ul>
+    </div>
+    <article class="hidden flex@container(--3xl) flex-col gap-lg grow(1) basis(0) min-w(0) overflow-y-auto p-lg">
+      <header class="flex flex-wrap items-start justify-between gap-sm">
+        <div class="flex flex-col gap-3xs">
+          <h3 class="heading">Production</h3>
+          <p class="m(0) fg-text-muted">Used by the deploy workflow on the main branch.</p>
+        </div>
+        <span class="badge badge-success badge-dot">Active</span>
+      </header>
+      <dl class="data-list">
+        <div class="data-list-item">
+          <dt class="data-list-term">Key</dt>
+          <dd class="data-list-value"><code class="code">atl_live_••••••••4f2a</code></dd>
+        </div>
+        <div class="data-list-item">
+          <dt class="data-list-term">Scope</dt>
+          <dd class="data-list-value">Deploy, read logs</dd>
+        </div>
+        <div class="data-list-item">
+          <dt class="data-list-term">Created</dt>
+          <dd class="data-list-value">2 March by Ada Lovelace</dd>
+        </div>
+        <div class="data-list-item">
+          <dt class="data-list-term">Last used</dt>
+          <dd class="data-list-value">Today at 09:41, from Tokyo</dd>
+        </div>
+      </dl>
+      <div class="flex gap-xs mt-auto">
+        <button type="button" class="btn btn-sm">Rotate key</button>
+        <button type="button" class="btn btn-sm btn-danger">Revoke</button>
+      </div>
+    </article>
+  </div>
+</section>`} />
+
+## 实现方式 \{#how-it-is-built\}
+
+- **给布局容器加上 `container-inline`**，使其成为尺寸容器。内部的所有 `@container(…)` 工具类均以该容器的尺寸为准。
+- **整行窗格的高度固定。** `flex h(440)` 让两个窗格等高，分别应用 `overflow-y-auto` 使它们独立滚动。应用占满视口高度时，使用[固定式应用框架](/pages/app-shell#fixed)提供的高度，无需写死数值。
+- **列表宽度固定，详情宽度自适应。** 布局容器宽度小于 48rem 时，列表使用 `w-full`。达到 48rem 后，列表改用 `w(300)@container(--3xl)`，并应用 `shrink(0)`。详情使用 `grow(1) basis(0) min-w(0)`，占据剩余宽度，始终为列表保留原有空间。
+- **布局容器宽度小于 48rem 时只显示一个窗格。** 详情窗格通过 `hidden` 隐藏，再通过 `flex@container(--3xl)` 恢复显示。只显示列表时，选择一行即可进入独立详情页。这一导航由应用的路由器负责。
+- **两个窗格之间的分隔线**由 `bxe(1)@container(--3xl) bxe-solid@container(--3xl)` 绘制，仅在两个窗格同时显示时可见。
+
+在[`list-interactive`](/components/list)中的 `list-row` 上设置 `aria-current="true"`，标记当前行。
+
+## 可调整宽度 \{#resizable\}
+
+要让读者自行分配两个窗格的宽度，可使用[分隔条](/components/splitter)，在原有的两个窗格之间加一个手柄。手柄有自己的状态和键盘交互契约，因此分隔条是一个组件。`splitter` [行为](/guide/behaviors)负责移动手柄，支持的按键见分隔条文档。
+
+<PagePreview name="resizable" title="可调整宽度" height={488} bodyClass="p-lg" behaviors caption="拖动两个窗格之间的分隔线，或将焦点移到分隔线上，再按方向键、Home 或 End。" html={`<section class="splitter sheet overflow-hidden h(440) text-sm fg-text-body" style="--splitter-size: 36%" aria-labelledby="keys-split-title">
+  <div class="splitter-pane flex flex-col">
+    <header class="flex flex-wrap items-center justify-between gap-sm p-md bb(1) bb-solid b-line-hair">
+      <h2 class="heading heading-sm" id="keys-split-title">API keys</h2>
+      <button type="button" class="btn btn-sm"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>New key</button>
+    </header>
+    <ul class="list list-interactive">
+      <li><a class="list-row" href="#" aria-current="true">
+        <div class="list-body">
+          <p class="list-title">Production</p>
+          <p class="list-description">Created 2 Mar · last used today</p>
+        </div>
+      </a></li>
+      <li><a class="list-row" href="#">
+        <div class="list-body">
+          <p class="list-title">Staging</p>
+          <p class="list-description">Created 14 Jan · last used yesterday</p>
+        </div>
+      </a></li>
+      <li><a class="list-row" href="#">
+        <div class="list-body">
+          <p class="list-title">CI</p>
+          <p class="list-description">Created 9 Dec · last used 3 days ago</p>
+        </div>
+      </a></li>
+      <li><a class="list-row" href="#">
+        <div class="list-body">
+          <p class="list-title">Local, Ada</p>
+          <p class="list-description">Created 1 Nov · last used 2 weeks ago</p>
+        </div>
+      </a></li>
+      <li><a class="list-row" href="#">
+        <div class="list-body">
+          <p class="list-title">Local, Alan</p>
+          <p class="list-description">Created 28 Oct · never used</p>
+        </div>
+      </a></li>
+      <li><a class="list-row" href="#">
+        <div class="list-body">
+          <p class="list-title">Legacy importer</p>
+          <p class="list-description">Created 4 Jun · last used in July</p>
+        </div>
+      </a></li>
+    </ul>
+  </div>
+  <div class="splitter-handle" role="separator" tabindex="0" aria-label="Resize the list" aria-valuenow="36" aria-valuemin="25" aria-valuemax="60"></div>
+  <article class="splitter-pane flex flex-col gap-lg p-lg">
+    <header class="flex flex-wrap items-start justify-between gap-sm">
+      <div class="flex flex-col gap-3xs">
+        <h3 class="heading">Production</h3>
+        <p class="m(0) fg-text-muted">Used by the deploy workflow on the main branch.</p>
+      </div>
+      <span class="badge badge-success badge-dot">Active</span>
+    </header>
+    <dl class="data-list">
+      <div class="data-list-item">
+        <dt class="data-list-term">Key</dt>
+        <dd class="data-list-value"><code class="code">atl_live_••••••••4f2a</code></dd>
+      </div>
+      <div class="data-list-item">
+        <dt class="data-list-term">Scope</dt>
+        <dd class="data-list-value">Deploy, read logs</dd>
+      </div>
+      <div class="data-list-item">
+        <dt class="data-list-term">Created</dt>
+        <dd class="data-list-value">2 March by Ada Lovelace</dd>
+      </div>
+      <div class="data-list-item">
+        <dt class="data-list-term">Last used</dt>
+        <dd class="data-list-value">Today at 09:41, from Tokyo</dd>
+      </div>
+    </dl>
+    <div class="flex gap-xs mt-auto">
+      <button type="button" class="btn btn-sm">Rotate key</button>
+      <button type="button" class="btn btn-sm btn-danger">Revoke</button>
+    </div>
+  </article>
+</section>`} />
+
+## 三种实现方式 \{#three-ways\}
+
+| 适用场景 | 实现方式 |
+| --- | --- |
+| 窗格位于页面的一个区域内 | 使用上文所示的工具类和容器 |
+| 读者可调整窗格宽度 | 使用[分隔条](/components/splitter) |
+| 窗格占据整个应用界面 | 使用[固定式应用框架](/pages/app-shell#fixed)，将列表放在侧边栏 |
+
+## 无障碍 \{#accessibility\}
+
+- 列表由链接组成，每个链接指向一个条目的详情。用 `aria-current="true"` 标记当前显示的条目所对应的链接。
+- 为布局容器提供无障碍名称，并为详情窗格添加能指明所选条目的标题，让读者进入窗格时知道自己所在的位置。
+- 如果窗格可滚动，但内部没有可聚焦的元素，就为窗格设置 `tabindex="0"`，以便用键盘滚动。
+- 布局容器较窄时，详情窗格通过 `display: none` 隐藏，并从无障碍树中移除。此时应移除指向该窗格的控件。
+
+## 相关内容 \{#related\}
+
+<ComponentLinks slugs={['list', 'data-list', 'splitter', 'surface', 'badge']} />
+
+<ComponentLinks kind="pages" slugs={['app-shell']} />

@@ -1,0 +1,225 @@
+---
+title: "瀑布流"
+description: "高低不一的區塊緊密排入各欄，底下不留多餘空隙。"
+---
+
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import PagePreview from '~/site/components/PagePreview.astro'
+
+瀑布流會將高低不一的區塊緊密排入等寬的欄。每個區塊都放進底端目前最高的欄，因此較矮的圖片旁即使有較高的圖片，也不會留下一整排空白，每張圖片也能維持原始比例。瀑布流只負責版面配置，區塊本身可用[圖文](/components/figure)、[卡片](/components/card)或[面板](/components/surface)呈現。
+
+瀑布流和[自動網格](/components/auto-grid)一樣，會依可用空間決定欄數，每欄至少為 `--masonry-min`，無須查詢。瀏覽器支援 grid lanes 時，由格線安排區塊的位置，否則由多欄容器排列。兩者的差異在於區塊的閱讀順序，詳見[下方說明](#fallback)。
+
+<PagePreview name="default" title="瀑布流" height={817} tabletHeight={1014} phoneHeight={1775} caption="先選「平板」，再選「手機」。六欄會縮成四欄，再縮成兩欄，圖片都會保留原本的比例，無須裁切對齊。" html={`<section class="p-lg bg-surface-base fg-text-body text-sm" aria-labelledby="masonry-title">
+  <div class="flex flex-col gap-xl max-w(1120) mx-auto">
+    <header class="flex flex-col gap-xs max-w(560)">
+      <p class="eyebrow">Field notes</p>
+      <h2 class="heading heading-xl" id="masonry-title">A week on the coast</h2>
+      <p class="lead lead-sm">Fourteen pictures, each at the shape it was taken in.</p>
+    </header>
+    <ul class="masonry" style="--masonry-min: 10rem">
+      <li class="masonry-item">
+        <figure class="figure">
+          <img class="figure-media" src="/demo/dunes.svg" alt="Dunes in the afternoon, their lee sides in shadow" style="--figure-ratio: 3 / 4">
+          <figcaption class="figure-caption">Monday, the dunes</figcaption>
+        </figure>
+      </li>
+      <li class="masonry-item">
+        <figure class="figure">
+          <img class="figure-media" src="/demo/tide.svg" alt="A pale sun low over flat water" style="--figure-ratio: 4 / 3">
+          <figcaption class="figure-caption">Low tide at seven</figcaption>
+        </figure>
+      </li>
+      <li class="masonry-item">
+        <figure class="figure">
+          <img class="figure-media" src="/demo/cairn.svg" alt="Five stones balanced on a beach" style="--figure-ratio: 4 / 5">
+          <figcaption class="figure-caption">A cairn on the point</figcaption>
+        </figure>
+      </li>
+      <li class="masonry-item">
+        <figure class="figure">
+          <img class="figure-media" src="/demo/harbor.svg" alt="A wooden jetty running out over calm water" style="--figure-ratio: 3 / 2">
+          <figcaption class="figure-caption">The old jetty</figcaption>
+        </figure>
+      </li>
+      <li class="masonry-item">
+        <figure class="figure">
+          <img class="figure-media" src="/demo/pines.svg" alt="Rows of pines fading into fog" style="--figure-ratio: 2 / 3">
+          <figcaption class="figure-caption">Fog in the pines</figcaption>
+        </figure>
+      </li>
+      <li class="masonry-item">
+        <figure class="figure">
+          <img class="figure-media" src="/demo/steps.svg" alt="Concrete steps half in shadow" style="--figure-ratio: 1 / 1">
+          <figcaption class="figure-caption">Stairs to the harbour</figcaption>
+        </figure>
+      </li>
+      <li class="masonry-item">
+        <figure class="figure">
+          <img class="figure-media" src="/demo/lighthouse.svg" alt="A lighthouse on a dark headland, its beam over the sea" style="--figure-ratio: 3 / 4">
+          <figcaption class="figure-caption">The light at dusk</figcaption>
+        </figure>
+      </li>
+      <li class="masonry-item">
+        <figure class="figure">
+          <img class="figure-media" src="/demo/moonstone.svg" alt="A full moon above two ridges" style="--figure-ratio: 16 / 10">
+          <figcaption class="figure-caption">Moonrise over the ridge</figcaption>
+        </figure>
+      </li>
+      <li class="masonry-item">
+        <figure class="figure">
+          <img class="figure-media" src="/demo/tide.svg" alt="The sea at slack tide" style="--figure-ratio: 1 / 1">
+          <figcaption class="figure-caption">Wednesday, still water</figcaption>
+        </figure>
+      </li>
+      <li class="masonry-item">
+        <figure class="figure">
+          <img class="figure-media" src="/demo/dunes.svg" alt="Dune ridges reshaped by the wind" style="--figure-ratio: 4 / 3">
+          <figcaption class="figure-caption">Ridges after the wind</figcaption>
+        </figure>
+      </li>
+      <li class="masonry-item">
+        <figure class="figure">
+          <img class="figure-media" src="/demo/harbor.svg" alt="Jetty posts standing in the water" style="--figure-ratio: 4 / 5">
+          <figcaption class="figure-caption">Posts at high water</figcaption>
+        </figure>
+      </li>
+      <li class="masonry-item">
+        <figure class="figure">
+          <img class="figure-media" src="/demo/cairn.svg" alt="A small stack of beach stones" style="--figure-ratio: 1 / 1">
+          <figcaption class="figure-caption">Stones by the door</figcaption>
+        </figure>
+      </li>
+      <li class="masonry-item">
+        <figure class="figure">
+          <img class="figure-media" src="/demo/pines.svg" alt="A line of pines in mist" style="--figure-ratio: 4 / 3">
+          <figcaption class="figure-caption">The road through the wood</figcaption>
+        </figure>
+      </li>
+      <li class="masonry-item">
+        <figure class="figure">
+          <img class="figure-media" src="/demo/steps.svg" alt="Steps in early light" style="--figure-ratio: 3 / 4">
+          <figcaption class="figure-caption">Morning on the steps</figcaption>
+        </figure>
+      </li>
+    </ul>
+  </div>
+</section>`} />
+
+## 實作方式 \{#how-it-is-built\}
+
+- **依空間決定欄數。** `masonry` 會排入盡可能多的等寬欄，每欄至少為 `--masonry-min`，且不會寬於容器本身，因此在手機上也不會溢出。圖庫將 `--masonry-min` 設為 10rem，讓手機上也能維持兩欄。
+- **由瀏覽器排列。** 支援 `display: grid-lanes` 時，每欄都是格線的一欄，瀏覽器會將每個區塊放入底端目前最高的欄。其他情況下則使用多欄容器，依序填滿各欄，並平衡欄高。
+- **保持區塊完整。** `masonry-item` 防止區塊被拆到兩欄，並保留其上方的間距。備援版面需要在區塊上加這個類別才能做到這兩點，因此每個區塊都要加上。
+- **保留區塊原有的比例。** 每張圖片都使用[圖文元件](/components/figure)，並將 `--figure-ratio` 設為圖片的比例。這樣在圖片載入前就能預留空間，載入後版面也不會位移。
+
+## 欄寬與間距 \{#lanes\}
+
+`--masonry-min` 設定最小欄寬，預設為 14rem。最小值越小，欄數就越多，每欄也越窄。圖片可設為 9 或 10rem，讓手機上維持兩欄。含段落的卡片可設為 16rem 以上。`--masonry-gap` 設定欄與欄之間及同欄區塊之間的距離，預設為 1rem。
+
+只要高度由內容決定，就能放進瀑布流，例如便條、引文，或帶有較長圖說的圖文。
+
+<ComponentPreview name="mixed" height={531} mediumHeight={649} narrowHeight={1301} title="混合區塊" bodyClass="p-lg" html={`<ul class="masonry w-full" style="--masonry-min: 11rem">
+  <li class="masonry-item">
+    <article class="card">
+      <header class="card-header">
+        <h3 class="card-title">Tuesday</h3>
+        <p class="card-description">Low tide at seven</p>
+      </header>
+      <p class="card-body">Walked out past the last post of the jetty. The sand was ribbed like a roof and full of small shells.</p>
+    </article>
+  </li>
+  <li class="masonry-item">
+    <figure class="figure">
+      <img class="figure-media" src="/demo/lighthouse.svg" alt="A lighthouse on a dark headland" style="--figure-ratio: 4 / 5">
+      <figcaption class="figure-caption">The light comes on at twenty past five.</figcaption>
+    </figure>
+  </li>
+  <li class="masonry-item">
+    <div class="sheet p-lg">
+      <blockquote class="quote">
+        <p class="quote-text">Nothing here is in a hurry, least of all the sea.</p>
+        <footer class="quote-source"><span class="quote-name">The harbour master</span></footer>
+      </blockquote>
+    </div>
+  </li>
+  <li class="masonry-item">
+    <article class="card">
+      <header class="card-header">
+        <h3 class="card-title">To bring back</h3>
+      </header>
+      <ul class="card-body bullets m(0)">
+        <li class="bullets-item">A stone for the desk</li>
+        <li class="bullets-item">The tide table</li>
+        <li class="bullets-item">Film for the camera</li>
+      </ul>
+    </article>
+  </li>
+  <li class="masonry-item">
+    <figure class="figure">
+      <img class="figure-media" src="/demo/cairn.svg" alt="Five stones balanced on a beach" style="--figure-ratio: 1 / 1">
+      <figcaption class="figure-caption">Someone builds it again every morning.</figcaption>
+    </figure>
+  </li>
+</ul>`} />
+
+## Grid lanes 與備援版面 \{#fallback\}
+
+瀑布流只需寫一份標記，瀏覽器會依支援情況決定版面配置。
+
+| | 支援 grid lanes | 使用備援版面 |
+| --- | --- | --- |
+| 欄的來源 | `display: grid-lanes` 的格線欄 | 多欄容器的欄，`columns: var(--masonry-min)` |
+| 區塊放置位置 | 依標記順序放入底端目前最高的欄 | 由上往下填滿第一欄，再填下一欄 |
+| 視覺順序 | 橫向跨欄，最前面的區塊構成第一列 | 沿各欄由上往下，最前面的區塊構成第一欄 |
+| 區塊間距 | 格線的間距 | 使用外距，欄頂的外距會裁掉 |
+
+Grid lanes 是較新的功能，目前部分瀏覽器引擎尚未支援。[瀏覽器支援](/guide/browser-support#layout)列出了使用這項功能的版面配置。備援版面只會改變視覺上的閱讀順序，每個區塊仍會緊密排列、完整保留原有比例。順著下方的編號看，就能知道瀏覽器採用哪一種排列方式。
+
+<ComponentPreview name="order" height={384} mediumHeight={416} narrowHeight={640} title="排列順序" bodyClass="p-lg" caption="支援 grid lanes 時橫向跨欄排列，否則沿各欄由上往下排列。" html={`<ol class="masonry w-full fg-text-muted text-sm" style="--masonry-min: 8rem">
+  <li class="masonry-item well flex items-center justify-center h(96)">1</li>
+  <li class="masonry-item well flex items-center justify-center h(160)">2</li>
+  <li class="masonry-item well flex items-center justify-center h(64)">3</li>
+  <li class="masonry-item well flex items-center justify-center h(128)">4</li>
+  <li class="masonry-item well flex items-center justify-center h(112)">5</li>
+  <li class="masonry-item well flex items-center justify-center h(80)">6</li>
+  <li class="masonry-item well flex items-center justify-center h(144)">7</li>
+  <li class="masonry-item well flex items-center justify-center h(72)">8</li>
+  <li class="masonry-item well flex items-center justify-center h(120)">9</li>
+</ol>`} />
+
+內容可按任意順序閱讀時，例如圖庫、便條看板或引文牆，可使用瀑布流。如果順序很重要，例如需要把最新內容放在最前面的動態消息，請使用[自動網格](/components/auto-grid)，讓每一列都依橫向順序閱讀。
+
+## 何時使用 \{#when\}
+
+| 區塊特性 | 適用元件 |
+| --- | --- |
+| 高度由內容決定，可按任意順序閱讀 | 瀑布流 |
+| 尺寸相同，或需要在各列對齊 | [自動網格](/components/auto-grid) |
+| 有幾種尺寸，位置固定，部分區塊需要更突出 | [Bento](/components/bento) |
+| 排成一列，以捲動瀏覽 | [輪播](/components/carousel) |
+
+## 無障礙 \{#accessibility\}
+
+- 兩種版面都以標記順序作為閱讀順序和鍵盤導覽順序。使用 grid lanes 時，視覺順序會橫向跨欄。使用備援版面時，則會沿各欄由上往下。兩種方式都保留區塊在標記中的先後順序。
+- 同類型的內容請用清單 `<ul class="masonry">`，並將每個區塊做成清單項目，讓螢幕閱讀器能讀出項目數量。
+- 傳達資訊的圖片即使已有圖說，仍需要 `alt` 文字。圖說用來補充圖片資訊，無法取代替代文字。
+
+## 類別 \{#classes\}
+
+<ContractTable name="masonry" directory="layouts" />
+
+## 自訂屬性 \{#custom-properties\}
+
+<ContractTable name="masonry" show="properties" directory="layouts" />
+
+## 相關元件 \{#related\}
+
+<ComponentLinks slugs={['auto-grid', 'bento', 'figure', 'card', 'quote', 'lightbox']} />
+
+## 原始碼 \{#source\}
+
+<ComponentSource name="masonry" directory="layouts" />

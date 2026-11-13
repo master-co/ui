@@ -1,0 +1,77 @@
+---
+title: "目录"
+description: "将各节标题列为链接，CSS 标出当前可见的一节。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+目录沿一条细线将页面中的各级标题列为一列低调的链接。当前可见章节的链接以墨色显示，细线上的标记会随章节切换滑向对应的链接。浏览器支持 `scroll-target-group` 时，页面会自动标记当前章节：列表跟随滚动，目标位于视口内的链接匹配 `:target-current`。整个过程由 CSS 完成，无需观察器或脚本。
+
+<ComponentPreview name="default" height={288} title="目录" background="plain" bodyClass="p-lg" html={`<div class="grid grid-cols(2) gap-lg">
+  <div class="h(240) overflow-y-auto scroll-area text-sm leading-md fg-text-body">
+    <h3 class="m(0) fg-text-strong" id="toc-install">Install</h3>
+    <p>Add the package and import it after the preset. The stylesheet has no build step of its own.</p>
+    <p>It ships as plain CSS files, one per component.</p>
+    <h3 class="fg-text-strong" id="toc-theme">Theme</h3>
+    <p>Moonstone and obsidian share one set of tokens. Override a token and every component follows.</p>
+    <p>The brand color is one token.</p>
+    <h3 class="fg-text-strong" id="toc-corners">Corners</h3>
+    <p>Corners turn with continuous curvature where the browser can draw them, and nest by their inset.</p>
+    <p>Elsewhere they are circular.</p>
+    <h3 class="fg-text-strong" id="toc-motion">Motion</h3>
+    <p>One easing family. Interaction is quick, explanation calm, and reduced motion keeps the fade.</p>
+    <p class="mb(160)">That is the whole system.</p>
+  </div>
+  <nav class="toc self-start" aria-label="On this page">
+    <p class="toc-title">On this page</p>
+    <ul class="toc-list">
+      <li><a class="toc-link" href="#toc-install">Install</a></li>
+      <li><a class="toc-link" href="#toc-theme">Theme</a></li>
+      <li><a class="toc-link" href="#toc-corners">Corners</a></li>
+      <li><a class="toc-link" href="#toc-motion">Motion</a></li>
+    </ul>
+  </nav>
+</div>`} caption="滚动正文，标记会跟随当前可见的章节。浏览器不支持 scroll-target-group 时，要等脚本设置 aria-current 后才会显示标记。" />
+
+## 层级 \{#levels\}
+
+在列表项内嵌套 `toc-list` 可增加一级。下一级共用同一条细线，链接多缩进一级。一个页面用两级就够了；需要第三级时，可以考虑拆分页面。
+
+<ComponentPreview name="levels" height={224} title="层级" background="plain" bodyClass="p-lg" html={`<nav class="toc max-w(220)" aria-label="On this page">
+  <ul class="toc-list">
+    <li><a class="toc-link" href="#">Overview</a></li>
+    <li>
+      <a class="toc-link" href="#" aria-current="true">Theme</a>
+      <ul class="toc-list">
+        <li><a class="toc-link" href="#">Surfaces</a></li>
+        <li><a class="toc-link" href="#">Lines and shadows</a></li>
+        <li><a class="toc-link" href="#">The brand color</a></li>
+      </ul>
+    </li>
+    <li><a class="toc-link" href="#">Accessibility</a></li>
+  </ul>
+</nav>`} />
+
+## 手动标记当前章节 \{#marking\}
+
+在链接上设置 `aria-current="true"` 会呈现与 `:target-current` 相同的状态。静态列表可由服务器设置，浏览器不支持 scroll-target-group 时可通过 `IntersectionObserver` 设置。两者同时存在时会标记同一个链接，因为它们都跟随当前可见的章节。
+
+## 无障碍 \{#accessibility\}
+
+- 列表使用带标签的 `<nav>`，例如“本页目录”，以便在页面的地标区域中找到它，并与主导航区分开。
+- 链接通过 `id` 跳转到标题。如果滚动区域上方有吸顶的[导航栏](/components/navbar)，为滚动容器设置 `scroll-padding-top`，避免跳转后标题被导航栏遮住。
+- 当前链接会改变墨色，旁边还有一道 1.5px 的墨色标记。这两种提示都不依赖色相。启用减少动态效果时，标记直接移到新位置，省去滑动动画。
+
+## 类名 \{#classes\}
+
+<ContractTable name="toc" />
+
+## 自定义属性 \{#custom-properties\}
+
+<ContractTable name="toc" show="properties" />
+
+## 源码 \{#source\}
+
+<ComponentSource name="toc" />

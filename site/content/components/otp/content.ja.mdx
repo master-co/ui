@@ -1,0 +1,90 @@
+---
+title: "OTP"
+description: "短いコードを 1 枠に 1 文字ずつ入力するフィールド。"
+---
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+OTP フィールドには、SMS や認証アプリで受け取る 6 桁の数字など、短いコードを 1 枠に 1 文字ずつ入力します。各枠はネイティブの入力要素です。[テキストフィールド](/components/input)と同じ質感の小さなくぼみとして表示され、フォーカス時は面と同じ高さになり、文字色の輪郭が付きます。タッチ画面では、ページ上の[キーパッド](/components/keypad)からも入力できます。
+
+<ComponentPreview name="default" height={96} title="OTP" background="plain" behaviors html={`<fieldset class="otp" aria-label="Verification code">
+  <input class="otp-slot" inputmode="numeric" pattern="[0-9]" maxlength="1" autocomplete="one-time-code" aria-label="Digit 1" value="4">
+  <input class="otp-slot" inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="Digit 2" value="2">
+  <input class="otp-slot" inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="Digit 3">
+  <span class="otp-separator" aria-hidden="true"></span>
+  <input class="otp-slot" inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="Digit 4">
+  <input class="otp-slot" inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="Digit 5">
+  <input class="otp-slot" inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="Digit 6">
+</fieldset>`} caption="数字を入力するとフォーカスが次の枠に移り、Backspace キーで前の枠に戻れます。コードを貼り付けると、各枠に 1 文字ずつ入ります。" />
+
+## ビヘイビア \{#behavior\}
+
+スクリプトがなければ、各枠は通常の入力要素として機能します。1 文字入力し、<kbd>Tab</kbd> キーで次の枠に移動します。`otp` [ビヘイビア](/guide/behaviors)を使うと、複数の枠を 1 つのフィールドとして操作できます。このビヘイビアは `otp` クラスを持つルート要素を受け取り、適用を解除する関数を返します。
+
+```js name=app.js
+import { otp } from '@master/ui/behaviors/otp.js'
+
+const root = document.querySelector('.otp')
+otp(root)
+
+root.addEventListener('change', (event) => {
+  if (event.detail) verify(event.detail.value)
+})
+```
+
+- **文字入力**　1 文字入力すると、フォーカスが次の枠に移ります。枠で許可されていない文字は入力できません。枠にフォーカスが移ると入力済みの文字が選択され、そのまま入力すれば置き換えられます。
+- **削除と移動**　<kbd>Backspace</kbd> キーを押すと、現在の枠の文字が消えます。枠が空の場合は、前の枠に移動してその文字を消します。
+- **貼り付けと自動入力**　貼り付けや自動入力で受け取ったコードは、各枠に 1 文字ずつ入ります。コード全体を受け取った場合は先頭の枠から、一部だけを受け取った場合は入力先の枠から入ります。
+- **イベント**　スクリプトが値を書き込んだ枠では、手入力時と同様に `input` が発行されます。すべての枠が埋まると、ルート要素は `detail.value` にコードを格納した、バブリングする `change` を発行します。各枠自身の `change` もルート要素までバブリングしますが、`detail` を持たないため、上のリスナーではその有無を確認しています。
+
+| オプション | 設定内容 |
+| --- | --- |
+| `pattern` | 入力する 1 文字が一致すべき正規表現。既定では先頭の枠の `pattern` 属性を使い、属性がなければ数字を許可します。 |
+
+先頭の枠に `autocomplete="one-time-code"` を付けるのは、自動入力に対応するためです。スマートフォンで SMS のコードを自動入力すると、1 つのフィールドにコード全体が入ります。`maxlength="1"` があると、スクリプトが受け取る前にコードが 1 文字に切り詰められます。ビヘイビアの適用中は各枠から `maxlength` を外し、ビヘイビア自体が各枠を 1 文字に制限します。適用を解除すると属性は元に戻ります。スクリプトがない場合は属性が残り、自動入力で先頭の 1 文字しか入らないため、SMS でコードを届ける場合は[単一のフィールド](#one-field-is-enough)が適しています。
+
+## エラー状態 \{#invalid\}
+
+コードが正しくない場合は、各枠に `aria-invalid="true"` を付け、理由をグループの下に表示してください。
+
+<ComponentPreview name="invalid" height={128} title="エラー状態" background="plain" bodyClass="flex flex-col items-center gap-xs p-lg" html={`<fieldset class="otp" aria-label="Verification code" aria-describedby="otp-error">
+  <input class="otp-slot" inputmode="numeric" maxlength="1" aria-label="Digit 1" aria-invalid="true" value="4">
+  <input class="otp-slot" inputmode="numeric" maxlength="1" aria-label="Digit 2" aria-invalid="true" value="2">
+  <input class="otp-slot" inputmode="numeric" maxlength="1" aria-label="Digit 3" aria-invalid="true" value="0">
+  <input class="otp-slot" inputmode="numeric" maxlength="1" aria-label="Digit 4" aria-invalid="true" value="9">
+</fieldset>
+<p class="m(0) text-xs fg-danger" id="otp-error">That code has expired. Request a new one.</p>`} />
+
+## 単一のフィールドでも入力できる \{#one-field-is-enough\}
+
+枠を分けるのは見た目の慣例で、必須ではありません。`autocomplete="one-time-code"`、`inputmode="numeric"`、`maxlength="6"` を指定した単一の[入力フィールド](/components/input)でも、スクリプトなしで同じコードを入力できます。コードをそのまま貼り付けられ、スクリーンリーダーでも操作しやすくなります。製品の表現に合う場合は、枠を分けてください。
+
+## キーボード操作 \{#keyboard\}
+
+<ContractTable name="otp" show="keyboard" />
+
+## アクセシビリティ \{#accessibility\}
+
+- ラベル付きの `<fieldset>` で枠をグループ化してください。各枠には見えるラベルがないため、それぞれにアクセシブルな名前を付けてください。
+- `inputmode="numeric"` を指定すると、枠を数値入力フィールドに変えずに数字キーボードを表示できます。
+- エラー時は入力内容を残してください。各枠の入力値が不正であることを示し、ユーザーが修正したり貼り付け直したりできるようにします。
+
+## React、Svelte、Vue \{#frameworks\}
+
+`otp` コンポーネントは、入力枠を描画してビヘイビアを適用し、コードの受け渡しと入力完了の通知を行います。`npx master-ui add otp` でプロジェクトにコピーできます。コンポーネントの構成と使い方は [React、Svelte、Vue](/guide/frameworks) を参照してください。
+
+<FrameworkSource name="otp" />
+
+## クラス \{#classes\}
+
+<ContractTable name="otp" />
+
+## カスタムプロパティ \{#custom-properties\}
+
+<ContractTable name="otp" show="properties" />
+
+## ソース \{#source\}
+
+<ComponentSource name="otp" />

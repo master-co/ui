@@ -1,0 +1,153 @@
+---
+title: "滚轮选择器"
+description: "滚动一列选项，停在选中标记处的选项即为当前值。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+滚轮选择器通过滚动一列选项来选值，停在标记下方的选项就是当前值，例如小时、分钟或单位。它用浏览器已有的能力实现手机上常见的选择方式：每一列都是一个滚动容器，会把一个选项吸附到中央。滚轮呈凹槽状，中央横跨一块小面板，标出选中的一行。
+
+<ComponentPreview name="default" height={272} title="滚轮选择器" bodyClass="flex items-center justify-center p-lg" behaviors html={`<div class="wheel" role="group" aria-label="Reminder time">
+  <div class="wheel-column" role="listbox" aria-label="Hour" tabindex="0">
+    <div class="wheel-option" role="option" aria-selected="false">01</div>
+    <div class="wheel-option" role="option" aria-selected="false">02</div>
+    <div class="wheel-option" role="option" aria-selected="false">03</div>
+    <div class="wheel-option" role="option" aria-selected="false">04</div>
+    <div class="wheel-option" role="option" aria-selected="false">05</div>
+    <div class="wheel-option" role="option" aria-selected="false">06</div>
+    <div class="wheel-option" role="option" aria-selected="false">07</div>
+    <div class="wheel-option" role="option" aria-selected="false">08</div>
+    <div class="wheel-option" role="option" aria-selected="true">09</div>
+    <div class="wheel-option" role="option" aria-selected="false">10</div>
+    <div class="wheel-option" role="option" aria-selected="false">11</div>
+    <div class="wheel-option" role="option" aria-selected="false">12</div>
+  </div>
+  <span class="wheel-separator" aria-hidden="true">:</span>
+  <div class="wheel-column" role="listbox" aria-label="Minute" tabindex="0">
+    <div class="wheel-option" role="option" aria-selected="false">00</div>
+    <div class="wheel-option" role="option" aria-selected="false">05</div>
+    <div class="wheel-option" role="option" aria-selected="false">10</div>
+    <div class="wheel-option" role="option" aria-selected="false">15</div>
+    <div class="wheel-option" role="option" aria-selected="false">20</div>
+    <div class="wheel-option" role="option" aria-selected="false">25</div>
+    <div class="wheel-option" role="option" aria-selected="true">30</div>
+    <div class="wheel-option" role="option" aria-selected="false">35</div>
+    <div class="wheel-option" role="option" aria-selected="false">40</div>
+    <div class="wheel-option" role="option" aria-selected="false">45</div>
+    <div class="wheel-option" role="option" aria-selected="false">50</div>
+    <div class="wheel-option" role="option" aria-selected="false">55</div>
+  </div>
+  <div class="wheel-column" role="listbox" aria-label="Period" tabindex="0">
+    <div class="wheel-option" role="option" aria-selected="true">AM</div>
+    <div class="wheel-option" role="option" aria-selected="false">PM</div>
+  </div>
+</div>`} caption="滚动一列、在触屏上拖动、点击选项，或聚焦某列后按方向键。" />
+
+## 浏览器原生行为 \{#what-the-platform-does\}
+
+- **转动就是滚动。** 每一列都可以像其他滚动容器一样，用鼠标滚轮、手指或触控板滚动。
+- **滚动吸附。** 在列上设置 `scroll-snap-type: y mandatory`，在各选项上设置 `scroll-snap-align: center`，滚动结束时一定会对齐某个选项。两端留有足够空间，让第一个和最后一个选项也能到达标记处。
+- **滚轮的外观。** 通过滚动驱动动画实现。每个选项都有一条相对于该列的视图时间轴。选项经过中央时文字颜色最深，离中央越远，文字越淡，偏转也越明显。渲染这些效果无需用脚本读取滚动位置。
+
+浏览器不支持视图时间轴时，所有选项都以平面样式显示，带有 `aria-selected="true"` 的选项使用较深的文字颜色。
+
+## 行为脚本 \{#behavior\}
+
+样式表无法把标记下的值传给表单。`wheel` [行为脚本](/guide/behaviors)根据列的滚动距离读取该值。它接收带有 `wheel` 类的根元素，不接受配置选项，并返回用于解除绑定的函数。
+
+```js name=app.js
+import { wheel } from '@master/ui/behaviors/wheel.js'
+
+const root = document.querySelector('.wheel')
+wheel(root)
+
+root.addEventListener('change', (event) => {
+  // event.target is the column that came to rest.
+  console.log(event.target.getAttribute('aria-label'), event.detail.value)
+})
+```
+
+- **滚动结束。** 一列停稳后，行为脚本将 `aria-selected="true"` 移到标记下方的选项。
+- **事件。** 选中的选项变更时，该列随即派发可冒泡的 `change` 事件。其 `detail.value` 是选项的 `data-value` 或选项文本，`detail.option` 则是选项本身。
+- **初始化。** 绑定脚本时，以及弹出层打开等导致列重新布局的情况下，脚本将每一列当前选中的选项移到标记下方。
+- **点击选项。** 点击后，该选项滚动到标记下方。
+- **键盘操作。** 聚焦某一列后，可以像操作列表框一样用键盘逐项移动。
+- **禁用选项。** 如果某列停在带有 `aria-disabled="true"` 的选项上，就会继续滚动到最近的可选项。
+
+要随表单提交该值，请在 `change` 监听器中将 `detail.value` 写入隐藏的输入框。未绑定脚本时，列仍可滚动和吸附，但会从第一个选项开始，`aria-selected` 仍保留在 HTML 标记中指定的选项上。
+
+## 单列 \{#one-column\}
+
+滚轮可以只包含一列。`wheel-sm` 将可见行数从五行减为三行，适合放在[弹出层](/components/popover)或设置行里。
+
+<ComponentPreview name="single" height={272} title="单列" bodyClass="flex items-center justify-center gap-lg p-lg" behaviors html={`<div class="wheel" role="group" aria-label="Repeat every">
+  <div class="wheel-column" role="listbox" aria-label="Interval" tabindex="0">
+    <div class="wheel-option" role="option" aria-selected="false">Hour</div>
+    <div class="wheel-option" role="option" aria-selected="false">Day</div>
+    <div class="wheel-option" role="option" aria-selected="true">Week</div>
+    <div class="wheel-option" role="option" aria-selected="false">Fortnight</div>
+    <div class="wheel-option" role="option" aria-selected="false">Month</div>
+    <div class="wheel-option" role="option" aria-selected="false">Quarter</div>
+    <div class="wheel-option" role="option" aria-selected="false">Year</div>
+  </div>
+</div>
+<div class="wheel wheel-sm" role="group" aria-label="Font size">
+  <div class="wheel-column" role="listbox" aria-label="Size" tabindex="0">
+    <div class="wheel-option" role="option" aria-selected="false">12</div>
+    <div class="wheel-option" role="option" aria-selected="false">13</div>
+    <div class="wheel-option" role="option" aria-selected="true">14</div>
+    <div class="wheel-option" role="option" aria-selected="false">15</div>
+    <div class="wheel-option" role="option" aria-selected="false">16</div>
+    <div class="wheel-option" role="option" aria-selected="false">18</div>
+    <div class="wheel-option" role="option" aria-selected="false">20</div>
+    <div class="wheel-option" role="option" aria-selected="false">24</div>
+  </div>
+  <span class="wheel-separator" aria-hidden="true">px</span>
+</div>`} />
+
+## 选中标记 \{#the-mark\}
+
+中央的横向面板属于整个滚轮，因此同一时间的小时和分钟共用它。面板在凹槽内缩进 4px，圆角与凹槽保持同心。`wheel-separator` 是位于面板上两列之间的固定文字，例如时间中的冒号或数字后的单位。
+
+选项行高为 36px，在触屏上为 44px。将 `--wheel-rows` 设为奇数，可让一列同时显示更多选项。
+
+## 何时选用其他控件 \{#when-to-use-something-else\}
+
+在触屏设备上，滚轮适合选项较少、按一定顺序排列且用户熟记的场景。使用键盘和指针时，[下拉选择框](/components/select)或[数字步进器](/components/stepper)更快。选择日期时，[日历](/components/calendar)能让用户看清日期所在的一周。原生 `<input type="time">` 在手机上已能打开系统滚轮。需要把选择器直接嵌在页面中时，再使用此组件。
+
+## 键盘操作 \{#keyboard\}
+
+绑定行为脚本后，按键会让获得焦点的列逐项滚动，并跳过禁用选项。未绑定时，同样的按键会像在其他滚动容器中一样滚动该列，结束后由浏览器完成吸附。
+
+<ContractTable name="wheel" show="keyboard" />
+
+## 无障碍 \{#accessibility\}
+
+- 每列使用 `role="listbox"`，带有 `aria-label` 和 `tabindex="0"`。每项使用 `role="option"`。行为脚本会让 `aria-selected` 始终对应标记下方的选项。
+- 选项的偏转和淡化随用户滚动而变化。启用减少动态效果后，选项只保留淡化效果。
+
+## React、Svelte 和 Vue \{#frameworks\}
+
+`wheel` 组件根据数据渲染各列，绑定行为脚本，并传入和传出各列的值。用 `npx master-ui add wheel` 将其复制到项目中。[React、Svelte 和 Vue](/guide/frameworks)介绍框架组件的结构和用法。
+
+<FrameworkSource name="wheel" />
+
+## 类名 \{#classes\}
+
+<ContractTable name="wheel" />
+
+## 自定义属性 \{#custom-properties\}
+
+<ContractTable name="wheel" show="properties" />
+
+## 相关内容 \{#related\}
+
+<ComponentLinks slugs={['select', 'stepper', 'calendar']} />
+
+## 源码 \{#source\}
+
+<ComponentSource name="wheel" />

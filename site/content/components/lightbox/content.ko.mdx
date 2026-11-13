@@ -1,0 +1,67 @@
+---
+title: "라이트박스"
+description: "네이티브 대화 상자를 사용해 페이지 위에 이미지를 크게 띄웁니다."
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+라이트박스는 페이지 위에 이미지를 크게 띄우는 컴포넌트입니다. 네이티브 `<dialog>`에 `.lightbox` 클래스를 적용하세요. 썸네일 버튼에 설정한 `commandfor`와 `command="show-modal"`으로 라이트박스를 열면 스크립트 없이 브라우저가 최상위 레이어, 포커스 트랩, <kbd>Esc</kbd> 키로 닫는 동작을 제공합니다. 대화 상자에는 별도의 표면이 없으며 크기는 이미지와 정확히 같습니다. 뒤쪽 페이지는 어둡고 흐릿하게 처리되어 이미지가 돋보입니다.
+
+<ComponentPreview name="default" height={440} narrowHeight={400} title="라이트박스" bodyClass="flex items-center justify-center p-lg" caption="카드를 누르세요. 닫으려면 이미지 바깥을 클릭하거나 닫기 버튼 또는 Esc 키를 누르세요." html={`<button class="card card-interactive w(240)" type="button" commandfor="moonstone" command="show-modal">
+  <img class="card-media" src="/demo/moonstone.svg" alt="">
+  <span class="card-header">
+    <span class="card-title">Moonstone</span>
+    <span class="card-description">View the picture</span>
+  </span>
+</button>
+
+<dialog class="lightbox" id="moonstone" closedby="any" aria-label="Moonstone" style="--lightbox-ratio: 16 / 9">
+  <img class="lightbox-media" src="/demo/moonstone.svg" alt="A pale stone over grey hills">
+  <p class="lightbox-caption">Moonstone, the stone the light theme is named for.</p>
+  <button class="btn btn-sm btn-square lightbox-close" type="button" commandfor="moonstone" command="close" aria-label="Close">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+  </button>
+</dialog>`} />
+
+## 열기와 닫기 \{#opening-and-closing\}
+
+- 썸네일 버튼에 `commandfor="id"`와 `command="show-modal"`을 함께 지정하면 라이트박스가 열립니다. 닫기 버튼에 `command="close"`를 지정하면 라이트박스가 닫히고 포커스가 썸네일로 돌아갑니다.
+- `closedby="any"`로 설정하면 바깥을 클릭해 닫을 수 있습니다. 대화 상자의 크기가 이미지와 정확히 같으므로 이미지 바깥을 클릭하면 대화 상자가 닫힙니다. 이 속성을 지원하지 않는 브라우저에서도 <kbd>Esc</kbd> 키와 닫기 버튼으로 닫을 수 있습니다.
+- 호출자 명령을 지원하지 않는 브라우저에서는 클릭 핸들러에서 `dialog.showModal()`과 `dialog.close()`를 호출하세요. 스타일시트는 동일합니다.
+
+`@starting-style`과 이산 전환을 사용해 이미지는 약간 작은 크기에서 서서히 나타나며, 닫힐 때는 열릴 때보다 빠르게 사라집니다. 이 기능을 지원하지 않으면 이미지가 즉시 나타나고 사라집니다.
+
+## 크기 \{#size\}
+
+`lightbox-media` 클래스는 `<img>`, `<video>` 또는 `<iframe>`에 적용합니다. 표시 크기는 파일의 원본 크기와 무관합니다. `--lightbox-ratio`에 지정한 가로세로 비율을 유지하면서 너비를 64rem으로 설정하되, 뷰포트의 너비와 높이에 맞춰 사방에 24px의 여백을 확보할 수 있는 크기까지 줄입니다. 별도로 지정하지 않으면 비율은 `3 / 2`입니다. 이미지, 동영상, 프레임 모두 같은 방식으로 크기가 정해지므로 로드될 때 레이아웃이 움직이지 않습니다.
+
+예제에서 `16 / 9`로 지정한 것처럼, 대화 상자에서 `--lightbox-ratio` 값을 이미지의 원래 가로세로 비율로 설정하세요. 지정한 비율과 다른 이미지는 표시 영역에 맞게 잘립니다. `--lightbox-width`로 최대 너비를, `--lightbox-gutter`로 가장자리 여백을 설정합니다.
+
+## 캡션과 닫기 버튼 \{#caption-and-close\}
+
+`lightbox-caption`은 이미지 아래에 떠 있는 막대로, 너비가 이미지와 같으며 이미지 배치 시 이 막대가 들어갈 공간을 확보합니다. 캡션은 한두 줄로 작성하세요. 작은 정사각형 [버튼](/components/button)에 `lightbox-close` 클래스를 적용하면 버튼이 이미지 위쪽 모서리에서 안쪽으로 8px 떨어진 곳에 배치됩니다. 버튼 자체가 볼록하고 테두리가 있어 어떤 이미지 위에서도 쉽게 찾을 수 있습니다.
+
+## 라이트박스와 대화 상자 중 선택 \{#lightbox-or-dialog\}
+
+라이트박스에는 이미지 한 장만 들어가며 사용자가 별도로 결정할 사항은 없습니다. 제목, 텍스트 또는 폼이 포함된 오버레이에는 [대화 상자](/components/dialog)를 사용하세요. 페이지 안에 캡션과 함께 표시하는 이미지에는 [그림](/components/figure)을 사용하세요.
+
+## 접근성 \{#accessibility\}
+
+- 대화 상자의 이름은 `aria-label`로 지정하거나, `aria-labelledby`로 캡션을 참조하도록 설정하세요.
+- 큰 이미지에는 내용을 설명하는 `alt` 값을 지정하세요. 버튼의 텍스트 자체가 무엇이 열리는지 알려 준다면 버튼 안에 있는 썸네일의 해당 값은 비워 둘 수 있습니다.
+- 접근 가능한 이름을 가진 닫기 버튼을 항상 제공하세요. 바깥을 클릭하거나 <kbd>Esc</kbd> 키를 눌러 닫을 수 있다는 점을 모든 사용자가 알아차리는 것은 아닙니다.
+- 라이트박스가 열리면 포커스가 내부로 이동하고, 닫히면 썸네일로 돌아갑니다. 동작 줄이기가 활성화되면 이미지는 크기 변화 없이 서서히 나타나고 사라집니다.
+
+## 클래스 \{#classes\}
+
+<ContractTable name="lightbox" />
+
+## 사용자 지정 속성 \{#custom-properties\}
+
+<ContractTable name="lightbox" show="properties" />
+
+## 소스 \{#source\}
+
+<ComponentSource name="lightbox" />

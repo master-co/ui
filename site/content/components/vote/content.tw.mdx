@@ -1,0 +1,122 @@
+---
+title: "投票"
+description: "讓每位讀者為分數加一或減一。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+投票讓每位讀者為回答、貼文或留言的分數加一或減一。兩個箭頭是同一群組中的原生單選按鈕，外觀是低調的方形按鈕。中間的分數由 CSS 計數器產生，因此按下按鈕就能改變分數，無須腳本。
+
+<ComponentPreview name="default" height={160} narrowHeight={192} title="投票" background="plain" html={`<article class="sheet max-w(440) w-full flex items-start gap-sm p(12)">
+  <fieldset class="vote" aria-label="Vote on this answer" style="--votes: 41">
+    <input type="radio" class="vote-up" name="answer-vote" value="up" aria-label="Upvote">
+    <output class="vote-score"></output>
+    <input type="radio" class="vote-down" name="answer-vote" value="down" aria-label="Downvote">
+  </fieldset>
+  <div class="flex flex-col gap(4) pt(6) pr(8)">
+    <p class="m(0) text-sm font-medium fg-text-strong">Put the focus ring on the group</p>
+    <p class="m(0) text-sm fg-text-body">A mask cuts the element it is drawn on, ring and all. Draw the ring on the container while one of its inputs has focus.</p>
+  </div>
+</article>`} caption="按箭頭投票，再按另一個箭頭即可改投。" />
+
+## 分數 \{#score\}
+
+在群組上將 `--votes` 設為扣除該讀者投票後的分數。選取向上箭頭會加一，選取向下箭頭會減一。若頁面已知道讀者投了哪一票，請選取對應的箭頭，並將其他人的投票總分設為基準。將 `vote-score` 留空，計數器就會自動顯示分數，負分會使用真正的負號。若分數太大，不適合以一分為單位顯示，可直接填入 `1.4k` 之類的文字。
+
+## 橫向排列 \{#horizontal\}
+
+`vote-horizontal` 將兩個箭頭分別放在分數兩側，適合放在留言下方的一排操作按鈕中。分數會保留三個數字的寬度，因此分數變動時箭頭不會位移。
+
+<ComponentPreview name="horizontal" height={208} title="橫向排列" background="plain" bodyClass="p-lg" html={`<div class="card max-w(480) mx-auto">
+  <ol class="thread">
+    <li class="thread-item">
+      <span class="thread-avatar"><span class="avatar">KJ</span></span>
+      <div class="thread-body">
+        <p class="thread-header"><span class="thread-author">Katherine Johnson</span> <time class="thread-meta" datetime="2026-11-12T10:54">12m</time></p>
+        <p class="thread-text">The figures in the second table are right. The third needs another pass.</p>
+        <div class="flex items-center gap(4) mt(6) ml(-8)">
+          <fieldset class="vote vote-horizontal" aria-label="Vote on this comment" style="--votes: 12">
+            <input type="radio" class="vote-up" name="comment-vote" value="up" aria-label="Upvote" checked>
+            <output class="vote-score"></output>
+            <input type="radio" class="vote-down" name="comment-vote" value="down" aria-label="Downvote">
+          </fieldset>
+          <button type="button" class="btn btn-quiet btn-sm">Reply</button>
+        </div>
+      </div>
+    </li>
+  </ol>
+</div>`} />
+
+## 狀態 \{#states\}
+
+平時箭頭以柔和的文字色描出輪廓，按鈕本身沒有底色。指標移上時，按鈕會像小面板般浮起，按下時會凹下，選取後則以文字色填滿箭頭。向上與向下的票只靠箭頭方向區分。若分數不開放投票，例如讀者自己的貼文，請停用欄位群組，箭頭會淡出，分數仍會顯示。
+
+<ComponentPreview name="states" height={136} title="狀態" background="plain" bodyClass="flex flex-wrap items-center justify-center gap-xl p-lg" html={`<fieldset class="vote" aria-label="Vote on this answer" style="--votes: 3">
+  <input type="radio" class="vote-up" name="vote-down-state" value="up" aria-label="Upvote">
+  <output class="vote-score"></output>
+  <input type="radio" class="vote-down" name="vote-down-state" value="down" aria-label="Downvote" checked>
+</fieldset>
+<fieldset class="vote" aria-label="Vote on this answer" style="--votes: -2">
+  <input type="radio" class="vote-up" name="vote-negative" value="up" aria-label="Upvote">
+  <output class="vote-score"></output>
+  <input type="radio" class="vote-down" name="vote-negative" value="down" aria-label="Downvote">
+</fieldset>
+<fieldset class="vote" aria-label="Votes on your answer" disabled>
+  <input type="radio" class="vote-up" name="vote-own" value="up" aria-label="Upvote">
+  <output class="vote-score">1.4k</output>
+  <input type="radio" class="vote-down" name="vote-own" value="down" aria-label="Downvote">
+</fieldset>`} />
+
+## 撤回投票 \{#taking-back\}
+
+再次按下已選取的單選按鈕無法清除選取，因此沒有腳本時，讀者只能改投另一邊。下方的程式碼讓讀者可以再次按下已選取的箭頭，或在該箭頭上按空白鍵來撤回投票，分數也會回到 `--votes`。
+
+<ComponentPreview name="taking-back" height={136} title="撤回投票" background="plain" html={`<fieldset class="vote" id="vote-clear" aria-label="Vote on this answer" style="--votes: 7">
+  <input type="radio" class="vote-up" name="vote-clear" value="up" aria-label="Upvote" checked>
+  <output class="vote-score"></output>
+  <input type="radio" class="vote-down" name="vote-clear" value="down" aria-label="Downvote">
+</fieldset>
+<script>
+  const vote = document.getElementById('vote-clear')
+  let chosen = vote.querySelector(':checked')
+
+  vote.addEventListener('click', function (event) {
+    const arrow = event.target.closest('.vote-up, .vote-down')
+    if (!arrow) return
+    if (arrow === chosen) {
+      arrow.checked = false
+      arrow.dispatchEvent(new Event('change', { bubbles: true }))
+      chosen = null
+    } else {
+      chosen = arrow
+    }
+  })
+
+  vote.addEventListener('keydown', function (event) {
+    if (event.key === ' ' && event.target === chosen) {
+      event.preventDefault()
+      chosen.click()
+    }
+  })
+</script>`} caption="再按一次實心箭頭即可撤回投票。" />
+
+## 無障礙 \{#accessibility\}
+
+- 使用 `aria-label` 或 `<legend>` 為群組命名，並為兩個單選按鈕分別命名為「投贊成票」和「投反對票」。
+- 將分數放在 `<output>` 中。螢幕閱讀器會依版面順序在兩個箭頭之間讀出分數，投票改變分數時也會將新分數當作狀態訊息播報。
+- 箭頭會保留焦點外框。箭頭圖形繪製在偽元素上，因此遮罩不會裁掉外框。方向鍵可在兩個單選按鈕之間切換投票，操作方式與一般單選群組相同。
+- 每個箭頭按鈕為 32px，在觸控螢幕上為 44px。在強制色彩模式下，箭頭使用按鈕文字色，已選取的箭頭則使用醒目提示色。
+
+## 類別 \{#classes\}
+
+<ContractTable name="vote" />
+
+## 自訂屬性 \{#custom-properties\}
+
+<ContractTable name="vote" show="properties" />
+
+## 原始碼 \{#source\}
+
+<ComponentSource name="vote" />

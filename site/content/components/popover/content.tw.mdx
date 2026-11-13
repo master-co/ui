@@ -1,0 +1,107 @@
+---
+title: "浮動面板"
+description: "錨定在開啟按鈕旁的浮動面板。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+浮動面板依附於開啟它的按鈕。在任一元素加上 `popover` 屬性和 `.popover`，再用 `popovertarget` 讓按鈕指向該元素。瀏覽器會將面板移到頂層，點擊面板外部或按下 <kbd>Esc</kbd> 時關閉，並讓面板在 Tab 順序中緊接在按鈕之後。面板由 CSS 錨點定位，不需要用腳本定位。
+
+<ComponentPreview name="default" height={240} title="浮動面板" bodyClass="flex items-start justify-center p-lg min-h(240)" html={`<button type="button" class="btn" popovertarget="share">Share</button>
+
+<div id="share" popover class="popover">
+  <div class="flex flex-col gap-sm w(260)">
+    <p class="m(0) fg-text-strong">Share this project</p>
+    <div class="input-group input-group-sm">
+      <input class="input-group-field" value="https://atlas.dev/p/9f2c" readonly aria-label="Link">
+      <button type="button" class="btn">Copy</button>
+    </div>
+  </div>
+</div>`} />
+
+## 放置位置 \{#placement\}
+
+浮動面板會在按鈕下方 6px 處開啟，並與按鈕的起始邊緣對齊。Popover API 會將按鈕與面板連結，因此按鈕無須命名即可作為錨點。面板若會超出檢視區，就會翻到另一側。
+
+| 類別 | 放置位置 |
+| --- | --- |
+| `popover` | 位於下方，與起始邊緣對齊 |
+| `popover-end` | 與結束邊緣對齊，適合放在一列末端的按鈕 |
+| `popover-center` | 相對於按鈕置中 |
+| `popover-top` | 位於按鈕上方，可搭配 `popover-end` 或 `popover-center` |
+
+<ComponentPreview name="placement" height={280} title="放置位置" bodyClass="flex flex-wrap items-center justify-center gap-md p-lg min-h(280)" html={`<button type="button" class="btn" popovertarget="place-start">Start</button>
+<button type="button" class="btn" popovertarget="place-center">Center</button>
+<button type="button" class="btn" popovertarget="place-end">End</button>
+<button type="button" class="btn" popovertarget="place-top">Top</button>
+
+<div id="place-start" popover class="popover">Lined up with the start edge.</div>
+<div id="place-center" popover class="popover popover-center">Centered on the button.</div>
+<div id="place-end" popover class="popover popover-end">Lined up with the end edge.</div>
+<div id="place-top" popover class="popover popover-top popover-center">Above the button.</div>`} />
+
+瀏覽器若不支援錨點定位，浮動面板仍可正常開關，並會依照瀏覽器對浮動面板的預設定位顯示在檢視區中央。
+
+## 搭配表單 \{#with-a-form\}
+
+浮動面板可以容納控制項。面板開啟時，焦點會留在按鈕上。按 <kbd>Tab</kbd> 可將焦點移入面板，也可在第一個欄位加上 `autofocus`，讓焦點在開啟時直接移到該欄位。
+
+<ComponentPreview name="form" height={304} title="搭配表單" bodyClass="flex items-start justify-center p-lg min-h(300)" html={`<button type="button" class="btn" popovertarget="rename">Rename</button>
+
+<form id="rename" popover class="popover">
+  <div class="flex flex-col gap-sm w(240)">
+    <label class="field">
+      Project name
+      <input class="input input-sm" value="atlas" autofocus>
+    </label>
+    <div class="flex justify-end gap-xs">
+      <button type="button" class="btn btn-sm" popovertarget="rename" popovertargetaction="hide">Cancel</button>
+      <button type="button" class="btn btn-sm btn-primary" popovertarget="rename" popovertargetaction="hide">Save</button>
+    </div>
+  </div>
+</form>`} />
+
+## 游標懸停時 \{#on-hover\}
+
+游標停在連結或按鈕上，或連結或按鈕取得焦點時，也可開啟浮動面板來預覽其指向的內容。為面板加上 `popover="hint"`，再用 `interestfor` 讓觸發元素指向面板。提示面板不會關閉已開啟的選單或其他浮動面板。請只放預覽內容，因為觸控螢幕的使用者只能透過長按查看。任何資訊都不應只在這裡提供。
+
+<ComponentPreview name="hover" height={240} title="游標懸停時" background="plain" bodyClass="flex items-start justify-center p-lg min-h(240)" html={`<p class="m(0) text-sm fg-text-body">Deployed by <a class="link" href="#ada" interestfor="ada-card">Ada Lovelace</a> two hours ago.</p>
+
+<div id="ada-card" popover="hint" class="popover">
+  <div class="flex items-center gap-sm">
+    <span class="avatar avatar-lg"><img class="avatar-image" src="/demo/portrait-1.svg" alt=""></span>
+    <div class="flex flex-col">
+      <span class="fg-text-strong">Ada Lovelace</span>
+      <span class="text-xs fg-text-muted">Owner · 412 deployments</span>
+    </div>
+  </div>
+</div>`} caption="將游標移到名稱上，或按 Tab 將焦點移到名稱。" />
+
+Chrome 和 Edge 已支援這類預覽觸發元素。其他瀏覽器仍可正常開啟連結，但不會顯示預覽。
+
+## 無障礙 \{#accessibility\}
+
+- 瀏覽器會為按鈕設定 `aria-expanded`，請勿自行設定。
+- 浮動面板是非模態的，開啟時使用者仍可操作頁面。如果必須先完成或取消一項任務，請使用[對話框](/components/dialog)。
+- 使用[選單](/components/menu)列出可執行的操作，使用[工具提示](/components/tooltip)顯示游標懸停時的標籤。
+
+## React、Svelte 和 Vue \{#frameworks\}
+
+`popover` 元件會依應用程式狀態開關浮動面板，也會在瀏覽器開關面板時發出通知。觸發元素和內容仍由頁面自己的標記定義。執行 `npx master-ui add popover` 即可將元件複製到專案中。請參閱 [React、Svelte 和 Vue](/guide/frameworks)，了解元件的建構和使用方式。
+
+<FrameworkSource name="popover" />
+
+## 類別 \{#classes\}
+
+<ContractTable name="popover" />
+
+## 自訂屬性 \{#custom-properties\}
+
+<ContractTable name="popover" show="properties" />
+
+## 原始碼 \{#source\}
+
+<ComponentSource name="popover" />

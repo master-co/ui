@@ -1,0 +1,133 @@
+---
+title: "倒计时"
+description: "以天、小时、分钟和秒显示剩余时间。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+倒计时显示距离某个时刻还有多久，例如产品上线、促销结束或活动开始。各时间单位等宽排列，数字在上，低调的小字号标签在下，相邻两列之间居中放置冒号。根元素为 `<time>`，其 `datetime` 以时长表示相同的剩余时间，让平台也能识别这些数字所表示的时间。仅靠标记会显示页面生成时的剩余时间，几行脚本即可让倒计时逐秒更新。
+
+<ComponentPreview name="default" height={128} title="倒计时" background="plain" bodyClass="flex items-center justify-center p-lg" caption="脚本每秒更新一次倒计时。" html={`<time class="countdown" id="launch" datetime="P2DT14H5M9S">
+  <span class="countdown-unit"><span class="countdown-value">02</span> <span class="countdown-label">days</span></span>
+  <span class="countdown-unit"><span class="countdown-value">14</span> <span class="countdown-label">hours</span></span>
+  <span class="countdown-unit"><span class="countdown-value">05</span> <span class="countdown-label">minutes</span></span>
+  <span class="countdown-unit"><span class="countdown-value">09</span> <span class="countdown-label">seconds</span></span>
+</time>
+<script>
+  var launch = document.getElementById('launch')
+  var figures = launch.querySelectorAll('.countdown-value')
+  var start = Array.prototype.map.call(figures, function (figure) { return Number(figure.textContent) })
+  var end = Date.now() + (((start[0] * 24 + start[1]) * 60 + start[2]) * 60 + start[3]) * 1000
+  function tick() {
+    var left = Math.max(0, Math.ceil((end - Date.now()) / 1000))
+    var units = [Math.floor(left / 86400), Math.floor(left / 3600) % 24, Math.floor(left / 60) % 60, left % 60]
+    units.forEach(function (unit, index) { figures[index].textContent = String(unit).padStart(2, '0') })
+    launch.setAttribute('datetime', left ? 'P' + units[0] + 'DT' + units[1] + 'H' + units[2] + 'M' + units[3] + 'S' : 'PT0S')
+    if (left) setTimeout(tick, (end - Date.now()) % 1000 || 1000)
+  }
+  tick()
+</script>`} />
+
+## 逐秒更新 \{#ticking\}
+
+倒计时由标记构成，数字和 `datetime` 表示相同的时长，由样式表负责呈现。脚本根据页面加载时的剩余时间计算一次结束时刻，之后每秒重写各单位的数字和 `datetime`。脚本将下一次更新安排在下一秒开始时，让数字始终与时钟同步。归零时，脚本写入 `datetime="PT0S"` 并停止更新。
+
+如果页面知道确切的结束日期和时间，例如促销在某个时区的午夜结束，就应倒计时至该时刻，避免以页面加载时的剩余时长为起点。这样，各设备上的数字都会一致。
+
+## 方块样式 \{#tiles\}
+
+`countdown-tiles` 将每组数字放进一块小型凸起面板。面板高度为数字高度的两倍，采用大号控件的圆角，标签放在面板下方。方块紧密排列，省去冒号。倒计时是视图的重点时，例如产品上线前的页面，可使用此样式。
+
+<ComponentPreview name="tiles" height={152} title="方块样式" background="plain" bodyClass="flex items-center justify-center p-lg" html={`<time class="countdown countdown-tiles" datetime="P2DT14H5M9S">
+  <span class="countdown-unit"><span class="countdown-value">02</span> <span class="countdown-label">days</span></span>
+  <span class="countdown-unit"><span class="countdown-value">14</span> <span class="countdown-label">hours</span></span>
+  <span class="countdown-unit"><span class="countdown-value">05</span> <span class="countdown-label">minutes</span></span>
+  <span class="countdown-unit"><span class="countdown-value">09</span> <span class="countdown-label">seconds</span></span>
+</time>`} />
+
+## 滚动数字 \{#rolling-figures\}
+
+每组数字都可以用[里程表](/components/odometer)呈现，让各数位滚动到新值。倒计时负责呈现时间单位，里程表负责呈现各数位，两者独立工作。倒计时的数字向下递减，因此脚本将每一位向后拨到新值。从 0 向后拨一格得到 -1，里程表会将它显示为 9，秒数就像计数器的转轮一样向下滚过零。
+
+<ComponentPreview name="rolling" height={152} title="滚动数字" background="plain" bodyClass="flex items-center justify-center p-lg" caption="秒数每秒向下滚动一次，分钟数在每分钟结束时向下滚动。" html={`<time class="countdown countdown-tiles" id="doors" datetime="PT4H12M30S">
+  <span class="countdown-unit">
+    <span class="countdown-value"><span class="odometer"><span class="odometer-value">04</span><span class="odometer-figures" aria-hidden="true"><span class="odometer-digit" style="--digit: 0"></span><span class="odometer-digit" style="--digit: 4"></span></span></span></span>
+    <span class="countdown-label">hours</span>
+  </span>
+  <span class="countdown-unit">
+    <span class="countdown-value"><span class="odometer"><span class="odometer-value">12</span><span class="odometer-figures" aria-hidden="true"><span class="odometer-digit" style="--digit: 1"></span><span class="odometer-digit" style="--digit: 2"></span></span></span></span>
+    <span class="countdown-label">minutes</span>
+  </span>
+  <span class="countdown-unit">
+    <span class="countdown-value"><span class="odometer"><span class="odometer-value">30</span><span class="odometer-figures" aria-hidden="true"><span class="odometer-digit" style="--digit: 3"></span><span class="odometer-digit" style="--digit: 0"></span></span></span></span>
+    <span class="countdown-label">seconds</span>
+  </span>
+</time>
+<script>
+  var doors = document.getElementById('doors')
+  var figures = doors.querySelectorAll('.odometer')
+  var start = Array.prototype.map.call(figures, function (figure) { return Number(figure.querySelector('.odometer-value').textContent) })
+  var end = Date.now() + ((start[0] * 60 + start[1]) * 60 + start[2]) * 1000
+  function roll(digit, numeral) {
+    var at = Number(digit.style.getPropertyValue('--digit')) || 0
+    var step = ((numeral - at) % 10 + 10) % 10
+    if (step) digit.style.setProperty('--digit', at + step - 10)
+  }
+  function tick() {
+    var left = Math.max(0, Math.ceil((end - Date.now()) / 1000))
+    var units = [Math.floor(left / 3600), Math.floor(left / 60) % 60, left % 60]
+    units.forEach(function (unit, index) {
+      var digits = figures[index].querySelectorAll('.odometer-digit')
+      figures[index].querySelector('.odometer-value').textContent = String(unit).padStart(2, '0')
+      roll(digits[0], Math.floor(unit / 10))
+      roll(digits[1], unit % 10)
+    })
+    doors.setAttribute('datetime', left ? 'PT' + units[0] + 'H' + units[1] + 'M' + units[2] + 'S' : 'PT0S')
+    if (left) setTimeout(tick, (end - Date.now()) % 1000 || 1000)
+  }
+  tick()
+</script>`} />
+
+## 行内样式 \{#inline\}
+
+`countdown-inline` 将各单位排在同一条基线上，每个标签紧跟对应的数字，字号与所在句子一致，适合在句中顺带提及截止时间。数字采用对比度较高的墨色，标签保持低调，让时间沿用句子的字重也能醒目。屏幕阅读器会把 `h` 这类短标签读成字母，因此应对辅助技术隐藏该字母，在旁边补上完整词语，并用 `sr-only` 在视觉上隐藏该词语。
+
+<ComponentPreview name="inline" height={96} title="行内样式" background="plain" bodyClass="flex items-center justify-center p-lg" html={`<p class="m(0) text-sm fg-text-body">Early pricing ends in
+  <time class="countdown countdown-inline" datetime="P2DT14H5M">
+    <span class="countdown-unit"><span class="countdown-value">2</span><span class="countdown-label" aria-hidden="true">d</span><span class="sr-only">days</span></span>
+    <span class="countdown-unit"><span class="countdown-value">14</span><span class="countdown-label" aria-hidden="true">h</span><span class="sr-only">hours</span></span>
+    <span class="countdown-unit"><span class="countdown-value">05</span><span class="countdown-label" aria-hidden="true">m</span><span class="sr-only">minutes</span></span>
+  </time>.
+</p>`} />
+
+## 时间到 \{#ended\}
+
+剩余时间归零时（`datetime="PT0S"`），数字的对比度降低，方块呈平坦的内凹样式，表示计时已经结束。在倒计时旁用文字说明接下来发生了什么，例如“现已开放入场”。页面有更合适的内容可展示时，就用它替换倒计时。
+
+<ComponentPreview name="ended" height={152} title="时间到" background="plain" bodyClass="flex items-center justify-center p-lg" html={`<time class="countdown countdown-tiles" datetime="PT0S">
+  <span class="countdown-unit"><span class="countdown-value">00</span> <span class="countdown-label">hours</span></span>
+  <span class="countdown-unit"><span class="countdown-value">00</span> <span class="countdown-label">minutes</span></span>
+  <span class="countdown-unit"><span class="countdown-value">00</span> <span class="countdown-label">seconds</span></span>
+</time>`} />
+
+## 无障碍 \{#accessibility\}
+
+- 倒计时切勿设为实时区域。每秒播报一次数字会干扰用户正在进行的操作，任意一秒的读数都没有用户必须即时获知的信息。用户导航到倒计时时，屏幕阅读器会朗读数字及其标签，例如“02 天 14 小时 05 分钟 09 秒”。
+- 如果某个时刻本身很重要，例如预订即将失效，就在单独的 `role="status"` 区域用文字播报一次，例如“您的座位还将保留一分钟。”
+- 样式表绘制冒号，并为其提供空的替代文本，屏幕阅读器会跳过这些冒号。
+- 标签使用完整词语。如果像行内倒计时那样用字母作标签，就隐藏字母，并用 `sr-only` 提供完整词语。
+- 启用减少动态效果时，倒计时中的里程表会在原位更新数字。启用强制颜色时，方块以系统颜色的轮廓线保留边缘。
+
+## 类名 \{#classes\}
+
+<ContractTable name="countdown" />
+
+## 自定义属性 \{#custom-properties\}
+
+<ContractTable name="countdown" show="properties" />
+
+## 源码 \{#source\}
+
+<ComponentSource name="countdown" />

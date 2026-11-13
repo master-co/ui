@@ -1,7 +1,7 @@
 import { defineSite } from '@master/internal-site/config'
 import i18n from '@master/internal-site/common/i18n.config.js'
 import translations from './i18n/translations'
-import { englishOnlySections } from './i18n/sections'
+import { documentSections } from './i18n/sections'
 
 const section = (name: string) => new URL(import.meta.resolve(`@master/internal-site/sections/${name}.astro`))
 const library = new URL('./sections/library.astro', import.meta.url)
@@ -24,8 +24,7 @@ export default defineSite({
   // `i18n/reviews.json`; `i18n/resources.ts` lists everything the production gate holds to those reviews.
   i18n: {
     ...i18n,
-    localizablePathnameRoots: ['guide'],
-    sectionLocales: Object.fromEntries(englishOnlySections.map(section => [section, ['en']])),
+    localizablePathnameRoots: documentSections,
     translations,
     validation: { reviews: new URL('./i18n/reviews.json', import.meta.url), resources: new URL('./i18n/resources.ts', import.meta.url) }
   },

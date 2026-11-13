@@ -1,0 +1,75 @@
+---
+title: "탭"
+description: "하나의 가는 선 위에 레이블을 나란히 놓고, 현재 탭에 글자색으로 밑줄을 표시합니다."
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+탭 레이블은 하나의 가는 선 위에 나란히 놓이고, 현재 탭에는 글자색으로 밑줄을 표시합니다. 탭은 같은 수준의 페이지나 패널을 전환합니다. 여러 값 중 하나를 고르는 간결한 UI에는 [세그먼트 컨트롤](/components/segmented)을 사용합니다.
+
+브라우저가 CSS 앵커 포지셔닝을 지원하면 `aria-selected` 값이 바뀔 때 밑줄 하나가 현재 탭으로 부드럽게 이동합니다. 밑줄의 위쪽 모서리는 각이 도드라지지 않도록 부드럽게 처리합니다. 지원하지 않는 브라우저에서는 각 탭이 자체 밑줄을 표시합니다.
+
+<ComponentPreview name="default" height={96} title="탭" background="plain" bodyClass="p-lg" html={`<nav class="tabs" aria-label="Project">
+  <a class="tabs-item" href="#overview" aria-current="page">Overview</a>
+  <a class="tabs-item" href="#activity">Activity</a>
+  <a class="tabs-item" href="#settings">Settings</a>
+</nav>`} />
+
+## 개수 표시 \{#with-counts\}
+
+<ComponentPreview name="counts" height={96} title="개수 표시" background="plain" bodyClass="p-lg" html={`<nav class="tabs" aria-label="Repository">
+  <a class="tabs-item" href="#code" aria-current="page">Code</a>
+  <a class="tabs-item" href="#issues">Issues <span class="badge badge-sm badge-pill">24</span></a>
+  <a class="tabs-item" href="#pulls">Pull requests <span class="badge badge-sm badge-pill">3</span></a>
+</nav>`} />
+
+## 작은 탭 \{#small\}
+
+<ComponentPreview name="small" height={96} title="작은 탭" background="plain" bodyClass="p-lg" html={`<nav class="tabs tabs-sm" aria-label="Period">
+  <a class="tabs-item" href="#day">Day</a>
+  <a class="tabs-item" href="#week" aria-current="page">Week</a>
+  <a class="tabs-item" href="#month">Month</a>
+</nav>`} />
+
+## 탭 패널 \{#tab-panels\}
+
+페이지 안에서 패널을 전환할 때는 WAI-ARIA 탭 패턴을 따릅니다. `role="tablist"` 컨테이너에 `aria-selected`와 `aria-controls`를 지정한 `role="tab"` 버튼을 배치하고 `role="tabpanel"` 영역을 사용합니다. 스타일시트는 모든 상태의 모양을 표시합니다. `tabs` [동작](/guide/behaviors)은 패널을 전환하고 탭 목록의 키보드 조작을 처리합니다.
+
+<ComponentPreview name="tablist" height={136} title="탭 목록" background="plain" bodyClass="p-lg" behaviors html={`<div class="tabs" role="tablist" aria-label="Account">
+  <button type="button" class="tabs-item" role="tab" id="tab-profile" aria-selected="true" aria-controls="panel-profile">Profile</button>
+  <button type="button" class="tabs-item" role="tab" id="tab-billing" aria-selected="false" aria-controls="panel-billing" tabindex="-1">Billing</button>
+  <button type="button" class="tabs-item" role="tab" id="tab-members" aria-selected="false" aria-controls="panel-members" tabindex="-1">Members</button>
+</div>
+<div role="tabpanel" id="panel-profile" aria-labelledby="tab-profile" class="pt-md text-sm fg-text-body">Profile settings</div>
+<div role="tabpanel" id="panel-billing" aria-labelledby="tab-billing" class="pt-md text-sm fg-text-body" hidden>Billing settings</div>
+<div role="tabpanel" id="panel-members" aria-labelledby="tab-members" class="pt-md text-sm fg-text-body" hidden>Members of the workspace</div>`} caption="탭에 포커스를 두고 방향키, Home 또는 End를 누르세요. 클릭으로도 선택할 수 있습니다." />
+
+`tabs` 동작은 `tabs` 클래스와 `role="tablist"`가 지정된 요소인 탭 목록을 인수로 받습니다. 옵션은 없으며, 연결한 동작을 해제하는 함수를 반환합니다.
+
+```js name=app.js
+import { tabs } from '@master/ui/behaviors/tabs.js'
+
+const detach = tabs(document.querySelector('.tabs[role="tablist"]'))
+```
+
+- **탭 키 포커스.** 선택된 탭만 탭 키 탐색 순서에 포함됩니다. 방향키를 누르면 비활성화된 탭을 건너뛰어 앞이나 뒤의 탭으로 포커스를 옮기고 해당 탭을 선택합니다. 목록의 양 끝에서는 반대쪽 끝으로 이동합니다. <kbd>Home</kbd>과 <kbd>End</kbd>는 각각 첫 번째와 마지막 탭으로 이동합니다. `aria-orientation="vertical"`이 지정된 탭 목록에서는 위쪽과 아래쪽 방향키를 사용합니다.
+- **패널.** 각 탭은 `aria-controls`로 자신이 제어하는 패널을 지정합니다. 선택된 탭의 패널을 표시하고 나머지 패널에는 `hidden`을 적용합니다.
+- **값.** 탭을 선택하면 탭 목록에서 버블링하는 `change` 이벤트가 발생합니다. 이 이벤트의 `detail.value`에는 탭의 `data-value` 값이 들어가며, 해당 값이 없으면 탭의 텍스트가 들어갑니다. 동작이 반환하는 함수에도 같은 `value`가 있습니다. 이 값을 설정하면 외부에서 탭을 선택할 수 있습니다.
+- **스크립트가 없으면** 선택된 탭의 패널만 `hidden` 속성 없이 표시되며, 패널 전환은 일어나지 않습니다. 각 탭을 별도 페이지로 구성할 수 있다면 `nav` 안에 링크를 사용합니다.
+
+## React, Svelte 및 Vue \{#frameworks\}
+
+`tabs` 컴포넌트는 데이터에서 탭 목록과 패널을 렌더링하고, 각 탭을 id로 해당 패널에 연결하며, 동작을 연결합니다. 선택된 탭 값을 입력으로 받고 외부로 전달합니다. `nav` 안에서 링크로 구성한 탭은 마크업으로 유지됩니다. `npx master-ui add tabs`로 컴포넌트를 프로젝트에 복사합니다. [React, Svelte 및 Vue](/guide/frameworks)에서 컴포넌트의 구성과 사용법을 설명합니다.
+
+<FrameworkSource name="tabs" />
+
+## 클래스 \{#classes\}
+
+<ContractTable name="tabs" />
+
+## 소스 \{#source\}
+
+<ComponentSource name="tabs" />

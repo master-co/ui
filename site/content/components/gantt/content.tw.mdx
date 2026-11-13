@@ -1,0 +1,81 @@
+---
+title: "甘特圖"
+description: "在同一條時間刻度上，以長條呈現各事項的持續時間。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+甘特圖在同一條時間刻度上以長條呈現有持續時間的事項，例如專案階段、值班時段或定期發行排程。它以清單呈現，每列包含長條的起訖位置、項目名稱和長條上的文字。樣式表負責版面配置，將名稱與長條分成兩欄，並在每個刻度單位的起點畫一條細線。實作未使用腳本或 SVG。
+
+<ComponentPreview name="default" height={248} narrowHeight={320} title="甘特圖" bodyClass="p-lg" html={`<div class="card max-w(560) mx-auto">
+  <ol class="gantt gantt-now" style="--gantt-from: 0; --gantt-to: 8; --gantt-now: 4.4" aria-label="Launch plan, in weeks">
+    <li class="gantt-row gantt-scale" aria-hidden="true">
+      <ol class="gantt-ticks"><li>W1</li><li>W2</li><li>W3</li><li>W4</li><li>W5</li><li>W6</li><li>W7</li><li>W8</li></ol>
+    </li>
+    <li class="gantt-row" style="--from: 0; --to: 3; --progress: 100"><span class="gantt-label">Research</span><span class="gantt-bar">Weeks 1 to 3</span></li>
+    <li class="gantt-row" aria-current="true" style="--from: 2; --to: 6"><span class="gantt-label">Design</span><span class="gantt-bar">Weeks 3 to 6</span></li>
+    <li class="gantt-row" style="--from: 4; --to: 7.5; --progress: 15"><span class="gantt-label">Build</span><span class="gantt-bar">Weeks 5 to 8</span></li>
+    <li class="gantt-row" style="--from: 7.5"><span class="gantt-label">Launch</span><span class="gantt-bar gantt-milestone">Middle of week 8</span></li>
+  </ol>
+</div>`} />
+
+## 長條定位 \{#how-a-bar-gets-its-place\}
+
+在清單上設定 `--gantt-from` 和 `--gantt-to`，指定刻度的起訖範圍。單位可自行選擇，例如天、週、小時或衝刺週期。每個 `gantt-row` 使用相同單位設定 `--from` 和 `--to`，其 `gantt-bar` 會依這兩個值在刻度範圍內的比例決定起訖位置。也可使用小數，讓長條在一個刻度單位中途結束。
+
+名稱欄以最長的名稱為準，軌道占用其餘寬度。每列共用這兩欄，無須指定欄寬，長條就能對齊。長條後方的細線標出每個刻度單位。
+
+用文字寫出長條所代表的資訊，例如日期、持續時間或負責人。即使長條太短，也請保留文字，讓螢幕閱讀器能讀出內容。放不下的文字會以省略號截斷。
+
+## 進度、目前列與現在時間 \{#progress\}
+
+在列上設定 0 到 100 的 `--progress`，長條就會依該百分比填入較深的色調。以 `aria-current="true"` 標記的列會使用深色實心長條，表示讀者目前所處的階段，或這個畫面所聚焦的階段。
+
+在清單上加上 `gantt-now`，就會在 `--gantt-now` 指定的位置畫出一條貫穿各列的深色線，標示今天。當指標停在某一列上時，該列的長條會加深一階，名稱也會改用高對比文字色，方便讀者在較寬的圖上沿著同一列閱讀。
+
+## 里程碑 \{#milestones\}
+
+里程碑代表單一時間點。讓該列只設定 `--from`，再將 `gantt-milestone` 加到長條上，就會在該位置畫出深色的小菱形。長條文字會保留在清單中供輔助科技讀取，但畫面上不會顯示，因此請在列名稱中寫明該時間點發生的事。
+
+## 刻度 \{#the-scale\}
+
+使用 `gantt-scale` 的列用來標示各刻度單位。列內放一份 `gantt-ticks` 清單，每個刻度單位對應一個項目，各標籤會對齊該單位起點的細線。刻度將長條文字已有的資訊以視覺方式呈現，因此請加上 `aria-hidden`。
+
+<ComponentPreview name="shifts" height={212} narrowHeight={280} title="一天中的各時段" bodyClass="p-lg" html={`<div class="card max-w(560) mx-auto">
+  <ol class="gantt" style="--gantt-from: 0; --gantt-to: 24" aria-label="On call today">
+    <li class="gantt-row gantt-scale" aria-hidden="true">
+      <ol class="gantt-ticks"><li>00</li><li></li><li></li><li></li><li></li><li></li><li>06</li><li></li><li></li><li></li><li></li><li></li><li>12</li><li></li><li></li><li></li><li></li><li></li><li>18</li><li></li><li></li><li></li><li></li><li></li></ol>
+    </li>
+    <li class="gantt-row" style="--from: 0; --to: 8"><span class="gantt-label">Grace</span><span class="gantt-bar">00:00 to 08:00</span></li>
+    <li class="gantt-row" aria-current="true" style="--from: 8; --to: 16"><span class="gantt-label">Ada</span><span class="gantt-bar">08:00 to 16:00</span></li>
+    <li class="gantt-row" style="--from: 16; --to: 24"><span class="gantt-label">Alan</span><span class="gantt-bar">16:00 to 24:00</span></li>
+  </ol>
+</div>`} />
+
+## 窄容器中的甘特圖 \{#narrow\}
+
+甘特圖本身是尺寸容器。當自身寬度低於 26rem 時，各列名稱會移到長條上方，讓軌道使用整個寬度。在手機上請縮短刻度範圍，八個單位容易閱讀，三十個就太擠。
+
+## 甘特圖、時間軸或圖表 \{#gantt-timeline-or-chart\}
+
+甘特圖適合呈現有開始和結束時間的事項。若要依發生順序呈現各個時間點的事件，請用[時間軸](/components/timeline)。若要比較與時間無關的數值，請用[圖表](/components/chart)。
+
+## 無障礙 \{#accessibility\}
+
+- 使用 `<ol>`，並以 `aria-label` 或標題為清單命名。每列都是一個清單項目，會依序讀出名稱和長條文字，例如「設計，第 3 到第 6 週」。
+- 長條、刻度細線和現在時間線由樣式表繪製。請在文字中寫出它們傳達的資訊，例如長條的起訖日期，並在需要時說明哪一列是目前的階段。
+- 辨識目前列無須依賴色相。它以深色長條和其餘列的淺色長條形成明暗對比。在強制色彩模式下，目前列為實心長條，其餘列只有外框。
+
+## 類別 \{#classes\}
+
+<ContractTable name="gantt" />
+
+## 自訂屬性 \{#custom-properties\}
+
+<ContractTable name="gantt" show="properties" />
+
+## 原始碼 \{#source\}
+
+<ComponentSource name="gantt" />

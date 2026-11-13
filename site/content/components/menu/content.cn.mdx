@@ -1,0 +1,234 @@
+---
+title: "菜单"
+description: "在触发按钮旁打开弹出层，展示一组操作。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+菜单是容纳一组操作的弹出层。给容器添加 `popover` 属性和 `.menu`，在其中放入带 `menu-item` 的按钮和链接，再在触发按钮上用 `popovertarget` 指向该容器。浏览器负责打开和关闭菜单。CSS 锚点定位将菜单贴着按钮放置，并在视口边缘翻转菜单的展开方向。
+
+<ComponentPreview name="default" height={320} title="菜单" bodyClass="flex items-start justify-center p-lg min-h(320)" html={`<button type="button" class="btn btn-square" popovertarget="project-menu" aria-label="Project actions">
+  <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>
+</button>
+
+<div id="project-menu" popover class="menu">
+  <button type="button" class="menu-item" popovertarget="project-menu" popovertargetaction="hide">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4Z"/></svg>
+    Rename
+    <span class="menu-shortcut">⌘R</span>
+  </button>
+  <button type="button" class="menu-item" popovertarget="project-menu" popovertargetaction="hide">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
+    Duplicate
+    <span class="menu-shortcut">⌘D</span>
+  </button>
+  <a class="menu-item" href="#settings">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h2M10 12h10M4 18h10M18 18h2"/><circle cx="16" cy="6" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="16" cy="18" r="2"/></svg>
+    Settings
+  </a>
+  <hr class="menu-separator">
+  <button type="button" class="menu-item menu-item-danger" popovertarget="project-menu" popovertargetaction="hide">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>
+    Delete
+  </button>
+</div>`} />
+
+## 菜单项 \{#items\}
+
+`menu-item` 可以用 `<button>` 执行操作，也可以用 `<a>` 导航。指针移到某一行时，该行立即显示与 Chip 组件同色的背景，无淡入过渡，因此高亮能跟上指针。通过键盘聚焦的行还会显示与文字同色的轮廓。给图标添加 [`icon`](/components/icon)，菜单项会设定图标尺寸，并在该行进入交互状态前弱化图标的显示。
+
+- 链接在导航时关闭菜单。按钮按上例使用 `popovertarget` 和 `popovertargetaction="hide"` 关闭菜单。省略这两项可让菜单保持打开。
+- `menu-item-danger` 以危险状态的前景色突出破坏性操作。
+- `menu-shortcut` 将快捷键放在行末。
+- 禁用的按钮使用禁用状态的前景色。对于链接，使用 `aria-disabled="true"` 并移除 `href`。
+
+## 分组 \{#groups\}
+
+`menu-label` 为分组添加标题。在 `<hr>` 上使用 `menu-separator`，可在组间绘制一条横贯菜单的细线。
+
+<ComponentPreview name="groups" height={344} title="分组" bodyClass="flex items-start justify-center p-lg min-h(340)" html={`<button type="button" class="btn" popovertarget="account-menu">Ada Lovelace</button>
+
+<div id="account-menu" popover class="menu">
+  <div class="menu-label">Account</div>
+  <a class="menu-item" href="#profile">Profile</a>
+  <a class="menu-item" href="#billing">Billing</a>
+  <hr class="menu-separator">
+  <div class="menu-label">Team</div>
+  <a class="menu-item" href="#members">Members</a>
+  <button type="button" class="menu-item" disabled>Transfer ownership</button>
+  <hr class="menu-separator">
+  <a class="menu-item" href="#sign-out">Sign out</a>
+</div>`} />
+
+## 可勾选菜单项 \{#checkable-items\}
+
+对于需要保持选中状态的选项，用 `<label>` 作为菜单项，包裹一个带 `menu-input` 的原生复选框或单选按钮。输入控件以不可见的方式覆盖整行，负责维护状态、响应按键和提供表单值。行末预留勾选标记的位置，勾选时显示标记，标签文字的位置保持稳定。
+
+<ComponentPreview name="checkable" height={320} title="可勾选菜单项" bodyClass="flex items-start justify-center p-lg min-h(320)" html={`<button type="button" class="btn" popovertarget="view-menu">View</button>
+
+<div id="view-menu" popover class="menu">
+  <div class="menu-label">Show</div>
+  <label class="menu-item"><input type="checkbox" class="menu-input" checked>Archived projects</label>
+  <label class="menu-item"><input type="checkbox" class="menu-input">Preview deployments</label>
+  <hr class="menu-separator">
+  <div class="menu-label">Sort by</div>
+  <label class="menu-item"><input type="radio" class="menu-input" name="sort" checked>Last updated</label>
+  <label class="menu-item"><input type="radio" class="menu-input" name="sort">Name</label>
+</div>`} />
+
+由脚本控制的菜单项也可以改用 `aria-checked="true"`，并配合 `role="menuitemcheckbox"` 或 `role="menuitemradio"`。
+
+## 定位 \{#placement\}
+
+菜单在按钮下方打开，并与按钮的起始边缘对齐。`menu-end` 改为与末端边缘对齐，适用于行末或工具栏末端的按钮。`menu-top` 让菜单在按钮上方打开。空间不足时，菜单会自动翻转方向。
+
+<ComponentPreview name="placement" height={224} title="定位" bodyClass="flex items-start justify-end p-lg min-h(220)" html={`<button type="button" class="btn btn-quiet btn-square" popovertarget="row-menu" aria-label="Row actions">
+  <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>
+</button>
+
+<div id="row-menu" popover class="menu menu-end">
+  <button type="button" class="menu-item" popovertarget="row-menu" popovertargetaction="hide">Open</button>
+  <button type="button" class="menu-item" popovertarget="row-menu" popovertargetaction="hide">Copy link</button>
+  <button type="button" class="menu-item" popovertarget="row-menu" popovertargetaction="hide">Archive</button>
+</div>`} />
+
+## 子菜单 \{#submenu\}
+
+菜单项可以打开另一个菜单。给菜单项添加 `popovertarget` 和 `aria-haspopup="menu"`，然后在父菜单内紧接该项放置一个 `menu menu-sub`。该项会显示箭头，并在子菜单打开期间保持高亮。子菜单在该项旁边对齐展开，空间不足时会翻到另一侧。弹出层可以嵌套，因此父菜单保持打开，按 <kbd>Esc</kbd> 每次关闭一级。
+
+<ComponentPreview name="submenu" height={304} title="子菜单" bodyClass="flex items-start justify-center p-lg min-h(300)" html={`<button type="button" class="btn" popovertarget="file-menu">File</button>
+
+<div id="file-menu" popover class="menu">
+  <button type="button" class="menu-item">New project<span class="menu-shortcut">⌘N</span></button>
+  <button type="button" class="menu-item" popovertarget="recent-menu" aria-haspopup="menu">Open recent</button>
+  <div id="recent-menu" popover class="menu menu-sub">
+    <button type="button" class="menu-item">atlas</button>
+    <button type="button" class="menu-item">borealis</button>
+    <button type="button" class="menu-item">cirrus</button>
+  </div>
+  <hr class="menu-separator">
+  <button type="button" class="menu-item">Export<span class="menu-shortcut">⌘E</span></button>
+</div>`} />
+
+子菜单通过点击打开，指针点击、手指轻点和键盘激活的效果相同。是否也在悬停时打开，由脚本决定。
+
+## 行为脚本 \{#behavior\}
+
+菜单可独立于脚本运行。浏览器负责打开和关闭菜单，<kbd>Tab</kbd> 在菜单项之间移动焦点，<kbd>Esc</kbd> 将焦点移回按钮。`menu` [行为脚本](/guide/behaviors) 为可选项。如果应用用户习惯用方向键操作菜单，可以用它补充菜单的键盘操作。
+
+<ComponentPreview name="keys" height={320} title="启用行为脚本" bodyClass="flex items-start justify-center p-lg min-h(320)" behaviors html={`<button type="button" class="btn" popovertarget="edit-menu" aria-haspopup="menu">Edit</button>
+
+<div id="edit-menu" popover class="menu" role="menu" aria-label="Edit">
+  <button type="button" class="menu-item" role="menuitem" popovertarget="edit-menu" popovertargetaction="hide">Undo<span class="menu-shortcut">⌘Z</span></button>
+  <button type="button" class="menu-item" role="menuitem" popovertarget="edit-menu" popovertargetaction="hide">Redo<span class="menu-shortcut">⇧⌘Z</span></button>
+  <button type="button" class="menu-item" role="menuitem" disabled>Paste</button>
+  <hr class="menu-separator">
+  <button type="button" class="menu-item" role="menuitem" popovertarget="share-menu" aria-haspopup="menu">Share</button>
+  <div id="share-menu" popover class="menu menu-sub" role="menu" aria-label="Share">
+    <button type="button" class="menu-item" role="menuitem" popovertarget="edit-menu" popovertargetaction="hide">Copy link</button>
+    <button type="button" class="menu-item" role="menuitem" popovertarget="edit-menu" popovertargetaction="hide">Send by email</button>
+  </div>
+  <hr class="menu-separator">
+  <button type="button" class="menu-item" role="menuitem" popovertarget="edit-menu" popovertargetaction="hide">Select all<span class="menu-shortcut">⌘A</span></button>
+</div>`} caption="打开菜单，然后按方向键、Home、End 或字母键。聚焦“分享”时，按右方向键打开其子菜单，按左方向键关闭。" />
+
+`menu` 接收带有 `menu` 类和 `popover` 属性的元素，不接受任何选项，并返回用于解除绑定的函数。子菜单也是菜单，也要像 `attach()` 那样为它绑定同一行为。
+
+```js name=app.js
+import { menu } from '@master/ui/behaviors/menu.js'
+
+for (const element of document.querySelectorAll('.menu')) menu(element)
+```
+
+- **打开菜单。** 菜单打开时，焦点移到第一项。
+- **移动焦点。** 方向键、<kbd>Home</kbd>、<kbd>End</kbd> 和字母键在菜单项之间移动焦点，跳过隐藏和禁用项。<kbd>Tab</kbd> 关闭菜单。
+- **子菜单。** 当焦点位于带 `aria-haspopup="menu"` 且后面紧跟 `menu-sub` 的菜单项上时，按朝向子菜单的方向键可打开子菜单，按相反的方向键可关闭子菜单并将焦点移回该项。在从右向左的菜单中，两个方向键的作用互换。
+- **原生菜单项。** 按钮、链接以及标签式菜单项中的复选框或单选按钮都按原生方式响应 <kbd>Enter</kbd> 和 <kbd>Space</kbd>。行为脚本既不设置状态，也不派发事件。请在菜单项上监听 `click`，在 `menu-input` 上监听 `change`。
+- **角色。** 行为脚本不会添加角色。使用它时，请参照预览，在菜单上写明 `role="menu"`，在菜单项上写明 `role="menuitem"`。
+
+## 上下文菜单 \{#context-menu\}
+
+`menu-context` 在指针所在位置打开菜单，无需依附按钮。浏览器平台没有通过右键单击以声明式方式打开弹出层的机制，因此菜单行为脚本导出了 `contextMenu(target, menu)`。右键单击和长按都会触发 `contextmenu`。收到事件时，脚本阻止浏览器自带的菜单打开，将指针位置写入 `--menu-x` 和 `--menu-y`，再调用 `showPopover()`。其余工作由样式表完成。菜单从该点向下、朝行内轴的末端方向展开。如果即将越过视口边缘，`@position-try` 会让菜单转向视口中央，无需测量。
+
+<ComponentPreview name="context" height={336} title="上下文菜单" bodyClass="content-start p-lg min-h(300)" behaviors html={`<div class="well flex items-center justify-center h(200) text-sm fg-text-muted" id="canvas" tabindex="0">Right-click or long-press here, or focus it and press Shift F10</div>
+
+<div id="canvas-menu" popover class="menu menu-context min-w(160)" role="menu" aria-label="Canvas">
+  <button type="button" class="menu-item" role="menuitem" popovertarget="canvas-menu" popovertargetaction="hide">Copy<span class="menu-shortcut">⌘C</span></button>
+  <button type="button" class="menu-item" role="menuitem" popovertarget="canvas-menu" popovertargetaction="hide">Paste<span class="menu-shortcut">⌘V</span></button>
+  <button type="button" class="menu-item" role="menuitem" popovertarget="canvas-menu" popovertargetaction="hide">Duplicate</button>
+  <hr class="menu-separator">
+  <button type="button" class="menu-item menu-item-danger" role="menuitem" popovertarget="canvas-menu" popovertargetaction="hide">Delete</button>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.contextMenu(document.getElementById('canvas'), document.getElementById('canvas-menu'))
+})
+</script>`} />
+
+上下文菜单关联到页面指定的目标，因此 `attach()` 不会自动绑定它。预览自行调用 `contextMenu`，加载的是 `MasterUI` 这个打包文件。在项目中导入两个函数：`contextMenu` 打开菜单，`menu` 为菜单项提供键盘操作，预览中这一步由 `attach()` 完成。
+
+```js name=app.js
+import { contextMenu, menu } from '@master/ui/behaviors/menu.js'
+
+const target = document.getElementById('canvas')
+const list = document.getElementById('canvas-menu')
+
+contextMenu(target, list)
+menu(list)
+```
+
+按 ContextMenu 键或 <kbd>Shift</kbd> + <kbd>F10</kbd> 会在目标元素的中心打开菜单。目标元素必须可以获得焦点，才能接收这些按键，因此需要设置 `tabindex="0"`。有些浏览器在按下这些键时不会触发 `contextmenu`，行为脚本也会直接监听按键。`contextMenu` 返回解除绑定的函数。在同一个目标上再次调用时，新绑定会替换原先的绑定。
+
+## 菜单栏 \{#menubar\}
+
+菜单栏是由一排低强调样式按钮组成的[工具栏](/components/toolbar)，每个按钮各自打开一个菜单。紧随按钮的菜单或弹出层打开时，按钮会保持下陷的外观，无需脚本即可标示哪个菜单已打开。
+
+<ComponentPreview name="menubar" height={264} title="菜单栏" bodyClass="flex items-start justify-center p-lg min-h(260)" html={`<div class="toolbar" role="toolbar" aria-label="Application">
+  <button type="button" class="btn btn-quiet btn-sm" popovertarget="bar-file">File</button>
+  <div id="bar-file" popover class="menu">
+    <button type="button" class="menu-item">New<span class="menu-shortcut">⌘N</span></button>
+    <button type="button" class="menu-item">Open<span class="menu-shortcut">⌘O</span></button>
+    <button type="button" class="menu-item">Save<span class="menu-shortcut">⌘S</span></button>
+  </div>
+  <button type="button" class="btn btn-quiet btn-sm" popovertarget="bar-edit">Edit</button>
+  <div id="bar-edit" popover class="menu">
+    <button type="button" class="menu-item">Undo<span class="menu-shortcut">⌘Z</span></button>
+    <button type="button" class="menu-item">Redo<span class="menu-shortcut">⇧⌘Z</span></button>
+  </div>
+  <button type="button" class="btn btn-quiet btn-sm" popovertarget="bar-view">View</button>
+  <div id="bar-view" popover class="menu">
+    <label class="menu-item"><input type="checkbox" class="menu-input" checked>Sidebar</label>
+    <label class="menu-item"><input type="checkbox" class="menu-input">Minimap</label>
+  </div>
+</div>`} />
+
+## 键盘操作 \{#keyboard\}
+
+<ContractTable name="menu" show="keyboard" />
+
+## 无障碍 \{#accessibility\}
+
+- 无需脚本，菜单就是一个包含按钮和链接的弹出层。按 <kbd>Tab</kbd> 在各项间移动焦点，按 <kbd>Esc</kbd> 关闭弹出层，焦点回到按钮。这已经是完整且正确的交互，请勿添加 `role="menu"`。
+- `role="menu"` 和 `role="menuitem"` 表示菜单支持方向键导航。只有使用 `menu` 行为脚本或自行提供相同键盘操作的脚本时，才添加它们。
+- 使用 `aria-label` 为仅含图标的按钮提供无障碍名称。
+
+## React、Svelte 和 Vue \{#frameworks\}
+
+`menu` 组件根据数据渲染菜单项，将菜单与触发器关联，并绑定行为脚本。传入目标即可呈现上下文菜单，常规菜单则接收触发器。使用 `npx master-ui add menu` 将组件复制到项目中。[React、Svelte 和 Vue](/guide/frameworks) 介绍了这些组件的实现和用法。
+
+<FrameworkSource name="menu" />
+
+## 类名 \{#classes\}
+
+<ContractTable name="menu" />
+
+## 自定义属性 \{#custom-properties\}
+
+<ContractTable name="menu" show="properties" />
+
+## 源码 \{#source\}
+
+<ComponentSource name="menu" />

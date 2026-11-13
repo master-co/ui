@@ -1,0 +1,120 @@
+---
+title: "スケジュール"
+description: "1 日の時刻を縦軸に並べ、予定の長さを高さで表すコンポーネント。"
+---
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+スケジュールは、1 日の時刻を縦軸に並べ、各予定の所要時間を高さで表します。カレンダーの日表示、会議の会場別プログラム、クリニックの予約表などに使えます。予定は順序付きリストで、各項目にタイトルと時刻をテキストで記述します。スタイルシートが予定を時間軸上に配置し、1 時間ごとに極細線と時刻ラベルを表示します。重なる予定は横に並びます。スクリプトや寸法の計測は不要です。
+
+<ComponentPreview name="default" height={400} title="スケジュール" bodyClass="p-lg" html={`<div class="card max-w(480) mx-auto">
+  <div class="schedule schedule-now" style="--schedule-from: 9; --schedule-to: 15; --now: 12.45">
+    <ol class="schedule-rail" aria-hidden="true"><li>9 AM</li><li>10 AM</li><li>11 AM</li><li>12 PM</li><li>1 PM</li><li>2 PM</li><li>3 PM</li></ol>
+    <ol class="schedule-events" aria-label="Thursday 13 November">
+    <li class="schedule-event" style="--start: 9; --end: 9.5"><p class="schedule-title">Standup</p><p class="schedule-time"><time datetime="09:00">9:00</time> – <time datetime="09:30">9:30</time></p></li>
+    <li class="schedule-event" style="--start: 10; --end: 11.5; --lanes: 2"><p class="schedule-title">Design review</p><p class="schedule-time"><time datetime="10:00">10:00</time> – <time datetime="11:30">11:30</time></p></li>
+    <li class="schedule-event" style="--start: 10.5; --end: 12; --lane: 1; --lanes: 2"><p class="schedule-title">Interview: platform engineer</p><p class="schedule-time"><time datetime="10:30">10:30</time> – <time datetime="12:00">12:00</time></p></li>
+    <li class="schedule-event" style="--start: 12; --end: 12.25"><p class="schedule-title">Check-in with Alan</p><p class="schedule-time"><time datetime="12:00">12:00</time> – <time datetime="12:15">12:15</time></p></li>
+    <li class="schedule-event" style="--start: 12.75; --end: 13.75"><p class="schedule-title">Lunch with Ada</p><p class="schedule-time"><time datetime="12:45">12:45</time> – <time datetime="13:45">1:45</time></p></li>
+    <li class="schedule-event" style="--start: 14; --end: 14.5"><p class="schedule-title">1:1 with Grace</p><p class="schedule-time"><time datetime="14:00">2:00</time> – <time datetime="14:30">2:30</time></p></li>
+    </ol>
+  </div>
+</div>`} />
+
+## 予定の配置 \{#how-an-event-gets-its-place\}
+
+時間軸の開始時刻`--schedule-from`と終了時刻`--schedule-to`は`schedule`に設定します。1 時間分の高さは`--schedule-hour`で、指定がなければ 48px です。各`schedule-event`には`--start`と`--end`を時間軸と同じ時刻の数値で指定します。たとえば 10 時 30 分は 10.5、午後 1 時 45 分は 13.75 です。予定はその時刻に合わせて配置され、上下の極細線から 1px ずつ離れるため、時刻が連続する予定の間にも線が残ります。
+
+`schedule-rail`には、`--schedule-from`から`--schedule-to`まで、終了時刻も含めて 1 時間ごとのラベルを入れます。各ラベルは、対応する極細線の高さに中央をそろえて配置されます。読者になじみのある時刻表記を使ってください。時刻欄の幅は 48px（`--schedule-rail`）です。
+
+1 時間あたり 48px で 1 日全体を表示すると、高さは 1,100px を超えます。必要な時間帯に絞るか、スケジュールを[スクロール領域](/components/scroll-area)に入れてスクロールできるようにします。
+
+## 重なる予定 \{#events-that-overlap\}
+
+時間が重なる予定は、表示幅を分け合います。それぞれに、横に並ぶ予定の数を表す`--lanes`と、先頭を 0 とした並び位置を表す`--lane`を指定します。上の例では、デザインレビューと面接が同じ時間帯に 2 列で並んでいます。どの列に割り当てるかはデータに基づいてリストの描画側が決め、スタイルシートは指定された位置に配置します。
+
+## 短い予定 \{#short-events\}
+
+各予定はサイズコンテナーで、高さに応じてテキストの表示が変わります。
+
+- 既定の高さ設定では、1 時間以上の予定はタイトルの下に時刻を表示します。
+- それより短い予定では、タイトルと時刻を 1 行に並べ、予定の中央に配置します。両方が収まらない場合は時刻を非表示にします。
+- 既定の高さで 15 分の予定を表示する場合など、1 行分の高さもないときは、淡い色の面だけを表示します。テキストは支援技術が参照できるようリスト内に残り、時刻は時間軸上の位置で分かります。
+
+## 現在時刻と現在の予定 \{#now\}
+
+スケジュールに`schedule-now`を付けると、予定と同じ時間単位で指定した`--now`の位置にインク色の線が引かれ、その日の列の先頭に点が付きます。線は予定の背面を通るため、テキストに重なりません。
+
+`aria-current="true"`を付けた予定は、インク色の面で表示されます。進行中の予定や、スケジュールの横に詳細を開いている予定に使います。
+
+## 複数日の表示 \{#several-days\}
+
+数日分を横に並べるには、各日の`schedule-events`を`schedule-day`の中に置き、その上に`schedule-heading`を配置します。各日は横幅と時間軸を共有し、見出しと時刻の位置がそろいます。今日の列に`aria-current="date"`を付けると、見出しが強いインク色になり、現在時刻の線は今日の列では点付きで、ほかの日の列では極細線で表示されます。
+
+<ComponentPreview name="days" height={324} title="複数日の表示" bodyClass="p-lg" html={`<div class="card max-w(560) mx-auto">
+  <div class="schedule schedule-now" style="--schedule-from: 9; --schedule-to: 13; --now: 11.25">
+    <ol class="schedule-rail" aria-hidden="true"><li>9 AM</li><li>10 AM</li><li>11 AM</li><li>12 PM</li><li>1 PM</li></ol>
+    <section class="schedule-day" aria-labelledby="day-12">
+      <h3 class="schedule-heading" id="day-12">Wed 12</h3>
+      <ol class="schedule-events">
+        <li class="schedule-event" style="--start: 9; --end: 10"><p class="schedule-title">Roadmap</p><p class="schedule-time"><time datetime="09:00">9:00</time> – <time datetime="10:00">10:00</time></p></li>
+        <li class="schedule-event" style="--start: 11; --end: 12.5"><p class="schedule-title">Workshop</p><p class="schedule-time"><time datetime="11:00">11:00</time> – <time datetime="12:30">12:30</time></p></li>
+      </ol>
+    </section>
+    <section class="schedule-day" aria-current="date" aria-labelledby="day-13">
+      <h3 class="schedule-heading" id="day-13">Thu 13</h3>
+      <ol class="schedule-events">
+        <li class="schedule-event" style="--start: 9; --end: 9.5"><p class="schedule-title">Standup</p><p class="schedule-time"><time datetime="09:00">9:00</time> – <time datetime="09:30">9:30</time></p></li>
+        <li class="schedule-event" style="--start: 10; --end: 11.5; --lanes: 2"><p class="schedule-title">Design review</p><p class="schedule-time"><time datetime="10:00">10:00</time> – <time datetime="11:30">11:30</time></p></li>
+        <li class="schedule-event" aria-current="true" style="--start: 10.5; --end: 12; --lane: 1; --lanes: 2"><p class="schedule-title">Interview</p><p class="schedule-time"><time datetime="10:30">10:30</time> – <time datetime="12:00">12:00</time></p></li>
+        <li class="schedule-event" style="--start: 12.25; --end: 13"><p class="schedule-title">Lunch</p><p class="schedule-time"><time datetime="12:15">12:15</time> – <time datetime="13:00">1:00</time></p></li>
+      </ol>
+    </section>
+    <section class="schedule-day" aria-labelledby="day-14">
+      <h3 class="schedule-heading" id="day-14">Fri 14</h3>
+      <ol class="schedule-events">
+        <li class="schedule-event" style="--start: 9.5; --end: 10.25"><p class="schedule-title">Sync</p><p class="schedule-time"><time datetime="09:30">9:30</time> – <time datetime="10:15">10:15</time></p></li>
+        <li class="schedule-event" style="--start: 11.5; --end: 13"><p class="schedule-title">Offsite</p><p class="schedule-time"><time datetime="11:30">11:30</time> – <time datetime="13:00">1:00</time></p></li>
+      </ol>
+    </section>
+  </div>
+</div>`} />
+
+3〜5日分ならカード内でも読みやすく、1週間分にはページ幅が適しています。狭いカラムでも各日の表示幅は均等に保たれ、収まりきらないタイトルの末尾は省略記号で表示されます。
+
+## 詳細を開く予定 \{#events-that-open-something\}
+
+予定の詳細を開けるようにする場合は、リスト項目自体ではなく、その中のリンクまたはボタンに`schedule-event`を指定します。配置は同じで、ポインターを重ねると色が一段濃くなり、キーボードでフォーカスするとフォーカスリングが表示されます。
+
+```html
+<li>
+  <a class="schedule-event" href="/events/design-review" style="--start: 10; --end: 11.5">
+    <span class="schedule-title">Design review</span>
+    <span class="schedule-time"><time datetime="10:00">10:00</time> – <time datetime="11:30">11:30</time></span>
+  </a>
+</li>
+```
+
+## スケジュール、ガントチャート、カレンダー \{#schedule-gantt-or-calendar\}
+
+スケジュールは、1日の時間の流れを上から下へ読むためのものです。計画の各項目を1行ずつ割り当て、共通の時間軸に期間を示すには[ガントチャート](/components/gantt)を使います。月表示から日付を選ぶには[カレンダー](/components/calendar)、出来事を発生順に並べるには[タイムライン](/components/timeline)を使います。
+
+## アクセシビリティ \{#accessibility\}
+
+- 予定を時刻順に`<ol>`に並べ、アクセシブルな名前を付けます。1日分なら`aria-label`を使い、複数日なら各日の`schedule-day`に`aria-labelledby`を指定して、その日の見出しを参照します。
+- 各予定にはタイトルと時刻をテキストで記載し、時刻には`<time datetime>`を使います。これにより、図がなくても「デザインレビュー、10:00から11:30まで」と読み上げられます。時刻欄は同じ時間軸を視覚化したものなので、`aria-hidden="true"`で支援技術から隠します。
+- 現在の予定と今日の列には`aria-current`を指定し、スクリーンリーダーがその状態を読み上げられるようにします。現在時刻の線はスタイルシートで描画されるため、時刻を伝える必要がある箇所にはテキストでも記載します。
+- 強制カラーモードでは、各予定に輪郭が付き、現在の予定はハイライト色で塗りつぶされます。細い罫線と現在時刻の線にはシステムカラーが使われます。
+
+## クラス \{#classes\}
+
+<ContractTable name="schedule" />
+
+## カスタムプロパティ \{#custom-properties\}
+
+<ContractTable name="schedule" show="properties" />
+
+## ソース \{#source\}
+
+<ComponentSource name="schedule" />

@@ -1,0 +1,110 @@
+---
+title: "迷你趋势线"
+description: "用一条细线显示趋势，适合嵌入正文、列表行或统计指标。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+迷你趋势线用一条细线呈现趋势，足够小，可以放在[统计指标](/components/stat)的数值下方、[表格](/components/table)的一列中，或直接嵌入句子。它是一个内联 SVG，会随可用空间拉伸，线条始终保持 1.5px 的描边，并沿用周围文字的墨色。圆点标记最新值，无论图形如何拉伸都保持圆形。无需脚本。
+
+<ComponentPreview name="default" height={224} narrowHeight={240} title="迷你趋势线" bodyClass="p-lg" html={`<div class="card max-w(320) mx-auto">
+  <div class="stat">
+    <p class="stat-label">Requests per day</p>
+    <div class="stat-row">
+      <p class="stat-value">61,240</p>
+      <p class="stat-delta stat-delta-up">12.4%</p>
+    </div>
+    <span class="sparkline" style="--sparkline-width: 100%; --sparkline-height: 2.5rem" aria-hidden="true"><svg class="sparkline-plot" viewBox="0 0 100 100" preserveAspectRatio="none"><path class="sparkline-area" d="M0 100 L7.69 90 L15.38 93.3 L23.08 76.7 L30.77 83.3 L38.46 66.7 L46.15 56.7 L53.85 63.3 L61.54 46.7 L69.23 30 L76.92 40 L84.62 20 L92.31 10 L100 0 V100 H0 Z" /><line class="sparkline-baseline" x1="0" y1="55.5" x2="100" y2="55.5" /><path class="sparkline-line" d="M0 100 L7.69 90 L15.38 93.3 L23.08 76.7 L30.77 83.3 L38.46 66.7 L46.15 56.7 L53.85 63.3 L61.54 46.7 L69.23 30 L76.92 40 L84.62 20 L92.31 10 L100 0" /></svg><span class="sparkline-dot" style="--x: 100; --y: 0"></span></span>
+    <p class="stat-description">The last 14 days; the dotted line is their average</p>
+  </div>
+</div>`} />
+
+## 线条的绘制方式 \{#how-the-line-is-drawn\}
+
+图形使用带有 `viewBox="0 0 100 100"` 和 `preserveAspectRatio="none"` 的 `<svg class="sparkline-plot">` 绘制。坐标框宽高各为 100 个单位，会拉伸到迷你趋势线的尺寸。只需在这个坐标框中定义一次各点坐标，线条就能适应句子和卡片。
+
+- **横向**，第一个点在 0，最后一个点在 100，各点等距排列。有 14 个值时，相邻两点相隔 100 / 13 个单位。
+- **纵向**，按 SVG 坐标规则，顶部为 0，底部为 100。将最小值映射到 100，最大值映射到 0。比较多条迷你趋势线时，也可以自定义刻度。
+
+`sparkline-line` 用一条 `<path>`（或一条 `<polyline>`）依次连接各点。描边不会随坐标框拉伸（`vector-effect: non-scaling-stroke`），因此在任何尺寸下都保持 1.5px，线段以圆角连接，线端采用圆头。
+
+迷你趋势线只呈现走势。下表中的每条线都以各自的最小值和最大值为刻度范围，因此只能看出各项目的变化方向。比较项目的数值大小时，请看线条旁边的数字。
+
+## 最新值 \{#the-latest-value\}
+
+`sparkline-dot` 用 HTML 绘制小圆点，因为 SVG 圆形会随图形拉伸成椭圆。用 `--x` 和 `--y` 将圆点的中心定位到最后一个点的坐标上，沿用同一套 100 × 100 的坐标。圆点周围有一圈与背后表面同色的描边，遮住靠近圆点的线条，使线条在圆点处收尾。迷你趋势线在自身的盒子内为圆点留出半个圆点宽度的空间，避免它挤到后面的文字。
+
+## 填充区域与基准线 \{#area-and-baseline\}
+
+`sparkline-area` 用一条 `<path>` 连接相同的点，再沿底边闭合（`V100 H0 Z`）。填充使用比线条更浅的同色，并向下渐隐。将填充区域放在线条之前，让线条绘制在它上方。
+
+`sparkline-baseline` 是一条由点组成的细线，用 `<line>` 在均值、目标值或上一周期数值对应的高度从 0 画到 100。它比趋势线更淡，旁边的文字说明它标记的值，如上方的统计指标所示。
+
+## 在句子中使用 \{#in-a-sentence\}
+
+迷你趋势线宽 4em、高 .75em，高度接近大写字母。它的垂直中心与旁边大写字母的中心对齐，因此能像单词一样嵌入一行文字。无论在页面、卡片还是墨色表面上，它都沿用文字的墨色。
+
+<ComponentPreview name="sentence" height={96} narrowHeight={112} title="在句子中使用" background="plain" bodyClass="p-lg" html={`<p class="m(0) max-w(440) mx-auto fg-text-body">Requests rose all fortnight <span class="sparkline" aria-hidden="true"><svg class="sparkline-plot" viewBox="0 0 100 100" preserveAspectRatio="none"><path class="sparkline-line" d="M0 100 L7.69 90 L15.38 93.3 L23.08 76.7 L30.77 83.3 L38.46 66.7 L46.15 56.7 L53.85 63.3 L61.54 46.7 L69.23 30 L76.92 40 L84.62 20 L92.31 10 L100 0" /></svg><span class="sparkline-dot" style="--x: 100; --y: 0"></span></span> to 61,000 a day, while latency fell <span class="sparkline" aria-hidden="true"><svg class="sparkline-plot" viewBox="0 0 100 100" preserveAspectRatio="none"><path class="sparkline-line" d="M0 0 L7.69 11.1 L15.38 3.7 L23.08 20.4 L30.77 25.9 L38.46 22.2 L46.15 42.6 L53.85 55.6 L61.54 50 L69.23 66.7 L76.92 75.9 L84.62 72.2 L92.31 85.2 L100 100" /></svg></span> to 128 ms.</p>`} />
+
+## 在表格中使用 \{#in-a-table\}
+
+可以为单条迷你趋势线设置 `--sparkline-width` 和 `--sparkline-height`，也可以在表格等容器上统一设置这两个属性，让容器内的所有迷你趋势线采用相同的尺寸。要让迷你趋势线像上方统计指标中的示例一样适应卡片尺寸，请使用 `--sparkline-width: 100%`。
+
+<ComponentPreview name="table" height={196} title="在表格中使用" bodyClass="p-lg" html={`<div class="sheet overflow-hidden max-w(480) mx-auto">
+  <table class="table table-compact" style="--sparkline-width: 5rem; --sparkline-height: 1rem">
+    <thead>
+      <tr class="table-row">
+        <th class="table-heading" scope="col">Project</th>
+        <th class="table-heading" scope="col">Last 14 days</th>
+        <th class="table-heading table-numeric" scope="col">Today</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="table-row">
+        <th class="table-cell table-primary" scope="row">Atlas</th>
+        <td class="table-cell"><span class="sparkline" role="img" aria-label="Rising steadily"><svg class="sparkline-plot" viewBox="0 0 100 100" preserveAspectRatio="none"><path class="sparkline-line" d="M0 100 L7.69 90 L15.38 93.3 L23.08 76.7 L30.77 83.3 L38.46 66.7 L46.15 56.7 L53.85 63.3 L61.54 46.7 L69.23 30 L76.92 40 L84.62 20 L92.31 10 L100 0" /></svg><span class="sparkline-dot" style="--x: 100; --y: 0"></span></span></td>
+        <td class="table-cell table-numeric">61,240</td>
+      </tr>
+      <tr class="table-row">
+        <th class="table-cell table-primary" scope="row">Borealis</th>
+        <td class="table-cell"><span class="sparkline" role="img" aria-label="Falling"><svg class="sparkline-plot" viewBox="0 0 100 100" preserveAspectRatio="none"><path class="sparkline-line" d="M0 5.9 L7.69 17.6 L15.38 0 L23.08 23.5 L30.77 35.3 L38.46 29.4 L46.15 52.9 L53.85 41.2 L61.54 70.6 L69.23 58.8 L76.92 82.4 L84.62 76.5 L92.31 94.1 L100 100" /></svg><span class="sparkline-dot" style="--x: 100; --y: 100"></span></span></td>
+        <td class="table-cell table-numeric">36,018</td>
+      </tr>
+      <tr class="table-row">
+        <th class="table-cell table-primary" scope="row">Cirrus</th>
+        <td class="table-cell"><span class="sparkline" role="img" aria-label="Rising slowly"><svg class="sparkline-plot" viewBox="0 0 100 100" preserveAspectRatio="none"><path class="sparkline-line" d="M0 100 L7.69 79.2 L15.38 91.7 L23.08 58.3 L30.77 66.7 L38.46 45.8 L46.15 54.2 L53.85 33.3 L61.54 41.7 L69.23 20.8 L76.92 29.2 L84.62 12.5 L92.31 16.7 L100 0" /></svg><span class="sparkline-dot" style="--x: 100; --y: 0"></span></span></td>
+        <td class="table-cell table-numeric">16,420</td>
+      </tr>
+    </tbody>
+  </table>
+</div>`} />
+
+## 状态墨色 \{#status-inks\}
+
+`sparkline-success`、`sparkline-warning` 和 `sparkline-danger` 为线条和圆点应用状态墨色。上升也可能意味着情况变差，例如错误增多时，线条会上升，并使用危险状态的墨色。仅在旁边的文字也表达同一状态时使用这些墨色，让读者也能通过文字判断状态。
+
+<ComponentPreview name="tones" height={96} narrowHeight={136} title="状态墨色" background="plain" bodyClass="p-lg" html={`<p class="m(0) max-w(440) mx-auto fg-text-body">After the fix, errors fell by half <span class="sparkline sparkline-success" aria-hidden="true"><svg class="sparkline-plot" viewBox="0 0 100 100" preserveAspectRatio="none"><path class="sparkline-line" d="M0 9.1 L7.69 0 L15.38 15.2 L23.08 6.1 L30.77 21.2 L38.46 39.4 L46.15 60.6 L53.85 72.7 L61.54 78.8 L69.23 87.9 L76.92 81.8 L84.62 90.9 L92.31 97 L100 100" /></svg><span class="sparkline-dot" style="--x: 100; --y: 100"></span></span> to 18 an hour. Checkout got slower <span class="sparkline sparkline-danger" aria-hidden="true"><svg class="sparkline-plot" viewBox="0 0 100 100" preserveAspectRatio="none"><path class="sparkline-line" d="M0 91.7 L7.69 100 L15.38 83.3 L23.08 91.7 L30.77 75 L38.46 83.3 L46.15 66.7 L53.85 58.3 L61.54 66.7 L69.23 41.7 L76.92 33.3 L84.62 25 L92.31 16.7 L100 0" /></svg><span class="sparkline-dot" style="--x: 100; --y: 0"></span></span> and now takes 3.2 seconds.</p>`} />
+
+## 无障碍 \{#accessibility\}
+
+- 如果旁边的文字没有说明趋势，请为迷你趋势线设置 `role="img"`，并用 `aria-label` 描述趋势，例如“每日计数从 31,000 增至 61,000”。其中的图形会作为一张图像处理。
+- 如果旁边的文字或数字已经说明了趋势，例如在句子或统计指标中，请使用 `aria-hidden="true"` 隐藏迷你趋势线，避免重复朗读。
+- 在强制颜色模式下，线条和圆点使用文字颜色，填充区域会被省略。
+
+## SVG 遮罩的回退方案 \{#platform\}
+
+填充区域通过应用于 SVG 图形的 CSS 遮罩实现渐隐。如果浏览器不支持为 SVG 图形应用遮罩，填充区域会使用均匀的同色浅填充。
+
+## 类名 \{#classes\}
+
+<ContractTable name="sparkline" />
+
+## 自定义属性 \{#custom-properties\}
+
+<ContractTable name="sparkline" show="properties" />
+
+## 源码 \{#source\}
+
+<ComponentSource name="sparkline" />

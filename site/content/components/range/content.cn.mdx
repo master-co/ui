@@ -1,0 +1,76 @@
+---
+title: "范围滑块"
+description: "在同一条轨道上选取两个值，用墨色填充两个滑柄之间的区域。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+范围滑块在同一刻度上选取两个值，例如最低价和最高价，或片段的起点和终点。它由同一组内的两个原生[滑块控件](/components/slider)组成。整组共用一条轨道，两个滑柄之间用墨色填充。每个输入控件都保留各自的键盘操作、标签和表单值。
+
+<ComponentPreview name="default" height={112} title="范围滑块" background="plain" bodyClass="p-lg" html={`<div class="flex flex-col gap-sm max-w(360) mx-auto">
+  <div class="flex items-baseline justify-between text-sm">
+    <span class="fg-text-strong" id="price">Price</span>
+    <output class="fg-text-muted" id="price-output">$120 to $380</output>
+  </div>
+  <div class="range" role="group" aria-labelledby="price">
+    <input type="range" class="slider range-start" min="0" max="500" step="10" value="120" aria-label="Lowest price">
+    <input type="range" class="slider range-end" min="0" max="500" step="10" value="380" aria-label="Highest price">
+  </div>
+</div>
+<script>
+(function () {
+  var range = document.querySelector('.range')
+  var output = document.getElementById('price-output')
+  range.addEventListener('input', function () {
+    var values = Array.from(range.querySelectorAll('.slider'), function (slider) { return Number(slider.value) })
+    output.textContent = '$' + Math.min.apply(null, values) + ' to $' + Math.max.apply(null, values)
+  })
+})()
+</script>`} caption="拖动任一滑柄，或将焦点移到其中一个滑柄上，再按方向键。脚本只负责更新轨道上方的两个数值。" />
+
+## 无需脚本的填充 \{#no-script-for-the-fill\}
+
+和单滑块控件确定填充范围的方式一样，每个滑柄都在所属的输入控件内充当一条视图时间轴。整组通过 `timeline-scope` 引用两条时间轴，各运行一个动画，得到两个百分比。填充从较小百分比延伸到较大百分比，因此两个滑柄可以互相越过，填充仍位于两者之间，较小的值仍是范围的起点。
+
+在表单处理函数中也按同样的规则读取这两个值，将较小值作为下限。如果两个值必须保持一定距离，请在 `input` 事件中限制取值。轨道的绘制独立于这一限制。
+
+浏览器不支持滚动驱动动画时，两个滑柄下方只显示一条普通的凹槽轨道，两个输入控件仍可照常操作。Chromium 和 Safari 26 会绘制填充。
+
+## 两个滑柄如何共用轨道 \{#how-the-thumbs-share-a-track\}
+
+两个输入控件位于同一个网格单元格内。两个输入控件都隐藏各自的轨道，只在各自的滑柄上接收指针事件。按下两个滑柄之间的区域时，两个输入控件都收不到该事件，滑柄也不会被另一个输入控件的空轨道遮住。正在移动的滑柄会显示在最上层。按下轨道空白处不会有任何反应，因为无法判断要移动哪个滑柄。
+
+## 禁用 \{#disabled\}
+
+禁用两个输入控件。滑柄和填充会一起淡化。
+
+<ComponentPreview name="disabled" height={96} title="禁用" background="plain" bodyClass="p-lg" html={`<div class="range max-w(360) mx-auto" role="group" aria-label="Seats, set by your plan">
+  <input type="range" class="slider range-start" value="20" aria-label="Fewest seats" disabled>
+  <input type="range" class="slider range-end" value="60" aria-label="Most seats" disabled>
+</div>`} />
+
+## 无障碍 \{#accessibility\}
+
+- 为整组设置 `role="group"` 和名称，并为每个输入控件分别设置 `aria-label`。用“最低价”和“最高价”这样的具体名称代替“起点”和“终点”。
+- 在轨道附近显示两个数值。滑柄本身不显示数值。
+- 按 Tab 键可依次将焦点移到各个滑柄上，键盘操作与原生滑块控件一致。在触摸屏上，滑柄尺寸为 24px。
+- 当精确数值比拖动时对刻度的直观感受更重要时，再提供两个[步进器](/components/stepper)或两个数字输入框。
+
+## 类名 \{#classes\}
+
+<ContractTable name="range" />
+
+## 自定义属性 \{#custom-properties\}
+
+<ContractTable name="range" show="properties" />
+
+## 相关内容 \{#related\}
+
+<ComponentLinks slugs={['slider', 'stepper', 'calendar']} />
+
+## 源码 \{#source\}
+
+<ComponentSource name="range" />

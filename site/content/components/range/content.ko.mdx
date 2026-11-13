@@ -1,0 +1,76 @@
+---
+title: "범위 슬라이더"
+description: "하나의 트랙에서 두 값을 선택하고 그 사이를 색으로 채웁니다."
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+범위 슬라이더는 최저가와 최고가, 클립의 시작점과 끝점처럼 하나의 눈금에서 두 값을 선택하는 데 사용합니다. 네이티브 [슬라이더](/components/slider) 두 개를 하나의 그룹으로 묶습니다. 그룹은 트랙 하나를 그려 두 손잡이 사이를 색으로 채웁니다. 각 입력 요소에는 고유한 키보드 조작, 라벨, 폼 값이 유지됩니다.
+
+<ComponentPreview name="default" height={112} title="범위 슬라이더" background="plain" bodyClass="p-lg" html={`<div class="flex flex-col gap-sm max-w(360) mx-auto">
+  <div class="flex items-baseline justify-between text-sm">
+    <span class="fg-text-strong" id="price">Price</span>
+    <output class="fg-text-muted" id="price-output">$120 to $380</output>
+  </div>
+  <div class="range" role="group" aria-labelledby="price">
+    <input type="range" class="slider range-start" min="0" max="500" step="10" value="120" aria-label="Lowest price">
+    <input type="range" class="slider range-end" min="0" max="500" step="10" value="380" aria-label="Highest price">
+  </div>
+</div>
+<script>
+(function () {
+  var range = document.querySelector('.range')
+  var output = document.getElementById('price-output')
+  range.addEventListener('input', function () {
+    var values = Array.from(range.querySelectorAll('.slider'), function (slider) { return Number(slider.value) })
+    output.textContent = '$' + Math.min.apply(null, values) + ' to $' + Math.max.apply(null, values)
+  })
+})()
+</script>`} caption="어느 손잡이든 드래그하거나 포커스를 둔 뒤 방향키로 조작하세요. 스크립트는 트랙 위에 숫자 두 개를 표시하는 데만 사용됩니다." />
+
+## 스크립트 없는 채우기 \{#no-script-for-the-fill\}
+
+단일 슬라이더가 채울 구간을 계산할 때와 마찬가지로, 각 손잡이는 해당 입력 요소 안에서 뷰 타임라인을 이룹니다. 그룹은 `timeline-scope`로 두 타임라인을 가져와 각각에 애니메이션을 하나씩 적용해 백분율 두 개를 구합니다. 작은 값부터 큰 값까지 칠하므로 두 손잡이가 서로 지나쳐도 그 사이가 채워지고, 두 값 중 작은 값이 계속 범위의 시작점이 됩니다.
+
+폼 핸들러에서도 두 값 중 작은 값을 하한으로 처리하세요. 두 값 사이에 일정 간격을 유지해야 한다면 `input`에서 값의 범위를 제한하세요. 이런 제한이 없어도 채우기 표시는 동작합니다.
+
+브라우저가 스크롤 기반 애니메이션을 지원하지 않으면 두 손잡이 아래의 트랙은 채워지지 않은 오목한 영역으로 표시되며, 두 입력 요소는 평소대로 동작합니다. Chromium과 Safari 26에서는 손잡이 사이가 채워집니다.
+
+## 두 손잡이의 트랙 공유 방식 \{#how-the-thumbs-share-a-track\}
+
+두 입력 요소는 같은 그리드 셀에 놓입니다. 각 입력 요소는 자체 트랙을 표시하지 않고 손잡이에서만 포인터 입력을 받습니다. 따라서 손잡이 사이를 눌러도 어느 쪽에도 입력이 전달되지 않으며, 손잡이가 다른 입력 요소의 빈 트랙에 가려지지도 않습니다. 움직이는 손잡이는 맨 앞으로 올라옵니다. 트랙의 빈 부분을 누르면 두 손잡이 중 어느 쪽을 움직여야 할지 알 수 없으므로 아무 동작도 일어나지 않습니다.
+
+## 비활성화 \{#disabled\}
+
+두 입력 요소를 모두 비활성화하세요. 손잡이와 채워진 구간이 함께 흐려집니다.
+
+<ComponentPreview name="disabled" height={96} title="비활성화" background="plain" bodyClass="p-lg" html={`<div class="range max-w(360) mx-auto" role="group" aria-label="Seats, set by your plan">
+  <input type="range" class="slider range-start" value="20" aria-label="Fewest seats" disabled>
+  <input type="range" class="slider range-end" value="60" aria-label="Most seats" disabled>
+</div>`} />
+
+## 접근성 \{#accessibility\}
+
+- 그룹의 역할은 `role="group"`으로 지정하고 이름도 부여하세요. 각 입력 요소에는 `aria-label` 속성으로 별도의 이름을 지정하세요. ‘시작’과 ‘끝’ 대신 ‘최저가’와 ‘최고가’처럼 값의 의미가 드러나는 이름을 사용하세요.
+- 트랙 근처에 두 값을 표시하세요. 손잡이 자체에는 숫자가 표시되지 않습니다.
+- 탭 키로 각 손잡이에 포커스를 둘 수 있으며, 네이티브 슬라이더와 동일한 키로 조작할 수 있습니다. 터치스크린에서 손잡이 크기는 24px입니다.
+- 눈금 위에서 값을 조절하는 감각보다 정확한 수치 입력이 중요하다면 [스테퍼](/components/stepper) 두 개나 숫자 입력 필드 두 개도 제공하세요.
+
+## 클래스 \{#classes\}
+
+<ContractTable name="range" />
+
+## 사용자 지정 속성 \{#custom-properties\}
+
+<ContractTable name="range" show="properties" />
+
+## 관련 항목 \{#related\}
+
+<ComponentLinks slugs={['slider', 'stepper', 'calendar']} />
+
+## 소스 \{#source\}
+
+<ComponentSource name="range" />

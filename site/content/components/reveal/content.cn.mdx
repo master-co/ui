@@ -1,0 +1,85 @@
+---
+title: "滚动显现"
+description: "内容随滚动进入可见区域时出现。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+滚动显现让内容在滚入视口时逐渐出现。内容的起始部分逐渐进入视口时，内容一边淡入，一边向上移动几像素到达最终位置，随后保持静止。这个效果只用一个类和一段滚动驱动动画。无需监听元素或动态添加类，动画进度由滚动位置决定。
+
+<ComponentPreview name="default" height={360} title="滚动显现" bodyClass="block p-lg" caption="在预览中滚动，每张卡片进入可视区域时都会显现。" html={`<div class="flex flex-col gap-md max-w(420) mx-auto">
+  <p class="m(0) fg-text-muted text-sm text-center py-xl">Scroll down</p>
+  <article class="card mt(240)">
+    <header class="card-header">
+      <h3 class="card-title">Native first</h3>
+      <p class="card-description">Every overlay is a dialog or a popover, opened without script.</p>
+    </header>
+  </article>
+  <article class="card reveal">
+    <header class="card-header">
+      <h3 class="card-title">One material</h3>
+      <p class="card-description">Surfaces step apart on a ladder of light, in both themes.</p>
+    </header>
+  </article>
+  <article class="card reveal">
+    <header class="card-header">
+      <h3 class="card-title">Contracts</h3>
+      <p class="card-description">Each stylesheet says what it promises in a file beside it.</p>
+    </header>
+  </article>
+  <article class="card reveal" style="--reveal-scale: .96">
+    <header class="card-header">
+      <h3 class="card-title">Yours to change</h3>
+      <p class="card-description">Tokens retune every component; the source is there to own.</p>
+    </header>
+  </article>
+  <p class="m(0) fg-text-muted text-sm text-center py-xl">The end</p>
+</div>`} />
+
+## 工作原理 \{#how-it-works\}
+
+动画使用元素自己的视图时间线 `animation-timeline: view()`，在元素进入滚动容器可视区域的这段范围内播放。由滚动位置决定动画进度，会带来以下三种表现：
+
+- 页面打开时已经可见的内容完全不会移动，因为它在首帧之前就已完成入场。
+- 往回滚动时，动画会倒放，无需重置。
+- 元素按进入滚动容器可视区域的顺序依次显现，无需设置延迟或错开播放时间。
+
+`--reveal-range` 将动画限制在元素进入滚动容器可视区域的前 12rem 内，因此即使区块很高，淡入也不会持续一整屏。高度不足 12rem 的元素在完全进入可视区域时就会完成动画，因此页面末尾的内容也总能完整显现。
+
+## 调整效果 \{#tuning\}
+
+可在单个元素上或多个元素的共同父元素上设置以下三个属性：
+
+- `--reveal-distance` 控制上移距离，默认为 16px。设置 `0` 可仅保留淡入效果。
+- `--reveal-scale` 控制显现时的初始缩放比例。`.96` 适合图片或卡片，文字应保持原尺寸。
+- `--reveal-range` 控制元素进入滚动容器可视区域多远时完成动画。
+
+## 何时使用 \{#when-to-use-it\}
+
+在长页面中，将滚动显现用于完整的内容区块，例如落地页中的一个区段、一排卡片或一幅插图。适量使用。如果所有内容都带有入场动画，页面就会一直有内容在动，快速滚动的读者也得等内容显现。
+
+不要用于读者需要立即看到的文字、对话框或菜单内的任何内容，以及加载时会改变尺寸的内容。
+
+## 无滚动驱动动画时 \{#fallback\}
+
+浏览器不支持 `animation-timeline: view()`，或读者在系统中启用了减少动态效果时，这个类不起作用，内容会直接显示。打印时也是如此。透明度只在动画中设置，因此内容的显示始终独立于动画。
+
+## 无障碍 \{#accessibility\}
+
+- 内容从一开始就在文档和无障碍树中。进入滚动容器的可视区域时，只有透明度和位置会变化。
+- 启用 `prefers-reduced-motion: reduce` 时，内容直接显示，无淡入或位移。
+- 将位移控制在较小范围内。大区块长距离移动会扫过视口的大部分区域，有些读者看了会感到不适。
+
+## 类名 \{#classes\}
+
+<ContractTable name="reveal" />
+
+## 自定义属性 \{#custom-properties\}
+
+<ContractTable name="reveal" show="properties" />
+
+## 源码 \{#source\}
+
+<ComponentSource name="reveal" />

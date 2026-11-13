@@ -1,0 +1,111 @@
+---
+title: "执行轨迹"
+description: "逐行展示智能体或任务的执行过程，带详情的步骤可展开查看。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+执行轨迹逐步展示智能体或任务做了什么，包括思考了什么、搜索了什么、读取了什么以及执行了什么。每个步骤占一行，样式低调，标记排成一列，由细线相连。带详情的步骤使用原生 `<details>`，激活该行即可展开详情，无需脚本。没有详情的步骤显示为普通行。
+
+<ComponentPreview name="default" height={368} narrowHeight={440} title="执行轨迹" bodyClass="p-lg" html={`<div class="card max-w(440) mx-auto">
+  <div class="trace">
+    <details class="trace-step">
+      <summary class="trace-summary"><span class="trace-marker"></span>Thought about the migration<span class="trace-meta">8s</span></summary>
+      <div class="trace-detail">The table has two million rows, so the column is added as nullable first and filled in batches.</div>
+    </details>
+    <details class="trace-step" open>
+      <summary class="trace-summary"><span class="trace-marker"></span>Searched the codebase<span class="trace-meta">12 files</span></summary>
+      <div class="trace-detail"><code class="code">orders.status</code> is read in 12 files, 3 of them in the billing service.</div>
+    </details>
+    <div class="trace-step">
+      <p class="trace-summary"><span class="trace-marker"></span>Read schema.prisma<span class="trace-meta">0.4s</span></p>
+    </div>
+    <div class="trace-step" aria-busy="true">
+      <p class="trace-summary"><span class="trace-marker"></span>Writing the migration</p>
+    </div>
+  </div>
+</div>`} />
+
+## 步骤 \{#a-step\}
+
+每个步骤由 `trace-step` 包裹 `trace-summary`。行内包含标记和文字，末尾可加上 `trace-meta` 显示数字信息，如耗时或找到的结果数量。
+
+步骤有详情时，使用 `<details>`，把该行写在它的 `<summary>` 中，再用后面的 `trace-detail` 放置详情。样式表检测到详情后，会将该行设为展开和收起的控件。文字后会显示一个小箭头，步骤展开时箭头朝下。浏览器支持 `::details-content` 的过渡时，详情会逐渐展开到自身高度，否则会立即展开。页内查找命中已折叠步骤中的内容时，会自动展开该步骤，这与任何 `<details>` 的行为一致。
+
+## 标记 \{#markers\}
+
+空的 `trace-marker` 显示为小圆点。标记也可以包含[图标](/components/icon)来表示步骤类型，或在步骤运行时显示带有 `spinner-inline` 的[加载指示器](/components/spinner)。
+
+<ComponentPreview name="markers" height={264} narrowHeight={312} title="标记" bodyClass="p-lg" html={`<div class="card max-w(440) mx-auto">
+  <div class="trace">
+    <div class="trace-step">
+      <p class="trace-summary"><span class="trace-marker"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.5-4.5"/></svg></span>Searched for "rate limit"<span class="trace-meta">4 results</span></p>
+    </div>
+    <div class="trace-step">
+      <p class="trace-summary"><span class="trace-marker"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h7l4 4v12H7zM14 4v4h4"/></svg></span>Read limits.ts<span class="trace-meta">214 lines</span></p>
+    </div>
+    <div class="trace-step">
+      <p class="trace-summary"><span class="trace-marker"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 8 4 4-4 4M12 17h7"/></svg></span>Ran the tests<span class="trace-meta">48 passed</span></p>
+    </div>
+    <div class="trace-step" aria-busy="true">
+      <p class="trace-summary"><span class="trace-marker"><span class="spinner spinner-inline"></span></span>Writing the answer</p>
+    </div>
+  </div>
+</div>`} />
+
+## 运行中与失败 \{#running-and-failed\}
+
+正在运行的步骤带有 `aria-busy="true"`。该行文字使用强调色，仅显示为圆点的标记会向外扩散出一圈波纹。用户启用减少动态效果时，这一圈会显示为静止的光环。步骤结束时移除该属性。
+
+失败的步骤使用 `trace-failed`，其标记和行末的数字信息使用危险状态色。ARIA 没有表示列表项失败的状态，因此这里使用类名。在该行或展开后的详情中用文字说明哪里失败了，让颜色之外也有明确的提示。
+
+<ComponentPreview name="failed" height={272} narrowHeight={312} title="失败" bodyClass="p-lg" html={`<div class="card max-w(440) mx-auto">
+  <div class="trace">
+    <div class="trace-step">
+      <p class="trace-summary"><span class="trace-marker"></span>Installed dependencies<span class="trace-meta">14s</span></p>
+    </div>
+    <div class="trace-step">
+      <p class="trace-summary"><span class="trace-marker"></span>Compiled 38 routes<span class="trace-meta">48s</span></p>
+    </div>
+    <details class="trace-step trace-failed" open>
+      <summary class="trace-summary"><span class="trace-marker"></span>Ran the test suite<span class="trace-meta">2 failed</span></summary>
+      <div class="trace-detail">orders.spec.ts expected the status to be "paid" and received "pending", twice.</div>
+    </details>
+  </div>
+</div>`} />
+
+## 单行 \{#one-line\}
+
+只有一个步骤的执行轨迹显示在助手的回答上方，用一行说明做了什么、花了多久，展开后可查看背后的推理。
+
+<ComponentPreview name="one" height={168} narrowHeight={208} title="单个步骤" background="plain" bodyClass="p-lg" html={`<div class="trace max-w(440) mx-auto">
+  <details class="trace-step">
+    <summary class="trace-summary"><span class="trace-marker"></span>Thought for 12 seconds</summary>
+    <div class="trace-detail">The question is about the fallback, not the feature, so the answer starts from a browser without anchor positioning.</div>
+  </details>
+</div>`} />
+
+## 执行轨迹、时间线或步骤条 \{#trace-timeline-or-steps\}
+
+执行轨迹展示工作过程。步骤可能正在运行，也可能已经失败，展开后可查看详情。[时间线](/components/timeline)记录事件及其发生时间。[步骤条](/components/steps)呈现一组固定顺序的步骤，供用户依次完成。
+
+## 无障碍 \{#accessibility\}
+
+- 可展开的步骤使用 `<details>`。浏览器为该行提供展开控件的角色、状态和键盘操作。
+- 标记由样式表绘制，辅助技术不会播报它。标记中的图标仅用于装饰，请在该行用文字说明步骤内容。
+- 如果执行轨迹在显示期间会继续添加步骤，请将它放在带有 `aria-live="polite"` 的区域中，以便每个新步骤在加入时得到播报。运行中的步骤通过 `aria-busy` 同时向辅助技术和用户传达运行状态。
+- 在触摸屏上，每行高 44px。
+
+## 类名 \{#classes\}
+
+<ContractTable name="trace" />
+
+## 自定义属性 \{#custom-properties\}
+
+<ContractTable name="trace" show="properties" />
+
+## 源码 \{#source\}
+
+<ComponentSource name="trace" />

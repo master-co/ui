@@ -1,0 +1,90 @@
+---
+title: "内訳"
+description: "全体の内訳を 1 本のバーにまとめ、各項目の割合を幅で示します。"
+---
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+内訳は、ストレージの種類別使用量、サービス別の請求額、予算の使用額と残額などを 1 本のバーで示します。各区画の幅は全体に占める割合に対応します。リストの各項目には描画用の数値を 1 回指定し、項目名と数値をテキストでも記述します。スタイルシートがそのリストからバーとその下の凡例を描画するため、スクリプトも SVG も不要です。
+
+<ComponentPreview name="default" height={220} narrowHeight={248} title="内訳" bodyClass="p-lg" html={`<div class="card max-w(440) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Storage</h3>
+    <p class="card-description">90 GB of 128 GB used</p>
+  </div>
+  <ul class="breakdown" aria-label="Storage by kind">
+    <li class="breakdown-item" style="--value: 42"><span class="breakdown-label">Photos <span class="breakdown-value">42 GB</span></span></li>
+    <li class="breakdown-item" style="--value: 28"><span class="breakdown-label">Apps <span class="breakdown-value">28 GB</span></span></li>
+    <li class="breakdown-item" style="--value: 14"><span class="breakdown-label">Mail <span class="breakdown-value">14 GB</span></span></li>
+    <li class="breakdown-item" style="--value: 6"><span class="breakdown-label">System <span class="breakdown-value">6 GB</span></span></li>
+    <li class="breakdown-item breakdown-rest" style="--value: 38"><span class="breakdown-label">Free <span class="breakdown-value">38 GB</span></span></li>
+  </ul>
+</div>`} caption="区画にポインターを合わせると、ほかの区画の表示が控えめになります。" />
+
+## 区画の幅の決まり方 \{#how-a-part-gets-its-width\}
+
+各 `breakdown-item` のスタイルに `--value` を指定します。区画はその値に比例して広がり、全体に占める割合が幅に反映されます。パーセントに換算したり、合計を特定の値にそろえたりする必要はありません。ギガバイト、金額、件数などをそのまま使えます。値が 0 でも幅 2px の目印が残るため、項目が見えなくなることはありません。
+
+各項目は独立したボックスを持たず、区画はバーに、`breakdown-label` はバーの下で折り返す凡例に配置されます。リストの項目構造は保たれるため、支援技術でもデータとして読み取れます。
+
+区画は同じ色の濃淡で、濃いものから順に並びます。値の大きい順に並べ、項目は 5 つ程度に抑えます。5 段階の濃淡は見分けられますが、8 段階になると判別が難しくなります。
+
+## 未使用分 \{#what-is-left\}
+
+`breakdown-rest` は、空き容量、予算の残額、空席などの未使用分を示します。区画はくぼんだように表示され、凡例の印は輪郭だけの丸になります。使用済みと未使用は、グレーの濃淡に頼らず、質感の違いで区別できます。未使用分は最後に置きます。
+
+## 行形式 \{#rows\}
+
+`breakdown-rows` を指定すると、凡例は細い罫線で区切られ、1 項目につき 1 行で、各行の末尾に数値が表示されます。請求書のように、数値を読み取って比較するときに使います。`--breakdown-height` を指定すると、バーが太くなります。
+
+<ComponentPreview name="rows" height={308} title="行形式" bodyClass="p-lg" html={`<div class="card max-w(340) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">November</h3>
+    <p class="card-description">$3,074 so far</p>
+  </div>
+  <ul class="breakdown breakdown-rows" style="--breakdown-height: .625rem" aria-label="Spend by service">
+    <li class="breakdown-item" style="--value: 1840"><span class="breakdown-label">Compute <span class="breakdown-value">$1,840</span></span></li>
+    <li class="breakdown-item" style="--value: 920"><span class="breakdown-label">Storage <span class="breakdown-value">$920</span></span></li>
+    <li class="breakdown-item" style="--value: 310"><span class="breakdown-label">Network <span class="breakdown-value">$310</span></span></li>
+    <li class="breakdown-item" style="--value: 4"><span class="breakdown-label">Support <span class="breakdown-value">$4</span></span></li>
+  </ul>
+</div>`} />
+
+## ステータス付きの項目 \{#status\}
+
+バーは単色です。失敗したリクエストなど、特定の状態を示す項目には、`--breakdown-fill` でステータス色を指定し、ラベルにも状態名を記載します。これにより、色だけに頼らずに状態を伝えられます。`--breakdown-color` は、各区画の濃淡の基準となる色を変更します。
+
+<ComponentPreview name="status" height={188} narrowHeight={220} title="ステータス" bodyClass="p-lg" html={`<div class="card max-w(440) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Requests</h3>
+    <p class="card-description">1.28M in the last hour</p>
+  </div>
+  <ul class="breakdown" aria-label="Requests by result">
+    <li class="breakdown-item" style="--value: 962"><span class="breakdown-label">Succeeded <span class="breakdown-value">96.2%</span></span></li>
+    <li class="breakdown-item" style="--value: 31"><span class="breakdown-label">Redirected <span class="breakdown-value">3.1%</span></span></li>
+    <li class="breakdown-item" style="--value: 7; --breakdown-fill: var(--color-danger)"><span class="breakdown-label">Failed <span class="breakdown-value">0.7%</span></span></li>
+  </ul>
+</div>`} />
+
+## 内訳とチャートの使い分け \{#breakdown-or-chart\}
+
+内訳は「何で構成されているか」を示し、合計に対する各項目の割合を読み取るために使います。[チャート](/components/chart)では、棒の長さを互いに比べたり、目盛りに照らして読んだりして、どの値が大きいかを確かめます。一定の範囲内にある 1 つの値には[メーター](/components/meter)を使います。
+
+## アクセシビリティ \{#accessibility\}
+
+- `<ul>` で記述し、順位を示す場合は `<ol>` を使います。`aria-label` または見出しでリストに名前を付けます。
+- 各項目の `breakdown-label` に、項目名と単位付きの数値を記載します。バーはスタイルシートで描画され、読み上げられません。
+- 区画の区別を濃淡だけに頼らないでください。凡例には、バーと同じ順序で各項目名が並びます。強制カラーモードでは、すべての区画がテキスト色になり、2px の間隔で区切られます。
+
+## クラス \{#classes\}
+
+<ContractTable name="breakdown" />
+
+## カスタムプロパティ \{#custom-properties\}
+
+<ContractTable name="breakdown" show="properties" />
+
+## ソース \{#source\}
+
+<ComponentSource name="breakdown" />

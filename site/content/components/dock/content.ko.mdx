@@ -1,0 +1,72 @@
+---
+title: "독"
+description: "실행 항목이 한 줄로 늘어서고 포인터 쪽의 타일이 커지는 컴포넌트입니다."
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+독은 반투명 유리 트레이에 실행 항목을 한 줄로 늘어놓은 컴포넌트입니다. 각 항목은 이미지나 아이콘을 담은 정사각형 타일이며 링크나 버튼으로 동작합니다. 포인터를 올리면 타일이 렌즈를 댄 듯 커집니다. 포인터 아래의 타일은 크기가 절반만큼 늘어나고, 양옆의 첫 번째 타일은 4분의 1보다 조금 더, 두 번째 타일은 10분의 1만큼 커져 줄 전체가 포인터 쪽으로 부드럽게 휘어 보입니다. 타일 위에는 잉크 색상의 레이블이 떠오르고, 현재 항목은 타일 아래의 점으로 표시합니다. 이 동작은 모두 CSS로 구현합니다. `:hover`, 인접 형제 결합자, `:has()`로 이웃 타일을 찾으므로 스크립트로 포인터 위치를 측정할 필요가 없습니다.
+
+<ComponentPreview name="default" height={152} title="독" bodyClass="flex items-end justify-center p-lg" html={`<nav class="dock" aria-label="Spaces">
+  <a class="dock-item" href="#harbor" aria-current="page"><img class="dock-image" src="/demo/harbor.svg" alt=""><span class="dock-label">Harbor</span></a>
+  <a class="dock-item" href="#dunes"><img class="dock-image" src="/demo/dunes.svg" alt=""><span class="dock-label">Dunes</span></a>
+  <a class="dock-item" href="#pines"><img class="dock-image" src="/demo/pines.svg" alt=""><span class="dock-label">Pines</span></a>
+  <a class="dock-item" href="#lighthouse"><img class="dock-image" src="/demo/lighthouse.svg" alt=""><span class="dock-label">Lighthouse</span></a>
+  <span class="dock-divider" role="separator" aria-orientation="vertical"></span>
+  <button type="button" class="dock-item"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.35-4.35"/></svg><span class="dock-label">Search</span></button>
+  <button type="button" class="dock-item"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16l-1 13H5zM10 11h4M3 4h18v3H3z"/></svg><span class="dock-label">Archive</span></button>
+</nav>`} caption="포인터를 독 위에서 움직이거나 Tab 키로 독에 포커스를 옮겨 보세요." />
+
+## 렌즈 효과 \{#lens\}
+
+타일의 기본 크기는 40px입니다. 포인터 아래의 타일은 60px, 양옆의 첫 번째 타일은 51px, 두 번째 타일은 44px이 됩니다. `--dock-magnify`로 가장 큰 크기를 설정하면 나머지 크기는 그 값에 따라 정해집니다. 변형 효과 대신 타일의 실제 크기가 커지므로 타일이 서로 겹치지 않고 포인터 주변에서 공간을 넓히며 트레이도 그만큼 넓어집니다. 타일은 트레이 바닥을 기준으로 위쪽 가장자리를 넘어 커지며, 테마의 이징을 따라 부드럽게 전환됩니다. 각 타일의 반응 영역은 이웃 타일과의 간격 중 절반까지 뻗어 있어 포인터가 타일 사이를 지날 때도 렌즈 효과가 이어집니다.
+
+렌즈 효과는 호버를 지원하는 포인터에서 동작합니다. 터치 화면에서는 44px 타일이 한 줄로 나열됩니다. 동작 줄이기 설정이 켜져 있으면 타일 크기는 그대로 유지되며 레이블은 여전히 표시됩니다. 독에 타일을 배치할 공간이 부족하면 모든 타일이 정사각형을 유지한 채 작아집니다.
+
+## 타일 \{#tiles\}
+
+타일은 살짝 떠 있는 표면으로, 한 변 길이의 절반 크기인 아이콘이나 타일을 가득 채우는 `dock-image`를 담습니다. 이미지는 `alt`를 비워 둡니다. 레이블이 실행 항목의 이름을 제공하기 때문입니다. 타일의 모서리 반경은 한 변 길이의 4분의 1이므로 40px 컨트롤에서는 10px입니다. 트레이의 모서리 반경은 여기에 8px의 안쪽 여백을 더한 값이므로 모서리에서도 두 곡선 사이의 간격이 일정합니다.
+
+링크로 된 실행 항목이 현재 위치를 가리키면 `aria-current="page"`를 지정합니다. 패널을 여는 등 무언가를 켜는 버튼에는 `aria-pressed`를 지정합니다. 두 경우 모두 타일 아래에 잉크 색상의 점을 표시합니다. 버튼으로 구성된 독에는 `role="toolbar"`와 이름을 지정하세요.
+
+<ComponentPreview name="panels" height={152} title="토글" bodyClass="flex items-end justify-center p-lg" html={`<div class="dock" id="panels" role="toolbar" aria-label="Panels">
+  <button type="button" class="dock-item" aria-pressed="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 4 8 4-8 4-8-4z"/><path d="m4 12 8 4 8-4"/><path d="m4 16 8 4 8-4"/></svg><span class="dock-label">Layers</span></button>
+  <button type="button" class="dock-item" aria-pressed="false"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5h14v10H10l-5 4z"/></svg><span class="dock-label">Comments</span></button>
+  <button type="button" class="dock-item" aria-pressed="false"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg><span class="dock-label">History</span></button>
+  <span class="dock-divider" role="separator" aria-orientation="vertical"></span>
+  <button type="button" class="dock-item"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg><span class="dock-label">Settings</span></button>
+</div>
+<script>
+  document.querySelectorAll('#panels [aria-pressed]').forEach(function (button) {
+    button.addEventListener('click', function () {
+      button.setAttribute('aria-pressed', button.getAttribute('aria-pressed') === 'true' ? 'false' : 'true')
+    })
+  })
+</script>`} caption="타일을 눌러 해당 패널을 표시하거나 숨기세요." />
+
+`dock-divider`는 짧고 가는 선으로 그룹을 구분합니다. 렌즈 효과는 이 구분선을 건너뛰고 이어집니다.
+
+## 배치 \{#placing\}
+
+독의 위치는 페이지에서 정합니다. 보통 화면 하단 중앙의 전용 영역에 배치하거나 `fixed` 또는 `sticky` 유틸리티로 그 위치에 고정합니다. 커진 타일과 레이블이 들어갈 수 있도록 독 위에 약 48px의 공간을 남겨 두세요.
+
+## 접근성 \{#accessibility\}
+
+- 실행 항목이 다른 위치로 이동하는 링크라면 `aria-label`이 지정된 `nav`로 감싸세요. 버튼으로 구성된 독에는 `role="toolbar"`와 레이블을 지정하세요.
+- 레이블은 각 실행 항목의 접근 가능한 이름입니다. 포인터를 올리거나 키보드로 포커스를 옮기기 전까지는 보이지 않지만, 페이지에 남아 있어 스크린 리더가 읽을 수 있습니다.
+- 모든 실행 항목은 Tab 키로 포커스를 받을 수 있으며, 포커스를 받으면 레이블과 포커스 윤곽선이 표시됩니다.
+- 실행 항목의 이름을 이미지에만 넣지 마세요. 레이블이 실행 항목의 유일한 텍스트입니다.
+
+## 클래스 \{#classes\}
+
+<ContractTable name="dock" />
+
+## 사용자 지정 속성 \{#custom-properties\}
+
+<ContractTable name="dock" show="properties" />
+
+## 소스 \{#source\}
+
+<ComponentSource name="dock" />

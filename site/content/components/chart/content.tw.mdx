@@ -1,0 +1,220 @@
+---
+title: "圖表"
+description: "由樣式表把清單中的幾個數值畫成長條。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+圖表用長條呈現幾個數值。它的結構是一份清單，每個項目的數值寫兩次，一次供繪圖，一次供閱讀。樣式表會畫出長條和底下的刻度，並在指標移到長條上時顯示數值。長條和[進度條](/components/progress)一樣，以實色填滿。整個圖表無須腳本或 SVG。
+
+<ComponentPreview name="default" height={336} title="圖表" bodyClass="p-lg" html={`<div class="card max-w(420) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Deployments</h3>
+    <p class="card-description">311 this week</p>
+  </div>
+  <ol class="chart" aria-label="Deployments per day, this week">
+    <li class="chart-item" style="--value: 42"><span class="chart-label">Mon</span><span class="chart-value">42</span></li>
+    <li class="chart-item" style="--value: 58"><span class="chart-label">Tue</span><span class="chart-value">58</span></li>
+    <li class="chart-item" style="--value: 36"><span class="chart-label">Wed</span><span class="chart-value">36</span></li>
+    <li class="chart-item" style="--value: 71"><span class="chart-label">Thu</span><span class="chart-value">71</span></li>
+    <li class="chart-item" style="--value: 64"><span class="chart-label">Fri</span><span class="chart-value">64</span></li>
+    <li class="chart-item" style="--value: 22"><span class="chart-label">Sat</span><span class="chart-value">22</span></li>
+    <li class="chart-item" style="--value: 18"><span class="chart-label">Sun</span><span class="chart-value">18</span></li>
+  </ol>
+</div>`} caption="將指標移到直條上，其他長條會淡化，該直條的數值則會顯示。" />
+
+## 長條的高度如何決定 \{#how-a-bar-gets-its-height\}
+
+在每個 `chart-item` 的 `style` 裡設定 `--value`。在圖表上用 `--chart-max` 設定刻度上限（預設為 100），並用 `--chart-height` 設定繪圖區高度。長條高度取決於數值占上限的比例。超過上限時，長條會填滿繪圖區。數值為零時，基線上仍會留下 1 像素高的短線，讓沒有數值的那天也有自己的位置。
+
+數值刻意寫兩次。`--value` 供繪圖使用。`chart-value` 則以易讀的文字格式呈現同一個數值。指標下的提示會顯示這個數值，螢幕閱讀器也能讀出它，使用者還能搜尋或複製這段文字。
+
+四條細線等距標示刻度。用 `--chart-lines` 配合刻度上限調整線數。上限為 100 時，設為五條就會每隔 20 畫一條線。
+
+## 突出單一項目 \{#quiet\}
+
+`chart-quiet` 會將長條改為淡色，只有標有 `aria-current` 的項目維持原色，例如一週中的今天、讀者目前使用的方案，或正在討論的版本。
+
+<ComponentPreview name="quiet" height={336} title="突出單一項目" bodyClass="p-lg" html={`<div class="card max-w(420) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Build minutes</h3>
+    <p class="card-description">Thursday so far</p>
+  </div>
+  <ol class="chart chart-quiet" aria-label="Build minutes per day, this week">
+    <li class="chart-item" style="--value: 42"><span class="chart-label">Mon</span><span class="chart-value">42</span></li>
+    <li class="chart-item" style="--value: 58"><span class="chart-label">Tue</span><span class="chart-value">58</span></li>
+    <li class="chart-item" style="--value: 36"><span class="chart-label">Wed</span><span class="chart-value">36</span></li>
+    <li class="chart-item" style="--value: 71" aria-current="true"><span class="chart-label">Thu</span><span class="chart-value">71</span></li>
+    <li class="chart-item" style="--value: 64"><span class="chart-label">Fri</span><span class="chart-value">64</span></li>
+    <li class="chart-item" style="--value: 22"><span class="chart-label">Sat</span><span class="chart-value">22</span></li>
+    <li class="chart-item" style="--value: 18"><span class="chart-label">Sun</span><span class="chart-value">18</span></li>
+  </ol>
+</div>`} />
+
+## 顯示所有數值 \{#values\}
+
+`chart-values` 會在每根長條上方直接標出數字。當長條不多且重點是精確數值，或要在無法懸停的觸控螢幕上呈現時，可使用這個樣式。
+
+<ComponentPreview name="values" height={248} title="顯示數值" bodyClass="p-lg" html={`<div class="card max-w(420) mx-auto">
+  <ol class="chart chart-values" style="--chart-height: 8rem" aria-label="Signups per day, this week">
+    <li class="chart-item" style="--value: 42"><span class="chart-label">Mon</span><span class="chart-value">42</span></li>
+    <li class="chart-item" style="--value: 58"><span class="chart-label">Tue</span><span class="chart-value">58</span></li>
+    <li class="chart-item" style="--value: 36"><span class="chart-label">Wed</span><span class="chart-value">36</span></li>
+    <li class="chart-item" style="--value: 71"><span class="chart-label">Thu</span><span class="chart-value">71</span></li>
+    <li class="chart-item" style="--value: 64"><span class="chart-label">Fri</span><span class="chart-value">64</span></li>
+    <li class="chart-item" style="--value: 22"><span class="chart-label">Sat</span><span class="chart-value">22</span></li>
+    <li class="chart-item" style="--value: 18"><span class="chart-label">Sun</span><span class="chart-value">18</span></li>
+  </ol>
+</div>`} />
+
+## 長條較多時 \{#many-bars\}
+
+各欄平分可用寬度，因此原本放一週的位置也放得下一個月。用 `--chart-gap` 縮小長條間距。名稱會對齊長條中央，寬度可以超過所在欄。每七個項目只標最後一個的名稱，其餘留白。名稱留白的項目請改用 `aria-label` 提供名稱，讓使用者知道數值對應哪個項目。
+
+<ComponentPreview name="dense" height={288} title="三十天" bodyClass="p-lg" responsive html={`<div class="card max-w(520) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Requests</h3>
+    <p class="card-description">Thousands per day, November</p>
+  </div>
+  <ol class="chart" style="--chart-gap: 3px; --chart-height: 7rem" aria-label="Requests per day in November, in thousands">
+    <li class="chart-item" style="--value: 49"><span class="chart-label">Nov 1</span><span class="chart-value">49</span></li>
+    <li class="chart-item" style="--value: 27" aria-label="Nov 2"><span class="chart-label"></span><span class="chart-value">27</span></li>
+    <li class="chart-item" style="--value: 58" aria-label="Nov 3"><span class="chart-label"></span><span class="chart-value">58</span></li>
+    <li class="chart-item" style="--value: 91" aria-label="Nov 4"><span class="chart-label"></span><span class="chart-value">91</span></li>
+    <li class="chart-item" style="--value: 14" aria-label="Nov 5"><span class="chart-label"></span><span class="chart-value">14</span></li>
+    <li class="chart-item" style="--value: 17" aria-label="Nov 6"><span class="chart-label"></span><span class="chart-value">17</span></li>
+    <li class="chart-item" style="--value: 76" aria-label="Nov 7"><span class="chart-label"></span><span class="chart-value">76</span></li>
+    <li class="chart-item" style="--value: 20"><span class="chart-label">Nov 8</span><span class="chart-value">20</span></li>
+    <li class="chart-item" style="--value: 54" aria-label="Nov 9"><span class="chart-label"></span><span class="chart-value">54</span></li>
+    <li class="chart-item" style="--value: 82" aria-label="Nov 10"><span class="chart-label"></span><span class="chart-value">82</span></li>
+    <li class="chart-item" style="--value: 15" aria-label="Nov 11"><span class="chart-label"></span><span class="chart-value">15</span></li>
+    <li class="chart-item" style="--value: 72" aria-label="Nov 12"><span class="chart-label"></span><span class="chart-value">72</span></li>
+    <li class="chart-item" style="--value: 35" aria-label="Nov 13"><span class="chart-label"></span><span class="chart-value">35</span></li>
+    <li class="chart-item" style="--value: 12" aria-label="Nov 14"><span class="chart-label"></span><span class="chart-value">12</span></li>
+    <li class="chart-item" style="--value: 19"><span class="chart-label">Nov 15</span><span class="chart-value">19</span></li>
+    <li class="chart-item" style="--value: 63" aria-label="Nov 16"><span class="chart-label"></span><span class="chart-value">63</span></li>
+    <li class="chart-item" style="--value: 61" aria-label="Nov 17"><span class="chart-label"></span><span class="chart-value">61</span></li>
+    <li class="chart-item" style="--value: 16" aria-label="Nov 18"><span class="chart-label"></span><span class="chart-value">16</span></li>
+    <li class="chart-item" style="--value: 38" aria-label="Nov 19"><span class="chart-label"></span><span class="chart-value">38</span></li>
+    <li class="chart-item" style="--value: 19" aria-label="Nov 20"><span class="chart-label"></span><span class="chart-value">19</span></li>
+    <li class="chart-item" style="--value: 78" aria-label="Nov 21"><span class="chart-label"></span><span class="chart-value">78</span></li>
+    <li class="chart-item" style="--value: 62"><span class="chart-label">Nov 22</span><span class="chart-value">62</span></li>
+    <li class="chart-item" style="--value: 15" aria-label="Nov 23"><span class="chart-label"></span><span class="chart-value">15</span></li>
+    <li class="chart-item" style="--value: 80" aria-label="Nov 24"><span class="chart-label"></span><span class="chart-value">80</span></li>
+    <li class="chart-item" style="--value: 23" aria-label="Nov 25"><span class="chart-label"></span><span class="chart-value">23</span></li>
+    <li class="chart-item" style="--value: 36" aria-label="Nov 26"><span class="chart-label"></span><span class="chart-value">36</span></li>
+    <li class="chart-item" style="--value: 88" aria-label="Nov 27"><span class="chart-label"></span><span class="chart-value">88</span></li>
+    <li class="chart-item" style="--value: 88" aria-label="Nov 28"><span class="chart-label"></span><span class="chart-value">88</span></li>
+    <li class="chart-item" style="--value: 82"><span class="chart-label">Nov 29</span><span class="chart-value">82</span></li>
+    <li class="chart-item" style="--value: 15" aria-label="Nov 30"><span class="chart-label"></span><span class="chart-value">15</span></li>
+  </ol>
+</div>`} />
+
+## 橫向 \{#horizontal\}
+
+`chart-horizontal` 以排名呈現，每個項目占一列。名稱疊在依數值比例延伸的淡色長條上，數字則放在列尾，無須移動指標就能讀到兩者。將 `--chart-max` 設為最大值，讓第一列的長條填滿整欄寬度。
+
+<ComponentPreview name="horizontal" height={328} title="橫向" bodyClass="p-lg" html={`<div class="card max-w(420) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Top pages</h3>
+    <p class="card-description">Visitors in the last 7 days</p>
+  </div>
+  <ol class="chart chart-horizontal" style="--chart-max: 4820" aria-label="Pages by visitors">
+    <li class="chart-item" style="--value: 4820"><span class="chart-label">/guide/installation</span><span class="chart-value">4,820</span></li>
+    <li class="chart-item" style="--value: 3112"><span class="chart-label">/components/button</span><span class="chart-value">3,112</span></li>
+    <li class="chart-item" style="--value: 2240"><span class="chart-label">/components/dialog</span><span class="chart-value">2,240</span></li>
+    <li class="chart-item" style="--value: 1360"><span class="chart-label">/guide/theme</span><span class="chart-value">1,360</span></li>
+    <li class="chart-item" style="--value: 412"><span class="chart-label">/components/command</span><span class="chart-value">412</span></li>
+  </ol>
+</div>`} />
+
+## 迷你長條圖 \{#spark\}
+
+`chart-spark` 只保留長條，長條高 32px、寬 6px，沒有刻度。圖表寬度由長條決定，適合放在[統計數值](/components/stat)的末端或表格儲存格裡。名稱和數值仍留在清單中，畫面上看不到，但螢幕閱讀器仍會朗讀。
+
+<ComponentPreview name="spark" height={192} narrowHeight={216} title="迷你長條圖" bodyClass="p-lg" html={`<div class="tray grid grid-cols(2) gap(4) max-w(560) mx-auto">
+  <div class="card card-flat">
+    <div class="stat">
+      <p class="stat-label">Requests</p>
+      <div class="stat-row">
+        <p class="stat-value">1.28M</p>
+        <p class="stat-delta stat-delta-up">12.4%</p>
+        <ol class="chart chart-spark ml-auto" style="--chart-max: 71" aria-label="Requests per day, last 14 days">
+          <li class="chart-item" style="--value: 18"><span class="chart-label">Day 1</span><span class="chart-value">18</span></li>
+          <li class="chart-item" style="--value: 24"><span class="chart-label">Day 2</span><span class="chart-value">24</span></li>
+          <li class="chart-item" style="--value: 22"><span class="chart-label">Day 3</span><span class="chart-value">22</span></li>
+          <li class="chart-item" style="--value: 31"><span class="chart-label">Day 4</span><span class="chart-value">31</span></li>
+          <li class="chart-item" style="--value: 28"><span class="chart-label">Day 5</span><span class="chart-value">28</span></li>
+          <li class="chart-item" style="--value: 36"><span class="chart-label">Day 6</span><span class="chart-value">36</span></li>
+          <li class="chart-item" style="--value: 33"><span class="chart-label">Day 7</span><span class="chart-value">33</span></li>
+          <li class="chart-item" style="--value: 41"><span class="chart-label">Day 8</span><span class="chart-value">41</span></li>
+          <li class="chart-item" style="--value: 38"><span class="chart-label">Day 9</span><span class="chart-value">38</span></li>
+          <li class="chart-item" style="--value: 52"><span class="chart-label">Day 10</span><span class="chart-value">52</span></li>
+          <li class="chart-item" style="--value: 47"><span class="chart-label">Day 11</span><span class="chart-value">47</span></li>
+          <li class="chart-item" style="--value: 58"><span class="chart-label">Day 12</span><span class="chart-value">58</span></li>
+          <li class="chart-item" style="--value: 63"><span class="chart-label">Day 13</span><span class="chart-value">63</span></li>
+          <li class="chart-item" style="--value: 71"><span class="chart-label">Day 14</span><span class="chart-value">71</span></li>
+        </ol>
+      </div>
+    </div>
+  </div>
+  <div class="card card-flat">
+    <div class="stat">
+      <p class="stat-label">Error rate</p>
+      <div class="stat-row">
+        <p class="stat-value">0.02%</p>
+        <p class="stat-delta stat-delta-down">0.4%</p>
+        <ol class="chart chart-spark ml-auto" style="--chart-max: 62" aria-label="Errors per day, last 14 days">
+          <li class="chart-item" style="--value: 62"><span class="chart-label">Day 1</span><span class="chart-value">62</span></li>
+          <li class="chart-item" style="--value: 58"><span class="chart-label">Day 2</span><span class="chart-value">58</span></li>
+          <li class="chart-item" style="--value: 60"><span class="chart-label">Day 3</span><span class="chart-value">60</span></li>
+          <li class="chart-item" style="--value: 51"><span class="chart-label">Day 4</span><span class="chart-value">51</span></li>
+          <li class="chart-item" style="--value: 49"><span class="chart-label">Day 5</span><span class="chart-value">49</span></li>
+          <li class="chart-item" style="--value: 44"><span class="chart-label">Day 6</span><span class="chart-value">44</span></li>
+          <li class="chart-item" style="--value: 46"><span class="chart-label">Day 7</span><span class="chart-value">46</span></li>
+          <li class="chart-item" style="--value: 38"><span class="chart-label">Day 8</span><span class="chart-value">38</span></li>
+          <li class="chart-item" style="--value: 35"><span class="chart-label">Day 9</span><span class="chart-value">35</span></li>
+          <li class="chart-item" style="--value: 31"><span class="chart-label">Day 10</span><span class="chart-value">31</span></li>
+          <li class="chart-item" style="--value: 33"><span class="chart-label">Day 11</span><span class="chart-value">33</span></li>
+          <li class="chart-item" style="--value: 26"><span class="chart-label">Day 12</span><span class="chart-value">26</span></li>
+          <li class="chart-item" style="--value: 22"><span class="chart-label">Day 13</span><span class="chart-value">22</span></li>
+          <li class="chart-item" style="--value: 19"><span class="chart-label">Day 14</span><span class="chart-value">19</span></li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>`} />
+
+## 動畫 \{#motion\}
+
+長條首次出現時會透過 `@starting-style` 從基線升起，`--value` 改變時則會平滑過渡到新高度。啟用減少動態效果偏好時，這兩種動畫都會停用。指標移到長條上時，長條會立即突出顯示，沒有淡入或淡出效果，讓強調效果跟得上指標在各長條間的移動。
+
+## 長條清單的適用範圍 \{#limits\}
+
+這個圖表適合用同一套刻度呈現少量數值。折線圖、面積圖、兩組並列的資料序列、縮放功能，或有缺漏時段的時間軸，都需要圖表函式庫。若要呈現某個範圍內的單一讀值，請用[量表](/components/meter)。
+
+## 無障礙 \{#accessibility\}
+
+- 順序有意義時，例如按日期排列，請用 `<ol>`。已排好名次的清單則用 `<ul>`。為清單加上 `aria-label`，說明測量項目及單位。
+- 每個項目會朗讀名稱和數值。提示只會在指標移到項目上時出現，請避免依賴它。
+- 請用位置和長度區分長條，切勿以色相區分。若將 `--chart-color` 設為狀態色，請在附近用文字說明狀態。
+- 在強制色彩模式下，長條會採用系統文字色。
+
+## 類別 \{#classes\}
+
+<ContractTable name="chart" />
+
+## 自訂屬性 \{#custom-properties\}
+
+<ContractTable name="chart" show="properties" />
+
+## 相關元件 \{#related\}
+
+<ComponentLinks slugs={['stat', 'meter', 'progress']} />
+
+## 原始碼 \{#source\}
+
+<ComponentSource name="chart" />

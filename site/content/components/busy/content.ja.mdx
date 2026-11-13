@@ -1,0 +1,77 @@
+---
+title: "処理中"
+description: "コンテンツを再取得中の領域に重ねるオーバーレイとスピナー。"
+---
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+処理中の状態は、フィルターを変更したカード、ページを読み込んでいるテーブル、保存中のフォームなど、既存のコンテンツを更新する領域に使います。領域に `busy` を指定し、処理中は `aria-busy="true"` を設定します。領域の背景色に合わせたオーバーレイでコンテンツのコントラストを抑え、中央に回転するスピナーを表示します。既存のコンテンツの位置は保たれるため、新しいコンテンツが届いてもレイアウトが急にずれることはありません。
+
+<ComponentPreview name="default" height={200} title="処理中" bodyClass="flex items-center justify-center p-lg" html={`<article class="card busy w-full max-w(320)" id="revenue" aria-label="Revenue">
+  <header class="card-header">
+    <h3 class="card-title">Revenue</h3>
+    <p class="card-description">$48,200 this month, up 12% on October.</p>
+  </header>
+  <footer class="card-footer">
+    <button class="btn btn-sm" type="button" id="revenue-refresh">Refresh</button>
+  </footer>
+</article>
+<script>
+  var card = document.getElementById('revenue')
+  document.getElementById('revenue-refresh').addEventListener('click', function () {
+    card.setAttribute('aria-busy', 'true')
+    card.inert = true
+    setTimeout(function () {
+      card.removeAttribute('aria-busy')
+      card.inert = false
+    }, 1800)
+  })
+</script>`} caption="「更新」を押すと、カードが 2 秒間、処理中になります。" />
+
+## 状態を表す属性 \{#one-attribute\}
+
+クラスを指定するだけでは何も描画されません。同じ要素の `aria-busy="true"` が状態を表します。スクリーンリーダーに伝わる状態とスタイルシートが参照する状態が同じ属性で決まるため、両者は常に一致します。処理が終わったら属性を削除するか、値を `false` にします。
+
+オーバーレイは 160ms 後にフェードインします。すぐに終わる処理では一瞬だけ表示されることがなく、コンテンツがすでに表示されているのに、読者に待つよう案内することもありません。
+
+<ComponentPreview name="resting" height={200} title="処理中" bodyClass="flex items-center justify-center p-lg" html={`<article class="card busy w-full max-w(320)" aria-busy="true" aria-label="Revenue" inert>
+  <header class="card-header">
+    <h3 class="card-title">Revenue</h3>
+    <p class="card-description">$48,200 this month, up 12% on October.</p>
+  </header>
+  <footer class="card-footer">
+    <button class="btn btn-sm" type="button">Refresh</button>
+  </footer>
+</article>`} />
+
+## オーバーレイ \{#the-veil\}
+
+オーバーレイの色は、[シート](/components/surface)、カード、ダイアログが公開する `--surface-color` をもとに合成します。カードにはグレーをかぶせず、カード自体の背景色を使ってコントラストを抑えます。独自の背景面を持たない領域では、ページのキャンバス色を使います。角の丸みは領域に揃え、スピナーの背後は不透明にして周囲を透かすため、リングに文字が重なって見えることはありません。
+
+オーバーレイは下にある要素へのポインター操作を遮ります。キーボード操作も無効にするには、最初の例のように、処理中は `inert` 属性を追加し、処理が終わったら削除します。
+
+`--busy-size` はスピナーの直径を指定します。既定は 20px です。
+
+## 処理中とスケルトンの使い分け \{#busy-or-skeleton\}
+
+処理中の状態は、表示済みのコンテンツを差し替えるときに使います。初回の読み込みでは、[スケルトン](/components/skeleton) でコンテンツの形を示します。単一の操作要素だけで待ち時間が発生する場合は、その要素の中に [スピナー](/components/spinner) を表示します。ボタンには専用の `aria-busy` 状態があります。
+
+## アクセシビリティ \{#accessibility\}
+
+- `aria-busy="true"` は、領域が更新中であることを支援技術に伝えます。支援技術は、属性が削除されるまで領域内の変更の読み上げを保留することがあります。
+- この属性だけでは、処理の開始は読み上げられません。処理中の領域の外にあるライブリージョンか、処理を開始した操作要素で、開始をテキストで伝えます。
+- 処理中は領域に `inert` を指定し、オーバーレイの下にある操作要素にフォーカスしたり、作動させたりできないようにします。
+- 動きを抑える設定が有効な場合は、スピナーの回転が遅くなります。強制カラーモードでは、オーバーレイにキャンバス色を使います。
+
+## クラス \{#classes\}
+
+<ContractTable name="busy" />
+
+## カスタムプロパティ \{#custom-properties\}
+
+<ContractTable name="busy" show="properties" />
+
+## ソース \{#source\}
+
+<ComponentSource name="busy" />

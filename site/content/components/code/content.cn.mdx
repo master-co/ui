@@ -1,0 +1,98 @@
+---
+title: "代码"
+description: "以等宽字体原样显示文本，可在行内显示，也可单独成块。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+代码以等宽字体原样显示命令、值或文件名等文本。行内用法是在 `<code>` 上使用 `.code`，在当前行内显示为小标签。块级用法是在 `<pre>` 上使用 `code-block`，形成一个[凹槽](/components/surface#well)，长行超出宽度时可单独滚动。
+
+<ComponentPreview name="default" height={96} narrowHeight={120} title="代码" background="plain" bodyClass="p-lg" html={`<p class="m(0) text-sm fg-text-body leading-md">Install the package with <code class="code">npm install @master/ui</code>, then import it after <code class="code">@master/css</code>.</p>`} />
+
+## 代码块 \{#block\}
+
+在 `<pre>` 上使用 `code-block`，并在其中保留 `<code>` 以保留代码语义。代码块保留原有换行，长行不折行，可横向滚动。如果行可能超出代码块宽度，请为代码块设置 `tabindex="0"`，以便用键盘滚动。
+
+<ComponentPreview name="block" height={208} title="代码块" background="plain" bodyClass="p-lg" html={`<pre class="code-block" tabindex="0"><code>@import '@master/css';
+@import '@master/ui';
+
+@theme {
+  --color-brand: var(--color-indigo-50);
+}</code></pre>`} />
+
+## 代码行 \{#lines\}
+
+需要单独标注某一行时，将每一行写成一个 `code-line`。代码块会以网格排列各行，每行都与最长行等宽，因此行底色可以覆盖整个可滚动宽度。网格项之间的空白不会渲染，因此元素之间的换行不占空间。每行代码写一个元素。
+
+`code-line-highlight` 为要说明的代码行加上底色，并在行首画一条墨色细线。在代码块上使用 `code-numbered`，即可通过 CSS 计数器在代码行旁的留白区生成行号。选中或复制代码时，行号不会一并选中或复制。
+
+<ComponentPreview name="lines" height={208} title="行号与高亮" background="plain" bodyClass="p-lg" html={`<pre class="code-block code-numbered" tabindex="0"><code class="code-line">.btn {</code>
+<code class="code-line">  --btn-height: 2.375rem;</code>
+<code class="code-line code-line-highlight">  --btn-radius: var(--radius-control);</code>
+<code class="code-line">  border-radius: calc(var(--btn-radius) * var(--corner-scale));</code>
+<code class="code-line">  corner-shape: var(--corner-shape);</code>
+<code class="code-line">}</code></pre>`} />
+
+## 差异对比 \{#diff\}
+
+`code-line-added` 和 `code-line-removed` 标记发生变更的行。颜色与行首已有的符号对应。像补丁一样在文本中保留 `+` 和 `-`，这样即使没有颜色也能读懂变更，复制后仍是补丁格式。
+
+<ComponentPreview name="diff" height={184} title="差异对比" background="plain" bodyClass="p-lg" html={`<pre class="code-block" tabindex="0"><code class="code-line">  @theme {</code>
+<code class="code-line code-line-removed">-   --radius-control: .5rem;</code>
+<code class="code-line code-line-added">+   --radius-control: .625rem;</code>
+<code class="code-line">    --radius-surface: 1rem;</code>
+<code class="code-line">  }</code></pre>`} />
+
+## 代码面板 \{#panel\}
+
+`code-panel` 在代码块上方加一栏头部，两者共用一个凹槽。文件名放在 `code-title` 中，控件放在头部末端，向内缩进 4px，圆角与外层同心。内部代码块取消独立的凹槽。
+
+在独立的 `code-block` 或容纳它的 `code-panel` 上设置 `--code-radius`。默认值为 `var(--radius-control)`。根元素直接放在[托盘](/components/surface#tray)中时使用 `var(--radius-surface)`，使圆角与托盘的内边距相配。面板内的代码块保持直角和透明，整个面板只保留一道外轮廓。
+
+复制功能需要脚本，三行即可实现。读取代码块的文本，再将其写入剪贴板。
+
+<ComponentPreview name="panel" height={248} title="代码面板" background="plain" bodyClass="p-lg" html={`<div class="code-panel">
+  <div class="code-header">
+    <span class="code-title">app.css</span>
+    <button type="button" class="btn btn-quiet btn-sm" id="copy-app-css"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 9h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V10a1 1 0 0 1 1-1M16 9V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>Copy</button>
+  </div>
+  <pre class="code-block" tabindex="0"><code>@import '@master/css';
+@import '@master/ui';
+
+@theme {
+  --color-brand: var(--color-indigo-50);
+}</code></pre>
+</div>
+<script>
+document.getElementById('copy-app-css').addEventListener('click', function (event) {
+  var button = event.currentTarget
+  navigator.clipboard.writeText(button.closest('.code-panel').querySelector('.code-block').textContent).then(function () {
+    button.lastChild.textContent = 'Copied'
+    setTimeout(function () { button.lastChild.textContent = 'Copy' }, 1600)
+  })
+})
+</script>`} />
+
+## 代码或 kbd \{#code-or-kbd\}
+
+读者需要键入的文本或从程序中读取的内容用 `code` 表示，需要按下的键用 [`kbd`](/components/kbd) 表示。样式表不提供语法高亮，语法高亮工具生成的 span 在代码块中保留各自的颜色。
+
+## 类名 \{#classes\}
+
+<ContractTable name="code" />
+
+## 自定义属性 \{#custom-properties\}
+
+<ContractTable name="code" show="properties" />
+
+## 无障碍 \{#accessibility\}
+
+- 如果某行可能超出代码块宽度，请为代码块设置 `tabindex="0"`，以便用键盘滚动。
+- 行号属于生成内容，不会被朗读、选中或复制。
+- 高亮只提供视觉提示。周围正文提到某行时，请直接说明该行写了什么，避免用颜色或行号来指代。
+
+## 源码 \{#source\}
+
+<ComponentSource name="code" />

@@ -1,0 +1,153 @@
+---
+title: "목록 상자"
+description: "선택할 수 있는 옵션 목록입니다. 콤보 상자나 명령 팔레트를 열면 표시됩니다."
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+목록 상자는 값을 고를 수 있는 옵션 목록입니다. [콤보 상자](/components/combobox)나 [명령 팔레트](/components/command)를 열면 이 목록이 표시되며, 페이지에 독립적으로 배치할 수도 있습니다. 스타일시트는 ARIA 속성에 따라 각 상태를 표시합니다. 스크립트는 키 입력을 처리하고 활성 옵션과 선택된 옵션에 맞춰 속성을 갱신합니다. 페이지에 독립적으로 배치된 목록 상자는 `listbox` [동작](/guide/behaviors)으로 제어하며, 콤보 상자와 명령 팔레트는 각각 자체 입력 필드에서 목록을 제어합니다.
+
+<ComponentPreview name="default" height={232} title="목록 상자" bodyClass="p-lg" behaviors html={`<div class="sheet sheet-flat max-w(320) mx-auto">
+  <div class="listbox" role="listbox" aria-label="Framework" tabindex="0" aria-activedescendant="fw-astro">
+    <div class="listbox-option" role="option" id="fw-astro" aria-selected="true" aria-checked="true">Astro</div>
+    <div class="listbox-option" role="option" id="fw-next" aria-checked="false">Next.js</div>
+    <div class="listbox-option" role="option" id="fw-svelte" aria-checked="false">SvelteKit</div>
+    <div class="listbox-option" role="option" id="fw-nuxt" aria-checked="false" aria-disabled="true">Nuxt</div>
+  </div>
+</div>`} caption="옵션을 클릭하거나, 목록에 포커스를 둔 뒤 방향키로 이동하고 Enter 또는 Space 키로 선택하세요." />
+
+## 두 상태와 두 속성 \{#two-states\}
+
+목록 상자는 키보드로 이동한 위치와 실제로 선택한 값을 구분합니다.
+
+- **활성 상태**는 `aria-selected="true"`로 표시합니다. 방향키로 이동한 위치의 옵션이며, <kbd>Enter</kbd> 키를 누르면 이 옵션이 선택됩니다. 활성 옵션에는 칩과 같은 색조가 적용됩니다. 포인터가 올라간 행에도 같은 색조가 전환 효과 없이 즉시 적용됩니다.
+- **선택 상태**는 `aria-checked="true"`로 표시하며, 해당 옵션의 값이 설정되었음을 뜻합니다. 행 끝에는 체크 표시가 붙습니다. `aria-checked`가 있는 옵션은 선택 여부와 관계없이 체크 표시 공간을 확보하므로 레이블이 움직이지 않습니다.
+
+포커스는 일반적으로 목록이나 텍스트 필드에 머물며, `aria-activedescendant`는 활성 옵션을 가리킵니다. 옵션에 직접 포커스가 가면 잉크 색상의 윤곽선도 표시됩니다.
+
+## 옵션의 추가 요소 \{#rich-options\}
+
+행 앞쪽 아이콘에는 [`icon`](/components/icon)을 적용하세요. `listbox-body`는 제목을 `listbox-description` 위에 배치하고, `listbox-end`는 행 끝에 단축키나 힌트를 표시합니다. `listbox-group`은 옵션과 해당 `listbox-label`을 하나의 그룹으로 묶고, `listbox-separator`는 그룹 사이에 구분선을 표시합니다.
+
+<ComponentPreview name="rich" height={296} title="옵션의 추가 요소" bodyClass="p-lg" html={`<div class="sheet sheet-flat max-w(360) mx-auto">
+  <div class="listbox" role="listbox" aria-label="Commands">
+    <div class="listbox-group" role="group" aria-labelledby="rich-suggestions">
+    <div class="listbox-label" id="rich-suggestions">Suggestions</div>
+    <div class="listbox-option" role="option" aria-selected="true">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      New project
+      <span class="listbox-end"><kbd class="kbd">⌘</kbd><kbd class="kbd">N</kbd></span>
+    </div>
+    <div class="listbox-option" role="option">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.35-4.35"/></svg>
+      <span class="listbox-body">
+        <span>Search deployments</span>
+        <span class="listbox-description">By branch, commit or author</span>
+      </span>
+    </div>
+    </div>
+    <hr class="listbox-separator">
+    <div class="listbox-group" role="group" aria-labelledby="rich-team">
+    <div class="listbox-label" id="rich-team">Team</div>
+    <div class="listbox-option" role="option">
+      <span class="avatar avatar-xs"><img class="avatar-image" src="/demo/portrait-1.svg" alt=""></span>
+      Ada Lovelace
+    </div>
+    <div class="listbox-option" role="option">
+      <span class="avatar avatar-xs"><img class="avatar-image" src="/demo/portrait-2.svg" alt=""></span>
+      Alan Turing
+    </div>
+    </div>
+  </div>
+</div>`} />
+
+## 필터링 \{#filtering\}
+
+스크립트는 조건에 맞지 않는 옵션에 `hidden` 속성을 설정해 목록을 필터링합니다. 그러면 `:has()`에 의해 추가 스크립트 없이 다음 두 동작이 이루어집니다.
+
+- 모든 옵션이 숨겨지면 `listbox-empty`가 표시되고, 옵션이 하나라도 다시 표시되면 숨겨집니다.
+- `listbox-group`은 그룹 제목과 옵션을 감싸는 `role="group"` 요소입니다. 그룹의 모든 옵션이 숨겨져 있는 동안에는 이 요소도 숨겨지므로 그룹 제목만 남는 일이 없습니다.
+
+<ComponentPreview name="empty" height={128} title="일치하는 옵션 없음" bodyClass="p-lg" html={`<div class="sheet sheet-flat max-w(320) mx-auto">
+  <div class="listbox" role="listbox" aria-label="Regions">
+    <div class="listbox-option" role="option" hidden>Tokyo</div>
+    <div class="listbox-option" role="option" hidden>Frankfurt</div>
+    <div class="listbox-empty">No regions match "zz".</div>
+  </div>
+</div>`} />
+
+## 동작 \{#behavior\}
+
+`listbox`는 페이지에 독립적으로 배치되어 직접 포커스를 받는 목록 상자를 제어합니다. 따라서 목록 상자에는 `tabindex="0"`가 있어야 합니다. `role="listbox"`가 있는 요소를 인수로 받으며, 설정 옵션 없이 동작을 연결하고 연결을 해제하는 함수를 반환합니다.
+
+```js name=app.js
+import { listbox } from '@master/ui/behaviors/listbox.js'
+
+const list = document.querySelector('.listbox')
+listbox(list)
+
+list.addEventListener('change', () => {
+  const chosen = list.querySelectorAll('[aria-checked="true"]')
+})
+```
+
+- **활성 옵션.** 키 입력이나 클릭으로 `aria-selected="true"`를 한 옵션으로 옮기고, 목록 상자의 `aria-activedescendant`가 그 옵션을 가리키도록 갱신한 뒤 해당 옵션이 보이도록 스크롤합니다. 포커스는 목록 상자에 계속 머뭅니다. `id`가 없는 옵션에는 이를 부여합니다. 목록 상자가 포커스를 받을 때 활성 옵션이 없으면 선택된 옵션을 활성화하고, 선택된 옵션도 없으면 첫 번째 옵션을 활성화합니다.
+- **선택.** <kbd>Enter</kbd> 또는 <kbd>Space</kbd> 키를 누르거나 옵션을 클릭하면 해당 옵션에는 `aria-checked="true"`를, 나머지 옵션에는 `false`를 설정합니다.
+- **이벤트.** 선택이 바뀔 때마다 목록 상자는 `input` 이벤트에 이어 `change` 이벤트를 발생시킵니다. 선택된 값을 읽으려면 `aria-checked="true"`가 설정된 옵션을 확인하세요.
+- **건너뛰는 옵션.** 숨겨진 옵션과 `aria-disabled="true"`가 설정된 옵션은 활성화하거나 선택할 수 없습니다.
+
+목록 상자에 `aria-multiselectable="true"`가 있으면 각 옵션을 개별적으로 선택하거나 선택 해제할 수 있으며, 다른 옵션의 상태는 그대로 유지됩니다.
+
+<ComponentPreview name="multiple" height={232} title="여러 값 선택" bodyClass="p-lg" behaviors html={`<div class="sheet sheet-flat max-w(320) mx-auto">
+  <div class="listbox" role="listbox" aria-label="Notify me about" aria-multiselectable="true" tabindex="0">
+    <div class="listbox-option" role="option" id="notify-deploys" aria-checked="true">Deployments</div>
+    <div class="listbox-option" role="option" id="notify-comments" aria-checked="false">Comments</div>
+    <div class="listbox-option" role="option" id="notify-billing" aria-checked="true">Billing</div>
+    <div class="listbox-option" role="option" id="notify-digest" aria-checked="false" aria-disabled="true">Weekly digest</div>
+  </div>
+</div>`} />
+
+텍스트 필드가 목록 상자를 제어하는 경우에는 해당 필드의 동작이 목록을 제어합니다. `listbox`는 `role="combobox"` 필드의 `aria-controls`가 가리키는 목록 상자에 관여하지 않으며, `attach()`는 [콤보 상자](/components/combobox)나 [명령 팔레트](/components/command) 안의 목록 상자를 건너뜁니다. 스크립트가 없으면 목록 상자는 속성에 지정된 상태로 표시되며 상태가 바뀌지 않습니다.
+
+## 플로팅 목록 상자 \{#floating\}
+
+`popover` 속성을 설정하면 목록 상자가 모서리 반경 12px의 플로팅 표면으로 표시되며, 각 행의 모서리 반경은 8px입니다. 기준 요소에 맞춰 배치되고 뷰포트 가장자리에서는 반대편으로 배치되며, 열리고 닫힐 때 [메뉴](/components/menu)와 같은 애니메이션을 사용합니다. 텍스트 필드가 목록 상자를 제어할 때는 입력 중에 닫히지 않도록 `popover="manual"`를 사용하세요. [콤보 상자](/components/combobox)에서 이 동작을 확인할 수 있습니다.
+
+## 목록 상자, 메뉴, 셀렉트 \{#listbox-menu-or-select\}
+
+- [셀렉트](/components/select)는 목록에서 값 하나를 선택하는 기본 HTML 컨트롤입니다. 옵션이 일반 텍스트로만 구성되어 있을 때 사용하세요. 스크립트가 필요 없습니다.
+- [메뉴](/components/menu)는 기본 HTML 버튼과 링크로 실행 항목을 제공합니다.
+- 목록 상자는 스크립트로 필터링하거나 그룹화하거나 불러오는 값이나 결과를 표시합니다. 콤보 상자, 명령 팔레트, 다중 선택 컨트롤에서 사용합니다.
+
+## 키보드 \{#keyboard\}
+
+다음은 목록 상자에 포커스가 있을 때 `listbox` 동작이 처리하는 키입니다. 방향키로는 첫 번째 옵션과 마지막 옵션을 넘어 이동할 수 없습니다. 콤보 상자와 명령 팔레트에서는 입력 필드가 각 패턴에 맞게 키 입력을 처리합니다.
+
+<ContractTable name="listbox" show="keyboard" />
+
+## 접근성 \{#accessibility\}
+
+- 컨테이너에 `role="listbox"`와 레이블을 지정하고, 각 옵션에 `role="option"`을 지정하세요. `listbox-group`에는 `role="group"`을 지정하고, `aria-labelledby`가 그룹 제목을 가리키도록 설정하세요.
+- 이 동작은 `aria-selected` 및 `aria-activedescendant` 속성을 함께 갱신하고 활성 옵션이 보이도록 스크롤합니다. 각 옵션에는 스크롤 여백이 있어 목록 가장자리에 바짝 붙지 않습니다.
+- 비활성화된 옵션에는 `aria-disabled="true"`가 설정되며, 키보드로 이동할 때 건너뜁니다.
+
+## React, Svelte, Vue \{#frameworks\}
+
+`listbox` 컴포넌트는 데이터로 옵션을 렌더링하고, 동작을 연결하며, 선택된 값을 입력으로 받고 외부로 전달합니다. `npx master-ui add listbox`로 프로젝트에 복사하세요. [React, Svelte, Vue](/guide/frameworks)에서 컴포넌트의 구성과 사용법을 확인할 수 있습니다.
+
+<FrameworkSource name="listbox" />
+
+## 클래스 \{#classes\}
+
+<ContractTable name="listbox" />
+
+## 사용자 지정 속성 \{#custom-properties\}
+
+<ContractTable name="listbox" show="properties" />
+
+## 소스 코드 \{#source\}
+
+<ComponentSource name="listbox" />

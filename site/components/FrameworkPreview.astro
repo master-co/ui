@@ -4,11 +4,10 @@ import { render } from 'svelte/server'
 import Code from '@master/internal-site/components/Code.astro'
 import Demo from '@master/internal-site/demo/Demo.svelte'
 import PreviewViewport from '~/site/components/PreviewViewport.svelte'
-import { demoDocument } from '@master/internal-site/demo/reference/document.ts'
 import PreviewGuard from '~/site/components/PreviewGuard.astro'
 import DocumentPreviewSwitch from '@master/internal-site/components/DocumentPreviewSwitch.astro'
 import { exampleScript, exampleSource } from '~/site/utils/framework-example'
-import { specimenHead as head } from '~/site/utils/preview'
+import { previewDocument, specimenHead as head } from '~/site/utils/preview'
 import { uiSource } from '~/site/utils/ui-source'
 
 interface Props {
@@ -35,12 +34,12 @@ const { name, title, caption = '', height, mediumHeight, narrowHeight, bodyClass
 const examples = import.meta.glob<{ default: Component }>('./examples/*.svelte', { eager: true })
 const example = examples[`./examples/${name}.svelte`]
 if (!example) throw new Error(`No example is named ${name}. There are: ${Object.keys(examples).join(', ')}`)
-const views = [['preview', 'Preview'], ['code', 'Code']] as const
+const views = [['preview', 'Preview'], ['code', 'Source code tab']] as const
 const html = `<div data-example="${name}" class="contents">${render(example.default).body}</div>`
 const section = { page: 'guide', id: name, title, html: [html], css: uiSource(), classes: [], classLists: [], highlighted: [] }
 // The script goes in after the document is made: its text is not markup to read classes from.
 const script = (await exampleScript(name, `[data-example="${name}"]`)).replaceAll('</script', '<\\/script')
-const document = demoDocument(section as Parameters<typeof demoDocument>[0], { html, caption, bodyClass, head } as Parameters<typeof demoDocument>[1]).replace('</body></html>', () => `<script>${script}</script></body></html>`)
+const document = previewDocument(section as Parameters<typeof previewDocument>[0], { html, caption: '', bodyClass, head } as Parameters<typeof previewDocument>[1]).replace('</body></html>', () => `<script>${script}</script></body></html>`)
 ---
 
 <PreviewGuard />

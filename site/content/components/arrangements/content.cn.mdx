@@ -1,0 +1,159 @@
+---
+title: "布局组合"
+description: "多数布局由四种排列方式组合而成：纵向堆叠、横向换行、两端对齐和居中。"
+---
+
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import PagePreview from '~/site/components/PagePreview.astro'
+
+大多数布局都由几种基本排列反复组合而成：纵向堆叠、自动换行、把两组推向两端，或让单个元素居中。每种排列只需两三个工具类。Master UI 有意省去了这些排列的专用类名，因为这样的类只会给工具类组合换个名字，每出现一种变体就得再加一个类。
+
+本页介绍布局的基本排列。其他布局、[区块](/blocks)和[页面](/pages)都由这些排列组合而成。
+
+## 纵向堆叠 \{#stack\}
+
+用 `flex flex-col` 和间距把元素排成间隔一致的一列。间距由堆叠容器统一设置，增删子元素时就不会留下多余的外边距。
+
+<ComponentPreview name="stack" height={240} title="纵向堆叠" html={`<div class="flex flex-col gap-md w-full max-w(320)">
+  <div class="well p-md">One</div>
+  <div class="well p-md">Two</div>
+  <div class="well p-md">Three</div>
+</div>`} />
+
+按间距尺度取值：标签与对应值之间用 `gap-xs`（8px），字段之间用 `gap-md`（16px），各节之间用 `gap-xl`（32px）。
+
+## 横向换行 \{#cluster\}
+
+用 `flex flex-wrap` 和间距让元素横向排列并自动换行。适合成组出现但宽度不一的元素，例如标签、筛选项或一组按钮。行与行之间也使用同样的间距。
+
+<ComponentPreview name="cluster" height={112} title="横向换行" html={`<div class="flex flex-wrap gap-xs max-w(360)">
+  <span class="chip">Design</span>
+  <span class="chip">Engineering</span>
+  <span class="chip">Research</span>
+  <span class="chip">Operations</span>
+  <span class="chip">Support</span>
+  <span class="chip">Legal</span>
+  <span class="chip">Finance</span>
+</div>`} />
+
+## 两端对齐 \{#split\}
+
+用 `flex items-center justify-between` 将两组元素推到同一行的两端。再加上 `flex-wrap` 和间距，空间不足时，第二组会换到第一组下方，第一组可以保留原有宽度。
+
+<ComponentPreview name="split" height={128} narrowHeight={184} title="两端对齐" bodyClass="flex justify-center p-lg" html={`<header class="sheet flex flex-wrap items-center justify-between gap-sm w-full max-w(520) p-md">
+  <div class="flex flex-col gap-3xs">
+    <h3 class="heading heading-sm">Members</h3>
+    <p class="m(0) text-sm fg-text-muted">Four people have access.</p>
+  </div>
+  <div class="flex gap-xs">
+    <button type="button" class="btn btn-sm">Export</button>
+    <button type="button" class="btn btn-sm btn-primary">Invite</button>
+  </div>
+</header>`} />
+
+只需把最后一项推到末端时，给它加上 `ml-auto`，其余各项保持原位。
+
+<ComponentPreview name="push" height={120} title="仅末项靠末端" bodyClass="flex justify-center p-lg" html={`<div class="sheet flex items-center gap-sm w-full max-w(520) p-sm">
+  <button type="button" class="btn btn-quiet btn-sm">Bold</button>
+  <button type="button" class="btn btn-quiet btn-sm">Italic</button>
+  <button type="button" class="btn btn-quiet btn-sm">Link</button>
+  <button type="button" class="btn btn-sm btn-primary ml-auto">Publish</button>
+</div>`} />
+
+## 居中 \{#center\}
+
+在容器上使用 `flex items-center justify-center`，让其中的单个元素在水平和垂直方向上都居中。要让一列内容在页面上居中并限制其宽度，在该列上设置最大宽度和 `mx-auto`。
+
+<ComponentPreview name="center" height={248} title="居中" bodyClass="p-lg" html={`<div class="well flex items-center justify-center w-full h(200)">
+  <button type="button" class="btn">In the middle</button>
+</div>`} />
+
+<ComponentPreview name="measure" background="plain" height={152} narrowHeight={200} title="限宽内容列" bodyClass="p-lg" html={`<article class="max-w(480) mx-auto text-sm leading-md fg-text-body">
+  <h3 class="heading">A column that stops</h3>
+  <p class="mt-xs m(0)">A measure is a maximum width with automatic margins. The column fills a phone and stops growing when the lines are long enough to read, about 45 to 75 characters. Nothing else is needed to center it.</p>
+</article>`} />
+
+## 分栏 \{#columns\}
+
+`grid grid-cols(3)` 将可用宽度均分为三列，`grid-col-span(2)` 让一个元素跨两列。列数需要随宽度自动调整时，使用[自动网格](/components/auto-grid)。卡片有几种尺寸时，使用[便当网格](/components/bento)。卡片各有不同高度时，使用[瀑布流布局](/components/masonry)。
+
+<ComponentPreview name="columns" height={176} title="分栏" bodyClass="p-lg" html={`<div class="grid grid-cols(3) gap-md w-full">
+  <div class="well p-md">One</div>
+  <div class="well p-md">Two</div>
+  <div class="well p-md">Three</div>
+  <div class="well p-md grid-col-span(2)">Four, across two</div>
+  <div class="well p-md">Five</div>
+</div>`} />
+
+## 并排 \{#beside\}
+
+两个元素并排时，一个采用固定宽度，另一个占据剩余空间。剩余空间太窄时，两者会改为上下排列，整个过程无需查询。在两者的容器上使用 `flex flex-wrap` 并设置间距。给较窄的元素设置 `grow(1) basis(…)`，作为两者同排时它的宽度，再给较宽的元素设置 `grow(999) basis(0)` 和 `min-w(…)`。较宽的元素会占据几乎全部剩余空间。当剩余空间小于其最小宽度时，布局就会换行，较窄的元素会在上一行撑满整行。
+
+<PagePreview name="beside" title="并排" height={161} tabletHeight={161} phoneHeight={315} caption="选择手机预览，面板会移到列表上方，宽度与列表相同。这个布局无需查询。" html={`<section class="flex flex-wrap gap-lg p-lg bg-surface-base fg-text-body text-sm">
+  <aside class="sheet flex flex-col gap-xs grow(1) basis(240) p-md" aria-label="Filters">
+    <h3 class="heading heading-sm">Filters</h3>
+    <label class="flex items-center gap-xs"><input type="checkbox" class="checkbox" checked> Open</label>
+    <label class="flex items-center gap-xs"><input type="checkbox" class="checkbox"> Assigned to me</label>
+  </aside>
+  <div class="sheet flex flex-col gap-xs grow(999) basis(0) min-w(320) p-md">
+    <h3 class="heading heading-sm">Issues</h3>
+    <p class="m(0) leading-md">The list takes everything the filters leave. Under 320px of its own it would be too narrow to read, so the row wraps instead.</p>
+  </div>
+</section>`} />
+
+## 随可用空间调整 \{#responsive\}
+
+变体可在指定宽度下切换工具类。`@md` 及其同系列变体以视口宽度为准，用于页面框架。`@container(--2xl)` 及其同系列变体以最近的尺寸容器为准，也就是设有 `container-inline` 的最近祖先元素。页面框架内的内容都使用这类变体，让同一部分在宽页面、侧边栏和对话框中遵循相同的布局规则。
+
+<PagePreview name="responsive" title="响应式布局" height={152} tabletHeight={200} phoneHeight={456} caption="选择手机预览，横排会变成纵向堆叠。" html={`<section class="container-inline p-lg bg-surface-base fg-text-body text-sm">
+  <div class="flex flex-col flex-row@container(--2xl) gap-md">
+    <div class="sheet p-lg grow(1) basis(0)">
+      <h3 class="heading heading-sm">Stacked when narrow</h3>
+      <p class="m(0) mt-xs leading-md">This is a stack until its container is 42rem wide.</p>
+    </div>
+    <div class="sheet p-lg grow(1) basis(0)">
+      <h3 class="heading heading-sm">Side by side when wide</h3>
+      <p class="m(0) mt-xs leading-md">Then the same markup is a row of equal columns.</p>
+    </div>
+    <div class="sheet p-lg grow(1) basis(0)">
+      <h3 class="heading heading-sm">By its own width</h3>
+      <p class="m(0) mt-xs leading-md">The query measures the section, not the screen.</p>
+    </div>
+  </div>
+</section>`} />
+
+| 变体 | 宽度依据 | 适用场景 |
+| --- | --- | --- |
+| `@xs` `@sm` `@md` `@lg` | 视口宽度：48、52.125、64、80rem | 页面框架 |
+| `@container(--md)` … `@container(--5xl)` | 最近的容器宽度：28 … 64rem | 页面内的区域 |
+| `@container(--max-3xl)` | 同上，宽度低于阈值时生效 | 空间较窄时 |
+
+## 何时使用布局类 \{#when-a-class\}
+
+有些布局细节无法用工具类表达，或每次单独实现时都容易出错，例如以 `dvh` 为单位的高度、为手机底部的主屏幕指示条预留的安全区间距、可独立滚动的粘性栏、自动确定列数的网格、仅在有足够单元格时才跨格的卡片、紧密排列元素的轨道、允许插图伸出边界的内容列，以及依次吸附在彼此下方的面板。以下布局类涵盖这些情况：
+
+| 类名 | 工具类无法表达的布局规则 |
+| --- | --- |
+| [`auto-grid`](/components/auto-grid) | 自动确定列数的网格轨道列表 |
+| [`bento`](/components/bento) | 列数随可用空间调整，跨列数随列数调整，行高设有下限 |
+| [`masonry`](/components/masonry) | 网格轨道，缺少这种轨道时使用多列容器 |
+| [`breakout`](/components/breakout) | 限定列宽，并根据周围的可用空间计算外边距 |
+| [`sticky-stack`](/components/sticky-stack) | 根据各面板在同级元素中的位置计算偏移量 |
+| [`form`](/components/form) | 容器查询的阈值，以及顺序会反转的操作项 |
+| [`page`](/pages/page), [`shell`](/pages/app-shell) | 整页框架：`dvh`、安全区域和粘性栏 |
+
+其余内容均见本页。
+
+## 无障碍 \{#accessibility\}
+
+- 键盘导航和屏幕阅读器都遵循源码顺序。`flex-row-reverse` 和 `order(…)` 只改变视觉顺序，阅读顺序仍按源码排列。仅在两种顺序都合理时使用它们。
+- 布局工具类只负责布局。选用能表达内容语义的元素，例如 `<nav>`、`<header>` 或 `<ul>`，再把工具类加到该元素上。
+
+## 相关内容 \{#related\}
+
+<ComponentLinks slugs={['auto-grid', 'bento', 'masonry', 'breakout', 'sticky-stack', 'form']} />
+
+<ComponentLinks slugs={['surface', 'chip', 'button', 'heading']} />
+
+<ComponentLinks kind="pages" slugs={['page', 'app-shell']} />

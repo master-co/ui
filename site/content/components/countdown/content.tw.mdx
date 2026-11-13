@@ -1,0 +1,133 @@
+---
+title: "倒數計時"
+description: "以天、時、分、秒顯示距離指定時間還有多久。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+倒數計時顯示距離指定時間還有多久，例如產品上線、促銷結束或活動開始。每個時間單位各占一欄，欄寬相同，上方是數字，下方是低調的小標籤，冒號置於欄與欄之間的正中央。根元素是 `<time>`，其 `datetime` 以時間長度表示同一段剩餘時間，讓平台也能讀取畫面上的時間資訊。沒有腳本時，畫面顯示的是產生頁面當下的剩餘時間。加上幾行腳本即可開始倒數。
+
+<ComponentPreview name="default" height={128} title="倒數計時" background="plain" bodyClass="flex items-center justify-center p-lg" caption="腳本每秒更新一次倒數。" html={`<time class="countdown" id="launch" datetime="P2DT14H5M9S">
+  <span class="countdown-unit"><span class="countdown-value">02</span> <span class="countdown-label">days</span></span>
+  <span class="countdown-unit"><span class="countdown-value">14</span> <span class="countdown-label">hours</span></span>
+  <span class="countdown-unit"><span class="countdown-value">05</span> <span class="countdown-label">minutes</span></span>
+  <span class="countdown-unit"><span class="countdown-value">09</span> <span class="countdown-label">seconds</span></span>
+</time>
+<script>
+  var launch = document.getElementById('launch')
+  var figures = launch.querySelectorAll('.countdown-value')
+  var start = Array.prototype.map.call(figures, function (figure) { return Number(figure.textContent) })
+  var end = Date.now() + (((start[0] * 24 + start[1]) * 60 + start[2]) * 60 + start[3]) * 1000
+  function tick() {
+    var left = Math.max(0, Math.ceil((end - Date.now()) / 1000))
+    var units = [Math.floor(left / 86400), Math.floor(left / 3600) % 24, Math.floor(left / 60) % 60, left % 60]
+    units.forEach(function (unit, index) { figures[index].textContent = String(unit).padStart(2, '0') })
+    launch.setAttribute('datetime', left ? 'P' + units[0] + 'DT' + units[1] + 'H' + units[2] + 'M' + units[3] + 'S' : 'PT0S')
+    if (left) setTimeout(tick, (end - Date.now()) % 1000 || 1000)
+  }
+  tick()
+</script>`} />
+
+## 更新倒數 \{#ticking\}
+
+倒數計時由標記構成，顯示的數字和 `datetime` 表示相同的剩餘時間，外觀則由樣式表控制。腳本會根據頁面載入時的剩餘時間算出結束時刻，只算一次，之後每秒更新各個數字與 `datetime`。每次都排在下一秒開始時更新，避免顯示時間逐漸偏離時鐘。歸零時寫入 `datetime="PT0S"`，然後停止更新。
+
+如果頁面已知結束的日期和時間，例如促銷在某個時區的午夜結束，請直接倒數到該時刻，讓各裝置顯示一致的剩餘時間。
+
+## 方塊 \{#tiles\}
+
+`countdown-tiles` 將每個數字放進略微浮起的小方塊。方塊高度是數字高度的兩倍，採用大型控制項的圓角，標籤放在方塊下方。方塊緊密排列，無須冒號。適合倒數是畫面主角的場合，例如產品上線前的頁面。
+
+<ComponentPreview name="tiles" height={152} title="方塊" background="plain" bodyClass="flex items-center justify-center p-lg" html={`<time class="countdown countdown-tiles" datetime="P2DT14H5M9S">
+  <span class="countdown-unit"><span class="countdown-value">02</span> <span class="countdown-label">days</span></span>
+  <span class="countdown-unit"><span class="countdown-value">14</span> <span class="countdown-label">hours</span></span>
+  <span class="countdown-unit"><span class="countdown-value">05</span> <span class="countdown-label">minutes</span></span>
+  <span class="countdown-unit"><span class="countdown-value">09</span> <span class="countdown-label">seconds</span></span>
+</time>`} />
+
+## 滾動數字 \{#rolling-figures\}
+
+數字可以用[里程表](/components/odometer)呈現，讓各位數在變動時滾到新數字。倒數元件負責呈現時間單位，里程表負責呈現各位數，兩者各自獨立。倒數時，腳本讓各位數往回轉到新的數字。從 0 往回一格會到 -1，而里程表會將它顯示為 9，因此秒數會像計數器的轉輪一樣向下滾過 0。
+
+<ComponentPreview name="rolling" height={152} title="滾動數字" background="plain" bodyClass="flex items-center justify-center p-lg" caption="秒數每秒向下滾動一次，分鐘數則在每分鐘結束時滾動。" html={`<time class="countdown countdown-tiles" id="doors" datetime="PT4H12M30S">
+  <span class="countdown-unit">
+    <span class="countdown-value"><span class="odometer"><span class="odometer-value">04</span><span class="odometer-figures" aria-hidden="true"><span class="odometer-digit" style="--digit: 0"></span><span class="odometer-digit" style="--digit: 4"></span></span></span></span>
+    <span class="countdown-label">hours</span>
+  </span>
+  <span class="countdown-unit">
+    <span class="countdown-value"><span class="odometer"><span class="odometer-value">12</span><span class="odometer-figures" aria-hidden="true"><span class="odometer-digit" style="--digit: 1"></span><span class="odometer-digit" style="--digit: 2"></span></span></span></span>
+    <span class="countdown-label">minutes</span>
+  </span>
+  <span class="countdown-unit">
+    <span class="countdown-value"><span class="odometer"><span class="odometer-value">30</span><span class="odometer-figures" aria-hidden="true"><span class="odometer-digit" style="--digit: 3"></span><span class="odometer-digit" style="--digit: 0"></span></span></span></span>
+    <span class="countdown-label">seconds</span>
+  </span>
+</time>
+<script>
+  var doors = document.getElementById('doors')
+  var figures = doors.querySelectorAll('.odometer')
+  var start = Array.prototype.map.call(figures, function (figure) { return Number(figure.querySelector('.odometer-value').textContent) })
+  var end = Date.now() + ((start[0] * 60 + start[1]) * 60 + start[2]) * 1000
+  function roll(digit, numeral) {
+    var at = Number(digit.style.getPropertyValue('--digit')) || 0
+    var step = ((numeral - at) % 10 + 10) % 10
+    if (step) digit.style.setProperty('--digit', at + step - 10)
+  }
+  function tick() {
+    var left = Math.max(0, Math.ceil((end - Date.now()) / 1000))
+    var units = [Math.floor(left / 3600), Math.floor(left / 60) % 60, left % 60]
+    units.forEach(function (unit, index) {
+      var digits = figures[index].querySelectorAll('.odometer-digit')
+      figures[index].querySelector('.odometer-value').textContent = String(unit).padStart(2, '0')
+      roll(digits[0], Math.floor(unit / 10))
+      roll(digits[1], unit % 10)
+    })
+    doors.setAttribute('datetime', left ? 'PT' + units[0] + 'H' + units[1] + 'M' + units[2] + 'S' : 'PT0S')
+    if (left) setTimeout(tick, (end - Date.now()) % 1000 || 1000)
+  }
+  tick()
+</script>`} />
+
+## 行內 \{#inline\}
+
+`countdown-inline` 將所有時間單位排在同一條基線上，標籤緊接在各自的數字後方，字級與所在句子相同，適合在句中順帶提到期限。數字採用較醒目的文字色，標籤則維持低調，因此無須加重字重，就能讓時間從句中突顯。螢幕閱讀器會把 `h` 之類的簡寫讀成字母。請對輔助科技隱藏簡寫，並在旁補上完整單位名稱，再用 `sr-only` 將它從畫面上隱藏。
+
+<ComponentPreview name="inline" height={96} title="行內" background="plain" bodyClass="flex items-center justify-center p-lg" html={`<p class="m(0) text-sm fg-text-body">Early pricing ends in
+  <time class="countdown countdown-inline" datetime="P2DT14H5M">
+    <span class="countdown-unit"><span class="countdown-value">2</span><span class="countdown-label" aria-hidden="true">d</span><span class="sr-only">days</span></span>
+    <span class="countdown-unit"><span class="countdown-value">14</span><span class="countdown-label" aria-hidden="true">h</span><span class="sr-only">hours</span></span>
+    <span class="countdown-unit"><span class="countdown-value">05</span><span class="countdown-label" aria-hidden="true">m</span><span class="sr-only">minutes</span></span>
+  </time>.
+</p>`} />
+
+## 倒數結束時 \{#ended\}
+
+剩餘時間歸零時，`datetime="PT0S"`，數字會變淡，方塊也會改為平坦的內嵌樣式，表示倒數已結束。請在旁邊用文字說明接下來的狀態，例如「已開放入場」。有更合適的內容可顯示時，就用它取代倒數計時。
+
+<ComponentPreview name="ended" height={152} title="時間到" background="plain" bodyClass="flex items-center justify-center p-lg" html={`<time class="countdown countdown-tiles" datetime="PT0S">
+  <span class="countdown-unit"><span class="countdown-value">00</span> <span class="countdown-label">hours</span></span>
+  <span class="countdown-unit"><span class="countdown-value">00</span> <span class="countdown-label">minutes</span></span>
+  <span class="countdown-unit"><span class="countdown-value">00</span> <span class="countdown-label">seconds</span></span>
+</time>`} />
+
+## 無障礙 \{#accessibility\}
+
+- 倒數計時一律不設為即時區域。每秒朗讀變動的數字會打斷讀者正在進行的操作，而單次更新也沒有讀者非聽不可的資訊。螢幕閱讀器會在讀者瀏覽到倒數計時時，讀出數字與單位，例如「02 天 14 小時 05 分 09 秒」。
+- 如果倒數時刻本身很重要，例如保留座位的期限即將屆滿，請在獨立的 `role="status"` 區域用文字通知一次，例如「您的座位將再保留一分鐘。」
+- 冒號由樣式表產生，替代文字為空，因此不會被朗讀。
+- 請以完整單位名稱撰寫標籤。若像行內倒數計時一樣以單一字母當標籤，請對輔助科技隱藏該字母，再用 `sr-only` 提供完整名稱。
+- 啟用減少動態效果時，倒數計時內的里程表會直接在原位更新數字。使用強制色彩時，方塊會以系統色輪廓保留邊界。
+
+## 類別 \{#classes\}
+
+<ContractTable name="countdown" />
+
+## 自訂屬性 \{#custom-properties\}
+
+<ContractTable name="countdown" show="properties" />
+
+## 原始碼 \{#source\}
+
+<ComponentSource name="countdown" />

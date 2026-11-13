@@ -1,0 +1,158 @@
+---
+title: "树形视图"
+description: "用嵌套的行呈现层级关系。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+树形视图用嵌套行呈现文件夹、大纲、分类等具有层级的内容。无需脚本，分支使用原生 `<details>`，其 `<summary>` 作为分支行，因此可以用浏览器原生支持的按键展开或折叠分支。页内查找也会自动展开包含匹配项的折叠分支。
+
+<ComponentPreview name="default" height={456} title="树形视图" background="plain" bodyClass="p-lg" html={`<ul class="tree max-w(260) mx-auto">
+  <li>
+    <details class="tree-group" open>
+      <summary class="tree-item tree-toggle">packages</summary>
+      <ul class="tree-sub">
+        <li>
+          <details class="tree-group" open>
+            <summary class="tree-item tree-toggle">ui</summary>
+            <ul class="tree-sub">
+              <li><a class="tree-item" href="#button" aria-current="page">button.css</a></li>
+              <li><a class="tree-item" href="#input">input.css</a></li>
+              <li><a class="tree-item" href="#theme">theme.css</a></li>
+            </ul>
+          </details>
+        </li>
+        <li>
+          <details class="tree-group">
+            <summary class="tree-item tree-toggle">tests</summary>
+            <ul class="tree-sub">
+              <li><a class="tree-item" href="#test">master.test.ts</a></li>
+            </ul>
+          </details>
+        </li>
+      </ul>
+    </details>
+  </li>
+  <li><a class="tree-item" href="#readme">README.md</a></li>
+  <li><a class="tree-item" href="#license">LICENSE</a></li>
+</ul>`} />
+
+## 行 \{#rows\}
+
+- `tree-item` 表示一行，可以是链接、按钮或分支的 `<summary>`。每行高 28px，排列紧凑，样式低调。指针悬停的行和当前行采用与标签块相同的色调。
+- 在分支行上使用 `tree-toggle`，会在行首一列绘制箭头。分支展开时，箭头转为朝下。每行都保留这一列，让叶节点与同级分支对齐。
+- `tree-sub` 容纳分支下的各行，将它们缩进一级，并沿着从箭头向下延伸的细线排列。
+
+## 带图标的树形视图 \{#with-icons\}
+
+将 [`icon`](/components/icon) 用于箭头列之后的图标。只有所在行成为当前行时，图标才会突出显示。
+
+<ComponentPreview name="icons" height={272} title="带图标的树形视图" background="plain" bodyClass="p-lg" html={`<ul class="tree max-w(260) mx-auto">
+  <li>
+    <details class="tree-group" open>
+      <summary class="tree-item tree-toggle">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/></svg>
+        Design
+      </summary>
+      <ul class="tree-sub">
+        <li>
+          <a class="tree-item" href="#tokens" aria-current="page">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2Z"/></svg>
+            Tokens
+          </a>
+        </li>
+        <li>
+          <a class="tree-item" href="#materials">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2Z"/></svg>
+            Materials
+          </a>
+        </li>
+      </ul>
+    </details>
+  </li>
+  <li>
+    <details class="tree-group">
+      <summary class="tree-item tree-toggle">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/></svg>
+        Engineering
+      </summary>
+      <ul class="tree-sub">
+        <li><a class="tree-item" href="#api">API</a></li>
+      </ul>
+    </details>
+  </li>
+</ul>`} />
+
+## 行为 \{#behavior\}
+
+WAI-ARIA 树形视图模式提供一个 Tab 停靠点，支持用方向键在各行间移动以及展开或折叠分支。该模式由 `tree` [行为脚本](/guide/behaviors) 实现，并沿用相同的类名。在列表上设置 `role="tree"`，在每个分支行上设置 `role="treeitem"` 和 `aria-expanded`，并在该分支的 `tree-sub` 上设置 `role="group"`。箭头根据 `aria-expanded` 更新方向，带有 `aria-expanded="false"` 的行会隐藏紧随其后的 `tree-sub`，`aria-selected="true"` 标记选中行。
+
+<ComponentPreview name="aria" height={272} title="由 ARIA 驱动" background="plain" bodyClass="p-lg" behaviors html={`<ul class="tree max-w(260) mx-auto" role="tree" aria-label="Outline">
+  <li role="none">
+    <div class="tree-item tree-toggle" role="treeitem" aria-expanded="true" tabindex="0">Introduction</div>
+    <ul class="tree-sub" role="group">
+      <li role="none"><div class="tree-item" role="treeitem" aria-selected="true" tabindex="-1">How it fits together</div></li>
+      <li role="none"><div class="tree-item" role="treeitem" tabindex="-1">Principles</div></li>
+    </ul>
+  </li>
+  <li role="none">
+    <div class="tree-item tree-toggle" role="treeitem" aria-expanded="false" tabindex="-1">Theme</div>
+    <ul class="tree-sub" role="group">
+      <li role="none"><div class="tree-item" role="treeitem" tabindex="-1">Surfaces</div></li>
+    </ul>
+  </li>
+</ul>`} caption="将焦点移入树形视图后，用方向键移动。按 Enter、空格键或点击可展开分支，或选中叶节点所在行。" />
+
+`tree` 接收带有 `tree` 类名的根元素，无需传入选项，返回用于解除绑定的函数。
+
+```js name=app.js
+import { tree } from '@master/ui/behaviors/tree.js'
+
+const root = document.querySelector('.tree')
+tree(root)
+
+root.addEventListener('change', (event) => console.log(event.detail.item))
+```
+
+- **唯一的 Tab 停靠点。** 行为脚本用 `tabindex` 将一行保留在 Tab 导航顺序中，优先采用标记中已设置 `tabindex="0"` 的行，其次采用选中行或当前行，最后采用第一行。哪一行获得焦点，哪一行就成为 Tab 停靠点。解除绑定时，每行都会恢复原来的 `tabindex`。
+- **方向键导航。** 按方向键移动时会跳过折叠分支内的行、带有 `hidden` 属性的行和禁用行。
+- **激活。** summary、链接和按钮沿用浏览器原生的激活方式。对于没有原生激活方式的行，也就是在 `div` 上使用 `role="treeitem"` 的行，可按 <kbd>Enter</kbd>、<kbd>空格键</kbd> 或点击来激活。激活分支会切换其展开或折叠状态，激活叶节点会选中该行。`aria-selected="true"` 会从原先所在的行移到新选中的行。
+- **事件。** 选中一行时，根元素会派发可冒泡的 `change` 事件，`detail.item` 中包含该行。
+- **禁用。** 带有 `disabled` 或 `aria-disabled="true"` 的行不会响应激活。链接不会跳转，分支维持原来的展开或折叠状态。
+
+行为脚本也适用于由 `<details>` 构成的树形视图。前两个预览展示了这类树形视图无需脚本的用法。脚本通过 `open` 展开或折叠 `tree-group`，使整棵树只有一个 Tab 停靠点，并支持用同样的按键导航。`attach()` 会为所有树形视图绑定该脚本。要让由 `<details>` 构成的树形视图保留浏览器原生行为，请按名称导入所需的行为脚本。
+
+## 树形视图或导航 \{#tree-or-nav\}
+
+[导航](/components/nav) 用简短的列表呈现入口，仅有一级分组，当前行呈现为浮在底面上的面板。树形视图适合多层内容，行排列紧凑，每个分支开头都有一个箭头。
+
+## 键盘操作 \{#keyboard\}
+
+<ContractTable name="tree" show="keyboard" />
+
+## 无障碍 \{#accessibility\}
+
+- 使用 `<details>` 时，请保留其原生语义，避免添加树形视图角色。辅助技术会正确播报原生展开控件。未绑定行为脚本时，每行都是一个 Tab 停靠点。
+- 用 `aria-current="page"` 标记当前行，在树形视图模式内则用 `aria-selected="true"`。
+- 在触摸屏上，每行高 44px。
+
+## React、Svelte 和 Vue \{#frameworks\}
+
+`tree` 组件根据数据渲染各行，绑定行为脚本，并接收和传出选中行。用 `npx master-ui add tree` 将组件复制到项目中。有关组件的实现和用法，请参阅 [React、Svelte 和 Vue](/guide/frameworks)。
+
+<FrameworkSource name="tree" />
+
+## 类名 \{#classes\}
+
+<ContractTable name="tree" />
+
+## 自定义属性 \{#custom-properties\}
+
+<ContractTable name="tree" show="properties" />
+
+## 源码 \{#source\}
+
+<ComponentSource name="tree" />

@@ -1,0 +1,91 @@
+---
+title: "進捗"
+description: "作業の進み具合に応じて色が伸びる細いバー。"
+---
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+進捗バーは、タスクがどこまで完了したかを示します。ネイティブの`<progress>`に`.progress`を指定します。ブラウザーが支援技術に値を伝え、クラスが進捗に応じて色で塗られる細いバーを描画します。コントロール内で進捗量がわからない処理を示すには、[スピナー](/components/spinner)を使います。
+
+<ComponentPreview name="default" height={96} title="進捗" background="plain" bodyClass="p-lg" html={`<label class="field">
+  Uploading 3 of 5 files
+  <progress class="progress" value="62" max="100">62%</progress>
+</label>`} />
+
+## 進捗量が不明な場合 \{#indeterminate\}
+
+進捗量がわからない間は、`value`を省略します。色の帯がトラックに沿って移動します。動きを抑える設定では、トラック全体を均一な中間色で静止表示します。
+
+<ComponentPreview name="indeterminate" height={96} title="進捗量が不明な場合" background="plain" bodyClass="p-lg" html={`<label class="field">
+  Preparing the build
+  <progress class="progress"></progress>
+</label>`} />
+
+## サイズ \{#sizes\}
+
+トラックの既定の太さは6pxです。リストの行には4pxの`progress-sm`を使えます。`progress-lg`は8pxです。
+
+<ComponentPreview name="sizes" height={104} title="サイズ" background="plain" bodyClass="flex flex-col gap-md p-lg" html={`<progress class="progress progress-sm" value="30" max="100" aria-label="Small">30%</progress>
+<progress class="progress" value="55" max="100" aria-label="Medium">55%</progress>
+<progress class="progress progress-lg" value="80" max="100" aria-label="Large">80%</progress>`} />
+
+## 区切り付き \{#segmented\}
+
+`progress-segmented`はトラックを等分します。5ステップ中3ステップ、8件のアップロード中4件など、完了した項目数で進捗を示すときに使います。`--progress-steps`を`max`と同じ値に設定すると、各区画が1ステップに対応します。トラックと塗りの両方に同じマスクで区切りを入れるため、区画と進捗値が対応します。
+
+<ComponentPreview name="segmented" height={136} title="区切り付き" background="plain" bodyClass="flex flex-col gap-md p-lg" html={`<label class="field">
+  Step 3 of 5
+  <progress class="progress progress-segmented" max="5" value="3">Step 3 of 5</progress>
+</label>
+<label class="field">
+  5 of 8 files uploaded
+  <progress class="progress progress-segmented progress-lg" style="--progress-steps: 8" max="8" value="5">5 of 8</progress>
+</label>`} />
+
+## リング \{#ring\}
+
+`progress-ring`は同じ進捗量を円周上に描画します。タイルや行、カードの隅に配置できます。要素には`role="progressbar"`を指定します。ブラウザーが型指定付きの`attr()`に対応していれば、リングは`aria-valuenow`と`aria-valuemax`を直接読み取ります。利用者に伝える値と描画に使う値を一度に指定でき、値が変わると円弧が滑らかに伸縮します。対応していないブラウザー向けには、`style`属性にも`--progress-ring-value`を指定します。
+
+要素の内容は、中央のラベルとして表示されます。円弧の両端は丸く、進捗がゼロのときはトラックだけが表示されます。
+
+<ComponentPreview name="ring" height={144} narrowHeight={232} title="リング" background="plain" bodyClass="flex flex-wrap items-center justify-center gap-lg p-lg" html={`<div class="progress-ring progress-ring-sm" role="progressbar" aria-label="Upload" aria-valuenow="40"></div>
+<div class="progress-ring" role="progressbar" aria-label="Storage used" aria-valuenow="64">64</div>
+<div class="progress-ring progress-ring-lg" role="progressbar" aria-label="Steps done" aria-valuenow="3" aria-valuemax="8" aria-valuetext="3 of 8">3/8</div>
+<div class="progress-ring progress-ring-xl" role="progressbar" aria-label="Coverage" aria-valuenow="86">86%</div>`} />
+
+`aria-valuenow`がない場合は進捗量が不明となり、円周の4分の1の長さの円弧がトラックに沿って移動します。リングでステータスを示す場合は、`--progress-ring-color`にステータス色を指定し、リングの横にも文言でステータスを表示します。
+
+<ComponentPreview name="ring-states" height={112} title="リングの状態" background="plain" bodyClass="flex flex-wrap items-center justify-center gap-lg p-lg" html={`<div class="progress-ring" role="progressbar" aria-label="Preparing"></div>
+<div class="progress-ring progress-ring-lg" role="progressbar" aria-label="Checks passed" aria-valuenow="100" style="--progress-ring-color: var(--color-success)">100</div>
+<div class="progress-ring progress-ring-lg" role="progressbar" aria-label="Quota used" aria-valuenow="92" style="--progress-ring-color: var(--color-danger)">92</div>`} />
+
+## 数値付き \{#with-a-value\}
+
+バー自体には数値は表示されません。値が変わっても表示位置がずれないよう、ラベルの横に等幅数字で表示してください。
+
+<ComponentPreview name="value" height={96} title="数値付き" background="plain" bodyClass="p-lg" html={`<div class="flex flex-col gap-xs">
+  <div class="flex items-baseline justify-between text-sm">
+    <span class="fg-text-strong" id="storage-label">Storage</span>
+    <span class="fg-text-muted">7.4 of 10 GB</span>
+  </div>
+  <progress class="progress" value="7.4" max="10" aria-labelledby="storage-label">74%</progress>
+</div>`} />
+
+## アクセシビリティ \{#accessibility\}
+
+- `field`によるラベル、`aria-label`、または`aria-labelledby`でバーに名前を付けます。
+- `<progress>`内のテキストは、その要素を描画できないブラウザー向けのフォールバックです。
+- バーが領域の読み込み状況を示す場合は、読み込みが完了するまで、その領域に`aria-busy="true"`を指定します。
+
+## クラス \{#classes\}
+
+<ContractTable name="progress" />
+
+## カスタムプロパティ \{#custom-properties\}
+
+<ContractTable name="progress" show="properties" />
+
+## ソース \{#source\}
+
+<ComponentSource name="progress" />

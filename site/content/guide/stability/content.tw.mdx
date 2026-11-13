@@ -1,70 +1,71 @@
 ---
 title: "穩定性"
-description: "辨識公開介面，掌控專案所使用的原始碼與主題，並在 Master UI 處於實驗階段時審視每次升級。"
+description: "在 Master UI 的實驗階段，辨識公開介面，掌控專案使用的原始碼與主題，並檢查升級帶來的變更。"
 ---
+
 import GuideFigure from '../../../components/GuideFigure.astro'
 
-專案透過 class 名稱、自訂屬性、匯入與指令依賴 Master UI。以元件庫為基礎進行開發時，請使用下列公開介面，並在升級時審視它們。
+專案透過類別名稱、自訂屬性、匯入路徑和指令使用 Master UI。以此程式庫為基礎開發時，請使用下列公開介面，並在升級時重新檢查。
 
-Master UI 仍處於實驗階段：即使是公開介面，也可能在 0.x 版本中變更。「公開」指的是使用目前版本時受支援的方式；它並不保證與下一個版本相容。請[審慎升級](#experimental)，檢查會影響你的專案的變更。
+Master UI 仍在實驗階段，即使是公開介面也可能在 0.x 版本中變更。「公開」表示目前版本支援的使用方式，並不保證與下一個版本相容。[審慎升級](#experimental)，確認哪些變更會影響你的專案。
 
-## 公開 \{#public\}
+## 公開介面 \{#public\}
 
-| 項目 | 記載位置 | 範例 |
+| 項目 | 定義位置 | 範例 |
 | --- | --- | --- |
-| Class 名稱 | 契約中的 `classes` | `btn`、`btn-primary`、`dialog-header` |
-| class 要求的元素與屬性 | 該 class 的 `elements`、`attributes` 與 `label` | `switch` 放在帶有 `type="checkbox"` 與 `role="switch"` 的 `<input>` 上，且需要無障礙名稱 |
-| 狀態標示 | 契約中的 `states` | `btn` 上的 `aria-pressed="true"`、`switch` 上的 `:checked` |
-| 元件的自訂屬性 | 契約中的 `properties` | `--btn-height`、`--splitter-size` |
-| 主題 token | `theme.css` 中的 `@theme`；`@master/ui/theme.json` 列出每個 token 及其值 | `--color-surface-raised`、`--radius-control`、`--lift` |
-| Mixin 名稱 | `theme.css` 中的 `@mixin` | `--surface-sheet`、`--focus-ring`、`--anchored` |
-| 契約的結構描述 | `@master/ui/contract.schema.json` | 契約的欄位及其各自的意義 |
-| 行為 | `@master/ui/behaviors` 的匯出 | `combobox(root)`、`attach()`、`calendarMonth()`、各自回傳的函式及其 `value` |
-| 框架元件的名稱 | `frameworks/manifest.json`，由 `master-ui add` 讀取 | `combobox`、`dialog`、`toast` |
-| 檢查器 | `@master/ui/check` 的匯出 | `check`、`createIndex`、`parse`、`format`、`owners` |
-| 指令 | `master-ui` | `list`、`contract`、`check`、`init`、`own`、`add`、`status`、`diff`、`accept` |
-| 匯入路徑 | 套件 `package.json` 中的 `exports` | 下方表格 |
+| 類別名稱 | 契約中的 `classes` | `btn`, `btn-primary`, `dialog-header` |
+| 類別要求的元素與屬性 | 該類別的 `elements`、`attributes` 和 `label` | `switch` 應套用於具有 `type="checkbox"` 和 `role="switch"` 的 `<input>`，且該元素必須有無障礙名稱 |
+| 狀態標記 | 契約中的 `states` | `btn` 上的 `aria-pressed="true"`、`switch` 上的 `:checked` |
+| 元件的公開自訂屬性 | 契約中的 `properties` | `--btn-height`, `--splitter-size` |
+| 主題 token | `theme.css` 中的 `@theme`；`@master/ui/theme.json` 列出各 token 及其值 | `--color-surface-raised`, `--radius-control`, `--lift` |
+| Mixin 名稱 | `theme.css` 中的 `@mixin` | `--surface-sheet`, `--focus-ring`, `--anchored` |
+| 契約結構描述 | `@master/ui/contract.schema.json` | 契約的欄位及其含義 |
+| 行為 | `@master/ui/behaviors` 的匯出項目 | `combobox(root)`、`attach()`、`calendarMonth()`、各自回傳的函式及該函式的 `value` |
+| 框架元件名稱 | `master-ui add` 讀取的 `frameworks/manifest.json` | `combobox`, `dialog`, `toast` |
+| 檢查工具 | `@master/ui/check` 的匯出項目 | `check`, `createIndex`, `parse`, `format`, `owners` |
+| 指令 | `master-ui` | `list`, `contract`, `check`, `init`, `own`, `add`, `status`, `diff`, `accept` |
+| 匯入路徑 | 套件 `package.json` 中的 `exports` | 見下表 |
 
-契約列出已安裝版本中單一元件的介面。依賴某個 class 或屬性之前，請先將它輸出：
+每份契約列出已安裝版本中單一元件的介面。使用某個類別或屬性前，先輸出該元件的契約：
 
 ```bash
 npx master-ui contract button
 ```
 
-契約的 `properties` 清單定義了元件專屬的擴充點。未列出的內部屬性可能會變更。共用的主題 token 則是另一個公開介面，定義於 `theme.css`。
+契約中的 `properties` 清單定義了元件專屬的擴充點。未列出的內部屬性可能變更。共用的主題 token 定義於 `theme.css`，是另一組公開介面。
 
 ### 匯入路徑 \{#import-paths\}
 
 | 路徑 | 內容 |
 | --- | --- |
-| `@master/ui`、`@master/ui/master.css` | 主題、所有元件與版面 class，以 Master CSS 原始碼形式提供 |
-| `@master/ui/theme.css` | 預設主題的 token 與 mixin |
-| `@master/ui/components/<name>.css`、`@master/ui/layouts/<name>.css` | 單一樣式表 |
-| `@master/ui/components/<name>.json`、`@master/ui/layouts/<name>.json` | 其契約 |
-| `@master/ui/themes/<name>.css` | 另一個主題，例如 `paper` |
+| `@master/ui`, `@master/ui/master.css` | 以 Master CSS 原始碼提供主題、所有元件和版面配置類別 |
+| `@master/ui/theme.css` | 預設主題的 token 和 mixin |
+| `@master/ui/components/<name>.css`, `@master/ui/layouts/<name>.css` | 單一樣式表 |
+| `@master/ui/components/<name>.json`, `@master/ui/layouts/<name>.json` | 對應的契約 |
+| `@master/ui/themes/<name>.css` | 其他主題，例如 `paper` |
 | `@master/ui/contract.schema.json` | 契約的 JSON Schema |
-| `@master/ui/contracts.json` | 所有契約集中於一個檔案 |
-| `@master/ui/theme.json` | 主題的每個 token 及其值 |
-| `@master/ui/standalone.css` | 編譯成一般 CSS 的主題與所有元件 |
-| `@master/ui/base.css` | 元件預期已存在的小型重設樣式 |
-| `@master/ui/behaviors`、`@master/ui/behaviors/<name>.js` | 帶有 `attach()` 的所有行為，或單一行為，並附有 TypeScript 型別 |
-| `@master/ui/check` | 以模組形式提供的契約檢查器 |
+| `@master/ui/contracts.json` | 收錄所有契約的單一檔案 |
+| `@master/ui/theme.json` | 主題的所有 token 及其值 |
+| `@master/ui/standalone.css` | 編譯成純 CSS 的主題和所有元件 |
+| `@master/ui/base.css` | 元件依賴的精簡樣式重設 |
+| `@master/ui/behaviors`, `@master/ui/behaviors/<name>.js` | 所有行為及 `attach()`，或單一行為，均附 TypeScript 型別 |
+| `@master/ui/check` | 以模組提供的契約檢查工具 |
 
-編譯後的檔案也可以在 `@master/ui/dist/` 下取得，這是 CDN 提供的路徑：`dist/standalone.css`、`dist/base.css`、`dist/themes/<name>.css`、`dist/contracts.json` 與 `dist/theme.json`。
+也可以透過 `@master/ui/dist/` 存取編譯後的檔案。CDN 使用的路徑包括 `dist/standalone.css`、`dist/base.css`、`dist/themes/<name>.css`、`dist/contracts.json` 和 `dist/theme.json`。
 
-## 非公開 \{#private\}
+## 私有實作細節 \{#private\}
 
-| 項目 | 範例 | 改用 |
+| 項目 | 範例 | 替代做法 |
 | --- | --- | --- |
-| 契約未列出的元件內部屬性 | `--btn-lift`，按鈕用它在自己的規則之間傳遞位移量 | 已列出的屬性，或主題 token：`--lift` |
-| 選擇器的結構 | 規則如何巢狀、由哪個偽元素繪製記號、規則在 `components` 層中的選擇器權重 | class 與狀態標示；元素上的 utility 會勝過任何元件規則 |
-| 預設主題的值 | `--shadow-raised` 背後的陰影清單、`--surface-sheet` 中漸層的色標 | token 或 mixin 名稱，在你自己的主題中重新定義 |
-| 樣式表中宣告與規則的順序 | 兩條規則中哪一條在後 | 檔案外部沒有任何東西依賴它 |
-| `behaviors/internal.js` | combobox、command、listbox 與 menu 行為共用的輔助函式。它自己的檔頭註明它不是行為 | 行為的函式；或[自行擁有該行為](/guide/behaviors#own-a-behavior)，並在旁邊保留該檔案的副本 |
-| `dist/` 下本頁未列出的檔案 | 建置留在該處的任何其他檔案 | 上方表格中的路徑 |
-| `frameworks/` 下的檔案 | 套件中所保存的 [React、Svelte 與 Vue 元件](/guide/frameworks)。它們是用來複製的原始碼，而不是用來匯入的模組，其 props 可能在不同版本之間變更 | `npx master-ui add <name>`，用來複製其中一個；副本屬於你，不會隨版本發布而改變 |
+| 契約未列出的元件內部屬性 | 按鈕用 `--btn-lift` 在自身的規則之間傳遞位移量 | 使用契約列出的屬性，或使用 `--lift` 等主題 token |
+| 選擇器的結構 | 規則如何巢狀排列、哪個偽元素繪製標記、規則的選擇器在 `components` 層中的權重 | 使用類別和狀態標記。套用在元素上的 utility 優先於任何元件規則 |
+| 預設主題的值 | `--shadow-raised` 定義的陰影清單、`--surface-sheet` 中的漸層色標 | 在自己的主題中使用相同的 token 或 mixin 名稱重新定義 |
+| 樣式表中宣告和規則的順序 | 兩條規則中哪一條排在後面 | 檔案外部不依賴這個順序 |
+| `behaviors/internal.js` | combobox、command、listbox 和 menu 行為共用的輔助函式。檔頭已註明此檔案並非行為 | 使用該行為的函式，或[自行維護該行為](/guide/behaviors#own-a-behavior)，並將這個檔案的副本放在同一目錄 |
+| 本頁未列出的 `dist/` 檔案 | 建置在該目錄產生的任何其他檔案 | 使用上表列出的路徑 |
+| `frameworks/` 下的檔案 | 套件內的 [React、Svelte 和 Vue 元件](/guide/frameworks)。這些原始碼供複製使用，不提供模組匯入，props 也可能隨版本變更 | 用 `npx master-ui add <name>` 複製所需元件。副本由你維護，不會隨套件版本變更 |
 
-實作細節可以在契約不變的情況下改變。例如，可以重新調整陰影，或將記號移到另一個偽元素，而不改變元件接受的標記。結果仍可能看起來不同，因此視覺審視仍是升級的一部分。
+實作細節可能在契約不變的情況下調整。例如，元件可在維持相同標記要求的情況下微調陰影，或改用另一個偽元素繪製標記。呈現結果仍可能有差異，因此升級時也要檢查外觀。
 
 ```css name=app.css
 /* Public: the button contract lists --btn-height. */
@@ -83,26 +84,26 @@ npx master-ui contract button
 }
 ```
 
-## 變更代表什麼 \{#what-a-change-means\}
+## 變更的影響 \{#what-a-change-means\}
 
-| 變更 | 是否為破壞性變更 |
+| 變更 | 是否破壞相容性 |
 | --- | --- |
-| 移除或重新命名公開名稱：class、必要屬性、狀態標示、已列出的屬性、token、mixin、匯出、指令、匯入路徑 | 是 |
-| 重新調整預設主題：色調、陰影、漸層、持續時間 | 否 |
-| 非公開清單上的任何項目改變 | 否 |
-| 套件中的框架元件改變：某個 prop、其標記 | 否。專案中的副本維持取得時的樣子；`master-ui status` 會告訴你上游已經變動 |
+| 移除或重新命名公開項目，包括類別、必要屬性、狀態標記、契約列出的屬性、token、mixin、匯出項目、指令或匯入路徑 | 是 |
+| 微調預設主題，例如色調、陰影、漸層或持續時間 | 否 |
+| 變更任何私有項目 | 否 |
+| 變更套件內框架元件的 prop 或標記 | 否。專案中的副本會保留複製當時的內容，`master-ui status` 會指出上游已有變更 |
 
-視覺上的重新調整可以保留契約不變。請決定專案需要掌控哪個部分：已安裝的版本、單一元件的實作，或主題的值。
+調整外觀時可以維持原有契約。先確認專案需要掌控哪一部分：已安裝的版本、個別元件的實作，還是主題的值。
 
-**擁有元件。** `own` 會複製它的樣式表、契約，以及（若有的話）行為。將頁面接到這些副本上，可避免之後的套件版本取代該實作。複製的樣式表仍會讀取主題 token，因此單是擁有它並不會凍結其外觀。請參閱[自訂](/guide/customization#own-a-component)。
+**自行維護元件。** `own` 會複製元件的樣式表、契約，以及行為（若有）。將頁面改為使用這些副本，即可避免日後升級套件時替換這份實作。樣式表副本仍會使用主題 token，外觀也會隨這些 token 的值而變。請參閱[自訂](/guide/customization#own-a-component)。
 
 ```bash
 npx master-ui own button
 ```
 
-### 保留本地主題 \{#pin-the-theme\}
+### 保留本機主題 \{#pin-the-theme\}
 
-將 `node_modules/@master/ui/theme.css` 複製到專案中，並在元件庫之後匯入。它的 token 與 mixin 定義會優先於套件中的定義。這會保留你所複製的值；但新的 token，以及元件使用 token 方式的改變，仍可能影響結果。[主題設定](/guide/theming)說明如何維護這個檔案。
+將 `node_modules/@master/ui/theme.css` 複製到專案，並在匯入程式庫後再匯入這個檔案。其中的 token 和 mixin 定義會優先於套件中的定義。這樣可保留複製當時的值，但新增 token 或調整元件使用 token 的方式，都可能影響呈現結果。請參閱[主題設定](/guide/theming)，了解如何維護這個檔案。
 
 ```css name=app.css
 @import '@master/css';
@@ -110,37 +111,37 @@ npx master-ui own button
 @import './ui/theme.css';
 ```
 
-## 套件處於實驗階段期間 \{#experimental\}
+## 套件仍在實驗階段時 \{#experimental\}
 
-Master UI 仍處於實驗階段：它的版本是 0.x。在 1.0 之前，上方表格說明的是某個名稱是什麼，而不是保留它的承諾。任何版本都可能重新命名或移除公開名稱，且不會提供棄用期、相容層或遷移指南。版本說明會列出變更的內容。
+Master UI 仍在實驗階段，版本為 0.x。在 1.0 之前，上表只說明各名稱的用途，名稱是否保留仍可能隨版本而定。任何版本都可能重新命名或移除公開名稱，且不提供淘汰緩衝期、相容層或遷移指南。請查閱版本說明以了解變更。
 
-因此，請安裝確切的版本，並審慎地升級：
+請安裝指定的確切版本，並在確認變更後再升級：
 
 ```bash
 npm install @master/ui --save-exact
 ```
 
-`--save-exact` 記錄的是所選的版本，而不是允許的版本範圍。請將套件清單與 lockfile 一起提交，讓其他 checkout 安裝相同的相依套件組合。如此一來，本地主題或元件副本就能對照已知的版本進行審視。
+`--save-exact` 會記錄選定的確切版本，而非允許的版本範圍。請一併提交套件資訊清單和鎖定檔，讓其他工作副本安裝相同的相依套件。日後就能以已知的版本為基準，檢查本機主題或元件副本。
 
-對於專案所擁有的元件，命令列工具會回報有哪些變動。`status` 會將每個擁有的元件與已安裝的套件比較，並列出自取得以來在上游有所變更的檔案：
+指令列工具會回報專案自行維護的元件有哪些上游變更。`status` 會逐一比對這些元件與已安裝的套件，列出自複製以來在上游有變更的檔案：
 
 ```bash
 npx master-ui status
 ```
 
-當某個擁有的元件在上游有所變更時，它會以代碼 2 結束，讓升級後執行的工作可以回報此事。`npx master-ui diff button` 會顯示已儲存的基準與已安裝套件之間的差異。在你自行審視並合併之後，`npx master-ui accept button` 會推進已儲存的基準；它不會合併或編輯你的工作副本。[自訂](/guide/customization#upstream-changes)逐步說明了這些指令。
+自行維護的元件若有上游變更，指令會以結束碼 2 結束，讓升級後執行的工作能回報這個狀態。`npx master-ui diff button` 會顯示已儲存的基準與已安裝套件之間的差異。自行檢查並合併變更後，執行 `npx master-ui accept button` 更新已儲存的基準。這項指令不會合併或編輯工作副本。請參閱[自訂](/guide/customization#upstream-changes)的指令操作步驟。
 
 <GuideFigure name="stability" title="合併上游變更">
 
-**比較、合併，再記錄新的基準。** `diff` 會比較已儲存的基準與已安裝的套件，你的工作副本不在比較範圍內。由你將需要的變更合併到工作副本中。之後，`accept` 會將已安裝的上游檔案複製到已儲存的基準，並更新擁有權紀錄；它不會更動你已合併的工作副本。圖中的檔案記號僅為示意，並非某次特定版本的差異。
+**比對並合併變更，再記錄新基準。** `diff` 只比對已儲存的基準與已安裝的套件。請自行將要採用的變更合併到工作副本。接著執行 `accept`，將已安裝套件中的上游檔案複製到已儲存的基準，並更新自行維護的紀錄，合併後的工作副本則維持原樣。圖中的檔案標記僅供示意。
 
 </GuideFigure>
 
 每次升級時：
 
-1. 閱讀版本說明，並更新確切的相依套件版本與 lockfile。
-2. 對專案的標記執行 `npx master-ui check`，找出不再符合契約的 class、元素或屬性。
-3. 審視已擁有與已加入元件的 `status` 與 `diff`；在接受新的基準之前先完成合併。
-4. 建置應用程式，並實際操作受影響的控制項、覆蓋層與鍵盤操作路徑。比較淺色與深色外觀，包括任何本地主題。
+1. 閱讀版本說明，更新相依套件的確切版本與鎖定檔。
+2. 執行 `npx master-ui check` 檢查專案的標記，找出已不符合契約的類別、元素或屬性。
+3. 檢查自行維護及已加入元件的 `status` 和 `diff` 結果，先合併變更，再接受新基準。
+4. 建置應用程式，實際操作受影響的控制項、覆疊介面及鍵盤操作流程。比較淺色與深色模式的外觀，若有本機主題也一併檢查。
 
-檢查器會依契約驗證標記；它無法確立應用程式的行為或渲染結果沒有改變。
+檢查工具會依契約驗證標記。應用程式的行為及呈現結果是否有變化，仍需另行確認。

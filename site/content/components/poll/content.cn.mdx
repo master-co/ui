@@ -1,0 +1,80 @@
+---
+title: "投票"
+description: "显示问题和候选答案，选择后展示投票结果。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+投票包含一个问题、几个选项和票数分布。每个选项都用 `<label>` 包裹原生单选按钮，因此可以用方向键在组内切换，表单也能获取选中的值。投票前，各选项以平面呈现，共用一道轮廓。选中任一选项后，每个选项从起始端填充底色，填充宽度对应得票比例，末端显示比例数值。整个过程只由输入控件的选中状态驱动，无需脚本。
+
+<ComponentPreview name="default" height={300} narrowHeight={320} title="投票" bodyClass="flex items-center justify-center p-lg" caption="选择一个选项即可查看结果。" html={`<div class="card w-full max-w(360)">
+  <fieldset class="poll">
+    <legend class="poll-title">Which theme should be the default?</legend>
+    <label class="poll-option" style="--value: 58"><input class="poll-input" type="radio" name="theme" value="moonstone"><span class="poll-label">Moonstone</span><span class="poll-value">58%</span></label>
+    <label class="poll-option" style="--value: 31"><input class="poll-input" type="radio" name="theme" value="obsidian"><span class="poll-label">Obsidian</span><span class="poll-value">31%</span></label>
+    <label class="poll-option" style="--value: 11"><input class="poll-input" type="radio" name="theme" value="system"><span class="poll-label">Follow the system</span><span class="poll-value">11%</span></label>
+    <p class="poll-meta">214 votes · 2 days left</p>
+  </fieldset>
+</div>`} />
+
+## 结果如何显示 \{#how-the-result-shows\}
+
+每个 `poll-option` 都通过 `--value` 保存其得票比例，取值为 0 到 100，并在 `poll-value` 中以文本显示同一个数值。没有输入控件被选中时，比例色条的宽度为零，数值对用户和辅助技术均隐藏。选中一个选项后，`:has()` 会检测到组内的选中状态，每条色条展开到对应宽度，各数值随之淡入。
+
+选中的选项会显示墨色轮廓和更浓的底色，并在文字后显示对勾。改选其他选项时，这三种标记随之转移，得票比例保持原值。
+
+数值由页面提供。如果结果需要计入刚投出的一票，请在记录该票时更新 `--value` 和文本，比例色条会平滑过渡到新的宽度。
+
+## 已结束的投票 \{#closed\}
+
+投票结束后，禁用输入控件。页面一开始就显示结果，所有选项均不可再选，并保持原有的可读性，方便查看结果。在读者选过的选项上保留 `checked`。
+
+<ComponentPreview name="closed" height={300} narrowHeight={320} title="已结束" bodyClass="flex items-center justify-center p-lg" html={`<div class="card w-full max-w(360)">
+  <fieldset class="poll">
+    <legend class="poll-title">Which theme should be the default?</legend>
+    <label class="poll-option" style="--value: 61"><input class="poll-input" type="radio" name="theme-closed" value="moonstone" disabled><span class="poll-label">Moonstone</span><span class="poll-value">61%</span></label>
+    <label class="poll-option" style="--value: 29"><input class="poll-input" type="radio" name="theme-closed" value="obsidian" disabled checked><span class="poll-label">Obsidian</span><span class="poll-value">29%</span></label>
+    <label class="poll-option" style="--value: 10"><input class="poll-input" type="radio" name="theme-closed" value="system" disabled><span class="poll-label">Follow the system</span><span class="poll-value">10%</span></label>
+    <p class="poll-meta">380 votes · Final result</p>
+  </fieldset>
+</div>`} />
+
+## 多选投票 \{#several-answers\}
+
+允许读者选择多个选项时，使用复选框。勾选任一选项即显示结果，每个已选选项都显示轮廓和对勾，各选项的得票比例之和不再固定为 100%。
+
+<ComponentPreview name="several" height={352} narrowHeight={376} title="多选投票" bodyClass="flex items-center justify-center p-lg" html={`<div class="card w-full max-w(360)">
+  <fieldset class="poll">
+    <legend class="poll-title">Which frameworks do you ship with?</legend>
+    <label class="poll-option" style="--value: 72"><input class="poll-input" type="checkbox" name="framework" value="react" checked><span class="poll-label">React</span><span class="poll-value">72%</span></label>
+    <label class="poll-option" style="--value: 34"><input class="poll-input" type="checkbox" name="framework" value="svelte" checked><span class="poll-label">Svelte</span><span class="poll-value">34%</span></label>
+    <label class="poll-option" style="--value: 41"><input class="poll-input" type="checkbox" name="framework" value="vue"><span class="poll-label">Vue</span><span class="poll-value">41%</span></label>
+    <label class="poll-option" style="--value: 18"><input class="poll-input" type="checkbox" name="framework" value="none"><span class="poll-label">None: plain HTML</span><span class="poll-value">18%</span></label>
+    <p class="poll-meta">Choose all that apply</p>
+  </fieldset>
+</div>`} />
+
+## 投票与选择项 \{#poll-or-choice\}
+
+投票结果汇总所有参与者的选择，选中一个选项即可查看结果。[选择项](/components/choice) 是用一句话说明自身含义的表单选项，选中后不再显示额外内容。只需展示结果、无需读者投票时，使用带 `chart-horizontal` 的[图表](/components/chart)。
+
+## 无障碍 \{#accessibility\}
+
+- 使用 `<fieldset>`，将问题放在它的 `<legend>` 中，以便辅助技术在播报每个选项时一并读出问题。组内的单选按钮共用同一个 `name`。
+- 每个选项都用 `<label>` 包裹其输入控件，因此整个选项表面都可操作。目标高度为 38px，在触摸屏上为 44px。焦点环围绕整个选项绘制。
+- 数值以文本呈现。结果显示前，使用 `visibility` 隐藏数值，避免辅助技术提前读出。看不到底色的读者仍可通过文档中的文本获取数值。
+- 看不到轮廓的读者可以通过对勾识别选中的选项。在强制颜色模式下，选中的选项使用系统高亮色。
+
+## 类名 \{#classes\}
+
+<ContractTable name="poll" />
+
+## 自定义属性 \{#custom-properties\}
+
+<ContractTable name="poll" show="properties" />
+
+## 源码 \{#source\}
+
+<ComponentSource name="poll" />

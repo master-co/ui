@@ -1,0 +1,192 @@
+---
+title: "Bento"
+description: "在同一容器內排列幾種尺寸的區塊，欄數隨可用空間調整。"
+---
+
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import PagePreview from '~/site/components/PagePreview.astro'
+
+Bento 把幾個不同尺寸的區塊排進同一個容器。展示產品功能或個人檔案的重點時，可以放一個大區塊，旁邊放一個高區塊，再用幾個小區塊搭配。Bento 只負責版面配置，本身不繪製背景。各區塊由[卡片](/components/card)、[面板](/components/surface)及其中的內容組成。
+
+Bento 會決定欄數以及各區塊能跨幾欄，兩者都以 Bento 本身的可用寬度為準，與檢視區寬度無關。從 48rem 起為四欄，從 28rem 起為兩欄，低於 28rem 則為一欄。寬版 Bento 中跨兩欄的區塊，在兩欄版面會占滿整列，在單欄版面則只占一格。同一份標記在桌面上可交錯排列，在手機上則依序排成一欄。
+
+<PagePreview name="default" title="Bento" height={708} tabletHeight={1236} phoneHeight={1584} caption="依序選擇「平板」和「手機」，四欄會先變成兩欄，再變成一欄。每個區塊的跨欄範圍都以當下的欄數為限。" html={`<section class="flex flex-col gap-xl p-xl bg-surface-base fg-text-body text-sm" aria-labelledby="bento-title">
+  <header class="flex flex-col gap-xs max-w(560)">
+    <p class="eyebrow">Platform</p>
+    <h2 class="heading heading-xl" id="bento-title">Everything a deploy needs</h2>
+  </header>
+  <div class="bento">
+    <article class="card card-split bento-large">
+      <img class="card-media" src="/demo/moonstone.svg" alt="">
+      <header class="card-header">
+        <h3 class="card-title">Live at the edge</h3>
+        <p class="card-description">Every push is served from 14 regions before the review is done.</p>
+      </header>
+      <p class="card-body">Static files, functions and images are cached where the reader is, and purged the moment a deploy replaces them.</p>
+      <footer class="card-footer">
+        <a class="btn btn-sm" href="#regions">See the regions</a>
+      </footer>
+    </article>
+    <article class="card bento-tall">
+      <header class="card-header">
+        <h3 class="card-title">Reviewed together</h3>
+        <p class="card-description">Comments land on the preview, beside what they are about.</p>
+      </header>
+      <div class="card-body flex flex-col gap-sm">
+        <div class="avatar-group" role="group" aria-label="Ada Lovelace, Alan Turing, Grace Hopper and 5 others">
+          <span class="avatar avatar-sm"><img class="avatar-image" src="/demo/portrait-1.svg" alt=""></span>
+          <span class="avatar avatar-sm"><img class="avatar-image" src="/demo/portrait-2.svg" alt=""></span>
+          <span class="avatar avatar-sm"><img class="avatar-image" src="/demo/portrait-3.svg" alt=""></span>
+          <span class="avatar avatar-sm" aria-hidden="true">+5</span>
+        </div>
+        <p class="m(0)">Eight people left 23 comments on this week's previews. Four are still open.</p>
+      </div>
+      <footer class="card-footer">
+        <a class="btn btn-sm" href="#comments">Open comments</a>
+      </footer>
+    </article>
+    <article class="card">
+      <div class="stat">
+        <p class="stat-label">Cold builds</p>
+        <div class="stat-row">
+          <p class="stat-value">38s</p>
+          <p class="stat-delta">21% faster</p>
+        </div>
+        <p class="stat-description">Caches are restored before the install.</p>
+      </div>
+    </article>
+    <article class="card">
+      <header class="card-header">
+        <h3 class="card-title">Rollbacks</h3>
+        <p class="card-description">Any deploy is one click away, and so is the one before it.</p>
+      </header>
+    </article>
+    <article class="card bento-wide">
+      <header class="card-header">
+        <h3 class="card-title">Builds this week</h3>
+        <p class="card-description">Thursday so far</p>
+      </header>
+      <ol class="chart chart-quiet" style="--chart-height: 4.5rem" aria-label="Builds per day, this week">
+        <li class="chart-item" style="--value: 42"><span class="chart-label">Mon</span><span class="chart-value">42</span></li>
+        <li class="chart-item" style="--value: 58"><span class="chart-label">Tue</span><span class="chart-value">58</span></li>
+        <li class="chart-item" style="--value: 36"><span class="chart-label">Wed</span><span class="chart-value">36</span></li>
+        <li class="chart-item" style="--value: 71" aria-current="true"><span class="chart-label">Thu</span><span class="chart-value">71</span></li>
+        <li class="chart-item" style="--value: 0"><span class="chart-label">Fri</span><span class="chart-value">0</span></li>
+        <li class="chart-item" style="--value: 0"><span class="chart-label">Sat</span><span class="chart-value">0</span></li>
+        <li class="chart-item" style="--value: 0"><span class="chart-label">Sun</span><span class="chart-value">0</span></li>
+      </ol>
+    </article>
+    <article class="sheet sheet-inverse bento-wide flex flex-col justify-between gap-md p(20)">
+      <div class="flex flex-col gap-3xs">
+        <h3 class="heading heading-sm fg-text-inverse">Start on the free plan</h3>
+        <p class="m(0)">Three projects and every feature above. No card needed.</p>
+      </div>
+      <div class="flex">
+        <a class="btn btn-sm" href="#start">Create a project</a>
+      </div>
+    </article>
+  </div>
+</section>`} />
+
+## 版面配置原理 \{#how-it-is-built\}
+
+- **依自身寬度計算欄數。** 容器無法查詢自身尺寸，因此 Bento 採用與[自動網格](/components/auto-grid)相同的做法，用 `repeat(auto-fill, …)` 搭配最小欄軌寬度。寬度達 48rem 時，最小欄軌寬度是總寬的四分之一。達 28rem 時是二分之一，再窄就占滿。因此只會自動排成四欄、兩欄或一欄，不會出現三欄。
+- **跨格範圍隨欄數調整。** Bento 是名為 `bento` 的尺寸查詢容器，以同一個寬度作為查詢依據。`bento-wide`、`bento-tall` 和 `bento-large` 要等 Bento 寬度達 28rem、有兩欄可用時，才會跨越多格。`bento-full` 在任何寬度都占滿整列。
+- **每列都有最小高度。** 每列至少有 `--bento-row` 指定的高度，預設為 10rem，並會隨內容增高。無論內容多寡，高區塊都占兩列，加上兩列之間的間距。
+- **區塊依標記順序排列。** 上方六個區塊依下列順序寫入標記，在四欄和兩欄版面都能緊密排列。先放大區塊和高區塊，接著用兩個小區塊填滿高區塊旁的一欄，最後放兩個寬區塊。
+- **用元件呈現各區塊。** [分欄卡片](/components/card#it-follows-its-container)在區塊夠寬時將圖片放在文字旁，較窄時則放在文字上方。數據分別用[統計數值](/components/stat)和[低調圖表](/components/chart#quiet)呈現，最後一個區塊使用本頁唯一的[反色面板](/components/surface#inverse)。
+
+## 區塊 \{#tiles\}
+
+未加類別的區塊占一格。以下四個類別可放大區塊：
+
+| 類別 | 四欄版面 | 兩欄版面 | 單欄版面 |
+| --- | --- | --- | --- |
+| `bento-wide` | 兩欄 | 整列 | 一格 |
+| `bento-tall` | 兩列 | 兩列 | 一格 |
+| `bento-large` | 兩欄、兩列 | 整列寬、兩列高 | 一格 |
+| `bento-full` | 整列 | 整列 | 整列 |
+
+<PagePreview name="tiles" title="區塊" height={416} tabletHeight={704} phoneHeight={800} caption="依序選擇「平板」和「手機」。欄數足夠時，區塊會維持各自的跨格設定，欄數不足時則會收回受欄數限制的跨格。" html={`<div class="bento p-lg bg-surface-base fg-text-muted text-2xl font-mono" style="--bento-row: 5rem">
+  <div class="well flex items-center justify-center bento-large">bento-large</div>
+  <div class="well flex items-center justify-center bento-tall">bento-tall</div>
+  <div class="well flex items-center justify-center">One cell</div>
+  <div class="well flex items-center justify-center">One cell</div>
+  <div class="well flex items-center justify-center bento-wide">bento-wide</div>
+  <div class="well flex items-center justify-center">One cell</div>
+  <div class="well flex items-center justify-center">One cell</div>
+  <div class="well flex items-center justify-center bento-full">bento-full</div>
+</div>`} />
+
+只讓少數區塊跨格。如果每個區塊都放大，效果就像把自動網格的區塊全部放大。如果沒有任何區塊放大，讀者就看不出該先看哪一個。
+
+## 順序 \{#order\}
+
+區塊依標記順序排列，每個區塊都放在前一個區塊之後第一個放得下的位置。如果列尾放不下寬區塊，它就會移到下一列，並在前一列留下空格。網格會保留這個空格，讓畫面上的排列順序與鍵盤導覽及螢幕閱讀器遵循的標記順序一致。
+
+請安排區塊的標記順序，讓它們能緊密排列。如果順序不影響理解，例如一面標誌牆或一組圖片，可用 `bento-dense` 讓後面的區塊往前補空格。
+
+<ComponentPreview name="order" height={610} mediumHeight={738} narrowHeight={738} title="順序" bodyClass="p-lg" caption="當托盤內的 Bento 寬度不到 28rem 時，每個區塊只占一格，排列也不會留下空格。拉寬視窗，就能看到空格出現。" html={`<div class="flex flex-col gap-md w-full fg-text-muted text-sm">
+  <p class="eyebrow">bento</p>
+  <div class="bento" style="--bento-row: 3rem">
+    <div class="well flex items-center justify-center">1</div>
+    <div class="well flex items-center justify-center bento-wide">2</div>
+    <div class="well flex items-center justify-center bento-wide">3</div>
+    <div class="well flex items-center justify-center">4</div>
+    <div class="well flex items-center justify-center">5</div>
+  </div>
+  <p class="eyebrow">bento bento-dense</p>
+  <div class="bento bento-dense" style="--bento-row: 3rem">
+    <div class="well flex items-center justify-center">1</div>
+    <div class="well flex items-center justify-center bento-wide">2</div>
+    <div class="well flex items-center justify-center bento-wide">3</div>
+    <div class="well flex items-center justify-center">4</div>
+    <div class="well flex items-center justify-center">5</div>
+  </div>
+</div>`} />
+
+第一個 Bento 的寬區塊在第一個區塊後方留下空格。第二個 Bento 的第四個區塊移到那個空格，畫面上排在第二，閱讀順序仍是第四。
+
+## 列高 \{#rows\}
+
+`--bento-row` 設定列高下限，預設為 10rem。區塊的文字較多時，該列會增高，同列其他區塊也會一起拉高，避免截斷內容。如果區塊只放圖表或一行文字，可以降低列高，例如本頁的示意圖使用 5rem。放圖片時則可提高列高。
+
+`--bento-gap` 設定區塊間距，預設為 1rem。欄數計算需要用到這個值，因此間距須透過這個自訂屬性設定，不能用間距工具類別代替。
+
+## 使用時機 \{#when\}
+
+| 區塊特性 | 版面配置 |
+| --- | --- |
+| 有不同尺寸，部分區塊需要強調 | Bento |
+| 尺寸一致，數量不限 | [自動網格](/components/auto-grid) |
+| 各區塊高度隨內容而定，例如相片集 | [瀑布流](/components/masonry) |
+| 設計指定欄數 | `grid grid-cols(3)` 和 `grid-col-span(2)`，搭配容器變體 |
+
+Bento 適合一次編排好六到十個區塊的內容。專案清單或搜尋結果等會持續增加的集合，各項目的重要性相近，適合使用自動網格。
+
+## 無障礙 \{#accessibility\}
+
+- 閱讀與鍵盤導覽都依標記順序進行。請把最重要的區塊放在最前面，並將 `bento-dense` 留給順序不影響理解的項目集合。
+- 螢幕閱讀器無法透過尺寸傳達重點。請將讀者最需要的標題放在大區塊，並讓各區塊的標題說明其主題，讓讀者瀏覽標題清單就能掌握整組內容。
+- 如果整個區塊只有一個連結，請將 `card-interactive` 直接加在連結元素上，讓該連結本身就是[卡片](/components/card)。
+
+## 類別 \{#classes\}
+
+<ContractTable name="bento" directory="layouts" />
+
+## 自訂屬性 \{#custom-properties\}
+
+<ContractTable name="bento" show="properties" directory="layouts" />
+
+## 相關內容 \{#related\}
+
+<ComponentLinks slugs={['auto-grid', 'masonry', 'card', 'stat', 'chart', 'surface']} />
+
+<ComponentLinks kind="blocks" slugs={['features']} />
+
+## 原始碼 \{#source\}
+
+<ComponentSource name="bento" directory="layouts" />

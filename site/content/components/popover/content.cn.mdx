@@ -1,0 +1,107 @@
+---
+title: "弹出层"
+description: "以触发按钮为锚点的浮动面板。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+弹出层是依附于触发按钮的浮动面板。为任意元素添加 `popover` 属性和 `.popover`，再用 `popovertarget` 让按钮指向该元素。浏览器将弹出层移到顶层，在点击其外部或按下 <kbd>Esc</kbd> 时将其关闭，并让它在 Tab 导航顺序中紧跟触发按钮。CSS 锚点定位负责放置弹出层，无需定位脚本。
+
+<ComponentPreview name="default" height={240} title="弹出层" bodyClass="flex items-start justify-center p-lg min-h(240)" html={`<button type="button" class="btn" popovertarget="share">Share</button>
+
+<div id="share" popover class="popover">
+  <div class="flex flex-col gap-sm w(260)">
+    <p class="m(0) fg-text-strong">Share this project</p>
+    <div class="input-group input-group-sm">
+      <input class="input-group-field" value="https://atlas.dev/p/9f2c" readonly aria-label="Link">
+      <button type="button" class="btn">Copy</button>
+    </div>
+  </div>
+</div>`} />
+
+## 位置 \{#placement\}
+
+弹出层在按钮下方 6px 处打开，并与按钮的起始边缘对齐。Popover API 将两者关联起来，按钮无需命名即可作为锚点。如果弹出层会超出视口，它就会翻转到按钮的另一侧。
+
+| 类名 | 位置 |
+| --- | --- |
+| `popover` | 位于按钮下方，与起始边缘对齐 |
+| `popover-end` | 与结束边缘对齐，适用于行末的按钮 |
+| `popover-center` | 相对于按钮居中 |
+| `popover-top` | 位于按钮上方，可与 `popover-end` 或 `popover-center` 搭配使用 |
+
+<ComponentPreview name="placement" height={280} title="位置" bodyClass="flex flex-wrap items-center justify-center gap-md p-lg min-h(280)" html={`<button type="button" class="btn" popovertarget="place-start">Start</button>
+<button type="button" class="btn" popovertarget="place-center">Center</button>
+<button type="button" class="btn" popovertarget="place-end">End</button>
+<button type="button" class="btn" popovertarget="place-top">Top</button>
+
+<div id="place-start" popover class="popover">Lined up with the start edge.</div>
+<div id="place-center" popover class="popover popover-center">Centered on the button.</div>
+<div id="place-end" popover class="popover popover-end">Lined up with the end edge.</div>
+<div id="place-top" popover class="popover popover-top popover-center">Above the button.</div>`} />
+
+浏览器不支持锚点定位时，弹出层仍可正常打开和关闭，并显示在浏览器默认放置弹出层的位置，也就是视口中央。
+
+## 在弹出层中使用表单 \{#with-a-form\}
+
+弹出层可以容纳控件。打开时，焦点留在按钮上，按 <kbd>Tab</kbd> 可将焦点移入弹出层。也可以给第一个字段添加 `autofocus`，让焦点在打开时直接落在该字段上。
+
+<ComponentPreview name="form" height={304} title="在弹出层中使用表单" bodyClass="flex items-start justify-center p-lg min-h(300)" html={`<button type="button" class="btn" popovertarget="rename">Rename</button>
+
+<form id="rename" popover class="popover">
+  <div class="flex flex-col gap-sm w(240)">
+    <label class="field">
+      Project name
+      <input class="input input-sm" value="atlas" autofocus>
+    </label>
+    <div class="flex justify-end gap-xs">
+      <button type="button" class="btn btn-sm" popovertarget="rename" popovertargetaction="hide">Cancel</button>
+      <button type="button" class="btn btn-sm btn-primary" popovertarget="rename" popovertargetaction="hide">Save</button>
+    </div>
+  </div>
+</form>`} />
+
+## 悬停时打开 \{#on-hover\}
+
+链接或按钮也可在被悬停或聚焦时打开弹出层，预览它指向的内容。为弹出层添加 `popover="hint"`，再用 `interestfor` 让触发元素指向它。这种提示型弹出层会让已打开的菜单或其他弹出层保持打开。这里只放预览内容，因为触屏用户只能通过长按查看，所有内容都应能从其他地方获取。
+
+<ComponentPreview name="hover" height={240} title="悬停时打开" background="plain" bodyClass="flex items-start justify-center p-lg min-h(240)" html={`<p class="m(0) text-sm fg-text-body">Deployed by <a class="link" href="#ada" interestfor="ada-card">Ada Lovelace</a> two hours ago.</p>
+
+<div id="ada-card" popover="hint" class="popover">
+  <div class="flex items-center gap-sm">
+    <span class="avatar avatar-lg"><img class="avatar-image" src="/demo/portrait-1.svg" alt=""></span>
+    <div class="flex flex-col">
+      <span class="fg-text-strong">Ada Lovelace</span>
+      <span class="text-xs fg-text-muted">Owner · 412 deployments</span>
+    </div>
+  </div>
+</div>`} caption="将指针悬停在名称上，或按 Tab 将焦点移到名称上。" />
+
+Chrome 和 Edge 已支持在悬停或聚焦时触发预览。在其他浏览器中，链接仍可正常使用，预览不会显示。
+
+## 无障碍 \{#accessibility\}
+
+- 按钮的 `aria-expanded` 由浏览器设置，请勿手动设置。
+- 弹出层是非模态的，打开时页面仍可交互。如果用户必须先完成或取消任务才能继续操作页面，请使用[对话框](/components/dialog)。
+- 用[菜单](/components/menu)呈现可执行操作的列表，用[工具提示](/components/tooltip)在悬停时显示标签。
+
+## React、Svelte 和 Vue \{#frameworks\}
+
+`popover` 组件根据应用状态打开和关闭弹出层，并在浏览器打开或关闭弹出层时发出通知。触发元素和弹出层内容仍由页面自己的标记定义。用 `npx master-ui add popover` 将组件复制到项目中。参阅 [React、Svelte 和 Vue](/guide/frameworks)，了解组件的实现和用法。
+
+<FrameworkSource name="popover" />
+
+## 类名 \{#classes\}
+
+<ContractTable name="popover" />
+
+## 自定义属性 \{#custom-properties\}
+
+<ContractTable name="popover" show="properties" />
+
+## 源码 \{#source\}
+
+<ComponentSource name="popover" />

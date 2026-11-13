@@ -1,0 +1,84 @@
+---
+title: "スクロール表示"
+description: "スクロールで画面内に入ると現れるコンテンツ。"
+---
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+スクロール表示では、コンテンツがスクロールで画面内に入るときに現れます。要素の先頭部分がビューポートに入る間に、数ピクセルせり上がりながらフェードインし、その後は静止します。1 つのクラスとスクロール駆動アニメーションで動作します。要素の監視やクラスの動的な追加は行いません。スクロール位置がアニメーションの進み具合を決めます。
+
+<ComponentPreview name="default" height={360} title="スクロール表示" bodyClass="block p-lg" caption="プレビューをスクロールすると、各カードが画面内に入るときに現れます。" html={`<div class="flex flex-col gap-md max-w(420) mx-auto">
+  <p class="m(0) fg-text-muted text-sm text-center py-xl">Scroll down</p>
+  <article class="card mt(240)">
+    <header class="card-header">
+      <h3 class="card-title">Native first</h3>
+      <p class="card-description">Every overlay is a dialog or a popover, opened without script.</p>
+    </header>
+  </article>
+  <article class="card reveal">
+    <header class="card-header">
+      <h3 class="card-title">One material</h3>
+      <p class="card-description">Surfaces step apart on a ladder of light, in both themes.</p>
+    </header>
+  </article>
+  <article class="card reveal">
+    <header class="card-header">
+      <h3 class="card-title">Contracts</h3>
+      <p class="card-description">Each stylesheet says what it promises in a file beside it.</p>
+    </header>
+  </article>
+  <article class="card reveal" style="--reveal-scale: .96">
+    <header class="card-header">
+      <h3 class="card-title">Yours to change</h3>
+      <p class="card-description">Tokens retune every component; the source is there to own.</p>
+    </header>
+  </article>
+  <p class="m(0) fg-text-muted text-sm text-center py-xl">The end</p>
+</div>`} />
+
+## 仕組み \{#how-it-works\}
+
+要素のアニメーションは、要素自身のビュータイムライン`animation-timeline: view()`に沿って、スクロール領域に入る区間で再生されます。スクロール位置に連動することで、次の 3 つの挙動になります。
+
+- ページを開いた時点で画面内にある要素は、最初のフレームより前に表示が完了しているため、動きません。
+- 逆方向にスクロールすると、アニメーションも逆再生されます。リセットは不要です。
+- 遅延や開始間隔を調整する必要はありません。要素は画面内に入る順に現れます。
+
+アニメーションが完了するまでの範囲は`--reveal-range`で指定します。既定では、要素が画面内に入り始めてから最初の 12rem 以内に完了します。そのため、縦に長いセクションでも、画面 1 つ分にわたってフェードが続くことはありません。要素がその距離より短ければ、全体が画面内に入った時点で完了するため、ページの最後の要素も最後まで表示されます。
+
+## 調整 \{#tuning\}
+
+次の 3 つのプロパティを、対象の要素か、複数の対象要素に共通する親要素に設定できます。
+
+- `--reveal-distance`は上方向への移動距離で、既定値は 16px です。フェードインだけにするには`0`を設定します。
+- `--reveal-scale`は表示開始時の倍率です。画像やカードには`.96`が適しています。テキストは拡大・縮小しないでください。
+- `--reveal-range`は、要素がどこまで画面内に入れば表示が完了するかを指定します。
+
+## 使いどころ \{#when-to-use-it\}
+
+長いページで、ランディングページのセクション、カードの列、図など、ブロック全体に使います。適用する箇所は絞ってください。あらゆる要素が次々に動くと画面が落ち着かず、すばやくスクロールする読者は表示を待つことになります。
+
+読者がすぐに読む必要のあるテキスト、ダイアログやメニュー内の要素、読み込み中にサイズが変わるコンテンツには使わないでください。
+
+## スクロール駆動アニメーションなしの場合 \{#fallback\}
+
+`animation-timeline: view()`に対応していないブラウザーや、読者がシステム設定で動きを減らしている場合は、クラスの効果が適用されず、コンテンツがそのまま表示されます。印刷時も同様です。不透明度はアニメーション内でのみ指定するため、コンテンツの表示がアニメーションに依存することはありません。
+
+## アクセシビリティ \{#accessibility\}
+
+- コンテンツは最初からドキュメントとアクセシビリティツリーに含まれます。画面内に入るときに変化するのは、不透明度と位置だけです。
+- `prefers-reduced-motion: reduce`ではフェードも移動もありません。
+- 移動距離は短くしてください。大きなブロックを大きく動かすと、ビューポートの広い範囲に動きが生じ、見づらく感じる読者もいます。
+
+## クラス \{#classes\}
+
+<ContractTable name="reveal" />
+
+## カスタムプロパティ \{#custom-properties\}
+
+<ContractTable name="reveal" show="properties" />
+
+## ソース \{#source\}
+
+<ComponentSource name="reveal" />

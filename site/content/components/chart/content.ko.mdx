@@ -1,0 +1,220 @@
+---
+title: "차트"
+description: "목록에 담긴 몇 개의 숫자를 스타일시트로 막대 형태로 표시합니다."
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+차트는 몇 개의 숫자를 막대로 표시합니다. 차트의 마크업은 목록으로 구성됩니다. 각 항목에는 같은 숫자가 막대를 그리는 데 쓰이는 값과 읽을 수 있는 텍스트로 한 번씩 들어갑니다. 스타일시트는 막대와 그 뒤의 눈금을 그리고, 포인터를 올리면 값을 표시합니다. [진행률 표시줄](/components/progress)의 채워진 부분처럼 막대에도 잉크색을 사용합니다. 스크립트와 SVG는 사용하지 않습니다.
+
+<ComponentPreview name="default" height={336} title="차트" bodyClass="p-lg" html={`<div class="card max-w(420) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Deployments</h3>
+    <p class="card-description">311 this week</p>
+  </div>
+  <ol class="chart" aria-label="Deployments per day, this week">
+    <li class="chart-item" style="--value: 42"><span class="chart-label">Mon</span><span class="chart-value">42</span></li>
+    <li class="chart-item" style="--value: 58"><span class="chart-label">Tue</span><span class="chart-value">58</span></li>
+    <li class="chart-item" style="--value: 36"><span class="chart-label">Wed</span><span class="chart-value">36</span></li>
+    <li class="chart-item" style="--value: 71"><span class="chart-label">Thu</span><span class="chart-value">71</span></li>
+    <li class="chart-item" style="--value: 64"><span class="chart-label">Fri</span><span class="chart-value">64</span></li>
+    <li class="chart-item" style="--value: 22"><span class="chart-label">Sat</span><span class="chart-value">22</span></li>
+    <li class="chart-item" style="--value: 18"><span class="chart-label">Sun</span><span class="chart-value">18</span></li>
+  </ol>
+</div>`} caption="막대에 포인터를 올리면 나머지 막대가 흐려지고 해당 값이 표시됩니다." />
+
+## 막대 높이 계산 \{#how-a-bar-gets-its-height\}
+
+각 `chart-item`의 `style`에서 `--value` 값을 설정합니다. 차트의 눈금 최댓값은 `--chart-max`로, 차트 영역의 높이는 `--chart-height`로 설정합니다. 눈금의 최댓값은 별도로 지정하지 않으면 100입니다. 막대 높이는 최댓값에 대한 값의 비율로 정해집니다. 최댓값을 넘으면 막대가 차트 영역을 가득 채우고, 값이 0이면 기준선에 1픽셀 표시가 남아 값이 없는 날도 확인할 수 있습니다.
+
+같은 숫자를 의도적으로 두 번 적습니다. 막대를 그릴 때는 `--value` 값을 사용합니다. `chart-value`에는 같은 숫자를 사람이 읽기 좋은 형식으로 적습니다. 포인터를 올리면 툴팁에 이 텍스트가 표시되고, 스크린 리더로 읽거나 검색하고 복사할 수도 있습니다.
+
+가는 눈금선 네 개가 일정한 간격으로 표시됩니다. 최댓값에 맞춰 `--chart-lines` 값을 설정합니다. 최댓값이 100일 때 눈금선을 다섯 개로 설정하면 20마다 눈금선이 표시됩니다.
+
+## 특정 막대 강조 \{#quiet\}
+
+`chart-quiet`을 적용하면 막대가 옅은 색으로 표시되고 `aria-current`로 표시한 항목에만 잉크색이 유지됩니다. 한 주 중 오늘, 독자가 이용 중인 요금제, 현재 논의 중인 릴리스 등을 강조할 수 있습니다.
+
+<ComponentPreview name="quiet" height={336} title="막대 강조" bodyClass="p-lg" html={`<div class="card max-w(420) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Build minutes</h3>
+    <p class="card-description">Thursday so far</p>
+  </div>
+  <ol class="chart chart-quiet" aria-label="Build minutes per day, this week">
+    <li class="chart-item" style="--value: 42"><span class="chart-label">Mon</span><span class="chart-value">42</span></li>
+    <li class="chart-item" style="--value: 58"><span class="chart-label">Tue</span><span class="chart-value">58</span></li>
+    <li class="chart-item" style="--value: 36"><span class="chart-label">Wed</span><span class="chart-value">36</span></li>
+    <li class="chart-item" style="--value: 71" aria-current="true"><span class="chart-label">Thu</span><span class="chart-value">71</span></li>
+    <li class="chart-item" style="--value: 64"><span class="chart-label">Fri</span><span class="chart-value">64</span></li>
+    <li class="chart-item" style="--value: 22"><span class="chart-label">Sat</span><span class="chart-value">22</span></li>
+    <li class="chart-item" style="--value: 18"><span class="chart-label">Sun</span><span class="chart-value">18</span></li>
+  </ol>
+</div>`} />
+
+## 값 상시 표시 \{#values\}
+
+`chart-values`를 적용하면 각 막대 위에 해당 값이 숫자로 표시됩니다. 막대가 적고 정확한 수치가 중요할 때나 호버가 없는 터치 화면에서 사용하세요.
+
+<ComponentPreview name="values" height={248} title="값 표시" bodyClass="p-lg" html={`<div class="card max-w(420) mx-auto">
+  <ol class="chart chart-values" style="--chart-height: 8rem" aria-label="Signups per day, this week">
+    <li class="chart-item" style="--value: 42"><span class="chart-label">Mon</span><span class="chart-value">42</span></li>
+    <li class="chart-item" style="--value: 58"><span class="chart-label">Tue</span><span class="chart-value">58</span></li>
+    <li class="chart-item" style="--value: 36"><span class="chart-label">Wed</span><span class="chart-value">36</span></li>
+    <li class="chart-item" style="--value: 71"><span class="chart-label">Thu</span><span class="chart-value">71</span></li>
+    <li class="chart-item" style="--value: 64"><span class="chart-label">Fri</span><span class="chart-value">64</span></li>
+    <li class="chart-item" style="--value: 22"><span class="chart-label">Sat</span><span class="chart-value">22</span></li>
+    <li class="chart-item" style="--value: 18"><span class="chart-label">Sun</span><span class="chart-value">18</span></li>
+  </ol>
+</div>`} />
+
+## 막대가 많은 차트 \{#many-bars\}
+
+각 열이 전체 너비를 균등하게 나누므로 일주일을 표시하던 공간에 한 달을 표시할 수 있습니다. `--chart-gap`으로 막대 사이 간격을 줄이세요. 이름은 막대 가운데에 배치되며 열보다 넓을 수 있습니다. 일곱 항목마다 이름을 하나씩 붙이고 나머지는 비워 두세요. 이름이 비어 있는 항목에는 대신 `aria-label`을 지정해 값이 어느 항목에 해당하는지 알 수 있게 하세요.
+
+<ComponentPreview name="dense" height={288} title="30일" bodyClass="p-lg" responsive html={`<div class="card max-w(520) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Requests</h3>
+    <p class="card-description">Thousands per day, November</p>
+  </div>
+  <ol class="chart" style="--chart-gap: 3px; --chart-height: 7rem" aria-label="Requests per day in November, in thousands">
+    <li class="chart-item" style="--value: 49"><span class="chart-label">Nov 1</span><span class="chart-value">49</span></li>
+    <li class="chart-item" style="--value: 27" aria-label="Nov 2"><span class="chart-label"></span><span class="chart-value">27</span></li>
+    <li class="chart-item" style="--value: 58" aria-label="Nov 3"><span class="chart-label"></span><span class="chart-value">58</span></li>
+    <li class="chart-item" style="--value: 91" aria-label="Nov 4"><span class="chart-label"></span><span class="chart-value">91</span></li>
+    <li class="chart-item" style="--value: 14" aria-label="Nov 5"><span class="chart-label"></span><span class="chart-value">14</span></li>
+    <li class="chart-item" style="--value: 17" aria-label="Nov 6"><span class="chart-label"></span><span class="chart-value">17</span></li>
+    <li class="chart-item" style="--value: 76" aria-label="Nov 7"><span class="chart-label"></span><span class="chart-value">76</span></li>
+    <li class="chart-item" style="--value: 20"><span class="chart-label">Nov 8</span><span class="chart-value">20</span></li>
+    <li class="chart-item" style="--value: 54" aria-label="Nov 9"><span class="chart-label"></span><span class="chart-value">54</span></li>
+    <li class="chart-item" style="--value: 82" aria-label="Nov 10"><span class="chart-label"></span><span class="chart-value">82</span></li>
+    <li class="chart-item" style="--value: 15" aria-label="Nov 11"><span class="chart-label"></span><span class="chart-value">15</span></li>
+    <li class="chart-item" style="--value: 72" aria-label="Nov 12"><span class="chart-label"></span><span class="chart-value">72</span></li>
+    <li class="chart-item" style="--value: 35" aria-label="Nov 13"><span class="chart-label"></span><span class="chart-value">35</span></li>
+    <li class="chart-item" style="--value: 12" aria-label="Nov 14"><span class="chart-label"></span><span class="chart-value">12</span></li>
+    <li class="chart-item" style="--value: 19"><span class="chart-label">Nov 15</span><span class="chart-value">19</span></li>
+    <li class="chart-item" style="--value: 63" aria-label="Nov 16"><span class="chart-label"></span><span class="chart-value">63</span></li>
+    <li class="chart-item" style="--value: 61" aria-label="Nov 17"><span class="chart-label"></span><span class="chart-value">61</span></li>
+    <li class="chart-item" style="--value: 16" aria-label="Nov 18"><span class="chart-label"></span><span class="chart-value">16</span></li>
+    <li class="chart-item" style="--value: 38" aria-label="Nov 19"><span class="chart-label"></span><span class="chart-value">38</span></li>
+    <li class="chart-item" style="--value: 19" aria-label="Nov 20"><span class="chart-label"></span><span class="chart-value">19</span></li>
+    <li class="chart-item" style="--value: 78" aria-label="Nov 21"><span class="chart-label"></span><span class="chart-value">78</span></li>
+    <li class="chart-item" style="--value: 62"><span class="chart-label">Nov 22</span><span class="chart-value">62</span></li>
+    <li class="chart-item" style="--value: 15" aria-label="Nov 23"><span class="chart-label"></span><span class="chart-value">15</span></li>
+    <li class="chart-item" style="--value: 80" aria-label="Nov 24"><span class="chart-label"></span><span class="chart-value">80</span></li>
+    <li class="chart-item" style="--value: 23" aria-label="Nov 25"><span class="chart-label"></span><span class="chart-value">23</span></li>
+    <li class="chart-item" style="--value: 36" aria-label="Nov 26"><span class="chart-label"></span><span class="chart-value">36</span></li>
+    <li class="chart-item" style="--value: 88" aria-label="Nov 27"><span class="chart-label"></span><span class="chart-value">88</span></li>
+    <li class="chart-item" style="--value: 88" aria-label="Nov 28"><span class="chart-label"></span><span class="chart-value">88</span></li>
+    <li class="chart-item" style="--value: 82"><span class="chart-label">Nov 29</span><span class="chart-value">82</span></li>
+    <li class="chart-item" style="--value: 15" aria-label="Nov 30"><span class="chart-label"></span><span class="chart-value">15</span></li>
+  </ol>
+</div>`} />
+
+## 가로 막대 \{#horizontal\}
+
+`chart-horizontal`은 순위를 표시하며 항목마다 한 행을 사용합니다. 이름은 항목의 비율만큼 길게 채운 옅은 색 영역 위에 놓이고, 수치는 행 끝에 표시됩니다. 둘 다 포인터를 올리지 않아도 읽을 수 있습니다. 첫 행의 막대가 열 전체 너비를 채우도록 `--chart-max`에 가장 큰 값을 지정합니다.
+
+<ComponentPreview name="horizontal" height={328} title="가로 막대" bodyClass="p-lg" html={`<div class="card max-w(420) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Top pages</h3>
+    <p class="card-description">Visitors in the last 7 days</p>
+  </div>
+  <ol class="chart chart-horizontal" style="--chart-max: 4820" aria-label="Pages by visitors">
+    <li class="chart-item" style="--value: 4820"><span class="chart-label">/guide/installation</span><span class="chart-value">4,820</span></li>
+    <li class="chart-item" style="--value: 3112"><span class="chart-label">/components/button</span><span class="chart-value">3,112</span></li>
+    <li class="chart-item" style="--value: 2240"><span class="chart-label">/components/dialog</span><span class="chart-value">2,240</span></li>
+    <li class="chart-item" style="--value: 1360"><span class="chart-label">/guide/theme</span><span class="chart-value">1,360</span></li>
+    <li class="chart-item" style="--value: 412"><span class="chart-label">/components/command</span><span class="chart-value">412</span></li>
+  </ol>
+</div>`} />
+
+## 미니 막대 차트 \{#spark\}
+
+`chart-spark`은 눈금 없이 막대만 표시합니다. 차트 높이는 32px이고 막대 너비는 6px입니다. 차트는 막대가 차지하는 만큼만 넓어서 [지표](/components/stat) 컴포넌트의 끝이나 표의 셀에 배치할 수 있습니다. 이름과 값은 화면에서 숨겨지지만 목록에는 남아 있어 스크린 리더가 읽을 수 있습니다.
+
+<ComponentPreview name="spark" height={192} narrowHeight={216} title="미니 막대 차트" bodyClass="p-lg" html={`<div class="tray grid grid-cols(2) gap(4) max-w(560) mx-auto">
+  <div class="card card-flat">
+    <div class="stat">
+      <p class="stat-label">Requests</p>
+      <div class="stat-row">
+        <p class="stat-value">1.28M</p>
+        <p class="stat-delta stat-delta-up">12.4%</p>
+        <ol class="chart chart-spark ml-auto" style="--chart-max: 71" aria-label="Requests per day, last 14 days">
+          <li class="chart-item" style="--value: 18"><span class="chart-label">Day 1</span><span class="chart-value">18</span></li>
+          <li class="chart-item" style="--value: 24"><span class="chart-label">Day 2</span><span class="chart-value">24</span></li>
+          <li class="chart-item" style="--value: 22"><span class="chart-label">Day 3</span><span class="chart-value">22</span></li>
+          <li class="chart-item" style="--value: 31"><span class="chart-label">Day 4</span><span class="chart-value">31</span></li>
+          <li class="chart-item" style="--value: 28"><span class="chart-label">Day 5</span><span class="chart-value">28</span></li>
+          <li class="chart-item" style="--value: 36"><span class="chart-label">Day 6</span><span class="chart-value">36</span></li>
+          <li class="chart-item" style="--value: 33"><span class="chart-label">Day 7</span><span class="chart-value">33</span></li>
+          <li class="chart-item" style="--value: 41"><span class="chart-label">Day 8</span><span class="chart-value">41</span></li>
+          <li class="chart-item" style="--value: 38"><span class="chart-label">Day 9</span><span class="chart-value">38</span></li>
+          <li class="chart-item" style="--value: 52"><span class="chart-label">Day 10</span><span class="chart-value">52</span></li>
+          <li class="chart-item" style="--value: 47"><span class="chart-label">Day 11</span><span class="chart-value">47</span></li>
+          <li class="chart-item" style="--value: 58"><span class="chart-label">Day 12</span><span class="chart-value">58</span></li>
+          <li class="chart-item" style="--value: 63"><span class="chart-label">Day 13</span><span class="chart-value">63</span></li>
+          <li class="chart-item" style="--value: 71"><span class="chart-label">Day 14</span><span class="chart-value">71</span></li>
+        </ol>
+      </div>
+    </div>
+  </div>
+  <div class="card card-flat">
+    <div class="stat">
+      <p class="stat-label">Error rate</p>
+      <div class="stat-row">
+        <p class="stat-value">0.02%</p>
+        <p class="stat-delta stat-delta-down">0.4%</p>
+        <ol class="chart chart-spark ml-auto" style="--chart-max: 62" aria-label="Errors per day, last 14 days">
+          <li class="chart-item" style="--value: 62"><span class="chart-label">Day 1</span><span class="chart-value">62</span></li>
+          <li class="chart-item" style="--value: 58"><span class="chart-label">Day 2</span><span class="chart-value">58</span></li>
+          <li class="chart-item" style="--value: 60"><span class="chart-label">Day 3</span><span class="chart-value">60</span></li>
+          <li class="chart-item" style="--value: 51"><span class="chart-label">Day 4</span><span class="chart-value">51</span></li>
+          <li class="chart-item" style="--value: 49"><span class="chart-label">Day 5</span><span class="chart-value">49</span></li>
+          <li class="chart-item" style="--value: 44"><span class="chart-label">Day 6</span><span class="chart-value">44</span></li>
+          <li class="chart-item" style="--value: 46"><span class="chart-label">Day 7</span><span class="chart-value">46</span></li>
+          <li class="chart-item" style="--value: 38"><span class="chart-label">Day 8</span><span class="chart-value">38</span></li>
+          <li class="chart-item" style="--value: 35"><span class="chart-label">Day 9</span><span class="chart-value">35</span></li>
+          <li class="chart-item" style="--value: 31"><span class="chart-label">Day 10</span><span class="chart-value">31</span></li>
+          <li class="chart-item" style="--value: 33"><span class="chart-label">Day 11</span><span class="chart-value">33</span></li>
+          <li class="chart-item" style="--value: 26"><span class="chart-label">Day 12</span><span class="chart-value">26</span></li>
+          <li class="chart-item" style="--value: 22"><span class="chart-label">Day 13</span><span class="chart-value">22</span></li>
+          <li class="chart-item" style="--value: 19"><span class="chart-label">Day 14</span><span class="chart-value">19</span></li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>`} />
+
+## 동작 \{#motion\}
+
+막대가 처음 나타날 때는 `@starting-style`을 사용해 기준선에서 위로 자라며, `--value` 값이 바뀌면 새 높이로 부드럽게 전환됩니다. 동작 줄이기가 설정되어 있으면 두 애니메이션 모두 적용되지 않습니다. 포인터가 여러 열을 빠르게 지나가도 강조 표시가 바로 따라오도록 페이드 효과 없이 즉시 반응합니다.
+
+## 막대 목록으로 표현하기 어려운 경우 \{#limits\}
+
+이 차트는 하나의 눈금으로 몇 개의 숫자를 표시하는 데 적합합니다. 선 차트나 영역 차트, 나란히 배치한 두 데이터 계열, 확대·축소, 중간에 공백이 있는 시간축을 구현하려면 차트 라이브러리가 필요합니다. 일정 범위 안의 측정값 하나는 [미터](/components/meter)로 표시합니다.
+
+## 접근성 \{#accessibility\}
+
+- 날짜처럼 순서에 의미가 있는 경우에는 `<ol>`을, 이미 정렬한 순위를 표시할 때는 `<ul>`을 사용하세요. 목록에는 무엇을 어떤 단위로 측정했는지 설명하는 `aria-label`을 지정하세요.
+- 스크린 리더는 각 항목의 이름과 값을 읽습니다. 툴팁은 포인터를 올릴 때만 표시되므로 툴팁에만 의존하지 마세요.
+- 막대는 색상에 의존하지 않고 위치와 길이로 구분할 수 있습니다. `--chart-color`에 상태를 나타내는 색상을 지정한다면, 막대 가까이에 해당 상태를 텍스트로도 표시하세요.
+- 강제 색상 모드에서는 막대에 시스템 텍스트 색상이 적용됩니다.
+
+## 클래스 \{#classes\}
+
+<ContractTable name="chart" />
+
+## 사용자 지정 속성 \{#custom-properties\}
+
+<ContractTable name="chart" show="properties" />
+
+## 관련 항목 \{#related\}
+
+<ComponentLinks slugs={['stat', 'meter', 'progress']} />
+
+## 소스 \{#source\}
+
+<ComponentSource name="chart" />

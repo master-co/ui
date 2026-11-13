@@ -1,0 +1,78 @@
+---
+title: "忙碌状态"
+description: "用遮罩和加载指示器标出正在重新获取内容的区域。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+忙碌状态用于标记正在重新获取内容的区域，例如筛选条件变更后的卡片、正在加载某一页数据的表格，或正在保存的表单。为区域添加 `busy`，并在操作期间设置 `aria-busy="true"`。与区域表面同色的遮罩淡化内容，中央显示旋转的加载指示器。原有内容保留在原位，新内容到达时布局不会跳动。
+
+<ComponentPreview name="default" height={200} title="忙碌状态" bodyClass="flex items-center justify-center p-lg" html={`<article class="card busy w-full max-w(320)" id="revenue" aria-label="Revenue">
+  <header class="card-header">
+    <h3 class="card-title">Revenue</h3>
+    <p class="card-description">$48,200 this month, up 12% on October.</p>
+  </header>
+  <footer class="card-footer">
+    <button class="btn btn-sm" type="button" id="revenue-refresh">Refresh</button>
+  </footer>
+</article>
+<script>
+  var card = document.getElementById('revenue')
+  document.getElementById('revenue-refresh').addEventListener('click', function () {
+    card.setAttribute('aria-busy', 'true')
+    card.inert = true
+    setTimeout(function () {
+      card.removeAttribute('aria-busy')
+      card.inert = false
+    }, 1800)
+  })
+</script>`} caption="按下「刷新」，卡片会进入忙碌状态，持续两秒。" />
+
+## 一个属性控制状态 \{#one-attribute\}
+
+单独添加这个类名不会产生视觉效果。用同一元素上的 `aria-busy="true"` 表示忙碌状态。屏幕阅读器和样式表都读取这个属性，因此两者感知的状态始终一致。操作结束后，移除该属性或将其设为 `false`。
+
+遮罩延迟 160ms 后淡入。如果操作立即完成，遮罩就不会闪现，也不会提示用户等待已经就绪的内容。
+
+<ComponentPreview name="resting" height={200} title="忙碌期间" bodyClass="flex items-center justify-center p-lg" html={`<article class="card busy w-full max-w(320)" aria-busy="true" aria-label="Revenue" inert>
+  <header class="card-header">
+    <h3 class="card-title">Revenue</h3>
+    <p class="card-description">$48,200 this month, up 12% on October.</p>
+  </header>
+  <footer class="card-footer">
+    <button class="btn btn-sm" type="button">Refresh</button>
+  </footer>
+</article>`} />
+
+## 遮罩 \{#the-veil\}
+
+遮罩通过 `--surface-color` 混合出颜色。[面板](/components/surface)、卡片和对话框都提供这个属性，因此，卡片的遮罩以自身的表面色淡化内容，不会套用灰色。区域没有自己的表面时，遮罩使用页面的画布颜色。遮罩沿用区域的圆角，在加载指示器背后完全不透明，向四周逐渐变淡，使旋转环不会叠在文字上。
+
+遮罩会阻止指针与下方内容交互。要同时阻止键盘交互，请按第一个示例，在区域处于忙碌状态时添加 `inert` 属性，结束后移除。
+
+`--busy-size` 设置加载指示器的直径，默认为 20px。
+
+## 忙碌状态与骨架屏的选择 \{#busy-or-skeleton\}
+
+替换已显示的内容时，使用忙碌状态。首次加载时，用[骨架屏](/components/skeleton)展示内容的轮廓。如果只有一个控件需要等待，就在该控件内显示[加载指示器](/components/spinner)。按钮有自己的 `aria-busy` 状态。
+
+## 无障碍 \{#accessibility\}
+
+- `aria-busy="true"` 告知辅助技术该区域正在更新，因此辅助技术可以等到属性移除后再播报区域内的变化。
+- 该属性不会播报操作已开始。要告知用户，请在忙碌区域之外的实时区域中，或在触发操作的控件中，用文字说明。
+- 区域处于忙碌状态时，将其设为 `inert`，防止遮罩下的控件获得焦点或被按下。
+- 用户启用减少动态效果时，加载指示器会减慢旋转速度。在强制颜色模式下，遮罩使用画布颜色。
+
+## 类名 \{#classes\}
+
+<ContractTable name="busy" />
+
+## 自定义属性 \{#custom-properties\}
+
+<ContractTable name="busy" show="properties" />
+
+## 源码 \{#source\}
+
+<ComponentSource name="busy" />

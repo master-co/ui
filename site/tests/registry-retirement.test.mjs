@@ -77,6 +77,12 @@ test('actual Pages dispatch retires a stale asset while preserving static redire
         }
         assert.equal((await fetch(origin + '/r/layout-does-not-exist.json', { redirect: 'manual' })).status, 404)
         assert.equal(await (await fetch(origin + '/guide/design.md')).text(), await readFile(path.join(output, 'guide/design.md'), 'utf8'))
+        const guide = await fetch(origin + '/tw/guide', { redirect: 'manual' })
+        assert.equal(guide.status, 302)
+        assert.equal(new URL(guide.headers.get('location'), origin).pathname, '/tw/guide/introduction')
+        const missing = await fetch(origin + '/tw/components/unknown-component')
+        assert.equal(missing.status, 404)
+        assert.match(await missing.text(), /<html lang="zh-TW"/)
     } finally {
         if (serverProcess && serverProcess.exitCode === null) {
             serverProcess.kill('SIGTERM')

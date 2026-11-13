@@ -1,0 +1,92 @@
+---
+title: "コンポーザー"
+description: "メッセージやプロンプトを作成するためのコンポーネント。入力に合わせて伸びる入力欄の下にツールが並びます。"
+---
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+コンポーザーは、メッセージやプロンプトを書くためのコンポーネントです。浮き上がったパネルに、テキスト量に合わせて伸びる枠のない入力欄を置きます。その下には控えめなツールを一列に並べ、列の最後に送信ボタンを配置します。入力欄にフォーカスが当たると、[入力欄コンポーネント](/components/input)と同じように、パネルに濃色の輪郭線が 1 本表示され、その外側がほのかに光ります。
+
+<ComponentPreview name="default" height={368} title="コンポーザー" bodyClass="p-lg" html={`<form class="composer max-w(480) mx-auto">
+  <textarea class="composer-field" name="message" aria-label="Message" placeholder="Ask anything"></textarea>
+  <div class="composer-toolbar">
+    <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Attach a file"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+    <button type="button" class="btn btn-quiet btn-sm"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4c3 3 3 13 0 16M12 4c-3 3-3 13 0 16"/></svg>Search</button>
+    <div class="composer-end">
+      <span class="composer-hint">Enter to send</span>
+      <button class="btn btn-primary btn-square btn-sm" aria-label="Send"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg></button>
+    </div>
+  </div>
+</form>`} caption="数行入力すると、入力欄が行数に合わせて伸びます。" />
+
+入力欄には `field-sizing: content` を指定した `<textarea>` を使います。最初は 1 行で、10 行まで伸び、それを超えるとスクロールします。最小と最大の行数は、`--composer-rows` と `--composer-max-rows` で変更できます。入力内容に合わせたサイズ調整に対応していないブラウザーでは、高さは 3 行分に固定され、それを超えるとスクロールします。
+
+ボタンはパネルの端から 8px 内側に配置します。角を同心円状に丸めることで、送信ボタンの曲線がパネルの角に沿います。
+
+## 添付ファイル \{#attachments\}
+
+`composer-attachments` は入力欄の上に配置する折り返し可能な行です。メッセージに添えるファイルの [チップ](/components/chip) やサムネイルを並べます。
+
+<ComponentPreview name="attachments" height={400} title="添付ファイル" bodyClass="p-lg" html={`<form class="composer max-w(480) mx-auto">
+  <div class="composer-attachments">
+    <span class="chip">brief.pdf<button type="button" class="chip-remove" aria-label="Remove brief.pdf"></button></span>
+    <span class="chip">notes.md<button type="button" class="chip-remove" aria-label="Remove notes.md"></button></span>
+  </div>
+  <textarea class="composer-field" name="message" aria-label="Message">Summarise the brief against these notes, and list what the notes leave out. Keep it to one page so the team can read it before the review on Thursday.</textarea>
+  <div class="composer-toolbar">
+    <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Attach a file"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+    <div class="composer-end">
+      <span class="composer-hint">138 / 2000</span>
+      <button class="btn btn-primary btn-sm">Send</button>
+    </div>
+  </div>
+</form>`} />
+
+## 無効状態 \{#disabled\}
+
+入力欄を無効にすると、パネルの浮き上がりがなくなり、くぼんだ表示になります。送信ボタンも無効にし、その理由をプレースホルダーかコンポーザーの横に示してください。
+
+<ComponentPreview name="disabled" height={152} narrowHeight={176} title="無効状態" bodyClass="p-lg" html={`<form class="composer max-w(480) mx-auto">
+  <textarea class="composer-field" name="message" aria-label="Message" placeholder="Replies are closed for this thread" disabled></textarea>
+  <div class="composer-toolbar">
+    <div class="composer-end">
+      <button class="btn btn-primary btn-square btn-sm" aria-label="Send" disabled><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg></button>
+    </div>
+  </div>
+</form>`} />
+
+## Enter で送信 \{#enter\}
+
+テキストエリアでは、Enter を押すと改行します。Enter で送信し、Shift+Enter で改行するように変更するには、リスナーが一つあれば十分です。入力メソッドで変換中は、送信処理を行わないようにします。
+
+```js
+field.addEventListener('keydown', event => {
+  if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) {
+    event.preventDefault()
+    field.form.requestSubmit()
+  }
+})
+```
+
+キー操作は製品によって異なるため、ツールの横に `composer-hint` で操作方法を示してください。
+
+## アクセシビリティ \{#accessibility\}
+
+- 入力欄には、`aria-label` またはコンポーザーの上に表示する `<label for>` で名前を付けます。プレースホルダーとは別に名前が必要です。
+- コンポーザーは `<form>` なので、送信ボタンから送信でき、パスワードマネージャーや拡張機能からも認識できます。
+- アイコンボタンには `aria-label` を指定します。Tab キーで移動すると、入力欄の後に読み順どおりに各ツールへフォーカスが移ります。
+- パネルの余白をクリックしても、既定では入力欄にフォーカスは移りません。パネル全体をクリック対象にするには、入力欄を `<label>` で囲みます。
+- タッチ画面では入力欄の文字サイズを 16px にしているため、フォーカス時に iOS がページを拡大することはありません。
+
+## クラス \{#classes\}
+
+<ContractTable name="composer" />
+
+## カスタムプロパティ \{#custom-properties\}
+
+<ContractTable name="composer" show="properties" />
+
+## ソース \{#source\}
+
+<ComponentSource name="composer" />

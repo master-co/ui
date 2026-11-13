@@ -1,0 +1,239 @@
+---
+title: "日历"
+description: "按月显示日期，支持选取日期或日期范围。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+日历按月显示可供选择的日期。它是由按钮组成的 ARIA 网格，样式表负责呈现所有状态，`calendar` [行为脚本](/guide/behaviors)负责生成日期、处理月份切换按钮和方向键。日历本身没有表面，可以放在[卡片](/components/card)中，也可以放在[弹出层](/components/popover)中组成日期选择器。
+
+<ComponentPreview name="default" height={392} title="日历" bodyClass="flex justify-center p-lg" behaviors html={`<div class="sheet p-md">
+  <div class="calendar">
+    <div class="calendar-header">
+      <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Previous month"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button>
+      <h3 class="calendar-title" id="cal-title" aria-live="polite"></h3>
+      <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Next month"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
+    </div>
+    <div class="calendar-grid" role="grid" aria-labelledby="cal-title"></div>
+  </div>
+</div>`} caption="点击日期即可选中，用两个按钮切换月份，也可以聚焦某个日期后使用方向键。" />
+
+标记由标题区和空网格组成。行为脚本将月份名称写入 `calendar-title`，将星期名称和各周的日期写入 `calendar-grid`，初始显示今天所在的月份。没有脚本时，网格会保留标记中的内容。如果日历需要在脚本运行前就可读，可参照下方[日期范围](#range)示例，在服务端渲染各周的日期，行为脚本挂载时会替换这些内容。
+
+## 状态 \{#states\}
+
+每种状态都由日期按钮上的属性或类名表示。行为脚本会设置这些属性和类名，手写标记或服务端渲染时也使用同一套属性和类名。
+
+| 状态 | 标记方式 | 显示效果 |
+| --- | --- | --- |
+| 今天 | `aria-current="date"` | 数字下方显示圆点 |
+| 已选中 | `aria-selected="true"` | 用墨色填充，与选中的[复选框](/components/checkbox)相同 |
+| 非本月日期 | `calendar-day-outside` | 数字使用弱化的墨色 |
+| 不可选 | `disabled` | 数字使用禁用状态的墨色 |
+
+日期按钮会像[菜单](/components/menu)中的条目一样立即响应指针操作。今天被选中时仍保留圆点，圆点与日期数字使用相同的墨色。
+
+## 日期范围 \{#range\}
+
+日期范围的起止日期用墨色填充，中间以与标签同色的色带相连。起始日期使用 `calendar-day-range-start`，结束日期使用 `calendar-day-range-end`，中间的日期使用 `calendar-day-range`。范围内的所有日期都使用 `aria-selected="true"`。
+
+此预览只包含标记，未挂载脚本。可在代码视图中查看行为脚本生成整月日历时使用的标记，其中包含一个日期范围、今天和两个不可选的日期。
+
+<ComponentPreview name="range" height={392} title="日期范围" bodyClass="flex justify-center p-lg" html={`<div class="sheet p-md">
+  <div class="calendar">
+    <div class="calendar-header">
+      <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Previous month"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button>
+      <h3 class="calendar-title" id="range-title" aria-live="polite">November 2026</h3>
+      <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Next month"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
+    </div>
+    <div class="calendar-grid" role="grid" aria-labelledby="range-title">
+      <div class="calendar-week" role="row">
+        <span class="calendar-weekday" role="columnheader" aria-label="Sunday">Sun</span>
+        <span class="calendar-weekday" role="columnheader" aria-label="Monday">Mon</span>
+        <span class="calendar-weekday" role="columnheader" aria-label="Tuesday">Tue</span>
+        <span class="calendar-weekday" role="columnheader" aria-label="Wednesday">Wed</span>
+        <span class="calendar-weekday" role="columnheader" aria-label="Thursday">Thu</span>
+        <span class="calendar-weekday" role="columnheader" aria-label="Friday">Fri</span>
+        <span class="calendar-weekday" role="columnheader" aria-label="Saturday">Sat</span>
+      </div>
+      <div class="calendar-week" role="row">
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Sunday, November 1, 2026">1</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Monday, November 2, 2026">2</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Tuesday, November 3, 2026">3</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Wednesday, November 4, 2026">4</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Thursday, November 5, 2026">5</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Friday, November 6, 2026" disabled>6</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Saturday, November 7, 2026" disabled>7</button>
+      </div>
+      <div class="calendar-week" role="row">
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Sunday, November 8, 2026">8</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Monday, November 9, 2026">9</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Tuesday, November 10, 2026">10</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Wednesday, November 11, 2026" aria-current="date">11</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Thursday, November 12, 2026">12</button>
+        <button type="button" class="calendar-day calendar-day-range-start" role="gridcell" tabindex="0" aria-label="Friday, November 13, 2026" aria-selected="true">13</button>
+        <button type="button" class="calendar-day calendar-day-range" role="gridcell" tabindex="-1" aria-label="Saturday, November 14, 2026" aria-selected="true">14</button>
+      </div>
+      <div class="calendar-week" role="row">
+        <button type="button" class="calendar-day calendar-day-range" role="gridcell" tabindex="-1" aria-label="Sunday, November 15, 2026" aria-selected="true">15</button>
+        <button type="button" class="calendar-day calendar-day-range" role="gridcell" tabindex="-1" aria-label="Monday, November 16, 2026" aria-selected="true">16</button>
+        <button type="button" class="calendar-day calendar-day-range" role="gridcell" tabindex="-1" aria-label="Tuesday, November 17, 2026" aria-selected="true">17</button>
+        <button type="button" class="calendar-day calendar-day-range-end" role="gridcell" tabindex="-1" aria-label="Wednesday, November 18, 2026" aria-selected="true">18</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Thursday, November 19, 2026">19</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Friday, November 20, 2026">20</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Saturday, November 21, 2026">21</button>
+      </div>
+      <div class="calendar-week" role="row">
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Sunday, November 22, 2026">22</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Monday, November 23, 2026">23</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Tuesday, November 24, 2026">24</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Wednesday, November 25, 2026">25</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Thursday, November 26, 2026">26</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Friday, November 27, 2026">27</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Saturday, November 28, 2026">28</button>
+      </div>
+      <div class="calendar-week" role="row">
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Sunday, November 29, 2026">29</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Monday, November 30, 2026">30</button>
+        <button type="button" class="calendar-day calendar-day-outside" role="gridcell" tabindex="-1" aria-label="Tuesday, December 1, 2026">1</button>
+        <button type="button" class="calendar-day calendar-day-outside" role="gridcell" tabindex="-1" aria-label="Wednesday, December 2, 2026">2</button>
+        <button type="button" class="calendar-day calendar-day-outside" role="gridcell" tabindex="-1" aria-label="Thursday, December 3, 2026">3</button>
+        <button type="button" class="calendar-day calendar-day-outside" role="gridcell" tabindex="-1" aria-label="Friday, December 4, 2026">4</button>
+        <button type="button" class="calendar-day calendar-day-outside" role="gridcell" tabindex="-1" aria-label="Saturday, December 5, 2026">5</button>
+      </div>
+    </div>
+  </div>
+</div>`} />
+
+色带通过以下方式呈现为一个整体：
+
+- 列之间没有间距，色带可以跨单元格连续延伸。行之间保留 2px 间距，每周各有一条独立的色带。
+- 日期范围跨周延续时，色带在一周结束处呈圆角。
+- 在范围的两端，色带覆盖单元格朝向范围内侧的半边，墨色填充的日期另占一层，叠在色带上方。这样，色带会在日期按钮的中心与其衔接，而不是在圆角边缘与其相接。
+
+启用 `range` 选项后，行为脚本会处理范围选择。第一次点击确定起始日期，第二次点击确定结束日期，第三次点击开始新的选择。如果第二次点击的日期更早，脚本会按时间先后排列两个日期。
+
+<ComponentPreview name="range-live" height={392} title="选择日期范围" bodyClass="flex justify-center p-lg" behaviors html={`<div class="sheet p-md">
+  <div class="calendar" id="stay">
+    <div class="calendar-header">
+      <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Previous month"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button>
+      <h3 class="calendar-title" id="stay-title" aria-live="polite"></h3>
+      <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Next month"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
+    </div>
+    <div class="calendar-grid" role="grid" aria-labelledby="stay-title"></div>
+  </div>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.calendar(document.getElementById('stay'), { range: true, value: ['2026-11-13', '2026-11-18'] })
+})
+</script>`} caption="点击一个日期作为起点，再点击另一个日期作为终点。" />
+
+`attach()` 不传入选项，因此此预览会在 `attach()` 运行后自行调用 `calendar`。在同一根元素上再次调用会替换上一次挂载的行为。`MasterUI` 是预览加载的打包文件。在项目中，请按照[行为脚本](#behavior)一节的示例导入 `calendar`。
+
+## 日期选择器 \{#date-picker\}
+
+日期选择器由输入字段、按钮和放在[弹出层](/components/popover)中的日历组成。弹出层无需脚本即可开关，并以按钮为参照自动定位。行为脚本生成日历并报告选中的日期，页面自己的脚本将该日期写入输入字段并隐藏弹出层。
+
+<ComponentPreview name="picker" height={480} title="日期选择器" background="plain" bodyClass="content-start p-lg min-h(480)" behaviors html={`<div class="field max-w(280) mx-auto">
+  <label for="starts">Starts</label>
+  <div class="input-group">
+    <input class="input-group-field" id="starts" value="2026-11-04" readonly>
+    <button type="button" class="btn btn-quiet btn-square" popovertarget="starts-calendar" aria-label="Choose a date">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M8 3v4M16 3v4"/></svg>
+    </button>
+    <div id="starts-calendar" popover class="popover popover-end">
+      <div class="calendar">
+        <div class="calendar-header">
+          <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Previous month"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button>
+          <h3 class="calendar-title" id="picker-title" aria-live="polite"></h3>
+          <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Next month"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
+        </div>
+        <div class="calendar-grid" role="grid" aria-labelledby="picker-title"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  var popover = document.getElementById('starts-calendar')
+  MasterUI.calendar(popover.querySelector('.calendar'), { value: '2026-11-04' })
+  popover.addEventListener('change', function (event) {
+    document.getElementById('starts').value = event.detail.value
+    popover.hidePopover()
+  })
+})
+</script>`} />
+
+日历的 `change` 事件会冒泡，因此监听器绑定在弹出层上。事件的 `detail.value` 提供 `YYYY-MM-DD` 格式的日期，这也是表单所需的日期值格式。
+
+在手机上，或表单只需填写日期时，可以使用原生 [`<input type="date">`](/components/input#date-time-and-color)，让用户使用设备自带的日期选择器。
+
+## 行为脚本 \{#behavior\}
+
+`calendar` 接收根元素和选项对象，并返回用于解除挂载的函数。
+
+```js name=app.js
+import { calendar } from '@master/ui/behaviors/calendar.js'
+
+const root = document.querySelector('.calendar')
+const picker = calendar(root, { value: '2026-11-04', min: '2026-11-01', max: '2026-12-31' })
+
+root.addEventListener('change', (event) => console.log(event.detail.value))
+```
+
+| 选项 | 设置内容 |
+| --- | --- |
+| `value` | `YYYY-MM-DD` 格式的选中日期，或日期范围的起止日期 |
+| `month` | 初始显示的月份，格式为 `YYYY-MM`。默认显示所选值所在的月份，未设置值时显示今天所在的月份 |
+| `min`, `max` | 可选的最早和最晚日期，格式为 `YYYY-MM-DD`。某个方向没有可切换的月份时，对应的月份切换按钮会禁用 |
+| `range` | 用 `true` 选择两个日期及其间的所有日期 |
+| `weekStart` | 第一列对应的星期几，0 表示星期日，6 表示星期六。默认遵循区域设置，浏览器无法确定时使用星期一 |
+| `locale` | 用于显示月份和星期名称的 BCP 47 标签。默认取日历所在范围的 `lang` |
+| `disabled` | 接收 `Date` 并判断该日期是否不可选的函数 |
+| `draw` | 代替脚本生成网格的函数。调用时以 `YYYY-MM` 的形式传入要显示的月份，参见[自定义网格](/guide/behaviors#a-grid-of-your-own) |
+
+- **脚本写入的内容。** 脚本写入星期名称、当前显示月份的各周以及月份名称。对日期按钮，脚本将日期写入 `value`，给今天加上 `aria-current="date"`，给选中的日期加上 `aria-selected="true"` 和范围类名，给不可选的日期加上 `disabled`，用 `aria-label` 提供完整日期，并通过 `tabindex` 让一个日期进入 Tab 键导航顺序。使用 `draw` 时，由模板或框架生成日期，脚本只为这些日期添加标记。
+- **事件。** 选择日期时，根元素会派发可冒泡的 `change` 事件，并通过 `detail.value` 携带所选值。单个日期以 `YYYY-MM-DD` 表示，选定范围的两端后则以 `[start, end]` 表示。
+- **值。** 值保存在脚本中，不写入标记。通过返回函数的 `value` 读取，例如 `picker.value`。选择范围时，终点选定前为 `null`。也可以从外部设置这个值来选择日期。`picker.value = '2026-11-20'` 会显示新日期所在的月份，且不会派发事件。
+- **日期。** 日期采用本地时区和公历。
+
+## 结构 \{#structure\}
+
+- `calendar-grid` 统一声明七列。每个 `calendar-week` 占一行，并使用这七列的子网格，因此无需表格即可让星期名称和日期按列对齐。
+- `calendar-weekday` 是列标题，其 `aria-label` 为完整的星期名称。
+- `calendar-day` 是带有 `role="gridcell"` 的 `<button>`。
+
+## 键盘操作 \{#keyboard\}
+
+行为脚本为网格提供日期网格的键盘操作。焦点移出当前月份时，日历会显示相邻月份，并将焦点保持在移到的日期上。移动时会跳过不可选的日期，并在 `min` 和 `max` 处停止。
+
+<ContractTable name="calendar" show="keyboard" />
+
+## 无障碍 \{#accessibility\}
+
+- 网格为 `role="grid"`，以月份标题作为无障碍名称。每周为 `role="row"`。
+- Tab 键导航顺序中只有一个日期，优先使用选中的日期，其次使用今天。如果该月两者都没有，则使用该月第一天。其余日期均带有 `tabindex="-1"`。
+- 为标题添加 `aria-live="polite"`，以便在切换月份时播报。
+- 在触摸屏上，日期按钮的尺寸为 44px。
+
+## React、Svelte 和 Vue \{#frameworks\}
+
+`calendar` 组件使用与行为脚本相同的数据渲染月份，使月份内容出现在初始 HTML 中，并支持传入和传出所选日期。使用 `npx master-ui add calendar` 将组件复制到项目中，参见 [React、Svelte 和 Vue](/guide/frameworks) 了解这些组件的实现和用法。
+
+<FrameworkSource name="calendar" />
+
+## 类名 \{#classes\}
+
+<ContractTable name="calendar" />
+
+## 自定义属性 \{#custom-properties\}
+
+<ContractTable name="calendar" show="properties" />
+
+## 源码 \{#source\}
+
+<ComponentSource name="calendar" />

@@ -1,0 +1,158 @@
+---
+title: "自動グリッド"
+description: "収まる数だけ等幅のカラムを並べ、カラム数をグリッド自身が決めます。"
+---
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import PagePreview from '~/site/components/PagePreview.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+自動グリッドは、最小幅を下回らない等幅のカラムを、収まる数だけ並べます。グリッド自身が使える幅からカラム数を決めるため、クエリーは不要です。同じマークアップで、ダッシュボードでは 4 列、サイドバーでは 2 列、スマートフォンでは 1 列に並びます。
+
+この配置を支える `repeat(auto-fill, minmax(min(100%, 16rem), 1fr))` はユーティリティでは表現できず、細部を誤りやすいため、レイアウトクラスとして用意しています。`min(100%, …)` により、狭い画面でも 1 カラムの幅が画面幅を超えません。
+
+<PagePreview name="default" title="自動グリッド" height={240} tabletHeight={336} phoneHeight={640} caption="「タブレット」、続いて「スマートフォン」を選ぶと、4 カラムが 2 カラム、次いで 1 カラムになります。クエリーは使っていません。" html={`<div class="auto-grid p-lg bg-surface-base">
+  <article class="card">
+    <header class="card-header">
+      <h3 class="card-title">Atlas</h3>
+      <p class="card-description">atlas.dev</p>
+    </header>
+  </article>
+  <article class="card">
+    <header class="card-header">
+      <h3 class="card-title">Borealis</h3>
+      <p class="card-description">borealis.app</p>
+    </header>
+  </article>
+  <article class="card">
+    <header class="card-header">
+      <h3 class="card-title">Cinder</h3>
+      <p class="card-description">cinder.io</p>
+    </header>
+  </article>
+  <article class="card">
+    <header class="card-header">
+      <h3 class="card-title">Drift</h3>
+      <p class="card-description">drift.so</p>
+    </header>
+  </article>
+  <article class="card">
+    <header class="card-header">
+      <h3 class="card-title">Ember</h3>
+      <p class="card-description">ember.dev</p>
+    </header>
+  </article>
+  <article class="card">
+    <header class="card-header">
+      <h3 class="card-title">Fathom</h3>
+      <p class="card-description">fathom.app</p>
+    </header>
+  </article>
+</div>`} />
+
+## 最小幅 \{#minimum\}
+
+`--auto-grid-min` はカラムの最小幅で、既定値は 16rem です。最小幅を小さくすると、より細いカラムを多く並べられます。図版には 11rem、段落を含むカードには 20rem が適しています。
+
+<PagePreview name="min" title="最小幅を小さくした例" height={144} tabletHeight={248} phoneHeight={664} html={`<div class="auto-grid p-lg bg-surface-base" style="--auto-grid-min: 11rem">
+  <section class="sheet p-md">
+    <div class="stat">
+      <p class="stat-label">Requests</p>
+      <div class="stat-row">
+        <p class="stat-value">1.28M</p>
+        <p class="stat-delta stat-delta-up">12.4%</p>
+      </div>
+    </div>
+  </section>
+  <section class="sheet p-md">
+    <div class="stat">
+      <p class="stat-label">Visitors</p>
+      <div class="stat-row">
+        <p class="stat-value">84.2K</p>
+        <p class="stat-delta stat-delta-up">3.1%</p>
+      </div>
+    </div>
+  </section>
+  <section class="sheet p-md">
+    <div class="stat">
+      <p class="stat-label">Bandwidth</p>
+      <div class="stat-row">
+        <p class="stat-value">74 GB</p>
+      </div>
+    </div>
+  </section>
+  <section class="sheet p-md">
+    <div class="stat">
+      <p class="stat-label">Builds</p>
+      <div class="stat-row">
+        <p class="stat-value">212</p>
+      </div>
+    </div>
+  </section>
+  <section class="sheet p-md">
+    <div class="stat">
+      <p class="stat-label">Domains</p>
+      <div class="stat-row">
+        <p class="stat-value">9</p>
+      </div>
+    </div>
+  </section>
+  <section class="sheet p-md">
+    <div class="stat">
+      <p class="stat-label">Members</p>
+      <div class="stat-row">
+        <p class="stat-value">4</p>
+      </div>
+    </div>
+  </section>
+</div>`} />
+
+ギャップは 1rem です。変更するには、グリッドに `gap-lg` などのギャップユーティリティを指定します。ユーティリティはライブラリーのクラスより後に定義されているため、既定の値を上書きできます。
+
+## 空カラムを残すか詰めるか \{#fill-or-fit\}
+
+既定では空のカラムも幅を確保するため、幅の広いグリッドにタイルが 2 枚だけでも、各タイルは通常のカラム幅を保ちます。`auto-grid-fit` は空のカラムを詰め、タイルのあるカラムで行全体の幅を分け合います。項目が増えていく一覧には既定の設定を、項目数が固定で常に行いっぱいに並べたい場合には fit を使います。
+
+<PagePreview name="fit" title="空カラムを詰める" height={232} phoneHeight={368} html={`<div class="flex flex-col gap-lg p-lg bg-surface-base fg-text-body text-sm">
+  <div class="flex flex-col gap-xs">
+    <p class="eyebrow">auto-grid</p>
+    <div class="auto-grid">
+      <div class="well p-md">One</div>
+      <div class="well p-md">Two</div>
+    </div>
+  </div>
+  <div class="flex flex-col gap-xs">
+    <p class="eyebrow">auto-grid auto-grid-fit</p>
+    <div class="auto-grid auto-grid-fit">
+      <div class="well p-md">One</div>
+      <div class="well p-md">Two</div>
+    </div>
+  </div>
+</div>`} />
+
+## 自動グリッドが適さない場面 \{#when-not\}
+
+カラム数がデザイン上の要件なら、`grid grid-cols(3)` と `grid-cols(3)@container(--4xl)` などのコンテナーバリアントで明示します。カラム数を自動で決める自動グリッドは、項目の一覧に適しています。3 番目のカラム自体に意味があるようなレイアウトでは、カラム数を明示します。
+
+## アクセシビリティ \{#accessibility\}
+
+- グリッドが変えるのはカラム数だけです。項目を左から右、上から下へたどる順序は、ソースの順序と一致します。
+- 同種の項目をタイルで並べる場合は、リスト要素 `<ul class="auto-grid">` を使います。スクリーンリーダーが項目数を読み上げます。
+
+## クラス \{#classes\}
+
+<ContractTable name="auto-grid" directory="layouts" />
+
+## カスタムプロパティ \{#custom-properties\}
+
+<ContractTable name="auto-grid" show="properties" directory="layouts" />
+
+## 関連項目 \{#related\}
+
+<ComponentLinks slugs={['bento', 'masonry', 'arrangements', 'card']} />
+
+<ComponentLinks kind="pages" slugs={['dashboard']} />
+
+## ソース \{#source\}
+
+<ComponentSource name="auto-grid" directory="layouts" />

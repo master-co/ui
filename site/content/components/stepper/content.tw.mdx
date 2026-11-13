@@ -1,0 +1,141 @@
+---
+title: "數字步進器"
+description: "以兩側的按鈕逐步增減中間的數值。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+數字步進器適合座位數、數量、字級等較常逐步調整、較少直接輸入的數值。它以[輸入群組](/components/input#input-group)包住原生的 `<input type="number">`，並在輸入槽兩端各放一個[按鈕](/components/button)。請在群組加上 `stepper`，並在欄位加上 `stepper-field`。
+
+<ComponentPreview name="default" height={128} title="數字步進器" bodyClass="flex items-center justify-center p-lg" behaviors html={`<div class="sheet flex items-center gap-lg p-md pl-lg">
+  <label class="text-sm fg-text-strong" for="seats">Seats</label>
+  <div class="input-group stepper">
+    <button type="button" class="btn btn-square" value="-1" tabindex="-1" aria-label="Fewer seats"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+    <input class="input-group-field stepper-field" id="seats" type="number" min="1" max="12" value="4">
+    <button type="button" class="btn btn-square" value="1" tabindex="-1" aria-label="More seats"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+  </div>
+</div>`} caption="按一下或按住按鈕、直接輸入數字，或在欄位中使用方向鍵。數值到達 1 或 12 時，對應的按鈕會以平面樣式顯示。" />
+
+## 欄位的原生功能 \{#what-the-field-already-does\}
+
+欄位採用數字輸入，因此在腳本執行前，平台就已提供步進器的大部分功能：
+
+- <kbd>↑</kbd> 和 <kbd>↓</kbd> 會依 `step` 增減數值，並在 `min` 和 `max` 停下。
+- 輔助科技會將欄位讀為數值調整按鈕，並讀出目前數值與上下限。
+- 手機會顯示數字鍵盤。
+- 手動輸入的數值超出範圍時，欄位會符合 `:user-invalid`，輸入槽的外框也會切換為危險色。
+
+樣式表會隱藏瀏覽器內建的增減按鈕，改由兩側的按鈕提供相同操作。
+
+## 行為 \{#behavior\}
+
+`stepper` [行為](/guide/behaviors)讓兩側的按鈕能逐步增減中間的數值。它接受帶有 `stepper` 類別的根元素，沒有可設定的選項，並回傳用來解除綁定的函式。
+
+```js name=app.js
+import { stepper } from '@master/ui/behaviors/stepper.js'
+
+const root = document.querySelector('.stepper')
+stepper(root)
+
+root.addEventListener('change', (event) => console.log(event.target.value))
+```
+
+- **逐步調整。** 按鈕會呼叫欄位的 `stepDown()` 或 `stepUp()`，與方向鍵使用相同的方法，因此 `min`、`max` 和 `step` 只需在欄位上設定一次。
+- **上下限。** 數值到達某個按鈕所對應的上限或下限時，該按鈕會進入 `disabled` 狀態，並在輸入槽中以平面樣式顯示。欄位留空時，視為尚未達到上限或下限。解除綁定時，會還原各按鈕原本的 `disabled` 狀態。
+- **按住。** 按住按鈕後，經過短暫延遲便會連續調整數值，直到放開、指標移出按鈕、指標操作取消，或數值到達上限或下限。
+- **方向。** 每個按鈕以 `value` 指定調整方向，負值代表減少。未設定時，欄位前方的按鈕會減少數值，後方的按鈕會增加數值。
+- **事件。** 按鈕改變數值時，欄位會依序派送 `input` 和 `change`，與手動輸入時相同。請從欄位的 `value` 讀取數值。
+
+按鈕設有 `tabindex="-1"`，因此用 Tab 鍵瀏覽時只會停在欄位上。在欄位中按方向鍵，就能完成按鈕的操作。若未掛載行為，欄位仍保有[平台原生功能](#what-the-field-already-does)，按鈕則不會改變數值。
+
+## 尺寸 \{#sizes\}
+
+數字步進器沿用輸入群組的尺寸。`input-group-sm` 高 32px，`input-group-lg` 高 44px，與相同尺寸的按鈕一致。內側的按鈕各比輸入槽矮 8px，並採用與輸入槽同心的圓角。
+
+<ComponentPreview name="sizes" height={96} mediumHeight={152} narrowHeight={216} title="尺寸" behaviors html={`<div class="input-group input-group-sm stepper">
+  <button type="button" class="btn btn-square" value="-1" tabindex="-1" aria-label="Decrease"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+  <input class="input-group-field stepper-field" type="number" value="2" aria-label="Small">
+  <button type="button" class="btn btn-square" value="1" tabindex="-1" aria-label="Increase"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+</div>
+<div class="input-group stepper">
+  <button type="button" class="btn btn-square" value="-1" tabindex="-1" aria-label="Decrease"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+  <input class="input-group-field stepper-field" type="number" value="16" aria-label="Medium">
+  <button type="button" class="btn btn-square" value="1" tabindex="-1" aria-label="Increase"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+</div>
+<div class="input-group input-group-lg stepper">
+  <button type="button" class="btn btn-square" value="-1" tabindex="-1" aria-label="Decrease"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+  <input class="input-group-field stepper-field" type="number" value="128" aria-label="Large">
+  <button type="button" class="btn btn-square" value="1" tabindex="-1" aria-label="Increase"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+</div>`} />
+
+## 寬度 \{#width\}
+
+輸入槽的寬度會配合數值。若瀏覽器支援 `field-sizing: content`，欄位會隨輸入的位數調整寬度，最窄可容納三位數，最寬可容納九位數。其餘瀏覽器會維持三位數的寬度。若要容納其他位數，請設定 `--stepper-min` 和 `--stepper-max`，也可以直接指定步進器的寬度，讓欄位填滿扣除按鈕後的剩餘空間。
+
+若要顯示單位，請在欄位後方加上 `input-group-addon`。將 `step` 設大，可增加每次調整的幅度。
+
+<ComponentPreview name="unit" height={152} title="單位與步長" bodyClass="flex flex-col items-center gap-md p-lg" behaviors html={`<div class="input-group stepper" style="--stepper-min: 5ch">
+  <button type="button" class="btn btn-square" value="-1" tabindex="-1" aria-label="Lower the budget"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+  <input class="input-group-field stepper-field" type="number" min="0" step="250" value="1250" aria-label="Monthly budget">
+  <span class="input-group-addon">USD</span>
+  <button type="button" class="btn btn-square" value="1" tabindex="-1" aria-label="Raise the budget"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+</div>
+<div class="input-group stepper w(280)">
+  <button type="button" class="btn btn-square" value="-1" tabindex="-1" aria-label="Fewer replicas"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+  <input class="input-group-field stepper-field" type="number" min="1" max="64" value="8" aria-label="Replicas">
+  <button type="button" class="btn btn-square" value="1" tabindex="-1" aria-label="More replicas"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+</div>`} />
+
+## 停用 \{#disabled\}
+
+請同時停用欄位與兩個按鈕。輸入槽會保留原本占用的空間，數值則會以停用色顯示。若欄位已停用或為唯讀，行為不會調整數值。這個預覽只有標記，未掛載腳本。
+
+<ComponentPreview name="disabled" height={96} title="停用" html={`<div class="input-group stepper">
+  <button type="button" class="btn btn-square" tabindex="-1" aria-label="Decrease" disabled><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+  <input class="input-group-field stepper-field" type="number" value="3" aria-label="Seats included in your plan" disabled>
+  <button type="button" class="btn btn-square" tabindex="-1" aria-label="Increase" disabled><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+</div>`} />
+
+## 何時使用其他元件 \{#when-to-use-something-else\}
+
+- 若數字通常只輸入一次，很少調整，例如連接埠號或價格，請使用設有 `type="number"` 的一般[輸入欄位](/components/input)。
+- 若要在較大的範圍內選擇位置，且操作手感比精確數值更重要，請使用[滑桿](/components/slider)。
+- 若要從少數有名稱的數量選項中擇一，請使用[分段控制項](/components/segmented)。
+
+## 鍵盤操作 \{#keyboard\}
+
+鍵盤操作由數字輸入欄位原生提供，行為不會新增按鍵操作。
+
+<ContractTable name="stepper" show="keyboard" />
+
+## 無障礙 \{#accessibility\}
+
+- 請使用 `<label>`、[表單欄位](/components/input#field)或 `aria-label` 為欄位加上標籤。每個按鈕都需要有自己的名稱，清楚說明會調整什麼，例如「增加座位數」，避免只寫「加號」。
+- 請將 `min`、`max` 和 `step` 設在欄位上。鍵盤操作、按鈕和輔助科技都會讀取這些設定。
+- 按鈕不列入 Tab 鍵的焦點順序。鍵盤使用者可在欄位中按方向鍵調整數值。指標操作區為 30px，44px 高的輸入槽內則有 36px 的手指觸控區。
+
+## React、Svelte 和 Vue \{#frameworks\}
+
+`stepper` 元件會掛載行為，並接收與回傳數值。執行 `npx master-ui add stepper` 將元件複製到專案中。元件的實作與用法請參閱 [React、Svelte 和 Vue](/guide/frameworks)。
+
+<FrameworkSource name="stepper" />
+
+## 類別 \{#classes\}
+
+<ContractTable name="stepper" />
+
+## 自訂屬性 \{#custom-properties\}
+
+<ContractTable name="stepper" show="properties" />
+
+## 相關元件 \{#related\}
+
+<ComponentLinks slugs={['input', 'slider', 'button']} />
+
+## 原始碼 \{#source\}
+
+<ComponentSource name="stepper" />

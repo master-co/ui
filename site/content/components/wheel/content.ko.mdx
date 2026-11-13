@@ -1,0 +1,153 @@
+---
+title: "휠"
+description: "열을 돌려 값을 표시선에 맞춰 선택하는 컴포넌트입니다."
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+휠은 열을 돌려 시, 분, 단위 등의 값을 표시선에 맞춰 선택하는 컴포넌트입니다. 휴대폰의 선택기와 같은 방식으로 동작하며, 플랫폼의 기본 기능을 활용합니다. 각 열은 스크롤 컨테이너이며, 스크롤이 멈추면 옵션 하나가 열 중앙에 맞춰집니다. 휠의 오목한 영역 중앙을 가로지르는 작은 표시판이 선택된 행을 보여 줍니다.
+
+<ComponentPreview name="default" height={272} title="휠" bodyClass="flex items-center justify-center p-lg" behaviors html={`<div class="wheel" role="group" aria-label="Reminder time">
+  <div class="wheel-column" role="listbox" aria-label="Hour" tabindex="0">
+    <div class="wheel-option" role="option" aria-selected="false">01</div>
+    <div class="wheel-option" role="option" aria-selected="false">02</div>
+    <div class="wheel-option" role="option" aria-selected="false">03</div>
+    <div class="wheel-option" role="option" aria-selected="false">04</div>
+    <div class="wheel-option" role="option" aria-selected="false">05</div>
+    <div class="wheel-option" role="option" aria-selected="false">06</div>
+    <div class="wheel-option" role="option" aria-selected="false">07</div>
+    <div class="wheel-option" role="option" aria-selected="false">08</div>
+    <div class="wheel-option" role="option" aria-selected="true">09</div>
+    <div class="wheel-option" role="option" aria-selected="false">10</div>
+    <div class="wheel-option" role="option" aria-selected="false">11</div>
+    <div class="wheel-option" role="option" aria-selected="false">12</div>
+  </div>
+  <span class="wheel-separator" aria-hidden="true">:</span>
+  <div class="wheel-column" role="listbox" aria-label="Minute" tabindex="0">
+    <div class="wheel-option" role="option" aria-selected="false">00</div>
+    <div class="wheel-option" role="option" aria-selected="false">05</div>
+    <div class="wheel-option" role="option" aria-selected="false">10</div>
+    <div class="wheel-option" role="option" aria-selected="false">15</div>
+    <div class="wheel-option" role="option" aria-selected="false">20</div>
+    <div class="wheel-option" role="option" aria-selected="false">25</div>
+    <div class="wheel-option" role="option" aria-selected="true">30</div>
+    <div class="wheel-option" role="option" aria-selected="false">35</div>
+    <div class="wheel-option" role="option" aria-selected="false">40</div>
+    <div class="wheel-option" role="option" aria-selected="false">45</div>
+    <div class="wheel-option" role="option" aria-selected="false">50</div>
+    <div class="wheel-option" role="option" aria-selected="false">55</div>
+  </div>
+  <div class="wheel-column" role="listbox" aria-label="Period" tabindex="0">
+    <div class="wheel-option" role="option" aria-selected="true">AM</div>
+    <div class="wheel-option" role="option" aria-selected="false">PM</div>
+  </div>
+</div>`} caption="열을 스크롤하거나 터치 화면에서 드래그하거나 옵션을 클릭하세요. 열에 포커스를 두고 방향키를 사용할 수도 있습니다." />
+
+## 플랫폼의 기본 동작 \{#what-the-platform-does\}
+
+- 휠을 **돌리는 동작**은 스크롤입니다. 마우스 휠, 손가락, 트랙패드는 다른 스크롤 컨테이너에서와 똑같이 동작합니다.
+- **열이 멈추는 위치**는 스크롤 스냅으로 결정됩니다. 열에는 `scroll-snap-type: y mandatory`, 각 옵션에는 `scroll-snap-align: center`를 적용합니다. 열은 두 값 사이에서 멈추지 않습니다. 양 끝에 여백을 두어 첫 번째와 마지막 옵션도 표시선에 닿을 수 있게 합니다.
+- **휠의 시각 효과**는 스크롤 기반 애니메이션으로 구현합니다. 각 옵션에는 열을 기준으로 하는 자체 뷰 타임라인이 있습니다. 옵션이 중앙을 지날 때 가장 선명하며, 중앙에서 멀어질수록 흐려지고 살짝 돌아갑니다. 이 효과를 그리기 위해 스크립트로 스크롤 위치를 읽을 필요가 없습니다.
+
+브라우저가 뷰 타임라인을 지원하지 않으면 모든 옵션이 회전 없이 표시되며, `aria-selected="true"`로 표시된 옵션만 진하게 표시됩니다.
+
+## 동작 \{#behavior\}
+
+스타일시트는 표시선에 놓인 값을 폼에 전달할 수 없습니다. `wheel` [동작](/guide/behaviors)은 열의 스크롤 위치에서 그 값을 읽습니다. `wheel` 클래스가 붙은 루트 요소를 인수로 받으며, 별도의 설정 옵션 없이 동작을 해제하는 함수를 반환합니다.
+
+```js name=app.js
+import { wheel } from '@master/ui/behaviors/wheel.js'
+
+const root = document.querySelector('.wheel')
+wheel(root)
+
+root.addEventListener('change', (event) => {
+  // event.target is the column that came to rest.
+  console.log(event.target.getAttribute('aria-label'), event.detail.value)
+})
+```
+
+- **열이 멈추면.** 동작은 `aria-selected="true"` 표시를 표시선에 놓인 옵션으로 옮깁니다.
+- **이벤트.** 그런 다음 선택된 옵션이 이전과 다르면 열에서 버블링하는 `change` 이벤트를 발생시킵니다. 이벤트의 `detail.value`에는 옵션의 `data-value` 값 또는 텍스트가, `detail.option`에는 옵션 요소가 들어 있습니다.
+- **초기 위치 설정.** 동작이 연결될 때와 팝오버가 열리는 경우처럼 열의 레이아웃이 다시 계산될 때, 각 열에서 선택된 옵션을 표시선에 맞춥니다.
+- 옵션을 **클릭**하면 해당 옵션이 표시선으로 이동합니다.
+- **키 조작.** 포커스된 열에서는 리스트박스와 같은 키를 사용해 옵션 단위로 이동합니다.
+- **비활성 옵션.** 열이 `aria-disabled="true"`로 표시된 옵션에서 멈추면 가장 가까운 활성 옵션으로 이동합니다.
+
+값을 폼과 함께 제출하려면 `change` 리스너에서 `detail.value`를 숨겨진 입력 필드에 복사합니다. 동작을 연결하지 않아도 열의 스크롤과 스냅은 작동합니다. 이 경우 열은 첫 번째 옵션에서 시작하고 `aria-selected` 속성은 마크업에서 지정한 옵션에 그대로 남습니다.
+
+## 단일 열 \{#one-column\}
+
+휠에 열을 하나만 둘 수도 있습니다. [팝오버](/components/popover) 안이나 설정 행에 휠을 배치할 때 `wheel-sm`을 사용하면 다섯 행 대신 세 행을 표시합니다.
+
+<ComponentPreview name="single" height={272} title="단일 열" bodyClass="flex items-center justify-center gap-lg p-lg" behaviors html={`<div class="wheel" role="group" aria-label="Repeat every">
+  <div class="wheel-column" role="listbox" aria-label="Interval" tabindex="0">
+    <div class="wheel-option" role="option" aria-selected="false">Hour</div>
+    <div class="wheel-option" role="option" aria-selected="false">Day</div>
+    <div class="wheel-option" role="option" aria-selected="true">Week</div>
+    <div class="wheel-option" role="option" aria-selected="false">Fortnight</div>
+    <div class="wheel-option" role="option" aria-selected="false">Month</div>
+    <div class="wheel-option" role="option" aria-selected="false">Quarter</div>
+    <div class="wheel-option" role="option" aria-selected="false">Year</div>
+  </div>
+</div>
+<div class="wheel wheel-sm" role="group" aria-label="Font size">
+  <div class="wheel-column" role="listbox" aria-label="Size" tabindex="0">
+    <div class="wheel-option" role="option" aria-selected="false">12</div>
+    <div class="wheel-option" role="option" aria-selected="false">13</div>
+    <div class="wheel-option" role="option" aria-selected="true">14</div>
+    <div class="wheel-option" role="option" aria-selected="false">15</div>
+    <div class="wheel-option" role="option" aria-selected="false">16</div>
+    <div class="wheel-option" role="option" aria-selected="false">18</div>
+    <div class="wheel-option" role="option" aria-selected="false">20</div>
+    <div class="wheel-option" role="option" aria-selected="false">24</div>
+  </div>
+  <span class="wheel-separator" aria-hidden="true">px</span>
+</div>`} />
+
+## 표시선 \{#the-mark\}
+
+중앙을 가로지르는 표시판은 휠 전체에 속하므로 시와 분을 고르는 두 열이 하나의 표시판을 공유합니다. 표시판은 오목한 영역의 가장자리에서 4px 안쪽에 놓이며, 모서리는 바깥쪽 모서리와 같은 중심을 기준으로 둥글게 처리됩니다. `wheel-separator`는 두 열 사이의 표시판 위에 놓이는 고정 텍스트로, 시와 분 사이의 콜론이나 숫자 뒤의 단위에 사용합니다.
+
+행 높이는 36px이며, 터치 화면에서는 44px입니다. 한 열에서 더 많은 행을 표시하려면 `--wheel-rows`를 홀수로 설정합니다.
+
+## 다른 컴포넌트가 적합한 경우 \{#when-to-use-something-else\}
+
+휠은 터치 기기에서 값이 적고 순서가 정해져 있으며 사용자가 그 값들에 익숙할 때 적합합니다. 키보드와 포인터를 사용할 때는 [셀렉트](/components/select)나 [스테퍼](/components/stepper)가 더 빠르며, 날짜를 고를 때는 [캘린더](/components/calendar)에서 선택하려는 날짜가 속한 주를 볼 수 있습니다. 휴대폰에서 네이티브 `<input type="time">`을 사용하면 플랫폼의 기본 휠이 열립니다. 선택기를 페이지 안에 배치해야 할 때는 이 휠을 사용하세요.
+
+## 키보드 \{#keyboard\}
+
+동작을 연결하면 키를 눌러 포커스된 열을 옵션 단위로 이동하며 비활성 옵션은 건너뜁니다. 동작을 연결하지 않으면 같은 키로 다른 스크롤 컨테이너에서처럼 열을 스크롤하고, 스냅으로 최종 위치를 맞춥니다.
+
+<ContractTable name="wheel" show="keyboard" />
+
+## 접근성 \{#accessibility\}
+
+- 각 열은 `role="listbox"`이며 `aria-label`과 `tabindex="0"`을 지정합니다. 각 옵션은 `role="option"`입니다. 동작은 표시선에 놓인 옵션에 `aria-selected` 속성을 유지합니다.
+- 회전과 투명도 변화는 사용자의 스크롤에 따라 달라집니다. 동작 줄이기가 설정되어 있으면 옵션의 투명도 변화만 유지되고 회전 효과는 사라집니다.
+
+## React, Svelte, Vue \{#frameworks\}
+
+`wheel` 컴포넌트는 데이터를 바탕으로 열을 렌더링하고 동작을 연결하며, 각 열의 값을 외부에서 받아 표시하고, 선택된 값을 외부로 전달합니다. `npx master-ui add wheel`을 사용해 프로젝트에 복사하세요. 컴포넌트의 구성과 사용법은 [React, Svelte, Vue](/guide/frameworks)에서 확인할 수 있습니다.
+
+<FrameworkSource name="wheel" />
+
+## 클래스 \{#classes\}
+
+<ContractTable name="wheel" />
+
+## 사용자 지정 속성 \{#custom-properties\}
+
+<ContractTable name="wheel" show="properties" />
+
+## 관련 항목 \{#related\}
+
+<ComponentLinks slugs={['select', 'stepper', 'calendar']} />
+
+## 소스 \{#source\}
+
+<ComponentSource name="wheel" />

@@ -1,0 +1,99 @@
+---
+title: "콤보박스"
+description: "입력한 텍스트와 일치하는 옵션을 보여 주는 리스트박스를 여는 텍스트 필드입니다."
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+콤보박스는 입력한 텍스트와 일치하는 옵션을 보여 주는 [리스트박스](/components/listbox)를 여는 텍스트 필드로, 직접 입력할 수 있는 선택 컨트롤입니다. 기존 [입력 그룹](/components/input#input-group)과 플로팅 리스트박스를 `combobox` 래퍼로 감싸 하나로 묶습니다. 스타일시트는 위치와 모양을 지정하고, `combobox` [동작](/guide/behaviors)은 옵션을 필터링하고 옵션 사이를 이동하며 선택한 값을 필드에 입력합니다.
+
+<ComponentPreview name="default" height={320} title="콤보박스" background="plain" bodyClass="content-start p-lg min-h(320)" behaviors html={`<div class="field max-w(320) mx-auto">
+  <label for="region">Region</label>
+  <div class="combobox">
+    <div class="input-group">
+      <input class="input-group-field" id="region" role="combobox" aria-expanded="false" aria-controls="region-list" aria-autocomplete="list" autocomplete="off" placeholder="Search regions">
+      <button type="button" class="combobox-toggle" tabindex="-1" aria-label="Show regions"></button>
+    </div>
+    <div id="region-list" popover="manual" class="listbox" role="listbox" aria-label="Regions">
+      <div class="listbox-option" role="option" id="region-hnd" aria-checked="false">Tokyo</div>
+      <div class="listbox-option" role="option" id="region-sin" aria-checked="false">Singapore</div>
+      <div class="listbox-option" role="option" id="region-fra" aria-checked="false">Frankfurt</div>
+      <div class="listbox-option" role="option" id="region-lhr" aria-checked="false">London</div>
+      <div class="listbox-option" role="option" id="region-iad" aria-checked="false">Virginia</div>
+      <div class="listbox-option" role="option" id="region-pdx" aria-checked="false" aria-disabled="true">Oregon</div>
+      <div class="listbox-empty">No regions match.</div>
+    </div>
+  </div>
+</div>`} caption="텍스트를 입력해 옵션을 필터링하고, 방향키로 이동한 뒤 Enter 키를 누르거나 클릭해 선택하세요." />
+
+## 스타일시트의 역할 \{#what-the-stylesheet-does\}
+
+- **배치.** `combobox` 래퍼는 자신을 앵커로 지정하고 앵커 이름의 범위를 래퍼 자체로 제한합니다. 리스트박스는 캐럿이나 버튼이 아닌 필드 전체를 기준으로 그 아래 6px에 열리며, `anchor-size()`로 최소 너비를 필드 너비로 맞춥니다. 별도의 측정이 필요 없으며 한 페이지에 콤보박스가 여러 개 있어도 서로 영향을 주지 않습니다.
+- **꺾쇠 아이콘.** `combobox-toggle`은 필드 끝에 있는 작은 버튼입니다. 필드가 `aria-expanded="true"` 상태인 동안 버튼의 꺾쇠 아이콘이 반대 방향을 향합니다.
+- **빈 상태.** 모든 옵션이 `hidden` 상태가 되면 `listbox-empty`가 자동으로 표시됩니다.
+- **필드 상태.** 호버, 포커스, 유효하지 않음, 비활성화 상태는 입력 그룹에서 처리합니다.
+
+앵커 위치 지정을 지원하지 않는 브라우저에서도 리스트박스는 일반 팝오버와 마찬가지로 뷰포트 중앙에 열립니다.
+
+## 동작 \{#behavior\}
+
+`combobox` 동작은 `combobox` 클래스가 있는 루트 요소를 받아, 연결한 동작을 해제하는 함수를 반환합니다. 별도의 설정 옵션은 없습니다. `role="combobox"`로 필드를 찾고 `role="listbox"`로 목록을 찾습니다.
+
+```js name=app.js
+import { combobox } from '@master/ui/behaviors/combobox.js'
+
+const detach = combobox(document.querySelector('.combobox'))
+```
+
+- **텍스트를 입력하면** 대소문자를 구분하지 않고 입력한 문자열이 포함되어 있는지 확인합니다. 텍스트에 해당 문자열이 없는 옵션에 `hidden` 속성을 설정하고 목록을 연 뒤, 첫 번째 일치 항목을 활성 옵션으로 지정합니다.
+- **활성 옵션**에는 `aria-selected="true"`가 설정되며, 필드의 `aria-activedescendant` 속성이 해당 옵션을 가리킵니다. 포커스는 필드에 유지됩니다.
+- <kbd>Enter</kbd> 키나 포인터로 **옵션을 선택하면** 옵션에서 `listbox-description`과 `listbox-end`를 제외한 텍스트를 필드에 입력하고, 선택한 옵션은 `aria-checked="true"`로, 나머지 옵션은 `false`로 표시한 뒤 목록을 닫습니다. 선택한 값을 직접 수정하면 해당 옵션의 체크 표시가 사라집니다.
+- **열기와 닫기.** 리스트박스는 `popover="manual"`이므로 필드에 입력하거나 필드를 클릭해도 닫히지 않습니다. 이 동작은 필드를 클릭하거나 토글 버튼을 조작하거나 방향키를 누르면 목록을 열고, <kbd>Esc</kbd> 키를 누르거나 포커스가 콤보박스를 벗어나면 목록을 닫습니다. `aria-expanded`는 목록의 열림 상태에 맞춰 갱신합니다.
+- **이벤트.** 옵션을 선택하면 필드에 직접 입력할 때와 마찬가지로 필드에서 `input`, `change` 순서로 이벤트를 발생시킵니다. 값은 필드의 `value`입니다.
+
+비활성화되거나 숨겨진 옵션은 건너뜁니다. 입력기로 문자를 조합하는 동안에는 입력기가 <kbd>Enter</kbd> 키와 방향키를 처리합니다.
+
+동작을 연결하지 않으면 필드는 일반 텍스트 입력란으로 작동합니다. 값을 직접 입력할 수 있으며 목록은 열리지 않습니다.
+
+## 컨트롤 선택 기준 \{#choosing-a-control\}
+
+단순한 옵션이 12개 이하라면 [셀렉트](/components/select)에서 스크립트 없이 플랫폼 기본 기능으로 글자를 입력해 옵션을 찾을 수 있습니다. 목록이 길어 검색이 필요하거나, 입력에 따라 옵션을 불러오거나, 각 행에 부가 설명 등 다양한 콘텐츠를 표시해야 할 때는 콤보박스를 사용하세요.
+
+## 키보드 조작 \{#keyboard\}
+
+키보드 입력은 연결한 동작에서 처리합니다. 목록이 닫혀 있거나 <kbd>Shift</kbd> 키를 누른 상태에서는 <kbd>Home</kbd>과 <kbd>End</kbd> 키가 일반 입력 필드에서처럼 캐럿을 이동합니다. 활성 옵션이 없으면 <kbd>Enter</kbd> 키의 기본 동작을 그대로 두므로 양식을 제출할 수 있습니다.
+
+<ContractTable name="combobox" show="keyboard" />
+
+## 접근성 \{#accessibility\}
+
+- 입력 요소에는 `role="combobox"`, 리스트박스를 가리키는 `aria-controls`, `aria-autocomplete="list"`, `aria-expanded` 속성이 설정됩니다.
+- 포커스는 입력 요소에 유지되며, 스크린 리더는 `aria-activedescendant` 속성을 통해 활성 옵션을 읽어 줍니다.
+- 필드에서 방향키로 목록을 열 수 있으므로 `tabindex="-1"`을 설정해 토글 버튼을 탭 순서에서 제외하세요.
+- 브라우저의 자체 추천 항목이 목록을 가리지 않도록 `autocomplete="off"`로 설정하세요.
+
+## React, Svelte, Vue \{#frameworks\}
+
+`combobox` 컴포넌트는 옵션 목록을 바탕으로 이 마크업을 렌더링하고 동작을 연결하며, 선택한 값을 받아 외부로 전달할 수 있습니다. `npx master-ui add combobox` 명령을 실행해 프로젝트에 복사하세요. 컴포넌트의 구성과 사용 방법은 [React, Svelte, Vue](/guide/frameworks)에서 확인할 수 있습니다.
+
+<FrameworkSource name="combobox" />
+
+## 클래스 \{#classes\}
+
+<ContractTable name="combobox" />
+
+[`input-group`](/components/input#input-group), `input-group-field`, 그리고 `popover` 속성이 있는 [`listbox`](/components/listbox)와 함께 사용합니다.
+
+## 관련 컴포넌트 \{#related\}
+
+콤보박스는 다음 컴포넌트로 구성되며, 각 컴포넌트는 자체 클래스와 상태를 유지합니다.
+
+<ComponentLinks slugs={['input', 'listbox', 'select']} />
+
+## 소스 코드 \{#source\}
+
+<ComponentSource name="combobox" />

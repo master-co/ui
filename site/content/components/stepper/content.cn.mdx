@@ -1,0 +1,141 @@
+---
+title: "数字步进器"
+description: "通过数字两侧的按钮按步长增减数值。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+步进器适合调整座位数、数量或字号等较小的数值，这些数值通常用按钮微调，较少直接输入。用一个[输入组](/components/input#input-group)包住原生 `<input type="number">`，在凹槽两端各放一个[按钮](/components/button)。给输入组添加 `stepper`，给输入框添加 `stepper-field`。
+
+<ComponentPreview name="default" height={128} title="步进器" bodyClass="flex items-center justify-center p-lg" behaviors html={`<div class="sheet flex items-center gap-lg p-md pl-lg">
+  <label class="text-sm fg-text-strong" for="seats">Seats</label>
+  <div class="input-group stepper">
+    <button type="button" class="btn btn-square" value="-1" tabindex="-1" aria-label="Fewer seats"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+    <input class="input-group-field stepper-field" id="seats" type="number" min="1" max="12" value="4">
+    <button type="button" class="btn btn-square" value="1" tabindex="-1" aria-label="More seats"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+  </div>
+</div>`} caption="点击或按住按钮，也可以在输入框中输入数字或使用方向键。数值为 1 或 12 时，对应的按钮会呈平坦状态。" />
+
+## 输入框的原生功能 \{#what-the-field-already-does\}
+
+步进器使用数字输入框，无需运行脚本即可获得大部分功能：
+
+- <kbd>↑</kbd> 和 <kbd>↓</kbd> 按 `step` 设定的步长增减数值，并在达到 `min` 或 `max` 时停止。
+- 辅助技术会将输入框读作微调按钮，并播报当前值和上下限。
+- 手机会显示数字键盘。
+- 手动输入的数值超出范围时，输入框会匹配 `:user-invalid`，凹槽会显示危险状态的轮廓。
+
+凹槽两端的按钮接管增减操作，因此样式表会隐藏浏览器自带的微调按钮。
+
+## 行为脚本 \{#behavior\}
+
+`stepper` [行为脚本](/guide/behaviors)让两端的按钮按步长调整中间输入框的数值。它接收带有 `stepper` 类的根元素，无需选项，并返回一个用于解除绑定的函数。
+
+```js name=app.js
+import { stepper } from '@master/ui/behaviors/stepper.js'
+
+const root = document.querySelector('.stepper')
+stepper(root)
+
+root.addEventListener('change', (event) => console.log(event.target.value))
+```
+
+- **步进。** 按钮调用输入框的 `stepDown()` 或 `stepUp()` 方法，与方向键使用的方法相同，因此只需在输入框上设置一次 `min`、`max` 和 `step`。
+- **上下限。** 数值达到按钮所对应的上限或下限时，该按钮会处于 `disabled` 状态，并在凹槽内呈平坦状态。输入框为空时，视为尚未达到任何一端的限制。解除绑定时，按钮会恢复原有的 `disabled`。
+- **按住。** 按住按钮片刻后，数值会连续增减，直到松开、指针移出、指针操作被取消，或数值达到上下限。
+- **方向。** 每个按钮通过自己的 `value` 指定步进方向，负值表示减小。省略该属性时，输入框前的按钮减小数值，输入框后的按钮增大数值。
+- **事件。** 按钮改变数值时，输入框会像手动输入时一样，先触发 `input`，再触发 `change`。数值取自输入框的 `value`。
+
+按钮带有 `tabindex="-1"`，因此在步进器内，只有输入框会通过 Tab 键获得焦点，方向键已能完成按钮的操作。未绑定行为脚本时，输入框仍保留[浏览器提供的原生功能](#what-the-field-already-does)，两个按钮则没有作用。
+
+## 尺寸 \{#sizes\}
+
+步进器沿用输入组的尺寸。`input-group-sm` 为 32px，`input-group-lg` 为 44px，与同尺寸按钮等高。两端按钮的高度均比凹槽小 8px，圆角与凹槽同心。
+
+<ComponentPreview name="sizes" height={96} mediumHeight={152} narrowHeight={216} title="尺寸" behaviors html={`<div class="input-group input-group-sm stepper">
+  <button type="button" class="btn btn-square" value="-1" tabindex="-1" aria-label="Decrease"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+  <input class="input-group-field stepper-field" type="number" value="2" aria-label="Small">
+  <button type="button" class="btn btn-square" value="1" tabindex="-1" aria-label="Increase"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+</div>
+<div class="input-group stepper">
+  <button type="button" class="btn btn-square" value="-1" tabindex="-1" aria-label="Decrease"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+  <input class="input-group-field stepper-field" type="number" value="16" aria-label="Medium">
+  <button type="button" class="btn btn-square" value="1" tabindex="-1" aria-label="Increase"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+</div>
+<div class="input-group input-group-lg stepper">
+  <button type="button" class="btn btn-square" value="-1" tabindex="-1" aria-label="Decrease"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+  <input class="input-group-field stepper-field" type="number" value="128" aria-label="Large">
+  <button type="button" class="btn btn-square" value="1" tabindex="-1" aria-label="Increase"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+</div>`} />
+
+## 宽度 \{#width\}
+
+凹槽宽度随数值变化。浏览器支持 `field-sizing: content` 时，输入框会随输入的位数调整宽度，最窄容纳三位数字，最宽容纳九位数字。其他浏览器中，输入框保持三位数字的宽度。可设置 `--stepper-min` 和 `--stepper-max` 以适应其他位数，也可直接设置步进器的宽度，让输入框占用按钮之外的可用空间。
+
+在输入框后放置一个 `input-group-addon` 来显示单位，并用更大的 `step` 增大每次调整的幅度。
+
+<ComponentPreview name="unit" height={152} title="单位与步长" bodyClass="flex flex-col items-center gap-md p-lg" behaviors html={`<div class="input-group stepper" style="--stepper-min: 5ch">
+  <button type="button" class="btn btn-square" value="-1" tabindex="-1" aria-label="Lower the budget"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+  <input class="input-group-field stepper-field" type="number" min="0" step="250" value="1250" aria-label="Monthly budget">
+  <span class="input-group-addon">USD</span>
+  <button type="button" class="btn btn-square" value="1" tabindex="-1" aria-label="Raise the budget"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+</div>
+<div class="input-group stepper w(280)">
+  <button type="button" class="btn btn-square" value="-1" tabindex="-1" aria-label="Fewer replicas"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+  <input class="input-group-field stepper-field" type="number" min="1" max="64" value="8" aria-label="Replicas">
+  <button type="button" class="btn btn-square" value="1" tabindex="-1" aria-label="More replicas"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+</div>`} />
+
+## 禁用 \{#disabled\}
+
+同时禁用输入框和两个按钮。凹槽保留原位，数值文字使用禁用状态的前景色。输入框处于禁用或只读状态时，行为脚本会跳过步进操作。此预览仅使用标记，未绑定脚本。
+
+<ComponentPreview name="disabled" height={96} title="禁用" html={`<div class="input-group stepper">
+  <button type="button" class="btn btn-square" tabindex="-1" aria-label="Decrease" disabled><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+  <input class="input-group-field stepper-field" type="number" value="3" aria-label="Seats included in your plan" disabled>
+  <button type="button" class="btn btn-square" tabindex="-1" aria-label="Increase" disabled><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+</div>`} />
+
+## 何时选用其他组件 \{#when-to-use-something-else\}
+
+- 如果数值通常只输入一次，很少调整，例如端口号或价格，请使用带有 `type="number"` 的普通[输入框](/components/input)。
+- 如果要在较宽的范围内选取位置，主要凭感觉调整，对精确数值的要求较低，请使用[滑块](/components/slider)。
+- 如果要从少量带名称的数值选项中选择，请使用[分段控件](/components/segmented)。
+
+## 键盘操作 \{#keyboard\}
+
+所有按键操作均由数字输入框原生提供，行为脚本不添加任何按键操作。
+
+<ContractTable name="stepper" show="keyboard" />
+
+## 无障碍 \{#accessibility\}
+
+- 使用 `<label>`、[字段](/components/input#field)或 `aria-label` 为输入框提供无障碍名称。每个按钮都需要有自己的名称，明确说明它会调整什么，例如用“增加座位数”代替“加号”。
+- 将 `min`、`max` 和 `step` 保留在输入框上。键盘操作、按钮和辅助技术都从输入框读取这些属性。
+- 按钮不进入 Tab 键的焦点顺序。键盘用户在输入框内用方向键增减数值。指针操作的目标尺寸为 30px，手指触控的目标尺寸为 36px，位于 44px 的凹槽内。
+
+## React、Svelte 和 Vue \{#frameworks\}
+
+`stepper` 组件接入行为脚本，接收并传出数值。用 `npx master-ui add stepper` 将组件复制到项目中。[React、Svelte 和 Vue](/guide/frameworks) 介绍了这些组件的实现和用法。
+
+<FrameworkSource name="stepper" />
+
+## 类名 \{#classes\}
+
+<ContractTable name="stepper" />
+
+## 自定义属性 \{#custom-properties\}
+
+<ContractTable name="stepper" show="properties" />
+
+## 相关内容 \{#related\}
+
+<ComponentLinks slugs={['input', 'slider', 'button']} />
+
+## 源码 \{#source\}
+
+<ComponentSource name="stepper" />

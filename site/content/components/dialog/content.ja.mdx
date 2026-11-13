@@ -1,0 +1,186 @@
+---
+title: "ダイアログ"
+description: "オーバーレイとして表示され、スクリプトなしで開閉できるネイティブのモーダルです。"
+---
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+ダイアログは表示階層の最上位にあるオーバーレイです。背後のページを暗くしてぼかす背景幕の上に表示されます。ネイティブの`<dialog>`に`.dialog`を指定します。`commandfor`と`command="show-modal"`を指定したボタンで開くと、ブラウザーがダイアログをトップレイヤーに表示し、フォーカスをダイアログ内に保ち、<kbd>Esc</kbd>で閉じる操作も処理するため、スクリプトは不要です。
+
+<ComponentPreview name="default" height={304} title="ダイアログ" bodyClass="flex items-center justify-center p-lg min-h(300)" html={`<button type="button" class="btn" commandfor="delete-project" command="show-modal">Delete project</button>
+
+<dialog id="delete-project" class="dialog" closedby="any" aria-labelledby="delete-project-title">
+  <header class="dialog-header">
+    <h2 class="dialog-title" id="delete-project-title">Delete this project?</h2>
+    <p class="dialog-description">Atlas and its 14 deployments are removed, and its domains stop resolving at once.</p>
+  </header>
+  <footer class="dialog-footer">
+    <button type="button" class="btn" commandfor="delete-project" command="close">Cancel</button>
+    <button type="button" class="btn btn-primary" commandfor="delete-project" command="close">Delete project</button>
+  </footer>
+</dialog>`} />
+
+## 開閉 \{#opening-and-closing\}
+
+従来はスクリプトが必要だったモーダルの開閉を、3つの属性で設定できます。
+
+- ボタンに`commandfor="id"`と`command="show-modal"`を指定すると、ダイアログがモーダルとして開きます。`command="close"`で閉じると、開いたボタンにフォーカスが戻ります。
+- ダイアログに`closedby="any"`を指定すると、常に使える<kbd>Esc</kbd>に加えて、背景幕をクリックして閉じられます。誤クリックで作業内容を失ってはいけない場合は、この属性を省略します。属性に未対応のブラウザーでも、<kbd>Esc</kbd>と閉じるボタンは使えます。
+- ダイアログ内の`<form method="dialog">`を送信するとダイアログが閉じ、どのボタンで送信したかをダイアログの`returnValue`で取得できます。
+
+モーダルダイアログが開いている間は、背後のページを操作したりスクロールしたりできません。
+
+## フォーム付き \{#with-a-form\}
+
+`dialog-body`はヘッダーとフッターの間にコンテンツを配置します。残りの高さを使い、コンテンツがビューポート内に収まりきらない場合は、ダイアログ内でスクロールします。`dialog-close`は隅に控えめな正方形のボタンを配置します。このボタンにはアクセシブルな名前を付けます。
+
+<ComponentPreview name="form" height={520} title="フォーム付き" bodyClass="flex items-center justify-center p-lg min-h(520)" html={`<button type="button" class="btn btn-primary" commandfor="invite" command="show-modal">Invite member</button>
+
+<dialog id="invite" class="dialog" closedby="any" aria-labelledby="invite-title">
+  <header class="dialog-header">
+    <h2 class="dialog-title" id="invite-title">Invite a member</h2>
+    <p class="dialog-description">They receive an email with a link that expires in seven days.</p>
+  </header>
+  <form class="dialog-body flex flex-col gap-md" method="dialog" id="invite-form">
+    <label class="field">
+      Email
+      <input class="input" type="email" placeholder="ada@example.com" required autofocus>
+    </label>
+    <label class="field">
+      Role
+      <select class="select">
+        <option class="select-option">Member</option>
+        <option class="select-option">Admin</option>
+        <option class="select-option">Billing</option>
+      </select>
+    </label>
+  </form>
+  <footer class="dialog-footer">
+    <button type="button" class="btn" commandfor="invite" command="close">Cancel</button>
+    <button type="submit" class="btn btn-primary" form="invite-form">Send invite</button>
+  </footer>
+  <button type="button" class="btn btn-quiet btn-square btn-sm dialog-close" commandfor="invite" command="close" aria-label="Close">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+  </button>
+</dialog>`} />
+
+## サイズ \{#sizes\}
+
+ダイアログの既定幅は28remです。1文で済む確認には幅22remの`dialog-sm`を使えます。`dialog-lg`の幅は40remです。画面が狭い場合は、どのサイズでもビューポートの左右に1remずつ余白を確保します。フッターはコンテナークエリーでダイアログ自体の幅に対応し、22rem未満では、主操作を先頭にしてボタンを全幅で縦に並べます。
+
+<ComponentPreview name="sizes" height={304} title="サイズ" bodyClass="flex flex-wrap items-center justify-center gap-md p-lg min-h(300)" html={`<button type="button" class="btn" commandfor="size-sm" command="show-modal">Small</button>
+<button type="button" class="btn" commandfor="size-lg" command="show-modal">Large</button>
+
+<dialog id="size-sm" class="dialog dialog-sm" closedby="any" aria-labelledby="size-sm-title">
+  <header class="dialog-header">
+    <h2 class="dialog-title" id="size-sm-title">Sign out?</h2>
+    <p class="dialog-description">Unsaved drafts stay on this device.</p>
+  </header>
+  <footer class="dialog-footer">
+    <button type="button" class="btn" commandfor="size-sm" command="close">Stay</button>
+    <button type="button" class="btn btn-primary" commandfor="size-sm" command="close">Sign out</button>
+  </footer>
+</dialog>
+
+<dialog id="size-lg" class="dialog dialog-lg" closedby="any" aria-labelledby="size-lg-title">
+  <header class="dialog-header">
+    <h2 class="dialog-title" id="size-lg-title">Release notes</h2>
+    <p class="dialog-description">Version 2.1 adds overlays that need no script: dialogs, popovers, menus and tooltips.</p>
+  </header>
+  <footer class="dialog-footer">
+    <button type="button" class="btn btn-primary" commandfor="size-lg" command="close">Done</button>
+  </footer>
+</dialog>`} />
+
+## ドロワー \{#drawer\}
+
+`dialog-drawer`はインライン方向の終端に配置するパネルです。ページを表示したまま、フィルターや詳細、設定を開けます。角丸や影が切れないようにビューポートの端から8px内側に配置し、その端からスライドして現れます。
+
+<ComponentPreview name="drawer" height={400} title="ドロワー" bodyClass="flex items-center justify-center p-lg min-h(400)" html={`<button type="button" class="btn" commandfor="filters" command="show-modal">Filters</button>
+
+<dialog id="filters" class="dialog dialog-drawer" closedby="any" aria-labelledby="filters-title">
+  <header class="dialog-header">
+    <h2 class="dialog-title" id="filters-title">Filters</h2>
+    <p class="dialog-description">Narrow the list of deployments.</p>
+  </header>
+  <div class="dialog-body flex flex-col gap-md">
+    <label class="field">
+      Branch
+      <input class="input" value="main">
+    </label>
+    <label class="check"><input type="checkbox" class="checkbox" checked> Production only</label>
+  </div>
+  <footer class="dialog-footer">
+    <button type="button" class="btn" commandfor="filters" command="close">Reset</button>
+    <button type="button" class="btn btn-primary" commandfor="filters" command="close">Apply</button>
+  </footer>
+</dialog>`} />
+
+### 始端への配置 \{#drawer-start\}
+
+`dialog-drawer-start`を追加すると、幅18remのドロワーをインライン方向の始端に配置でき、ナビゲーションに使えます。幅の狭いレイアウトでサイドバーを格納した場合は、このドロワーで表示できます。[アプリシェル](/pages/app-shell)を参照してください。
+
+<ComponentPreview name="drawer-start" height={400} title="始端に配置したドロワー" bodyClass="flex items-center justify-center p-lg min-h(400)" html={`<button type="button" class="btn" commandfor="nav-drawer" command="show-modal">Open navigation</button>
+
+<dialog id="nav-drawer" class="dialog dialog-drawer dialog-drawer-start" closedby="any" aria-label="Navigation">
+  <div class="dialog-body">
+    <nav class="nav" aria-label="Workspace">
+      <a class="nav-item" href="#" aria-current="page">Overview</a>
+      <a class="nav-item" href="#">Projects</a>
+      <a class="nav-item" href="#">Domains</a>
+      <a class="nav-item" href="#">Settings</a>
+    </nav>
+  </div>
+</dialog>`} />
+
+## シート \{#sheet\}
+
+`dialog-sheet`は画面の下端からせり上がります。小さな画面で、親指が届きやすい位置に短い操作や選択肢の一覧を表示できます。`--dialog-width`を上限として横幅いっぱいに広がり、画面の下端に接する左右の角は直角になります。`env(safe-area-inset-bottom)`でホームインジケーターとの間に余白を確保します。
+
+<ComponentPreview name="sheet" height={384} title="シート" bodyClass="flex items-center justify-center p-lg min-h(380)" html={`<button type="button" class="btn" commandfor="share-sheet" command="show-modal">Share</button>
+
+<dialog id="share-sheet" class="dialog dialog-sheet" closedby="any" aria-labelledby="share-sheet-title">
+  <header class="dialog-header">
+    <h2 class="dialog-title" id="share-sheet-title">Share this project</h2>
+    <p class="dialog-description">Anyone with the link can view the latest deployment.</p>
+  </header>
+  <div class="dialog-body">
+    <div class="input-group">
+      <input class="input-group-field" value="https://atlas.dev/p/9f2c" readonly aria-label="Link">
+      <button type="button" class="btn">Copy</button>
+    </div>
+  </div>
+  <footer class="dialog-footer">
+    <button type="button" class="btn btn-primary" commandfor="share-sheet" command="close">Done</button>
+  </footer>
+</dialog>`} />
+
+## アニメーション \{#motion\}
+
+ダイアログは、元の大きさの97%で0.5rem下にずれた状態から、280msかけてフェードインします。閉じるときは160msかけて消えます。開閉の両方をスタイルシートのCSSで定義します。`@starting-style`で描画の初期状態を指定し、`display`と`overlay`を`allow-discrete`でトランジションさせることで、閉じるアニメーションが終わってからダイアログがトップレイヤーを離れます。動きを減らす設定では、フェードだけが残ります。
+
+## アクセシビリティ \{#accessibility\}
+
+- `aria-labelledby`でダイアログの`dialog-title`を参照し、ダイアログに名前を付けます。
+- `show-modal`で開くと、フォーカスはダイアログ内に移り、閉じると開いたボタンに戻ります。最初にフォーカスを当てるフィールドに`autofocus`を指定します。削除などの破壊的な操作を確認する場合は、安全な選択肢に指定します。
+- `command`と`commandfor`は、現行のChrome、Edge、Firefox、Safariでサポートされています。古いブラウザーではクリックハンドラーから`dialog.showModal()`を呼び出します。スタイルシートはそのまま使えます。
+
+## React、Svelte、Vue \{#frameworks\}
+
+`dialog`コンポーネントは、アプリケーションの状態に応じてダイアログを開閉し、ブラウザーで実際に開閉されたことを通知します。開くための要素とダイアログ内の各部には、ページ側のマークアップをそのまま使います。`npx master-ui add dialog`でプロジェクトにコピーできます。構成と使い方は[React、Svelte、Vue](/guide/frameworks)を参照してください。
+
+<FrameworkSource name="dialog" />
+
+## クラス \{#classes\}
+
+<ContractTable name="dialog" />
+
+## カスタムプロパティ \{#custom-properties\}
+
+<ContractTable name="dialog" show="properties" />
+
+## ソース \{#source\}
+
+<ComponentSource name="dialog" />

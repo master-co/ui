@@ -1,0 +1,96 @@
+---
+title: "ゲージ"
+description: "文字盤の円弧を値に応じて塗りつぶし、測定値を示します。"
+---
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+ゲージは文字盤に測定値を示します。円周の3分の2にあたる下部の開いた円弧を、値に応じて前景色で塗りつぶします。数値は中央に、その下の円弧の両端の間には短いラベルが表示されます。要素に`role="meter"`を指定し、値はテキストでも記述します。描画はスタイルシートが担い、スクリプトやSVGは使いません。
+
+<ComponentPreview name="default" height={184} narrowHeight={296} title="ゲージ" bodyClass="p-lg" html={`<div class="card max-w(480) mx-auto">
+  <div class="flex flex-wrap justify-around gap-md">
+    <div class="gauge" role="meter" aria-label="CPU" aria-valuenow="38" style="--gauge-value: 38">
+      <span class="gauge-value">38%</span>
+      <span class="gauge-label">CPU</span>
+    </div>
+    <div class="gauge" role="meter" aria-label="Memory" aria-valuenow="72" style="--gauge-value: 72">
+      <span class="gauge-value">72%</span>
+      <span class="gauge-label">Memory</span>
+    </div>
+    <div class="gauge" role="meter" aria-label="Disk" aria-valuenow="91" style="--gauge-value: 91">
+      <span class="gauge-value">91%</span>
+      <span class="gauge-label">Disk</span>
+    </div>
+  </div>
+</div>`} />
+
+## 塗りつぶす円弧の長さ \{#how-the-arc-gets-its-length\}
+
+測定値は`aria-valuenow`で、範囲は`aria-valuemin`から`aria-valuemax`までです。範囲を省略すると0から100になります。型付きの`attr()`に対応するブラウザーでは、ゲージが属性を直接参照するため、数値は一度だけ記述すれば十分です。未対応のブラウザーでは`--gauge-value`を参照し、既定と異なる範囲には`--gauge-min`と`--gauge-max`も参照します。すべてのブラウザーエンジンが型付きの`attr()`に対応するまでは、例のように属性とカスタムプロパティの両方を指定します。
+
+トラックと塗りつぶしの両端は丸く、値が変わると塗りつぶしが滑らかに伸縮します。値が範囲の下限にあるときは、塗りつぶしの丸い端も表示されず、トラックだけが残ります。
+
+<ComponentPreview name="range" height={152} narrowHeight={272} title="独自の範囲" background="plain" bodyClass="flex flex-wrap items-end justify-center gap-xl p-lg" html={`<div class="gauge" role="meter" aria-label="Engine speed" aria-valuenow="4200" aria-valuemin="0" aria-valuemax="8000" style="--gauge-value: 4200; --gauge-max: 8000">
+  <span class="gauge-value">4,200</span>
+  <span class="gauge-label">rpm</span>
+</div>
+<div class="gauge" role="meter" aria-label="Rating" aria-valuenow="4.6" aria-valuemin="1" aria-valuemax="5" style="--gauge-value: 4.6; --gauge-min: 1; --gauge-max: 5">
+  <span class="gauge-value">4.6</span>
+  <span class="gauge-label">of 5</span>
+</div>
+<div class="gauge" role="meter" aria-label="Queue" aria-valuenow="0" style="--gauge-value: 0">
+  <span class="gauge-value">0</span>
+  <span class="gauge-label">Queued</span>
+</div>`} />
+
+## サイズ \{#sizes\}
+
+ゲージの幅は既定で120pxです。`gauge-sm`は88pxで、情報量の多いダッシュボードのタイルに適しています。`gauge-lg`は160pxで、画面の主役となる測定値に適しています。線幅はゲージの幅の15分の1で、数値の文字サイズも幅に合わせて変わります。`gauge-label`がない場合、数値はゲージの中央に配置されます。
+
+<ComponentPreview name="sizes" height={192} narrowHeight={320} title="サイズ" background="plain" bodyClass="flex flex-wrap items-end justify-center gap-xl p-lg" html={`<div class="gauge gauge-sm" role="meter" aria-label="Battery" aria-valuenow="64" style="--gauge-value: 64">
+  <span class="gauge-value">64%</span>
+  <span class="gauge-label">Battery</span>
+</div>
+<div class="gauge" role="meter" aria-label="Battery" aria-valuenow="64" style="--gauge-value: 64">
+  <span class="gauge-value">64%</span>
+  <span class="gauge-label">Battery</span>
+</div>
+<div class="gauge gauge-lg" role="meter" aria-label="Battery" aria-valuenow="64" style="--gauge-value: 64">
+  <span class="gauge-value">64%</span>
+</div>`} />
+
+## 測定値で状態を示す \{#status\}
+
+塗りつぶしには既定で前景色を使います。測定値そのものが警告を示す場合は、`--gauge-color`に状態を表す色を指定し、警告であることをテキストでも伝えます。状態の意味は色だけに頼らずに伝えます。トラックには、同じ色を控えめにした色が適用されます。
+
+<ComponentPreview name="status" height={152} title="ステータス" background="plain" bodyClass="flex flex-wrap items-end justify-center gap-xl p-lg" html={`<div class="gauge" role="meter" aria-label="Storage" aria-valuenow="84" aria-valuetext="84%, nearly full" style="--gauge-value: 84; --gauge-color: var(--color-warning)">
+  <span class="gauge-value">84%</span>
+  <span class="gauge-label">Nearly full</span>
+</div>
+<div class="gauge" role="meter" aria-label="Error budget" aria-valuenow="97" aria-valuetext="97% spent, over budget soon" style="--gauge-value: 97; --gauge-color: var(--color-danger)">
+  <span class="gauge-value">97%</span>
+  <span class="gauge-label">Spent</span>
+</div>`} />
+
+## ゲージ・メーター・プログレスの使い分け \{#gauge-meter-or-progress\}
+
+ゲージと[メーター](/components/meter)は、どちらも一定の範囲内の測定値を示します。ダッシュボードなど、数値が主役で専用の表示領域を取れる場合はゲージを、フォームの一項目やテーブルの一行にはメーターを使います。[プログレス](/components/progress)は完了のあるタスクに使い、完了時にリングが閉じます。ゲージの円弧は最大値でも開いたままです。
+
+## アクセシビリティ \{#accessibility\}
+
+- 要素に`role="meter"`を指定し、`aria-label`または`aria-labelledby`でアクセシブルな名前を付け、`aria-valuenow`に測定値を指定します。範囲が0から100以外の場合は、`aria-valuemin`と`aria-valuemax`を追加します。
+- `gauge-value`のテキストにも、単位を添えて測定値を記述します。数値だけでは意味が伝わらない場合は、`aria-valuetext`を追加します。
+- 円弧はスタイルシートで描画され、読み上げの対象にはなりません。強制カラーモードでは、塗りつぶしにシステムの強調色、トラックにシステムのグレーが適用されます。
+
+## クラス \{#classes\}
+
+<ContractTable name="gauge" />
+
+## カスタムプロパティ \{#custom-properties\}
+
+<ContractTable name="gauge" show="properties" />
+
+## ソース \{#source\}
+
+<ComponentSource name="gauge" />

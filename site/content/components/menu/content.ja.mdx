@@ -1,0 +1,233 @@
+---
+title: "メニュー"
+description: "ボタンに沿って開く、アクション一覧のポップオーバーです。"
+---
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+メニューは、アクションの一覧を表示するポップオーバーです。コンテナーに`popover`属性と`.menu`を指定し、`menu-item`を付けたボタンやリンクを並べます。開閉用のボタンから`popovertarget`でコンテナーを参照します。開閉はブラウザーが行います。CSSアンカー配置でボタンに沿って配置し、ビューポートの端では配置を反転します。
+
+<ComponentPreview name="default" height={320} title="メニュー" bodyClass="flex items-start justify-center p-lg min-h(320)" html={`<button type="button" class="btn btn-square" popovertarget="project-menu" aria-label="Project actions">
+  <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>
+</button>
+
+<div id="project-menu" popover class="menu">
+  <button type="button" class="menu-item" popovertarget="project-menu" popovertargetaction="hide">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4Z"/></svg>
+    Rename
+    <span class="menu-shortcut">⌘R</span>
+  </button>
+  <button type="button" class="menu-item" popovertarget="project-menu" popovertargetaction="hide">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
+    Duplicate
+    <span class="menu-shortcut">⌘D</span>
+  </button>
+  <a class="menu-item" href="#settings">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h2M10 12h10M4 18h10M18 18h2"/><circle cx="16" cy="6" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="16" cy="18" r="2"/></svg>
+    Settings
+  </a>
+  <hr class="menu-separator">
+  <button type="button" class="menu-item menu-item-danger" popovertarget="project-menu" popovertargetaction="hide">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>
+    Delete
+  </button>
+</div>`} />
+
+## 項目 \{#items\}
+
+`menu-item`には、アクション用の`<button>`か、ページ移動用の`<a>`を使います。ポインターが重なった行はフェードを挟まずすぐにチップと同じ色調に切り替わるため、ポインターの移動に追従します。キー操作でフォーカスした行には、文字色の輪郭線も付きます。アイコンには[`icon`](/components/icon)を指定します。アイコンのサイズは項目側で決まり、行が操作対象になるまでは控えめな色で表示されます。
+
+- リンクは、移動先を開くとメニューが閉じます。ボタンで閉じるには、上の例のように`popovertarget`と`popovertargetaction="hide"`を指定します。メニューを開いたままにするには、両方を省略します。
+- `menu-item-danger`は、破壊的なアクションを危険を示す文字色で表示します。
+- `menu-shortcut`は、行の末尾にショートカットを表示します。
+- 無効なボタンは、無効状態の文字色で表示されます。リンクを無効にするには、`aria-disabled="true"`を指定し、`href`を削除します。
+
+## グループ \{#groups\}
+
+`menu-label`はグループの見出しを表示します。`<hr>`に`menu-separator`を指定すると、グループ間にメニューの両端まで伸びる細い区切り線が入ります。
+
+<ComponentPreview name="groups" height={344} title="グループ" bodyClass="flex items-start justify-center p-lg min-h(340)" html={`<button type="button" class="btn" popovertarget="account-menu">Ada Lovelace</button>
+
+<div id="account-menu" popover class="menu">
+  <div class="menu-label">Account</div>
+  <a class="menu-item" href="#profile">Profile</a>
+  <a class="menu-item" href="#billing">Billing</a>
+  <hr class="menu-separator">
+  <div class="menu-label">Team</div>
+  <a class="menu-item" href="#members">Members</a>
+  <button type="button" class="menu-item" disabled>Transfer ownership</button>
+  <hr class="menu-separator">
+  <a class="menu-item" href="#sign-out">Sign out</a>
+</div>`} />
+
+## 選択状態を持つ項目 \{#checkable-items\}
+
+選択状態を保持する項目には、`menu-input`を付けたネイティブのチェックボックスまたはラジオボタンを`<label>`で囲みます。入力要素は見えない状態で行全体を覆い、選択状態の保持、キー操作、フォーム値の管理を担います。選択すると行の末尾にチェックマークが表示されます。そのスペースは常に確保されるため、選択状態が変わってもラベルの位置は変わりません。
+
+<ComponentPreview name="checkable" height={320} title="選択状態を持つ項目" bodyClass="flex items-start justify-center p-lg min-h(320)" html={`<button type="button" class="btn" popovertarget="view-menu">View</button>
+
+<div id="view-menu" popover class="menu">
+  <div class="menu-label">Show</div>
+  <label class="menu-item"><input type="checkbox" class="menu-input" checked>Archived projects</label>
+  <label class="menu-item"><input type="checkbox" class="menu-input">Preview deployments</label>
+  <hr class="menu-separator">
+  <div class="menu-label">Sort by</div>
+  <label class="menu-item"><input type="radio" class="menu-input" name="sort" checked>Last updated</label>
+  <label class="menu-item"><input type="radio" class="menu-input" name="sort">Name</label>
+</div>`} />
+
+スクリプトで制御する項目には、代わりに`aria-checked="true"`を付け、`role="menuitemcheckbox"`または`role="menuitemradio"`を指定できます。
+
+## 配置 \{#placement\}
+
+メニューはボタンの下に開き、開始端がそろいます。行やツールバーの末尾にあるボタンでは、`menu-end`で終了端をそろえられます。`menu-top`を指定すると上に開きます。スペースが足りない場合は、自動で反対側に開きます。
+
+<ComponentPreview name="placement" height={224} title="配置" bodyClass="flex items-start justify-end p-lg min-h(220)" html={`<button type="button" class="btn btn-quiet btn-square" popovertarget="row-menu" aria-label="Row actions">
+  <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>
+</button>
+
+<div id="row-menu" popover class="menu menu-end">
+  <button type="button" class="menu-item" popovertarget="row-menu" popovertargetaction="hide">Open</button>
+  <button type="button" class="menu-item" popovertarget="row-menu" popovertargetaction="hide">Copy link</button>
+  <button type="button" class="menu-item" popovertarget="row-menu" popovertargetaction="hide">Archive</button>
+</div>`} />
+
+## サブメニュー \{#submenu\}
+
+項目から別のメニューを開けます。項目に`popovertarget`と`aria-haspopup="menu"`を付け、親メニュー内でその項目の直後に`menu menu-sub`を置きます。項目にはシェブロンが付き、サブメニューが開いている間は強調表示されます。サブメニューは項目の横に、項目と位置をそろえて開きます。スペースが足りない場合は反対側に開きます。ポップオーバーは入れ子にできるため、親メニューは開いたままになり、<kbd>Esc</kbd>で一階層ずつ閉じられます。
+
+<ComponentPreview name="submenu" height={304} title="サブメニュー" bodyClass="flex items-start justify-center p-lg min-h(300)" html={`<button type="button" class="btn" popovertarget="file-menu">File</button>
+
+<div id="file-menu" popover class="menu">
+  <button type="button" class="menu-item">New project<span class="menu-shortcut">⌘N</span></button>
+  <button type="button" class="menu-item" popovertarget="recent-menu" aria-haspopup="menu">Open recent</button>
+  <div id="recent-menu" popover class="menu menu-sub">
+    <button type="button" class="menu-item">atlas</button>
+    <button type="button" class="menu-item">borealis</button>
+    <button type="button" class="menu-item">cirrus</button>
+  </div>
+  <hr class="menu-separator">
+  <button type="button" class="menu-item">Export<span class="menu-shortcut">⌘E</span></button>
+</div>`} />
+
+サブメニューはクリックで開きます。ポインター、タッチ、キーボードのいずれでも同じように操作できます。ホバーでも開くようにする場合は、スクリプトで実装します。
+
+## ビヘイビア \{#behavior\}
+
+メニューはスクリプトなしで使えます。開閉はブラウザーが処理し、<kbd>Tab</kbd>で項目間を移動でき、<kbd>Esc</kbd>でフォーカスがボタンに戻ります。`menu`の[ビヘイビア](/guide/behaviors)は任意です。矢印キーでの移動が期待されるアプリケーション向けに、メニューのキーボード操作を追加します。
+
+<ComponentPreview name="keys" height={320} title="ビヘイビアを適用した例" bodyClass="flex items-start justify-center p-lg min-h(320)" behaviors html={`<button type="button" class="btn" popovertarget="edit-menu" aria-haspopup="menu">Edit</button>
+
+<div id="edit-menu" popover class="menu" role="menu" aria-label="Edit">
+  <button type="button" class="menu-item" role="menuitem" popovertarget="edit-menu" popovertargetaction="hide">Undo<span class="menu-shortcut">⌘Z</span></button>
+  <button type="button" class="menu-item" role="menuitem" popovertarget="edit-menu" popovertargetaction="hide">Redo<span class="menu-shortcut">⇧⌘Z</span></button>
+  <button type="button" class="menu-item" role="menuitem" disabled>Paste</button>
+  <hr class="menu-separator">
+  <button type="button" class="menu-item" role="menuitem" popovertarget="share-menu" aria-haspopup="menu">Share</button>
+  <div id="share-menu" popover class="menu menu-sub" role="menu" aria-label="Share">
+    <button type="button" class="menu-item" role="menuitem" popovertarget="edit-menu" popovertargetaction="hide">Copy link</button>
+    <button type="button" class="menu-item" role="menuitem" popovertarget="edit-menu" popovertargetaction="hide">Send by email</button>
+  </div>
+  <hr class="menu-separator">
+  <button type="button" class="menu-item" role="menuitem" popovertarget="edit-menu" popovertargetaction="hide">Select all<span class="menu-shortcut">⌘A</span></button>
+</div>`} caption="メニューを開き、矢印キー、Home、End、または文字キーを押します。「共有」で右矢印キーを押すとサブメニューが開き、左矢印キーで閉じます。" />
+
+`menu`は、`menu`クラスと`popover`属性を持つ要素を受け取ります。オプションはなく、ビヘイビアを解除する関数を返します。サブメニューにも、`attach()`と同じようにビヘイビアを適用します。
+
+```js name=app.js
+import { menu } from '@master/ui/behaviors/menu.js'
+
+for (const element of document.querySelectorAll('.menu')) menu(element)
+```
+
+- **開く。** メニューが開くと、最初の項目にフォーカスが移ります。
+- **移動する。** 矢印キー、<kbd>Home</kbd>、<kbd>End</kbd>、文字キーで項目間のフォーカスを移動します。非表示の項目と無効な項目は飛ばします。<kbd>Tab</kbd>を押すとメニューが閉じます。
+- **サブメニュー。** `aria-haspopup="menu"`を持ち、直後に`menu-sub`がある項目では、サブメニューの方向を指す矢印キーで開きます。反対の矢印キーで閉じると、フォーカスは元の項目に戻ります。右から左に表示するメニューでは、左右のキーが入れ替わります。
+- **項目のネイティブ動作。** ボタン、リンク、ラベル付き項目内のチェックボックスやラジオボタンは、従来どおり<kbd>Enter</kbd>と<kbd>Space</kbd>で操作できます。ビヘイビアは状態の設定もイベントの発行も行いません。項目の`click`イベントと`menu-input`の`change`イベントを監視してください。
+- **ロール。** ビヘイビアはロールを追加しません。プレビューと同様に、ビヘイビアを適用するときは、メニューに`role="menu"`、各項目に`role="menuitem"`を指定します。
+
+## コンテキストメニュー \{#context-menu\}
+
+`menu-context`はボタンを基準にせず、ポインターの位置にメニューを開きます。右クリックでポップオーバーを開く宣言的な仕組みがないため、メニューのビヘイビアは`contextMenu(target, menu)`をエクスポートします。右クリックや長押しで発生する`contextmenu`を受けると、ブラウザー標準のメニューを抑止し、ポインターの位置を`--menu-x`と`--menu-y`に設定して`showPopover()`を呼び出します。以降の配置はスタイルシートが処理します。メニューはその位置から下方向とインラインの終了方向に広がります。ビューポートの端を越える場合は、寸法を計測せずに`@position-try`で内側へ開くように切り替わります。
+
+<ComponentPreview name="context" height={336} title="コンテキストメニュー" bodyClass="content-start p-lg min-h(300)" behaviors html={`<div class="well flex items-center justify-center h(200) text-sm fg-text-muted" id="canvas" tabindex="0">Right-click or long-press here, or focus it and press Shift F10</div>
+
+<div id="canvas-menu" popover class="menu menu-context min-w(160)" role="menu" aria-label="Canvas">
+  <button type="button" class="menu-item" role="menuitem" popovertarget="canvas-menu" popovertargetaction="hide">Copy<span class="menu-shortcut">⌘C</span></button>
+  <button type="button" class="menu-item" role="menuitem" popovertarget="canvas-menu" popovertargetaction="hide">Paste<span class="menu-shortcut">⌘V</span></button>
+  <button type="button" class="menu-item" role="menuitem" popovertarget="canvas-menu" popovertargetaction="hide">Duplicate</button>
+  <hr class="menu-separator">
+  <button type="button" class="menu-item menu-item-danger" role="menuitem" popovertarget="canvas-menu" popovertargetaction="hide">Delete</button>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.contextMenu(document.getElementById('canvas'), document.getElementById('canvas-menu'))
+})
+</script>`} />
+
+コンテキストメニューの対象はページごとに決まるため、`attach()`は自動で関連付けを行いません。プレビューでは`contextMenu`を明示的に呼び出します。`MasterUI`はプレビューが読み込むバンドルです。プロジェクトでは両方の関数をインポートします。`contextMenu`でメニューを開き、`menu`でメニュー内のキー操作を追加します。プレビューでは後者を`attach()`が行います。
+
+```js name=app.js
+import { contextMenu, menu } from '@master/ui/behaviors/menu.js'
+
+const target = document.getElementById('canvas')
+const list = document.getElementById('canvas-menu')
+
+contextMenu(target, list)
+menu(list)
+```
+
+ContextMenuキーまたは<kbd>Shift</kbd> + <kbd>F10</kbd>を押すと、対象の中央にメニューが開きます。キー入力を受け取れるように、対象には`tabindex="0"`を付けてフォーカス可能にします。これらのキー操作で`contextmenu`を発行しないブラウザーもあるため、ビヘイビアはキー入力自体も監視します。`contextMenu`は関連付けを解除する関数を返します。同じ対象に対して再度呼び出すと、先の関連付けが置き換わります。
+
+## メニューバー \{#menubar\}
+
+複数のメニューを横に並べるには、控えめなスタイルのボタンを[ツールバー](/components/toolbar)に並べ、それぞれにメニューを付けます。直後のメニューやポップオーバーが開いている間、ボタンはくぼんだ表示を保ちます。開いているメニューのタイトルがスクリプトなしでわかります。
+
+<ComponentPreview name="menubar" height={264} title="メニューバー" bodyClass="flex items-start justify-center p-lg min-h(260)" html={`<div class="toolbar" role="toolbar" aria-label="Application">
+  <button type="button" class="btn btn-quiet btn-sm" popovertarget="bar-file">File</button>
+  <div id="bar-file" popover class="menu">
+    <button type="button" class="menu-item">New<span class="menu-shortcut">⌘N</span></button>
+    <button type="button" class="menu-item">Open<span class="menu-shortcut">⌘O</span></button>
+    <button type="button" class="menu-item">Save<span class="menu-shortcut">⌘S</span></button>
+  </div>
+  <button type="button" class="btn btn-quiet btn-sm" popovertarget="bar-edit">Edit</button>
+  <div id="bar-edit" popover class="menu">
+    <button type="button" class="menu-item">Undo<span class="menu-shortcut">⌘Z</span></button>
+    <button type="button" class="menu-item">Redo<span class="menu-shortcut">⇧⌘Z</span></button>
+  </div>
+  <button type="button" class="btn btn-quiet btn-sm" popovertarget="bar-view">View</button>
+  <div id="bar-view" popover class="menu">
+    <label class="menu-item"><input type="checkbox" class="menu-input" checked>Sidebar</label>
+    <label class="menu-item"><input type="checkbox" class="menu-input">Minimap</label>
+  </div>
+</div>`} />
+
+## キーボード操作 \{#keyboard\}
+
+<ContractTable name="menu" show="keyboard" />
+
+## アクセシビリティ \{#accessibility\}
+
+- スクリプトを使わないメニューは、ボタンやリンクを含むポップオーバーです。<kbd>Tab</kbd>で項目間を移動でき、<kbd>Esc</kbd>で閉じるとフォーカスがボタンに戻ります。この構成だけで適切に操作できるため、`role="menu"`は追加しないでください。
+- `role="menu"`と`role="menuitem"`は、矢印キーで移動できることを示します。`menu`ビヘイビア、または同等のキー操作を提供する独自のスクリプトと併用する場合に限り追加してください。
+- アイコンだけのボタンには、`aria-label`でアクセシブルな名前を付けます。
+
+## React、Svelte、Vue \{#frameworks\}
+
+`menu`コンポーネントは、データから項目を描画し、メニューを起動要素に関連付けて、ビヘイビアを適用します。起動要素の代わりに対象を渡すと、コンテキストメニューになります。`npx master-ui add menu`でプロジェクトにコピーできます。コンポーネントの構成と使い方は[React、Svelte、Vue](/guide/frameworks)を参照してください。
+
+<FrameworkSource name="menu" />
+
+## クラス \{#classes\}
+
+<ContractTable name="menu" />
+
+## カスタムプロパティ \{#custom-properties\}
+
+<ContractTable name="menu" show="properties" />
+
+## ソース \{#source\}
+
+<ComponentSource name="menu" />

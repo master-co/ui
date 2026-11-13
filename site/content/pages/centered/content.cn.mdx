@@ -1,0 +1,77 @@
+---
+title: "居中布局"
+description: "在视口中央呈现一项任务，可搭配侧面板。"
+---
+
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import PagePreview from '~/site/components/PagePreview.astro'
+
+居中布局只在视口中央呈现一项任务，例如登录、确认地址或显示错误页面。页面框架采用[页面框架](/pages/page)，用 `dvh` 使其与视口等高，再用两个工具类将内容居中。
+
+<PagePreview name="default" title="居中布局" height={640} html={`<main class="page items-center justify-center p-lg bg-surface-tray fg-text-body text-sm">
+  <form class="sheet form w-full max-w(380) p-xl">
+    <header class="flex flex-col gap-3xs">
+      <h1 class="heading heading-lg">Sign in to Atlas</h1>
+      <p class="m(0) fg-text-muted">Welcome back.</p>
+    </header>
+    <label class="field">Email<input class="input" type="email" name="email" autocomplete="email" placeholder="you@example.com"></label>
+    <label class="field">Password<input class="input" type="password" name="password" autocomplete="current-password"></label>
+    <button class="btn btn-primary">Sign in</button>
+    <p class="m(0) text-center fg-text-muted">New here? <a class="link" href="#">Create an account</a></p>
+  </form>
+</main>`} />
+
+## 实现方式 \{#how-it-is-built\}
+
+- **`page items-center justify-center`。** 单个任务占据整页，因此直接在 `<main>` 上设置纵向布局，最小高度与视口等高，再用两个工具类让内容在两个轴上居中。`p-lg` 让卡片与手机屏幕边缘留出间距。
+- **在卡片上使用 `w-full max-w(380)`。** 卡片在手机上占满可用宽度，最大宽度以单列字段易于阅读和填写为准。
+- **凸起面板下方的托盘。** 页面框架使用 `bg-surface-tray`，卡片采用[凸起面板](/components/surface#sheet)材质，整页只有卡片凸起。
+- **卡片高于视口时，页面可以滚动。** 页面只设最小高度，不固定高度，因此可以随内容增高。手机弹出键盘时就会出现这种情况。
+
+卡片同时也是[表单](/components/form)，由表单设置字段间距。
+
+## 带侧面板的布局 \{#split\}
+
+从 `md` 断点起，页面框架分为等宽两列，一列放任务，另一列放展示品牌、引文或图片的面板。低于该断点时，面板隐藏，页面只保留任务。
+
+<PagePreview name="split" title="带侧面板的布局" height={640} caption="在平板和手机视图中，面板隐藏，页面只保留表单。" html={`<div class="page bg-surface-base fg-text-body text-sm">
+  <div class="grow(1) grid grid-cols(2)@md">
+    <main class="flex items-center justify-center p-lg">
+      <form class="form w-full max-w(340)">
+        <header class="flex flex-col gap-3xs">
+          <h1 class="heading heading-lg">Sign in to Atlas</h1>
+          <p class="m(0) fg-text-muted">Welcome back.</p>
+        </header>
+        <label class="field">Email<input class="input" type="email" name="email" autocomplete="email" placeholder="you@example.com"></label>
+        <label class="field">Password<input class="input" type="password" name="password" autocomplete="current-password"></label>
+        <button class="btn btn-primary">Sign in</button>
+        <p class="m(0) text-center fg-text-muted">New here? <a class="link" href="#">Create an account</a></p>
+      </form>
+    </main>
+    <aside class="hidden flex@md flex-col justify-between p-2xl bg-surface-inverse fg-text-inverse">
+      <p class="m(0) flex items-center gap-xs text-md font-medium"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18a9 9 0 0 0 0-18M12 3a9 9 0 0 0 0 18"/></svg>Atlas</p>
+      <blockquote class="m(0) flex flex-col gap-md max-w(440)">
+        <p class="m(0) text-2xl">We replaced four libraries with a stylesheet, and the interface got quieter.</p>
+        <footer class="text-sm">Katherine Johnson, Engineering at Orbit</footer>
+      </blockquote>
+    </aside>
+  </div>
+</div>`} />
+
+`grid grid-cols(2)@md` 将页面框架分为两列，面板使用 `hidden flex@md`。页面框架对应整个视口，因此这里的 `@md` 断点按视口宽度判断，无需使用容器查询。
+
+面板采用墨色，由 `bg-surface-inverse` 搭配 `fg-text-inverse`。面板会最先隐藏，因此只放几句话，读者必需的信息应放在页面的其他位置。
+
+## 无障碍 \{#accessibility\}
+
+- 整页只有一个 `<h1>`，位于卡片内。
+- 面板使用 `<aside>`。仅包含装饰时，用 `aria-hidden="true"` 将它从辅助技术中隐藏；包含引文时，它属于正文内容，对辅助技术保持可见。
+- 为字段设置 `autocomplete` 值，让密码管理器能够自动填充。
+
+## 相关内容 \{#related\}
+
+<ComponentLinks slugs={['form', 'surface', 'input', 'button', 'link']} />
+
+<ComponentLinks kind="blocks" slugs={['sign-in']} />
+
+<ComponentLinks kind="pages" slugs={['page']} />

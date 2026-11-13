@@ -1,0 +1,72 @@
+---
+title: "程序坞"
+description: "一排启动项，越靠近指针的图块放得越大。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+程序坞在磨砂玻璃托盘上排列一组启动项。每个启动项都是一个方形图块，内含图片或图标，并作为链接或按钮使用。指针悬停时，这一排图块会像透镜一样放大。指针下的图块放大一半，两侧紧邻的图块各放大略多于四分之一，再往外一格各放大十分之一，使整排图块朝指针平滑隆起。墨色标签浮现在图块上方，下方的圆点标记当前项。整个效果由 CSS 实现，使用 `:hover`、相邻兄弟组合符和 `:has()` 找到相邻图块，无需脚本测量指针位置。
+
+<ComponentPreview name="default" height={152} title="程序坞" bodyClass="flex items-end justify-center p-lg" html={`<nav class="dock" aria-label="Spaces">
+  <a class="dock-item" href="#harbor" aria-current="page"><img class="dock-image" src="/demo/harbor.svg" alt=""><span class="dock-label">Harbor</span></a>
+  <a class="dock-item" href="#dunes"><img class="dock-image" src="/demo/dunes.svg" alt=""><span class="dock-label">Dunes</span></a>
+  <a class="dock-item" href="#pines"><img class="dock-image" src="/demo/pines.svg" alt=""><span class="dock-label">Pines</span></a>
+  <a class="dock-item" href="#lighthouse"><img class="dock-image" src="/demo/lighthouse.svg" alt=""><span class="dock-label">Lighthouse</span></a>
+  <span class="dock-divider" role="separator" aria-orientation="vertical"></span>
+  <button type="button" class="dock-item"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.35-4.35"/></svg><span class="dock-label">Search</span></button>
+  <button type="button" class="dock-item"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16l-1 13H5zM10 11h4M3 4h18v3H3z"/></svg><span class="dock-label">Archive</span></button>
+</nav>`} caption="沿程序坞移动指针，或按 Tab 将焦点移入程序坞。" />
+
+## 透镜放大效果 \{#lens\}
+
+图块静止时的边长为 40px。指针下的图块增至 60px，紧邻的图块增至 51px，再往外一格增至 44px。`--dock-magnify` 设置最大尺寸，其余尺寸由此推导。放大通过改变图块的实际尺寸实现，整排图块在指针周围腾出空间，彼此不会遮挡，托盘也随之变宽。图块从托盘底部向上伸展，越过托盘上沿，并按主题设定的缓动曲线平滑放大。每个图块的悬停区域都向两侧延伸到相邻间隙的中点，让指针在图块之间移动时持续触发放大效果。
+
+透镜放大效果适用于支持悬停的指针。在触摸屏上，程序坞显示为一排边长为 44px 的图块。启用减少动态效果时，图块保持原尺寸，标签仍会显示。空间不足时，所有图块都会缩小并保持正方形。
+
+## 图块 \{#tiles\}
+
+图块是凸起面板，可放置尺寸为图块边长一半的图标，也可用 `dock-image` 填满图块，并将其 `alt` 留空。启动项由标签命名。图块的圆角半径为边长的四分之一，边长为 40px 时采用控件的 10px 圆角。托盘的圆角半径在此基础上加上 8px 的内边距，使两道曲线在转角处保持等距。
+
+启动项为链接时，用 `aria-current="page"` 标记当前位置。按钮用于切换面板等内容时，使用 `aria-pressed`。两者都会在图块下方显示墨色圆点。为由按钮组成的程序坞添加 `role="toolbar"` 和名称。
+
+<ComponentPreview name="panels" height={152} title="切换按钮" bodyClass="flex items-end justify-center p-lg" html={`<div class="dock" id="panels" role="toolbar" aria-label="Panels">
+  <button type="button" class="dock-item" aria-pressed="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 4 8 4-8 4-8-4z"/><path d="m4 12 8 4 8-4"/><path d="m4 16 8 4 8-4"/></svg><span class="dock-label">Layers</span></button>
+  <button type="button" class="dock-item" aria-pressed="false"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5h14v10H10l-5 4z"/></svg><span class="dock-label">Comments</span></button>
+  <button type="button" class="dock-item" aria-pressed="false"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg><span class="dock-label">History</span></button>
+  <span class="dock-divider" role="separator" aria-orientation="vertical"></span>
+  <button type="button" class="dock-item"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg><span class="dock-label">Settings</span></button>
+</div>
+<script>
+  document.querySelectorAll('#panels [aria-pressed]').forEach(function (button) {
+    button.addEventListener('click', function () {
+      button.setAttribute('aria-pressed', button.getAttribute('aria-pressed') === 'true' ? 'false' : 'true')
+    })
+  })
+</script>`} caption="按下图块可显示或隐藏对应的面板。" />
+
+`dock-divider` 用一条短细线隔开各组。计算相邻图块的放大尺寸时会跳过这条线。
+
+## 放置位置 \{#placing\}
+
+程序坞不负责定位，由页面决定放置位置。通常将它居中放在屏幕底部，可以为它单独划出一个区域，也可以用 `fixed` 或 `sticky` 工具类将它固定在底部。在程序坞上方留出约 48px，容纳放大的图块及其标签。
+
+## 无障碍 \{#accessibility\}
+
+- 启动项用于导航时，将它们放在带有 `aria-label` 的 `nav` 中。程序坞由按钮组成时，为它添加 `role="toolbar"` 和标签。
+- 标签是每个启动项的无障碍名称。指针悬停或键盘焦点移到图块时，标签才会显示。标签始终保留在页面中，屏幕阅读器可以读出它。
+- 每个启动项都可以通过 Tab 聚焦，并在聚焦时显示标签和焦点环。
+- 请用标签写出启动项的名称，避免只在图片里呈现名称。标签是启动项唯一的文本。
+
+## 类名 \{#classes\}
+
+<ContractTable name="dock" />
+
+## 自定义属性 \{#custom-properties\}
+
+<ContractTable name="dock" show="properties" />
+
+## 源码 \{#source\}
+
+<ComponentSource name="dock" />

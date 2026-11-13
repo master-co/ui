@@ -1,0 +1,71 @@
+---
+title: "스크롤 영역"
+description: "콘텐츠가 이어지는 가장자리에 페이드가 적용되는 스크롤 영역입니다."
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+스크롤 영역은 페이지 안에서 따로 스크롤할 수 있는 영역입니다. 패널 안의 긴 목록이나 폭이 넓은 표, 로그 등에 사용합니다. 플랫폼 기본 스크롤 동작을 유지하면서 가늘고 눈에 덜 띄는 스크롤바를 표시합니다. 콘텐츠가 가장자리 너머로 이어지는 곳은 서서히 흐려지고, 콘텐츠가 끝나는 곳은 선명하게 유지됩니다.
+
+<ComponentPreview name="default" height={248} title="스크롤 영역" bodyClass="p-lg" html={`<div class="sheet max-w(360) mx-auto">
+  <div class="scroll-area h(200) p-md text-sm fg-text-body leading-md" tabindex="0" role="region" aria-label="Release notes">
+    <p class="m(0)">2.1 adds overlays that need no script.</p>
+    <p class="m(0) mt-sm">Dialogs open with invoker commands and trap focus on their own.</p>
+    <p class="m(0) mt-sm">Popovers, menus and tooltips are placed with anchor positioning and flip at the viewport edge.</p>
+    <p class="m(0) mt-sm">The select draws its option list in the same material where the browser allows it.</p>
+    <p class="m(0) mt-sm">Segmented controls and tabs glide one indicator between options.</p>
+    <p class="m(0) mt-sm">Corners turn with continuous curvature where corner-shape is supported.</p>
+    <p class="m(0) mt-sm">Every one of these falls back to a working component.</p>
+  </div>
+</div>`} caption="메모를 스크롤해 보세요. 위쪽 가장자리 너머에 콘텐츠가 생기면 그 가장자리가 서서히 흐려지고, 맨 아래에 도달하면 아래쪽 가장자리가 선명해집니다." />
+
+## 가장자리 페이드 동작 \{#how-the-fade-knows\}
+
+페이드는 두 정지점을 사용자 지정 속성 `--scroll-area-start`와 `--scroll-area-end`로 지정한 마스크로 구현합니다. 영역 자체의 스크롤 타임라인에서 두 애니메이션이 이 속성을 제어합니다. 하나는 처음 1.5rem을 스크롤하는 동안 시작 가장자리에 페이드를 적용하고, 다른 하나는 마지막 1.5rem을 스크롤하는 동안 끝 가장자리의 페이드를 없앱니다. 스크립트나 스크롤 위치 감지용 요소는 사용하지 않습니다. 콘텐츠가 영역 밖으로 넘치지 않으면 타임라인이 비활성 상태로 유지되고 양쪽 가장자리 모두 선명하게 표시됩니다.
+
+스크롤 기반 애니메이션을 지원하지 않는 브라우저에서도 스크롤 동작은 같으며 페이드 효과만 표시되지 않습니다.
+
+## 영역 경계에서의 스크롤 동작 \{#scrolling-past-it\}
+
+블록 축에서는 스크롤 영역의 끝에 도달하면 페이지 스크롤로 이어집니다. 영역 안에서 휠을 굴리거나 스와이프할 때 해당 방향으로 더 스크롤할 내용이 없으면, 페이지의 다른 콘텐츠 위에서와 마찬가지로 페이지가 스크롤됩니다. 스크롤 전파는 인라인 축에서만 차단됩니다. 따라서 가로로 스와이프하다가 행의 끝에 도달하면 그 자리에서 멈추고 브라우저의 뒤로 가기 제스처가 실행되지 않습니다.
+
+## 인라인 축 스크롤 \{#inline\}
+
+`scroll-area-inline`을 사용하면 가로로 스크롤하고 인라인 축의 시작과 끝 가장자리에 페이드를 적용합니다. 카드가 한 줄로 늘어서 있거나 [표](/components/table#wide-tables)가 배치된 열보다 넓을 때 사용할 수 있습니다.
+
+<ComponentPreview name="inline" height={96} title="인라인 축 스크롤" bodyClass="p-lg" html={`<div class="scroll-area scroll-area-inline" tabindex="0" role="region" aria-label="Regions">
+  <div class="flex gap-sm w-fit py(4) px(2)">
+    <span class="chip">Tokyo</span>
+    <span class="chip">Singapore</span>
+    <span class="chip">Sydney</span>
+    <span class="chip">Mumbai</span>
+    <span class="chip">Frankfurt</span>
+    <span class="chip">London</span>
+    <span class="chip">Paris</span>
+    <span class="chip">Stockholm</span>
+    <span class="chip">Virginia</span>
+    <span class="chip">Oregon</span>
+    <span class="chip">São Paulo</span>
+    <span class="chip">Cape Town</span>
+  </div>
+</div>`} />
+
+## 접근성 \{#accessibility\}
+
+- 스크롤할 수 있는 영역에는 키보드로 접근할 수 있어야 합니다. 영역 안에 포커스를 받을 수 있는 콘텐츠가 없다면 영역에 `tabindex="0"`과 `region` 같은 `role`, 그리고 레이블을 지정하세요.
+- 마스크는 같은 가장자리에서 영역 자체의 스크롤바도 흐리게 표시합니다. 강제 색상 모드에서는 마스크를 제거합니다.
+- 영역의 높이나 최대 높이를 지정하세요. 둘 다 지정하지 않으면 콘텐츠에 맞춰 영역이 늘어나므로 스크롤이 생기지 않습니다.
+
+## 클래스 \{#classes\}
+
+<ContractTable name="scroll-area" />
+
+## 사용자 지정 속성 \{#custom-properties\}
+
+<ContractTable name="scroll-area" show="properties" />
+
+## 소스 코드 \{#source\}
+
+<ComponentSource name="scroll-area" />

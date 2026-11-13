@@ -1,0 +1,189 @@
+---
+title: "スニペット"
+description: "コピー用の1行のコマンドを、プロンプトとコピーボタン付きで表示します。"
+---
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+スニペットは、ターミナルで実行する1行のコマンドを、プロンプトとコピーボタン付きで表示します。[コードブロック](/components/code#block)と同じように等幅フォントで表示する[くぼんだ面](/components/surface#well)で、ボタンと同じ高さなので横に並べられます。プロンプトは選択できず、コマンドは折り返しません。コピーボタンは終端から4px内側にあり、ポインターを重ねるまでは控えめに表示されます。
+
+<ComponentPreview name="default" height={96} title="スニペット" background="plain" bodyClass="p-lg" html={`<div class="snippet max-w(360) mx-auto">
+  <span class="snippet-prompt" aria-hidden="true">$</span>
+  <code class="snippet-command" tabindex="0">npm install @master/ui</code>
+  <button type="button" class="btn btn-quiet btn-square" aria-label="Copy command">
+    <svg class="icon snippet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 8h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
+    <svg class="icon snippet-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>
+  </button>
+  <output class="snippet-status"></output>
+</div>
+<script>
+document.querySelectorAll('.snippet').forEach(function (snippet) {
+  var status = snippet.querySelector('.snippet-status')
+  var timer = 0
+  snippet.querySelector('.btn').addEventListener('click', function () {
+    var command = Array.prototype.find.call(snippet.querySelectorAll('.snippet-command'), function (line) {
+      return line.checkVisibility()
+    })
+    navigator.clipboard.writeText(command.textContent).then(function () {
+      status.textContent = 'Copied'
+      clearTimeout(timer)
+      timer = setTimeout(function () { status.textContent = '' }, 2000)
+    })
+  })
+})
+</script>`} caption="コマンドをコピーすると、アイコンが2秒間チェックマークに変わります。" />
+
+## コマンド行 \{#line\}
+
+`snippet`は、プロンプト、コマンド、コピーボタンを3列に並べます。`snippet-prompt`は、端末でコマンドの前に表示される`$`や`>`などの記号で、控えめな色で表示します。選択できないため、行を手動で選択してもコマンドだけが選択されます。読み上げの対象から外すため、`aria-hidden`を指定します。`snippet-command`は`<code>`に記述したコマンドです。最後に、控えめな正方形の[ボタン](/components/button)を置きます。ボタンの高さと角丸はスニペットが設定し、上下に4pxずつ余白を取ります。
+
+行に収まらないコマンドは折り返さず、スクロールバーを表示せずに横スクロールできます。続きがある端には、スクロール位置に応じてフェードがかかります。スクロールするまでは先頭側にフェードはかかりません。コマンドに`tabindex="0"`を指定すると、矢印キーでスクロールでき、フォーカスリングは行全体を囲みます。
+
+<ComponentPreview name="long" height={96} title="長いコマンド" background="plain" bodyClass="p-lg" html={`<div class="snippet max-w(360) mx-auto">
+  <span class="snippet-prompt" aria-hidden="true">$</span>
+  <code class="snippet-command" tabindex="0">curl -fsSL https://ui.master.co/install.sh | sh -s -- --yes --prefix ~/.local</code>
+  <button type="button" class="btn btn-quiet btn-square" aria-label="Copy command">
+    <svg class="icon snippet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 8h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
+    <svg class="icon snippet-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>
+  </button>
+  <output class="snippet-status"></output>
+</div>
+<script>
+document.querySelectorAll('.snippet').forEach(function (snippet) {
+  var status = snippet.querySelector('.snippet-status')
+  var timer = 0
+  snippet.querySelector('.btn').addEventListener('click', function () {
+    var command = Array.prototype.find.call(snippet.querySelectorAll('.snippet-command'), function (line) {
+      return line.checkVisibility()
+    })
+    navigator.clipboard.writeText(command.textContent).then(function () {
+      status.textContent = 'Copied'
+      clearTimeout(timer)
+      timer = setTimeout(function () { status.textContent = '' }, 2000)
+    })
+  })
+})
+</script>`} caption="コマンドを横にスクロールできます。続きがある側の端にフェードがかかります。" />
+
+## コピー \{#copying\}
+
+コピーにはスクリプトが必要です。コマンドのテキストを`navigator.clipboard`に渡します。コピー済みの状態は、クラスではなくボタンの隣にある空の`<output>`（`snippet-status`）で表します。この要素は画面には表示されません。スクリプトが「コピーしました」と書き込むとスクリーンリーダーが読み上げ、2秒後にスクリプトが内容を消去します。内容がある間は、スタイルシートがコピーアイコンをチェックマークに切り替え、画面上でもコピーの完了を伝えます。
+
+プレビューのスクリプトは、表示中のコマンドを取得してクリップボードに書き込み、ステータスにメッセージを入れてから消去します。クリップボードを利用できるのは、HTTPSまたはlocalhostで配信されるページに限られます。スクリプトが無効な場合はボタンが表示されず、コマンドを手動で選択してコピーできます。
+
+## パッケージマネージャー \{#package-managers\}
+
+同じ操作を行うコマンドをnpm、pnpm、bun、yarnごとに用意するには、ネイティブのラジオボタンで構成した[セグメントコントロール](/components/segmented)をスニペットの先頭に置き、選択肢ごとに`snippet-command`を同じ順序で記述します。コントロール自体の背景はなくなり、スニペット上部の細い罫線の上に並びます。選択された項目は一段浮いた面として表示され、選択を変えるとその面が次の項目へ滑らかに移動します。選択された項目と同じ順番にあるコマンドが表示されます。スクリプトなしで最大6項目に対応します。
+
+<ComponentPreview name="managers" height={136} title="パッケージマネージャー" background="plain" bodyClass="p-lg" html={`<div class="snippet max-w(360) mx-auto">
+  <div class="segmented" role="radiogroup" aria-label="Package manager">
+    <label class="segmented-item"><input class="segmented-input" type="radio" name="manager" checked>npm</label>
+    <label class="segmented-item"><input class="segmented-input" type="radio" name="manager">pnpm</label>
+    <label class="segmented-item"><input class="segmented-input" type="radio" name="manager">bun</label>
+    <label class="segmented-item"><input class="segmented-input" type="radio" name="manager">yarn</label>
+  </div>
+  <span class="snippet-prompt" aria-hidden="true">$</span>
+  <code class="snippet-command" tabindex="0">npm install @master/ui</code>
+  <code class="snippet-command" tabindex="0">pnpm add @master/ui</code>
+  <code class="snippet-command" tabindex="0">bun add @master/ui</code>
+  <code class="snippet-command" tabindex="0">yarn add @master/ui</code>
+  <button type="button" class="btn btn-quiet btn-square" aria-label="Copy command">
+    <svg class="icon snippet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 8h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
+    <svg class="icon snippet-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>
+  </button>
+  <output class="snippet-status"></output>
+</div>
+<script>
+document.querySelectorAll('.snippet').forEach(function (snippet) {
+  var status = snippet.querySelector('.snippet-status')
+  var timer = 0
+  snippet.querySelector('.btn').addEventListener('click', function () {
+    var command = Array.prototype.find.call(snippet.querySelectorAll('.snippet-command'), function (line) {
+      return line.checkVisibility()
+    })
+    navigator.clipboard.writeText(command.textContent).then(function () {
+      status.textContent = 'Copied'
+      clearTimeout(timer)
+      timer = setTimeout(function () { status.textContent = '' }, 2000)
+    })
+  })
+})
+</script>`} caption="パッケージマネージャーを選ぶと、対応するコマンドが表示されます。" />
+
+## サイズ \{#sizes\}
+
+行の高さはボタンと同じ38pxです。`snippet-sm`は高さ32px、文字サイズ12pxで、情報量の多いページやテーブルに適しています。`snippet-lg`は高さ44px、文字サイズ14pxで、ページ上部で大きいボタンと高さをそろえられます。タッチ画面では、どのサイズも高さ44pxになります。
+
+<ComponentPreview name="sizes" height={224} narrowHeight={280} title="サイズ" background="plain" bodyClass="p-lg" html={`<div class="flex flex-col items-center gap-lg">
+  <div class="snippet snippet-sm">
+    <span class="snippet-prompt" aria-hidden="true">$</span>
+    <code class="snippet-command" tabindex="0">npx master-ui add button</code>
+    <button type="button" class="btn btn-quiet btn-square" aria-label="Copy command">
+      <svg class="icon snippet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 8h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
+      <svg class="icon snippet-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>
+    </button>
+    <output class="snippet-status"></output>
+  </div>
+  <div class="snippet">
+    <span class="snippet-prompt" aria-hidden="true">$</span>
+    <code class="snippet-command" tabindex="0">npx master-ui add button</code>
+    <button type="button" class="btn btn-quiet btn-square" aria-label="Copy command">
+      <svg class="icon snippet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 8h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
+      <svg class="icon snippet-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>
+    </button>
+    <output class="snippet-status"></output>
+  </div>
+  <div class="flex flex-wrap items-center justify-center gap-sm">
+    <a class="btn btn-primary btn-lg" href="#">Get started</a>
+    <div class="snippet snippet-lg">
+      <span class="snippet-prompt" aria-hidden="true">$</span>
+      <code class="snippet-command" tabindex="0">npm install @master/ui</code>
+      <button type="button" class="btn btn-quiet btn-square" aria-label="Copy command">
+        <svg class="icon snippet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 8h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
+        <svg class="icon snippet-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>
+      </button>
+      <output class="snippet-status"></output>
+    </div>
+  </div>
+</div>
+<script>
+document.querySelectorAll('.snippet').forEach(function (snippet) {
+  var status = snippet.querySelector('.snippet-status')
+  var timer = 0
+  snippet.querySelector('.btn').addEventListener('click', function () {
+    var command = Array.prototype.find.call(snippet.querySelectorAll('.snippet-command'), function (line) {
+      return line.checkVisibility()
+    })
+    navigator.clipboard.writeText(command.textContent).then(function () {
+      status.textContent = 'Copied'
+      clearTimeout(timer)
+      timer = setTimeout(function () { status.textContent = '' }, 2000)
+    })
+  })
+})
+</script>`} />
+
+## スニペットとコードの使い分け \{#snippet-or-code\}
+
+スニペットは、実行する1行のコマンドに使います。複数行のコード、ファイルの内容、出力結果を読ませる場合は[コードブロック](/components/code#block)、文中でコマンドに言及する場合はインラインの[コード](/components/code)を使います。押すキーには[キーボード入力](/components/kbd)を使います。
+
+## アクセシビリティ \{#accessibility\}
+
+- 装飾用のプロンプトには`aria-hidden="true"`を指定し、コマンドだけが読み上げられるようにします。
+- コピーボタンには「コマンドをコピー」などの`aria-label`を指定します。アイコンには`aria-hidden`を指定します。
+- マークアップでは`snippet-status`を空にし、空白文字も入れないでください。スクリプトが書き込んだ「コピーしました」がここから読み上げられます。`<output>`はそれ自体が優先度 polite のライブリージョンです。
+- コマンドに`tabindex="0"`を指定し、行に収まらない場合にキーボードでスクロールできるようにします。
+- 強制カラーモードでは、フェードがなくなり、コマンド欄に輪郭が付き、プロンプトにはシステムのグレーのテキスト色が適用されます。
+
+## クラス \{#classes\}
+
+<ContractTable name="snippet" />
+
+## カスタムプロパティ \{#custom-properties\}
+
+<ContractTable name="snippet" show="properties" />
+
+## ソース \{#source\}
+
+<ComponentSource name="snippet" />

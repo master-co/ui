@@ -567,3 +567,34 @@ test('retired registry names redirect only to generated registry items', async (
   assert.equal(existsSync(resolve(output, 'r/layout-arrangements.json')), false)
   assert.equal(match('/r/layout-does-not-exist.json'), undefined, 'Unknown names must not acquire speculative registry redirects')
 })
+
+test('localized catalogs, articles and portable exports agree', async () => {
+  const editions = [
+    { locale: 'tw', lang: 'zh-TW', button: '按鈕', preview: '預覽' },
+    { locale: 'ja', lang: 'ja', button: 'ボタン', preview: 'プレビュー' },
+    { locale: 'ko', lang: 'ko', button: '버튼', preview: '미리보기' },
+    { locale: 'cn', lang: 'zh-CN', button: '按钮', preview: '预览' }
+  ]
+  const english = JSON.parse(await readFile(resolve(output, 'search/en.json'), 'utf8'))
+  const page = await browser.newPage({ viewport: { width: 390, height: 1000 } })
+  try {
+    for (const { locale, lang, button, preview } of editions) {
+      const prefix = `/${locale}`
+      const localized = JSON.parse(await readFile(resolve(output, `search/${locale}.json`), 'utf8'))
+      assert.deepEqual(localized.map(entry => entry.url.slice(prefix.length)), english.map(entry => entry.url))
+      for (const { url } of localized) assert.ok(existsSync(resolve(output, `.${url}.html`)), url)
+      const index = await readFile(resolve(output, locale, 'llms.txt'), 'utf8')
+      assert.match(index, new RegExp(`/${locale}/components/button\\.md`))
+      const markdown = await readFile(resolve(output, locale, 'components/button.md'), 'utf8')
+      assert.ok(markdown.startsWith(`# ${button}\n`))
+      await visit(page, prefix + '/components')
+      const tile = page.locator(`.component-index a[href="${prefix}/components/button"]`)
+      assert.ok((await tile.textContent())?.includes(button))
+      await visit(page, prefix + '/components/button')
+      assert.equal(await page.locator('html').getAttribute('lang'), lang)
+      assert.equal(await page.locator('h1').textContent(), button)
+      assert.ok(await page.locator('#sidebar').count())
+      assert.equal(await page.locator('[data-switch="view"] label span').first().textContent(), preview)
+    }
+  } finally { await page.close() }
+})

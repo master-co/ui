@@ -1,2 +1,2 @@
-/** Sections still published in English only: their routes, search and Markdown exist only at the unprefixed URL. */
-export const englishOnlySections = ['components', 'blocks', 'pages']
+/** Document sections that have their own navigation and portable exports. */
+export const documentSections = ['guide', 'components', 'blocks', 'pages']

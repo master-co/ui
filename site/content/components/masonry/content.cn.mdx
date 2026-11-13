@@ -1,0 +1,225 @@
+---
+title: "瀑布流"
+description: "将不同高度的内容块紧密排入等宽列，避免高低不齐时留下整行空白。"
+---
+
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import PagePreview from '~/site/components/PagePreview.astro'
+
+瀑布流把高度各异的内容项排进等宽的列。每项都放入当前底端最高的一列，让矮图旁不留下整行空白，同时保留每张图片拍摄时的宽高比。瀑布流只负责排列，本身不提供底面。各内容项可以是[媒体图注](/components/figure)、[卡片](/components/card)或[面板](/components/surface)。
+
+和[自动网格](/components/auto-grid)一样，瀑布流根据可用空间计算列数，每列至少为 `--masonry-min`，无需查询。浏览器支持 grid lanes 时，由网格排列内容项。否则使用多列容器达到同样的效果，区别在于[下文](#fallback)所述的阅读顺序。
+
+<PagePreview name="default" title="瀑布流" height={817} tabletHeight={1014} phoneHeight={1775} caption="先选择平板，再选择手机。六列会先变成四列，再变成两列，每张图片都保留原有构图，无需裁剪对齐。" html={`<section class="p-lg bg-surface-base fg-text-body text-sm" aria-labelledby="masonry-title">
+  <div class="flex flex-col gap-xl max-w(1120) mx-auto">
+    <header class="flex flex-col gap-xs max-w(560)">
+      <p class="eyebrow">Field notes</p>
+      <h2 class="heading heading-xl" id="masonry-title">A week on the coast</h2>
+      <p class="lead lead-sm">Fourteen pictures, each at the shape it was taken in.</p>
+    </header>
+    <ul class="masonry" style="--masonry-min: 10rem">
+      <li class="masonry-item">
+        <figure class="figure">
+          <img class="figure-media" src="/demo/dunes.svg" alt="Dunes in the afternoon, their lee sides in shadow" style="--figure-ratio: 3 / 4">
+          <figcaption class="figure-caption">Monday, the dunes</figcaption>
+        </figure>
+      </li>
+      <li class="masonry-item">
+        <figure class="figure">
+          <img class="figure-media" src="/demo/tide.svg" alt="A pale sun low over flat water" style="--figure-ratio: 4 / 3">
+          <figcaption class="figure-caption">Low tide at seven</figcaption>
+        </figure>
+      </li>
+      <li class="masonry-item">
+        <figure class="figure">
+          <img class="figure-media" src="/demo/cairn.svg" alt="Five stones balanced on a beach" style="--figure-ratio: 4 / 5">
+          <figcaption class="figure-caption">A cairn on the point</figcaption>
+        </figure>
+      </li>
+      <li class="masonry-item">
+        <figure class="figure">
+          <img class="figure-media" src="/demo/harbor.svg" alt="A wooden jetty running out over calm water" style="--figure-ratio: 3 / 2">
+          <figcaption class="figure-caption">The old jetty</figcaption>
+        </figure>
+      </li>
+      <li class="masonry-item">
+        <figure class="figure">
+          <img class="figure-media" src="/demo/pines.svg" alt="Rows of pines fading into fog" style="--figure-ratio: 2 / 3">
+          <figcaption class="figure-caption">Fog in the pines</figcaption>
+        </figure>
+      </li>
+      <li class="masonry-item">
+        <figure class="figure">
+          <img class="figure-media" src="/demo/steps.svg" alt="Concrete steps half in shadow" style="--figure-ratio: 1 / 1">
+          <figcaption class="figure-caption">Stairs to the harbour</figcaption>
+        </figure>
+      </li>
+      <li class="masonry-item">
+        <figure class="figure">
+          <img class="figure-media" src="/demo/lighthouse.svg" alt="A lighthouse on a dark headland, its beam over the sea" style="--figure-ratio: 3 / 4">
+          <figcaption class="figure-caption">The light at dusk</figcaption>
+        </figure>
+      </li>
+      <li class="masonry-item">
+        <figure class="figure">
+          <img class="figure-media" src="/demo/moonstone.svg" alt="A full moon above two ridges" style="--figure-ratio: 16 / 10">
+          <figcaption class="figure-caption">Moonrise over the ridge</figcaption>
+        </figure>
+      </li>
+      <li class="masonry-item">
+        <figure class="figure">
+          <img class="figure-media" src="/demo/tide.svg" alt="The sea at slack tide" style="--figure-ratio: 1 / 1">
+          <figcaption class="figure-caption">Wednesday, still water</figcaption>
+        </figure>
+      </li>
+      <li class="masonry-item">
+        <figure class="figure">
+          <img class="figure-media" src="/demo/dunes.svg" alt="Dune ridges reshaped by the wind" style="--figure-ratio: 4 / 3">
+          <figcaption class="figure-caption">Ridges after the wind</figcaption>
+        </figure>
+      </li>
+      <li class="masonry-item">
+        <figure class="figure">
+          <img class="figure-media" src="/demo/harbor.svg" alt="Jetty posts standing in the water" style="--figure-ratio: 4 / 5">
+          <figcaption class="figure-caption">Posts at high water</figcaption>
+        </figure>
+      </li>
+      <li class="masonry-item">
+        <figure class="figure">
+          <img class="figure-media" src="/demo/cairn.svg" alt="A small stack of beach stones" style="--figure-ratio: 1 / 1">
+          <figcaption class="figure-caption">Stones by the door</figcaption>
+        </figure>
+      </li>
+      <li class="masonry-item">
+        <figure class="figure">
+          <img class="figure-media" src="/demo/pines.svg" alt="A line of pines in mist" style="--figure-ratio: 4 / 3">
+          <figcaption class="figure-caption">The road through the wood</figcaption>
+        </figure>
+      </li>
+      <li class="masonry-item">
+        <figure class="figure">
+          <img class="figure-media" src="/demo/steps.svg" alt="Steps in early light" style="--figure-ratio: 3 / 4">
+          <figcaption class="figure-caption">Morning on the steps</figcaption>
+        </figure>
+      </li>
+    </ul>
+  </div>
+</section>`} />
+
+## 实现方式 \{#how-it-is-built\}
+
+- **按可用宽度计算列数。** `masonry` 创建尽可能多的等宽列，每列至少为 `--masonry-min`，并将列宽限制在容器宽度以内，避免在手机上溢出。图库将 `--masonry-min` 设为 10rem，在手机上也能保留两列。
+- **由浏览器排列。** 浏览器支持 `display: grid-lanes` 时，各列为网格列，每个内容项由浏览器放入当前底端最高的一列。其他浏览器使用多列容器，逐列填充并平衡各列的高度。
+- **保持每项完整。** `masonry-item` 防止内容项被拆到两列，并保留项上方的间距。回退方案需要通过类名实现这两点，因此每个内容项都带有该类名。
+- **保留原有宽高比。** 每张图片都放在一个[媒体图注](/components/figure)组件中，并将 `--figure-ratio` 设为图片原有的宽高比。图片加载前，所在列就会为它预留空间，加载完成时布局保持稳定。
+
+## 列 \{#lanes\}
+
+`--masonry-min` 指定列的最小宽度，默认为 14rem。最小宽度越小，排下的列就越多，每列也越窄。排布图片时，列的最小宽度可设为 9 或 10rem，以便在手机上保留两列。排布含段落的卡片时，可设为 16rem 或更大。`--masonry-gap` 指定列与列之间以及同列各项之间的间距，默认为 1rem。
+
+瀑布流也可以混排图片以外的内容。只要高度由自身内容决定，便签、引语或带较长图注的媒体图注组件都可以排进同一个瀑布流。
+
+<ComponentPreview name="mixed" height={531} mediumHeight={649} narrowHeight={1301} title="混合内容" bodyClass="p-lg" html={`<ul class="masonry w-full" style="--masonry-min: 11rem">
+  <li class="masonry-item">
+    <article class="card">
+      <header class="card-header">
+        <h3 class="card-title">Tuesday</h3>
+        <p class="card-description">Low tide at seven</p>
+      </header>
+      <p class="card-body">Walked out past the last post of the jetty. The sand was ribbed like a roof and full of small shells.</p>
+    </article>
+  </li>
+  <li class="masonry-item">
+    <figure class="figure">
+      <img class="figure-media" src="/demo/lighthouse.svg" alt="A lighthouse on a dark headland" style="--figure-ratio: 4 / 5">
+      <figcaption class="figure-caption">The light comes on at twenty past five.</figcaption>
+    </figure>
+  </li>
+  <li class="masonry-item">
+    <div class="sheet p-lg">
+      <blockquote class="quote">
+        <p class="quote-text">Nothing here is in a hurry, least of all the sea.</p>
+        <footer class="quote-source"><span class="quote-name">The harbour master</span></footer>
+      </blockquote>
+    </div>
+  </li>
+  <li class="masonry-item">
+    <article class="card">
+      <header class="card-header">
+        <h3 class="card-title">To bring back</h3>
+      </header>
+      <ul class="card-body bullets m(0)">
+        <li class="bullets-item">A stone for the desk</li>
+        <li class="bullets-item">The tide table</li>
+        <li class="bullets-item">Film for the camera</li>
+      </ul>
+    </article>
+  </li>
+  <li class="masonry-item">
+    <figure class="figure">
+      <img class="figure-media" src="/demo/cairn.svg" alt="Five stones balanced on a beach" style="--figure-ratio: 1 / 1">
+      <figcaption class="figure-caption">Someone builds it again every morning.</figcaption>
+    </figure>
+  </li>
+</ul>`} />
+
+## Grid lanes 与回退方案 \{#fallback\}
+
+瀑布流只需编写一套标记，浏览器按自己支持的方式布局。
+
+| | 支持 grid lanes | 不支持 grid lanes |
+| --- | --- | --- |
+| 列的来源 | `display: grid-lanes` 的列 | 多列容器中的列，由 `columns: var(--masonry-min)` 定义 |
+| 内容项的放置位置 | 按标记顺序放入当前底端最高的一列 | 从第一列向下填充，填满后转到下一列 |
+| 视觉顺序 | 横向跨列阅读，最前面的几项组成首行 | 逐列向下阅读，最前面的几项组成首列 |
+| 内容项之间的间距 | 网格间距 | 上外边距，位于列首时省去 |
+
+Grid lanes 是一项新特性，部分浏览器引擎已支持。[浏览器支持](/guide/browser-support#layout)列出了使用该特性的布局。两种方式都会紧密排列内容项，并保留每项的完整性与形状，只有视觉浏览顺序不同。按下方编号浏览，即可看出当前浏览器采用哪种方式。
+
+<ComponentPreview name="order" height={384} mediumHeight={416} narrowHeight={640} title="视觉顺序" bodyClass="p-lg" caption="支持 grid lanes 时横向跨列阅读，使用回退方案时逐列向下阅读。" html={`<ol class="masonry w-full fg-text-muted text-sm" style="--masonry-min: 8rem">
+  <li class="masonry-item well flex items-center justify-center h(96)">1</li>
+  <li class="masonry-item well flex items-center justify-center h(160)">2</li>
+  <li class="masonry-item well flex items-center justify-center h(64)">3</li>
+  <li class="masonry-item well flex items-center justify-center h(128)">4</li>
+  <li class="masonry-item well flex items-center justify-center h(112)">5</li>
+  <li class="masonry-item well flex items-center justify-center h(80)">6</li>
+  <li class="masonry-item well flex items-center justify-center h(144)">7</li>
+  <li class="masonry-item well flex items-center justify-center h(72)">8</li>
+  <li class="masonry-item well flex items-center justify-center h(120)">9</li>
+</ol>`} />
+
+图库、便签板或引语墙可以按任意顺序浏览，适合用瀑布流。如果顺序很重要，例如信息流要把最新内容排在最前面，请用[自动网格](/components/auto-grid)，它始终按行横向阅读。
+
+## 适用场景 \{#when\}
+
+| 内容项 | 选用布局 |
+| --- | --- |
+| 各项高度由内容决定，可按任意顺序阅读 | 瀑布流 |
+| 各项尺寸一致，或需要按行对齐 | [自动网格](/components/auto-grid) |
+| 采用几种尺寸，位置一次排定，部分内容项更重要 | [便当网格](/components/bento) |
+| 排成一行，通过滚动浏览 | [轮播](/components/carousel) |
+
+## 无障碍 \{#accessibility\}
+
+- 两种布局的阅读顺序和键盘导航顺序都遵循标记顺序。支持 grid lanes 时，按行横向跨列浏览即可遵循标记顺序。使用回退方案时，则按列从上到下浏览。两种布局都保留每个内容项在标记序列中的位置。
+- 用列表 `<ul class="masonry">` 将同类内容归为一组，以便读屏软件播报项目总数。每个内容项都是一个列表项。
+- 传达信息的图片即使有图注，也需要 `alt` 文本。图注用于补充图片信息，无法代替图片本身。
+
+## 类名 \{#classes\}
+
+<ContractTable name="masonry" directory="layouts" />
+
+## 自定义属性 \{#custom-properties\}
+
+<ContractTable name="masonry" show="properties" directory="layouts" />
+
+## 相关内容 \{#related\}
+
+<ComponentLinks slugs={['auto-grid', 'bento', 'figure', 'card', 'quote', 'lightbox']} />
+
+## 源码 \{#source\}
+
+<ComponentSource name="masonry" directory="layouts" />

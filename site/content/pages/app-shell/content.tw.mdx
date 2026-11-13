@@ -1,0 +1,471 @@
+---
+title: "應用程式框架"
+description: "主區域捲動時，側邊欄留在原位。框架較窄時，側邊欄改用抽屜呈現。"
+---
+
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import PagePreview from '~/site/components/PagePreview.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+應用程式框架是應用程式的外框，讓側邊欄在主區域捲動時留在原位。它以 `shell` 版面配置類別為基礎，處理 utility 無法表達的細節，包括以 `dvh` 設定高度、讓側邊欄黏附定位並獨立捲動、為主畫面指示器預留內距，以及設定側邊欄收起的寬度門檻。
+
+框架本身只負責版面配置。範例以邊框 utility 畫出細線，導覽列使用 [navbar](/components/navbar)，連結使用 [nav](/components/nav)，各區塊則使用排列在[自動網格](/components/auto-grid)中的[卡片](/components/card)。
+
+<PagePreview name="default" title="應用程式框架" caption="捲動頁面時，側邊欄和導覽列會留在原位。選擇「手機」後，側邊欄會隱藏，並出現可開啟抽屜的按鈕。" html={`<div class="shell bg-surface-base fg-text-body text-sm">
+  <a class="skip" href="#app-main">Skip to content</a>
+  <aside class="shell-sidebar gap-md p-sm bxe(1) bxe-solid b-line-hair">
+    <a class="navbar-brand h(40) px-xs" href="#"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18a9 9 0 0 0 0-18M12 3a9 9 0 0 0 0 18"/></svg>Atlas</a>
+    <nav class="nav" aria-label="Workspace">
+      <a class="nav-item" href="#"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12 12 5l7 7M7 10v9h10v-9"/></svg>Overview</a>
+      <a class="nav-item" href="#" aria-current="page"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/></svg>Projects<span class="nav-end">12</span></a>
+      <a class="nav-item" href="#"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0-18 0M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>Domains</a>
+      <a class="nav-item" href="#"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19h16M7 16V9M12 16V5M17 16v-4"/></svg>Analytics</a>
+      <a class="nav-item" href="#"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7a4 4 0 1 0 8 0a4 4 0 0 0-8 0M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2M16 3.1a4 4 0 0 1 0 7.8M21 21v-2a4 4 0 0 0-3-3.85"/></svg>Team</a>
+      <a class="nav-item" href="#"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 6a2 2 0 1 0 4 0a2 2 0 0 0-4 0M4 6h10M18 6h2M6 12a2 2 0 1 0 4 0a2 2 0 0 0-4 0M4 12h2M10 12h10M15 18a2 2 0 1 0 4 0a2 2 0 0 0-4 0M4 18h11M19 18h1"/></svg>Settings</a>
+    </nav>
+    <button type="button" class="btn btn-quiet justify-start mt-auto"><span class="avatar avatar-xs"><img class="avatar-image" src="/demo/portrait-1.svg" alt=""></span>Ada Lovelace</button>
+  </aside>
+  <main class="shell-main" id="app-main" tabindex="-1">
+    <header class="navbar">
+      <button type="button" class="btn btn-quiet btn-square btn-sm shell-toggle" commandfor="shell-nav" command="show-modal" aria-label="Open navigation"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h16M4 16h16"/></svg></button>
+      <h1 class="heading heading-sm">Projects</h1>
+      <div class="navbar-end">
+        <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Search"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11a7 7 0 1 0 14 0a7 7 0 0 0-14 0M20 20l-4-4"/></svg></button>
+        <button type="button" class="btn btn-primary btn-sm"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>New project</button>
+      </div>
+    </header>
+    <div class="flex flex-col gap-lg p-lg">
+      <div class="auto-grid">
+        <article class="card">
+          <header class="card-header">
+            <h3 class="card-title">Atlas</h3>
+            <p class="card-description">atlas.dev</p>
+            <span class="badge badge-success badge-dot card-action">Ready</span>
+          </header>
+        </article>
+        <article class="card">
+          <header class="card-header">
+            <h3 class="card-title">Borealis</h3>
+            <p class="card-description">borealis.app</p>
+            <span class="badge badge-info badge-dot card-action">Building</span>
+          </header>
+        </article>
+        <article class="card">
+          <header class="card-header">
+            <h3 class="card-title">Cinder</h3>
+            <p class="card-description">cinder.io</p>
+            <span class="badge badge-success badge-dot card-action">Ready</span>
+          </header>
+        </article>
+        <article class="card">
+          <header class="card-header">
+            <h3 class="card-title">Drift</h3>
+            <p class="card-description">drift.so</p>
+            <span class="badge badge-danger badge-dot card-action">Failed</span>
+          </header>
+        </article>
+        <article class="card">
+          <header class="card-header">
+            <h3 class="card-title">Ember</h3>
+            <p class="card-description">ember.dev</p>
+            <span class="badge badge-success badge-dot card-action">Ready</span>
+          </header>
+        </article>
+        <article class="card">
+          <header class="card-header">
+            <h3 class="card-title">Fathom</h3>
+            <p class="card-description">fathom.app</p>
+            <span class="badge badge-success badge-dot card-action">Ready</span>
+          </header>
+        </article>
+      </div>
+    </div>
+  </main>
+  <dialog class="dialog dialog-drawer dialog-drawer-start" id="shell-nav" closedby="any" aria-label="Navigation">
+    <div class="dialog-body flex flex-col gap-md">
+      <a class="navbar-brand h(40) px-xs" href="#"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18a9 9 0 0 0 0-18M12 3a9 9 0 0 0 0 18"/></svg>Atlas</a>
+      <nav class="nav" aria-label="Workspace, in the drawer">
+        <a class="nav-item" href="#"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12 12 5l7 7M7 10v9h10v-9"/></svg>Overview</a>
+        <a class="nav-item" href="#" aria-current="page"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/></svg>Projects<span class="nav-end">12</span></a>
+        <a class="nav-item" href="#"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0-18 0M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>Domains</a>
+        <a class="nav-item" href="#"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19h16M7 16V9M12 16V5M17 16v-4"/></svg>Analytics</a>
+        <a class="nav-item" href="#"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7a4 4 0 1 0 8 0a4 4 0 0 0-8 0M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2M16 3.1a4 4 0 0 1 0 7.8M21 21v-2a4 4 0 0 0-3-3.85"/></svg>Team</a>
+        <a class="nav-item" href="#"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 6a2 2 0 1 0 4 0a2 2 0 0 0-4 0M4 6h10M18 6h2M6 12a2 2 0 1 0 4 0a2 2 0 0 0-4 0M4 12h2M10 12h10M15 18a2 2 0 1 0 4 0a2 2 0 0 0-4 0M4 18h11M19 18h1"/></svg>Settings</a>
+      </nav>
+    </div>
+    <button type="button" class="btn btn-quiet btn-square btn-sm dialog-close" commandfor="shell-nav" command="close" aria-label="Close navigation"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  </dialog>
+</div>`} />
+
+## 版面配置做法 \{#how-it-is-built\}
+
+| 部位 | 類別 | 用途 |
+| --- | --- | --- |
+| 外框 | `shell` | 至少與檢視區等高的網格，同時是名為 `shell` 的尺寸查詢容器 |
+| 側邊欄 | `shell-sidebar` | 黏附於頁首下方，高度等於檢視區的剩餘空間，並可獨立捲動 |
+| 主區域 | `shell-main` | 佔用剩餘欄位，寬度不會超出該欄 |
+| 切換控制項 | `shell-toggle` | 讓控制項只在側邊欄收起時顯示 |
+
+預設由**整份文件捲動**。採用黏附定位的 [navbar](/components/navbar) 仍可正常運作，連到標題的連結會跳到正確位置，瀏覽器也會在返回時還原捲動位置。
+
+當框架寬度小於 48rem，側邊欄會從版面配置中移除，也不會自動出現替代介面。請將相同的導覽放進起始側的[抽屜](/components/dialog#drawer)，再以帶有 `shell-toggle` 的按鈕開啟。抽屜使用原生 `<dialog>`，透過 `commandfor` 開啟，整個配置無須撰寫腳本。
+
+寬度門檻以框架本身為準。因此無論螢幕多寬，只要框架所在的面板夠窄，側邊欄就會收起。
+
+## 托盤底色 \{#on-a-tray\}
+
+將框架設為托盤底色，並把主區域放在內縮 8px 的[面板](/components/surface#sheet)上。這樣看起來，側邊欄屬於外框，內容則置於框架之上。版面配置類別維持相同，只調整底色與面板樣式。
+
+<PagePreview name="inset" title="托盤底色" html={`<div class="shell bg-surface-tray fg-text-body text-sm">
+  <a class="skip" href="#app-main-inset">Skip to content</a>
+  <aside class="shell-sidebar gap-md p-sm">
+    <a class="navbar-brand h(40) px-xs" href="#"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18a9 9 0 0 0 0-18M12 3a9 9 0 0 0 0 18"/></svg>Atlas</a>
+    <nav class="nav" aria-label="Workspace">
+      <a class="nav-item" href="#"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12 12 5l7 7M7 10v9h10v-9"/></svg>Overview</a>
+      <a class="nav-item" href="#" aria-current="page"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/></svg>Projects<span class="nav-end">12</span></a>
+      <a class="nav-item" href="#"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0-18 0M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>Domains</a>
+      <a class="nav-item" href="#"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19h16M7 16V9M12 16V5M17 16v-4"/></svg>Analytics</a>
+      <a class="nav-item" href="#"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7a4 4 0 1 0 8 0a4 4 0 0 0-8 0M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2M16 3.1a4 4 0 0 1 0 7.8M21 21v-2a4 4 0 0 0-3-3.85"/></svg>Team</a>
+      <a class="nav-item" href="#"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 6a2 2 0 1 0 4 0a2 2 0 0 0-4 0M4 6h10M18 6h2M6 12a2 2 0 1 0 4 0a2 2 0 0 0-4 0M4 12h2M10 12h10M15 18a2 2 0 1 0 4 0a2 2 0 0 0-4 0M4 18h11M19 18h1"/></svg>Settings</a>
+    </nav>
+    <button type="button" class="btn btn-quiet justify-start mt-auto"><span class="avatar avatar-xs"><img class="avatar-image" src="/demo/portrait-1.svg" alt=""></span>Ada Lovelace</button>
+  </aside>
+  <div class="shell-main flex flex-col p(8) pxs(0)@container(--3xl)">
+    <main class="sheet grow(1)" id="app-main-inset" tabindex="-1">
+      <header class="navbar" style="--navbar-color: var(--color-surface-raised)">
+        <button type="button" class="btn btn-quiet btn-square btn-sm shell-toggle" commandfor="shell-nav-inset" command="show-modal" aria-label="Open navigation"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h16M4 16h16"/></svg></button>
+        <h1 class="heading heading-sm">Projects</h1>
+        <div class="navbar-end">
+          <button type="button" class="btn btn-primary btn-sm"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>New project</button>
+        </div>
+      </header>
+      <div class="auto-grid p-lg">
+        <article class="card card-flat">
+          <header class="card-header">
+            <h3 class="card-title">Atlas</h3>
+            <p class="card-description">atlas.dev</p>
+            <span class="badge badge-success badge-dot card-action">Ready</span>
+          </header>
+        </article>
+        <article class="card card-flat">
+          <header class="card-header">
+            <h3 class="card-title">Borealis</h3>
+            <p class="card-description">borealis.app</p>
+            <span class="badge badge-info badge-dot card-action">Building</span>
+          </header>
+        </article>
+        <article class="card card-flat">
+          <header class="card-header">
+            <h3 class="card-title">Cinder</h3>
+            <p class="card-description">cinder.io</p>
+            <span class="badge badge-success badge-dot card-action">Ready</span>
+          </header>
+        </article>
+        <article class="card card-flat">
+          <header class="card-header">
+            <h3 class="card-title">Drift</h3>
+            <p class="card-description">drift.so</p>
+            <span class="badge badge-danger badge-dot card-action">Failed</span>
+          </header>
+        </article>
+        <article class="card card-flat">
+          <header class="card-header">
+            <h3 class="card-title">Ember</h3>
+            <p class="card-description">ember.dev</p>
+            <span class="badge badge-success badge-dot card-action">Ready</span>
+          </header>
+        </article>
+        <article class="card card-flat">
+          <header class="card-header">
+            <h3 class="card-title">Fathom</h3>
+            <p class="card-description">fathom.app</p>
+            <span class="badge badge-success badge-dot card-action">Ready</span>
+          </header>
+        </article>
+      </div>
+    </main>
+  </div>
+  <dialog class="dialog dialog-drawer dialog-drawer-start" id="shell-nav-inset" closedby="any" aria-label="Navigation">
+    <div class="dialog-body flex flex-col gap-md">
+      <a class="navbar-brand h(40) px-xs" href="#"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18a9 9 0 0 0 0-18M12 3a9 9 0 0 0 0 18"/></svg>Atlas</a>
+      <nav class="nav" aria-label="Workspace, in the drawer">
+        <a class="nav-item" href="#"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12 12 5l7 7M7 10v9h10v-9"/></svg>Overview</a>
+        <a class="nav-item" href="#" aria-current="page"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/></svg>Projects<span class="nav-end">12</span></a>
+        <a class="nav-item" href="#"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0-18 0M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>Domains</a>
+        <a class="nav-item" href="#"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19h16M7 16V9M12 16V5M17 16v-4"/></svg>Analytics</a>
+        <a class="nav-item" href="#"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7a4 4 0 1 0 8 0a4 4 0 0 0-8 0M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2M16 3.1a4 4 0 0 1 0 7.8M21 21v-2a4 4 0 0 0-3-3.85"/></svg>Team</a>
+        <a class="nav-item" href="#"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 6a2 2 0 1 0 4 0a2 2 0 0 0-4 0M4 6h10M18 6h2M6 12a2 2 0 1 0 4 0a2 2 0 0 0-4 0M4 12h2M10 12h10M15 18a2 2 0 1 0 4 0a2 2 0 0 0-4 0M4 18h11M19 18h1"/></svg>Settings</a>
+      </nav>
+    </div>
+    <button type="button" class="btn btn-quiet btn-square btn-sm dialog-close" commandfor="shell-nav-inset" command="close" aria-label="Close navigation"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  </dialog>
+</div>`} />
+
+導覽列的背景會帶有下方區域的色調。若導覽列位於面板上，請將 `--navbar-color` 設為該面板的色彩。
+
+## 含頁首 \{#with-a-header\}
+
+`shell-header` 位於框架上方，橫跨兩欄。側邊欄會黏附在頁首下方，框架透過 `--shell-header` 預留頁首高度。預設值為 3.5rem，與導覽列等高。若頁首較高，請調整此屬性。
+
+<PagePreview name="header" title="含頁首" html={`<div class="shell bg-surface-base fg-text-body text-sm">
+  <a class="skip" href="#app-main-header">Skip to content</a>
+  <header class="navbar shell-header bb(1) bb-solid b-line-hair">
+    <button type="button" class="btn btn-quiet btn-square btn-sm shell-toggle" commandfor="shell-nav-header" command="show-modal" aria-label="Open navigation"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h16M4 16h16"/></svg></button>
+    <a class="navbar-brand" href="#"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18a9 9 0 0 0 0-18M12 3a9 9 0 0 0 0 18"/></svg>Atlas</a>
+    <div class="navbar-end">
+      <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Notifications"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 5a2 2 0 1 1 4 0a7 7 0 0 1 4 6v3a4 4 0 0 0 2 3H4a4 4 0 0 0 2-3v-3a7 7 0 0 1 4-6M9 17v1a3 3 0 0 0 6 0v-1"/></svg></button>
+      <span class="avatar avatar-sm"><img class="avatar-image" src="/demo/portrait-1.svg" alt="Ada Lovelace"></span>
+    </div>
+  </header>
+  <aside class="shell-sidebar p-sm bxe(1) bxe-solid b-line-hair">
+    <nav class="nav" aria-label="Workspace">
+      <a class="nav-item" href="#"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12 12 5l7 7M7 10v9h10v-9"/></svg>Overview</a>
+      <a class="nav-item" href="#" aria-current="page"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/></svg>Projects<span class="nav-end">12</span></a>
+      <a class="nav-item" href="#"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0-18 0M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>Domains</a>
+      <a class="nav-item" href="#"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19h16M7 16V9M12 16V5M17 16v-4"/></svg>Analytics</a>
+      <a class="nav-item" href="#"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7a4 4 0 1 0 8 0a4 4 0 0 0-8 0M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2M16 3.1a4 4 0 0 1 0 7.8M21 21v-2a4 4 0 0 0-3-3.85"/></svg>Team</a>
+      <a class="nav-item" href="#"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 6a2 2 0 1 0 4 0a2 2 0 0 0-4 0M4 6h10M18 6h2M6 12a2 2 0 1 0 4 0a2 2 0 0 0-4 0M4 12h2M10 12h10M15 18a2 2 0 1 0 4 0a2 2 0 0 0-4 0M4 18h11M19 18h1"/></svg>Settings</a>
+    </nav>
+  </aside>
+  <main class="shell-main flex flex-col gap-lg p-lg" id="app-main-header" tabindex="-1">
+    <h1 class="heading heading-lg">Projects</h1>
+    <div class="auto-grid">
+      <article class="card">
+        <header class="card-header">
+          <h3 class="card-title">Atlas</h3>
+          <p class="card-description">atlas.dev</p>
+          <span class="badge badge-success badge-dot card-action">Ready</span>
+        </header>
+      </article>
+      <article class="card">
+        <header class="card-header">
+          <h3 class="card-title">Borealis</h3>
+          <p class="card-description">borealis.app</p>
+          <span class="badge badge-info badge-dot card-action">Building</span>
+        </header>
+      </article>
+      <article class="card">
+        <header class="card-header">
+          <h3 class="card-title">Cinder</h3>
+          <p class="card-description">cinder.io</p>
+          <span class="badge badge-success badge-dot card-action">Ready</span>
+        </header>
+      </article>
+      <article class="card">
+        <header class="card-header">
+          <h3 class="card-title">Drift</h3>
+          <p class="card-description">drift.so</p>
+          <span class="badge badge-danger badge-dot card-action">Failed</span>
+        </header>
+      </article>
+      <article class="card">
+        <header class="card-header">
+          <h3 class="card-title">Ember</h3>
+          <p class="card-description">ember.dev</p>
+          <span class="badge badge-success badge-dot card-action">Ready</span>
+        </header>
+      </article>
+      <article class="card">
+        <header class="card-header">
+          <h3 class="card-title">Fathom</h3>
+          <p class="card-description">fathom.app</p>
+          <span class="badge badge-success badge-dot card-action">Ready</span>
+        </header>
+      </article>
+    </div>
+  </main>
+  <dialog class="dialog dialog-drawer dialog-drawer-start" id="shell-nav-header" closedby="any" aria-label="Navigation">
+    <div class="dialog-body flex flex-col gap-md">
+      <a class="navbar-brand h(40) px-xs" href="#"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18a9 9 0 0 0 0-18M12 3a9 9 0 0 0 0 18"/></svg>Atlas</a>
+      <nav class="nav" aria-label="Workspace, in the drawer">
+        <a class="nav-item" href="#"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12 12 5l7 7M7 10v9h10v-9"/></svg>Overview</a>
+        <a class="nav-item" href="#" aria-current="page"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/></svg>Projects<span class="nav-end">12</span></a>
+        <a class="nav-item" href="#"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0-18 0M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>Domains</a>
+        <a class="nav-item" href="#"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19h16M7 16V9M12 16V5M17 16v-4"/></svg>Analytics</a>
+        <a class="nav-item" href="#"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7a4 4 0 1 0 8 0a4 4 0 0 0-8 0M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2M16 3.1a4 4 0 0 1 0 7.8M21 21v-2a4 4 0 0 0-3-3.85"/></svg>Team</a>
+        <a class="nav-item" href="#"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 6a2 2 0 1 0 4 0a2 2 0 0 0-4 0M4 6h10M18 6h2M6 12a2 2 0 1 0 4 0a2 2 0 0 0-4 0M4 12h2M10 12h10M15 18a2 2 0 1 0 4 0a2 2 0 0 0-4 0M4 18h11M19 18h1"/></svg>Settings</a>
+      </nav>
+    </div>
+    <button type="button" class="btn btn-quiet btn-square btn-sm dialog-close" commandfor="shell-nav-header" command="close" aria-label="Close navigation"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  </dialog>
+</div>`} />
+
+## 固定於檢視區 \{#fixed\}
+
+`shell-fixed` 讓框架恰好與檢視區等高。只有各區域會各自捲動，因此使用者瀏覽已開啟的內容時，清單會留在原位。收件匣、編輯器或聊天介面等需要並排瀏覽兩個區域的情境，適合使用這種配置。其餘情境請使用預設配置。在手機上，瀏覽器工具列會隨頁面捲動而收合，讓整份文件一起捲動能更好地配合這個行為。
+
+`--shell-sidebar` 設定側邊欄寬度。此處的訊息清單使用 20rem。
+
+<PagePreview name="fixed" title="固定於檢視區" height={560} caption="清單和訊息各自捲動，整個頁面不會捲動。切換到「手機」時，清單會隱藏，並可透過按鈕在抽屜中開啟。" html={`<div class="shell shell-fixed bg-surface-base fg-text-body text-sm" style="--shell-sidebar: 20rem">
+  <aside class="shell-sidebar bxe(1) bxe-solid b-line-hair">
+    <header class="flex items-center justify-between p-md">
+      <h1 class="heading heading-sm">Inbox</h1>
+      <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Filter"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg></button>
+    </header>
+    <ul class="list list-interactive">
+      <li><a class="list-row" href="#" aria-current="true">
+        <div class="list-body">
+          <p class="list-title">Deploy failed on drift.so</p>
+          <p class="list-description">The install step exited with code 1.</p>
+        </div>
+        <span class="list-end">09:41</span>
+      </a></li>
+      <li><a class="list-row" href="#">
+        <div class="list-body">
+          <p class="list-title">Ada invited you to Borealis</p>
+          <p class="list-description">You now have access as an editor.</p>
+        </div>
+        <span class="list-end">09:12</span>
+      </a></li>
+      <li><a class="list-row" href="#">
+        <div class="list-body">
+          <p class="list-title">Your invoice for October</p>
+          <p class="list-description">$48.00, paid with the card ending 4242.</p>
+        </div>
+        <span class="list-end">Tue</span>
+      </a></li>
+      <li><a class="list-row" href="#">
+        <div class="list-body">
+          <p class="list-title">Domain atlas.dev renewed</p>
+          <p class="list-description">Valid until 4 November next year.</p>
+        </div>
+        <span class="list-end">Mon</span>
+      </a></li>
+      <li><a class="list-row" href="#">
+        <div class="list-body">
+          <p class="list-title">Weekly summary</p>
+          <p class="list-description">1.28M requests, 0.02% errors.</p>
+        </div>
+        <span class="list-end">Mon</span>
+      </a></li>
+      <li><a class="list-row" href="#">
+        <div class="list-body">
+          <p class="list-title">Cinder is live in 14 regions</p>
+          <p class="list-description">Deployed from main by Alan.</p>
+        </div>
+        <span class="list-end">Sun</span>
+      </a></li>
+      <li><a class="list-row" href="#">
+        <div class="list-body">
+          <p class="list-title">New sign-in from Tokyo</p>
+          <p class="list-description">If this was you, there is nothing to do.</p>
+        </div>
+        <span class="list-end">Sat</span>
+      </a></li>
+      <li><a class="list-row" href="#">
+        <div class="list-body">
+          <p class="list-title">Usage at 80% of your plan</p>
+          <p class="list-description">Upgrade or lower traffic before the 30th.</p>
+        </div>
+        <span class="list-end">Fri</span>
+      </a></li>
+    </ul>
+  </aside>
+  <main class="shell-main">
+    <button type="button" class="btn btn-sm shell-toggle m-md" commandfor="inbox-list" command="show-modal">Inbox</button>
+    <article class="flex flex-col gap-md max-w(640) p-xl">
+      <p class="eyebrow">Deployments</p>
+      <h2 class="heading heading-xl">Deploy failed on drift.so</h2>
+      <p class="lead lead-sm">The install step exited with code 1. Nothing was published, and the previous deployment is still serving traffic.</p>
+      <pre class="code-block"><code>npm error code ERESOLVE
+npm error ERESOLVE could not resolve
+npm error While resolving: drift@2.4.0</code></pre>
+      <p class="m(0) leading-md">The adapter that drift pins was withdrawn from the registry this morning, so the lockfile no longer resolves. Two other projects in this team pin the same version.</p>
+      <p class="m(0) leading-md">Retry the deployment after pinning the dependency, or roll back from the deployments list. The log above is the last twenty lines; the full log is on the deployment page.</p>
+      <div class="flex gap-xs">
+        <button type="button" class="btn btn-primary">Retry deployment</button>
+        <button type="button" class="btn">View full log</button>
+      </div>
+    </article>
+  </main>
+  <dialog class="dialog dialog-drawer dialog-drawer-start" id="inbox-list" closedby="any" aria-label="Inbox">
+    <div class="dialog-body flex flex-col gap-md">
+      <h2 class="heading heading-sm">Inbox</h2>
+      <ul class="list list-interactive">
+        <li><a class="list-row" href="#" aria-current="true">
+          <div class="list-body">
+            <p class="list-title">Deploy failed on drift.so</p>
+            <p class="list-description">The install step exited with code 1.</p>
+          </div>
+          <span class="list-end">09:41</span>
+        </a></li>
+        <li><a class="list-row" href="#">
+          <div class="list-body">
+            <p class="list-title">Ada invited you to Borealis</p>
+            <p class="list-description">You now have access as an editor.</p>
+          </div>
+          <span class="list-end">09:12</span>
+        </a></li>
+        <li><a class="list-row" href="#">
+          <div class="list-body">
+            <p class="list-title">Your invoice for October</p>
+            <p class="list-description">$48.00, paid with the card ending 4242.</p>
+          </div>
+          <span class="list-end">Tue</span>
+        </a></li>
+        <li><a class="list-row" href="#">
+          <div class="list-body">
+            <p class="list-title">Domain atlas.dev renewed</p>
+            <p class="list-description">Valid until 4 November next year.</p>
+          </div>
+          <span class="list-end">Mon</span>
+        </a></li>
+        <li><a class="list-row" href="#">
+          <div class="list-body">
+            <p class="list-title">Weekly summary</p>
+            <p class="list-description">1.28M requests, 0.02% errors.</p>
+          </div>
+          <span class="list-end">Mon</span>
+        </a></li>
+        <li><a class="list-row" href="#">
+          <div class="list-body">
+            <p class="list-title">Cinder is live in 14 regions</p>
+            <p class="list-description">Deployed from main by Alan.</p>
+          </div>
+          <span class="list-end">Sun</span>
+        </a></li>
+        <li><a class="list-row" href="#">
+          <div class="list-body">
+            <p class="list-title">New sign-in from Tokyo</p>
+            <p class="list-description">If this was you, there is nothing to do.</p>
+          </div>
+          <span class="list-end">Sat</span>
+        </a></li>
+        <li><a class="list-row" href="#">
+          <div class="list-body">
+            <p class="list-title">Usage at 80% of your plan</p>
+            <p class="list-description">Upgrade or lower traffic before the 30th.</p>
+          </div>
+          <span class="list-end">Fri</span>
+        </a></li>
+      </ul>
+    </div>
+    <button type="button" class="btn btn-quiet btn-square btn-sm dialog-close" commandfor="inbox-list" command="close" aria-label="Close the inbox"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  </dialog>
+</div>`} />
+
+## 無障礙 \{#accessibility\}
+
+- 使用地標元素。側邊欄用 `<aside>` 或 `<nav>`，主區域用 `<main>`，頁首用 `<header>`。為每個 `<nav>` 加上標籤。加入抽屜後會有兩個導覽區，請使用不同的標籤。
+- 抽屜中的連結及其順序應與側邊欄相同。側邊欄顯示時，切換控制項會設為 `display: none`，並從 Tab 鍵的焦點順序中移除。
+- 可獨立捲動的區域若沒有任何可取得焦點的內容，請為該區域加上 `tabindex="0"` 和標籤，讓使用者能以鍵盤捲動。
+- 高度使用 `dvh`，因此手機的瀏覽器工具列不會蓋住側邊欄底部。側邊欄也會依主畫面指示器的安全區域預留底部內距。
+
+## 類別 \{#classes\}
+
+<ContractTable name="shell" directory="layouts" />
+
+## 自訂屬性 \{#custom-properties\}
+
+<ContractTable name="shell" show="properties" directory="layouts" />
+
+## 相關項目 \{#related\}
+
+<ComponentLinks slugs={['navbar', 'nav', 'dialog', 'skip', 'surface', 'card', 'list', 'auto-grid']} />
+
+<ComponentLinks kind="pages" slugs={['dashboard', 'docs', 'holy-grail', 'master-detail']} />
+
+## 原始碼 \{#source\}
+
+<ComponentSource name="shell" directory="layouts" />

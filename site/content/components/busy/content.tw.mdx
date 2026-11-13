@@ -1,0 +1,78 @@
+---
+title: "處理中"
+description: "區域重新載入內容時，以遮罩和旋轉指示器呈現處理狀態。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+區域正在重新取得內容時，可以標記為處理中，例如卡片套用新的篩選條件、表格載入另一頁，或表單儲存資料。將 `busy` 加在區域上，並在處理期間設定 `aria-busy="true"`。遮罩沿用區域的表面色，淡化原有內容，中央則顯示旋轉指示器。原有內容會留在原位，新內容載入時版面就不會跳動。
+
+<ComponentPreview name="default" height={200} title="處理中" bodyClass="flex items-center justify-center p-lg" html={`<article class="card busy w-full max-w(320)" id="revenue" aria-label="Revenue">
+  <header class="card-header">
+    <h3 class="card-title">Revenue</h3>
+    <p class="card-description">$48,200 this month, up 12% on October.</p>
+  </header>
+  <footer class="card-footer">
+    <button class="btn btn-sm" type="button" id="revenue-refresh">Refresh</button>
+  </footer>
+</article>
+<script>
+  var card = document.getElementById('revenue')
+  document.getElementById('revenue-refresh').addEventListener('click', function () {
+    card.setAttribute('aria-busy', 'true')
+    card.inert = true
+    setTimeout(function () {
+      card.removeAttribute('aria-busy')
+      card.inert = false
+    }, 1800)
+  })
+</script>`} caption="按下「重新整理」，卡片會顯示兩秒的處理中狀態。" />
+
+## 用一個屬性控制狀態 \{#one-attribute\}
+
+單獨加上類別不會顯示任何效果。要在同一元素上設定 `aria-busy="true"` 才會進入處理中狀態。螢幕閱讀器與樣式表都依據這個屬性，因此兩者呈現的狀態會一致。處理結束時，請移除這個屬性或將它設為 `false`。
+
+遮罩會等候 160ms 再淡入。若作業立即完成，遮罩就不會一閃而過，也不會提示使用者等待已經就緒的內容。
+
+<ComponentPreview name="resting" height={200} title="處理期間" bodyClass="flex items-center justify-center p-lg" html={`<article class="card busy w-full max-w(320)" aria-busy="true" aria-label="Revenue" inert>
+  <header class="card-header">
+    <h3 class="card-title">Revenue</h3>
+    <p class="card-description">$48,200 this month, up 12% on October.</p>
+  </header>
+  <footer class="card-footer">
+    <button class="btn btn-sm" type="button">Refresh</button>
+  </footer>
+</article>`} />
+
+## 遮罩 \{#the-veil\}
+
+遮罩以[面板](/components/surface)、卡片及對話框公開的 `--surface-color` 混合而成，因此遮罩會用卡片本身的顏色淡化內容，而不會套上灰色。區域若未設定自己的表面色，就使用頁面底色。遮罩沿用區域的圓角，在旋轉指示器正後方完全遮住內容，往外則逐漸變淡，讓圓環不會與文字重疊。
+
+遮罩會阻擋指標與下方內容互動。若也要阻擋鍵盤操作，請像第一個範例一樣，在區域處理期間加上 `inert` 屬性，結束後再移除。
+
+`--busy-size` 設定旋轉指示器的直徑，預設為 20px。
+
+## 處理中與骨架畫面 \{#busy-or-skeleton\}
+
+正在替換現有內容時，使用處理中狀態。首次載入時，畫面上還沒有可淡化的內容，請用[骨架畫面](/components/skeleton)呈現預期的版面。若只有單一控制項需要等候，就在該控制項內放置[旋轉指示器](/components/spinner)。按鈕本身有 `aria-busy` 狀態。
+
+## 無障礙 \{#accessibility\}
+
+- `aria-busy="true"` 會告知輔助科技這個區域正在更新，讓它可以等到屬性移除後，再讀出區域內的變更。
+- 作業開始時，這個屬性不會觸發朗讀。請在處理中區域之外的即時區域，或在啟動作業的控制項上，以文字告知使用者。
+- 處理期間，將區域設為 `inert`，避免遮罩下的控制項取得焦點或遭到觸發。
+- 使用者偏好減少動態效果時，旋轉指示器會轉得較慢。在強制色彩模式下，遮罩使用頁面底色。
+
+## 類別 \{#classes\}
+
+<ContractTable name="busy" />
+
+## 自訂屬性 \{#custom-properties\}
+
+<ContractTable name="busy" show="properties" />
+
+## 原始碼 \{#source\}
+
+<ComponentSource name="busy" />

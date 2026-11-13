@@ -1,0 +1,93 @@
+---
+title: "表面"
+description: "托盘、凸起面板与凹槽构成所有组件共用的材质层级。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+Master UI 的所有组件都使用同几种材质。可直接用这些材质制作卡片、面板和分组，让自定义布局与组件保持一致的光影和层次。[主题](/guide/theme#surfaces)介绍了各层次。
+
+<ComponentPreview name="ladder" height={200} title="托盘、凸起面板和凹槽" bodyClass="p-lg" html={`<div class="tray">
+  <div class="sheet flex flex-col gap-md p-lg">
+    <p class="m(0) text-sm fg-text-strong">Deployment</p>
+    <div class="well p-md text-sm fg-text-muted">No builds are queued.</div>
+  </div>
+</div>`} />
+
+## 凸起面板 \{#sheet\}
+
+凸起面板的圆角半径为 16px，浏览器支持时采用超椭圆角。顶边带有高光，边缘用半像素轮廓勾勒，下方的短阴影逐渐淡出。凸起面板默认使用 Lifted 层级的阴影，可按用途选用更低或更高的层级。
+
+<ComponentPreview name="sheets" height={216} title="凸起面板的层次" bodyClass="grid grid-cols(2) gap-lg p-lg" html={`<div class="sheet sheet-flat p-lg text-sm fg-text-muted">Flat</div>
+<div class="sheet sheet-raised p-lg text-sm fg-text-muted">Raised</div>
+<div class="sheet p-lg text-sm fg-text-muted">Lifted</div>
+<div class="sheet sheet-floating p-lg text-sm fg-text-muted">Floating</div>`} />
+
+| 类名 | 层次 | 用途 |
+| --- | --- | --- |
+| `sheet sheet-flat` | 一圈轮廓线，无阴影 | 紧凑的列表和表格 |
+| `sheet sheet-raised` | `--shadow-raised` | 内容密集的表面上的小卡片 |
+| `sheet` | `--shadow-lifted` | 卡片和面板 |
+| `sheet sheet-floating` | `--shadow-floating` | 覆盖在内容上方的弹出层和菜单 |
+| `sheet sheet-inverse` | 墨色表面上的默认面板阴影 | 页面上唯一用于邀请用户采取行动的表面 |
+
+## 反色 \{#inverse\}
+
+`sheet-inverse` 是墨色的凸起面板，在 Moonstone 中呈深色，在 Obsidian 中呈珠白色。它把主[按钮](/components/button)的表面样式扩展到面板大小，保留相同的光照渐变和顶边高光。每页只用一处，留给需要用户采取行动的内容，例如[行动号召](/blocks/cta)。
+
+面板上的文字使用反色墨色。给默认使用高强调墨色的[标题](/components/heading)添加 `fg-text-inverse`。默认按钮在面板上最亮，因此一眼就能看出它是操作入口；主按钮的墨色则会和面板的墨色融在一起。
+
+<ComponentPreview name="inverse" height={144} narrowHeight={248} title="反色" bodyClass="p-lg" html={`<section class="sheet sheet-inverse flex flex-wrap items-center justify-between gap-md p-lg">
+  <div class="flex flex-col gap-3xs">
+    <h3 class="heading heading-sm fg-text-inverse">Your trial ends in three days</h3>
+    <p class="m(0) text-sm">Add a card to keep your projects online.</p>
+  </div>
+  <button type="button" class="btn btn-sm">Add a card</button>
+</section>`} />
+
+## 凹槽 \{#well\}
+
+凹槽低于周围表面，带有柔和的内阴影、一圈半像素轮廓线和底边下方的一道高光。输入字段、分段控件的轨道和开关都采用凹槽。
+
+`--well-radius` 设置应用主题圆角缩放系数前的凹槽圆角半径。默认值为 `var(--radius-control)`。
+
+<ComponentPreview name="well" height={120} title="凹槽" bodyClass="p-lg" html={`<div class="well p-lg text-sm fg-text-muted">Drop files here</div>`} />
+
+## 托盘 \{#tray\}
+
+托盘向内凹陷，可容纳一个或多个凸起面板。4px 的内边距让圆角相互贴合，托盘的圆角半径等于面板缩放后的圆角半径加上这段内边距。使用默认的 1.6 倍圆角缩放系数时，16px 的表面圆角半径变为 25.6px，托盘的圆角半径为 29.6px。
+
+<ComponentPreview name="tray" height={168} title="托盘" bodyClass="p-lg" html={`<div class="tray">
+  <p class="m(0) px-md py-sm text-xs fg-text-muted">Recent</p>
+  <div class="sheet p-lg text-sm fg-text-body">Quarterly report.pdf</div>
+</div>`} />
+
+直接放在托盘里的其他组件也需要采用凸起面板的圆角半径。在该组件的根元素上设置相应属性，凹槽用 `--well-radius`，代码块或面板用 `--code-radius`，窗口用 `--window-radius`，警示用 `--alert-radius`。属性值设为 `var(--radius-surface)`。托盘在圆角缩放后加上 4px 的内边距，因此默认主题和 Paper 都能保持这种圆角关系。嵌套更深的组件保留各自的圆角半径。
+
+<ComponentPreview name="tray-well" height={136} title="托盘中的凹槽" bodyClass="p-lg" html={`<div class="tray">
+  <div class="well p-lg text-sm" style="--well-radius: var(--radius-surface)">No builds are queued.</div>
+</div>`} />
+
+## 表面颜色 \{#the-surface-color\}
+
+每个表面都通过 `--surface-color` 提供自己的颜色。组件会读取这个属性，用所在表面的颜色绘制环线，形成镂空效果，例如围绕[角标](/components/badge#on-an-icon)、[堆叠头像](/components/avatar#stack)和状态圆点绘制的环线。这样，在凸起面板、托盘、凹槽、[卡片](/components/card)或[对话框](/components/dialog)中，环线会自动与表面同色。使用自定义表面时，将此属性设为它的背景色。
+
+## 使用工具类组合 \{#compose-with-utilities\}
+
+这些材质也以主题令牌提供，可用 `bg-surface-raised`、`shadow-raised`、`shadow-pressed` 和 `b-line-contour` 为自定义元素应用材质。
+
+<ComponentPreview name="utilities" height={120} narrowHeight={144} title="应用材质的工具类" html={`<div class="p-lg r-lg bg-surface-raised shadow-raised text-sm fg-text-body">bg-surface-raised shadow-raised</div>`} />
+
+## 类名 \{#classes\}
+
+<ContractTable name="surface" />
+
+## 自定义属性 \{#custom-properties\}
+
+<ContractTable name="surface" show="properties" />
+
+## 源码 \{#source\}
+
+<ComponentSource name="surface" />

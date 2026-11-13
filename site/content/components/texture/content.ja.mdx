@@ -1,0 +1,140 @@
+---
+title: "テクスチャ"
+description: "サーフェスにドット、グリッド、斜線、交差斜線、チェック柄を描きます。"
+---
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+テクスチャは、サーフェス全体に繰り返し描く模様です。コンテンツがなくても領域の用途や状態を伝える必要がある場合は、任意の要素に `.texture` を指定します。模様は控えめな単色の背景画像なので、要素にもともとある背景色をそのまま使えます。たとえば、くぼみの見た目を保ったままドットを重ねられます。
+
+<ComponentPreview name="default" height={208} title="テクスチャ" background="plain" bodyClass="p-lg" html={`<div class="well texture flex items-center justify-center h(160)">
+  <button type="button" class="btn">Publish</button>
+</div>`} />
+
+## パターン \{#drawings\}
+
+パターンは 5 種類あり、それぞれが領域の用途や状態を示します。見た目の好みよりも、伝えたい意味を基準に選びます。たとえば、別々の場所で斜線を見たユーザーが、どちらも同じ意味だと判断できるようにします。
+
+<ComponentPreview name="drawings" height={184} mediumHeight={384} narrowHeight={448} title="パターン" background="plain" bodyClass="p-lg" html={`<div class="auto-grid auto-grid-fit" style="--auto-grid-min: 6rem">
+<figure class="m(0) flex flex-col gap-xs">
+  <div class="well texture h(96)"></div>
+  <figcaption class="text-xs fg-text-muted">Dots</figcaption>
+</figure>
+<figure class="m(0) flex flex-col gap-xs">
+  <div class="well texture texture-grid h(96)"></div>
+  <figcaption class="text-xs fg-text-muted">Grid</figcaption>
+</figure>
+<figure class="m(0) flex flex-col gap-xs">
+  <div class="well texture texture-stripes h(96)"></div>
+  <figcaption class="text-xs fg-text-muted">Stripes</figcaption>
+</figure>
+<figure class="m(0) flex flex-col gap-xs">
+  <div class="well texture texture-crosshatch h(96)"></div>
+  <figcaption class="text-xs fg-text-muted">Crosshatch</figcaption>
+</figure>
+<figure class="m(0) flex flex-col gap-xs">
+  <div class="well texture texture-checker h(96)"></div>
+  <figcaption class="text-xs fg-text-muted">Checker</figcaption>
+</figure>
+</div>`} />
+
+| クラス | 意味 | 用途 |
+| --- | --- | --- |
+| `texture` | 表示用の領域 | 見本、キャンバス、図を表示する背景 |
+| `texture texture-grid` | 位置の目安がある領域 | 位置が重要なキャンバス。エディター、間取り図、レイアウト教材など |
+| `texture texture-stripes` | 空けてある領域 | ガター、余白、何も入っていないスロット、画像のプレースホルダー |
+| `texture texture-crosshatch` | 使用できない領域 | 利用不可の時間帯、休業日、範囲外の領域 |
+| `texture texture-checker` | 透明な領域 | 透明部分のある画像や、アルファ値を持つ色の下地 |
+
+テクスチャに文字を直接重ねないでください。模様が文字にかかると読みにくくなるため、キャプションは領域の横に置くか、テクスチャに重ねたシートの上に置きます。
+
+## 空き領域と利用不可の領域 \{#kept-and-unavailable\}
+
+斜線と交差斜線は、何も入っていない領域の状態を区別します。斜線の枠は空けてあり、後から使えます。交差斜線の枠は選択できません。模様だけでは伝わらないことがあるため、同じ意味を文字でも示します。この例では、利用できない時間帯を無効にし、その状態を示すラベルも付けています。
+
+<ComponentPreview name="slots" height={232} title="空き領域と利用不可の領域" background="plain" bodyClass="p-lg" html={`<div class="sheet grid grid-cols(4) gap-xs p-xs">
+  <button type="button" class="btn btn-quiet h(88)">9:00</button>
+  <button type="button" class="btn btn-quiet h(88)">10:00</button>
+  <div class="well texture texture-stripes h(88)" role="img" aria-label="11:00, kept free"></div>
+  <div class="well texture texture-crosshatch h(88)" role="img" aria-label="12:00, closed"></div>
+</div>
+<p class="m(0) mt-md text-xs fg-text-muted">11:00 is kept free. The office is closed at 12:00.</p>`} />
+
+## 透明部分 \{#transparency\}
+
+チェック柄は、背景が透ける部分を示す下地です。画像を上に重ねると、透明な箇所からチェック柄が見えます。この例では、マークのくり抜き部分から見えます。
+
+<ComponentPreview name="checker" height={184} title="透明部分" background="plain" html={`<div class="well texture texture-checker flex items-center justify-center w(240) h(136) fg-text-strong">
+  <svg width="80" height="80" viewBox="0 0 96 96" role="img" aria-label="A square mark with a round hole">
+    <path fill="currentColor" fill-rule="evenodd" d="M20 8h56a12 12 0 0 1 12 12v56a12 12 0 0 1-12 12H20A12 12 0 0 1 8 76V20A12 12 0 0 1 20 8Zm28 18a22 22 0 1 0 0 44 22 22 0 0 0 0-44Z"/>
+  </svg>
+</div>`} />
+
+## サイズ・太さ・色 \{#size-weight-and-ink\}
+
+3 つのカスタムプロパティで、要素ごとにパターンを調整できます。`--texture-size` はタイル一辺の長さ、`--texture-weight` はドットの半径または罫線の太さ、`--texture-ink` は模様の色です。テーマでは、`--color-texture` を使ってすべてのテクスチャの色をまとめて設定できます。
+
+テクスチャは、その上に置くものより控えめにします。見本を置く背景には、細く間隔を空けた模様で輪郭を判別できれば十分です。模様が密になると、見本が目立ちにくくなります。
+
+<ComponentPreview name="tuning" height={184} mediumHeight={384} narrowHeight={448} title="サイズ・太さ・色" background="plain" bodyClass="p-lg" html={`<div class="auto-grid auto-grid-fit" style="--auto-grid-min: 9rem">
+<figure class="m(0) flex flex-col gap-xs">
+  <div class="well texture h(96)" style="--texture-size: 20px"></div>
+  <figcaption class="text-xs fg-text-muted">A 20px tile</figcaption>
+</figure>
+<figure class="m(0) flex flex-col gap-xs">
+  <div class="well texture texture-stripes h(96)" style="--texture-weight: 1px; --texture-size: 12px"></div>
+  <figcaption class="text-xs fg-text-muted">A 1px stripe in a 12px tile</figcaption>
+</figure>
+<figure class="m(0) flex flex-col gap-xs">
+  <div class="well texture texture-grid h(96)" style="--texture-ink: var(--color-line-hair)"></div>
+  <figcaption class="text-xs fg-text-muted">The hairline's ink</figcaption>
+</figure>
+</div>`} />
+
+斜線は正方形のタイル内で 45° 傾いているため、線の間隔はタイル一辺の長さを √2 で割った値になります。既定の 8px のタイルでは 5.7px です。タイルのサイズは整数ピクセルにしてください。端数があると、タイルの境目で線がずれます。
+
+タイルは領域の中央を基準に並ぶため、領域の大きさにかかわらず、向かい合う端で模様が同じように切れます。角を起点にするには `background-position` を指定します。
+
+## フェード \{#fade\}
+
+`texture-fade` は領域の端に向かって模様を薄くします。見出しの背景などに使えます。マスクによって要素内のコンテンツも薄くなるため、コンテンツの背後に専用の要素を置いて適用し、その要素を支援技術から隠します。
+
+<ComponentPreview name="fade" height={240} title="フェード" background="plain" bodyClass="p-lg" html={`<div class="relative flex flex-col items-center justify-center gap-md h(192)">
+  <div class="texture texture-grid texture-fade absolute inset(0)" aria-hidden="true"></div>
+  <h3 class="relative m(0) text-xl fg-text-strong">Ship the first draft</h3>
+  <button type="button" class="relative btn btn-primary">Start a project</button>
+</div>`} />
+
+## 重ね合わせ \{#layering\}
+
+テクスチャを適用すると、要素の背景画像が置き換わり、背景色はそのまま残ります。別の画像も重ねたり、模様で形を切り抜いたりする場合は、クラスを指定した要素の `--texture-image` を参照します。そこにパターンが公開されています。
+
+```css
+.texture.stage {
+  background-image: var(--texture-image), linear-gradient(var(--color-surface-raised), var(--color-surface-raised-low));
+  background-size: var(--texture-size) var(--texture-size), auto;
+}
+```
+
+交差斜線は 2 レイヤーで構成されるため、サイズを 2 つ指定します。
+
+## アクセシビリティ \{#accessibility\}
+
+テクスチャは視覚的な模様で、強制カラーモードでは表示されません。意味を伝える場合は、必ずほかの手段も併用します。
+
+- 既存の領域を装飾するだけなら、追加の指定は不要です。テクスチャの表示専用の要素には `aria-hidden="true"` を指定します。
+- テクスチャが「空けてある」「利用できない」「透明」などの状態を示す場合は、その意味を隣にテキストで示すか、領域自体に `aria-label` を付けて `role="img"` で伝えます。
+- 操作できないコントロールには、まず `disabled` を指定します。交差斜線は、その属性が示す利用不可の状態を視覚的にも伝えます。
+
+## クラス \{#classes\}
+
+<ContractTable name="texture" />
+
+## カスタムプロパティ \{#custom-properties\}
+
+<ContractTable name="texture" show="properties" />
+
+## ソース \{#source\}
+
+<ComponentSource name="texture" />

@@ -1,0 +1,152 @@
+---
+title: "オドメーター"
+description: "桁が回転して新しい値に切り替わる数値表示。"
+---
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+オドメーターは、機械式カウンターのように、桁を回転させて新しい値を表示します。各桁は高さ1行分の窓で、スタイルシートが縦に並べた数字の一つを表示します。ページ側で桁の`--digit`を変更すると、数字の列が新しい数字まで回転し、行の上下で数字がフェードイン、フェードアウトします。独自の背景面やサイズを持たないため、[統計表示](/components/stat)の数値、見出し、文中の一語として使えます。同じ数値をプレーンテキストでも一度記述し、スクリーンリーダーはそのテキストを読み上げます。
+
+<ComponentPreview name="default" height={224} title="オドメーター" bodyClass="flex items-center justify-center p-lg" caption="「訪問者を追加」を押すと、値が変わる桁が上に回転し、新しい人数を表示します。" html={`<div class="card w-full max-w(320)">
+  <div class="stat">
+    <p class="stat-label">Visitors today</p>
+    <div class="stat-row">
+      <p class="stat-value">
+        <span class="odometer" id="visitors">
+          <span class="odometer-value">12,847</span>
+          <span class="odometer-figures" aria-hidden="true">
+            <span class="odometer-digit" style="--digit: 1"></span>
+            <span class="odometer-digit" style="--digit: 2"></span>,
+            <span class="odometer-digit" style="--digit: 8"></span>
+            <span class="odometer-digit" style="--digit: 4"></span>
+            <span class="odometer-digit" style="--digit: 7"></span>
+          </span>
+        </span>
+      </p>
+      <p class="stat-delta stat-delta-up">3.1%</p>
+    </div>
+  </div>
+  <button class="btn btn-sm self-start" type="button" id="visitors-add">Add visitors</button>
+</div>
+<script>
+  function roll(odometer, text, up) {
+    odometer.querySelector('.odometer-value').textContent = text
+    var numerals = text.split('').filter(function (character) { return character >= '0' && character <= '9' })
+    odometer.querySelectorAll('.odometer-digit').forEach(function (digit, index) {
+      var at = Number(digit.style.getPropertyValue('--digit')) || 0
+      var step = ((numerals[index] - at) % 10 + 10) % 10
+      if (!up && step) step -= 10
+      digit.style.setProperty('--digit', at + step)
+    })
+  }
+  var visitors = 12847
+  document.getElementById('visitors-add').addEventListener('click', function () {
+    visitors += 1 + Math.floor(Math.random() * 240)
+    roll(document.getElementById('visitors'), visitors.toLocaleString('en-US'), true)
+  })
+</script>`} />
+
+## 数値の記述方法 \{#how-it-is-written\}
+
+数値は、読み上げなどで使うテキストと画面表示用のマークアップの2通りで記述します。
+
+- `odometer-value`には、画面上で見えないようにクリップしたテキストを入れます。スクリーンリーダーは一続きの文字列として読み上げ、ページ内検索やコピーでもこのテキストが使われます。
+- `odometer-figures`は数値を描画する要素で、`aria-hidden="true"`を指定します。各桁に空の`odometer-digit`を一つ置き、その桁の数字を`--digit`に指定します。カンマ、小数点、通貨記号、単位など、動かない文字は各桁の要素の外に、表示順に沿ってプレーンテキストで記述します。
+
+数字は Flexbox で横一列に並べるため、マークアップ内で桁の間に入れた改行やインデントが、数値の表示に空白として現れることはありません。単位の前などに空白を入れる場合は、改行なしスペース（`&nbsp;`）を使います。右から左に読むページでも、数字は通常の数値表記どおり左から右に並びます。
+
+各桁には表示に現れない 0 があり、表示窓の幅を数字 1 文字分に保ち、ベースラインを行に揃えます。数字はすべて等幅なので、回転中も数値の隣にある要素は動きません。
+
+## 書体を選ばない \{#any-type\}
+
+オドメーターは文字サイズ、太さ、色を親要素から継承します。表示窓の寸法、列内の数字の間隔、フェードの範囲もその文字設定に合わせるため、見出し、統計値、本文のいずれでも同じ仕組みが使えます。
+
+<ComponentPreview name="type" height={200} title="見出しと本文での使用例" background="plain" bodyClass="flex flex-col items-start justify-center gap-sm p-lg" caption="「スタンドを追加」を押すと、合計額と税額の桁が上に回転します。もう一度押すと、下に回転して元の金額に戻ります。" html={`<h3 class="m(0) text-4xl font-semibold fg-text-strong">
+  <span class="odometer" id="total">
+    <span class="odometer-value">$1,280.50</span>
+    <span class="odometer-figures" aria-hidden="true">
+      $<span class="odometer-digit" style="--digit: 1"></span>,
+      <span class="odometer-digit" style="--digit: 2"></span>
+      <span class="odometer-digit" style="--digit: 8"></span>
+      <span class="odometer-digit" style="--digit: 0"></span>.
+      <span class="odometer-digit" style="--digit: 5"></span>
+      <span class="odometer-digit" style="--digit: 0"></span>
+    </span>
+  </span>
+</h3>
+<p class="m(0) text-sm fg-text-muted">Includes
+  <span class="odometer" id="tax">
+    <span class="odometer-value">$106.71</span>
+    <span class="odometer-figures" aria-hidden="true">
+      $<span class="odometer-digit" style="--digit: 1"></span>
+      <span class="odometer-digit" style="--digit: 0"></span>
+      <span class="odometer-digit" style="--digit: 6"></span>.
+      <span class="odometer-digit" style="--digit: 7"></span>
+      <span class="odometer-digit" style="--digit: 1"></span>
+    </span>
+  </span>
+  in tax.</p>
+<button class="btn btn-sm mt-sm" type="button" id="stand" aria-pressed="false">Add the stand</button>
+<script>
+  function roll(odometer, text, up) {
+    odometer.querySelector('.odometer-value').textContent = text
+    var numerals = text.split('').filter(function (character) { return character >= '0' && character <= '9' })
+    odometer.querySelectorAll('.odometer-digit').forEach(function (digit, index) {
+      var at = Number(digit.style.getPropertyValue('--digit')) || 0
+      var step = ((numerals[index] - at) % 10 + 10) % 10
+      if (!up && step) step -= 10
+      digit.style.setProperty('--digit', at + step)
+    })
+  }
+  var stand = document.getElementById('stand')
+  stand.addEventListener('click', function () {
+    var added = stand.getAttribute('aria-pressed') !== 'true'
+    stand.setAttribute('aria-pressed', String(added))
+    stand.textContent = added ? 'Remove the stand' : 'Add the stand'
+    roll(document.getElementById('total'), added ? '$1,329.50' : '$1,280.50', added)
+    roll(document.getElementById('tax'), added ? '$110.79' : '$106.71', added)
+  })
+</script>`} />
+
+## 数値の増減に合わせた回転 \{#rolling\}
+
+各列には 0 から 9 までの数字が並び、各桁は指定された数字まで列に沿って上下に回転します。カウンターのようにすべての桁を数値の増減と同じ方向に回転させるには、`--digit` の値を 9 を超えて増やしたり、0 を下回って減らしたりします。表示窓には 10 を法とする剰余に対応した数字が表示されます。9 から 10 を指定すると 1 つ先の 0 に進み、0 から -1 を指定すると 1 つ前の 9 に戻ります。
+
+上のプレビューでは、スクリプトでこの動作を実現しています。各桁の前回の設定値を読み取り、数値が増えたときは前に、減ったときは後ろに進めて、新しい数字に合わせます。どちらの方向にも移動は最大 9 ステップです。
+
+```js
+var at = Number(digit.style.getPropertyValue('--digit')) || 0
+var step = ((numeral - at) % 10 + 10) % 10
+if (!up && step) step -= 10
+digit.style.setProperty('--digit', at + step)
+```
+
+スクリプトがなければ、オドメーターには数値がそのまま表示されます。数値を一度だけ描画するページなら、各桁に指定する値は 0 から 9 までで十分です。
+
+## タイミング \{#timing\}
+
+各桁の回転には、テーマの基本時間の 2 倍にあたる `--odometer-duration` がかかります。すべての桁にテーマ共通のイージング曲線を使い、素早く動き始めて緩やかに止まるため、新しい数字を早い段階で読み取れます。各桁は直前の桁から `--odometer-stagger` 遅れて動き始めるので、変化が左から右に伝わります。表示窓では数字 1 文字分の高さがフェードのかからない範囲に収まり、次の数字はその範囲の外にあるため、静止時は現在の数値だけが見えます。
+
+## アクセシビリティ \{#accessibility\}
+
+- スクリーンリーダーが読み上げるのは `odometer-value` だけです。区切り記号や単位を含めて表示と一致させ、各桁と同時に更新してください。
+- `odometer-figures` には `aria-hidden="true"` が必要です。列の数字は空の代替テキストを持つ生成コンテンツですが、桁の間の記号は実際のテキストなので、そのままでは重複して読み上げられます。
+- オドメーターは既定でライブリージョンになっていません。ユーザーの選択後に合計が変わるなど、新しい値を読み上げる必要がある場合は、`aria-live="polite"` を `odometer` のルート要素に追加してください。視覚的に隠した値だけがルート要素のテキストなので、新しい数値は一度だけ読み上げられます。数秒ごとに自動で変わる数値には、この指定を使わないでください。
+- 動きを抑える設定では、数字は回転せずその場で切り替わります。強制カラーモードでは、数字にシステムの文字色が適用されます。
+
+## ブラウザー対応 \{#platform\}
+
+回転では、登録済みのカスタムプロパティ（`@property`）をイージング付きで変化させ、表示窓では `mod()` を使って 10 を法とする剰余を求めます。`@property` に対応していないブラウザーでは、数字はその場で切り替わります。`mod()` に対応していない場合は、`--digit` を 0 から 9 の範囲に収めてください。桁ごとの遅延には `sibling-index()` を使います。対応ブラウザー（Chromium）では桁が順に回転し、それ以外では同時に回転します。
+
+## クラス \{#classes\}
+
+<ContractTable name="odometer" />
+
+## カスタムプロパティ \{#custom-properties\}
+
+<ContractTable name="odometer" show="properties" />
+
+## ソース \{#source\}
+
+<ComponentSource name="odometer" />

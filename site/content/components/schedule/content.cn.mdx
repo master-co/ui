@@ -1,0 +1,121 @@
+---
+title: "日程表"
+description: "沿纵向小时刻度排布当天事件，高度对应时长。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+日程表沿时间轴从上到下显示一天中的各个小时，事件的高度对应其持续时间，适用于日历的日视图、会议各会场的安排或诊所的预约。事件按有序列表组织，每项都用文字写明标题和时间。样式表按小时刻度放置事件，并在每个整点绘制带标签的细线。时间重叠的事件并排显示。整个布局无需脚本或尺寸测量。
+
+<ComponentPreview name="default" height={400} title="日程表" bodyClass="p-lg" html={`<div class="card max-w(480) mx-auto">
+  <div class="schedule schedule-now" style="--schedule-from: 9; --schedule-to: 15; --now: 12.45">
+    <ol class="schedule-rail" aria-hidden="true"><li>9 AM</li><li>10 AM</li><li>11 AM</li><li>12 PM</li><li>1 PM</li><li>2 PM</li><li>3 PM</li></ol>
+    <ol class="schedule-events" aria-label="Thursday 13 November">
+    <li class="schedule-event" style="--start: 9; --end: 9.5"><p class="schedule-title">Standup</p><p class="schedule-time"><time datetime="09:00">9:00</time> – <time datetime="09:30">9:30</time></p></li>
+    <li class="schedule-event" style="--start: 10; --end: 11.5; --lanes: 2"><p class="schedule-title">Design review</p><p class="schedule-time"><time datetime="10:00">10:00</time> – <time datetime="11:30">11:30</time></p></li>
+    <li class="schedule-event" style="--start: 10.5; --end: 12; --lane: 1; --lanes: 2"><p class="schedule-title">Interview: platform engineer</p><p class="schedule-time"><time datetime="10:30">10:30</time> – <time datetime="12:00">12:00</time></p></li>
+    <li class="schedule-event" style="--start: 12; --end: 12.25"><p class="schedule-title">Check-in with Alan</p><p class="schedule-time"><time datetime="12:00">12:00</time> – <time datetime="12:15">12:15</time></p></li>
+    <li class="schedule-event" style="--start: 12.75; --end: 13.75"><p class="schedule-title">Lunch with Ada</p><p class="schedule-time"><time datetime="12:45">12:45</time> – <time datetime="13:45">1:45</time></p></li>
+    <li class="schedule-event" style="--start: 14; --end: 14.5"><p class="schedule-title">1:1 with Grace</p><p class="schedule-time"><time datetime="14:00">2:00</time> – <time datetime="14:30">2:30</time></p></li>
+    </ol>
+  </div>
+</div>`} />
+
+## 事件如何定位 \{#how-an-event-gets-its-place\}
+
+在 `schedule` 上将时间范围设为从 `--schedule-from` 到 `--schedule-to`。每小时的高度由 `--schedule-hour` 指定，默认为 48px。每个 `schedule-event` 都用 `--start` 和 `--end` 在同一时间刻度上指定起止时刻，以小时为单位，因此上午 10 点半写作 10.5，下午 1 点 45 分写作 13.75。事件从对应的开始时刻延伸到结束时刻，上下各与细线留出 1px 的间距，让首尾相接的事件之间仍有一条细线。
+
+`schedule-rail` 为从 `--schedule-from` 到 `--schedule-to` 的每个整点各放一个标签，包含最后一个整点，并将各标签放在对应细线的高度中央。按读者习惯的时间格式编写标签。时间轴宽 48px（`--schedule-rail`）。
+
+按每小时 48px 计算，一整天的高度超过 1,100px。可以只显示所需时段，也可以将日程表放在[滚动区域](/components/scroll-area)内，使其可以滚动。
+
+## 时间重叠的事件 \{#events-that-overlap\}
+
+时间重叠的事件共享可用宽度。为每个事件设置 `--lanes`，表示该时段的并排事件数，再设置 `--lane`，表示它在其中的位置，从 0 开始编号。上例中的设计评审和面试占据同一时段的两列。渲染列表的一方根据数据分配列，样式表只负责按列放置事件。
+
+## 短时事件 \{#short-events\}
+
+每个事件都是尺寸查询容器，文字布局随事件自身的高度调整：
+
+- 在默认尺寸下，持续时间达到一小时，标题就显示在时间上方。
+- 持续时间更短时，标题和时间在事件内居中显示在同一行。两者放不下时，隐藏时间。
+- 连一行文字都放不下时，例如默认尺寸下持续 15 分钟的事件，只显示带底色的面板。文字仍保留在列表中供辅助技术读取，事件在时间轴上的位置表明它的时间。
+
+## 当前时间与当前事件 \{#now\}
+
+日程表上的 `schedule-now` 在 `--now` 指定的位置绘制一条墨色线，和事件一样以小时为单位，并在线与当天区域起始边缘的交点画一个圆点。线从事件下方穿过，不会划过事件的文字。
+
+用 `aria-current="true"` 标记的事件显示为墨色面板，表示该事件正在进行，或其详情已在日程表旁打开。
+
+## 并排显示多天 \{#several-days\}
+
+要并排显示几天，将每天的 `schedule-events` 放入一个 `schedule-day`，并在其上方放置 `schedule-heading`。各天共享可用宽度和时间轴，标题和小时刻度彼此对齐。用 `aria-current="date"` 标记今天所在的列。今天的标题使用更浓的墨色，当前时间线带着圆点穿过这一列，并以细线贯穿其他日期列。
+
+<ComponentPreview name="days" height={324} title="并排显示多天" bodyClass="p-lg" html={`<div class="card max-w(560) mx-auto">
+  <div class="schedule schedule-now" style="--schedule-from: 9; --schedule-to: 13; --now: 11.25">
+    <ol class="schedule-rail" aria-hidden="true"><li>9 AM</li><li>10 AM</li><li>11 AM</li><li>12 PM</li><li>1 PM</li></ol>
+    <section class="schedule-day" aria-labelledby="day-12">
+      <h3 class="schedule-heading" id="day-12">Wed 12</h3>
+      <ol class="schedule-events">
+        <li class="schedule-event" style="--start: 9; --end: 10"><p class="schedule-title">Roadmap</p><p class="schedule-time"><time datetime="09:00">9:00</time> – <time datetime="10:00">10:00</time></p></li>
+        <li class="schedule-event" style="--start: 11; --end: 12.5"><p class="schedule-title">Workshop</p><p class="schedule-time"><time datetime="11:00">11:00</time> – <time datetime="12:30">12:30</time></p></li>
+      </ol>
+    </section>
+    <section class="schedule-day" aria-current="date" aria-labelledby="day-13">
+      <h3 class="schedule-heading" id="day-13">Thu 13</h3>
+      <ol class="schedule-events">
+        <li class="schedule-event" style="--start: 9; --end: 9.5"><p class="schedule-title">Standup</p><p class="schedule-time"><time datetime="09:00">9:00</time> – <time datetime="09:30">9:30</time></p></li>
+        <li class="schedule-event" style="--start: 10; --end: 11.5; --lanes: 2"><p class="schedule-title">Design review</p><p class="schedule-time"><time datetime="10:00">10:00</time> – <time datetime="11:30">11:30</time></p></li>
+        <li class="schedule-event" aria-current="true" style="--start: 10.5; --end: 12; --lane: 1; --lanes: 2"><p class="schedule-title">Interview</p><p class="schedule-time"><time datetime="10:30">10:30</time> – <time datetime="12:00">12:00</time></p></li>
+        <li class="schedule-event" style="--start: 12.25; --end: 13"><p class="schedule-title">Lunch</p><p class="schedule-time"><time datetime="12:15">12:15</time> – <time datetime="13:00">1:00</time></p></li>
+      </ol>
+    </section>
+    <section class="schedule-day" aria-labelledby="day-14">
+      <h3 class="schedule-heading" id="day-14">Fri 14</h3>
+      <ol class="schedule-events">
+        <li class="schedule-event" style="--start: 9.5; --end: 10.25"><p class="schedule-title">Sync</p><p class="schedule-time"><time datetime="09:30">9:30</time> – <time datetime="10:15">10:15</time></p></li>
+        <li class="schedule-event" style="--start: 11.5; --end: 13"><p class="schedule-title">Offsite</p><p class="schedule-time"><time datetime="11:30">11:30</time> – <time datetime="13:00">1:00</time></p></li>
+      </ol>
+    </section>
+  </div>
+</div>`} />
+
+三到五天的日程放在卡片里易于阅读，一周的日程适合使用整页宽度。在较窄的容器里，每天仍保留各自分到的宽度，放不下的标题以省略号结尾。
+
+## 可打开详情的事件 \{#events-that-open-something\}
+
+事件可以打开详情时，将 `schedule-event` 从列表项移到其内部的链接或按钮上。定位方式相同，指针悬停时底色加深一级，键盘聚焦时显示焦点环。
+
+```html
+<li>
+  <a class="schedule-event" href="/events/design-review" style="--start: 10; --end: 11.5">
+    <span class="schedule-title">Design review</span>
+    <span class="schedule-time"><time datetime="10:00">10:00</time> – <time datetime="11:30">11:30</time></span>
+  </a>
+</li>
+```
+
+## 日程表、甘特图或日历 \{#schedule-gantt-or-calendar\}
+
+日程表按从上到下的顺序显示一天中的各个小时。要在同一时间刻度上显示计划中各事项的起止时间，每项占一行，使用[甘特图](/components/gantt)。要从一个月中选择某一天，使用[日历](/components/calendar)。要按发生顺序呈现各个时间点，使用[时间线](/components/timeline)。
+
+## 无障碍 \{#accessibility\}
+
+- 按时间顺序将事件写成一个 `<ol>`，并为列表提供无障碍名称。只显示一天时使用 `aria-label`，多天并排时，在每天的 `schedule-day` 上用 `aria-labelledby` 引用各自的标题。
+- 每个事件都用文字写明标题和时间，并用 `<time datetime>` 标记时刻，这样即使脱离图形布局，也能读出“设计评审，10:00 至 11:30”。时间轴是同一刻度的视觉呈现，用 `aria-hidden="true"` 将其对辅助技术隐藏。
+- 用 `aria-current` 标记当前事件和今天，屏幕阅读器会读出相应状态。当前时间线由样式表绘制，需要传达当前时间时，用文字写明。
+- 在强制颜色模式下，每个事件都有轮廓线，当前事件以高亮色填充，细线和当前时间线使用系统颜色。
+
+## 类名 \{#classes\}
+
+<ContractTable name="schedule" />
+
+## 自定义属性 \{#custom-properties\}
+
+<ContractTable name="schedule" show="properties" />
+
+## 源码 \{#source\}
+
+<ComponentSource name="schedule" />

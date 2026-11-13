@@ -1,15 +1,16 @@
 ---
-title: "React、Svelte 與 Vue"
-description: "將具有狀態的元件複製到 React、Svelte 或 Vue，連接應用程式的值，並讓伺服器渲染的標記保持正確。"
+title: "React、Svelte 和 Vue"
+description: "將有狀態的元件複製到 React、Svelte 或 Vue，與應用程式的值同步，並確保伺服器產生的標記正確。"
 ---
+
 import GuideFigure from '../../../components/GuideFigure.astro'
 import FrameworkPreview from '~/site/components/FrameworkPreview.astro'
 
-無狀態的元件請使用原生標記；當應用程式需要協調值、資料、id 或生命週期時，再複製框架元件。複製的元件會在 React、Svelte 與 Vue 中渲染相同的契約，並掛上套件中的行為。請先完成[安裝](/guide/installation)，讓它們的樣式可用；複製元件並不會匯入它的 CSS。
+無狀態元件可直接使用原生標記。當應用程式需要協調值、資料、ID 或生命週期時，再複製框架元件。複製的元件會在 React、Svelte 和 Vue 中算繪符合相同契約的標記，並掛載套件提供的行為。先依照[安裝](/guide/installation)設定樣式，因為複製元件時不會一併匯入 CSS。
 
-## 標記就是標記 \{#markup\}
+## 直接使用標記 \{#markup\}
 
-無論在 React、Svelte 或 Vue 中，按鈕都是帶有 `btn btn-primary` 的 `<button>`。沒有 `Button` 元件，專案也不應該撰寫只是把 props 轉成 class 的元件。
+在 React、Svelte 和 Vue 中，按鈕都是套用 `btn btn-primary` 的 `<button>`。Master UI 沒有提供 `Button` 元件，如果只是要把 props 轉成 class，專案也不應另外寫一個。
 
 ```tsx name=Toolbar.tsx
 export function Toolbar({ saving }: { saving: boolean }) {
@@ -21,57 +22,57 @@ export function Toolbar({ saving }: { saving: boolean }) {
 }
 ```
 
-- **沒有需要元件擁有的東西。** 按鈕沒有要傳遞的值、沒有要渲染的列、沒有要連結的 id，也沒有要掛上的東西。它的狀態就是框架本來就會設定的屬性。
-- **檢查器讀取的是 class。** [`master-ui check`](/guide/ai#check-the-markup) 會讀取 `.jsx`、`.tsx`、`.svelte`、`.vue` 與 `.astro` 檔案。它看得到 `className="btn btn-outline"` 並指出沒有這個 class；但它看不到 `<Button variant="outline">`。
-- **標記不需要用戶端腳本。** 帶有 class 的原生元素在伺服器上渲染後就停留在那裡。在 React Server Components 中，它不會為用戶端的打包結果增加任何內容。
+- **按鈕沒有需要元件管理的內容。** 它不必傳遞值、算繪列、用 ID 連結元素或掛載行為。它的狀態由框架原本就會設定的屬性表示。
+- **檢查工具會讀取 class。** [`master-ui check`](/guide/ai#check-the-markup) 會讀取 `.jsx`、`.tsx`、`.svelte`、`.vue` 和 `.astro` 檔案。它能讀到 `className="btn btn-outline"` 並回報沒有這個 class，但讀不到 `<Button variant="outline">`。
+- **標記不需要用戶端腳本。** 帶有 class 的原生元素在伺服器上算繪即可。在 React Server Components 中，這類元素不會增加打包後的用戶端程式碼。
 
-只有語法不同：
+各框架的差異只在語法：
 
-| 在 HTML 中 | 在 JSX 中 | 在 Svelte 與 Vue 中 |
+| HTML | JSX | Svelte 和 Vue |
 | --- | --- | --- |
-| `class="btn btn-primary"` | `className="btn btn-primary"` | 相同 |
-| `for="email"` | `htmlFor="email"` | 相同 |
-| `tabindex="-1"`、`popovertarget="share"` | `tabIndex={-1}`、`popoverTarget="share"` | 相同 |
-| `commandfor="confirm"` 搭配 `command="show-modal"`、`interestfor="tip"` | 在 React 的型別尚未列出它們時，以展開方式傳入 | 相同 |
+| `class="btn btn-primary"` | `className="btn btn-primary"` | 同 HTML |
+| `for="email"` | `htmlFor="email"` | 同 HTML |
+| `tabindex="-1"`, `popovertarget="share"` | `tabIndex={-1}`, `popoverTarget="share"` | 同 HTML |
+| `commandfor="confirm"` 搭配 `command="show-modal"`，以及 `interestfor="tip"` | 若 React 的型別尚未列出這些屬性，請用展開語法傳入 | 同 HTML |
 
-當標記在專案中重複出現時，請依專案的慣用寫法，將它包裝成專案自己的元件，並在其中以字面字串保留契約的 class。
+同一段標記在專案中反覆出現時，可以用專案慣用的寫法將它封裝成自己的元件，並在元件內以字串常值保留契約指定的 class。
 
-## 框架擁有什麼 \{#what-a-framework-owns\}
+## 框架負責管理哪些內容 \{#what-a-framework-owns\}
 
-當框架至少擁有以下四者之一時，才會有框架元件：
+只要框架需要負責下列至少一項，就適合使用框架元件：
 
-1. **應用程式讀取或設定的值。** combobox 中選擇了什麼、對話框是否開啟。
-2. **由資料渲染的列。** listbox 的選項、一個月的各天、選單的項目。
-3. **連結各部件的 id。** 標籤與其控制項、按鈕與它開啟的 popover、分頁與其面板。
-4. **生命週期。** 在元素存在時掛上、在元素離開時卸下的[行為](/guide/behaviors)。
+1. **應用程式讀取或設定的值。** 例如組合方塊選了哪一項、對話框是否開啟。
+2. **由資料算繪的列。** 例如清單方塊的選項、某個月的日期、選單的項目。
+3. **用來連結各部位的 ID。** 例如標籤與其控制項、按鈕與它開啟的彈出框、分頁標籤與其面板。
+4. **生命週期。** 元素出現時掛載[行為](/guide/behaviors)，移除時卸載。
 
-這和元件庫判斷是否需要 [class](/guide/introduction#tiers) 的標準相同：看的是知識，而不是重複的標記。有十七個模式通過這項標準。
+這也是程式庫判斷是否需要提供 [class](/guide/introduction#tiers) 的標準。重點在於是否有需要封裝的知識，單純重複的標記不構成理由。共有 17 種模式符合這個標準。
 
-| 元件 | 渲染的契約 | 框架擁有的東西 |
+| 元件 | 算繪的標記契約 | 框架負責管理 |
 | --- | --- | --- |
-| `calendar` | [日曆](/components/calendar) | 值，以及它繪製的月份 |
-| `combobox` | [Combobox](/components/combobox) | 值、選項 |
-| `command` | [命令面板](/components/command) | 是否開啟、命令 |
-| `compare` | [Compare](/components/compare) | 位置 |
-| `dialog` | [對話框](/components/dialog) | 是否開啟、其觸發元素所指名的 id |
-| `field` | [欄位](/components/input#hint-and-error) | 連結標籤、控制項、提示與錯誤的 id |
-| `listbox` | [Listbox](/components/listbox) | 值、選項 |
-| `menu` | [選單](/components/menu) | 項目、其觸發元素所指名的 id、右鍵選單的目標 |
-| `otp` | [OTP](/components/otp) | 代碼、格位數量 |
-| `popover` | [Popover](/components/popover) | 是否開啟、其觸發元素所指名的 id |
-| `splitter` | [分隔條](/components/splitter) | 尺寸 |
-| `stepper` | [Stepper](/components/stepper) | 數字 |
-| `tabs` | [分頁](/components/tabs#tab-panels) | 所選的分頁、連結分頁與面板的 id |
-| `toast` | [Toast](/components/toast) | 佇列：一個 `toast()` 函式，以及顯示它的區域 |
-| `tooltip` | [工具提示](/components/tooltip) | 連結控制項與其標籤的 id |
-| `tree` | [樹狀結構](/components/tree) | 所選的列、各列 |
-| `wheel` | [Wheel](/components/wheel) | 每一欄的值、選項 |
+| `calendar` | [行事曆](/components/calendar) | 值與顯示的月份 |
+| `combobox` | [組合方塊](/components/combobox) | 值與選項 |
+| `command` | [指令面板](/components/command) | 開啟狀態與指令 |
+| `compare` | [比較](/components/compare) | 位置 |
+| `dialog` | [對話框](/components/dialog) | 開啟狀態與觸發控制項指定的 ID |
+| `field` | [欄位](/components/input#hint-and-error) | 用來連結標籤、控制項、提示與錯誤訊息的 ID |
+| `listbox` | [清單方塊](/components/listbox) | 值與選項 |
+| `menu` | [選單](/components/menu) | 項目、觸發控制項指定的 ID，以及快顯選單的目標 |
+| `otp` | [OTP](/components/otp) | 驗證碼與輸入格數 |
+| `popover` | [彈出框](/components/popover) | 開啟狀態與觸發控制項指定的 ID |
+| `splitter` | [分隔器](/components/splitter) | 尺寸 |
+| `stepper` | [數值步進器](/components/stepper) | 數值 |
+| `tabs` | [分頁標籤](/components/tabs#tab-panels) | 選取的分頁標籤，以及連結標籤與面板的 ID |
+| `toast` | [浮動通知](/components/toast) | 佇列，包括 `toast()` 函式與顯示通知的區域 |
+| `tooltip` | [工具提示](/components/tooltip) | 用來連結控制項與其標籤的 ID |
+| `tree` | [樹狀清單](/components/tree) | 選取的列與所有列 |
+| `wheel` | [滾輪](/components/wheel) | 各欄的值與選項 |
 
-其他所有契約都只是標記。select 是 `<select class="select">`，開關是帶有 `role="switch"` 的核取方塊，accordion 是 `<details>`：它們的狀態由瀏覽器保存，框架則像繫結任何原生控制項一樣繫結它。
+其他契約都直接用標記實作。選取清單用 `<select class="select">`，開關用帶有 `role="switch"` 的核取方塊，手風琴用 `<details>`。這些元素的狀態由瀏覽器管理，框架會像處理其他原生控制項一樣繫結其狀態。
 
-## 加入元件 \{#add\}
+## 新增元件 \{#add\}
 
-元件是你專案中的原始碼，而不是從套件匯入的東西。由 `master-ui` 指令複製它：
+元件會成為專案中的原始碼，無須從套件匯入。用 `master-ui` 指令複製元件：
 
 ```bash
 npx master-ui add combobox --framework=react
@@ -82,18 +83,18 @@ Add combobox: ui/combobox.tsx, ui/use-behavior.ts.
   It renders the markup of "master-ui contract combobox" and needs that stylesheet from @master/ui.
 ```
 
-- 當 `package.json` 恰好只列出 React、Svelte 與 Vue 其中之一時，會從中讀取框架，並在第一次之後記錄於 `master-ui.json`。
-- 元件從旁邊匯入的小型輔助函式會一併複製：React 與 Vue 為 `use-behavior.ts`，Svelte 為 `behavior.svelte.ts`。
-- 檔案會放在專案根目錄的 `ui/`。`--directory` 可指定其他位置，並會被記住：原始碼位於 `src` 下的 SvelteKit 可用 `--directory=src/lib/ui`，Nuxt 則可用 `--directory=app/ui`。
-- 在它們旁邊，`ui/.base/` 保存每個檔案取得時的原樣。之後 `diff` 會拿這份副本與上游比較；請不要更動它。
-- 不帶名稱的 `npx master-ui add` 會列出所有元件。
-- 已經存在的副本會被保留。它屬於你，而且可能已經被編輯過。
+- 若 `package.json` 只列出 React、Svelte 和 Vue 其中一種，指令會自動辨識框架，並在第一次執行後將選擇記錄在 `master-ui.json`。
+- 元件從同目錄匯入的輔助檔案也會一併複製。React 和 Vue 使用 `use-behavior.ts`，Svelte 使用 `behavior.svelte.ts`。
+- 檔案預設放在專案根目錄的 `ui/`。可用 `--directory` 指定其他位置，指令會記住這項設定。例如 SvelteKit 的原始碼放在 `src` 下，可指定 `--directory=src/lib/ui`，Nuxt 則可指定 `--directory=app/ui`。
+- 同一目錄下的 `ui/.base/` 會保留各檔案複製當下的版本。之後 `diff` 會用這份副本與上游比對，請保留原樣。
+- 執行 `npx master-ui add` 時省略名稱，即可列出可用的元件。
+- 如果元件副本已存在，指令會保留它，讓你先前的修改得以保留。
 
-複製的元件負責渲染、生命週期與值的同步。它從 `@master/ui/behaviors` 匯入其行為，因此升級該相依套件時，就會帶來鍵盤與焦點的修正。當元件本身在上游有所變更時，請使用 [`status` 與 `diff`](/guide/customization#upstream-changes) 審視差異，並將你需要的變更合併到你的工作副本中。接著執行 `accept`，將已安裝套件的版本記錄為新的已儲存基準；它會更新 `.base/` 與追蹤用的中繼資料，而不會改變你的工作檔案。[登錄庫](/guide/registry#items)以 `react-combobox`、`svelte-combobox` 與 `vue-combobox` 提供相同的檔案。
+複製到專案的元件負責算繪、生命週期和值的同步。它會從 `@master/ui/behaviors` 匯入行為，因此升級這項相依套件時，也會取得鍵盤操作與焦點處理的修正。上游元件本身有變更時，可用 [`status` 和 `diff`](/guide/customization#upstream-changes) 檢視差異，再將需要的變更合併到工作副本。接著執行 `accept`，將已安裝套件的版本記為新的比對基準。這會更新 `.base/` 和追蹤用的中繼資料，並保留工作檔案原樣。[登錄庫](/guide/registry#items)中的 `react-combobox`、`svelte-combobox` 和 `vue-combobox` 提供的是同一批檔案。
 
 ## 使用元件 \{#use\}
 
-以你使用的框架執行 `add combobox`，再從複製檔案的實際目錄匯入它。以下範例假設預設的 `ui/` 目錄位於範例檔案旁邊。每個範例都以該框架自己的慣用寫法呈現同一個 combobox。Svelte 版本可以實際執行：它在伺服器上渲染，並在預覽中完成 hydration，使用的是專案會取得的同一個元件與行為。它的程式碼檢視就是該檔案。
+針對你使用的框架執行 `add combobox`，再從檔案實際所在的目錄匯入複製的檔案。以下範例假設預設的 `ui/` 目錄就在範例檔案旁。各範例都以框架慣用的寫法呈現同一個組合方塊。Svelte 範例可以直接操作。它先在伺服器上算繪，再於預覽中完成 hydration，使用的元件與行為和專案取得的相同。「程式碼」檢視會顯示該範例檔案。
 
 ```tsx name=Region.tsx
 'use client'
@@ -115,7 +116,7 @@ export function Region() {
 }
 ```
 
-<FrameworkPreview name="Region" height={304} title="Region.svelte" bodyClass="flex items-start justify-center p-lg min-h(300)" caption="輸入文字以篩選，按 Enter 或點擊來選擇，再覆寫已選的內容：應用程式保存的值會跟著改變。" />
+<FrameworkPreview name="Region" height={304} title="Region.svelte" bodyClass="flex items-start justify-center p-lg min-h(300)" caption="輸入文字來篩選，按 Enter 或點選某個選項，再輸入文字覆蓋選取結果。應用程式持有的值會跟著更新。" />
 
 ```vue name=Region.vue
 <script setup lang="ts">
@@ -136,21 +137,21 @@ const region = ref<string | null>(null)
 </template>
 ```
 
-選擇 Tokyo，並確認應用程式保存的是 `hnd`；欄位則顯示選項的標籤。覆寫該選擇後，值會變成 `null`，直到再次選擇某個選項為止。model 保存的是選項的值，而不是任意的搜尋文字。
+選取東京，確認應用程式持有的值為 `hnd`，而欄位會顯示該選項的標籤。輸入文字覆蓋選取結果後，值會變成 `null`，直到再次選取選項。模型只儲存選項的值，搜尋欄位中的文字不會寫入模型。
 
-| | 值 | 是否開啟 | 其他輸出 |
+| | 值 | 開啟狀態 | 其他輸出 |
 | --- | --- | --- | --- |
-| React | `value`，或讓元件自行保存的 `defaultValue`，以及 `onValueChange` | `open`、`onOpenChange` | `onComplete`、`onValueCommit`、`onSearch` |
-| Svelte | `bind:value`，以及 `onValueChange` | `bind:open`，以及 `onOpenChange` | 相同的回呼 props |
-| Vue | `v-model` | `v-model:open` | `@complete`、`@value-commit`、`@search` |
+| React | `value`（或用 `defaultValue` 讓元件自行管理）與 `onValueChange` | `open`、`onOpenChange` | `onComplete`, `onValueCommit`, `onSearch` |
+| Svelte | `bind:value` 與 `onValueChange` | `bind:open` 與 `onOpenChange` | 與 React 相同的回呼 props |
+| Vue | `v-model` | `v-model:open` | `@complete`, `@value-commit`, `@search` |
 
-各轉接元件對值的歸屬並不相同。在 React 中，`value` 由擁有者說了算：當讀者改變了元件，而擁有者沒有在 `onValueChange` 中接受該變更時，元件會回到傳入的值，就像受控的 `<input>` 一樣。`open` 也是如此。Svelte 與 Vue 沒有這樣的規則。未透過 `bind:` 或 `v-model` 傳入的值只是元件的起始值，之後元件會保留讀者所選的內容。若要在這些框架中拒絕某個變更，請自行將繫結的值設回去。
+各框架的轉接元件管理值的方式不同。在 React 中，傳入的 `value` 由呼叫端決定。使用者操作元件後，如果呼叫端沒有在 `onValueChange` 中採用新值，元件就會回到原先傳入的值，與受控的 `<input>` 相同。`open` 也適用同樣的規則。在 Svelte 和 Vue 中，若傳值時未使用 `bind:` 或 `v-model`，傳入的值只用於初始化，之後由元件保留使用者選取的值。若要拒絕變更，請自行將繫結的值設回原值。
 
-不屬於元件本身的 props 會傳給讀者預期的元素：combobox 的欄位、對話框的 `<dialog>`、listbox 的根元素。combobox 就是這樣取得其 `aria-label`、`placeholder` 與 `name`。
+元件沒有自行處理的 props 會傳給對應的元素，例如組合方塊的欄位、對話框的 `<dialog>`，或清單方塊的根元素。因此，你可以直接在組合方塊元件上設定 `aria-label`、`placeholder` 和 `name`。
 
-### 頁面自己的標記 \{#the-pages-own-markup\}
+### 由頁面提供的標記 \{#the-pages-own-markup\}
 
-使用這些範例之前，請先加入所需的元件，例如 `npx master-ui add dialog --framework=react` 或 `--framework=vue`。對話框、popover、選單與工具提示，是由屬於頁面的控制項開啟的。元件不會渲染自己的按鈕。它將指名自己的屬性交給頁面，由頁面展開到自己的按鈕上；接著由瀏覽器開啟對話框，就像在一般頁面上一樣。
+使用這些範例前，請先新增所需元件，例如執行 `npx master-ui add dialog --framework=react`，或改用 `--framework=vue`。對話框、彈出框、選單與工具提示都由頁面自己的控制項開啟。元件不會自行算繪按鈕。元件會把指向自身的屬性交給頁面，讓頁面用展開語法將它們套用到自己的按鈕。接著，瀏覽器就會像在純 HTML 頁面上一樣開啟對話框。
 
 ```tsx name=DeleteProject.tsx
 'use client'
@@ -180,7 +181,7 @@ export function DeleteProject({ remove }: { remove: () => Promise<void> }) {
 }
 ```
 
-<FrameworkPreview name="DeleteProject" height={320} title="DeleteProject.svelte" bodyClass="flex items-start justify-center p-lg min-h(320)" caption="按鈕透過 commandfor 開啟對話框，本身沒有處理函式。應用程式會得知對話框已開啟，並在專案刪除後由自己的狀態將其關閉。" />
+<FrameworkPreview name="DeleteProject" height={320} title="DeleteProject.svelte" bodyClass="flex items-start justify-center p-lg min-h(320)" caption="按鈕透過 commandfor 開啟對話框，無需另外設定事件處理函式。應用程式會收到對話框已開啟的通知，並在專案刪除後透過自身的狀態關閉對話框。" />
 
 ```vue name=DeleteProject.vue
 <script setup lang="ts">
@@ -212,9 +213,9 @@ async function confirm() {
 </template>
 ```
 
-此處的 `remove` 是應用程式的刪除函式，由呼叫端提供。範例會在它完成後關閉對話框；請在該請求周圍加上應用程式的忙碌與錯誤狀態。對話框內的部件是契約的標記，而不是元件：`dialog-header`、`dialog-title` 與 `dialog-footer` 不擁有任何東西。只有在由應用程式決定時才傳入 `open`，例如在請求失敗後開啟對話框，或在路由改變時關閉對話框。沒有它時，整件事由觸發元素與瀏覽器完成。
+這裡的 `remove` 是由呼叫端提供的應用程式刪除函式。範例會等它成功完成後關閉對話框。請為這項請求加上應用程式的處理中與錯誤狀態。對話框內的 `dialog-header`、`dialog-title` 和 `dialog-footer` 都是契約定義的標記，各自無須管理狀態或行為。只有在應用程式需要決定開啟狀態時才傳入 `open`，例如請求失敗後開啟對話框，或切換路由時關閉對話框。省略這項設定時，觸發控制項與瀏覽器就能處理開關。
 
-[欄位](/components/input#hint-and-error)以相反方向的相同方式運作。它擁有 id，並將攜帶這些 id 的屬性交給頁面的控制項：
+[欄位](/components/input#hint-and-error)也採用同樣的做法，但連結的方向相反。欄位元件管理 ID，並把帶有這些 ID 的屬性交給頁面自己的控制項：
 
 ```tsx name=Email.tsx
 import { Field } from './ui/field'
@@ -228,9 +229,9 @@ export function Email({ error }: { error?: string }) {
 }
 ```
 
-### Toast \{#toasts\}
+### 浮動通知 \{#toasts\}
 
-toast 在事情發生之前沒有任何元素，因此它的元件是一個佇列：一個可從任何地方呼叫的 `toast()` 函式，以及一個只渲染一次、用來顯示佇列內容的區域。
+浮動通知在事件發生前沒有對應的元素，因此元件以佇列運作。你可以在任何地方呼叫 `toast()`，而通知會顯示在只需算繪一次的區域中。
 
 ```tsx name=App.tsx
 'use client'
@@ -248,36 +249,36 @@ export function ToastExample() {
 }
 ```
 
-在 Svelte 與 Vue 中，`toast` 是 `Toaster.svelte` 與 `Toaster.vue` 的具名匯出。toast 會在六秒後自行離開；`duration` 可設定其他時間，`duration: false` 則讓它保留到關閉為止。
+在 Svelte 和 Vue 中，`toast` 分別是 `Toaster.svelte` 和 `Toaster.vue` 的具名匯出。浮動通知預設會在 6 秒後自動消失。可用 `duration` 調整顯示時間，或用 `duration: false` 讓通知一直保留到被關閉為止。
 
-## 邏輯在哪裡 \{#where-the-logic-is\}
+## 邏輯放在哪裡 \{#where-the-logic-is\}
 
-對於有行為的模式，轉接元件會將鍵盤處理與選取規則交給該行為。它有三項職責：
+對於有行為的模式，轉接元件會把鍵盤操作與選取規則交給行為處理。轉接元件有三項職責：
 
-- **渲染契約的標記**，並在其中繪製好第一個值。第一份 HTML 在任何腳本執行之前就是正確的。
-- **掛上行為**，並在選項改變時重新掛上。
-- **傳遞值。** 當應用程式設定另一個值時，它會寫入行為的 [`value`](/guide/behaviors#the-value)；並在每個抵達根元素的 `input` 與 `change` 上讀取它。
+- **算繪契約規定的標記**，並一併呈現初始值。初次產生的 HTML 在任何腳本執行前就已正確反映狀態。
+- **掛載行為**，並在設定選項變更時重新掛載。
+- **傳遞值。** 當應用程式設定新值時，轉接元件會寫入行為的 [`value`](/guide/behaviors#the-value)。每當 `input` 或 `change` 事件傳到根元素時，就會讀取該值。
 
-第一次渲染之後，由行為變動屬性，就像在一般頁面上一樣。共用的行為程式碼讓鍵盤處理集中在一處。共用的測試情境會檢查每個框架轉接元件：掛載、依契約檢查標記、按下按鍵、讀取產生的值、設定值、卸載。
+首次算繪後，行為會像在純 HTML 頁面上一樣更新屬性。各框架共用同一份行為程式碼，集中處理鍵盤操作。共用的測試情境會檢查各框架的轉接元件，包括掛載元件、核對標記是否符合契約、按鍵、讀取輸出的值、設定值，以及卸載元件。
 
-若要改變某個按鍵的作用或選取的意義，請[自行擁有該行為](/guide/behaviors#own-a-behavior)。之後執行 `master-ui add` 建立新的元件檔案時，會使用那個本地行為。若你已經加入了該元件，請自行更新它的匯入；`add` 會保留既有檔案。
+若要變更按鍵的作用或選取規則，請[自行維護行為](/guide/behaviors#own-a-behavior)。之後執行 `master-ui add` 建立新的元件檔案時，指令會使用專案中的這份行為。如果已經新增元件，請自行更新匯入路徑，因為 `add` 會保留現有檔案。
 
-## 在伺服器上 \{#on-a-server\}
+## 在伺服器上算繪 \{#on-a-server\}
 
-<GuideFigure name="frameworks" title="渲染與行為的生命週期">
+<GuideFigure name="frameworks" title="算繪與行為的生命週期">
 
-**渲染與互動有不同的生命週期。** 已選的 listbox 值在伺服器 HTML 中就已標示。掛載之後，轉接元件會掛上行為，並將應用程式的值與其同步。卸載時會呼叫清理函式，停止監聽器與觀察器；清理不會還原原本的標記。
+**算繪與互動各有自己的生命週期。** 伺服器產生的 HTML 已標記清單方塊中選取的值。掛載後，轉接元件會掛載行為，並與應用程式的值同步。卸載時會呼叫清理函式來停止監聽與觀察，原先的標記則不會還原。
 
 </GuideFigure>
 
-- **第一份 HTML 就保有狀態。** 已選的選項、所選的分頁、分隔條的尺寸、日曆的月份及其已選日期，都在伺服器送出的標記中。只有瀏覽器才知道的標示，例如日曆中的今天，會在行為掛上時出現。
-- **在伺服器上渲染日曆時，請提供 `locale`。** 月份與星期的名稱來自 `Intl`，而伺服器與瀏覽器對要使用的語言不一定看法一致。
-- **在 React Server Components 中，** 掛上行為或保存狀態的元件都是用戶端元件，並宣告 `'use client'`。將函式（`trigger`、`onValueChange` 或項目的 `onSelect`）交給這些元件的檔案，本身也是用戶端元件，這就是上述範例以 `'use client'` 開頭的原因：Server Component 無法將函式傳給用戶端元件。`Field` 與 `Tooltip` 只負責連結 id，因此它們會在伺服器上渲染，所在的檔案不會渲染其他來自用戶端的東西。所有屬於標記的內容都在撰寫它的地方渲染。
-- **id 由框架產生：** React 與 Vue 使用 `useId`，Svelte 使用 `$props.id()`，因此伺服器與瀏覽器之間的 id 會一致。Vue 在單一應用程式內為它們編號。若頁面掛載數個 Vue 應用程式（例如 islands 架構），請為每個應用程式設定 `app.config.idPrefix`，否則其中兩個會將不同的元素都命名為 `v-0`。
+- **初始 HTML 就帶有狀態。** 伺服器送出的標記包含選取的選項、選取的分頁標籤、分隔器的尺寸，以及行事曆的月份與選取日期。只有瀏覽器才能判定的標記，例如行事曆上的今天，會在掛載行為時補上。
+- 在伺服器上算繪行事曆時，**請為行事曆指定 `locale`**。月份與星期的名稱由 `Intl` 產生，而伺服器與瀏覽器使用的語言可能不同。
+- **在 React Server Components 中，** 會掛載行為或保有狀態的元件是用戶端元件，並宣告 `'use client'`。若某個檔案會將函式傳給這類元件，例如 `trigger`、`onValueChange` 或項目的 `onSelect`，該檔案也是用戶端元件。這就是上方範例以 `'use client'` 開頭的原因，因為 Server Component 無法將函式傳給用戶端元件。`Field` 和 `Tooltip` 只透過 ID 連結元素，因此可以在伺服器上算繪，前提是同一檔案沒有算繪其他用戶端元件。純標記則可在所在位置直接算繪。
+- **ID 由框架產生：** React 和 Vue 使用 `useId`，Svelte 使用 `$props.id()`，讓伺服器與瀏覽器產生一致的 ID。Vue 會在各個應用程式內各自編號。若頁面掛載多個 Vue 應用程式，例如採用島嶼架構的頁面，請為每個應用程式指定不同的 `app.config.idPrefix`，以免兩個應用程式都將不同的元素命名為 `v-0`。
 
-## 你自己的元件 \{#your-own\}
+## 建立自己的元件 \{#your-own\}
 
-當你需要在同一個行為周圍使用不同的渲染方式時，請使用 `master-ui add` 複製的輔助函式。例如，為所選框架加入 `listbox` 以取得其輔助函式，然後在 `ui/` 目錄旁撰寫一個 `Sizes` 元件，下方的匯入就是以此為前提。將初始選擇渲染到標記中，讓伺服器 HTML 保持正確，並讓輔助函式同步之後的值。在 React 中，輔助函式是一個回傳 ref 的 hook：
+如果想沿用相同的行為但改用不同的標記，可以使用 `master-ui add` 一併複製的輔助程式。例如，先針對選用的框架新增 `listbox` 以取得輔助程式，再依照下方範例的匯入路徑，將 `Sizes` 元件放在 `ui/` 目錄旁。在標記中呈現初始選取值，確保伺服器產生的 HTML 正確，再由輔助程式同步後續的值。React 的輔助程式是一個會傳回 ref 的 hook：
 
 ```tsx name=Sizes.tsx
 'use client'
@@ -298,7 +299,7 @@ export function Sizes({ value, onValueChange }: { value: string, onValueChange: 
 }
 ```
 
-它的第二個引數是行為的選項，第三個引數是值以及接收值的對象。在 Svelte 中，輔助函式會產生一個 attachment；在 Vue 中，它是一個接收樣板 ref 與 model 的 composable：
+它的第二個引數是行為的設定選項，第三個引數則包含值及接收值變更的回呼。Svelte 的輔助程式會建立 attachment，Vue 的輔助程式則是接收範本 ref 和模型的 composable：
 
 ```svelte name=Sizes.svelte
 <script lang="ts">
@@ -338,10 +339,10 @@ useBehavior(useTemplateRef<HTMLElement>('root'), listbox, undefined, value)
 </template>
 ```
 
-[行為](/guide/behaviors#in-a-framework)說明了在各框架中不使用輔助函式、直接掛上行為的方式。
+[行為](/guide/behaviors#in-a-framework)說明如何在各框架中直接掛載行為，無須使用輔助程式。
 
-## 其他 headless 元件庫 \{#headless-libraries\}
+## 其他 headless 程式庫 \{#headless-libraries\}
 
-隨附的元件使用瀏覽器平台與 Master UI 的行為。它們不相依於任何 headless 元件庫。
+Master UI 提供的元件使用瀏覽器原生功能和 Master UI 的行為，無須依賴 headless 元件程式庫。
 
-若應用程式需要其他元件庫的行為，請將契約的 class 放在其對應的元素上，並依照契約檢查每個狀態、鍵盤動作與焦點轉移。寫入不同屬性的轉接層，可能需要自行擁有的樣式表。單憑 CSS class 並不能確立相容性；請先完成一個完整的互動，再將整合方式套用到整個專案。
+如果應用程式需要使用其他程式庫的行為，請將契約指定的 class 套用到對應的元素，逐一核對各種狀態、鍵盤操作與焦點切換是否符合契約。如果轉接元件設定的屬性不同，可能需要自行維護樣式表。單靠 CSS class 無法確保相容性。請先驗證一套完整的互動流程，再將整合方式套用到整個專案。

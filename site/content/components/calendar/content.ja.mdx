@@ -1,0 +1,238 @@
+---
+title: "カレンダー"
+description: "1 か月分の日付から、単一の日付や期間を選べるカレンダー。"
+---
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+カレンダーは、1 か月分の日付から選択するためのコンポーネントです。ボタンを並べた ARIA グリッドで、各状態の見た目はスタイルシートが担い、日付の生成、月の切り替えボタン、矢印キーの操作は `calendar` の [ビヘイビア](/guide/behaviors) が担います。カレンダー自体に背景面はありません。[カード](/components/card) に配置したり、[ポップオーバー](/components/popover) に配置して日付ピッカーにしたりできます。
+
+<ComponentPreview name="default" height={392} title="カレンダー" bodyClass="flex justify-center p-lg" behaviors html={`<div class="sheet p-md">
+  <div class="calendar">
+    <div class="calendar-header">
+      <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Previous month"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button>
+      <h3 class="calendar-title" id="cal-title" aria-live="polite"></h3>
+      <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Next month"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
+    </div>
+    <div class="calendar-grid" role="grid" aria-labelledby="cal-title"></div>
+  </div>
+</div>`} caption="日付をクリックして選択します。月の切り替えには 2 つのボタンを使います。日付にフォーカスして矢印キーで移動することもできます。" />
+
+マークアップはヘッダーと空のグリッドで構成します。ビヘイビアは月名を `calendar-title` に、曜日名と週ごとの日付を `calendar-grid` に書き込み、初期表示には今月を使います。スクリプトが動作するまではグリッドのマークアップがそのまま表示されます。実行前から日付を表示する必要がある場合は、下の [期間](#range) の例のように、週ごとの日付を含めてサーバーでレンダリングします。ビヘイビアが適用されると、グリッドの内容が置き換わります。
+
+## 状態 \{#states\}
+
+各状態は、日付ボタンの属性またはクラスで表します。ビヘイビアがこれらを設定します。手書きやサーバー生成のマークアップでも同じ属性とクラスを指定します。
+
+| 状態 | 属性・クラス | 表示 |
+| --- | --- | --- |
+| 今日 | `aria-current="date"` | 数字の下にドット |
+| 選択済み | `aria-selected="true"` | 選択済みの [チェックボックス](/components/checkbox) と同じインク色の塗りつぶし |
+| 表示月の範囲外 | `calendar-day-outside` | 控えめな文字色 |
+| 選択不可 | `disabled` | 無効状態の文字色 |
+
+日付ボタンは、[メニュー](/components/menu) の項目と同じように、ポインターを重ねるとすぐに反応します。今日の日付を選択したときもドットは残り、その日付の文字色に揃います。
+
+## 期間 \{#range\}
+
+期間の始点と終点をインク色で塗りつぶし、チップと同系色の帯でつなぎます。開始日には `calendar-day-range-start`、終了日には `calendar-day-range-end`、その間の日付には `calendar-day-range` を指定します。期間内のすべての日付に `aria-selected="true"` を指定します。
+
+このプレビューはマークアップだけで構成し、スクリプトは適用していません。「コード」ビューでは、ビヘイビアが生成する形式の 1 か月分のマークアップと、期間、今日、選択できない 2 つの日付の指定を確認できます。
+
+<ComponentPreview name="range" height={392} title="期間" bodyClass="flex justify-center p-lg" html={`<div class="sheet p-md">
+  <div class="calendar">
+    <div class="calendar-header">
+      <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Previous month"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button>
+      <h3 class="calendar-title" id="range-title" aria-live="polite">November 2026</h3>
+      <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Next month"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
+    </div>
+    <div class="calendar-grid" role="grid" aria-labelledby="range-title">
+      <div class="calendar-week" role="row">
+        <span class="calendar-weekday" role="columnheader" aria-label="Sunday">Sun</span>
+        <span class="calendar-weekday" role="columnheader" aria-label="Monday">Mon</span>
+        <span class="calendar-weekday" role="columnheader" aria-label="Tuesday">Tue</span>
+        <span class="calendar-weekday" role="columnheader" aria-label="Wednesday">Wed</span>
+        <span class="calendar-weekday" role="columnheader" aria-label="Thursday">Thu</span>
+        <span class="calendar-weekday" role="columnheader" aria-label="Friday">Fri</span>
+        <span class="calendar-weekday" role="columnheader" aria-label="Saturday">Sat</span>
+      </div>
+      <div class="calendar-week" role="row">
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Sunday, November 1, 2026">1</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Monday, November 2, 2026">2</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Tuesday, November 3, 2026">3</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Wednesday, November 4, 2026">4</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Thursday, November 5, 2026">5</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Friday, November 6, 2026" disabled>6</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Saturday, November 7, 2026" disabled>7</button>
+      </div>
+      <div class="calendar-week" role="row">
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Sunday, November 8, 2026">8</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Monday, November 9, 2026">9</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Tuesday, November 10, 2026">10</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Wednesday, November 11, 2026" aria-current="date">11</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Thursday, November 12, 2026">12</button>
+        <button type="button" class="calendar-day calendar-day-range-start" role="gridcell" tabindex="0" aria-label="Friday, November 13, 2026" aria-selected="true">13</button>
+        <button type="button" class="calendar-day calendar-day-range" role="gridcell" tabindex="-1" aria-label="Saturday, November 14, 2026" aria-selected="true">14</button>
+      </div>
+      <div class="calendar-week" role="row">
+        <button type="button" class="calendar-day calendar-day-range" role="gridcell" tabindex="-1" aria-label="Sunday, November 15, 2026" aria-selected="true">15</button>
+        <button type="button" class="calendar-day calendar-day-range" role="gridcell" tabindex="-1" aria-label="Monday, November 16, 2026" aria-selected="true">16</button>
+        <button type="button" class="calendar-day calendar-day-range" role="gridcell" tabindex="-1" aria-label="Tuesday, November 17, 2026" aria-selected="true">17</button>
+        <button type="button" class="calendar-day calendar-day-range-end" role="gridcell" tabindex="-1" aria-label="Wednesday, November 18, 2026" aria-selected="true">18</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Thursday, November 19, 2026">19</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Friday, November 20, 2026">20</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Saturday, November 21, 2026">21</button>
+      </div>
+      <div class="calendar-week" role="row">
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Sunday, November 22, 2026">22</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Monday, November 23, 2026">23</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Tuesday, November 24, 2026">24</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Wednesday, November 25, 2026">25</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Thursday, November 26, 2026">26</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Friday, November 27, 2026">27</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Saturday, November 28, 2026">28</button>
+      </div>
+      <div class="calendar-week" role="row">
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Sunday, November 29, 2026">29</button>
+        <button type="button" class="calendar-day" role="gridcell" tabindex="-1" aria-label="Monday, November 30, 2026">30</button>
+        <button type="button" class="calendar-day calendar-day-outside" role="gridcell" tabindex="-1" aria-label="Tuesday, December 1, 2026">1</button>
+        <button type="button" class="calendar-day calendar-day-outside" role="gridcell" tabindex="-1" aria-label="Wednesday, December 2, 2026">2</button>
+        <button type="button" class="calendar-day calendar-day-outside" role="gridcell" tabindex="-1" aria-label="Thursday, December 3, 2026">3</button>
+        <button type="button" class="calendar-day calendar-day-outside" role="gridcell" tabindex="-1" aria-label="Friday, December 4, 2026">4</button>
+        <button type="button" class="calendar-day calendar-day-outside" role="gridcell" tabindex="-1" aria-label="Saturday, December 5, 2026">5</button>
+      </div>
+    </div>
+  </div>
+</div>`} />
+
+帯がひと続きの形に見えるよう、次のように描画します。
+
+- 列の間に隙間を設けず、帯をセルからセルへつなげます。行の間には 2px の隙間を設け、週ごとに帯を分けます。
+- 期間が週をまたぐ場合、週の境目で帯の端を丸めます。
+- 開始日と終了日では、セルのうち期間の内側に面する半分を帯で覆い、その上にインク色で塗りつぶした日付ボタンを重ねます。これにより、帯は日付ボタンの丸い縁より内側に入り、中央まで届きます。
+
+`range` オプションを指定すると、ビヘイビアで期間を選択できます。1 回目のクリックで開始日、2 回目で終了日を選び、3 回目は新しい期間の選択を開始します。2 回目に選んだ日付のほうが早い場合は、日付順に並べ替えます。
+
+<ComponentPreview name="range-live" height={392} title="期間を選択する" bodyClass="flex justify-center p-lg" behaviors html={`<div class="sheet p-md">
+  <div class="calendar" id="stay">
+    <div class="calendar-header">
+      <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Previous month"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button>
+      <h3 class="calendar-title" id="stay-title" aria-live="polite"></h3>
+      <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Next month"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
+    </div>
+    <div class="calendar-grid" role="grid" aria-labelledby="stay-title"></div>
+  </div>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.calendar(document.getElementById('stay'), { range: true, value: ['2026-11-13', '2026-11-18'] })
+})
+</script>`} caption="開始日をクリックし、次に終了日をクリックします。" />
+
+`attach()` はオプションを渡さないため、このプレビューでは `attach()` の実行後に `calendar` を明示的に呼び出します。同じルートに対して 2 回呼び出すと、2 回目に適用したビヘイビアが 1 回目のものを置き換えます。`MasterUI` はプレビューが読み込むバンドルです。プロジェクトでは、[ビヘイビア](#behavior) セクションの例に従って `calendar` をインポートします。
+
+## 日付ピッカー \{#date-picker\}
+
+日付ピッカーは、入力フィールド、ボタン、[ポップオーバー](/components/popover) 内のカレンダーで構成します。ポップオーバーはスクリプトなしで開閉し、ボタンに接する位置に自動で配置されます。ビヘイビアはカレンダーを描画し、選択された日付を通知します。ページ側のスクリプトはその日付をフィールドに書き込み、ポップオーバーを閉じます。
+
+<ComponentPreview name="picker" height={480} title="日付ピッカー" background="plain" bodyClass="content-start p-lg min-h(480)" behaviors html={`<div class="field max-w(280) mx-auto">
+  <label for="starts">Starts</label>
+  <div class="input-group">
+    <input class="input-group-field" id="starts" value="2026-11-04" readonly>
+    <button type="button" class="btn btn-quiet btn-square" popovertarget="starts-calendar" aria-label="Choose a date">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M8 3v4M16 3v4"/></svg>
+    </button>
+    <div id="starts-calendar" popover class="popover popover-end">
+      <div class="calendar">
+        <div class="calendar-header">
+          <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Previous month"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button>
+          <h3 class="calendar-title" id="picker-title" aria-live="polite"></h3>
+          <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Next month"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
+        </div>
+        <div class="calendar-grid" role="grid" aria-labelledby="picker-title"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  var popover = document.getElementById('starts-calendar')
+  MasterUI.calendar(popover.querySelector('.calendar'), { value: '2026-11-04' })
+  popover.addEventListener('change', function (event) {
+    document.getElementById('starts').value = event.detail.value
+    popover.hidePopover()
+  })
+})
+</script>`} />
+
+カレンダーの `change` イベントはバブリングするため、リスナーはポップオーバーに登録します。イベントの `detail.value` には `YYYY-MM-DD` 形式の日付が入ります。これはフォームが日付の値として受け取る形式と同じです。
+
+スマートフォンで使う場合や、フォームで日付を入力できれば十分な場合は、ネイティブの [`<input type="date">`](/components/input#date-time-and-color) を使うと、端末標準の日付ピッカーを利用できます。
+
+## ビヘイビア \{#behavior\}
+
+`calendar` はルート要素とオプションオブジェクトを受け取り、ビヘイビアの適用を解除する関数を返します。
+
+```js name=app.js
+import { calendar } from '@master/ui/behaviors/calendar.js'
+
+const root = document.querySelector('.calendar')
+const picker = calendar(root, { value: '2026-11-04', min: '2026-11-01', max: '2026-12-31' })
+
+root.addEventListener('change', (event) => console.log(event.detail.value))
+```
+
+| オプション | 設定内容 |
+| --- | --- |
+| `value` | `YYYY-MM-DD` 形式の選択日、または期間の開始日と終了日 |
+| `month` | 最初に表示する月を `YYYY-MM` 形式で指定。既定は値が属する月、値がなければ今月 |
+| `min`, `max` | 選択可能な最初と最後の日付を `YYYY-MM-DD` 形式で指定。移動先の月がなければ、対応する月切り替えボタンは無効 |
+| `range` | `true` を指定すると、2 つの日付を選んで、その間のすべての日付を含む期間を選択できます。 |
+| `weekStart` | 最初の列の曜日。日曜の 0 から土曜の 6 まで。既定はロケールの週の開始曜日で、ブラウザーから取得できない場合は月曜 |
+| `locale` | 月名と曜日名に使う BCP 47 言語タグ。既定はカレンダーに適用される `lang` 属性の値 |
+| `disabled` | `Date` を受け取り、その日付が選択不可かどうかを返す関数 |
+| `draw` | スクリプトに代わってグリッドを生成する関数。表示する月が `YYYY-MM` 形式で渡されます。[独自のグリッド](/guide/behaviors#a-grid-of-your-own) を参照してください。 |
+
+- **生成する内容。** 曜日名、表示月の週ごとの日付、月名を書き込みます。日付ボタンでは、`value` に日付を設定し、今日には `aria-current="date"`、選択された日付には `aria-selected="true"` と期間用のクラス、選択できない日付には `disabled` を設定します。さらに、`aria-label` に完全な日付を指定し、`tabindex` でタブ順に含まれる日付を 1 つに絞ります。`draw` を指定した場合は、テンプレートやフレームワークが日付ボタンを生成し、スクリプトは状態などの属性やクラスだけを設定します。
+- **イベント。** 日付を選択すると、ルートからバブリングする `change` が発行されます。イベントの `detail.value` には、選んだ日付が `YYYY-MM-DD` 形式で入ります。期間の両端を選択すると `[start, end]` が入ります。
+- **値。** 値の保持先はスクリプト内です。返された関数の `value` から、`picker.value` のように読み取ります。期間の終了日は、選択されるまで `null` です。外部から選択を変更するには値を設定します。`picker.value = '2026-11-20'` は新しく選んだ日付が属する月を表示し、イベントは発行しません。
+- **日付。** ローカルのタイムゾーンとグレゴリオ暦に従います。
+
+## 構造 \{#structure\}
+
+- `calendar-grid` で 7 列を一度だけ定義します。各 `calendar-week` はその列を引き継ぐサブグリッド上の行なので、テーブルを使わずに曜日名と日付の列を揃えられます。
+- `calendar-weekday` は列見出しです。`aria-label` には省略していない曜日名を指定します。
+- `calendar-day` は、`role="gridcell"` を持つ `<button>` です。
+
+## キーボード操作 \{#keyboard\}
+
+ビヘイビアは、日付グリッドのキーボード操作を提供します。月の境界を越えて移動すると、隣の月が表示され、移動先の日付にフォーカスが移ります。選択できない日付は飛ばし、`min` と `max` の境界で移動が止まります。
+
+<ContractTable name="calendar" show="keyboard" />
+
+## アクセシビリティ \{#accessibility\}
+
+- グリッドには `role="grid"` を指定し、月のタイトルをラベルにします。各週には `role="row"` を指定します。
+- タブ順に含まれる日付は 1 つです。表示中の月に選択済みの日付があればその日、なければ今日を使い、どちらも含まれない月では 1 日を使います。ほかの日付には `tabindex="-1"` を指定します。
+- 月の切り替えが読み上げられるよう、タイトルに `aria-live="polite"` を指定します。
+- タッチスクリーンでは、日付ボタンのサイズは 44px です。
+
+## React、Svelte、Vue \{#frameworks\}
+
+`calendar` コンポーネントは、ビヘイビアと同じデータから月の表示を生成するため、最初の HTML にカレンダーが含まれます。選択日は外部から受け取り、選択の変更を外部に通知します。`npx master-ui add calendar` でプロジェクトにコピーできます。構成と使い方は [React、Svelte、Vue](/guide/frameworks) を参照してください。
+
+<FrameworkSource name="calendar" />
+
+## クラス \{#classes\}
+
+<ContractTable name="calendar" />
+
+## カスタムプロパティ \{#custom-properties\}
+
+<ContractTable name="calendar" show="properties" />
+
+## ソース \{#source\}
+
+<ComponentSource name="calendar" />

@@ -1,0 +1,74 @@
+---
+title: "タブ"
+description: "細い罫線に沿ってラベルを並べ、現在のタブをインク色の下線で示します。"
+---
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+タブは細い罫線に沿って並ぶラベルで、現在の項目にはインク色の下線が付きます。同じ階層のページやパネルを切り替えるために使います。値の選択肢をコンパクトに並べるには、[セグメントコントロール](/components/segmented) を使います。
+
+ブラウザーが CSS アンカー位置指定に対応していれば、`aria-selected` が変わると 1 本の下線が現在のタブへ滑らかに移動します。下線の上側の角は丸く仕上げています。対応していない場合は、タブごとに下線を描画します。
+
+<ComponentPreview name="default" height={96} title="タブ" background="plain" bodyClass="p-lg" html={`<nav class="tabs" aria-label="Project">
+  <a class="tabs-item" href="#overview" aria-current="page">Overview</a>
+  <a class="tabs-item" href="#activity">Activity</a>
+  <a class="tabs-item" href="#settings">Settings</a>
+</nav>`} />
+
+## 件数付き \{#with-counts\}
+
+<ComponentPreview name="counts" height={96} title="件数付き" background="plain" bodyClass="p-lg" html={`<nav class="tabs" aria-label="Repository">
+  <a class="tabs-item" href="#code" aria-current="page">Code</a>
+  <a class="tabs-item" href="#issues">Issues <span class="badge badge-sm badge-pill">24</span></a>
+  <a class="tabs-item" href="#pulls">Pull requests <span class="badge badge-sm badge-pill">3</span></a>
+</nav>`} />
+
+## 小サイズ \{#small\}
+
+<ComponentPreview name="small" height={96} title="小サイズ" background="plain" bodyClass="p-lg" html={`<nav class="tabs tabs-sm" aria-label="Period">
+  <a class="tabs-item" href="#day">Day</a>
+  <a class="tabs-item" href="#week" aria-current="page">Week</a>
+  <a class="tabs-item" href="#month">Month</a>
+</nav>`} />
+
+## タブパネル \{#tab-panels\}
+
+同じページ内のパネルを切り替える場合は、WAI-ARIA のタブパターンに従います。コンテナーに `role="tablist"`、各ボタンに `role="tab"` と `aria-selected`、`aria-controls`、各パネル領域に `role="tabpanel"` を指定します。各状態の見た目はスタイルシートが定義し、パネルの切り替えとタブリストのキー操作は `tabs` [ビヘイビア](/guide/behaviors) が担当します。
+
+<ComponentPreview name="tablist" height={136} title="タブリスト" background="plain" bodyClass="p-lg" behaviors html={`<div class="tabs" role="tablist" aria-label="Account">
+  <button type="button" class="tabs-item" role="tab" id="tab-profile" aria-selected="true" aria-controls="panel-profile">Profile</button>
+  <button type="button" class="tabs-item" role="tab" id="tab-billing" aria-selected="false" aria-controls="panel-billing" tabindex="-1">Billing</button>
+  <button type="button" class="tabs-item" role="tab" id="tab-members" aria-selected="false" aria-controls="panel-members" tabindex="-1">Members</button>
+</div>
+<div role="tabpanel" id="panel-profile" aria-labelledby="tab-profile" class="pt-md text-sm fg-text-body">Profile settings</div>
+<div role="tabpanel" id="panel-billing" aria-labelledby="tab-billing" class="pt-md text-sm fg-text-body" hidden>Billing settings</div>
+<div role="tabpanel" id="panel-members" aria-labelledby="tab-members" class="pt-md text-sm fg-text-body" hidden>Members of the workspace</div>`} caption="タブにフォーカスし、矢印キー、Home キー、End キーで切り替えます。クリックでも選択できます。" />
+
+`tabs` は、`tabs` クラスと `role="tablist"` を持つタブリスト要素を引数に取ります。オプションはなく、ビヘイビアを解除する関数を返します。
+
+```js name=app.js
+import { tabs } from '@master/ui/behaviors/tabs.js'
+
+const detach = tabs(document.querySelector('.tabs[role="tablist"]'))
+```
+
+- **Tab キーで止まるのは 1 か所です。** 選択中のタブだけがタブ順序に入ります。矢印キーで前後のタブに移動して選択でき、無効なタブは飛ばし、端まで移動すると反対側に戻ります。<kbd>Home</kbd> は先頭、<kbd>End</kbd> は末尾に移動します。`aria-orientation="vertical"` が指定されたタブリストでは、左右の矢印キーの代わりに上下の矢印キーを使います。
+- **パネル。** 各タブは `aria-controls` で対応するパネルを参照します。選択中のタブのパネルを表示し、ほかのパネルには `hidden` を付けます。
+- **選択値。** タブを選択すると、タブリストからバブリングする `change` が発行されます。`detail.value` には、タブの `data-value`、またはタブのテキストが入ります。ビヘイビアが返す関数にも同じ `value` があり、これを設定すると外部からタブを選択できます。
+- **スクリプトがない場合**、選択中のタブに対応するパネルだけに `hidden` が付かず、パネルの切り替えは行われません。タブごとにページを用意できる場合は、`nav` の中にリンクを配置します。
+
+## React、Svelte、Vue \{#frameworks\}
+
+`tabs` コンポーネントは、データからタブリストとパネルを描画し、各タブとパネルを ID で関連付け、ビヘイビアを適用します。選択中のタブは外部から指定でき、選択結果も外部に渡せます。`nav` 内でリンクとして使うタブは、マークアップだけで構成します。`npx master-ui add tabs` でコンポーネントをプロジェクトにコピーできます。構成と使い方は [React、Svelte、Vue](/guide/frameworks) を参照してください。
+
+<FrameworkSource name="tabs" />
+
+## クラス \{#classes\}
+
+<ContractTable name="tabs" />
+
+## ソース \{#source\}
+
+<ComponentSource name="tabs" />

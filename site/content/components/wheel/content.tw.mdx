@@ -1,0 +1,153 @@
+---
+title: "滾輪選擇器"
+description: "轉動欄位，讓要選取的值停在標記下方。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+滾輪選擇器透過轉動欄位來選取值，讓小時、分鐘或單位停在標記下方。它利用平台原有的功能做出手機上常見的選擇器。每個欄位都是捲動容器，會讓一個選項貼齊中央。滾輪的選項區向內凹，中央有一道橫跨各欄的標記，用來指出目前選取的是哪一列。
+
+<ComponentPreview name="default" height={272} title="滾輪選擇器" bodyClass="flex items-center justify-center p-lg" behaviors html={`<div class="wheel" role="group" aria-label="Reminder time">
+  <div class="wheel-column" role="listbox" aria-label="Hour" tabindex="0">
+    <div class="wheel-option" role="option" aria-selected="false">01</div>
+    <div class="wheel-option" role="option" aria-selected="false">02</div>
+    <div class="wheel-option" role="option" aria-selected="false">03</div>
+    <div class="wheel-option" role="option" aria-selected="false">04</div>
+    <div class="wheel-option" role="option" aria-selected="false">05</div>
+    <div class="wheel-option" role="option" aria-selected="false">06</div>
+    <div class="wheel-option" role="option" aria-selected="false">07</div>
+    <div class="wheel-option" role="option" aria-selected="false">08</div>
+    <div class="wheel-option" role="option" aria-selected="true">09</div>
+    <div class="wheel-option" role="option" aria-selected="false">10</div>
+    <div class="wheel-option" role="option" aria-selected="false">11</div>
+    <div class="wheel-option" role="option" aria-selected="false">12</div>
+  </div>
+  <span class="wheel-separator" aria-hidden="true">:</span>
+  <div class="wheel-column" role="listbox" aria-label="Minute" tabindex="0">
+    <div class="wheel-option" role="option" aria-selected="false">00</div>
+    <div class="wheel-option" role="option" aria-selected="false">05</div>
+    <div class="wheel-option" role="option" aria-selected="false">10</div>
+    <div class="wheel-option" role="option" aria-selected="false">15</div>
+    <div class="wheel-option" role="option" aria-selected="false">20</div>
+    <div class="wheel-option" role="option" aria-selected="false">25</div>
+    <div class="wheel-option" role="option" aria-selected="true">30</div>
+    <div class="wheel-option" role="option" aria-selected="false">35</div>
+    <div class="wheel-option" role="option" aria-selected="false">40</div>
+    <div class="wheel-option" role="option" aria-selected="false">45</div>
+    <div class="wheel-option" role="option" aria-selected="false">50</div>
+    <div class="wheel-option" role="option" aria-selected="false">55</div>
+  </div>
+  <div class="wheel-column" role="listbox" aria-label="Period" tabindex="0">
+    <div class="wheel-option" role="option" aria-selected="true">AM</div>
+    <div class="wheel-option" role="option" aria-selected="false">PM</div>
+  </div>
+</div>`} caption="捲動欄位、在觸控螢幕上拖曳欄位、點選選項，或將焦點移到欄位後使用方向鍵。" />
+
+## 平台提供的功能 \{#what-the-platform-does\}
+
+- **轉動**就是捲動。滑鼠滾輪、手指和觸控板的操作方式與其他捲動容器相同。
+- **停靠**由捲動貼齊實現。在欄位上設定 `scroll-snap-type: y mandatory`，並在每個選項上設定 `scroll-snap-align: center`。欄位不會停在兩個值之間。欄位兩端都留有空間，讓第一個和最後一個選項也能移到標記下方。
+- **滾輪的外觀**由捲動驅動的動畫呈現。每個選項都有自己的檢視時間軸，以它在欄位中的位置為準。選項經過中央時顏色最深，離中央越遠就越淡，並略微向外轉。這個效果不需要透過腳本讀取捲動位置。
+
+如果瀏覽器不支援檢視時間軸，所有選項都會平面顯示，其中標有 `aria-selected="true"` 的選項會以較深的顏色呈現。
+
+## 行為 \{#behavior\}
+
+樣式表無法告訴表單哪個值位於標記下方。`wheel` [行為](/guide/behaviors)會根據欄位捲動的距離讀取這個值。它只接受帶有 `wheel` 類別的根元素，沒有設定選項，並傳回用來解除此行為的函式。
+
+```js name=app.js
+import { wheel } from '@master/ui/behaviors/wheel.js'
+
+const root = document.querySelector('.wheel')
+wheel(root)
+
+root.addEventListener('change', (event) => {
+  // event.target is the column that came to rest.
+  console.log(event.target.getAttribute('aria-label'), event.detail.value)
+})
+```
+
+- **停靠。** 欄位停止捲動後，行為會將 `aria-selected="true"` 移到標記下方的選項。
+- **事件。** 如果選項已變更，欄位就會派送可冒泡的 `change` 事件。`detail.value` 取自選項的 `data-value`，未設定時則取其文字。`detail.option` 是選項元素本身。
+- **初始化。** 行為掛載時，以及欄位重新進行版面配置時（例如彈出浮層開啟時），都會將各欄位目前選取的選項移到標記下方。
+- **點選**選項會將該選項移到標記下方。
+- **按鍵。** 欄位取得焦點後，按鍵操作方式與清單方塊相同，每次移動一個選項。
+- **停用的選項。** 若欄位停在帶有 `aria-disabled="true"` 的選項上，就會繼續轉到最近的可用選項。
+
+若要隨表單送出選取值，請在 `change` 事件監聽器中將 `detail.value` 複製到隱藏的輸入欄位。未掛載行為時，欄位仍可捲動和貼齊，但會從第一個選項開始，`aria-selected` 也會留在 HTML 標記原先指定的選項上。
+
+## 單欄 \{#one-column\}
+
+滾輪選擇器可以只有一欄。`wheel-sm` 會把顯示列數從五列縮為三列，適合放在[彈出浮層](/components/popover)或一列設定項目中。
+
+<ComponentPreview name="single" height={272} title="單欄" bodyClass="flex items-center justify-center gap-lg p-lg" behaviors html={`<div class="wheel" role="group" aria-label="Repeat every">
+  <div class="wheel-column" role="listbox" aria-label="Interval" tabindex="0">
+    <div class="wheel-option" role="option" aria-selected="false">Hour</div>
+    <div class="wheel-option" role="option" aria-selected="false">Day</div>
+    <div class="wheel-option" role="option" aria-selected="true">Week</div>
+    <div class="wheel-option" role="option" aria-selected="false">Fortnight</div>
+    <div class="wheel-option" role="option" aria-selected="false">Month</div>
+    <div class="wheel-option" role="option" aria-selected="false">Quarter</div>
+    <div class="wheel-option" role="option" aria-selected="false">Year</div>
+  </div>
+</div>
+<div class="wheel wheel-sm" role="group" aria-label="Font size">
+  <div class="wheel-column" role="listbox" aria-label="Size" tabindex="0">
+    <div class="wheel-option" role="option" aria-selected="false">12</div>
+    <div class="wheel-option" role="option" aria-selected="false">13</div>
+    <div class="wheel-option" role="option" aria-selected="true">14</div>
+    <div class="wheel-option" role="option" aria-selected="false">15</div>
+    <div class="wheel-option" role="option" aria-selected="false">16</div>
+    <div class="wheel-option" role="option" aria-selected="false">18</div>
+    <div class="wheel-option" role="option" aria-selected="false">20</div>
+    <div class="wheel-option" role="option" aria-selected="false">24</div>
+  </div>
+  <span class="wheel-separator" aria-hidden="true">px</span>
+</div>`} />
+
+## 標記 \{#the-mark\}
+
+橫跨中央的標記屬於整個滾輪，因此同一個時間的小時和分鐘欄位會共用它。標記從凹槽邊緣內縮 4px，圓角與外框同心。`wheel-separator` 是固定顯示在標記上、位於兩欄之間的文字，例如時間中的冒號或接在數字後的單位。
+
+每列高 36px，在觸控螢幕上則高 44px。將 `--wheel-rows` 設為奇數，就能顯示欄位中的更多列。
+
+## 何時改用其他元件 \{#when-to-use-something-else\}
+
+滾輪適合用在觸控裝置上，讓使用者從少量、順序固定且熟悉的選項中挑選。使用鍵盤和指標時，[下拉選單](/components/select)或[數字步進器](/components/stepper)操作更快。若要選日期，[月曆](/components/calendar)能讓使用者在挑選日期時看到該日期所在的一週。原生 `<input type="time">` 在手機上就會開啟平台自帶的滾輪。需要把選擇器直接放在頁面中時，再使用這個元件。
+
+## 鍵盤操作 \{#keyboard\}
+
+掛載行為後，對取得焦點的欄位按下按鍵，會以整個選項為單位移動，並跳過停用的選項。未掛載行為時，相同的按鍵會像操作其他捲動容器一樣捲動欄位，再由捲動貼齊完成定位。
+
+<ContractTable name="wheel" show="keyboard" />
+
+## 無障礙 \{#accessibility\}
+
+- 每個欄位都使用 `role="listbox"`，並設有 `aria-label` 和 `tabindex="0"`。每個選項都使用 `role="option"`。行為會讓 `aria-selected` 始終標示位於標記下方的選項。
+- 轉動和淡化效果會隨使用者的捲動而變化。啟用減少動態效果的偏好設定時，選項會保留淡化效果，並取消轉動。
+
+## React、Svelte 和 Vue \{#frameworks\}
+
+`wheel` 元件會根據資料算繪欄位、掛載行為，並支援傳入與傳出每個欄位的值。使用 `npx master-ui add wheel` 將元件複製到專案。[React、Svelte 和 Vue](/guide/frameworks) 說明了這些元件的實作與用法。
+
+<FrameworkSource name="wheel" />
+
+## 類別 \{#classes\}
+
+<ContractTable name="wheel" />
+
+## 自訂屬性 \{#custom-properties\}
+
+<ContractTable name="wheel" show="properties" />
+
+## 相關元件 \{#related\}
+
+<ComponentLinks slugs={['select', 'stepper', 'calendar']} />
+
+## 原始碼 \{#source\}
+
+<ComponentSource name="wheel" />

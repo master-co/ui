@@ -1,0 +1,114 @@
+---
+title: "讨论串"
+description: "每条回复都用连线指向它所回复的评论。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+讨论串由评论及其回复组成，常见于文档、评审或议题下方。每条评论的 [头像](/components/avatar) 位于一列，正文排在旁边。回复排在正文下方，一条细线从评论头像向下延伸，再转向每条回复。读者顺着连线就能看出每条回复对应哪条评论，无需根据缩进判断。
+
+<ComponentPreview name="default" height={376} narrowHeight={440} title="讨论串" bodyClass="p-lg" html={`<div class="card max-w(480) mx-auto">
+  <ol class="thread">
+    <li class="thread-item">
+      <span class="thread-avatar"><span class="avatar">AL</span></span>
+      <div class="thread-body">
+        <p class="thread-header"><span class="thread-author">Ada Lovelace</span> <time class="thread-meta" datetime="2026-11-12T09:12">2h</time></p>
+        <p class="thread-text">The focus ring is cut by the mask. Should it move to the group?</p>
+      </div>
+      <ol class="thread-replies">
+        <li class="thread-item">
+          <span class="thread-avatar"><span class="avatar avatar-sm">AT</span></span>
+          <div class="thread-body">
+            <p class="thread-header"><span class="thread-author">Alan Turing</span> <time class="thread-meta" datetime="2026-11-12T10:05">1h</time></p>
+            <p class="thread-text">Yes. The group already has the corner, so the ring follows it.</p>
+          </div>
+        </li>
+        <li class="thread-item">
+          <span class="thread-avatar"><span class="avatar avatar-sm">GH</span></span>
+          <div class="thread-body">
+            <p class="thread-header"><span class="thread-author">Grace Hopper</span> <time class="thread-meta" datetime="2026-11-12T10:31">35m</time></p>
+            <p class="thread-text">I will make the change this afternoon.</p>
+          </div>
+        </li>
+      </ol>
+    </li>
+    <li class="thread-item">
+      <span class="thread-avatar"><span class="avatar">KJ</span></span>
+      <div class="thread-body">
+        <p class="thread-header"><span class="thread-author">Katherine Johnson</span> <time class="thread-meta" datetime="2026-11-12T10:54">12m</time></p>
+        <p class="thread-text">The figures in the second table are right.</p>
+      </div>
+    </li>
+  </ol>
+</div>`} />
+
+## 结构 \{#structure\}
+
+`thread` 是一个列表，每个 `thread-item` 是一条评论，依次包含以下三个子元素：
+
+1. `thread-avatar` 包裹头像，构成连线向下延伸的一列。
+2. `thread-body` 容纳正文内容：先放一个 `thread-header`，其中包含 `thread-author`，并在姓名旁放一个 `thread-meta`，然后为每段文字各放一个 `thread-text`。无论页面如何设置段落的外边距，标题行和正文段落的外边距都为零。后面还可以放其他内容，例如 [引用](/components/quote) 或一排视觉上不抢眼的按钮。
+3. 有回复时，`thread-replies` 包含回复当前评论的 `thread-item` 列表。
+
+评论下方有回复时，连线会自动出现。每条回复通过一段折线接入连线，折线在头像前止住。连线各段互不重叠，因为线条的墨色是半透明的，两段叠加会使局部变深。
+
+## 嵌套 \{#nesting\}
+
+回复也可以有回复。在回复内放入一个 `thread-replies`，连线就会向内延伸一层。评论头像使用 [头像](/components/avatar) 的默认尺寸 32px；回复头像无论嵌套多深，都使用 24px 的 `avatar-sm`。
+
+嵌套两三层就够了。每多一层就占用 36px 的宽度，手机上的讨论串嵌套太深，正文就没有足够的空间。达到这个层级后，如需继续回复，就在回复开头写上被回复者的姓名，并将回复留在同一层。
+
+<ComponentPreview name="nesting" height={284} narrowHeight={304} title="嵌套" bodyClass="p-lg" html={`<div class="card max-w(480) mx-auto">
+  <ol class="thread">
+    <li class="thread-item">
+      <span class="thread-avatar"><span class="avatar">GH</span></span>
+      <div class="thread-body">
+        <p class="thread-header"><span class="thread-author">Grace Hopper</span> <time class="thread-meta" datetime="2026-11-12T08:02">3h</time></p>
+        <p class="thread-text">Can we ship the contracts before the framework components?</p>
+      </div>
+      <ol class="thread-replies">
+        <li class="thread-item">
+          <span class="thread-avatar"><span class="avatar avatar-sm">AL</span></span>
+          <div class="thread-body">
+            <p class="thread-header"><span class="thread-author">Ada Lovelace</span> <time class="thread-meta" datetime="2026-11-12T08:40">2h</time></p>
+            <p class="thread-text">Yes, they do not depend on each other.</p>
+          </div>
+          <ol class="thread-replies">
+            <li class="thread-item">
+              <span class="thread-avatar"><span class="avatar avatar-sm">GH</span></span>
+              <div class="thread-body">
+                <p class="thread-header"><span class="thread-author">Grace Hopper</span> <time class="thread-meta" datetime="2026-11-12T08:44">2h</time></p>
+                <p class="thread-text">Then Tuesday.</p>
+              </div>
+            </li>
+          </ol>
+        </li>
+      </ol>
+    </li>
+  </ol>
+</div>`} />
+
+## 讨论串还是消息 \{#thread-or-message\}
+
+讨论串围绕一个主题展开，各条评论地位平等，都可以被回复。一条 [消息](/components/message) 是双方对话中的一次发言，以指向发言者的气泡呈现。无需回复的事件用 [时间线](/components/timeline) 呈现。
+
+## 无障碍 \{#accessibility\}
+
+- 用 `<ol>` 编写讨论串，用嵌套的 `<ol>` 表示回复。嵌套结构表达回复关系，屏幕阅读器会读出层级和回复数量，对应视觉上由连线呈现的信息。
+- 每个时间都用带 `datetime` 的 `<time>` 标记，因为“2h”只是某个确切时间的简写。
+- 连线由样式表绘制，屏幕阅读器不会读出它。在强制颜色模式下，连线使用文本颜色。
+- 作者姓名旁显示姓名首字母或照片的头像仅作装饰，因为旁边已有姓名文本。
+
+## 类名 \{#classes\}
+
+<ContractTable name="thread" />
+
+## 自定义属性 \{#custom-properties\}
+
+<ContractTable name="thread" show="properties" />
+
+## 源码 \{#source\}
+
+<ComponentSource name="thread" />

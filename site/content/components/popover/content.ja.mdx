@@ -1,0 +1,106 @@
+---
+title: "ポップオーバー"
+description: "開くボタンを基準に表示されるフローティングパネル。"
+---
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+ポップオーバーは、開くボタンにひも付くフローティングパネルです。任意の要素に`popover`属性と`.popover`を追加し、ボタンの`popovertarget`でその要素を参照します。ブラウザーはポップオーバーをトップレイヤーに表示し、外側をクリックするか<kbd>Esc</kbd>を押すと閉じます。タブ順ではボタンの直後に入ります。配置にはCSSアンカー位置指定を使うため、位置調整用のスクリプトは不要です。
+
+<ComponentPreview name="default" height={240} title="ポップオーバー" bodyClass="flex items-start justify-center p-lg min-h(240)" html={`<button type="button" class="btn" popovertarget="share">Share</button>
+
+<div id="share" popover class="popover">
+  <div class="flex flex-col gap-sm w(260)">
+    <p class="m(0) fg-text-strong">Share this project</p>
+    <div class="input-group input-group-sm">
+      <input class="input-group-field" value="https://atlas.dev/p/9f2c" readonly aria-label="Link">
+      <button type="button" class="btn">Copy</button>
+    </div>
+  </div>
+</div>`} />
+
+## 配置 \{#placement\}
+
+ポップオーバーはボタンの6px下に開き、ボタンの開始端に揃います。Popover APIが両者を関連付けるため、アンカーとなるボタンに名前を付ける必要はありません。ビューポートからはみ出す場合は、反対側に表示されます。
+
+| クラス | 配置 |
+| --- | --- |
+| `popover` | ボタンの下、開始端揃え |
+| `popover-end` | 終了端揃え。行末のボタン向け |
+| `popover-center` | ボタンに対して中央揃え |
+| `popover-top` | ボタンの上。`popover-end`または`popover-center`と併用 |
+
+<ComponentPreview name="placement" height={280} title="配置" bodyClass="flex flex-wrap items-center justify-center gap-md p-lg min-h(280)" html={`<button type="button" class="btn" popovertarget="place-start">Start</button>
+<button type="button" class="btn" popovertarget="place-center">Center</button>
+<button type="button" class="btn" popovertarget="place-end">End</button>
+<button type="button" class="btn" popovertarget="place-top">Top</button>
+
+<div id="place-start" popover class="popover">Lined up with the start edge.</div>
+<div id="place-center" popover class="popover popover-center">Centered on the button.</div>
+<div id="place-end" popover class="popover popover-end">Lined up with the end edge.</div>
+<div id="place-top" popover class="popover popover-top popover-center">Above the button.</div>`} />
+
+CSSアンカー位置指定に対応していないブラウザーでも、ポップオーバーは開閉できます。表示位置はブラウザーの既定どおり、ビューポートの中央になります。
+
+## フォーム付き \{#with-a-form\}
+
+ポップオーバーにはフォームコントロールを配置できます。開いた直後はボタンにフォーカスが残り、<kbd>Tab</kbd>を押すとポップオーバー内に移動します。開いたときに最初のフィールドへフォーカスを移すには、そのフィールドに`autofocus`を指定します。
+
+<ComponentPreview name="form" height={304} title="フォーム付き" bodyClass="flex items-start justify-center p-lg min-h(300)" html={`<button type="button" class="btn" popovertarget="rename">Rename</button>
+
+<form id="rename" popover class="popover">
+  <div class="flex flex-col gap-sm w(240)">
+    <label class="field">
+      Project name
+      <input class="input input-sm" value="atlas" autofocus>
+    </label>
+    <div class="flex justify-end gap-xs">
+      <button type="button" class="btn btn-sm" popovertarget="rename" popovertargetaction="hide">Cancel</button>
+      <button type="button" class="btn btn-sm btn-primary" popovertarget="rename" popovertargetaction="hide">Save</button>
+    </div>
+  </div>
+</form>`} />
+
+## ホバーで表示 \{#on-hover\}
+
+リンクやボタンにホバーするかフォーカスを合わせたときに、遷移先のプレビューとしてポップオーバーを開くこともできます。ポップオーバーに`popover="hint"`を指定し、トリガーの`interestfor`で参照します。ヒントを開いても、すでに開いているメニューや別のポップオーバーは閉じません。タッチ画面では長押しでしか表示できないため、内容はプレビューにとどめ、ここでしか得られない情報は載せないでください。
+
+<ComponentPreview name="hover" height={240} title="ホバーで表示" background="plain" bodyClass="flex items-start justify-center p-lg min-h(240)" html={`<p class="m(0) text-sm fg-text-body">Deployed by <a class="link" href="#ada" interestfor="ada-card">Ada Lovelace</a> two hours ago.</p>
+
+<div id="ada-card" popover="hint" class="popover">
+  <div class="flex items-center gap-sm">
+    <span class="avatar avatar-lg"><img class="avatar-image" src="/demo/portrait-1.svg" alt=""></span>
+    <div class="flex flex-col">
+      <span class="fg-text-strong">Ada Lovelace</span>
+      <span class="text-xs fg-text-muted">Owner · 412 deployments</span>
+    </div>
+  </div>
+</div>`} caption="名前にポインターを合わせるか、Tabキーでフォーカスを移動します。" />
+
+Interest InvokersはChromeとEdgeで利用できます。その他のブラウザーでは、リンクは通常どおり機能し、プレビューは表示されません。
+
+## アクセシビリティ \{#accessibility\}
+
+- ボタンの`aria-expanded`はブラウザーが設定するため、手動では指定しないでください。
+- ポップオーバーは非モーダルなので、開いている間もページを操作できます。完了するか閉じるまで他の操作に移れないようにするには、[ダイアログ](/components/dialog)を使います。
+- 操作の一覧には[メニュー](/components/menu)、ホバー時に表示するラベルには[ツールチップ](/components/tooltip)を使います。
+
+## React、Svelte、Vue \{#frameworks\}
+
+`popover`コンポーネントは、アプリケーションの状態に応じてポップオーバーを開閉し、ブラウザー側で開閉が起きたときに通知します。トリガーと内容はページ側のマークアップで記述します。`npx master-ui add popover`でプロジェクトにコピーできます。コンポーネントの構成と使い方は[React、Svelte、Vue](/guide/frameworks)を参照してください。
+
+<FrameworkSource name="popover" />
+
+## クラス \{#classes\}
+
+<ContractTable name="popover" />
+
+## カスタムプロパティ \{#custom-properties\}
+
+<ContractTable name="popover" show="properties" />
+
+## ソース \{#source\}
+
+<ComponentSource name="popover" />

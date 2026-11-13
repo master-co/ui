@@ -1,114 +1,115 @@
 ---
 title: "瀏覽器支援"
-description: "確認基準需求，區分自動備援與需由應用程式處理的部分，並在目標瀏覽器中驗證元件。"
+description: "確認基本需求，分辨哪些備援會自動生效、哪些需要應用程式處理，並在目標瀏覽器中驗證元件。"
 ---
+
 import GuideFigure from '../../../components/GuideFigure.astro'
 
-請確認你的應用程式所使用的元件在瀏覽器中的支援情況。Master UI 以現代 CSS 建立基準外觀，並以原生元素提供行為。其他功能可改善定位、動態效果或控制項；它們的備援方式可能是自動的，也可能需要你的應用程式提供處理函式。
+確認應用程式使用的元件在瀏覽器中的支援情況。Master UI 使用現代 CSS 呈現基本外觀，並透過原生元素提供行為。進階功能可改善定位、動態效果或控制項。缺少這些功能時，有些備援會自動生效，有些則需要應用程式提供事件處理函式。
 
-請先閱讀下方的基準，再閱讀與你的元件相關的強化功能列。CI 會在固定版本的 Playwright 相依套件所附帶的 Chromium、Firefox 與 WebKit 版本中執行各框架情境，包括 invoker commands、interest invokers 與錨點定位的文件化備援方式。這些表格描述的是功能需求，並不保證適用於每個已發布的瀏覽器版本。請在你支援的每個瀏覽器中[檢查功能與結果](#checking-a-feature)。
+先確認下列基本需求，再查看所用元件對應的進階功能。CI 會在固定版本的 Playwright 相依套件隨附的 Chromium、Firefox 和 WebKit 中測試各框架的使用情境，涵蓋文件所述的觸發指令、興趣觸發器和錨點定位備援。表格列出各項功能的需求，但不保證每個已發布的瀏覽器版本都能正常運作。請在每個支援的瀏覽器版本中[檢查功能與實際結果](#checking-a-feature)。
 
-## 基準需求 \{#baseline\}
+## 基本需求 \{#baseline\}
 
-下列功能在所列位置使用時，元件庫不提供備援方式。串接層、巢狀與色彩函式會廣泛影響整個元件庫；`subgrid` 或 `<dialog>` 這類功能則只在元件使用它們的地方才有影響。
+下列使用情境中，函式庫不提供備援。層疊圖層、巢狀規則和色彩函式的影響遍及整個函式庫。`subgrid` 或 `<dialog>` 等功能則只影響使用它們的元件。
 
 | 功能 | 使用位置 |
 | --- | --- |
-| 自訂屬性 | 每個 token，以及契約公開的每個屬性 |
-| 串接層（`@layer`） | 每條元件與版面規則都位於 `components` 層，token 則位於 `theme`。這讓 utility 不需要 `!important` 就能勝過元件 |
-| CSS 巢狀 | 規則以巢狀方式撰寫，編譯後的樣式表也保留巢狀 |
-| `light-dark()` | 隨色彩配置改變的主題色彩 |
+| 自訂屬性 | 所有 token，以及契約公開的所有屬性 |
+| 層疊圖層（`@layer`） | 所有元件與版面配置規則都在 `components` 圖層，token 則在 `theme` 圖層。這讓 utility 無須使用 `!important` 就能覆寫元件樣式 |
+| CSS 巢狀規則 | 規則採巢狀寫法，編譯後的樣式表也保留巢狀結構 |
+| `light-dark()` | 隨配色模式變換的主題色彩 |
 | `oklch()` | 色彩 token 的值 |
-| `color-mix()` | 色調、帶色相的按鈕、玻璃材質、墨色表面上的行內 chip |
-| `:has()` | 讀取子元素狀態的父元素：[輸入群組](/components/input)、欄位、[分段控制](/components/segmented)、[評分](/components/rating)、[步驟](/components/steps)、[listbox](/components/listbox) 的空狀態 |
-| 容器尺寸查詢（`@container`） | [卡片](/components/card)、[對話框](/components/dialog)、[資料清單](/components/data-list)、[導覽列](/components/navbar)，以及 [form](/components/form)、[bento](/components/bento) 與 [shell](/pages/app-shell) 版面 |
-| `subgrid` | [日曆](/components/calendar)、[圖表](/components/chart)、[資料清單](/components/data-list) |
-| 個別的變形屬性（`translate`、`scale`） | 控制項的浮起狀態與覆蓋層的進場 |
-| `:focus-visible` | 控制項上的鍵盤焦點環 |
-| `:dir()` | 在由右至左的文字中會反轉的部件，例如抽屜、麵包屑分隔符號與日曆範圍 |
-| 邏輯屬性與 `inset` | 依循文字方向的間距與定位 |
-| 動態檢視區單位（`dvh`） | [對話框](/components/dialog)與[命令面板](/components/command)的高度上限。`page` 與 `shell` 版面會先寫入 `vh` 值 |
-| `popover` 屬性 | [Popover](/components/popover)、[選單](/components/menu)、[工具提示](/components/tooltip)、[combobox](/components/combobox) 的清單 |
-| `<dialog>` | [對話框](/components/dialog)、[命令面板](/components/command)、[toast](/components/toast)、可關閉的[橫幅](/components/banner) |
+| `color-mix()` | 淡色、色調按鈕、玻璃效果，以及深色背景上的行內標籤 |
+| `:has()` | 父元素讀取子元素的狀態，例如[輸入群組](/components/input)、欄位、[分段控制項](/components/segmented)、[評分](/components/rating)、[步驟](/components/steps)，以及[清單方塊](/components/listbox)的空白狀態 |
+| 容器尺寸查詢（`@container`） | [卡片](/components/card)、[對話框](/components/dialog)、[資料清單](/components/data-list)、[導覽列](/components/navbar)，以及[表單](/components/form)、[便當盒](/components/bento)和[應用程式外框](/pages/app-shell)版面配置 |
+| `subgrid` | [行事曆](/components/calendar)、[圖表](/components/chart)、[資料清單](/components/data-list) |
+| 獨立變形屬性（`translate`、`scale`） | 控制項的上抬狀態與覆疊元件的進場效果 |
+| `:focus-visible` | 控制項的鍵盤焦點外框 |
+| `:dir()` | 在由右至左的文字中反轉方向的部分，例如抽屜面板、麵包屑導覽分隔符號和行事曆日期範圍 |
+| 邏輯屬性與 `inset` | 隨文字方向調整的間距與定位 |
+| 動態檢視區單位（`dvh`） | [對話框](/components/dialog)和[指令面板](/components/command)的高度上限。`page` 和 `shell` 版面配置會先宣告 `vh` 值 |
+| `popover` 屬性 | [彈出框](/components/popover)、[選單](/components/menu)、[工具提示](/components/tooltip)、[組合方塊](/components/combobox)的清單 |
+| `<dialog>` | [對話框](/components/dialog)、[指令面板](/components/command)、[浮動通知](/components/toast)、可關閉的[橫幅](/components/banner) |
 
-不支援的語法可能使一條宣告、一個選擇器或整條規則失效。失去串接層或巢狀支援會影響樣式表的大部分內容；失去某個色彩函式，則可能讓使用這些色彩的宣告沒有可用的值。強化功能的備援方式無法彌補缺少的基準功能。
+瀏覽器不支援的語法可能使宣告、選擇器或整條規則失效。缺少層疊圖層或巢狀規則支援會影響樣式表的大部分內容。缺少色彩函式支援時，引用這些色彩的宣告可能取不到可用的值。進階功能的備援仍有賴瀏覽器滿足基本需求。
 
-## 強化功能 \{#enhancements\}
+## 進階功能 \{#enhancements\}
 
-下列每項功能都以兩種方式之一加以控管。大多數位於 `@supports` 規則內，例如 `@supports (anchor-scope: --segmented-thumb)` 或 `@supports selector(::scroll-marker)`，並寫在繪製備援方式的規則之後。其餘則是不支援該功能的瀏覽器會忽略的單一宣告、at-rule 或屬性，例如 `interpolate-size`、`@starting-style` 或 `closedby`。
+下列功能各採用兩種方式之一處理相容性。大多數放在 `@supports` 規則中，例如 `@supports (anchor-scope: --segmented-thumb)` 或 `@supports selector(::scroll-marker)`，並寫在呈現備援樣式的規則之後。其餘則各自使用一項宣告、一條 at 規則或一個屬性，例如 `interpolate-size`、`@starting-style` 或 `closedby`，瀏覽器若不支援便會忽略。
 
-最後一欄說明備援方式或需要的整合工作。每份[契約](/guide/contracts)中的 `platform` 清單記錄了各元件特有的行為。特別注意：只靠 `commandfor` 開啟的對話框，在不支援 invoker commands 的瀏覽器中，要等你提供下文所述的處理函式才會開啟。
+最後一欄說明備援行為或需要自行整合的部分。各[契約](/guide/contracts)的 `platform` 清單記錄該元件的具體行為。尤其要注意，若對話框只靠 `commandfor` 開啟，在不支援觸發指令的瀏覽器中，必須加入下文所述的事件處理函式才能開啟。
 
-<GuideFigure name="browser-support" title="基準定位與強化定位">
+<GuideFigure name="browser-support" title="基本支援與進階定位">
 
-**強化功能是在可運作的基準之上改變結果。** 在原生支援 popover 的情況下，同一個表面在兩種情況中都會開啟與關閉。CSS 錨點定位會將它放在觸發元素旁；沒有這項強化功能時，一般的 popover 仍會置中於檢視區。兩個示意檢視區只有定位不同。兩個分支都不會為不支援 popover 的瀏覽器提供備援方式。
+**進階功能會在基本功能正常運作的前提下改變呈現結果。** 只要瀏覽器原生支援彈出框，兩種情況下都能開啟與關閉同一個面板。支援 CSS 錨點定位時，彈出框會出現在觸發控制項旁。缺少錨點定位時，一般彈出框仍會置中於檢視區。兩張檢視區示意圖的差異僅在位置。兩種情況都需要瀏覽器支援彈出框。
 
 </GuideFigure>
 
-### 覆蓋層與定位 \{#overlays-and-placement\}
+### 覆疊元件與定位 \{#overlays-and-placement\}
 
-| 功能 | 使用的元件 | 不支援時 |
+| 功能 | 使用元件 | 缺少支援時 |
 | --- | --- | --- |
-| Invoker commands：`command` 與 `commandfor` | [對話框](/components/dialog)、[命令面板](/components/command) | 從點擊處理函式呼叫 `showModal()` 與 `close()`；樣式表相同 |
-| `closedby="any"` | [對話框](/components/dialog)、[命令面板](/components/command) | 點擊遮罩不會有任何作用；Escape 與關閉按鈕仍可關閉它 |
-| Interest invokers：搭配 `interestfor` 的 `popover="hint"` | [工具提示](/components/tooltip)、作為預覽使用的 [popover](/components/popover) | 工具提示或預覽不會出現；控制項保留其無障礙名稱，仍可作為連結或按鈕運作 |
-| CSS 錨點定位：`position-area`、`position-try-fallbacks` | [Popover](/components/popover)、[選單](/components/menu)、[工具提示](/components/tooltip)、帶有 `popover` 屬性的 [listbox](/components/listbox) | 表面的開啟與關閉方式相同；它會置中顯示於檢視區，也就是瀏覽器放置任何 popover 的位置 |
-| `anchor-scope` 與 `anchor-size()` | [Combobox](/components/combobox) | 清單位於文件流中，緊接在欄位下方，並使用自己的寬度 |
-| `anchor-scope` 搭配 `anchor()`，用於一個會移動的指示器 | [分段控制](/components/segmented)、[分頁](/components/tabs)、[目錄](/components/toc) | 每個目前選項各自繪製指示標示，它會立即切換而不會滑動 |
-| `anchor-scope` 搭配 `anchor()`，用於從文字處開始的分隔線 | [清單](/components/list) | 列下方的細線橫跨整列 |
-| `@position-try` | [右鍵選單](/components/menu) | 它會在指標的下方與結尾方向開啟，到達檢視區邊緣時不會反轉 |
-| `@starting-style` 與 `transition-behavior: allow-discrete` | [對話框](/components/dialog)、[popover](/components/popover)、[選單](/components/menu)、[工具提示](/components/tooltip)、[toast](/components/toast)、[圖表](/components/chart) | 覆蓋層會立即出現與離開，沒有淡入淡出；圖表的長條會直接以完整高度出現 |
+| 觸發指令：`command` 和 `commandfor` | [對話框](/components/dialog)、[指令面板](/components/command) | 在點擊事件處理函式中呼叫 `showModal()` 和 `close()`，沿用原有樣式表 |
+| `closedby="any"` | [對話框](/components/dialog)、[指令面板](/components/command) | 點擊遮罩不會關閉，仍可按 Escape 鍵或關閉按鈕 |
+| 興趣觸發器：搭配 `interestfor` 使用 `popover="hint"` | [工具提示](/components/tooltip)、用於預覽的[彈出框](/components/popover) | 工具提示或預覽不會出現，控制項仍保有無障礙名稱，並可照常作為連結或按鈕使用 |
+| CSS 錨點定位：`position-area`、`position-try-fallbacks` | [彈出框](/components/popover)、[選單](/components/menu)、[工具提示](/components/tooltip)、帶有 `popover` 屬性的[清單方塊](/components/listbox) | 面板照常開啟與關閉，瀏覽器會依彈出框的預設定位將其置中於檢視區 |
+| `anchor-scope` 和 `anchor-size()` | [組合方塊](/components/combobox) | 清單依正常版面配置流程緊接在欄位下方，採用自身寬度 |
+| 搭配 `anchor()` 使用 `anchor-scope`，讓同一個指示標記移動 | [分段控制項](/components/segmented)、[頁籤](/components/tabs)、[目錄](/components/toc) | 目前選取的項目各自顯示標記，切換時標記立即更新，沒有滑動效果 |
+| 搭配 `anchor()` 使用 `anchor-scope`，讓分隔線從文字起點開始 | [清單](/components/list) | 項目下方的細線橫跨整列 |
+| `@position-try` | [快顯選單](/components/menu) | 選單會在指標下方偏行尾的一側開啟，碰到檢視區邊緣時不會翻轉方向 |
+| `@starting-style` 和 `transition-behavior: allow-discrete` | [對話框](/components/dialog)、[彈出框](/components/popover)、[選單](/components/menu)、[工具提示](/components/tooltip)、[浮動通知](/components/toast)、[圖表](/components/chart) | 覆疊元件會立即出現或消失，沒有淡入淡出效果。圖表的長條會直接以完整高度顯示 |
 
 ### 欄位 \{#fields\}
 
-| 功能 | 使用的元件 | 不支援時 |
+| 功能 | 使用元件 | 缺少支援時 |
 | --- | --- | --- |
-| `appearance: base-select` | [Select](/components/select) | select 保留其凹槽與箭頭，並開啟平台本身的選項清單；`select-option` 沒有作用 |
-| `field-sizing: content` | [input](/components/input)、[composer](/components/composer)、[stepper](/components/stepper) 中的 `input-auto` textarea | textarea 保留其最小高度與調整大小的控制點；composer 維持三行並可捲動；stepper 維持 `--stepper-min` 的寬度 |
-| `:user-invalid` | [Input](/components/input) | 原生限制仍會驗證欄位，但不會觸發這個自訂的錯誤外觀；`aria-invalid="true"` 仍會觸發 |
-| 原生欄位的部件：`::-webkit-calendar-picker-indicator`、`::-webkit-inner-spin-button`、`::-webkit-search-cancel-button` | [Input](/components/input) | 瀏覽器在日期、時間、數字與搜尋欄位中保留自己的圖示 |
-| 原生 `<meter>` 的部件 | [Meter](/components/meter) | 瀏覽器保留自己的量表，以自己的樣式呈現相同的值與相同的三種色調 |
+| `appearance: base-select` | [選取方塊](/components/select) | 選取方塊保留凹槽外觀和箭頭，並開啟平台原生的選項清單。`select-option` 不會生效 |
+| `field-sizing: content` | [輸入](/components/input)中的 `input-auto` 文字區域、[撰寫框](/components/composer)、[步進器](/components/stepper) | 文字區域保留最小高度和調整大小的把手。撰寫框維持三行高度，可捲動內容。步進器維持 `--stepper-min` 設定的寬度 |
+| `:user-invalid` | [輸入](/components/input) | 原生限制仍會驗證欄位，但不會觸發這個自訂錯誤樣式。`aria-invalid="true"` 仍可觸發 |
+| 原生欄位的組成部分：`::-webkit-calendar-picker-indicator`、`::-webkit-inner-spin-button`、`::-webkit-search-cancel-button` | [輸入](/components/input) | 日期、時間、數字和搜尋欄位會保留瀏覽器原生的標記 |
+| 原生 `<meter>` 的組成部分 | [量表](/components/meter) | 瀏覽器會保留原生量表，以自身樣式呈現相同的數值與三種色調 |
 
-### 展開收合 \{#disclosure\}
+### 展開與收合 \{#disclosure\}
 
-| 功能 | 使用的元件 | 不支援時 |
+| 功能 | 使用元件 | 缺少支援時 |
 | --- | --- | --- |
-| `interpolate-size`，搭配 `<details>` 上的 `::details-content` | [Accordion](/components/accordion)、[nav](/components/nav)、[expand](/components/expand)、[橫幅](/components/banner) | 面板或群組會立即開啟與關閉；關閉的橫幅會立即離開 |
-| 以 `::details-content` 作為收合文字的預覽 | [Expand](/components/expand) | 收合時文字會隱藏，與任何 `<details>` 相同，切換按鈕仍可將其展開 |
-| `<details>` 上的 `name` 屬性 | [Accordion](/components/accordion) | 各列獨立開啟與關閉 |
+| `interpolate-size`，搭配 `<details>` 上的 `::details-content` | [手風琴](/components/accordion)、[導覽](/components/nav)、[展開](/components/expand)、[橫幅](/components/banner) | 面板或群組會立即展開或收合，橫幅關閉後也會立即消失 |
+| 使用 `::details-content` 預覽收合時的文字 | [展開](/components/expand) | 收合時會像一般 `<details>` 一樣隱藏文字，切換控制項仍可展開內容 |
+| `<details>` 上的 `name` 屬性 | [手風琴](/components/accordion) | 各列可獨立展開與收合 |
 
 ### 捲動 \{#scrolling\}
 
-| 功能 | 使用的元件 | 不支援時 |
+| 功能 | 使用元件 | 缺少支援時 |
 | --- | --- | --- |
-| 捲動驅動動畫：`animation-timeline: scroll()` | [捲動區域](/components/scroll-area)、[導覽列](/components/navbar)中的 `navbar-progress` | 區域的捲動方式相同，邊緣保持乾淨而沒有淡出效果；進度線不會繪製 |
-| 捲動驅動動畫：`view-timeline` 與 `timeline-scope` | [Slider](/components/slider)、[range](/components/range)、[compare](/components/compare) | slider 或 range 的軌道維持一般凹槽，滑塊仍會顯示值；[compare 行為](/guide/behaviors)會將輸入的值複製到 `--compare-position` |
-| 捲動驅動動畫：`animation-timeline: view()` | [Wheel](/components/wheel) | 選項以平面方式繪製，標示為 `aria-selected="true"` 的選項使用強調墨色 |
-| `::scroll-button()` 與 `::scroll-marker` | [輪播](/components/carousel) | 沒有按鈕也沒有圓點：輪播是一列可滑動、捲動並吸附的內容 |
-| 捲動狀態容器查詢：`container-type: scroll-state` | [導覽列](/components/navbar) | 導覽列的底板一律繪製，在頁面頂端也一樣 |
-| `scroll-target-group` 與 `:target-current` | [目錄](/components/toc) | 在腳本或伺服器為連結設定 `aria-current` 之前，不會有任何連結被標示 |
+| 捲動驅動動畫：`animation-timeline: scroll()` | [捲動區域](/components/scroll-area)、[導覽列](/components/navbar)中的 `navbar-progress` | 捲動區域照常運作，邊緣不會出現漸隱效果。導覽列不會顯示進度線 |
+| 捲動驅動動畫：`view-timeline` 和 `timeline-scope` | [滑桿](/components/slider)、[範圍滑桿](/components/range)、[比較](/components/compare) | 滑桿或範圍滑桿的軌道維持單純的凹槽外觀，滑塊仍會顯示數值。[比較行為](/guide/behaviors)會將輸入值複製到 `--compare-position` |
+| 捲動驅動動畫：`animation-timeline: view()` | [滾輪](/components/wheel) | 選項以平面方式呈現，標記為 `aria-selected="true"` 的選項會使用較醒目的文字色 |
+| `::scroll-button()` 和 `::scroll-marker` | [輪播](/components/carousel) | 輪播以單列呈現，可滑動、捲動並貼齊定位點，沒有按鈕或圓點 |
+| 捲動狀態容器查詢：`container-type: scroll-state` | [導覽列](/components/navbar) | 導覽列的底板會一直顯示，包括在頁面頂端時 |
+| `scroll-target-group` 和 `:target-current` | [目錄](/components/toc) | 連結要等腳本或伺服器為其設定 `aria-current`，才會標記為目前項目 |
 
-### 版面 \{#layout\}
+### 版面配置 \{#layout\}
 
-| 功能 | 使用的元件 | 不支援時 |
+| 功能 | 使用元件 | 缺少支援時 |
 | --- | --- | --- |
-| Grid lanes：`display: grid-lanes` | [Masonry](/components/masonry) | 由多欄方塊排列相同的圖塊；圖塊會沿每一欄往下填滿，而不是橫跨各通道 |
-| `sibling-index()` | [Sticky stack](/components/sticky-stack) | 每個面板都黏在同一條線上，並完全覆蓋前一個面板，因此不會露出任何邊緣 |
-| 容器查詢單位（`cqi`） | [Breakout](/components/breakout) | 寬版或滿版的子元素會留在閱讀欄內 |
+| 格線軌道：`display: grid-lanes` | [瀑布流](/components/masonry) | 相同的區塊會排列在多欄容器中，逐欄由上而下填滿，不會橫跨各軌道依序排列 |
+| `sibling-index()` | [黏附堆疊](/components/sticky-stack) | 每個面板都黏附在同一位置，將前一個面板完全蓋住，因此看不到下方面板的邊緣 |
+| 容器查詢單位（`cqi`） | [跨欄](/components/breakout) | 加寬或全寬的子元素仍會留在閱讀欄內 |
 
-### 繪製 \{#drawing\}
+### 外觀繪製 \{#drawing\}
 
-| 功能 | 使用的元件 | 不支援時 |
+| 功能 | 使用元件 | 缺少支援時 |
 | --- | --- | --- |
-| `corner-shape: squircle` | 每個元件，透過 `--corner-shape` 與 `--corner-scale` | 視覺尺寸相同的圓形圓角 |
-| `corner-shape: bevel` | [File](/components/file) | 檔案圖示的紙頁保留四個圓角，沒有折角 |
-| 具型別的 `attr()` | [progress](/components/progress) 的環形 | 環形不會讀取 `aria-valuenow`：請同時在 `style` 屬性中設定 `--progress-ring-value` |
-| `sibling-index()` | [Skeleton](/components/skeleton) | 同一區塊中的每個 skeleton 會在同一時刻開始其光帶 |
-| `text-wrap: balance` 與 `text-wrap: pretty` | [Heading](/components/heading) | 文字照常換行 |
+| `corner-shape: squircle` | 所有元件，透過 `--corner-shape` 和 `--corner-scale` | 改用視覺大小相同的圓弧轉角 |
+| `corner-shape: bevel` | [檔案](/components/file) | 紙張圖示保留四個圓角，不會顯示摺角 |
+| 具型別的 `attr()` | [進度](/components/progress)的環形指示器 | 環形指示器無法讀取 `aria-valuenow`，請同時在 `style` 屬性中設定 `--progress-ring-value` |
+| `sibling-index()` | [骨架](/components/skeleton) | 同一區塊內的所有骨架會同時啟動光帶動畫 |
+| `text-wrap: balance` 和 `text-wrap: pretty` | [標題](/components/heading) | 文字依預設方式換行 |
 
-## 檢查功能 \{#checking-a-feature\}
+## 檢查功能支援 \{#checking-a-feature\}
 
-請使用確切的功能名稱查詢其目前的相容性資訊。對於 CSS，你也可以用樣式表所測試的相同條件，直接詢問眼前的瀏覽器：
+使用確切的功能名稱查詢最新的相容性資訊。若是 CSS 功能，也可以用樣式表採用的同一個條件，在目前的瀏覽器中查詢：
 
 ```js
 CSS.supports('(anchor-scope: --mark)')
@@ -116,39 +117,39 @@ CSS.supports('(appearance: base-select)')
 CSS.supports('selector(::scroll-marker)')
 ```
 
-[`CSS.supports()`](https://drafts.csswg.org/css-conditional-3/#dom-css-supports) 會評估 CSS 支援條件。正面的結果有助於選擇 CSS 分支，但它並不是渲染或互動測試。它也不會測試 `commandfor` 這類 HTML 屬性。
+[`CSS.supports()`](https://drafts.csswg.org/css-conditional-3/#dom-css-supports) 會判斷瀏覽器是否符合 CSS 支援條件。回傳肯定結果可用來選擇要套用的 CSS 規則，實際呈現與互動仍須另外測試。像 `commandfor` 這類 HTML 屬性也需要另外檢查。
 
-檢查功能之後，請在目標瀏覽器中驗證元件：
+檢查功能支援後，在目標瀏覽器中驗證元件：
 
-1. 透過你的應用程式提供的途徑開啟、關閉、選取或編輯它。對於覆蓋層，請包含鍵盤操作與焦點返回。
-2. 檢查靠近檢視區邊緣時的定位、窄版版面，以及會捲動的內容。
-3. 檢查你打算上線的備援方式。缺少動畫或許可以接受；缺少開啟用的處理函式，或將必要說明藏在無法顯示的工具提示中，則無法接受。
+1. 依照應用程式提供的操作流程，開啟、關閉、選取或編輯元件。測試覆疊元件時，也要確認鍵盤操作，以及關閉後焦點是否回到原處。
+2. 檢查元件靠近檢視區邊緣、處於狹窄版面或內容可捲動時的定位。
+3. 確認預計上線的備援行為。少了動畫或許可以接受，但開啟元件所需的事件處理函式不能缺少，必要指示也不能只放在可能無法顯示的工具提示中。
 
-請將必要說明保留在可見的文字中。只有在底層控制項已具備名稱與用途時，省略工具提示才算是可用的備援方式。
+將必要指示放在看得見的文字中。只有當控制項本身已有名稱且用途清楚時，省略工具提示才是可用的備援。
 
 ## 偏好設定與裝置 \{#preferences-and-devices\}
 
-支援不只關乎功能。凡是元件有需要改變之處，每份樣式表也會回應描述讀者裝置與設定的查詢。
+除了瀏覽器功能支援，各樣式表也會在元件需要調整時，依據查詢條件配合使用者的裝置與設定。
 
-| 查詢 | 改變的內容 |
+| 查詢 | 變化 |
 | --- | --- |
-| `(hover: hover)` | 懸停狀態寫在其中，因此只在指標可以懸停的地方套用。觸控不會讓控制項停留在懸停外觀 |
-| `(pointer: coarse)` | 目標放大到 44px。按鈕的最小高度變為 `2.75rem`；核取方塊的標籤會在其所在行周圍擴大，而不移動旁邊的內容 |
-| `(prefers-reduced-motion: reduce)` | 移除位移：控制項的浮起、覆蓋層的縮放與滑動、指示器的滑行。淡入淡出會保留，因此仍看得到變化 |
-| `(forced-colors: active)` | 瀏覽器會移除陰影並替換色彩，因此邊緣與狀態會改以 `ButtonText`、`CanvasText` 與 `Highlight` 等系統色彩的外框與填色重新繪製 |
-| `(prefers-contrast: more)` | 主題會加強其細線、分隔線與輪廓 token，以及弱化與停用狀態的墨色。讀取這些 token 的元件會跟著改變 |
-| `(prefers-reduced-transparency: reduce)` | [導覽列](/components/navbar)與[分頁列](/components/tabbar)的玻璃材質會變成不透明表面，沒有模糊效果 |
+| `(hover: hover)` | 懸停樣式寫在這個查詢內，因此只會在指標能懸停時套用。觸碰後，控制項不會停留在懸停外觀 |
+| `(pointer: coarse)` | 操作目標擴大至 44px。按鈕的最小高度增為 `2.75rem`，核取方塊標籤的可點擊範圍會從文字所在的那一行向外擴大，周圍元素的位置維持原樣 |
+| `(prefers-reduced-motion: reduce)` | 停用控制項上抬、覆疊元件縮放與滑入滑出，以及指示標記滑動等效果。保留淡入淡出，讓使用者仍能看出變化 |
+| `(forced-colors: active)` | 瀏覽器會移除陰影並替換色彩，因此邊緣與狀態會改以 `ButtonText`、`CanvasText` 和 `Highlight` 等系統色繪製外框與填色 |
+| `(prefers-contrast: more)` | 主題會提高細線、分隔線與輪廓的對比度，也會提高次要文字與停用狀態文字的對比度。使用這些 token 的元件會跟著調整 |
+| `(prefers-reduced-transparency: reduce)` | [導覽列](/components/navbar)和[頁籤列](/components/tabbar)會改用不透明的純色背景，並移除玻璃模糊效果 |
 
-在不同色彩配置間有差異的主題色彩會使用 `light-dark()`，並依循頁面或子樹的 `color-scheme`；請參閱[預設主題](/guide/theme#color-schemes)。
+主題中隨配色模式變化的色彩會使用 `light-dark()`，並依頁面或子樹的 `color-scheme` 決定採用哪個色彩。請參閱[預設主題](/guide/theme#color-schemes)。
 
 ## 獨立樣式表 \{#standalone\}
 
-`@master/ui/standalone.css` 是將相同原始碼編譯成一般 CSS 的版本，供未使用 Master CSS 的專案使用。[安裝](/guide/installation#without-master-css)說明如何連結它。
+`@master/ui/standalone.css` 由相同的原始碼編譯成純 CSS，供未使用 Master CSS 的專案使用。請參閱[安裝](/guide/installation#without-master-css)中的引入方式。
 
 ```css name=app.css
 @import '@master/ui/standalone.css';
 ```
 
-編譯會解析 mixin，並將 token 寫成自訂屬性。它不會降級 CSS：檔案宣告相同的串接層，保留巢狀、`light-dark()` 與 `oklch()`，並帶有相同的 `@supports` 規則。它的需求與備援方式就是本頁所列的內容。編譯後的主題（例如 `@master/ui/dist/themes/paper.css`）也是如此。
+編譯時會展開 mixin，並將 token 寫成自訂屬性。編譯過程不會將現代 CSS 語法轉成舊版語法。編譯後的 CSS 仍宣告相同的層疊圖層，保留巢狀規則、`light-dark()` 和 `oklch()`，也沿用相同的 `@supports` 規則。本頁列出的需求與備援同樣適用於這個檔案，以及 `@master/ui/dist/themes/paper.css` 等編譯後的主題。
 
-編譯後的檔案也宣告了 `color-scheme: light dark`，並支援 `data-theme="light"` 與 `data-theme="dark"`。若有其他建置工具在這一步之後轉換它，請測試你的應用程式實際提供的 CSS。
+編譯後的檔案也會宣告 `color-scheme: light dark`，並支援 `data-theme="light"` 和 `data-theme="dark"`。如果後續還有其他建置工具轉換這份 CSS，請測試應用程式實際提供的版本。

@@ -1,0 +1,197 @@
+---
+title: "表情回應"
+description: "用表情符號回應訊息。每個表情都顯示回應人數，按一下即可加入。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+表情回應是讀者留在[訊息](/components/message)下方的表情符號，旁邊會顯示有多少人用了同一個表情。每個回應都是採用標籤元件色調的平面膠囊，內含原生核取方塊。按一下即可加入自己的回應，再按一下即可收回。人數由 CSS 計數器依核取狀態增減，無須腳本。
+
+<ComponentPreview name="default" height={248} title="表情回應" background="plain" bodyClass="p-lg" html={`<ol class="max-w(400) w-full mx-auto m(0) p(0)">
+  <li class="message">
+    <span class="avatar avatar-sm message-avatar"><img class="avatar-image" src="/demo/portrait-1.svg" alt="Ada"></span>
+    <div class="message-bubble">The new previews are live. Have a look before the review.</div>
+    <div class="reaction-group" role="group" aria-label="Reactions to Ada's message">
+      <label class="reaction" style="--count: 3">
+        <input type="checkbox" class="reaction-input" name="reaction" value="👍" aria-label="Thumbs up, 3 others" checked>
+        <span class="reaction-emoji" aria-hidden="true">👍</span>
+        <span class="reaction-count" aria-hidden="true"></span>
+      </label>
+      <label class="reaction" style="--count: 2">
+        <input type="checkbox" class="reaction-input" name="reaction" value="🎉" aria-label="Party popper, 2 others">
+        <span class="reaction-emoji" aria-hidden="true">🎉</span>
+        <span class="reaction-count" aria-hidden="true"></span>
+      </label>
+      <label class="reaction" style="--count: 1">
+        <input type="checkbox" class="reaction-input" name="reaction" value="👀" aria-label="Eyes, 1 other">
+        <span class="reaction-emoji" aria-hidden="true">👀</span>
+        <span class="reaction-count" aria-hidden="true"></span>
+      </label>
+    </div>
+    <span class="message-meta">Ada · 14:03</span>
+  </li>
+  <li class="message message-sent">
+    <div class="message-bubble">On it. The dark ones look right.</div>
+    <div class="reaction-group" role="group" aria-label="Reactions to your message">
+      <label class="reaction" style="--count: 1">
+        <input type="checkbox" class="reaction-input" name="reaction-reply" value="❤️" aria-label="Heart, 1 other">
+        <span class="reaction-emoji" aria-hidden="true">❤️</span>
+        <span class="reaction-count" aria-hidden="true"></span>
+      </label>
+    </div>
+  </li>
+</ol>`} caption="按一下表情即可加入回應，再按一下即可收回。" />
+
+將 `reaction-group` 放在訊息泡泡後方。群組放在收到的訊息下方時，與泡泡的起始端對齊；放在送出的訊息下方時，則與泡泡的結束端對齊。用 `aria-label` 為群組命名。畫面上有多則訊息時，請說明這組表情回應的是誰的訊息。
+
+## 回應人數 \{#count\}
+
+在每個表情回應上設定 `--count`，填入其他人的回應人數，不包含讀者本人。膠囊以這個數字作為計數器的起點，核取後加一，因此讀者已加入的表情回應會比 `--count` 多顯示一人。將 `reaction-count` 留空，計數器就會填入數字。如果人數太多，不適合逐一計數，可在裡面填入 `1.2k` 等文字，畫面便會改為顯示這段文字。
+
+## 狀態 \{#states\}
+
+平時，表情回應是帶有一道外框的平面膠囊，人數以低對比色顯示。指標移到上方時，外框會更明顯。按下時，膠囊會下沉，表情符號也會跟著往內壓。加入回應後，元件會套用元件庫的選取樣式，呈現墨色細框、淡墨色底，人數則以較深的墨色顯示。核取方塊停用時，例如討論串已關閉，膠囊會維持平面，表情符號也會淡化。
+
+<ComponentPreview name="states" height={96} title="狀態" html={`<div class="reaction-group" role="group" aria-label="Reactions">
+  <label class="reaction" style="--count: 2">
+    <input type="checkbox" class="reaction-input" name="reaction-states" value="👏" aria-label="Clapping, 2 others">
+    <span class="reaction-emoji" aria-hidden="true">👏</span>
+    <span class="reaction-count" aria-hidden="true"></span>
+  </label>
+  <label class="reaction" style="--count: 2">
+    <input type="checkbox" class="reaction-input" name="reaction-states" value="❤️" aria-label="Heart, 2 others" checked>
+    <span class="reaction-emoji" aria-hidden="true">❤️</span>
+    <span class="reaction-count" aria-hidden="true"></span>
+  </label>
+  <label class="reaction">
+    <input type="checkbox" class="reaction-input" name="reaction-states" value="🔥" aria-label="Fire, 1,214 others">
+    <span class="reaction-emoji" aria-hidden="true">🔥</span>
+    <span class="reaction-count" aria-hidden="true">1.2k</span>
+  </label>
+  <label class="reaction" style="--count: 4">
+    <input type="checkbox" class="reaction-input" name="reaction-states" value="👍" aria-label="Thumbs up, 4 others" disabled>
+    <span class="reaction-emoji" aria-hidden="true">👍</span>
+    <span class="reaction-count" aria-hidden="true"></span>
+  </label>
+</div>`} />
+
+## 新增表情回應 \{#adding\}
+
+`reaction-add` 是列尾帶有臉部圖示和加號的圓形按鈕，用來開啟頁面的表情符號選擇器。選擇器是由低調的方形[按鈕](/components/button)組成的[彈出面板](/components/popover)，每個按鈕都包含一個 `reaction-emoji`。緊接在按鈕後方的彈出面板開啟時，按鈕會維持下沉狀態。選取表情符號即可加入回應。如果還沒有人用過該表情，頁面也要新增對應的膠囊，因此選擇器需要幾行腳本處理這一步。本頁其餘功能都無須腳本。
+
+<ComponentPreview name="adding" height={152} title="新增表情回應" bodyClass="content-start flex flex-wrap items-start justify-center gap-md p-lg" html={`<div class="reaction-group" id="reactions" role="group" aria-label="Reactions">
+  <label class="reaction" style="--count: 4">
+    <input type="checkbox" class="reaction-input" name="reaction" value="👍" aria-label="Thumbs up, 4 others">
+    <span class="reaction-emoji" aria-hidden="true">👍</span>
+    <span class="reaction-count" aria-hidden="true"></span>
+  </label>
+  <label class="reaction" style="--count: 1">
+    <input type="checkbox" class="reaction-input" name="reaction" value="🚀" aria-label="Rocket, 1 other">
+    <span class="reaction-emoji" aria-hidden="true">🚀</span>
+    <span class="reaction-count" aria-hidden="true"></span>
+  </label>
+  <button type="button" class="reaction-add" popovertarget="reaction-picker" aria-label="Add a reaction"></button>
+  <div class="popover p(4)" id="reaction-picker" popover>
+    <div class="grid grid-cols(6) gap(2)">
+      <button type="button" class="btn btn-quiet btn-square btn-sm" value="👍" aria-label="Thumbs up"><span class="reaction-emoji" aria-hidden="true">👍</span></button>
+      <button type="button" class="btn btn-quiet btn-square btn-sm" value="❤️" aria-label="Heart"><span class="reaction-emoji" aria-hidden="true">❤️</span></button>
+      <button type="button" class="btn btn-quiet btn-square btn-sm" value="😂" aria-label="Laughing"><span class="reaction-emoji" aria-hidden="true">😂</span></button>
+      <button type="button" class="btn btn-quiet btn-square btn-sm" value="🎉" aria-label="Party popper"><span class="reaction-emoji" aria-hidden="true">🎉</span></button>
+      <button type="button" class="btn btn-quiet btn-square btn-sm" value="👀" aria-label="Eyes"><span class="reaction-emoji" aria-hidden="true">👀</span></button>
+      <button type="button" class="btn btn-quiet btn-square btn-sm" value="🚀" aria-label="Rocket"><span class="reaction-emoji" aria-hidden="true">🚀</span></button>
+    </div>
+  </div>
+</div>
+<script>
+  const picker = document.getElementById('reaction-picker')
+  const reactions = document.getElementById('reactions')
+
+  picker.addEventListener('click', function (event) {
+    const option = event.target.closest('button')
+    if (!option) return
+    let input = Array.from(reactions.querySelectorAll('.reaction-input')).find(function (each) { return each.value === option.value })
+    if (!input) {
+      const reaction = document.createElement('label')
+      const emoji = document.createElement('span')
+      const count = document.createElement('span')
+      input = document.createElement('input')
+      reaction.className = 'reaction'
+      input.type = 'checkbox'
+      input.className = 'reaction-input'
+      input.name = 'reaction'
+      input.value = option.value
+      input.setAttribute('aria-label', option.getAttribute('aria-label') + ', no others')
+      emoji.className = 'reaction-emoji'
+      emoji.textContent = option.value
+      emoji.setAttribute('aria-hidden', 'true')
+      count.className = 'reaction-count'
+      count.setAttribute('aria-hidden', 'true')
+      reaction.append(input, emoji, count)
+      reactions.insertBefore(reaction, reactions.querySelector('.reaction-add'))
+    }
+    if (!input.checked) input.click()
+    picker.hidePopover()
+  })
+</script>`} caption="開啟選擇器，選取這一列尚未出現的表情符號。" />
+
+## 在討論串中 \{#thread\}
+
+在[討論串](/components/thread)中，表情回應列接在留言文字後方，與文字的間距比段落之間稍大。
+
+<ComponentPreview name="thread" height={264} narrowHeight={304} title="在討論串中" bodyClass="p-lg" html={`<div class="card max-w(480) mx-auto">
+  <ol class="thread">
+    <li class="thread-item">
+      <span class="thread-avatar"><span class="avatar">GH</span></span>
+      <div class="thread-body">
+        <p class="thread-header"><span class="thread-author">Grace Hopper</span> <time class="thread-meta" datetime="2026-11-12T09:12">2h</time></p>
+        <p class="thread-text">The contracts ship on Tuesday, the framework components the week after.</p>
+        <div class="reaction-group" role="group" aria-label="Reactions to Grace Hopper's comment">
+          <label class="reaction" style="--count: 5">
+            <input type="checkbox" class="reaction-input" name="reaction-thread" value="👍" aria-label="Thumbs up, 5 others">
+            <span class="reaction-emoji" aria-hidden="true">👍</span>
+            <span class="reaction-count" aria-hidden="true"></span>
+          </label>
+          <label class="reaction" style="--count: 2">
+            <input type="checkbox" class="reaction-input" name="reaction-thread" value="🚀" aria-label="Rocket, 2 others" checked>
+            <span class="reaction-emoji" aria-hidden="true">🚀</span>
+            <span class="reaction-count" aria-hidden="true"></span>
+          </label>
+        </div>
+      </div>
+      <ol class="thread-replies">
+        <li class="thread-item">
+          <span class="thread-avatar"><span class="avatar avatar-sm">AL</span></span>
+          <div class="thread-body">
+            <p class="thread-header"><span class="thread-author">Ada Lovelace</span> <time class="thread-meta" datetime="2026-11-12T10:05">1h</time></p>
+            <p class="thread-text">Then the release notes go out on Monday.</p>
+          </div>
+        </li>
+      </ol>
+    </li>
+  </ol>
+</div>`} />
+
+## 無障礙設計 \{#accessibility\}
+
+- 以文字寫出表情符號名稱和其他人的回應人數，作為每個核取方塊的名稱，例如 `aria-label="Thumbs up, 3 others"`。再用 `aria-hidden="true"` 對輔助技術隱藏表情符號和人數。讀者是否也有回應由核取狀態表示，因此每次按下後，名稱仍然正確。
+- 別依賴畫面上的人數讓螢幕閱讀器讀出數字。瀏覽器引擎在計算無障礙名稱和描述時會略過 CSS 計數器產生的文字。在 Chromium 中，核取方塊的名稱取自標籤文字，不包含計數器產生的數字。
+- 為群組和 `reaction-add` 命名，後者可命名為「新增表情回應」。選擇器中的每個按鈕都以表情符號的名稱命名，並對輔助技術隱藏表情符號本身。
+- 整個膠囊都是操作目標，尺寸為 28px，觸控螢幕上為 44px。在強制色彩模式下，膠囊仍有外框，已加入的回應則以醒目提示色顯示較粗的外框。
+
+## 平台注意事項 \{#platform\}
+
+以 `text-box: trim-both cap alphabetic` 將人數文字的文字框裁切至大寫字母高度。這樣膠囊就能以數字本身置中，讓數字與表情符號的中央對齊。瀏覽器未套用這項設定時，數字與中央的偏差仍在半個像素以內。Chromium 和 Safari 支援 `text-box`。
+
+## 類別 \{#classes\}
+
+<ContractTable name="reaction" />
+
+## 自訂屬性 \{#custom-properties\}
+
+<ContractTable name="reaction" show="properties" />
+
+## 原始碼 \{#source\}
+
+<ComponentSource name="reaction" />

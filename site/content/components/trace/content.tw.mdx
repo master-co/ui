@@ -1,0 +1,111 @@
+---
+title: "追蹤記錄"
+description: "逐步呈現代理程式或工作做過的事，每個步驟以低調的單列摘要呈現，有細節時可展開查看。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+追蹤記錄逐步呈現代理程式或工作做過的事，包括思考、搜尋、讀取和執行的內容。每個步驟以低調的單列摘要呈現，標記沿同一欄排列，由一條細線串起。有細節的步驟使用原生 `<details>`，按下摘要列即可展開，無須腳本。其餘步驟以一般文字列顯示。
+
+<ComponentPreview name="default" height={368} narrowHeight={440} title="追蹤記錄" bodyClass="p-lg" html={`<div class="card max-w(440) mx-auto">
+  <div class="trace">
+    <details class="trace-step">
+      <summary class="trace-summary"><span class="trace-marker"></span>Thought about the migration<span class="trace-meta">8s</span></summary>
+      <div class="trace-detail">The table has two million rows, so the column is added as nullable first and filled in batches.</div>
+    </details>
+    <details class="trace-step" open>
+      <summary class="trace-summary"><span class="trace-marker"></span>Searched the codebase<span class="trace-meta">12 files</span></summary>
+      <div class="trace-detail"><code class="code">orders.status</code> is read in 12 files, 3 of them in the billing service.</div>
+    </details>
+    <div class="trace-step">
+      <p class="trace-summary"><span class="trace-marker"></span>Read schema.prisma<span class="trace-meta">0.4s</span></p>
+    </div>
+    <div class="trace-step" aria-busy="true">
+      <p class="trace-summary"><span class="trace-marker"></span>Writing the migration</p>
+    </div>
+  </div>
+</div>`} />
+
+## 步驟 \{#a-step\}
+
+每個步驟用 `trace-step` 包住 `trace-summary`。摘要列包含標記和文字，也可在末端加入 `trace-meta`，顯示耗時或找到的項目數等數字資訊。
+
+步驟有細節時，請使用 `<details>`，將摘要列放在 `<summary>` 中，接著以 `trace-detail` 包住細節。樣式表偵測到細節後，會在摘要文字後加上小箭頭，表示該列可以展開或收合。展開時箭頭朝下。瀏覽器能對 `::details-content` 套用轉場時，細節會以動畫展開至內容本身的高度，其他瀏覽器則會立即展開。使用頁面內搜尋時，只要收合的步驟含有相符文字，瀏覽器就會自動展開它，行為和其他 `<details>` 相同。
+
+## 標記 \{#markers\}
+
+空的 `trace-marker` 會顯示為小圓點。也可以在標記中放入[圖示](/components/icon)來表示步驟類型，或在步驟執行期間顯示帶有 `spinner-inline` 的[載入指示器](/components/spinner)。
+
+<ComponentPreview name="markers" height={264} narrowHeight={312} title="標記" bodyClass="p-lg" html={`<div class="card max-w(440) mx-auto">
+  <div class="trace">
+    <div class="trace-step">
+      <p class="trace-summary"><span class="trace-marker"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.5-4.5"/></svg></span>Searched for "rate limit"<span class="trace-meta">4 results</span></p>
+    </div>
+    <div class="trace-step">
+      <p class="trace-summary"><span class="trace-marker"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h7l4 4v12H7zM14 4v4h4"/></svg></span>Read limits.ts<span class="trace-meta">214 lines</span></p>
+    </div>
+    <div class="trace-step">
+      <p class="trace-summary"><span class="trace-marker"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 8 4 4-4 4M12 17h7"/></svg></span>Ran the tests<span class="trace-meta">48 passed</span></p>
+    </div>
+    <div class="trace-step" aria-busy="true">
+      <p class="trace-summary"><span class="trace-marker"><span class="spinner spinner-inline"></span></span>Writing the answer</p>
+    </div>
+  </div>
+</div>`} />
+
+## 執行中與失敗 \{#running-and-failed\}
+
+進行中的步驟帶有 `aria-busy="true"`，文字會加深，純圓點標記則會向外擴散一圈。使用者啟用減少動態效果時，外圈會以靜止的光暈呈現。步驟結束後請移除這個屬性。
+
+步驟失敗時，使用 `trace-failed` 將標記和摘要列末端的數字資訊改為危險狀態色。ARIA 沒有表示清單項目失敗的狀態，因此這裡使用類別。請在摘要列或展開後的內容中寫明哪個動作失敗，讓使用者也能透過文字辨識。
+
+<ComponentPreview name="failed" height={272} narrowHeight={312} title="失敗" bodyClass="p-lg" html={`<div class="card max-w(440) mx-auto">
+  <div class="trace">
+    <div class="trace-step">
+      <p class="trace-summary"><span class="trace-marker"></span>Installed dependencies<span class="trace-meta">14s</span></p>
+    </div>
+    <div class="trace-step">
+      <p class="trace-summary"><span class="trace-marker"></span>Compiled 38 routes<span class="trace-meta">48s</span></p>
+    </div>
+    <details class="trace-step trace-failed" open>
+      <summary class="trace-summary"><span class="trace-marker"></span>Ran the test suite<span class="trace-meta">2 failed</span></summary>
+      <div class="trace-detail">orders.spec.ts expected the status to be "paid" and received "pending", twice.</div>
+    </details>
+  </div>
+</div>`} />
+
+## 單列記錄 \{#one-line\}
+
+只有一個步驟的追蹤記錄，可以用在助理回答上方，列出執行的動作和耗時，並可展開查看背後的推理。
+
+<ComponentPreview name="one" height={168} narrowHeight={208} title="單一步驟" background="plain" bodyClass="p-lg" html={`<div class="trace max-w(440) mx-auto">
+  <details class="trace-step">
+    <summary class="trace-summary"><span class="trace-marker"></span>Thought for 12 seconds</summary>
+    <div class="trace-detail">The question is about the fallback, not the feature, so the answer starts from a browser without anchor positioning.</div>
+  </details>
+</div>`} />
+
+## 追蹤記錄、時間軸或步驟 \{#trace-timeline-or-steps\}
+
+追蹤記錄呈現工作執行情況，可以標示進行中或失敗的步驟，也能展開查看執行細節。[時間軸](/components/timeline)記錄事件及其發生時間。[步驟](/components/steps)則呈現讀者依序完成的固定流程。
+
+## 無障礙 \{#accessibility\}
+
+- 可展開的步驟使用 `<details>`，由瀏覽器為摘要列提供展開與收合控制項的角色、狀態和鍵盤操作。
+- 標記由樣式表繪製，輔助技術不會朗讀。標記內的圖示是裝飾，請在摘要列寫明這個步驟的內容。
+- 如果追蹤記錄會在顯示期間增加步驟，請將它放在帶有 `aria-live="polite"` 的區域內，讓新增的步驟在加入時由輔助技術朗讀。進行中的步驟帶有 `aria-busy`，讓使用者可透過視覺樣式或輔助技術辨識其狀態。
+- 在觸控螢幕上，每列高 44px。
+
+## 類別 \{#classes\}
+
+<ContractTable name="trace" />
+
+## 自訂屬性 \{#custom-properties\}
+
+<ContractTable name="trace" show="properties" />
+
+## 原始碼 \{#source\}
+
+<ComponentSource name="trace" />

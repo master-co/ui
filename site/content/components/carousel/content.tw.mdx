@@ -1,0 +1,214 @@
+---
+title: "輪播"
+description: "僅用 CSS 實作可捲動並自動貼齊的一排投影片。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+輪播是一排可捲動並自動貼齊的投影片。它完全以 CSS 實作：軌道是啟用捲動貼齊的捲動容器，因此觸控、觸控板、鍵盤和輔助科技都能依照一般捲動方式操作。瀏覽器支援時，樣式表會加上上一張和下一張按鈕，並為每張投影片加上圓點。瀏覽器會將它們產生為可取得焦點的控制項。
+
+<ComponentPreview name="default" height={200} narrowHeight={224} title="輪播" bodyClass="p-lg" html={`<div class="carousel" role="region" aria-label="Featured projects" tabindex="0">
+  <article class="carousel-slide card card-flat">
+    <header class="card-header">
+      <h3 class="card-title">Atlas</h3>
+      <p class="card-description">A map of every deployment, live.</p>
+    </header>
+    <div class="card-body">1.28M requests in the last 24 hours.</div>
+  </article>
+  <article class="carousel-slide card card-flat">
+    <header class="card-header">
+      <h3 class="card-title">Borealis</h3>
+      <p class="card-description">Edge functions close to the reader.</p>
+    </header>
+    <div class="card-body">Served from 14 regions.</div>
+  </article>
+  <article class="carousel-slide card card-flat">
+    <header class="card-header">
+      <h3 class="card-title">Cirrus</h3>
+      <p class="card-description">Storage that follows the project.</p>
+    </header>
+    <div class="card-body">7.4 of 10 GB in use.</div>
+  </article>
+</div>`} />
+
+## 控制項 \{#the-controls\}
+
+標記中沒有對應按鈕或圓點的元素，兩者都是偽元素：
+
+- `::scroll-button(inline-start)` 和 `::scroll-button(inline-end)` 每次將軌道捲動一頁。它們和其他按鈕一樣帶有浮起效果，指標移入時會抬高，按下時會下沉。到達任一端時，瀏覽器會停用對應的按鈕，樣式表則將它淡出並隱藏，避免遮住下方的投影片。
+- 每張投影片的 `::scroll-marker` 是一個圓點，`::scroll-marker-group` 將這些圓點集中在軌道下方。目前可見投影片的圓點會符合 `:target-current`，拉長並填上墨色。每個圓點周圍都有內距以擴大操作範圍，觸控螢幕上還會再加大，手指不必精準點中 6px 的圓點。
+
+這些控制項以各自的輪播為錨點定位。錨點名稱的作用域限於個別輪播，因此同一頁上的多組輪播可各自使用自己的控制項。瀏覽器不支援這些偽元素時，輪播只會少了這些控制項，仍是一排可滑動、可捲動的投影片。
+
+## 同時顯示多張 \{#several-in-view\}
+
+`carousel-2` 和 `carousel-3` 分別同時顯示兩張或三張投影片。投影片平分軌道扣除間距後的寬度，因此最後一張可見投影片剛好貼齊軌道邊緣。
+
+<ComponentPreview name="several" height={184} title="同時顯示多張" bodyClass="p-lg" html={`<div class="carousel carousel-3" role="region" aria-label="Team" tabindex="0">
+  <div class="carousel-slide sheet sheet-flat flex flex-col items-center gap-xs p-md">
+    <span class="avatar avatar-lg"><img class="avatar-image" src="/demo/portrait-1.svg" alt=""></span>
+    <span class="text-sm fg-text-strong">Ada</span>
+  </div>
+  <div class="carousel-slide sheet sheet-flat flex flex-col items-center gap-xs p-md">
+    <span class="avatar avatar-lg"><img class="avatar-image" src="/demo/portrait-2.svg" alt=""></span>
+    <span class="text-sm fg-text-strong">Alan</span>
+  </div>
+  <div class="carousel-slide sheet sheet-flat flex flex-col items-center gap-xs p-md">
+    <span class="avatar avatar-lg"><img class="avatar-image" src="/demo/portrait-3.svg" alt=""></span>
+    <span class="text-sm fg-text-strong">Katherine</span>
+  </div>
+  <div class="carousel-slide sheet sheet-flat flex flex-col items-center gap-xs p-md">
+    <span class="avatar avatar-lg" role="img" aria-label="Grace">GH</span>
+    <span class="text-sm fg-text-strong">Grace</span>
+  </div>
+  <div class="carousel-slide sheet sheet-flat flex flex-col items-center gap-xs p-md">
+    <span class="avatar avatar-lg" role="img" aria-label="Margaret">MH</span>
+    <span class="text-sm fg-text-strong">Margaret</span>
+  </div>
+</div>`} />
+
+## 露出下一張 \{#peek\}
+
+將 `--carousel-slide` 設得比軌道窄，下一張投影片就會露出一部分。下一張露出的邊緣比圓點更早讓使用者看出後面還有內容。瀏覽器未呈現圓點時，這也是唯一的提示。圖片採用[圖像元件](/components/figure)。在軌道上設定 `--figure-ratio`，就能在載入前為每張圖片保留同一比例的空間，避免橫列跳動。
+
+<ComponentPreview name="peek" height={420} mediumHeight={392} narrowHeight={308} title="露出下一張" bodyClass="p-lg" html={`<div class="carousel" style="--carousel-slide: 84%; --figure-ratio: 16 / 10" role="region" aria-label="Field notes" tabindex="0">
+  <figure class="carousel-slide figure">
+    <img class="figure-media" src="/demo/harbor.svg" alt="A wooden jetty running out over calm water">
+    <figcaption class="figure-caption">The jetty at high water</figcaption>
+  </figure>
+  <figure class="carousel-slide figure">
+    <img class="figure-media" src="/demo/tide.svg" alt="A pale sun low over flat water">
+    <figcaption class="figure-caption">Low tide at seven</figcaption>
+  </figure>
+  <figure class="carousel-slide figure">
+    <img class="figure-media" src="/demo/moonstone.svg" alt="A full moon above two ridges">
+    <figcaption class="figure-caption">Moonrise over the ridges</figcaption>
+  </figure>
+  <figure class="carousel-slide figure">
+    <img class="figure-media" src="/demo/pines.svg" alt="A line of pines in mist">
+    <figcaption class="figure-caption">Pines in the morning fog</figcaption>
+  </figure>
+</div>`} />
+
+## 置中 \{#centered\}
+
+`carousel-center` 將目前可見的投影片置中，左右各露出相鄰投影片的一部分，並在第一張之前與最後一張之後留出空間，讓首尾也能捲動到中央。每張投影片預設占軌道的 80%，可調整 `--carousel-slide` 來控制相鄰投影片露出的多寡。兩端的留白由各一個空白的 flex 項目撐出，無須設定內距，因此投影片寬度仍按整條軌道的寬度等比例計算。
+
+<ComponentPreview name="centered" height={408} mediumHeight={380} narrowHeight={300} title="置中" bodyClass="p-lg" html={`<div class="carousel carousel-center" style="--figure-ratio: 16 / 10" role="region" aria-label="Material studies" tabindex="0">
+  <figure class="carousel-slide figure">
+    <img class="figure-media" src="/home/slides/pearl.svg" alt="A pearl on a stone plinth, in soft morning light">
+    <figcaption class="figure-caption">Pearl, in morning light</figcaption>
+  </figure>
+  <figure class="carousel-slide figure">
+    <img class="figure-media" src="/home/slides/obsidian.svg" alt="A polished obsidian sphere on a dark glossy floor, a softbox reflected in it">
+    <figcaption class="figure-caption">Obsidian, under a softbox</figcaption>
+  </figure>
+  <figure class="carousel-slide figure">
+    <img class="figure-media" src="/home/slides/dune.svg" alt="Dunes at first light, their ridges catching a low sun">
+    <figcaption class="figure-caption">Dunes, at first light</figcaption>
+  </figure>
+  <figure class="carousel-slide figure">
+    <img class="figure-media" src="/home/slides/tide.svg" alt="A still sea at dusk, the moon low over the horizon and its light broken on the water">
+    <figcaption class="figure-caption">Tide, at dusk</figcaption>
+  </figure>
+  <figure class="carousel-slide figure">
+    <img class="figure-media" src="/home/slides/arches.svg" alt="A plaster hall with three arched openings, low sun laying their shapes across the floor">
+    <figcaption class="figure-caption">Arches, in low sun</figcaption>
+  </figure>
+</div>`} />
+
+## 固定寬度橫列 \{#shelf\}
+
+將投影片設為相同的固定寬度，軌道能容納幾張就完整顯示幾張，下一張則只露出一部分。採用鄰近貼齊時，快速滑動可一次越過數張投影片，無須逐張停下。捲動會在放手後自然停下，並在靠近投影片時貼齊最近的一張。
+
+<ComponentPreview name="shelf" height={296} title="固定寬度橫列" bodyClass="p-lg" html={`<div class="carousel (scroll-snap-type:x|proximity)" style="--carousel-slide: 8.5rem; --carousel-gap: .75rem; --figure-ratio: 4 / 5" role="region" aria-label="Prints" tabindex="0">
+  <figure class="carousel-slide figure">
+    <img class="figure-media" src="/demo/cairn.svg" alt="Five stones balanced on a beach">
+    <figcaption class="figure-caption"><span class="block fg-text-strong">Cairn</span>$48</figcaption>
+  </figure>
+  <figure class="carousel-slide figure">
+    <img class="figure-media" src="/demo/dunes.svg" alt="Dunes in the afternoon, their lee sides in shadow">
+    <figcaption class="figure-caption"><span class="block fg-text-strong">Dunes</span>$56</figcaption>
+  </figure>
+  <figure class="carousel-slide figure">
+    <img class="figure-media" src="/demo/lighthouse.svg" alt="A lighthouse on a dark headland, its beam over the sea">
+    <figcaption class="figure-caption"><span class="block fg-text-strong">Headland</span>$64</figcaption>
+  </figure>
+  <figure class="carousel-slide figure">
+    <img class="figure-media" src="/demo/pines.svg" alt="Rows of pines fading into fog">
+    <figcaption class="figure-caption"><span class="block fg-text-strong">Pines</span>$48</figcaption>
+  </figure>
+  <figure class="carousel-slide figure">
+    <img class="figure-media" src="/demo/steps.svg" alt="Concrete steps half in shadow">
+    <figcaption class="figure-caption"><span class="block fg-text-strong">Steps</span>$40</figcaption>
+  </figure>
+  <figure class="carousel-slide figure">
+    <img class="figure-media" src="/demo/harbor.svg" alt="Jetty posts standing in the water">
+    <figcaption class="figure-caption"><span class="block fg-text-strong">Jetty</span>$56</figcaption>
+  </figure>
+  <figure class="carousel-slide figure">
+    <img class="figure-media" src="/demo/tide.svg" alt="The sea at slack tide">
+    <figcaption class="figure-caption"><span class="block fg-text-strong">Slack tide</span>$48</figcaption>
+  </figure>
+</div>`} />
+
+## 依空間顯示 \{#as-many-as-fit\}
+
+顯示張數可依輪播容器的可用寬度調整，無須以視窗寬度為準。將父元素設為查詢容器，並在各個寬度下設定 `--carousel-slide`，讓投影片平分軌道扣除間距後的寬度，如同 `carousel-2` 和 `carousel-3` 的做法。縮窄預覽即可看到投影片從三張變成兩張，再變成一張。
+
+<ComponentPreview name="as-many-as-fit" height={184} title="依空間顯示" responsive bodyClass="p-lg" html={`<div class="container-inline">
+  <div class="carousel (--carousel-slide:calc((100%-1rem)/2))@container(--sm) (--carousel-slide:calc((100%-2rem)/3))@container(--xl)" role="region" aria-label="Projects" tabindex="0">
+    <article class="carousel-slide card card-flat">
+      <header class="card-header">
+        <h3 class="card-title">Atlas</h3>
+        <p class="card-description">A map of every deployment.</p>
+      </header>
+    </article>
+    <article class="carousel-slide card card-flat">
+      <header class="card-header">
+        <h3 class="card-title">Borealis</h3>
+        <p class="card-description">Edge functions near the reader.</p>
+      </header>
+    </article>
+    <article class="carousel-slide card card-flat">
+      <header class="card-header">
+        <h3 class="card-title">Cirrus</h3>
+        <p class="card-description">Storage that follows the project.</p>
+      </header>
+    </article>
+    <article class="carousel-slide card card-flat">
+      <header class="card-header">
+        <h3 class="card-title">Delta</h3>
+        <p class="card-description">Previews for every branch.</p>
+      </header>
+    </article>
+    <article class="carousel-slide card card-flat">
+      <header class="card-header">
+        <h3 class="card-title">Ember</h3>
+        <p class="card-description">Logs that keep a week.</p>
+      </header>
+    </article>
+  </div>
+</div>`} />
+
+## 無障礙 \{#accessibility\}
+
+- 在軌道上設定 `role="region"`、標籤和 `tabindex="0"`，讓使用者能以方向鍵捲動。
+- 樣式表將產生的按鈕命名為「上一張投影片」和「下一張投影片」。每個圓點都以對應投影片的內容命名。
+- 輪播本身不會自行捲動。若用計時器自動切換內容，必須透過腳本提供暫停控制項。
+- 啟用減少動態效果時，軌道會直接跳到另一張投影片，省略平滑捲動。
+- 在強制色彩模式下，按鈕會以系統按鈕色繪製外框，圓點也會保留系統色彩，其中目前可見投影片的圓點會使用醒目提示色。
+
+## 類別 \{#classes\}
+
+<ContractTable name="carousel" />
+
+## 自訂屬性 \{#custom-properties\}
+
+<ContractTable name="carousel" show="properties" />
+
+## 原始碼 \{#source\}
+
+<ComponentSource name="carousel" />

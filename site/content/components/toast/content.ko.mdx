@@ -1,0 +1,107 @@
+---
+title: "토스트"
+description: "페이지 위에 잠깐 표시되며 자동으로 사라질 수 있는 메시지입니다."
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+토스트는 저장, 배포, 복사처럼 방금 일어난 일을 페이지 위에 잠깐 알리는 메시지입니다. 각 토스트는 고정 배치된 `toast-region` 안에 있는 비모달 `<dialog>`입니다. 대화상자이므로 스크립트 없이 닫을 수 있으며, 나타나고 사라지는 동작은 스타일시트에서 CSS로 정의합니다.
+
+<ComponentPreview name="default" height={240} title="토스트" bodyClass="content-start p-lg min-h(240)" html={`<div class="toast-region" role="region" aria-label="Notifications" aria-live="polite">
+  <dialog open class="toast toast-success" aria-labelledby="toast-deployed">
+    <svg class="icon toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 4.5-5.5"/></svg>
+    <div class="toast-body">
+      <p class="toast-title" id="toast-deployed">Deployed to production</p>
+      <p class="toast-description">atlas.dev is live in 14 regions.</p>
+    </div>
+    <form method="dialog" class="toast-close">
+      <button class="btn btn-quiet btn-square btn-sm" aria-label="Dismiss">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </form>
+  </dialog>
+</div>`} caption="토스트의 버튼을 눌러 닫으세요. 스크립트는 사용하지 않습니다." />
+
+## 표시 및 닫기 \{#showing-and-dismissing\}
+
+- `open` 속성이 있는 토스트는 페이지가 로드될 때 표시됩니다. 양식이 POST로 제출된 뒤 서버에서 렌더링하는 메시지에 적합합니다.
+- 스크립트에서는 영역 안에 있는 토스트에서 `toast.show()`를 호출하거나, 해당 영역에 새 `<dialog open class="toast">`를 추가하세요. 두 경우 모두 `@starting-style` 규칙이 토스트 등장 동작의 시작 프레임을 지정합니다.
+- 버튼을 `<form method="dialog">` 요소로 감싸거나 버튼에 `commandfor`와 `command="close"`를 지정하면 버튼을 눌러 토스트를 닫을 수 있습니다. `display` 속성은 `allow-discrete`와 함께 전환되므로, 토스트가 차지하던 공간이 사라지기 전에 닫히는 동작이 재생됩니다.
+
+## 자동 닫기 \{#timed\}
+
+`toast-timed` 클래스를 사용하면 토스트가 6초 후에 자동으로 닫힙니다. 시간은 `display: none`으로 끝나는 CSS 애니메이션으로 제어합니다. 포인터가 토스트 위에 있거나 키보드 포커스가 토스트 안에 있으면 애니메이션이 일시 정지되어 내용을 읽을 시간을 확보할 수 있습니다. 토스트 아래쪽의 가는 선은 남은 시간에 따라 줄어들고 타이머가 멈추면 함께 멈춥니다. 시간을 변경하려면 `--toast-duration` 사용자 지정 속성을 설정하세요. 사용자가 아직 실행해야 할 수 있는 동작은 자동으로 닫히는 토스트에 넣지 마세요. 중요한 내용은 계속 표시되는 [알림](/components/alert)에 넣으세요.
+
+<ComponentPreview name="timed" height={200} title="자동으로 닫히는 토스트" bodyClass="content-start p-lg min-h(200)" html={`<div class="toast-region" role="region" aria-label="Notifications" aria-live="polite">
+  <dialog open class="toast toast-timed" aria-label="Link copied">
+    <div class="toast-body">
+      <p class="toast-description">Link copied to the clipboard.</p>
+    </div>
+  </dialog>
+</div>`} caption="이 토스트는 6초 후에 닫힙니다. 다시 보려면 페이지를 새로고침하세요." />
+
+## 동작 버튼 \{#with-an-action\}
+
+본문 뒤에 놓은 [버튼](/components/button)은 행의 끝에 배치됩니다. 상태를 지정하는 수정자는 아이콘에만 색을 적용하며 텍스트는 기본 글자색을 유지합니다.
+
+<ComponentPreview name="action" height={304} title="동작 버튼이 있는 토스트" bodyClass="content-start p-lg min-h(300)" html={`<div class="toast-region" role="region" aria-label="Notifications" aria-live="polite">
+  <dialog open class="toast" aria-labelledby="toast-archived">
+    <div class="toast-body">
+      <p class="toast-title" id="toast-archived">Project archived</p>
+      <p class="toast-description">Atlas is hidden from the dashboard.</p>
+    </div>
+    <form method="dialog"><button class="btn btn-sm">Undo</button></form>
+  </dialog>
+  <dialog open class="toast toast-danger" aria-labelledby="toast-failed">
+    <svg class="icon toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16v.01"/></svg>
+    <div class="toast-body">
+      <p class="toast-title" id="toast-failed">The build failed</p>
+      <p class="toast-description">The install step exited with code 1.</p>
+    </div>
+    <form method="dialog" class="toast-close">
+      <button class="btn btn-quiet btn-square btn-sm" aria-label="Dismiss">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </form>
+  </dialog>
+</div>`} />
+
+## 토스트 영역 \{#the-region\}
+
+`toast-region`은 하단의 인라인 끝 모서리에 고정되며 가장 최근 토스트를 맨 아래에 쌓습니다. 영역 자체는 포인터 이벤트를 받지 않으므로 빈 부분 아래에 있는 페이지를 계속 조작할 수 있습니다. 좁은 화면에서는 화면 너비 전체를 차지합니다.
+
+| 클래스 | 배치 |
+| --- | --- |
+| `toast-region` | 하단의 인라인 끝 |
+| `toast-region-top` | 상단. 토스트가 아래 방향으로 나타나며 가장 최근 토스트가 맨 위에 배치됩니다. |
+| `toast-region-center` | 인라인 끝 대신 가운데에 배치 |
+
+이 영역은 `z-index`가 지정된 일반 고정 배치 요소입니다. 열린 모달 [대화상자](/components/dialog) 위에 토스트를 표시하려면 영역에 `popover="manual"`를 지정하고 해당 영역에서 `showPopover()`를 한 번 호출하세요. 그러면 영역이 최상위 레이어에 배치됩니다.
+
+## 접근성 \{#accessibility\}
+
+- 토스트가 나타날 때 스크린 리더가 읽도록 `aria-live="polite"`를 지정해 라이브 영역으로 만들고, `aria-label`로 영역의 접근 가능한 이름을 지정하세요.
+- 각 토스트에는 제목을 가리키는 `aria-labelledby` 속성이나 `aria-label` 속성으로 접근 가능한 이름을 지정하세요.
+- 토스트는 작업 결과를 확인하는 용도입니다. 사용자가 토스트를 놓쳐도 필요한 정보나 기능에 접근할 수 있어야 하므로, 어떤 동작을 실행하는 유일한 수단을 토스트 안에 두지 마세요.
+- 동작 줄이기가 설정되어 있으면 토스트는 제자리에서 서서히 나타납니다.
+
+## React, Svelte 및 Vue \{#frameworks\}
+
+`toast` 컴포넌트는 토스트를 큐로 관리합니다. 어디서든 호출할 수 있는 `toast()` 함수와 큐의 내용을 표시하는 영역으로 구성되며, 영역은 한 번만 렌더링합니다. `npx master-ui add toast`를 사용해 프로젝트에 복사하세요. 컴포넌트의 구성과 사용법은 [React, Svelte 및 Vue](/guide/frameworks)에서 확인할 수 있습니다.
+
+<FrameworkSource name="toast" />
+
+## 클래스 \{#classes\}
+
+<ContractTable name="toast" />
+
+## 사용자 지정 속성 \{#custom-properties\}
+
+<ContractTable name="toast" show="properties" />
+
+## 소스 \{#source\}
+
+<ComponentSource name="toast" />

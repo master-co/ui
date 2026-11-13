@@ -1,0 +1,86 @@
+---
+title: "画像比較"
+description: "同じ対象を写した 2 枚の画像を、境界線のハンドルを動かして比較できます。"
+---
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+画像比較では、同じ対象の 2 枚の画像を重ね、境界線を動かして編集前後、ライト表示とダーク表示、初稿と改訂版などを見比べられます。ハンドルにはネイティブの `<input type="range">` を使い、スライダー標準のキー操作、値、名前を利用できます。細い境界線には真珠のような質感のつまみが付き、手前の画像はその線に沿って切り抜かれます。
+
+<ComponentPreview name="default" height={376} narrowHeight={320} title="画像比較" bodyClass="p-lg" behaviors html={`<figure class="compare max-w(520) mx-auto">
+  <img class="compare-before" src="/demo/moonstone.svg" alt="The landscape before grading: grey and flat" style="aspect-ratio: 16 / 10; filter: grayscale(1) contrast(.75)">
+  <img class="compare-after" src="/demo/moonstone.svg" alt="The landscape after grading">
+  <input type="range" class="compare-range" min="0" max="100" value="50" aria-label="Show more of the graded picture">
+</figure>`} caption="つまみをドラッグするか、つまみにフォーカスして矢印キーを押します。" />
+
+## ハンドルと画像表示の連動 \{#the-handle-moves-the-picture\}
+
+スクロール駆動アニメーションに対応したブラウザーでは、入力要素内のつまみを基準にしたビュータイムラインをフレームが参照します。スクリプトなしで `--compare-position` がつまみの位置に追従し、画像の切り抜きと境界線はそのプロパティに連動します。
+
+非対応のブラウザーでは、`compare` [ビヘイビア](/guide/behaviors)が同じ処理を行います。適用時と入力値が変わるたびに、入力値が範囲内のどの位置にあるかを百分率に換算し、ルート要素の `--compare-position` に書き込みます。ビヘイビアはすべてのブラウザーで適用してください。スタイルシートがすでにプロパティを制御している場合、スクリプトは表示に影響しません。
+
+```js name=app.js
+import { compare } from '@master/ui/behaviors/compare.js'
+
+const detach = compare(document.querySelector('.compare'))
+```
+
+ビヘイビアは `compare` クラスを持つルート要素を受け取ります。オプションや独自のイベントはありません。範囲入力は標準の `input` と `change` を発行し、その `value` が境界線の位置を示します。スタイルシートのタイムラインが機能せず、ビヘイビアも適用していない場合、境界線は `--compare-position` で指定した位置に固定されます。既定は中央です。
+
+入力要素はフレームよりつまみ一つ分だけ幅が広くなっています。つまみの中心がフレームの端から端まで移動できるため、境界線をどちらの端にも合わせられます。
+
+## 画像 \{#pictures\}
+
+`compare-before` は背面にあり、始端から境界線までが表示されます。`compare-after` は前面にあり、境界線から終端までが表示されます。どちらの画像もフレーム全体を覆い、フレームの形に合わせて切り抜かれます。一方の画像に幅と高さ、または `aspect-ratio` を指定してフレームの形を決め、同じ構図の画像を 2 枚使ってください。
+
+フレームにはサーフェスと同じ角の丸みと、すべての [図版](/components/figure) に共通する内側の輪郭が付きます。カードの中に配置する場合は `--compare-radius` を指定します。
+
+<ComponentPreview name="small" height={424} title="カード内での表示" bodyClass="flex items-center justify-center p-lg" behaviors html={`<div class="card w(280)">
+  <figure class="compare card-media" style="--compare-radius: calc(var(--radius-surface) - 4px)">
+    <img class="compare-before" src="/demo/portrait-1.svg" alt="The portrait as uploaded" style="aspect-ratio: 4 / 3; filter: saturate(.2) brightness(.92)">
+    <img class="compare-after" src="/demo/portrait-1.svg" alt="The portrait with the Warm preset">
+    <input type="range" class="compare-range" min="0" max="100" value="40" aria-label="Show more of the Warm preset">
+  </figure>
+  <div class="card-header">
+    <h3 class="card-title">Warm</h3>
+    <p class="card-description">Drag to compare with the original.</p>
+  </div>
+</div>`} />
+
+## キーボード操作 \{#keyboard\}
+
+範囲入力の標準キー操作を使います。ビヘイビアによる追加のキー操作はありません。
+
+<ContractTable name="compare" show="keyboard" />
+
+## アクセシビリティ \{#accessibility\}
+
+- 「色調補正後の画像を広く表示」のように、操作すると何が変わるかがわかる名前を入力要素に付けます。
+- 各画像に `alt` を付け、どちらの画像か、もう一方とどう違うかを記述します。2 枚を見比べられない読者にも、違いが言葉で伝わるようにします。
+- ハンドルは、Tab キーで移動できる一つのフォーカス先です。矢印キーで境界線を 1 ステップずつ動かせます。<kbd>Home</kbd> と <kbd>End</kbd> では、それぞれ片方の画像が全体表示されます。
+- つまみのサイズは 32px で、タッチ画面では 44px です。フレーム上で指を上下に動かして、ページを縦にスクロールできます。
+
+## React、Svelte、Vue \{#frameworks\}
+
+`compare` コンポーネントはビヘイビアを適用し、境界線の位置を受け渡します。2 枚の画像はページ側のマークアップに記述します。`npx master-ui add compare` でプロジェクトにコピーできます。コンポーネントの構成と使い方は [React、Svelte、Vue](/guide/frameworks) を参照してください。
+
+<FrameworkSource name="compare" />
+
+## クラス \{#classes\}
+
+<ContractTable name="compare" />
+
+## カスタムプロパティ \{#custom-properties\}
+
+<ContractTable name="compare" show="properties" />
+
+## 関連コンポーネント \{#related\}
+
+<ComponentLinks slugs={['figure', 'slider', 'carousel']} />
+
+## ソース \{#source\}
+
+<ComponentSource name="compare" />

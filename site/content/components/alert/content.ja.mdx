@@ -1,0 +1,88 @@
+---
+title: "アラート"
+description: "ページの流れの中に表示するメッセージ。必要に応じてステータスを付けられます。"
+---
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+アラートは、そのページに関するメッセージを本文の流れの中に表示するコンポーネントです。平らな面を 0.5px の輪郭で囲みます。ステータスに応じて背景を淡く色づけ、アイコンの色を変えます。テキストは通常の文字色を保ち、色だけに頼らず意味を伝えます。
+
+<ComponentPreview name="default" height={120} narrowHeight={192} title="アラート" bodyClass="p-lg" html={`<div class="alert" role="status">
+  <svg class="icon alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.01"/></svg>
+  <div class="alert-body">
+    <p class="alert-title">A new version is available</p>
+    <p class="alert-description">Reload to use the latest build of the dashboard.</p>
+  </div>
+  <button type="button" class="btn btn-sm">Reload</button>
+</div>`} />
+
+## ステータス \{#status\}
+
+読み手に必要な対応に応じてステータスを選び、その意味が文面からも伝わるようにします。
+
+- `alert-info` は、現時点では状況に変化のない補足情報を伝えます。
+- `alert-success`は、直前の処理が完了したことを伝えます。
+- `alert-warning`は、問題が起きる前に注意を促します。
+- `alert-danger`は、処理の失敗や操作を続行できないことを伝えます。
+
+<ComponentPreview name="status" height={312} mediumHeight={368} narrowHeight={488} title="ステータス" bodyClass="flex flex-col gap-sm p-lg" html={`<div class="alert alert-info" role="status">
+  <svg class="icon alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.01"/></svg>
+  <div class="alert-body">
+    <p class="alert-description">Scheduled maintenance on Sunday from 02:00 to 03:00 UTC.</p>
+  </div>
+</div>
+<div class="alert alert-success" role="status">
+  <svg class="icon alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 4.5-5.5"/></svg>
+  <div class="alert-body">
+    <p class="alert-description">Your domain is verified and serving traffic.</p>
+  </div>
+</div>
+<div class="alert alert-warning" role="status">
+  <svg class="icon alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4 3 19h18L12 4ZM12 10v4M12 17v.01"/></svg>
+  <div class="alert-body">
+    <p class="alert-title">Your card expires this month</p>
+    <p class="alert-description">Update the payment method to keep deployments running.</p>
+  </div>
+  <button type="button" class="btn btn-sm">Update</button>
+</div>
+<div class="alert alert-danger" role="alert">
+  <svg class="icon alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16v.01"/></svg>
+  <div class="alert-body">
+    <p class="alert-title">The build failed</p>
+    <p class="alert-description">The install step exited with code 1. Read the logs for the missing dependency.</p>
+  </div>
+</div>`} />
+
+## レイアウト \{#layout\}
+
+アラートは `--alert-radius` を使用し、既定値は `var(--radius-control-lg)` です。[トレイ](/components/surface#tray)の直下に配置する場合は、アラートのこのプロパティを `var(--radius-surface)` に設定して、トレイの角丸と内側の余白に合わせます。
+
+アイコンに `icon alert-icon` を指定すると、本文が何行あっても、1 行目の上下中央に揃います。`alert-body` は残りの幅を使います。本文の後に置いたボタンやリンクは行末に配置され、アラートの幅が狭いときは本文の下に折り返します。
+
+<ComponentPreview name="narrow" height={192} title="狭いカラムでの表示" bodyClass="p-lg" html={`<div class="alert alert-warning max-w(280) mx-auto" role="status">
+  <svg class="icon alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4 3 19h18L12 4ZM12 10v4M12 17v.01"/></svg>
+  <div class="alert-body">
+    <p class="alert-title">Usage is at 90%</p>
+    <p class="alert-description">Requests are limited when the plan runs out.</p>
+  </div>
+  <button type="button" class="btn btn-sm">Upgrade</button>
+</div>`} />
+
+## アクセシビリティ \{#accessibility\}
+
+- ページの読み込み後に表示されるアラートには、ライブリージョンが必要です。`role="status"` は読み上げの切れ目を待ち、`role="alert"` は進行中の読み上げに割り込みます。`role="alert"` は、すぐに対応が必要なエラーに限って使います。
+- ページに最初から含まれるアラートには、ロールの指定は不要です。
+- アイコンには `aria-hidden="true"` を指定します。メッセージはテキストで伝えます。
+
+## クラス \{#classes\}
+
+<ContractTable name="alert" />
+
+## カスタムプロパティ \{#custom-properties\}
+
+<ContractTable name="alert" show="properties" />
+
+## ソース \{#source\}
+
+<ComponentSource name="alert" />

@@ -1,0 +1,78 @@
+---
+title: "數字鍵盤"
+description: "仿手機按鍵排列，方便用拇指輸入代碼或金額。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+數字鍵盤採用手機的按鍵排列，將十二個按鈕排成三欄，方便用拇指輸入代碼或金額。鍵面平時凸起，按下時立即下沉。每個數字鍵都以大字顯示數字，下方印著手機按鍵常見的小字母。數字鍵盤本身不會輸入任何內容。每個按鍵都是按鈕，由頁面把對應的數字填到指定位置。
+
+<ComponentPreview name="default" height={344} title="數字鍵盤" bodyClass="flex flex-col items-center justify-center gap-md p-lg" caption="按下按鍵，腳本就會將對應數字填入欄位。" html={`<input class="input input-lg text-center w-full max-w(272)" id="pad-amount" type="text" inputmode="none" value="" placeholder="0" aria-label="Amount" readonly>
+<div class="keypad" id="pad" role="group" aria-label="Keypad">
+  <button class="keypad-key" type="button" value="1">1</button>
+  <button class="keypad-key" type="button" value="2">2<span class="keypad-letters">abc</span></button>
+  <button class="keypad-key" type="button" value="3">3<span class="keypad-letters">def</span></button>
+  <button class="keypad-key" type="button" value="4">4<span class="keypad-letters">ghi</span></button>
+  <button class="keypad-key" type="button" value="5">5<span class="keypad-letters">jkl</span></button>
+  <button class="keypad-key" type="button" value="6">6<span class="keypad-letters">mno</span></button>
+  <button class="keypad-key" type="button" value="7">7<span class="keypad-letters">pqrs</span></button>
+  <button class="keypad-key" type="button" value="8">8<span class="keypad-letters">tuv</span></button>
+  <button class="keypad-key" type="button" value="9">9<span class="keypad-letters">wxyz</span></button>
+  <button class="keypad-key keypad-key-quiet" type="button" value=".">.</button>
+  <button class="keypad-key" type="button" value="0">0</button>
+  <button class="keypad-key keypad-key-quiet" type="button" value="delete" aria-label="Delete">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H9l-5-6zM12 10l4 4m0-4-4 4"/></svg>
+  </button>
+</div>
+<script>
+  var amount = document.getElementById('pad-amount')
+  document.getElementById('pad').addEventListener('click', function (event) {
+    var key = event.target.closest('button')
+    if (!key) return
+    amount.value = key.value === 'delete' ? amount.value.slice(0, -1) : amount.value + key.value
+  })
+</script>`} />
+
+## 按鍵 \{#a-key\}
+
+`keypad-key` 是高度為 52px 的按鈕，採用與[按鈕](/components/button)相同的凸起鍵面。用拇指連續輸入六位數時，按鍵節奏很快，因此按下時鍵面立即沉入凹槽，省去過場動畫。指標移到按鍵上時，輪廓線會加深，和其他控制項的懸停狀態一致。
+
+`keypad-letters` 是數字下方的字母列，方便使用者用單字記住代碼。輸入金額時可省略這一列。
+
+`keypad-key-quiet` 用於刪除、小數點或正負號等非數字按鍵。這些按鍵按下時才顯示鍵面，讓十個數字鍵成為視覺主體，其餘按鍵退居邊緣。如果鍵盤一角不需要按鍵，放入空的 `<span>` 即可維持網格排列。
+
+## 鍵盤版面 \{#the-pad\}
+
+鍵盤分成三個等寬欄，欄距為 8px，寬度隨容器延展，最大為 17rem。用一般按鈕組成鍵盤時，容易漏掉以下兩項行為：
+
+- 設定 `touch-action: manipulation`，讓瀏覽器無須等待判斷第二次點按是否要觸發雙點縮放。快速連按同一個鍵會算作兩次按鍵。
+- 停用數字的文字選取，按下時即使手指稍微滑動，也不會反白選取文字。
+
+`--keypad-key` 設定按鍵高度，`--keypad-gap` 設定按鍵之間的間距。
+
+## 頁面如何處理輸入 \{#script\}
+
+數字鍵盤的按鍵行為由頁面決定，例如在金額後加上一位數字、填入 [OTP 欄位](/components/otp)的一格，或撥出電話。和範例一樣，在鍵盤上掛一個事件監聽器即可。讀取按下的按鈕的 `value`，再將它寫入指定位置。
+
+在頁面上保留真正的輸入欄位，讓使用者可以用實體鍵盤輸入，讓密碼管理員可以自動填入，也讓螢幕閱讀器可以讀出值的變化。在欄位上設定 `inputmode="none"`，手機就不會彈出系統鍵盤蓋住數字鍵盤。
+
+## 無障礙 \{#accessibility\}
+
+- 為鍵盤設定 `role="group"` 和 `aria-label`。每個數字鍵都是按鈕，並以顯示的數字作為名稱。只顯示圖示的按鍵需要 `aria-label`。
+- 數字下方的字母是按鈕文字的一部分。如果使用者無須聽到「2 abc」，請用帶有 `aria-hidden="true"` 的元素包住字母。
+- 讓螢幕閱讀器追蹤接收數字的欄位並宣告輸入結果，避免逐次宣告按鍵。
+- 無論使用哪種指標裝置，按鍵高度都是 52px，高於觸控目標所需的 44px。
+
+## 類別 \{#classes\}
+
+<ContractTable name="keypad" />
+
+## 自訂屬性 \{#custom-properties\}
+
+<ContractTable name="keypad" show="properties" />
+
+## 原始碼 \{#source\}
+
+<ComponentSource name="keypad" />

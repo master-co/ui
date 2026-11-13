@@ -1,0 +1,157 @@
+---
+title: "ツリー"
+description: "階層構造を入れ子の行で表示します。"
+---
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+ツリーは、フォルダー、アウトライン、カテゴリーなどの階層構造を入れ子の行で表示します。スクリプトを使わない場合、枝にはネイティブの `<details>` を使い、その `<summary>` が行になります。ブラウザー標準のキー操作で開閉でき、ページ内検索で閉じた枝の中に一致が見つかると、その枝が開きます。
+
+<ComponentPreview name="default" height={456} title="ツリー" background="plain" bodyClass="p-lg" html={`<ul class="tree max-w(260) mx-auto">
+  <li>
+    <details class="tree-group" open>
+      <summary class="tree-item tree-toggle">packages</summary>
+      <ul class="tree-sub">
+        <li>
+          <details class="tree-group" open>
+            <summary class="tree-item tree-toggle">ui</summary>
+            <ul class="tree-sub">
+              <li><a class="tree-item" href="#button" aria-current="page">button.css</a></li>
+              <li><a class="tree-item" href="#input">input.css</a></li>
+              <li><a class="tree-item" href="#theme">theme.css</a></li>
+            </ul>
+          </details>
+        </li>
+        <li>
+          <details class="tree-group">
+            <summary class="tree-item tree-toggle">tests</summary>
+            <ul class="tree-sub">
+              <li><a class="tree-item" href="#test">master.test.ts</a></li>
+            </ul>
+          </details>
+        </li>
+      </ul>
+    </details>
+  </li>
+  <li><a class="tree-item" href="#readme">README.md</a></li>
+  <li><a class="tree-item" href="#license">LICENSE</a></li>
+</ul>`} />
+
+## 行 \{#rows\}
+
+- `tree-item` は行を表します。リンク、ボタン、または枝の `<summary>` に使います。行は高さ 28px で、コンパクトで控えめな表示です。ポインターが重なっている行と現在の行には、チップと同じ色調が付きます。
+- 枝の行に `tree-toggle` を付けると、先頭の列にシェブロンが表示され、展開中は下を向きます。どの行にもこの列の幅を確保するため、末端の項目も同じ階層の枝と揃います。
+- `tree-sub` は枝の子の行を1段下げてまとめます。シェブロンから下に伸びる細い線に沿って、子の行が並びます。
+
+## アイコン付き \{#with-icons\}
+
+シェブロン用の列の後ろにアイコンを置き、[`icon`](/components/icon) を付けます。アイコンは通常は控えめに表示され、その行が現在の項目になると強調されます。
+
+<ComponentPreview name="icons" height={272} title="アイコン付き" background="plain" bodyClass="p-lg" html={`<ul class="tree max-w(260) mx-auto">
+  <li>
+    <details class="tree-group" open>
+      <summary class="tree-item tree-toggle">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/></svg>
+        Design
+      </summary>
+      <ul class="tree-sub">
+        <li>
+          <a class="tree-item" href="#tokens" aria-current="page">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2Z"/></svg>
+            Tokens
+          </a>
+        </li>
+        <li>
+          <a class="tree-item" href="#materials">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2Z"/></svg>
+            Materials
+          </a>
+        </li>
+      </ul>
+    </details>
+  </li>
+  <li>
+    <details class="tree-group">
+      <summary class="tree-item tree-toggle">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/></svg>
+        Engineering
+      </summary>
+      <ul class="tree-sub">
+        <li><a class="tree-item" href="#api">API</a></li>
+      </ul>
+    </details>
+  </li>
+</ul>`} />
+
+## ビヘイビア \{#behavior\}
+
+WAI-ARIA のツリーパターンでは、Tab キーで止まる行は1つで、矢印キーでツリー内を移動し、枝を開閉します。この操作にはスクリプトの `tree` [ビヘイビア](/guide/behaviors)が必要です。クラスは共通で、リストに `role="tree"`、各枝の行に `role="treeitem"` と `aria-expanded`、その枝の `tree-sub` に `role="group"` を指定します。シェブロンの向きは `aria-expanded` に連動し、行に `aria-expanded="false"` が指定されていれば、直後の `tree-sub` が非表示になります。選択中の行は `aria-selected="true"` で示します。
+
+<ComponentPreview name="aria" height={272} title="ARIA による制御" background="plain" bodyClass="p-lg" behaviors html={`<ul class="tree max-w(260) mx-auto" role="tree" aria-label="Outline">
+  <li role="none">
+    <div class="tree-item tree-toggle" role="treeitem" aria-expanded="true" tabindex="0">Introduction</div>
+    <ul class="tree-sub" role="group">
+      <li role="none"><div class="tree-item" role="treeitem" aria-selected="true" tabindex="-1">How it fits together</div></li>
+      <li role="none"><div class="tree-item" role="treeitem" tabindex="-1">Principles</div></li>
+    </ul>
+  </li>
+  <li role="none">
+    <div class="tree-item tree-toggle" role="treeitem" aria-expanded="false" tabindex="-1">Theme</div>
+    <ul class="tree-sub" role="group">
+      <li role="none"><div class="tree-item" role="treeitem" tabindex="-1">Surfaces</div></li>
+    </ul>
+  </li>
+</ul>`} caption="ツリーにフォーカスを移し、矢印キーで操作します。Enter、Space、またはクリックで枝を展開し、末端の行ではその行を選択します。" />
+
+`tree` は、`tree` クラスを持つルート要素を受け取ります。オプションはなく、ビヘイビアを解除する関数を返します。
+
+```js name=app.js
+import { tree } from '@master/ui/behaviors/tree.js'
+
+const root = document.querySelector('.tree')
+tree(root)
+
+root.addEventListener('change', (event) => console.log(event.detail.item))
+```
+
+- **Tab キーで止まる行は1つ。** ビヘイビアは `tabindex` を使って、Tab 順序に1行だけを含めます。マークアップで `tabindex="0"` が指定された行を優先し、該当する行がなければ選択中または現在の行、いずれもなければ先頭行を使います。フォーカスを受けた行が、Tab 順序に含まれる唯一の行になります。ビヘイビアを解除すると、各行の `tabindex` が元に戻ります。
+- **移動。** 矢印キーで移動すると、閉じた枝の中の行、`hidden` の行、無効な行はスキップされます。
+- **アクティブ化。** summary、リンク、ボタンには、ブラウザー標準の操作が適用されます。標準の操作を持たない行（`div` に `role="treeitem"` を指定した行）は、<kbd>Enter</kbd>、<kbd>Space</kbd>、クリックで操作できます。枝の行を操作すると枝が開閉し、末端の行を操作するとその行が選択されます。`aria-selected="true"` は、それまで選択されていた行から新たに選択された行に移ります。
+- **イベント。** 行を選択すると、ルート要素からバブリングする `change` イベントが発火します。`detail.item` には選択した行が入ります。
+- **無効な行。** `disabled` または `aria-disabled="true"` が指定された行は操作を受け付けません。リンク先への移動も、枝の開閉も行いません。
+
+このビヘイビアは、最初の2つのプレビューで使っている `<details>` のツリーにも適用できます。これらのプレビューはビヘイビアなしで動作します。適用すると、`open` を介して `tree-group` を開閉し、Tab キーで止まる行が1つになります。ツリー内は同じキーで移動できます。`attach()` はすべてのツリーにビヘイビアを適用します。`<details>` のツリーでブラウザー標準の操作を維持するには、必要なビヘイビアを名前でインポートします。
+
+## ツリーとナビゲーションの使い分け \{#tree-or-nav\}
+
+[ナビゲーション](/components/nav)は、移動先を1階層のグループにまとめた短いリストです。現在の行は浮き上がった面で示します。ツリーは複数の階層をコンパクトな行で表示し、各枝の先頭にシェブロンを置きます。
+
+## キーボード操作 \{#keyboard\}
+
+<ContractTable name="tree" show="keyboard" />
+
+## アクセシビリティ \{#accessibility\}
+
+- `<details>` を使う場合、ツリー用のロールは追加しないでください。ネイティブの開閉コントロールはそのままで正しく読み上げられます。ビヘイビアを使わない場合は、すべての行に Tab キーで移動できます。
+- 現在の行は `aria-current="page"` で示します。ツリーパターン内では `aria-selected="true"` を使います。
+- タッチスクリーンでは行の高さが 44px になります。
+
+## React、Svelte、Vue \{#frameworks\}
+
+`tree` コンポーネントはデータから行を描画し、ビヘイビアを適用します。選択中の行を外部から指定でき、選択結果も外部に渡します。`npx master-ui add tree` でプロジェクトにコピーできます。コンポーネントの仕組みと使い方は [React、Svelte、Vue](/guide/frameworks) を参照してください。
+
+<FrameworkSource name="tree" />
+
+## クラス \{#classes\}
+
+<ContractTable name="tree" />
+
+## カスタムプロパティ \{#custom-properties\}
+
+<ContractTable name="tree" show="properties" />
+
+## ソース \{#source\}
+
+<ComponentSource name="tree" />

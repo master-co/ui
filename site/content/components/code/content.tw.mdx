@@ -1,0 +1,98 @@
+---
+title: "程式碼"
+description: "以等寬字型呈現原樣文字，可放在行內或獨立成區塊。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+程式碼以等寬字型原樣呈現指令、值或檔名等文字。行內用法是在 `<code>` 上套用 `.code`，讓它在文字行中顯示為小標籤。區塊用法是在 `<pre>` 上套用 `code-block`，形成一個可獨立捲動的[凹槽](/components/surface#well)，即使有程式碼行超出區塊寬度，也能捲動查看。
+
+<ComponentPreview name="default" height={96} narrowHeight={120} title="程式碼" background="plain" bodyClass="p-lg" html={`<p class="m(0) text-sm fg-text-body leading-md">Install the package with <code class="code">npm install @master/ui</code>, then import it after <code class="code">@master/css</code>.</p>`} />
+
+## 區塊 \{#block\}
+
+在 `<pre>` 上套用 `code-block`，並在裡面保留 `<code>` 以維持語意。區塊保留原本的換行，長行則以水平捲動呈現。若有任何一行可能超出區塊寬度，請加上 `tabindex="0"`，讓使用者能以鍵盤捲動。
+
+<ComponentPreview name="block" height={208} title="區塊" background="plain" bodyClass="p-lg" html={`<pre class="code-block" tabindex="0"><code>@import '@master/css';
+@import '@master/ui';
+
+@theme {
+  --color-brand: var(--color-indigo-50);
+}</code></pre>`} />
+
+## 程式碼行 \{#lines\}
+
+若要針對特定行加上標示，請將每行設為 `code-line`。區塊會以網格排列各行，每行都與最長的一行同寬，因此行底色會涵蓋完整的可捲動寬度。網格項目之間的空白不會顯示，所以元素間的換行不會多占一行。每一行程式碼各用一個元素。
+
+`code-line-highlight` 以淡色底和行首的前景色細線標示要說明的那一行。在區塊上套用 `code-numbered`，即可用 CSS 計數器在程式碼旁的行號區顯示行號。選取或複製程式碼時，行號不會一併選取或複製。
+
+<ComponentPreview name="lines" height={208} title="行號與醒目標示" background="plain" bodyClass="p-lg" html={`<pre class="code-block code-numbered" tabindex="0"><code class="code-line">.btn {</code>
+<code class="code-line">  --btn-height: 2.375rem;</code>
+<code class="code-line code-line-highlight">  --btn-radius: var(--radius-control);</code>
+<code class="code-line">  border-radius: calc(var(--btn-radius) * var(--corner-scale));</code>
+<code class="code-line">  corner-shape: var(--corner-shape);</code>
+<code class="code-line">}</code></pre>`} />
+
+## 差異 \{#diff\}
+
+`code-line-added` 和 `code-line-removed` 標示新增與移除的行。色調對應各行原有的行首符號。請像修補檔一樣，在文字中保留 `+` 和 `-`，讓使用者單憑文字也能辨識變更，並能將內容直接複製為修補檔。
+
+<ComponentPreview name="diff" height={184} title="差異" background="plain" bodyClass="p-lg" html={`<pre class="code-block" tabindex="0"><code class="code-line">  @theme {</code>
+<code class="code-line code-line-removed">-   --radius-control: .5rem;</code>
+<code class="code-line code-line-added">+   --radius-control: .625rem;</code>
+<code class="code-line">    --radius-surface: 1rem;</code>
+<code class="code-line">  }</code></pre>`} />
+
+## 面板 \{#panel\}
+
+`code-panel` 將標頭放在程式碼區塊上方，兩者共用同一個凹槽。檔名放在 `code-title` 中，控制項位於標頭末端，向內縮 4px，圓角與外框同心。內部的程式碼區塊會省去自己的凹槽樣式。
+
+可在獨立的 `code-block` 或包住它的 `code-panel` 上設定 `--code-radius`。預設值為 `var(--radius-control)`。若根元素是[托盤](/components/surface#tray)的直接子元素，則使用 `var(--radius-surface)`，讓圓角配合托盤的內距。面板內的區塊維持直角與透明背景，整組只呈現一道外輪廓。
+
+複製功能只需三行腳本。讀取區塊的文字，再寫入剪貼簿。
+
+<ComponentPreview name="panel" height={248} title="面板" background="plain" bodyClass="p-lg" html={`<div class="code-panel">
+  <div class="code-header">
+    <span class="code-title">app.css</span>
+    <button type="button" class="btn btn-quiet btn-sm" id="copy-app-css"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 9h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V10a1 1 0 0 1 1-1M16 9V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>Copy</button>
+  </div>
+  <pre class="code-block" tabindex="0"><code>@import '@master/css';
+@import '@master/ui';
+
+@theme {
+  --color-brand: var(--color-indigo-50);
+}</code></pre>
+</div>
+<script>
+document.getElementById('copy-app-css').addEventListener('click', function (event) {
+  var button = event.currentTarget
+  navigator.clipboard.writeText(button.closest('.code-panel').querySelector('.code-block').textContent).then(function () {
+    button.lastChild.textContent = 'Copied'
+    setTimeout(function () { button.lastChild.textContent = 'Copy' }, 1600)
+  })
+})
+</script>`} />
+
+## Code 或 kbd \{#code-or-kbd\}
+
+用 `code` 標記讀者要輸入的文字或從程式讀到的內容，用 [`kbd`](/components/kbd) 標記要按的按鍵。樣式表不提供語法醒目提示，語法醒目提示工具產生的 span 元素在區塊內會保留各自的顏色。
+
+## 類別 \{#classes\}
+
+<ContractTable name="code" />
+
+## 自訂屬性 \{#custom-properties\}
+
+<ContractTable name="code" show="properties" />
+
+## 無障礙 \{#accessibility\}
+
+- 若有任何一行可能超出區塊寬度，請加上 `tabindex="0"`，讓使用者能以鍵盤捲動。
+- 行號是產生的內容，朗讀、選取或複製程式碼時都不會包含行號。
+- 醒目標示是視覺效果。周圍文字若要指涉某一行，請直接說明該行的內容，避免以顏色或行號指稱。
+
+## 原始碼 \{#source\}
+
+<ComponentSource name="code" />

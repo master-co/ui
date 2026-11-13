@@ -1,0 +1,87 @@
+---
+title: "圖片比較"
+description: "用滑柄移動兩張圖片的分隔線，比較同一事物的不同樣貌。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+圖片比較將同一事物的兩張圖片疊在一起，讓讀者移動分隔線，比較編輯前後、淺色與深色，或草稿與修訂版。滑柄是原生的 `<input type="range">`，因此具備滑桿的鍵盤操作、數值與可存取名稱。細細的分隔線上有一個珍珠般的滑塊，上層圖片沿著這條線裁切。
+
+<ComponentPreview name="default" height={376} narrowHeight={320} title="圖片比較" bodyClass="p-lg" behaviors html={`<figure class="compare max-w(520) mx-auto">
+  <img class="compare-before" src="/demo/moonstone.svg" alt="The landscape before grading: grey and flat" style="aspect-ratio: 16 / 10; filter: grayscale(1) contrast(.75)">
+  <img class="compare-after" src="/demo/moonstone.svg" alt="The landscape after grading">
+  <input type="range" class="compare-range" min="0" max="100" value="50" aria-label="Show more of the graded picture">
+</figure>`} caption="拖曳滑柄，或將焦點移到滑柄上，再按方向鍵。" />
+
+## 用滑柄調整圖片的顯示範圍 \{#the-handle-moves-the-picture\}
+
+瀏覽器支援捲動驅動動畫時，外框會讀取以輸入元件內的滑塊為主體的檢視時間軸。`--compare-position` 無須腳本就會跟隨滑塊移動，圖片裁切範圍與分隔線也會隨這個屬性更新。
+
+在其他瀏覽器中，`compare` [行為](/guide/behaviors)會在掛載時及每次滑柄移動時，將輸入值換算為它在數值範圍內的百分比，寫入根元素的 `--compare-position`。請在所有瀏覽器中掛載這個行為。若樣式表已驅動這個屬性，腳本就不會影響畫面。
+
+```js name=app.js
+import { compare } from '@master/ui/behaviors/compare.js'
+
+const detach = compare(document.querySelector('.compare'))
+```
+
+這個行為接受帶有 `compare` 類別的根元素，沒有選項，也不會自行派發事件。輸入元件和其他範圍輸入元件一樣會派發 `input` 和 `change`，而 `value` 就是分隔線的位置。如果樣式表的時間軸和這個行為都未啟用，兩張圖片會固定以 `--compare-position` 指定的位置為界，預設在正中央。
+
+輸入元件比外框多出一個滑柄的寬度，因此滑柄的中心可以從外框的一側移到另一側，讓分隔線抵達兩端。
+
+## 圖片 \{#pictures\}
+
+`compare-before` 位於下層，顯示從起始側到分隔線的部分。`compare-after` 位於上層，顯示從分隔線到結束側的部分。兩張圖片都會填滿外框，超出部分會被裁切。請為其中一張設定寬度和高度，或設定 `aspect-ratio`，並使用取景一致的兩張圖片。
+
+外框沿用介面的圓角樣式，並帶有所有[圖文呈現](/components/figure)元件共有的內側描邊。放進卡片時，可用 `--compare-radius` 調整圓角。
+
+<ComponentPreview name="small" height={424} title="放在卡片中" bodyClass="flex items-center justify-center p-lg" behaviors html={`<div class="card w(280)">
+  <figure class="compare card-media" style="--compare-radius: calc(var(--radius-surface) - 4px)">
+    <img class="compare-before" src="/demo/portrait-1.svg" alt="The portrait as uploaded" style="aspect-ratio: 4 / 3; filter: saturate(.2) brightness(.92)">
+    <img class="compare-after" src="/demo/portrait-1.svg" alt="The portrait with the Warm preset">
+    <input type="range" class="compare-range" min="0" max="100" value="40" aria-label="Show more of the Warm preset">
+  </figure>
+  <div class="card-header">
+    <h3 class="card-title">Warm</h3>
+    <p class="card-description">Drag to compare with the original.</p>
+  </div>
+</div>`} />
+
+## 鍵盤操作 \{#keyboard\}
+
+鍵盤操作完全由原生範圍輸入元件提供。
+
+<ContractTable name="compare" show="keyboard" />
+
+## 無障礙 \{#accessibility\}
+
+- 依滑動後的效果為輸入元件命名，例如「顯示更多調色後的圖片」。
+- 為每張圖片提供 `alt`，說明它是哪一張，以及與另一張有何差異。無法並排觀看兩張圖片的讀者需要透過文字得知差異。
+- 滑柄在 Tab 順序中占一個焦點位置。方向鍵每次移動分隔線一格，<kbd>Home</kbd> 和 <kbd>End</kbd> 各會完整顯示其中一張圖片。
+- 滑柄大小為 32px，在觸控螢幕上則為 44px。手指從外框上垂直滑過時，仍可捲動頁面。
+
+## React、Svelte 和 Vue \{#frameworks\}
+
+`compare` 元件會掛載行為，並接收與回傳滑柄位置。兩張圖片仍由頁面自己的標記定義。執行 `npx master-ui add compare` 將元件複製到專案中。[React、Svelte 和 Vue](/guide/frameworks) 說明元件的建置與使用方式。
+
+<FrameworkSource name="compare" />
+
+## 類別 \{#classes\}
+
+<ContractTable name="compare" />
+
+## 自訂屬性 \{#custom-properties\}
+
+<ContractTable name="compare" show="properties" />
+
+## 相關元件 \{#related\}
+
+<ComponentLinks slugs={['figure', 'slider', 'carousel']} />
+
+## 原始碼 \{#source\}
+
+<ComponentSource name="compare" />

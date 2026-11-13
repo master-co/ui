@@ -1,70 +1,71 @@
 ---
 title: "안정성"
-description: "공개 인터페이스를 식별하고, 프로젝트가 사용하는 소스와 테마를 통제하며, Master UI가 실험 단계인 동안 업그레이드를 검토합니다."
+description: "Master UI가 실험 단계인 동안 공개 인터페이스를 확인하고, 프로젝트에서 사용하는 소스와 테마를 관리하며, 업그레이드 시 변경 사항을 검토하세요."
 ---
+
 import GuideFigure from '../../../components/GuideFigure.astro'
 
-프로젝트는 클래스 이름, 사용자 지정 속성, 가져오기, 명령을 통해 Master UI에 의존합니다. 라이브러리 위에 무언가를 만들 때는 아래의 공개 인터페이스를 사용하고, 업그레이드할 때는 이를 검토하세요.
+프로젝트는 클래스 이름, 사용자 지정 속성, 임포트, 명령을 통해 Master UI에 의존합니다. 라이브러리를 사용할 때는 아래 공개 인터페이스를 사용하고, 업그레이드할 때는 이 인터페이스를 다시 확인하세요.
 
-Master UI는 실험 단계입니다. 0.x 릴리스에서는 공개 인터페이스도 바뀔 수 있습니다. 공개라는 것은 현재 버전을 사용하는 지원되는 방법을 나타낼 뿐, 다음 버전과의 호환성을 약속하지 않습니다. 프로젝트에 영향을 주는 변경을 확인하려면 [신중하게 업그레이드하세요](#experimental).
+Master UI는 실험 단계이며, 공개 인터페이스도 0.x 릴리스에서 변경될 수 있습니다. 공개 인터페이스는 현재 버전에서 지원하는 사용 방법을 뜻하며, 다음 버전과의 호환성을 보장하지 않습니다. [업그레이드 절차](#experimental)를 따라 프로젝트에 영향을 주는 변경 사항을 확인하세요.
 
-## 공개 \{#public\}
+## 공개 인터페이스 \{#public\}
 
-| 대상 | 명시된 곳 | 예 |
+| 항목 | 정의 위치 | 예시 |
 | --- | --- | --- |
 | 클래스 이름 | 계약의 `classes` | `btn`, `btn-primary`, `dialog-header` |
-| 클래스가 요구하는 요소와 속성 | 해당 클래스의 `elements`, `attributes`, `label` | `switch`는 `type="checkbox"`와 `role="switch"`를 가진 `<input>`에 붙으며, 접근 가능한 이름이 필요합니다 |
+| 클래스에 필요한 요소와 어트리뷰트 | 해당 클래스의 `elements`, `attributes`, `label` | `switch`는 `type="checkbox"`와 `role="switch"`가 지정된 `<input>`에 적용하며, 접근 가능한 이름이 필요합니다 |
 | 상태 표시 | 계약의 `states` | `btn`의 `aria-pressed="true"`, `switch`의 `:checked` |
 | 컴포넌트의 사용자 지정 속성 | 계약의 `properties` | `--btn-height`, `--splitter-size` |
-| 테마 토큰 | `theme.css`의 `@theme`. `@master/ui/theme.json`에 각 토큰과 그 값이 나열되어 있습니다 | `--color-surface-raised`, `--radius-control`, `--lift` |
+| 테마 토큰 | `theme.css`의 `@theme`에 정의되며, `@master/ui/theme.json`에 각 토큰과 그 값이 나열됩니다 | `--color-surface-raised`, `--radius-control`, `--lift` |
 | 믹스인 이름 | `theme.css`의 `@mixin` | `--surface-sheet`, `--focus-ring`, `--anchored` |
 | 계약 스키마 | `@master/ui/contract.schema.json` | 계약의 필드와 각 필드의 의미 |
-| 동작 | `@master/ui/behaviors`의 내보내기 | `combobox(root)`, `attach()`, `calendarMonth()`, 각각이 반환하는 함수와 그 `value` |
-| 프레임워크 컴포넌트의 이름 | `master-ui add`가 읽는 `frameworks/manifest.json` | `combobox`, `dialog`, `toast` |
-| 검사기 | `@master/ui/check`의 내보내기 | `check`, `createIndex`, `parse`, `format`, `owners` |
+| 동작 | `@master/ui/behaviors`에서 내보내는 항목 | `combobox(root)`, `attach()`, `calendarMonth()`와 각각이 반환하는 함수 및 그 함수의 `value` |
+| 프레임워크 컴포넌트 이름 | `master-ui add`가 읽는 `frameworks/manifest.json` | `combobox`, `dialog`, `toast` |
+| 검사기 | `@master/ui/check`에서 내보내는 항목 | `check`, `createIndex`, `parse`, `format`, `owners` |
 | 명령 | `master-ui` | `list`, `contract`, `check`, `init`, `own`, `add`, `status`, `diff`, `accept` |
-| 가져오기 경로 | 패키지 `package.json`의 `exports` | 아래 표 |
+| 임포트 경로 | 패키지의 `package.json`에 있는 `exports` | 아래 표 |
 
-계약은 설치된 버전에서 한 컴포넌트의 인터페이스를 나열합니다. 클래스나 속성에 의존하기 전에 출력해 보세요.
+계약에는 설치된 버전의 개별 컴포넌트 인터페이스가 나열됩니다. 클래스나 속성에 의존하기 전에 해당 계약을 출력하세요:
 
 ```bash
 npx master-ui contract button
 ```
 
-계약의 `properties` 목록은 컴포넌트별 확장 지점을 정의합니다. 목록에 없는 내부 속성은 바뀔 수 있습니다. 공유 테마 토큰은 `theme.css`에 정의된 별도의 공개 인터페이스입니다.
+계약의 `properties` 목록은 해당 컴포넌트의 확장 지점을 정의합니다. 목록에 없는 내부 속성은 변경될 수 있습니다. 공통 테마 토큰은 별도의 공개 인터페이스이며 `theme.css`에 정의되어 있습니다.
 
-### 가져오기 경로 \{#import-paths\}
+### 임포트 경로 \{#import-paths\}
 
 | 경로 | 내용 |
 | --- | --- |
-| `@master/ui`, `@master/ui/master.css` | 테마, 모든 컴포넌트, 레이아웃 클래스(Master CSS 소스) |
+| `@master/ui`, `@master/ui/master.css` | 테마, 모든 컴포넌트, 레이아웃 클래스를 담은 Master CSS 소스 |
 | `@master/ui/theme.css` | 기본 테마의 토큰과 믹스인 |
-| `@master/ui/components/<name>.css`, `@master/ui/layouts/<name>.css` | 스타일시트 하나 |
-| `@master/ui/components/<name>.json`, `@master/ui/layouts/<name>.json` | 그 계약 |
-| `@master/ui/themes/<name>.css` | `paper` 같은 다른 테마 |
+| `@master/ui/components/<name>.css`, `@master/ui/layouts/<name>.css` | 개별 스타일시트 |
+| `@master/ui/components/<name>.json`, `@master/ui/layouts/<name>.json` | 해당 스타일시트의 계약 |
+| `@master/ui/themes/<name>.css` | `paper` 등의 다른 테마 |
 | `@master/ui/contract.schema.json` | 계약의 JSON Schema |
-| `@master/ui/contracts.json` | 모든 계약을 담은 하나의 파일 |
-| `@master/ui/theme.json` | 테마의 모든 토큰과 그 값 |
-| `@master/ui/standalone.css` | 일반 CSS로 컴파일된 테마와 모든 컴포넌트 |
-| `@master/ui/base.css` | 컴포넌트가 전제하는 작은 리셋 |
-| `@master/ui/behaviors`, `@master/ui/behaviors/<name>.js` | `attach()`를 포함한 모든 동작, 또는 동작 하나. TypeScript용 타입 포함 |
-| `@master/ui/check` | 모듈 형태의 계약 검사기 |
+| `@master/ui/contracts.json` | 모든 계약을 담은 단일 파일 |
+| `@master/ui/theme.json` | 테마의 모든 토큰과 각 토큰의 값 |
+| `@master/ui/standalone.css` | 테마와 모든 컴포넌트를 일반 CSS로 컴파일한 결과 |
+| `@master/ui/base.css` | 컴포넌트가 전제로 하는 간단한 CSS 리셋 |
+| `@master/ui/behaviors`, `@master/ui/behaviors/<name>.js` | `attach()`를 포함한 모든 동작 또는 개별 동작, TypeScript 타입 포함 |
+| `@master/ui/check` | 계약 검사기 모듈 |
 
-컴파일된 파일은 CDN이 제공하는 경로인 `@master/ui/dist/` 아래에서도 접근할 수 있습니다. `dist/standalone.css`, `dist/base.css`, `dist/themes/<name>.css`, `dist/contracts.json`, `dist/theme.json`입니다.
+컴파일된 파일은 CDN이 제공하는 경로인 `@master/ui/dist/`에서도 접근할 수 있습니다. 해당 파일은 `dist/standalone.css`, `dist/base.css`, `dist/themes/<name>.css`, `dist/contracts.json`, `dist/theme.json`입니다.
 
-## 비공개 \{#private\}
+## 비공개 인터페이스 \{#private\}
 
-| 대상 | 예 | 대신 사용할 것 |
+| 항목 | 예시 | 대신 사용할 항목 |
 | --- | --- | --- |
-| 계약에 나열되지 않은 컴포넌트 내부 속성 | 버튼이 자체 규칙 사이에서 이동 거리를 전달하는 데 쓰는 `--btn-lift` | 나열된 속성, 또는 테마 토큰 `--lift` |
-| 선택자의 구조 | 규칙이 어떻게 중첩되는지, 어떤 의사 요소가 표시를 그리는지, `components` 레이어 안에서 규칙의 명시도가 얼마인지 | 클래스와 상태 표시. 요소에 붙인 유틸리티는 어떤 컴포넌트 규칙보다도 우선합니다 |
-| 기본 테마의 값 | `--shadow-raised` 뒤의 그림자 목록, `--surface-sheet`의 그라데이션 정지점 | 직접 만든 테마에서 다시 정의하는 토큰이나 믹스인 이름 |
-| 스타일시트 안의 선언과 규칙의 순서 | 두 규칙 중 어느 것이 뒤에 오는지 | 파일 밖의 어떤 것도 이에 의존하지 않습니다 |
-| `behaviors/internal.js` | combobox, command, listbox, menu 동작이 공유하는 헬퍼. 파일 자체의 머리말에 동작이 아니라고 적혀 있습니다 | 동작의 함수. 또는 [동작을 소유하고](/guide/behaviors#own-a-behavior) 이 파일의 복사본을 그 옆에 두세요 |
-| 이 페이지에서 언급하지 않은 `dist/` 아래의 파일 | 빌드가 그곳에 남기는 그 밖의 파일 | 위 표의 경로 |
-| `frameworks/` 아래의 파일 | 패키지에 들어 있는 형태의 [React, Svelte, Vue 컴포넌트](/guide/frameworks). 가져올 모듈이 아니라 복사할 소스이며, props는 릴리스마다 바뀔 수 있습니다 | 하나를 복사하는 `npx master-ui add <name>`. 복사본은 여러분의 것이며 릴리스에 따라 바뀌지 않습니다 |
+| 계약에 명시되지 않은 컴포넌트 내부 속성 | 버튼이 자체 규칙 간에 이동 거리를 전달하는 데 사용하는 `--btn-lift` | 계약에 명시된 속성 또는 테마 토큰(예: `--lift`) |
+| 선택자 구조 | 규칙의 중첩 방식, 표시를 그리는 의사 요소, `components` 레이어 내 규칙의 명시도 | 클래스와 상태 표시입니다. 요소에 적용된 유틸리티가 모든 컴포넌트 규칙보다 우선합니다 |
+| 기본 테마의 값 | `--shadow-raised`에 사용되는 그림자 목록과 `--surface-sheet`의 그라데이션 색상 정지점 | 프로젝트의 자체 테마에서 재정의하는 토큰 또는 믹스인 이름 |
+| 스타일시트 내 선언 및 규칙의 순서 | 두 규칙 중 어느 쪽이 뒤에 오는지 | 파일 외부에서 여기에 의존하는 항목은 없습니다 |
+| `behaviors/internal.js` | 콤보박스, 명령, 리스트박스, 메뉴의 동작 구현이 공유하는 헬퍼입니다. 파일 헤더에는 이 파일이 동작 구현에 해당하지 않는다고 명시되어 있습니다 | 동작 함수입니다. 또는 [동작을 직접 관리](/guide/behaviors#own-a-behavior)하고 해당 파일의 사본을 동작 구현 파일과 같은 디렉터리에 두세요 |
+| `dist/` 아래에서 이 페이지에 명시하지 않은 파일 | 빌드가 그 위치에 남기는 그 밖의 파일 | 위 표에 나열된 경로 |
+| `frameworks/` 아래의 파일 | 패키지에 포함된 [React, Svelte 및 Vue 컴포넌트](/guide/frameworks)입니다. 소스를 복사해 사용하며, 모듈로 가져오는 용도로 제공되지 않습니다. props는 릴리스마다 바뀔 수 있습니다 | `npx master-ui add <name>`는 컴포넌트 하나를 복사합니다. 사본은 프로젝트에서 직접 관리하며 패키지가 새로 릴리스되어도 바뀌지 않습니다 |
 
-구현 세부 사항은 계약이 그대로인 채로 바뀔 수 있습니다. 예를 들어 컴포넌트가 받아들이는 마크업을 바꾸지 않고도 그림자를 다시 조정하거나 표시를 다른 의사 요소로 옮길 수 있습니다. 그래도 결과는 다르게 보일 수 있으므로 시각적 검토는 여전히 업그레이드의 일부입니다.
+계약이 그대로여도 구현 세부 사항은 바뀔 수 있습니다. 예를 들어 컴포넌트가 허용하는 마크업을 유지하면서 그림자를 조정하거나 표시를 다른 의사 요소로 옮길 수 있습니다. 화면에 표시되는 결과는 달라질 수 있으므로 업그레이드할 때 시각적 변화도 확인하세요.
 
 ```css name=app.css
 /* Public: the button contract lists --btn-height. */
@@ -83,26 +84,26 @@ npx master-ui contract button
 }
 ```
 
-## 변경의 의미 \{#what-a-change-means\}
+## 변경 유형과 호환성 \{#what-a-change-means\}
 
-| 변경 | 호환성을 깨는가 |
+| 변경 사항 | 호환성 깨짐 여부 |
 | --- | --- |
-| 공개된 이름이 제거되거나 이름이 바뀜: 클래스, 필수 속성, 상태 표시, 나열된 속성, 토큰, 믹스인, 내보내기, 명령, 가져오기 경로 | 예 |
-| 기본 테마를 다시 조정함: 톤, 그림자, 그라데이션, 지속 시간 | 아니요 |
-| 비공개 목록에 있는 것이 바뀜 | 아니요 |
-| 패키지의 프레임워크 컴포넌트가 바뀜: prop, 마크업 | 아니요. 프로젝트의 복사본은 가져온 당시 그대로 유지되며, `master-ui status`가 업스트림이 바뀌었음을 알려 줍니다 |
+| 공개 이름을 삭제하거나 이름을 바꿉니다. 클래스, 필수 어트리뷰트, 상태 표시, 목록에 명시된 속성, 토큰, 믹스인, 내보내기 항목, 명령, 임포트 경로가 이에 해당합니다 | 예 |
+| 기본 테마의 색조, 그림자, 그라데이션, 지속 시간 등을 조정합니다 | 아니요 |
+| 비공개 목록에 있는 항목이 바뀝니다 | 아니요 |
+| 패키지에 포함된 프레임워크 컴포넌트의 prop이나 마크업이 바뀝니다 | 아니요. 프로젝트의 사본은 복사 당시 상태를 유지하며, `master-ui status`는 패키지 원본의 변경을 알려 줍니다 |
 
-시각적 재조정은 계약을 보존할 수 있습니다. 프로젝트가 어느 부분을 통제해야 하는지 정하세요. 설치된 릴리스, 한 컴포넌트의 구현, 또는 테마의 값입니다.
+계약을 유지하면서 외관을 조정할 수 있습니다. 설치할 릴리스, 특정 컴포넌트의 구현, 테마 값 중 프로젝트에서 직접 관리해야 할 부분을 정하세요.
 
-**컴포넌트를 소유하세요.** `own`은 스타일시트, 계약, 그리고 있다면 동작을 복사합니다. 이후의 패키지 릴리스가 그 구현을 대체하지 않도록 페이지를 그 복사본에 연결하세요. 복사한 스타일시트는 여전히 테마 토큰을 읽으므로, 소유만으로 외형이 고정되지는 않습니다. [사용자 지정](/guide/customization#own-a-component)을 참고하세요.
+**컴포넌트를 직접 관리하세요.** `own` 명령은 컴포넌트의 스타일시트와 계약을 복사하고, 동작 구현이 있으면 함께 복사합니다. 이후 패키지 릴리스에서 해당 구현이 교체되지 않도록 페이지에서 이 사본을 사용하세요. 복사한 스타일시트도 테마 토큰을 참조하므로, 컴포넌트 사본만으로는 외관까지 고정할 수 없습니다. [사용자 지정](/guide/customization#own-a-component)을 참고하세요.
 
 ```bash
 npx master-ui own button
 ```
 
-### 로컬 테마 유지하기 \{#pin-the-theme\}
+### 로컬 테마 유지 \{#pin-the-theme\}
 
-`node_modules/@master/ui/theme.css`를 프로젝트에 복사하고 라이브러리 다음에 가져오세요. 그 토큰과 믹스인 정의가 패키지의 정의보다 우선합니다. 이렇게 하면 복사한 값이 보존되지만, 새 토큰이나 컴포넌트가 토큰을 사용하는 방식의 변경은 여전히 결과에 영향을 줄 수 있습니다. 파일을 유지 관리하는 방법은 [테마 설정](/guide/theming)에서 설명합니다.
+`node_modules/@master/ui/theme.css` 파일을 프로젝트에 복사한 뒤 라이브러리 다음에 임포트하세요. 이 파일의 토큰과 믹스인 정의가 패키지 정의보다 우선합니다. 복사한 값은 유지되지만, 새 토큰이 추가되거나 컴포넌트에서 토큰을 사용하는 방식이 바뀌면 결과에 영향을 줄 수 있습니다. 파일을 관리하는 방법은 [테마 설정](/guide/theming)을 참고하세요.
 
 ```css name=app.css
 @import '@master/css';
@@ -110,37 +111,37 @@ npx master-ui own button
 @import './ui/theme.css';
 ```
 
-## 패키지가 실험 단계인 동안 \{#experimental\}
+## 실험 단계의 패키지 사용 \{#experimental\}
 
-Master UI는 실험 단계이며 버전은 0.x입니다. 1.0 전까지 위 표는 이름이 무엇인지를 설명할 뿐, 그 이름을 유지하겠다는 약속이 아닙니다. 어떤 릴리스에서든 공개된 이름이 바뀌거나 제거될 수 있으며, 지원 중단 기간, 호환성 계층, 마이그레이션 가이드는 제공되지 않습니다. 변경 사항은 릴리스 노트에 나열됩니다.
+Master UI는 실험 단계이며 버전은 0.x입니다. 1.0이 나오기 전까지 위 표는 각 이름의 역할을 설명하며, 해당 이름의 유지를 보장하지 않습니다. 모든 릴리스에서 공개 이름이 바뀌거나 삭제될 수 있으며, 지원 중단 유예 기간, 호환성 레이어, 마이그레이션 가이드는 제공되지 않습니다. 변경 사항은 릴리스 노트에서 확인할 수 있습니다.
 
-따라서 정확한 버전을 설치하고 의도적으로 업그레이드하세요.
+따라서 정확한 버전을 지정해 설치하고, 변경 사항을 확인하며 업그레이드하세요.
 
 ```bash
 npm install @master/ui --save-exact
 ```
 
-`--save-exact`는 허용 버전 범위가 아니라 선택된 버전을 기록합니다. 다른 체크아웃에서도 같은 의존성 집합이 설치되도록 패키지 매니페스트와 lockfile을 함께 커밋하세요. 그러면 로컬 테마나 컴포넌트 복사본을 알려진 릴리스와 대조해 검토할 수 있습니다.
+`--save-exact` 옵션은 허용 버전 범위 대신 선택한 버전을 기록합니다. 다른 체크아웃에서도 같은 의존성 구성이 설치되도록 패키지 매니페스트와 잠금 파일을 함께 커밋하세요. 그러면 로컬 테마나 컴포넌트 사본을 특정 릴리스와 비교해 검토할 수 있습니다.
 
-프로젝트가 소유한 컴포넌트에 대해서는 명령줄 도구가 무엇이 바뀌었는지 알려 줍니다. `status`는 소유한 각 컴포넌트를 설치된 패키지와 비교하고, 가져온 이후 업스트림에서 바뀐 파일을 나열합니다.
+명령줄 도구는 프로젝트에서 직접 관리하는 컴포넌트의 원본 변경 사항을 알려 줍니다. `status` 명령은 직접 관리하는 각 컴포넌트를 설치된 패키지와 비교하여 복사 이후 패키지 원본에서 변경된 파일을 나열합니다.
 
 ```bash
 npx master-ui status
 ```
 
-소유한 컴포넌트가 업스트림에서 바뀌었으면 종료 코드 2로 끝나므로, 업그레이드 후 실행되는 작업이 이를 보고할 수 있습니다. `npx master-ui diff button`은 저장된 기준과 설치된 패키지 사이의 차이를 보여 줍니다. 직접 검토하고 병합한 뒤 `npx master-ui accept button`을 실행하면 저장된 기준이 갱신됩니다. 이 명령은 작업 복사본을 병합하거나 편집하지 않습니다. 명령 사용법은 [사용자 지정](/guide/customization#upstream-changes)에서 단계별로 설명합니다.
+직접 관리하는 컴포넌트의 패키지 원본이 바뀌면 종료 코드 2를 반환하므로, 업그레이드 후 실행하는 작업에서 변경을 보고할 수 있습니다. `npx master-ui diff button`은 저장된 기준본과 설치된 패키지의 차이를 보여 줍니다. 변경 사항을 검토하고 직접 병합한 뒤 `npx master-ui accept button`을 실행해 저장된 기준본을 갱신하세요. 이 명령은 작업 사본을 병합하거나 수정하지 않습니다. 명령 사용 절차는 [사용자 지정](/guide/customization#upstream-changes)을 참고하세요.
 
-<GuideFigure name="stability" title="업스트림 변경 병합하기">
+<GuideFigure name="stability" title="패키지 원본 변경 사항 병합">
 
-**비교하고, 병합한 다음, 새 기준을 기록합니다.** `diff`는 저장된 기준과 설치된 패키지를 비교하며, 작업 복사본은 이 비교에 포함하지 않습니다. 원하는 변경은 직접 작업 복사본에 병합합니다. 그 후 `accept`는 설치된 업스트림 파일을 저장된 기준으로 복사하고 소유 기록을 업데이트합니다. 병합한 작업 복사본은 건드리지 않습니다. 다이어그램의 파일 표시는 도식일 뿐, 특정 릴리스의 diff가 아닙니다.
+**비교하고 병합한 뒤 새 기준본을 기록하세요.** `diff`는 저장된 기준본과 설치된 패키지를 비교하며, 작업 사본은 비교에서 제외합니다. 필요한 변경 사항을 작업 사본에 직접 병합하세요. 그런 다음 `accept`는 설치된 패키지의 원본 파일을 저장된 기준본에 복사하고 직접 관리 기록을 갱신합니다. 병합한 작업 사본은 그대로 유지됩니다. 그림의 파일 표시는 개념을 설명하기 위한 것이며 특정 릴리스의 변경 내역을 나타내지 않습니다.
 
 </GuideFigure>
 
-업그레이드할 때마다 다음을 수행하세요.
+업그레이드할 때마다 다음 절차를 따르세요.
 
-1. 릴리스 노트를 읽고, 정확한 의존성 버전과 lockfile을 업데이트합니다.
-2. 프로젝트의 마크업에 대해 `npx master-ui check`를 실행해 더 이상 계약과 맞지 않는 클래스, 요소, 속성을 찾습니다.
-3. 소유하거나 추가한 컴포넌트의 `status`와 `diff`를 검토하고, 새 기준을 수락하기 전에 병합합니다.
-4. 애플리케이션을 빌드하고 영향을 받는 컨트롤, 오버레이, 키보드 경로를 시험합니다. 로컬 테마를 포함해 라이트 외형과 다크 외형을 비교합니다.
+1. 릴리스 노트를 읽고, 의존성에 지정한 정확한 버전과 잠금 파일을 갱신하세요.
+2. `npx master-ui check` 명령으로 프로젝트의 마크업을 검사해 컴포넌트 계약과 더 이상 일치하지 않는 클래스, 요소, 어트리뷰트를 찾으세요.
+3. 직접 관리하는 컴포넌트와 추가된 컴포넌트에 대해 `status` 및 `diff`의 결과를 검토하세요. 새 기준본을 기록하기 전에 변경 사항을 병합하세요.
+4. 애플리케이션을 빌드하고, 변경의 영향을 받는 컨트롤과 오버레이, 키보드 조작 경로를 테스트하세요. 로컬 테마가 있다면 이를 포함해 밝은 테마와 어두운 테마에서의 외관을 비교하세요.
 
-검사기는 계약을 기준으로 마크업을 검증할 뿐, 애플리케이션의 동작이나 렌더링 결과가 바뀌지 않았음을 확인해 주지는 못합니다.
+검사기는 마크업이 계약에 부합하는지 확인합니다. 애플리케이션 동작이나 렌더링 결과가 이전과 같은지는 이 검사로 확인할 수 없습니다.

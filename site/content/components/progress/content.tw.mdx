@@ -1,0 +1,92 @@
+---
+title: "進度"
+description: "隨工作完成逐步填色的細軌道。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+進度元件顯示工作已完成多少。將 `.progress` 套用到原生 `<progress>`，瀏覽器就會將數值提供給輔助技術，類別則會繪製一條隨進度填色的細軌道。若要在控制項內表示耗時未定的工作，請使用[載入指示器](/components/spinner)。
+
+<ComponentPreview name="default" height={96} title="進度" background="plain" bodyClass="p-lg" html={`<label class="field">
+  Uploading 3 of 5 files
+  <progress class="progress" value="62" max="100">62%</progress>
+</label>`} />
+
+## 不確定進度 \{#indeterminate\}
+
+進度未知時，省略 `value`。色帶會沿著軌道移動。使用者若啟用減少動態效果，軌道則會以均勻的中間色調靜止顯示。
+
+<ComponentPreview name="indeterminate" height={96} title="不確定進度" background="plain" bodyClass="p-lg" html={`<label class="field">
+  Preparing the build
+  <progress class="progress"></progress>
+</label>`} />
+
+## 尺寸 \{#sizes\}
+
+軌道預設厚度為 6px。`progress-sm` 為 4px，適合清單項目。`progress-lg` 為 8px。
+
+<ComponentPreview name="sizes" height={104} title="尺寸" background="plain" bodyClass="flex flex-col gap-md p-lg" html={`<progress class="progress progress-sm" value="30" max="100" aria-label="Small">30%</progress>
+<progress class="progress" value="55" max="100" aria-label="Medium">55%</progress>
+<progress class="progress progress-lg" value="80" max="100" aria-label="Large">80%</progress>`} />
+
+## 分段 \{#segmented\}
+
+`progress-segmented` 將軌道切成等長區段，適合以項目數量表示的進度，例如已完成 5 個步驟中的 3 個，或已上傳 8 個檔案中的 4 個。將 `--progress-steps` 設為與 `max` 相同的數值，讓每一段對應一個步驟。分段遮罩同時套用到軌道和填色，讓各區段與進度值對齊。
+
+<ComponentPreview name="segmented" height={136} title="分段" background="plain" bodyClass="flex flex-col gap-md p-lg" html={`<label class="field">
+  Step 3 of 5
+  <progress class="progress progress-segmented" max="5" value="3">Step 3 of 5</progress>
+</label>
+<label class="field">
+  5 of 8 files uploaded
+  <progress class="progress progress-segmented progress-lg" style="--progress-steps: 8" max="8" value="5">5 of 8</progress>
+</label>`} />
+
+## 環形 \{#ring\}
+
+`progress-ring` 將相同的進度值繪製在圓形軌道上，適合放在方塊、一列內容或卡片角落。請使用帶有 `role="progressbar"` 的元素。瀏覽器若支援具型別的 `attr()`，圓環會直接讀取 `aria-valuenow` 和 `aria-valuemax`，因此只需設定一次數值，輔助技術和圓環繪圖就能共用，弧線也會平滑過渡到新數值。其他瀏覽器還需要在 `style` 屬性中設定 `--progress-ring-value`。
+
+元素本身的內容會顯示為中央標籤。弧線兩端都是圓角，進度為零時只顯示空軌道。
+
+<ComponentPreview name="ring" height={144} narrowHeight={232} title="環形" background="plain" bodyClass="flex flex-wrap items-center justify-center gap-lg p-lg" html={`<div class="progress-ring progress-ring-sm" role="progressbar" aria-label="Upload" aria-valuenow="40"></div>
+<div class="progress-ring" role="progressbar" aria-label="Storage used" aria-valuenow="64">64</div>
+<div class="progress-ring progress-ring-lg" role="progressbar" aria-label="Steps done" aria-valuenow="3" aria-valuemax="8" aria-valuetext="3 of 8">3/8</div>
+<div class="progress-ring progress-ring-xl" role="progressbar" aria-label="Coverage" aria-valuenow="86">86%</div>`} />
+
+省略 `aria-valuenow` 表示進度未知，此時四分之一圈長的弧線會沿著軌道移動。若圓環需要表示狀態，請將 `--progress-ring-color` 設為對應的狀態色，並在旁邊以文字標示狀態。
+
+<ComponentPreview name="ring-states" height={112} title="環形狀態" background="plain" bodyClass="flex flex-wrap items-center justify-center gap-lg p-lg" html={`<div class="progress-ring" role="progressbar" aria-label="Preparing"></div>
+<div class="progress-ring progress-ring-lg" role="progressbar" aria-label="Checks passed" aria-valuenow="100" style="--progress-ring-color: var(--color-success)">100</div>
+<div class="progress-ring progress-ring-lg" role="progressbar" aria-label="Quota used" aria-valuenow="92" style="--progress-ring-color: var(--color-danger)">92</div>`} />
+
+## 顯示數值 \{#with-a-value\}
+
+進度條本身不會顯示數值。請在標籤旁用等寬數字顯示，避免數值更新時位置跳動。
+
+<ComponentPreview name="value" height={96} title="顯示數值" background="plain" bodyClass="p-lg" html={`<div class="flex flex-col gap-xs">
+  <div class="flex items-baseline justify-between text-sm">
+    <span class="fg-text-strong" id="storage-label">Storage</span>
+    <span class="fg-text-muted">7.4 of 10 GB</span>
+  </div>
+  <progress class="progress" value="7.4" max="10" aria-labelledby="storage-label">74%</progress>
+</div>`} />
+
+## 無障礙 \{#accessibility\}
+
+- 使用 `field` 的標籤、`aria-label` 或 `aria-labelledby` 為進度條命名。
+- `<progress>` 內的文字會在瀏覽器無法繪製該元素時作為替代內容。
+- 若進度條表示某個區域的載入進度，請在該區域設定 `aria-busy="true"`，直到載入完成。
+
+## 類別 \{#classes\}
+
+<ContractTable name="progress" />
+
+## 自訂屬性 \{#custom-properties\}
+
+<ContractTable name="progress" show="properties" />
+
+## 原始碼 \{#source\}
+
+<ComponentSource name="progress" />

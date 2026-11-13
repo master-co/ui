@@ -1,0 +1,99 @@
+---
+title: "分隔器"
+description: "兩個窗格與中間的拖曳把手，可用來調整窗格各自占用的空間。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+分隔器由兩個窗格和中間的把手組成，可調整兩個窗格各自占用的空間，例如編輯器旁的檔案清單，或編輯器下方的終端機。窗格以一道細線相隔。指標移到線上或分隔線取得焦點時，線條會加深，並顯示一小段握柄。
+
+分隔器本身是元件，版面配置可以使用它。它的把手有自己的外觀、狀態與鍵盤操作契約。若兩個窗格無須調整大小，請參閱[主從版面配置](/pages/master-detail)。
+
+樣式表負責繪製分隔器與安排版面，`splitter` [行為](/guide/behaviors)則負責移動把手。這個行為會將第一個窗格的大小寫入容器上的 `--splitter-size`，並將同一個數值寫入把手的 `aria-valuenow`。兩者只透過這兩個值銜接。
+
+<ComponentPreview name="default" height={288} title="分隔器" bodyClass="p-lg" behaviors html={`<div class="splitter sheet overflow-hidden h(240)" style="--splitter-size: 36%">
+  <div class="splitter-pane p-md text-sm fg-text-body">
+    <p class="m(0) fg-text-strong">Files</p>
+    <p class="mt-sm m(0)">theme.css</p>
+    <p class="m(0)">master.css</p>
+    <p class="m(0)">components/</p>
+  </div>
+  <div class="splitter-handle" role="separator" tabindex="0" aria-label="Resize the file list" aria-valuenow="36" aria-valuemin="15" aria-valuemax="85"></div>
+  <div class="splitter-pane p-md text-sm fg-text-body">
+    <p class="m(0) fg-text-strong">Editor</p>
+    <p class="mt-sm m(0)">Drag the line between the panes, or focus it and press the arrow keys.</p>
+  </div>
+</div>`} caption="拖曳分隔線，或將焦點移到分隔線上，再按方向鍵、Home 或 End。" />
+
+## 行為 \{#behavior\}
+
+`splitter` 接受帶有 `splitter` 類別的根元素，並回傳用來解除綁定的函式。它只移動根元素的直屬子元素 `splitter-handle`，因此窗格內可以再放一個分隔器。
+
+```js name=app.js
+import { splitter } from '@master/ui/behaviors/splitter.js'
+
+const root = document.querySelector('.splitter')
+splitter(root, { step: 10 })
+
+root.addEventListener('change', (event) => {
+  localStorage.setItem('files-width', event.target.getAttribute('aria-valuenow'))
+})
+```
+
+- **拖曳。** 收到 `pointerdown` 時，會在把手上擷取指標。指標移動時，會將它在容器內的相對位置寫成百分比。
+- **按鍵。** 按下與把手移動方向相符的方向鍵時，把手會依設定的幅度移動一次。<kbd class="kbd">Home</kbd> 和 <kbd class="kbd">End</kbd> 分別將窗格調到最小與最大。
+- **每次變更**都會設定根元素的 `--splitter-size` 和把手的 `aria-valuenow`。大小會維持在把手的 `aria-valuemin` 與 `aria-valuemax` 之間，未設定時分別預設為 0 和 100。
+- **事件。** 大小每次變更時，把手都會派送 `input`，並在拖曳結束或按鍵移動把手後派送 `change`。兩個事件都會冒泡。請從把手的 `aria-valuenow` 讀取數值。
+- **停用。** 設有 `aria-disabled="true"` 的把手無法移動。
+
+| 選項 | 用途 |
+| --- | --- |
+| `step` | 每按一次方向鍵，把手移動的幅度，以百分比計。預設為 5 |
+
+無論指定的大小是多少，樣式表都會讓第一個窗格的邊界與兩端各至少相距 `--splitter-min`，在按住把手時防止選取文字，並依把手的方向切換版面配置。若未掛載行為，兩個窗格會維持 `--splitter-size` 指定的比例，把手也無法移動。
+
+## 上下堆疊的窗格 \{#stacked\}
+
+`aria-orientation` 指定分隔線的方向。分隔線預設為垂直，兩個窗格左右並排。設為 `aria-orientation="horizontal"` 時，窗格會上下堆疊，把手也會變成水平線。容器會直接讀取這個屬性，無須同步設定修飾類別。
+
+<ComponentPreview name="stacked" height={328} title="上下堆疊的窗格" bodyClass="p-lg" behaviors html={`<div class="splitter sheet overflow-hidden h(280) max-w(420) mx-auto" style="--splitter-size: 60%">
+  <div class="splitter-pane p-md text-sm fg-text-body">
+    <p class="m(0) fg-text-strong">Editor</p>
+  </div>
+  <div class="splitter-handle" role="separator" tabindex="0" aria-orientation="horizontal" aria-label="Resize the editor" aria-valuenow="60" aria-valuemin="15" aria-valuemax="85"></div>
+  <div class="splitter-pane p-md text-sm fg-text-body">
+    <p class="m(0) fg-text-strong">Terminal</p>
+  </div>
+</div>`} />
+
+## 鍵盤操作 \{#keyboard\}
+
+<ContractTable name="splitter" show="keyboard" />
+
+## 無障礙 \{#accessibility\}
+
+- 把手是可取得焦點的 `role="separator"`，並有標籤說明它調整的是哪個區域。`aria-valuenow`、`aria-valuemin` 和 `aria-valuemax` 皆以第一個窗格占用空間的百分比表示。這些資訊讓輔助科技能辨識它是窗格分隔器。
+- 鍵盤必須能完成指標可執行的所有操作。方向鍵用來移動把手，Home 和 End 則用來移到兩端。這些操作都由行為提供。
+- 分隔線在版面配置中占 1px，橫跨分隔線的操作區寬 9px。觸控螢幕上的操作區寬 25px，且一律顯示握柄。
+- 每個窗格都可獨立捲動。若可捲動的窗格內沒有可取得焦點的內容，請為窗格加上標籤與 `tabindex="0"`，讓鍵盤使用者也能將焦點移到窗格上。
+
+## React、Svelte 和 Vue \{#frameworks\}
+
+`splitter` 元件會掛載行為，並接收與回傳窗格大小。兩個窗格仍由頁面自己的標記定義。執行 `npx master-ui add splitter` 將元件複製到專案中。元件的實作與用法請參閱 [React、Svelte 和 Vue](/guide/frameworks)。
+
+<FrameworkSource name="splitter" />
+
+## 類別 \{#classes\}
+
+<ContractTable name="splitter" />
+
+## 自訂屬性 \{#custom-properties\}
+
+<ContractTable name="splitter" show="properties" />
+
+## 原始碼 \{#source\}
+
+<ComponentSource name="splitter" />

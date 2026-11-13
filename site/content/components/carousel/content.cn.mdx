@@ -1,0 +1,214 @@
+---
+title: "轮播"
+description: "仅用 CSS 实现横向滚动和吸附的幻灯片序列。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+轮播是一排可滚动并吸附到指定位置的幻灯片。它完全由 CSS 实现，轨道是启用了滚动吸附的滚动容器，因此触屏、触控板、键盘和辅助技术都可以按常规方式滚动。在支持相应功能的浏览器中，样式表会添加上一张和下一张按钮，并为每张幻灯片添加一个圆点。浏览器会将它们生成为可聚焦的实际控件。
+
+<ComponentPreview name="default" height={200} narrowHeight={224} title="轮播" bodyClass="p-lg" html={`<div class="carousel" role="region" aria-label="Featured projects" tabindex="0">
+  <article class="carousel-slide card card-flat">
+    <header class="card-header">
+      <h3 class="card-title">Atlas</h3>
+      <p class="card-description">A map of every deployment, live.</p>
+    </header>
+    <div class="card-body">1.28M requests in the last 24 hours.</div>
+  </article>
+  <article class="carousel-slide card card-flat">
+    <header class="card-header">
+      <h3 class="card-title">Borealis</h3>
+      <p class="card-description">Edge functions close to the reader.</p>
+    </header>
+    <div class="card-body">Served from 14 regions.</div>
+  </article>
+  <article class="carousel-slide card card-flat">
+    <header class="card-header">
+      <h3 class="card-title">Cirrus</h3>
+      <p class="card-description">Storage that follows the project.</p>
+    </header>
+    <div class="card-body">7.4 of 10 GB in use.</div>
+  </article>
+</div>`} />
+
+## 控件 \{#the-controls\}
+
+按钮和圆点均由伪元素生成，无需在标记中添加对应元素：
+
+- `::scroll-button(inline-start)` 和 `::scroll-button(inline-end)` 每次将轨道滚动一页。它们和其他按钮一样，默认凸起，指针悬停时抬高，按下时下沉。滚动到任一端时，浏览器会禁用对应的按钮，样式表会将其淡出并隐藏，露出下方的幻灯片。
+- 每张幻灯片上的 `::scroll-marker` 生成一个圆点，`::scroll-marker-group` 将这些圆点集中在轨道下方。当前可见幻灯片的圆点匹配 `:target-current`，会拉长并使用墨色。每个圆点都通过内边距扩大点击区域，在触屏上还会进一步扩大，无需用手指精确点中 6 像素宽的圆点。
+
+这些控件通过锚点定位放在各自的轮播上。锚点名称限定在各自的作用域内，因此同一页面上的多个轮播各用各的控件。浏览器不支持这些伪元素时，轮播只会少了这些控件，仍可滑动和滚动。
+
+## 同时显示多张 \{#several-in-view\}
+
+`carousel-2` 和 `carousel-3` 分别同时显示两张和三张幻灯片。从轨道宽度中扣除可见幻灯片之间的间距，再除以同时显示的张数，得到每张幻灯片的宽度，使最后一张可见幻灯片与轨道边缘对齐。
+
+<ComponentPreview name="several" height={184} title="同时显示多张" bodyClass="p-lg" html={`<div class="carousel carousel-3" role="region" aria-label="Team" tabindex="0">
+  <div class="carousel-slide sheet sheet-flat flex flex-col items-center gap-xs p-md">
+    <span class="avatar avatar-lg"><img class="avatar-image" src="/demo/portrait-1.svg" alt=""></span>
+    <span class="text-sm fg-text-strong">Ada</span>
+  </div>
+  <div class="carousel-slide sheet sheet-flat flex flex-col items-center gap-xs p-md">
+    <span class="avatar avatar-lg"><img class="avatar-image" src="/demo/portrait-2.svg" alt=""></span>
+    <span class="text-sm fg-text-strong">Alan</span>
+  </div>
+  <div class="carousel-slide sheet sheet-flat flex flex-col items-center gap-xs p-md">
+    <span class="avatar avatar-lg"><img class="avatar-image" src="/demo/portrait-3.svg" alt=""></span>
+    <span class="text-sm fg-text-strong">Katherine</span>
+  </div>
+  <div class="carousel-slide sheet sheet-flat flex flex-col items-center gap-xs p-md">
+    <span class="avatar avatar-lg" role="img" aria-label="Grace">GH</span>
+    <span class="text-sm fg-text-strong">Grace</span>
+  </div>
+  <div class="carousel-slide sheet sheet-flat flex flex-col items-center gap-xs p-md">
+    <span class="avatar avatar-lg" role="img" aria-label="Margaret">MH</span>
+    <span class="text-sm fg-text-strong">Margaret</span>
+  </div>
+</div>`} />
+
+## 露出下一张的边缘 \{#peek\}
+
+将 `--carousel-slide` 设为小于轨道宽度的值，下一张幻灯片就会露出边缘。用户在看到圆点之前，就能从露出的边缘看出后面还有内容。浏览器不显示圆点时，这是唯一的提示。图片使用 [图文单元](/components/figure)，轨道上的 `--figure-ratio` 在图片加载前就为每张图预留相同形状的空间，避免整排内容跳动。
+
+<ComponentPreview name="peek" height={420} mediumHeight={392} narrowHeight={308} title="露出下一张的边缘" bodyClass="p-lg" html={`<div class="carousel" style="--carousel-slide: 84%; --figure-ratio: 16 / 10" role="region" aria-label="Field notes" tabindex="0">
+  <figure class="carousel-slide figure">
+    <img class="figure-media" src="/demo/harbor.svg" alt="A wooden jetty running out over calm water">
+    <figcaption class="figure-caption">The jetty at high water</figcaption>
+  </figure>
+  <figure class="carousel-slide figure">
+    <img class="figure-media" src="/demo/tide.svg" alt="A pale sun low over flat water">
+    <figcaption class="figure-caption">Low tide at seven</figcaption>
+  </figure>
+  <figure class="carousel-slide figure">
+    <img class="figure-media" src="/demo/moonstone.svg" alt="A full moon above two ridges">
+    <figcaption class="figure-caption">Moonrise over the ridges</figcaption>
+  </figure>
+  <figure class="carousel-slide figure">
+    <img class="figure-media" src="/demo/pines.svg" alt="A line of pines in mist">
+    <figcaption class="figure-caption">Pines in the morning fog</figcaption>
+  </figure>
+</div>`} />
+
+## 居中显示 \{#centered\}
+
+`carousel-center` 将当前幻灯片放在中间，两侧各露出相邻幻灯片的边缘。轨道在第一张之前和最后一张之后留出空间，让首尾两张也能居中。每张幻灯片占轨道宽度的 80%，可设置 `--carousel-slide` 调整相邻幻灯片露出的多少。两端各用一个空的 Flex 项留出空间，无需设置内边距，因此幻灯片的宽度仍按整个轨道的宽度计算。
+
+<ComponentPreview name="centered" height={408} mediumHeight={380} narrowHeight={300} title="居中显示" bodyClass="p-lg" html={`<div class="carousel carousel-center" style="--figure-ratio: 16 / 10" role="region" aria-label="Material studies" tabindex="0">
+  <figure class="carousel-slide figure">
+    <img class="figure-media" src="/home/slides/pearl.svg" alt="A pearl on a stone plinth, in soft morning light">
+    <figcaption class="figure-caption">Pearl, in morning light</figcaption>
+  </figure>
+  <figure class="carousel-slide figure">
+    <img class="figure-media" src="/home/slides/obsidian.svg" alt="A polished obsidian sphere on a dark glossy floor, a softbox reflected in it">
+    <figcaption class="figure-caption">Obsidian, under a softbox</figcaption>
+  </figure>
+  <figure class="carousel-slide figure">
+    <img class="figure-media" src="/home/slides/dune.svg" alt="Dunes at first light, their ridges catching a low sun">
+    <figcaption class="figure-caption">Dunes, at first light</figcaption>
+  </figure>
+  <figure class="carousel-slide figure">
+    <img class="figure-media" src="/home/slides/tide.svg" alt="A still sea at dusk, the moon low over the horizon and its light broken on the water">
+    <figcaption class="figure-caption">Tide, at dusk</figcaption>
+  </figure>
+  <figure class="carousel-slide figure">
+    <img class="figure-media" src="/home/slides/arches.svg" alt="A plaster hall with three arched openings, low sun laying their shapes across the floor">
+    <figcaption class="figure-caption">Arches, in low sun</figcaption>
+  </figure>
+</div>`} />
+
+## 等宽横排 \{#shelf\}
+
+每张幻灯片采用相同的固定宽度，轨道能放下几张就完整显示几张，下一张会在边缘处截断。采用就近吸附时，快速滑动可以越过多张幻灯片，并在松手后停在滑动终点附近，靠近最近的一张，无需逐张停靠。
+
+<ComponentPreview name="shelf" height={296} title="等宽横排" bodyClass="p-lg" html={`<div class="carousel (scroll-snap-type:x|proximity)" style="--carousel-slide: 8.5rem; --carousel-gap: .75rem; --figure-ratio: 4 / 5" role="region" aria-label="Prints" tabindex="0">
+  <figure class="carousel-slide figure">
+    <img class="figure-media" src="/demo/cairn.svg" alt="Five stones balanced on a beach">
+    <figcaption class="figure-caption"><span class="block fg-text-strong">Cairn</span>$48</figcaption>
+  </figure>
+  <figure class="carousel-slide figure">
+    <img class="figure-media" src="/demo/dunes.svg" alt="Dunes in the afternoon, their lee sides in shadow">
+    <figcaption class="figure-caption"><span class="block fg-text-strong">Dunes</span>$56</figcaption>
+  </figure>
+  <figure class="carousel-slide figure">
+    <img class="figure-media" src="/demo/lighthouse.svg" alt="A lighthouse on a dark headland, its beam over the sea">
+    <figcaption class="figure-caption"><span class="block fg-text-strong">Headland</span>$64</figcaption>
+  </figure>
+  <figure class="carousel-slide figure">
+    <img class="figure-media" src="/demo/pines.svg" alt="Rows of pines fading into fog">
+    <figcaption class="figure-caption"><span class="block fg-text-strong">Pines</span>$48</figcaption>
+  </figure>
+  <figure class="carousel-slide figure">
+    <img class="figure-media" src="/demo/steps.svg" alt="Concrete steps half in shadow">
+    <figcaption class="figure-caption"><span class="block fg-text-strong">Steps</span>$40</figcaption>
+  </figure>
+  <figure class="carousel-slide figure">
+    <img class="figure-media" src="/demo/harbor.svg" alt="Jetty posts standing in the water">
+    <figcaption class="figure-caption"><span class="block fg-text-strong">Jetty</span>$56</figcaption>
+  </figure>
+  <figure class="carousel-slide figure">
+    <img class="figure-media" src="/demo/tide.svg" alt="The sea at slack tide">
+    <figcaption class="figure-caption"><span class="block fg-text-strong">Slack tide</span>$48</figcaption>
+  </figure>
+</div>`} />
+
+## 按可用宽度显示 \{#as-many-as-fit\}
+
+显示张数可由轮播获得的空间决定，无需依据窗口宽度。将父元素设为查询容器，再按各个宽度设置 `--carousel-slide`。计算方式与 `carousel-2` 和 `carousel-3` 相同，从轨道宽度中扣除可见幻灯片之间的间距，再除以该宽度下同时显示的张数。缩窄预览，即可看到显示张数从三张变为两张，再变为一张。
+
+<ComponentPreview name="as-many-as-fit" height={184} title="按可用宽度显示" responsive bodyClass="p-lg" html={`<div class="container-inline">
+  <div class="carousel (--carousel-slide:calc((100%-1rem)/2))@container(--sm) (--carousel-slide:calc((100%-2rem)/3))@container(--xl)" role="region" aria-label="Projects" tabindex="0">
+    <article class="carousel-slide card card-flat">
+      <header class="card-header">
+        <h3 class="card-title">Atlas</h3>
+        <p class="card-description">A map of every deployment.</p>
+      </header>
+    </article>
+    <article class="carousel-slide card card-flat">
+      <header class="card-header">
+        <h3 class="card-title">Borealis</h3>
+        <p class="card-description">Edge functions near the reader.</p>
+      </header>
+    </article>
+    <article class="carousel-slide card card-flat">
+      <header class="card-header">
+        <h3 class="card-title">Cirrus</h3>
+        <p class="card-description">Storage that follows the project.</p>
+      </header>
+    </article>
+    <article class="carousel-slide card card-flat">
+      <header class="card-header">
+        <h3 class="card-title">Delta</h3>
+        <p class="card-description">Previews for every branch.</p>
+      </header>
+    </article>
+    <article class="carousel-slide card card-flat">
+      <header class="card-header">
+        <h3 class="card-title">Ember</h3>
+        <p class="card-description">Logs that keep a week.</p>
+      </header>
+    </article>
+  </div>
+</div>`} />
+
+## 无障碍 \{#accessibility\}
+
+- 为轨道设置 `role="region"`、无障碍名称和 `tabindex="0"`，使用户可以用方向键滚动轨道。
+- 样式表将生成的按钮分别命名为“上一张幻灯片”和“下一张幻灯片”。每个圆点使用对应幻灯片内容的名称。
+- 轮播不会自动切换幻灯片。如果内容定时切换，需要由脚本提供暂停控件。
+- 启用减少动态效果后，轨道会直接跳到另一张幻灯片，省去平滑滚动。
+- 在强制颜色模式下，按钮使用系统按钮颜色绘制轮廓，圆点沿用系统颜色，当前可见幻灯片的圆点使用系统高亮色。
+
+## 类名 \{#classes\}
+
+<ContractTable name="carousel" />
+
+## 自定义属性 \{#custom-properties\}
+
+<ContractTable name="carousel" show="properties" />
+
+## 源码 \{#source\}
+
+<ComponentSource name="carousel" />

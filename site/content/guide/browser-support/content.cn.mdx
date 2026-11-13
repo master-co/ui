@@ -1,114 +1,115 @@
 ---
 title: "浏览器支持"
-description: "了解基线要求，区分自动回退与需要应用自行处理的工作，并在目标浏览器中验证组件。"
+description: "查看基础要求，区分自动采用的回退方案和需要应用补充处理的情况，并在目标浏览器中验证所用组件。"
 ---
+
 import GuideFigure from '../../../components/GuideFigure.astro'
 
-请检查应用所用组件的浏览器支持情况。Master UI 依靠现代 CSS 实现基线外观，依靠原生元素实现行为。其他特性用于改进定位、动效或控件；它们的回退方案可能是自动的，也可能需要在你的应用中编写处理函数。
+按应用实际使用的组件，确认目标浏览器支持哪些功能。Master UI 使用现代 CSS 实现基础外观，并借助原生元素实现交互行为。增强功能可改善定位、动效或控件体验。浏览器可能会自动采用回退方案，也可能需要应用提供处理程序。
 
-先从下面的基线开始，再阅读与你所用组件相关的增强特性行。CI 会在锁定版本的 Playwright 依赖所附带的 Chromium、Firefox 和 WebKit 中运行各框架场景，包括 invoker commands、interest invokers 和锚点定位的文档化回退方案。这些表格描述的是特性要求，并不保证适用于每个已发布的浏览器版本。请在你支持的每个浏览器中[检查特性和结果](#checking-a-feature)。
+先查看下方的基础要求，再查看所用组件对应的增强功能。CI 使用锁定版本的 Playwright 随附的 Chromium、Firefox 和 WebKit 运行框架测试场景，覆盖文档所述的调用命令、兴趣触发器（interest invokers）和锚点定位回退方案。表格列出功能要求。各浏览器发行版本的实际表现需逐一验证。请在支持的每种浏览器中[检查功能支持和实际效果](#checking-a-feature)。
 
-## 基线要求 \{#baseline\}
+## 基础要求 \{#baseline\}
 
-下列特性在所列位置使用时，库不提供任何回退方案。层、嵌套和颜色函数会广泛影响整个库；`subgrid` 或 `<dialog>` 这类特性只在使用它的组件中起作用。
+在下列用途中，组件库直接使用这些功能，未提供回退方案。层叠层、嵌套和颜色函数广泛影响整个库。`subgrid` 或 `<dialog>` 等功能只影响使用它们的组件。
 
-| 特性 | 使用位置 |
+| 功能 | 用途 |
 | --- | --- |
-| 自定义属性 | 每个令牌，以及契约公开的每个属性 |
-| 层叠层（`@layer`） | 所有组件和布局规则都在 `components` 层，令牌在 `theme` 层。正是借此，工具类无需 `!important` 就能覆盖组件 |
-| CSS 嵌套 | 规则以嵌套方式编写，编译后的样式表也保留嵌套 |
+| 自定义属性 | 所有令牌及契约公开的所有属性 |
+| 层叠层（`@layer`） | 所有组件和布局规则都位于 `components` 层，令牌位于 `theme` 层。工具类凭借层叠顺序覆盖组件样式，无需使用 `!important` |
+| CSS 嵌套 | 规则采用嵌套写法，编译后的样式表也保留嵌套 |
 | `light-dark()` | 随配色方案变化的主题颜色 |
 | `oklch()` | 颜色令牌的值 |
-| `color-mix()` | 色调变化、带色调的按钮、玻璃效果、墨色表面上的行内标签 |
-| `:has()` | 读取子元素状态的父元素：[输入组](/components/input)、字段、[分段控件](/components/segmented)、[评分](/components/rating)、[步骤](/components/steps)、[列表框](/components/listbox)的空状态 |
-| 容器尺寸查询（`@container`） | [卡片](/components/card)、[对话框](/components/dialog)、[数据列表](/components/data-list)、[导航栏](/components/navbar)，以及 [form](/components/form)、[bento](/components/bento) 和 [shell](/pages/app-shell) 布局 |
+| `color-mix()` | 淡色调、着色按钮、玻璃材质和墨色表面上的行内标签 |
+| `:has()` | 父元素读取子元素状态的场景，包括[输入组](/components/input)、字段、[分段控件](/components/segmented)、[评分](/components/rating)、[步骤](/components/steps)以及[列表框](/components/listbox)的空状态 |
+| 容器尺寸查询（`@container`） | [卡片](/components/card)、[对话框](/components/dialog)、[数据列表](/components/data-list)、[导航栏](/components/navbar)以及[表单](/components/form)、[便当网格](/components/bento)和[应用外壳](/pages/app-shell)布局 |
 | `subgrid` | [日历](/components/calendar)、[图表](/components/chart)、[数据列表](/components/data-list) |
-| 独立的变换属性（`translate`、`scale`） | 控件的抬升状态和浮层的入场 |
-| `:focus-visible` | 控件上的键盘焦点环 |
-| `:dir()` | 在从右到左文本中需要翻转的部件，例如抽屉、面包屑分隔符和日历范围 |
-| 逻辑属性和 `inset` | 跟随文本方向的间距和定位 |
-| 动态视口单位（`dvh`） | [对话框](/components/dialog)和[命令面板](/components/command)的高度上限。`page` 和 `shell` 布局会先写一个 `vh` 值 |
-| `popover` 属性 | [弹出层](/components/popover)、[菜单](/components/menu)、[工具提示](/components/tooltip)、[组合框](/components/combobox)的列表 |
-| `<dialog>` | [对话框](/components/dialog)、[命令面板](/components/command)、[提示消息](/components/toast)、可关闭的[横幅](/components/banner) |
+| 独立变换属性（`translate`、`scale`） | 控件抬升时的状态和浮层的入场效果 |
+| `:focus-visible` | 控件的键盘焦点环 |
+| `:dir()` | 在从右向左的文本中反转方向的部分，例如抽屉、面包屑分隔符和日历日期范围 |
+| 逻辑属性和 `inset` | 随文本方向调整的间距和定位 |
+| 动态视口单位（`dvh`） | [对话框](/components/dialog)和[命令面板](/components/command)的高度上限。`page` 和 `shell` 布局先声明一个 `vh` 值 |
+| `popover` 属性 | [弹出层](/components/popover)、[菜单](/components/menu)、[工具提示](/components/tooltip)和[组合框](/components/combobox)的列表 |
+| `<dialog>` | [对话框](/components/dialog)、[命令面板](/components/command)、[轻提示](/components/toast)、可关闭的[横幅](/components/banner) |
 
-不受支持的语法可能会使一条声明、一个选择器或整条规则失效。缺少层或嵌套会影响样式表的大部分内容；缺少某个颜色函数，可能导致使用这些颜色的声明没有可用的值。增强特性的回退方案无法弥补缺失的基线特性。
+浏览器不支持的语法可能使声明、选择器或整条规则失效。缺少层叠层或嵌套支持会影响样式表中的大量规则。缺少颜色函数支持可能导致引用这些颜色的声明得不到可用值。增强功能的回退方案无法弥补基础功能的缺失。
 
-## 增强特性 \{#enhancements\}
+## 增强功能 \{#enhancements\}
 
-下面每项特性都通过以下两种方式之一加以控制。大多数位于 `@supports` 规则中，例如 `@supports (anchor-scope: --segmented-thumb)` 或 `@supports selector(::scroll-marker)`，写在绘制回退效果的规则之后。其余的则是单个声明、at 规则或属性，不支持该特性的浏览器会直接忽略它们，例如 `interpolate-size`、`@starting-style` 或 `closedby`。
+以下功能通过两种方式按浏览器支持情况启用。大多数功能放在 `@supports` 规则中，例如 `@supports (anchor-scope: --segmented-thumb)` 或 `@supports selector(::scroll-marker)`，并写在实现回退效果的规则之后。其余功能通过单条声明、一个 at 规则或一个属性启用，例如 `interpolate-size`、`@starting-style` 或 `closedby`。缺少相应支持的浏览器会忽略它们。
 
-最后一列描述回退效果或所需的集成工作。每份[契约](/guide/contracts)中的 `platform` 列表记录了组件特有的行为。特别要注意，只带 `commandfor` 的对话框，在不支持 invoker commands 的浏览器中不会打开，除非你提供下文所述的处理函数。
+最后一列说明回退方案或集成时需要完成的工作。每份[契约](/guide/contracts)中的 `platform` 列表记录对应组件的具体行为。尤其是仅通过 `commandfor` 触发的对话框，在缺少调用命令支持的浏览器中，需要提供下文所述的处理程序才能打开。
 
-<GuideFigure name="browser-support" title="基线定位与增强定位">
+<GuideFigure name="browser-support" title="基础定位与增强定位">
 
-**增强特性是在可用的基线之上改变结果。** 在原生支持 popover 的情况下，同一个表面在两种情况下都能打开和关闭。CSS 锚点定位会把它放在触发元素旁边；没有这项增强时，普通的 popover 会保持在视口中央。两个示意视口只在定位上有所不同。两个分支都不为不支持 popover 的浏览器提供回退方案。
+**增强功能在可用的基础方案之上改变呈现效果。** 浏览器原生支持弹出层时，两种情况下同一个表面都能打开和关闭。CSS 锚点定位将它放在触发控件旁边。缺少这项增强功能时，普通弹出层仍居中显示在视口内。两个视口示意图只展示位置的变化。两种方案都未为不支持弹出层的浏览器提供回退方案。
 
 </GuideFigure>
 
 ### 浮层与定位 \{#overlays-and-placement\}
 
-| 特性 | 使用它的组件 | 不支持时 |
+| 功能 | 使用该功能的组件 | 缺少该功能时 |
 | --- | --- | --- |
-| Invoker commands：`command` 和 `commandfor` | [对话框](/components/dialog)、[命令面板](/components/command) | 在点击处理函数中调用 `showModal()` 和 `close()`；样式表不变 |
-| `closedby="any"` | [对话框](/components/dialog)、[命令面板](/components/command) | 点击遮罩没有反应；Escape 键和关闭按钮仍可关闭 |
-| Interest invokers：`popover="hint"` 搭配 `interestfor` | [工具提示](/components/tooltip)、用作预览的[弹出层](/components/popover) | 工具提示或预览不会出现；控件保留其无障碍名称，仍可作为链接或按钮使用 |
-| CSS 锚点定位：`position-area`、`position-try-fallbacks` | [弹出层](/components/popover)、[菜单](/components/menu)、[工具提示](/components/tooltip)、带 `popover` 属性的[列表框](/components/listbox) | 表面照常打开和关闭；它会出现在视口中央，即浏览器放置任何 popover 的位置 |
-| `anchor-scope` 和 `anchor-size()` | [组合框](/components/combobox) | 列表位于文档流中，紧贴在字段正下方，使用自身的宽度 |
-| `anchor-scope` 搭配 `anchor()`，用于单个移动的指示器 | [分段控件](/components/segmented)、[标签页](/components/tabs)、[目录](/components/toc) | 每个当前选项绘制自己的标记，切换时立即变化，没有滑动效果 |
-| `anchor-scope` 搭配 `anchor()`，用于从文字处开始的分隔线 | [列表](/components/list) | 行下方的细线横跨整行 |
-| `@position-try` | [上下文菜单](/components/menu) | 菜单在指针的下方和末端方向打开，到达视口边缘时不会折返 |
-| `@starting-style` 和 `transition-behavior: allow-discrete` | [对话框](/components/dialog)、[弹出层](/components/popover)、[菜单](/components/menu)、[工具提示](/components/tooltip)、[提示消息](/components/toast)、[图表](/components/chart) | 浮层立即出现和消失，没有淡入淡出；图表的柱条直接以完整高度出现 |
+| 调用命令：`command` 和 `commandfor` | [对话框](/components/dialog)、[命令面板](/components/command) | 在点击事件处理函数中调用 `showModal()` 和 `close()`，沿用同一份样式表 |
+| `closedby="any"` | [对话框](/components/dialog)、[命令面板](/components/command) | 点击遮罩没有反应，按 Escape 或点击关闭按钮仍可关闭 |
+| 兴趣触发：`popover="hint"` 配合 `interestfor` | [工具提示](/components/tooltip)、用作预览的[弹出层](/components/popover) | 工具提示或预览不会显示，控件保留无障碍名称，仍可作为链接或按钮使用 |
+| CSS 锚点定位：`position-area`、`position-try-fallbacks` | [弹出层](/components/popover)、[菜单](/components/menu)、[工具提示](/components/tooltip)、带有 `popover` 属性的[列表框](/components/listbox) | 表面照常打开和关闭，并按浏览器对弹出层的默认定位居中显示在视口内 |
+| `anchor-scope` 和 `anchor-size()` | [组合框](/components/combobox) | 列表留在文档流中，紧接在字段下方，使用自身宽度 |
+| `anchor-scope` 配合 `anchor()`，让同一个指示标记在选项之间移动 | [分段控件](/components/segmented)、[标签页](/components/tabs)、[目录](/components/toc) | 每个选项成为当前选项时都会显示自己的标记，标记即时切换，无滑动动画 |
+| `anchor-scope` 配合 `anchor()`，让分隔线从文字起始处开始 | [列表](/components/list) | 行下方的细线横跨整行 |
+| `@position-try` | [上下文菜单](/components/menu) | 菜单从指针位置向下、朝行内末端展开，触及视口边缘时也不翻转 |
+| `@starting-style` 和 `transition-behavior: allow-discrete` | [对话框](/components/dialog)、[弹出层](/components/popover)、[菜单](/components/menu)、[工具提示](/components/tooltip)、[轻提示](/components/toast)、[图表](/components/chart) | 浮层即时显示和隐藏，无淡入淡出效果。图表的柱条直接以完整高度显示 |
 
-### 字段 \{#fields\}
+### 表单字段 \{#fields\}
 
-| 特性 | 使用它的组件 | 不支持时 |
+| 功能 | 使用该功能的组件 | 缺少该功能时 |
 | --- | --- | --- |
-| `appearance: base-select` | [选择框](/components/select) | 选择框保留其凹槽和箭头，并打开平台自身的选项列表；`select-option` 不起作用 |
-| `field-sizing: content` | [输入框](/components/input)中的 `input-auto` 文本区域、[编写器](/components/composer)、[步进器](/components/stepper) | 文本区域保持最小高度和调整大小的手柄；编写器保持三行高度并滚动；步进器保持 `--stepper-min` 的宽度 |
-| `:user-invalid` | [输入框](/components/input) | 原生约束仍会验证字段，但不会触发这种自定义的错误外观；`aria-invalid="true"` 仍然有效 |
-| 原生字段的部件：`::-webkit-calendar-picker-indicator`、`::-webkit-inner-spin-button`、`::-webkit-search-cancel-button` | [输入框](/components/input) | 浏览器在日期、时间、数字和搜索字段中保留自己的标记 |
-| 原生 `<meter>` 的部件 | [计量条](/components/meter) | 浏览器保留自己的计量条，以自身的样式显示相同的值和相同的三种色调 |
+| `appearance: base-select` | [选择框](/components/select) | 选择框保留凹槽样式和折线箭头，并打开平台原生的选项列表。`select-option` 不生效 |
+| `field-sizing: content` | [输入框](/components/input)、[编辑器](/components/composer)和[步进器](/components/stepper)中使用 `input-auto` 的 textarea | textarea 保留最小高度和尺寸调整手柄，编辑器保持三行高度并可滚动，步进器保留 `--stepper-min` 的宽度 |
+| `:user-invalid` | [输入框](/components/input) | 原生约束仍会验证字段。此自定义错误样式由 `aria-invalid="true"` 触发，原生约束不会触发该样式 |
+| 原生字段的组成部分：`::-webkit-calendar-picker-indicator`、`::-webkit-inner-spin-button`、`::-webkit-search-cancel-button` | [输入框](/components/input) | 日期、时间、数字和搜索字段保留浏览器自带的控件图标 |
+| 原生 `<meter>` 的组成部分 | [度量条](/components/meter) | 浏览器保留原生度量条，以自己的样式显示相同的数值和三种色调 |
 
-### 展开与收起 \{#disclosure\}
+### 展开与折叠 \{#disclosure\}
 
-| 特性 | 使用它的组件 | 不支持时 |
+| 功能 | 使用该功能的组件 | 缺少该功能时 |
 | --- | --- | --- |
-| `interpolate-size`，搭配 `<details>` 上的 `::details-content` | [手风琴](/components/accordion)、[导航](/components/nav)、[展开](/components/expand)、[横幅](/components/banner) | 面板或分组立即打开和关闭；被关闭的横幅立即消失 |
-| 用 `::details-content` 预览收起时的文字 | [展开](/components/expand) | 与任何 `<details>` 一样，收起时文字被隐藏，切换按钮仍可将其展开 |
-| `<details>` 上的 `name` 属性 | [手风琴](/components/accordion) | 各行独立打开和关闭 |
+| `interpolate-size`，在 `<details>` 上使用 `::details-content` | [折叠面板](/components/accordion)、[导航](/components/nav)、[展开](/components/expand)、[横幅](/components/banner) | 面板或分组即时展开和折叠，横幅关闭后立即消失 |
+| 用 `::details-content` 预览折叠状态下的文本 | [展开](/components/expand) | 与任何 `<details>` 一样，折叠时文本隐藏，仍可通过切换控件展开 |
+| `<details>` 上的 `name` 属性 | [折叠面板](/components/accordion) | 各行可独立展开和折叠 |
 
 ### 滚动 \{#scrolling\}
 
-| 特性 | 使用它的组件 | 不支持时 |
+| 功能 | 使用位置 | 不支持时 |
 | --- | --- | --- |
-| 滚动驱动动画：`animation-timeline: scroll()` | [滚动区域](/components/scroll-area)、[导航栏](/components/navbar)中的 `navbar-progress` | 区域照常滚动，边缘保持干净，没有渐隐效果；进度线不会绘制 |
-| 滚动驱动动画：`view-timeline` 和 `timeline-scope` | [滑动条](/components/slider)、[范围](/components/range)、[对比](/components/compare) | 滑动条或范围的轨道保持为普通的凹槽，滑块仍会显示值；[compare 行为](/guide/behaviors)会把输入框的值复制到 `--compare-position` |
-| 滚动驱动动画：`animation-timeline: view()` | [滚轮](/components/wheel) | 选项以平面方式绘制，标记为 `aria-selected="true"` 的选项使用强调墨色 |
-| `::scroll-button()` 和 `::scroll-marker` | [轮播](/components/carousel) | 没有按钮也没有圆点：轮播是一行可以滑动、滚动并吸附的内容 |
-| 滚动状态容器查询：`container-type: scroll-state` | [导航栏](/components/navbar) | 导航栏的底板始终绘制，在页面顶部也是如此 |
-| `scroll-target-group` 和 `:target-current` | [目录](/components/toc) | 在脚本或服务器为链接设置 `aria-current` 之前，不会标记任何链接 |
+| 滚动驱动动画：`animation-timeline: scroll()` | [滚动区域](/components/scroll-area)、[导航栏](/components/navbar)中的 `navbar-progress` | 区域照常滚动，边缘保持清晰，不显示渐隐效果和进度线 |
+| 滚动驱动动画：`view-timeline` 和 `timeline-scope` | [滑块](/components/slider)、[范围滑块](/components/range)、[对比](/components/compare) | 滑块和范围滑块的轨道仍呈现为简单的凹槽，拖动手柄仍指示相应的值；[对比行为](/guide/behaviors)将输入控件的值复制到 `--compare-position` |
+| 滚动驱动动画：`animation-timeline: view()` | [滚轮](/components/wheel) | 选项以平面形式显示，带有 `aria-selected="true"` 标记的选项使用高对比度文字颜色 |
+| `::scroll-button()` 和 `::scroll-marker` | [轮播](/components/carousel) | 轮播以单行显示，支持滑动、滚动和滚动吸附，无按钮和圆点指示器 |
+| 滚动状态容器查询：`container-type: scroll-state` | [导航栏](/components/navbar) | 导航栏窗格始终显示，在页面顶部也一样 |
+| `scroll-target-group` 和 `:target-current` | [目录](/components/toc) | 链接只有在脚本或服务器为其设置 `aria-current` 后才会显示标记 |
 
 ### 布局 \{#layout\}
 
-| 特性 | 使用它的组件 | 不支持时 |
+| 功能 | 使用位置 | 不支持时 |
 | --- | --- | --- |
-| Grid lanes：`display: grid-lanes` | [瀑布流](/components/masonry) | 由多栏盒子排列相同的图块；它们沿每一栏向下填充，而不是横跨各条通道 |
-| `sibling-index()` | [粘性堆叠](/components/sticky-stack) | 每个面板都粘在同一条线上，并完全覆盖前一个面板，因此看不到任何边缘 |
-| 容器查询单位（`cqi`） | [Breakout](/components/breakout) | 宽幅或全宽的子元素仍保留在阅读栏内 |
+| 网格通道：`display: grid-lanes` | [瀑布流](/components/masonry) | 多列容器排布相同的内容项，按列自上而下依次填充，而非在各列之间横向分布 |
+| `sibling-index()` | [粘性堆叠](/components/sticky-stack) | 所有面板都吸附在同一条线上，后一个完全覆盖前一个，所以下层面板的边缘不会露出 |
+| 容器查询单位（`cqi`） | [扩展布局](/components/breakout) | 宽幅或全宽子元素仍留在正文列内 |
 
 ### 绘制 \{#drawing\}
 
-| 特性 | 使用它的组件 | 不支持时 |
+| 功能 | 使用位置 | 不支持时 |
 | --- | --- | --- |
-| `corner-shape: squircle` | 所有组件，通过 `--corner-shape` 和 `--corner-scale` | 视觉尺寸相同的圆形圆角 |
-| `corner-shape: bevel` | [文件](/components/file) | 页面图形保留四个圆角，没有折角 |
-| 带类型的 `attr()` | [进度](/components/progress)的圆环 | 圆环不会读取 `aria-valuenow`：还需要在 `style` 属性中设置 `--progress-ring-value` |
-| `sibling-index()` | [骨架屏](/components/skeleton) | 同一区块中的每个骨架屏都在同一时刻开始其光带动画 |
-| `text-wrap: balance` 和 `text-wrap: pretty` | [标题](/components/heading) | 文字照常换行 |
+| `corner-shape: squircle` | 所有组件均通过 `--corner-shape` 和 `--corner-scale` 使用 | 使用视觉大小相同的圆弧圆角 |
+| `corner-shape: bevel` | [文件](/components/file) | 文件图形保留四个圆角，不显示折角 |
+| 带类型的 `attr()` | [进度指示器](/components/progress)的圆环 | 圆环无法读取 `aria-valuenow`，还需在 `style` 属性中设置 `--progress-ring-value` |
+| `sibling-index()` | [骨架屏](/components/skeleton) | 同一区块中的所有骨架占位元素同时开始播放光带动画 |
+| `text-wrap: balance` 和 `text-wrap: pretty` | [标题](/components/heading) | 文本照常换行 |
 
-## 检查特性 \{#checking-a-feature\}
+## 检查功能支持情况 \{#checking-a-feature\}
 
-使用确切的特性名称查找其当前的兼容性信息。对于 CSS，也可以用样式表所测试的同一条件，直接询问你面前的浏览器：
+使用功能的准确名称查找最新的兼容性信息。对于 CSS，还可以用样式表中的同一条件查询当前浏览器：
 
 ```js
 CSS.supports('(anchor-scope: --mark)')
@@ -116,39 +117,39 @@ CSS.supports('(appearance: base-select)')
 CSS.supports('selector(::scroll-marker)')
 ```
 
-[`CSS.supports()`](https://drafts.csswg.org/css-conditional-3/#dom-css-supports) 用于求值 CSS 支持条件。肯定的结果有助于选择 CSS 分支，但它并不是渲染或交互测试。它也不会测试 `commandfor` 之类的 HTML 属性。
+[`CSS.supports()`](https://drafts.csswg.org/css-conditional-3/#dom-css-supports)用于判断指定的 CSS 支持条件是否成立。返回肯定结果时，可据此选择 CSS 分支。渲染和交互仍需单独测试，`commandfor` 等 HTML 属性也需另行检查。
 
-检查特性之后，请在目标浏览器中验证组件：
+检查功能支持情况后，在目标浏览器中验证组件：
 
-1. 通过应用提供的路径打开、关闭、选择或编辑组件。对于浮层，要包括键盘操作和焦点返回。
-2. 检查靠近视口边缘时的定位、窄布局以及会滚动的内容。
-3. 检查你打算发布的回退方案。缺少动画也许可以接受；缺少打开处理函数，或者把关键说明藏在无法显示的工具提示里，则不可接受。
+1. 通过应用提供的操作路径打开、关闭、选择或编辑。对于浮层，还要验证键盘操作和关闭后的焦点恢复。
+2. 检查靠近视口边缘时的位置、窄幅布局和可滚动内容。
+3. 检查准备随产品交付的回退方案。缺少动画可能可以接受，但必须有打开操作的处理程序，必要说明也必须在工具提示不可用时仍然可见。
 
-把关键说明放在可见文字中。只有当底层控件本身已经具备名称和用途时，省略工具提示才算可用的回退方案。
+将必要说明放在可见文本中。只有控件本身已有名称且用途明确时，省略工具提示才是可用的回退方案。
 
 ## 偏好设置与设备 \{#preferences-and-devices\}
 
-支持不只关乎特性。只要组件有需要调整的地方，每个样式表也会响应描述读者设备和设置的查询。
+支持范围还包括读者的设备和设置。组件有可调整之处时，其样式表也会响应相应的查询。
 
-| 查询 | 变化内容 |
+| 查询 | 变化 |
 | --- | --- |
-| `(hover: hover)` | 悬停状态写在其中，因此只在指针能够悬停的地方生效。触摸不会让控件停留在悬停外观 |
-| `(pointer: coarse)` | 目标增大到 44px。按钮的最小高度变为 `2.75rem`；复选框的标签在其所在行周围扩大，而不移动旁边的内容 |
-| `(prefers-reduced-motion: reduce)` | 移除位移：控件的抬升、浮层的缩放与滑动、指示器的滑行。淡入淡出保留，因此变化仍然可见 |
-| `(forced-colors: active)` | 浏览器会移除阴影并替换颜色，因此边缘和状态会改用 `ButtonText`、`CanvasText` 和 `Highlight` 等系统颜色，以轮廓和填充重新绘制 |
-| `(prefers-contrast: more)` | 主题会加强其细线、分隔线和轮廓令牌，以及弱化和禁用的墨色。读取这些令牌的组件会随之变化 |
-| `(prefers-reduced-transparency: reduce)` | [导航栏](/components/navbar)和[标签栏](/components/tabbar)的玻璃效果变为实色表面，没有模糊 |
+| `(hover: hover)` | 悬停状态定义在此条件内，仅在指针支持悬停时生效。触摸后，控件不会停留在悬停状态。 |
+| `(pointer: coarse)` | 交互目标扩大到 44px。按钮的最小高度增至 `2.75rem`。复选框标签的点击区域围绕文字所在行扩大，周围元素保持原位。 |
+| `(prefers-reduced-motion: reduce)` | 移除控件上浮、浮层缩放和滑动、指示器滑移等动效。保留淡入淡出，状态变化依然可见。 |
+| `(forced-colors: active)` | 浏览器移除阴影并替换颜色，因此边缘和状态改用 `ButtonText`、`CanvasText` 和 `Highlight` 等系统颜色绘制轮廓和填充。 |
+| `(prefers-contrast: more)` | 主题增强细线、分隔线和轮廓令牌，以及弱化和禁用状态的墨色。使用这些令牌的组件随之调整。 |
+| `(prefers-reduced-transparency: reduce)` | [导航栏](/components/navbar)和[标签栏](/components/tabbar)的玻璃材质改为无模糊效果的实色表面。 |
 
-在不同配色方案存在差异的地方，主题颜色使用 `light-dark()`，并跟随页面或子树的 `color-scheme`；参见[默认主题](/guide/theme#color-schemes)。
+主题配色中随方案变化的颜色使用 `light-dark()`，并遵循页面或子树的 `color-scheme`。参见[默认主题](/guide/theme#color-schemes)。
 
 ## 独立样式表 \{#standalone\}
 
-`@master/ui/standalone.css` 是将同一份源码编译成的普通 CSS，供不使用 Master CSS 的项目使用。[安装](/guide/installation#without-master-css)介绍了如何链接它。
+`@master/ui/standalone.css` 由同一份源码编译为纯 CSS，适用于未使用 Master CSS 的项目。参见[安装](/guide/installation#without-master-css)，了解如何引入。
 
 ```css name=app.css
 @import '@master/ui/standalone.css';
 ```
 
-编译会解析 mixin，并把令牌写成自定义属性。它不会降级 CSS：该文件声明相同的层，保留嵌套、`light-dark()` 和 `oklch()`，并带有相同的 `@supports` 规则。它的要求和回退方案就是本页列出的这些。编译后的主题（例如 `@master/ui/dist/themes/paper.css`）也是如此。
+编译会展开混入，并将令牌写为自定义属性。编译保留 CSS 特性：文件声明相同的层，保留嵌套、`light-dark()` 和 `oklch()`，以及相同的 `@supports` 规则。浏览器要求和回退方案均以本页为准。`@master/ui/dist/themes/paper.css` 等编译后的主题也遵循这些规则。
 
-编译后的文件还声明了 `color-scheme: light dark`，并支持 `data-theme="light"` 和 `data-theme="dark"`。如果在这一步之后还有其他构建工具转换它，请测试应用实际提供的 CSS。
+编译后的文件还声明 `color-scheme: light dark`，并支持 `data-theme="light"` 和 `data-theme="dark"`。如果后续构建工具还会转换该文件，请测试应用实际提供的 CSS。

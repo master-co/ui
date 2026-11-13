@@ -1,0 +1,224 @@
+---
+title: "メイソンリー"
+description: "高さの異なるタイルを、下に空きを残さず列に詰めて配置します。"
+---
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import PagePreview from '~/site/components/PagePreview.astro'
+
+メイソンリーは、それぞれ高さの異なるタイルを、同じ幅の列に詰めて配置します。各タイルを下端が最も高い列に置くため、高さの低い画像の下に、隣の高い画像と行の高さを揃えるための空白ができず、どの画像も元の縦横比を保ちます。メイソンリーは配置を担うレイアウトで、それ自体は面を描画せず、タイルには[図版](/components/figure)、[カード](/components/card)、[シート](/components/surface)を使います。
+
+[自動グリッド](/components/auto-grid)と同様に、利用可能な幅から列数を決めます。各列の最小幅は`--masonry-min`で、クエリーは不要です。ブラウザーがグリッドレーンに対応していればグリッドで詰めて配置し、対応していなければ段組みで配置します。違いはタイルを読む順序で、[下記](#fallback)で説明します。
+
+<PagePreview name="default" title="メイソンリー" height={817} tabletHeight={1014} phoneHeight={1775} caption="「タブレット」、「スマートフォン」の順に選ぶと、列数が6列から4列、2列へと変わります。列が変わっても、画像は高さを揃えるために切り抜かれません。" html={`<section class="p-lg bg-surface-base fg-text-body text-sm" aria-labelledby="masonry-title">
+  <div class="flex flex-col gap-xl max-w(1120) mx-auto">
+    <header class="flex flex-col gap-xs max-w(560)">
+      <p class="eyebrow">Field notes</p>
+      <h2 class="heading heading-xl" id="masonry-title">A week on the coast</h2>
+      <p class="lead lead-sm">Fourteen pictures, each at the shape it was taken in.</p>
+    </header>
+    <ul class="masonry" style="--masonry-min: 10rem">
+      <li class="masonry-item">
+        <figure class="figure">
+          <img class="figure-media" src="/demo/dunes.svg" alt="Dunes in the afternoon, their lee sides in shadow" style="--figure-ratio: 3 / 4">
+          <figcaption class="figure-caption">Monday, the dunes</figcaption>
+        </figure>
+      </li>
+      <li class="masonry-item">
+        <figure class="figure">
+          <img class="figure-media" src="/demo/tide.svg" alt="A pale sun low over flat water" style="--figure-ratio: 4 / 3">
+          <figcaption class="figure-caption">Low tide at seven</figcaption>
+        </figure>
+      </li>
+      <li class="masonry-item">
+        <figure class="figure">
+          <img class="figure-media" src="/demo/cairn.svg" alt="Five stones balanced on a beach" style="--figure-ratio: 4 / 5">
+          <figcaption class="figure-caption">A cairn on the point</figcaption>
+        </figure>
+      </li>
+      <li class="masonry-item">
+        <figure class="figure">
+          <img class="figure-media" src="/demo/harbor.svg" alt="A wooden jetty running out over calm water" style="--figure-ratio: 3 / 2">
+          <figcaption class="figure-caption">The old jetty</figcaption>
+        </figure>
+      </li>
+      <li class="masonry-item">
+        <figure class="figure">
+          <img class="figure-media" src="/demo/pines.svg" alt="Rows of pines fading into fog" style="--figure-ratio: 2 / 3">
+          <figcaption class="figure-caption">Fog in the pines</figcaption>
+        </figure>
+      </li>
+      <li class="masonry-item">
+        <figure class="figure">
+          <img class="figure-media" src="/demo/steps.svg" alt="Concrete steps half in shadow" style="--figure-ratio: 1 / 1">
+          <figcaption class="figure-caption">Stairs to the harbour</figcaption>
+        </figure>
+      </li>
+      <li class="masonry-item">
+        <figure class="figure">
+          <img class="figure-media" src="/demo/lighthouse.svg" alt="A lighthouse on a dark headland, its beam over the sea" style="--figure-ratio: 3 / 4">
+          <figcaption class="figure-caption">The light at dusk</figcaption>
+        </figure>
+      </li>
+      <li class="masonry-item">
+        <figure class="figure">
+          <img class="figure-media" src="/demo/moonstone.svg" alt="A full moon above two ridges" style="--figure-ratio: 16 / 10">
+          <figcaption class="figure-caption">Moonrise over the ridge</figcaption>
+        </figure>
+      </li>
+      <li class="masonry-item">
+        <figure class="figure">
+          <img class="figure-media" src="/demo/tide.svg" alt="The sea at slack tide" style="--figure-ratio: 1 / 1">
+          <figcaption class="figure-caption">Wednesday, still water</figcaption>
+        </figure>
+      </li>
+      <li class="masonry-item">
+        <figure class="figure">
+          <img class="figure-media" src="/demo/dunes.svg" alt="Dune ridges reshaped by the wind" style="--figure-ratio: 4 / 3">
+          <figcaption class="figure-caption">Ridges after the wind</figcaption>
+        </figure>
+      </li>
+      <li class="masonry-item">
+        <figure class="figure">
+          <img class="figure-media" src="/demo/harbor.svg" alt="Jetty posts standing in the water" style="--figure-ratio: 4 / 5">
+          <figcaption class="figure-caption">Posts at high water</figcaption>
+        </figure>
+      </li>
+      <li class="masonry-item">
+        <figure class="figure">
+          <img class="figure-media" src="/demo/cairn.svg" alt="A small stack of beach stones" style="--figure-ratio: 1 / 1">
+          <figcaption class="figure-caption">Stones by the door</figcaption>
+        </figure>
+      </li>
+      <li class="masonry-item">
+        <figure class="figure">
+          <img class="figure-media" src="/demo/pines.svg" alt="A line of pines in mist" style="--figure-ratio: 4 / 3">
+          <figcaption class="figure-caption">The road through the wood</figcaption>
+        </figure>
+      </li>
+      <li class="masonry-item">
+        <figure class="figure">
+          <img class="figure-media" src="/demo/steps.svg" alt="Steps in early light" style="--figure-ratio: 3 / 4">
+          <figcaption class="figure-caption">Morning on the steps</figcaption>
+        </figure>
+      </li>
+    </ul>
+  </div>
+</section>`} />
+
+## レイアウトの仕組み \{#how-it-is-built\}
+
+- **利用可能な幅から列数を決定。** `masonry`は、幅が`--masonry-min`以上の等幅列を、収まるだけ作ります。各列はコンテナーの幅を超えないため、スマートフォンでもはみ出しません。ギャラリーでは`--masonry-min`を10remに設定し、スマートフォンでも2列を保ちます。
+- **ブラウザーによる配置。** `display: grid-lanes`に対応している場合、各列はグリッドの列になり、ブラウザーが各タイルを下端の最も高い列に置きます。フォールバックでは段組みを使い、1列ずつ埋めながら列の高さを均等にします。
+- **タイルの分割防止。** `masonry-item`はタイルが2つの列に分割されるのを防ぎ、タイル上部の間隔も確保します。フォールバックではどちらにもタイルのクラスが必要なため、すべてのタイルに指定します。
+- **元の縦横比を維持。** 各画像を[図版](/components/figure)にし、元の縦横比を`--figure-ratio`に設定します。読み込み前から列内に必要なスペースが確保されるため、画像が表示されてもレイアウトはずれません。
+
+## 列 \{#lanes\}
+
+`--masonry-min`は列の最小幅で、既定は14remです。最小幅を小さくすると、細い列を多く並べられます。画像なら9remまたは10remでスマートフォンでも2列を保てます。段落を含むカードには16rem以上を使います。`--masonry-gap`は列間と列内のタイル間の間隔で、1remです。
+
+タイルは画像に限りません。メモ、引用、長めのキャプションが付いた図版など、内容に合わせて高さが決まる要素なら、同じレイアウトに混在させられます。
+
+<ComponentPreview name="mixed" height={531} mediumHeight={649} narrowHeight={1301} title="異なるタイルの組み合わせ" bodyClass="p-lg" html={`<ul class="masonry w-full" style="--masonry-min: 11rem">
+  <li class="masonry-item">
+    <article class="card">
+      <header class="card-header">
+        <h3 class="card-title">Tuesday</h3>
+        <p class="card-description">Low tide at seven</p>
+      </header>
+      <p class="card-body">Walked out past the last post of the jetty. The sand was ribbed like a roof and full of small shells.</p>
+    </article>
+  </li>
+  <li class="masonry-item">
+    <figure class="figure">
+      <img class="figure-media" src="/demo/lighthouse.svg" alt="A lighthouse on a dark headland" style="--figure-ratio: 4 / 5">
+      <figcaption class="figure-caption">The light comes on at twenty past five.</figcaption>
+    </figure>
+  </li>
+  <li class="masonry-item">
+    <div class="sheet p-lg">
+      <blockquote class="quote">
+        <p class="quote-text">Nothing here is in a hurry, least of all the sea.</p>
+        <footer class="quote-source"><span class="quote-name">The harbour master</span></footer>
+      </blockquote>
+    </div>
+  </li>
+  <li class="masonry-item">
+    <article class="card">
+      <header class="card-header">
+        <h3 class="card-title">To bring back</h3>
+      </header>
+      <ul class="card-body bullets m(0)">
+        <li class="bullets-item">A stone for the desk</li>
+        <li class="bullets-item">The tide table</li>
+        <li class="bullets-item">Film for the camera</li>
+      </ul>
+    </article>
+  </li>
+  <li class="masonry-item">
+    <figure class="figure">
+      <img class="figure-media" src="/demo/cairn.svg" alt="Five stones balanced on a beach" style="--figure-ratio: 1 / 1">
+      <figcaption class="figure-caption">Someone builds it again every morning.</figcaption>
+    </figure>
+  </li>
+</ul>`} />
+
+## グリッドレーンとフォールバック \{#fallback\}
+
+メイソンリーは共通のマークアップで記述でき、ブラウザーの対応状況に応じてレイアウトが切り替わります。
+
+| | グリッドレーン対応時 | フォールバック時 |
+| --- | --- | --- |
+| 列の構成 | `display: grid-lanes`の列 | `columns: var(--masonry-min)`による段組みの列 |
+| タイルの配置先 | マークアップ順に、下端が最も高い列へ | 先頭の列を上から埋め、いっぱいになったら次の列へ |
+| 見た目の順序 | 列を横にたどる順序。先頭のタイルが最上段に並ぶ | 各列を上から下へたどる順序。先頭のタイルが最初の列に並ぶ |
+| タイル間の間隔 | グリッドのギャップ | マージン。列の先頭では省略 |
+
+グリッドレーンは新しい機能で、対応状況はブラウザーエンジンによって異なります。使用しているレイアウトは[ブラウザー対応](/guide/browser-support#layout)に一覧があります。フォールバックでも、すべてのタイルが分割されずに元の形のまま詰めて配置されます。違いは並び順だけです。下の番号をたどると、お使いのブラウザーでどちらのレイアウトが使われているか確認できます。
+
+<ComponentPreview name="order" height={384} mediumHeight={416} narrowHeight={640} title="並び順" bodyClass="p-lg" caption="グリッドレーンでは列を横にたどり、フォールバックでは各列を上から下へたどります。" html={`<ol class="masonry w-full fg-text-muted text-sm" style="--masonry-min: 8rem">
+  <li class="masonry-item well flex items-center justify-center h(96)">1</li>
+  <li class="masonry-item well flex items-center justify-center h(160)">2</li>
+  <li class="masonry-item well flex items-center justify-center h(64)">3</li>
+  <li class="masonry-item well flex items-center justify-center h(128)">4</li>
+  <li class="masonry-item well flex items-center justify-center h(112)">5</li>
+  <li class="masonry-item well flex items-center justify-center h(80)">6</li>
+  <li class="masonry-item well flex items-center justify-center h(144)">7</li>
+  <li class="masonry-item well flex items-center justify-center h(72)">8</li>
+  <li class="masonry-item well flex items-center justify-center h(120)">9</li>
+</ol>`} />
+
+ギャラリーやメモのボード、引用の一覧など、どの順序で読んでもよい場合にメイソンリーを選びます。新着順のフィードなど、順序が重要な場合は、各行を常に横にたどれる[自動グリッド](/components/auto-grid)を使います。
+
+## 使い分け \{#when\}
+
+| タイルの特徴 | 適したレイアウト |
+| --- | --- |
+| 内容に応じた高さで、読む順序は任意 | メイソンリー |
+| サイズが同じ、または行を揃えて配置 | [自動グリッド](/components/auto-grid) |
+| 数種類のサイズを固定配置し、重要度に差を付ける | [ベントー](/components/bento) |
+| 1行に並べてスクロール | [カルーセル](/components/carousel) |
+
+## アクセシビリティ \{#accessibility\}
+
+- どちらのレイアウトでも、読み取り順序とキーボードでの移動順序はマークアップ順です。見た目では、グリッドレーンは列を横に、フォールバックは各列を上から下へたどると、その順序になります。どちらのレイアウトでもタイルの順序は保たれます。
+- 同種の項目を並べる場合は、項目数が読み上げられるよう、リスト`<ul class="masonry">`を使います。各タイルをリスト項目にします。
+- 情報を伝える画像には、キャプションがあっても`alt`テキストが必要です。キャプションは画像を補足するものです。
+
+## クラス \{#classes\}
+
+<ContractTable name="masonry" directory="layouts" />
+
+## カスタムプロパティ \{#custom-properties\}
+
+<ContractTable name="masonry" show="properties" directory="layouts" />
+
+## 関連項目 \{#related\}
+
+<ComponentLinks slugs={['auto-grid', 'bento', 'figure', 'card', 'quote', 'lightbox']} />
+
+## ソース \{#source\}
+
+<ComponentSource name="masonry" directory="layouts" />

@@ -1,0 +1,99 @@
+---
+title: "组合框"
+description: "输入文字后打开匹配项列表的文本框。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+组合框是可输入文字的选择控件，输入时会打开一个显示匹配项的[列表框](/components/listbox)。外层的 `combobox` 将现有的[输入组](/components/input#input-group)和浮动列表框组合在一起。样式表负责定位和呈现，`combobox` [行为脚本](/guide/behaviors)负责筛选选项、在选项间移动，并将选中的选项写入输入框。
+
+<ComponentPreview name="default" height={320} title="组合框" background="plain" bodyClass="content-start p-lg min-h(320)" behaviors html={`<div class="field max-w(320) mx-auto">
+  <label for="region">Region</label>
+  <div class="combobox">
+    <div class="input-group">
+      <input class="input-group-field" id="region" role="combobox" aria-expanded="false" aria-controls="region-list" aria-autocomplete="list" autocomplete="off" placeholder="Search regions">
+      <button type="button" class="combobox-toggle" tabindex="-1" aria-label="Show regions"></button>
+    </div>
+    <div id="region-list" popover="manual" class="listbox" role="listbox" aria-label="Regions">
+      <div class="listbox-option" role="option" id="region-hnd" aria-checked="false">Tokyo</div>
+      <div class="listbox-option" role="option" id="region-sin" aria-checked="false">Singapore</div>
+      <div class="listbox-option" role="option" id="region-fra" aria-checked="false">Frankfurt</div>
+      <div class="listbox-option" role="option" id="region-lhr" aria-checked="false">London</div>
+      <div class="listbox-option" role="option" id="region-iad" aria-checked="false">Virginia</div>
+      <div class="listbox-option" role="option" id="region-pdx" aria-checked="false" aria-disabled="true">Oregon</div>
+      <div class="listbox-empty">No regions match.</div>
+    </div>
+  </div>
+</div>`} caption="输入文字筛选选项，用方向键移动，按 Enter 或点击确认选择。" />
+
+## 样式表的作用 \{#what-the-stylesheet-does\}
+
+- **定位。** 外层的 `combobox` 为自身设置锚点名称，并将名称的作用域限定在自身。列表框在整个输入区域下方 6px 处打开，定位不受插入光标或按钮位置影响，并通过 `anchor-size()` 使其宽度至少与输入区域相同。整个过程无需测量尺寸，同一页面上的多个组合框可以独立定位。
+- **箭头。** `combobox-toggle` 是输入区域末端的小按钮。输入框处于 `aria-expanded="true"` 状态时，按钮上的箭头会翻转。
+- **空状态。** 所有选项都处于 `hidden` 状态时，`listbox-empty` 会自动显示。
+- **输入框状态。** 悬停、聚焦、无效和禁用状态由输入组提供。
+
+浏览器不支持锚点定位时，列表框仍可打开，并与其他弹出层一样在视口中居中显示。
+
+## 行为脚本 \{#behavior\}
+
+`combobox` 接收带有 `combobox` 类的根元素，并返回一个用于解除绑定的函数。它没有配置选项，通过 `role="combobox"` 查找输入框，通过 `role="listbox"` 查找列表。
+
+```js name=app.js
+import { combobox } from '@master/ui/behaviors/combobox.js'
+
+const detach = combobox(document.querySelector('.combobox'))
+```
+
+- **输入文字**时，脚本会给文本中不含输入内容的选项设置 `hidden`，匹配时忽略大小写。随后打开列表，并将第一个匹配项设为活动选项。
+- **活动选项**带有 `aria-selected="true"`，输入框通过 `aria-activedescendant` 指向该选项。焦点保留在输入框中。
+- **选择选项**时，按 <kbd>Enter</kbd> 或使用指针都会将选项文本写入输入框，省去其中的 `listbox-description` 和 `listbox-end`，将该选项标记为 `aria-checked="true"`，将其余选项标记为 `false`，然后关闭列表。输入新内容覆盖已选值时，会清除该选项的勾选标记。
+- **打开和关闭。** 列表框使用 `popover="manual"`，因此在输入框中打字或点击时会保持打开。点击输入框或切换按钮，或按方向键时，脚本会打开列表。按 <kbd>Esc</kbd> 或焦点离开组合框时，脚本会关闭列表，并使 `aria-expanded` 与开关状态保持同步。
+- **事件。** 选中选项时，输入框会像输入文字时一样，先派发 `input`，再派发 `change`。当前值取自输入框的 `value`。
+
+移动时会跳过禁用和隐藏的选项。输入法处于组字状态时，<kbd>Enter</kbd> 和方向键由输入法处理。
+
+未加载行为脚本时，输入框仍可接受文本输入，列表保持关闭。
+
+## 选择控件 \{#choosing-a-control\}
+
+对于最多十二个纯文本选项，[下拉选择框](/components/select)无需脚本即可利用平台原生的键入查找功能。如果选项多到需要搜索、需要随输入动态加载，或选项行包含丰富内容，请使用组合框。
+
+## 键盘操作 \{#keyboard\}
+
+这些按键由行为脚本处理。列表关闭时，或按住 <kbd>Shift</kbd> 时，<kbd>Home</kbd> 和 <kbd>End</kbd> 会像在普通输入框中一样移动光标。没有活动选项时，脚本保留 <kbd>Enter</kbd> 的默认行为，因此仍可用它提交表单。
+
+<ContractTable name="combobox" show="keyboard" />
+
+## 无障碍 \{#accessibility\}
+
+- 输入框带有 `role="combobox"`、指向列表框的 `aria-controls`、`aria-autocomplete="list"` 和 `aria-expanded`。
+- 焦点保留在输入框中，辅助技术通过 `aria-activedescendant` 播报活动选项。
+- 用 `tabindex="-1"` 将切换按钮移出 Tab 键导航顺序，因为在输入框中按方向键即可打开列表。
+- 设置 `autocomplete="off"`，避免浏览器自带的建议遮住列表。
+
+## React、Svelte 和 Vue \{#frameworks\}
+
+`combobox` 组件根据选项列表渲染这段标记，绑定行为脚本，并接收和传出选中的值。使用 `npx master-ui add combobox` 将组件复制到项目中。有关这些组件的实现和用法，请参阅 [React、Svelte 和 Vue](/guide/frameworks)。
+
+<FrameworkSource name="combobox" />
+
+## 类名 \{#classes\}
+
+<ContractTable name="combobox" />
+
+它与 [`input-group`](/components/input#input-group)、`input-group-field` 和带有 `popover` 属性的 [`listbox`](/components/listbox) 配合使用。
+
+## 相关内容 \{#related\}
+
+组合框由以下组件组成，各组件保留自己的类名和状态。
+
+<ComponentLinks slugs={['input', 'listbox', 'select']} />
+
+## 源码 \{#source\}
+
+<ComponentSource name="combobox" />

@@ -1,0 +1,99 @@
+---
+title: "組合方塊"
+description: "開啟清單方塊以顯示相符選項的文字欄位。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+組合方塊是可輸入文字的選擇控制項，會開啟[清單方塊](/components/listbox)來顯示相符選項。它由現有的[輸入群組](/components/input#input-group)和浮動清單方塊組成，兩者以 `combobox` 包裝元素相連。樣式表負責定位和外觀。`combobox` [行為](/guide/behaviors)負責篩選選項、在選項間移動，以及將選取的值填入欄位。
+
+<ComponentPreview name="default" height={320} title="組合方塊" background="plain" bodyClass="content-start p-lg min-h(320)" behaviors html={`<div class="field max-w(320) mx-auto">
+  <label for="region">Region</label>
+  <div class="combobox">
+    <div class="input-group">
+      <input class="input-group-field" id="region" role="combobox" aria-expanded="false" aria-controls="region-list" aria-autocomplete="list" autocomplete="off" placeholder="Search regions">
+      <button type="button" class="combobox-toggle" tabindex="-1" aria-label="Show regions"></button>
+    </div>
+    <div id="region-list" popover="manual" class="listbox" role="listbox" aria-label="Regions">
+      <div class="listbox-option" role="option" id="region-hnd" aria-checked="false">Tokyo</div>
+      <div class="listbox-option" role="option" id="region-sin" aria-checked="false">Singapore</div>
+      <div class="listbox-option" role="option" id="region-fra" aria-checked="false">Frankfurt</div>
+      <div class="listbox-option" role="option" id="region-lhr" aria-checked="false">London</div>
+      <div class="listbox-option" role="option" id="region-iad" aria-checked="false">Virginia</div>
+      <div class="listbox-option" role="option" id="region-pdx" aria-checked="false" aria-disabled="true">Oregon</div>
+      <div class="listbox-empty">No regions match.</div>
+    </div>
+  </div>
+</div>`} caption="輸入文字即可篩選，用方向鍵移動，再按 Enter 或點擊選取。" />
+
+## 樣式表的作用 \{#what-the-stylesheet-does\}
+
+- **位置。** `combobox` 包裝元素將自身設為具名錨點，並將名稱的作用域限制在自身範圍內。清單方塊會在整個欄位下方 6px 處開啟，不以文字游標或按鈕為基準，並透過 `anchor-size()` 確保寬度至少與欄位相同。無須另外量測尺寸，同一頁上的多個組合方塊也能各自運作。
+- **箭頭。** `combobox-toggle` 是欄位末端的小按鈕。當欄位為 `aria-expanded="true"` 時，按鈕上的箭頭會翻轉。
+- **空白狀態。** 所有選項都設為 `hidden` 時，`listbox-empty` 會自動顯示。
+- **欄位狀態。** 指標停留、焦點、無效及停用狀態均由輸入群組提供。
+
+瀏覽器若不支援錨點定位，清單方塊仍可開啟，並和一般彈出視窗一樣在檢視區置中顯示。
+
+## 行為 \{#behavior\}
+
+`combobox` 接收根元素，也就是帶有 `combobox` 類別的元素，並傳回用來解除行為的函式。它無須任何選項設定，會透過 `role="combobox"` 找到欄位，並透過 `role="listbox"` 找到清單。
+
+```js name=app.js
+import { combobox } from '@master/ui/behaviors/combobox.js'
+
+const detach = combobox(document.querySelector('.combobox'))
+```
+
+- **輸入文字**時，不包含輸入文字的選項會設為 `hidden`，比對不分大小寫。清單會開啟，第一個相符項目會成為作用中選項。
+- **作用中選項**設為 `aria-selected="true"`，並由欄位上的 `aria-activedescendant` 指向。焦點會留在欄位內。
+- **選取選項**時，可按 <kbd>Enter</kbd> 或用指標操作。選項文字會填入欄位，略過 `listbox-description` 和 `listbox-end` 的內容。選取的選項會設為 `aria-checked="true"`，其餘設為 `false`，清單隨即關閉。重新輸入並覆寫選取值時，會清除該選項的勾選狀態。
+- **開啟與關閉。** 清單方塊使用 `popover="manual"`，因此在欄位內輸入或點擊時，清單會維持開啟。點擊欄位或切換按鈕，或按方向鍵，都會開啟清單。按 <kbd>Esc</kbd> 或焦點離開組合方塊時，會關閉清單。行為也會同步更新 `aria-expanded`。
+- **事件。** 選取選項時，欄位會依序觸發 `input` 和 `change`，與輸入文字時相同。值取自欄位的 `value`。
+
+停用或隱藏的選項會被略過。輸入法組字期間，<kbd>Enter</kbd> 和方向鍵會交由輸入法處理。
+
+未掛上行為時，欄位會維持為文字輸入欄位。使用者仍可輸入值，清單則保持關閉。
+
+## 選擇控制項 \{#choosing-a-control\}
+
+若純文字選項不超過 12 個，可用[下拉選單](/components/select)，無須腳本即可使用平台內建的鍵入定位功能。當清單很長而需要搜尋、選項會隨輸入載入，或每個選項需要呈現較豐富的內容時，請使用組合方塊。
+
+## 鍵盤操作 \{#keyboard\}
+
+按鍵由行為處理。清單關閉且按住 <kbd>Shift</kbd> 時，<kbd>Home</kbd> 和 <kbd>End</kbd> 會像在一般欄位中一樣移動文字游標。沒有作用中選項時，<kbd>Enter</kbd> 保留原本的行為，仍可送出表單。
+
+<ContractTable name="combobox" show="keyboard" />
+
+## 無障礙 \{#accessibility\}
+
+- 輸入欄位具有 `role="combobox"`、指向清單方塊的 `aria-controls`，以及 `aria-autocomplete="list"` 和 `aria-expanded`。
+- 焦點留在輸入欄位內，輔助技術透過 `aria-activedescendant` 讀出作用中選項。
+- 使用 `tabindex="-1"` 將切換按鈕移出 Tab 鍵的巡覽順序，因為在欄位中就能按方向鍵開啟清單。
+- 設定 `autocomplete="off"`，避免瀏覽器內建的自動完成建議遮住清單方塊。
+
+## React、Svelte 和 Vue \{#frameworks\}
+
+`combobox` 元件會根據選項清單產生這套標記、掛上行為，並支援傳入及傳出選取值。用 `npx master-ui add combobox` 將元件複製到專案中。元件的建置與使用方式請參閱 [React、Svelte 和 Vue](/guide/frameworks)。
+
+<FrameworkSource name="combobox" />
+
+## 類別 \{#classes\}
+
+<ContractTable name="combobox" />
+
+搭配 [`input-group`](/components/input#input-group)、`input-group-field` 和帶有 `popover` 屬性的 [`listbox`](/components/listbox) 使用。
+
+## 相關元件 \{#related\}
+
+組合方塊由下列元件組成，各元件保有自己的類別與狀態。
+
+<ComponentLinks slugs={['input', 'listbox', 'select']} />
+
+## 原始碼 \{#source\}
+
+<ComponentSource name="combobox" />

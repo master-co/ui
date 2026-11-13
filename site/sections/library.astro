@@ -17,12 +17,14 @@ import type { MetadataTitle } from '@master/internal-site/types/Metadata'
 export const bodyClass = 'bg-surface-base'
 
 // A static build names the overview `components.html`; the dev server serves `/components`.
-const [, kind, rest] = /^\/(components|blocks|pages)(\/[^/.]+)?/.exec(Astro.url.pathname) ?? []
+const site = siteOf(Astro)
+const pathname = site.locale === site.i18n.defaultLocale ? site.pathname : site.pathname.slice(site.locale.length + 1)
+const [, kind, rest] = /^\/(components|blocks|pages)(\/[^/.]+)?/.exec(pathname) ?? []
 const sidebar = Boolean(rest) && kind === 'components'
 
 // The sidebar is a client island; serialize only the fields it renders on every page.
 const sidebarCategories = sidebar
-  ? resolveNavigation(siteOf(Astro).locale, (navigation as Record<string, any[]>)[kind] ?? []).map(({ name, pages }: { name: string, pages: any[] }) => ({
+  ? resolveNavigation(site.locale, (navigation as Record<string, any[]>)[kind] ?? []).map(({ name, pages }: { name: string, pages: any[] }) => ({
       name,
       pages: pages.map(({ title, pathname, other }: { title: MetadataTitle, pathname: string, other?: { subject: string } }) => other ? { title, pathname, other } : { title, pathname })
     }))

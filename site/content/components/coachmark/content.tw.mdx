@@ -1,0 +1,153 @@
+---
+title: "導覽提示"
+description: "操作導覽中的一個步驟，指向要說明的控制項。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+導覽提示是操作導覽中的一個步驟，用一張小卡片指向控制項並說明其用途。它是彈出視窗，因此瀏覽器會將它放在頂層，並把焦點移入其中。CSS 錨點定位會將卡片放在開啟它的元素旁，並以箭頭指向該元素。提示點是個不時向外擴散圓環的小圓點，用來標示頁面上的位置，也是開啟卡片的按鈕。
+
+<ComponentPreview name="default" height={256} narrowHeight={284} title="導覽提示" bodyClass="flex items-end justify-center p-lg" html={`<div class="toolbar" role="toolbar" aria-label="Deployments">
+  <button type="button" class="btn btn-quiet btn-sm btn-square" aria-label="Search">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.35-4.35"/></svg>
+  </button>
+  <span class="relative inline-flex">
+    <button type="button" class="btn btn-quiet btn-sm btn-square" aria-label="Filter">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+    </button>
+    <button type="button" class="coachmark-beacon absolute top(-3) right(-3)" popovertarget="tip-filter" aria-label="What is new in Filter"></button>
+    <div id="tip-filter" popover class="coachmark coachmark-top" role="dialog" aria-labelledby="tip-filter-title">
+      <p class="coachmark-count">New</p>
+      <h2 class="coachmark-title" id="tip-filter-title">Filter by author</h2>
+      <p class="coachmark-text">Narrow the deployments to the ones you shipped, or to anyone on the team.</p>
+      <div class="coachmark-actions">
+        <button type="button" class="btn btn-sm" popovertarget="tip-filter" popovertargetaction="hide" autofocus>Got it</button>
+      </div>
+    </div>
+  </span>
+  <button type="button" class="btn btn-quiet btn-sm btn-square" aria-label="Share">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M8 8l4-4 4 4M5 14v5h14v-5"/></svg>
+  </button>
+</div>`} caption="按下篩選按鈕上的圓點。" />
+
+卡片採用 [sheet-inverse](/components/surface) 的反相配色，在月長石色底上用墨色，在黑曜石色底上用珍珠色，因此能與一般彈出視窗的表面及下方頁面區隔，箭頭也與卡片無縫相接。卡片上的預設[按鈕](/components/button)清楚標示可執行的動作。低調樣式的按鈕沿用卡片的前景色，指標停留時則以該色的淡色調作為底色。
+
+## 結構 \{#anatomy\}
+
+只有標題是必填項目。
+
+| 類別 | 內容 |
+| --- | --- |
+| `coachmark-count` | 以較低調的前景色顯示導覽進度，例如「第 2 步，共 4 步」，也可顯示「新功能」之類的字樣 |
+| `coachmark-title` | 步驟標題。為它設定 id，並用它標示導覽提示 |
+| `coachmark-text` | 用一兩句話說明控制項的用途 |
+| `coachmark-actions` | 卡片底部的小按鈕。有多個按鈕時，第一個（例如「略過」）靠起始端，其餘（例如「上一步」和「下一步」）靠結束端排列 |
+
+操作按鈕與卡片邊緣相距 12px，讓小按鈕的圓角與卡片圓角相襯。卡片的圓角半徑等於按鈕的圓角半徑加上這段內距。
+
+## 位置 \{#placement\}
+
+導覽提示預設在觸發元素正下方置中開啟，箭頭尖端距離該元素 6px。下方空間不足時，卡片會翻到上方。`coachmark-top` 優先使用上方空間，適合靠近畫面底部的控制項，或像第一個範例那樣把提示點放在控制項的上角。
+
+箭頭會指向標記中緊接在導覽提示前面的元素，因此請把導覽提示放在提示點或所要說明的控制項之後。導覽提示開啟時，該元素會成為具名錨點，箭頭會對準其中央。即使檢視區邊緣把卡片推向一旁，箭頭也會維持對準，同時避開卡片的圓角。卡片翻轉時，箭頭會移到另一側。和操作導覽一樣，一次只會開啟一則導覽提示。
+
+## 提示點 \{#beacon\}
+
+`coachmark-beacon` 是按鈕上直徑 10px 的圓點，外框沿用所在表面的顏色，操作目標尺寸為 24px，在觸控螢幕上為 44px。它透過 `popovertarget` 開啟對應的導覽提示，並需要用 `aria-label` 說明會開啟什麼。提示點的位置由頁面決定。可在 `relative` 包裝元素內使用 `absolute` utility，將提示點放在控制項的上角，也可將兩者並排。
+
+提示點以向外擴散的圓環吸引注意。指標停在提示點上、提示點取得焦點、對應的導覽提示開啟，或使用者偏好減少動態效果時，圓環會維持為靜止的光暈。使用者看過該步驟後，請移除提示點。
+
+## 操作導覽 \{#tour\}
+
+操作導覽會依序開啟數則導覽提示。為每個步驟設定 `popover="manual"`，讓使用者點擊頁面（例如試用箭頭指向的控制項）時仍能繼續導覽。用一小段腳本切換步驟。`showPopover({ source })` 會以步驟前方的元素為錨點開啟該步驟，各步驟的操作按鈕則呼叫它開啟下一步或上一步。手動彈出視窗需要由腳本處理 <kbd>Esc</kbd>，關閉視窗後再將焦點移回導覽的起點。
+
+<ComponentPreview name="tour" height={256} narrowHeight={284} title="操作導覽" bodyClass="flex items-start justify-center gap-sm p-lg" html={`<button type="button" class="btn btn-sm" id="tour-start">Take the tour</button>
+<div class="toolbar" role="toolbar" aria-label="Deployments">
+  <button type="button" class="btn btn-quiet btn-sm btn-square" aria-label="Search">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.35-4.35"/></svg>
+  </button>
+  <div id="tour-search" popover="manual" class="coachmark" role="dialog" aria-labelledby="tour-search-title">
+    <p class="coachmark-count">1 of 3</p>
+    <h2 class="coachmark-title" id="tour-search-title">Search every deployment</h2>
+    <p class="coachmark-text">Find one by its branch, its commit or the person who shipped it.</p>
+    <div class="coachmark-actions">
+      <button type="button" class="btn btn-sm btn-quiet" value="skip">Skip</button>
+      <button type="button" class="btn btn-sm" value="next" autofocus>Next</button>
+    </div>
+  </div>
+  <button type="button" class="btn btn-quiet btn-sm btn-square" aria-label="Filter">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+  </button>
+  <div id="tour-filter" popover="manual" class="coachmark" role="dialog" aria-labelledby="tour-filter-title">
+    <p class="coachmark-count">2 of 3</p>
+    <h2 class="coachmark-title" id="tour-filter-title">Filter the list</h2>
+    <p class="coachmark-text">Keep only the deployments of one branch, one author or one status.</p>
+    <div class="coachmark-actions">
+      <button type="button" class="btn btn-sm btn-quiet" value="skip">Skip</button>
+      <button type="button" class="btn btn-sm btn-quiet" value="back">Back</button>
+      <button type="button" class="btn btn-sm" value="next" autofocus>Next</button>
+    </div>
+  </div>
+  <button type="button" class="btn btn-quiet btn-sm btn-square" aria-label="Share">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M8 8l4-4 4 4M5 14v5h14v-5"/></svg>
+  </button>
+  <div id="tour-share" popover="manual" class="coachmark" role="dialog" aria-labelledby="tour-share-title">
+    <p class="coachmark-count">3 of 3</p>
+    <h2 class="coachmark-title" id="tour-share-title">Share a deployment</h2>
+    <p class="coachmark-text">Copy a link to it, open for anyone on the team.</p>
+    <div class="coachmark-actions">
+      <button type="button" class="btn btn-sm btn-quiet" value="back">Back</button>
+      <button type="button" class="btn btn-sm" value="done" autofocus>Done</button>
+    </div>
+  </div>
+</div>
+<script>
+  var start = document.getElementById('tour-start')
+  var steps = [document.getElementById('tour-search'), document.getElementById('tour-filter'), document.getElementById('tour-share')]
+  function show(index) {
+    steps.forEach(function (step) { if (step.matches(':popover-open')) step.hidePopover() })
+    if (steps[index]) steps[index].showPopover({ source: steps[index].previousElementSibling })
+    else start.focus()
+  }
+  start.addEventListener('click', function () { show(0) })
+  steps.forEach(function (step, index) {
+    step.addEventListener('click', function (event) {
+      var action = event.target.closest('button')
+      if (!action) return
+      show(action.value === 'next' ? index + 1 : action.value === 'back' ? index - 1 : -1)
+    })
+    step.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') show(-1)
+    })
+  })
+</script>`} caption="開始導覽，試試「下一步」、「上一步」和 Esc。" />
+
+由提示點開啟的單則導覽提示使用 `popover="auto"`。點擊外部或按下 <kbd>Esc</kbd> 時，瀏覽器會關閉它並將焦點移回提示點，全程無須腳本。
+
+## 無障礙 \{#accessibility\}
+
+- 為導覽提示設定 `role="dialog"`，並透過 `aria-labelledby` 以其標題作為名稱。這是非模態對話框，使用者仍可操作周圍的頁面。
+- 在主要操作按鈕上加上 `autofocus`，讓卡片開啟時焦點移入其中，使用者便可按 <kbd>Enter</kbd> 繼續。
+- 每個步驟都應能退出，可透過「略過」或「完成」按鈕，也可按 <kbd>Esc</kbd>。單則導覽提示還可透過點擊外部關閉。
+- 導覽中的所有資訊都應能從其他地方取得，讓略過導覽的使用者也能找到完整資訊。
+- 在標記中將導覽提示緊接在提示點之後，這樣無論卡片顯示在哪裡，Tab 鍵都會在提示點之後進入導覽提示。
+
+## 瀏覽器支援 \{#browser-support\}
+
+導覽提示使用 CSS 錨點定位。卡片的位置由 `position-area` 和 `position-try-fallbacks` 決定，箭頭則使用 `anchor()` 相對於卡片與所指向的元素定位。瀏覽器若不支援錨點定位，導覽提示仍可開關，會依瀏覽器的彈出視窗預設位置在檢視區置中顯示，並省略箭頭。`showPopover()` 的 `source` 選項為導覽步驟指定錨點。未提供此選項時，步驟會在沒有錨點的情況下開啟。淡入與短距離滑動使用 `@starting-style`，缺少支援時卡片會立即出現或消失。
+
+卡片進場時會淡入並朝錨點滑動 4px，退場時則以較短的時間淡出。卡片維持原尺寸，因為套用其他彈出視窗的縮放效果會把箭頭縮進卡片範圍內，使箭頭無法伸向所指的元素。
+
+## 類別 \{#classes\}
+
+<ContractTable name="coachmark" />
+
+## 自訂屬性 \{#custom-properties\}
+
+<ContractTable name="coachmark" show="properties" />
+
+## 原始碼 \{#source\}
+
+<ComponentSource name="coachmark" />

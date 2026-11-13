@@ -1,0 +1,97 @@
+---
+title: "儀表"
+description: "以圓弧的填滿程度呈現讀值。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+儀表用底部開口、占整圈三分之二的圓弧呈現讀值，並依讀值填入深色。數字置於中央，下方的簡短標籤位於圓弧兩端之間。元素使用 `role="meter"`，讀值以文字提供，圖形則由樣式表繪製。無須腳本或 SVG。
+
+<ComponentPreview name="default" height={184} narrowHeight={296} title="儀表" bodyClass="p-lg" html={`<div class="card max-w(480) mx-auto">
+  <div class="flex flex-wrap justify-around gap-md">
+    <div class="gauge" role="meter" aria-label="CPU" aria-valuenow="38" style="--gauge-value: 38">
+      <span class="gauge-value">38%</span>
+      <span class="gauge-label">CPU</span>
+    </div>
+    <div class="gauge" role="meter" aria-label="Memory" aria-valuenow="72" style="--gauge-value: 72">
+      <span class="gauge-value">72%</span>
+      <span class="gauge-label">Memory</span>
+    </div>
+    <div class="gauge" role="meter" aria-label="Disk" aria-valuenow="91" style="--gauge-value: 91">
+      <span class="gauge-value">91%</span>
+      <span class="gauge-label">Disk</span>
+    </div>
+  </div>
+</div>`} />
+
+## 圓弧長度 \{#how-the-arc-gets-its-length\}
+
+讀值由 `aria-valuenow` 指定，介於 `aria-valuemin` 和 `aria-valuemax` 之間。省略範圍時，預設為 0 到 100。瀏覽器支援具型別的 `attr()` 時，儀表會直接讀取這些屬性，數值只需寫一次。其他瀏覽器會讀取 `--gauge-value`，若使用自訂範圍，也會讀取 `--gauge-min` 和 `--gauge-max`。在所有瀏覽器引擎都支援具型別的 `attr()` 之前，請像本頁範例一樣同時設定兩組值。
+
+軌道和填色的兩端都是圓頭，讀值變動時，填色會平順地過渡到新位置。填色長度為零時，只會顯示未填色的軌道，填色的圓頭大小也會縮為零。
+
+<ComponentPreview name="range" height={152} narrowHeight={272} title="自訂範圍" background="plain" bodyClass="flex flex-wrap items-end justify-center gap-xl p-lg" html={`<div class="gauge" role="meter" aria-label="Engine speed" aria-valuenow="4200" aria-valuemin="0" aria-valuemax="8000" style="--gauge-value: 4200; --gauge-max: 8000">
+  <span class="gauge-value">4,200</span>
+  <span class="gauge-label">rpm</span>
+</div>
+<div class="gauge" role="meter" aria-label="Rating" aria-valuenow="4.6" aria-valuemin="1" aria-valuemax="5" style="--gauge-value: 4.6; --gauge-min: 1; --gauge-max: 5">
+  <span class="gauge-value">4.6</span>
+  <span class="gauge-label">of 5</span>
+</div>
+<div class="gauge" role="meter" aria-label="Queue" aria-valuenow="0" style="--gauge-value: 0">
+  <span class="gauge-value">0</span>
+  <span class="gauge-label">Queued</span>
+</div>`} />
+
+## 尺寸 \{#sizes\}
+
+儀表寬 120px。`gauge-sm` 寬 88px，適合資訊密集的儀表板小卡。`gauge-lg` 寬 160px，適合畫面上最主要的讀值。線條粗細為寬度的十五分之一，數字也會等比例縮放。省略 `gauge-label` 時，數字會置於儀表正中央。
+
+<ComponentPreview name="sizes" height={192} narrowHeight={320} title="尺寸" background="plain" bodyClass="flex flex-wrap items-end justify-center gap-xl p-lg" html={`<div class="gauge gauge-sm" role="meter" aria-label="Battery" aria-valuenow="64" style="--gauge-value: 64">
+  <span class="gauge-value">64%</span>
+  <span class="gauge-label">Battery</span>
+</div>
+<div class="gauge" role="meter" aria-label="Battery" aria-valuenow="64" style="--gauge-value: 64">
+  <span class="gauge-value">64%</span>
+  <span class="gauge-label">Battery</span>
+</div>
+<div class="gauge gauge-lg" role="meter" aria-label="Battery" aria-valuenow="64" style="--gauge-value: 64">
+  <span class="gauge-value">64%</span>
+</div>`} />
+
+## 用讀值表達狀態 \{#status\}
+
+填色預設使用深色。當讀值本身代表警示時，請將 `--gauge-color` 設為狀態色，並以文字說明警示內容，讓使用者不必單靠色相判讀。軌道會使用同一色相的較淡色調。
+
+<ComponentPreview name="status" height={152} title="狀態" background="plain" bodyClass="flex flex-wrap items-end justify-center gap-xl p-lg" html={`<div class="gauge" role="meter" aria-label="Storage" aria-valuenow="84" aria-valuetext="84%, nearly full" style="--gauge-value: 84; --gauge-color: var(--color-warning)">
+  <span class="gauge-value">84%</span>
+  <span class="gauge-label">Nearly full</span>
+</div>
+<div class="gauge" role="meter" aria-label="Error budget" aria-valuenow="97" aria-valuetext="97% spent, over budget soon" style="--gauge-value: 97; --gauge-color: var(--color-danger)">
+  <span class="gauge-value">97%</span>
+  <span class="gauge-label">Spent</span>
+</div>`} />
+
+## 儀表、量表或進度 \{#gauge-meter-or-progress\}
+
+儀表和[量表](/components/meter)都能呈現一定範圍內的測量值。當讀值是畫面重點，而且有獨立空間可呈現時，例如在儀表板上，請用儀表。若要在表單的一行或表格的一列中呈現讀值，請用量表。[進度](/components/progress)適合呈現會完成的任務，完成時圓環會閉合。儀表的圓弧則始終保留開口。
+
+## 無障礙 \{#accessibility\}
+
+- 為元素加上 `role="meter"`，用 `aria-label` 或 `aria-labelledby` 提供可存取名稱，並在 `aria-valuenow` 填入讀值。範圍不是 0 到 100 時，請加上 `aria-valuemin` 和 `aria-valuemax`。
+- 在 `gauge-value` 的文字中再寫一次讀值，並附上單位。若數字需要文字補充才容易理解，請加上 `aria-valuetext`。
+- 圓弧由樣式表繪製，螢幕閱讀器不會讀出圖形本身。在強制色彩模式下，填色使用系統醒目提示色，軌道使用系統灰色。
+
+## 類別 \{#classes\}
+
+<ContractTable name="gauge" />
+
+## 自訂屬性 \{#custom-properties\}
+
+<ContractTable name="gauge" show="properties" />
+
+## 原始碼 \{#source\}
+
+<ComponentSource name="gauge" />

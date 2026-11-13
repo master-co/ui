@@ -1,0 +1,75 @@
+---
+title: "标签页"
+description: "在一条细线上排列标签，墨色下划线标出当前项。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+标签页的文字沿同一条细线排列，当前标签带有墨色下划线。标签页用于在同级页面或面板间切换。若要紧凑地呈现一组选项供用户选择，可使用[分段控件](/components/segmented)。
+
+浏览器支持 CSS 锚点定位时，`aria-selected` 变化会让同一条下划线滑到当前标签下方。下划线的上缘经过圆滑处理，避免墨色形成生硬的尖角。其他浏览器中，每个标签各自绘制下划线。
+
+<ComponentPreview name="default" height={96} title="标签页" background="plain" bodyClass="p-lg" html={`<nav class="tabs" aria-label="Project">
+  <a class="tabs-item" href="#overview" aria-current="page">Overview</a>
+  <a class="tabs-item" href="#activity">Activity</a>
+  <a class="tabs-item" href="#settings">Settings</a>
+</nav>`} />
+
+## 带计数 \{#with-counts\}
+
+<ComponentPreview name="counts" height={96} title="带计数" background="plain" bodyClass="p-lg" html={`<nav class="tabs" aria-label="Repository">
+  <a class="tabs-item" href="#code" aria-current="page">Code</a>
+  <a class="tabs-item" href="#issues">Issues <span class="badge badge-sm badge-pill">24</span></a>
+  <a class="tabs-item" href="#pulls">Pull requests <span class="badge badge-sm badge-pill">3</span></a>
+</nav>`} />
+
+## 小尺寸 \{#small\}
+
+<ComponentPreview name="small" height={96} title="小尺寸" background="plain" bodyClass="p-lg" html={`<nav class="tabs tabs-sm" aria-label="Period">
+  <a class="tabs-item" href="#day">Day</a>
+  <a class="tabs-item" href="#week" aria-current="page">Week</a>
+  <a class="tabs-item" href="#month">Month</a>
+</nav>`} />
+
+## 标签页面板 \{#tab-panels\}
+
+在同一页面内切换面板时，遵循 WAI-ARIA 标签页模式：使用 `role="tablist"` 容器、带有 `aria-selected` 和 `aria-controls` 的 `role="tab"` 按钮，以及 `role="tabpanel"` 区域。样式表绘制所有状态，`tabs` [行为脚本](/guide/behaviors) 负责切换面板，并为标签列表提供键盘操作。
+
+<ComponentPreview name="tablist" height={136} title="标签列表" background="plain" bodyClass="p-lg" behaviors html={`<div class="tabs" role="tablist" aria-label="Account">
+  <button type="button" class="tabs-item" role="tab" id="tab-profile" aria-selected="true" aria-controls="panel-profile">Profile</button>
+  <button type="button" class="tabs-item" role="tab" id="tab-billing" aria-selected="false" aria-controls="panel-billing" tabindex="-1">Billing</button>
+  <button type="button" class="tabs-item" role="tab" id="tab-members" aria-selected="false" aria-controls="panel-members" tabindex="-1">Members</button>
+</div>
+<div role="tabpanel" id="panel-profile" aria-labelledby="tab-profile" class="pt-md text-sm fg-text-body">Profile settings</div>
+<div role="tabpanel" id="panel-billing" aria-labelledby="tab-billing" class="pt-md text-sm fg-text-body" hidden>Billing settings</div>
+<div role="tabpanel" id="panel-members" aria-labelledby="tab-members" class="pt-md text-sm fg-text-body" hidden>Members of the workspace</div>`} caption="聚焦一个标签后，可使用方向键、Home 或 End 键。也可单击选中标签。" />
+
+`tabs` 接收标签列表，也就是带有 `tabs` 类名和 `role="tablist"` 的元素。该函数不接受配置选项，返回用于卸载行为的函数。
+
+```js name=app.js
+import { tabs } from '@master/ui/behaviors/tabs.js'
+
+const detach = tabs(document.querySelector('.tabs[role="tablist"]'))
+```
+
+- **Tab 键只停一处。** 只有选中的标签位于 Tab 键的焦点顺序中。方向键将焦点移到上一个或下一个标签并选中它，跳过禁用的标签，到达首尾时循环切换。<kbd>Home</kbd> 和 <kbd>End</kbd> 分别跳到第一个和最后一个标签。带有 `aria-orientation="vertical"` 的标签列表使用上、下方向键。
+- **面板。** 标签通过 `aria-controls` 指定对应的面板。选中标签的面板会显示，其余面板会加上 `hidden`。
+- **值。** 选中标签时，标签列表会派发可冒泡的 `change` 事件，其中的 `detail.value` 取该标签的 `data-value`，若无则取其文本。行为脚本返回的函数也有同样的 `value`，从外部设置它即可选中对应标签。
+- **没有脚本时**，只有选中标签的面板不带 `hidden`，面板也无法切换。如果每个标签都可以对应一个独立页面，可在 `nav` 中使用链接。
+
+## React、Svelte 和 Vue \{#frameworks\}
+
+`tabs` 组件根据数据渲染标签列表及其面板，通过 ID 将各标签与对应面板关联起来，挂载行为脚本，并支持从外部传入和读取当前选中的标签。若标签是 `nav` 中的链接，直接使用 HTML 标记即可。使用 `npx master-ui add tabs` 将组件复制到项目中。[React、Svelte 和 Vue](/guide/frameworks) 介绍了这些组件的实现和用法。
+
+<FrameworkSource name="tabs" />
+
+## 类名 \{#classes\}
+
+<ContractTable name="tabs" />
+
+## 源码 \{#source\}
+
+<ComponentSource name="tabs" />

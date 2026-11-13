@@ -1,0 +1,67 @@
+---
+title: "灯箱"
+description: "在原生对话框中放大查看图片。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+灯箱在页面上方放大显示图片。将 `.lightbox` 用于原生 `<dialog>`，缩略图按钮通过 `commandfor` 和 `command="show-modal"` 打开灯箱。浏览器负责将灯箱置于顶层、将焦点限制在其中，并支持按 <kbd>Esc</kbd> 关闭，整个过程无需脚本。对话框本身没有面板，尺寸与图片完全一致。图片后方的页面会变暗并明显模糊。
+
+<ComponentPreview name="default" height={440} narrowHeight={400} title="灯箱" bodyClass="flex items-center justify-center p-lg" caption="按下卡片打开灯箱。点击图片外部、按下关闭按钮或按 Esc 即可关闭。" html={`<button class="card card-interactive w(240)" type="button" commandfor="moonstone" command="show-modal">
+  <img class="card-media" src="/demo/moonstone.svg" alt="">
+  <span class="card-header">
+    <span class="card-title">Moonstone</span>
+    <span class="card-description">View the picture</span>
+  </span>
+</button>
+
+<dialog class="lightbox" id="moonstone" closedby="any" aria-label="Moonstone" style="--lightbox-ratio: 16 / 9">
+  <img class="lightbox-media" src="/demo/moonstone.svg" alt="A pale stone over grey hills">
+  <p class="lightbox-caption">Moonstone, the stone the light theme is named for.</p>
+  <button class="btn btn-sm btn-square lightbox-close" type="button" commandfor="moonstone" command="close" aria-label="Close">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+  </button>
+</dialog>`} />
+
+## 打开与关闭 \{#opening-and-closing\}
+
+- 在缩略图按钮上同时设置 `commandfor="id"` 和 `command="show-modal"`，即可打开灯箱。在关闭按钮上设置 `command="close"`，即可关闭灯箱并将焦点移回缩略图。
+- `closedby="any"` 让灯箱支持点击外部关闭。对话框与图片尺寸完全一致，点击图片以外的任意位置都会关闭灯箱。浏览器不支持此属性时，仍可按 <kbd>Esc</kbd> 或使用关闭按钮。
+- 如果浏览器不支持调用命令，请在点击事件处理函数中调用 `dialog.showModal()` 和 `dialog.close()`。样式表保持不变。
+
+图片通过 `@starting-style` 和离散过渡从略小的尺寸淡入并放大到目标尺寸，退出比进入更快。缺少这些特性时，图片会立即显示和消失。
+
+## 尺寸 \{#size\}
+
+将 `lightbox-media` 用于 `<img>`、`<video>` 或 `<iframe>`。媒体尺寸独立于文件本身。宽高比由 `--lightbox-ratio` 设置，默认为 `3 / 2`。宽度为 64rem，若视口的宽度或高度不足，则按比例缩小，四周各留 24px。图片、视频和嵌入框架都按同一规则确定尺寸，加载时不会引发布局位移。
+
+在对话框上将 `--lightbox-ratio` 设为图片本身的宽高比，例如示例中的 `16 / 9`。宽高比不同的图片会裁剪以填满显示区域。`--lightbox-width` 设置最大宽度，`--lightbox-gutter` 设置四周的留白。
+
+## 说明文字与关闭按钮 \{#caption-and-close\}
+
+`lightbox-caption` 是悬浮在图片下方的说明栏，宽度与图片一致，图片会为它留出空间。说明文字控制在一到两行。将 `lightbox-close` 用于小型方形[按钮](/components/button)，按钮位于图片的一个上角，距上边缘和相邻的侧边缘各 8px。按钮采用凸起样式并带有独立轮廓，在任何图片上都容易找到。
+
+## 灯箱与对话框 \{#lightbox-or-dialog\}
+
+灯箱只展示一张图片，无需用户作出选择。带标题、正文或表单的浮层使用[对话框](/components/dialog)。留在页面内并附有说明文字的图片使用[插图](/components/figure)。
+
+## 无障碍 \{#accessibility\}
+
+- 使用 `aria-label` 为对话框提供无障碍名称，或通过 `aria-labelledby` 引用其说明文字。
+- 为大图提供能描述图片内容的 `alt`。如果按钮文字已经说明会打开什么，按钮内缩略图的对应属性可以留空。
+- 始终提供带有无障碍名称的关闭按钮，因为有些用户可能不知道可以点击外部或按 <kbd>Esc</kbd> 关闭。
+- 灯箱打开时，焦点移入灯箱，关闭时移回缩略图。启用减少动态效果时，图片只做淡入淡出，尺寸保持不变。
+
+## 类名 \{#classes\}
+
+<ContractTable name="lightbox" />
+
+## 自定义属性 \{#custom-properties\}
+
+<ContractTable name="lightbox" show="properties" />
+
+## 源码 \{#source\}
+
+<ComponentSource name="lightbox" />

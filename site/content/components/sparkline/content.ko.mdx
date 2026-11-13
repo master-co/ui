@@ -1,0 +1,110 @@
+---
+title: "스파크라인"
+description: "문장, 표의 행, 통계에 넣을 수 있도록 추세를 가느다란 선 하나로 표시합니다."
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+스파크라인은 추세를 가느다란 선 하나로 나타낸 작은 그래프입니다. [통계](/components/stat)의 수치 아래, [표](/components/table)의 열, 문장 안처럼 관련 텍스트가 있는 곳에 바로 넣을 수 있습니다. 인라인 SVG로, 주어진 공간에 맞춰 늘어나며 선은 주변 텍스트의 색상과 1.5px 두께를 유지합니다. 최신 값을 표시하는 점은 그래프가 얼마나 늘어나든 원형을 유지합니다. 스크립트는 사용하지 않습니다.
+
+<ComponentPreview name="default" height={224} narrowHeight={240} title="스파크라인" bodyClass="p-lg" html={`<div class="card max-w(320) mx-auto">
+  <div class="stat">
+    <p class="stat-label">Requests per day</p>
+    <div class="stat-row">
+      <p class="stat-value">61,240</p>
+      <p class="stat-delta stat-delta-up">12.4%</p>
+    </div>
+    <span class="sparkline" style="--sparkline-width: 100%; --sparkline-height: 2.5rem" aria-hidden="true"><svg class="sparkline-plot" viewBox="0 0 100 100" preserveAspectRatio="none"><path class="sparkline-area" d="M0 100 L7.69 90 L15.38 93.3 L23.08 76.7 L30.77 83.3 L38.46 66.7 L46.15 56.7 L53.85 63.3 L61.54 46.7 L69.23 30 L76.92 40 L84.62 20 L92.31 10 L100 0 V100 H0 Z" /><line class="sparkline-baseline" x1="0" y1="55.5" x2="100" y2="55.5" /><path class="sparkline-line" d="M0 100 L7.69 90 L15.38 93.3 L23.08 76.7 L30.77 83.3 L38.46 66.7 L46.15 56.7 L53.85 63.3 L61.54 46.7 L69.23 30 L76.92 40 L84.62 20 L92.31 10 L100 0" /></svg><span class="sparkline-dot" style="--x: 100; --y: 0"></span></span>
+    <p class="stat-description">The last 14 days; the dotted line is their average</p>
+  </div>
+</div>`} />
+
+## 선 그리기 \{#how-the-line-is-drawn\}
+
+그래프는 `viewBox="0 0 100 100"`와 `preserveAspectRatio="none"`를 지정한 `<svg class="sparkline-plot">`로 그립니다. 가로와 세로가 각각 100 단위인 좌표 영역을 스파크라인 크기에 맞춰 늘립니다. 이 영역에 점의 좌표를 한 번만 지정하면 문장과 카드 어디에서든 선이 크기에 맞게 표시됩니다.
+
+- **가로 방향**으로 첫 점은 0, 마지막 점은 100에 놓고 나머지 점은 그 사이에 등간격으로 배치합니다. 값이 14개라면 점 사이의 간격은 100 / 13 단위입니다.
+- **세로 방향**은 SVG 좌표계에 따라 맨 위가 0, 맨 아래가 100입니다. 최솟값을 100에, 최댓값을 0에 대응시키세요. 여러 스파크라인을 비교할 때는 눈금 범위를 직접 정할 수도 있습니다.
+
+`sparkline-line`은 각 점을 지나는 `<path>` 또는 `<polyline>`입니다. 좌표 영역이 늘어나도 선 두께는 변하지 않으므로(`vector-effect: non-scaling-stroke`) 크기에 관계없이 1.5px 두께를 유지하며, 연결부와 끝은 둥글게 표시됩니다.
+
+스파크라인은 개별 값 대신 변화의 흐름을 보여 줍니다. 아래 표에서는 각 프로젝트의 최솟값과 최댓값을 기준으로 스파크라인을 따로 그립니다. 변화 방향은 선으로 확인하고, 어느 프로젝트의 값이 더 큰지는 옆의 수치로 비교하세요.
+
+## 최신 값 \{#the-latest-value\}
+
+`sparkline-dot`은 작은 HTML 점입니다. SVG 원을 쓰면 그래프가 늘어날 때 타원이 되기 때문입니다. 같은 100 × 100 좌표계에서 마지막 점의 좌표를 `--x`와 `--y`에 지정해 점의 중심을 배치하세요. 배경과 같은 색의 테두리가 점 주변의 선을 가려 추세선이 점 앞에서 끝나는 것처럼 보입니다. 스파크라인은 점의 절반이 들어갈 공간을 자체 영역 안에 확보하므로 뒤따르는 단어와 점이 너무 가까워지지 않습니다.
+
+## 채움 영역과 기준선 \{#area-and-baseline\}
+
+`sparkline-area`는 같은 점들을 지나고 아래쪽 가장자리를 따라 닫히는 `<path>`입니다(`V100 H0 Z`). 선과 같은 색으로 옅게 채우고 아래로 갈수록 투명하게 표시합니다. 선이 채움 영역 위에 그려지도록 마크업에서 채움 영역을 선보다 앞에 배치하세요.
+
+`sparkline-baseline`은 평균값, 목표값 또는 이전 기간 값의 높이에서 0부터 100까지 이어지는 가는 점선 `<line>`입니다. 추세선보다 눈에 덜 띄며, 위의 통계 예시처럼 스파크라인 옆의 텍스트로 기준선이 나타내는 값을 설명합니다.
+
+## 문장 속 스파크라인 \{#in-a-sentence\}
+
+스파크라인의 너비는 4em, 높이는 대문자 높이와 비슷한 .75em입니다. 세로 중심을 주변 대문자의 세로 중심에 맞춰 텍스트 줄 안에서 단어처럼 배치됩니다. 페이지, 카드, 잉크색 표면 어디에서든 주변 텍스트와 같은 색을 사용합니다.
+
+<ComponentPreview name="sentence" height={96} narrowHeight={112} title="문장 속 스파크라인" background="plain" bodyClass="p-lg" html={`<p class="m(0) max-w(440) mx-auto fg-text-body">Requests rose all fortnight <span class="sparkline" aria-hidden="true"><svg class="sparkline-plot" viewBox="0 0 100 100" preserveAspectRatio="none"><path class="sparkline-line" d="M0 100 L7.69 90 L15.38 93.3 L23.08 76.7 L30.77 83.3 L38.46 66.7 L46.15 56.7 L53.85 63.3 L61.54 46.7 L69.23 30 L76.92 40 L84.62 20 L92.31 10 L100 0" /></svg><span class="sparkline-dot" style="--x: 100; --y: 0"></span></span> to 61,000 a day, while latency fell <span class="sparkline" aria-hidden="true"><svg class="sparkline-plot" viewBox="0 0 100 100" preserveAspectRatio="none"><path class="sparkline-line" d="M0 0 L7.69 11.1 L15.38 3.7 L23.08 20.4 L30.77 25.9 L38.46 22.2 L46.15 42.6 L53.85 55.6 L61.54 50 L69.23 66.7 L76.92 75.9 L84.62 72.2 L92.31 85.2 L100 100" /></svg></span> to 128 ms.</p>`} />
+
+## 표 속 스파크라인 \{#in-a-table\}
+
+`--sparkline-width`와 `--sparkline-height`를 스파크라인에 직접 지정하거나 표 같은 컨테이너에 한 번만 지정해 내부의 모든 스파크라인에 같은 크기를 적용하세요. 위의 통계 예시처럼 카드 크기에 맞춰 표시할 때는 `--sparkline-width: 100%`를 사용하세요.
+
+<ComponentPreview name="table" height={196} title="표 속 스파크라인" bodyClass="p-lg" html={`<div class="sheet overflow-hidden max-w(480) mx-auto">
+  <table class="table table-compact" style="--sparkline-width: 5rem; --sparkline-height: 1rem">
+    <thead>
+      <tr class="table-row">
+        <th class="table-heading" scope="col">Project</th>
+        <th class="table-heading" scope="col">Last 14 days</th>
+        <th class="table-heading table-numeric" scope="col">Today</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="table-row">
+        <th class="table-cell table-primary" scope="row">Atlas</th>
+        <td class="table-cell"><span class="sparkline" role="img" aria-label="Rising steadily"><svg class="sparkline-plot" viewBox="0 0 100 100" preserveAspectRatio="none"><path class="sparkline-line" d="M0 100 L7.69 90 L15.38 93.3 L23.08 76.7 L30.77 83.3 L38.46 66.7 L46.15 56.7 L53.85 63.3 L61.54 46.7 L69.23 30 L76.92 40 L84.62 20 L92.31 10 L100 0" /></svg><span class="sparkline-dot" style="--x: 100; --y: 0"></span></span></td>
+        <td class="table-cell table-numeric">61,240</td>
+      </tr>
+      <tr class="table-row">
+        <th class="table-cell table-primary" scope="row">Borealis</th>
+        <td class="table-cell"><span class="sparkline" role="img" aria-label="Falling"><svg class="sparkline-plot" viewBox="0 0 100 100" preserveAspectRatio="none"><path class="sparkline-line" d="M0 5.9 L7.69 17.6 L15.38 0 L23.08 23.5 L30.77 35.3 L38.46 29.4 L46.15 52.9 L53.85 41.2 L61.54 70.6 L69.23 58.8 L76.92 82.4 L84.62 76.5 L92.31 94.1 L100 100" /></svg><span class="sparkline-dot" style="--x: 100; --y: 100"></span></span></td>
+        <td class="table-cell table-numeric">36,018</td>
+      </tr>
+      <tr class="table-row">
+        <th class="table-cell table-primary" scope="row">Cirrus</th>
+        <td class="table-cell"><span class="sparkline" role="img" aria-label="Rising slowly"><svg class="sparkline-plot" viewBox="0 0 100 100" preserveAspectRatio="none"><path class="sparkline-line" d="M0 100 L7.69 79.2 L15.38 91.7 L23.08 58.3 L30.77 66.7 L38.46 45.8 L46.15 54.2 L53.85 33.3 L61.54 41.7 L69.23 20.8 L76.92 29.2 L84.62 12.5 L92.31 16.7 L100 0" /></svg><span class="sparkline-dot" style="--x: 100; --y: 0"></span></span></td>
+        <td class="table-cell table-numeric">16,420</td>
+      </tr>
+    </tbody>
+  </table>
+</div>`} />
+
+## 상태 색상 \{#status-inks\}
+
+`sparkline-success`, `sparkline-warning`, `sparkline-danger`는 선과 점을 상태에 해당하는 색상으로 그립니다. 상승이 항상 좋은 것은 아닙니다. 예를 들어 오류가 늘어날 때는 상승하는 선을 위험 색상으로 표시합니다. 색상만으로 상태를 전달하지 않도록 스파크라인 옆의 텍스트에도 같은 의미가 담겨 있을 때만 상태 색상을 사용하세요.
+
+<ComponentPreview name="tones" height={96} narrowHeight={136} title="상태 색상" background="plain" bodyClass="p-lg" html={`<p class="m(0) max-w(440) mx-auto fg-text-body">After the fix, errors fell by half <span class="sparkline sparkline-success" aria-hidden="true"><svg class="sparkline-plot" viewBox="0 0 100 100" preserveAspectRatio="none"><path class="sparkline-line" d="M0 9.1 L7.69 0 L15.38 15.2 L23.08 6.1 L30.77 21.2 L38.46 39.4 L46.15 60.6 L53.85 72.7 L61.54 78.8 L69.23 87.9 L76.92 81.8 L84.62 90.9 L92.31 97 L100 100" /></svg><span class="sparkline-dot" style="--x: 100; --y: 100"></span></span> to 18 an hour. Checkout got slower <span class="sparkline sparkline-danger" aria-hidden="true"><svg class="sparkline-plot" viewBox="0 0 100 100" preserveAspectRatio="none"><path class="sparkline-line" d="M0 91.7 L7.69 100 L15.38 83.3 L23.08 91.7 L30.77 75 L38.46 83.3 L46.15 66.7 L53.85 58.3 L61.54 66.7 L69.23 41.7 L76.92 33.3 L84.62 25 L92.31 16.7 L100 0" /></svg><span class="sparkline-dot" style="--x: 100; --y: 0"></span></span> and now takes 3.2 seconds.</p>`} />
+
+## 접근성 \{#accessibility\}
+
+- 주변 텍스트에 추세 설명이 없다면 스파크라인에 `role="img"`를 지정하고, `aria-label`에 “일일 수치가 31,000에서 61,000으로 증가”처럼 추세를 설명하는 문구를 넣으세요. 그러면 내부 그래프가 하나의 이미지로 처리됩니다.
+- 문장이나 통계처럼 주변 텍스트나 수치가 이미 추세를 설명한다면 `aria-hidden="true"`로 스파크라인을 숨겨 스크린 리더가 같은 내용을 두 번 읽지 않도록 하세요.
+- 강제 색상 모드에서는 선과 점이 텍스트 색상을 따르며 채움 영역은 표시되지 않습니다.
+
+## SVG 마스크 미지원 시 폴백 \{#platform\}
+
+SVG 도형에 CSS 마스크를 적용해 채움 영역이 아래로 갈수록 투명해지도록 합니다. SVG 도형에 마스크를 적용할 수 없는 브라우저에서는 채움 영역 전체를 선과 같은 색으로 균일하게 옅게 표시합니다.
+
+## 클래스 \{#classes\}
+
+<ContractTable name="sparkline" />
+
+## 사용자 지정 속성 \{#custom-properties\}
+
+<ContractTable name="sparkline" show="properties" />
+
+## 소스 \{#source\}
+
+<ComponentSource name="sparkline" />

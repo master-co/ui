@@ -1,0 +1,87 @@
+---
+title: "图片对比"
+description: "对比同一对象的两张图片，拖动手柄可移动两图之间的分界线。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+图片对比组件将同一对象的两张图片叠放在一起，让读者移动两图之间的分界线，例如对比编辑前后、浅色和深色效果，或初稿和修订稿。手柄使用原生 `<input type="range">`，因此具备滑块原生的键盘操作、数值和无障碍名称。珍珠般的手柄位于一条细线上，上层图片沿这条线裁切。
+
+<ComponentPreview name="default" height={376} narrowHeight={320} title="图片对比" bodyClass="p-lg" behaviors html={`<figure class="compare max-w(520) mx-auto">
+  <img class="compare-before" src="/demo/moonstone.svg" alt="The landscape before grading: grey and flat" style="aspect-ratio: 16 / 10; filter: grayscale(1) contrast(.75)">
+  <img class="compare-after" src="/demo/moonstone.svg" alt="The landscape after grading">
+  <input type="range" class="compare-range" min="0" max="100" value="50" aria-label="Show more of the graded picture">
+</figure>`} caption="拖动手柄，或将焦点移到手柄上后按方向键。" />
+
+## 用手柄移动图片分界线 \{#the-handle-moves-the-picture\}
+
+在支持滚动驱动动画的浏览器中，手柄在输入控件内形成视图时间线，组件外框读取这条时间线。`--compare-position` 无需脚本即可随手柄的位置更新，裁切边界和分界线都由该属性控制。
+
+在其他浏览器中，`compare` [行为脚本](/guide/behaviors) 实现同样的效果。脚本在挂接时以及输入值每次变化时，将当前值换算为其在取值范围内的百分比，再写入根元素上的 `--compare-position`。在所有浏览器中都挂接该脚本。样式表已驱动该属性时，脚本不会改变渲染效果。
+
+```js name=app.js
+import { compare } from '@master/ui/behaviors/compare.js'
+
+const detach = compare(document.querySelector('.compare'))
+```
+
+行为脚本接收带有 `compare` 类名的根元素，无需选项，也不额外派发事件。范围输入控件照常派发 `input` 和 `change` 事件，其 `value` 决定分界线的位置。如果样式表的时间线和行为脚本都不可用，两张图片会以 `--compare-position` 指定的位置为界。未设置该属性时，分界线位于正中央。
+
+输入控件比组件外框宽出一个手柄的宽度，因此手柄中心可以从外框的一侧边缘移到另一侧，分界线也能到达两侧边缘。
+
+## 图片 \{#pictures\}
+
+`compare-before` 位于下层，从起始边缘显示到分界线；`compare-after` 位于上层，从分界线显示到末端边缘。两张图片都填满组件外框，并沿外框裁切。用宽度和高度或 `aspect-ratio` 为其中一张图片设定外框的形状，并选用两张取景一致的图片。
+
+组件外框采用表面的圆角，并带有所有[媒体图注](/components/figure)组件共有的内侧边缘样式。将组件嵌入卡片时，设置 `--compare-radius`。
+
+<ComponentPreview name="small" height={424} title="嵌入卡片" bodyClass="flex items-center justify-center p-lg" behaviors html={`<div class="card w(280)">
+  <figure class="compare card-media" style="--compare-radius: calc(var(--radius-surface) - 4px)">
+    <img class="compare-before" src="/demo/portrait-1.svg" alt="The portrait as uploaded" style="aspect-ratio: 4 / 3; filter: saturate(.2) brightness(.92)">
+    <img class="compare-after" src="/demo/portrait-1.svg" alt="The portrait with the Warm preset">
+    <input type="range" class="compare-range" min="0" max="100" value="40" aria-label="Show more of the Warm preset">
+  </figure>
+  <div class="card-header">
+    <h3 class="card-title">Warm</h3>
+    <p class="card-description">Drag to compare with the original.</p>
+  </div>
+</div>`} />
+
+## 键盘操作 \{#keyboard\}
+
+键盘操作完全由范围输入控件原生提供。
+
+<ContractTable name="compare" show="keyboard" />
+
+## 无障碍 \{#accessibility\}
+
+- 用移动控件所产生的效果为输入控件命名，例如“显示更多调色后的画面”。
+- 为每张图片设置 `alt`，说明它是哪一张，以及它与另一张有何区别。无法并排查看两张图片的读者需要通过文字了解差异。
+- 手柄在 Tab 键导航顺序中占一个焦点位置。按方向键可将分界线移动一个步长，按 <kbd>Home</kbd> 或 <kbd>End</kbd> 键可分别完整显示其中一张图片。
+- 手柄尺寸为 32px，在触摸屏上为 44px。手指在组件外框内上下滑动时，仍可纵向滚动页面。
+
+## React、Svelte 和 Vue \{#frameworks\}
+
+`compare` 组件挂接行为脚本，并接收和传出分界线位置。两张图片的标记仍由页面提供。用 `npx master-ui add compare` 将组件复制到项目中。有关组件的实现和用法，请参阅 [React、Svelte 和 Vue](/guide/frameworks)。
+
+<FrameworkSource name="compare" />
+
+## 类名 \{#classes\}
+
+<ContractTable name="compare" />
+
+## 自定义属性 \{#custom-properties\}
+
+<ContractTable name="compare" show="properties" />
+
+## 相关内容 \{#related\}
+
+<ComponentLinks slugs={['figure', 'slider', 'carousel']} />
+
+## 源码 \{#source\}
+
+<ComponentSource name="compare" />

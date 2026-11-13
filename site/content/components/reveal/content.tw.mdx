@@ -1,0 +1,85 @@
+---
+title: "捲動顯現"
+description: "內容隨捲動進入畫面時逐漸顯現。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+捲動顯現讓內容在進入畫面時淡入並向上移動幾個像素。動畫在內容剛跨入檢視區的那段距離內完成，之後內容便維持靜止。這個效果由一個類別和捲動驅動動畫實作。動畫進度直接取決於捲動位置，無須監聽元素或動態加上類別。
+
+<ComponentPreview name="default" height={360} title="捲動顯現" bodyClass="block p-lg" caption="捲動預覽，卡片會在進入畫面時逐一顯現。" html={`<div class="flex flex-col gap-md max-w(420) mx-auto">
+  <p class="m(0) fg-text-muted text-sm text-center py-xl">Scroll down</p>
+  <article class="card mt(240)">
+    <header class="card-header">
+      <h3 class="card-title">Native first</h3>
+      <p class="card-description">Every overlay is a dialog or a popover, opened without script.</p>
+    </header>
+  </article>
+  <article class="card reveal">
+    <header class="card-header">
+      <h3 class="card-title">One material</h3>
+      <p class="card-description">Surfaces step apart on a ladder of light, in both themes.</p>
+    </header>
+  </article>
+  <article class="card reveal">
+    <header class="card-header">
+      <h3 class="card-title">Contracts</h3>
+      <p class="card-description">Each stylesheet says what it promises in a file beside it.</p>
+    </header>
+  </article>
+  <article class="card reveal" style="--reveal-scale: .96">
+    <header class="card-header">
+      <h3 class="card-title">Yours to change</h3>
+      <p class="card-description">Tokens retune every component; the source is there to own.</p>
+    </header>
+  </article>
+  <p class="m(0) fg-text-muted text-sm text-center py-xl">The end</p>
+</div>`} />
+
+## 運作方式 \{#how-it-works\}
+
+元素的動畫使用自己的檢視時間軸 `animation-timeline: view()`，在元素進入捲動容器的這段範圍內播放。由捲動位置決定進度會帶來三種行為：
+
+- 頁面開啟時，已在畫面中的內容會保持靜止，因為它的進場動畫在第一個影格前就已完成。
+- 往回捲動會倒播動畫，無須重設。
+- 元素會依進入畫面的順序逐一顯現，無須調整延遲或另外安排錯開的時間。
+
+動畫會在元素進入畫面的前 12rem 內完成，這段距離由 `--reveal-range` 設定，因此較高的區塊無須捲過一整個畫面才淡入完畢。元素若比這段距離短，整個元素進入畫面時就會完成動畫，因此頁面最後一個元素也一定會完整顯現。
+
+## 調整動畫 \{#tuning\}
+
+可在個別元素上，或在多個元素共用的父元素上設定以下三個屬性：
+
+- `--reveal-distance` 控制向上移動的距離，預設為 16px。設為 `0` 時只有淡入效果。
+- `--reveal-scale` 控制進場時的起始縮放比例。圖片或卡片適合用 `.96`，文字則應維持原尺寸。
+- `--reveal-range` 控制元素進入畫面多遠時完成動畫。
+
+## 使用時機 \{#when-to-use-it\}
+
+將捲動顯現用於長頁面中的完整區塊，例如登陸頁面的一個區段、一列卡片或一張圖。請適量使用。每個區塊都套用動畫會讓整頁一直在動，快速捲動的讀者也得等內容顯現。
+
+請勿將這個效果套用到讀者需要立即看到的文字、對話框或選單內的任何內容，以及載入時會改變尺寸的內容。
+
+## 無捲動驅動動畫時 \{#fallback\}
+
+如果瀏覽器不支援 `animation-timeline: view()`，或讀者在系統中設定減少動態效果，這個類別便不會產生效果，內容會直接顯示。列印時也一樣。透明度只在動畫中設定，因此無論動畫是否播放，內容都能顯示。
+
+## 無障礙設計 \{#accessibility\}
+
+- 內容從一開始就在文件和無障礙樹中。進場時只會改變透明度和位置。
+- 啟用 `prefers-reduced-motion: reduce` 時，內容會直接顯示，沒有淡入或位移。
+- 保持位移幅度小。大型區塊若移動太遠，會讓檢視區內大片內容同時移動，使部分讀者感到不適。
+
+## 類別 \{#classes\}
+
+<ContractTable name="reveal" />
+
+## 自訂屬性 \{#custom-properties\}
+
+<ContractTable name="reveal" show="properties" />
+
+## 原始碼 \{#source\}
+
+<ComponentSource name="reveal" />

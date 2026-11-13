@@ -12,7 +12,8 @@ import results from '../../../benchmarks/shadcn-cost/results.json'
  * Compared: the committed results of benchmarks/shadcn-cost, read at build time. Nothing here is typed in by
  * hand; the sentences that name a case are chosen from the figures.
  */
-const { t } = siteOf(Astro)
+const { t, locale, i18n } = siteOf(Astro)
+const list = new Intl.ListFormat(i18n.hreflangOfLocale[locale] ?? locale, { type: 'conjunction' })
 const kB = (bytes: number) => bytes ? (bytes / 1000).toFixed(1) : '0'
 const repository = 'https://github.com/master-co/ui/tree/main/benchmarks/shadcn-cost'
 
@@ -29,12 +30,12 @@ const js = (entry: Case, runtime: typeof runtimes[number]) => runtime === 'with'
 
 const rows = [
     { id: 'none', name: t('The setup alone'), note: t('no component') },
-    { id: 'button', name: 'Button' },
-    { id: 'card', name: 'Card' },
-    { id: 'dialog', name: 'Dialog' },
-    { id: 'tabs', name: 'Tabs', note: t('Master UI: tabs.js') },
-    { id: 'select', name: 'Select', note: t('Master UI: native, no script') },
-    { id: 'tooltip', name: 'Tooltip' },
+    { id: 'button', name: t('Button') },
+    { id: 'card', name: t('Card') },
+    { id: 'dialog', name: t('Dialog') },
+    { id: 'tabs', name: t('Tabs'), note: t('Master UI: tabs.js') },
+    { id: 'select', name: t('Select'), note: t('Master UI: native, no script') },
+    { id: 'tooltip', name: t('Tooltip') },
     { id: 'all', name: t('All six') },
 ]
 
@@ -202,8 +203,8 @@ const headline = (gap > 0 && allShadcn.js.gzip - allMaster.js.gzip >= gap
       <ol class="home-cost-notes" id="compare-notes">
         <li><span class="home-cost-note-mark" aria-hidden="true">1</span>{t('Every file the built page loads first, gzipped: the HTML, its stylesheets and its module scripts. Master UI writes the markup in the HTML; shadcn/ui renders it from JavaScript. React and React DOM are {size} kB of that JavaScript on every shadcn/ui page; “Without React” leaves them out. Lightning CSS minifies both builds’ CSS, so it weighs less here than in the unminified figures above.').replace('{size}', kB(shadcn[bases[0]].none.react.gzip))}</li>
         <li><span class="home-cost-note-mark" aria-hidden="true">2</span>{smallerCss.length
-          ? t('CSS alone, shadcn/ui ships less for {cases}, since Tailwind writes only the utilities a page uses. The widest gap is {widest}: {master} kB against {shadcn} kB.').replace('{cases}', new Intl.ListFormat('en', { type: 'conjunction' }).format(smallerCss.map(entry => caseName(entry.row)))).replace('{widest}', caseName(widest.row)).replace('{master}', kB(master[widest.row.id].css.gzip)).replace('{shadcn}', kB(Math.max(...bases.map(base => shadcn[base][widest.row.id].css.gzip))))
-          : t('CSS alone, Master UI ships no more than shadcn/ui in any case.')}{widest ? ` ${t('A Master UI {name} compiles {count} stylesheets after the theme, itself and what it composes: {list}.').replace('{name}', caseName(widest.row).toLowerCase()).replace('{count}', String(master[widest.row.id].stylesheets.length)).replace('{list}', new Intl.ListFormat('en', { type: 'conjunction' }).format(master[widest.row.id].stylesheets.map(file => file.replace(/^.*\//, '').replace(/\.css$/, ''))))}` : ''}</li>
+          ? t('CSS alone, shadcn/ui ships less for {cases}, since Tailwind writes only the utilities a page uses. The widest gap is {widest}: {master} kB against {shadcn} kB.').replace('{cases}', list.format(smallerCss.map(entry => caseName(entry.row)))).replace('{widest}', caseName(widest.row)).replace('{master}', kB(master[widest.row.id].css.gzip)).replace('{shadcn}', kB(Math.max(...bases.map(base => shadcn[base][widest.row.id].css.gzip))))
+          : t('CSS alone, Master UI ships no more than shadcn/ui in any case.')}{widest ? ` ${t('A Master UI {name} compiles {count} stylesheets after the theme, itself and what it composes: {list}.').replace('{name}', caseName(widest.row).toLowerCase()).replace('{count}', String(master[widest.row.id].stylesheets.length)).replace('{list}', list.format(master[widest.row.id].stylesheets.map(file => file.replace(/^.*\//, '').replace(/\.css$/, ''))))}` : ''}</li>
         <li><span class="home-cost-note-mark" aria-hidden="true">3</span>{t('Master UI needs a script only where no native element does the job. Tabs that switch panels in place load the tabs behavior; the select measured is a native select, which needs none. Drawn as a combobox, a select costs {css} kB of CSS and {js} kB of JavaScript.').replace('{css}', kB(combobox.css.gzip)).replace('{js}', kB(combobox.js.gzip))}</li>
         <li><span class="home-cost-note-mark" aria-hidden="true">4</span>{t('shadcn/ui {shadcn} ({styles}) on Vite {vite}, React {react}, Tailwind CSS {tailwind}; Master UI from commit {commit} on the same Vite. Built with Vite’s defaults, gzipped by node:zlib, on {date} ({machine}); 1 kB is 1,000 bytes.')
           .replace('{shadcn}', first.shadcn)

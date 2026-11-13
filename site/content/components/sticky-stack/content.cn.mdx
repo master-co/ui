@@ -1,0 +1,158 @@
+---
+title: "粘性堆叠"
+description: "页面滚动时，面板依次停住并叠在前一个面板下方。"
+---
+
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import PagePreview from '~/site/components/PagePreview.astro'
+
+粘性堆叠由少量面板组成，随页面滚动依次叠放。每个面板到达顶部附近时停住，位置比前一个略低，后一个面板则滑到它上面。已读面板的边缘仍露在当前面板上方。滚动到堆叠末尾时，所有面板一起移出视野，页面继续滚动。
+
+这种布局只决定哪些面板停住、停在哪里，外观由[卡片](/components/card)或[面板](/components/surface)提供。它们各自的表面会遮住下方的面板。整个布局无需脚本，每个面板都是 `position: sticky`，相邻面板停靠位置的高度差由样式表计算。
+
+<PagePreview name="default" title="粘性堆叠" height={640} tabletHeight={720} phoneHeight={720} caption="点击预览后滚动，每一步都会停在栏下方，比前一步略低。选择「手机」，堆叠在窄栏中也会以同样的方式工作。" html={`<div class="bg-surface-base fg-text-body text-sm">
+  <header class="navbar">
+    <a class="navbar-brand" href="#top">Atlas</a>
+    <nav class="navbar-nav" aria-label="Main">
+      <a class="navbar-link" href="#product">Product</a>
+      <a class="navbar-link" href="#start" aria-current="page">Get started</a>
+      <a class="navbar-link" href="#pricing">Pricing</a>
+    </nav>
+    <div class="navbar-end">
+      <a class="btn btn-primary btn-sm" href="#sign-up">Sign up</a>
+      <button type="button" class="btn btn-quiet btn-square btn-sm navbar-toggle" popovertarget="stack-menu" aria-label="Open the menu"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h16M4 16h16"/></svg></button>
+      <div class="menu menu-end" id="stack-menu" popover>
+        <a class="menu-item" href="#product">Product</a>
+        <a class="menu-item" href="#start">Get started</a>
+        <a class="menu-item" href="#pricing">Pricing</a>
+      </div>
+    </div>
+  </header>
+  <main class="flex flex-col gap-2xl max-w(720) mx-auto px-lg py-2xl">
+    <header class="flex flex-col gap-xs">
+      <p class="eyebrow">Get started</p>
+      <h1 class="heading heading-2xl">From a repository to a live site</h1>
+      <p class="lead">Four steps, about five minutes. Each one is undone as easily as it is done.</p>
+    </header>
+    <ol class="sticky-stack" style="--sticky-stack-top: 4.5rem">
+      <li class="sticky-stack-item">
+        <article class="card min-h(256)">
+          <p class="eyebrow">Step 1</p>
+          <header class="card-header">
+            <h2 class="card-title">Connect a repository</h2>
+            <p class="card-description">Choose one you have, or start from a template.</p>
+          </header>
+          <div class="card-body well flex items-center justify-between gap-sm p-md">
+            <code class="code">atlas/site</code>
+            <span class="badge">main</span>
+          </div>
+          <footer class="card-footer">
+            <a class="btn btn-sm" href="#repositories">Choose another</a>
+          </footer>
+        </article>
+      </li>
+      <li class="sticky-stack-item">
+        <article class="card min-h(256)">
+          <p class="eyebrow">Step 2</p>
+          <header class="card-header">
+            <h2 class="card-title">Set the build</h2>
+            <p class="card-description">The command that builds the site, and the folder it writes.</p>
+          </header>
+          <div class="card-body well flex flex-col gap-3xs p-md">
+            <code class="code">bun run build</code>
+            <code class="code">dist/</code>
+          </div>
+          <footer class="card-footer">
+            <a class="btn btn-sm" href="#build">Edit the build</a>
+          </footer>
+        </article>
+      </li>
+      <li class="sticky-stack-item">
+        <article class="card min-h(256)">
+          <p class="eyebrow">Step 3</p>
+          <header class="card-header">
+            <h2 class="card-title">Preview every branch</h2>
+            <p class="card-description">A pull request gets a link of its own, rebuilt on every push.</p>
+          </header>
+          <div class="card-body well flex items-center justify-between gap-sm p-md">
+            <code class="code">pr-142.atlas.dev</code>
+            <span class="badge badge-success badge-dot">Ready</span>
+          </div>
+          <footer class="card-footer">
+            <a class="btn btn-sm" href="#preview">Open the preview</a>
+          </footer>
+        </article>
+      </li>
+      <li class="sticky-stack-item">
+        <article class="card min-h(256)">
+          <p class="eyebrow">Step 4</p>
+          <header class="card-header">
+            <h2 class="card-title">Ship</h2>
+            <p class="card-description">Merge to main, and the preview you approved is what goes live.</p>
+          </header>
+          <div class="card-body well flex items-center justify-between gap-sm p-md">
+            <code class="code">atlas.dev</code>
+            <span class="badge badge-success badge-live">Live</span>
+          </div>
+          <footer class="card-footer">
+            <a class="btn btn-sm btn-primary" href="#ship">Merge and ship</a>
+          </footer>
+        </article>
+      </li>
+    </ol>
+    <section class="flex flex-col gap-xs" aria-labelledby="stack-next">
+      <h2 class="heading heading-lg" id="stack-next">Then it is yours</h2>
+      <p class="m(0) leading-md">Add a domain, invite the team, or leave it as it is. The stack has ended, so the steps scrolled away together, and the page goes on as a page.</p>
+    </section>
+  </main>
+</div>`} />
+
+## 实现方式 \{#how-it-is-built\}
+
+- **每个面板都会停住。** `sticky-stack-item` 为 `position: sticky`。粘性定位的盒子会停在距离最近的滚动容器顶部 `inset-block-start` 的位置，此处的滚动容器是页面。盒子只能在其父元素，也就是堆叠容器内移动。因此，每一步都会停在栏下方，直到堆叠末尾滚到这里，四个面板才一起移出视野。
+- **每个面板都比前一个略低。** 每个面板的停靠位置以 `--sticky-stack-top` 为起点，前面每有一个面板就加上 `--sticky-stack-peek`。样式表通过 `sibling-index()` 统计前面的面板数量，HTML 标记中无需编号。
+- **停在栏下方。** 这里的栏是一个[导航栏](/components/navbar)，自身采用粘性定位，高度为 3.5rem。因此堆叠将 `--sticky-stack-top` 设为 4.5rem，即导航栏的高度再加 1rem 间距。
+- **用表面遮住下方的面板。** 每个列表项都包含一张[卡片](/components/card)，卡片的表面会遮住下方的面板。后面的面板在 HTML 标记中排得更靠后，因此绘制在先前面板的上层。
+- **用列表组织各个步骤。** 步骤的顺序很重要，因此使用 `<ol>`。将卡片放在列表项内，由列表项执行粘性定位，卡片保持自身的位置。
+
+## 面板露出的边缘 \{#peek\}
+
+`--sticky-stack-peek` 决定每个面板比前一个面板低多少，默认值为 .75rem。这个距离能让被遮住的面板各露出一点边缘，足以数清当前面板遮住了几个已经读过的步骤。值越大，露出的部分越多。设为 2.5rem 时，可以露出一个标题的高度。设为 0 时，所有面板都停在同一位置，每个面板都会完全遮住前一个。
+
+浏览器不支持 `sibling-index()` 时，所有面板都停在同一位置，效果与设为 0 相同。堆叠仍然有效，每一步到达时都会盖住前一步，只是被盖住的面板边缘不会露出。
+
+## 滚动容器 \{#scroller\}
+
+粘性面板以最近的滚动容器为停靠参照，并且只能在其父元素内移动。由此有三点需要注意：
+
+- 列表项必须是堆叠容器的直接子元素。如果在列表项外再包一层元素，这一层就会成为它的父元素，列表项也就没有移动空间。列表项内可以放任意内容，此处放的是卡片。
+- 堆叠与滚动容器之间的元素都不能裁剪堆叠。在祖先元素上设置 `overflow: hidden` 会使该元素成为滚动容器，导致所有面板都无法停住。
+- 面板能停留多久，取决于堆叠中它后面的内容。最后一个面板只会停留到堆叠末尾滚到它所在的位置。要让它停留更久，就增加它下方的堆叠高度，例如加一个收尾面板。
+
+## 何时使用 \{#when\}
+
+需要让读者随页面滚动按顺序阅读少量内容时，可以使用粘性堆叠，例如三到六个值得逐一阅读的步骤、章节或方案。需要并排展示面板，或让读者自由切换面板时，使用[轮播](/components/carousel)。对于读者按需逐项展开的参考资料，使用[折叠面板](/components/accordion)。长列表不适合堆叠，二十个面板的边缘叠在一起会占据大量空间。
+
+## 无障碍 \{#accessibility\}
+
+- 堆叠只改变面板的绘制位置。阅读和键盘导航都遵循 HTML 标记的顺序。被遮住的面板中的链接获得焦点时，页面会滚动，直到该面板进入视野。
+- 每个面板刚到达停靠位置时都会完整呈现，读者无需隔着上层面板阅读。面板高度应小于视口高度减去 `--sticky-stack-top` 后的值。面板过高时，读者还没看到末尾，它就会被盖住。
+- 面板只随读者滚动而移动，移动距离与滚动距离相同。整个过程没有自动移动或动画，因此无需为减少动态效果做额外处理。
+
+## 类名 \{#classes\}
+
+<ContractTable name="sticky-stack" directory="layouts" />
+
+## 自定义属性 \{#custom-properties\}
+
+<ContractTable name="sticky-stack" show="properties" directory="layouts" />
+
+## 相关内容 \{#related\}
+
+<ComponentLinks slugs={['card', 'navbar', 'carousel', 'accordion', 'steps']} />
+
+## 源码 \{#source\}
+
+<ComponentSource name="sticky-stack" directory="layouts" />

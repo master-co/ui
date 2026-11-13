@@ -1,0 +1,106 @@
+---
+title: "トースト"
+description: "ページに重ねて表示する短いメッセージです。自動で閉じることもできます。"
+---
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+トーストは、保存、デプロイ、コピーなど、直前に起きたことをページ上で知らせる短いメッセージです。各トーストは、固定配置の `toast-region` 内に置く非モーダルの `<dialog>` です。ダイアログなのでスクリプトなしで閉じられ、表示と終了のアニメーションはスタイルシートの CSS で制御されます。
+
+<ComponentPreview name="default" height={240} title="トースト" bodyClass="content-start p-lg min-h(240)" html={`<div class="toast-region" role="region" aria-label="Notifications" aria-live="polite">
+  <dialog open class="toast toast-success" aria-labelledby="toast-deployed">
+    <svg class="icon toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 4.5-5.5"/></svg>
+    <div class="toast-body">
+      <p class="toast-title" id="toast-deployed">Deployed to production</p>
+      <p class="toast-description">atlas.dev is live in 14 regions.</p>
+    </div>
+    <form method="dialog" class="toast-close">
+      <button class="btn btn-quiet btn-square btn-sm" aria-label="Dismiss">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </form>
+  </dialog>
+</div>`} caption="ボタンでトーストを閉じます。スクリプトは不要です。" />
+
+## 表示と終了 \{#showing-and-dismissing\}
+
+- `open` 属性が付いたトーストはページの読み込み時に表示されます。フォーム送信後にサーバーが描画するメッセージに適しています。
+- スクリプトから表示するには、表示領域内のトーストで `toast.show()` を呼び出すか、表示領域に新しい `<dialog open class="toast">` を追加します。どちらの場合も、`@starting-style` が表示アニメーションの開始状態を指定します。
+- ボタンを `<form method="dialog">` で囲むか、ボタンに `commandfor` と `command="close"` を指定すると、トーストを閉じられます。`display` は `allow-discrete` で遷移するため、終了アニメーションが完了してからトーストの占有スペースがなくなります。
+
+## 自動で閉じる \{#timed\}
+
+`toast-timed` を指定すると、トーストは 6 秒後に自動で閉じます。時間の計測には `display: none` で終わる CSS アニメーションを使います。ポインターがトーストに重なっている間や、キーボードフォーカスがトースト内にある間は一時停止するため、操作を急ぐ必要はありません。下端の細い線は残り時間に合わせて短くなり、計測が止まると線も止まります。表示時間は `--toast-duration` で変更できます。自動で閉じるトーストに、後から必要になる操作を置かないでください。重要な内容には、表示が持続する[アラート](/components/alert)を使います。
+
+<ComponentPreview name="timed" height={200} title="自動で閉じる" bodyClass="content-start p-lg min-h(200)" html={`<div class="toast-region" role="region" aria-label="Notifications" aria-live="polite">
+  <dialog open class="toast toast-timed" aria-label="Link copied">
+    <div class="toast-body">
+      <p class="toast-description">Link copied to the clipboard.</p>
+    </div>
+  </dialog>
+</div>`} caption="このトーストは 6 秒後に閉じます。再表示するには、ページを再読み込みしてください。" />
+
+## アクション付き \{#with-an-action\}
+
+本文の後に置いた[ボタン](/components/button)は、行の末尾に表示されます。ステータス修飾子で色が変わるのはアイコンだけで、テキストは既定の前景色のままです。
+
+<ComponentPreview name="action" height={304} title="アクション付き" bodyClass="content-start p-lg min-h(300)" html={`<div class="toast-region" role="region" aria-label="Notifications" aria-live="polite">
+  <dialog open class="toast" aria-labelledby="toast-archived">
+    <div class="toast-body">
+      <p class="toast-title" id="toast-archived">Project archived</p>
+      <p class="toast-description">Atlas is hidden from the dashboard.</p>
+    </div>
+    <form method="dialog"><button class="btn btn-sm">Undo</button></form>
+  </dialog>
+  <dialog open class="toast toast-danger" aria-labelledby="toast-failed">
+    <svg class="icon toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16v.01"/></svg>
+    <div class="toast-body">
+      <p class="toast-title" id="toast-failed">The build failed</p>
+      <p class="toast-description">The install step exited with code 1.</p>
+    </div>
+    <form method="dialog" class="toast-close">
+      <button class="btn btn-quiet btn-square btn-sm" aria-label="Dismiss">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </form>
+  </dialog>
+</div>`} />
+
+## 表示領域 \{#the-region\}
+
+`toast-region` は下端の末尾側の角に固定され、最新のトーストが一番下になるように縦に並べます。表示領域自体はポインターイベントを受け取らないため、空いている部分の下にあるページも操作できます。画面が狭いときは、画面幅いっぱいに広がります。
+
+| クラス | 配置 |
+| --- | --- |
+| `toast-region` | 下端の末尾側 |
+| `toast-region-top` | 上端。トーストは下向きに移動しながら現れ、最新のものが一番上 |
+| `toast-region-center` | 中央揃え |
+
+表示領域は `z-index` を持つ通常の固定配置要素です。開いているモーダル[ダイアログ](/components/dialog)より手前にトーストを表示するには、表示領域に `popover="manual"` を指定し、その要素で `showPopover()` を一度呼び出します。これで表示領域がトップレイヤーに入ります。
+
+## アクセシビリティ \{#accessibility\}
+
+- トーストの表示時に読み上げられるよう、表示領域に `aria-live="polite"` を指定してライブリージョンにし、`aria-label` で名前を付けます。
+- 各トーストには、タイトルを参照する `aria-labelledby` または `aria-label` で名前を付けます。
+- トーストは、操作の結果を知らせるために使います。見逃しても支障がないように、操作への唯一の導線をトーストに置かないでください。
+- 動きを減らす設定では、トーストは位置を変えずにフェードします。
+
+## React、Svelte、Vue \{#frameworks\}
+
+`toast` コンポーネントはトーストをキューで管理します。どこからでも呼び出せる `toast()` 関数と、一度だけレンダリングしてキュー内のトーストを表示する領域で構成されます。`npx master-ui add toast` でプロジェクトにコピーできます。コンポーネントの仕組みと使い方は [React、Svelte、Vue](/guide/frameworks) を参照してください。
+
+<FrameworkSource name="toast" />
+
+## クラス \{#classes\}
+
+<ContractTable name="toast" />
+
+## カスタムプロパティ \{#custom-properties\}
+
+<ContractTable name="toast" show="properties" />
+
+## ソース \{#source\}
+
+<ComponentSource name="toast" />

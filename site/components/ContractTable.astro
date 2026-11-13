@@ -1,6 +1,8 @@
 ---
 import DocumentTableFrame from '@master/internal-site/components/DocumentTableFrame.astro'
 import InlineCode from '@master/internal-site/components/InlineCode.astro'
+import { siteOf } from '@master/internal-site/astro/site-context'
+import { localizedContract } from '~/site/i18n/contract-copy'
 import { contract } from '~/site/utils/ui-source'
 
 interface Props {
@@ -19,20 +21,23 @@ interface Props {
  * its accessible name lets keyboard readers distinguish multiple contract tables.
  */
 const { name, show = 'classes', directory = 'components' } = Astro.props
-const subject = contract(name, directory)
+const { locale, t } = siteOf(Astro)
+const subject = localizedContract(contract(name, directory), locale)
 const base = (entry: { of?: string | string[] }) => entry.of === undefined ? [] : Array.isArray(entry.of) ? entry.of : [entry.of]
+const [withBefore, withAfter] = t('Apply with {classes}').split('{classes}')
+const [onBefore, onAfter] = t('Set on {class}').split('{class}')
 ---
 
 {show === 'classes' && (
-  <DocumentTableFrame class="contract-table" label={`${subject.title}: ${show}`} identifiers><table class="table">
-    <thead><tr class="table-row"><th class="table-heading" scope="col">Class</th><th class="table-heading" scope="col">Description</th></tr></thead>
+  <DocumentTableFrame class="contract-table" label={`${subject.title}: ${t('Classes')}`} identifiers><table class="table">
+    <thead><tr class="table-row"><th class="table-heading" scope="col">{t('Class')}</th><th class="table-heading" scope="col">{t('Description')}</th></tr></thead>
     <tbody>
       {subject.classes.map(entry => (
         <tr class="table-row">
           <th class="table-cell" scope="row"><InlineCode code={entry.name} /></th>
           <td class="table-cell">
             {entry.description}
-            {entry.kind === 'modifier' && base(entry).length > 0 && <>. With {base(entry).map((owner, at) => <>{at > 0 && ' or '}<InlineCode code={owner} /></>)}</>}
+            {entry.kind === 'modifier' && base(entry).length > 0 && <span class="block">{withBefore}{base(entry).map((owner, at) => <>{at > 0 && ` ${t('or')} `}<InlineCode code={owner} /></>)}{withAfter}</span>}
           </td>
         </tr>
       ))}
@@ -41,14 +46,14 @@ const base = (entry: { of?: string | string[] }) => entry.of === undefined ? [] 
 )}
 
 {show === 'properties' && (
-  <DocumentTableFrame class="contract-table" label={`${subject.title}: ${show}`} identifiers><table class="table">
-    <thead><tr class="table-row"><th class="table-heading" scope="col">Property</th><th class="table-heading" scope="col">Default</th><th class="table-heading" scope="col">Description</th></tr></thead>
+  <DocumentTableFrame class="contract-table" label={`${subject.title}: ${t('Custom properties')}`} identifiers><table class="table">
+    <thead><tr class="table-row"><th class="table-heading" scope="col">{t('Property')}</th><th class="table-heading" scope="col">{t('Default')}</th><th class="table-heading" scope="col">{t('Description')}</th></tr></thead>
     <tbody>
       {(subject.properties ?? []).map(property => (
         <tr class="table-row">
           <th class="table-cell" scope="row"><InlineCode code={property.name} /></th>
           <td class="table-cell">{property.default ? <InlineCode code={property.default} /> : ''}</td>
-          <td class="table-cell">{property.description}{property.on && <>. On <InlineCode code={property.on} /></>}</td>
+          <td class="table-cell">{property.description}{property.on && <span class="block">{onBefore}<InlineCode code={property.on} />{onAfter}</span>}</td>
         </tr>
       ))}
     </tbody>
@@ -56,8 +61,8 @@ const base = (entry: { of?: string | string[] }) => entry.of === undefined ? [] 
 )}
 
 {show === 'states' && (
-  <DocumentTableFrame class="contract-table" label={`${subject.title}: ${show}`} identifiers><table class="table">
-    <thead><tr class="table-row"><th class="table-heading" scope="col">State</th><th class="table-heading" scope="col">Mark it with</th><th class="table-heading" scope="col">On</th><th class="table-heading" scope="col">Description</th></tr></thead>
+  <DocumentTableFrame class="contract-table" label={`${subject.title}: ${t('States')}`} identifiers><table class="table">
+    <thead><tr class="table-row"><th class="table-heading" scope="col">{t('State')}</th><th class="table-heading" scope="col">{t('Mark it with')}</th><th class="table-heading" scope="col">{t('On')}</th><th class="table-heading" scope="col">{t('Description')}</th></tr></thead>
     <tbody>
       {(subject.states ?? []).map(state => (
         <tr class="table-row">
@@ -72,8 +77,8 @@ const base = (entry: { of?: string | string[] }) => entry.of === undefined ? [] 
 )}
 
 {show === 'keyboard' && (
-  <DocumentTableFrame class="contract-table" label={`${subject.title}: ${show}`} identifiers><table class="table">
-    <thead><tr class="table-row"><th class="table-heading" scope="col">Keys</th><th class="table-heading" scope="col">Action</th></tr></thead>
+  <DocumentTableFrame class="contract-table" label={`${subject.title}: ${t('Keyboard')}`} identifiers><table class="table">
+    <thead><tr class="table-row"><th class="table-heading" scope="col">{t('Keys')}</th><th class="table-heading" scope="col">{t('Action')}</th></tr></thead>
     <tbody>
       {(subject.keyboard ?? []).map(item => (
         <tr class="table-row">

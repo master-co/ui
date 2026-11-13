@@ -1,0 +1,79 @@
+---
+title: "投票"
+description: "質問と複数の回答を表示し、回答を選ぶと得票結果を表示。"
+---
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+投票は、質問と複数の回答、得票結果を表示するコンポーネントです。各回答はネイティブのラジオボタンを `<label>` で囲む構造なので、矢印キーで選択でき、フォームでも選択値を扱えます。投票前の回答は、1 本の輪郭で囲んだ平らな面として表示されます。回答を選ぶと、各回答の先頭から得票率に応じた幅で色が付き、末尾に数値が表示されます。この表示の切り替えは入力要素の選択状態だけで制御でき、スクリプトは不要です。
+
+<ComponentPreview name="default" height={300} narrowHeight={320} title="投票" bodyClass="flex items-center justify-center p-lg" caption="回答を選ぶと、結果が表示されます。" html={`<div class="card w-full max-w(360)">
+  <fieldset class="poll">
+    <legend class="poll-title">Which theme should be the default?</legend>
+    <label class="poll-option" style="--value: 58"><input class="poll-input" type="radio" name="theme" value="moonstone"><span class="poll-label">Moonstone</span><span class="poll-value">58%</span></label>
+    <label class="poll-option" style="--value: 31"><input class="poll-input" type="radio" name="theme" value="obsidian"><span class="poll-label">Obsidian</span><span class="poll-value">31%</span></label>
+    <label class="poll-option" style="--value: 11"><input class="poll-input" type="radio" name="theme" value="system"><span class="poll-label">Follow the system</span><span class="poll-value">11%</span></label>
+    <p class="poll-meta">214 votes · 2 days left</p>
+  </fieldset>
+</div>`} />
+
+## 結果の表示 \{#how-the-result-shows\}
+
+各 `poll-option` では、得票率を 0 から 100 の値として `--value` に指定し、同じ数値を `poll-value` にテキストで入れます。どの入力要素も選択されていない間は、得票率を示す色の幅は 0 で、数値は画面にも支援技術にも公開されません。回答が選択されると、`:has()` がグループ内の選択状態を検出し、色が各得票率に応じた幅まで広がり、数値がフェードインします。
+
+選択した回答には文字色の輪郭と濃い背景色が付き、回答文の後ろにチェックマークが表示されます。別の回答を選ぶと、この 3 つの表示が新しい回答に移ります。得票率はそのままです。
+
+得票率の数値はページ側で指定します。今の投票を結果に反映する場合は、投票を記録した時点で `--value` と表示テキストを更新してください。色の幅が新しい得票率まで滑らかに変化します。
+
+## 締め切り後の投票 \{#closed\}
+
+投票を締め切ったら、入力要素を無効にしてください。結果は最初から表示され、回答は選べなくなります。結果を確認できるように、回答の読みやすさは維持されます。ユーザーが選んだ回答には `checked` を残してください。
+
+<ComponentPreview name="closed" height={300} narrowHeight={320} title="締め切り済み" bodyClass="flex items-center justify-center p-lg" html={`<div class="card w-full max-w(360)">
+  <fieldset class="poll">
+    <legend class="poll-title">Which theme should be the default?</legend>
+    <label class="poll-option" style="--value: 61"><input class="poll-input" type="radio" name="theme-closed" value="moonstone" disabled><span class="poll-label">Moonstone</span><span class="poll-value">61%</span></label>
+    <label class="poll-option" style="--value: 29"><input class="poll-input" type="radio" name="theme-closed" value="obsidian" disabled checked><span class="poll-label">Obsidian</span><span class="poll-value">29%</span></label>
+    <label class="poll-option" style="--value: 10"><input class="poll-input" type="radio" name="theme-closed" value="system" disabled><span class="poll-label">Follow the system</span><span class="poll-value">10%</span></label>
+    <p class="poll-meta">380 votes · Final result</p>
+  </fieldset>
+</div>`} />
+
+## 複数回答 \{#several-answers\}
+
+複数の回答を選べる場合は、チェックボックスを使います。1 つでも選ぶと結果が表示され、選択した各回答に輪郭とチェックマークが付きます。得票率の合計は 100% になるとは限りません。
+
+<ComponentPreview name="several" height={352} narrowHeight={376} title="複数回答" bodyClass="flex items-center justify-center p-lg" html={`<div class="card w-full max-w(360)">
+  <fieldset class="poll">
+    <legend class="poll-title">Which frameworks do you ship with?</legend>
+    <label class="poll-option" style="--value: 72"><input class="poll-input" type="checkbox" name="framework" value="react" checked><span class="poll-label">React</span><span class="poll-value">72%</span></label>
+    <label class="poll-option" style="--value: 34"><input class="poll-input" type="checkbox" name="framework" value="svelte" checked><span class="poll-label">Svelte</span><span class="poll-value">34%</span></label>
+    <label class="poll-option" style="--value: 41"><input class="poll-input" type="checkbox" name="framework" value="vue"><span class="poll-label">Vue</span><span class="poll-value">41%</span></label>
+    <label class="poll-option" style="--value: 18"><input class="poll-input" type="checkbox" name="framework" value="none"><span class="poll-label">None: plain HTML</span><span class="poll-value">18%</span></label>
+    <p class="poll-meta">Choose all that apply</p>
+  </fieldset>
+</div>`} />
+
+## 投票と選択肢 \{#poll-or-choice\}
+
+投票では、回答を選ぶと全体の集計結果が表示されます。[選択肢](/components/choice)は一文で内容を説明するフォーム項目で、選択後に追加の表示はありません。投票操作のない結果表示には、`chart-horizontal` を使った[チャート](/components/chart)を使います。
+
+## アクセシビリティ \{#accessibility\}
+
+- `<fieldset>`を使い、その`<legend>`に質問を記述します。これで各回答とともに質問が読み上げられます。グループ内のラジオボタンには同じ`name`を指定します。
+- 各回答の入力要素を`<label>`で囲み、回答欄全体を操作できるようにします。高さは38pxで、タッチ画面では44pxです。フォーカスリングは回答欄の周囲に表示されます。
+- 数値はテキストとして記述します。結果を表示するまでは`visibility`で隠して先に読み上げられるのを防ぎ、結果の表示後は背景色の違いが見えなくても数値を確認できるようにします。
+- 輪郭の違いが見えなくても、チェックマークで選択した回答がわかります。強制カラーモードでは、選択した回答にシステムのハイライト色を使います。
+
+## クラス \{#classes\}
+
+<ContractTable name="poll" />
+
+## カスタムプロパティ \{#custom-properties\}
+
+<ContractTable name="poll" show="properties" />
+
+## ソース \{#source\}
+
+<ComponentSource name="poll" />

@@ -1,0 +1,186 @@
+---
+title: "輸入欄位"
+description: "採內凹樣式的文字欄位，支援標籤、提示、錯誤訊息與群組。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+文字欄位預設呈內凹效果，外緣有半像素的輪廓線。取得焦點時，欄位會與面板齊平，並顯示一道前景色輪廓線與柔和的光暈。將 `.input` 加在 `<input>` 和 `<textarea>` 上，並將 `.field` 加在包住欄位的 `<label>` 上。
+
+<ComponentPreview name="default" height={120} title="輸入欄位" background="plain" bodyClass="p-lg" html={`<label class="field">
+  Email
+  <input class="input" type="email" placeholder="you@example.com">
+</label>`} />
+
+## 提示與錯誤 \{#hint-and-error\}
+
+用 `aria-describedby` 將提示或錯誤訊息連結到欄位，並用 `aria-invalid="true"` 標記無效值。`field-error` 只在欄位無效時顯示，並在顯示期間取代提示，因此兩者一開始就可以寫進標記。
+
+<ComponentPreview name="hint" height={264} title="提示與錯誤" background="plain" bodyClass="grid gap-lg p-lg" html={`<label class="field">
+  Project name
+  <input class="input" value="atlas" aria-describedby="name-hint">
+  <span class="field-hint" id="name-hint">Lowercase letters, numbers and dashes.</span>
+</label>
+<label class="field">
+  Domain
+  <input class="input" value="atlas" aria-invalid="true" aria-describedby="domain-error">
+  <span class="field-error" id="domain-error">Enter a full domain, such as atlas.dev.</span>
+</label>`} />
+
+## 原生驗證 \{#native-validation\}
+
+瀏覽器的原生驗證條件也能觸發相同狀態，無須腳本。設有 `required`、`type` 或 `pattern` 的欄位若不符合驗證條件，會透過 `:user-invalid` 顯示錯誤輪廓。這個選擇器只在使用者編輯過欄位或嘗試送出表單後才會符合，剛開啟表單時不會生效。`field-error` 也會一併顯示。
+
+<ComponentPreview name="validation" height={208} narrowHeight={224} title="原生驗證" background="plain" bodyClass="p-lg" html={`<form class="flex flex-col gap-md">
+  <label class="field">
+    Work email
+    <input class="input" type="email" required placeholder="you@company.com" aria-describedby="work-email-hint work-email-error">
+    <span class="field-hint" id="work-email-hint">Type something that is not an email, then leave the field.</span>
+    <span class="field-error" id="work-email-error">Enter an email address, such as ada@example.com.</span>
+  </label>
+  <button type="submit" class="btn btn-primary self-start">Continue</button>
+</form>`} />
+
+## 尺寸 \{#sizes\}
+
+欄位有 32、38 和 44px 三種高度，與[按鈕](/components/button)、[選取欄位](/components/select)和[分段控制項](/components/segmented)一致，同列擺放時可齊平。在觸控螢幕上，所有尺寸的高度一律為 44px。
+
+<ComponentPreview name="sizes" height={216} title="尺寸" background="plain" bodyClass="grid gap-md p-lg" html={`<input class="input input-sm" placeholder="Small" aria-label="Small">
+<input class="input" placeholder="Medium" aria-label="Medium">
+<input class="input input-lg" placeholder="Large" aria-label="Large">`} />
+
+## 多行文字欄位 \{#textarea\}
+
+套用 `.input` 的 `<textarea>` 會保留你指定的列數，並提供垂直調整大小的把手。加上 `input-auto` 即可讓欄位隨內容增高。`field-sizing: content` 會將高度控制在三到十二行，超過後即可捲動。可用 `--input-rows` 和 `--input-max-rows` 調整範圍。瀏覽器若不支援 `field-sizing`，欄位會保留最小高度和調整把手。
+
+<ComponentPreview name="textarea" height={512} title="多行文字欄位" background="plain" bodyClass="grid gap-lg p-lg" html={`<label class="field">
+  Message
+  <textarea class="input" rows="3" placeholder="A fixed height with a resize handle"></textarea>
+</label>
+<label class="field">
+  Notes
+  <textarea class="input input-auto" placeholder="Keep typing: this one grows with its content"></textarea>
+</label>`} />
+
+## 輸入群組 \{#input-group\}
+
+`input-group` 用同一個凹槽包住未套外框的欄位及其附屬內容，例如圖示、單位、快捷鍵或按鈕。群組透過 `:has()` 呈現內部欄位的懸停、焦點、無效和停用狀態，欄位本身則透過 `input-group-field` 保留輸入語意與文字游標。將群組設為 `<label>`，點擊凹槽任一處即可讓欄位取得焦點。
+
+<ComponentPreview name="group" height={216} title="輸入群組" background="plain" bodyClass="grid gap-md p-lg" html={`<label class="input-group">
+  <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.35-4.35"/></svg>
+  <input class="input-group-field" type="search" placeholder="Search projects" aria-label="Search projects">
+  <kbd class="kbd">⌘K</kbd>
+</label>
+<label class="input-group">
+  <span class="input-group-addon">https://</span>
+  <input class="input-group-field" value="atlas" aria-label="Subdomain">
+  <span class="input-group-addon">.master.co</span>
+</label>
+<label class="input-group">
+  <input class="input-group-field" type="number" value="24" aria-label="Timeout">
+  <span class="input-group-addon">seconds</span>
+</label>`} />
+
+群組內的[按鈕](/components/button)距離凹槽邊緣 4px，圓角半徑比凹槽小 4px，因此各種尺寸下的內外圓角都維持同心。群組內有按鈕時，請用 `<div>` 作為群組容器。
+
+<ComponentPreview name="inline" height={152} title="搭配按鈕" background="plain" bodyClass="grid gap-md p-lg" html={`<form class="input-group">
+  <input class="input-group-field" type="email" placeholder="you@example.com" aria-label="Email">
+  <button type="submit" class="btn btn-primary">Subscribe</button>
+</form>
+<div class="input-group input-group-sm">
+  <input class="input-group-field" value="https://atlas.dev/p/9f2c" readonly aria-label="Share link">
+  <button type="button" class="btn">Copy</button>
+</div>`} />
+
+若要讓欄位和按鈕各自獨立，請用 flex 並排，例如 `<form class="flex gap-xs">`。
+
+## 多值輸入 \{#several-values\}
+
+`input-group-wrap` 讓群組可以收集多個值，例如收件者、標籤或篩選條件。每個值都在群組內顯示為一個[標籤元件](/components/chip)，輸入欄位占用最後一列的剩餘空間，值放不下時群組就會增加一列。標籤元件距離群組邊緣 6px，內外圓角維持同心。
+
+樣式表負責排列這些值。按 <kbd class="kbd">Enter</kbd> 新增、按 <kbd class="kbd">Backspace</kbd> 移除最後一個值的行為，可以用幾行自訂腳本實作，也可以交由伺服器處理後回傳結果。
+
+<ComponentPreview name="wrap" height={160} narrowHeight={192} title="多值輸入" background="plain" bodyClass="p-lg" html={`<div class="field max-w(420) mx-auto">
+  <label for="input-teams">Teams</label>
+  <div class="input-group input-group-wrap">
+    <span class="chip">Design<button type="button" class="chip-remove" aria-label="Remove Design"></button></span>
+    <span class="chip">Research<button type="button" class="chip-remove" aria-label="Remove Research"></button></span>
+    <span class="chip">Engineering<button type="button" class="chip-remove" aria-label="Remove Engineering"></button></span>
+    <span class="chip">Operations<button type="button" class="chip-remove" aria-label="Remove Operations"></button></span>
+    <input class="input-group-field" id="input-teams" placeholder="Add a team">
+  </div>
+</div>`} />
+
+## 搜尋與自動填入 \{#search-and-autofill\}
+
+`type="search"` 欄位保留瀏覽器的清除按鈕，並將它重繪為圖示前景色的細叉。瀏覽器自動填入欄位時，凹槽會染上一層淡淡的資訊色，取代瀏覽器引擎原本的黃色或藍色，讓填好的表單維持一致的外觀。
+
+<ComponentPreview name="search" height={96} title="搜尋" background="plain" bodyClass="p-lg" html={`<input class="input max-w(360) mx-auto" type="search" value="moonstone" aria-label="Search">`} caption="在 Chromium 和 Safari 中，將指標移到欄位上或讓欄位取得焦點，即可看到清除按鈕。" />
+
+## 檔案 \{#file\}
+
+`<input type="file">` 的瀏覽器按鈕會變成一個小型凸起控制項，嵌在凹槽中，就像分段控制項軌道上的選項。
+
+<ComponentPreview name="file" height={120} title="檔案" background="plain" bodyClass="p-lg" html={`<label class="field">
+  Attachment
+  <input class="input" type="file">
+</label>`} />
+
+## 日期、時間、數字與色彩 \{#date-time-and-color\}
+
+`.input` 為瀏覽器原生的日期、時間、數字與色彩欄位套用相同的凹槽樣式。選擇器沿用平台原生介面，使用者在自己的裝置上看到的是熟悉的操作方式。色彩欄位呈方形，色票從邊緣向內縮 4px，圓角與外框維持同心。
+
+瀏覽器在這些欄位加上的小符號，會以與圖示一致的線條粗細和前景色重繪。日曆或時鐘圖示可開啟選擇器，數字欄位則有一對尖角圖示，上方朝上，用來增加數值，下方朝下，用來減少數值。Chromium 和 Safari 開放這些部位供樣式表調整，Firefox 則保留原生樣式。若使用者經常需要逐步調整數值，請用[步進控制項](/components/stepper)。
+
+<ComponentPreview name="native" height={208} narrowHeight={232} title="日期、時間、數字與色彩" background="plain" bodyClass="grid grid-cols(2) gap-md p-lg" html={`<label class="field">
+  Starts
+  <input class="input" type="date" value="2026-11-11">
+</label>
+<label class="field">
+  At
+  <input class="input" type="time" value="09:30">
+</label>
+<label class="field">
+  Timeout in seconds
+  <input class="input" type="number" min="0" step="5" value="30">
+</label>
+<label class="field">
+  Accent
+  <input class="input" type="color" value="#5b4fe0">
+</label>`} />
+
+## 欄位集 \{#fieldset\}
+
+在 `<fieldset>` 上加上 `fieldset`，可將相關控制項歸在同一個標題下，並移除瀏覽器預設的凹槽邊框。`fieldset-legend` 則讓 `<legend>` 採用欄位標籤的樣式。用欄位集包住[核取方塊](/components/checkbox)、[選項按鈕](/components/radio)或[選項](/components/choice)，即可為整組控制項命名。
+
+<ComponentPreview name="fieldset" height={168} title="欄位集" background="plain" bodyClass="p-lg" html={`<fieldset class="fieldset">
+  <legend class="fieldset-legend">Notify me about</legend>
+  <label class="check"><input type="checkbox" class="checkbox" checked> Failed deployments</label>
+  <label class="check"><input type="checkbox" class="checkbox" checked> Expiring certificates</label>
+  <label class="check"><input type="checkbox" class="checkbox"> Product news</label>
+</fieldset>`} />
+
+## 停用 \{#disabled\}
+
+<ComponentPreview name="disabled" height={96} title="停用" background="plain" bodyClass="p-lg" html={`<input class="input" value="Read only in this plan" aria-label="Plan" disabled>`} />
+
+## React、Svelte 與 Vue \{#frameworks\}
+
+`field` 元件透過 ID 將標籤、控制項、提示和錯誤訊息串接起來。控制項沿用頁面自己的標記，本頁其餘範例也都以標記實作。執行 `npx master-ui add field` 將元件複製到專案。元件的建構與使用方式請見 [React、Svelte 與 Vue](/guide/frameworks)。
+
+<FrameworkSource name="input" />
+
+## 類別 \{#classes\}
+
+<ContractTable name="input" />
+
+## 自訂屬性 \{#custom-properties\}
+
+<ContractTable name="input" show="properties" />
+
+## 原始碼 \{#source\}
+
+<ComponentSource name="input" />

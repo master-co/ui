@@ -1,0 +1,72 @@
+---
+title: "Dock"
+description: "一排啟動項目，會在指標附近放大。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+Dock 是一排放在霧面玻璃托盤上的啟動項目。每個方塊都放有圖片或圖示，本身是連結或按鈕。指標移過時，整排呈現透鏡般的放大效果。指標下方的方塊放大一半，左右相鄰的方塊各放大略多於四分之一，再外側的方塊各放大十分之一，讓整排平滑地朝指標所在處隆起。標籤會浮現在方塊上方，方塊下方的圓點則標示目前的項目。整個效果都由 CSS 實作，透過 `:hover`、相鄰兄弟組合器和 `:has()` 找出鄰近的方塊，無須用腳本量測指標位置。
+
+<ComponentPreview name="default" height={152} title="Dock" bodyClass="flex items-end justify-center p-lg" html={`<nav class="dock" aria-label="Spaces">
+  <a class="dock-item" href="#harbor" aria-current="page"><img class="dock-image" src="/demo/harbor.svg" alt=""><span class="dock-label">Harbor</span></a>
+  <a class="dock-item" href="#dunes"><img class="dock-image" src="/demo/dunes.svg" alt=""><span class="dock-label">Dunes</span></a>
+  <a class="dock-item" href="#pines"><img class="dock-image" src="/demo/pines.svg" alt=""><span class="dock-label">Pines</span></a>
+  <a class="dock-item" href="#lighthouse"><img class="dock-image" src="/demo/lighthouse.svg" alt=""><span class="dock-label">Lighthouse</span></a>
+  <span class="dock-divider" role="separator" aria-orientation="vertical"></span>
+  <button type="button" class="dock-item"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.35-4.35"/></svg><span class="dock-label">Search</span></button>
+  <button type="button" class="dock-item"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16l-1 13H5zM10 11h4M3 4h18v3H3z"/></svg><span class="dock-label">Archive</span></button>
+</nav>`} caption="沿著 Dock 移動指標，或按 Tab 將焦點移到 Dock。" />
+
+## 透鏡效果 \{#lens\}
+
+方塊平時是 40px。指標停在方塊上時，該方塊變成 60px，左右相鄰的方塊是 51px，再外側的方塊是 44px。`--dock-magnify` 設定最大的尺寸，其餘尺寸依此推算。放大效果透過改變方塊的實際尺寸達成，未使用 CSS 變形。整排方塊因此會在指標周圍拉開，避免彼此重疊，托盤也會隨之加寬。方塊從托盤底部向上放大，越過托盤上緣，並依主題的緩動設定平滑過渡。每個方塊的感應範圍都向外延伸至相鄰間距的一半，讓指標跨過方塊之間的空隙時，放大效果仍能持續。
+
+透鏡效果適用於支援懸停的指標。在觸控螢幕上，Dock 會顯示一排 44px 的方塊。啟用減少動態效果時，方塊會維持原本的尺寸，標籤仍會顯示。空間不足時，所有方塊會一起縮小，並維持正方形。
+
+## 方塊 \{#tiles\}
+
+每個方塊都呈現微微抬高的效果，可放置尺寸為方塊邊長一半的圖示，或以 `dock-image` 填滿方塊。圖片的 `alt` 留空，啟動項目的名稱由標籤提供。方塊的圓角半徑是邊長的四分之一，40px 的控制項便是 10px。托盤的圓角半徑等於方塊的圓角半徑加上 8px 的內距，讓兩道弧線之間的間距一致。
+
+若啟動項目是連結，請在目前頁面的連結加上 `aria-current="page"`。若是用來切換面板等內容的按鈕，則使用 `aria-pressed`。兩者都會在方塊下方顯示圓點。若 Dock 由按鈕組成，請加上 `role="toolbar"` 並提供名稱。
+
+<ComponentPreview name="panels" height={152} title="切換按鈕" bodyClass="flex items-end justify-center p-lg" html={`<div class="dock" id="panels" role="toolbar" aria-label="Panels">
+  <button type="button" class="dock-item" aria-pressed="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 4 8 4-8 4-8-4z"/><path d="m4 12 8 4 8-4"/><path d="m4 16 8 4 8-4"/></svg><span class="dock-label">Layers</span></button>
+  <button type="button" class="dock-item" aria-pressed="false"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5h14v10H10l-5 4z"/></svg><span class="dock-label">Comments</span></button>
+  <button type="button" class="dock-item" aria-pressed="false"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg><span class="dock-label">History</span></button>
+  <span class="dock-divider" role="separator" aria-orientation="vertical"></span>
+  <button type="button" class="dock-item"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg><span class="dock-label">Settings</span></button>
+</div>
+<script>
+  document.querySelectorAll('#panels [aria-pressed]').forEach(function (button) {
+    button.addEventListener('click', function () {
+      button.setAttribute('aria-pressed', button.getAttribute('aria-pressed') === 'true' ? 'false' : 'true')
+    })
+  })
+</script>`} caption="按下方塊即可顯示或隱藏對應的面板。" />
+
+`dock-divider` 用一小段細線隔開不同群組。透鏡效果會直接跨過分隔線。
+
+## 放置位置 \{#placing\}
+
+Dock 本身不負責定位，位置由頁面決定。通常會放在畫面底部中央，可放入專屬區域，或用 `fixed` 或 `sticky` utility 固定在該處。請在 Dock 上方預留約 48px，供方塊放大及顯示標籤。
+
+## 無障礙 \{#accessibility\}
+
+- 若啟動項目用於導覽，請以帶有 `aria-label` 的 `nav` 包住它們。若 Dock 由按鈕組成，請加上 `role="toolbar"` 並提供標籤。
+- 每個啟動項目的標籤就是它的無障礙名稱。標籤在指標移入或鍵盤焦點移到方塊時才會顯示，但始終留在頁面中，供螢幕閱讀器讀取。
+- 每個啟動項目都能透過 Tab 取得焦點，聚焦時會顯示標籤與焦點外框。
+- 請將啟動項目的名稱寫在標籤裡。標籤是該項目唯一的文字。
+
+## 類別 \{#classes\}
+
+<ContractTable name="dock" />
+
+## 自訂屬性 \{#custom-properties\}
+
+<ContractTable name="dock" show="properties" />
+
+## 原始碼 \{#source\}
+
+<ComponentSource name="dock" />

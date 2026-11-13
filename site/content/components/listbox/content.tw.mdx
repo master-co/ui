@@ -1,0 +1,153 @@
+---
+title: "選項清單"
+description: "供使用者選擇的清單，也是組合方塊與指令面板展開時顯示的介面。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+選項清單列出可供選擇的項目。它是[組合方塊](/components/combobox)和[指令面板](/components/command)展開時顯示的介面，也能獨立放在頁面上。樣式表根據 ARIA 屬性呈現各種狀態，腳本則處理按鍵操作，並更新屬性以標示目前作用中的選項與已選取的值。獨立的選項清單由 `listbox` [行為](/guide/behaviors)控制，組合方塊和指令面板則各自由自己的輸入欄位控制清單。
+
+<ComponentPreview name="default" height={232} title="選項清單" bodyClass="p-lg" behaviors html={`<div class="sheet sheet-flat max-w(320) mx-auto">
+  <div class="listbox" role="listbox" aria-label="Framework" tabindex="0" aria-activedescendant="fw-astro">
+    <div class="listbox-option" role="option" id="fw-astro" aria-selected="true" aria-checked="true">Astro</div>
+    <div class="listbox-option" role="option" id="fw-next" aria-checked="false">Next.js</div>
+    <div class="listbox-option" role="option" id="fw-svelte" aria-checked="false">SvelteKit</div>
+    <div class="listbox-option" role="option" id="fw-nuxt" aria-checked="false" aria-disabled="true">Nuxt</div>
+  </div>
+</div>`} caption="點選選項，或將焦點移到清單，用方向鍵移動，再按 Enter 或空白鍵選取。" />
+
+## 兩種狀態，兩個屬性 \{#two-states\}
+
+選項清單會區分鍵盤目前指向的選項與已選取的值。
+
+- **作用中**使用 `aria-selected="true"`，表示方向鍵目前移到的選項，也是按 <kbd>Enter</kbd> 時會選取的選項。該列會套用標籤元件的色調。指標移到某一列上方時，該列也會立即套用相同色調，沒有淡入效果。
+- **已選取**使用 `aria-checked="true"`，表示該值已設定，選項末端會顯示勾號。只要選項有 `aria-checked`，無論值為何，都會保留勾號的空間，讓標籤維持在原位。
+
+焦點通常留在清單或文字欄位上，由 `aria-activedescendant` 指定作用中的選項。若選項本身取得焦點，還會顯示一道文字色的外框。
+
+## 含圖示與說明的選項 \{#rich-options\}
+
+在列首的圖示上加上 [`icon`](/components/icon)。`listbox-body` 將標題放在 `listbox-description` 上方，`listbox-end` 則在列尾放置快速鍵或提示。用 `listbox-group` 包住一組選項及其 `listbox-label`，再用 `listbox-separator` 在群組之間加上分隔線。
+
+<ComponentPreview name="rich" height={296} title="含圖示與說明的選項" bodyClass="p-lg" html={`<div class="sheet sheet-flat max-w(360) mx-auto">
+  <div class="listbox" role="listbox" aria-label="Commands">
+    <div class="listbox-group" role="group" aria-labelledby="rich-suggestions">
+    <div class="listbox-label" id="rich-suggestions">Suggestions</div>
+    <div class="listbox-option" role="option" aria-selected="true">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      New project
+      <span class="listbox-end"><kbd class="kbd">⌘</kbd><kbd class="kbd">N</kbd></span>
+    </div>
+    <div class="listbox-option" role="option">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.35-4.35"/></svg>
+      <span class="listbox-body">
+        <span>Search deployments</span>
+        <span class="listbox-description">By branch, commit or author</span>
+      </span>
+    </div>
+    </div>
+    <hr class="listbox-separator">
+    <div class="listbox-group" role="group" aria-labelledby="rich-team">
+    <div class="listbox-label" id="rich-team">Team</div>
+    <div class="listbox-option" role="option">
+      <span class="avatar avatar-xs"><img class="avatar-image" src="/demo/portrait-1.svg" alt=""></span>
+      Ada Lovelace
+    </div>
+    <div class="listbox-option" role="option">
+      <span class="avatar avatar-xs"><img class="avatar-image" src="/demo/portrait-2.svg" alt=""></span>
+      Alan Turing
+    </div>
+    </div>
+  </div>
+</div>`} />
+
+## 篩選 \{#filtering\}
+
+腳本會在不符合條件的選項上設定 `hidden` 屬性。接著，`:has()` 會自動處理下列兩種情況，無須額外的腳本。
+
+- 所有選項都隱藏時，`listbox-empty` 就會顯示。只要有選項重新出現，它就會隱藏。
+- `listbox-group` 是包住群組標題及其選項的 `role="group"` 元素。當群組內的選項全數隱藏時，整個群組也會隱藏，避免只剩標題。
+
+<ComponentPreview name="empty" height={128} title="沒有相符的選項" bodyClass="p-lg" html={`<div class="sheet sheet-flat max-w(320) mx-auto">
+  <div class="listbox" role="listbox" aria-label="Regions">
+    <div class="listbox-option" role="option" hidden>Tokyo</div>
+    <div class="listbox-option" role="option" hidden>Frankfurt</div>
+    <div class="listbox-empty">No regions match "zz".</div>
+  </div>
+</div>`} />
+
+## 行為 \{#behavior\}
+
+`listbox` 控制獨立放在頁面上、由清單本身保有焦點的選項清單，因此清單需要 `tabindex="0"`。它接收帶有 `role="listbox"` 的元素，不接受設定選項，並傳回用來解除行為的函式。
+
+```js name=app.js
+import { listbox } from '@master/ui/behaviors/listbox.js'
+
+const list = document.querySelector('.listbox')
+listbox(list)
+
+list.addEventListener('change', () => {
+  const chosen = list.querySelectorAll('[aria-checked="true"]')
+})
+```
+
+- **作用中的選項。** 按鍵或點擊會將 `aria-selected="true"` 移到對應的選項，更新清單上的 `aria-activedescendant`，再捲動清單，讓該選項進入可見範圍。焦點始終留在清單上。缺少 `id` 的選項會自動取得一個。清單取得焦點時，若沒有作用中的選項，已選取的選項就會成為作用中的選項。若也沒有已選取的選項，則由第一個選項成為作用中的選項。
+- **選取。** 按 <kbd>Enter</kbd>、<kbd>Space</kbd> 或點擊時，該選項會設為 `aria-checked="true"`，其餘選項則設為 `false`。
+- **事件。** 選取結果每次變更時，清單會依序派送 `input` 和 `change` 事件。讀取帶有 `aria-checked="true"` 的選項即可取得選取結果。
+- **略過的選項。** 隱藏的選項和帶有 `aria-disabled="true"` 的選項都無法成為作用中的選項，也無法選取。
+
+在清單上設定 `aria-multiselectable="true"` 後，每個選項都可獨立勾選或取消勾選，其餘選項會維持原狀。
+
+<ComponentPreview name="multiple" height={232} title="多選" bodyClass="p-lg" behaviors html={`<div class="sheet sheet-flat max-w(320) mx-auto">
+  <div class="listbox" role="listbox" aria-label="Notify me about" aria-multiselectable="true" tabindex="0">
+    <div class="listbox-option" role="option" id="notify-deploys" aria-checked="true">Deployments</div>
+    <div class="listbox-option" role="option" id="notify-comments" aria-checked="false">Comments</div>
+    <div class="listbox-option" role="option" id="notify-billing" aria-checked="true">Billing</div>
+    <div class="listbox-option" role="option" id="notify-digest" aria-checked="false" aria-disabled="true">Weekly digest</div>
+  </div>
+</div>`} />
+
+由文字欄位控制的選項清單，會由該欄位的行為從欄位端操作。若清單是由 `role="combobox"` 欄位的 `aria-controls` 指定，`listbox` 會略過它。`attach()` 也會略過[組合方塊](/components/combobox)或[指令面板](/components/command)內的清單。沒有腳本時，選項清單只會依照現有屬性呈現，狀態不會變更。
+
+## 浮動顯示 \{#floating\}
+
+加上 `popover` 屬性後，選項清單會成為浮動面板。面板的圓角為 12px，列的圓角為 8px。面板會貼著錨點定位，遇到檢視區邊緣時會翻轉到另一側，進出場動畫與[選單](/components/menu)相同。由文字欄位控制時，請使用 `popover="manual"`，讓清單在輸入時保持開啟。可參考[組合方塊](/components/combobox)的示範。
+
+## 選項清單、選單或下拉式選單 \{#listbox-menu-or-select\}
+
+- [下拉式選單](/components/select)是從清單中選取單一值的原生控制項。選項都是純文字時，使用這個元件即可，無須腳本。
+- [選單](/components/menu)以原生按鈕和連結提供可執行的動作。
+- 選項清單包含可由腳本篩選、分組或載入的值或結果，適用於組合方塊、指令面板和多選介面。
+
+## 鍵盤操作 \{#keyboard\}
+
+以下是焦點留在選項清單上時，`listbox` 行為支援的按鍵。方向鍵移到第一個或最後一個選項時就會停下。組合方塊和指令面板則由各自的欄位依照其互動模式處理按鍵。
+
+<ContractTable name="listbox" show="keyboard" />
+
+## 無障礙 \{#accessibility\}
+
+- 為容器加上 `role="listbox"` 和標籤，並為每個選項加上 `role="option"`。`listbox-group` 使用 `role="group"`，並透過 `aria-labelledby` 引用群組標題作為標籤。
+- 此行為會同步更新 `aria-selected` 和 `aria-activedescendant`，並捲動清單，讓作用中的選項進入可見範圍。選項設有捲動邊距，因此捲動後會與清單邊緣保留一些距離。
+- 停用的選項帶有 `aria-disabled="true"`，鍵盤操作會略過它。
+
+## React、Svelte 和 Vue \{#frameworks\}
+
+`listbox` 元件會根據資料呈現選項、掛載行為，並接收和傳出選取的值。使用 `npx master-ui add listbox` 將元件複製到專案中。元件的實作方式與用法請見 [React、Svelte 和 Vue](/guide/frameworks)。
+
+<FrameworkSource name="listbox" />
+
+## 類別 \{#classes\}
+
+<ContractTable name="listbox" />
+
+## 自訂屬性 \{#custom-properties\}
+
+<ContractTable name="listbox" show="properties" />
+
+## 原始碼 \{#source\}
+
+<ComponentSource name="listbox" />

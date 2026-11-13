@@ -1,0 +1,152 @@
+---
+title: "リストボックス"
+description: "項目を選ぶための一覧です。コンボボックスやコマンドパレットを開くと表示されます。"
+---
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+リストボックスは、項目を選ぶための選択肢の一覧です。[コンボボックス](/components/combobox)や[コマンドパレット](/components/command)を開いたときに表示されるほか、ページ内に単独で配置することもできます。スタイルシートはARIA属性に応じて各状態を描画します。スクリプトはキー操作を処理し、アクティブな選択肢や選択済みの項目に合わせて属性を更新します。単独で配置する場合は`listbox` [ビヘイビア](/guide/behaviors)がその処理を担います。コンボボックスとコマンドパレットでは、それぞれの入力フィールドからリストを操作します。
+
+<ComponentPreview name="default" height={232} title="リストボックス" bodyClass="p-lg" behaviors html={`<div class="sheet sheet-flat max-w(320) mx-auto">
+  <div class="listbox" role="listbox" aria-label="Framework" tabindex="0" aria-activedescendant="fw-astro">
+    <div class="listbox-option" role="option" id="fw-astro" aria-selected="true" aria-checked="true">Astro</div>
+    <div class="listbox-option" role="option" id="fw-next" aria-checked="false">Next.js</div>
+    <div class="listbox-option" role="option" id="fw-svelte" aria-checked="false">SvelteKit</div>
+    <div class="listbox-option" role="option" id="fw-nuxt" aria-checked="false" aria-disabled="true">Nuxt</div>
+  </div>
+</div>`} caption="選択肢をクリックするか、リストにフォーカスを移して矢印キーで移動し、EnterキーまたはSpaceキーで選択します。" />
+
+## 2つの状態と2つの属性 \{#two-states\}
+
+リストボックスでは、キー操作の対象になっている項目と、すでに選択された項目を区別します。
+
+- **アクティブ**は`aria-selected="true"`で示します。矢印キーで移動した先の、<kbd>Enter</kbd>で選択できる項目です。背景はチップと同じ色調になります。ポインターを重ねた行も、フェードなしで即座に同じ色調になります。
+- **選択済み**は`aria-checked="true"`で示します。値が確定した項目で、行末にチェックマークが付きます。`aria-checked`を持つ選択肢は、どちらの状態でもチェックマークのスペースを確保するため、ラベルの位置がずれません。
+
+通常、フォーカスはリストかテキストフィールドに留まり、`aria-activedescendant`がアクティブな選択肢を指します。選択肢自体がフォーカスを受け取る場合は、文字色のアウトラインも表示されます。
+
+## 情報を追加した選択肢 \{#rich-options\}
+
+行頭のアイコンには[`icon`](/components/icon)を指定します。`listbox-body`はタイトルの下に`listbox-description`を配置し、`listbox-end`はショートカットやヒントを行末に置きます。`listbox-group`は一連の選択肢をその`listbox-label`とともに囲み、`listbox-separator`はグループ間に区切り線を引きます。
+
+<ComponentPreview name="rich" height={296} title="情報を追加した選択肢" bodyClass="p-lg" html={`<div class="sheet sheet-flat max-w(360) mx-auto">
+  <div class="listbox" role="listbox" aria-label="Commands">
+    <div class="listbox-group" role="group" aria-labelledby="rich-suggestions">
+    <div class="listbox-label" id="rich-suggestions">Suggestions</div>
+    <div class="listbox-option" role="option" aria-selected="true">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      New project
+      <span class="listbox-end"><kbd class="kbd">⌘</kbd><kbd class="kbd">N</kbd></span>
+    </div>
+    <div class="listbox-option" role="option">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.35-4.35"/></svg>
+      <span class="listbox-body">
+        <span>Search deployments</span>
+        <span class="listbox-description">By branch, commit or author</span>
+      </span>
+    </div>
+    </div>
+    <hr class="listbox-separator">
+    <div class="listbox-group" role="group" aria-labelledby="rich-team">
+    <div class="listbox-label" id="rich-team">Team</div>
+    <div class="listbox-option" role="option">
+      <span class="avatar avatar-xs"><img class="avatar-image" src="/demo/portrait-1.svg" alt=""></span>
+      Ada Lovelace
+    </div>
+    <div class="listbox-option" role="option">
+      <span class="avatar avatar-xs"><img class="avatar-image" src="/demo/portrait-2.svg" alt=""></span>
+      Alan Turing
+    </div>
+    </div>
+  </div>
+</div>`} />
+
+## 絞り込み \{#filtering\}
+
+スクリプトは、一致しない選択肢に`hidden`属性を設定して絞り込みます。すると、追加のスクリプトなしで、`:has()`によって次の2つの表示が切り替わります。
+
+- すべての選択肢が非表示になると`listbox-empty`が表示され、1件でも再表示されると消えます。
+- `listbox-group`は、見出しと選択肢を囲む`role="group"`要素です。配下の選択肢がすべて非表示になると要素全体が隠れ、見出しだけが残ることはありません。
+
+<ComponentPreview name="empty" height={128} title="一致する項目がありません" bodyClass="p-lg" html={`<div class="sheet sheet-flat max-w(320) mx-auto">
+  <div class="listbox" role="listbox" aria-label="Regions">
+    <div class="listbox-option" role="option" hidden>Tokyo</div>
+    <div class="listbox-option" role="option" hidden>Frankfurt</div>
+    <div class="listbox-empty">No regions match "zz".</div>
+  </div>
+</div>`} />
+
+## ビヘイビア \{#behavior\}
+
+`listbox`は、ページ内に配置され、自身がフォーカスを保持するリストボックスを制御します。そのため、リストボックスには`tabindex="0"`を指定します。`role="listbox"`が付いた要素を受け取り、オプション引数は取らず、ビヘイビアを解除する関数を返します。
+
+```js name=app.js
+import { listbox } from '@master/ui/behaviors/listbox.js'
+
+const list = document.querySelector('.listbox')
+listbox(list)
+
+list.addEventListener('change', () => {
+  const chosen = list.querySelectorAll('[aria-checked="true"]')
+})
+```
+
+- **アクティブな選択肢。** キー操作やクリックで`aria-selected="true"`を対象の選択肢に移し、その選択肢をリストボックスの`aria-activedescendant`で参照して、表示範囲に入るようにスクロールします。フォーカスはリストボックスに留まります。`id`のない選択肢には自動で付与します。フォーカスが入った時点でアクティブな選択肢がなければ、選択済みの項目を、選択済みの項目もなければ先頭の項目をアクティブにします。
+- **選択。** <kbd>Enter</kbd>、<kbd>Space</kbd>、またはクリックで、対象の選択肢に`aria-checked="true"`を、ほかの選択肢に`false`を設定します。
+- **イベント。** 選択内容が変わるたびに、リストボックスは`input`、`change`の順にイベントを発行します。選択済みの項目は、`aria-checked="true"`が付いた選択肢を取得して確認します。
+- **操作対象外の選択肢。** 非表示の選択肢と`aria-disabled="true"`が付いた選択肢は、アクティブにならず、選択もできません。
+
+リストボックスに`aria-multiselectable="true"`を指定すると、操作した選択肢だけが選択または解除され、ほかの選択肢の状態は維持されます。
+
+<ComponentPreview name="multiple" height={232} title="複数選択" bodyClass="p-lg" behaviors html={`<div class="sheet sheet-flat max-w(320) mx-auto">
+  <div class="listbox" role="listbox" aria-label="Notify me about" aria-multiselectable="true" tabindex="0">
+    <div class="listbox-option" role="option" id="notify-deploys" aria-checked="true">Deployments</div>
+    <div class="listbox-option" role="option" id="notify-comments" aria-checked="false">Comments</div>
+    <div class="listbox-option" role="option" id="notify-billing" aria-checked="true">Billing</div>
+    <div class="listbox-option" role="option" id="notify-digest" aria-checked="false" aria-disabled="true">Weekly digest</div>
+  </div>
+</div>`} />
+
+テキストフィールドが制御するリストボックスは、そのフィールドのビヘイビアに従い、フィールドから操作します。`listbox`は、`role="combobox"`フィールドの`aria-controls`が参照するリストボックスを処理対象から外します。`attach()`も、[コンボボックス](/components/combobox)や[コマンドパレット](/components/command)内のリストボックスを処理対象から外します。スクリプトがない場合は、属性に従って表示され、状態は変化しません。
+
+## フローティング表示 \{#floating\}
+
+`popover`属性を付けると、リストボックスは角丸12px、各行の角丸8pxのフローティングシートになります。アンカーに隣接して配置され、ビューポートの端では配置が反転します。表示・非表示時のアニメーションは[メニュー](/components/menu)と同じです。テキストフィールドが制御する場合は、入力中に閉じないように`popover="manual"`を使います。[コンボボックス](/components/combobox)に実装例があります。
+
+## リストボックス、メニュー、セレクトの使い分け \{#listbox-menu-or-select\}
+
+- [セレクト](/components/select)は、一覧から値を1つ選ぶためのネイティブコントロールです。選択肢がプレーンテキストならセレクトを使います。スクリプトは不要です。
+- [メニュー](/components/menu)には、ネイティブのボタンやリンクでアクションを並べます。
+- リストボックスには、スクリプトで絞り込み、グループ化、読み込みを行う値や結果を表示します。コンボボックス、コマンドパレット、複数選択などで使います。
+
+## キーボード操作 \{#keyboard\}
+
+以下は、リストボックス自身がフォーカスを保持しているときの`listbox`ビヘイビアのキー操作です。矢印キーでの移動は、先頭と末尾の選択肢で止まります。コンボボックスとコマンドパレットでは、それぞれのパターンに従ってフィールドでキー操作を行います。
+
+<ContractTable name="listbox" show="keyboard" />
+
+## アクセシビリティ \{#accessibility\}
+
+- コンテナーに`role="listbox"`とラベルを、各選択肢に`role="option"`を指定します。`listbox-group`には`role="group"`を指定し、`aria-labelledby`で見出しをラベルとして参照します。
+- ビヘイビアは`aria-selected`と`aria-activedescendant`を連動させ、アクティブな選択肢が見える位置までスクロールします。各選択肢にはスクロールマージンがあり、リストの端に余白が残ります。
+- 無効な選択肢には`aria-disabled="true"`を指定します。キー操作ではその選択肢を飛ばします。
+
+## React、Svelte、Vue \{#frameworks\}
+
+`listbox`コンポーネントは、データから選択肢を描画し、ビヘイビアを適用して、選択値の受け渡しを行います。`npx master-ui add listbox`でプロジェクトにコピーできます。コンポーネントの構成と使い方は、[React、Svelte、Vue](/guide/frameworks)を参照してください。
+
+<FrameworkSource name="listbox" />
+
+## クラス \{#classes\}
+
+<ContractTable name="listbox" />
+
+## カスタムプロパティ \{#custom-properties\}
+
+<ContractTable name="listbox" show="properties" />
+
+## ソース \{#source\}
+
+<ComponentSource name="listbox" />

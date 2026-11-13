@@ -1,0 +1,111 @@
+---
+title: "트레이스"
+description: "에이전트나 작업이 수행한 내용을 단계마다 간결한 한 줄로 보여 주며, 세부 내용이 있는 줄은 펼쳐서 확인할 수 있습니다."
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+트레이스는 에이전트나 작업이 무엇을 했는지 단계별로 보여 줍니다. 무엇을 생각하고, 검색하고, 읽고, 실행했는지 확인할 수 있습니다. 각 단계는 간결한 한 줄로 표시되며, 같은 열에 놓인 마커는 아주 가는 선으로 이어집니다. 세부 내용이 있는 단계는 브라우저 기본 `<details>` 요소를 사용하므로 스크립트 없이도 해당 줄에서 세부 내용을 펼칠 수 있습니다. 세부 내용이 없는 단계는 일반 줄로 표시됩니다.
+
+<ComponentPreview name="default" height={368} narrowHeight={440} title="트레이스" bodyClass="p-lg" html={`<div class="card max-w(440) mx-auto">
+  <div class="trace">
+    <details class="trace-step">
+      <summary class="trace-summary"><span class="trace-marker"></span>Thought about the migration<span class="trace-meta">8s</span></summary>
+      <div class="trace-detail">The table has two million rows, so the column is added as nullable first and filled in batches.</div>
+    </details>
+    <details class="trace-step" open>
+      <summary class="trace-summary"><span class="trace-marker"></span>Searched the codebase<span class="trace-meta">12 files</span></summary>
+      <div class="trace-detail"><code class="code">orders.status</code> is read in 12 files, 3 of them in the billing service.</div>
+    </details>
+    <div class="trace-step">
+      <p class="trace-summary"><span class="trace-marker"></span>Read schema.prisma<span class="trace-meta">0.4s</span></p>
+    </div>
+    <div class="trace-step" aria-busy="true">
+      <p class="trace-summary"><span class="trace-marker"></span>Writing the migration</p>
+    </div>
+  </div>
+</div>`} />
+
+## 단계 \{#a-step\}
+
+단계는 `trace-summary`를 감싸는 `trace-step`입니다. 한 줄에 마커와 설명을 표시하며, 소요 시간이나 찾은 항목 수처럼 수치로 나타낼 수 있는 정보는 줄 끝에 `trace-meta`를 추가해 표시할 수 있습니다.
+
+세부 내용이 있는 단계는 `<details>` 요소로 작성하고, `<summary>`에 단계 요약을, 그 뒤의 `trace-detail`에 세부 내용을 넣습니다. 스타일시트는 세부 내용이 있으면 그 줄을 펼치고 접을 수 있게 표시합니다. 설명 뒤에 작은 꺾쇠가 붙으며, 단계가 펼쳐져 있는 동안에는 아래를 가리킵니다. 브라우저가 `::details-content`의 전환을 지원하면 세부 내용이 실제 높이까지 부드럽게 펼쳐지고, 그 외에는 즉시 펼쳐집니다. 페이지 내 검색은 다른 `<details>` 요소에서와 마찬가지로 일치하는 내용이 있는 접힌 단계를 자동으로 펼칩니다.
+
+## 마커 \{#markers\}
+
+비어 있는 `trace-marker`는 작은 점으로 표시됩니다. 마커에 [아이콘](/components/icon)을 넣어 단계의 종류를 나타내거나, 단계가 실행 중일 때 `spinner-inline`이 적용된 [스피너](/components/spinner)를 표시할 수 있습니다.
+
+<ComponentPreview name="markers" height={264} narrowHeight={312} title="마커" bodyClass="p-lg" html={`<div class="card max-w(440) mx-auto">
+  <div class="trace">
+    <div class="trace-step">
+      <p class="trace-summary"><span class="trace-marker"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.5-4.5"/></svg></span>Searched for "rate limit"<span class="trace-meta">4 results</span></p>
+    </div>
+    <div class="trace-step">
+      <p class="trace-summary"><span class="trace-marker"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h7l4 4v12H7zM14 4v4h4"/></svg></span>Read limits.ts<span class="trace-meta">214 lines</span></p>
+    </div>
+    <div class="trace-step">
+      <p class="trace-summary"><span class="trace-marker"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 8 4 4-4 4M12 17h7"/></svg></span>Ran the tests<span class="trace-meta">48 passed</span></p>
+    </div>
+    <div class="trace-step" aria-busy="true">
+      <p class="trace-summary"><span class="trace-marker"><span class="spinner spinner-inline"></span></span>Writing the answer</p>
+    </div>
+  </div>
+</div>`} />
+
+## 실행 중 및 실패 상태 \{#running-and-failed\}
+
+실행 중인 단계에는 `aria-busy="true"`를 지정합니다. 설명에는 강조 텍스트 색상이 적용되고, 마커가 점으로만 표시된 경우에는 점 주위로 원형 파동이 퍼집니다. 사용자가 동작 줄이기를 설정한 경우에는 점 주위에 움직이지 않는 원형 테두리가 표시됩니다. 단계가 끝나면 이 속성을 제거합니다.
+
+실패한 단계에는 `trace-failed` 클래스를 적용합니다. 마커와 줄 끝의 수치 정보에는 위험 상태 색상이 적용됩니다. ARIA에는 목록 항목의 실패 상태를 나타내는 방법이 없으므로 클래스를 사용합니다. 색상만으로 실패를 알리지 않도록 단계의 설명이나 세부 내용에 무엇이 실패했는지 텍스트로 적습니다.
+
+<ComponentPreview name="failed" height={272} narrowHeight={312} title="실패" bodyClass="p-lg" html={`<div class="card max-w(440) mx-auto">
+  <div class="trace">
+    <div class="trace-step">
+      <p class="trace-summary"><span class="trace-marker"></span>Installed dependencies<span class="trace-meta">14s</span></p>
+    </div>
+    <div class="trace-step">
+      <p class="trace-summary"><span class="trace-marker"></span>Compiled 38 routes<span class="trace-meta">48s</span></p>
+    </div>
+    <details class="trace-step trace-failed" open>
+      <summary class="trace-summary"><span class="trace-marker"></span>Ran the test suite<span class="trace-meta">2 failed</span></summary>
+      <div class="trace-detail">orders.spec.ts expected the status to be "paid" and received "pending", twice.</div>
+    </details>
+  </div>
+</div>`} />
+
+## 한 줄 \{#one-line\}
+
+한 단계로 된 트레이스는 어시스턴트가 답변 위에 표시하는 한 줄입니다. 수행한 작업과 소요 시간을 보여 주며, 펼치면 그 작업의 판단 근거를 확인할 수 있습니다.
+
+<ComponentPreview name="one" height={168} narrowHeight={208} title="단일 단계" background="plain" bodyClass="p-lg" html={`<div class="trace max-w(440) mx-auto">
+  <details class="trace-step">
+    <summary class="trace-summary"><span class="trace-marker"></span>Thought for 12 seconds</summary>
+    <div class="trace-detail">The question is about the fallback, not the feature, so the answer starts from a browser without anchor positioning.</div>
+  </details>
+</div>`} />
+
+## 트레이스, 타임라인, 단계 표시기 \{#trace-timeline-or-steps\}
+
+트레이스는 작업의 수행 과정을 보여 줍니다. 각 단계는 실행 중이거나 실패한 상태일 수 있으며, 펼쳐서 세부 내용을 확인할 수 있습니다. [타임라인](/components/timeline)은 이벤트와 발생 시각을 기록합니다. [단계 표시기](/components/steps)는 사용자가 정해진 순서대로 진행할 단계를 보여 줍니다.
+
+## 접근성 \{#accessibility\}
+
+- 펼칠 수 있는 단계는 `<details>` 요소입니다. 브라우저는 단계의 한 줄에 펼침 컨트롤의 역할과 상태를 부여하고 키보드 조작을 지원합니다.
+- 스타일시트가 그리는 마커는 보조 기술이 읽어 주지 않습니다. 마커 안의 아이콘은 장식용이므로 단계에서 무엇을 했는지 해당 줄에 텍스트로 적습니다.
+- 화면에 표시된 상태에서 단계가 계속 추가되는 트레이스는 `aria-live="polite"` 속성이 지정된 영역에 배치합니다. 그러면 새 단계가 추가될 때마다 보조 기술이 해당 단계를 알려 줍니다. 실행 중인 단계에 `aria-busy`를 지정하면 해당 상태를 화면에 표시하고 보조 기술에도 전달할 수 있습니다.
+- 터치 화면에서 각 줄의 높이는 44px입니다.
+
+## 클래스 \{#classes\}
+
+<ContractTable name="trace" />
+
+## 사용자 지정 속성 \{#custom-properties\}
+
+<ContractTable name="trace" show="properties" />
+
+## 소스 \{#source\}
+
+<ComponentSource name="trace" />

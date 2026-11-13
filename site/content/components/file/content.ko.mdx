@@ -1,0 +1,164 @@
+---
+title: "파일"
+description: "첨부 파일, 업로드 파일, 다운로드 파일을 이름이 있는 개별 항목으로 표시합니다."
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+파일 컴포넌트는 문서 하나를 하나의 개체로 보여 줍니다. 확장자가 적힌 작은 페이지 옆에는 파일 이름이 있고, 그 아래에는 눈에 덜 띄는 정보가 한 줄 표시됩니다. 맨 끝에는 조작 요소가 하나 있습니다. 파일은 각각 평평한 종이 한 장으로 표시되므로 [드롭 영역](/components/dropzone) 아래나 [대화 상자](/components/dialog) 안에 세로로 나열하면 여러 장을 쌓아 놓은 것처럼 항목마다 구분됩니다.
+
+<ComponentPreview name="default" height={288} title="파일" bodyClass="p-lg" html={`<ul class="flex flex-col gap-xs max-w(400) mx-auto">
+  <li class="file">
+    <span class="file-page" aria-hidden="true">pdf</span>
+    <div class="file-body">
+      <p class="file-name">Q3 infrastructure report.pdf</p>
+      <p class="file-meta">2.4 MB · PDF document</p>
+    </div>
+    <div class="file-end">
+      <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Remove Q3 infrastructure report.pdf"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+  </li>
+  <li class="file">
+    <img class="file-thumb" src="/demo/moonstone.svg" alt="">
+    <div class="file-body">
+      <p class="file-name">moonstone-cover.png</p>
+      <p class="file-meta">1,920 × 1,200 · 840 KB</p>
+    </div>
+    <div class="file-end">
+      <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Remove moonstone-cover.png"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+  </li>
+  <li class="file">
+    <span class="file-page" aria-hidden="true">csv</span>
+    <div class="file-body">
+      <p class="file-name">members-export-2026-11.csv</p>
+      <p class="file-meta">312 rows · 18 KB</p>
+    </div>
+    <div class="file-end">
+      <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Remove members-export-2026-11.csv"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+  </li>
+</ul>`} />
+
+## 파일 페이지 \{#the-page\}
+
+`file-page`는 가로 28, 세로 36인 작은 종이 모양으로, 바탕에서 살짝 떠 있습니다. 아래쪽에 적는 확장자는 어떤 대소문자로 입력해도 대문자로 표시됩니다. 확장자는 네 글자 이내로 입력하세요. 옆의 파일 이름에도 같은 정보가 있으므로 이 페이지에 `aria-hidden`을 지정해 보조 기술에서 숨깁니다.
+
+접힌 모서리는 브라우저가 그립니다. `corner-shape`을 적용하면 위쪽 끝 모서리가 사선으로 잘리고, 작은 정사각형에서 그 사선으로 잘라 내고 남은 부분이 접힌 면이 됩니다. `corner-shape`을 지원하지 않는 브라우저에서는 네 모서리가 둥글고 접힌 부분이 없는 페이지로 표시됩니다.
+
+이미지 파일은 `<img>`에 적용한 `file-thumb`으로 페이지를 대신합니다.
+
+## 업로드 중 \{#uploading\}
+
+파일 컴포넌트 안에 클래스가 `progress file-progress`인 네이티브 `<progress>` 요소를 넣습니다. 그러면 시트 자체가 진행률 표시줄이 됩니다. 표시줄은 텍스트 아래에서 시트 양 끝까지 이어지고, 업로드된 비율만큼 배경에 색이 채워집니다. 채움 영역의 바깥쪽은 시트의 모서리를 따릅니다. `value`가 없으면 진행률을 알 수 없으므로 같은 색조의 띠가 시트를 가로질러 움직입니다.
+
+`file-meta`에도 진행률을 적고, 업로드 중에는 파일에 `aria-busy="true"`를 지정합니다.
+
+<ComponentPreview name="uploading" height={208} title="업로드 중" bodyClass="p-lg" html={`<ul class="flex flex-col gap-xs max-w(400) mx-auto">
+  <li class="file" aria-busy="true">
+    <span class="file-page" aria-hidden="true">zip</span>
+    <div class="file-body">
+      <p class="file-name">atlas-build-2026-11-11.zip</p>
+      <p class="file-meta">Uploading · 64% of 182 MB</p>
+    </div>
+    <div class="file-end">
+      <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Cancel the upload of atlas-build-2026-11-11.zip"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <progress class="progress file-progress" max="100" value="64" aria-label="Upload of atlas-build-2026-11-11.zip">64%</progress>
+  </li>
+  <li class="file" aria-busy="true">
+    <span class="file-page" aria-hidden="true">mp4</span>
+    <div class="file-body">
+      <p class="file-name">onboarding-walkthrough.mp4</p>
+      <p class="file-meta">Scanning for viruses…</p>
+    </div>
+    <progress class="progress file-progress" aria-label="Scan of onboarding-walkthrough.mp4"></progress>
+  </li>
+</ul>`} />
+
+## 업로드 실패 \{#failed\}
+
+`file-failed` 클래스는 파일에 위험 상태의 윤곽선을 적용하고 `file-meta`의 글자색을 위험 상태 색상으로 바꿉니다. 그곳에 실패 원인을 적고, 맨 끝에 문제를 해결할 수 있는 조작 요소를 배치하세요. ARIA에는 목록 항목의 실패를 나타내는 속성이 없으므로 이 상태는 클래스로 지정하고, 실패 사실은 텍스트로 전달합니다. 해당 텍스트에 `role="alert"`를 적용하면 사용자가 페이지를 보고 있는 동안 발생한 실패를 알릴 수 있습니다.
+
+<ComponentPreview name="failed" height={112} title="업로드 실패" bodyClass="p-lg" html={`<div class="file file-failed max-w(400) mx-auto">
+  <span class="file-page" aria-hidden="true">mov</span>
+  <div class="file-body">
+    <p class="file-name">walkthrough-final-v2.mov</p>
+    <p class="file-meta" role="alert">Larger than the 100 MB limit</p>
+  </div>
+  <div class="file-end">
+    <button type="button" class="btn btn-sm">Replace</button>
+  </div>
+</div>`} />
+
+## 소형 파일 \{#compact\}
+
+`file-sm`은 높이가 32px이고 파일 이름 길이에 맞춰 너비가 정해지는 한 줄짜리 컴포넌트입니다. [작성기](/components/composer) 위에 첨부 파일을 표시하거나 행 안에서 파일을 언급할 때 사용합니다. 작은 버튼과 높이가 같아 같은 행에 배치할 수 있습니다. 페이지가 작아 확장자를 담을 수 없으므로 파일 이름과 옆에 표시되는 정보에서 확장자를 확인할 수 있습니다. 끝의 조작 요소는 24px이며 시트 가장자리에서 4px 안쪽에 놓입니다. 터치 화면에서는 파일 높이가 44px, 조작 요소 크기가 36px입니다.
+
+<ComponentPreview name="compact" height={200} narrowHeight={256} title="소형 파일" bodyClass="p-lg" html={`<form class="composer max-w(480) mx-auto">
+  <div class="composer-attachments">
+    <span class="file file-sm">
+      <span class="file-page" aria-hidden="true"></span>
+      <span class="file-body"><span class="file-name">report.pdf</span><span class="file-meta">2.4 MB</span></span>
+      <span class="file-end"><button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Remove report.pdf"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></span>
+    </span>
+    <span class="file file-sm">
+      <img class="file-thumb" src="/demo/moonstone.svg" alt="">
+      <span class="file-body"><span class="file-name">cover.png</span></span>
+      <span class="file-end"><button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Remove cover.png"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></span>
+    </span>
+  </div>
+  <textarea class="composer-field" rows="1" placeholder="Add a note about these files" aria-label="Message"></textarea>
+  <div class="composer-toolbar">
+    <div class="composer-end">
+      <button type="submit" class="btn btn-primary btn-sm">Send</button>
+    </div>
+  </div>
+</form>`} />
+
+## 열 수 있는 파일 \{#a-file-that-opens\}
+
+파일 컴포넌트 전체가 링크나 버튼이면 `file-interactive` 클래스를 추가합니다. [버튼](/components/button)처럼 기본 상태에서는 바탕에서 살짝 떠 있고, 포인터를 올리면 더 올라가며, 누르면 내려갑니다. 링크 내부의 각 부분은 `<span>` 요소로 구성합니다.
+
+<ComponentPreview name="interactive" height={104} title="열 수 있는 파일" bodyClass="p-lg" html={`<div class="grid grid-cols(2) gap-sm max-w(520) mx-auto">
+  <a class="file file-interactive" href="#" download>
+    <span class="file-page" aria-hidden="true">docx</span>
+    <span class="file-body">
+      <span class="file-name">Master services agreement.docx</span>
+      <span class="file-meta">48 KB · Download</span>
+    </span>
+  </a>
+  <a class="file file-interactive" href="#" download>
+    <span class="file-page" aria-hidden="true">xlsx</span>
+    <span class="file-body">
+      <span class="file-name">Pricing schedule.xlsx</span>
+      <span class="file-meta">22 KB · Download</span>
+    </span>
+  </a>
+</div>`} />
+
+## 접근성 \{#accessibility\}
+
+- 파일이 여러 개면 목록으로 구성하세요. `<ul>`을 사용하고 각 `<li>`에 `file`을 지정하세요.
+- 조작 요소의 이름에는 어느 파일에 적용되는지 명시하세요. 예를 들어 "제거"만 쓰는 대신 "report.pdf 제거"라고 쓰세요.
+- `<progress>`에 레이블을 지정하고 텍스트에도 백분율을 표시하세요. 배경색은 그 수치를 시각적으로 보여 줍니다.
+- 긴 파일 이름은 끝부분이 잘립니다. 확장자처럼 끝부분이 중요하다면 `title`에 전체 이름을 넣으세요.
+
+## 클래스 \{#classes\}
+
+<ContractTable name="file" />
+
+## 사용자 지정 속성 \{#custom-properties\}
+
+<ContractTable name="file" show="properties" />
+
+## 관련 항목 \{#related\}
+
+<ComponentLinks slugs={['dropzone', 'composer', 'list']} />
+
+## 소스 \{#source\}
+
+<ComponentSource name="file" />

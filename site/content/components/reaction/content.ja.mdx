@@ -1,0 +1,196 @@
+---
+title: "リアクション"
+description: "メッセージへのリアクションを絵文字ごとに件数付きで表示し、押すと自分のリアクションを追加できるコンポーネント。"
+---
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+リアクションは、読者が[メッセージ](/components/message)の下に付ける絵文字で、同じ絵文字を付けたほかの人の人数も表示します。各リアクションは、ネイティブのチェックボックスをチップと同じ色調の平らなピル型に収めたものです。押すと自分のリアクションが加わり、もう一度押すと取り消せます。人数は CSS カウンターで表示するため、チェックの切り替えに応じてスクリプトなしで増減します。
+
+<ComponentPreview name="default" height={248} title="リアクション" background="plain" bodyClass="p-lg" html={`<ol class="max-w(400) w-full mx-auto m(0) p(0)">
+  <li class="message">
+    <span class="avatar avatar-sm message-avatar"><img class="avatar-image" src="/demo/portrait-1.svg" alt="Ada"></span>
+    <div class="message-bubble">The new previews are live. Have a look before the review.</div>
+    <div class="reaction-group" role="group" aria-label="Reactions to Ada's message">
+      <label class="reaction" style="--count: 3">
+        <input type="checkbox" class="reaction-input" name="reaction" value="👍" aria-label="Thumbs up, 3 others" checked>
+        <span class="reaction-emoji" aria-hidden="true">👍</span>
+        <span class="reaction-count" aria-hidden="true"></span>
+      </label>
+      <label class="reaction" style="--count: 2">
+        <input type="checkbox" class="reaction-input" name="reaction" value="🎉" aria-label="Party popper, 2 others">
+        <span class="reaction-emoji" aria-hidden="true">🎉</span>
+        <span class="reaction-count" aria-hidden="true"></span>
+      </label>
+      <label class="reaction" style="--count: 1">
+        <input type="checkbox" class="reaction-input" name="reaction" value="👀" aria-label="Eyes, 1 other">
+        <span class="reaction-emoji" aria-hidden="true">👀</span>
+        <span class="reaction-count" aria-hidden="true"></span>
+      </label>
+    </div>
+    <span class="message-meta">Ada · 14:03</span>
+  </li>
+  <li class="message message-sent">
+    <div class="message-bubble">On it. The dark ones look right.</div>
+    <div class="reaction-group" role="group" aria-label="Reactions to your message">
+      <label class="reaction" style="--count: 1">
+        <input type="checkbox" class="reaction-input" name="reaction-reply" value="❤️" aria-label="Heart, 1 other">
+        <span class="reaction-emoji" aria-hidden="true">❤️</span>
+        <span class="reaction-count" aria-hidden="true"></span>
+      </label>
+    </div>
+  </li>
+</ol>`} caption="リアクションを押すと追加でき、もう一度押すと取り消せます。" />
+
+吹き出しの後に`reaction-group`を置きます。受信メッセージでは吹き出しの先頭に、送信メッセージでは吹き出しの末尾にそろえます。`aria-label`でグループに名前を付け、画面に複数のメッセージがある場合は、誰のメッセージへのリアクションかも示します。
+
+## リアクション数 \{#count\}
+
+各リアクションの`--count`には、そのリアクションを付けた人のうち、読者本人を除いた人数を設定します。ピルのカウンターはその値から始まり、チェックが入ると 1 を足すため、読者が付けたリアクションは`--count`より 1 多く表示されます。`reaction-count`を空にすると、カウンターの数値が表示されます。1 人単位で表示するには数が大きすぎる場合は、`1.2k`などのテキストを入れると、そのテキストが表示されます。
+
+## 状態 \{#states\}
+
+通常時は、1 本の輪郭線で囲まれた平らなピル型で、カウントは控えめな色で表示します。ポインターを重ねると輪郭がはっきりし、押している間はピルがくぼみ、絵文字も一緒に沈み込みます。リアクションを付けると、ライブラリ共通の選択状態になり、インク色の極細線と淡いインク色の背景が付き、カウントは強いインク色になります。終了したスレッドなどでチェックボックスが無効な場合は、平らなまま絵文字が薄く表示されます。
+
+<ComponentPreview name="states" height={96} title="状態" html={`<div class="reaction-group" role="group" aria-label="Reactions">
+  <label class="reaction" style="--count: 2">
+    <input type="checkbox" class="reaction-input" name="reaction-states" value="👏" aria-label="Clapping, 2 others">
+    <span class="reaction-emoji" aria-hidden="true">👏</span>
+    <span class="reaction-count" aria-hidden="true"></span>
+  </label>
+  <label class="reaction" style="--count: 2">
+    <input type="checkbox" class="reaction-input" name="reaction-states" value="❤️" aria-label="Heart, 2 others" checked>
+    <span class="reaction-emoji" aria-hidden="true">❤️</span>
+    <span class="reaction-count" aria-hidden="true"></span>
+  </label>
+  <label class="reaction">
+    <input type="checkbox" class="reaction-input" name="reaction-states" value="🔥" aria-label="Fire, 1,214 others">
+    <span class="reaction-emoji" aria-hidden="true">🔥</span>
+    <span class="reaction-count" aria-hidden="true">1.2k</span>
+  </label>
+  <label class="reaction" style="--count: 4">
+    <input type="checkbox" class="reaction-input" name="reaction-states" value="👍" aria-label="Thumbs up, 4 others" disabled>
+    <span class="reaction-emoji" aria-hidden="true">👍</span>
+    <span class="reaction-count" aria-hidden="true"></span>
+  </label>
+</div>`} />
+
+## リアクションの追加 \{#adding\}
+
+`reaction-add`は行の末尾にある、顔とプラス記号が付いた丸いボタンです。押すと、ページの絵文字ピッカーが開きます。ピッカーは[ポップオーバー](/components/popover)で、控えめな正方形の[ボタン](/components/button)が並び、それぞれに`reaction-emoji`が入っています。ボタンの直後にあるポップオーバーが開いている間、ボタンは押し込まれた状態を保ちます。絵文字を選ぶとリアクションが付き、まだ誰も付けていなければピルも追加されます。ピルの追加はページ側で処理するため、ピッカーには数行のスクリプトが必要です。このページのほかの機能はすべてスクリプトなしで動作します。
+
+<ComponentPreview name="adding" height={152} title="リアクションの追加" bodyClass="content-start flex flex-wrap items-start justify-center gap-md p-lg" html={`<div class="reaction-group" id="reactions" role="group" aria-label="Reactions">
+  <label class="reaction" style="--count: 4">
+    <input type="checkbox" class="reaction-input" name="reaction" value="👍" aria-label="Thumbs up, 4 others">
+    <span class="reaction-emoji" aria-hidden="true">👍</span>
+    <span class="reaction-count" aria-hidden="true"></span>
+  </label>
+  <label class="reaction" style="--count: 1">
+    <input type="checkbox" class="reaction-input" name="reaction" value="🚀" aria-label="Rocket, 1 other">
+    <span class="reaction-emoji" aria-hidden="true">🚀</span>
+    <span class="reaction-count" aria-hidden="true"></span>
+  </label>
+  <button type="button" class="reaction-add" popovertarget="reaction-picker" aria-label="Add a reaction"></button>
+  <div class="popover p(4)" id="reaction-picker" popover>
+    <div class="grid grid-cols(6) gap(2)">
+      <button type="button" class="btn btn-quiet btn-square btn-sm" value="👍" aria-label="Thumbs up"><span class="reaction-emoji" aria-hidden="true">👍</span></button>
+      <button type="button" class="btn btn-quiet btn-square btn-sm" value="❤️" aria-label="Heart"><span class="reaction-emoji" aria-hidden="true">❤️</span></button>
+      <button type="button" class="btn btn-quiet btn-square btn-sm" value="😂" aria-label="Laughing"><span class="reaction-emoji" aria-hidden="true">😂</span></button>
+      <button type="button" class="btn btn-quiet btn-square btn-sm" value="🎉" aria-label="Party popper"><span class="reaction-emoji" aria-hidden="true">🎉</span></button>
+      <button type="button" class="btn btn-quiet btn-square btn-sm" value="👀" aria-label="Eyes"><span class="reaction-emoji" aria-hidden="true">👀</span></button>
+      <button type="button" class="btn btn-quiet btn-square btn-sm" value="🚀" aria-label="Rocket"><span class="reaction-emoji" aria-hidden="true">🚀</span></button>
+    </div>
+  </div>
+</div>
+<script>
+  const picker = document.getElementById('reaction-picker')
+  const reactions = document.getElementById('reactions')
+
+  picker.addEventListener('click', function (event) {
+    const option = event.target.closest('button')
+    if (!option) return
+    let input = Array.from(reactions.querySelectorAll('.reaction-input')).find(function (each) { return each.value === option.value })
+    if (!input) {
+      const reaction = document.createElement('label')
+      const emoji = document.createElement('span')
+      const count = document.createElement('span')
+      input = document.createElement('input')
+      reaction.className = 'reaction'
+      input.type = 'checkbox'
+      input.className = 'reaction-input'
+      input.name = 'reaction'
+      input.value = option.value
+      input.setAttribute('aria-label', option.getAttribute('aria-label') + ', no others')
+      emoji.className = 'reaction-emoji'
+      emoji.textContent = option.value
+      emoji.setAttribute('aria-hidden', 'true')
+      count.className = 'reaction-count'
+      count.setAttribute('aria-hidden', 'true')
+      reaction.append(input, emoji, count)
+      reactions.insertBefore(reaction, reactions.querySelector('.reaction-add'))
+    }
+    if (!input.checked) input.click()
+    picker.hidePopover()
+  })
+</script>`} caption="ピッカーを開き、行にまだない絵文字を選びます。" />
+
+## スレッド内 \{#thread\}
+
+[スレッド](/components/thread)では、コメント本文の後にリアクションの行を置きます。本文との間隔は、段落同士の間隔より少し広く取ります。
+
+<ComponentPreview name="thread" height={264} narrowHeight={304} title="スレッド内" bodyClass="p-lg" html={`<div class="card max-w(480) mx-auto">
+  <ol class="thread">
+    <li class="thread-item">
+      <span class="thread-avatar"><span class="avatar">GH</span></span>
+      <div class="thread-body">
+        <p class="thread-header"><span class="thread-author">Grace Hopper</span> <time class="thread-meta" datetime="2026-11-12T09:12">2h</time></p>
+        <p class="thread-text">The contracts ship on Tuesday, the framework components the week after.</p>
+        <div class="reaction-group" role="group" aria-label="Reactions to Grace Hopper's comment">
+          <label class="reaction" style="--count: 5">
+            <input type="checkbox" class="reaction-input" name="reaction-thread" value="👍" aria-label="Thumbs up, 5 others">
+            <span class="reaction-emoji" aria-hidden="true">👍</span>
+            <span class="reaction-count" aria-hidden="true"></span>
+          </label>
+          <label class="reaction" style="--count: 2">
+            <input type="checkbox" class="reaction-input" name="reaction-thread" value="🚀" aria-label="Rocket, 2 others" checked>
+            <span class="reaction-emoji" aria-hidden="true">🚀</span>
+            <span class="reaction-count" aria-hidden="true"></span>
+          </label>
+        </div>
+      </div>
+      <ol class="thread-replies">
+        <li class="thread-item">
+          <span class="thread-avatar"><span class="avatar avatar-sm">AL</span></span>
+          <div class="thread-body">
+            <p class="thread-header"><span class="thread-author">Ada Lovelace</span> <time class="thread-meta" datetime="2026-11-12T10:05">1h</time></p>
+            <p class="thread-text">Then the release notes go out on Monday.</p>
+          </div>
+        </li>
+      </ol>
+    </li>
+  </ol>
+</div>`} />
+
+## アクセシビリティ \{#accessibility\}
+
+- 各チェックボックスには、`aria-label="Thumbs up, 3 others"`のように絵文字の名前とほかの人の人数を言葉で表した名前を付け、絵文字とカウントは`aria-hidden="true"`で支援技術から隠します。読者本人がリアクションを付けたかどうかはチェック状態で伝わり、何度切り替えても名前の内容は正確なままです。
+- 画面に表示されるカウントが読み上げられることを前提にしないでください。ブラウザーエンジンは、CSS カウンターで生成したテキストをアクセシブルな名前や説明に含めません。Chromium では、チェックボックスの名前にはラベルの文言だけが使われ、数値は含まれません。
+- グループに名前を付け、`reaction-add`には「リアクションを追加」という名前を付けます。ピッカーの各ボタンには絵文字の名前を付け、絵文字自体は支援技術から隠します。
+- ピル全体が操作対象です。サイズは 28px、タッチ画面では 44px です。強制カラーモードでも輪郭が残り、自分が付けたリアクションには、ハイライト色で通常より太い輪郭線が付きます。
+
+## プラットフォーム別の補足 \{#platform\}
+
+`text-box: trim-both cap alphabetic`でカウントの数字の上下をキャップハイトに合わせて切り詰めます。これにより、行ボックスではなく数字そのものがピル内で中央に配置され、絵文字の中央とそろいます。この指定がなくても、数字の中央と絵文字の中央のずれは 0.5px 以内です。`text-box`は Chromium と Safari で利用できます。
+
+## クラス \{#classes\}
+
+<ContractTable name="reaction" />
+
+## カスタムプロパティ \{#custom-properties\}
+
+<ContractTable name="reaction" show="properties" />
+
+## ソース \{#source\}
+
+<ComponentSource name="reaction" />

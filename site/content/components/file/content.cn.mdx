@@ -1,0 +1,164 @@
+---
+title: "文件"
+description: "以文件名为核心呈现附件、上传项或下载项。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+文件组件将单份文档呈现为一个独立对象：左侧的小纸页标有扩展名，中间是文件名，下方低调地列出文件信息，末端有一个控件。组件采用平整的面板样式，因此在[拖放区](/components/dropzone)下方或[对话框](/components/dialog)内纵向排列时，每个文件都清晰可辨。
+
+<ComponentPreview name="default" height={288} title="文件" bodyClass="p-lg" html={`<ul class="flex flex-col gap-xs max-w(400) mx-auto">
+  <li class="file">
+    <span class="file-page" aria-hidden="true">pdf</span>
+    <div class="file-body">
+      <p class="file-name">Q3 infrastructure report.pdf</p>
+      <p class="file-meta">2.4 MB · PDF document</p>
+    </div>
+    <div class="file-end">
+      <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Remove Q3 infrastructure report.pdf"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+  </li>
+  <li class="file">
+    <img class="file-thumb" src="/demo/moonstone.svg" alt="">
+    <div class="file-body">
+      <p class="file-name">moonstone-cover.png</p>
+      <p class="file-meta">1,920 × 1,200 · 840 KB</p>
+    </div>
+    <div class="file-end">
+      <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Remove moonstone-cover.png"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+  </li>
+  <li class="file">
+    <span class="file-page" aria-hidden="true">csv</span>
+    <div class="file-body">
+      <p class="file-name">members-export-2026-11.csv</p>
+      <p class="file-meta">312 rows · 18 KB</p>
+    </div>
+    <div class="file-end">
+      <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Remove members-export-2026-11.csv"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+  </li>
+</ul>`} />
+
+## 纸页图标 \{#the-page\}
+
+`file-page` 是一张 28 × 36 的小纸页，略微凸起，底部标有扩展名。输入时大小写不限，显示时统一转为大写。扩展名最多写四个字符。旁边的文件名已包含相同信息，因此用 `aria-hidden` 对辅助技术隐藏纸页图标。
+
+折角由浏览器绘制。借助 `corner-shape`，末端的上角被切成斜角，折起的部分由一个小正方形经斜角裁切后留下的区域构成。浏览器不支持 `corner-shape` 时，纸页图标显示为四个圆角，无折角。
+
+文件为图片时，在 `<img>` 上使用 `file-thumb` 代替纸页图标。
+
+## 上传中 \{#uploading\}
+
+在文件组件内放入带有 `progress file-progress` 的原生 `<progress>`。此时整个面板就是进度条。进度条铺在文字背后，从面板的一侧延伸到另一侧，按上传进度为面板着色，填充边缘贴合面板的圆角。省略 `value` 时，进度未知，一条同色的色带会横向移动。
+
+同时在 `file-meta` 中写明上传进度，并在上传期间用 `aria-busy="true"` 标记文件。
+
+<ComponentPreview name="uploading" height={208} title="上传中" bodyClass="p-lg" html={`<ul class="flex flex-col gap-xs max-w(400) mx-auto">
+  <li class="file" aria-busy="true">
+    <span class="file-page" aria-hidden="true">zip</span>
+    <div class="file-body">
+      <p class="file-name">atlas-build-2026-11-11.zip</p>
+      <p class="file-meta">Uploading · 64% of 182 MB</p>
+    </div>
+    <div class="file-end">
+      <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Cancel the upload of atlas-build-2026-11-11.zip"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <progress class="progress file-progress" max="100" value="64" aria-label="Upload of atlas-build-2026-11-11.zip">64%</progress>
+  </li>
+  <li class="file" aria-busy="true">
+    <span class="file-page" aria-hidden="true">mp4</span>
+    <div class="file-body">
+      <p class="file-name">onboarding-walkthrough.mp4</p>
+      <p class="file-meta">Scanning for viruses…</p>
+    </div>
+    <progress class="progress file-progress" aria-label="Scan of onboarding-walkthrough.mp4"></progress>
+  </li>
+</ul>`} />
+
+## 上传失败 \{#failed\}
+
+`file-failed` 为文件面板加上危险状态的轮廓，并将 `file-meta` 改为危险状态的墨色。在该处说明出错原因，并在末端提供解决操作。ARIA 没有表示列表项失败的属性，因此用类名设置失败状态，由文字传达失败信息。为这段文字加上 `role="alert"`，即可在用户浏览页面期间发生失败时播报。
+
+<ComponentPreview name="failed" height={112} title="上传失败" bodyClass="p-lg" html={`<div class="file file-failed max-w(400) mx-auto">
+  <span class="file-page" aria-hidden="true">mov</span>
+  <div class="file-body">
+    <p class="file-name">walkthrough-final-v2.mov</p>
+    <p class="file-meta" role="alert">Larger than the 100 MB limit</p>
+  </div>
+  <div class="file-end">
+    <button type="button" class="btn btn-sm">Replace</button>
+  </div>
+</div>`} />
+
+## 紧凑样式 \{#compact\}
+
+`file-sm` 采用单行布局，高 32px，宽度随文件名而定，可用作[消息输入框](/components/composer)上方的附件，也可放在提及该文件的行内。它与小号按钮等高，可以同行排列。纸页图标较小，扩展名由旁边的文件名和信息呈现。末端控件尺寸为 24px，距面板边缘 4px。在触摸屏上，文件组件高 44px，控件尺寸为 36px。
+
+<ComponentPreview name="compact" height={200} narrowHeight={256} title="紧凑样式" bodyClass="p-lg" html={`<form class="composer max-w(480) mx-auto">
+  <div class="composer-attachments">
+    <span class="file file-sm">
+      <span class="file-page" aria-hidden="true"></span>
+      <span class="file-body"><span class="file-name">report.pdf</span><span class="file-meta">2.4 MB</span></span>
+      <span class="file-end"><button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Remove report.pdf"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></span>
+    </span>
+    <span class="file file-sm">
+      <img class="file-thumb" src="/demo/moonstone.svg" alt="">
+      <span class="file-body"><span class="file-name">cover.png</span></span>
+      <span class="file-end"><button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Remove cover.png"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></span>
+    </span>
+  </div>
+  <textarea class="composer-field" rows="1" placeholder="Add a note about these files" aria-label="Message"></textarea>
+  <div class="composer-toolbar">
+    <div class="composer-end">
+      <button type="submit" class="btn btn-primary btn-sm">Send</button>
+    </div>
+  </div>
+</form>`} />
+
+## 可打开的文件 \{#a-file-that-opens\}
+
+整个文件组件作为链接或按钮时，添加 `file-interactive`。它和[按钮](/components/button)一样，默认凸起，指针悬停时抬升，按下时下沉。链接内部的各部分使用 `<span>`。
+
+<ComponentPreview name="interactive" height={104} title="可打开的文件" bodyClass="p-lg" html={`<div class="grid grid-cols(2) gap-sm max-w(520) mx-auto">
+  <a class="file file-interactive" href="#" download>
+    <span class="file-page" aria-hidden="true">docx</span>
+    <span class="file-body">
+      <span class="file-name">Master services agreement.docx</span>
+      <span class="file-meta">48 KB · Download</span>
+    </span>
+  </a>
+  <a class="file file-interactive" href="#" download>
+    <span class="file-page" aria-hidden="true">xlsx</span>
+    <span class="file-body">
+      <span class="file-name">Pricing schedule.xlsx</span>
+      <span class="file-meta">22 KB · Download</span>
+    </span>
+  </a>
+</div>`} />
+
+## 无障碍 \{#accessibility\}
+
+- 多个文件组成列表。使用 `<ul>`，并在每个 `<li>` 上添加 `file`。
+- 控件的无障碍名称应指明它作用于哪个文件，例如“移除 report.pdf”，而不是只写“移除”。
+- 为 `<progress>` 提供无障碍名称，并在文字中保留百分比。面板着色直观地呈现这个数值。
+- 过长的文件名会从末尾截断。如果末尾信息很重要，例如文件扩展名，请在 `title` 中保留完整文件名。
+
+## 类名 \{#classes\}
+
+<ContractTable name="file" />
+
+## 自定义属性 \{#custom-properties\}
+
+<ContractTable name="file" show="properties" />
+
+## 相关内容 \{#related\}
+
+<ComponentLinks slugs={['dropzone', 'composer', 'list']} />
+
+## 源码 \{#source\}
+
+<ComponentSource name="file" />

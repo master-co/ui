@@ -1,0 +1,141 @@
+---
+title: "스테퍼"
+description: "양쪽 버튼으로 가운데 숫자를 조절하는 컴포넌트입니다."
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+스테퍼는 좌석 수, 수량, 글자 크기처럼 직접 입력하는 일보다 조금씩 조절하는 일이 더 잦은 작은 숫자에 사용합니다. 네이티브 `<input type="number">` 요소를 감싸는 [입력 그룹](/components/input#input-group)으로, 오목한 영역 양쪽 끝에 [버튼](/components/button)이 하나씩 있습니다. 그룹에는 `stepper`를, 필드에는 `stepper-field`를 추가합니다.
+
+<ComponentPreview name="default" height={128} title="스테퍼" bodyClass="flex items-center justify-center p-lg" behaviors html={`<div class="sheet flex items-center gap-lg p-md pl-lg">
+  <label class="text-sm fg-text-strong" for="seats">Seats</label>
+  <div class="input-group stepper">
+    <button type="button" class="btn btn-square" value="-1" tabindex="-1" aria-label="Fewer seats"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+    <input class="input-group-field stepper-field" id="seats" type="number" min="1" max="12" value="4">
+    <button type="button" class="btn btn-square" value="1" tabindex="-1" aria-label="More seats"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+  </div>
+</div>`} caption="버튼을 한 번 누르거나 길게 누르세요. 필드에 숫자를 직접 입력하거나 방향키를 사용할 수도 있습니다. 값이 1 또는 12에 도달하면 해당 방향의 버튼이 평평해집니다." />
+
+## 필드의 기본 동작 \{#what-the-field-already-does\}
+
+숫자 입력 필드이므로 스크립트가 실행되기 전에도 플랫폼이 스테퍼 기능의 대부분을 제공합니다.
+
+- <kbd>↑</kbd>와 <kbd>↓</kbd>는 값을 `step`씩 조절하며 `min`과 `max`에서 멈춥니다.
+- 보조 기술은 필드를 스핀 버튼으로 안내하며 현재 값과 범위의 한계값을 함께 알립니다.
+- 휴대전화에서는 숫자 키패드가 표시됩니다.
+- 입력한 값이 범위를 벗어나면 `:user-invalid` 상태가 되고, 오목한 영역에 위험 상태의 윤곽선이 표시됩니다.
+
+양쪽 버튼이 브라우저의 기본 스핀 버튼을 대신하므로 스타일시트에서 기본 버튼을 숨깁니다.
+
+## 동작 \{#behavior\}
+
+`stepper` [동작](/guide/behaviors)을 연결하면 양쪽 버튼으로 그 사이의 숫자를 조절할 수 있습니다. `stepper` 클래스가 있는 루트 요소를 인수로 받습니다. 동작에 별도 옵션은 없으며, 호출하면 동작을 해제하는 함수를 반환합니다.
+
+```js name=app.js
+import { stepper } from '@master/ui/behaviors/stepper.js'
+
+const root = document.querySelector('.stepper')
+stepper(root)
+
+root.addEventListener('change', (event) => console.log(event.target.value))
+```
+
+- **값 조절.** 버튼은 방향키와 동일하게 필드의 `stepDown()` 또는 `stepUp()` 메서드를 호출합니다. 따라서 `min`, `max`, `step`은 필드에 한 번만 지정하면 됩니다.
+- **범위 제한.** 값이 버튼이 조절하는 방향의 한계에 도달해 있는 동안 해당 버튼은 `disabled` 상태가 됩니다. 비활성화된 버튼은 오목한 영역 안에서 평평하게 표시됩니다. 빈 필드는 어느 쪽 한계에도 도달하지 않은 상태입니다. 동작을 해제하면 버튼의 `disabled` 상태가 연결 전으로 돌아갑니다.
+- **길게 누르기.** 버튼을 길게 누르면 잠시 후부터 값이 반복해서 바뀝니다. 누르기를 끝내거나 포인터가 버튼을 벗어나거나 포인터 입력이 취소되거나 값이 한계에 도달하면 멈춥니다.
+- **조절 방향.** 각 버튼의 `value`가 조절 방향을 정합니다. 음수이면 값이 줄어듭니다. 이를 지정하지 않으면 필드 앞의 버튼은 값을 줄이고 뒤의 버튼은 값을 늘립니다.
+- **이벤트.** 버튼으로 숫자가 바뀌면 직접 입력할 때와 마찬가지로 필드가 `input`, `change` 순서로 이벤트를 발생시킵니다. 값은 필드의 `value`입니다.
+
+버튼에는 `tabindex="-1"`을 지정합니다. Tab 키로 이동할 때는 필드에만 포커스가 가며, 필드의 방향키로 버튼과 같은 조작을 할 수 있습니다. 동작을 연결하지 않아도 필드는 [플랫폼이 제공하는 기능](#what-the-field-already-does)을 그대로 수행하며, 버튼은 작동하지 않습니다.
+
+## 크기 \{#sizes\}
+
+스테퍼는 입력 그룹의 크기를 따릅니다. `input-group-sm`은 32px, `input-group-lg`은 44px이며 같은 크기의 버튼과 높이가 같습니다. 양쪽 버튼은 오목한 영역보다 각각 8px 낮고, 모서리의 곡선은 오목한 영역의 모서리와 중심을 공유합니다.
+
+<ComponentPreview name="sizes" height={96} mediumHeight={152} narrowHeight={216} title="크기" behaviors html={`<div class="input-group input-group-sm stepper">
+  <button type="button" class="btn btn-square" value="-1" tabindex="-1" aria-label="Decrease"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+  <input class="input-group-field stepper-field" type="number" value="2" aria-label="Small">
+  <button type="button" class="btn btn-square" value="1" tabindex="-1" aria-label="Increase"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+</div>
+<div class="input-group stepper">
+  <button type="button" class="btn btn-square" value="-1" tabindex="-1" aria-label="Decrease"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+  <input class="input-group-field stepper-field" type="number" value="16" aria-label="Medium">
+  <button type="button" class="btn btn-square" value="1" tabindex="-1" aria-label="Increase"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+</div>
+<div class="input-group input-group-lg stepper">
+  <button type="button" class="btn btn-square" value="-1" tabindex="-1" aria-label="Decrease"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+  <input class="input-group-field stepper-field" type="number" value="128" aria-label="Large">
+  <button type="button" class="btn btn-square" value="1" tabindex="-1" aria-label="Increase"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+</div>`} />
+
+## 너비 \{#width\}
+
+오목한 영역의 너비는 숫자 길이에 맞춰집니다. 브라우저에서 `field-sizing: content`를 지원하면 필드 너비는 입력한 자릿수에 맞춰 3자리 너비에서 9자리 너비 사이로 바뀝니다. 지원하지 않는 브라우저에서는 3자리 너비를 유지합니다. 다른 자릿수에 맞추려면 `--stepper-min`과 `--stepper-max`를 설정합니다. 또는 스테퍼에 너비를 지정하면 필드가 버튼을 제외한 나머지 너비를 차지합니다.
+
+단위는 필드 뒤에 `input-group-addon`으로 표시합니다. `step`을 크게 설정하면 한 번에 바뀌는 값의 폭도 커집니다.
+
+<ComponentPreview name="unit" height={152} title="단위와 조절 간격" bodyClass="flex flex-col items-center gap-md p-lg" behaviors html={`<div class="input-group stepper" style="--stepper-min: 5ch">
+  <button type="button" class="btn btn-square" value="-1" tabindex="-1" aria-label="Lower the budget"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+  <input class="input-group-field stepper-field" type="number" min="0" step="250" value="1250" aria-label="Monthly budget">
+  <span class="input-group-addon">USD</span>
+  <button type="button" class="btn btn-square" value="1" tabindex="-1" aria-label="Raise the budget"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+</div>
+<div class="input-group stepper w(280)">
+  <button type="button" class="btn btn-square" value="-1" tabindex="-1" aria-label="Fewer replicas"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+  <input class="input-group-field stepper-field" type="number" min="1" max="64" value="8" aria-label="Replicas">
+  <button type="button" class="btn btn-square" value="1" tabindex="-1" aria-label="More replicas"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+</div>`} />
+
+## 비활성화 \{#disabled\}
+
+필드와 양쪽 버튼을 모두 비활성화하세요. 오목한 영역은 제자리를 유지하고 숫자에는 비활성화 상태의 글자색이 적용됩니다. 필드가 비활성 상태이거나 읽기 전용이면 버튼으로 값을 조절할 수 없습니다. 이 미리보기는 스크립트 없이 마크업만 사용합니다.
+
+<ComponentPreview name="disabled" height={96} title="비활성화" html={`<div class="input-group stepper">
+  <button type="button" class="btn btn-square" tabindex="-1" aria-label="Decrease" disabled><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+  <input class="input-group-field stepper-field" type="number" value="3" aria-label="Seats included in your plan" disabled>
+  <button type="button" class="btn btn-square" tabindex="-1" aria-label="Increase" disabled><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+</div>`} />
+
+## 다른 컴포넌트의 사용 기준 \{#when-to-use-something-else\}
+
+- 포트 번호나 가격처럼 한 번 입력하고 거의 조절하지 않는 숫자에는 `type="number"`를 지정한 기본 [입력 컴포넌트](/components/input)를 사용합니다.
+- 범위가 넓고 정확한 숫자보다 범위 내에서 대략 어느 지점인지가 중요하다면 [슬라이더](/components/slider)를 사용하세요.
+- 이름이 붙은 몇 가지 수량 중 하나를 선택할 때는 [세그먼트 컨트롤](/components/segmented)을 사용하세요.
+
+## 키보드 \{#keyboard\}
+
+숫자 입력 필드의 기본 키보드 조작을 그대로 사용하며, 동작을 연결해도 추가되는 키는 없습니다.
+
+<ContractTable name="stepper" show="keyboard" />
+
+## 접근성 \{#accessibility\}
+
+- `<label>`, [필드](/components/input#field) 또는 `aria-label`로 입력 필드에 레이블을 지정하세요. 각 버튼에는 어떤 값을 바꾸는지 드러나는 이름이 필요합니다. 예를 들어 ‘더하기’보다 ‘좌석 수 늘리기’가 적합합니다.
+- `min`, `max`, `step`은 필드에 지정합니다. 키보드 조작, 버튼 동작, 보조 기술이 모두 이 값을 참조합니다.
+- 버튼은 Tab 키의 포커스 이동 순서에서 제외됩니다. 키보드 사용자는 필드에서 방향키로 값을 조절합니다. 포인터로 누르는 영역은 30px이며, 44px 크기의 오목한 영역에서 손가락으로 누르는 영역은 36px입니다.
+
+## React, Svelte, Vue \{#frameworks\}
+
+`stepper` 컴포넌트는 동작을 연결하고 숫자 값을 주고받습니다. `npx master-ui add stepper`로 프로젝트에 복사하세요. 컴포넌트의 구성과 사용법은 [React, Svelte, Vue](/guide/frameworks) 문서에서 확인할 수 있습니다.
+
+<FrameworkSource name="stepper" />
+
+## 클래스 \{#classes\}
+
+<ContractTable name="stepper" />
+
+## 사용자 지정 속성 \{#custom-properties\}
+
+<ContractTable name="stepper" show="properties" />
+
+## 관련 항목 \{#related\}
+
+<ComponentLinks slugs={['input', 'slider', 'button']} />
+
+## 소스 \{#source\}
+
+<ComponentSource name="stepper" />

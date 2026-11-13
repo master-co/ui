@@ -1,0 +1,99 @@
+---
+title: "分隔器"
+description: "两个窗格和中间的手柄，手柄用于调节两个窗格各自占用的空间。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+分隔器由两个窗格和中间的手柄组成。手柄决定两个窗格如何分配空间，例如文件列表与编辑器左右并排，或编辑器与终端上下排列。两个窗格以一条细线相接。指针悬停在线上或细线获得焦点时，细线呈现墨色，并显示一个小握柄。
+
+分隔器属于组件，可作为布局的一部分使用。它的手柄有自己的材质、状态和键盘交互契约。如果两个窗格的尺寸无需调整，请参阅[主从布局](/pages/master-detail)。
+
+样式表绘制分隔器并安排其布局，`splitter` [行为脚本](/guide/behaviors)负责移动手柄。行为脚本只写入两处：将第一个窗格的尺寸写入容器的 `--splitter-size`，并将同一数值写入手柄的 `aria-valuenow`。
+
+<ComponentPreview name="default" height={288} title="分隔器" bodyClass="p-lg" behaviors html={`<div class="splitter sheet overflow-hidden h(240)" style="--splitter-size: 36%">
+  <div class="splitter-pane p-md text-sm fg-text-body">
+    <p class="m(0) fg-text-strong">Files</p>
+    <p class="mt-sm m(0)">theme.css</p>
+    <p class="m(0)">master.css</p>
+    <p class="m(0)">components/</p>
+  </div>
+  <div class="splitter-handle" role="separator" tabindex="0" aria-label="Resize the file list" aria-valuenow="36" aria-valuemin="15" aria-valuemax="85"></div>
+  <div class="splitter-pane p-md text-sm fg-text-body">
+    <p class="m(0) fg-text-strong">Editor</p>
+    <p class="mt-sm m(0)">Drag the line between the panes, or focus it and press the arrow keys.</p>
+  </div>
+</div>`} caption="拖动分隔线，或让它获得焦点后使用方向键、Home 键和 End 键。" />
+
+## 行为脚本 \{#behavior\}
+
+`splitter` 接收带有 `splitter` 类的根元素，并返回用于解绑行为的函数。它移动的手柄是根元素的直接子元素 `splitter-handle`，因此窗格内可以嵌套自己的分隔器。
+
+```js name=app.js
+import { splitter } from '@master/ui/behaviors/splitter.js'
+
+const root = document.querySelector('.splitter')
+splitter(root, { step: 10 })
+
+root.addEventListener('change', (event) => {
+  localStorage.setItem('files-width', event.target.getAttribute('aria-valuenow'))
+})
+```
+
+- **拖动。** 发生 `pointerdown` 时，手柄捕获指针。指针移动期间，行为脚本将指针在容器内的位置写为百分比。
+- **按键。** 按与手柄移动轴对应的方向键，手柄移动一个步长。<kbd class="kbd">Home</kbd> 和 <kbd class="kbd">End</kbd> 分别将窗格尺寸调至最小值和最大值。
+- **每次变化**都会设置根元素的 `--splitter-size` 和手柄的 `aria-valuenow`。尺寸限制在手柄的 `aria-valuemin` 与 `aria-valuemax` 之间，未设置时分别默认为 0 和 100。
+- **事件。** 每次尺寸变化时，手柄都会触发 `input`。拖动结束或按键使手柄移动后，手柄会触发 `change`。两个事件都会冒泡。从手柄读取 `aria-valuenow`。
+- **禁用。** 带有 `aria-disabled="true"` 的手柄无法移动。
+
+| 选项 | 设置内容 |
+| --- | --- |
+| `step` | 按一次方向键时手柄移动的幅度，以百分比计，默认为 5 |
+
+无论指定什么尺寸，样式表都会将第一个窗格的尺寸限制在一定范围内，使分隔线与容器两端各相距至少 `--splitter-min`。按住手柄时，样式表会阻止文本选中，并根据手柄的方向切换布局。没有行为脚本时，两个窗格保持 `--splitter-size` 指定的比例，手柄固定不动。
+
+## 上下排列的窗格 \{#stacked\}
+
+`aria-orientation` 指定分隔线的方向。默认情况下，分隔线竖直，两个窗格左右并排。设置 `aria-orientation="horizontal"` 后，窗格上下排列，手柄变为水平线。容器直接读取该属性，无需同步修改器类。
+
+<ComponentPreview name="stacked" height={328} title="上下排列的窗格" bodyClass="p-lg" behaviors html={`<div class="splitter sheet overflow-hidden h(280) max-w(420) mx-auto" style="--splitter-size: 60%">
+  <div class="splitter-pane p-md text-sm fg-text-body">
+    <p class="m(0) fg-text-strong">Editor</p>
+  </div>
+  <div class="splitter-handle" role="separator" tabindex="0" aria-orientation="horizontal" aria-label="Resize the editor" aria-valuenow="60" aria-valuemin="15" aria-valuemax="85"></div>
+  <div class="splitter-pane p-md text-sm fg-text-body">
+    <p class="m(0) fg-text-strong">Terminal</p>
+  </div>
+</div>`} />
+
+## 键盘操作 \{#keyboard\}
+
+<ContractTable name="splitter" show="keyboard" />
+
+## 无障碍 \{#accessibility\}
+
+- 手柄是可聚焦的 `role="separator"`，其无障碍名称指明它调整的对象，`aria-valuenow`、`aria-valuemin` 和 `aria-valuemax` 均以第一个窗格所占的百分比表示。辅助技术据此将手柄识别为窗口分隔器。
+- 键盘必须支持指针能完成的所有操作。行为脚本支持用方向键移动手柄，用 Home 键和 End 键将手柄移到两端。
+- 分隔线在布局中占 1px，垂直于线的交互区域宽 9px。触摸屏上该区域宽 25px，握柄始终可见。
+- 窗格可独立滚动。如果可滚动的窗格内没有可聚焦的内容，请为窗格设置无障碍名称和 `tabindex="0"`，使其可以通过键盘获得焦点。
+
+## React、Svelte 和 Vue \{#frameworks\}
+
+`splitter` 组件绑定行为脚本，接收并传出尺寸值。两个窗格的标记仍由页面提供。使用 `npx master-ui add splitter` 将组件复制到项目中。有关组件的实现与用法，请参阅 [React、Svelte 和 Vue](/guide/frameworks)。
+
+<FrameworkSource name="splitter" />
+
+## 类名 \{#classes\}
+
+<ContractTable name="splitter" />
+
+## 自定义属性 \{#custom-properties\}
+
+<ContractTable name="splitter" show="properties" />
+
+## 源码 \{#source\}
+
+<ComponentSource name="splitter" />

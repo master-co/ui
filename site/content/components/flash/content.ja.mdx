@@ -1,0 +1,68 @@
+---
+title: "フラッシュ"
+description: "リンクの移動先を輪郭線で示し、その線が徐々に消えます。"
+---
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+フラッシュはリンクの移動先を示します。見出し、行、コメント、カードなど、idを持つ任意の要素に`flash`を付けます。そのidがURLのフラグメントと一致すると、要素の周囲に輪郭線が表示され、2秒かけて消えます。複数の項目があるページでも、どの項目へのリンクを開いたかがわかります。状態はURLで決まり、スクリプトは不要です。
+
+<ComponentPreview name="default" height={272} narrowHeight={292} title="フラッシュ" bodyClass="p-lg" caption="リンクを開くと、リンク先のコメントを囲む輪郭線が表示され、徐々に消えます。" html={`<div class="card max-w(480) mx-auto">
+  <p class="m(0) text-sm">Jump to <a class="link" href="#comment-ada">Ada's comment</a> or <a class="link" href="#comment-grace">Grace's reply</a>.</p>
+  <ol class="thread">
+    <li class="thread-item flash" id="comment-ada" style="--flash-offset: 1rem">
+      <span class="thread-avatar"><span class="avatar">AL</span></span>
+      <div class="thread-body">
+        <p class="thread-header"><span class="thread-author">Ada Lovelace</span> <time class="thread-meta" datetime="2026-11-12T09:12">2h</time></p>
+        <p class="thread-text">The focus ring is cut by the mask. Should it move to the group?</p>
+      </div>
+    </li>
+    <li class="thread-item flash" id="comment-grace" style="--flash-offset: 1rem">
+      <span class="thread-avatar"><span class="avatar">GH</span></span>
+      <div class="thread-body">
+        <p class="thread-header"><span class="thread-author">Grace Hopper</span> <time class="thread-meta" datetime="2026-11-12T10:31">35m</time></p>
+        <p class="thread-text">I will make the change this afternoon.</p>
+      </div>
+    </li>
+  </ol>
+</div>`} />
+
+## 仕組み \{#how-it-works\}
+
+ブラウザーは、idがURLのフラグメントに一致する要素をページの`:target`として扱います。`flash`はその要素を輪郭線で囲み、徐々に消します。状態はURLで決まるため、次のように動作します。
+
+- 別ページからリンクを開いても、同じページ内のリンクを開いても、URLを貼り付けて開いても、同じ要素が強調表示されます。
+- 別のフラグメントへのリンクを開くと強調表示が移ります。同じフラグメントへのリンクを再び開いても、アニメーションは再生されません。
+
+輪郭線にはアウトラインを使います。レイアウト上の領域を取らず、要素自体の角に沿い、擬似要素も不要です。要素の表面、影、ホバー時の表示も保たれます。同じクラスをカード、表の行、見出し、コメントに使えます。
+
+## ナビゲーションバーとの重なりを防ぐ \{#offset\}
+
+フラグメントリンクで移動すると、対象はビューポートの最上部までスクロールされます。sticky で上部に留まる[ナビゲーションバー](/components/navbar)があると、対象がその背後に隠れます。`flash`では、ブラウザーが対象を上端からどれだけ離してスクロールを止めるかも指定できます。その距離は`--flash-offset`で、既定は5remです。ページ上部の固定要素の高さに、少し余白を足した値を指定します。
+
+## 動きの軽減 \{#reduced-motion\}
+
+動きの軽減が有効な場合、フェードは起こりません。移動先である間は極細の輪郭線が残り、動きなしで対象を示します。
+
+## フラッシュとマークの使い分け \{#flash-or-mark\}
+
+フラッシュは移動先を一時的に示します。文章中の語句を常に強調するには[マーク](/components/mark)を使います。直前に起きたことを知らせるには[トースト](/components/toast)を使います。
+
+## アクセシビリティ \{#accessibility\}
+
+- フラッシュは視覚的な手がかりです。移動先がリンクや操作コントロール以外の要素なら、`tabindex="-1"`を付けます。リンクで移動したときにその要素へフォーカスが移り、次に<kbd>Tab</kbd>を押すとそこから移動できます。
+- 輪郭線は要素の4px外側にあり、内容を覆わないため、テキストのコントラストが保たれます。
+- 強制カラーモードでは、対象をシステムの強調色で囲み、フェードは起こりません。
+
+## クラス \{#classes\}
+
+<ContractTable name="flash" />
+
+## カスタムプロパティ \{#custom-properties\}
+
+<ContractTable name="flash" show="properties" />
+
+## ソース \{#source\}
+
+<ComponentSource name="flash" />

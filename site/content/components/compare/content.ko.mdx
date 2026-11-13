@@ -1,0 +1,87 @@
+---
+title: "이미지 비교"
+description: "같은 대상을 담은 두 이미지와 그 사이의 경계선을 움직이는 손잡이입니다."
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+이미지 비교 컴포넌트는 같은 대상을 담은 두 이미지를 겹쳐 보여 주고, 사용자가 두 이미지 사이의 경계선을 움직일 수 있게 합니다. 편집 전후, 밝은 버전과 어두운 버전, 초안과 수정본 등을 비교할 수 있습니다. 조작부는 네이티브 `<input type="range">`이므로 슬라이더의 키보드 조작, 값, 접근 가능한 이름을 지원합니다. 가는 경계선 위에는 진주처럼 둥근 손잡이가 있고, 위에 놓인 이미지는 이 경계선을 기준으로 잘립니다.
+
+<ComponentPreview name="default" height={376} narrowHeight={320} title="이미지 비교" bodyClass="p-lg" behaviors html={`<figure class="compare max-w(520) mx-auto">
+  <img class="compare-before" src="/demo/moonstone.svg" alt="The landscape before grading: grey and flat" style="aspect-ratio: 16 / 10; filter: grayscale(1) contrast(.75)">
+  <img class="compare-after" src="/demo/moonstone.svg" alt="The landscape after grading">
+  <input type="range" class="compare-range" min="0" max="100" value="50" aria-label="Show more of the graded picture">
+</figure>`} caption="손잡이를 드래그하거나, 손잡이에 포커스를 두고 방향키를 사용하세요." />
+
+## 손잡이에 따른 이미지 표시 범위 \{#the-handle-moves-the-picture\}
+
+브라우저가 스크롤 기반 애니메이션을 지원하면 입력 요소 안의 손잡이가 뷰 타임라인이 되고 프레임은 이 타임라인을 참조합니다. `--compare-position`은 스크립트 없이 손잡이 위치에 따라 바뀌며, 이미지가 잘리는 범위와 경계선 위치는 이 속성값을 따릅니다.
+
+그 외 브라우저에서는 `compare` [동작](/guide/behaviors)이 같은 역할을 합니다. 동작을 연결할 때와 입력값이 바뀔 때마다 입력 범위 내에서 값이 차지하는 위치를 백분율로 환산해 루트 요소의 `--compare-position`에 복사합니다. 모든 브라우저에서 이 동작을 연결하세요. 스타일시트가 이미 이 속성을 제어하는 브라우저에서는 스크립트가 화면 표시에 영향을 주지 않습니다.
+
+```js name=app.js
+import { compare } from '@master/ui/behaviors/compare.js'
+
+const detach = compare(document.querySelector('.compare'))
+```
+
+이 동작은 `compare` 클래스가 적용된 루트 요소를 받습니다. 자체 옵션과 이벤트는 없으며, 입력 요소는 일반 범위 입력과 마찬가지로 `input`과 `change` 이벤트를 발생시키며, 입력 요소의 `value`가 경계선의 위치를 결정합니다. 스타일시트의 타임라인과 이 동작이 모두 없으면 두 이미지는 `--compare-position`에 지정된 위치에서 나뉜 상태로 유지됩니다. 별도로 설정하지 않으면 경계선은 중앙에 놓입니다.
+
+입력 요소는 프레임보다 손잡이 너비만큼 넓습니다. 따라서 손잡이 중심이 프레임의 한쪽 끝에서 다른 쪽 끝까지 움직일 수 있고, 경계선도 양쪽 끝에 닿을 수 있습니다.
+
+## 이미지 \{#pictures\}
+
+`compare-before` 이미지는 아래에 놓이며 시작점부터 경계선까지 보입니다. `compare-after` 이미지는 위에 놓이며 경계선부터 끝점까지 보입니다. 두 이미지 모두 프레임을 채우고 프레임 밖은 잘립니다. 한 이미지에 너비와 높이를 지정하거나 `aspect-ratio`를 설정해 프레임의 형태를 정하고, 구도가 같은 두 이미지를 사용하세요.
+
+프레임에는 표면과 같은 모서리 처리와 모든 [그림](/components/figure)에 적용되는 안쪽 테두리가 있습니다. 카드 안에 배치할 때는 `--compare-radius`를 설정하세요.
+
+<ComponentPreview name="small" height={424} title="카드 안의 이미지 비교" bodyClass="flex items-center justify-center p-lg" behaviors html={`<div class="card w(280)">
+  <figure class="compare card-media" style="--compare-radius: calc(var(--radius-surface) - 4px)">
+    <img class="compare-before" src="/demo/portrait-1.svg" alt="The portrait as uploaded" style="aspect-ratio: 4 / 3; filter: saturate(.2) brightness(.92)">
+    <img class="compare-after" src="/demo/portrait-1.svg" alt="The portrait with the Warm preset">
+    <input type="range" class="compare-range" min="0" max="100" value="40" aria-label="Show more of the Warm preset">
+  </figure>
+  <div class="card-header">
+    <h3 class="card-title">Warm</h3>
+    <p class="card-description">Drag to compare with the original.</p>
+  </div>
+</div>`} />
+
+## 키보드 조작 \{#keyboard\}
+
+범위 입력 요소의 기본 키보드 조작을 그대로 사용합니다. 이 동작이 추가하는 키는 없습니다.
+
+<ContractTable name="compare" show="keyboard" />
+
+## 접근성 \{#accessibility\}
+
+- 입력 요소의 접근 가능한 이름에는 손잡이를 움직였을 때의 효과를 담으세요. 예를 들어 "색을 보정한 이미지 더 많이 보기"로 지정할 수 있습니다.
+- 각 이미지의 `alt` 속성에는 어느 버전인지와 다른 이미지와의 차이를 설명하세요. 두 이미지를 나란히 볼 수 없는 사용자도 설명을 읽고 차이를 알 수 있어야 합니다.
+- Tab 키로 이동할 때 손잡이는 하나의 포커스 지점입니다. 방향키를 누르면 경계선이 한 단계씩 이동하고, <kbd>Home</kbd>과 <kbd>End</kbd>를 누르면 각각 한쪽 이미지 전체가 표시됩니다.
+- 손잡이 크기는 32px이며 터치 화면에서는 44px입니다. 프레임 위에서도 손가락을 위아래로 움직여 페이지를 스크롤할 수 있습니다.
+
+## React, Svelte 및 Vue \{#frameworks\}
+
+`compare` 컴포넌트는 동작을 연결하고 위치 값을 주고받습니다. 두 이미지는 페이지의 마크업에 직접 작성합니다. `npx master-ui add compare`로 프로젝트에 복사하세요. 컴포넌트의 구성과 사용법은 [React, Svelte 및 Vue](/guide/frameworks)에서 확인할 수 있습니다.
+
+<FrameworkSource name="compare" />
+
+## 클래스 \{#classes\}
+
+<ContractTable name="compare" />
+
+## 사용자 지정 속성 \{#custom-properties\}
+
+<ContractTable name="compare" show="properties" />
+
+## 관련 항목 \{#related\}
+
+<ComponentLinks slugs={['figure', 'slider', 'carousel']} />
+
+## 소스 \{#source\}
+
+<ComponentSource name="compare" />

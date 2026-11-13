@@ -1,0 +1,98 @@
+---
+title: "코드"
+description: "텍스트를 입력된 그대로 고정폭 글꼴로 표시합니다. 인라인이나 블록으로 사용할 수 있습니다."
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+코드는 명령어, 값, 파일 이름처럼 적힌 그대로 보여 주는 고정폭 글꼴의 텍스트입니다. 인라인에서는 `<code>`에 `.code`를 적용하면 텍스트 줄 안에 작은 칩으로 표시됩니다. 블록에서는 `<pre>`에 `code-block`을 적용하면 줄이 길 때 블록 자체를 가로로 스크롤할 수 있는 [오목한 영역](/components/surface#well)이 됩니다.
+
+<ComponentPreview name="default" height={96} narrowHeight={120} title="코드" background="plain" bodyClass="p-lg" html={`<p class="m(0) text-sm fg-text-body leading-md">Install the package with <code class="code">npm install @master/ui</code>, then import it after <code class="code">@master/css</code>.</p>`} />
+
+## 블록 \{#block\}
+
+`<pre>`에 `code-block`을 적용하고, 코드의 의미를 전달할 수 있도록 그 안에 `<code>`를 둡니다. 기존 줄바꿈은 유지되며, 긴 줄은 자동으로 줄바꿈되지 않고 블록을 가로로 스크롤할 수 있습니다. 줄이 블록 너비를 넘을 수 있다면 키보드로 스크롤할 수 있도록 `tabindex="0"`을 지정합니다.
+
+<ComponentPreview name="block" height={208} title="블록" background="plain" bodyClass="p-lg" html={`<pre class="code-block" tabindex="0"><code>@import '@master/css';
+@import '@master/ui';
+
+@theme {
+  --color-brand: var(--color-indigo-50);
+}</code></pre>`} />
+
+## 코드 줄 \{#lines\}
+
+특정 줄을 따로 표시하려면 각 줄을 요소로 감싸고 각 요소에 `code-line`을 적용합니다. 그러면 블록이 줄을 그리드로 배치합니다. 모든 줄의 너비가 가장 긴 줄에 맞춰지므로 특정 줄에 적용한 강조 띠가 스크롤 영역 전체 너비를 채웁니다. 그리드 항목 사이의 공백은 렌더링되지 않으므로 요소 사이에서 줄을 바꿔도 빈 줄이 생기지 않습니다. 코드 한 줄마다 요소 하나를 사용합니다.
+
+`code-line-highlight`는 강조할 줄에 옅은 배경색을 입히고 줄 시작 부분에 진한 선을 표시합니다. 블록에 `code-numbered`를 적용하면 CSS 카운터로 줄 번호를 매깁니다. 줄 번호는 코드 옆 여백에 표시되며 코드와 함께 선택되거나 복사되지 않습니다.
+
+<ComponentPreview name="lines" height={208} title="줄 번호와 줄 강조" background="plain" bodyClass="p-lg" html={`<pre class="code-block code-numbered" tabindex="0"><code class="code-line">.btn {</code>
+<code class="code-line">  --btn-height: 2.375rem;</code>
+<code class="code-line code-line-highlight">  --btn-radius: var(--radius-control);</code>
+<code class="code-line">  border-radius: calc(var(--btn-radius) * var(--corner-scale));</code>
+<code class="code-line">  corner-shape: var(--corner-shape);</code>
+<code class="code-line">}</code></pre>`} />
+
+## 변경 내역 \{#diff\}
+
+변경된 줄은 `code-line-added`와 `code-line-removed`로 표시합니다. 각 줄의 색상은 줄 첫머리의 기호와 대응합니다. 패치에서처럼 텍스트에 `+`와 `-`를 그대로 두면 색상 없이도 변경 내용을 구분할 수 있고, 복사한 결과를 패치로 사용할 수 있습니다.
+
+<ComponentPreview name="diff" height={184} title="변경 내역" background="plain" bodyClass="p-lg" html={`<pre class="code-block" tabindex="0"><code class="code-line">  @theme {</code>
+<code class="code-line code-line-removed">-   --radius-control: .5rem;</code>
+<code class="code-line code-line-added">+   --radius-control: .625rem;</code>
+<code class="code-line">    --radius-surface: 1rem;</code>
+<code class="code-line">  }</code></pre>`} />
+
+## 패널 \{#panel\}
+
+`code-panel`은 블록 위에 헤더를 배치해 하나의 오목한 영역으로 묶습니다. 헤더에는 `code-title`로 표시한 파일 이름과 끝에 놓인 컨트롤이 들어갑니다. 컨트롤은 가장자리에서 4px 안쪽에 놓이며 바깥 모서리와 중심이 같은 둥근 모서리를 사용합니다. 내부 블록에는 별도의 오목한 영역이 표시되지 않습니다.
+
+독립된 `code-block` 또는 이를 감싸는 `code-panel`에 `--code-radius`를 설정합니다. 기본값은 `var(--radius-control)`입니다. [트레이](/components/surface#tray)의 직계 자식인 루트에는 `var(--radius-surface)`가 적용되어, 트레이 안쪽으로 들어간 간격에 맞춰 모서리가 둥글게 처리됩니다. 패널 안의 블록은 모서리가 직각이고 배경이 투명해 전체에 하나의 윤곽선만 보입니다.
+
+복사에는 스크립트가 필요합니다. 블록의 텍스트를 읽어 클립보드에 쓰는 데는 세 줄이면 충분합니다.
+
+<ComponentPreview name="panel" height={248} title="패널" background="plain" bodyClass="p-lg" html={`<div class="code-panel">
+  <div class="code-header">
+    <span class="code-title">app.css</span>
+    <button type="button" class="btn btn-quiet btn-sm" id="copy-app-css"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 9h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V10a1 1 0 0 1 1-1M16 9V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>Copy</button>
+  </div>
+  <pre class="code-block" tabindex="0"><code>@import '@master/css';
+@import '@master/ui';
+
+@theme {
+  --color-brand: var(--color-indigo-50);
+}</code></pre>
+</div>
+<script>
+document.getElementById('copy-app-css').addEventListener('click', function (event) {
+  var button = event.currentTarget
+  navigator.clipboard.writeText(button.closest('.code-panel').querySelector('.code-block').textContent).then(function () {
+    button.lastChild.textContent = 'Copied'
+    setTimeout(function () { button.lastChild.textContent = 'Copy' }, 1600)
+  })
+})
+</script>`} />
+
+## 코드와 kbd \{#code-or-kbd\}
+
+독자가 텍스트로 입력하거나 프로그램에서 읽는 내용에는 `code`를 사용하고, 눌러야 할 키에는 [`kbd`](/components/kbd)를 사용합니다. 스타일시트는 구문 강조를 적용하지 않습니다. 구문 강조 도구가 만든 span 요소는 블록 안에서도 각자의 색상을 유지합니다.
+
+## 클래스 \{#classes\}
+
+<ContractTable name="code" />
+
+## 사용자 지정 속성 \{#custom-properties\}
+
+<ContractTable name="code" show="properties" />
+
+## 접근성 \{#accessibility\}
+
+- 줄이 블록 너비를 넘을 수 있다면 키보드로 스크롤할 수 있도록 블록에 `tabindex="0"`을 지정합니다.
+- 줄 번호는 생성된 콘텐츠입니다. 스크린 리더가 읽지 않으며 선택하거나 복사할 수 없습니다.
+- 줄 강조는 시각적 표시입니다. 블록 주변의 설명에서 특정 줄을 가리킬 때는 색상이나 줄 번호 대신 그 줄의 내용을 직접 언급합니다.
+
+## 소스 \{#source\}
+
+<ComponentSource name="code" />

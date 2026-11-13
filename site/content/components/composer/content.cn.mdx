@@ -1,0 +1,93 @@
+---
+title: "消息编辑器"
+description: "用于撰写消息或提示词，输入区随内容增高，下方排列工具。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+消息编辑器用于撰写消息或提示词。凸起面板内有一个无独立边框、随文本增高的输入区，输入区下方是一排低调的工具按钮，发送按钮位于末尾。输入区聚焦时，面板会像[输入框](/components/input)一样显示一道墨色轮廓和柔和的光晕。
+
+<ComponentPreview name="default" height={368} title="消息编辑器" bodyClass="p-lg" html={`<form class="composer max-w(480) mx-auto">
+  <textarea class="composer-field" name="message" aria-label="Message" placeholder="Ask anything"></textarea>
+  <div class="composer-toolbar">
+    <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Attach a file"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+    <button type="button" class="btn btn-quiet btn-sm"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4c3 3 3 13 0 16M12 4c-3 3-3 13 0 16"/></svg>Search</button>
+    <div class="composer-end">
+      <span class="composer-hint">Enter to send</span>
+      <button class="btn btn-primary btn-square btn-sm" aria-label="Send"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg></button>
+    </div>
+  </div>
+</form>`} caption="输入几行文字，输入区会随之增高。" />
+
+输入区使用带有 `field-sizing: content` 的 `<textarea>`，初始为一行，最多增至十行，之后可滚动。设置 `--composer-rows` 和 `--composer-max-rows` 可分别调整初始行数和最大行数。浏览器无法根据内容调整输入区高度时，输入区固定为三行，超出后可滚动。
+
+按钮距面板边缘 8px，采用同心圆角，使发送按钮的圆角与面板的圆角相呼应。
+
+## 附件 \{#attachments\}
+
+`composer-attachments` 是输入区上方可自动换行的一排附件，可用[标签](/components/chip)表示文件，也可显示缩略图。
+
+<ComponentPreview name="attachments" height={400} title="附件" bodyClass="p-lg" html={`<form class="composer max-w(480) mx-auto">
+  <div class="composer-attachments">
+    <span class="chip">brief.pdf<button type="button" class="chip-remove" aria-label="Remove brief.pdf"></button></span>
+    <span class="chip">notes.md<button type="button" class="chip-remove" aria-label="Remove notes.md"></button></span>
+  </div>
+  <textarea class="composer-field" name="message" aria-label="Message">Summarise the brief against these notes, and list what the notes leave out. Keep it to one page so the team can read it before the review on Thursday.</textarea>
+  <div class="composer-toolbar">
+    <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Attach a file"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+    <div class="composer-end">
+      <span class="composer-hint">138 / 2000</span>
+      <button class="btn btn-primary btn-sm">Send</button>
+    </div>
+  </div>
+</form>`} />
+
+## 禁用 \{#disabled\}
+
+禁用输入区后，面板呈凹槽状，不再抬升。请同时禁用发送按钮，并在占位文本中或编辑器旁说明原因。
+
+<ComponentPreview name="disabled" height={152} narrowHeight={176} title="禁用" bodyClass="p-lg" html={`<form class="composer max-w(480) mx-auto">
+  <textarea class="composer-field" name="message" aria-label="Message" placeholder="Replies are closed for this thread" disabled></textarea>
+  <div class="composer-toolbar">
+    <div class="composer-end">
+      <button class="btn btn-primary btn-square btn-sm" aria-label="Send" disabled><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg></button>
+    </div>
+  </div>
+</form>`} />
+
+## 按 Enter 发送 \{#enter\}
+
+在 textarea 中，按 Enter 默认换行。只需一个事件监听器，即可改为按 Enter 发送、按 Shift+Enter 换行。输入法正在组合文字时，跳过这段按键处理。
+
+```js
+field.addEventListener('keydown', event => {
+  if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) {
+    event.preventDefault()
+    field.form.requestSubmit()
+  }
+})
+```
+
+各产品的按键约定不同，请在工具按钮旁用 `composer-hint` 说明这组快捷键。
+
+## 无障碍 \{#accessibility\}
+
+- 为输入区提供无障碍名称，可使用 `aria-label`，也可在编辑器上方放置可见的 `<label for>`。占位文本不能充当无障碍名称。
+- 编辑器使用 `<form>`，因此发送按钮可提交表单，密码管理器或扩展也能找到它。
+- 为图标按钮设置 `aria-label`。按 Tab 时，焦点从输入区移到工具按钮，并按阅读顺序依次移动。
+- 点击面板的内边距区域时，输入区默认不会获得焦点。要让点击整个面板都能聚焦输入区，请用 `<label>` 包裹输入区。
+- 在触摸屏上，输入区的字号为 16px，因此 iOS 不会在输入区聚焦时放大页面。
+
+## 类名 \{#classes\}
+
+<ContractTable name="composer" />
+
+## 自定义属性 \{#custom-properties\}
+
+<ContractTable name="composer" show="properties" />
+
+## 源码 \{#source\}
+
+<ComponentSource name="composer" />

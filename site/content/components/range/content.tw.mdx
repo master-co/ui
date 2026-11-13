@@ -1,0 +1,76 @@
+---
+title: "範圍滑桿"
+description: "在同一條軌道上選擇兩個值，並填色標示兩值之間的範圍。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+範圍滑桿可在同一個刻度上選取兩個值，例如最低與最高價格，或片段的起點與終點。它將兩個原生[滑桿](/components/slider)放在同一個群組中。群組繪製一條共用軌道，並在兩個滑塊之間填色。每個輸入元素各自保有原生鍵盤操作、標籤和表單值。
+
+<ComponentPreview name="default" height={112} title="範圍滑桿" background="plain" bodyClass="p-lg" html={`<div class="flex flex-col gap-sm max-w(360) mx-auto">
+  <div class="flex items-baseline justify-between text-sm">
+    <span class="fg-text-strong" id="price">Price</span>
+    <output class="fg-text-muted" id="price-output">$120 to $380</output>
+  </div>
+  <div class="range" role="group" aria-labelledby="price">
+    <input type="range" class="slider range-start" min="0" max="500" step="10" value="120" aria-label="Lowest price">
+    <input type="range" class="slider range-end" min="0" max="500" step="10" value="380" aria-label="Highest price">
+  </div>
+</div>
+<script>
+(function () {
+  var range = document.querySelector('.range')
+  var output = document.getElementById('price-output')
+  range.addEventListener('input', function () {
+    var values = Array.from(range.querySelectorAll('.slider'), function (slider) { return Number(slider.value) })
+    output.textContent = '$' + Math.min.apply(null, values) + ' to $' + Math.max.apply(null, values)
+  })
+})()
+</script>`} caption="拖曳任一滑塊，或將焦點移到滑塊後使用方向鍵。腳本只負責更新軌道上方的兩個數值。" />
+
+## 無須腳本即可填色 \{#no-script-for-the-fill\}
+
+和單一滑桿的填色方式一樣，每個滑塊都在自己的輸入元素內建立檢視時間軸。群組透過 `timeline-scope` 取得兩條時間軸，並各自執行一段動畫，藉此取得兩個百分比。填色會從較小值延伸到較大值，所以兩個滑塊可以交錯。填色仍會落在兩者之間，範圍起點也始終是較小的值。
+
+在表單處理程式中也依照相同方式讀取這組數值，以較小值作為下限。如果兩值必須保持一定間距，請在 `input` 事件中限制數值。填色本身不受此限制影響。
+
+瀏覽器若不支援捲動驅動動畫，兩個滑塊下方只會顯示未填色的軌道，兩個輸入元素仍可正常操作。Chromium 和 Safari 26 支援填色。
+
+## 滑塊如何共用軌道 \{#how-the-thumbs-share-a-track\}
+
+兩個輸入元素位於同一個網格儲存格。各自隱藏自己的軌道，只在滑塊上接收指標操作。按下兩個滑塊之間的區域不會觸發任何一個滑塊，另一個輸入元素的空軌道也不會擋住滑塊。正在移動的滑塊會顯示在最上層。按下軌道空白處不會有任何效果，因為無法判斷要移動哪一個滑塊。
+
+## 停用 \{#disabled\}
+
+停用兩個輸入元素。滑塊和填色會一起淡化。
+
+<ComponentPreview name="disabled" height={96} title="停用" background="plain" bodyClass="p-lg" html={`<div class="range max-w(360) mx-auto" role="group" aria-label="Seats, set by your plan">
+  <input type="range" class="slider range-start" value="20" aria-label="Fewest seats" disabled>
+  <input type="range" class="slider range-end" value="60" aria-label="Most seats" disabled>
+</div>`} />
+
+## 無障礙 \{#accessibility\}
+
+- 為群組設定 `role="group"` 和名稱，並為每個輸入元素設定各自的 `aria-label`。請用「最低價格」和「最高價格」這類具體名稱，避免只寫「起點」和「終點」。
+- 在軌道旁顯示兩個數值。滑塊本身不會顯示數字。
+- 每個滑塊都有自己的 Tab 停駐點，並支援原生滑桿的鍵盤操作。在觸控螢幕上，滑塊的尺寸為 24px。
+- 若精確輸入比直覺調整範圍更重要，請另外提供兩個[數字步進器](/components/stepper)或兩個數字欄位。
+
+## 類別 \{#classes\}
+
+<ContractTable name="range" />
+
+## 自訂屬性 \{#custom-properties\}
+
+<ContractTable name="range" show="properties" />
+
+## 相關項目 \{#related\}
+
+<ComponentLinks slugs={['slider', 'stepper', 'calendar']} />
+
+## 原始碼 \{#source\}
+
+<ComponentSource name="range" />

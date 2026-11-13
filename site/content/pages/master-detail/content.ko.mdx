@@ -1,0 +1,205 @@
+---
+title: "목록·상세 레이아웃"
+description: "목록과 선택한 항목의 상세 내용을 나란히 배치하고 각각 독립적으로 스크롤하는 레이아웃입니다."
+---
+
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import PagePreview from '~/site/components/PagePreview.astro'
+
+목록·상세 레이아웃은 키 목록과 선택한 키, 메시지 목록과 선택한 메시지, 파일 목록과 선택한 파일처럼 목록 옆에 선택한 항목의 상세 내용을 배치합니다. 각 영역이 독립적으로 스크롤되므로 상세 내용을 살펴보는 동안에도 목록의 스크롤 위치가 유지됩니다.
+
+이 예제는 유틸리티만으로 구현합니다. 페이지 안에 넣을 수 있을 만큼 간결하며, 컨테이너 쿼리로 자체 너비에 맞춰 배치를 조정하므로 넓은 페이지와 좁은 패널에서 모두 사용할 수 있습니다.
+
+<PagePreview name="default" title="목록·상세 레이아웃" height={488} bodyClass="p-lg" caption="태블릿과 휴대폰에서는 상세 영역이 숨겨지고 목록이 전체 너비를 차지합니다. 이때 각 행은 해당 항목의 상세 페이지로 연결됩니다." html={`<section class="sheet container-inline overflow-hidden text-sm fg-text-body" aria-labelledby="keys-title">
+  <div class="flex h(440)">
+    <div class="flex flex-col w-full w(300)@container(--3xl) shrink(0) bxe(1)@container(--3xl) bxe-solid@container(--3xl) b-line-hair">
+      <header class="flex flex-wrap items-center justify-between gap-sm p-md bb(1) bb-solid b-line-hair">
+        <h2 class="heading heading-sm" id="keys-title">API keys</h2>
+        <button type="button" class="btn btn-sm"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>New key</button>
+      </header>
+      <ul class="list list-interactive grow(1) overflow-y-auto">
+        <li><a class="list-row" href="#" aria-current="true">
+          <div class="list-body">
+            <p class="list-title">Production</p>
+            <p class="list-description">Created 2 Mar · last used today</p>
+          </div>
+        </a></li>
+        <li><a class="list-row" href="#">
+          <div class="list-body">
+            <p class="list-title">Staging</p>
+            <p class="list-description">Created 14 Jan · last used yesterday</p>
+          </div>
+        </a></li>
+        <li><a class="list-row" href="#">
+          <div class="list-body">
+            <p class="list-title">CI</p>
+            <p class="list-description">Created 9 Dec · last used 3 days ago</p>
+          </div>
+        </a></li>
+        <li><a class="list-row" href="#">
+          <div class="list-body">
+            <p class="list-title">Local, Ada</p>
+            <p class="list-description">Created 1 Nov · last used 2 weeks ago</p>
+          </div>
+        </a></li>
+        <li><a class="list-row" href="#">
+          <div class="list-body">
+            <p class="list-title">Local, Alan</p>
+            <p class="list-description">Created 28 Oct · never used</p>
+          </div>
+        </a></li>
+        <li><a class="list-row" href="#">
+          <div class="list-body">
+            <p class="list-title">Legacy importer</p>
+            <p class="list-description">Created 4 Jun · last used in July</p>
+          </div>
+        </a></li>
+      </ul>
+    </div>
+    <article class="hidden flex@container(--3xl) flex-col gap-lg grow(1) basis(0) min-w(0) overflow-y-auto p-lg">
+      <header class="flex flex-wrap items-start justify-between gap-sm">
+        <div class="flex flex-col gap-3xs">
+          <h3 class="heading">Production</h3>
+          <p class="m(0) fg-text-muted">Used by the deploy workflow on the main branch.</p>
+        </div>
+        <span class="badge badge-success badge-dot">Active</span>
+      </header>
+      <dl class="data-list">
+        <div class="data-list-item">
+          <dt class="data-list-term">Key</dt>
+          <dd class="data-list-value"><code class="code">atl_live_••••••••4f2a</code></dd>
+        </div>
+        <div class="data-list-item">
+          <dt class="data-list-term">Scope</dt>
+          <dd class="data-list-value">Deploy, read logs</dd>
+        </div>
+        <div class="data-list-item">
+          <dt class="data-list-term">Created</dt>
+          <dd class="data-list-value">2 March by Ada Lovelace</dd>
+        </div>
+        <div class="data-list-item">
+          <dt class="data-list-term">Last used</dt>
+          <dd class="data-list-value">Today at 09:41, from Tokyo</dd>
+        </div>
+      </dl>
+      <div class="flex gap-xs mt-auto">
+        <button type="button" class="btn btn-sm">Rotate key</button>
+        <button type="button" class="btn btn-sm btn-danger">Revoke</button>
+      </div>
+    </article>
+  </div>
+</section>`} />
+
+## 구성 방법 \{#how-it-is-built\}
+
+- **프레임에 `container-inline` 적용**. 프레임이 크기 컨테이너가 됩니다. 내부의 모든 `@container(…)` 유틸리티는 화면 크기가 아닌 프레임 크기를 기준으로 동작합니다.
+- **높이가 고정된 행.** `flex h(440)`로 두 영역의 높이를 같게 맞추고, 각 영역에 `overflow-y-auto`를 적용해 독립적으로 스크롤되게 합니다. 화면 높이를 모두 쓰는 앱에서는 높이를 숫자로 지정하는 대신 [고정 셸](/pages/app-shell#fixed)에서 가져오세요.
+- **목록은 고정 너비, 상세 영역은 가변 너비.** 프레임 너비가 48rem 미만이면 목록에 `w-full`을 적용하고, 48rem 이상이면 `shrink(0)`와 함께 `w(300)@container(--3xl)`을 적용합니다. 상세 영역에는 `grow(1) basis(0) min-w(0)`를 적용해 남은 너비를 채우고 목록을 밀어내지 않도록 합니다.
+- **48rem 미만에서는 영역 하나만 표시.** 상세 영역은 `hidden`으로 숨기고 `flex@container(--3xl)`을 적용해 다시 표시합니다. 좁은 화면에서는 목록이 표시되며, 행을 선택하면 해당 항목의 상세 페이지로 이동합니다. 이 이동은 라우터에서 처리하세요.
+- **두 영역 사이의 구분선**에는 `bxe(1)@container(--3xl) bxe-solid@container(--3xl)`을 적용해 두 영역이 모두 표시될 때만 보이게 합니다.
+
+[`list-interactive`](/components/list) 안의 `list-row`에 `aria-current="true"`를 적용해 현재 행을 표시합니다.
+
+## 너비 조절 \{#resizable\}
+
+사용자가 두 영역의 너비를 직접 조절할 수 있게 하려면 [분할기](/components/splitter)를 사용하세요. 같은 두 영역 사이에 손잡이가 들어갑니다. 손잡이에 상태와 키보드 조작 계약이 있으므로 분할기는 컴포넌트로 제공됩니다. `splitter` [동작](/guide/behaviors)이 손잡이의 이동을 처리하며, 사용할 수 있는 키는 해당 문서에 나와 있습니다.
+
+<PagePreview name="resizable" title="너비 조절" height={488} bodyClass="p-lg" behaviors caption="두 영역 사이의 구분선을 드래그하거나, 구분선에 포커스를 두고 방향키, Home 또는 End를 누르세요." html={`<section class="splitter sheet overflow-hidden h(440) text-sm fg-text-body" style="--splitter-size: 36%" aria-labelledby="keys-split-title">
+  <div class="splitter-pane flex flex-col">
+    <header class="flex flex-wrap items-center justify-between gap-sm p-md bb(1) bb-solid b-line-hair">
+      <h2 class="heading heading-sm" id="keys-split-title">API keys</h2>
+      <button type="button" class="btn btn-sm"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>New key</button>
+    </header>
+    <ul class="list list-interactive">
+      <li><a class="list-row" href="#" aria-current="true">
+        <div class="list-body">
+          <p class="list-title">Production</p>
+          <p class="list-description">Created 2 Mar · last used today</p>
+        </div>
+      </a></li>
+      <li><a class="list-row" href="#">
+        <div class="list-body">
+          <p class="list-title">Staging</p>
+          <p class="list-description">Created 14 Jan · last used yesterday</p>
+        </div>
+      </a></li>
+      <li><a class="list-row" href="#">
+        <div class="list-body">
+          <p class="list-title">CI</p>
+          <p class="list-description">Created 9 Dec · last used 3 days ago</p>
+        </div>
+      </a></li>
+      <li><a class="list-row" href="#">
+        <div class="list-body">
+          <p class="list-title">Local, Ada</p>
+          <p class="list-description">Created 1 Nov · last used 2 weeks ago</p>
+        </div>
+      </a></li>
+      <li><a class="list-row" href="#">
+        <div class="list-body">
+          <p class="list-title">Local, Alan</p>
+          <p class="list-description">Created 28 Oct · never used</p>
+        </div>
+      </a></li>
+      <li><a class="list-row" href="#">
+        <div class="list-body">
+          <p class="list-title">Legacy importer</p>
+          <p class="list-description">Created 4 Jun · last used in July</p>
+        </div>
+      </a></li>
+    </ul>
+  </div>
+  <div class="splitter-handle" role="separator" tabindex="0" aria-label="Resize the list" aria-valuenow="36" aria-valuemin="25" aria-valuemax="60"></div>
+  <article class="splitter-pane flex flex-col gap-lg p-lg">
+    <header class="flex flex-wrap items-start justify-between gap-sm">
+      <div class="flex flex-col gap-3xs">
+        <h3 class="heading">Production</h3>
+        <p class="m(0) fg-text-muted">Used by the deploy workflow on the main branch.</p>
+      </div>
+      <span class="badge badge-success badge-dot">Active</span>
+    </header>
+    <dl class="data-list">
+      <div class="data-list-item">
+        <dt class="data-list-term">Key</dt>
+        <dd class="data-list-value"><code class="code">atl_live_••••••••4f2a</code></dd>
+      </div>
+      <div class="data-list-item">
+        <dt class="data-list-term">Scope</dt>
+        <dd class="data-list-value">Deploy, read logs</dd>
+      </div>
+      <div class="data-list-item">
+        <dt class="data-list-term">Created</dt>
+        <dd class="data-list-value">2 March by Ada Lovelace</dd>
+      </div>
+      <div class="data-list-item">
+        <dt class="data-list-term">Last used</dt>
+        <dd class="data-list-value">Today at 09:41, from Tokyo</dd>
+      </div>
+    </dl>
+    <div class="flex gap-xs mt-auto">
+      <button type="button" class="btn btn-sm">Rotate key</button>
+      <button type="button" class="btn btn-sm btn-danger">Revoke</button>
+    </div>
+  </article>
+</section>`} />
+
+## 세 가지 구성 방법 \{#three-ways\}
+
+| 사용 상황 | 구성 방법 |
+| --- | --- |
+| 두 영역이 페이지의 일부인 경우 | 위 예제처럼 유틸리티와 컨테이너 사용 |
+| 사용자가 두 영역의 너비를 조절하는 경우 | [분할기](/components/splitter) |
+| 두 영역이 앱 전체를 구성하는 경우 | 목록을 사이드바로 둔 [고정 셸](/pages/app-shell#fixed) |
+
+## 접근성 \{#accessibility\}
+
+- 목록은 각 항목의 상세 내용으로 연결되는 링크로 구성됩니다. 현재 표시 중인 항목의 링크에 `aria-current="true"`를 지정합니다.
+- 프레임에 레이블을 지정하고, 상세 영역에는 선택한 항목의 이름을 제목으로 넣으세요. 그러면 상세 영역에 바로 도달한 사용자도 어떤 항목을 보고 있는지 알 수 있습니다.
+- 스크롤할 수 있지만 내부에 포커스를 받을 요소가 없는 영역에는 키보드로 스크롤할 수 있도록 `tabindex="0"`을 지정하세요.
+- 좁은 화면에서 상세 영역을 숨기면 `display: none`이 적용되어 접근성 트리에서 제외됩니다. 이 영역을 가리키는 컨트롤이 남지 않도록 하세요.
+
+## 관련 문서 \{#related\}
+
+<ComponentLinks slugs={['list', 'data-list', 'splitter', 'surface', 'badge']} />
+
+<ComponentLinks kind="pages" slugs={['app-shell']} />

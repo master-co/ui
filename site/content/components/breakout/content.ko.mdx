@@ -1,0 +1,141 @@
+---
+title: "브레이크아웃"
+description: "그림이나 띠 영역을 본문 단보다 넓게 펼치거나 양쪽 가장자리까지 확장할 수 있는 단일 열 레이아웃입니다."
+---
+
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import PagePreview from '~/site/components/PagePreview.astro'
+
+브레이크아웃은 읽기 편한 너비의 단을 주어진 공간 가운데에 배치하는 레이아웃입니다. 이미지, 표, 띠 영역은 본문 단보다 조금 더 넓게 펼치거나 양쪽 가장자리까지 확장할 수 있습니다. 긴 글, 변경 이력, 이야기처럼 본문의 한 줄 길이를 읽기 편하게 유지하면서 다른 콘텐츠에는 더 넓은 공간을 내어 주는 데 적합합니다.
+
+별도의 클래스를 지정하지 않아도 모든 콘텐츠가 본문 단 안에 배치됩니다. 단 밖으로 확장할 요소에만 `breakout-wide` 또는 `breakout-full`을 지정합니다. 브레이크아웃 자체에는 표면 스타일이 없으므로, 양쪽 가장자리까지 확장한 띠 영역의 모양은 유틸리티나 컴포넌트로 지정합니다.
+
+<PagePreview name="default" title="브레이크아웃" height={1576} tabletHeight={1500} phoneHeight={1800} caption="글을 스크롤한 뒤 태블릿과 휴대폰을 차례로 선택해 보세요. 본문은 읽기 편한 줄 길이를 유지하고, 이미지와 표는 단 양옆에 남는 공간만큼 확장되며, 띠 영역은 언제나 양쪽 가장자리까지 이어집니다." html={`<article class="breakout py-2xl bg-surface-base fg-text-body text-md leading-lg">
+  <header class="flex flex-col gap-xs">
+    <p class="eyebrow">Changelog · 12 November</p>
+    <h1 class="heading heading-2xl">Faster cold builds, and comments on previews</h1>
+    <p class="lead">Dependency caches are now restored before the install step, and anyone with the link to a preview can leave a comment on it.</p>
+  </header>
+  <p>A cold build is one that starts with nothing: a new branch, a cleared cache, a project that has not built in a week. Until this release it downloaded every dependency again before it could restore anything, which made the first build of a branch the slowest one, and the one people waited for most.</p>
+  <figure class="figure breakout-wide">
+    <img class="figure-media" src="/demo/harbor.svg" alt="A wooden jetty running out over calm water" style="--figure-ratio: 21 / 9">
+    <figcaption class="figure-caption">The cache now waits at the end of the jetty, not the start: it is there before the install begins.</figcaption>
+  </figure>
+  <h2 class="heading heading-lg mt-md">Caches before the install</h2>
+  <p>The cache of a project is now keyed by its lockfile and restored before the install step runs. The install finds what it needs already in place and only fetches what changed. A branch that changes no dependency builds as fast as the one it came from.</p>
+  <div class="breakout breakout-full py-xl bg-surface-tray">
+    <dl class="auto-grid" style="--auto-grid-min: 9rem">
+      <div class="stat">
+        <dt class="stat-label">Cold builds</dt>
+        <dd class="stat-row m(0)"><span class="stat-value">38s</span><span class="stat-delta">21% faster</span></dd>
+      </div>
+      <div class="stat">
+        <dt class="stat-label">Installs skipped</dt>
+        <dd class="stat-row m(0)"><span class="stat-value">64%</span></dd>
+      </div>
+      <div class="stat">
+        <dt class="stat-label">Data fetched</dt>
+        <dd class="stat-row m(0)"><span class="stat-value">1.9 GB</span><span class="stat-delta">48% less</span></dd>
+      </div>
+    </dl>
+  </div>
+  <h2 class="heading heading-lg mt-md">Comments on previews</h2>
+  <p>Anyone with the link to a preview can now leave a comment on it, pinned to the place they mean. Comments are kept with the deploy, so they are still there when someone opens the same preview next week, and they are listed on the pull request.</p>
+  <div class="scroll-area scroll-area-inline breakout-wide" tabindex="0" role="region" aria-label="Who can comment, by plan">
+    <table class="table">
+      <thead>
+        <tr class="table-row">
+          <th class="table-heading" scope="col">Plan</th>
+          <th class="table-heading" scope="col">Who can comment</th>
+          <th class="table-heading" scope="col">Kept for</th>
+          <th class="table-heading table-numeric" scope="col">Previews</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="table-row">
+          <th class="table-cell table-primary" scope="row">Free</th>
+          <td class="table-cell">Members of the team</td>
+          <td class="table-cell">30 days</td>
+          <td class="table-cell table-numeric">10</td>
+        </tr>
+        <tr class="table-row">
+          <th class="table-cell table-primary" scope="row">Pro</th>
+          <td class="table-cell">Anyone with the link</td>
+          <td class="table-cell">One year</td>
+          <td class="table-cell table-numeric">Unlimited</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Both changes are on for every project today. There is nothing to turn on.</p>
+</article>`} />
+
+## 구조 \{#how-it-is-built\}
+
+- **단일 열.** 브레이크아웃은 열이 하나인 그리드입니다. 열의 너비는 `--breakout-measure`로 지정한 너비(기본값 40rem)와 전체 너비에서 양쪽에 `--breakout-gutter`만큼씩 여백을 뺀 너비 중 더 작은 값입니다. 열은 가운데에 배치되며, 모든 자식 요소는 클래스 없이 이 열에 들어갑니다.
+- **마진을 이용한 단 확장.** 브레이크아웃은 인라인 크기 컨테이너입니다. 자식 요소에서 `100cqi`는 브레이크아웃의 너비이고 `100%`는 단의 너비이므로, 단 양옆에 남는 공간은 각각 두 값의 차이의 절반입니다. `breakout-wide`는 음수 마진으로 양쪽에서 각각 최대 `--breakout-wide`만큼 확장하되 가장자리 여백은 침범하지 않습니다. `breakout-full`은 양옆에 남는 공간을 모두 사용합니다.
+- **본문 단에 맞춘 띠 영역의 텍스트.** 전체 너비로 확장하는 자식 요소에 `breakout`도 지정하면, 띠 영역은 양쪽 가장자리까지 이어지고 그 안의 자식 요소는 본문과 같은 너비의 단에 배치됩니다. 위 예시에서 띠 영역 안의 수치는 위아래 본문과 나란히 정렬됩니다.
+- **행 간격으로 만드는 세로 리듬.** 그리드에서는 마진이 상쇄되지 않으므로, 자식 요소 사이에는 그리드의 행 간격인 1.25rem이 적용됩니다. 제목에는 `mt-md`를 적용해 제목이 소개하는 아래 콘텐츠보다 위 콘텐츠와의 간격을 조금 더 넓힙니다.
+- **너비가 큰 표의 독립 스크롤.** 표는 `scroll-area-inline`과 `breakout-wide`를 함께 적용한 [스크롤 영역](/components/scroll-area)에 배치합니다. 휴대폰에서는 페이지 너비가 늘어나지 않고 표가 단 안에서 가로로 스크롤됩니다.
+
+## 넓은 너비와 전체 너비 \{#wide-and-full\}
+
+자식 요소가 확장되는 폭은 단 양옆에 남는 공간, 즉 페이지 너비에 따라 달라집니다.
+
+| 사용 가능한 너비 | 본문 단 | `breakout-wide` | `breakout-full` |
+| --- | --- | --- | --- |
+| 본문 단 너비에 양쪽 최대 확장 폭을 더한 값보다 넓음 | 40rem, 가운데 정렬 | 양쪽으로 각각 8rem 확장(56rem) | 사용 가능한 전체 너비 |
+| 두 기준 사이 | 40rem, 가운데 정렬 | 가장자리 여백을 뺀 전체 너비 | 사용 가능한 전체 너비 |
+| 본문 단의 기준 너비보다 좁음 | 양쪽 가장자리 여백을 뺀 전체 너비 | 본문 단과 같은 너비 | 사용 가능한 전체 너비 |
+
+<ComponentPreview name="widths" background="stripes" height={332} narrowHeight={332} title="너비" bodyClass="p(0)" html={`<div class="breakout py-lg fg-text-muted text-sm" style="--breakout-measure: 20rem; --breakout-wide: 5rem">
+  <div class="well flex items-center justify-center h(56)">The column</div>
+  <div class="well flex items-center justify-center h(56) breakout-wide">breakout-wide</div>
+  <div class="well flex items-center justify-center h(56) breakout-full">breakout-full</div>
+  <div class="well flex items-center justify-center h(56)">The column</div>
+</div>`} />
+
+`--breakout-measure`는 본문 단의 최대 너비입니다. 40rem이면 본문 한 줄에 약 70자가 들어갑니다. 큰 글자를 쓸 때는 값을 낮추고, 코드를 표시하는 단에서는 값을 높이세요. `--breakout-wide`는 넓게 확장하는 자식 요소가 양쪽에서 각각 확장할 수 있는 최대 폭이고, `--breakout-gutter`는 전체 너비로 확장하는 요소를 제외한 모든 요소와 가장자리 사이에 확보하는 최소 여백입니다.
+
+## 전체 너비의 띠 영역 \{#full-band\}
+
+양쪽 가장자리까지 이어지는 띠 영역은 보통 배경색이나 이미지 위에 텍스트를 얹는 데 사용합니다. 이때 텍스트는 본문 단 너비 안에 두세요. 띠 영역 자체를 브레이크아웃으로 만들면, 띠 영역은 `breakout-full` 자식 요소로서 양쪽 가장자리까지 확장되고 그 안의 자식 요소는 주변 본문과 같은 너비의 단에 배치됩니다.
+
+```html
+<div class="breakout breakout-full py-xl bg-surface-tray">
+  <p>These words line up with the column above and below the band.</p>
+</div>
+```
+
+브레이크아웃 자체에는 표면 스타일이 없으므로 띠 영역의 배경색은 유틸리티 `bg-surface-tray`로 지정합니다. 창 가장자리에 닿는 모서리는 둥글게 처리할 필요가 없으므로, 가장자리까지 확장하는 이미지는 `breakout-full` [그림](/components/figure)에 `--figure-radius: 0`을 적용해 배치합니다.
+
+## 사용 사례 \{#when\}
+
+아티클, 게시글, 변경 이력, 가이드처럼 읽을 콘텐츠가 한 단으로 구성된 페이지에 브레이크아웃을 사용하세요. 본문 단 옆에 탐색 메뉴나 목차 같은 영역이 있는 페이지에는 [문서 페이지](/pages/docs)를 사용하세요. 그 안의 본문 단은 브레이크아웃으로 구성할 수 있습니다. 단 밖으로 확장할 요소가 없다면 `max-w(640) mx-auto`와 가장자리 여백을 위한 유틸리티만 사용하세요.
+
+## 접근성 \{#accessibility\}
+
+- 브레이크아웃은 너비만 바꿉니다. 읽기 순서는 마크업에 나오는 순서와 같습니다.
+- 단 너비는 rem 단위로 지정하므로 독자의 글자 크기 설정을 따릅니다. 글자 크기가 커지면 한 줄에 약 70자가 들어가도록 단도 넓어집니다. 창이 그 너비보다 좁아지면 단이 창 너비에 맞춰 줄어들어 페이지를 가로로 스크롤할 필요가 없습니다.
+- 단보다 넓은 표는 이름과 `tabindex="0"`을 지정한 [스크롤 영역](/components/scroll-area) 안에서 스크롤되므로 키보드로도 스크롤할 수 있습니다.
+
+## 클래스 \{#classes\}
+
+<ContractTable name="breakout" directory="layouts" />
+
+## 사용자 지정 속성 \{#custom-properties\}
+
+<ContractTable name="breakout" show="properties" directory="layouts" />
+
+## 관련 항목 \{#related\}
+
+<ComponentLinks slugs={['figure', 'heading', 'table', 'scroll-area', 'quote', 'arrangements']} />
+
+<ComponentLinks kind="pages" slugs={['docs', 'page']} />
+
+## 소스 \{#source\}
+
+<ComponentSource name="breakout" directory="layouts" />
