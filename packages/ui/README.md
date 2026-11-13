@@ -161,6 +161,7 @@ Or import only the theme and the components you use:
 | Quote | `quote`, `quote-lg`, `quote-text`, `quote-source`, `quote-name` |
 | Message | `message`, `message-sent`, `message-avatar`, `message-bubble`, `message-meta`, `message-typing` |
 | Thread | `thread`, `thread-item`, `thread-avatar`, `thread-body`, `thread-header`, `thread-text`, `thread-author`, `thread-meta`, `thread-replies` |
+| Reaction | `reaction-group`, `reaction`, `reaction-input`, `reaction-emoji`, `reaction-count`, `reaction-add` |
 | Avatar | `avatar`, `avatar-image`, `avatar-xs`, `avatar-sm`, `avatar-lg`, `avatar-xl`, `avatar-square`, `avatar-status`, `avatar-group` |
 | Badge | `badge`, `badge-sm`, `badge-lg`, `badge-pill`, `badge-outline`, `badge-raised`, `badge-ink`, `badge-info`, `badge-success`, `badge-warning`, `badge-danger`, `badge-dot`, `badge-live`, `badge-corner` |
 | Heading | `heading`, `heading-xs`, `heading-sm`, `heading-lg`, `heading-xl`, `heading-2xl`, `heading-display`, `eyebrow`, `lead`, `lead-sm`, `lead-lg` |

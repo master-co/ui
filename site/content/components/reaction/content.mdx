@@ -1,0 +1,192 @@
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+A reaction is an emoji a reader leaves under a [message](/components/message), with how many others left it. Each one is a flat pill of the chip tone around a native checkbox: a press adds the reader's own and a second press takes it back. The count is a CSS counter, so it goes up and down with the box and needs no script.
+
+<ComponentPreview name="default" height={248} title="Reaction" background="plain" bodyClass="p-lg" html={`<ol class="max-w(400) w-full mx-auto m(0) p(0)">
+  <li class="message">
+    <span class="avatar avatar-sm message-avatar"><img class="avatar-image" src="/demo/portrait-1.svg" alt="Ada"></span>
+    <div class="message-bubble">The new previews are live. Have a look before the review.</div>
+    <div class="reaction-group" role="group" aria-label="Reactions to Ada's message">
+      <label class="reaction" style="--count: 3">
+        <input type="checkbox" class="reaction-input" name="reaction" value="👍" aria-label="Thumbs up, 3 others" checked>
+        <span class="reaction-emoji" aria-hidden="true">👍</span>
+        <span class="reaction-count" aria-hidden="true"></span>
+      </label>
+      <label class="reaction" style="--count: 2">
+        <input type="checkbox" class="reaction-input" name="reaction" value="🎉" aria-label="Party popper, 2 others">
+        <span class="reaction-emoji" aria-hidden="true">🎉</span>
+        <span class="reaction-count" aria-hidden="true"></span>
+      </label>
+      <label class="reaction" style="--count: 1">
+        <input type="checkbox" class="reaction-input" name="reaction" value="👀" aria-label="Eyes, 1 other">
+        <span class="reaction-emoji" aria-hidden="true">👀</span>
+        <span class="reaction-count" aria-hidden="true"></span>
+      </label>
+    </div>
+    <span class="message-meta">Ada · 14:03</span>
+  </li>
+  <li class="message message-sent">
+    <div class="message-bubble">On it. The dark ones look right.</div>
+    <div class="reaction-group" role="group" aria-label="Reactions to your message">
+      <label class="reaction" style="--count: 1">
+        <input type="checkbox" class="reaction-input" name="reaction-reply" value="❤️" aria-label="Heart, 1 other">
+        <span class="reaction-emoji" aria-hidden="true">❤️</span>
+        <span class="reaction-count" aria-hidden="true"></span>
+      </label>
+    </div>
+  </li>
+</ol>`} caption="Press a reaction to add yours, and again to take it back." />
+
+Put a `reaction-group` after the bubble: under a received message it starts where the bubble starts, under a sent one it ends where the bubble ends. Name the group with `aria-label`, and say whose message it answers when there are several on the screen.
+
+## The count \{#count\}
+
+Set `--count` on each reaction to how many others gave it, not counting the reader. The pill starts its counter there, and the checked box adds one, so a reaction the reader has given shows one more than `--count`. Leave `reaction-count` empty and the counter writes the number into it; write text inside it, such as `1.2k`, when the number is too large to count by one, and that text is shown instead.
+
+## States \{#states\}
+
+At rest a reaction is a flat pill on one contour, and its count is muted. Under the pointer the contour is firmer; under a press the pill sinks into a well and the emoji is pushed in with it. Given, it takes the library's selected state: an ink hairline, a faint tint of ink and the count in strong ink. A disabled box, such as one in a closed thread, lies flat with its emoji faded.
+
+<ComponentPreview name="states" height={96} title="States" html={`<div class="reaction-group" role="group" aria-label="Reactions">
+  <label class="reaction" style="--count: 2">
+    <input type="checkbox" class="reaction-input" name="reaction-states" value="👏" aria-label="Clapping, 2 others">
+    <span class="reaction-emoji" aria-hidden="true">👏</span>
+    <span class="reaction-count" aria-hidden="true"></span>
+  </label>
+  <label class="reaction" style="--count: 2">
+    <input type="checkbox" class="reaction-input" name="reaction-states" value="❤️" aria-label="Heart, 2 others" checked>
+    <span class="reaction-emoji" aria-hidden="true">❤️</span>
+    <span class="reaction-count" aria-hidden="true"></span>
+  </label>
+  <label class="reaction">
+    <input type="checkbox" class="reaction-input" name="reaction-states" value="🔥" aria-label="Fire, 1,214 others">
+    <span class="reaction-emoji" aria-hidden="true">🔥</span>
+    <span class="reaction-count" aria-hidden="true">1.2k</span>
+  </label>
+  <label class="reaction" style="--count: 4">
+    <input type="checkbox" class="reaction-input" name="reaction-states" value="👍" aria-label="Thumbs up, 4 others" disabled>
+    <span class="reaction-emoji" aria-hidden="true">👍</span>
+    <span class="reaction-count" aria-hidden="true"></span>
+  </label>
+</div>`} />
+
+## Adding a reaction \{#adding\}
+
+`reaction-add` is a round button at the end of the row, with a face and a plus, that opens the page's emoji picker: a [popover](/components/popover) of quiet square [buttons](/components/button), each holding a `reaction-emoji`. The button stays sunk while the popover right after it is open. Choosing an emoji gives that reaction, and adds its pill when nobody has given it yet; that last step is the page's, so the picker needs a few lines of script. Everything else on this page works without one.
+
+<ComponentPreview name="adding" height={152} title="Adding a reaction" bodyClass="content-start flex flex-wrap items-start justify-center gap-md p-lg" html={`<div class="reaction-group" id="reactions" role="group" aria-label="Reactions">
+  <label class="reaction" style="--count: 4">
+    <input type="checkbox" class="reaction-input" name="reaction" value="👍" aria-label="Thumbs up, 4 others">
+    <span class="reaction-emoji" aria-hidden="true">👍</span>
+    <span class="reaction-count" aria-hidden="true"></span>
+  </label>
+  <label class="reaction" style="--count: 1">
+    <input type="checkbox" class="reaction-input" name="reaction" value="🚀" aria-label="Rocket, 1 other">
+    <span class="reaction-emoji" aria-hidden="true">🚀</span>
+    <span class="reaction-count" aria-hidden="true"></span>
+  </label>
+  <button type="button" class="reaction-add" popovertarget="reaction-picker" aria-label="Add a reaction"></button>
+  <div class="popover p(4)" id="reaction-picker" popover>
+    <div class="grid grid-cols(6) gap(2)">
+      <button type="button" class="btn btn-quiet btn-square btn-sm" value="👍" aria-label="Thumbs up"><span class="reaction-emoji" aria-hidden="true">👍</span></button>
+      <button type="button" class="btn btn-quiet btn-square btn-sm" value="❤️" aria-label="Heart"><span class="reaction-emoji" aria-hidden="true">❤️</span></button>
+      <button type="button" class="btn btn-quiet btn-square btn-sm" value="😂" aria-label="Laughing"><span class="reaction-emoji" aria-hidden="true">😂</span></button>
+      <button type="button" class="btn btn-quiet btn-square btn-sm" value="🎉" aria-label="Party popper"><span class="reaction-emoji" aria-hidden="true">🎉</span></button>
+      <button type="button" class="btn btn-quiet btn-square btn-sm" value="👀" aria-label="Eyes"><span class="reaction-emoji" aria-hidden="true">👀</span></button>
+      <button type="button" class="btn btn-quiet btn-square btn-sm" value="🚀" aria-label="Rocket"><span class="reaction-emoji" aria-hidden="true">🚀</span></button>
+    </div>
+  </div>
+</div>
+<script>
+  const picker = document.getElementById('reaction-picker')
+  const reactions = document.getElementById('reactions')
+
+  picker.addEventListener('click', function (event) {
+    const option = event.target.closest('button')
+    if (!option) return
+    let input = Array.from(reactions.querySelectorAll('.reaction-input')).find(function (each) { return each.value === option.value })
+    if (!input) {
+      const reaction = document.createElement('label')
+      const emoji = document.createElement('span')
+      const count = document.createElement('span')
+      input = document.createElement('input')
+      reaction.className = 'reaction'
+      input.type = 'checkbox'
+      input.className = 'reaction-input'
+      input.name = 'reaction'
+      input.value = option.value
+      input.setAttribute('aria-label', option.getAttribute('aria-label') + ', no others')
+      emoji.className = 'reaction-emoji'
+      emoji.textContent = option.value
+      emoji.setAttribute('aria-hidden', 'true')
+      count.className = 'reaction-count'
+      count.setAttribute('aria-hidden', 'true')
+      reaction.append(input, emoji, count)
+      reactions.insertBefore(reaction, reactions.querySelector('.reaction-add'))
+    }
+    if (!input.checked) input.click()
+    picker.hidePopover()
+  })
+</script>`} caption="Open the picker and choose an emoji that is not in the row yet." />
+
+## In a thread \{#thread\}
+
+In a [thread](/components/thread) the row follows the words of a comment, a little further from them than one paragraph from the next.
+
+<ComponentPreview name="thread" height={264} narrowHeight={304} title="In a thread" bodyClass="p-lg" html={`<div class="card max-w(480) mx-auto">
+  <ol class="thread">
+    <li class="thread-item">
+      <span class="thread-avatar"><span class="avatar">GH</span></span>
+      <div class="thread-body">
+        <p class="thread-header"><span class="thread-author">Grace Hopper</span> <time class="thread-meta" datetime="2026-11-12T09:12">2h</time></p>
+        <p class="thread-text">The contracts ship on Tuesday, the framework components the week after.</p>
+        <div class="reaction-group" role="group" aria-label="Reactions to Grace Hopper's comment">
+          <label class="reaction" style="--count: 5">
+            <input type="checkbox" class="reaction-input" name="reaction-thread" value="👍" aria-label="Thumbs up, 5 others">
+            <span class="reaction-emoji" aria-hidden="true">👍</span>
+            <span class="reaction-count" aria-hidden="true"></span>
+          </label>
+          <label class="reaction" style="--count: 2">
+            <input type="checkbox" class="reaction-input" name="reaction-thread" value="🚀" aria-label="Rocket, 2 others" checked>
+            <span class="reaction-emoji" aria-hidden="true">🚀</span>
+            <span class="reaction-count" aria-hidden="true"></span>
+          </label>
+        </div>
+      </div>
+      <ol class="thread-replies">
+        <li class="thread-item">
+          <span class="thread-avatar"><span class="avatar avatar-sm">AL</span></span>
+          <div class="thread-body">
+            <p class="thread-header"><span class="thread-author">Ada Lovelace</span> <time class="thread-meta" datetime="2026-11-12T10:05">1h</time></p>
+            <p class="thread-text">Then the release notes go out on Monday.</p>
+          </div>
+        </li>
+      </ol>
+    </li>
+  </ol>
+</div>`} />
+
+## Accessibility \{#accessibility\}
+
+- Name each checkbox with the emoji and the others' count in words, such as `aria-label="Thumbs up, 3 others"`, and hide the emoji and the count with `aria-hidden="true"`. The checked state then says whether the reader is one of them, and the name stays true after every press.
+- Do not rely on the drawn count being read. Engines leave text written by a CSS counter out of an accessible name and description: in Chromium the box is named by its label's words without the number.
+- Name the group, and name `reaction-add` ("Add a reaction"). Each button of the picker is named with its emoji's name, and its emoji is hidden.
+- The pill is the target: 28px, and 44px on a touch screen. In forced colors it keeps an outline, and a given reaction a thicker one in the highlight color.
+
+## Platform notes \{#platform\}
+
+The count's figures are trimmed to their cap height with `text-box: trim-both cap alphabetic`, so the pill centres the figures rather than the line around them, level with the middle of the emoji. Without it they stand within half a pixel of the middle. `text-box` is in Chromium and Safari.
+
+## Classes \{#classes\}
+
+<ContractTable name="reaction" />
+
+## Custom properties \{#custom-properties\}
+
+<ContractTable name="reaction" show="properties" />
+
+## Source \{#source\}
+
+<ComponentSource name="reaction" />

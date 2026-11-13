@@ -111,6 +111,7 @@ export const components = [
   { slug: 'list', name: 'List', category: 'Content', description: 'Rows of things with media, words and something at the end.' },
   { slug: 'file', name: 'File', category: 'Content', description: 'One file as a thing with a name: an attachment, an upload or a download.' },
   { slug: 'message', name: 'Message', category: 'Content', description: 'One turn of a conversation, as a bubble that points at its author.' },
+  { slug: 'reaction', name: 'Reaction', category: 'Content', description: 'Emoji answers to a message, each with its count, that a press adds to.' },
   { slug: 'thread', name: 'Thread', category: 'Content', description: 'Comments and their replies, each joined by a line to the comment it answers.' },
   { slug: 'avatar', name: 'Avatar', category: 'Content', description: 'A person or a team as a photo or initials, alone or stacked.' },
   { slug: 'badge', name: 'Badge', category: 'Content', description: 'A small chip for a status, a category or a count.' },

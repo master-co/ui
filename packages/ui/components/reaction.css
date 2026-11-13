@@ -1,0 +1,279 @@
+/*
+ * Reaction: an emoji answer to a message, with how many gave it.
+ * Each reaction is a <label> around a native checkbox, so a press, Space and the form all work as they do for a
+ * checkbox. The count is a CSS counter: the pill starts it at --count, the reactions of everyone else, and a
+ * checked box adds one, so the number is right after every press with no script. Engines leave a counter out of
+ * an accessible name, so the box is named in words (the emoji and the others' count) and the pill's drawing is
+ * hidden from assistive technology; the checked state says whether the reader is one of them.
+ * At rest a reaction is a flat pill of the chip tone on one contour; under a press it sinks into a well and the
+ * emoji is pushed in with it; given, it takes the selected language of the library: an ink hairline, a faint
+ * tint of ink and the count in strong ink.
+ * Geometry: a 28px pill (44 on a touch screen) with true half circles at its ends. The emoji is 16px and stands
+ * as far from the start as from the top and bottom, so it is concentric with the round end; the count's figures
+ * are tabular, and trimmed to their cap height where text-box is supported, so flex centres the figures rather
+ * than the line around them (elsewhere they stand within half a pixel of the middle).
+ * A count written in the markup (1.2k) replaces the counter, for numbers too large to count by one.
+ * Under a message the row stands under the bubble, and in a thread under the words.
+ */
+@layer components {
+  /* The row of reactions, with the button that adds one at its end. */
+  .reaction-group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .375rem;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  /* Under a message the row stands where the bubble does: at the start of a received row, at the end of a sent one. */
+  .message .reaction-group {
+    grid-column: 2;
+    margin-top: .125rem;
+  }
+
+  .message-sent .reaction-group {
+    grid-column: 1;
+    justify-content: flex-end;
+  }
+
+  .message:not(.message-sent, :has(.message-avatar)) .reaction-group {
+    grid-column: 1 / -1;
+  }
+
+  /* In a thread it follows the words, a little further from them than one paragraph from the next. */
+  .thread-body .reaction-group {
+    margin-top: .375rem;
+  }
+
+  .reaction {
+    --reaction-height: 1.75rem;
+    --reaction-emoji-size: 1rem;
+    --count: 0;
+    position: relative;
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: .25rem;
+    height: var(--reaction-height);
+    margin: 0;
+    padding-block: 0;
+    padding-inline: calc((var(--reaction-height) - var(--reaction-emoji-size)) / 2) .5rem;
+    border-radius: 999px;
+    corner-shape: round;
+    background: var(--color-surface-chip);
+    color: var(--color-text-muted);
+    box-shadow: inset 0 0 0 .5px var(--color-line-contour);
+    font: var(--font-weight-control) .78125rem/1 var(--font-family-sans);
+    font-feature-settings: inherit;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    vertical-align: middle;
+    counter-reset: reaction var(--count);
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition-property: background-color, box-shadow, color;
+    transition-duration: var(--duration-quick);
+    transition-timing-function: var(--easing-glide);
+
+    @media (hover: hover) {
+      &:hover:not(:has(.reaction-input:disabled)) {
+        color: var(--color-text-body);
+        box-shadow: inset 0 0 0 .5px var(--color-line-mark);
+      }
+    }
+
+    /* Given: the reader's own reaction is counted, and the pill takes an ink hairline over a faint tint of ink. */
+    &:has(.reaction-input:checked) {
+      counter-increment: reaction;
+      background: color-mix(in oklab, var(--color-text-strong) 10%, transparent);
+      color: var(--color-text-strong);
+      box-shadow: inset 0 0 0 .5px var(--color-text-strong), 0 0 0 .5px color-mix(in oklab, var(--color-text-strong) 22%, transparent);
+
+      @media (hover: hover) {
+        &:hover:not(:has(.reaction-input:disabled)) {
+          background: color-mix(in oklab, var(--color-text-strong) 13%, transparent);
+          color: var(--color-text-strong);
+          box-shadow: inset 0 0 0 .5px var(--color-text-strong), 0 0 0 .5px color-mix(in oklab, var(--color-text-strong) 22%, transparent);
+        }
+      }
+    }
+
+    /*
+     * Pressed: the pill sinks into a well and the emoji is pushed in with it, given or not, so a tap is
+     * answered before the state changes.
+     */
+    &:active:not(:has(.reaction-input:disabled)) {
+      background: var(--color-surface-inset-hover);
+      box-shadow: inset 0 1px 2px var(--color-shade-1), inset 0 0 0 .5px var(--color-line-strong), 0 .5px 0 var(--color-lip);
+      transition-duration: var(--duration-press);
+
+      .reaction-emoji {
+        scale: .88;
+        transition-duration: var(--duration-press);
+      }
+    }
+
+    &:has(.reaction-input:focus-visible) {
+      @apply --focus-ring;
+    }
+
+    &:has(.reaction-input:disabled) {
+      background: var(--color-surface-inset);
+      color: var(--color-text-disabled);
+      box-shadow: var(--shadow-flat);
+      cursor: not-allowed;
+
+      .reaction-emoji {
+        opacity: .6;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      &:active .reaction-emoji {
+        scale: none;
+      }
+    }
+
+    @media (pointer: coarse) {
+      --reaction-height: 2.75rem;
+      --reaction-emoji-size: 1.25rem;
+      padding-inline-end: .875rem;
+    }
+
+    @media (forced-colors: active) {
+      outline: 1px solid CanvasText;
+      outline-offset: -1px;
+
+      &:has(.reaction-input:checked) {
+        outline: 2px solid Highlight;
+        outline-offset: -2px;
+      }
+
+      &:has(.reaction-input:disabled) {
+        outline-color: GrayText;
+        color: GrayText;
+      }
+    }
+  }
+
+  /* The checkbox covers the pill invisibly: the label is the target, the input keeps the state. */
+  .reaction-input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: inherit;
+    opacity: 0;
+    appearance: none;
+    cursor: inherit;
+  }
+
+  /* The emoji, a character or a picture, in a square as tall as its font; also an option of the picker. */
+  .reaction-emoji {
+    display: inline-grid;
+    flex: none;
+    place-items: center;
+    width: var(--reaction-emoji-size, 1rem);
+    height: var(--reaction-emoji-size, 1rem);
+    font-size: var(--reaction-emoji-size, 1rem);
+    line-height: 1;
+    transition: scale var(--duration-quick) var(--easing-glide);
+  }
+
+  /* The count, from the counter; text written inside it is shown instead. */
+  .reaction-count {
+    min-width: 1ch;
+    text-align: center;
+    /* Trimmed to its figures, so flex centres the figures and not the line around them. */
+    text-box: trim-both cap alphabetic;
+
+    &:empty::before {
+      content: counter(reaction);
+    }
+  }
+
+  /*
+   * Add a reaction: a round button of the same pill, with a face and a plus. It opens the page's emoji picker,
+   * a popover, which adds the chosen reaction.
+   */
+  .reaction-add {
+    --reaction-height: 1.75rem;
+    position: relative;
+    display: inline-grid;
+    flex: none;
+    place-items: center;
+    width: var(--reaction-height);
+    height: var(--reaction-height);
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    corner-shape: round;
+    background: var(--color-surface-chip);
+    color: var(--color-text-muted);
+    box-shadow: inset 0 0 0 .5px var(--color-line-contour);
+    appearance: none;
+    -webkit-tap-highlight-color: transparent;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition-property: background-color, box-shadow, color;
+    transition-duration: var(--duration-quick);
+    transition-timing-function: var(--easing-glide);
+
+    &::before {
+      content: '';
+      width: 1rem;
+      height: 1rem;
+      background: currentColor;
+      mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M13.07 5.27A8 8 0 1 0 18.73 10.93M19.5 2v5M17 4.5h5M8 15.5q3 2.5 6 0'/%3E%3Ccircle cx='8.5' cy='11' r='1' fill='black' stroke='none'/%3E%3Ccircle cx='13.5' cy='11' r='1' fill='black' stroke='none'/%3E%3C/svg%3E") center / contain no-repeat;
+    }
+
+    @media (hover: hover) {
+      &:hover:not(:disabled) {
+        color: var(--color-text-strong);
+        box-shadow: inset 0 0 0 .5px var(--color-line-mark);
+      }
+    }
+
+    &:active:not(:disabled), &:has(+ .popover:popover-open) {
+      background: var(--color-surface-inset);
+      color: var(--color-text-strong);
+      box-shadow: var(--shadow-pressed);
+    }
+
+    &:active:not(:disabled) {
+      transition-duration: var(--duration-press);
+    }
+
+    &:focus-visible {
+      @apply --focus-ring;
+    }
+
+    &:disabled {
+      color: var(--color-text-disabled);
+      cursor: not-allowed;
+    }
+
+    @media (pointer: coarse) {
+      --reaction-height: 2.75rem;
+    }
+
+    @media (forced-colors: active) {
+      outline: 1px solid ButtonText;
+      outline-offset: -1px;
+
+      &::before {
+        background: ButtonText;
+      }
+    }
+  }
+}
