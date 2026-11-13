@@ -12,6 +12,8 @@ Use a few meaningful sizes across a family. A compact field, adjacent button and
 
 Compact desktop tools can be dense while remaining keyboard accessible. Touch targets need room for imprecise input. Meet the [accessibility target-size requirements](../accessibility.md), and prefer comfortable touch bounds where space permits.
 
+Grow the target for a coarse pointer, not the visible surface. A segmented control, a button or a chip that becomes taller on touch changes its proportions, its radius-to-height relationship and the alignment of everything beside it; a rule that keeps a row level then forces each neighbor to grow too. Extend an invisible hit area around the unchanged control instead. Where neighbors sit too close for an extension that does not reach over them, extend only along the open axis, accept the control's own size when it already meets the minimum, or give the composition more room. Rows of a list are the exception: they have no shape to keep, and a taller row is the room a finger needs.
+
 Content determines minimum space. Use minimum height with padding rather than a fixed height where labels can wrap. Avoid width assumptions based on one translated string, a single number of digits or a placeholder.
 
 ## Compare footprints
