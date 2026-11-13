@@ -5,7 +5,7 @@
  * `.cover`), so light and dark come from the same drawing. A drawing is at real size: a control is 38px, a ring is
  * half a pixel, a corner is its role token. The art is a 240 × 150 safe area centered on the stage: a wider stage
  * shows more stage around it, and only a stage narrower than the safe area scales the art down.
- * Words are bars, never text. One mark per cover may be ink.
+ * Words are bars, never text. One mark per cover may be ink, and data that belongs to a category may take its hue.
  */
 /* A layout's gap is its own: a column inside a gapless column keeps the default. */
 @property --gap {
@@ -213,6 +213,46 @@
     color: var(--color-text-inverse);
   }
 
+  /*
+   * Hue: a category, the only color a cover holds besides ink. Ink says what a component is for; a hue says what a
+   * piece of data belongs to, and appears only where the component itself reads a category: a category's dot,
+   * a badge, a chip or a tag of one, an icon frame, a schedule's event and the series of a chart that has several.
+   * A cover-hue-<n> class sets the four category roles for itself and what it holds, in the chart's own order
+   * (blue, orange, teal, violet), so the first category is always blue and four is the most a cover shows. The
+   * primitives that a category colors read the roles, and fall back to their neutral look without one.
+   */
+  .cover-hue-1, .cover-hue-2, .cover-hue-3, .cover-hue-4 {
+    --cover-bar: color-mix(in oklch, var(--category-text) 78%, transparent);
+  }
+
+  .cover-hue-1 {
+    --category-surface: var(--color-category-blue-surface);
+    --category-text: var(--color-category-blue-text);
+    --category-line: var(--color-category-blue-line);
+    --category-mark: var(--color-category-blue-mark);
+  }
+
+  .cover-hue-2 {
+    --category-surface: var(--color-category-orange-surface);
+    --category-text: var(--color-category-orange-text);
+    --category-line: var(--color-category-orange-line);
+    --category-mark: var(--color-category-orange-mark);
+  }
+
+  .cover-hue-3 {
+    --category-surface: var(--color-category-teal-surface);
+    --category-text: var(--color-category-teal-text);
+    --category-line: var(--color-category-teal-line);
+    --category-mark: var(--color-category-teal-mark);
+  }
+
+  .cover-hue-4 {
+    --category-surface: var(--color-category-violet-surface);
+    --category-text: var(--color-category-violet-text);
+    --category-line: var(--color-category-violet-line);
+    --category-mark: var(--color-category-violet-mark);
+  }
+
   /* A row in a list: a menu item, an option. The active one takes the chip tone at once. */
   .cover-row {
     --r: var(--radius-control-sm);
@@ -381,8 +421,8 @@
   /* A chip-toned face: an alert, inline code, a band. Without the contour it is a skeleton block. */
   .cover-tone {
     --r: var(--radius-control-lg);
-    background: var(--color-surface-chip);
-    box-shadow: inset 0 0 0 .5px var(--color-line-contour);
+    background: var(--category-surface, var(--color-surface-chip));
+    box-shadow: inset 0 0 0 .5px var(--category-line, var(--color-line-contour));
 
     &.cover-skeleton {
       --r: var(--radius-chip);
@@ -531,9 +571,9 @@
     padding: 0 5px 0 8px;
     border-radius: calc(var(--radius-control) * var(--corner-scale) - 6px);
     corner-shape: var(--corner-shape);
-    background: var(--color-surface-chip);
-    box-shadow: inset 0 0 0 .5px var(--color-line-contour);
-    color: var(--color-text-muted);
+    background: var(--category-surface, var(--color-surface-chip));
+    box-shadow: inset 0 0 0 .5px var(--category-line, var(--color-line-contour));
+    color: var(--category-text, var(--color-text-muted));
   }
 
   .cover-chip {
@@ -564,9 +604,9 @@
     gap: 5px;
     height: 22px;
     padding: 0 7px;
-    background: var(--color-surface-chip);
-    box-shadow: inset 0 0 0 .5px var(--color-line-contour);
-    color: var(--color-text-body);
+    background: var(--category-surface, var(--color-surface-chip));
+    box-shadow: inset 0 0 0 .5px var(--category-line, var(--color-line-contour));
+    color: var(--category-text, var(--color-text-body));
 
     /* A flag of ink, such as a collaborator's name beside their pointer. */
     &.cover-ink {
@@ -597,7 +637,7 @@
     width: var(--d, 7px);
     height: var(--d, 7px);
     border-radius: 999px;
-    background: var(--color-line-mark);
+    background: var(--category-mark, var(--color-line-mark));
 
     &.cover-ink {
       background: var(--color-surface-inverse);
@@ -794,11 +834,11 @@
   }
 
   /*
-   * A swatch: a disc with an edge inside it. A cover keeps to ink, so its colors are steps of ink set with
-   * --swatch; the chosen one stands in a ring of ink, a gap away, cut from --cover-surface.
+   * A swatch: a disc with an edge inside it, in its hue's mark (cover-hue-<n>) or a color set with --swatch; the
+   * chosen one stands in a ring of ink, a gap away, cut from --cover-surface.
    */
   .cover-swatch {
-    --swatch: currentColor;
+    --swatch: var(--category-mark, currentColor);
     display: block;
     flex: none;
     width: 24px;
@@ -851,7 +891,7 @@
       inset-inline-start: 0;
       width: 2px;
       border-radius: 999px;
-      background: var(--color-line-strong);
+      background: var(--category-mark, var(--color-line-strong));
     }
   }
 
@@ -972,9 +1012,9 @@
   }
 
   /*
-   * A chart's plot: an SVG written by the chart's own layout, in steps of ink. A shape is filled at --tone of ink,
-   * all of it by default, and a line is a stroke of the same, --w wide; a hairline is the scale, and a wash is the
-   * fade under a line.
+   * A chart's plot: an SVG written by the chart's own layout. A shape is filled at --tone of its color, all of it by
+   * default, and a line is a stroke of the same, --w wide; a hairline is the scale, and a wash is the fade under a
+   * line. The color is ink for a chart of one series and a series' hue (cover-hue-<n>) when there are several.
    */
   .cover-plot {
     display: block;
@@ -983,12 +1023,12 @@
   }
 
   .cover-plot-shape {
-    fill: color-mix(in oklab, var(--color-surface-inverse) var(--tone, 100%), var(--color-surface-raised));
+    fill: color-mix(in oklab, var(--category-mark, var(--color-surface-inverse)) var(--tone, 100%), var(--color-surface-raised));
   }
 
   .cover-plot-line {
     fill: none;
-    stroke: color-mix(in oklab, var(--color-surface-inverse) var(--tone, 100%), var(--color-surface-raised));
+    stroke: color-mix(in oklab, var(--category-mark, var(--color-surface-inverse)) var(--tone, 100%), var(--color-surface-raised));
     stroke-width: var(--w, 2px);
     stroke-linecap: round;
     stroke-linejoin: round;
@@ -1003,7 +1043,7 @@
   }
 
   .cover-plot-wash {
-    fill: color-mix(in oklab, var(--color-surface-inverse) 16%, transparent);
+    fill: color-mix(in oklab, var(--category-mark, color-mix(in oklab, var(--color-surface-inverse) 55%, transparent)) 28%, transparent);
     mask-image: linear-gradient(to bottom, black, transparent);
   }
 
@@ -1182,10 +1222,10 @@
     }
   }
 
-  /* A breakdown's segment, --w of the bar wide and --tone of ink dark, and the dot of the same tone beside its name. */
+  /* A breakdown's segment, --w of the bar wide and --tone of ink dark, and a legend's key in the same tone or its series' hue. */
   .cover-part, .cover-legend {
     display: block;
-    background: color-mix(in oklab, var(--color-surface-inverse) var(--tone, 100%), transparent);
+    background: color-mix(in oklab, var(--category-mark, var(--color-surface-inverse)) var(--tone, 100%), transparent);
   }
 
   .cover-part {
@@ -1401,8 +1441,8 @@
   }
 
   /*
-   * A color picker's field, in steps of ink since a cover holds no hue: the tone deepens along it and falls
-   * toward the ink down it. Its thumb is the color in a pearl ring, placed by its middle at --x and --y.
+   * A color picker's field for its hue (cover-hue-<n>): white at one corner, the hue along the top and black down
+   * it, as a real field is in either scheme. Its thumb is the color in a pearl ring, placed by its middle at --x and --y.
    */
   .cover-field {
     --r: var(--radius-control);
@@ -1411,8 +1451,8 @@
     border-radius: calc(var(--r) * var(--corner-scale));
     corner-shape: var(--corner-shape);
     background:
-      linear-gradient(180deg, transparent, var(--color-text-strong)),
-      linear-gradient(90deg, var(--color-surface-raised), color-mix(in oklch, var(--color-text-strong) 42%, var(--color-surface-raised)));
+      linear-gradient(180deg, transparent, oklch(0% 0 none)),
+      linear-gradient(90deg, oklch(100% 0 none), var(--category-mark, color-mix(in oklch, var(--color-text-strong) 42%, var(--color-surface-raised))));
     box-shadow: inset 0 0 0 .5px var(--color-line-contour);
   }
 
