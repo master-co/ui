@@ -154,6 +154,7 @@ Or import only the theme and the components you use:
 | Tree | `tree`, `tree-item`, `tree-toggle`, `tree-group`, `tree-sub` |
 | Carousel | `carousel`, `carousel-slide`, `carousel-2`, `carousel-3`, `carousel-center` |
 | Marquee | `marquee`, `marquee-reverse`, `marquee-track` |
+| Waveform | `waveform`, `waveform-sm`, `waveform-lg`, `waveform-bar`, `waveform-seek`, `waveform-time` |
 | Splitter | `splitter`, `splitter-pane`, `splitter-handle` |
 | Figure | `figure`, `figure-framed`, `figure-center`, `figure-media`, `figure-caption` |
 | Compare | `compare`, `compare-before`, `compare-after`, `compare-range` |

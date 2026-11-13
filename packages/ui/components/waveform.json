@@ -1,0 +1,45 @@
+{
+  "$schema": "../contract.schema.json",
+  "name": "waveform",
+  "title": "Waveform",
+  "tier": "component",
+  "category": "Media",
+  "description": "A recording as a row of bars, in ink as far as it has played.",
+  "use": "A voice message or a short clip: the shape of the sound, drawn as thin bars that fill with ink as the recording plays. The page's player sets --waveform-progress on the row as the audio plays, and an optional range input over the bars seeks. The bars are decorative; the seek input or the time beside them carries the meaning.",
+  "instead": [
+    { "when": "It is how far a task has come, not a recording", "use": "progress" },
+    { "when": "It is a value to set, with no sound behind it", "use": "slider" },
+    { "when": "The bars are numbers a reader compares", "use": "chart" }
+  ],
+  "script": "optional",
+  "keyboard": [
+    { "keys": "ArrowLeft, ArrowRight, ArrowUp, ArrowDown", "action": "With waveform-seek: step back or forward through the recording, as any range input does" },
+    { "keys": "Home, End", "action": "With waveform-seek: go to the start or the end" },
+    { "keys": "PageUp, PageDown", "action": "With waveform-seek: take a larger step" }
+  ],
+  "platform": [
+    { "feature": "round() with a length step", "fallback": "Each bar takes its exact height, and the round of a bar's ends may be cut flat by part of a pixel" }
+  ],
+  "classes": [
+    { "name": "waveform", "kind": "root", "description": "The row, 32px tall, centered on its middle line. It fills its container, or in a row of other things takes the width its bars need. Its ink is currentColor" },
+    { "name": "waveform-sm", "kind": "modifier", "of": "waveform", "exclusive": "size", "description": "A 20px row of 2px bars, 1.5px apart, for a line of a list" },
+    { "name": "waveform-lg", "kind": "modifier", "of": "waveform", "exclusive": "size", "description": "A 48px row of 4px bars, 3px apart, for a player" },
+    { "name": "waveform-bar", "kind": "part", "of": "waveform", "description": "One bar, an empty element as tall as its --level of the row and never shorter than it is wide. Ink up to the playhead, a quiet tint after it" },
+    { "name": "waveform-seek", "kind": "part", "of": "waveform", "elements": ["input"], "attributes": { "type": "range" }, "label": true, "description": "A native range input laid invisibly over the bars, last in the row: the pointer and the keys seek with it, and the row draws its focus ring. Give it an aria-label and an aria-valuetext in words" },
+    { "name": "waveform-time", "kind": "part", "of": "waveform", "anywhere": true, "description": "The length of the recording, or how much has played, beside the row: small tabular figures in the ink of the place it stands in" }
+  ],
+  "states": [
+    { "on": "waveform-seek", "name": "focus-visible", "mark": ":focus-visible", "description": "The row takes the focus ring, drawn in its own ink so it shows on a sent bubble too" },
+    { "on": "waveform-seek", "name": "hover", "mark": ":hover", "description": "With a pointer that hovers, the bars still to play step up a little, to say they can be touched" },
+    { "on": "waveform-seek", "name": "disabled", "mark": ":disabled", "description": "The row keeps its drawing and no longer answers the pointer" }
+  ],
+  "properties": [
+    { "name": "--waveform-progress", "on": "waveform", "default": "0", "description": "How far the recording has played, from 0 to 1. The page's player sets it" },
+    { "name": "--level", "on": "waveform-bar", "description": "How loud the recording is at this bar, from 0 to 1: the bar's share of the row's height" },
+    { "name": "--waveform-height", "on": "waveform", "default": "2rem", "description": "Height of the row, and of the loudest bar" },
+    { "name": "--waveform-bar", "on": "waveform", "default": "3px", "description": "Width of a bar, and the height of the shortest" },
+    { "name": "--waveform-gap", "on": "waveform", "default": "2px", "description": "The least space between bars" },
+    { "name": "--waveform-color", "on": "waveform", "default": "currentColor", "description": "The ink of what has played; what has not is a tint of it" }
+  ],
+  "example": "<div class=\"waveform\" style=\"--waveform-progress: .4\">\n  <span class=\"waveform-bar\" style=\"--level: .3\"></span>\n  <span class=\"waveform-bar\" style=\"--level: .6\"></span>\n  <span class=\"waveform-bar\" style=\"--level: .9\"></span>\n  <span class=\"waveform-bar\" style=\"--level: .5\"></span>\n  <span class=\"waveform-bar\" style=\"--level: .7\"></span>\n  <span class=\"waveform-bar\" style=\"--level: .4\"></span>\n  <span class=\"waveform-bar\" style=\"--level: .2\"></span>\n  <span class=\"waveform-bar\" style=\"--level: .1\"></span>\n  <input class=\"waveform-seek\" type=\"range\" min=\"0\" max=\"14\" step=\"0.1\" value=\"5.6\" aria-label=\"Seek\" aria-valuetext=\"0:05 of 0:14\">\n</div>\n<span class=\"waveform-time\">0:14</span>"
+}

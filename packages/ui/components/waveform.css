@@ -1,0 +1,163 @@
+/*
+ * Waveform: a recording as a row of bars, in ink as far as it has played.
+ * Each bar is a thin pill as tall as its --level of the row, centered on the row's middle line. Bars are 3px wide
+ * and 2px apart: the row is as wide as its bars need in a line of other things, and in a wider room the bars
+ * share its width with even gaps; in a narrower one they grow thinner together.
+ * The ink is the ink of the text the row stands in (currentColor), so the same bars read in a received bubble,
+ * on a sent one filled with ink, and on a page. What has not played yet is a quiet tint of that ink.
+ * How far it has played is one number on the row, --waveform-progress, from 0 to 1, which the script that plays
+ * the recording sets. Each bar is cut to its own pill shape by a clip-path, which clips everything inside it;
+ * its ::before is positioned against the row, not the bar, and runs from the row's start to the playhead, so the
+ * ink stops exactly at the playhead, even halfway across a bar. That needs no count of the bars, no index and no
+ * second copy of them, and every engine draws it the same.
+ * A transparent native range input laid over the bars seeks: it takes the pointer and the arrow keys, carries
+ * the meaning for assistive technology, and its focus ring is drawn around the row in the row's ink. The bars say
+ * nothing.
+ * Rows are 32px tall, 20px small and 48px large. A bar's height is rounded to steps of 2px with round(), so its
+ * ends fall on whole pixels; without round() it takes its exact height and an end may lose part of its round.
+ */
+@layer components {
+  .waveform {
+    --waveform-height: 2rem;
+    --waveform-bar: 3px;
+    --waveform-gap: 2px;
+    --waveform-progress: 0;
+    --waveform-color: currentColor;
+    /* What is still to play: a quiet tint of the same ink. */
+    --waveform-rest: color-mix(in oklab, var(--waveform-color) 28%, transparent);
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--waveform-gap);
+    min-width: 0;
+    height: var(--waveform-height);
+    margin: 0;
+    padding: 0;
+    border-radius: calc(var(--radius-chip) * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+
+    &.waveform-sm {
+      --waveform-height: 1.25rem;
+      --waveform-bar: 2px;
+      --waveform-gap: 1.5px;
+    }
+
+    &.waveform-lg {
+      --waveform-height: 3rem;
+      --waveform-bar: 4px;
+      --waveform-gap: 3px;
+    }
+
+    /* Something to seek with: the bars still to play step up a little under the pointer. */
+    @media (hover: hover) {
+      &:has(.waveform-seek:hover:not(:disabled)) {
+        --waveform-rest: color-mix(in oklab, var(--waveform-color) 40%, transparent);
+      }
+    }
+
+    /* The ring is drawn in the row's own ink, so it is seen on a sent bubble filled with ink too. */
+    &:has(.waveform-seek:focus-visible) {
+      @apply --focus-ring;
+      outline-color: var(--waveform-color);
+    }
+
+    @media (forced-colors: active) {
+      --waveform-color: CanvasText;
+      --waveform-rest: GrayText;
+
+      &:has(.waveform-seek:focus-visible) {
+        outline-color: Highlight;
+      }
+    }
+  }
+
+  /* One bar: --level of the row's height, never shorter than it is wide, so silence is a row of dots. */
+  .waveform-bar {
+    flex: 0 1 auto;
+    width: var(--waveform-bar);
+    min-width: 1px;
+    height: max(var(--waveform-bar), calc(var(--level, .5) * 100%));
+    /*
+     * In whole steps of 2px, so a bar's top and bottom fall on whole pixels about the middle line: the paint is
+     * snapped to the pixel grid and the clip is not, and a bar between the two would lose the round of its ends.
+     */
+    height: round(max(var(--waveform-bar), var(--level, .5) * 100%), 2px);
+    margin: 0;
+    padding: 0;
+    background: var(--waveform-rest);
+    /* The pill. A clip-path cuts what the bar holds too, which border-radius with overflow would not. */
+    clip-path: inset(0 round 999px);
+
+    /* The played ink, measured against the row: from its start to the playhead. */
+    &::before {
+      content: '';
+      position: absolute;
+      inset-block: 0;
+      inset-inline-start: 0;
+      inline-size: clamp(0%, var(--waveform-progress) * 100%, 100%);
+      background: var(--waveform-color);
+    }
+
+    @media (forced-colors: active) {
+      forced-color-adjust: none;
+    }
+  }
+
+  /*
+   * The seek control: a native range input over the whole row, invisible, so the bars are what is seen and the
+   * input is what is used. Its thumb is a pixel wide, so the value under the pointer is the bar under it.
+   * On touch it reaches 44px tall, past a short row.
+   */
+  .waveform-seek {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    opacity: 0;
+    appearance: none;
+    cursor: pointer;
+    touch-action: pan-y;
+    -webkit-tap-highlight-color: transparent;
+
+    &::-webkit-slider-thumb {
+      width: 1px;
+      height: var(--waveform-height);
+      border: 0;
+      appearance: none;
+    }
+
+    &::-moz-range-thumb {
+      width: 1px;
+      height: var(--waveform-height);
+      border: 0;
+    }
+
+    &:disabled {
+      cursor: default;
+    }
+
+    @media (pointer: coarse) {
+      inset-block: min(0px, calc((var(--waveform-height) - 2.75rem) / 2));
+      height: auto;
+    }
+  }
+
+  /*
+   * The length of the recording, or how much of it has played, beside the bars: small tabular figures in the
+   * ink of the place it stands in, a step quieter than the words around it.
+   */
+  .waveform-time {
+    flex: none;
+    margin: 0;
+    color: color-mix(in oklab, currentColor 72%, transparent);
+    font-size: .75rem;
+    line-height: 1.2;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+}
