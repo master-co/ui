@@ -72,14 +72,17 @@ Or import only the theme and the components you use:
 | Hotspot | `hotspot`, `hotspot-pin` |
 | Divider | `divider`, `divider-vertical`, `divider-label` |
 | Texture | `texture`, `texture-grid`, `texture-stripes`, `texture-crosshatch`, `texture-checker`, `texture-fade` |
+| Category | `category-stone`, `category-gray`, `category-zinc`, `category-neutral`, `category-slate`, `category-brown`, `category-orange`, `category-amber`, `category-yellow`, `category-lime`, `category-green`, `category-beryl`, `category-teal`, `category-cyan`, `category-sky`, `category-blue`, `category-indigo`, `category-violet`, `category-purple`, `category-fuchsia`, `category-pink`, `category-crimson`, `category-red` |
 | Scroll area | `scroll-area`, `scroll-area-inline` |
 | Reveal | `reveal` |
 | Icon | `icon` |
+| Icon frame | `icon-frame`, `icon-frame-xs`, `icon-frame-sm`, `icon-frame-lg`, `icon-frame-raised`, `icon-frame-info`, `icon-frame-success`, `icon-frame-warning`, `icon-frame-danger`, `icon-frame-category` |
 | Button | `btn`, `btn-primary`, `btn-quiet`, `btn-brand`, `btn-danger`, `btn-sm`, `btn-lg`, `btn-square`, `btn-pill`, `btn-group` |
 | Toolbar | `toolbar`, `toolbar-floating`, `toolbar-separator` |
 | Link | `link`, `link-quiet` |
 | Skip link | `skip` |
 | Input | `input`, `input-sm`, `input-lg`, `input-auto`, `input-group`, `input-group-sm`, `input-group-lg`, `input-group-wrap`, `input-group-field`, `input-group-addon`, `field`, `field-hint`, `field-error`, `fieldset`, `fieldset-legend` |
+| Editor | `editor`, `editor-toolbar`, `editor-document`, `editor-paragraph`, `editor-heading`, `editor-subheading`, `editor-list`, `editor-list-numbered`, `editor-item`, `editor-quote`, `editor-link`, `editor-rule` |
 | Select | `select`, `select-option`, `select-raised`, `select-sm`, `select-lg` |
 | Checkbox | `check`, `checkbox` |
 | Radio | `radio` |
@@ -87,7 +90,7 @@ Or import only the theme and the components you use:
 | Slider | `slider` |
 | Range | `range`, `range-start`, `range-end` |
 | Segmented control | `segmented`, `segmented-item`, `segmented-input`, `segmented-sm`, `segmented-lg` |
-| Chip | `chip`, `chip-input`, `chip-remove` |
+| Chip | `chip`, `chip-sm`, `chip-lg`, `chip-category`, `chip-input`, `chip-remove`, `chip-label`, `chip-media`, `chip-dot`, `chip-count` |
 | Tags | `tags` |
 | Editable | `editable`, `editable-preview`, `editable-field`, `editable-placeholder` |
 | Swatch | `swatch`, `swatch-input`, `swatch-sm`, `swatch-lg`, `swatch-square` |
@@ -125,12 +128,12 @@ Or import only the theme and the components you use:
 | Toast | `toast-region`, `toast-region-top`, `toast-region-center`, `toast`, `toast-timed`, `toast-info`, `toast-success`, `toast-warning`, `toast-danger`, `toast-icon`, `toast-body`, `toast-title`, `toast-description`, `toast-close` |
 | Alert | `alert`, `alert-info`, `alert-success`, `alert-warning`, `alert-danger`, `alert-icon`, `alert-body`, `alert-title`, `alert-description` |
 | Banner | `banner`, `banner-dismissible`, `banner-info`, `banner-success`, `banner-warning`, `banner-danger`, `banner-inverse`, `banner-brand`, `banner-content`, `banner-title`, `banner-action`, `banner-close` |
-| Progress | `progress`, `progress-sm`, `progress-lg`, `progress-segmented`, `progress-ring`, `progress-ring-sm`, `progress-ring-lg`, `progress-ring-xl` |
+| Progress | `progress`, `progress-sm`, `progress-lg`, `progress-segmented`, `progress-label`, `progress-label-below`, `progress-marker`, `progress-ring`, `progress-ring-half`, `progress-ring-sm`, `progress-ring-lg`, `progress-ring-xl` |
 | Meter | `meter`, `meter-sm`, `meter-lg`, `meter-segmented` |
 | Gauge | `gauge`, `gauge-sm`, `gauge-lg`, `gauge-value`, `gauge-label` |
 | Uptime | `uptime`, `uptime-sm`, `uptime-day`, `uptime-degraded`, `uptime-down`, `uptime-none` |
 | Gantt | `gantt`, `gantt-now`, `gantt-row`, `gantt-scale`, `gantt-label`, `gantt-bar`, `gantt-milestone`, `gantt-ticks` |
-| Schedule | `schedule`, `schedule-now`, `schedule-rail`, `schedule-day`, `schedule-heading`, `schedule-events`, `schedule-event`, `schedule-title`, `schedule-time` |
+| Schedule | `schedule`, `schedule-now`, `schedule-rail`, `schedule-day`, `schedule-heading`, `schedule-events`, `schedule-event`, `schedule-title`, `schedule-time`, `schedule-event-lane`, `schedule-event-continued`, `schedule-event-continues`, `schedule-event-plain`, `schedule-event-category`, `schedule-allday`, `schedule-allday-label`, `schedule-month`, `schedule-weekdays`, `schedule-weekday`, `schedule-weeks`, `schedule-week`, `schedule-date`, `schedule-date-outside`, `schedule-date-number`, `schedule-more`, `schedule-list`, `schedule-agenda`, `schedule-agenda-day`, `schedule-agenda-date`, `schedule-view`, `schedule-view-header`, `schedule-view-title`, `schedule-view-previous`, `schedule-view-next`, `schedule-view-today`, `schedule-view-switch`, `schedule-view-body` |
 | Price | `price`, `price-sm`, `price-lg`, `price-amount`, `price-currency`, `price-period`, `price-was` |
 | Skeleton | `skeleton`, `skeleton-text`, `skeleton-circle` |
 | Shimmer | `shimmer` |
@@ -158,7 +161,7 @@ Or import only the theme and the components you use:
 | Trace | `trace`, `trace-step`, `trace-failed`, `trace-summary`, `trace-marker`, `trace-meta`, `trace-detail` |
 | Calendar | `calendar`, `calendar-header`, `calendar-title`, `calendar-grid`, `calendar-week`, `calendar-weekday`, `calendar-day`, `calendar-day-outside`, `calendar-day-range-start`, `calendar-day-range`, `calendar-day-range-end` |
 | Tree | `tree`, `tree-item`, `tree-toggle`, `tree-group`, `tree-sub` |
-| Carousel | `carousel`, `carousel-slide`, `carousel-2`, `carousel-3`, `carousel-center` |
+| Carousel | `carousel`, `carousel-slide`, `carousel-2`, `carousel-3`, `carousel-center`, `carousel-vertical`, `carousel-view`, `carousel-previous`, `carousel-next`, `carousel-dots`, `carousel-dot` |
 | Marquee | `marquee`, `marquee-reverse`, `marquee-track` |
 | Waveform | `waveform`, `waveform-sm`, `waveform-lg`, `waveform-bar`, `waveform-seek`, `waveform-time` |
 | Splitter | `splitter`, `splitter-pane`, `splitter-handle` |
@@ -168,8 +171,8 @@ Or import only the theme and the components you use:
 | Message | `message`, `message-sent`, `message-avatar`, `message-bubble`, `message-meta`, `message-typing` |
 | Thread | `thread`, `thread-item`, `thread-avatar`, `thread-body`, `thread-header`, `thread-text`, `thread-author`, `thread-meta`, `thread-replies` |
 | Reaction | `reaction-group`, `reaction`, `reaction-input`, `reaction-emoji`, `reaction-count`, `reaction-add` |
-| Avatar | `avatar`, `avatar-image`, `avatar-xs`, `avatar-sm`, `avatar-lg`, `avatar-xl`, `avatar-square`, `avatar-status`, `avatar-group` |
-| Badge | `badge`, `badge-sm`, `badge-lg`, `badge-pill`, `badge-outline`, `badge-raised`, `badge-ink`, `badge-info`, `badge-success`, `badge-warning`, `badge-danger`, `badge-dot`, `badge-live`, `badge-corner` |
+| Avatar | `avatar`, `avatar-image`, `avatar-xs`, `avatar-sm`, `avatar-lg`, `avatar-xl`, `avatar-square`, `avatar-fallback`, `avatar-status`, `avatar-badge`, `avatar-group` |
+| Badge | `badge`, `badge-sm`, `badge-lg`, `badge-pill`, `badge-outline`, `badge-raised`, `badge-ink`, `badge-category`, `badge-info`, `badge-success`, `badge-warning`, `badge-danger`, `badge-dot`, `badge-live`, `badge-corner`, `badge-compound`, `badge-label`, `badge-media`, `badge-addon` |
 | Heading | `heading`, `heading-xs`, `heading-sm`, `heading-lg`, `heading-xl`, `heading-2xl`, `heading-display`, `eyebrow`, `lead`, `lead-sm`, `lead-lg` |
 | Code | `code`, `code-block`, `code-line`, `code-line-highlight`, `code-line-added`, `code-line-removed`, `code-numbered`, `code-panel`, `code-header`, `code-title` |
 | Snippet | `snippet`, `snippet-sm`, `snippet-lg`, `snippet-prompt`, `snippet-command`, `snippet-icon`, `snippet-check`, `snippet-status` |
@@ -227,7 +230,7 @@ stop.value = 'hnd'                                          // where a pattern h
 
 ## React, Svelte and Vue
 
-A component is a class on a native element, so in a framework most of the library is the same markup in that framework's syntax; there is no `Button` to import. Twenty-one patterns hold state, render rows from data, join parts by id or have a lifetime, and each has a component: calendar, combobox, command, compare, dialog, editable, field, listbox, menu, otp, popover, sortable, splitter, stepper, tabs, tags, toast, toolbar, tooltip, tree and wheel.
+A component is a class on a native element, so in a framework most of the library is the same markup in that framework's syntax; there is no `Button` to import. Twenty-four patterns hold state, render rows from data, join parts by id or have a lifetime, and each has a component: avatar, calendar, carousel, combobox, command, compare, dialog, editable, field, listbox, menu, otp, popover, schedule, sortable, splitter, stepper, tabs, tags, toast, toolbar, tooltip, tree and wheel.
 
 ```sh
 npx master-ui add combobox --framework=react   # ui/combobox.tsx and ui/use-behavior.ts

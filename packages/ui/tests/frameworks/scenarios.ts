@@ -595,6 +595,93 @@ export const scenarios: Record<string, Scenario> = {
   },
 
 
+  async avatar(driver, page) {
+    const mounted = await driver.mount('avatar', { src: '/people/ada.jpg', alt: 'Ada Lovelace', initials: 'AL' })
+    conforms(page)
+    const root = page.one('.avatar')
+    const image = page.one<HTMLImageElement>('.avatar-image')
+    const fallback = page.one<HTMLElement>('.avatar-fallback')
+    assert.equal(root.getAttribute('role'), 'img')
+    assert.equal(root.getAttribute('aria-label'), 'Ada Lovelace', 'the avatar is named once, on its root')
+    assert.equal(image.getAttribute('alt'), '')
+    assert.equal(fallback.getAttribute('aria-hidden'), 'true')
+    assert.equal(fallback.textContent?.trim(), 'AL')
+    assert.equal(image.hidden, false, 'the photo loads over its fallback')
+
+    await driver.act(() => image.dispatchEvent(new page.window.Event('error')))
+    assert.equal(image.hidden, true, 'a photo that fails is hidden')
+    assert.equal(fallback.hidden, false)
+
+    await driver.act(async () => {
+      mounted.set({ src: '/people/ada-2.jpg' })
+      await new Promise(resolve => setTimeout(resolve, 0))
+    })
+    assert.equal(image.getAttribute('src'), '/people/ada-2.jpg')
+    assert.equal(image.hidden, false, 'a new photo starts over')
+    await driver.act(() => image.dispatchEvent(new page.window.Event('load')))
+    assert.equal(fallback.hidden, true, 'the loaded photo hides the fallback')
+    await driver.act(() => mounted.unmount())
+
+    await driver.mount('avatar', { alt: 'Grace Hopper', initials: 'GH' })
+    assert.equal(page.one<HTMLImageElement>('.avatar-image').hidden, true, 'no photo: the fallback alone')
+  },
+
+  async carousel(driver, page) {
+    const { mounted, heard } = await owned(driver, 'carousel', { value: 'atlas' })
+    conforms(page)
+    const dots = () => page.all('.carousel-dot').map(dot => dot.getAttribute('aria-current') === 'true')
+    const slides = page.all('.carousel-slide')
+    assert.deepEqual(slides.map(slide => slide.getAttribute('data-value')), ['atlas', 'borealis', 'cirrus'], 'a slide for each item')
+    assert.deepEqual(page.all('.carousel-dot').map(dot => dot.getAttribute('aria-controls')), slides.map(slide => slide.id), 'each dot names its slide')
+    assert.deepEqual(dots(), [true, false, false], 'the value is drawn from the first render')
+    assert.equal(page.one<HTMLButtonElement>('.carousel-previous').disabled, true)
+
+    await driver.act(() => page.click(page.one('.carousel-next')))
+    assert.deepEqual(heard, ['borealis'], 'the slide the reader goes to comes out')
+    assert.deepEqual(dots(), [false, true, false])
+
+    await driver.act(() => mounted.set({ value: 'cirrus' }))
+    assert.deepEqual(dots(), [false, false, true], 'a value set by the owner is shown')
+    assert.equal(page.one<HTMLButtonElement>('.carousel-next').disabled, true)
+    assert.deepEqual(heard, ['borealis'], 'and says nothing')
+    await driver.act(() => mounted.unmount())
+    assert.equal(page.all('.carousel-view').length, 0)
+  },
+
+  async schedule(driver, page) {
+    const events = [
+      { id: 'standup', title: 'Standup', start: '2026-11-13T09:00', end: '2026-11-13T09:15', category: 'blue' },
+      { id: 'offsite', title: 'Offsite', start: '2026-11-07', end: '2026-11-11', allDay: true },
+      ...Array.from({ length: 4 }, (_, index) => ({ id: `talk${index}`, title: `Talk ${index}`, start: `2026-11-18T1${index}:00`, end: `2026-11-18T1${index}:30` })),
+    ]
+    const clicked: unknown[] = []
+    const { mounted, heard } = await owned(driver, 'schedule', { events, today: '2026-11-13', locale: 'en-US', weekStart: 1, value: { date: '2026-11-13', view: 'month' }, onEventClick: (event: { id: string }) => clicked.push(event.id) })
+    conforms(page)
+    const title = () => page.one('.schedule-view-title').textContent
+    assert.equal(title(), 'November 2026', 'the period is drawn from the first render')
+    assert.equal(page.all('.schedule-week').length, 6)
+    assert.equal(page.one('.schedule-date[aria-current="date"] .schedule-date-number').textContent, '13')
+    assert.equal(page.all('.schedule-event[value="offsite"]').length, 2, 'an event across weeks is a piece in each')
+    assert.ok(page.one('.schedule-event[value="standup"]').classList.contains('category-blue'))
+    assert.equal(page.one('.schedule-more').textContent, '+1 more', 'a day past its lanes has a more button')
+    assert.equal(page.one<HTMLInputElement>('.schedule-view-switch input[value="month"]').checked, true)
+
+    await driver.act(() => page.click(page.one('.schedule-event[value="standup"]')))
+    assert.deepEqual(clicked, ['standup'], 'an event is the page\'s to answer')
+
+    await driver.act(() => page.click(page.one('.schedule-view-next')))
+    assert.deepEqual(heard, [{ date: '2026-12-13', view: 'month' }], 'a move comes out')
+    assert.equal(title(), 'December 2026', 'the framework writes the period')
+
+    await driver.act(() => mounted.set({ value: { date: '2026-11-13', view: 'week' } }))
+    assert.equal(page.all('.schedule-day').length, 7, 'a value set by the owner is written')
+    assert.equal(page.all('.schedule-allday .schedule-event').length, 1, 'what lasts whole days stands in the band')
+    assert.equal(heard.length, 1, 'and says nothing')
+    conforms(page)
+    await driver.act(() => mounted.unmount())
+    assert.equal(page.all('.schedule-view').length, 0)
+  },
+
   async toast(driver, page) {
     const mounted = await driver.mount('toast')
     assert.equal(page.all('.toast').length, 0)

@@ -96,3 +96,10 @@ test('the installation prompt keeps its exact text in portable output', () => {
   assert.equal(promptMarkdown('<DocumentPrompt title="T" text={`run \\`\\`\\`npm\\`\\`\\``} />'), '**T**\n\n````text\nrun ```npm```\n````')
   assert.throws(() => promptMarkdown('<DocumentPrompt title="T" text={`${x}`} />'), /static template literal/)
 })
+
+test('a working example is exported as the files it is made of, by the page that owns them', () => {
+  const source = 'Before\n\n<PagePreview name="default" title="Schedule view" example="schedule-view" caption="Open a day." />\n\nAfter'
+  const markdown = previewMarkdown(source, { example: id => `files of ${id}` })
+  assert.equal(markdown, 'Before\n\n**Schedule view**\n\nfiles of schedule-view\n\nOpen a day.\n\nAfter')
+  assert.throws(() => previewMarkdown(source), /need its files/)
+})

@@ -1,0 +1,185 @@
+{
+  "$schema": "../contract.schema.json",
+  "name": "editor",
+  "title": "Editor",
+  "tier": "component",
+  "category": "Forms",
+  "description": "The frame of a rich text editor: its toolbar, its document and their states.",
+  "use": "Formatted text a reader writes: a description, a comment, a post. The editing itself, the document model, the selection, the history and the keys, belongs to an engine such as TipTap or ProseMirror, which makes editor-document editable and writes the classes of its blocks; the editor draws the frame, the toolbar band, the states and what the document holds. For plain text, a textarea is simpler and better.",
+  "instead": [
+    {
+      "when": "The text is plain, or a few lines without formatting",
+      "use": "input"
+    },
+    {
+      "when": "It is a message or a prompt sent with a button, which grows from one line",
+      "use": "composer"
+    },
+    {
+      "when": "The text is read, not edited",
+      "use": "code"
+    }
+  ],
+  "composes": [
+    "toolbar",
+    "button",
+    "select",
+    "input",
+    "code"
+  ],
+  "script": "optional",
+  "keyboard": [
+    {
+      "keys": "Tab",
+      "action": "Moves from the toolbar, one stop, to the document and on; the engine decides whether Tab indents a list item"
+    },
+    {
+      "keys": "ArrowLeft, ArrowRight, Home, End",
+      "action": "In the toolbar: move between its controls, as the toolbar behavior does"
+    },
+    {
+      "keys": "Ctrl/Cmd+B, Ctrl/Cmd+I, Ctrl/Cmd+U, Ctrl/Cmd+Z, Ctrl/Cmd+Shift+Z",
+      "action": "In the document: the engine's shortcuts for bold, italic, underline, undo and redo"
+    }
+  ],
+  "platform": [
+    {
+      "feature": "contenteditable, made editable by the engine",
+      "fallback": "Without the engine the frame and its states still draw: a document with contenteditable edits as the browser's own contenteditable does, without structure, and the toolbar does nothing"
+    },
+    {
+      "feature": ":has()",
+      "fallback": "The frame does not rise or take the danger edge with the document's focus and state; the document itself still shows them"
+    }
+  ],
+  "classes": [
+    {
+      "name": "editor",
+      "kind": "root",
+      "description": "The frame: the well of a field that holds the toolbar band and the document, and rises with the document's focus"
+    },
+    {
+      "name": "editor-toolbar",
+      "kind": "part",
+      "of": "editor",
+      "description": "On a toolbar at the top of the frame: laid flat, one inset in, with a hairline under it; it wraps on a narrow editor"
+    },
+    {
+      "name": "editor-document",
+      "kind": "part",
+      "of": "editor",
+      "attributes": {
+        "role": "textbox",
+        "aria-multiline": "true"
+      },
+      "label": true,
+      "description": "The element the engine makes editable: it grows from --editor-rows lines to --editor-max-rows, then scrolls. Name it with aria-labelledby, and describe it with the field's hint"
+    },
+    {
+      "name": "editor-paragraph",
+      "kind": "part",
+      "of": "editor",
+      "description": "A paragraph of the document"
+    },
+    {
+      "name": "editor-heading",
+      "kind": "part",
+      "of": "editor",
+      "description": "A heading of the document, on an h2 or the level the engine writes"
+    },
+    {
+      "name": "editor-subheading",
+      "kind": "part",
+      "of": "editor",
+      "description": "A heading a level below editor-heading"
+    },
+    {
+      "name": "editor-list",
+      "kind": "part",
+      "of": "editor",
+      "elements": [
+        "ul",
+        "ol"
+      ],
+      "description": "A list with bullets, its markers in the muted ink; a list inside an item takes circles"
+    },
+    {
+      "name": "editor-list-numbered",
+      "kind": "modifier",
+      "of": "editor-list",
+      "description": "Numbers instead of bullets, on an ol"
+    },
+    {
+      "name": "editor-item",
+      "kind": "part",
+      "of": "editor",
+      "elements": [
+        "li"
+      ],
+      "description": "An item of a list"
+    },
+    {
+      "name": "editor-quote",
+      "kind": "part",
+      "of": "editor",
+      "description": "A quotation, on a blockquote: a rule at its start and its words a step quieter"
+    },
+    {
+      "name": "editor-link",
+      "kind": "part",
+      "of": "editor",
+      "elements": [
+        "a"
+      ],
+      "description": "A link in the document, underlined in the line's ink"
+    },
+    {
+      "name": "editor-rule",
+      "kind": "part",
+      "of": "editor",
+      "elements": [
+        "hr"
+      ],
+      "description": "A horizontal rule between parts of the document"
+    }
+  ],
+  "states": [
+    {
+      "on": "editor-document",
+      "name": "focus",
+      "mark": ":focus",
+      "description": "The frame rises to a raised face with the field's focus halo"
+    },
+    {
+      "on": "editor-document",
+      "name": "invalid",
+      "mark": "aria-invalid=\"true\"",
+      "description": "The frame takes the danger edge, and a field-error in the field shows"
+    },
+    {
+      "on": "editor-document",
+      "name": "read only",
+      "mark": "aria-readonly=\"true\"",
+      "description": "The frame rests flat with no caret: the words can be read and copied, not changed"
+    },
+    {
+      "on": "editor",
+      "name": "disabled",
+      "mark": "aria-disabled=\"true\"",
+      "description": "The frame drops to a flat well with disabled ink; disable the toolbar's controls and the engine with it"
+    }
+  ],
+  "properties": [
+    {
+      "name": "--editor-rows",
+      "default": "6",
+      "description": "How many lines the document shows when it is empty"
+    },
+    {
+      "name": "--editor-max-rows",
+      "default": "18",
+      "description": "How many lines it grows to before it scrolls"
+    }
+  ],
+  "example": "<div class=\"editor\">\n  <div class=\"toolbar editor-toolbar\" role=\"toolbar\" aria-label=\"Formatting\">\n    <button type=\"button\" class=\"btn btn-quiet btn-sm\" aria-pressed=\"false\">Bold</button>\n    <button type=\"button\" class=\"btn btn-quiet btn-sm\" aria-pressed=\"false\">Italic</button>\n  </div>\n  <div class=\"editor-document\" role=\"textbox\" aria-multiline=\"true\" aria-label=\"Description\" contenteditable=\"true\">\n    <p class=\"editor-paragraph\">A map of every deployment, live.</p>\n  </div>\n</div>"
+}

@@ -14,6 +14,18 @@
  * never strikes through their words.
  * Several days stand side by side as schedule-day columns, each with an optional heading over it.
  * Everything is placed by the stylesheet; nothing is measured by a script.
+ *
+ * Events that last whole days stand in lanes rather than on the hours: in schedule-allday, a band under the
+ * headings, and in schedule-month, a month as weeks of seven days. Such an event (schedule-event-lane) spans
+ * --span days from day --column on lane --lane; a piece that began in an earlier week or goes on past this one
+ * is schedule-event-continued or schedule-event-continues, with square ends where it goes on. An event of a few
+ * hours in a month is plain: a dot, its time and its title. A day of a month shows three lanes and a
+ * schedule-more button for the rest; in a narrow month the lanes give way to a dot for each event under the day's
+ * number, which opens the day. schedule-agenda lists the same events by day, for a narrow room or a reader who
+ * would rather read than look. A category colors an event's sheet, bar and words (schedule-event-category).
+ *
+ * schedule-view is the schedule a reader works: a header with previous, today and next, the period's name and a
+ * switch between day, week, month and agenda, over a body the schedule behavior writes from the events.
  */
 @layer components {
   .schedule {
@@ -41,6 +53,27 @@
     /* Without headings, the first label stands half above the first hour: keep it in the box. */
     &:not(:has(.schedule-heading)) {
       padding-block-start: .5rem;
+    }
+
+    /*
+     * With an all-day band, the headings, the band and the hours are three rows. The band runs across the days, so
+     * each day names its column with --column, from 1, and the schedule says how many there are in --schedule-days.
+     */
+    &:has(.schedule-allday) {
+      grid-template-rows: auto auto calc(var(--schedule-span) * var(--schedule-hour));
+
+      .schedule-rail {
+        grid-row: 3;
+      }
+
+      .schedule-day {
+        grid-column: calc(var(--column) + 1);
+        grid-row: 1 / span 3;
+      }
+
+      .schedule-events {
+        grid-row: 3;
+      }
     }
 
     /* Now: an ink line across the day, and a dot where it meets the day's edge. */
@@ -238,10 +271,132 @@
       }
     }
 
+    /*
+     * In a lane: --span days from day --column, on lane --lane, one line high. In a month the first row is the
+     * day's number; in the all-day band the first column is the rail's.
+     */
+    &.schedule-event-lane {
+      --schedule-length: var(--schedule-lane-height, 1.375rem);
+      position: relative;
+      top: auto;
+      inset-inline-start: auto;
+      grid-column: calc(var(--column, 1) + var(--schedule-lane-column, 0)) / span var(--span, 1);
+      grid-row: calc(var(--lane, 0) + var(--schedule-lane-row, 1));
+      flex-wrap: nowrap;
+      align-items: center;
+      align-content: center;
+      width: auto;
+      min-width: 0;
+      height: var(--schedule-length);
+      margin-inline: 2px;
+      padding-block: 0;
+    }
+
+    /*
+     * A piece of an event that began before what is shown, or goes on after it: on the hours, past midnight, its
+     * top or its bottom is square and the bar runs to that edge; in a lane, past the week, its start or its end.
+     */
+    &.schedule-event-continued {
+      border-start-start-radius: 0;
+      border-start-end-radius: 0;
+
+      &::before {
+        inset-block-start: 0;
+        border-start-start-radius: 0;
+        border-start-end-radius: 0;
+      }
+    }
+
+    &.schedule-event-continues {
+      border-end-start-radius: 0;
+      border-end-end-radius: 0;
+
+      &::before {
+        inset-block-end: 0;
+        border-end-start-radius: 0;
+        border-end-end-radius: 0;
+      }
+    }
+
+    &.schedule-event-lane.schedule-event-continued {
+      margin-inline-start: 0;
+      padding-inline-start: .5rem;
+      border-radius: 0 calc(var(--radius-chip) * var(--corner-scale)) calc(var(--radius-chip) * var(--corner-scale)) 0;
+
+      &:dir(rtl) {
+        border-radius: calc(var(--radius-chip) * var(--corner-scale)) 0 0 calc(var(--radius-chip) * var(--corner-scale));
+      }
+
+      /* It is not the start, so it has no bar. */
+      &::before {
+        content: none;
+      }
+    }
+
+    &.schedule-event-lane.schedule-event-continues {
+      margin-inline-end: 0;
+      border-start-end-radius: 0;
+      border-end-end-radius: 0;
+
+      &:not(.schedule-event-continued) {
+        border-start-start-radius: calc(var(--radius-chip) * var(--corner-scale));
+        border-end-start-radius: calc(var(--radius-chip) * var(--corner-scale));
+      }
+
+      &::before {
+        inset-block: clamp(0px, (var(--schedule-length) - 12px) / 2, var(--schedule-bar-inset));
+        border-radius: calc(var(--schedule-bar) / 2);
+      }
+    }
+
+    /* Plain: an event of a few hours in a month. No sheet, a dot for the bar, then its time and its title. */
+    &.schedule-event-plain {
+      --schedule-tint: transparent;
+      box-shadow: none;
+      color: var(--color-text-body);
+
+      &::before {
+        inset-block: calc(50% - 3px);
+        inset-inline-start: .3125rem;
+        width: 6px;
+        height: 6px;
+        border-radius: 999px;
+        background: var(--schedule-edge);
+      }
+
+      .schedule-time {
+        flex: none;
+        order: -1;
+      }
+    }
+
+    /* A category: its surface for the sheet, its mark for the bar and its text for the words. */
+    &.schedule-event-category {
+      --schedule-tint: var(--category-surface, color-mix(in oklab, var(--schedule-color) 7%, var(--schedule-surface)));
+      --schedule-edge: var(--category-mark, color-mix(in oklab, var(--schedule-color) 62%, transparent));
+      color: var(--category-text, var(--color-text-strong));
+      box-shadow: inset 0 0 0 .5px var(--category-line, color-mix(in oklab, var(--schedule-color) 12%, transparent));
+
+      /* A plain event keeps the body's ink: its dot carries the category. */
+      &.schedule-event-plain {
+        --schedule-tint: transparent;
+        box-shadow: none;
+        color: var(--color-text-body);
+      }
+    }
+
     /* Under the pointer the sheet is a step firmer, at once. */
     @media (hover: hover) {
       &:hover:not([aria-current="true"]) {
         --schedule-tint: color-mix(in oklab, var(--schedule-color) 12%, var(--schedule-surface));
+      }
+
+      &.schedule-event-category:hover:not([aria-current="true"]) {
+        --schedule-tint: color-mix(in oklab, var(--category-mark, var(--schedule-color)) 14%, var(--category-surface, var(--schedule-surface)));
+      }
+
+      &.schedule-event-plain:hover:not([aria-current="true"]) {
+        --schedule-tint: color-mix(in oklab, var(--schedule-color) 6%, transparent);
       }
     }
 
@@ -300,6 +455,11 @@
       color: color-mix(in oklab, var(--color-text-inverse) 72%, transparent);
     }
 
+    /* On a category's surface the time keeps the category's text, which is the ink that reads there. */
+    .schedule-event-category:not([aria-current="true"]) & {
+      color: inherit;
+    }
+
     @media (forced-colors: active) {
       color: inherit;
     }
@@ -320,6 +480,372 @@
   @container schedule-event (height < .875rem) {
     .schedule-title, .schedule-time {
       opacity: 0;
+    }
+  }
+}
+
+@layer components {
+  /*
+   * The all-day band: a row under the headings, across the days, with a lane for each event that runs a whole
+   * day or more. Its first column is the rail's, where its name stands. A hairline closes it above the hours.
+   */
+  .schedule-allday {
+    --schedule-lane-column: 1;
+    display: grid;
+    grid-row: 2;
+    grid-column: 1 / span calc(var(--schedule-days, 1) + 1);
+    grid-template-columns: subgrid;
+    grid-auto-rows: 1.375rem;
+    row-gap: 2px;
+    align-content: start;
+    min-height: 1.375rem;
+    margin: 0 0 .5rem;
+    padding: 0 0 .375rem;
+    box-shadow: 0 1px 0 var(--color-line-hair);
+    list-style: none;
+  }
+
+  /* The name of the band, in the rail: "All day". */
+  .schedule-allday-label {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: center;
+    padding-inline-end: .5rem;
+    color: var(--color-text-muted);
+    font-size: .6875rem;
+    line-height: 1rem;
+    text-align: end;
+    white-space: nowrap;
+  }
+
+  /*
+   * A month: the names of the weekdays over its weeks. It is a size container, so a narrow month shows each day's
+   * events as dots under its number and leaves the words to the day it opens.
+   */
+  .schedule-month {
+    --schedule-color: var(--color-surface-inverse);
+    --schedule-surface: var(--surface-color, var(--color-surface-base));
+    container: schedule-month / inline-size;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    min-width: 0;
+    color: var(--color-text-body);
+    font: 400 .8125rem/1.25rem var(--font-family-sans);
+    font-feature-settings: inherit;
+    font-variant-numeric: tabular-nums;
+
+    @media (forced-colors: active) {
+      --schedule-color: CanvasText;
+    }
+  }
+
+  .schedule-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    padding-block-end: .5rem;
+    color: var(--color-text-muted);
+    font-size: .75rem;
+    font-weight: var(--font-weight-control);
+    line-height: 1rem;
+  }
+
+  .schedule-weekday {
+    min-width: 0;
+    padding-inline: .5rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .schedule-weeks {
+    display: grid;
+    margin: 0;
+    padding: 0;
+    box-shadow: 0 -1px 0 var(--color-line-hair);
+    list-style: none;
+  }
+
+  /*
+   * A week: seven columns, the day's number on the first row, --lanes rows of events under it, and a row for the
+   * days that have more than the lanes hold. Each day is a cell from the top to the bottom of the week.
+   */
+  .schedule-week {
+    --schedule-lane-row: 2;
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    grid-template-rows: 2.25rem repeat(var(--lanes, 3), 1.375rem) 1.375rem;
+    row-gap: 2px;
+    padding-block-end: .375rem;
+    box-shadow: 0 1px 0 var(--color-line-hair);
+  }
+
+  /* A day of a month: a cell the height of its week, with a hairline at its end. */
+  .schedule-date {
+    --count: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    grid-column: var(--column, 1);
+    grid-row: 1 / -1;
+    min-width: 0;
+    margin-block-end: -.375rem;
+    padding: .375rem;
+
+    /* A hairline at the end of every day but the last of the week, which stands at the month's edge. */
+    box-shadow: inset calc(-1px * min(1, 7 - var(--column, 1))) 0 0 var(--color-line-hair);
+
+    &:dir(rtl) {
+      box-shadow: inset calc(1px * min(1, 7 - var(--column, 1))) 0 0 var(--color-line-hair);
+    }
+
+    /* A day of the month before or after: a quieter number on a faint tray. */
+    &.schedule-date-outside {
+      background: color-mix(in oklab, var(--color-surface-tray) 45%, transparent);
+      color: var(--color-text-muted);
+    }
+  }
+
+  /* The day's number: a round button that opens the day. Today's is ink. */
+  .schedule-date-number {
+    display: inline-grid;
+    flex: none;
+    place-items: center;
+    min-width: 1.5rem;
+    height: 1.5rem;
+    margin: 0;
+    padding: 0 .3125rem;
+    border: 0;
+    border-radius: 999px;
+    corner-shape: round;
+    background: transparent;
+    color: inherit;
+    font: var(--font-weight-control) .75rem/1 var(--font-family-sans);
+    font-feature-settings: inherit;
+    font-variant-numeric: tabular-nums;
+    text-decoration: none;
+    appearance: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+
+    @media (hover: hover) {
+      &:hover {
+        background: var(--color-surface-chip);
+        color: var(--color-text-strong);
+      }
+    }
+
+    &:focus-visible {
+      @apply --focus-ring;
+    }
+
+    .schedule-date[aria-current="date"] & {
+      background: var(--color-surface-inverse);
+      color: var(--color-text-inverse);
+      box-shadow: var(--shadow-ink-top);
+    }
+
+    @media (forced-colors: active) {
+      .schedule-date[aria-current="date"] & {
+        forced-color-adjust: none;
+        background: Highlight;
+        color: HighlightText;
+      }
+    }
+  }
+
+  /* The rest of a day's events, past its lanes: a quiet button on the week's last row that lists them. */
+  .schedule-more {
+    grid-column: var(--column, 1);
+    grid-row: -2;
+    justify-self: start;
+    align-self: center;
+    margin: 0 2px;
+    padding: 0 .375rem;
+    height: 1.25rem;
+    border: 0;
+    border-radius: calc(var(--radius-chip) * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    background: transparent;
+    color: var(--color-text-muted);
+    font: var(--font-weight-control) .6875rem/1 var(--font-family-sans);
+    font-feature-settings: inherit;
+    white-space: nowrap;
+    appearance: none;
+    cursor: pointer;
+
+    @media (hover: hover) {
+      &:hover {
+        background: var(--color-surface-chip);
+        color: var(--color-text-strong);
+      }
+    }
+
+    &:focus-visible {
+      @apply --focus-ring;
+    }
+  }
+
+  /* A narrow month: a dot for each event, three at most, under the day's number; the number opens the day. */
+  @container schedule-month (width < 36rem) {
+    .schedule-week {
+      grid-template-rows: 3rem;
+      padding-block-end: 0;
+
+      .schedule-event, .schedule-more {
+        display: none;
+      }
+    }
+
+    .schedule-weekday {
+      padding-inline: 0;
+      text-align: center;
+    }
+
+    .schedule-date {
+      align-items: center;
+      margin-block-end: 0;
+      padding: .25rem 0;
+
+      &::after {
+        content: '';
+        width: calc(min(var(--count), 3) * 6px);
+        height: 4px;
+        margin-top: .1875rem;
+        background: radial-gradient(circle, var(--color-text-muted) 1.5px, transparent 2px) 0 0 / 6px 4px repeat-x;
+      }
+    }
+
+    .schedule-date-number {
+      min-width: 2rem;
+      height: 2rem;
+      font-size: .8125rem;
+    }
+  }
+
+  /* A list of events, in the order they come: a day's in its popover, and each day's in the agenda. */
+  .schedule-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    .schedule-event {
+      --schedule-lane-height: 1.625rem;
+    }
+  }
+
+  /*
+   * Agenda: the period's days that have events, one to a row: the date at the start, its events beside it. In a
+   * narrow room the date stands over its events.
+   */
+  .schedule-agenda {
+    --schedule-color: var(--color-surface-inverse);
+    --schedule-surface: var(--surface-color, var(--color-surface-base));
+    container: schedule-agenda / inline-size;
+    display: grid;
+    margin: 0;
+    padding: 0;
+    color: var(--color-text-body);
+    font: 400 .8125rem/1.25rem var(--font-family-sans);
+    font-feature-settings: inherit;
+    font-variant-numeric: tabular-nums;
+    list-style: none;
+  }
+
+  .schedule-agenda-day {
+    display: grid;
+    grid-template-columns: 7rem minmax(0, 1fr);
+    gap: .25rem 1rem;
+    padding-block: .75rem;
+    box-shadow: 0 1px 0 var(--color-line-hair);
+
+    &:last-child {
+      box-shadow: none;
+    }
+  }
+
+  .schedule-agenda-date {
+    margin: 0;
+    padding-block-start: .1875rem;
+    color: var(--color-text-muted);
+    font-size: .75rem;
+    font-weight: var(--font-weight-control);
+    line-height: 1.25rem;
+
+    .schedule-agenda-day[aria-current="date"] & {
+      color: var(--color-text-strong);
+    }
+  }
+
+  @container schedule-agenda (width < 28rem) {
+    .schedule-agenda-day {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  /*
+   * A schedule a reader works: a header of controls over the body the schedule behavior writes. The header keeps
+   * the period's name between the turns and the switch, and puts the name on a line of its own when the room is narrow.
+   */
+  .schedule-view {
+    container: schedule-view / inline-size;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+    min-width: 0;
+  }
+
+  .schedule-view-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .5rem .75rem;
+    min-width: 0;
+  }
+
+  /* The period on show: "November 2026". Announced when it changes. */
+  .schedule-view-title {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin: 0;
+    color: var(--color-text-strong);
+    font: var(--font-weight-control) 1rem/1.5rem var(--font-family-sans);
+    font-feature-settings: inherit;
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+  }
+
+  .schedule-view-switch, .schedule-view-today, .schedule-view-previous, .schedule-view-next {
+    flex: none;
+  }
+
+  /* Back and on point the way the days run: where they run from the right, the square turns round. */
+  .schedule-view-previous, .schedule-view-next {
+    &:dir(rtl) {
+      scale: -1 1;
+    }
+  }
+
+  @container schedule-view (width < 34rem) {
+    .schedule-view-title {
+      flex-basis: 100%;
+      order: -1;
+    }
+
+    .schedule-view-switch {
+      margin-inline-start: auto;
+    }
+  }
+
+  /* The body the behavior writes; it takes the room the header leaves and keeps the schedule's own scrolling. */
+  .schedule-view-body {
+    min-width: 0;
+
+    &:focus-visible {
+      @apply --focus-ring;
     }
   }
 }

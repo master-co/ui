@@ -2,12 +2,20 @@
  * Chip: a small pill that is a choice or a value.
  * As a label around a checkbox or a radio it is a filter: raised at rest, filled with ink when chosen,
  * the way a checkbox fills. As a plain element it is a value that can carry a remove button.
- * A chip is 28px tall; its ends are true half circles, which tells it apart from a badge.
+ * A chip is 28px tall (24px small, 32px large); its ends are true half circles, which tells it apart from a badge.
+ *
+ * Inside, a chip may hold a picture at its start (chip-media), a category dot (chip-dot), its words (chip-label,
+ * which shrinks and ends in an ellipsis), a count (a badge with chip-count) and a remove button. The words give
+ * way first; the picture, the count and the button keep their size. With chip-category a value takes its
+ * category's surface, text and line, and a filter keeps its raised face and shows the category in its dot.
  */
 @layer components {
   .chip {
     --chip-height: 1.75rem;
     --chip-padding-x: .625rem;
+    --chip-font-size: .78125rem;
+    --chip-inset: .25rem;
+    --chip-remove-size: 1.25rem;
     --icon-size: .875rem;
     --icon-offset: -.0625rem;
     position: relative;
@@ -23,11 +31,56 @@
     background: var(--color-surface-chip);
     color: var(--color-text-strong);
     box-shadow: inset 0 0 0 .5px var(--color-line-contour);
-    font: var(--font-weight-control) .78125rem/1 var(--font-family-sans);
+    font: var(--font-weight-control) var(--chip-font-size)/1 var(--font-family-sans);
     font-feature-settings: inherit;
     white-space: nowrap;
     vertical-align: middle;
     -webkit-tap-highlight-color: transparent;
+
+    &.chip-sm {
+      --chip-height: 1.5rem;
+      --chip-padding-x: .5rem;
+      --chip-font-size: .71875rem;
+      --chip-inset: .1875rem;
+      --chip-remove-size: 1rem;
+      --icon-size: .75rem;
+      gap: .3125rem;
+    }
+
+    &.chip-lg {
+      --chip-height: 2rem;
+      --chip-padding-x: .75rem;
+      --chip-font-size: .84375rem;
+      --chip-remove-size: 1.5rem;
+      --icon-size: 1rem;
+      gap: .4375rem;
+    }
+
+    /* A value of a category: its tinted surface, its text and its line. */
+    &.chip-category {
+      --chip-dot: var(--category-mark, var(--color-text-muted));
+
+      &:not(:has(.chip-input)) {
+        background: var(--category-surface, var(--color-surface-chip));
+        color: var(--category-text, var(--color-text-strong));
+        box-shadow: inset 0 0 0 .5px var(--category-line, var(--color-line-contour));
+      }
+    }
+
+    /* Long words stop at the container's edge and end in an ellipsis. */
+    &:has(.chip-label) {
+      max-width: 100%;
+    }
+
+    /* A picture at the start stands as far from the end as from the top and bottom, so the curves are concentric. */
+    &:has(.chip-media:first-child) {
+      padding-inline-start: var(--chip-inset);
+    }
+
+    /* A count at the end, likewise. */
+    &:has(.chip-count:last-child) {
+      padding-inline-end: var(--chip-inset);
+    }
 
     /* A chip that holds a .chip-input is a control: a small raised sheet that lifts under the pointer. */
     &:has(.chip-input) {
@@ -95,14 +148,21 @@
 
     /* A remove button stands as far from the pill's end as from its top and bottom, so the two circles are concentric. */
     &:has(.chip-remove) {
-      padding-inline-end: calc((var(--chip-height) - 1.25rem) / 2);
+      padding-inline-end: calc((var(--chip-height) - var(--chip-remove-size)) / 2);
     }
 
-    /* On touch a filter is 44px, as every other target is. */
+    /*
+     * On touch a filter is 44px, as every other target is, and so is a value with a remove button, so the button's
+     * 44px target stays within its own value. A field that holds values sets their height for itself.
+     */
     @media (pointer: coarse) {
       &:has(.chip-input) {
         min-height: 2.75rem;
         padding-inline: 1rem;
+      }
+
+      &:has(.chip-remove) {
+        --chip-height: 2.75rem;
       }
     }
 
@@ -139,14 +199,79 @@
     cursor: inherit;
   }
 
+  /* The words of a chip: they shrink first and end in an ellipsis. */
+  .chip-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /*
+   * A picture at the start of a chip: an avatar, a flag or a logo, the chip's height less two insets, round.
+   * Put an avatar or an icon inside; this part sizes them.
+   */
+  .chip-media {
+    --chip-media-size: calc(var(--chip-height) - 2 * var(--chip-inset));
+    --icon-size: calc(var(--chip-media-size) - .25rem);
+    display: inline-grid;
+    flex: none;
+    place-items: center;
+    width: var(--chip-media-size);
+    height: var(--chip-media-size);
+    border-radius: 999px;
+    corner-shape: round;
+    overflow: hidden;
+
+    .avatar {
+      --avatar-size: var(--chip-media-size);
+    }
+  }
+
+  /*
+   * A dot that marks the chip's category, in its mark color, or muted ink without one. A hairline of the chip's own
+   * text keeps it found on any face, an ink one included.
+   */
+  .chip-dot {
+    flex: none;
+    width: .5rem;
+    height: .5rem;
+    border-radius: 999px;
+    corner-shape: round;
+    background: var(--chip-dot, var(--color-text-muted));
+    box-shadow: inset 0 0 0 .5px color-mix(in oklab, currentColor 30%, transparent);
+
+    @media (forced-colors: active) {
+      background: CanvasText;
+      forced-color-adjust: none;
+    }
+  }
+
+  /*
+   * A count inside a chip: put it on a badge, which keeps its material, and this part fits it to the chip, as a
+   * pill concentric with the chip's end. On a chosen filter it takes a tone of the ink.
+   */
+  .chip .chip-count {
+    --badge-height: calc(var(--chip-height) - 2 * var(--chip-inset) - .125rem);
+    --badge-padding-x: .375rem;
+    --badge-font-size: .6875rem;
+    --badge-radius: 999px;
+    corner-shape: round;
+  }
+
+  .chip:has(.chip-input:checked) .chip-count {
+    background: color-mix(in oklab, currentColor 16%, transparent);
+    color: inherit;
+    box-shadow: none;
+  }
+
   /* Removes the value; give it an accessible name that includes the value. */
   .chip-remove {
     position: relative;
     display: inline-grid;
     flex: none;
     place-items: center;
-    width: 1.25rem;
-    height: 1.25rem;
+    width: var(--chip-remove-size);
+    height: var(--chip-remove-size);
     margin: 0;
     padding: 0;
     border: 0;
@@ -159,20 +284,20 @@
 
     &::before {
       content: '';
-      width: .75rem;
-      height: .75rem;
+      width: calc(var(--chip-remove-size) * .6);
+      height: calc(var(--chip-remove-size) * .6);
       background: currentColor;
       mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round'%3E%3Cpath d='M4.5 4.5l7 7M11.5 4.5l-7 7'/%3E%3C/svg%3E") center / contain no-repeat;
     }
 
-    /* The target reaches past the glyph without moving it: 28px, and 36px on touch. */
+    /* The target reaches past the glyph without moving it: 28px, and 44px on touch. */
     &::after {
       content: '';
       position: absolute;
       inset: -.25rem;
 
       @media (pointer: coarse) {
-        inset: -.5rem;
+        inset: calc((2.75rem - var(--chip-remove-size)) / -2);
       }
     }
 

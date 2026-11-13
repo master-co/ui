@@ -1,5 +1,7 @@
 import { useRef, type ComponentType } from 'react'
+import { Avatar } from '../../../frameworks/react/avatar.tsx'
 import { Calendar } from '../../../frameworks/react/calendar.tsx'
+import { Carousel, type CarouselProps } from '../../../frameworks/react/carousel.tsx'
 import { Combobox } from '../../../frameworks/react/combobox.tsx'
 import { Editable } from '../../../frameworks/react/editable.tsx'
 import { Command } from '../../../frameworks/react/command.tsx'
@@ -9,6 +11,7 @@ import { Field } from '../../../frameworks/react/field.tsx'
 import { Listbox } from '../../../frameworks/react/listbox.tsx'
 import { Menu, type MenuProps } from '../../../frameworks/react/menu.tsx'
 import { Otp } from '../../../frameworks/react/otp.tsx'
+import { Schedule } from '../../../frameworks/react/schedule.tsx'
 import { Popover, type PopoverProps } from '../../../frameworks/react/popover.tsx'
 import { Sortable, type SortableProps } from '../../../frameworks/react/sortable.tsx'
 import { Splitter, type SplitterProps } from '../../../frameworks/react/splitter.tsx'
@@ -44,6 +47,25 @@ function SortableExample(props: Omit<SortableProps<typeof tasks[number]>, 'items
         </>
       )}
     </Sortable>
+  )
+}
+
+const projects = [
+  { value: 'atlas', name: 'Atlas', line: 'A map of every deployment, live.' },
+  { value: 'borealis', name: 'Borealis', line: 'Edge functions close to the reader.' },
+  { value: 'cirrus', name: 'Cirrus', line: 'Storage that follows the project.' },
+]
+
+function CarouselExample(props: Omit<CarouselProps<typeof projects[number]>, 'items' | 'children' | 'label'>) {
+  return (
+    <Carousel label="Featured projects" slideClassName="card" items={projects} {...props}>
+      {project => (
+        <>
+          <h3 className="card-title">{project.name}</h3>
+          <p className="card-description">{project.line}</p>
+        </>
+      )}
+    </Carousel>
   )
 }
 
@@ -117,7 +139,9 @@ function FieldExample(props: Omit<FieldProps, 'children'>) {
 }
 
 export const fixtures = {
+  'avatar': Avatar,
   'calendar': Calendar,
+  'carousel': CarouselExample,
   'combobox': Combobox,
   'command': Command,
   'compare': CompareExample,
@@ -128,6 +152,7 @@ export const fixtures = {
   'listbox': Listbox,
   'menu': MenuExample,
   'otp': Otp,
+  'schedule': Schedule,
   'popover': PopoverExample,
   'sortable': SortableExample,
   'splitter': SplitterExample,

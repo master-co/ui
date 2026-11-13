@@ -1,9 +1,22 @@
 /*
  * Progress: a native <progress> drawn as a thin well that fills with ink.
  * Without a value it is indeterminate: a band of ink travels along the track.
- * A ring draws the same amount around a circle, for a tile, a row or the corner of a card.
+ * A ring draws the same amount around a circle, for a tile, a row or the corner of a card; a half ring draws
+ * it along an arch, with the figure standing in the arch.
+ *
+ * progress-label holds a bar and a marker that rides the end of its fill: a small sheet with the figure and a
+ * point that touches the end. The marker slides along under the point, as far as the point is along the bar,
+ * so at 0 and at 100 it stays inside the bar's ends and never leaves its container. The bar is still the
+ * semantics; the marker is aria-hidden and reads --progress-value, the same amount, which the page writes
+ * beside the bar's value. An indeterminate bar has no amount, so its marker is not shown.
  */
 @property --progress-ring-value {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+
+@property --progress-ring-from {
   syntax: '<number>';
   inherits: true;
   initial-value: 0;
@@ -104,6 +117,111 @@
   }
 
   /*
+   * A bar with a marker over its end, or under it with progress-label-below. The room for the marker is kept
+   * above or below the bar, so the marker never covers what stands next to it.
+   */
+  .progress-label {
+    --progress-value: 0;
+    --progress-marker-height: 1.5rem;
+    --progress-marker-gap: .5rem;
+    position: relative;
+    display: block;
+    min-width: 0;
+    padding-block-start: calc(var(--progress-marker-height) + var(--progress-marker-gap));
+
+    &.progress-label-below {
+      padding-block: 0 calc(var(--progress-marker-height) + var(--progress-marker-gap));
+    }
+
+    /* No amount, no figure. */
+    &:has(.progress:indeterminate) {
+      padding-block: 0;
+
+      .progress-marker {
+        display: none;
+      }
+    }
+  }
+
+  /*
+   * The figure over the end of the fill: a small sheet whose point touches the end. The point sits as far along
+   * the sheet as the end is along the bar, so the sheet slides under it and stays inside the bar's ends.
+   */
+  .progress-marker {
+    --progress-marker-at: clamp(0, var(--progress-value), 100);
+    position: absolute;
+    top: 0;
+    inset-inline-start: calc(var(--progress-marker-at) * 1%);
+    display: inline-grid;
+    place-items: center;
+    box-sizing: border-box;
+    height: var(--progress-marker-height);
+    padding: 0 .5rem;
+    translate: calc(var(--progress-marker-at) * -1%) 0;
+    border-radius: calc(var(--radius-control-sm) * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    @apply --surface-sheet;
+    color: var(--color-text-strong);
+    box-shadow: var(--shadow-raised);
+    font: var(--font-weight-control) .75rem/1 var(--font-family-sans);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    transition-property: inset-inline-start, translate;
+    transition-duration: var(--duration-base);
+    transition-timing-function: var(--easing-glide);
+
+    &:dir(rtl) {
+      translate: calc(var(--progress-marker-at) * 1%) 0;
+    }
+
+    /*
+     * The point: a small square turned on its corner, the sheet's own face, with a contour on its two lower
+     * sides only, so it grows out of the sheet without a seam. It stays a point's width in from the corners.
+     */
+    &::after {
+      content: '';
+      position: absolute;
+      top: calc(100% - .25rem);
+      inset-inline-start: clamp(.5rem, calc(var(--progress-marker-at) * 1%), calc(100% - .5rem));
+      width: .5rem;
+      height: .5rem;
+      translate: -50% 0;
+      rotate: 45deg;
+      background: var(--color-surface-raised-low);
+      box-shadow: inset -.5px -.5px 0 var(--color-line-contour);
+    }
+
+    &:dir(rtl)::after {
+      translate: 50% 0;
+    }
+
+    .progress-label-below & {
+      top: auto;
+      bottom: 0;
+
+      &::after {
+        top: auto;
+        bottom: calc(100% - .25rem);
+        background: var(--color-surface-raised);
+        box-shadow: inset .5px .5px 0 var(--color-line-contour);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: none;
+    }
+
+    @media (forced-colors: active) {
+      outline: 1px solid CanvasText;
+      outline-offset: -1px;
+
+      &::after {
+        display: none;
+      }
+    }
+  }
+
+  /*
    * Ring: an element with role="progressbar". Where the browser supports typed attr(), the ring reads
    * aria-valuenow and aria-valuemax itself, so the amount is written once, for people and for the drawing;
    * elsewhere set --progress-ring-value. Both ends of the arc are round, and the arc eases to each new value.
@@ -167,6 +285,45 @@
       }
     }
 
+    /*
+     * Half: the amount along an arch, from its start to its end, with the figure standing in the arch. The arch
+     * is the top half of the ring; its two ends and the end of the arc are round. The track's start takes the
+     * arc's color while the arc begins there and holds any amount, so the arc begins with a round end too.
+     */
+    &.progress-ring-half {
+      height: calc(var(--progress-ring-size) / 2 + var(--progress-ring-width) / 2);
+      place-items: end center;
+      font-size: calc(var(--progress-ring-size) * .2);
+
+      &::before {
+        --progress-ring-radius: calc((var(--progress-ring-size) - var(--progress-ring-width)) / 2);
+        --progress-ring-from-angle: calc(var(--progress-ring-from) * 180deg - 90deg);
+        --progress-ring-to-angle: calc((var(--progress-ring-from) + var(--progress-ring-turn)) * 180deg - 90deg);
+        --progress-ring-start: color-mix(in oklab, var(--progress-ring-color) calc(min(1, var(--progress-ring-turn) * 1000) * (1 - min(1, var(--progress-ring-from) * 1000)) * 100%), var(--progress-ring-track));
+        inset: 0 0 auto;
+        height: var(--progress-ring-size);
+        background:
+          radial-gradient(circle at calc(50% + var(--progress-ring-radius) * sin(var(--progress-ring-from-angle))) calc(50% - var(--progress-ring-radius) * cos(var(--progress-ring-from-angle))), var(--progress-ring-color) calc(var(--progress-ring-cap) - .5px), transparent var(--progress-ring-cap)),
+          radial-gradient(circle at calc(50% + var(--progress-ring-radius) * sin(var(--progress-ring-to-angle))) calc(50% - var(--progress-ring-radius) * cos(var(--progress-ring-to-angle))), var(--progress-ring-color) calc(var(--progress-ring-cap) - .5px), transparent var(--progress-ring-cap)),
+          conic-gradient(from -90deg,
+            var(--progress-ring-track) 0 calc(var(--progress-ring-from) * 180deg),
+            var(--progress-ring-color) 0 calc((var(--progress-ring-from) + var(--progress-ring-turn)) * 180deg),
+            var(--progress-ring-track) 0 200deg,
+            transparent 0 340deg,
+            var(--progress-ring-start) 0);
+        mask:
+          radial-gradient(circle at 50% 100%, transparent calc(var(--progress-ring-radius) - var(--progress-ring-width) / 2 - .5px), black calc(var(--progress-ring-radius) - var(--progress-ring-width) / 2), black calc(var(--progress-ring-radius) + var(--progress-ring-width) / 2 - .5px), transparent calc(var(--progress-ring-radius) + var(--progress-ring-width) / 2)) top / 100% 50% no-repeat,
+          radial-gradient(circle at calc(var(--progress-ring-width) / 2) 50%, black calc(var(--progress-ring-width) / 2 - .5px), transparent calc(var(--progress-ring-width) / 2)),
+          radial-gradient(circle at calc(100% - var(--progress-ring-width) / 2) 50%, black calc(var(--progress-ring-width) / 2 - .5px), transparent calc(var(--progress-ring-width) / 2));
+        border-radius: 0;
+      }
+
+      /* No amount: a quarter of the arch travels from one end to the other and back. */
+      &:not([aria-valuenow])::before {
+        animation: progress-half-travel 1.4s var(--easing-glide) infinite alternate;
+      }
+    }
+
     &.progress-ring-sm {
       --progress-ring-size: 1.25rem;
       --progress-ring-width: 2.5px;
@@ -197,6 +354,16 @@
       --progress-ring-track: GrayText;
       forced-color-adjust: none;
     }
+  }
+}
+
+@keyframes progress-half-travel {
+  from {
+    --progress-ring-from: 0;
+  }
+
+  to {
+    --progress-ring-from: .75;
   }
 }
 

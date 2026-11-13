@@ -2,6 +2,12 @@
  * Avatar: a person or a team as a photo or as initials, in a circle of one fixed size.
  * Three layers stay independent: the image, a faint inward stroke that keeps pale photos from losing their edge,
  * and, in a stack, an opaque ring in the color of the surface behind it that separates overlapping circles.
+ *
+ * A photo that may fail to load stands over its fallback (avatar-fallback: initials or an icon) in one cell, so
+ * the box never changes size. The avatar behavior hides the photo when it fails and the fallback once the photo
+ * has loaded, with the hidden attribute; without the script the fallback shows until the photo paints over it.
+ * One mark at most stands on the lower end corner: a presence dot (avatar-status) or a picture that says what
+ * someone is (avatar-badge: verified, a company, a team), never both.
  */
 @layer components {
   .avatar {
@@ -60,6 +66,7 @@
   /* The photo fills the circle; the box stays the same when it is missing and initials show instead. */
   .avatar-image {
     grid-area: 1 / 1;
+    z-index: 0;
     width: 100%;
     height: 100%;
     border-radius: inherit;
@@ -68,6 +75,60 @@
     /* A faint inward edge, so a pale photo keeps its circle on a pale surface. */
     outline: 1px solid var(--color-line-image);
     outline-offset: -1px;
+  }
+
+  /*
+   * What shows when there is no photo, or until it loads: initials or an icon, in the same cell under the photo.
+   * The avatar names the person; the fallback is hidden from assistive technology.
+   */
+  .avatar-fallback {
+    display: grid;
+    grid-area: 1 / 1;
+    place-items: center;
+    --icon-size: calc(var(--avatar-size) * .5);
+    --icon-color: var(--color-text-muted);
+
+    &[hidden] {
+      display: none;
+    }
+  }
+
+  /*
+   * A picture on the lower end corner that says what someone is: verified, a company, a team. It is two fifths of
+   * the avatar, centred on the circle's edge at 45°, cut out by a ring of the surface behind it, and takes the
+   * avatar's shape: a circle, or a rounded square on a square avatar. Put an icon in it, or make it the image.
+   */
+  .avatar-badge {
+    --avatar-badge-size: max(.75rem, calc(var(--avatar-size) * .4));
+    --avatar-badge-at: calc(var(--avatar-size) * .146 - var(--avatar-badge-size) / 2);
+    --icon-size: calc(var(--avatar-badge-size) * .7);
+    position: absolute;
+    inset-block-end: var(--avatar-badge-at);
+    inset-inline-end: var(--avatar-badge-at);
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    box-sizing: border-box;
+    width: var(--avatar-badge-size);
+    height: var(--avatar-badge-size);
+    border-radius: 999px;
+    corner-shape: round;
+    object-fit: cover;
+    @apply --surface-sheet;
+    color: var(--color-text-strong);
+    box-shadow: 0 0 0 .5px var(--color-line-image-strong), 0 0 0 calc(max(1.5px, var(--avatar-size) * .04)) var(--avatar-ring, var(--surface-color, var(--color-surface-base)));
+    font-size: calc(var(--avatar-badge-size) * .5);
+
+    /* On a rounded square the corner point is nearer the box's corner, and the badge is a rounded square too. */
+    .avatar-square & {
+      --avatar-badge-at: calc(var(--avatar-size) * .073 - var(--avatar-badge-size) / 2);
+      border-radius: calc(var(--avatar-badge-size) * .25 * var(--corner-scale));
+      corner-shape: var(--corner-shape);
+    }
+
+    @media (forced-colors: active) {
+      outline: 1px solid CanvasText;
+    }
   }
 
   /*

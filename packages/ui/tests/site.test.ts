@@ -43,3 +43,42 @@ for (const page of pages(content)) {
     } finally { preset.dispose() }
   })
 }
+
+/**
+ * The working examples in `site/examples` are markup and modules shared by a preview, its Code view, the Markdown
+ * export and the registry. Their markup is held to the contracts like any preview, and what they name is real: the
+ * files, the root a module mounts on, the contracts and the packages, which are the site's and never the library's.
+ */
+const examples = new URL('../../../site/examples/', import.meta.url)
+const manifest = JSON.parse(readFileSync(new URL('manifest.json', examples), 'utf8')) as { examples: Record<string, { html: string, script?: string, files?: string[], contracts: string[], dependencies?: Record<string, string> }> }
+const sitePackage = JSON.parse(readFileSync(new URL('../../../site/package.json', import.meta.url), 'utf8'))
+const library = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
+
+for (const [id, entry] of Object.entries(manifest.examples)) {
+  test(`example ${id}: its markup satisfies the contracts`, () => {
+    const html = readFileSync(new URL(entry.html, examples), 'utf8')
+    const preset = utilities('library')
+    try {
+      const known = (className: string) => index.classes.has(className) || preset.has(className)
+      const unknown = [...new Set(parse(html).flatMap(element => element.classes))].filter(className => !known(className))
+      assert.deepEqual(check(html, index, { knows: known, strict: true }).map(diagnostic => format([diagnostic], entry.html)), [])
+      assert.deepEqual(unknown, [], 'a class that is neither a contract class nor a preset utility')
+    } finally { preset.dispose() }
+  })
+
+  test(`example ${id}: its files, its root, its contracts and its packages are real`, () => {
+    for (const file of [entry.html, ...(entry.script ? [entry.script] : []), ...(entry.files ?? [])]) assert.ok(existsSync(new URL(file, examples)), `${file} is missing`)
+    // The markup and the module are the example's own; a file it imports may be another example's, which it shares.
+    for (const file of [entry.html, ...(entry.script ? [entry.script] : [])]) assert.ok(file.startsWith(`${id}/`), `${file} is not in the example's folder`)
+    for (const file of (entry.files ?? []).filter(file => !file.startsWith(`${id}/`))) {
+      assert.ok(Object.keys(manifest.examples).some(other => file.startsWith(`${other}/`) && [manifest.examples[other].script, ...(manifest.examples[other].files ?? [])].includes(file)), `${file} is shared from an example that does not list it`)
+    }
+    assert.match(readFileSync(new URL(entry.html, examples), 'utf8'), new RegExp(`data-example="${id}"`), 'the markup names the root its module mounts on')
+    if (entry.script) assert.match(readFileSync(new URL(entry.script, examples), 'utf8'), /export function mount\(/, 'the module starts with mount(root)')
+    for (const name of entry.contracts) assert.ok(contracts().some(contract => contract.name === name), `${name} is not a contract`)
+    for (const [dependency, version] of Object.entries(entry.dependencies ?? {})) {
+      assert.equal(sitePackage.dependencies?.[dependency] ?? sitePackage.devDependencies?.[dependency], version, `${dependency} is not the site's, at exactly ${version}`)
+      assert.ok(!library.dependencies?.[dependency] && !library.peerDependencies?.[dependency], `${dependency} must not become a dependency of @master/ui`)
+    }
+  })
+}

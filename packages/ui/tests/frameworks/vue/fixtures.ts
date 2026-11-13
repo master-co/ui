@@ -1,16 +1,19 @@
 import type { Component } from 'vue'
+import Avatar from '../../../frameworks/vue/Avatar.vue'
 import Calendar from '../../../frameworks/vue/Calendar.vue'
 import Combobox from '../../../frameworks/vue/Combobox.vue'
 import Command from '../../../frameworks/vue/Command.vue'
 import Editable from '../../../frameworks/vue/Editable.vue'
 import Listbox from '../../../frameworks/vue/Listbox.vue'
 import Otp from '../../../frameworks/vue/Otp.vue'
+import Schedule from '../../../frameworks/vue/Schedule.vue'
 import Stepper from '../../../frameworks/vue/Stepper.vue'
 import Tabs from '../../../frameworks/vue/Tabs.vue'
 import Tags from '../../../frameworks/vue/Tags.vue'
 import Toaster, { toast } from '../../../frameworks/vue/Toaster.vue'
 import Tree from '../../../frameworks/vue/Tree.vue'
 import Wheel from '../../../frameworks/vue/Wheel.vue'
+import CarouselExample from './CarouselExample.vue'
 import CompareExample from './CompareExample.vue'
 import ContextMenuExample from './ContextMenuExample.vue'
 import DialogExample from './DialogExample.vue'
@@ -27,7 +30,9 @@ import TooltipExample from './TooltipExample.vue'
  * panes, pictures, a control. The scenarios mount these, so every example here is one that runs.
  */
 export const fixtures: Record<string, Component> = {
+  'avatar': Avatar,
   'calendar': Calendar,
+  'carousel': CarouselExample,
   'combobox': Combobox,
   'command': Command,
   'compare': CompareExample,
@@ -38,6 +43,7 @@ export const fixtures: Record<string, Component> = {
   'listbox': Listbox,
   'menu': MenuExample,
   'otp': Otp,
+  'schedule': Schedule,
   'popover': PopoverExample,
   'sortable': SortableExample,
   'splitter': SplitterExample,

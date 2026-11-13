@@ -1,0 +1,245 @@
+/*
+ * Editor: the frame of a rich text editor. The editing itself (the document, the selection, the history, the
+ * keys) belongs to an engine such as TipTap or ProseMirror; this is what every such editor shares in Master UI.
+ *
+ * It is a field: the well of an input, with the input's hover, focus halo, invalid edge and disabled ink, but
+ * the focus is the document's, not the frame's. A toolbar (editor-toolbar on a toolbar) stands in the top of the
+ * well as a band of quiet controls, parted from the document by a hairline, its corner nested in the well's. The
+ * document (editor-document, the element the engine makes editable) grows from --editor-rows lines to
+ * --editor-max-rows, then scrolls.
+ *
+ * What the document holds is styled through classes the engine is told to write on its nodes, never by element:
+ * editor-paragraph, editor-heading, editor-subheading, editor-list (editor-list-numbered), editor-quote,
+ * editor-link and editor-rule; inline code is a code and a block of code a code-block. Nothing here reaches
+ * outside the editor, so it is not a typography for a page.
+ */
+@layer components {
+  .editor {
+    --editor-rows: 6;
+    --editor-max-rows: 18;
+    --editor-padding-x: .875rem;
+    --editor-padding-y: .625rem;
+    --editor-radius: var(--radius-control-lg);
+    --editor-inset: 4px;
+    --editor-line: 1.6;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    border-radius: calc(var(--editor-radius) * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    background: var(--color-surface-inset);
+    color: var(--color-text-strong);
+    box-shadow: var(--shadow-pressed);
+    font: 400 .875rem/var(--editor-line) var(--font-family-sans);
+    font-feature-settings: inherit;
+    text-align: start;
+    transition-property: box-shadow, background-color;
+    transition-duration: var(--duration-quick);
+    transition-timing-function: var(--easing-glide);
+
+    @media (hover: hover) {
+      &:hover:not(:has(.editor-document:focus), [aria-disabled="true"], :has(.editor-document[aria-readonly="true"])) {
+        background: var(--color-surface-inset-hover);
+      }
+    }
+
+    /* The document has focus: the frame rises to a raised face with the field's halo, as an input does. */
+    &:has(.editor-document:focus) {
+      background: var(--color-surface-raised);
+      box-shadow: inset 0 0 0 .5px var(--color-line-mark), 0 0 0 .5px var(--color-line-mark), 0 0 0 3.5px var(--color-focus-halo);
+    }
+
+    /* An error keeps its edge while focused, and the halo takes the danger tone. */
+    &:has(.editor-document[aria-invalid="true"]) {
+      box-shadow: var(--shadow-pressed), inset 0 0 0 .5px var(--color-danger), 0 0 0 .5px color-mix(in oklab, var(--color-danger) 45%, transparent);
+
+      &:has(.editor-document:focus) {
+        box-shadow: inset 0 0 0 .5px var(--color-danger), 0 0 0 .5px var(--color-danger), 0 0 0 3.5px color-mix(in oklab, var(--color-danger) 15%, transparent);
+      }
+    }
+
+    /* Read only: the words can be read and copied, not changed, so the well rests flat and the caret is gone. */
+    &:has(.editor-document[aria-readonly="true"]) {
+      background: transparent;
+      box-shadow: var(--shadow-flat);
+
+      .editor-document {
+        caret-color: transparent;
+      }
+    }
+
+    /* Disabled: the frame drops to a flat well with disabled ink, and nothing in it answers the pointer. */
+    &[aria-disabled="true"] {
+      color: var(--color-text-disabled);
+      box-shadow: var(--shadow-flat);
+      cursor: not-allowed;
+
+      .editor-document {
+        pointer-events: none;
+      }
+    }
+
+    @media (forced-colors: active) {
+      outline: 1px solid FieldText;
+      outline-offset: -1px;
+
+      &:has(.editor-document:focus) {
+        outline: 2px solid Highlight;
+      }
+
+      &:has(.editor-document[aria-invalid="true"]) {
+        outline-color: Mark;
+      }
+    }
+  }
+
+  /*
+   * The toolbar band: a toolbar laid flat in the top of the well, one inset in, so its corner nests in the
+   * well's. A hairline parts it from the document. It wraps on a narrow editor rather than scrolling away.
+   */
+  .editor-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    max-width: none;
+    margin: 0;
+    padding: var(--editor-inset);
+    border-radius: calc(var(--editor-radius) * var(--corner-scale)) calc(var(--editor-radius) * var(--corner-scale)) 0 0;
+    background: transparent;
+    box-shadow: 0 1px 0 var(--color-line-hair);
+
+    .editor[aria-disabled="true"] & {
+      opacity: .6;
+    }
+
+    @media (forced-colors: active) {
+      outline: none;
+      border-block-end: 1px solid GrayText;
+    }
+  }
+
+  /*
+   * The document: the element the engine makes editable. It grows with what it holds, from --editor-rows lines to
+   * --editor-max-rows, then scrolls. Its own focus ring is the frame's halo.
+   */
+  .editor-document {
+    flex: 1 1 auto;
+    min-height: calc(var(--editor-rows) * var(--editor-line) * 1em + 2 * var(--editor-padding-y));
+    max-height: calc(var(--editor-max-rows) * var(--editor-line) * 1em + 2 * var(--editor-padding-y));
+    padding: var(--editor-padding-y) var(--editor-padding-x);
+    overflow: auto;
+    overflow-wrap: anywhere;
+    outline: none;
+    caret-color: var(--color-text-strong);
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-line-strong) transparent;
+
+    @media (pointer: coarse) {
+      font-size: max(1em, 1rem);
+    }
+  }
+
+  .editor-paragraph {
+    margin: 0 0 .75em;
+  }
+
+  .editor-heading, .editor-subheading {
+    margin: 1.25em 0 .5em;
+    color: var(--color-text-strong);
+    font-weight: 600;
+    letter-spacing: -.01em;
+    text-wrap: balance;
+  }
+
+  .editor-heading {
+    font-size: 1.375em;
+    line-height: 1.3;
+  }
+
+  .editor-subheading {
+    font-size: 1.125em;
+    line-height: 1.4;
+  }
+
+  /* A list: bullets, or numbers with editor-list-numbered, in the muted ink so the words lead. */
+  .editor-list {
+    margin: 0 0 .75em;
+    padding-inline-start: 1.5em;
+    list-style: disc;
+
+    &::marker {
+      color: var(--color-text-muted);
+    }
+
+    &.editor-list-numbered {
+      list-style: decimal;
+    }
+
+    .editor-list {
+      margin-block: .25em 0;
+      list-style: circle;
+    }
+  }
+
+  .editor-item {
+    padding-inline-start: .25em;
+
+    &::marker {
+      color: var(--color-text-muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .editor-paragraph {
+      margin-block-end: .25em;
+    }
+  }
+
+  /* A quotation: a rule of ink at its start, its words a step quieter. */
+  .editor-quote {
+    margin: 0 0 .75em;
+    padding-inline-start: 1em;
+    color: var(--color-text-body);
+    box-shadow: inset 2px 0 0 var(--color-line-strong);
+
+    &:dir(rtl) {
+      box-shadow: inset -2px 0 0 var(--color-line-strong);
+    }
+
+    .editor-paragraph:last-child {
+      margin-block-end: 0;
+    }
+
+    @media (forced-colors: active) {
+      border-inline-start: 2px solid CanvasText;
+      box-shadow: none;
+    }
+  }
+
+  .editor-link {
+    color: inherit;
+    text-decoration-line: underline;
+    text-decoration-color: var(--color-line-mark);
+    text-decoration-thickness: 1px;
+    text-underline-offset: .2em;
+    cursor: text;
+
+    @media (forced-colors: active) {
+      color: LinkText;
+    }
+  }
+
+  /* The first and the last block keep no margin of their own, so the padding is the only space at either end. */
+  :is(.editor-heading, .editor-subheading, .editor-rule):first-child {
+    margin-block-start: 0;
+  }
+
+  :is(.editor-paragraph, .editor-heading, .editor-subheading, .editor-list, .editor-quote, .editor-rule):last-child {
+    margin-block-end: 0;
+  }
+
+  .editor-rule {
+    height: 1px;
+    margin: 1.25em 0;
+    border: 0;
+    background: var(--color-line-divider);
+  }
+}

@@ -18,6 +18,8 @@ test('svelte: the first HTML, rendered on a server, holds the state', () => {
 
 /** The least each of the other fixtures needs. */
 const others: Record<string, Record<string, unknown>> = {
+  'avatar': { src: '/people/ada.jpg', alt: 'Ada Lovelace', initials: 'AL' },
+  'carousel': {},
   'command': { items: [{ label: 'New project', group: 'Suggestions' }], searchLabel: 'Search commands', listLabel: 'Commands', 'aria-label': 'Command palette' },
   'compare': { label: 'Show more of the second picture' },
   'dialog': {},
@@ -25,6 +27,7 @@ const others: Record<string, Record<string, unknown>> = {
   'listbox': { options: [{ value: 'hnd', label: 'Tokyo' }], value: 'hnd', 'aria-label': 'Region' },
   'menu': { items: [{ label: 'Rename' }, { separator: true }, { label: 'Settings', href: '#settings' }], 'aria-label': 'Project' },
   'popover': {},
+  'schedule': { events: [{ id: 'standup', title: 'Standup', start: '2026-11-13T09:00', end: '2026-11-13T09:15' }], today: '2026-11-13', locale: 'en-US', weekStart: 1 },
   'stepper': { value: 4, decrementLabel: 'Fewer seats', incrementLabel: 'More seats', 'aria-label': 'Seats' },
   'toast': {},
   'toolbar': {},

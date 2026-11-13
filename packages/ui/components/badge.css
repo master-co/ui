@@ -1,4 +1,9 @@
-/* Badge: a small chip for a status, a category or a count. Hue appears only with a status. */
+/*
+ * Badge: a small chip for a status, a category or a count. Hue appears with a status, in one of four tones, or with
+ * a category, read from --category-* (see category.css); the two are different facts and never share a badge.
+ * A badge may hold a picture (badge-media), a label that truncates (badge-label) and, as a compound, a smaller
+ * badge of its own (badge-addon) whose corner nests inside the outer one.
+ */
 @layer components {
   .badge {
     --badge-height: 1.375rem;
@@ -6,6 +11,7 @@
     --badge-font-size: .71875rem;
     --badge-radius: var(--radius-chip);
     --badge-tone: var(--color-text-muted);
+    --badge-inset: .1875rem;
     --icon-size: .875rem;
     --icon-offset: -.0625rem;
     display: inline-flex;
@@ -77,6 +83,18 @@
       box-shadow: inset 0 0 0 .5px color-mix(in oklab, var(--badge-tone) 36%, transparent);
     }
 
+    /* A category: its tinted surface, its text and its line, with the mark as the dot. Neutral without one. */
+    &.badge-category {
+      --badge-tone: var(--category-mark, var(--color-text-muted));
+      background: var(--category-surface, var(--color-surface-chip));
+      color: var(--category-text, var(--color-text-body));
+      box-shadow: inset 0 0 0 .5px var(--category-line, var(--color-line-contour));
+
+      &.badge-outline {
+        background: transparent;
+      }
+    }
+
     &.badge-info { --badge-tone: var(--color-info); }
     &.badge-success { --badge-tone: var(--color-success); }
     &.badge-warning { --badge-tone: var(--color-warning); }
@@ -103,6 +121,59 @@
       }
     }
 
+    /* A label that may be long: the badge stops at its container's edge and the label ends in an ellipsis. */
+    &:has(.badge-label) {
+      max-width: 100%;
+    }
+
+    /* A picture at the start stands as far from the badge's edge as from its top and bottom. */
+    &:has(.badge-media:first-child) {
+      padding-inline-start: var(--badge-inset);
+    }
+
+    /*
+     * Compound: a smaller badge (badge-addon) and a message inside one capsule, such as "New · Theming has a
+     * guide". The outer badge is taller by two insets, and its corner is the addon's corner plus the inset, so the
+     * two curves run parallel. A link around it is one target: the capsule takes the hover and the focus ring.
+     */
+    &.badge-compound {
+      --badge-height: 1.75rem;
+      --badge-padding-x: .625rem;
+      --badge-font-size: .78125rem;
+      --badge-radius: calc(var(--radius-chip) + var(--badge-inset));
+      gap: .5rem;
+
+      &:has(.badge-addon:first-child) {
+        padding-inline-start: var(--badge-inset);
+      }
+
+      &:has(.badge-addon:last-child) {
+        padding-inline-end: var(--badge-inset);
+      }
+
+      &.badge-pill .badge-addon {
+        --badge-radius: 999px;
+        corner-shape: round;
+      }
+    }
+
+    &:any-link {
+      transition-property: box-shadow, color;
+      transition-duration: var(--duration-quick);
+      transition-timing-function: var(--easing-glide);
+
+      @media (hover: hover) {
+        /* The contour firms toward the badge's own text, whatever its face. */
+        &:hover {
+          box-shadow: inset 0 0 0 .5px color-mix(in oklab, currentColor 45%, transparent);
+        }
+      }
+
+      &:focus-visible {
+        @apply --focus-ring;
+      }
+    }
+
     /* A count on the corner of its nearest positioned parent, cut out by a ring of the surface it sits on. */
     &.badge-corner {
       --badge-height: 1.125rem;
@@ -121,6 +192,63 @@
         translate: -35% -35%;
       }
     }
+
+    @media (forced-colors: active) {
+      outline: 1px solid CanvasText;
+      outline-offset: -1px;
+    }
+  }
+}
+
+@layer components {
+  /* The words of a badge that may be long: they shrink and end in an ellipsis, while a picture or a count keeps its size. */
+  .badge-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /*
+   * A picture at the start of a badge: an avatar, a flag or a logo, sized to the badge less two insets and kept
+   * round, so it sits in the badge's end as a pearl sits in a setting. Put an avatar or an icon inside; this part
+   * sizes them through --avatar-size and --icon-size.
+   */
+  .badge-media {
+    --badge-media-size: calc(var(--badge-height) - 2 * var(--badge-inset));
+    --icon-size: calc(var(--badge-media-size) - .125rem);
+    display: inline-grid;
+    flex: none;
+    place-items: center;
+    width: var(--badge-media-size);
+    height: var(--badge-media-size);
+    margin-inline-end: -.0625rem;
+    border-radius: 999px;
+    corner-shape: round;
+    overflow: hidden;
+
+    .avatar {
+      --avatar-size: var(--badge-media-size);
+    }
+  }
+
+  /*
+   * The smaller badge inside a compound badge: a raised face on the outer one's tint, one inset in from its edges,
+   * so its corner is the outer corner less the inset. It takes the category or the tone of the outer badge.
+   */
+  .badge-addon {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: .25rem;
+    height: calc(var(--badge-height) - 2 * var(--badge-inset));
+    padding: 0 .4375rem;
+    border-radius: calc(var(--badge-radius) * var(--corner-scale) - var(--badge-inset));
+    corner-shape: var(--corner-shape);
+    @apply --surface-sheet;
+    color: inherit;
+    box-shadow: var(--shadow-raised);
+    font-size: .71875rem;
+    white-space: nowrap;
 
     @media (forced-colors: active) {
       outline: 1px solid CanvasText;
