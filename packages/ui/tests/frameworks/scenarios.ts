@@ -498,6 +498,20 @@ export const scenarios: Record<string, Scenario> = {
     await driver.act(() => popover.hidePopover())
     assert.deepEqual(heard, [false], 'a popover the browser closed says so')
     await driver.act(() => mounted.unmount())
+
+    // A hint: the trigger shows it on hover and on focus, and the browser does the rest.
+    const hint = await owned(driver, 'popover', { mode: 'hint', open: false }, 'open', 'onOpenChange')
+    conforms(page)
+    const card = page.one<HTMLElement>('.popover')
+    const trigger = page.one('button.btn')
+    assert.equal(card.getAttribute('popover'), 'hint')
+    assert.equal(trigger.getAttribute('interestfor'), card.id, 'the trigger names the hint with interestfor')
+    assert.equal(trigger.hasAttribute('popovertarget'), false, 'and does not open it with a press')
+    await driver.act(() => hint.mounted.set({ open: true }))
+    assert.equal(page.isOpen(card), true, 'open shows a hint too')
+    await driver.act(() => card.hidePopover())
+    assert.deepEqual(hint.heard, [false], 'a hint the browser hid says so')
+    await driver.act(() => hint.mounted.unmount())
   },
 
   async tooltip(driver, page) {
