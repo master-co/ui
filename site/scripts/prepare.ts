@@ -18,7 +18,7 @@ const categoryOrder = [
   // Components: parts with a material, a state or a platform behavior, and the layouts that arrange them in a room.
   'Materials', 'Layouts', 'Structure', 'Actions', 'Forms', 'Navigation', 'Overlays', 'Feedback', 'Data display', 'Media', 'Content', 'Typography',
   // Charts: the forms of the chart, by what a reader has to see.
-  'Change over time', 'Comparison', 'Parts of a whole', 'Relationship',
+  'Change over time', 'Comparison', 'Parts of a whole', 'Distribution', 'Relationship',
   // Blocks: one stretch of a page with a purpose.
   'Marketing blocks', 'Application blocks',
   // Pages: a whole screen, where its regions go and what scrolls.

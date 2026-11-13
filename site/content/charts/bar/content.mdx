@@ -113,6 +113,60 @@ addEventListener('DOMContentLoaded', function () {
 })
 </script>`} />
 
+### As shares of a whole \{#percent\}
+
+`stacked: 'percent'` makes every stack a whole: each bar is as tall as its share of its stack, so the stacks are all the same height and what changes from one to the next is the mix. The readout says each value with its share.
+
+<ComponentPreview name="percent" height={386} title="Shares of a whole" bodyClass="p-lg" behaviors html={`<div class="card max-w(440) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Accounts</h3>
+    <p class="card-description">Share by plan, each quarter</p>
+  </div>
+  <figure class="chart" id="plans" style="--chart-height: 11rem"></figure>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.chart(document.getElementById('plans'), {
+    type: 'bar',
+    stacked: 'percent',
+    label: 'Share of accounts by plan, each quarter',
+    labels: ['Q1', 'Q2', 'Q3', 'Q4'],
+    series: [
+      { name: 'Free', values: [620, 640, 610, 580] },
+      { name: 'Pro', values: [240, 300, 360, 420] },
+      { name: 'Team', values: [60, 90, 130, 190] }
+    ]
+  })
+})
+</script>`} />
+
+### To either side of zero \{#diverging\}
+
+Values under zero stack downward from the baseline while those above it stack upward, so two series of opposite sign diverge from a line in the middle: agreement and disagreement, income and spending. Give the series their categories yourself, so the two sides keep their colors wherever they stand.
+
+<ComponentPreview name="diverging" height={386} title="To either side of zero" bodyClass="p-lg" behaviors html={`<div class="card max-w(520) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Survey</h3>
+    <p class="card-description">Share who disagree and who agree</p>
+  </div>
+  <figure class="chart" id="survey" style="--chart-height: 11rem"></figure>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.chart(document.getElementById('survey'), {
+    type: 'bar',
+    stacked: true,
+    horizontal: true,
+    label: 'Share of answers that disagree and agree, by statement, in percent',
+    labels: ['Easy to set up', 'Fast', 'Well documented', 'Good value'],
+    series: [
+      { name: 'Disagree', category: 'orange', values: [-12, -24, -18, -30] },
+      { name: 'Agree', category: 'blue', values: [72, 58, 64, 46] }
+    ]
+  })
+})
+</script>`} />
+
 ## Across \{#across\}
 
 `horizontal` turns the bars across, one row to a name, for a ranking whose names are longer than a column is wide. The names stand beside the rows and the scale under them; a name longer than eighteen letters is cut, and the readout says it whole.
@@ -133,6 +187,51 @@ addEventListener('DOMContentLoaded', function () {
     label: 'Pages by visitors in the last 7 days',
     labels: ['Installation', 'Button', 'Dialog', 'Default theme', 'Command'],
     series: [{ name: 'Visitors', values: [4820, 3112, 2240, 1360, 412] }]
+  })
+})
+</script>`} />
+
+## Lollipops and whiskers \{#lollipop\}
+
+`mark: 'lollipop'` draws each bar as a stem with a dot at its end. It says the same value with far less ink, which suits many bars or long ones, where a row of solid bars reads as a wall.
+
+<ComponentPreview name="lollipop" height={348} title="Lollipops" bodyClass="p-lg" behaviors html={`<div class="card max-w(520) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Response time</h3>
+    <p class="card-description">Median by endpoint, in milliseconds</p>
+  </div>
+  <figure class="chart" id="endpoints" style="--chart-height: 11rem"></figure>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.chart(document.getElementById('endpoints'), {
+    type: 'bar',
+    mark: 'lollipop',
+    horizontal: true,
+    values: true,
+    label: 'Median response time by endpoint, in milliseconds',
+    labels: ['/search', '/checkout', '/feed', '/profile', '/login'],
+    series: [{ name: 'Median', values: [412, 318, 240, 132, 96] }]
+  })
+})
+</script>`} />
+
+A series with `low` and `high`, one of each to a label, carries what its values may be: an interval around a mean, the range between runs. It is drawn as a whisker through the bar's end, and the readout says it after the value.
+
+<ComponentPreview name="whiskers" height={348} title="Whiskers" bodyClass="p-lg" behaviors html={`<div class="card max-w(440) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Trial</h3>
+    <p class="card-description">Mean score by group, with its interval</p>
+  </div>
+  <figure class="chart" id="trial" style="--chart-height: 11rem"></figure>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.chart(document.getElementById('trial'), {
+    type: 'bar',
+    label: 'Mean score by group with its 95% interval',
+    labels: ['Control', 'A', 'B', 'C'],
+    series: [{ name: 'Score', values: [52, 61, 58, 70], low: [46, 55, 49, 64], high: [58, 67, 67, 76] }]
   })
 })
 </script>`} />
@@ -173,10 +272,11 @@ addEventListener('DOMContentLoaded', function () {
 | Option | Default | |
 | --- | --- | --- |
 | `label` | none | What the chart shows and in what unit: the plot's accessible name |
-| `labels` | `[]` | The names along the scale, or around a radar |
-| `series` | `[]` | Each with a `name` and `values`, a `value` for a slice or a ring, or `points` for a scatter; optionally a `category`, a `type` and a ring's `max` |
-| `stacked` | `false` | Bars, or areas, stand on each other |
-| `horizontal` | `false` | Bars run across |
+| `labels` | `[]` | The names along the scale, around a radar or over a heatmap's columns |
+| `series` | `[]` | Each with a `name` and what its form reads: `values`, a `value`, `points`, `ranges` or `children`; optionally a `category`, a `type`, `low` and `high`, and a ring's `max` |
+| `stacked` | `false` | Bars, or areas, stand on each other; `'percent'` makes every stack a whole, and `'stream'` centers stacked areas on a middle line |
+| `horizontal` | `false` | Bars, ranges, dumbbells and boxes run across |
+| `mark` | `'bar'` | `'lollipop'` draws a bar as a stem with a dot at its end |
 | `min`, `max`, `ticks` | fit, `4` | The ends of the scale and about how many steps mark it; `xMin`, `xMax` and `xTicks` for a scatter's scale across |
 | `axis` | `true` | Whether the scale's figures are written; `false` keeps the hairlines alone, for a small chart in a tile |
 | `format`, `tickFormat` | the locale's | How a value and a tick are written; `xFormat` for a scatter's scale across |

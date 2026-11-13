@@ -4,7 +4,7 @@ import ComponentLinks from '~/site/components/ComponentLinks.astro'
 import ContractTable from '~/site/components/ContractTable.astro'
 import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
-A chart draws numbers as lines, areas, bars, a pie, a donut, rings, a radar or a scatter. It is one SVG that fits the width it is given: what stands on a scale is placed by percentages, the lines keep their weight however far the plot stretches, and the text is never scaled. A chart of one series is ink, as a [progress bar](/components/progress) fills with ink; several series take the colors of a [category](/components/category). Each point is a list item that says its values in words.
+A chart draws numbers in the form the reader's question calls for: a line, bars, a donut, a histogram, a funnel and [more than twenty in all](#forms). Whatever the form, it is one SVG that fits the width it is given: what stands on a scale is placed by percentages, the lines keep their weight however far the plot stretches, and the text is never scaled. A chart of one series is ink, as a [progress bar](/components/progress) fills with ink; several series take the colors of a [category](/components/category). Each point is a list item that says its values in words.
 
 <ComponentPreview name="default" height={434} title="Chart" bodyClass="p-lg" behaviors html={`<div class="card max-w(560) mx-auto">
   <div class="card-header">
@@ -63,6 +63,31 @@ const html = `<figure class="chart">${chartMarkup({ type: 'bar', label, labels, 
 
 Calling `chart()` on that element with no series works the chart as it is written, and `attach()` from `@master/ui/behaviors` does so for every chart on the page.
 
+### Only the forms a page draws \{#forms-only\}
+
+`chart.js` has every form: about 16 kB minified and gzipped. A page that draws one or two can carry those alone. `chart-core.js` is the chart with no form of its own, about 6 kB, and each form is a module that `chartForms()` takes: lines, areas and bars together add about 2 kB, since they share a scale, and every other form under 1 kB.
+
+```js name=app.js
+import { chartCore, chartForms } from '@master/ui/behaviors/chart-core.js'
+import { chartCartesian } from '@master/ui/behaviors/chart-cartesian.js'
+
+chartForms(chartCartesian)
+chartCore(document.querySelector('.chart'), { type: 'line', label, labels, series })
+```
+
+| Module | Draws |
+| --- | --- |
+| `chart-cartesian.js` | `line`, `area`, `bar` |
+| `chart-scatter.js` | `scatter` |
+| `chart-pie.js` | `pie`, `donut` |
+| `chart-rings.js`, `chart-radar.js`, `chart-sunburst.js` | `rings`, `radar`, `sunburst` |
+| `chart-waterfall.js`, `chart-range.js` | `waterfall`; `range`, `dumbbell` |
+| `chart-slope.js`, `chart-bump.js` | `slope`, `bump` |
+| `chart-marimekko.js`, `chart-funnel.js`, `chart-waffle.js`, `chart-treemap.js` | `marimekko`, `funnel`, `waffle`, `treemap` |
+| `chart-histogram.js`, `chart-box.js`, `chart-heatmap.js` | `histogram`, `box`, `heatmap` |
+
+A type no form draws throws an error that names what to import, so a missing form is found at once.
+
 ## Forms \{#forms\}
 
 Each form has a page of its own, with its examples and the options that matter to it.
@@ -71,12 +96,27 @@ Each form has a page of its own, with its examples and the options that matter t
 | --- | --- | --- |
 | [Line chart](/charts/line) | `line` | Values that go on from one to the next, as a line from point to point. |
 | [Area chart](/charts/area) | `area` | A line with a wash of its color under it, alone or stacked into a total. |
+| [Slope chart](/charts/slope) | `slope` | What rose, what fell and what crossed between two moments, read from the slopes. |
+| [Bump chart](/charts/bump) | `bump` | How the ranks of a few things changed, as lines that cross where one overtakes another. |
 | [Bar chart](/charts/bar) | `bar` | Amounts compared as bars on a baseline: side by side, stacked or across. |
 | [Radar chart](/charts/radar) | `radar` | A few things on the same measures, each an outline around one center. |
+| [Waterfall chart](/charts/waterfall) | `waterfall` | How a figure became another, as steps up and down from the first to the last. |
+| [Range chart](/charts/range) | `range` | Spans between two values: where each begins and where it ends. |
+| [Dumbbell chart](/charts/dumbbell) | `dumbbell` | Two values of each thing joined by a stem, so the gap between them is the mark. |
 | [Pie chart](/charts/pie) | `pie` | What one whole is made of, as slices of a circle. |
 | [Donut chart](/charts/donut) | `donut` | The parts of a whole around one figure that stands in the middle. |
 | [Rings](/charts/rings) | `rings` | A few readings, each filling a ring of its own toward its whole. |
+| [Marimekko chart](/charts/marimekko) | `marimekko` | Columns as wide as their totals, each split into its parts. |
+| [Funnel chart](/charts/funnel) | `funnel` | The stages of one flow, each narrowing to the next. |
+| [Waffle chart](/charts/waffle) | `waffle` | A hundred cells, each one percent of the whole. |
+| [Treemap](/charts/treemap) | `treemap` | Many parts of a whole as tiles, each as large as its share. |
+| [Sunburst chart](/charts/sunburst) | `sunburst` | A whole, its parts and the parts of each part, in two rings. |
+| [Histogram](/charts/histogram) | `histogram` | How readings are spread: bins between round numbers, each as tall as its count. |
+| [Box plot](/charts/box) | `box` | The spread of several groups in five figures each: a box, its median and its whiskers. |
+| [Heatmap](/charts/heatmap) | `heatmap` | A pattern across two scales: cells as dark as their values. |
 | [Scatter plot](/charts/scatter) | `scatter` | Two measures against each other, one dot to a thing. |
+
+Lines, areas and bars share one scale and may stand in one chart: a series with a `type` of its own is drawn as that mark, such as a line over bars.
 
 ## The readout and the keys \{#readout\}
 
@@ -106,12 +146,13 @@ The scale starts at zero, or under it for a value under zero, and ends at a roun
 
 | Option | Default | |
 | --- | --- | --- |
-| `type` | `'bar'` | `line`, `area`, `bar`, `pie`, `donut`, `rings`, `radar` or `scatter` |
+| `type` | `'bar'` | The form: one of the types in [Forms](#forms) |
 | `label` | none | What the chart shows and in what unit: the plot's accessible name |
-| `labels` | `[]` | The names along the scale, or around a radar |
-| `series` | `[]` | Each with a `name` and `values`, a `value` for a slice or a ring, or `points` for a scatter; optionally a `category`, a `type` and a ring's `max` |
-| `stacked` | `false` | Bars, or areas, stand on each other |
-| `horizontal` | `false` | Bars run across |
+| `labels` | `[]` | The names along the scale, around a radar or over a heatmap's columns |
+| `series` | `[]` | Each with a `name` and what its form reads: `values`, a `value`, `points`, `ranges` or `children`; optionally a `category`, a `type`, `low` and `high`, and a ring's `max` |
+| `stacked` | `false` | Bars, or areas, stand on each other; `'percent'` makes every stack a whole, and `'stream'` centers stacked areas on a middle line |
+| `horizontal` | `false` | Bars, ranges, dumbbells and boxes run across |
+| `mark` | `'bar'` | `'lollipop'` draws a bar as a stem with a dot at its end |
 | `curve` | `'smooth'` | `smooth`, `linear` or `step` |
 | `min`, `max`, `ticks` | fit, `4` | The ends of the scale and about how many steps mark it; `xMin`, `xMax` and `xTicks` for a scatter's scale across |
 | `axis` | `true` | Whether the scale's figures are written; `false` keeps the hairlines alone, for a small chart in a tile |
@@ -120,6 +161,10 @@ The scale starts at zero, or under it for a value under zero, and ends at a roun
 | `current` | none | The index of the point marked `aria-current` |
 | `legend`, `toggle` | with two series, `true` | Whether a legend is written, and whether its entries are checkboxes |
 | `hole`, `center` | `.7`, none | A donut's hole, and what stands in the middle of a donut or rings |
+| `total` | none | A waterfall's closing bar: its name |
+| `bins` | from the count | About how many bins a histogram sorts its readings into |
+| `ascending` | `false` | In a bump chart, the lowest value ranks first |
+| `words` | English | The names of a box plot's five figures: `min`, `q1`, `median`, `q3` and `max` |
 | `hidden` | `[]` | The names of the series left out |
 | `locale` | `'en-US'` | A BCP 47 tag for the numbers |
 | `draw` | none | Takes over the writing: called with the hidden names, for a renderer that writes the chart itself |
