@@ -1,6 +1,6 @@
 name: Release
 # Every push to main validates the workspace, releases @master/ui when its commits call for a release,
-# checks the version the registry serves, and deploys the site with the version it documents.
+# checks the version the registry serves, and delivers the site with the version it documents.
 # Versions come from the v* tags (v0.0.0 is the baseline, never published) and the commit types; see AGENTS.md.
 on:
   push:
@@ -83,33 +83,81 @@ jobs:
 
   deploy-site:
     needs: [release, verify-registry]
+    # The site deploys on its own, not only with a release. `plan` delivers a release with its version,
+    # and any other push with the newest release, whatever it changed; only a pending release holds it.
+    # A release delivers only once the registry serves it with provenance.
     if: ${{ always() && needs.release.result == 'success' && (needs.verify-registry.result == 'success' || (needs.release.outputs.released == 'false' && needs.verify-registry.result == 'skipped')) }}
-    # The site shows the newest release in its header; v0.0.0 is only the baseline, so it shows none.
     runs-on: ubuntu-latest
-    timeout-minutes: 20
-    # Repository settings: secrets CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID, optional variable CLOUDFLARE_PAGES_PROJECT.
+    # Includes the wait for the Cloudflare Pages build of pages-stable and for ui.master.co to serve it.
+    timeout-minutes: 75
+    permissions:
+      contents: write # attach the site manifest to the release and move pages-stable
+      checks: read # read the Cloudflare Pages check of the delivered commit
+    # Cloudflare Pages builds pages-stable with its Git integration (scripts/build-site-hosted.sh);
+    # this job holds no Cloudflare credential and uploads nothing to Cloudflare. See site/README.md.
     env:
-      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-      PAGES_PROJECT: ${{ vars.CLOUDFLARE_PAGES_PROJECT || 'master-ui' }}
-      PUBLIC_VERSION: ${{ needs.release.outputs.version != '0.0.0' && needs.release.outputs.version || '' }}
+      PUBLIC_URL: https://ui.master.co
+      PAGES_PROJECT: ${{ vars.CLOUDFLARE_PAGES_PROJECT }}
+      PAGES_SUBDOMAIN: ${{ vars.CLOUDFLARE_PAGES_SUBDOMAIN }}
+      PAGES_RELEASE_MODE: ${{ vars.CLOUDFLARE_PAGES_MODE }}
     steps:
       - uses: actions/checkout@v6
         with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0 # the plan reads the release tags and the commits since the newest one
           persist-credentials: false
       - uses: ./.github/actions/setup
-      - run: bun run build
-      - name: Preserve the exact versioned site for deployment
+      # Sets PUBLIC_VERSION and SITE_DELIVERY for the following steps when the site delivers.
+      - name: Plan the site delivery for this push
+        id: plan
+        run: node scripts/pages-site-release.mjs plan
+        env:
+          RELEASED: ${{ needs.release.outputs.released }}
+          RELEASE_VERSION: ${{ needs.release.outputs.version }}
+      - name: Require the release tag and the version the registry serves
+        if: ${{ steps.plan.outputs.deliver == 'true' }}
+        run: node scripts/pages-site-release.mjs preflight
+      # Cloudflare must reproduce these final, verified bytes.
+      - name: Build the exact site revision with its identity
+        if: ${{ steps.plan.outputs.deliver == 'true' }}
+        run: |
+          bun run build
+          node scripts/pages-site-release.mjs identity
+      - name: Install browser
+        if: ${{ steps.plan.outputs.deliver == 'true' }}
+        run: bun x playwright install --with-deps chromium
+        working-directory: packages/ui
+      - name: Verify the final output on the Pages runtime and in a browser
+        if: ${{ steps.plan.outputs.deliver == 'true' }}
+        run: |
+          bun run test:site-hosting
+          bun run test:site
+        env:
+          MASTER_UI_BROWSER: chromium
+      - name: Create the output manifest
+        if: ${{ steps.plan.outputs.deliver == 'true' }}
+        run: node scripts/pages-site-release.mjs manifest
+      - name: Retain the verified site output
+        if: ${{ steps.plan.outputs.deliver == 'true' }}
         uses: actions/upload-artifact@v7
         with:
-          name: released-site-${{ github.sha }}
-          path: site/out/
+          name: site-release-${{ github.sha }}
+          path: |
+            site/out/
+            release-artifacts/site.manifest.json
           include-hidden-files: true
-          retention-days: 7
-      - name: Deploy to Cloudflare Pages
-        if: ${{ env.CLOUDFLARE_API_TOKEN != '' }}
-        working-directory: site
-        run: bun x wrangler pages deploy out --project-name "$PAGES_PROJECT" --branch "$GITHUB_REF_NAME" --commit-hash "$GITHUB_SHA" --commit-dirty=true
-      - name: Report a skipped deployment
-        if: ${{ env.CLOUDFLARE_API_TOKEN == '' }}
-        run: echo "::notice::Cloudflare credentials are not configured; the site was built but not deployed."
+          if-no-files-found: error
+          retention-days: 30
+      - name: Publish the manifest, advance pages-stable and wait for the deployment
+        if: ${{ steps.plan.outputs.deliver == 'true' }}
+        run: node scripts/pages-site-release.mjs deliver
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Retain the delivery receipt
+        if: ${{ always() && steps.plan.outputs.deliver == 'true' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: site-delivery-${{ github.sha }}-${{ github.run_attempt }}
+          path: release-artifacts/site-delivery.json
+          if-no-files-found: warn
+          retention-days: 90
