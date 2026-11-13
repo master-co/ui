@@ -1,0 +1,303 @@
+/*
+ * Schedule: a day as hours down a rail, each event as tall as it lasts.
+ * The hours run from --schedule-from to --schedule-to, each --schedule-hour tall, with a hairline at every
+ * hour. A rail of labels stands at the start, each label on the middle of its hairline; it is a picture of the
+ * scale and is hidden from assistive technology. The events of a day are an ordered list: each sets --start
+ * and --end in hours and says its title and its time in words, so the list reads without the drawing.
+ * An event is a quiet sheet of tinted ink with an ink edge at its start, inset from the hairlines so that two
+ * events that meet keep a line between them. Events that overlap share the width: --lane is the event's place
+ * and --lanes how many stand side by side. An event is a size container, so a short one keeps its title on
+ * one line, puts the time beside it when there is room, and with no room for a line shows only its sheet.
+ * The event marked aria-current is ink. schedule-now draws an ink line with a dot at --now, through the day
+ * marked aria-current="date", and as a hairline through the other days; it passes under the events, so it
+ * never strikes through their words.
+ * Several days stand side by side as schedule-day columns, each with an optional heading over it.
+ * Everything is placed by the stylesheet; nothing is measured by a script.
+ */
+@layer components {
+  .schedule {
+    --schedule-from: 8;
+    --schedule-to: 18;
+    --schedule-hour: 3rem;
+    --schedule-rail: 3rem;
+    --schedule-color: var(--color-surface-inverse);
+    /* The surface the schedule stands on, which a card or a sheet publishes; the event's tint is mixed with it. */
+    --schedule-surface: var(--surface-color, var(--color-surface-base));
+    --schedule-span: calc(var(--schedule-to) - var(--schedule-from));
+    display: grid;
+    grid-template-rows: auto calc(var(--schedule-span) * var(--schedule-hour));
+    grid-template-columns: var(--schedule-rail);
+    grid-auto-columns: minmax(0, 1fr);
+    grid-auto-flow: column;
+    min-width: 0;
+    margin: 0;
+    padding-block-end: .5rem;
+    color: var(--color-text-body);
+    font: 400 .8125rem/1.25rem var(--font-family-sans);
+    font-feature-settings: inherit;
+    font-variant-numeric: tabular-nums;
+
+    /* Without headings, the first label stands half above the first hour: keep it in the box. */
+    &:not(:has(.schedule-heading)) {
+      padding-block-start: .5rem;
+    }
+
+    /* Now: an ink line across the day, and a dot where it meets the day's edge. */
+    &.schedule-now .schedule-events {
+      &::before, &::after {
+        content: '';
+        position: absolute;
+        pointer-events: none;
+      }
+
+      /* The line passes under the events, so it never strikes through their words. */
+      &::after {
+        z-index: 0;
+        top: calc((var(--now, var(--schedule-from)) - var(--schedule-from)) * var(--schedule-hour));
+        inset-inline: 0;
+        height: 1px;
+        background: var(--color-text-strong);
+      }
+
+      &::before {
+        top: calc((var(--now, var(--schedule-from)) - var(--schedule-from)) * var(--schedule-hour) - 3px);
+        inset-inline-start: -3px;
+        width: 7px;
+        height: 7px;
+        z-index: 2;
+        border-radius: 999px;
+        corner-shape: round;
+        background: var(--color-text-strong);
+        box-shadow: 0 0 0 1.5px var(--schedule-surface);
+      }
+
+      @media (forced-colors: active) {
+        &::before, &::after {
+          forced-color-adjust: none;
+          background: CanvasText;
+        }
+      }
+    }
+
+    /* When one day is today, the line runs through the others as a hairline, with no dot. */
+    &.schedule-now:has(.schedule-day[aria-current="date"]) .schedule-day:not([aria-current="date"]) .schedule-events {
+      &::before {
+        content: none;
+      }
+
+      &::after {
+        background: var(--color-line-mark);
+      }
+    }
+
+    @media (forced-colors: active) {
+      --schedule-color: CanvasText;
+    }
+  }
+
+  /* The labels of the hours, one to an hour, each centered on its hairline. */
+  .schedule-rail {
+    display: grid;
+    grid-area: 2 / 1;
+    grid-auto-rows: var(--schedule-hour);
+    align-content: start;
+    margin: -.5rem 0 0;
+    padding: 0;
+    padding-inline-end: .5rem;
+    color: var(--color-text-muted);
+    font-size: .6875rem;
+    line-height: 1rem;
+    list-style: none;
+    text-align: end;
+    white-space: nowrap;
+  }
+
+  /* One day: its heading over its events, on the schedule's own rows. */
+  .schedule-day {
+    display: grid;
+    grid-row: 1 / span 2;
+    grid-template-rows: subgrid;
+    min-width: 0;
+    margin: 0;
+  }
+
+  /* The name of a day, over its column. Today's takes the strong ink. */
+  .schedule-heading {
+    grid-row: 1;
+    min-width: 0;
+    margin: 0;
+    padding-block-end: .75rem;
+    overflow: hidden;
+    color: var(--color-text-muted);
+    font-size: .75rem;
+    font-weight: var(--font-weight-control);
+    line-height: 1rem;
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    .schedule-day[aria-current="date"] & {
+      color: var(--color-text-strong);
+    }
+  }
+
+  /*
+   * The events of a day, and the scale behind them: a hairline at every hour, one down the day's start, and
+   * the closing hairline under the last hour. The hours begin after the upright line, so no crossing is drawn twice.
+   */
+  .schedule-events {
+    --schedule-inset: 2px;
+    --schedule-inset-end: .5rem;
+    --schedule-lane-gap: 3px;
+    --schedule-line: var(--color-line-hair);
+    position: relative;
+    grid-row: 2;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    background:
+      linear-gradient(var(--schedule-line), var(--schedule-line)) left / 1px 100% no-repeat,
+      repeating-linear-gradient(180deg, var(--schedule-line) 0 1px, transparent 1px var(--schedule-hour)) right / calc(100% - 1px) 100% no-repeat;
+    box-shadow: 0 1px 0 var(--schedule-line);
+    list-style: none;
+
+    &:dir(rtl) {
+      background:
+        linear-gradient(var(--schedule-line), var(--schedule-line)) right / 1px 100% no-repeat,
+        repeating-linear-gradient(180deg, var(--schedule-line) 0 1px, transparent 1px var(--schedule-hour)) left / calc(100% - 1px) 100% no-repeat;
+    }
+
+    /* The hairlines stay, in the system's gray; the events inside keep the system's colors. */
+    @media (forced-colors: active) {
+      --schedule-line: GrayText;
+      forced-color-adjust: none;
+    }
+  }
+
+  /*
+   * One event, from --start to --end in hours, in lane --lane of --lanes. It stands a pixel clear of the
+   * hairline over it and the one under it. It goes on the list item, or on a link or a button inside one.
+   */
+  .schedule-event {
+    --schedule-length: calc((var(--end, 1) - var(--start, 0)) * var(--schedule-hour) - 3px);
+    --schedule-cell: calc((100% - var(--schedule-inset) - var(--schedule-inset-end) + var(--schedule-lane-gap)) / var(--lanes, 1));
+    --schedule-tint: color-mix(in oklab, var(--schedule-color) 7%, var(--schedule-surface));
+    --schedule-edge: var(--schedule-color);
+    position: absolute;
+    z-index: 1;
+    top: calc((var(--start, 0) - var(--schedule-from)) * var(--schedule-hour) + 2px);
+    inset-inline-start: calc(var(--schedule-inset) + var(--lane, 0) * var(--schedule-cell));
+    container: schedule-event / size;
+    display: flex;
+    flex-flow: row wrap;
+    align-content: flex-start;
+    column-gap: .375rem;
+    box-sizing: border-box;
+    width: calc(var(--schedule-cell) - var(--schedule-lane-gap));
+    height: max(var(--schedule-length), 2px);
+    margin: 0;
+    /* A short event centers its one line; a longer one keeps the same inset at its top. */
+    padding: clamp(0px, (var(--schedule-length) - 1rem) / 2, .25rem) .375rem;
+    padding-inline-start: calc(2px + .375rem);
+    border: 0;
+    border-radius: calc(var(--radius-chip) * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    overflow: hidden;
+    background: var(--schedule-tint);
+    color: var(--color-text-strong);
+    box-shadow: inset 2px 0 0 var(--schedule-edge), inset 0 0 0 .5px color-mix(in oklab, var(--schedule-color) 12%, transparent);
+    font: inherit;
+    font-feature-settings: inherit;
+    text-align: start;
+    text-decoration: none;
+    appearance: none;
+    -webkit-tap-highlight-color: transparent;
+
+    &:dir(rtl) {
+      box-shadow: inset -2px 0 0 var(--schedule-edge), inset 0 0 0 .5px color-mix(in oklab, var(--schedule-color) 12%, transparent);
+    }
+
+    /* Under the pointer the sheet is a step firmer, at once. */
+    @media (hover: hover) {
+      &:hover:not([aria-current="true"]) {
+        --schedule-tint: color-mix(in oklab, var(--schedule-color) 12%, var(--schedule-surface));
+      }
+    }
+
+    /* The event that matters now, or the one that is open: ink. */
+    &[aria-current="true"] {
+      background: var(--schedule-color);
+      color: var(--color-text-inverse);
+      box-shadow: var(--shadow-ink-top);
+    }
+
+    &:focus-visible, &:has(:focus-visible) {
+      @apply --focus-ring;
+      z-index: 3;
+    }
+
+    @media (forced-colors: active) {
+      forced-color-adjust: auto;
+      outline: 1px solid CanvasText;
+      outline-offset: -1px;
+
+      &[aria-current="true"] {
+        forced-color-adjust: none;
+        background: Highlight;
+        color: HighlightText;
+      }
+    }
+  }
+
+  /* What the event is: one line that ends in an ellipsis. */
+  .schedule-title {
+    flex: 1 0 100%;
+    min-width: 0;
+    margin: 0;
+    overflow: hidden;
+    font-size: .75rem;
+    font-weight: var(--font-weight-control);
+    line-height: 1rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* When it is: a quiet line under the title, in tabular figures. */
+  .schedule-time {
+    flex: 1 0 100%;
+    min-width: 0;
+    margin: 0;
+    overflow: hidden;
+    color: var(--color-text-muted);
+    font-size: .6875rem;
+    line-height: 1rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    .schedule-event[aria-current="true"] & {
+      color: color-mix(in oklab, var(--color-text-inverse) 72%, transparent);
+    }
+
+    @media (forced-colors: active) {
+      color: inherit;
+    }
+  }
+
+  /* A short event: the time beside the title when both fit, and under it, out of sight, when they do not. */
+  @container schedule-event (height < 2rem) {
+    .schedule-title, .schedule-time {
+      flex: 0 1 auto;
+    }
+
+    .schedule-time {
+      flex-shrink: 0;
+    }
+  }
+
+  /* Under a line's height: the sheet alone. Its words stay for assistive technology. */
+  @container schedule-event (height < .875rem) {
+    .schedule-title, .schedule-time {
+      opacity: 0;
+    }
+  }
+}

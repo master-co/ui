@@ -125,6 +125,7 @@ Or import only the theme and the components you use:
 | Gauge | `gauge`, `gauge-sm`, `gauge-lg`, `gauge-value`, `gauge-label` |
 | Uptime | `uptime`, `uptime-sm`, `uptime-day`, `uptime-degraded`, `uptime-down`, `uptime-none` |
 | Gantt | `gantt`, `gantt-now`, `gantt-row`, `gantt-scale`, `gantt-label`, `gantt-bar`, `gantt-milestone`, `gantt-ticks` |
+| Schedule | `schedule`, `schedule-now`, `schedule-rail`, `schedule-day`, `schedule-heading`, `schedule-events`, `schedule-event`, `schedule-title`, `schedule-time` |
 | Price | `price`, `price-sm`, `price-lg`, `price-amount`, `price-currency`, `price-period`, `price-was` |
 | Skeleton | `skeleton`, `skeleton-text`, `skeleton-circle` |
 | Shimmer | `shimmer` |

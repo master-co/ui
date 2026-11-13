@@ -1,0 +1,44 @@
+{
+  "$schema": "../contract.schema.json",
+  "name": "schedule",
+  "title": "Schedule",
+  "tier": "component",
+  "category": "Data display",
+  "description": "A day as hours down a rail, each event as tall as it lasts.",
+  "use": "A day, or a few days side by side, of things booked at a time: meetings, appointments, shifts, talks at a conference. The hours run from --schedule-from to --schedule-to and each event sets --start and --end in hours. Write each event's title and time as text, so the list reads without the drawing.",
+  "instead": [
+    { "when": "The spans are compared on one shared scale, one row to a thing, such as phases of a project", "use": "gantt" },
+    { "when": "A month is shown, and a reader picks a day from it", "use": "calendar" },
+    { "when": "The events are moments in the order they happened, with no length", "use": "timeline" },
+    { "when": "The events are read as rows of facts and sorted, not placed in time", "use": "table" }
+  ],
+  "script": "none",
+  "classes": [
+    { "name": "schedule", "kind": "root", "description": "The hours from --schedule-from to --schedule-to, each --schedule-hour tall: a rail of labels at the start, then one column for each day" },
+    { "name": "schedule-now", "kind": "modifier", "of": "schedule", "description": "Draws an ink line with a dot at --now through the day marked aria-current=\"date\", or through every day when none is, and a hairline through the other days" },
+    { "name": "schedule-rail", "kind": "part", "of": "schedule", "elements": ["ol", "ul"], "description": "The labels of the hours, one item to an hour from --schedule-from to --schedule-to, each centered on its hairline. Hide it with aria-hidden: the events say their times in words" },
+    { "name": "schedule-day", "kind": "part", "of": "schedule", "description": "One day's column, for several days side by side: an optional schedule-heading over its schedule-events. Mark today with aria-current=\"date\". A schedule of one day may leave it out" },
+    { "name": "schedule-heading", "kind": "part", "of": "schedule", "description": "The name of a day, over its column, in muted ink; today's takes the strong ink" },
+    { "name": "schedule-events", "kind": "part", "of": "schedule", "elements": ["ol", "ul"], "description": "The events of one day, in order of time, on the scale's hairlines: one at every hour and one down the day's start" },
+    { "name": "schedule-event", "kind": "part", "of": "schedule", "description": "One event from --start to --end, in lane --lane of --lanes: a quiet sheet of tinted ink with an ink edge, a pixel clear of the hairlines. Put it on the list item, or on a link or a button inside one. A short event keeps one line" },
+    { "name": "schedule-title", "kind": "part", "of": "schedule", "description": "What the event is: one line that ends in an ellipsis" },
+    { "name": "schedule-time", "kind": "part", "of": "schedule", "description": "When it is, written with <time> elements: a quiet line under the title, or beside it in a short event when both fit" }
+  ],
+  "states": [
+    { "on": "schedule-event", "name": "current", "mark": "aria-current=\"true\"", "description": "The event in progress, or the one open beside the schedule: an ink sheet" },
+    { "on": "schedule-day", "name": "today", "mark": "aria-current=\"date\"", "description": "Today: its heading takes the strong ink and schedule-now draws its line through it" }
+  ],
+  "properties": [
+    { "name": "--schedule-from", "default": "8", "description": "The first hour, from 0 to 24; fractions work" },
+    { "name": "--schedule-to", "default": "18", "description": "The hour the schedule ends" },
+    { "name": "--schedule-hour", "default": "3rem", "description": "The height of an hour" },
+    { "name": "--schedule-rail", "default": "3rem", "description": "The width of the rail of labels" },
+    { "name": "--schedule-color", "default": "var(--color-surface-inverse)", "description": "The ink the events are tinted and edged with" },
+    { "name": "--now", "on": "schedule", "description": "The hour of the line of schedule-now, such as 13.5 for half past one" },
+    { "name": "--start", "on": "schedule-event", "description": "The hour the event begins" },
+    { "name": "--end", "on": "schedule-event", "description": "The hour the event ends" },
+    { "name": "--lane", "on": "schedule-event", "description": "Where the event stands among events that overlap it, from 0 at the start; 0 by default" },
+    { "name": "--lanes", "on": "schedule-event", "description": "How many events stand side by side where this one does; 1 by default" }
+  ],
+  "example": "<div class=\"schedule\" style=\"--schedule-from: 9; --schedule-to: 12\">\n  <ol class=\"schedule-rail\" aria-hidden=\"true\"><li>9 AM</li><li>10 AM</li><li>11 AM</li><li>12 PM</li></ol>\n  <ol class=\"schedule-events\" aria-label=\"Thursday 13 November\">\n    <li class=\"schedule-event\" style=\"--start: 9; --end: 9.5\">\n      <p class=\"schedule-title\">Standup</p>\n      <p class=\"schedule-time\"><time datetime=\"09:00\">9:00</time> – <time datetime=\"09:30\">9:30</time></p>\n    </li>\n    <li class=\"schedule-event\" style=\"--start: 10; --end: 11.5\">\n      <p class=\"schedule-title\">Design review</p>\n      <p class=\"schedule-time\"><time datetime=\"10:00\">10:00</time> – <time datetime=\"11:30\">11:30</time></p>\n    </li>\n  </ol>\n</div>"
+}

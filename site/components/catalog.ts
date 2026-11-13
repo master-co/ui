@@ -96,6 +96,7 @@ export const components = [
   { slug: 'uptime', name: 'Uptime', category: 'Data display', description: 'How a service has been, one tick to a day.' },
   { slug: 'timeline', name: 'Timeline', category: 'Data display', description: 'Events in the order they happened.' },
   { slug: 'gantt', name: 'Gantt', category: 'Data display', description: 'Things that last, as bars on one scale of time.' },
+  { slug: 'schedule', name: 'Schedule', category: 'Data display', description: 'A day as hours down a rail, each event as tall as it lasts.' },
   { slug: 'trace', name: 'Trace', category: 'Data display', description: 'What an agent or a job did, step by step, each a quiet line that opens its detail.' },
   { slug: 'meter', name: 'Meter', category: 'Data display', description: 'A measurement within a known range.' },
   { slug: 'gauge', name: 'Gauge', category: 'Data display', description: 'A reading on a dial: an arc that fills as far as the value has come.' },
