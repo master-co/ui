@@ -5,7 +5,7 @@ description: "순수 JavaScript나 프레임워크에서 참조 동작을 연결
 
 import GuideFigure from '../../../components/GuideFigure.astro'
 
-대부분의 컴포넌트는 스타일을 적용하는 요소에 이미 필요한 동작이 있어 스크립트가 필요하지 않습니다. 콤보박스, 달력 그리드, 분할기처럼 대응하는 네이티브 요소가 없는 패턴도 있습니다. 이런 패턴에서는 스타일시트가 ARIA 속성과 네이티브 속성을 읽어 상태를 표시하고, 참조 스크립트인 동작이 입력, 포커스, 선택을 조율합니다. 이 가이드에서는 요소에 동작을 연결하고, 값을 읽고, 요소가 페이지에서 제거될 때 리스너를 해제하는 방법을 설명합니다.
+대부분의 컴포넌트는 스타일을 적용하는 요소에 이미 필요한 동작이 있어 스크립트가 필요하지 않습니다. 콤보박스, 달력 그리드, 분할 조절기처럼 대응하는 네이티브 요소가 없는 패턴도 있습니다. 이런 패턴에서는 스타일시트가 ARIA 속성과 네이티브 속성을 읽어 상태를 표시하고, 참조 스크립트인 동작이 입력, 포커스, 선택을 조율합니다. 이 가이드에서는 요소에 동작을 연결하고, 값을 읽고, 요소가 페이지에서 제거될 때 리스너를 해제하는 방법을 설명합니다.
 
 ## 동작의 정의 \{#what-a-behavior-is\}
 
@@ -14,7 +14,7 @@ import GuideFigure from '../../../components/GuideFigure.astro'
 | 동작이 하는 일 | 동작이 하지 않는 일 |
 | --- | --- |
 | ARIA 속성과 네이티브 속성을 설정하고 제거합니다. `aria-selected`, `aria-checked`, `aria-expanded`, `aria-activedescendant`, `aria-valuenow`, `hidden`, `tabindex`, `open`, 필드 값이 이에 해당합니다. | 스타일, 상태를 나타내는 클래스, 크기 또는 위치를 설정합니다. |
-| 포커스를 이동하고 플랫폼 API인 `showPopover()`, `showModal()`, `stepUp()`, `scrollIntoView()`를 호출합니다. | 팝오버나 대화상자 열기, 바깥을 눌러 닫기, 모달의 포커스 가두기와 Escape 키 처리 등 플랫폼 기능을 다시 구현합니다. |
+| 포커스를 이동하고 플랫폼 API인 `showPopover()`, `showModal()`, `stepUp()`, `scrollIntoView()`를 호출합니다. | 팝오버나 대화 상자 열기, 바깥을 눌러 닫기, 모달의 포커스 가두기와 Escape 키 처리 등 플랫폼 기능을 다시 구현합니다. |
 | 이벤트에서만 알 수 있는 정보를 계약에 명시된 `--menu-x`, `--splitter-size` 등의 사용자 지정 속성을 통해 전달합니다. | 요소의 위치를 지정하거나 제약을 적용합니다. 두 작업 모두 스타일시트가 속성을 읽어 처리합니다. |
 | 한 달의 각 주처럼 데이터에 따라 반복되는 행을 계약에 명시된 클래스로 생성합니다. | 계약 범위 밖의 정보를 읽거나 씁니다. 동작은 계약에 명시된 클래스와 역할로 구성 요소를 찾습니다. |
 
@@ -22,7 +22,7 @@ import GuideFigure from '../../../components/GuideFigure.astro'
 
 <GuideFigure name="behaviors" title="입력에서 상태 표시까지">
 
-**DOM 속성이 동작과 화면 표시를 연결합니다.** 리스트박스에서 옵션이 활성화된 상태로 Enter 키를 누르면 동작이 `aria-checked="true"`를 설정합니다. 스타일시트는 이 속성을 읽어 체크 표시를 보여 줍니다. 스크립트가 옵션을 선택하고 CSS가 선택 상태를 표시합니다.
+**DOM 속성이 동작과 화면 표시를 연결합니다.** 목록 상자에서 옵션이 활성화된 상태로 Enter 키를 누르면 동작이 `aria-checked="true"`를 설정합니다. 스타일시트는 이 속성을 읽어 체크 표시를 보여 줍니다. 스크립트가 옵션을 선택하고 CSS가 선택 상태를 표시합니다.
 
 </GuideFigure>
 
@@ -34,16 +34,16 @@ import GuideFigure from '../../../components/GuideFigure.astro'
 | --- | --- | --- | --- |
 | [달력](/components/calendar) | `calendar` | 표시할 월의 주별 행을 생성하고, 오늘과 선택한 날짜 또는 기간, 선택할 수 없는 날짜를 표시하며, 그리드 안에서 이동할 수 있게 합니다. | 필수 |
 | [콤보박스](/components/combobox) | `combobox` | 입력한 내용과 일치하지 않는 옵션을 숨기고, 활성 옵션을 바꾸고, 목록을 열고 닫으며, 선택한 옵션을 필드에 입력합니다. | 필수 |
-| [명령 팔레트](/components/command) | `command` | 명령을 필터링하고 활성 옵션을 바꿉니다. Enter 키를 누르면 활성 옵션을 클릭하고 대화상자를 닫습니다. 어디서든 단축키로 대화상자를 열 수 있습니다. | 필수 |
-| [비교](/components/compare) | `compare` | 브라우저가 스크롤 기반 애니메이션을 지원하지 않으면 범위 입력 요소의 값을 `--compare-position`에 복사합니다. 지원하는 경우에는 아무것도 변경하지 않습니다. | 필수 |
-| [리스트박스](/components/listbox) | `listbox` | 방향키나 문자 입력으로 활성 옵션을 바꾸고, 선택한 옵션에 체크 표시를 합니다. 다중 선택 목록에서는 여러 옵션에 체크 표시를 할 수 있습니다. | 필수 |
+| [명령 팔레트](/components/command) | `command` | 명령을 필터링하고 활성 옵션을 바꿉니다. Enter 키를 누르면 활성 옵션을 클릭하고 대화 상자를 닫습니다. 어디서든 단축키로 대화 상자를 열 수 있습니다. | 필수 |
+| [이미지 비교](/components/compare) | `compare` | 브라우저가 스크롤 기반 애니메이션을 지원하지 않으면 범위 입력 요소의 값을 `--compare-position`에 복사합니다. 지원하는 경우에는 아무것도 변경하지 않습니다. | 필수 |
+| [목록 상자](/components/listbox) | `listbox` | 방향키나 문자 입력으로 활성 옵션을 바꾸고, 선택한 옵션에 체크 표시를 합니다. 다중 선택 목록에서는 여러 옵션에 체크 표시를 할 수 있습니다. | 필수 |
 | [메뉴](/components/menu) | `menu`, `contextMenu` | 방향키나 문자 입력으로 항목 사이에서 포커스를 이동하고, 하위 메뉴가 있는 방향의 방향키로 하위 메뉴를 엽니다. `contextMenu`는 포인터 위치에서 메뉴를 엽니다. | 선택 사항 |
 | [OTP](/components/otp) | `otp` | 입력 칸 사이에서 포커스를 이동하고, 붙여 넣거나 자동으로 채운 코드를 각 칸에 나누어 넣습니다. | 필수 |
-| [분할기](/components/splitter) | `splitter` | 손잡이를 드래그하거나 키로 움직일 때 첫 번째 패널의 크기를 `--splitter-size`와 `aria-valuenow`에 기록합니다. | 필수 |
+| [분할 조절기](/components/splitter) | `splitter` | 손잡이를 드래그하거나 키로 움직일 때 첫 번째 패널의 크기를 `--splitter-size`와 `aria-valuenow`에 기록합니다. | 필수 |
 | [스테퍼](/components/stepper) | `stepper` | 두 버튼이 숫자 입력 필드의 `stepDown()`과 `stepUp()`을 각각 호출하게 하고, 필드 값이 최솟값이나 최댓값에 도달하면 해당 버튼을 비활성화합니다. | 필수 |
 | [탭](/components/tabs#tab-panels) | `tabs` | `role="tablist"`에서 탭 하나만 Tab 키 이동 순서에 두고, 방향키로 탭을 이동하고 선택하며, 선택한 탭의 패널을 표시합니다. | 선택 사항 |
 | [트리](/components/tree) | `tree` | 트리 전체를 Tab 키 이동 순서에서 한 지점으로 취급하고, 방향키로 항목을 탐색하고 접을 수 있게 합니다. | 선택 사항 |
-| [휠](/components/wheel) | `wheel` | `aria-selected`를 표시 아래에 멈춘 옵션으로 옮기고, 포커스가 있는 열에 리스트박스와 같은 키보드 동작을 적용합니다. | 필수 |
+| [휠](/components/wheel) | `wheel` | `aria-selected`를 표시 아래에 멈춘 옵션으로 옮기고, 포커스가 있는 열에 목록 상자와 같은 키보드 동작을 적용합니다. | 필수 |
 
 ## 동작 하나 연결 \{#attach-one\}
 
@@ -168,7 +168,7 @@ onUnmounted(() => detach?.())
 
 `pattern`은 각 문자가 일치해야 하는 정규 표현식입니다. 생략하면 동작이 첫 번째 슬롯의 `pattern` 속성을 읽습니다. 해당 속성도 없으면 숫자만 허용합니다.
 
-### 분할기 \{#splitter-options\}
+### 분할 조절기 \{#splitter-options\}
 
 `step`은 방향키를 한 번 누를 때 손잡이가 얼마나 이동하는지 퍼센트포인트 단위로 지정합니다. 기본값은 5입니다.
 
@@ -179,7 +179,7 @@ onUnmounted(() => detach?.())
 | 동작 | 이벤트 | 이벤트 발생 요소 | 전달 값 |
 | --- | --- | --- | --- |
 | `combobox` | 옵션을 선택하면 `input`, 이어서 `change` | 필드 | 필드의 `value` 값 |
-| `listbox` | `input`, 이어서 `change` | 리스트박스 | 리스트박스의 각 옵션에서 `aria-checked="true"`를 읽으세요 |
+| `listbox` | `input`, 이어서 `change` | 목록 상자 | 목록 상자의 각 옵션에서 `aria-checked="true"`를 읽으세요 |
 | `stepper` | 버튼으로 숫자가 바뀌면 `input`, 이어서 `change` | 필드 | 필드의 `value` 값 |
 | `splitter` | 크기가 바뀔 때마다 `input`, 드래그가 끝나거나 키로 손잡이를 움직이면 `change` | 손잡이 | `aria-valuenow`를 읽으세요 |
 | `otp` | 스크립트가 값을 쓴 슬롯에서 `input`, 모든 슬롯이 채워지면 `change` | 각각 슬롯과 루트 | `detail.value`: 코드 |
@@ -209,7 +209,7 @@ root.addEventListener('change', (event) => {
 | --- | --- |
 | `calendar` | 날짜는 `YYYY-MM-DD`, 범위는 `[start, end]`입니다. 종료 날짜는 선택하기 전까지 `null`이며, 선택한 값이 없으면 `null`입니다. 값을 설정하면 새 값에 해당하는 달을 표시합니다. |
 | `combobox` | 선택한 옵션이 나타내는 값입니다. 필드에 텍스트가 있고 그에 해당하는 옵션을 선택하지 않은 상태에서는 `null`입니다. 값을 설정하면 옵션의 텍스트가 필드에 입력됩니다. |
-| `listbox` | 선택한 옵션이 나타내는 값입니다. 선택 항목이 없으면 `null`입니다. 리스트박스에 `aria-multiselectable="true"`가 설정되어 있으면 선택한 옵션의 값 목록입니다. |
+| `listbox` | 선택한 옵션이 나타내는 값입니다. 선택 항목이 없으면 `null`입니다. 목록 상자에 `aria-multiselectable="true"`가 설정되어 있으면 선택한 옵션의 값 목록입니다. |
 | `otp` | 각 슬롯에 입력된 문자를 슬롯 순서대로 나열한 값 |
 | `splitter` | 첫 번째 패널의 크기(%) |
 | `stepper` | 필드의 숫자 값입니다. 필드가 비어 있으면 `null`입니다. |
@@ -310,7 +310,7 @@ npx master-ui own combobox
 
 `own`은 컴포넌트의 스타일시트, 계약, 동작을 프로젝트에 복사합니다. 기본 경로는 각각 `ui/combobox.css`, `ui/combobox.json`, `ui/combobox.js`입니다. 복사한 스크립트는 프로젝트에서 직접 관리하므로 프로젝트 내 경로에서 가져오세요. 컴포넌트 직접 관리에 관한 나머지 내용은 [사용자 정의](/guide/customization#own-a-component)에서 다룹니다.
 
-콤보박스, 명령 팔레트, 리스트박스, 메뉴의 동작은 `./internal.js`에서 공통 보조 함수를 가져옵니다. `own`은 이 파일을 해당 동작 파일과 같은 위치에 복사합니다.
+콤보박스, 명령 팔레트, 목록 상자, 메뉴의 동작은 `./internal.js`에서 공통 보조 함수를 가져옵니다. `own`은 이 파일을 해당 동작 파일과 같은 위치에 복사합니다.
 
 수정할 때도 계약을 지키세요. 스크립트가 변경하는 속성은 스타일시트가 참조하는 속성과 일치해야 하며, `keyboard` 목록에는 변경된 키 동작을 반영해야 합니다.
 

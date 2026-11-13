@@ -35,6 +35,22 @@ prose (です・ます); Korean uses consistent formal technical prose (합니�
 Traditional Chinese uses Taiwan vocabulary (程式碼、檔案、預設、元件、樣式表).
 Simplified Chinese is edited on its own, not converted from Traditional Chinese.
 
+Use the same component name in its page title, catalog entry, contract title,
+and links that name the component. Translate terms by their role in the UI.
+For example, a filter chip is a selectable label, a badge conveys status or
+counts, and a pill describes a shape.
+
+| English | Traditional Chinese | Simplified Chinese | Japanese | Korean |
+| --- | --- | --- | --- | --- |
+| Chip | 膠囊標籤 | 胶囊标签 | チップ | 칩 |
+| Filter chip | 篩選標籤 | 筛选标签 | フィルターチップ | 필터 칩 |
+| Badge | 徽章 | 徽标 | バッジ | 배지 |
+| Popover | 彈出面板 | 弹出层 | ポップオーバー | 팝오버 |
+| Tabs | 分頁標籤 | 标签页 | タブ | 탭 |
+| Pagination | 分頁導覽 | 分页 | ページネーション | 페이지네이션 |
+| Listbox | 清單方塊 | 列表框 | リストボックス | 목록 상자 |
+| Tree | 樹狀檢視 | 树形视图 | ツリー | 트리 |
+
 Keep as written: code fences and inline code, code comments, imports, component
 and prop names, class names, tokens, commands, URLs, the markup in `html={…}`
 samples, the agent prompt of `DocumentPrompt`, file names and the library's own
