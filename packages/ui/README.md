@@ -104,6 +104,7 @@ Or import only the theme and the components you use:
 | Tabs | `tabs`, `tabs-item`, `tabs-sm` |
 | Navbar | `navbar`, `navbar-floating`, `navbar-brand`, `navbar-nav`, `navbar-link`, `navbar-end`, `navbar-toggle`, `navbar-progress` |
 | Tab bar | `tabbar`, `tabbar-floating`, `tabbar-item`, `tabbar-label` |
+| Dock | `dock`, `dock-item`, `dock-image`, `dock-label`, `dock-divider` |
 | Table of contents | `toc`, `toc-title`, `toc-list`, `toc-link` |
 | Nav | `nav`, `nav-item`, `nav-end`, `nav-label`, `nav-group`, `nav-toggle`, `nav-sub` |
 | Breadcrumb | `breadcrumb`, `breadcrumb-item`, `breadcrumb-link` |

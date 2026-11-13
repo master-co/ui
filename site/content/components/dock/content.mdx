@@ -1,0 +1,67 @@
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+A dock is a row of launchers on a tray of frosted glass: square tiles that hold a picture or an icon, each a link or a button. Under the pointer the row swells like a lens. The tile under it grows by half, the next one on each side by a little over a quarter and the one after that by a tenth, so the row bends smoothly toward the pointer. A label in ink rises over the tile, and a dot under a tile marks the current one. It is all CSS: `:hover`, the next-sibling combinator and `:has()` find the neighbors, and no script measures the pointer.
+
+<ComponentPreview name="default" height={152} title="Dock" bodyClass="flex items-end justify-center p-lg" html={`<nav class="dock" aria-label="Spaces">
+  <a class="dock-item" href="#harbor" aria-current="page"><img class="dock-image" src="/demo/harbor.svg" alt=""><span class="dock-label">Harbor</span></a>
+  <a class="dock-item" href="#dunes"><img class="dock-image" src="/demo/dunes.svg" alt=""><span class="dock-label">Dunes</span></a>
+  <a class="dock-item" href="#pines"><img class="dock-image" src="/demo/pines.svg" alt=""><span class="dock-label">Pines</span></a>
+  <a class="dock-item" href="#lighthouse"><img class="dock-image" src="/demo/lighthouse.svg" alt=""><span class="dock-label">Lighthouse</span></a>
+  <span class="dock-divider" role="separator" aria-orientation="vertical"></span>
+  <button type="button" class="dock-item"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.35-4.35"/></svg><span class="dock-label">Search</span></button>
+  <button type="button" class="dock-item"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16l-1 13H5zM10 11h4M3 4h18v3H3z"/></svg><span class="dock-label">Archive</span></button>
+</nav>`} caption="Move the pointer along the dock, or move to it with Tab." />
+
+## The lens \{#lens\}
+
+A tile is 40px at rest. Under the pointer it is 60px, its neighbors 51px and the tiles after them 44px; `--dock-magnify` sets the largest, and the others follow from it. The tiles grow in size, not by a transform, so the row opens around the pointer instead of tiles covering one another, and the tray widens with it. They grow from the tray's foot and over its top edge, and ease there along the theme's glide. Each tile reaches half the gap to its neighbors, so the lens holds while the pointer crosses from one tile to the next.
+
+The lens is for a pointer that hovers. On a touch screen the dock is a plain row of 44px tiles, and with reduced motion the tiles keep their size; the label still shows. Where the dock has less room than its tiles ask for, they all give some of it up and stay square.
+
+## Tiles \{#tiles\}
+
+A tile is a raised sheet with an icon, drawn at half its side, or a `dock-image` that fills it, with an empty `alt`: the label names the launcher. Its corner is a quarter of its side, the control's 10px at 40px, and the tray's corner is that plus the 8px inset, so the two curves keep one distance around the bend.
+
+A launcher that is a link takes `aria-current="page"` for the place the reader is in. A button that turns something on, such as a panel, takes `aria-pressed`. Both draw a dot of ink under the tile. Give a dock of buttons `role="toolbar"` and a name.
+
+<ComponentPreview name="panels" height={152} title="Toggles" bodyClass="flex items-end justify-center p-lg" html={`<div class="dock" id="panels" role="toolbar" aria-label="Panels">
+  <button type="button" class="dock-item" aria-pressed="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 4 8 4-8 4-8-4z"/><path d="m4 12 8 4 8-4"/><path d="m4 16 8 4 8-4"/></svg><span class="dock-label">Layers</span></button>
+  <button type="button" class="dock-item" aria-pressed="false"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5h14v10H10l-5 4z"/></svg><span class="dock-label">Comments</span></button>
+  <button type="button" class="dock-item" aria-pressed="false"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg><span class="dock-label">History</span></button>
+  <span class="dock-divider" role="separator" aria-orientation="vertical"></span>
+  <button type="button" class="dock-item"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg><span class="dock-label">Settings</span></button>
+</div>
+<script>
+  document.querySelectorAll('#panels [aria-pressed]').forEach(function (button) {
+    button.addEventListener('click', function () {
+      button.setAttribute('aria-pressed', button.getAttribute('aria-pressed') === 'true' ? 'false' : 'true')
+    })
+  })
+</script>`} caption="Press a tile to show or hide its panel." />
+
+`dock-divider` parts groups with a short hairline. The lens steps over it, as if it were not there.
+
+## Placing it \{#placing\}
+
+The dock places nothing. The page decides where it stands: usually centered along the foot of a screen, in a region of its own or held there with `fixed` or `sticky` utilities. Leave room above it for the swollen tiles and their labels, about 48px.
+
+## Accessibility \{#accessibility\}
+
+- Wrap the launchers in a `nav` with an `aria-label` when they are places, or give a dock of buttons `role="toolbar"` and a label.
+- The label is each launcher's accessible name. It is unseen until the pointer or the keys reach the tile, but it stays in the page, so a screen reader reads it.
+- Every launcher is a tab stop and shows its label and a focus ring when it has focus.
+- Do not hide a launcher's name in the picture alone: the label is the only text it has.
+
+## Classes \{#classes\}
+
+<ContractTable name="dock" />
+
+## Custom properties \{#custom-properties\}
+
+<ContractTable name="dock" show="properties" />
+
+## Source \{#source\}
+
+<ComponentSource name="dock" />

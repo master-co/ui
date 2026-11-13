@@ -59,6 +59,7 @@ export const components = [
   { slug: 'tabs', name: 'Tabs', category: 'Navigation', description: 'Words on one hairline, the current one underlined in ink.' },
   { slug: 'navbar', name: 'Navbar', category: 'Navigation', description: 'The bar at the top of a page, which takes its material once content scrolls under it.' },
   { slug: 'tabbar', name: 'Tab bar', category: 'Navigation', description: 'The main destinations of a small-screen app, along the bottom edge.' },
+  { slug: 'dock', name: 'Dock', category: 'Navigation', description: 'A row of launchers that swell toward the pointer.' },
   { slug: 'nav', name: 'Nav', category: 'Navigation', description: 'A vertical list of destinations for a sidebar.' },
   { slug: 'tree', name: 'Tree', category: 'Navigation', description: 'Nested rows for things that contain things.' },
   { slug: 'toc', name: 'Table of contents', category: 'Navigation', description: 'The headings of a page as links, with the section in view marked by CSS.' },

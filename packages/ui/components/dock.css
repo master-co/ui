@@ -1,0 +1,259 @@
+/*
+ * Dock: a row of launchers that swell toward the pointer.
+ * The dock is a tray of frosted glass, the tab bar's floating pane, holding square tiles: a raised sheet with an
+ * icon, or a picture. The tile under the pointer grows by half and the two on each side of it by less, so the
+ * row opens around the pointer like a lens. The tiles grow in size, not by a transform, so their neighbors move
+ * apart instead of being covered; they grow upward from the tray's foot and over its top edge.
+ * The growth needs a pointer that hovers and is left out with reduced motion; the dock is then a plain row.
+ * A label in ink rises over the tile under the pointer or the keys, and a dot under a tile marks the current one.
+ * Geometry: 40px tiles with the control's 10px corner, 8px from the tray's edge, so the tray is 56px tall, a
+ * bar's height, and its corner is the tile's corner plus that inset. The dock places nothing: the page puts it
+ * where it goes, usually centered along the foot of a screen.
+ */
+@layer components {
+  .dock {
+    --dock-size: 2.5rem;
+    --dock-inset: 8px;
+    --dock-gap: 6px;
+    --dock-magnify: 1.5;
+    --dock-color: var(--color-surface-floating);
+    --surface-color: var(--dock-color);
+    display: inline-flex;
+    align-items: flex-end;
+    gap: var(--dock-gap);
+    box-sizing: border-box;
+    max-width: 100%;
+    height: calc(var(--dock-size) + var(--dock-inset) * 2);
+    margin: 0;
+    padding: var(--dock-inset);
+    border-radius: calc(var(--dock-size) * .25 * var(--corner-scale) + var(--dock-inset));
+    corner-shape: var(--corner-shape);
+    background: color-mix(in oklab, var(--dock-color) 78%, transparent);
+    box-shadow: var(--shadow-floating);
+    backdrop-filter: blur(16px) saturate(1.7);
+    vertical-align: bottom;
+
+    @media (pointer: coarse) {
+      --dock-size: 2.75rem;
+    }
+
+    @media (prefers-reduced-transparency: reduce) {
+      background: var(--dock-color);
+      backdrop-filter: none;
+    }
+
+    @media (forced-colors: active) {
+      outline: 1px solid CanvasText;
+      outline-offset: -1px;
+      background: Canvas;
+    }
+  }
+
+  /*
+   * A launcher: a link or a button, square, as large as the dock's size times its own scale. Its corner and
+   * its icon grow with it, so a swollen tile is the same shape, only nearer. Where the dock has less room than
+   * its tiles ask for, they all give some of it up and stay square.
+   */
+  .dock-item {
+    --dock-scale: 1;
+    --icon-size: 50%;
+    position: relative;
+    display: grid;
+    flex: 0 1 auto;
+    place-items: center;
+    width: calc(var(--dock-size) * var(--dock-scale));
+    min-width: 0;
+    aspect-ratio: 1;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    /* A quarter of its side: the control's 10px corner at 40px, and the same shape at any size. */
+    border-radius: calc(25% * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    @apply --surface-sheet;
+    color: var(--color-text-strong);
+    box-shadow: var(--shadow-raised);
+    font: inherit;
+    text-decoration: none;
+    appearance: none;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transform-origin: bottom;
+    transition-property: width, scale;
+    transition-duration: var(--duration-base);
+    transition-timing-function: var(--easing-glide);
+
+    /* The pointer's reach: the tile and half the gap on each side, down to the tray's foot, so the lens holds
+       while the pointer crosses from one tile to the next. */
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0 calc(var(--dock-gap) / -2) calc(-1 * var(--dock-inset));
+    }
+
+    &:active {
+      scale: .92;
+      transition-duration: var(--duration-base), var(--duration-press);
+    }
+
+    &:focus-visible {
+      @apply --focus-ring;
+    }
+
+    /*
+     * The current one: a dot of ink under the tile, in the middle of the tray's inset. A rim of the tray keeps it
+     * apart from the focus ring it crosses.
+     */
+    &:is([aria-current]:not([aria-current="false"]), [aria-pressed="true"])::after {
+      content: '';
+      position: absolute;
+      bottom: calc(var(--dock-inset) / -2 - 2px);
+      left: calc(50% - 2px);
+      z-index: 1;
+      width: 4px;
+      height: 4px;
+      border-radius: 999px;
+      corner-shape: round;
+      background: var(--color-text-strong);
+    }
+
+    &:focus-visible::after {
+      box-shadow: 0 0 0 2px var(--dock-color);
+    }
+
+    &:is(:disabled, [aria-disabled="true"]) {
+      cursor: not-allowed;
+      opacity: .5;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      &:active {
+        scale: none;
+      }
+    }
+
+    @media (forced-colors: active) {
+      outline: 1px solid ButtonText;
+      outline-offset: -1px;
+
+      &:focus-visible {
+        outline: 2px solid Highlight;
+        outline-offset: 2px;
+      }
+
+      &::after {
+        background: CanvasText;
+      }
+    }
+  }
+
+  /*
+   * The lens. The tile under the pointer takes the full magnification, the next one on each side a little over
+   * half of it and the one after that a sixth, so the row bends smoothly instead of stepping. A divider is
+   * stepped over, as if it were not there. Only with a pointer that hovers, and not with reduced motion.
+   */
+  @media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    .dock-item {
+      &:hover {
+        --dock-scale: var(--dock-magnify);
+      }
+
+      &:is(
+        .dock-item:hover + .dock-item,
+        .dock-item:hover + .dock-divider + .dock-item,
+        .dock-item:has(+ .dock-item:hover),
+        .dock-item:has(+ .dock-divider + .dock-item:hover)
+      ) {
+        --dock-scale: calc(1 + (var(--dock-magnify) - 1) * .55);
+      }
+
+      &:is(
+        .dock-item:hover + .dock-item + .dock-item,
+        .dock-item:hover + .dock-divider + .dock-item + .dock-item,
+        .dock-item:hover + .dock-item + .dock-divider + .dock-item,
+        .dock-item:has(+ .dock-item + .dock-item:hover),
+        .dock-item:has(+ .dock-divider + .dock-item + .dock-item:hover),
+        .dock-item:has(+ .dock-item + .dock-divider + .dock-item:hover)
+      ) {
+        --dock-scale: calc(1 + (var(--dock-magnify) - 1) * .18);
+      }
+    }
+  }
+
+  /* A picture that fills the tile, with a faint inward edge so a pale one keeps its shape. */
+  .dock-image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+    corner-shape: inherit;
+    object-fit: cover;
+    outline: 1px solid var(--color-line-image);
+    outline-offset: -1px;
+  }
+
+  /*
+   * The name of a launcher, in ink over the tile while it is under the pointer or has focus. It is the tile's
+   * accessible name too, so it stays in the page while it is unseen.
+   */
+  .dock-label {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    padding: .3125rem .5rem;
+    border-radius: calc((var(--radius-chip) + 1px) * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    background: var(--color-surface-tip);
+    color: light-dark(var(--color-text-inverse), var(--color-text-strong));
+    box-shadow: var(--shadow-tip);
+    font: 400 .75rem/1.35 var(--font-family-sans);
+    font-feature-settings: inherit;
+    white-space: nowrap;
+    opacity: 0;
+    translate: -50% 2px;
+    pointer-events: none;
+    transition-property: opacity, translate;
+    transition-duration: var(--duration-quick);
+    transition-timing-function: var(--easing-glide);
+
+    @media (forced-colors: active) {
+      outline: 1px solid CanvasText;
+      outline-offset: -1px;
+    }
+  }
+
+  .dock-item:focus-visible .dock-label {
+    opacity: 1;
+    translate: -50% 0;
+  }
+
+  @media (hover: hover) {
+    .dock-item:hover .dock-label {
+      opacity: 1;
+      translate: -50% 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .dock-label {
+      translate: -50% 0;
+    }
+  }
+
+  /* A hairline between groups of launchers, standing in the middle of the tray. */
+  .dock-divider {
+    flex: none;
+    align-self: center;
+    width: 1px;
+    height: calc(var(--dock-size) * .6);
+    margin: 0 2px;
+    border: 0;
+    background: var(--color-line-divider);
+
+    @media (forced-colors: active) {
+      background: CanvasText;
+    }
+  }
+}
