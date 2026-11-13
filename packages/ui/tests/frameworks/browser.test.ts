@@ -341,6 +341,48 @@ for (const framework of ['react', 'svelte', 'vue']) {
       await until(() => toasts.count(), count => count === 0, 'a timed toast is removed when its time is up', 6000)
     })
 
+    await t.test('a toast is updated in place, settles a promise, and holds while its action has focus', async () => {
+      const toasts = page.locator(`[data-framework="${framework}"] dialog.toast`)
+      // The same module the playground mounted, so the same queue.
+      const call = (script: string) => page.evaluate(`import('/mount-${framework === 'react' ? 'react.tsx' : `${framework}.ts`}').then(({ toast }) => { ${script} })`)
+
+      // An update starts the clock again: a toast updated near its end gets its whole time for the new words.
+      await call(`window.updated = toast({ description: 'Uploading…', duration: 1200 })`)
+      await until(() => toasts.count(), count => count === 1, 'the toast is shown')
+      await toasts.first().evaluate(element => { (element as any).marked = true })
+      await page.waitForTimeout(800)
+      await page.evaluate(() => (window as any).updated.update({ description: 'Uploaded.', status: 'success', duration: 1200 }))
+      await page.waitForTimeout(800)
+      assert.equal(await toasts.count(), 1, 'still there after its first time ran out')
+      assert.equal(await toasts.first().evaluate(element => (element as any).marked), true, 'the same element')
+      assert.equal(await toasts.first().innerText(), 'Uploaded.')
+      await until(() => toasts.count(), count => count === 0, 'it leaves when the new time is up')
+
+      // A promise: pending with a turning spinner and no clock, then the same toast says how it ended.
+      await call(`window.finish = null; window.settled = toast.promise(new Promise(resolve => { window.finish = resolve }), { loading: 'Deploying…', success: value => ({ description: value + ' is live.', duration: 800 }), error: 'Failed.' })`)
+      await until(() => toasts.count(), count => count === 1, 'a pending toast is shown')
+      const pending = toasts.first()
+      assert.equal(await pending.getAttribute('aria-busy'), 'true')
+      assert.deepEqual(await pending.evaluate(element => element.getAnimations({ subtree: true }).flatMap(animation => 'animationName' in animation ? [animation.animationName] : [])), ['spinner-rotate'], 'the spinner turns and no clock runs')
+      await page.waitForTimeout(700)
+      await page.evaluate(() => (window as any).finish('atlas.dev'))
+      await until(() => pending.getAttribute('aria-busy'), value => value === null, 'it settles')
+      assert.equal(await pending.innerText(), 'atlas.dev is live.')
+      assert.match((await pending.getAttribute('class'))!, /toast-success/)
+      await until(() => toasts.count(), count => count === 0, 'and leaves when its time is up')
+
+      // The action is a real button: with focus on it the clock waits, and Enter runs it and dismisses the toast.
+      await call(`window.undone = 0; toast({ title: 'Project archived', duration: 600, action: { label: 'Undo', onClick: () => { window.undone++ } } })`)
+      await until(() => toasts.count(), count => count === 1, 'the toast with an action is shown')
+      await page.mouse.move(10, 10)
+      await toasts.first().getByRole('button', { name: 'Undo' }).focus()
+      await page.waitForTimeout(1000)
+      assert.equal(await toasts.count(), 1, 'it waits while its action holds focus')
+      await page.keyboard.press('Enter')
+      await until(() => toasts.count(), count => count === 0, 'the action dismisses it')
+      assert.equal(await page.evaluate(() => (window as any).undone), 1, 'the action ran once')
+    })
+
     await t.test('the application invoker fallback opens and closes the native dialog', async () => {
       await page.goto(`${origin}?only=${framework}&invokers=fallback`)
       const dialog = example('dialog').locator('dialog')

@@ -208,7 +208,7 @@ test('vue: the first HTML, rendered on a server, holds the state, and hydrates w
   }
 
   // A toast that waits is not the server's to write: it shows once the page has mounted.
-  const dismiss = toast('Saved.')
+  const saved = toast('Saved.')
   const html = await renderToString(createSSRApp({ render: () => h(fixtures.toast) }))
   assert.doesNotMatch(html, /<dialog/)
   const { page, mount, done, restore } = stage(`<div id="app">${html}</div>`)
@@ -216,7 +216,8 @@ test('vue: the first HTML, rendered on a server, holds the state, and hydrates w
     const mounted = mount('toast', {}, page.one('#app'))
     await act()
     assert.equal(page.all('dialog.toast').length, 1)
-    await act(dismiss)
+    await act(() => saved.dismiss())
+    await act(() => new Promise(resolve => setTimeout(resolve, 350)))
     assert.equal(page.all('dialog.toast').length, 0)
     await act(() => mounted.unmount())
   } finally { restore() }

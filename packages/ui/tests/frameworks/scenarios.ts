@@ -24,8 +24,16 @@ export interface Driver {
   mount(component: string, props?: Record<string, unknown>): Promise<Mounted>
   /** Run something that changes state, then let the framework and the observers settle. */
   act(run?: () => unknown): Promise<void>
-  /** Show a toast with the framework's own `toast()`. */
-  toast(message: Record<string, unknown>): void
+  /** Show a toast with the framework's own `toast()`, and its `toast.promise()`. */
+  toast: Toasts
+}
+
+interface ToastHandle {
+  update(message: Record<string, unknown> | string): void
+  dismiss(): void
+}
+type Toasts = ((message: Record<string, unknown> | string) => ToastHandle) & {
+  promise<T>(promise: Promise<T>, messages: Record<string, unknown>): Promise<T>
 }
 
 type Page = ReturnType<typeof dom>
@@ -602,9 +610,11 @@ export const scenarios: Record<string, Scenario> = {
     await driver.act(() => driver.toast({ description: 'Saved.', duration: false }))
     conforms(page)
     const toasts = () => page.all<HTMLDialogElement>('dialog.toast')
+    const leave = () => driver.act(() => new Promise(resolve => setTimeout(resolve, 350)))
     assert.equal(toasts().length, 2)
     assert.equal(page.one('.toast-region').getAttribute('aria-live'), 'polite')
     assert.equal(toasts()[0].open, true)
+    assert.equal(toasts()[0].getAttribute('aria-atomic'), 'true', 'a toast is announced as a whole')
     assert.equal(toasts()[0].classList.contains('toast-timed'), true)
     assert.equal(toasts()[0].classList.contains('toast-success'), true)
     assert.equal(toasts()[0].getAttribute('aria-labelledby'), page.one('.toast-title').id)
@@ -612,10 +622,87 @@ export const scenarios: Record<string, Scenario> = {
 
     // A dismissed toast leaves through its transition, then it is removed.
     await driver.act(() => toasts()[1].close())
-    await driver.act(() => new Promise(resolve => setTimeout(resolve, 350)))
+    await leave()
     assert.equal(toasts().length, 1)
     // A timed toast that has run out is removed.
     await driver.act(() => toasts()[0].dispatchEvent(Object.assign(new page.window.Event('animationend', { bubbles: true }), { animationName: 'toast-expire' })))
+    assert.equal(toasts().length, 0)
+
+    // An update says something else in the same toast, in its place: no second toast, no second entrance.
+    let handle!: ToastHandle
+    await driver.act(() => driver.toast('Kept above.'))
+    await driver.act(() => { handle = driver.toast({ title: 'Archiving Atlas', duration: false }) })
+    const archived = toasts()[1]
+    const undone: string[] = []
+    await driver.act(() => handle.update({ title: 'Project archived', description: 'Atlas is hidden from the dashboard.', status: 'success', duration: 4000, action: { label: 'Undo', onClick: () => undone.push('undo') } }))
+    conforms(page)
+    assert.equal(toasts().length, 2)
+    assert.equal(toasts()[1], archived, 'the same dialog, in the same place')
+    assert.equal(archived.querySelector('.toast-title')?.textContent, 'Project archived')
+    assert.equal(archived.querySelector('.toast-description')?.textContent, 'Atlas is hidden from the dashboard.')
+    assert.equal(archived.getAttribute('aria-labelledby'), archived.querySelector('.toast-title')?.id)
+    assert.deepEqual([...archived.classList].sort(), ['toast', 'toast-success', 'toast-timed'])
+    assert.equal(archived.style.getPropertyValue('--toast-duration'), '4000ms')
+
+    // The action is a real button after the words, before the dismiss button: it runs once, then the toast leaves.
+    const buttons = [...archived.querySelectorAll('button')]
+    assert.deepEqual(buttons.map(button => button.textContent!.trim() || button.getAttribute('aria-label')), ['Undo', 'Dismiss'])
+    assert.ok(buttons[0].closest('.toast-action'))
+    await driver.act(() => buttons[0].click())
+    assert.deepEqual(undone, ['undo'])
+    assert.equal(archived.open, false)
+    await leave()
+    assert.deepEqual(toasts().map(toast => toast.textContent!.trim()), ['Kept above.'])
+    // An update to a toast that has gone shows nothing.
+    await driver.act(() => handle.update('Too late.'))
+    assert.equal(toasts().length, 1)
+
+    // An action that prevents the default keeps its toast.
+    await driver.act(() => { handle = driver.toast({ description: 'Upload failed.', action: { label: 'Retry', onClick: (event: Event) => event.preventDefault() } }) })
+    await driver.act(() => toasts()[1].querySelector<HTMLButtonElement>('.toast-action button')!.click())
+    assert.equal(toasts()[1].open, true)
+    // dismiss() closes it from the application, and it leaves the same way.
+    await driver.act(() => handle.dismiss())
+    assert.equal(toasts()[1].open, false)
+    await leave()
+    assert.equal(toasts().length, 1)
+
+    // A promise: pending while it runs, with a spinner and no clock, then the same toast says how it ended.
+    let finish!: (value: { name: string }) => void
+    const work = new Promise<{ name: string }>(resolve => { finish = resolve })
+    let returned!: Promise<unknown>
+    await driver.act(() => { returned = driver.toast.promise(work, { loading: { title: 'Deploying Atlas' }, success: (value: { name: string }) => ({ title: `${value.name} is live` }), error: 'The deploy failed.' }) })
+    assert.equal(returned, work, 'the promise comes back, to await or chain')
+    conforms(page)
+    const deploy = toasts()[1]
+    assert.equal(deploy.getAttribute('aria-busy'), 'true')
+    assert.ok(deploy.querySelector('.spinner.toast-icon'), 'a spinner in the place of the icon')
+    assert.equal(deploy.querySelector('.spinner')?.getAttribute('aria-hidden'), 'true')
+    assert.deepEqual([...deploy.classList], ['toast'], 'no status and no clock while pending')
+    await driver.act(async () => { finish({ name: 'atlas.dev' }); await work })
+    assert.equal(toasts()[1], deploy, 'the same toast')
+    assert.equal(deploy.getAttribute('aria-busy'), null)
+    assert.equal(deploy.querySelector('.spinner'), null)
+    assert.equal(deploy.querySelector('.toast-title')?.textContent, 'atlas.dev is live')
+    assert.deepEqual([...deploy.classList].sort(), ['toast', 'toast-success', 'toast-timed'])
+
+    // A rejected promise turns the toast into a failure, in words from the reason.
+    let fail!: (reason: Error) => void
+    const failing = new Promise<never>((_, reject) => { fail = reject })
+    await driver.act(() => { driver.toast.promise(failing, { loading: 'Saving…', success: 'Saved.', error: (error: Error) => ({ title: 'Not saved', description: error.message }) }).catch(() => {}) })
+    const saving = toasts()[2]
+    assert.equal(saving.getAttribute('aria-busy'), 'true')
+    assert.equal(saving.querySelector('.toast-description')?.textContent, 'Saving…')
+    await driver.act(async () => { fail(new Error('The server is offline.')); await failing.catch(() => {}) })
+    assert.equal(toasts()[2], saving)
+    assert.equal(saving.getAttribute('aria-busy'), null)
+    assert.equal(saving.querySelector('.toast-description')?.textContent, 'The server is offline.')
+    assert.deepEqual([...saving.classList].sort(), ['toast', 'toast-danger', 'toast-timed'])
+    conforms(page)
+
+    // The queue outlives a Toaster: leave it empty for whoever renders the next one.
+    await driver.act(() => toasts().forEach(toast => toast.close()))
+    await leave()
     assert.equal(toasts().length, 0)
     await driver.act(() => mounted.unmount())
   },
