@@ -84,7 +84,7 @@ Or import only the theme and the components you use:
 | Checkbox | `check`, `checkbox` |
 | Radio | `radio` |
 | Switch | `switch`, `switch-sm`, `switch-lg` |
-| Slider | `slider` |
+| Slider | `slider`, `slider-vertical` |
 | Range | `range`, `range-start`, `range-end` |
 | Dial | `dial`, `dial-full`, `dial-sm`, `dial-lg`, `dial-thumb`, `dial-value`, `dial-ticks`, `dial-mark` |
 | Segmented control | `segmented`, `segmented-item`, `segmented-input`, `segmented-sm`, `segmented-lg` |
