@@ -4,7 +4,8 @@
  * hour. A rail of labels stands at the start, each label on the middle of its hairline; it is a picture of the
  * scale and is hidden from assistive technology. The events of a day are an ordered list: each sets --start
  * and --end in hours and says its title and its time in words, so the list reads without the drawing.
- * An event is a quiet sheet of tinted ink with an ink edge at its start, inset from the hairlines so that two
+ * An event is a quiet sheet of tinted ink with a rounded ink bar standing inside its start, straight from end
+ * to end where an edge drawn along the sheet would bend round its corners. It is inset from the hairlines so that two
  * events that meet keep a line between them. Events that overlap share the width: --lane is the event's place
  * and --lanes how many stand side by side. An event is a size container, so a short one keeps its title on
  * one line, puts the time beside it when there is room, and with no room for a line shows only its sheet.
@@ -182,7 +183,9 @@
     --schedule-length: calc((var(--end, 1) - var(--start, 0)) * var(--schedule-hour) - 3px);
     --schedule-cell: calc((100% - var(--schedule-inset) - var(--schedule-inset-end) + var(--schedule-lane-gap)) / var(--lanes, 1));
     --schedule-tint: color-mix(in oklab, var(--schedule-color) 7%, var(--schedule-surface));
-    --schedule-edge: var(--schedule-color);
+    --schedule-edge: color-mix(in oklab, var(--schedule-color) 62%, transparent);
+    --schedule-bar: 3px;
+    --schedule-bar-inset: 3px;
     position: absolute;
     z-index: 1;
     top: calc((var(--start, 0) - var(--schedule-from)) * var(--schedule-hour) + 2px);
@@ -198,14 +201,14 @@
     margin: 0;
     /* A short event centers its one line; a longer one keeps the same inset at its top. */
     padding: clamp(0px, (var(--schedule-length) - 1rem) / 2, .25rem) .375rem;
-    padding-inline-start: calc(2px + .375rem);
+    padding-inline-start: calc(var(--schedule-bar-inset) + var(--schedule-bar) + .3125rem);
     border: 0;
     border-radius: calc(var(--radius-chip) * var(--corner-scale));
     corner-shape: var(--corner-shape);
     overflow: hidden;
     background: var(--schedule-tint);
     color: var(--color-text-strong);
-    box-shadow: inset 2px 0 0 var(--schedule-edge), inset 0 0 0 .5px color-mix(in oklab, var(--schedule-color) 12%, transparent);
+    box-shadow: inset 0 0 0 .5px color-mix(in oklab, var(--schedule-color) 12%, transparent);
     font: inherit;
     font-feature-settings: inherit;
     text-align: start;
@@ -213,8 +216,26 @@
     appearance: none;
     -webkit-tap-highlight-color: transparent;
 
-    &:dir(rtl) {
-      box-shadow: inset -2px 0 0 var(--schedule-edge), inset 0 0 0 .5px color-mix(in oklab, var(--schedule-color) 12%, transparent);
+    /*
+     * The bar: 3px wide, 3px in from the start and from the top and bottom, round at both ends, in a firm tint
+     * of the ink so it marks the event without shouting over its words. On an event too short to hold it
+     * inset, it comes out to the sheet's edges and stays a line rather than shrinking to a dot.
+     */
+    &::before {
+      content: '';
+      position: absolute;
+      inset-block: clamp(0px, (var(--schedule-length) - 12px) / 2, var(--schedule-bar-inset));
+      inset-inline-start: var(--schedule-bar-inset);
+      width: var(--schedule-bar);
+      border-radius: calc(var(--schedule-bar) / 2);
+      corner-shape: round;
+      background: var(--schedule-edge);
+      pointer-events: none;
+
+      @media (forced-colors: active) {
+        forced-color-adjust: none;
+        background: CanvasText;
+      }
     }
 
     /* Under the pointer the sheet is a step firmer, at once. */
@@ -226,6 +247,7 @@
 
     /* The event that matters now, or the one that is open: ink. */
     &[aria-current="true"] {
+      --schedule-edge: color-mix(in oklab, var(--color-text-inverse) 55%, transparent);
       background: var(--schedule-color);
       color: var(--color-text-inverse);
       box-shadow: var(--shadow-ink-top);
