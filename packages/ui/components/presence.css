@@ -1,0 +1,211 @@
+/*
+ * Presence: where another person is, drawn in the color that names them.
+ * A pointer is an arrow standing at the point the page gives it, with the person's name in a flag down and to
+ * the side of its tip and, when they write one, a short message in a bubble under the name. In text, another
+ * person's caret is a 2px bar in the line with their name above it, and their selection is a tint of their color
+ * behind the words.
+ * The color is the person's identity: one of --color-identity-1 to 8, chosen with presence-1 to presence-8,
+ * or any color set as --presence-color. Every identity takes --color-identity-ink as its text. Hue means a
+ * person here and nothing else.
+ * Geometry: a 20px arrow whose tip is the point, cut out of the page by a ring of the identity ink so it reads
+ * on any content; a 12px name in a flag with the chip's corner; a 13px message in a bubble with the control's
+ * corner, at most 15rem wide. The flag and the bubble stand on the page with the raised shadow.
+ * Coordinates and presence are the application's: it sets --presence-x and --presence-y, in pixels from the
+ * top-left corner of the positioned element that holds the pointers, and adds and removes the elements. A
+ * pointer glides to each new point and jumps under reduced motion. Nothing here takes a pointer event, so a
+ * pointer never stands in the way of the reader's own.
+ */
+@layer components {
+  .presence {
+    --presence-color: var(--color-identity-1);
+    --presence-x: 0px;
+    --presence-y: 0px;
+    --presence-arrow: 1.25rem;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: .25rem;
+    width: max-content;
+    max-width: 15rem;
+    /* The flag starts under the arrow's tail, beside its point. */
+    padding: calc(var(--presence-arrow) * .85) 0 0 calc(var(--presence-arrow) * .6);
+    translate: var(--presence-x) var(--presence-y);
+    pointer-events: none;
+    transition-property: translate;
+    transition-duration: var(--duration-quick);
+    transition-timing-function: linear;
+
+    /*
+     * The arrow: a ring of the identity ink under a face of the identity color. Its tip, 2 of its 20 units in
+     * from the corner, is the point.
+     */
+    &::before, &::after {
+      content: '';
+      position: absolute;
+      top: calc(var(--presence-arrow) * -.1);
+      left: calc(var(--presence-arrow) * -.1);
+      width: var(--presence-arrow);
+      height: var(--presence-arrow);
+    }
+
+    &::before {
+      background: var(--color-identity-ink);
+      mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M2 2 18 8.6 10.6 10.6 8.6 18Z' fill='black' stroke='black' stroke-width='3.5' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+    }
+
+    &::after {
+      background: var(--presence-color, var(--color-identity-1));
+      mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M2 2 18 8.6 10.6 10.6 8.6 18Z' fill='black' stroke='black' stroke-width='1' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      transition-duration: 0s;
+    }
+
+    @media (forced-colors: active) {
+      &::before, &::after {
+        forced-color-adjust: none;
+      }
+
+      &::before {
+        background: Canvas;
+      }
+
+      &::after {
+        background: CanvasText;
+      }
+    }
+  }
+
+  /* The person's name, in a flag of their color. */
+  .presence-name {
+    max-width: 100%;
+    margin: 0;
+    padding: .125rem .375rem;
+    overflow: hidden;
+    border-radius: calc(var(--radius-chip) * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    background: var(--presence-color, var(--color-identity-1));
+    color: var(--color-identity-ink);
+    box-shadow: 0 0 0 .5px var(--color-line-on-color), 0 1px 2px -1px var(--color-shade-1), 0 2px 4px -2px var(--color-shade-2), 0 4px 8px -4px var(--color-shade-3);
+    font: var(--font-weight-control) .75rem/1.35 var(--font-family-sans);
+    letter-spacing: 0;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    @media (forced-colors: active) {
+      outline: 1px solid CanvasText;
+    }
+  }
+
+  /* What the person is saying, in a bubble under the name: a few words, as cursor chat has them. */
+  .presence-message {
+    max-width: 100%;
+    margin: 0;
+    padding: .375rem .625rem;
+    border-radius: calc(var(--radius-control) * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    background: var(--presence-color, var(--color-identity-1));
+    color: var(--color-identity-ink);
+    box-shadow: 0 0 0 .5px var(--color-line-on-color), 0 1px 2px -1px var(--color-shade-1), 0 2px 4px -2px var(--color-shade-2), 0 4px 8px -4px var(--color-shade-3);
+    font: 400 .8125rem/1.4 var(--font-family-sans);
+    overflow-wrap: anywhere;
+
+    @media (forced-colors: active) {
+      outline: 1px solid CanvasText;
+    }
+  }
+
+  /*
+   * Another person's caret in text: an inline mark between two letters, a bar as tall as the line of letters,
+   * with the name in a flag that stands on it. It takes no room in the line.
+   */
+  .presence-caret {
+    --presence-color: var(--color-identity-1);
+    position: relative;
+    display: inline-block;
+    width: 2px;
+    height: 1.2em;
+    margin-inline: -1px;
+    border-radius: 999px;
+    corner-shape: round;
+    background: var(--presence-color, var(--color-identity-1));
+    vertical-align: -.2em;
+    pointer-events: none;
+
+    .presence-name {
+      position: absolute;
+      bottom: 100%;
+      inset-inline-start: 0;
+      max-width: 12rem;
+      padding: 0 .3125rem;
+      border-end-start-radius: 0;
+      font-size: .6875rem;
+      line-height: 1.45;
+    }
+
+    @media (forced-colors: active) {
+      forced-color-adjust: none;
+      background: Highlight;
+    }
+  }
+
+  /*
+   * The eight identities, by class: presence-1 to presence-8 on a pointer, a caret, a selection or a name
+   * that stands alone. Naming each token here also keeps it in a stylesheet compiled for the classes a page
+   * uses. --presence-color takes any other color a product gives a person.
+   */
+  :is(.presence, .presence-caret, .presence-selection, .presence-name) {
+    &.presence-1 {
+      --presence-color: var(--color-identity-1);
+    }
+
+    &.presence-2 {
+      --presence-color: var(--color-identity-2);
+    }
+
+    &.presence-3 {
+      --presence-color: var(--color-identity-3);
+    }
+
+    &.presence-4 {
+      --presence-color: var(--color-identity-4);
+    }
+
+    &.presence-5 {
+      --presence-color: var(--color-identity-5);
+    }
+
+    &.presence-6 {
+      --presence-color: var(--color-identity-6);
+    }
+
+    &.presence-7 {
+      --presence-color: var(--color-identity-7);
+    }
+
+    &.presence-8 {
+      --presence-color: var(--color-identity-8);
+    }
+  }
+
+  /* Another person's selection: a tint of their color behind the words, carried across lines. */
+  .presence-selection {
+    --presence-color: var(--color-identity-1);
+    padding-block: .1em;
+    border-radius: calc(2px * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    background: color-mix(in oklab, var(--presence-color) 24%, transparent);
+    color: inherit;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+
+    @media (forced-colors: active) {
+      outline: 1px dotted CanvasText;
+    }
+  }
+}

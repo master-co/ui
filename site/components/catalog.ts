@@ -127,6 +127,7 @@ export const components = [
   { slug: 'reaction', name: 'Reaction', category: 'Content', description: 'Emoji answers to a message, each with its count, that a press adds to.' },
   { slug: 'thread', name: 'Thread', category: 'Content', description: 'Comments and their replies, each joined by a line to the comment it answers.' },
   { slug: 'avatar', name: 'Avatar', category: 'Content', description: 'A person or a team as a photo or initials, alone or stacked.' },
+  { slug: 'presence', name: 'Presence', category: 'Content', description: 'Another person\'s pointer, caret or selection, in the color that names them.' },
   { slug: 'badge', name: 'Badge', category: 'Content', description: 'A small chip for a status, a category or a count.' },
   { slug: 'icon', name: 'Icon', category: 'Content', description: 'Size inline icons through the component that holds them.' },
   { slug: 'heading', name: 'Heading', category: 'Typography', description: 'A title in the ink of the page, with the line over it and the paragraph under it.' },

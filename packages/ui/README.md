@@ -141,6 +141,7 @@ Or import only the theme and the components you use:
 | Spinner | `spinner`, `spinner-sm`, `spinner-lg`, `spinner-xl`, `spinner-inline` |
 | Busy | `busy` |
 | Caret | `caret`, `caret-block` |
+| Presence | `presence`, `presence-name`, `presence-message`, `presence-caret`, `presence-selection`, `presence-1`, `presence-2`, `presence-3`, `presence-4`, `presence-5`, `presence-6`, `presence-7`, `presence-8` |
 | Flash | `flash` |
 | Empty | `empty`, `empty-media`, `empty-title`, `empty-description`, `empty-actions` |
 | Accordion | `accordion`, `accordion-item`, `accordion-trigger`, `accordion-content` |
