@@ -165,6 +165,8 @@ Or import only the theme and the components you use:
 | Carousel | `carousel`, `carousel-slide`, `carousel-2`, `carousel-3`, `carousel-center` |
 | Marquee | `marquee`, `marquee-reverse`, `marquee-track` |
 | Waveform | `waveform`, `waveform-sm`, `waveform-lg`, `waveform-bar`, `waveform-seek`, `waveform-time` |
+| Player | `player`, `player-video`, `player-media`, `player-controls`, `player-button`, `player-play`, `player-mute`, `player-speed`, `player-captions`, `player-pip`, `player-fullscreen`, `player-off`, `player-on`, `player-elapsed`, `player-duration`, `player-seek`, `player-volume` |
+| Transcript | `transcript`, `transcript-list`, `transcript-cue`, `transcript-time`, `transcript-text`, `transcript-speaker`, `transcript-return` |
 | Splitter | `splitter`, `splitter-pane`, `splitter-handle` |
 | Figure | `figure`, `figure-framed`, `figure-center`, `figure-media`, `figure-caption` |
 | Compare | `compare`, `compare-before`, `compare-after`, `compare-range` |

@@ -26,6 +26,7 @@ import { contextMenu, menu } from './menu.js'
 import { otp } from './otp.js'
 import { signature, signaturePath, signatureSvg } from './signature.js'
 import { panel } from './panel.js'
+import { player } from './player.js'
 import { sortable } from './sortable.js'
 import { range } from './range.js'
 import { splitter } from './splitter.js'
@@ -34,10 +35,11 @@ import { tabs } from './tabs.js'
 import { tags } from './tags.js'
 import { toolbar } from './toolbar.js'
 import { tour } from './tour.js'
+import { transcript } from './transcript.js'
 import { tree } from './tree.js'
 import { wheel } from './wheel.js'
 
-export { calendar, calendarMonth, calendarPeriods, colorPicker, colorPickerState, combobox, command, compare, contextMenu, cropper, cropperFit, dial, drawer, editable, gantt, listbox, menu, otp, panel, range, signature, signaturePath, signatureSvg, sortable, splitter, stepper, tabs, tags, toolbar, tour, tree, wheel }
+export { calendar, calendarMonth, calendarPeriods, colorPicker, colorPickerState, combobox, command, compare, contextMenu, cropper, cropperFit, dial, drawer, editable, gantt, listbox, menu, otp, panel, player, range, signature, signaturePath, signatureSvg, sortable, splitter, stepper, tabs, tags, toolbar, tour, transcript, tree, wheel }
 
 /**
  * Each pattern's root class and the behavior that drives it.
@@ -68,6 +70,8 @@ const patterns = [
   ['.color-picker', colorPicker],
   ['.panel', panel],
   ['.dialog-swipe', drawer],
+  ['.player', player],
+  ['.transcript', transcript],
 ]
 
 /**

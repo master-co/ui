@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { check, createIndex } from '../../check/index.js'
 import { contracts, utilities } from '../support.ts'
 import { dom } from '../behaviors/dom.ts'
+import { stub } from '../behaviors/media.ts'
 
 /**
  * One set of scenarios for every framework. A framework component renders the contract's markup, gives the
@@ -878,6 +879,89 @@ export const scenarios: Record<string, Scenario> = {
     assert.deepEqual(opened, [false], 'a panel the browser closed says so')
     await driver.act(() => mounted.unmount())
     assert.equal(page.all('.panel').length, 0)
+  },
+
+  async player(driver, page) {
+    // An owner that keeps the time and whether it plays, as an application does.
+    const times: number[] = []
+    const plays: boolean[] = []
+    let mounted: Mounted | undefined
+    mounted = await driver.mount('player', {
+      src: '/demo/recording.m4a',
+      label: 'A short recording',
+      time: 0,
+      playing: false,
+      onTimeChange: (next: number) => { times.push(next); mounted?.set({ time: next }) },
+      onPlayingChange: (next: boolean) => { plays.push(next); mounted?.set({ playing: next }) },
+    })
+    conforms(page)
+    const media = page.one<HTMLMediaElement>('.player-media')
+    const play = page.one<HTMLButtonElement>('.player-play')
+    assert.equal(media.hasAttribute('controls'), false, 'the behavior took the browser\'s controls away')
+    assert.equal(page.one('.player').getAttribute('aria-label'), 'A short recording')
+    assert.equal(page.one('.player-speed').getAttribute('popovertarget'), page.one('.menu').id, 'the speed button names its menu')
+    assert.equal(page.all('.player-captions, .player-pip, .player-fullscreen').length, 0, 'an audio player has no picture to draw them for')
+    const control = stub(media)
+    await driver.act(() => control.load(25))
+    assert.equal(page.one('.player-duration').textContent, '0:25')
+
+    await driver.act(() => play.click())
+    assert.deepEqual(plays, [true], 'playing comes out')
+    assert.equal(play.getAttribute('aria-pressed'), 'true')
+    await driver.act(() => control.advance(3))
+    assert.deepEqual(times, [3], 'the time comes out as it moves')
+    await driver.act(() => page.key(play, 'l'))
+    assert.deepEqual(times, [3, 13], 'and when the reader seeks')
+
+    await driver.act(() => mounted!.set({ time: 20 }))
+    assert.equal(media.currentTime, 20, 'a time set by the owner seeks')
+    assert.equal(page.one('.player-elapsed').textContent, '0:20')
+    assert.deepEqual(times, [3, 13], 'and the owner, who said so, is not told')
+    await driver.act(() => mounted!.set({ playing: false }))
+    assert.equal(media.paused, true, 'playing false pauses')
+    assert.equal(play.getAttribute('aria-pressed'), 'false')
+    assert.deepEqual(plays, [true])
+    await driver.act(() => mounted!.unmount())
+    assert.equal(page.all('.player').length, 0)
+
+    const video = await driver.mount('player', { src: '/demo/moonrise.mp4', video: true, poster: '/demo/moonrise.jpg', label: 'Moonrise', tracks: [{ src: '/demo/recording.vtt', kind: 'captions', srcLang: 'en', srclang: 'en', label: 'English' }] })
+    conforms(page)
+    assert.equal(page.one('.player').classList.contains('player-video'), true)
+    assert.equal(page.one('.player-media').localName, 'video')
+    assert.equal(page.all('.player-media track').length, 1)
+    assert.equal(page.all('.player-captions, .player-pip, .player-fullscreen').length, 3)
+    await driver.act(() => video.unmount())
+  },
+
+  async transcript(driver, page) {
+    const cues = [
+      { start: 0.3, text: 'This is a short recording.' },
+      { start: 4.7, text: 'Each line is a cue.', speaker: 'Ana' },
+      { start: 8.7, text: 'The line being spoken is marked.' },
+    ]
+    const mounted = await driver.mount('transcript', { cues })
+    conforms(page)
+    const root = page.one('.transcript')
+    const media = page.one<HTMLMediaElement>('.player-media')
+    assert.equal(root.getAttribute('aria-controls'), page.one('.player').id, 'the transcript names the player it follows')
+    assert.deepEqual(page.all('.transcript-cue').map(cue => cue.getAttribute('data-start')), ['0.3', '4.7', '8.7'])
+    assert.deepEqual(page.all('.transcript-time').map(time => time.textContent), ['0:00', '0:04', '0:08'])
+    assert.deepEqual(page.all('.transcript-speaker').map(speaker => speaker.textContent), ['Ana'])
+    const current = () => page.all('.transcript-cue[aria-current="true"]').map(cue => cue.getAttribute('data-start'))
+
+    const control = stub(media, { duration: 25 })
+    await driver.act(() => control.advance(5))
+    assert.deepEqual(current(), ['4.7'], 'the behavior marks the cue the framework wrote')
+    await driver.act(() => page.all<HTMLButtonElement>('.transcript-time')[2].click())
+    assert.equal(media.currentTime, 8.7, 'a cue plays from its time')
+    assert.deepEqual(current(), ['8.7'])
+
+    await driver.act(() => mounted.set({ cues: [...cues, { start: 13.1, text: 'Lines you have heard turn quiet.' }] }))
+    assert.equal(page.all('.transcript-cue').length, 4)
+    await driver.act(() => control.advance(14))
+    assert.deepEqual(current(), ['13.1'], 'a cue that arrives later is followed')
+    await driver.act(() => mounted.unmount())
+    assert.equal(page.all('.transcript').length, 0)
   },
 
   async tooltip(driver, page) {

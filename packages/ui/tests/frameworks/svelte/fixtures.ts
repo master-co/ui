@@ -9,6 +9,7 @@ import Gantt from '../../../frameworks/svelte/Gantt.svelte'
 import Listbox from '../../../frameworks/svelte/Listbox.svelte'
 import Otp from '../../../frameworks/svelte/Otp.svelte'
 import Signature from '../../../frameworks/svelte/Signature.svelte'
+import Player from '../../../frameworks/svelte/Player.svelte'
 import Stepper from '../../../frameworks/svelte/Stepper.svelte'
 import Tabs from '../../../frameworks/svelte/Tabs.svelte'
 import Tags from '../../../frameworks/svelte/Tags.svelte'
@@ -30,6 +31,7 @@ import SplitterExample from './SplitterExample.svelte'
 import ToolbarExample from './ToolbarExample.svelte'
 import TooltipExample from './TooltipExample.svelte'
 import TourExample from './TourExample.svelte'
+import TranscriptExample from './TranscriptExample.svelte'
 
 /**
  * How each component is used. A component that takes markup of the page's is shown with it: a trigger,
@@ -54,6 +56,7 @@ export const fixtures = {
   'menu': MenuExample,
   'otp': Otp,
   'panel': PanelExample,
+  'player': Player,
   'popover': PopoverExample,
   'signature': Signature,
   'sortable': SortableExample,
@@ -65,6 +68,7 @@ export const fixtures = {
   'toolbar': ToolbarExample,
   'tooltip': TooltipExample,
   'tour': TourExample,
+  'transcript': TranscriptExample,
   'tree': Tree,
   'wheel': Wheel,
 } as unknown as Record<string, Component<Record<string, unknown>>>

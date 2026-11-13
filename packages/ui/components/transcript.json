@@ -1,0 +1,43 @@
+{
+  "$schema": "../contract.schema.json",
+  "name": "transcript",
+  "title": "Transcript",
+  "tier": "component",
+  "category": "Media",
+  "description": "What a recording says, as cues that follow it as it plays.",
+  "use": "Beside a player or a plain audio or video element, the words of the recording as a list of cues, each with the time it begins. The current cue is marked and kept in view, played cues turn quiet, and a cue plays from its time when it is chosen. Name the media with aria-controls; the cues are written in the page, or read by the behavior from the media's WebVTT track.",
+  "instead": [
+    { "when": "The words are shown over the picture, a line at a time", "use": "player" },
+    { "when": "Events in time that are not spoken words", "use": "timeline" }
+  ],
+  "composes": ["scroll-area", "button"],
+  "script": "optional",
+  "behavior": "transcript",
+  "keyboard": [
+    { "keys": "Tab", "action": "Enter the list at the time of the current cue, or of the first, and leave it again: the list is one tab stop" },
+    { "keys": "ArrowDown, ArrowUp", "action": "Move to the time of the next or the previous cue" },
+    { "keys": "Home, End", "action": "Move to the time of the first or the last cue" },
+    { "keys": "Enter, Space", "action": "Play from the focused cue's time, as the native button does" }
+  ],
+  "platform": [
+    { "feature": "The TextTrack API and a WebVTT track", "fallback": "Without the behavior a transcript read from a track is not written; write the cues in the page to keep them readable without script" },
+    { "feature": "@starting-style and transition-behavior: allow-discrete", "fallback": "The button back to the current cue appears at once, without the fade" }
+  ],
+  "classes": [
+    { "name": "transcript", "kind": "root", "description": "The transcript, beside its media. Give it an aria-label and aria-controls with the id of the player or the media element it follows" },
+    { "name": "transcript-list", "kind": "part", "of": "transcript", "description": "The cues, on an ol, scrolling inside --transcript-height. Add scroll-area to fade its edges" },
+    { "name": "transcript-cue", "kind": "part", "of": "transcript", "attributes": { "data-start": true }, "description": "One cue, an li with data-start, the second it begins: its time, then its words. Quiet once played, strong on a raised sheet while current. A press anywhere on it plays from its time" },
+    { "name": "transcript-time", "kind": "part", "of": "transcript", "elements": ["button"], "description": "When the cue begins, in small tabular figures, on a button that plays from there. The list's tab stop" },
+    { "name": "transcript-text", "kind": "part", "of": "transcript", "description": "The words of the cue" },
+    { "name": "transcript-speaker", "kind": "part", "of": "transcript", "description": "Who speaks, over the words, when the recording has several voices" },
+    { "name": "transcript-return", "kind": "part", "of": "transcript", "elements": ["button"], "description": "Back to the current cue: a small pill button at the list's lower edge, hidden until the reader scrolls the current cue out of view" }
+  ],
+  "states": [
+    { "on": "transcript-cue", "name": "current", "mark": "aria-current=\"true\"", "description": "The cue being spoken: strong ink on a raised sheet. Every cue before it is drawn as played" },
+    { "on": "transcript-return", "name": "hidden", "mark": "hidden", "description": "While the list follows the current cue; the behavior removes it when the reader scrolls away" }
+  ],
+  "properties": [
+    { "name": "--transcript-height", "on": "transcript", "default": "20rem", "description": "The tallest the list grows before it scrolls" }
+  ],
+  "example": "<section class=\"transcript\" aria-label=\"Transcript\" aria-controls=\"episode-player\">\n  <ol class=\"transcript-list scroll-area\">\n    <li class=\"transcript-cue\" data-start=\"0.3\">\n      <button type=\"button\" class=\"transcript-time\">0:00</button>\n      <p class=\"transcript-text\">This is a short recording, made to show the player and its transcript.</p>\n    </li>\n    <li class=\"transcript-cue\" data-start=\"4.7\">\n      <button type=\"button\" class=\"transcript-time\">0:04</button>\n      <p class=\"transcript-text\">Each line of the transcript is a cue, with the time it begins.</p>\n    </li>\n  </ol>\n  <button type=\"button\" class=\"btn btn-sm btn-pill transcript-return\" hidden>Back to current</button>\n</section>"
+}

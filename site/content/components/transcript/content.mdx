@@ -1,0 +1,114 @@
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+A transcript is what a recording says, as a list of cues, each with the time it begins. It follows the recording as it plays: the cue being spoken is strong on a raised sheet, the cues already heard turn quiet and the ones still to come wait in the body's ink. Choose a cue and the recording plays from there. The `transcript` [behavior](/guide/behaviors) connects it to a [player](/components/player) or to a plain `<audio>` or `<video>`, named by its id in `aria-controls`.
+
+<ComponentPreview name="default" height={296} narrowHeight={312} title="Transcript" background="plain" bodyClass="content-start p-lg" behaviors html={`<div class="grid gap-sm max-w(480) mx-auto">
+  <div class="player" id="talk" role="group" aria-label="A short recording">
+    <audio class="player-media" src="/demo/recording.m4a" controls preload="metadata"></audio>
+    <div class="player-controls">
+      <button type="button" class="player-button player-play" aria-label="Play" aria-pressed="false">
+        <svg class="icon player-off" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.8v14.4a1 1 0 0 0 1.5.86l11.5-7.2a1 1 0 0 0 0-1.72L8.5 3.94A1 1 0 0 0 7 4.8"/></svg>
+        <svg class="icon player-on" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+      </button>
+      <span class="player-elapsed">0:00</span>
+      <input type="range" class="slider player-seek" min="0" max="0" step="any" value="0" aria-label="Seek">
+      <span class="player-duration">0:00</span>
+    </div>
+  </div>
+  <section class="transcript" aria-label="Transcript" aria-controls="talk" style="--transcript-height: 12rem">
+    <ol class="transcript-list scroll-area">
+      <li class="transcript-cue" data-start="0.3"><button type="button" class="transcript-time">0:00</button><p class="transcript-text">This is a short recording, made to show the player and its transcript.</p></li>
+      <li class="transcript-cue" data-start="4.7"><button type="button" class="transcript-time">0:04</button><p class="transcript-text">Each line of the transcript is a cue, with the time it begins.</p></li>
+      <li class="transcript-cue" data-start="8.7"><button type="button" class="transcript-time">0:08</button><p class="transcript-text">The line being spoken is marked, and the transcript keeps it in view.</p></li>
+      <li class="transcript-cue" data-start="13.06"><button type="button" class="transcript-time">0:13</button><p class="transcript-text">Lines you have heard turn quiet. The ones still to come wait in plain ink.</p></li>
+      <li class="transcript-cue" data-start="17.65"><button type="button" class="transcript-time">0:17</button><p class="transcript-text">Choose any line to jump to it, or scroll away and come back later.</p></li>
+      <li class="transcript-cue" data-start="21.79"><button type="button" class="transcript-time">0:21</button><p class="transcript-text">That is the whole recording. Thank you for listening.</p></li>
+    </ol>
+    <button type="button" class="btn btn-sm btn-pill transcript-return" hidden>Back to current</button>
+  </section>
+</div>`} caption="Play, then choose a line. Scroll the transcript away from the current line while it plays: it stops following and offers the way back." />
+
+## Following and scrolling away \{#following\}
+
+As the recording plays, the behavior marks the current cue with `aria-current="true"`: the last cue whose `data-start` has passed, so the place is kept through a pause between two cues. Every cue before it is drawn as played, by the stylesheet alone.
+
+The list keeps the current cue in its middle. It scrolls itself and nothing around it, so a page with a transcript on it never moves under the reader; it glides, or jumps for a reader who asks for reduced motion. When the reader scrolls the list with the wheel, a finger, the keys or the scrollbar and the current cue leaves the view, the list stops following, and `transcript-return`, a small pill at its lower edge, brings it back. Choosing a cue, or scrolling the current cue back into view, follows again.
+
+The list scrolls inside `--transcript-height`, 20rem unless set. Add [`scroll-area`](/components/scroll-area) to the list for its thin scrollbar and the fades at the edges where it goes on.
+
+## From a WebVTT track \{#from-a-track\}
+
+When the list is empty, the behavior writes the cues from the media's first captions or subtitles track, read through the TextTrack API: the time, the words without their tags, and the speaker a voice tag names (`<v Ana>`). A track loads its cues only once it is not disabled, so the behavior sets a disabled track to `hidden`, which shows nothing over a picture. Here the transcript follows a plain `<audio>` with the browser's controls.
+
+<ComponentPreview name="track" height={360} title="From a track" background="plain" bodyClass="content-start p-lg" behaviors html={`<div class="grid gap-sm max-w(480) mx-auto">
+  <audio id="talk-audio" class="w-full" src="/demo/recording.m4a" controls preload="metadata">
+    <track kind="captions" src="/demo/recording.vtt" srclang="en" label="English">
+  </audio>
+  <section class="transcript" aria-label="Transcript" aria-controls="talk-audio" style="--transcript-height: 15rem">
+    <ol class="transcript-list scroll-area"></ol>
+    <button type="button" class="btn btn-sm btn-pill transcript-return" hidden>Back to current</button>
+  </section>
+</div>`} caption="The cues are read from recording.vtt. Without the script this list stays empty, so write the cues in the page when it must be read without one." />
+
+## The behavior \{#behavior\}
+
+`transcript` takes the root, the element with the `transcript` class, and returns the function that detaches it.
+
+```js name=app.js
+import { transcript } from '@master/ui/behaviors/transcript.js'
+
+const detach = transcript(document.querySelector('.transcript'))
+```
+
+- **The media** is the one `aria-controls` names: a player, whose `player-media` it takes, or an `<audio>` or `<video>`. The behavior looks each time the media speaks, so a media written after the transcript, or another one named later, is followed. The `media` option names an element instead.
+- **A cue** is an `li` with `data-start`, the second it begins, holding a `transcript-time` button and a `transcript-text`. A press anywhere on a cue plays from its start, unless the reader is selecting its words; <kbd class="kbd">Enter</kbd> on its time does the same.
+- **Rows written elsewhere.** The behavior reads the list each time and keeps none of it, so a renderer may write the cues and change them. `draw: false` leaves an empty list to the renderer; `track` chooses the track the cues are written from. The rows it wrote are removed when it detaches.
+
+| Option | Default | |
+| --- | --- | --- |
+| `media` | from `aria-controls` | The media element to follow |
+| `track` | the first captions or subtitles track | The track an empty list is written from |
+| `draw` | `true` | Whether to write an empty list from the track |
+
+Without the behavior the cues are a list a reader reads; nothing is marked, nothing follows, and a cue does not seek.
+
+## Keyboard \{#keyboard\}
+
+The times are one tab stop, the current cue's, and the arrows move between them, so a long transcript is not a long walk through the tab order.
+
+<ContractTable name="transcript" show="keyboard" />
+
+## Accessibility \{#accessibility\}
+
+- Name the transcript with `aria-label` or a heading it points to with `aria-labelledby`, and name its media in `aria-controls`.
+- The current cue is `aria-current="true"`; the stylesheet draws it in ink and depth, not in a hue, and in forced colors with a system outline.
+- The transcript never takes focus by itself as the recording plays. Focus moves only when the reader moves it, and back to the current cue when the way back is chosen.
+- A transcript is what a recording without a picture needs to be understood without sound. Write it in the page when the page has to be read without script.
+
+## React, Svelte and Vue \{#frameworks\}
+
+The `transcript` component writes the cues from `cues`, each a `start`, its `text` and an optional `speaker`, names the media given as `media`, and attaches the behavior, which marks and follows them. Copy it into the project with `npx master-ui add transcript`; [React, Svelte and Vue](/guide/frameworks) says how the components are built and used.
+
+<FrameworkSource name="transcript" />
+
+## Classes \{#classes\}
+
+<ContractTable name="transcript" />
+
+The way back is a [button](/components/button), `btn btn-sm btn-pill`, with the `transcript-return` part.
+
+## Custom properties \{#custom-properties\}
+
+<ContractTable name="transcript" show="properties" />
+
+## Related \{#related\}
+
+<ComponentLinks slugs={['player', 'scroll-area', 'timeline']} />
+
+## Source \{#source\}
+
+<ComponentSource name="transcript" />

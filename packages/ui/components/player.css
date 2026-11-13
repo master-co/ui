@@ -1,0 +1,368 @@
+/*
+ * Player: controls of the page's own over a native <audio> or <video>, which keeps its semantics, its keys in
+ * the browser's menus and its fallback.
+ * The media keeps the controls attribute in the markup. While it has it the browser's controls are what is seen
+ * and the player's are hidden, so a page without the script still plays; the behavior removes the attribute as it
+ * attaches and puts it back as it detaches.
+ * An audio player is one raised sheet: a row of quiet 32px buttons, the times in small tabular figures and a seek
+ * track that is the slider's own native range input, 6px inside a corner of the control radius plus that inset.
+ * A video player is the frame itself: the picture covers a dark field with a surface's corner, and the same row
+ * stands over its lower edge on a shade that rises from the edge. That row is drawn in the dark scheme in both
+ * themes, as a screen is dark, so every token it reads resolves to its obsidian value.
+ * State is drawn from attributes. A toggle has aria-pressed: one with two faces (play and pause, sound and
+ * silence, into and out of full screen) shows the face for its state, one with a single face (captions, picture in
+ * picture) sinks into a well while it is on. The behavior mirrors the media into them: the play button is pressed
+ * while the media plays, the mute button while it is muted. What has loaded is --player-buffered, from 0 to 1,
+ * drawn on the seek track under what has played.
+ * Over a video the row fades while the media plays and the pointer has not moved for a while (--player-idle, set
+ * by the behavior). It never fades while anything in the player has keyboard focus or its speed menu is open, and
+ * never for a reader who asks for reduced motion.
+ * The row answers the room the player is given: narrower than 26rem the volume slider steps out and the mute
+ * button stays; narrower than 24rem picture in picture and the time so far step out too.
+ * Without the behavior the media keeps the browser's controls. Without container queries the row keeps every
+ * control at every width.
+ */
+@layer components {
+  .player {
+    --player-inset: 6px;
+    --player-radius: calc(var(--radius-control) + var(--player-inset));
+    --player-buffered: 0;
+    --player-idle: 0;
+    /* What has loaded and not played: a quiet share of the fill's own ink. */
+    --player-buffer-color: color-mix(in oklab, var(--slider-color, var(--color-surface-inverse)) 24%, transparent);
+    position: relative;
+    display: grid;
+    min-width: 0;
+    margin: 0;
+    padding: var(--player-inset);
+    border-radius: calc(var(--player-radius) * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    @apply --surface-sheet;
+    color: var(--color-text-body);
+    box-shadow: var(--shadow-raised);
+    container-type: inline-size;
+
+    /*
+     * The frame of a video. The picture fills it and the controls stand over its lower edge. A corner of a
+     * surface, the dark field around the picture, and an inward hairline so a pale frame does not bleed out.
+     */
+    &.player-video {
+      --player-radius: var(--radius-surface);
+      padding: 0;
+      overflow: hidden;
+      background: var(--color-surface-media);
+      box-shadow: 0 0 0 .5px var(--color-line-image-strong), var(--shadow-raised);
+
+      .player-media {
+        grid-area: 1 / 1;
+        width: 100%;
+        height: auto;
+        aspect-ratio: var(--player-ratio, auto);
+        object-fit: contain;
+      }
+
+      .player-controls {
+        grid-area: 1 / 1;
+        align-self: end;
+        padding: 2.5rem .5rem .375rem;
+        background: linear-gradient(to top, var(--color-on-image-scrim), transparent);
+        /* A screen is dark: the controls over it read every token as obsidian, in both themes. */
+        color-scheme: dark;
+        color: var(--color-on-image);
+        transition: opacity var(--duration-base) var(--easing-glide);
+      }
+
+      /* The times read on any picture: white, with a shade under the figures. */
+      .player-elapsed,
+      .player-duration {
+        color: var(--color-on-image);
+        text-shadow: 0 1px 2px var(--color-on-image-shade);
+      }
+    }
+
+    /* Full screen: the frame becomes the screen, square and with no edge. */
+    &:fullscreen {
+      grid-template-rows: minmax(0, 1fr);
+      border-radius: 0;
+      box-shadow: none;
+
+      .player-media {
+        height: 100%;
+      }
+    }
+
+    /* While the media keeps the browser's controls, they are the controls: the script has not attached. */
+    &:has(.player-media[controls]) .player-controls {
+      display: none;
+    }
+
+    @media (forced-colors: active) {
+      outline: 1px solid CanvasText;
+      outline-offset: -1px;
+    }
+  }
+
+  /*
+   * While the video plays, the pointer is still and nothing in the player has keyboard focus or an open menu,
+   * the controls fade out of the picture, and the pointer with them. Any movement brings them back at once.
+   */
+  @media (prefers-reduced-motion: no-preference) {
+    .player-video:has(.player-play[aria-pressed="true"]):not(:has(:focus-visible, .menu:popover-open)) .player-controls {
+      opacity: calc(1 - var(--player-idle));
+    }
+
+    @container style(--player-idle: 1) {
+      .player-video:has(.player-play[aria-pressed="true"]):not(:has(:focus-visible, .menu:popover-open)) .player-media {
+        cursor: none;
+      }
+    }
+  }
+
+  /*
+   * Captions the browser draws over the picture rise above the controls while they show, and settle to the
+   * edge as they fade. Chromium and WebKit name the box the cues stand in; elsewhere they stay at the edge.
+   */
+  .player-video .player-media::-webkit-media-text-track-container {
+    translate: 0 calc(-1 * var(--player-cue-lift, 2.75rem));
+    transition: translate var(--duration-base) var(--easing-glide);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .player-video:has(.player-play[aria-pressed="true"]):not(:has(:focus-visible, .menu:popover-open)) .player-media {
+      --player-cue-lift: calc(2.75rem * (1 - var(--player-idle)));
+    }
+  }
+
+  /* The native element. Audio without controls draws nothing; a video is the picture. */
+  .player-media {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    border: 0;
+    outline: 0;
+  }
+
+  /* The row of controls: buttons, the times and the seek track between them. */
+  .player-controls {
+    display: flex;
+    align-items: center;
+    gap: .25rem;
+    min-width: 0;
+    margin: 0;
+  }
+
+  /*
+   * A control of the player: a quiet 32px square with one icon, or the speed as a few figures. It answers the
+   * pointer as a quiet button does, rising onto a sheet; it is never a hue.
+   */
+  .player-button {
+    --icon-size: 1rem;
+    position: relative;
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    min-width: 2rem;
+    height: 2rem;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: calc(var(--radius-control-sm) * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    background: transparent;
+    color: inherit;
+    font: var(--font-weight-control) .75rem/1 var(--font-family-sans);
+    font-variant-numeric: tabular-nums;
+    appearance: none;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    transition-property: box-shadow, color;
+    transition-duration: var(--duration-quick);
+    transition-timing-function: var(--easing-glide);
+
+    &[hidden] {
+      display: none;
+    }
+
+    @media (hover: hover) {
+      &:hover:not(:disabled) {
+        @apply --surface-sheet;
+        color: var(--color-text-strong);
+        box-shadow: var(--shadow-raised);
+      }
+    }
+
+    /* Held, and a toggle with one face that is on: sunk into a well. */
+    &:active:not(:disabled),
+    &[aria-pressed="true"]:not(:has(.player-on)),
+    &:has(+ .menu:popover-open) {
+      background: var(--color-surface-inset);
+      color: var(--color-text-strong);
+      box-shadow: var(--shadow-pressed);
+      transition-duration: var(--duration-press);
+    }
+
+    &:focus-visible {
+      @apply --focus-ring;
+    }
+
+    &:disabled {
+      color: var(--color-text-disabled);
+      cursor: not-allowed;
+    }
+
+    @media (pointer: coarse) {
+      min-width: 2.75rem;
+      height: 2.75rem;
+    }
+
+    @media (forced-colors: active) {
+      &[aria-pressed="true"]:not(:has(.player-on)) {
+        outline: 2px solid Highlight;
+        outline-offset: -2px;
+      }
+
+      &:focus-visible {
+        outline-color: Highlight;
+      }
+    }
+  }
+
+  /* The speed: a few figures, a little wider than an icon. */
+  .player-speed {
+    padding-inline: .5rem;
+  }
+
+  /* Play is the control a reader looks for first: its icon is a size up. */
+  .player-play {
+    --icon-size: 1.125rem;
+  }
+
+  /* Mute stands close to its volume slider, so the two read as one control. */
+  .player-mute {
+    margin-inline-end: -.125rem;
+  }
+
+  /* Captions, picture in picture and full screen belong to a picture: an audio player leaves them out. */
+  .player-captions,
+  .player-pip,
+  .player-fullscreen {
+    .player:not(.player-video) & {
+      display: none;
+    }
+  }
+
+  /*
+   * In a player narrower than 24rem, picture in picture and the time so far step out of the row, the length
+   * stays, and the controls close up.
+   */
+  @container (width < 24rem) {
+    .player-pip,
+    .player-elapsed {
+      display: none;
+    }
+
+    .player-controls {
+      gap: 0;
+    }
+  }
+
+  /* Muted, the volume slider keeps the level it will return to, a step quieter. */
+  .player-controls:has(.player-mute[aria-pressed="true"]) .player-volume {
+    opacity: .45;
+  }
+
+  /*
+   * The two faces of a toggle: the one for off (play, sound, into full screen) and the one for on (pause,
+   * silence, out of full screen). Only the face for the button's aria-pressed is shown.
+   */
+  .player-on {
+    display: none;
+  }
+
+  .player-button[aria-pressed="true"] {
+    .player-on {
+      display: inline-block;
+    }
+
+    .player-off {
+      display: none;
+    }
+  }
+
+  /* How much has played, and how long it is: small tabular figures, as wide whatever the digits. */
+  .player-elapsed,
+  .player-duration {
+    flex: none;
+    min-width: 2.25rem;
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: .75rem;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  /*
+   * The seek track: the slider's own range input, as long as the row allows. Under what has played, what has
+   * loaded is a quiet share of the same ink, as far as --player-buffered.
+   */
+  .player-seek {
+    flex: 1 1 0;
+    width: auto;
+    min-width: 3rem;
+    margin-inline: .25rem;
+
+    &::-webkit-slider-runnable-track {
+      background:
+        linear-gradient(90deg, var(--slider-color) var(--slider-fill), transparent 0),
+        linear-gradient(90deg, var(--player-buffer-color) calc(var(--player-buffered) * 100%), transparent 0)
+        var(--color-surface-inset);
+    }
+
+    &::-moz-range-track {
+      background: linear-gradient(90deg, var(--player-buffer-color) calc(var(--player-buffered) * 100%), transparent 0) var(--color-surface-inset);
+    }
+
+    &:dir(rtl)::-webkit-slider-runnable-track {
+      background:
+        linear-gradient(270deg, var(--slider-color) var(--slider-fill), transparent 0),
+        linear-gradient(270deg, var(--player-buffer-color) calc(var(--player-buffered) * 100%), transparent 0)
+        var(--color-surface-inset);
+    }
+
+    &:dir(rtl)::-moz-range-track {
+      background: linear-gradient(270deg, var(--player-buffer-color) calc(var(--player-buffered) * 100%), transparent 0) var(--color-surface-inset);
+    }
+
+    @media (forced-colors: active) {
+      &::-webkit-slider-runnable-track {
+        background: linear-gradient(90deg, Highlight var(--slider-fill), transparent 0) Canvas;
+      }
+
+      &::-moz-range-track {
+        background: Canvas;
+      }
+    }
+  }
+
+  /* The volume: a short slider beside the mute button. Where the player is narrow, the mute button is enough. */
+  .player-volume {
+    flex: none;
+    width: 4.5rem;
+    margin-inline: .25rem .5rem;
+
+    &[hidden] {
+      display: none;
+    }
+
+    @container (width < 26rem) {
+      display: none;
+    }
+  }
+}

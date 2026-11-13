@@ -1,7 +1,7 @@
 /**
  * What the listbox, combobox, command and menu behaviors share: which items the keys may land on, how the
- * active option of a listbox moves, how a list is filtered and how typed letters find an item. It is not a
- * behavior and exports none; copy it beside the behaviors that import it.
+ * active option of a listbox moves, how a list is filtered and how typed letters find an item, and how a player
+ * and a transcript write a time. It is not a behavior and exports none; copy it beside the behaviors that import it.
  */
 
 /**
@@ -286,4 +286,17 @@ export function chipKeys(field, remove) {
         if (event.key.length === 1) field.focus()
     }
   }
+}
+
+/**
+ * A time as a clock: 0:05, 12:40, 1:02:09.
+ * @param {number} seconds
+ * @param {boolean} [hours] Whether to write the hours though there are none.
+ */
+export function clock(seconds, hours = false) {
+  const whole = Number.isFinite(seconds) && seconds > 0 ? Math.floor(seconds) : 0
+  const h = Math.floor(whole / 3600)
+  const m = Math.floor(whole / 60) % 60
+  const s = String(whole % 60).padStart(2, '0')
+  return h || hours ? `${h}:${String(m).padStart(2, '0')}:${s}` : `${m}:${s}`
 }

@@ -26,12 +26,15 @@ const others: Record<string, Record<string, unknown>> = {
   'field': { label: 'Work email', hint: 'We only send receipts.' },
   'listbox': { options: [{ value: 'hnd', label: 'Tokyo' }], value: 'hnd', 'aria-label': 'Region' },
   'menu': { items: [{ label: 'Rename' }, { separator: true }, { label: 'Settings', href: '#settings' }], 'aria-label': 'Project' },
+  'player': { src: '/demo/recording.m4a', label: 'A short recording', time: 65 },
   'popover': {},
   'stepper': { value: 4, decrementLabel: 'Fewer seats', incrementLabel: 'More seats', 'aria-label': 'Seats' },
   'toast': {},
   'toolbar': {},
   'tooltip': {},
   'tour': { spotlight: true },
+  'transcript': { cues: [{ start: 0.3, text: 'This is a short recording.' }] },
+  'tree': { nodes: [{ label: 'themes', children: [{ label: 'paper.css', value: 'themes/paper.css' }] }], 'aria-label': 'Files' },
 }
 
 test('svelte: every fixture renders on a server', () => {

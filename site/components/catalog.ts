@@ -115,6 +115,8 @@ export const components = [
   { slug: 'carousel', name: 'Carousel', category: 'Media', description: 'A row of slides that scrolls and snaps, built from CSS alone.' },
   { slug: 'marquee', name: 'Marquee', category: 'Media', description: 'A row that passes by without end, and stops when you look closely.' },
   { slug: 'waveform', name: 'Waveform', category: 'Media', description: 'A recording as a row of bars, in ink as far as it has played.' },
+  { slug: 'player', name: 'Player', category: 'Media', description: 'Controls of the page\'s own over a native audio or video element.' },
+  { slug: 'transcript', name: 'Transcript', category: 'Media', description: 'What a recording says, as cues that follow it as it plays.' },
   { slug: 'compare', name: 'Compare', category: 'Media', description: 'Two pictures of the same thing, and a handle that draws the line between them.' },
   { slug: 'cropper', name: 'Cropper', category: 'Media', description: 'A picture with a box over it that says what to keep.' },
   { slug: 'window', name: 'Window', category: 'Media', description: 'The frame of an application around a screenshot, a demo or a terminal.' },

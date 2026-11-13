@@ -14,6 +14,7 @@ import { Listbox } from '../../../frameworks/react/listbox.tsx'
 import { Menu, type MenuProps } from '../../../frameworks/react/menu.tsx'
 import { Otp } from '../../../frameworks/react/otp.tsx'
 import { Panel, type PanelProps } from '../../../frameworks/react/panel.tsx'
+import { Player } from '../../../frameworks/react/player.tsx'
 import { Popover, type PopoverProps } from '../../../frameworks/react/popover.tsx'
 import { Signature } from '../../../frameworks/react/signature.tsx'
 import { Sortable, type SortableProps } from '../../../frameworks/react/sortable.tsx'
@@ -25,6 +26,7 @@ import { toast, Toaster } from '../../../frameworks/react/toast.tsx'
 import { Toolbar, type ToolbarProps } from '../../../frameworks/react/toolbar.tsx'
 import { Tooltip } from '../../../frameworks/react/tooltip.tsx'
 import { Tour, type TourProps } from '../../../frameworks/react/tour.tsx'
+import { Transcript, type TranscriptProps } from '../../../frameworks/react/transcript.tsx'
 import { Tree } from '../../../frameworks/react/tree.tsx'
 import { Wheel } from '../../../frameworks/react/wheel.tsx'
 import { type CompareProps } from '../../../frameworks/react/compare.tsx'
@@ -184,6 +186,15 @@ function FieldExample(props: Omit<FieldProps, 'children'>) {
   return <Field {...props}>{control => <input className="input" type="email" {...control} />}</Field>
 }
 
+function TranscriptExample(props: Omit<TranscriptProps, 'media'>) {
+  return (
+    <>
+      <Player id="talk" src="/demo/recording.m4a" label="A short recording" />
+      <Transcript media="talk" aria-label="Transcript" {...props} />
+    </>
+  )
+}
+
 export const fixtures = {
   'calendar': Calendar,
   'color-picker': ColorPicker,
@@ -203,6 +214,7 @@ export const fixtures = {
   'menu': MenuExample,
   'otp': Otp,
   'panel': PanelExample,
+  'player': Player,
   'popover': PopoverExample,
   'signature': Signature,
   'sortable': SortableExample,
@@ -214,6 +226,7 @@ export const fixtures = {
   'toolbar': ToolbarExample,
   'tooltip': TooltipExample,
   'tour': TourExample,
+  'transcript': TranscriptExample,
   'tree': Tree,
   'wheel': Wheel,
 } as unknown as Record<string, ComponentType<Record<string, unknown>>>

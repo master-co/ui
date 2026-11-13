@@ -1,7 +1,8 @@
 import { afterEach, test } from 'node:test'
 import assert from 'node:assert/strict'
 import { dom } from './dom.ts'
-import { calendar, calendarMonth, calendarPeriods, combobox, command, compare, cropper, dial, gantt, listbox, otp, panel, signature, splitter, stepper, tour, tree, wheel } from '../../behaviors/index.js'
+import { calendar, calendarMonth, calendarPeriods, combobox, command, compare, cropper, dial, gantt, listbox, otp, panel, player, signature, splitter, stepper, tour, tree, wheel } from '../../behaviors/index.js'
+import { stub } from './media.ts'
 
 /** happy-dom catches what a listener throws and reports it on the window; a test must not pass over it. */
 const thrown: unknown[] = []
@@ -635,5 +636,23 @@ test('cropper: value reads and sets the crop in the picture\'s pixels, fitted in
   handle.value = { x: 700, y: 0, width: 400, height: 300 }
   assert.deepEqual(handle.value, { x: 400, y: 0, width: 400, height: 300 }, 'a crop past the edge is kept inside the picture')
   handle.value = { ...handle.value }
+  assert.deepEqual(heard, [])
+})
+
+test('player: value reads the media\'s time, and setting it seeks and says nothing a control would', () => {
+  const { one, heard } = setup(`<div class="player" role="group" aria-label="Episode">
+  <audio class="player-media" src="/episode.m4a" controls></audio>
+  <div class="player-controls">
+    <span class="player-elapsed">0:00</span>
+    <input type="range" class="slider player-seek" min="0" max="0" step="any" value="0" aria-label="Seek">
+  </div>
+</div>`)
+  stub(one('.player-media'), { duration: 60 })
+  const handle = player(one<HTMLElement>('.player'))
+  assert.equal(handle.value, 0)
+  handle.value = 42
+  assert.equal(one<HTMLMediaElement>('.player-media').currentTime, 42)
+  assert.equal(one<HTMLInputElement>('.player-seek').value, '42')
+  assert.equal(one('.player-elapsed').textContent, '0:42')
   assert.deepEqual(heard, [])
 })

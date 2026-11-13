@@ -9,6 +9,7 @@ import Gantt from '../../../frameworks/vue/Gantt.vue'
 import Listbox from '../../../frameworks/vue/Listbox.vue'
 import Otp from '../../../frameworks/vue/Otp.vue'
 import Signature from '../../../frameworks/vue/Signature.vue'
+import Player from '../../../frameworks/vue/Player.vue'
 import Stepper from '../../../frameworks/vue/Stepper.vue'
 import Tabs from '../../../frameworks/vue/Tabs.vue'
 import Tags from '../../../frameworks/vue/Tags.vue'
@@ -30,6 +31,7 @@ import SplitterExample from './SplitterExample.vue'
 import ToolbarExample from './ToolbarExample.vue'
 import TooltipExample from './TooltipExample.vue'
 import TourExample from './TourExample.vue'
+import TranscriptExample from './TranscriptExample.vue'
 
 /**
  * How each component is used. A component that takes markup of the page's is shown with it: a trigger,
@@ -54,6 +56,7 @@ export const fixtures: Record<string, Component> = {
   'menu': MenuExample,
   'otp': Otp,
   'panel': PanelExample,
+  'player': Player,
   'popover': PopoverExample,
   'signature': Signature,
   'sortable': SortableExample,
@@ -65,6 +68,7 @@ export const fixtures: Record<string, Component> = {
   'toolbar': ToolbarExample,
   'tooltip': TooltipExample,
   'tour': TourExample,
+  'transcript': TranscriptExample,
   'tree': Tree,
   'wheel': Wheel,
 }

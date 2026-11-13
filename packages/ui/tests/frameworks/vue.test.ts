@@ -24,7 +24,7 @@ const compiled = await compile()
 const { fixtures, toast } = await import(compiled('tests/frameworks/vue/fixtures.ts'))
 
 /** The scenarios' props, as Vue names them: the value is the model, and a change of it an update. */
-const names: Record<string, string> = { value: 'modelValue', onValueChange: 'onUpdate:modelValue', onOpenChange: 'onUpdate:open', onQueryChange: 'onUpdate:query' }
+const names: Record<string, string> = { value: 'modelValue', onValueChange: 'onUpdate:modelValue', onOpenChange: 'onUpdate:open', onQueryChange: 'onUpdate:query', onTimeChange: 'onUpdate:time', onPlayingChange: 'onUpdate:playing' }
 const translate = (props: Record<string, unknown>) => Object.fromEntries(Object.entries(props).map(([name, value]) => [names[name] ?? name, value]))
 const settle = () => new Promise(resolve => setTimeout(resolve, 0))
 
