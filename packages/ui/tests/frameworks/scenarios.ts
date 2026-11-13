@@ -95,6 +95,21 @@ async function comboboxSeveral(driver: Driver, page: Page) {
   await driver.act(() => mounted.unmount())
 }
 
+const continents = [
+  { value: 'hnd', label: 'Tokyo', group: 'Asia' },
+  { value: 'fra', label: 'Frankfurt', group: 'Europe' },
+  { value: 'sin', label: 'Singapore', group: 'Asia' },
+]
+
+/** Each group is a role="group" labelled by its caption, and holds the options of that group in their order. */
+function assertGroups(page: Page, captions: string[], values: string[][]) {
+  const groups = page.all('.listbox-group')
+  assert.deepEqual(groups.map(group => group.getAttribute('role')), captions.map(() => 'group'))
+  assert.deepEqual(groups.map(group => page.document.getElementById(group.getAttribute('aria-labelledby') ?? '')?.textContent), captions, 'a group is named by its caption')
+  assert.deepEqual(groups.map(group => group.querySelector('.listbox-label')?.textContent), captions, 'the caption stands in its group')
+  assert.deepEqual(groups.map(group => [...group.querySelectorAll('[role="option"]')].map(option => option.getAttribute('data-value'))), values, 'options of one group are written together')
+}
+
 export const scenarios: Record<string, Scenario> = {
   async combobox(driver, page) {
     const { mounted, heard } = await owned(driver, 'combobox', { options: regions, value: null, listLabel: 'Regions', toggleLabel: 'Show regions', empty: 'No regions match.', 'aria-label': 'Region' })
@@ -130,6 +145,17 @@ export const scenarios: Record<string, Scenario> = {
     await driver.act(() => mounted.unmount())
     assert.equal(page.all('.combobox').length, 0)
 
+    // Options with a group are written under its caption, and filter and choose as any other.
+    const grouped = await owned(driver, 'combobox', { options: continents, value: null, listLabel: 'Regions', toggleLabel: 'Show regions', 'aria-label': 'Region' })
+    conforms(page)
+    assertGroups(page, ['Asia', 'Europe'], [['hnd', 'sin'], ['fra']])
+    const search = page.one<HTMLInputElement>('[role="combobox"]')
+    await driver.act(() => page.type(search, 'frank'))
+    assert.deepEqual(page.all('[role="option"]').map(option => option.hidden), [true, true, false])
+    await driver.act(() => page.key(search, 'Enter'))
+    assert.deepEqual(grouped.heard, ['fra'])
+    await driver.act(() => grouped.mounted.unmount())
+
     await comboboxSeveral(driver, page)
   },
 
@@ -160,6 +186,15 @@ export const scenarios: Record<string, Scenario> = {
     await driver.act(() => page.click(page.all('[role="option"]')[1]))
     assert.deepEqual(several.heard, [['astro', 'next']])
     await driver.act(() => several.mounted.unmount())
+
+    // Options with a group are written under its caption; the keys walk from one group into the next.
+    const grouped = await owned(driver, 'listbox', { options: continents, value: 'sin', 'aria-label': 'Region' })
+    conforms(page)
+    assertGroups(page, ['Asia', 'Europe'], [['hnd', 'sin'], ['fra']])
+    const list = page.one('.listbox')
+    await driver.act(() => { list.focus(); page.key(list, 'ArrowDown'); page.key(list, 'Enter') })
+    assert.deepEqual(grouped.heard, ['fra'])
+    await driver.act(() => grouped.mounted.unmount())
   },
 
   async calendar(driver, page) {

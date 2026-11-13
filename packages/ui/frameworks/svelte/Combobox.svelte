@@ -7,6 +7,8 @@
     /** What the option says, and what the field holds once it is chosen. */
     label: string
     description?: string
+    /** The caption of the group the option belongs to. Options of one group are written together, under it. */
+    group?: string
     disabled?: boolean
   }
 
@@ -50,10 +52,23 @@
   let chips = $state(several ? firsts : [])
   const labelOf = (each: string) => options.find(option => option.value === each)?.label ?? each
   const attach = behavior(combobox, () => (multiple ? { filter, removeLabel, draw: (values: string[]) => { chips = values } } : { filter }), {
+  const groups = $derived([...new Set(options.map(option => option.group))])
     value: () => value,
     change: (next) => { value = next; onValueChange?.(next) },
   })
 </script>
+
+{#snippet row(option: ComboboxOption)}
+  <!-- The behavior writes `aria-selected` on the option the keys are on. -->
+  <!-- svelte-ignore a11y_role_has_required_aria_props -->
+  <div class="listbox-option" role="option" data-value={option.value} aria-checked={several ? firsts.includes(option.value) : option.value === first} aria-disabled={option.disabled || undefined}>
+    {#if option.description}
+      <span class="listbox-body"><span>{option.label}</span><span class="listbox-description">{option.description}</span></span>
+    {:else}
+      {option.label}
+    {/if}
+  </div>
+{/snippet}
 
 <!--
   @component
@@ -74,16 +89,15 @@
     <button type="button" class="combobox-toggle" tabindex={-1} aria-label={toggleLabel}></button>
   </div>
   <div id="{id}list" popover="manual" class="listbox" role="listbox" aria-label={listLabel} aria-multiselectable={several || undefined}>
-    {#each options as option (option.value)}
-      <!-- The behavior writes `aria-selected` on the option the keys are on. -->
-      <!-- svelte-ignore a11y_role_has_required_aria_props -->
-      <div class="listbox-option" role="option" data-value={option.value} aria-checked={several ? firsts.includes(option.value) : option.value === first} aria-disabled={option.disabled || undefined}>
-        {#if option.description}
-          <span class="listbox-body"><span>{option.label}</span><span class="listbox-description">{option.description}</span></span>
-        {:else}
-          {option.label}
-        {/if}
-      </div>
+    {#each groups as group, index (group)}
+      {#if group === undefined}
+        {#each options.filter(option => option.group === undefined) as option (option.value)}{@render row(option)}{/each}
+      {:else}
+        <div class="listbox-group" role="group" aria-labelledby="{id}group{index}">
+          <div class="listbox-label" id="{id}group{index}">{group}</div>
+          {#each options.filter(option => option.group === group) as option (option.value)}{@render row(option)}{/each}
+        </div>
+      {/if}
     {/each}
     {#if empty !== undefined}<div class="listbox-empty">{empty}</div>{/if}
   </div>

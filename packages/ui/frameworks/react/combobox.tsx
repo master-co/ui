@@ -9,6 +9,8 @@ export interface ComboboxOption {
   /** What the option says, and what the field holds once it is chosen. */
   label: string
   description?: string
+  /** The caption of the group the option belongs to. Options of one group are written together, under it. */
+  group?: string
   disabled?: boolean
 }
 
@@ -61,6 +63,14 @@ export function Combobox(props: ComboboxProps) {
   const ref = useBehavior(combobox, multiple ? { filter, draw: setChips, removeLabel } : { filter }, { value, defaultValue, onValueChange } as never)
   const chosen = (option: ComboboxOption) => (multiple ? [first ?? []].flat().includes(option.value) : option.value === first)
   const labelOf = (each: string) => options.find(option => option.value === each)?.label ?? each
+  const groups = [...new Set(options.map(option => option.group))]
+  const row = (option: ComboboxOption) => (
+    <div className="listbox-option" role="option" key={option.value} data-value={option.value} aria-checked={chosen(option)} aria-disabled={option.disabled || undefined}>
+      {option.description
+        ? <span className="listbox-body"><span>{option.label}</span><span className="listbox-description">{option.description}</span></span>
+        : option.label}
+    </div>
+  )
   return (
     <div className={className ? `combobox ${className}` : 'combobox'} ref={ref}>
       <div className={multiple ? 'input-group input-group-wrap' : 'input-group'}>
@@ -75,13 +85,14 @@ export function Combobox(props: ComboboxProps) {
         <button type="button" className="combobox-toggle" tabIndex={-1} aria-label={toggleLabel} />
       </div>
       <div id={`${id}list`} popover="manual" className="listbox" role="listbox" aria-label={listLabel} aria-multiselectable={multiple || undefined}>
-        {options.map(option => (
-          <div className="listbox-option" role="option" key={option.value} data-value={option.value} aria-checked={chosen(option)} aria-disabled={option.disabled || undefined}>
-            {option.description
-              ? <span className="listbox-body"><span>{option.label}</span><span className="listbox-description">{option.description}</span></span>
-              : option.label}
-          </div>
-        ))}
+        {groups.map((group, index) => group === undefined
+          ? options.filter(option => option.group === undefined).map(row)
+          : (
+              <div className="listbox-group" role="group" aria-labelledby={`${id}group${index}`} key={group}>
+                <div className="listbox-label" id={`${id}group${index}`}>{group}</div>
+                {options.filter(option => option.group === group).map(row)}
+              </div>
+            ))}
         {empty !== undefined && <div className="listbox-empty">{empty}</div>}
       </div>
     </div>

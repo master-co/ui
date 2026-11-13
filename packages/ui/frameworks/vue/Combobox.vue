@@ -5,12 +5,14 @@ export interface ComboboxOption {
   /** What the option says, and what the field holds once it is chosen. */
   label: string
   description?: string
+  /** The caption of the group the option belongs to. Options of one group are written together, under it. */
+  group?: string
   disabled?: boolean
 }
 </script>
 
 <script setup lang="ts">
-import { ref, useAttrs, useId, useTemplateRef } from 'vue'
+import { computed, h, ref, useAttrs, useId, useTemplateRef, type FunctionalComponent } from 'vue'
 import { combobox } from '@master/ui/behaviors/combobox.js'
 import { useBehavior } from './use-behavior'
 
@@ -60,6 +62,18 @@ const labelOf = (each: string) => options.find(option => option.value === each)?
 const checked = (option: ComboboxOption) => (several ? firsts.includes(option.value) : option.value === first)
 const root = useTemplateRef<HTMLDivElement>('root')
 useBehavior(root, combobox, () => (multiple ? { filter, removeLabel, draw: (values: string[]) => { chips.value = values } } : { filter }), model)
+
+const groups = computed(() => [...new Set(options.map(option => option.group))])
+const Row: FunctionalComponent<{ option: ComboboxOption }> = ({ option }) => h('div', {
+  'class': 'listbox-option',
+  'role': 'option',
+  'data-value': option.value,
+  'aria-checked': checked(option),
+  'aria-disabled': option.disabled || undefined,
+}, option.description
+  ? h('span', { class: 'listbox-body' }, [h('span', option.label), h('span', { class: 'listbox-description' }, option.description)])
+  : option.label)
+Row.props = ['option']
 </script>
 
 <template>
@@ -74,10 +88,15 @@ useBehavior(root, combobox, () => (multiple ? { filter, removeLabel, draw: (valu
       <button type="button" class="combobox-toggle" tabindex="-1" :aria-label="toggleLabel" />
     </div>
     <div :id="`${id}-list`" popover="manual" class="listbox" role="listbox" :aria-label="listLabel" :aria-multiselectable="several || undefined">
-      <div v-for="option in options" :key="option.value" class="listbox-option" role="option" :data-value="option.value" :aria-checked="checked(option)" :aria-disabled="option.disabled || undefined">
-        <span v-if="option.description" class="listbox-body"><span>{{ option.label }}</span><span class="listbox-description">{{ option.description }}</span></span>
-        <template v-else>{{ option.label }}</template>
-      </div>
+      <template v-for="(group, index) in groups" :key="group ?? ''">
+        <template v-if="group === undefined">
+          <template v-for="option in options" :key="option.value"><Row v-if="option.group === undefined" :option="option" /></template>
+        </template>
+        <div v-else class="listbox-group" role="group" :aria-labelledby="`${id}-group-${index}`">
+          <div class="listbox-label" :id="`${id}-group-${index}`">{{ group }}</div>
+          <template v-for="option in options" :key="option.value"><Row v-if="option.group === group" :option="option" /></template>
+        </div>
+      </template>
       <div v-if="empty !== undefined" class="listbox-empty">{{ empty }}</div>
     </div>
   </div>

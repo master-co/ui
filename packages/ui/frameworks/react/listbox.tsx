@@ -1,5 +1,5 @@
 'use client'
-import { useState, type ComponentProps } from 'react'
+import { useId, useState, type ComponentProps } from 'react'
 import { listbox } from '@master/ui/behaviors/listbox.js'
 import { useBehavior } from './use-behavior'
 
@@ -8,6 +8,8 @@ export interface ListboxOption {
   value: string
   label: string
   description?: string
+  /** The caption of the group the option belongs to. Options of one group are written together, under it. */
+  group?: string
   disabled?: boolean
 }
 
@@ -23,17 +25,27 @@ export interface ListboxProps extends Omit<ComponentProps<'div'>, 'defaultValue'
 
 /** A listbox that stands in the page. Name it with `aria-label` or `aria-labelledby`. */
 export function Listbox({ options, value, defaultValue, onValueChange, multiple, className, ...root }: ListboxProps) {
+  const id = useId()
   const ref = useBehavior(listbox, undefined, { value, defaultValue, onValueChange })
   const [first] = useState(() => [value ?? defaultValue ?? []].flat())
+  const groups = [...new Set(options.map(option => option.group))]
+  const row = (option: ListboxOption) => (
+    <div className="listbox-option" role="option" key={option.value} data-value={option.value} aria-checked={first.includes(option.value)} aria-disabled={option.disabled || undefined}>
+      {option.description
+        ? <span className="listbox-body"><span>{option.label}</span><span className="listbox-description">{option.description}</span></span>
+        : option.label}
+    </div>
+  )
   return (
     <div className={className ? `listbox ${className}` : 'listbox'} role="listbox" tabIndex={0} aria-multiselectable={multiple || undefined} ref={ref} {...root}>
-      {options.map(option => (
-        <div className="listbox-option" role="option" key={option.value} data-value={option.value} aria-checked={first.includes(option.value)} aria-disabled={option.disabled || undefined}>
-          {option.description
-            ? <span className="listbox-body"><span>{option.label}</span><span className="listbox-description">{option.description}</span></span>
-            : option.label}
-        </div>
-      ))}
+      {groups.map((group, index) => group === undefined
+        ? options.filter(option => option.group === undefined).map(row)
+        : (
+            <div className="listbox-group" role="group" aria-labelledby={`${id}group${index}`} key={group}>
+              <div className="listbox-label" id={`${id}group${index}`}>{group}</div>
+              {options.filter(option => option.group === group).map(row)}
+            </div>
+          ))}
     </div>
   )
 }
