@@ -1,8 +1,9 @@
 import ComponentPreview from '~/site/components/ComponentPreview.astro'
 import ComponentSource from '~/site/components/ComponentSource.astro'
 import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
-A carousel is a row of slides that scrolls and snaps. It is built from CSS alone: the track is a scroll container with scroll snapping, so touch, a trackpad, the keys and assistive technology all work as scrolling does. Where the browser supports them, the stylesheet adds previous and next buttons and a dot for each slide, which the browser generates as real, focusable controls.
+A carousel is a row, or a column, of slides that scrolls and snaps. It is built from CSS alone: the track is a scroll container with scroll snapping, so touch, a trackpad, the keys and assistive technology all work as scrolling does. Where the browser supports them, the stylesheet adds previous and next buttons and a dot for each slide, which the browser generates as real, focusable controls.
 
 <ComponentPreview name="default" height={200} narrowHeight={224} title="Carousel" bodyClass="p-lg" html={`<div class="carousel" role="region" aria-label="Featured projects" tabindex="0">
   <article class="carousel-slide card card-flat">
@@ -188,6 +189,77 @@ The count can follow the room the carousel is given rather than the window. Make
   </div>
 </div>`} />
 
+## Vertical \{#vertical\}
+
+`carousel-vertical` turns the row into a column `--carousel-viewport` tall, 20rem by default, that scrolls and snaps up and down. A slide takes `--carousel-slide` of the height; the buttons stand at the middle of the top and the bottom edges, and the dots run down beside the end edge.
+
+<ComponentPreview name="vertical" height={296} title="Vertical" bodyClass="p-lg" html={`<div class="carousel carousel-vertical w-full max-w(360)" style="--carousel-viewport: 15rem; --carousel-slide: 50%" role="region" aria-label="This week" tabindex="0">
+  <article class="carousel-slide card card-flat">
+    <header class="card-header">
+      <h3 class="card-title">Monday</h3>
+      <p class="card-description">Planning, then the design review.</p>
+    </header>
+  </article>
+  <article class="carousel-slide card card-flat">
+    <header class="card-header">
+      <h3 class="card-title">Tuesday</h3>
+      <p class="card-description">Pairing on the schedule view.</p>
+    </header>
+  </article>
+  <article class="carousel-slide card card-flat">
+    <header class="card-header">
+      <h3 class="card-title">Wednesday</h3>
+      <p class="card-description">Release notes and the changelog.</p>
+    </header>
+  </article>
+</div>`} />
+
+## Read and set the slide in view \{#view\}
+
+A page that needs to know which slide is in view, or to show one, puts the track in a `carousel-view` with previous and next buttons and a row of dots of its own. Inside a view the generated controls step aside, so there is one set of buttons. The [`carousel` behavior](/guide/behaviors) drives them:
+
+- It watches which slide is most in view with an `IntersectionObserver`, the first in order when two are equally in view, and names it the current slide once a scroll has come to rest: at `scrollend`, or after a pause where the browser has no `scrollend`.
+- Previous, next and a dot ask the platform to scroll the slide into view at its own snap alignment, at once under reduced motion. The behavior never sets a position.
+- The current slide's dot is `aria-current="true"`, and previous and next are disabled at the ends. Several slides may be in view; there is still one current slide, and the others are not hidden.
+- A slide stands for its `data-value`, or its `id`, so the current slide stays current when a slide is added before it. A change the reader makes dispatches `input` and `change`; the function it returns has a `value` to read and to set, and setting it dispatches nothing.
+
+<ComponentPreview name="view" height={232} narrowHeight={256} title="Read and set the slide in view" bodyClass="p-lg" behaviors html={`<div class="carousel-view w-full">
+  <div class="carousel" role="region" aria-label="Releases" tabindex="0">
+  <article class="carousel-slide card card-flat" id="release-atlas" data-value="atlas">
+    <header class="card-header">
+      <h3 class="card-title">Atlas</h3>
+      <p class="card-description">A map of every deployment, live.</p>
+    </header>
+  </article>
+  <article class="carousel-slide card card-flat" id="release-borealis" data-value="borealis">
+    <header class="card-header">
+      <h3 class="card-title">Borealis</h3>
+      <p class="card-description">Edge functions close to the reader.</p>
+    </header>
+  </article>
+  <article class="carousel-slide card card-flat" id="release-cirrus" data-value="cirrus">
+    <header class="card-header">
+      <h3 class="card-title">Cirrus</h3>
+      <p class="card-description">Storage that follows the project.</p>
+    </header>
+  </article>
+  </div>
+  <button type="button" class="btn btn-square btn-sm btn-pill carousel-previous" aria-label="Previous slide"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button>
+  <button type="button" class="btn btn-square btn-sm btn-pill carousel-next" aria-label="Next slide"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
+  <div class="carousel-dots">
+    <button type="button" class="carousel-dot" aria-controls="release-atlas" aria-label="Slide 1 of 3"></button>
+    <button type="button" class="carousel-dot" aria-controls="release-borealis" aria-label="Slide 2 of 3"></button>
+    <button type="button" class="carousel-dot" aria-controls="release-cirrus" aria-label="Slide 3 of 3"></button>
+  </div>
+</div>`} />
+
+```js name=app.js
+import { carousel } from '@master/ui/behaviors/carousel.js'
+
+const releases = carousel(document.querySelector('.carousel-view'), { value: 'borealis' })
+releases.value // 'borealis'
+```
+
 ## Accessibility \{#accessibility\}
 
 - Give the track `role="region"`, a label and `tabindex="0"`, so the arrow keys can scroll it.
@@ -195,6 +267,13 @@ The count can follow the room the carousel is given rather than the window. Make
 - A carousel does not move by itself. Content that advances on a timer needs a pause control, which is a script's job.
 - With reduced motion the track jumps between slides instead of gliding.
 - In forced colors the buttons are drawn with an outline in the button color, and the dots keep their system colors, the one in view in the highlight.
+- In a `carousel-view`, name the buttons and the dots in the page's language; a dot says which slide of how many it goes to.
+
+## React, Svelte and Vue \{#frameworks\}
+
+The `carousel` component writes the slides from items, each with a `value` that stays the same when the items change, and the view's buttons and dots beside them; its value is the current slide. Copy it into the project with `npx master-ui add carousel`; [React, Svelte and Vue](/guide/frameworks) says how the components are built and used. A carousel nobody reads needs no component: the markup above is enough.
+
+<FrameworkSource name="carousel" />
 
 ## Classes \{#classes\}
 

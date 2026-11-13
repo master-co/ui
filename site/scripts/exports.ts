@@ -13,10 +13,11 @@
  */
 import { execFileSync } from 'node:child_process'
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
+import { dirname, join, posix } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { blocks, components, pageOfContract, pages as pageLayouts } from '../components/catalog.ts'
 import { exampleSource } from '../utils/framework-example.ts'
+import { example as exampleOf, exampleFiles, exampleSetup } from '../utils/examples.ts'
 import { previewMarkdown } from '../utils/preview-markdown.ts'
 import { anchorMarkdown } from '../utils/anchor-markdown.ts'
 import { figureMarkdown } from '../utils/figure-markdown.ts'
@@ -134,6 +135,21 @@ function contractMarkdown(source: any, locale = 'en') {
 }
 
 /**
+ * A working example as Markdown: every file it is made of, what it installs and how a page starts it, so it runs
+ * outside this site with nothing but the packages it names.
+ */
+function exampleMarkdown(id: string) {
+  const { dependencies = {}, contracts: used } = exampleOf(id)
+  const setup = exampleSetup(id)
+  return [
+    `It uses ${used.map(name => `\`${name}\``).join(', ')}${Object.keys(dependencies).length ? `, and ${Object.keys(dependencies).map(name => `\`${name}\``).join(', ')}` : ''}. Install the packages, import Master UI as the installation guide shows (${origin}/guide/installation.md), then start the example on its root:`,
+    `\`\`\`sh\n${setup.install}\n\`\`\``,
+    ...(setup.start ? [`\`\`\`js name=start.js\n${setup.start}\n\`\`\``] : []),
+    ...exampleFiles(id).map(file => `\`\`\`${file.lang} name=${file.name}\n${file.content}\n\`\`\``),
+  ].join('\n\n')
+}
+
+/**
  * An MDX page as Markdown: previews become fenced markup, components that only draw are dropped.
  */
 function mdxMarkdown(source: string, title: string, description: string, locale = 'en') {
@@ -141,7 +157,7 @@ function mdxMarkdown(source: string, title: string, description: string, locale 
     const translated = locale !== 'en' && existsSync(join(site, 'content', section, slug, `content.${locale}.mdx`))
     return `${origin}${translated ? prefixOf(locale) : ''}/${section}/${slug}.md${hash}`
   }
-  const body = figureMarkdown(promptMarkdown(previewMarkdown(source.trimStart())))
+  const body = figureMarkdown(promptMarkdown(previewMarkdown(source.trimStart(), { example: exampleMarkdown })))
     // The imports of the page itself, at its top. An import inside a code sample is part of the sample.
     .replace(/^(?:import .*\n)+/, '')
     .replace(/<FrameworkPreview name="([^"]+)"[\s\S]*?\/>/g, (_, name) => `\`\`\`svelte\n${exampleSource(name)}\n\`\`\``)
@@ -320,16 +336,27 @@ for (const [framework, { title, package: dependency }] of Object.entries(manifes
 for (const [kind, list] of [['blocks', blocks], ['pages', pageLayouts]] as const) {
   for (const entry of list) {
     const source = read(join(site, 'content', kind, entry.slug, 'content.mdx'))
-    const markup = /<PagePreview\b[\s\S]*?html=\{`([\s\S]*?)`\}/.exec(source)?.[1]
+    // The first preview: a working example of the shared source, or markup written on the page.
+    const first = /<PagePreview\b[\s\S]*?(?:example="([^"]+)"|html=\{`([\s\S]*?)`\})/.exec(source)
+    const working = first?.[1]
+    const markup = working ? exampleFiles(working)[0]!.content : first?.[2]
     if (!markup) continue
     const used = [...new Set([...markup.matchAll(/class="([^"]*)"/g)].flatMap(match => match[1].split(/\s+/)))]
     const needs = contracts.filter(contract => contract.classes.some((entry: any) => used.includes(entry.name))).map(contract => contract.name)
     const name = kind === 'blocks' ? `block-${entry.slug}` : `page-${entry.slug}`
     items.push({
       $schema: schema, name, type: 'registry:item', title: entry.name, description: entry.description,
-      dependencies: ['@master/css'], registryDependencies: needs.map(item), files: [file(`ui/${kind}/${entry.slug}.html`, `${markup}\n`)], categories: [entry.category],
-      docs: `Markup to paste into a page or a component. It uses: ${needs.join(', ')}. Variants: ${origin}/${kind}/${entry.slug}.md`,
-      meta: { tier: kind === 'blocks' ? 'block' : 'page', components: needs },
+      dependencies: ['@master/css', ...(working ? ['@master/ui', ...Object.entries(exampleOf(working).dependencies ?? {}).map(([dependency, version]) => `${dependency}@${version}`)] : [])],
+      registryDependencies: needs.map(item),
+      // A block that works carries its script and its data, so what a project copies still works.
+      files: working
+        ? exampleFiles(working).map(part => file(part.name === 'index.html' ? `ui/${kind}/${entry.slug}.html` : posix.normalize(`ui/${kind}/${entry.slug}/${part.name}`), `${part.content}\n`))
+        : [file(`ui/${kind}/${entry.slug}.html`, `${markup}\n`)],
+      categories: [entry.category],
+      docs: working
+        ? `A working block: paste ${entry.slug}.html into a page and start it with mount() from ${entry.slug}/main.js. It uses: ${needs.join(', ')}. ${origin}/${kind}/${entry.slug}.md`
+        : `Markup to paste into a page or a component. It uses: ${needs.join(', ')}. Variants: ${origin}/${kind}/${entry.slug}.md`,
+      meta: { tier: kind === 'blocks' ? 'block' : 'page', components: needs, ...(working ? { script: 'required' } : {}) },
     })
   }
 }

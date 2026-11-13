@@ -1,0 +1,38 @@
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import PagePreview from '~/site/components/PagePreview.astro'
+
+A filter bar narrows a list by conditions: a field, a way to compare and a value, such as "Status is Ready" or "Duration is less than 60 seconds". Conditions are written in a [popover](/components/popover), applied together, and shown on the bar as [chips](/components/chip#values) that each take one away. The bar works over any list; here it narrows a list of deployments, and in the [table view](/blocks/table-view) the same bar narrows a table.
+
+<PagePreview name="default" title="Filter bar" example="filter-bar" touchHeight={{ desktop: 624, tablet: 624, phone: 776 }} caption="Open Filters to change a condition or add one, then Apply. A chip's cross takes its condition away." />
+
+Blocks are markup to copy. They take the page's own text color and size; the previews set `fg-text-body text-sm` on the body. Each block is a size container, so it reflows by its own width: in a wide page, a sidebar's worth of room or a dialog.
+
+## What is in it \{#anatomy\}
+
+- **One button opens the conditions.** "Filters" with a count of what is applied in an ink [badge](/components/badge), so a closed bar still says that the list is narrowed. Its accessible name says it too: "Filters, 2 applied".
+- **The conditions are a draft.** The popover opens on a copy of what is applied. Add condition, a change of field, a change of value: nothing happens to the list until Apply. Cancel, <kbd class="kbd">Escape</kbd> or a click outside drop the draft; Clear empties it, so Apply then shows every row.
+- **Every condition is one row**, "Where" before the first and "and" before the others: a row meets all of them, and there is one level, no groups and no "or". Each row is a [select](/components/select) for the field, one for the comparison, the value and a quiet button that removes it.
+- **The field decides the rest.** A text field compares with contains, is, is not or starts with and takes words; a choice compares with is or is not and takes one of its values; a number is more or less and takes a number field; a date is on, before or after and takes a date field. Changing the field starts its row over, so a comparison never meets a value it cannot read.
+- **A condition that cannot work is never applied.** A missing value, letters in a number or half a date mark the value `aria-invalid="true"`, which the [field](/components/input) draws as its danger edge, and a message under the rows says which condition and why. Focus goes to it, and the list does not change.
+- **Applied conditions are chips.** Each says its condition in words and has a remove button named for it, "Remove the filter Status is Ready". Clear all, at the end of the row, takes them all away at once.
+- **The list says what it shows.** The summary under the title counts the matches against the whole, "12 of 30 deployments match all 2 filters", and the list says when nothing matches and how to get back.
+
+## What needs a script \{#script\}
+
+The example is three modules. `query.js` holds the conditions: the comparisons each type offers, what is wrong with a condition, whether a row meets one, and search, sort and pages; it reads plain rows and touches no element. `filters.js` runs the bar: it copies the templates the markup holds for a condition's row, a choice and a chip, fills them in, and calls `onChange` with the applied conditions. `main.js` draws the list from them. Your application asks its own data source the same questions, and the bar does not change: send the applied conditions to the server instead of to `filter()`.
+
+Without a script the bar has nothing to stage: give the list a `<form method="get">` with a select for each field instead, and the server answers the query string.
+
+## Accessibility \{#accessibility\}
+
+- The popover is a `role="dialog"` named by its heading, "Filter deployments". Opening it puts focus on the first condition's field, or on Add condition when there is none; closing it gives focus back to Filters.
+- Each control of a row is named with its condition's number: "Field of condition 2", "Value of condition 2", "Remove condition 2". A number's value says its unit.
+- The message about a condition that cannot be applied is a `role="alert"` and is tied to its value with `aria-describedby`, so it is read when it appears and again from the value.
+- Removing a chip moves focus to the next chip, or to Filters when it was the last; Clear all moves it to Filters. The summary is a polite live region, so the new count is read after a change.
+- A condition is words in its chip, never a color: a status keeps its [badge](/components/badge) tone in the list, beside its name.
+
+## Related \{#related\}
+
+<ComponentLinks slugs={['surface', 'heading', 'button', 'badge', 'popover', 'select', 'input', 'chip', 'list']} />
+
+<ComponentLinks kind="blocks" slugs={['table-view', 'page-header']} />

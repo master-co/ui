@@ -6,13 +6,19 @@ import PreviewGuard from '~/site/components/PreviewGuard.astro'
 import DocumentPreviewSwitch from '@master/internal-site/components/DocumentPreviewSwitch.astro'
 import { previewDocument, previewHead as head } from '~/site/utils/preview'
 import { behaviorsScript, uiSource } from '~/site/utils/ui-source'
+import { example as exampleOf, exampleFiles, exampleHtml, exampleScriptUrl } from '~/site/utils/examples'
 
 interface Props {
   /** A stable id, unique within the page. */
   name: string
   title: string
-  /** Trusted site-authored markup; never pass user-provided HTML. */
-  html: string
+  /** Trusted site-authored markup; never pass user-provided HTML. Give this or `example`, not both. */
+  html?: string
+  /**
+   * A working example in `site/examples`, by its id in the manifest: its markup runs here with its module,
+   * served from the site's own origin, and the Code view shows every file it is made of.
+   */
+  example?: string
   caption?: string
   /** Utilities for the preview's body. A page starts at the viewport's edge, so the default removes the body's padding. */
   bodyClass?: string
@@ -40,8 +46,15 @@ interface Props {
  * The source sits behind a second view of the same tray: Preview, the default, or Code.
  * Both choices are radios read by the stylesheet: the preview needs no script of its own.
  */
-const { name, title, html, caption = '', bodyClass = 'p(0)', height = 720, tabletHeight = height, phoneHeight = tabletHeight, touchHeight = {}, size = 'desktop', behaviors = false } = Astro.props
-const running = behaviors ? `${html}\n<script>${behaviorsScript()};MasterUI.attach()</script>` : html
+if ((Astro.props.html === undefined) === (Astro.props.example === undefined)) throw new Error(`PagePreview ${Astro.props.name} takes html or example, and only one of them`)
+const given = Astro.props.example ? exampleOf(Astro.props.example) : undefined
+const { name, title, caption = '', bodyClass = given?.preview.bodyClass ?? 'p(0)', height = given?.preview.height ?? 720, size = given?.preview.size ?? 'desktop', behaviors = false } = Astro.props
+const { tabletHeight = given?.preview.tabletHeight ?? height } = Astro.props
+const { phoneHeight = given?.preview.phoneHeight ?? tabletHeight, touchHeight = {} } = Astro.props
+const html = Astro.props.example ? exampleHtml(Astro.props.example) : Astro.props.html!
+const files = Astro.props.example ? exampleFiles(Astro.props.example) : []
+const module = Astro.props.example && given?.script ? `\n<script type="module" src="${exampleScriptUrl(Astro.props.example)}"></script>` : ''
+const running = behaviors ? `${html}\n<script>${behaviorsScript()};MasterUI.attach()</script>` : `${html}${module}`
 const source = behaviors ? `${html}\n<script type="module">\n  import { attach } from '@master/ui/behaviors'\n\n  attach()\n</script>` : html
 const section = { page: 'library', id: name, title, html: [running], css: uiSource(), classes: [], classLists: [], highlighted: [] }
 const document = previewDocument(section as Parameters<typeof previewDocument>[0], { html: running, caption: '', bodyClass, head } as Parameters<typeof previewDocument>[1])
@@ -60,7 +73,9 @@ const sizes = [['desktop', 'Desktop'], ['tablet', 'Tablet'], ['phone', 'Phone']]
   <Fragment slot="source">
     {/* Preserve literal example emails through Cloudflare without disabling HTML compression. */}
     <Fragment set:html="<!--email_off-->" />
-    <Code lang="html" beautify code={source} />
+    {files.length
+      ? files.map(file => <Code lang={file.lang} name={file.name} beautify={file.lang === 'html'} code={file.content} />)
+      : <Code lang="html" beautify code={source} />}
     <Fragment set:html="<!--/email_off-->" />
   </Fragment>
   <PreviewViewport client:idle={{ timeout: 500 }} title={title} document={document} height={height} framed background="stripes" />

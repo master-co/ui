@@ -1,0 +1,37 @@
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import PagePreview from '~/site/components/PagePreview.astro'
+
+A messaging block is one conversation: who is in it, the turns in the order they came, and a [composer](/components/composer) to write the next one. Each turn is a [message](/components/message); files, a picture, a voice message and reactions stand in the same rows.
+
+<PagePreview name="default" title="Messaging" example="messaging" touchHeight={{ desktop: 644, tablet: 644, phone: 665 }} caption="Write a message and press Enter, attach a file, play the voice message or add a reaction." />
+
+Blocks are markup to copy. They take the page's own text color and size; the previews set `fg-text-body text-sm` on the body. Each block is a size container, so it reflows by its own width: in a wide page, a sidebar's worth of room or a dialog.
+
+## What is in it \{#anatomy\}
+
+- **One [sheet](/components/surface#sheet)**: a header with the people in the room, the thread in a [scroll area](/components/scroll-area) of its own, and the composer at the foot, so the composer stays where it is however long the thread grows.
+- **The thread is an `<ol>`.** The order is the content. A [divider](/components/divider) with a label names the day.
+- **Turns from one person are grouped.** Their bubbles stand 4px apart and only the last one shows the avatar and the name with the time; the others keep the avatar's place with an `invisible` avatar, so the bubbles line up. Every turn still starts with the author and the time in a visually hidden prefix, so the group reads the same without the drawing.
+- **An attachment is a turn of its own.** A [file](/components/file) or a [figure](/components/figure) stands where a bubble would, at the start of a received turn and at the end of a sent one.
+- **A voice message is a [waveform](/components/waveform)** in a bubble, with a play button and a seek over the bars. In the preview a timer stands in for the audio.
+- **Delivery is words.** A sent turn says "Read" or "Sent" with its time in `message-meta`; nothing depends on a tick mark's color.
+- **[Reactions](/components/reaction)** follow the turn they answer, at its start or its end, as checkboxes with a name and a count.
+- **The composer sends on Enter** and keeps Shift+Enter for a new line, and leaves Enter to an input method while it composes. Files wait above the field as [chips](/components/chip) that can be taken back. Send is disabled until there is something to send.
+
+## What needs a script \{#script\}
+
+`main.js` adds what is written, and the files attached, to the end of the thread as the reader's own turns, sets the text as text and never as markup, keeps the newest turn in view and gives focus back to the field. Sending, ordering, read receipts and keeping the thread in step with the others are the application's: a turn added here stays "Sent". Without the script the composer is a form that posts to the server.
+
+## Accessibility \{#accessibility\}
+
+- The sheet is a `<section>` named by the room's name; the thread is a region with its own name, in the tab order so it can be scrolled with the keys.
+- The thread's list is `aria-live="polite"` for additions, so a new turn is announced without moving focus.
+- The author and the time of every turn are in its accessible text, whether or not the avatar and the meta are drawn; the visible meta is then `aria-hidden` so it is not read twice.
+- The picture's `alt` says what it shows; a voice message's buttons are named "Play" and "Seek", and the seek says the time in words.
+- The attach button is named; its file input is out of the tab order, since the button opens it.
+
+## Related \{#related\}
+
+<ComponentLinks slugs={['surface', 'heading', 'avatar', 'scroll-area', 'divider', 'message', 'file', 'figure', 'waveform', 'reaction', 'composer', 'chip', 'button']} />
+
+<ComponentLinks kind="blocks" slugs={['activity-feed', 'sidebar']} />

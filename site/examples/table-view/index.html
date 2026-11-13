@@ -1,0 +1,212 @@
+<section class="sheet container-inline flex flex-col overflow-hidden" data-example="table-view" aria-labelledby="tv-title">
+  <header class="flex flex-wrap items-center justify-between gap-sm p-md">
+    <div class="flex flex-col gap-3xs">
+      <h2 class="heading heading-sm" id="tv-title">Atlas Labs</h2>
+      <p class="m(0) fg-text-muted" id="tv-summary">24 projects</p>
+    </div>
+    <div class="flex flex-wrap items-center gap-xs">
+      <div class="segmented segmented-sm" role="radiogroup" aria-label="Show">
+        <label class="segmented-item"><input type="radio" class="segmented-input" name="tv-set" value="projects" checked>Projects</label>
+        <label class="segmented-item"><input type="radio" class="segmented-input" name="tv-set" value="people">People</label>
+        <label class="segmented-item"><input type="radio" class="segmented-input" name="tv-set" value="files">Files</label>
+      </div>
+      <button type="button" class="btn btn-primary btn-sm" id="tv-action"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>New project</span></button>
+    </div>
+  </header>
+
+  <div class="flex flex-wrap items-center gap-xs px-md pb-md">
+    <label class="input-group input-group-sm grow(1) basis(200) max-w(320)">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11a7 7 0 1 0 14 0a7 7 0 0 0-14 0M20 20l-4-4"/></svg>
+      <input class="input-group-field" type="search" id="tv-search" placeholder="Search projects" aria-label="Search projects" autocomplete="off">
+    </label>
+    <button type="button" class="btn btn-sm" popovertarget="tv-filters" data-filter="open">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+      Filters
+      <span data-filter="count" aria-hidden="true" hidden><span class="badge badge-sm badge-ink badge-pill">0</span></span>
+    </button>
+    <select class="select select-raised select-sm ml-auto" id="tv-sort" aria-label="Sort by"></select>
+    <div class="w-full" data-filter="applied" hidden>
+      <div class="flex flex-wrap items-center gap-xs">
+        <ul class="flex flex-wrap gap-xs m(0) p(0)" aria-label="Applied filters" data-filter="chips"></ul>
+        <button type="button" class="btn btn-quiet btn-sm" data-filter="clear-all">Clear all</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="popover p(0) w(560)" id="tv-filters" popover role="dialog" aria-labelledby="tv-filters-title" style="--popover-max-width: min(36rem, calc(100vw - 2rem))" data-filter="panel">
+    <form class="flex flex-col" data-filter="form" novalidate>
+      <header class="flex flex-col gap-3xs px-md pt-md pb-sm">
+        <h3 class="heading heading-xs" id="tv-filters-title">Filter projects</h3>
+        <p class="m(0) fg-text-muted" id="tv-filters-hint">A project shows when it meets every condition.</p>
+      </header>
+      <ul class="flex flex-col gap-xs m(0) px-md py-xs" data-filter="conditions"></ul>
+      <p class="m(0) px-md py-xs fg-text-muted" data-filter="empty">No conditions yet: every row shows.</p>
+      <p class="m(0) px-md py-xs fg-danger" id="tv-filters-error" role="alert" data-filter="error" hidden></p>
+      <div class="px-md pb-md">
+        <button type="button" class="btn btn-quiet btn-sm" data-filter="add"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Add condition</button>
+      </div>
+      <footer class="flex flex-wrap items-center justify-between gap-xs p-md bt(1) bt-solid b-line-hair">
+        <button type="button" class="btn btn-quiet btn-sm" data-filter="clear">Clear</button>
+        <div class="flex gap-xs">
+          <button type="button" class="btn btn-sm" data-filter="cancel">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm">Apply</button>
+        </div>
+      </footer>
+    </form>
+  </div>
+
+  <div class="scroll-area scroll-area-inline bt(1) bt-solid b-line-hair">
+    <table class="table table-interactive" id="tv-table" aria-labelledby="tv-title">
+      <thead id="tv-head"></thead>
+      <tbody id="tv-body"></tbody>
+    </table>
+  </div>
+
+  <footer class="flex flex-wrap items-center justify-between gap-sm p-md bt(1) bt-solid b-line-hair">
+    <div class="flex flex-wrap items-center gap-xs min-h(32)">
+      <p class="m(0) fg-text-muted" id="tv-count">No projects selected</p>
+      <div id="tv-selected" hidden>
+        <div class="flex items-center gap-3xs">
+          <button type="button" class="btn btn-quiet btn-sm btn-danger" id="tv-delete">Delete</button>
+          <button type="button" class="btn btn-quiet btn-sm" id="tv-deselect">Clear selection</button>
+        </div>
+      </div>
+    </div>
+    <div class="flex flex-wrap items-center gap-sm">
+      <p class="m(0) fg-text-muted whitespace-nowrap" id="tv-range">1–8 of 24</p>
+      <nav aria-label="Pagination"><ol class="pagination" id="tv-pages"></ol></nav>
+    </div>
+  </footer>
+  <p class="sr-only" role="status" id="tv-status"></p>
+
+  <template data-filter="row">
+    <li class="flex flex-wrap items-center gap-xs">
+      <span class="w(44) shrink(0) fg-text-muted text-right" data-part="joiner">Where</span>
+      <select class="select select-sm" aria-label="Field" data-part="field"></select>
+      <select class="select select-sm" aria-label="Comparison" data-part="operator"></select>
+      <input class="input input-sm grow(1) basis(128) min-w(0)" aria-label="Value" data-part="value" required>
+      <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Remove condition" data-part="remove"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    </li>
+  </template>
+  <template data-filter="choice">
+    <select class="select select-sm grow(1) basis(128)" aria-label="Value" data-part="value"></select>
+  </template>
+  <template data-filter="chip">
+    <li><span class="chip"><span class="chip-label"></span><button type="button" class="chip-remove" aria-label="Remove the filter"></button></span></li>
+  </template>
+
+  <template id="tv-head-projects">
+    <table class="table"><thead><tr class="table-row">
+      <th class="table-heading" scope="col"><input type="checkbox" class="checkbox" data-part="all" aria-label="Select all projects"></th>
+      <th class="table-heading" scope="col" data-sort="name">Project</th>
+      <th class="table-heading" scope="col">Status</th>
+      <th class="table-heading" scope="col">Region</th>
+      <th class="table-heading table-numeric" scope="col" data-sort="deployments">Deployments</th>
+      <th class="table-heading" scope="col" data-sort="deployed">Last deployed</th>
+      <th class="table-heading" scope="col"><span class="sr-only">Actions</span></th>
+    </tr></thead></table>
+  </template>
+  <template id="tv-row-projects">
+    <table class="table"><tbody><tr class="table-row">
+      <td class="table-cell"><input type="checkbox" class="checkbox" data-part="select" aria-label="Select"></td>
+      <th class="table-cell table-primary text-left" scope="row"><span data-part="name"></span><span class="block fg-text-muted font-regular" data-part="domain"></span></th>
+      <td class="table-cell"><span class="badge badge-dot" data-part="status"></span></td>
+      <td class="table-cell" data-part="region"></td>
+      <td class="table-cell table-numeric" data-part="deployments"></td>
+      <td class="table-cell whitespace-nowrap" data-part="deployed"></td>
+      <td class="table-cell text-right" data-part="actions"></td>
+    </tr></tbody></table>
+  </template>
+
+  <template id="tv-head-people">
+    <table class="table"><thead><tr class="table-row">
+      <th class="table-heading" scope="col"><input type="checkbox" class="checkbox" data-part="all" aria-label="Select all people"></th>
+      <th class="table-heading" scope="col" data-sort="name">Person</th>
+      <th class="table-heading" scope="col">Role</th>
+      <th class="table-heading" scope="col">Status</th>
+      <th class="table-heading table-numeric" scope="col" data-sort="projects">Projects</th>
+      <th class="table-heading" scope="col" data-sort="active">Last active</th>
+      <th class="table-heading" scope="col"><span class="sr-only">Actions</span></th>
+    </tr></thead></table>
+  </template>
+  <template id="tv-row-people">
+    <table class="table"><tbody><tr class="table-row">
+      <td class="table-cell"><input type="checkbox" class="checkbox" data-part="select" aria-label="Select"></td>
+      <th class="table-cell table-primary text-left" scope="row">
+        <span class="flex items-center gap-sm">
+          <span class="avatar avatar-sm" aria-hidden="true" data-part="initials"></span>
+          <span class="min-w(0)"><span class="block" data-part="name"></span><span class="block fg-text-muted font-regular" data-part="email"></span></span>
+        </span>
+      </th>
+      <td class="table-cell" data-part="role"></td>
+      <td class="table-cell"><span class="badge badge-dot" data-part="status"></span></td>
+      <td class="table-cell table-numeric" data-part="projects"></td>
+      <td class="table-cell whitespace-nowrap" data-part="active"></td>
+      <td class="table-cell text-right" data-part="actions"></td>
+    </tr></tbody></table>
+  </template>
+
+  <template id="tv-head-files">
+    <table class="table"><thead><tr class="table-row">
+      <th class="table-heading" scope="col"><input type="checkbox" class="checkbox" data-part="all" aria-label="Select all files"></th>
+      <th class="table-heading" scope="col" data-sort="name">File</th>
+      <th class="table-heading" scope="col">Type</th>
+      <th class="table-heading table-numeric" scope="col" data-sort="size">Size</th>
+      <th class="table-heading" scope="col" data-sort="modified">Modified</th>
+      <th class="table-heading" scope="col">Owner</th>
+      <th class="table-heading" scope="col"><span class="sr-only">Actions</span></th>
+    </tr></thead></table>
+  </template>
+  <template id="tv-row-files">
+    <table class="table"><tbody><tr class="table-row">
+      <td class="table-cell"><input type="checkbox" class="checkbox" data-part="select" aria-label="Select"></td>
+      <th class="table-cell table-primary text-left" scope="row">
+        <span class="flex items-center gap-sm">
+          <span class="icon-frame icon-frame-xs" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21h-10a2 2 0 0 1-2-2v-14a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z"/></svg></span>
+          <span class="min-w(0) truncate" data-part="name"></span>
+        </span>
+      </th>
+      <td class="table-cell" data-part="type"></td>
+      <td class="table-cell table-numeric" data-part="size"></td>
+      <td class="table-cell whitespace-nowrap" data-part="modified"></td>
+      <td class="table-cell whitespace-nowrap" data-part="owner"></td>
+      <td class="table-cell text-right" data-part="actions"></td>
+    </tr></tbody></table>
+  </template>
+
+  <template id="tv-actions">
+    <div>
+      <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Actions"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12a1 1 0 1 0 2 0a1 1 0 1 0-2 0M11 12a1 1 0 1 0 2 0a1 1 0 1 0-2 0M18 12a1 1 0 1 0 2 0a1 1 0 1 0-2 0"/></svg></button>
+      <div class="menu menu-end" popover>
+        <a class="menu-item" href="#" data-part="open">Open</a>
+        <hr class="menu-separator">
+        <button type="button" class="menu-item menu-item-danger" data-part="delete">Delete</button>
+      </div>
+    </div>
+  </template>
+
+  <template id="tv-empty">
+    <table class="table"><tbody><tr class="table-row">
+      <td class="table-cell" colspan="7">
+        <div class="empty">
+          <p class="empty-title" data-part="title">No projects match</p>
+          <p class="empty-description">Try another search, or remove a filter.</p>
+          <div class="empty-actions"><button type="button" class="btn btn-sm" data-part="reset">Clear the search and the filters</button></div>
+        </div>
+      </td>
+    </tr></tbody></table>
+  </template>
+
+  <template id="tv-page">
+    <ol class="pagination"><li><button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Page"></button></li></ol>
+  </template>
+  <template id="tv-gap">
+    <ol class="pagination"><li class="pagination-gap" aria-hidden="true">…</li></ol>
+  </template>
+  <template id="tv-previous">
+    <ol class="pagination"><li><button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Previous page"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button></li></ol>
+  </template>
+  <template id="tv-next">
+    <ol class="pagination"><li><button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Next page"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button></li></ol>
+  </template>
+</section>

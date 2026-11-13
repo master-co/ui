@@ -1,0 +1,115 @@
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+An editor is the frame of a rich text field: the well of an [input](/components/input), a [toolbar](/components/toolbar) laid flat in its top, and the document under it. The editing itself, the document model, the selection, the history and the keys, belongs to an engine such as TipTap or ProseMirror, which makes `editor-document` editable and writes the editor's classes on the blocks it renders. [Rich text](/guide/rich-text) puts TipTap in it.
+
+<ComponentPreview name="default" height={256} narrowHeight={296} title="Editor" background="plain" bodyClass="content-start p-lg" html={`<div class="field w-full max-w(560) mx-auto">
+  <span id="notes-label">Release notes</span>
+  <div class="editor" style="--editor-rows: 5">
+    <div class="toolbar editor-toolbar" role="toolbar" aria-label="Formatting">
+      <button type="button" class="btn btn-quiet btn-sm btn-square" aria-label="Bold" aria-pressed="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 5h6a3.5 3.5 0 0 1 0 7h-6zM13 12h1a3.5 3.5 0 0 1 0 7h-7v-7"/></svg></button>
+      <button type="button" class="btn btn-quiet btn-sm btn-square" aria-label="Italic" aria-pressed="false"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5h6M7 19h6M14 5l-4 14"/></svg></button>
+      <span class="toolbar-separator" role="separator" aria-orientation="vertical"></span>
+      <button type="button" class="btn btn-quiet btn-sm btn-square" aria-label="Bulleted list" aria-pressed="false"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11M5 6v.01M5 12v.01M5 18v.01"/></svg></button>
+      <button type="button" class="btn btn-quiet btn-sm btn-square" aria-label="Link" aria-pressed="false"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 15l6-6M11 6l.5-.5a5 5 0 0 1 7 7l-.5.5M13 18l-.4.5a5 5 0 0 1-7.1 0a5 5 0 0 1 0-7l.5-.5"/></svg></button>
+    </div>
+    <div class="editor-document" role="textbox" aria-multiline="true" aria-labelledby="notes-label" contenteditable="true">
+      <h2 class="editor-heading">Version 0.4</h2>
+      <p class="editor-paragraph">Category colors arrive: <strong>twenty-three palettes</strong>, each with a surface, a text, a line and a mark.</p>
+    </div>
+  </div>
+</div>`} />
+
+Without an engine this preview's document is the browser's own `contenteditable`: it takes typing, but not structure, and its toolbar does nothing.
+
+## The frame \{#frame\}
+
+- **It is a field.** The well, its hover, its focus halo, its danger edge and its disabled ink are the input's, so a rich text field reads like the fields around it. The focus that raises the frame is the document's, so moving through the toolbar does not.
+- **The toolbar is a band.** `editor-toolbar` on a toolbar lays it flat in the top of the well, one inset in, so its corner nests in the well's, with a hairline under it. It wraps on a narrow editor. The [toolbar behavior](/components/toolbar) gives it one tab stop and the arrow keys.
+- **The document grows.** From `--editor-rows` lines when it is empty, six by default, to `--editor-max-rows`, eighteen, then it scrolls inside the frame.
+
+## What the document holds \{#content\}
+
+The stylesheet never selects an element: the engine writes a class on each block, and only these are styled, inside the editor and nowhere else. It is not a typography for a page.
+
+<ComponentPreview name="content" height={368} narrowHeight={448} title="What the document holds" background="plain" bodyClass="content-start p-lg" html={`<div class="editor w-full max-w(560) mx-auto">
+  <div class="editor-document" role="textbox" aria-multiline="true" aria-label="Document" contenteditable="true">
+    <h2 class="editor-heading">A heading</h2>
+    <p class="editor-paragraph">A paragraph with <a class="editor-link" href="#content">a link</a>, <em>emphasis</em> and <code class="code">inline code</code>.</p>
+    <h3 class="editor-subheading">A subheading</h3>
+    <ul class="editor-list">
+      <li class="editor-item"><p class="editor-paragraph">A list with bullets</p></li>
+      <li class="editor-item"><p class="editor-paragraph">Its markers in the muted ink</p></li>
+    </ul>
+    <ol class="editor-list editor-list-numbered">
+      <li class="editor-item"><p class="editor-paragraph">A list with numbers</p></li>
+      <li class="editor-item"><p class="editor-paragraph">On an ordered list</p></li>
+    </ol>
+    <blockquote class="editor-quote"><p class="editor-paragraph">A quotation, a step quieter.</p></blockquote>
+    <hr class="editor-rule">
+    <p class="editor-paragraph">And a paragraph after a rule.</p>
+  </div>
+</div>`} />
+
+## States \{#states\}
+
+Each state is an attribute the engine keeps on its element, or one the page sets on the frame: focus and `aria-invalid="true"` raise the frame or give it the danger edge, `aria-readonly="true"` lays it flat with no caret, and `aria-disabled="true"` on the frame drops it to a flat well with disabled ink. An invalid document shows the field's `field-error`. Disable the toolbar's controls with the editor, and tell the engine it is not editable.
+
+<ComponentPreview name="states" height={456} narrowHeight={496} title="States" background="plain" bodyClass="content-start p-lg" html={`<div class="grid gap-lg w-full max-w(560) mx-auto">
+  <div class="field">
+    <span id="state-invalid">Summary</span>
+    <div class="editor" style="--editor-rows: 2">
+      <div class="editor-document" role="textbox" aria-multiline="true" aria-labelledby="state-invalid" aria-describedby="state-invalid-error" aria-invalid="true" contenteditable="true"></div>
+    </div>
+    <p class="field-error" id="state-invalid-error">Write at least a sentence before you publish.</p>
+  </div>
+  <div class="field">
+    <span id="state-readonly">Published notes</span>
+    <div class="editor" style="--editor-rows: 2">
+      <div class="editor-document" role="textbox" aria-multiline="true" aria-labelledby="state-readonly" aria-readonly="true" contenteditable="false">
+        <p class="editor-paragraph">Version 0.3 shipped tags, editable values and sortable lists.</p>
+      </div>
+    </div>
+  </div>
+  <div class="field">
+    <span id="state-disabled">Draft</span>
+    <div class="editor" style="--editor-rows: 2" aria-disabled="true">
+    <div class="toolbar editor-toolbar" role="toolbar" aria-label="Formatting">
+      <button type="button" class="btn btn-quiet btn-sm btn-square" aria-label="Bold" aria-pressed="false" disabled><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 5h6a3.5 3.5 0 0 1 0 7h-6zM13 12h1a3.5 3.5 0 0 1 0 7h-7v-7"/></svg></button>
+      <button type="button" class="btn btn-quiet btn-sm btn-square" aria-label="Italic" aria-pressed="false" disabled><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5h6M7 19h6M14 5l-4 14"/></svg></button>
+      <span class="toolbar-separator" role="separator" aria-orientation="vertical"></span>
+      <button type="button" class="btn btn-quiet btn-sm btn-square" aria-label="Bulleted list" aria-pressed="false" disabled><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11M5 6v.01M5 12v.01M5 18v.01"/></svg></button>
+      <button type="button" class="btn btn-quiet btn-sm btn-square" aria-label="Link" aria-pressed="false" disabled><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 15l6-6M11 6l.5-.5a5 5 0 0 1 7 7l-.5.5M13 18l-.4.5a5 5 0 0 1-7.1 0a5 5 0 0 1 0-7l.5-.5"/></svg></button>
+    </div>
+      <div class="editor-document" role="textbox" aria-multiline="true" aria-labelledby="state-disabled" aria-disabled="true" contenteditable="false">
+        <p class="editor-paragraph">Locked while the release is reviewed.</p>
+      </div>
+    </div>
+  </div>
+</div>`} />
+
+## Accessibility \{#accessibility\}
+
+- The document is a `role="textbox"` with `aria-multiline="true"`, named by the field's label with `aria-labelledby` and described by its hint and error with `aria-describedby`. A `<label for>` cannot name an element that is not a form control.
+- The toolbar is one tab stop, named, with `aria-controls` pointing at the document. Name every icon button, mark a toggle with `aria-pressed`, and give `aria-keyshortcuts` the shortcut the engine handles.
+- After a toolbar command, focus goes back to the document, where the reader was writing.
+- Do not add key handlers of your own to the document: an input method composing a word uses Enter and the arrows, and the engine knows when it does.
+- In forced colors the frame is outlined in the field's color, in the highlight while it has focus.
+
+## Classes \{#classes\}
+
+<ContractTable name="editor" />
+
+## Custom properties \{#custom-properties\}
+
+<ContractTable name="editor" show="properties" />
+
+## Related \{#related\}
+
+<ComponentLinks slugs={['input', 'toolbar', 'composer', 'code']} />
+
+## Source \{#source\}
+
+<ComponentSource name="editor" />

@@ -1,8 +1,11 @@
 import ComponentPreview from '~/site/components/ComponentPreview.astro'
 import ComponentSource from '~/site/components/ComponentSource.astro'
 import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
 A schedule shows a day as hours down a rail, each event as tall as it lasts: a calendar's day view, the rooms of a conference, a clinic's appointments. The events are an ordered list, and each says its title and its time in words; the stylesheet places them on a scale of hours with a hairline at every hour and a label on each. Events that overlap stand side by side. There is no script and nothing is measured.
+
+What lasts whole days stands in a band over the hours. A month shows each day's events in lanes, and an agenda lists them by day. A [schedule view](#schedule-view) is the schedule a reader works, by the day, the week, the month or as an agenda, driven by the `schedule` behavior.
 
 <ComponentPreview name="default" height={400} title="Schedule" bodyClass="p-lg" html={`<div class="card max-w(480) mx-auto">
   <div class="schedule schedule-now" style="--schedule-from: 9; --schedule-to: 15; --now: 12.45">
@@ -92,9 +95,126 @@ When an event opens its details, put `schedule-event` on a link or a button insi
 </li>
 ```
 
+## Whole days \{#whole-days\}
+
+An event that lasts a day or more stands in `schedule-allday`, a band under the headings and over the hours, with its name, such as "All day", in the rail's column. Each event in it is a `schedule-event-lane`: it covers `--span` days from day `--column`, on lane `--lane`. The band runs across the days, so each `schedule-day` names its column with `--column` and the schedule says how many there are in `--schedule-days`.
+
+<ComponentPreview name="all-day" height={344} title="Whole days" bodyClass="p-lg" html={`<div class="card max-w(560) mx-auto">
+  <div class="card-body">
+    <div class="schedule" style="--schedule-from: 9; --schedule-to: 13; --schedule-days: 3">
+      <ol class="schedule-rail" aria-hidden="true"><li>9 AM</li><li>10 AM</li><li>11 AM</li><li>12 PM</li><li>1 PM</li></ol>
+      <div class="schedule-day" style="--column: 1"><h3 class="schedule-heading">Wed 12</h3><ol class="schedule-events" aria-label="Wednesday 12 November"><li class="schedule-event" style="--start: 9.5; --end: 10.5"><p class="schedule-title">Planning</p><p class="schedule-time">9:30 – 10:30</p></li></ol></div>
+      <div class="schedule-day" style="--column: 2" aria-current="date"><h3 class="schedule-heading">Thu 13</h3><ol class="schedule-events" aria-label="Thursday 13 November"><li class="schedule-event" style="--start: 11; --end: 12"><p class="schedule-title">Design review</p><p class="schedule-time">11:00 – 12:00</p></li></ol></div>
+      <div class="schedule-day" style="--column: 3"><h3 class="schedule-heading">Fri 14</h3><ol class="schedule-events" aria-label="Friday 14 November"></ol></div>
+      <div class="schedule-allday" role="group" aria-label="All day">
+        <span class="schedule-allday-label" aria-hidden="true">All day</span>
+        <p class="schedule-event schedule-event-lane" style="--column: 2; --span: 2"><span class="schedule-title">Offsite in Lisbon</span></p>
+        <p class="schedule-event schedule-event-lane schedule-event-continued" style="--column: 1; --lane: 1"><span class="schedule-title">On call</span></p>
+      </div>
+    </div>
+  </div>
+</div>`} />
+
+A piece of an event that began before what is shown is `schedule-event-continued`, and one that goes on after it is `schedule-event-continues`: in a lane its start or its end is square and runs to the edge, and on the hours, past midnight, its top or its bottom. A piece that is not the start has no bar.
+
+## Category \{#category\}
+
+`schedule-event-category` colors an event with the [category](/components/category) set on it or around it: its sheet takes the category's surface, its bar the category's mark and its words the category's text. A calendar of several teams or projects tells them apart this way; the title still says what the event is.
+
+<ComponentPreview name="category" height={240} title="Category" bodyClass="p-lg" html={`<div class="card max-w(480) mx-auto">
+  <div class="card-body">
+    <div class="schedule" style="--schedule-from: 9; --schedule-to: 12">
+      <ol class="schedule-rail" aria-hidden="true"><li>9 AM</li><li>10 AM</li><li>11 AM</li><li>12 PM</li></ol>
+      <ol class="schedule-events" aria-label="Thursday 13 November">
+        <li class="schedule-event schedule-event-category category-violet" style="--start: 9; --end: 10; --lanes: 2"><p class="schedule-title">User interviews</p><p class="schedule-time">9:00 – 10:00</p></li>
+        <li class="schedule-event schedule-event-category category-teal" style="--start: 9.5; --end: 11; --lane: 1; --lanes: 2"><p class="schedule-title">Token audit</p><p class="schedule-time">9:30 – 11:00</p></li>
+        <li class="schedule-event schedule-event-category category-orange" style="--start: 11; --end: 11.75"><p class="schedule-title">Launch check-in</p><p class="schedule-time">11:00 – 11:45</p></li>
+      </ol>
+    </div>
+  </div>
+</div>`} />
+
+## A month \{#month\}
+
+`schedule-month` is a month as weeks of seven days. Each `schedule-week` writes a day, then the events that start on it, then its more button, so a screen reader meets them in the order of the days; the stylesheet places each in its column and lane. The day's number, `schedule-date-number`, is a round button that opens the day, ink for today. A day shows `--lanes` events, three by default, and a `schedule-more` button for the rest, which opens a [popover](/components/popover) that lists them. A short event in a month is plain, `schedule-event-plain`: a dot, its time and its title, without a sheet.
+
+In a room narrower than 36rem the lanes give way: each day shows a dot for each of its events, three at most, under its number, which opens the day. Nothing is squeezed into seven narrow columns of text.
+
+`schedule-agenda` lists the same events by day, the date at the start of each row and its events in a `schedule-list` beside it, or over them in a narrow room. It suits a phone, a printout and a reader who would rather read than look.
+
+The month and the agenda are written from the events, so they come from the behavior or a framework component, as in the view below.
+
+## A schedule to work \{#schedule-view\}
+
+A `schedule-view` puts a header of controls over a body the [`schedule` behavior](/guide/behaviors) writes: today, previous and next, the period's name and a switch between day, week, month and agenda. Previous and next move by the view's period, a day's number opens that day, and the period's name is announced when it changes. On a narrow room the name takes a line of its own.
+
+<ComponentPreview name="view" height={640} narrowHeight={600} title="A schedule to work" background="plain" bodyClass="content-start p-lg" behaviors html={`<section class="schedule-view" id="team" aria-labelledby="team-title">
+  <div class="schedule-view-header">
+    <button type="button" class="btn btn-sm schedule-view-today">Today</button>
+    <button type="button" class="btn btn-sm btn-square btn-quiet schedule-view-previous" aria-label="Previous"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button>
+    <button type="button" class="btn btn-sm btn-square btn-quiet schedule-view-next" aria-label="Next"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
+    <h2 class="schedule-view-title" id="team-title" aria-live="polite">November 2026</h2>
+    <div class="segmented segmented-sm schedule-view-switch" role="radiogroup" aria-label="View">
+      <label class="segmented-item"><input type="radio" class="segmented-input" name="team-view" value="day">Day</label>
+      <label class="segmented-item"><input type="radio" class="segmented-input" name="team-view" value="week">Week</label>
+      <label class="segmented-item"><input type="radio" class="segmented-input" name="team-view" value="month" checked>Month</label>
+      <label class="segmented-item"><input type="radio" class="segmented-input" name="team-view" value="agenda">Agenda</label>
+    </div>
+  </div>
+  <div class="schedule-view-body"></div>
+</section>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.schedule(document.getElementById('team'), {
+    today: '2026-11-13', locale: 'en-US', weekStart: 1, value: { date: '2026-11-13', view: 'month' },
+    events: [
+      { id: 'review', title: 'Design review', start: '2026-11-03T10:00', end: '2026-11-03T11:30', category: 'violet' },
+      { id: 'offsite', title: 'Offsite', start: '2026-11-07', end: '2026-11-11', allDay: true, category: 'teal' },
+      { id: 'deploy', title: 'Deploy window', start: '2026-11-12T22:00', end: '2026-11-13T02:00', category: 'red' },
+      { id: 'launch', title: 'Launch', start: '2026-11-13', end: '2026-11-14', allDay: true, category: 'orange' },
+      { id: 'standup', title: 'Standup', start: '2026-11-13T09:00', end: '2026-11-13T09:15' },
+      { id: 'lunch', title: 'Team lunch', start: '2026-11-13T12:00', end: '2026-11-13T13:00', category: 'green' },
+      { id: 'call', title: 'Customer call', start: '2026-11-13T14:00', end: '2026-11-13T15:00', category: 'blue' },
+      { id: 'retro', title: 'Retro', start: '2026-11-13T17:00', end: '2026-11-13T17:45' },
+      { id: 'planning', title: 'Planning', start: '2026-11-17T09:30', end: '2026-11-17T11:00', category: 'blue' },
+      { id: 'conference', title: 'Conference', start: '2026-11-19', end: '2026-11-22', allDay: true, category: 'violet' }
+    ]
+  })
+})
+</script>`} caption="Move by a month, open a day from its number, or switch to the week or the agenda." />
+
+### The events \{#the-events\}
+
+Each event has a stable `id`, a `title`, a `start` and an `end`. An all-day event has `allDay: true` and days for its ends, `YYYY-MM-DD`; another has local times, `YYYY-MM-DDTHH:mm`. The `end` is exclusive: an all-day event on the 13th alone ends on the 14th, and an event that ends at midnight ends with the day before. `category` names a palette, such as `blue` for `category-blue`, and `href` makes the event a link; without one it is a button whose `value` is its id, which the page listens to.
+
+Times are already in the zone the schedule is shown in, and a repeating event arrives as its occurrences: time zones and repeats are the application's to resolve. Days are counted with the calendar, kept at noon, so a daylight-saving change never moves an all-day event to the day before. The view does not edit, move or store events; it shows them and says which one was pressed.
+
+### The behavior \{#behavior\}
+
+```js name=app.js
+import { schedule } from '@master/ui/behaviors/schedule.js'
+
+const team = schedule(document.querySelector('.schedule-view'), { events, today: '2026-11-13' })
+team.value // { date: '2026-11-13', view: 'month' }
+```
+
+| Option | Default | |
+| --- | --- | --- |
+| `events` | `[]` | The events, as above |
+| `value` | today's month | The day and the view to show first: `{ date, view }`, the view one of `day`, `week`, `month` or `agenda` |
+| `today` | the browser's | Today, as `YYYY-MM-DD`; give it when a server renders the schedule, so both sides agree |
+| `locale` | the page's `lang` | A BCP 47 tag for the names of days and months |
+| `weekStart` | the locale's | The first day of a week, 0 for Sunday to 6 for Saturday |
+| `lanes` | `3` | How many events a day of a month shows before the rest go behind its more button |
+| `from`, `to` | `8`, `18` | The hours a day or a week shows at least; they reach further for an earlier or a later event |
+| `messages` | English | The band's name, the more button's words and name, and the empty agenda's sentence |
+| `draw` | none | Takes over writing the title and the body, for a renderer that writes them itself |
+
+The reader's moves dispatch `input` and `change` from the root; the function it returns has a `value` to read and to set, and setting it dispatches nothing. `scheduleLayout(value, options)` returns what a view shows as data, the weeks with each event's lane, the hours with each event's place, the band and the agenda's days, so a server, a framework and the behavior lay out the same events the same way.
+
 ## Schedule, gantt or calendar \{#schedule-gantt-or-calendar\}
 
-A schedule is for the hours of a day, read down. Spans of a plan on one shared scale, one row to each thing, are a [gantt](/components/gantt). A month to pick a day from is a [calendar](/components/calendar), and moments in the order they happened are a [timeline](/components/timeline).
+A schedule is for events placed in time: the hours of a day read down, or the days of a month. Spans of a plan on one shared scale, one row to each thing, are a [gantt](/components/gantt). A month to pick a day from, or a range of days, is a [calendar](/components/calendar), and moments in the order they happened are a [timeline](/components/timeline).
 
 ## Accessibility \{#accessibility\}
 
@@ -102,6 +222,14 @@ A schedule is for the hours of a day, read down. Spans of a plan on one shared s
 - Each event says its title and its time in words, with `<time datetime>` for the hours, so it reads "Design review, 10:00 to 11:30" without the drawing. The rail is a picture of the same scale: hide it with `aria-hidden="true"`.
 - The current event and today are marked with `aria-current`, which a screen reader announces. The line of now is drawn by the stylesheet; say the time in words where it matters.
 - In forced colors each event is outlined, the current one is filled with the highlight color, and the hairlines and the line of now keep the system's colors.
+- A month is not a date grid: its days are numbers that open a day and its events are links or buttons, each named with its title and when it is. A more button says how many events it lists and on which day. A category's color is never the only way an event is told apart.
+- The view's controls keep focus as they move; a day's number, which leaves with the month, hands focus to the name of the day it opened.
+
+## React, Svelte and Vue \{#frameworks\}
+
+The `schedule` component writes the period from `scheduleLayout()`, so the first HTML a server sends holds it, and attaches the behavior, which answers the header and the day numbers. Its value is `{ date, view }`, and pressing an event without an `href` is heard as `onEventClick`, or `eventClick` in Vue. Give `today` and `locale` when it is rendered on a server. Copy it into the project with `npx master-ui add schedule`; [React, Svelte and Vue](/guide/frameworks) says how the components are built and used.
+
+<FrameworkSource name="schedule" />
 
 ## Classes \{#classes\}
 

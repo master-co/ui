@@ -377,7 +377,7 @@ ${[1, 2, 3, 4, 5].map(score => `    <input type="radio" class="rating-input" nam
   [
     `<div class="well">
   <div class="empty">
-    <div class="empty-media">${icon(glyph.upload)}</div>
+    <div class="icon-frame empty-media" aria-hidden="true">${icon(glyph.upload)}</div>
     <h3 class="empty-title">No deployments yet</h3>
     <p class="empty-description">Push to main and it appears here.</p>
     <div class="empty-actions"><button type="button" class="btn btn-sm btn-primary">Deploy now</button></div>
@@ -385,7 +385,7 @@ ${[1, 2, 3, 4, 5].map(score => `    <input type="radio" class="rating-input" nam
 </div>`,
     `<div class="well">
   <div class="empty">
-    <div class="empty-media">${icon(glyph.search)}</div>
+    <div class="icon-frame empty-media" aria-hidden="true">${icon(glyph.search)}</div>
     <h3 class="empty-title">No results for “cirus”</h3>
     <p class="empty-description">Check the spelling, or try another name.</p>
   </div>

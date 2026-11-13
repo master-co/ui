@@ -1,6 +1,7 @@
 import ComponentPreview from '~/site/components/ComponentPreview.astro'
 import ComponentSource from '~/site/components/ComponentSource.astro'
 import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
 An avatar stands for a person or a team: a photo when there is one, initials when there is not, in a circle that keeps the same size either way. A faint inward stroke finishes the edge, so a pale photo does not dissolve into a pale surface.
 
@@ -45,6 +46,50 @@ The default is 32px. Initials scale with the circle. Use one or two letters.
   <span class="avatar-status bg-warning"></span>
 </span>`} />
 
+## Badge \{#badge\}
+
+`avatar-badge` puts a picture on the same corner that says what someone is, rather than whether they are there: verified, the company they work for, the team a project belongs to. It is two fifths of the avatar, its centre on the circle's edge at 45°, and it is cut out by a ring of the surface behind it, as the status dot is. On a square avatar it is a rounded square too. Put an icon in it, or make it the image itself, and say what it means in the avatar's name.
+
+<ComponentPreview name="badge" height={112} title="Badge" html={`<span class="avatar avatar-lg" role="img" aria-label="Ada Lovelace, verified">
+  <img class="avatar-image" src="/demo/portrait-1.svg" alt="">
+  <span class="avatar-badge"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 12.5 4 4 8-9"/></svg></span>
+</span>
+<span class="avatar avatar-xl" role="img" aria-label="Grace Hopper, verified">
+  <img class="avatar-image" src="/demo/portrait-3.svg" alt="">
+  <span class="avatar-badge"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 12.5 4 4 8-9"/></svg></span>
+</span>
+<span class="avatar avatar-xl avatar-square" role="img" aria-label="Moonstone team, at Master">
+  MT
+  <img class="avatar-badge" src="/demo/moonstone.svg" alt="">
+</span>`} />
+
+One corner holds one mark. A status dot, a verified badge and a company logo on the same corner cover each other; choose the one the reader needs, and say the others in words.
+
+## When the photo fails \{#fallback\}
+
+A photo from a server can be slow or missing. Put the initials, or an icon, in an `avatar-fallback` under the photo: the two share one cell, so the box never changes size. The [`avatar` behavior](/guide/behaviors) follows the photo. While it loads the fallback shows through; once it loads the fallback is hidden; when it fails, or has no source, the photo is hidden instead, so a broken image is never shown. A new `src` starts over, and an answer about a photo the avatar no longer shows changes nothing.
+
+<ComponentPreview name="fallback" height={96} title="When the photo fails" behaviors html={`<span class="avatar avatar-lg" role="img" aria-label="Ada Lovelace">
+  <img class="avatar-image" src="/demo/portrait-1.svg" alt="">
+  <span class="avatar-fallback" aria-hidden="true">AL</span>
+</span>
+<span class="avatar avatar-lg" role="img" aria-label="Alan Turing">
+  <img class="avatar-image" src="data:image/png;base64,AAAA" alt="">
+  <span class="avatar-fallback" aria-hidden="true">AT</span>
+</span>
+<span class="avatar avatar-lg" role="img" aria-label="A guest">
+  <img class="avatar-image" alt="">
+  <span class="avatar-fallback" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12a4 4 0 1 0 0-8a4 4 0 0 0 0 8z"/><path d="M5 20a7 7 0 0 1 14 0"/></svg></span>
+</span>`} />
+
+Name the avatar once, on the root, with `role="img"` and `aria-label`; give the photo an empty `alt` and the fallback `aria-hidden`, so the name is not read twice. Without the script the fallback shows until the photo paints over it, and a photo that fails shows as the browser draws a broken image.
+
+```js name=app.js
+import { avatar } from '@master/ui/behaviors/avatar.js'
+
+for (const root of document.querySelectorAll('.avatar')) avatar(root)
+```
+
 ## Stack \{#stack\}
 
 `avatar-group` overlaps avatars by a quarter of their size. Each paints in front of the one before it and is separated from it by a 2px ring in the color of the surface behind the stack. The order follows the markup in both writing directions. Count the people who are not shown in a last avatar, and name the whole group once.
@@ -73,6 +118,13 @@ The ring must match the surface the stack sits on. Inside a [sheet, a tray, a ca
 - A photo needs `alt` with the person's name. Initials are not a name: give the avatar `role="img"` and `aria-label`.
 - When the name is written next to the avatar, the avatar is decoration: use `alt=""` or `aria-hidden="true"`.
 - In a stack, name the group once on the container and leave the images empty, so a name is not read twice.
+- A badge or a status dot is not read on its own: say verified, away or the company in the avatar's name.
+
+## React, Svelte and Vue \{#frameworks\}
+
+The `avatar` component takes `src`, `alt` and `initials`, writes the photo over its fallback and attaches the behavior; a corner mark goes in as its children. Copy it into the project with `npx master-ui add avatar`; [React, Svelte and Vue](/guide/frameworks) says how the components are built and used. A photo that never fails needs no component: the markup above is enough.
+
+<FrameworkSource name="avatar" />
 
 ## Classes \{#classes\}
 

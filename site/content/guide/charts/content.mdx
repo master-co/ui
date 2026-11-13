@@ -1,0 +1,83 @@
+import PagePreview from '~/site/components/PagePreview.astro'
+
+Master UI draws a few numbers itself, with no script: a handful of bars, a trend in a sentence, a dial, a share of a bar. A chart that needs axes that scale, many points, a tooltip under the pointer or a shape such as a radar is the work of a charting engine. This guide puts one, [Chart.js](https://www.chartjs.org/docs/latest/getting-started/integration.html), in Master UI's colors, with a legend that works and the same numbers as a table, and shows what it takes to keep it in step with the theme and to let it go.
+
+Chart.js is the site's dependency in these examples, not the library's: `@master/ui` does not depend on it, and any engine that draws on a canvas or in SVG fits the same way.
+
+## The library's charts, or an engine \{#choose\}
+
+Reach for a component first. Each draws from markup, so its numbers are in the page as text, it follows the theme with no script, and it prints.
+
+| You need | Use |
+| --- | --- |
+| A handful of numbers on one scale, such as a week of days | [Chart](/components/chart) |
+| Which way a series went, beside a figure or in a row | [Sparkline](/components/sparkline) |
+| One reading and how near its limit it is | [Gauge](/components/gauge), or a half [progress ring](/components/progress#half-ring) |
+| Where a quantity stands in a known range | [Meter](/components/meter) |
+| What a total is made of, along one bar | [Breakdown](/components/breakdown) |
+| A pattern across many small values | [Heatmap](/components/heatmap) |
+
+An engine earns its weight when the axes have to scale to the data, there are more points than labels, a reader explores values under the pointer, series are shown and hidden, or the shape is one the components do not draw: lines across months, a doughnut, rings, a radar. The examples below load Chart.js only in their own previews, about 160 KB each, and register only the parts each chart draws.
+
+## Lines and bars \{#lines-and-bars\}
+
+Several series over time, as lines or bars. The switch draws the same data the other way; the legend shows and hides a region, and the table under the chart holds every number.
+
+<PagePreview name="series" title="Lines and bars" example="chart-series" caption="Switch to bars, hide a region from the legend, or open the numbers." />
+
+- **Register what is drawn.** `Chart.register(LineController, LineElement, PointElement, BarController, BarElement, CategoryScale, LinearScale, Tooltip)`, from `chart.js` and not `chart.js/auto`, keeps the rest of the engine out of the bundle.
+- **Marks are fine.** Lines are 2px with a point only under the pointer; a bar is round at the end away from the axis and parted from its neighbor by a ring of the surface. The grid is a hairline across, with no lines down.
+- **One axis.** Two measures of different scale are two charts, never one chart with an axis on each side.
+
+## Parts of a whole \{#parts-of-a-whole\}
+
+A share as a doughnut or a pie, and three goals as concentric rings, each filled in its color on a track of its own tint.
+
+<PagePreview name="parts" title="Parts of a whole" example="chart-parts" caption="Switch to a pie, hide a kind or a goal, or open the numbers." />
+
+A part's legend chip hides its slice, and the others close up. A ring's track is the category's surface, so the part still to go reads as the same goal, quieter. Keep a whole to four or five parts; fold the rest into "Other", as the storage does.
+
+## Radar \{#radar\}
+
+Two releases on six measures. Each shape is drawn in its mark with a wash of the same color, so the two show through each other.
+
+<PagePreview name="radar" title="Radar" example="chart-radar" caption="Hide a release from the legend, or open the numbers." />
+
+A radar compares a few things on the same measures at a glance; the table says the scores. Its measures share one range, here 0 to 100.
+
+## Colors from the theme \{#colors\}
+
+Every series names a [category](/components/category), and the category decides its color: Tokyo is blue in the chart, in its legend chip and in any badge that names it, wherever it stands in the list. The marks are the categories' `-mark` roles, which hold 3:1 against the surface; a radar's wash is the same mark, faint. The grid, the ticks and the tooltip take the theme's line, text and ink tokens. The data holds category names, never colors.
+
+A canvas cannot read a custom property, and a token is written with `light-dark()`, so each example resolves its colors where the chart stands: a hidden probe inside the chart's root takes the token as its color, and one pixel painted with it gives the color as `rgba()`. Paper, an override scoped to a region and the color scheme all apply, because the probe stands where the chart does.
+
+```js name=theme.js
+const probe = document.createElement('span')
+probe.style.cssText = 'position:absolute;visibility:hidden'
+root.append(probe)
+
+function resolve(token) {
+  probe.style.color = `var(${token})`
+  pixel.fillStyle = getComputedStyle(probe).color
+  pixel.fillRect(0, 0, 1, 1)
+  const [r, g, b, a] = pixel.getImageData(0, 0, 1, 1).data
+  return `rgba(${r}, ${g}, ${b}, ${a / 255})`
+}
+```
+
+The examples use four categories, in one fixed order: blue, orange, teal and violet. Checked as a palette, they stay apart for the common kinds of color blindness, in both schemes. A fifth series is folded into "Other" or shown as another chart, rather than given a hue that is too near one of the four.
+
+## Accessibility \{#accessibility\}
+
+- **The legend is controls.** Each entry is a [filter chip](/components/chip#category) around a real checkbox, in a group named for what it shows, so it is reached with Tab and toggled with Space. Its dot carries the category and its words the name.
+- **The numbers are text.** Each chart has a table of the same values behind a disclosure, and its canvas has `role="img"` and a sentence that says what the chart shows. A tooltip under the pointer is a convenience, never the only way to read a value.
+- **Color is never alone.** A series is named in the legend and the table, and a status color never stands for a series.
+- **Motion follows the reader.** With reduced motion the charts draw at once instead of easing in.
+
+## Keep it in step, and let it go \{#lifecycle\}
+
+Each example's `main.js` exports `mount(root)`, which draws the chart and returns the function that stops it.
+
+- **The size.** The canvas stands in a container whose height the stylesheet sets, and Chart.js follows that container's width with `responsive` and `maintainAspectRatio: false`. Nothing is measured to place.
+- **The theme.** A change of the reader's color scheme, or of the class, the style or `data-theme` on the root element, draws the chart again with the colors resolved anew.
+- **The end.** Unmounting calls `destroy()` on each chart and removes every listener and observer, so a chart in a view that leaves takes nothing with it. In a framework, call `mount` when the element exists and its result when it goes: in React an effect's cleanup, in Svelte an attachment, in Vue `onBeforeUnmount`.
