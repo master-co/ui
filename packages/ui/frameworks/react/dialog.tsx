@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useId, useReducer, useRef, type ComponentProps, type ReactNode } from 'react'
+import { drawer } from '@master/ui/behaviors/drawer.js'
 
 export interface DialogProps extends Omit<ComponentProps<'dialog'>, 'open'> {
   /** Whether the dialog is open, when this component is told. Leave it out and the trigger opens it. */
@@ -14,6 +15,9 @@ export interface DialogProps extends Omit<ComponentProps<'dialog'>, 'open'> {
  * only opens and closes it from `open`, and says when the browser did. Its children are the contract's
  * parts: `dialog-header`, `dialog-body`, `dialog-footer`. A button inside closes it with
  * `commandfor={id}` and `command="close"`, or from a form with `method="dialog"`.
+ *
+ * A drawer or a sheet with `dialog-swipe` in its `className` holds a `dialog-panel` and is let go of to
+ * close; the drawer behavior, attached to every dialog, closes it and says so here like any other close.
  */
 export function Dialog({ open, onOpenChange, trigger, className, id, children, ...dialog }: DialogProps) {
   const generated = useId()
@@ -43,7 +47,11 @@ export function Dialog({ open, onOpenChange, trigger, className, id, children, .
       again()
     }
     for (const type of ['toggle', 'close']) root.addEventListener(type, report, { signal: controller.signal })
-    return () => controller.abort()
+    const detach = drawer(root)
+    return () => {
+      controller.abort()
+      detach()
+    }
   }, [])
 
   return (

@@ -115,7 +115,7 @@ Or import only the theme and the components you use:
 | Pagination | `pagination`, `pagination-gap` |
 | Pager | `pager`, `pager-link`, `pager-label`, `pager-title` |
 | Steps | `steps`, `steps-vertical`, `steps-complete`, `steps-item`, `steps-body`, `steps-title`, `steps-description` |
-| Dialog | `dialog`, `dialog-sm`, `dialog-lg`, `dialog-drawer`, `dialog-drawer-start`, `dialog-sheet`, `dialog-header`, `dialog-title`, `dialog-description`, `dialog-body`, `dialog-footer`, `dialog-close` |
+| Dialog | `dialog`, `dialog-sm`, `dialog-lg`, `dialog-drawer`, `dialog-drawer-start`, `dialog-sheet`, `dialog-swipe`, `dialog-detents`, `dialog-panel`, `dialog-handle`, `dialog-header`, `dialog-title`, `dialog-description`, `dialog-body`, `dialog-footer`, `dialog-close` |
 | Lightbox | `lightbox`, `lightbox-media`, `lightbox-caption`, `lightbox-close` |
 | Popover | `popover`, `popover-end`, `popover-center`, `popover-top` |
 | Color picker | `color-picker`, `color-picker-area`, `color-picker-thumb`, `color-picker-hue`, `color-picker-alpha`, `color-picker-swatch`, `color-picker-fields`, `color-picker-format`, `color-picker-text`, `color-picker-popover` |

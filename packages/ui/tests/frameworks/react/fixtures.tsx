@@ -136,6 +136,24 @@ function PanelExample(props: Omit<PanelProps, 'title' | 'handleLabel'>) {
   )
 }
 
+/** A sheet the reader swipes: the track holds the panel, and the handle moves it between half and full height. */
+function DialogSheetExample(props: DialogProps) {
+  return (
+    <Dialog id="comments" className="dialog-sheet dialog-swipe dialog-detents" aria-labelledby="comments-title" trigger={attributes => <button type="button" className="btn" {...attributes}>Comments</button>} {...props}>
+      <div className="dialog-panel">
+        <button type="button" className="dialog-handle" aria-label="Sheet height"></button>
+        <header className="dialog-header">
+          <h2 className="dialog-title" id="comments-title">Comments</h2>
+          <p className="dialog-description">Three people reviewed this deployment.</p>
+        </header>
+        <div className="dialog-body">
+          <p>Ada: the build on main is green again.</p>
+        </div>
+      </div>
+    </Dialog>
+  )
+}
+
 function PopoverExample(props: PopoverProps) {
   return (
     <Popover trigger={attributes => <button type="button" className="btn" {...attributes}>Share</button>} {...props}>
@@ -172,6 +190,7 @@ export const fixtures = {
   'dial': Dial,
   'dialog': DialogExample,
   'editable': Editable,
+  'dialog-sheet': DialogSheetExample,
   'field': FieldExample,
   'gantt': Gantt,
   'listbox': Listbox,

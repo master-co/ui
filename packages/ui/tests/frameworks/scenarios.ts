@@ -747,6 +747,22 @@ export const scenarios: Record<string, Scenario> = {
     assert.deepEqual(heard, [false], 'a dialog the browser closed says so')
     assert.equal(dialog.open, false)
     await driver.act(() => mounted.unmount())
+
+    // A sheet the reader swipes: the component attaches the drawer behavior, which lets it go.
+    const sheet = await owned(driver, 'dialog-sheet', { open: false }, 'open', 'onOpenChange')
+    conforms(page)
+    const swiped = page.one<HTMLDialogElement>('dialog.dialog-swipe')
+    const handle = page.one<HTMLButtonElement>('.dialog-handle')
+    await driver.act(() => sheet.mounted.set({ open: true }))
+    // A browser says `toggle` when a dialog opens; happy-dom opens it without a word.
+    await driver.act(() => swiped.dispatchEvent(Object.assign(new page.window.Event('toggle'), { newState: 'open' })))
+    assert.equal(handle.getAttribute('aria-expanded'), 'false', 'a sheet with detents opens at half height')
+    await driver.act(() => page.key(handle, 'ArrowUp'))
+    assert.equal(handle.getAttribute('aria-expanded'), 'true', 'its handle grows it')
+    await driver.act(() => { page.pointer(swiped, 'pointerdown', { pointerType: 'touch' }); page.click(swiped) })
+    assert.equal(swiped.open, false, 'a press on the track beside the panel closes it, as closedby="any" does')
+    assert.deepEqual(sheet.heard, [false], 'and the component says so')
+    await driver.act(() => sheet.mounted.unmount())
   },
 
   async popover(driver, page) {

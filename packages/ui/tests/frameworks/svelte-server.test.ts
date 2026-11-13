@@ -22,6 +22,7 @@ const others: Record<string, Record<string, unknown>> = {
   'command': { items: [{ label: 'New project', group: 'Suggestions' }], searchLabel: 'Search commands', listLabel: 'Commands', 'aria-label': 'Command palette' },
   'compare': { label: 'Show more of the second picture' },
   'dialog': {},
+  'dialog-sheet': {},
   'field': { label: 'Work email', hint: 'We only send receipts.' },
   'listbox': { options: [{ value: 'hnd', label: 'Tokyo' }], value: 'hnd', 'aria-label': 'Region' },
   'menu': { items: [{ label: 'Rename' }, { separator: true }, { label: 'Settings', href: '#settings' }], 'aria-label': 'Project' },

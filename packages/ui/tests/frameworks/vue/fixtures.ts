@@ -19,6 +19,7 @@ import ColorPickerPopoverExample from './ColorPickerPopoverExample.vue'
 import CompareExample from './CompareExample.vue'
 import ContextMenuExample from './ContextMenuExample.vue'
 import DialogExample from './DialogExample.vue'
+import DialogSheetExample from './DialogSheetExample.vue'
 import FieldExample from './FieldExample.vue'
 import MenuExample from './MenuExample.vue'
 import PanelExample from './PanelExample.vue'
@@ -44,6 +45,7 @@ export const fixtures: Record<string, Component> = {
   'dial': Dial,
   'dialog': DialogExample,
   'editable': Editable,
+  'dialog-sheet': DialogSheetExample,
   'field': FieldExample,
   'gantt': Gantt,
   'listbox': Listbox,

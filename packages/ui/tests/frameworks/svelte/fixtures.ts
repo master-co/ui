@@ -19,6 +19,7 @@ import ColorPickerPopoverExample from './ColorPickerPopoverExample.svelte'
 import CompareExample from './CompareExample.svelte'
 import ContextMenuExample from './ContextMenuExample.svelte'
 import DialogExample from './DialogExample.svelte'
+import DialogSheetExample from './DialogSheetExample.svelte'
 import FieldExample from './FieldExample.svelte'
 import MenuExample from './MenuExample.svelte'
 import PanelExample from './PanelExample.svelte'
@@ -44,6 +45,7 @@ export const fixtures = {
   'dial': Dial,
   'dialog': DialogExample,
   'editable': Editable,
+  'dialog-sheet': DialogSheetExample,
   'field': FieldExample,
   'gantt': Gantt,
   'listbox': Listbox,
