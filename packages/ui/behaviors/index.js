@@ -8,6 +8,8 @@
  * A context menu belongs to a target that only the page knows: attach it with `contextMenu(target, menu)`.
  * A gantt is found too, and only its bars marked `role="slider"` move. A chart is found and worked as the page
  * wrote it; call `chart(root, { series })` to have it written from data.
+ * `chart` has every form of the chart; `chartCore`, `chartForms` and a form such as `chartCartesian` are for a page
+ * that carries only the forms it draws.
  *
  * Where a pattern has a value that no native control holds, the function its behavior returns has a `value`:
  * read it for what is chosen, set it to choose from outside. Setting it dispatches nothing.
@@ -15,7 +17,25 @@
 import { avatar } from './avatar.js'
 import { calendar, calendarMonth, calendarPeriods } from './calendar.js'
 import { carousel } from './carousel.js'
-import { chart, chartLayout, chartMarkup } from './chart.js'
+import { chart, chartForms, chartLayout, chartMarkup } from './chart.js'
+import { chartCore } from './chart-core.js'
+import { chartCartesian } from './chart-cartesian.js'
+import { chartScatter } from './chart-scatter.js'
+import { chartPie } from './chart-pie.js'
+import { chartRings } from './chart-rings.js'
+import { chartRadar } from './chart-radar.js'
+import { chartWaterfall } from './chart-waterfall.js'
+import { chartRange } from './chart-range.js'
+import { chartSlope } from './chart-slope.js'
+import { chartBump } from './chart-bump.js'
+import { chartMarimekko } from './chart-marimekko.js'
+import { chartHistogram } from './chart-histogram.js'
+import { chartBox } from './chart-box.js'
+import { chartHeatmap } from './chart-heatmap.js'
+import { chartFunnel } from './chart-funnel.js'
+import { chartWaffle } from './chart-waffle.js'
+import { chartTreemap } from './chart-treemap.js'
+import { chartSunburst } from './chart-sunburst.js'
 import { colorPicker, colorPickerFormat, colorPickerState } from './color-picker.js'
 import { combobox } from './combobox.js'
 import { command } from './command.js'
@@ -46,7 +66,7 @@ import { transcript } from './transcript.js'
 import { tree } from './tree.js'
 import { wheel } from './wheel.js'
 
-export { avatar, calendar, calendarMonth, calendarPeriods, carousel, chart, chartLayout, chartMarkup, colorPicker, colorPickerFormat, colorPickerState, combobox, command, compare, contextMenu, cropper, cropperFit, dial, drawer, editable, follow, gradient, gradientCss, gantt, listbox, menu, otp, panel, player, range, schedule, scheduleLayout, signature, signaturePath, signatureSvg, sortable, splitter, stepper, tabs, tags, toolbar, tour, transcript, tree, wheel }
+export { avatar, calendar, calendarMonth, calendarPeriods, carousel, chart, chartCore, chartForms, chartLayout, chartMarkup, chartCartesian, chartScatter, chartPie, chartRings, chartRadar, chartWaterfall, chartRange, chartSlope, chartBump, chartMarimekko, chartHistogram, chartBox, chartHeatmap, chartFunnel, chartWaffle, chartTreemap, chartSunburst, colorPicker, colorPickerFormat, colorPickerState, combobox, command, compare, contextMenu, cropper, cropperFit, dial, drawer, editable, follow, gradient, gradientCss, gantt, listbox, menu, otp, panel, player, range, schedule, scheduleLayout, signature, signaturePath, signatureSvg, sortable, splitter, stepper, tabs, tags, toolbar, tour, transcript, tree, wheel }
 
 /**
  * Each pattern's root class and the behavior that drives it.

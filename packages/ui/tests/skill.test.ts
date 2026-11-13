@@ -2,6 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { existsSync, readFileSync } from 'node:fs'
 import { contracts, imports } from './support.ts'
+import { chartForms } from '../behaviors/chart.js'
 
 /**
  * The public skill tells an agent which component to use and which commands to run. Both must exist: a
@@ -13,14 +14,14 @@ const known = new Set([...all.map(contract => contract.name), ...all.flatMap(con
 
 test('charts.md names only forms the chart draws and components that exist', () => {
   const text = readFileSync(new URL('references/charts.md', skill), 'utf8')
-  const types = new Set(/const types = \[([^\]]+)\]/.exec(readFileSync(new URL('../behaviors/chart.js', import.meta.url), 'utf8'))![1].match(/[a-z]+/g))
+  const types = new Set(chartForms())
   for (const match of text.matchAll(/type: '([a-z]+)'/g)) assert.ok(types.has(match[1]), `"${match[1]}" is not a form the chart draws`)
   const rows = text.split('\n').filter(line => line.startsWith('|') && !line.startsWith('| ---') && line.includes('`chart`') === false && /^\| (One figure|Which way|One reading|A pattern|Exact numbers)/.test(line))
   assert.equal(rows.length, 5)
   for (const row of rows) for (const match of (row.split('|').at(-2) ?? '').matchAll(/`([a-z][a-z0-9-]*)`/g)) assert.ok(known.has(match[1]), `"${match[1]}" is not a contract: ${row}`)
   for (const name of ['blue', 'orange', 'teal', 'violet', 'amber', 'pink', 'green', 'sky']) assert.ok(known.has(`category-${name}`), `category-${name}`)
   assert.match(text, /blue, orange, teal, violet, amber, pink, green, sky/, 'the order of categories is the one the layout gives')
-  assert.match(readFileSync(new URL('../behaviors/chart.js', import.meta.url), 'utf8'), /const palette = \['blue', 'orange', 'teal', 'violet', 'amber', 'pink', 'green', 'sky'\]/)
+  assert.match(readFileSync(new URL('../behaviors/chart-core.js', import.meta.url), 'utf8'), /const palette = \['blue', 'orange', 'teal', 'violet', 'amber', 'pink', 'green', 'sky'\]/)
 })
 
 test('choosing.md names only components and classes that exist', () => {

@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { dom } from './dom.ts'
-import { chart, chartLayout, chartMarkup } from '../../behaviors/chart.js'
+import { chart, chartForms, chartLayout, chartMarkup } from '../../behaviors/chart.js'
 import { check, createIndex } from '../../check/index.js'
 import { contracts, utilities } from '../support.ts'
 
@@ -169,13 +169,181 @@ test('chartLayout: a scatter scales both ways around its points, and every dot i
   assert.equal(chartLayout({ type: 'scatter', series: [{ name: 'A', points: [] }, { name: 'B', points: [] }] }).legend[0].mark, 'chart-key-mark chart-key-dot')
 })
 
-test('chartLayout: nothing to draw is still a layout', () => {
-  for (const type of ['line', 'area', 'bar', 'pie', 'donut', 'rings', 'radar', 'scatter'] as const) {
-    const layout = chartLayout({ type })
-    assert.equal(layout.points.length, type === 'radar' ? 3 : 0, type)
-    assert.doesNotMatch(JSON.stringify(layout), /NaN|Infinity|undefined%/, type)
+test('chartForms: the core draws only the forms it is given', async () => {
+  const core = await import('../../behaviors/chart-core.js')
+  const { chartCartesian } = await import('../../behaviors/chart-cartesian.js')
+  assert.equal(typeof core.chartCore, 'function')
+  assert.deepEqual(chartCartesian.types, ['line', 'area', 'bar'])
+  assert.ok(core.chartForms(chartCartesian).includes('line'), 'taking a form returns the types that can be drawn')
+})
+
+test('chartLayout: stacks as shares of a whole, and a stream around its middle', () => {
+  const whole = chartLayout({ type: 'bar', stacked: 'percent', labels: ['a', 'b'], series: [{ name: 'Free', values: [1, 3] }, { name: 'Pro', values: [3, 1] }] })
+  assert.deepEqual(whole.ticks.filter(tick => tick.classes.includes('chart-tick-y')).map(tick => tick.text), ['0%', '25%', '50%', '75%', '100%'])
+  assert.equal(whole.points[0].text, 'a: Free 1 (25%), Pro 3 (75%)', 'a value is said with its share')
+  assert.deepEqual(whole.points[0].marks.map(mark => [mark.name, mark.y, mark.height]), [['Pro', '0%', '75%'], ['Free', '75%', '25%']])
+
+  const stream = chartLayout({ type: 'area', stacked: 'stream', labels: ['a', 'b', 'c'], series: [{ name: 'Rock', values: [2, 4, 2] }, { name: 'Jazz', values: [2, 4, 2] }], curve: 'linear' })
+  assert.deepEqual(stream.paths.map(path => path.kind), ['area', 'area'], 'a stream has no edges between its layers')
+  assert.equal(stream.ticks.some(tick => tick.classes.includes('chart-tick-y')), false, 'and no scale: its thickness is the value')
+  assert.equal(stream.paths[0].d, 'M0 50L50 50L100 50L100 75L50 100L0 75Z', 'the first layer hangs under the middle line')
+  assert.equal(stream.points[1].marks[0].cy, '75%', 'a point is marked in the middle of its layer')
+})
+
+test('chartLayout: what a value may be is a band around a line and a whisker on a bar', () => {
+  const line = chartLayout({ type: 'line', labels: ['a', 'b'], series: [{ name: 'Sessions', values: [10, 20], low: [5, 10], high: [15, 30] }], curve: 'linear', max: 40 })
+  assert.deepEqual(line.paths.map(path => path.kind), ['band', 'line'])
+  assert.equal(line.paths[0].d, 'M0 62.5L100 25L100 75L0 87.5Z')
+  assert.equal(line.points[0].text, 'a: 10 (5–15)')
+  const bar = chartLayout({ type: 'bar', labels: ['a'], series: [{ name: 'Score', values: [20], low: [10], high: [30] }], max: 40 })
+  const whisker = bar.points[0].marks.find(mark => mark.classes === 'chart-whisker')!
+  assert.deepEqual([whisker.kind, whisker.y1, whisker.y2], ['line', '75%', '25%'])
+  assert.equal(bar.points[0].y, 0.25, 'the readout clears the whisker, not only the bar')
+})
+
+test('chartLayout: a lollipop is a stem with a dot at the value', () => {
+  const layout = chartLayout({ type: 'bar', mark: 'lollipop', labels: ['a', 'b'], series: [{ name: 'Median', values: [10, 20] }], max: 20 })
+  assert.deepEqual(layout.points[1].marks.map(mark => [mark.kind, mark.classes]), [['line', 'chart-stem'], ['dot', 'chart-dot']])
+  assert.deepEqual([layout.points[1].marks[0].y1, layout.points[1].marks[0].y2, layout.points[1].marks[1].cy], ['100%', '0%', '0%'])
+  assert.equal(layout.points[1].marks[1].value, '20', 'the dot carries the value for the readout')
+})
+
+test('chartLayout: a bubble is as large in area as its size, and the largest are drawn first', () => {
+  const layout = chartLayout({ type: 'scatter', series: [{ name: 'Markets', points: [{ x: 1, y: 1, size: 25, label: 'Small' }, { x: 2, y: 2, size: 100, label: 'Large' }] }] })
+  assert.deepEqual(layout.points.map(point => [point.label, point.marks[0].size, point.marks[0].classes]), [['Large', 20, 'chart-dot chart-dot-bubble'], ['Small', 10, 'chart-dot chart-dot-bubble']])
+  assert.equal(layout.points[1].text, 'Small, Markets: 1, 1, 25')
+  assert.ok(layout.points[0].hit && 'r' in layout.points[0].hit && layout.points[0].hit.r === 24)
+})
+
+test('chartLayout: a waterfall walks from its first figure to its sum', () => {
+  const layout = chartLayout({ type: 'waterfall', total: 'June', values: true, labels: ['January', 'Sales', 'Refunds'], series: [{ name: 'Cash', values: [400, 200, -100] }], max: 800 })
+  assert.deepEqual(layout.points.map(point => point.text), ['January: 400', 'Sales: +200 (600)', 'Refunds: -100 (500)', 'June: 500'])
+  assert.deepEqual(layout.points.map(point => point.marks[0].classes), ['chart-bar', 'chart-bar chart-bar-rise', 'chart-bar chart-bar-down chart-bar-fall', 'chart-bar'])
+  assert.deepEqual(layout.points.map(point => [point.marks[0].y, point.marks[0].height]), [['50%', '50%'], ['25%', '25%'], ['25%', '12.5%'], ['37.5%', '62.5%']])
+  assert.equal(layout.paths[0].classes, 'chart-link')
+  assert.equal(layout.paths[0].d.match(/M/g)?.length, 3, 'a hairline carries each bar\'s end to the next')
+  assert.deepEqual(layout.values.map(value => value.text), ['400', '+200', '-100', '500'])
+})
+
+test('chartLayout: a range is a bar between two values and a dumbbell two dots on a stem; neither starts at zero', () => {
+  const range = chartLayout({ type: 'range', labels: ['a', 'b'], series: [{ name: 'Tokyo', ranges: [[10, 20], [30, 15]] }], min: 10, max: 30 })
+  assert.deepEqual(range.points.map(point => point.text), ['a: 10–20', 'b: 15–30'])
+  assert.deepEqual(range.points.map(point => [point.marks[0].classes, point.marks[0].y, point.marks[0].height]), [['chart-bar chart-bar-floating', '50%', '50%'], ['chart-bar chart-bar-floating', '0%', '75%']])
+  assert.equal(range.grid.some(line => line.base), false, 'a scale that does not start at zero has no baseline')
+
+  const dumbbell = chartLayout({ type: 'dumbbell', horizontal: true, labels: ['Design'], series: [{ name: '2019', values: [60] }, { name: '2024', values: [80] }], min: 40, max: 80 })
+  assert.deepEqual(dumbbell.points[0].marks.map(mark => [mark.kind, mark.classes, mark.cx ?? `${mark.x1} ${mark.x2}`]), [['line', 'chart-stem', '50% 100%'], ['dot', 'chart-dot', '50%'], ['dot', 'chart-dot', '100%']])
+  assert.equal(dumbbell.points[0].text, 'Design: 2019 60, 2024 80')
+  assert.deepEqual(dumbbell.legend.map(key => key.mark), ['chart-key-mark chart-key-dot', 'chart-key-mark chart-key-dot'])
+})
+
+test('chartLayout: a slope is a line to a series, named at its last end, and its labels are kept apart', () => {
+  const layout = chartLayout({ type: 'slope', labels: ['2019', '2024'], series: [{ name: 'Chrome', values: [50, 60] }, { name: 'Edge', values: [10, 11] }, { name: 'Opera', values: [10, 10] }] })
+  assert.equal(layout.radial, true, 'the points stand in the canvas, where a line is a path')
+  assert.equal(layout.stretch, true)
+  assert.deepEqual(layout.points.map(point => point.text), ['Chrome: 2019 50, 2024 60', 'Edge: 2019 10, 2024 11', 'Opera: 2019 10, 2024 10'])
+  assert.deepEqual(layout.points[0].marks.map(mark => mark.classes), ['chart-hit chart-hit-line', 'chart-line', 'chart-knot', 'chart-knot'])
+  assert.deepEqual(layout.points[0].marks.slice(2).map(mark => [mark.name, mark.value]), [['2019', '50'], ['2024', '60']])
+  const last = layout.values.filter(value => value.classes.includes('chart-value-across'))
+  assert.deepEqual(last.map(value => value.text), ['60  Chrome', '11  Edge', '10  Opera'])
+  const ys = last.map(value => parseFloat(value.y))
+  assert.ok(ys[2] - ys[1] >= 7.4, 'two ends that would meet are nudged apart')
+  assert.equal(layout.gutter, 2)
+  assert.equal(layout.tail, 9)
+})
+
+test('chartLayout: a bump ranks the series at each label', () => {
+  const layout = chartLayout({ type: 'bump', labels: ['Q1', 'Q2'], series: [{ name: 'Atlas', values: [90, 100] }, { name: 'Beacon', values: [140, 80] }] })
+  assert.deepEqual(layout.points.map(point => point.text), ['Atlas: Q1 2, Q2 1', 'Beacon: Q1 1, Q2 2'])
+  assert.equal(layout.points[0].marks[1].d, 'M0 75C50 75 50 25 100 25', 'from rank to rank the line leaves and arrives level')
+  assert.deepEqual(layout.ticks.filter(tick => tick.classes.includes('chart-tick-y')).map(tick => tick.text), ['1', '2'])
+  assert.deepEqual(layout.values.map(value => [value.text, value.y]), [['Atlas', '25%'], ['Beacon', '75%']])
+  assert.equal(layout.points[0].marks[2].value, '2 (90)', 'a knot says its rank and the value behind it')
+  assert.equal(chartLayout({ type: 'bump', ascending: true, labels: ['Q1'], series: [{ name: 'Atlas', values: [90] }, { name: 'Beacon', values: [140] }] }).points[0].text, 'Atlas: Q1 1')
+})
+
+test('chartLayout: a marimekko\'s columns are as wide as their totals', () => {
+  const layout = chartLayout({ type: 'marimekko', labels: ['Americas', 'Asia'], series: [{ name: 'Hardware', values: [30, 10] }, { name: 'Software', values: [30, 30] }] })
+  const [first, second] = layout.points
+  assert.ok(Math.abs(parseFloat(first.marks[0].width!) / parseFloat(second.marks[0].width!) - 1.5) < 0.01, '60 against 40')
+  assert.equal(first.text, 'Americas: Hardware 30 (50%), Software 30 (50%)')
+  assert.equal(first.label, 'Americas: 60 (60%)', 'the readout\'s title says the column\'s share of the whole')
+  assert.deepEqual(second.marks.map(mark => [mark.name, mark.y, mark.height, mark.classes]), [['Software', '0%', '75%', 'chart-bar'], ['Hardware', '75%', '25%', 'chart-bar chart-bar-inner']])
+})
+
+test('chartLayout: a histogram sorts readings into bins between round numbers', () => {
+  const layout = chartLayout({ type: 'histogram', bins: 4, series: [{ name: 'Requests', values: [0, 1, 9, 10, 11, 25, 39, 40] }] })
+  assert.deepEqual(layout.points.map(point => point.text), ['0–10: 3', '10–20: 2', '20–30: 1', '30–40: 2'], 'an edge belongs to the bin it begins, and the last bin holds its upper edge')
+  assert.deepEqual(layout.points.map(point => [point.marks[0].x, point.marks[0].width]), [['0%', '25%'], ['25%', '25%'], ['50%', '25%'], ['75%', '25%']])
+  assert.equal(layout.points[0].marks[0].classes, 'chart-bar chart-bar-bin')
+  assert.deepEqual(layout.ticks.filter(tick => tick.classes.includes('chart-tick-x')).map(tick => tick.text), ['0', '10', '20', '30', '40'])
+})
+
+test('chartLayout: a box plot is five figures, with a reading far from the others as a dot of its own', () => {
+  const layout = chartLayout({ type: 'box', series: [{ name: 'Tokyo', values: [1, 2, 3, 4, 5, 6, 7, 8, 9, 40] }], words: { median: 'Middle' } })
+  assert.equal(layout.points[0].text, 'Tokyo: Min 1, Q1 3.25, Middle 5.5, Q3 7.75, Max 9')
+  const marks = layout.points[0].marks
+  assert.deepEqual(marks.filter(mark => mark.name).map(mark => [mark.name, mark.value]), [['Max', '9'], ['Q3', '7.75'], ['Middle', '5.5'], ['Q1', '3.25'], ['Min', '1']], 'the readout lists them from the top')
+  assert.deepEqual(marks.filter(mark => mark.classes.includes('chart-dot-outlier')).length, 1)
+  assert.deepEqual(layout.ticks.filter(tick => tick.classes.includes('chart-tick-x')).map(tick => tick.text), ['Tokyo'])
+  assert.equal(layout.legend.length, 0)
+})
+
+test('chartLayout: a heatmap\'s cell is as dark as its value in the range', () => {
+  const layout = chartLayout({ type: 'heatmap', labels: ['09', '12'], series: [{ name: 'Mon', values: [0, 10] }, { name: 'Tue', values: [5, null] }] })
+  assert.deepEqual(layout.points.map(point => [point.text, point.marks[0].tone]), [['Mon, 09: 0', 8], ['Mon, 12: 10', 100], ['Tue, 09: 5', 54]], 'a cell with no value is not drawn')
+  assert.deepEqual([layout.points[2].marks[0].x, layout.points[2].marks[0].y, layout.points[2].marks[0].width, layout.points[2].marks[0].height], ['0%', '50%', '50%', '50%'])
+  assert.deepEqual(layout.ticks.map(tick => [tick.text, tick.classes]), [['09', 'chart-tick chart-tick-x'], ['12', 'chart-tick chart-tick-x'], ['Mon', 'chart-tick chart-tick-y'], ['Tue', 'chart-tick chart-tick-y']])
+})
+
+test('chartLayout: a funnel\'s stage narrows to the stage after it', () => {
+  const layout = chartLayout({ type: 'funnel', series: [{ name: 'Visits', value: 1000 }, { name: 'Paid', value: 250 }] })
+  assert.deepEqual(layout.points.map(point => point.text), ['Visits: 1,000 (100%)', 'Paid: 250 (25%)'])
+  assert.equal(layout.points[0].marks[0].d, 'M0 0.7H100L62.5 49.3H37.5Z')
+  assert.equal(layout.points[1].marks[0].d, 'M37.5 50.7H62.5L62.5 99.3H37.5Z', 'the last stage keeps its width')
+  assert.deepEqual(layout.points.map(point => point.marks[0].tone), [100, 38])
+  assert.equal(layout.radial, true)
+  assert.equal(layout.tail, 11)
+})
+
+test('chartLayout: a waffle fills a hundred cells exactly', () => {
+  const layout = chartLayout({ type: 'waffle', series: [{ name: 'Chrome', value: 58.4 }, { name: 'Safari', value: 24.3 }, { name: 'Other', value: 17.3 }] })
+  assert.deepEqual(layout.points.map(point => point.marks.length), [59, 24, 17], 'the cell left over goes to the largest fraction')
+  assert.equal(layout.classes, 'chart-plot chart-plot-radial')
+  assert.deepEqual([layout.points[0].marks[0].x, layout.points[0].marks[0].y, layout.points[0].marks[0].classes], ['0%', '90%', 'chart-unit'], 'it fills from the foot')
+  assert.equal(layout.points[0].marks.filter(mark => mark.name).length, 1, 'one cell carries the series for the readout')
+  assert.deepEqual(layout.legend.map(key => key.value), ['58.4%', '24.3%', '17.3%'])
+})
+
+test('chartLayout: a treemap\'s tiles share the plot by their values, the largest first', () => {
+  const layout = chartLayout({ type: 'treemap', series: [{ name: 'icons', value: 10 }, { name: 'react-dom', value: 60 }, { name: 'editor', value: 30 }] })
+  assert.deepEqual(layout.points.map(point => point.text), ['react-dom: 60 (60%)', 'editor: 30 (30%)', 'icons: 10 (10%)'])
+  const areas = layout.points.map(point => parseFloat(point.marks[0].width!) * parseFloat(point.marks[0].height!) / 100)
+  assert.deepEqual(areas.map(area => Math.round(area)), [60, 30, 10])
+  assert.deepEqual([layout.points[0].marks[0].x, layout.points[0].marks[0].y, layout.points[0].marks[0].height], ['0%', '0%', '100%'])
+  assert.deepEqual(layout.values.map(value => value.text), ['react-dom', '60', 'editor', '30', 'icons'], 'a tile with room for one line says its name alone')
+  assert.equal(layout.points[0].marks[0].category, undefined, 'tiles are a wash of ink unless a series names a category')
+})
+
+test('chartLayout: a sunburst\'s children share their part\'s sweep', () => {
+  const layout = chartLayout({ type: 'sunburst', series: [{ name: 'Mobile', children: [{ name: 'iOS', value: 30 }, { name: 'Android', value: 20 }] }, { name: 'Desktop', value: 50 }] })
+  assert.deepEqual(layout.points.map(point => point.text), ['Mobile: 50 (50%)', 'Mobile, iOS: 30 (30%)', 'Mobile, Android: 20 (20%)', 'Desktop: 50 (50%)'])
+  assert.deepEqual(layout.points.map(point => [point.marks[0].category, point.marks[0].tone]), [['blue', undefined], ['blue', 78], ['blue', 34], ['orange', undefined]])
+  assert.deepEqual(layout.center, { value: '' })
+  assert.deepEqual(layout.legend.map(key => [key.name, key.value]), [['Mobile', '50%'], ['Desktop', '50%']])
+})
+
+test('chartLayout: nothing to draw is still a layout, in every form', () => {
+  const types = ['line', 'area', 'bar', 'scatter', 'pie', 'donut', 'rings', 'radar', 'waterfall', 'range', 'dumbbell', 'slope', 'bump', 'marimekko', 'histogram', 'box', 'heatmap', 'funnel', 'waffle', 'treemap', 'sunburst'] as const
+  assert.deepEqual([...chartForms()].sort(), [...types].sort(), 'chart.js has every form')
+  for (const type of types) {
+    for (const config of [{ type }, { type, labels: ['a'], series: [{ name: 'A' }] }, { type, series: [{ name: 'A', values: [], value: 0, points: [], ranges: [], children: [] }] }]) {
+      const layout = chartLayout(config)
+      assert.doesNotMatch(JSON.stringify(layout), /NaN|Infinity|undefined%/, type)
+      assert.equal(typeof chartMarkup(layout), 'string', type)
+    }
   }
-  assert.equal(chartLayout({ type: 'nothing' as never }).type, 'bar')
+  assert.throws(() => chartLayout({ type: 'nothing' as never }), /No form draws a "nothing" chart/, 'a type no form draws says which module to take')
 })
 
 test('chartMarkup: every chart satisfies the contract, and words are escaped', () => {
@@ -192,6 +360,23 @@ test('chartMarkup: every chart satisfies the contract, and words are escaped', (
       { type: 'rings', label: 'Goals', series: [{ name: 'Move', value: 72 }] },
       { type: 'radar', label: 'Scores', labels: ['a', 'b', 'c'], series: regions },
       { type: 'scatter', label: 'Size against time', series: [{ name: 'API', points: [{ x: 1, y: 2 }] }, { name: 'Pages', points: [{ x: 2, y: 1 }] }] },
+      { type: 'scatter', label: 'Markets', series: [{ name: 'Markets', points: [{ x: 1, y: 2, size: 3 }] }] },
+      { type: 'line', label: 'Forecast', labels: week, series: [{ ...regions[0], low: regions[0].values.map(value => value - 5), high: regions[0].values.map(value => value + 5) }] },
+      { type: 'area', stacked: 'stream', label: 'Listening', labels: week, series: regions },
+      { type: 'bar', mark: 'lollipop', label: 'Response', labels: week, series: [regions[0]] },
+      { type: 'waterfall', label: 'Cash', total: 'End', values: true, labels: week, series: [{ name: 'Cash', values: [40, 10, -20, 5, -8, 12, 3] }] },
+      { type: 'range', label: 'Temperature', labels: ['a', 'b'], series: [{ name: 'Tokyo', ranges: [[1, 4], [2, 6]] }] },
+      { type: 'dumbbell', label: 'Pay', labels: week, series: regions },
+      { type: 'slope', label: 'Share', labels: ['2019', '2024'], series: regions },
+      { type: 'bump', label: 'Rank', labels: week, series: regions },
+      { type: 'marimekko', label: 'Revenue', labels: week, series: regions },
+      { type: 'histogram', label: 'Response time', series: [regions[0]] },
+      { type: 'box', label: 'Latency', series: regions },
+      { type: 'heatmap', label: 'Activity', labels: week, series: regions },
+      { type: 'funnel', label: 'Sign-up', series: [{ name: 'Visits', value: 9 }, { name: 'Paid', value: 2 }] },
+      { type: 'waffle', label: 'Browsers', series: [{ name: 'Chrome', value: 6 }, { name: 'Safari', value: 4 }] },
+      { type: 'treemap', label: 'Bundle', series: [{ name: 'react-dom', value: 6, category: 'blue' }, { name: 'editor', value: 4 }] },
+      { type: 'sunburst', label: 'Devices', series: [{ name: 'Mobile', children: [{ name: 'iOS', value: 3 }, { name: 'Android', value: 2 }] }, { name: 'Desktop', value: 5 }] },
     ] as const
     for (const config of charts) assert.deepEqual(check(`<figure class="chart">${chartMarkup(config)}</figure>`, index, { knows: known, strict: true }), [], config.type)
   } finally { preset.dispose() }

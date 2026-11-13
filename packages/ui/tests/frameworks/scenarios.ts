@@ -1455,6 +1455,51 @@ export const scenarios: Record<string, Scenario> = {
     conforms(page)
     await driver.act(() => mounted.unmount())
     assert.equal(page.all('.chart').length, 0)
+
+    // The forms beyond the first eight: each is mounted on its own and holds what its layout says.
+    const canvas = () => page.one('.chart-canvas')
+    const toned = (marks: Element[], property = '--chart-tone') => marks.length > 0 && marks.every(mark => mark.getAttribute('style')?.includes(property))
+    const inPoints = (selector: string) => points().map(point => point.querySelectorAll(selector).length)
+
+    const funnel = await driver.mount('chart', { type: 'funnel', label: 'Visitors by stage', series: [{ name: 'Visited', value: 1200 }, { name: 'Signed up', value: 480 }, { name: 'Paid', value: 96 }] })
+    conforms(page)
+    assert.equal(canvas().getAttribute('role'), 'presentation', 'a canvas that holds the points is no picture to hide')
+    assert.equal(canvas().hasAttribute('aria-hidden'), false)
+    assert.equal(canvas().getAttribute('preserveAspectRatio'), 'none', 'and it still stretches to the plot')
+    assert.equal(page.all('.chart-canvas path.chart-stage').length, 3, 'a stage for each series, in the canvas')
+    assert.ok(toned(page.all('.chart-canvas path.chart-stage')), 'a stage carries its share of the color')
+    await driver.act(() => funnel.unmount())
+
+    const heatmap = await driver.mount('chart', { type: 'heatmap', label: 'Deploys by day and week', labels: ['Mon', 'Tue', 'Wed'], series: [{ name: 'Week 1', values: [2, 8, 5] }, { name: 'Week 2', values: [6, 1, 9] }] })
+    conforms(page)
+    assert.equal(page.all('rect.chart-cell').length, 6, 'a cell for each value')
+    assert.ok(toned(page.all('rect.chart-cell')), 'a cell carries its share of the color')
+    assert.equal(canvas().getAttribute('aria-hidden'), 'true', 'a canvas without the points is hidden')
+    assert.equal(canvas().hasAttribute('role'), false)
+    await driver.act(() => heatmap.unmount())
+
+    const lollipop = await driver.mount('chart', { type: 'bar', mark: 'lollipop', label: 'Requests per day, in thousands', labels: ['Mon', 'Tue', 'Wed'], series: [{ name: 'Production', values: [42, 58, 36] }] })
+    conforms(page)
+    assert.deepEqual(inPoints('line.chart-stem'), [1, 1, 1], 'a lollipop is a stem')
+    assert.deepEqual(inPoints('circle.chart-dot'), [1, 1, 1], 'with a dot at its end')
+    assert.equal(page.all('rect.chart-bar').length, 0)
+    await driver.act(() => lollipop.unmount())
+
+    const bubbles = await driver.mount('chart', { type: 'scatter', label: 'Latency by payload', series: [{ name: 'Production', points: [{ x: 1, y: 12, size: 4 }, { x: 3, y: 20, size: 16 }, { x: 5, y: 9, size: 9 }] }] })
+    conforms(page)
+    assert.equal(page.all('circle.chart-dot-bubble').length, 3, 'a point with a size is a bubble')
+    assert.ok(toned(page.all('circle.chart-dot-bubble'), '--chart-dot'), 'a bubble carries its size')
+    await driver.act(() => bubbles.unmount())
+
+    const slope = await driver.mount('chart', { type: 'slope', label: 'Share of traffic', labels: ['2019', '2024'], series: [{ name: 'Mobile', values: [38, 61] }, { name: 'Desktop', values: [62, 39] }] })
+    conforms(page)
+    assert.equal(points().length, 2, 'a point for each series')
+    assert.ok(points().every(point => point.parentElement === canvas()), 'the points stand in the canvas')
+    for (const selector of ['path.chart-hit-line', 'path.chart-line', 'path.chart-knot']) assert.ok(inPoints(selector).every(count => count > 0), `every point holds a ${selector}`)
+    assert.equal(canvas().getAttribute('role'), 'presentation')
+    assert.equal(canvas().getAttribute('preserveAspectRatio'), 'none')
+    await driver.act(() => slope.unmount())
+    assert.equal(page.all('.chart').length, 0)
   },
 
   async gradient(driver, page) {

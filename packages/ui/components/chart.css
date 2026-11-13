@@ -1,5 +1,7 @@
 /*
- * Chart: numbers drawn as lines, areas, bars, a pie, a donut, rings, a radar or a scatter, in one SVG.
+ * Chart: numbers drawn in one SVG, in every form the chart behavior lays out: lines, areas and bars, a scatter,
+ * a pie and a donut, rings, a radar, a waterfall, ranges, a slope, a bump, a marimekko, a histogram, a box plot,
+ * a heatmap, a funnel, a waffle, a treemap and a sunburst.
  * The plot is an SVG with no box of its own units: it is as wide as the room it is given and --chart-height
  * tall, and everything that stands on a scale (a hairline, a tick, a bar, a dot) is placed by percentages of it.
  * Only what must be a path (a line, an area, a slice) is drawn in chart-canvas, a 100 by 100 box inside the plot
@@ -17,6 +19,9 @@
  * slices of the other points step back to a tint, at once. chart-tip is the readout beside the point: it stands
  * at --chart-x and --chart-y of the plot, on the side with more room, and never leaves the plot.
  * In a chart-quiet chart every bar is a tint and the point marked aria-current is ink.
+ *
+ * Marks that are steps of one color (a heatmap's cells, a funnel's stages, the outer ring of a sunburst) take
+ * --chart-tone of it. A waterfall's steps up and down are the two status inks, beside the sign of their value.
  *
  * Marks draw themselves in when they first appear: bars rise from the baseline, lines run in from the start,
  * slices and shapes open from the center, a ring fills. Reduced motion removes all of it.
@@ -109,14 +114,15 @@
       margin-bottom: 1.375rem;
     }
 
-    /* Values written over the bars need a line above the plot, and after bars that run across, --chart-tail digits. */
+    margin-right: calc(var(--chart-tail, 0) * 1ch + min(var(--chart-tail, 0), 1) * .625rem);
+
+    /* Values written over the bars need a line above the plot; those written beside or on a mark do not. */
     &:has(.chart-value) {
       margin-top: 1rem;
     }
 
-    &:has(.chart-value-across) {
+    &:has(.chart-value-across), &:has(.chart-value-before), &:has(.chart-value-tile) {
       margin-top: 0;
-      margin-right: calc(var(--chart-tail, 0) * 1ch + .625rem);
     }
 
     /* A pie, a donut and rings: a square, as wide as --chart-size and no wider than its room. */
@@ -163,7 +169,7 @@
           fill: color-mix(in oklab, var(--chart-bar-color) 30%, var(--chart-surface));
         }
 
-        .chart-slice, .chart-arc {
+        .chart-slice, .chart-arc, .chart-line, .chart-knot, .chart-unit, .chart-stage, .chart-box, .chart-stem {
           opacity: .32;
         }
       }
@@ -174,7 +180,7 @@
         fill: color-mix(in oklab, var(--chart-bar-color) 30%, var(--chart-surface));
       }
 
-      .chart-slice, .chart-arc {
+      .chart-slice, .chart-arc, .chart-line, .chart-knot, .chart-unit, .chart-stage, .chart-box, .chart-stem {
         opacity: .32;
       }
     }
@@ -319,9 +325,21 @@
         stroke: var(--color-focus);
       }
 
-      .chart-slice, .chart-track {
+      .chart-slice, .chart-track, .chart-stage {
         stroke: var(--color-focus);
         stroke-width: 2px;
+      }
+
+      /* A mark cut by a clip takes the ring in place of the cut, so the ring is whole. */
+      .chart-cell, .chart-unit, .chart-tile {
+        stroke: var(--color-focus);
+        stroke-width: 2px;
+        clip-path: none;
+      }
+
+      /* A line's ring is a band of the focus color along it. */
+      .chart-hit-line {
+        stroke: color-mix(in oklab, var(--color-focus) 24%, transparent);
       }
     }
 
@@ -340,6 +358,15 @@
     vector-effect: non-scaling-stroke;
     rx: var(--chart-bar-radius);
     pointer-events: all;
+
+    /* Along a line: a wide stroke nobody sees, so the pointer does not have to find a line two pixels wide. */
+    &.chart-hit-line {
+      fill: none;
+      stroke-width: 18px;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      pointer-events: stroke;
+    }
   }
 
   /* The hairline through the point under the pointer. */
@@ -425,6 +452,33 @@
       }
     }
 
+    /* Between two values, with no end on the baseline: both ends are turned, and it opens from its middle. */
+    &.chart-bar-floating {
+      clip-path: inset(0 round var(--chart-bar-radius));
+
+      @starting-style {
+        clip-path: inset(50% round var(--chart-bar-radius));
+      }
+    }
+
+    /* A histogram's bin: it meets the bins beside it, parted by a hairline of the surface. */
+    &.chart-bar-bin {
+      clip-path: inset(0 .5px 0 .5px round var(--chart-bar-radius) var(--chart-bar-radius) 0 0);
+
+      @starting-style {
+        clip-path: inset(100% .5px 0 .5px round var(--chart-bar-radius) var(--chart-bar-radius) 0 0);
+      }
+    }
+
+    /* A waterfall's step up and step down: the two status inks, beside the sign written with the value. */
+    &.chart-bar-rise {
+      --chart-bar-color: var(--color-success);
+    }
+
+    &.chart-bar-fall {
+      --chart-bar-color: var(--color-danger);
+    }
+
     @media (prefers-reduced-motion: reduce) {
       transition: none;
     }
@@ -443,6 +497,23 @@
     /* Shown only while its point is under the pointer or has the focus. */
     &.chart-dot-quiet {
       opacity: 0;
+    }
+
+    /* A bubble: a wash of its color inside an edge of it, so bubbles that overlap show through each other. */
+    &.chart-dot-bubble {
+      fill: color-mix(in oklab, var(--category-mark, var(--chart-color)) 34%, transparent);
+      stroke: var(--category-mark, var(--chart-color));
+      stroke-width: 1.5px;
+      paint-order: normal;
+    }
+
+    /* A reading far from the others in a box plot: small and hollow. */
+    &.chart-dot-outlier {
+      r: 2.5px;
+      fill: var(--chart-surface);
+      stroke: var(--category-mark, var(--chart-color));
+      stroke-width: 1.5px;
+      paint-order: normal;
     }
   }
 
@@ -464,11 +535,35 @@
       dominant-baseline: central;
       transform: translate(.5rem, 0);
     }
+
+    /* Before the plot, ending at its edge: a slope's value at its first end. */
+    &.chart-value-before {
+      text-anchor: end;
+      dominant-baseline: central;
+      transform: translate(-.5rem, 0);
+    }
+
+    /* On a tile, from its first corner: its name. */
+    &.chart-value-tile {
+      fill: var(--color-text-strong);
+      font-weight: var(--font-weight-control);
+      text-anchor: start;
+      dominant-baseline: hanging;
+      transform: translate(.5rem, .5625rem);
+    }
+
+    /* Under a tile's name: its value, quieter. */
+    &.chart-value-quiet {
+      fill: var(--color-text-muted);
+      font-weight: 400;
+      transform: translate(.5rem, 1.5625rem);
+    }
   }
 
   /* A slice of a pie or a donut. It opens from the center when it first appears. */
   .chart-slice {
-    fill: var(--category-mark, var(--chart-color));
+    /* A slice of an outer ring takes a share of its part's color, --chart-tone. */
+    fill: color-mix(in oklab, var(--category-mark, var(--chart-color)) var(--chart-tone, 100%), var(--chart-surface));
     stroke: transparent;
     stroke-width: 0;
     stroke-linejoin: round;
@@ -542,6 +637,139 @@
     @media (prefers-reduced-motion: reduce) {
       transition: none;
     }
+  }
+
+  /* What a line's values may be: a band between their lower and upper ends, behind the line. */
+  .chart-band {
+    fill: color-mix(in oklab, var(--category-mark, color-mix(in oklab, var(--chart-color) 55%, transparent)) 18%, transparent);
+    stroke: none;
+    transition: opacity 720ms var(--easing-glide);
+
+    @starting-style {
+      opacity: 0;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: none;
+    }
+  }
+
+  /* A stem: a lollipop's line from the baseline to its dot, and the line between a dumbbell's ends. */
+  .chart-stem {
+    stroke: color-mix(in oklab, var(--category-mark, var(--chart-color)) 42%, var(--chart-surface));
+    stroke-width: 2px;
+    stroke-linecap: round;
+    pointer-events: none;
+  }
+
+  /* A whisker: from the lowest to the highest a value may be, through a bar's end or a box. */
+  .chart-whisker {
+    /* Halfway between the ink and the surface, so it reads over a bar of ink and over the plot alike. */
+    stroke: color-mix(in oklab, var(--chart-color) 52%, var(--chart-surface));
+    stroke-width: 1.5px;
+    pointer-events: none;
+  }
+
+  /* A box plot's box: from the first quartile to the third. */
+  .chart-box {
+    fill: var(--category-mark, var(--chart-color));
+    stroke: none;
+    clip-path: inset(0 round calc(var(--chart-bar-radius) * .75));
+  }
+
+  /* The median: a line of the surface cut through the box. */
+  .chart-median {
+    stroke: var(--chart-surface);
+    stroke-width: 2px;
+    pointer-events: none;
+  }
+
+  /* A waterfall's hairline from one bar's end to the next bar. */
+  .chart-link {
+    fill: none;
+    stroke: var(--color-line-mark);
+    stroke-width: 1px;
+    vector-effect: non-scaling-stroke;
+    shape-rendering: crispEdges;
+  }
+
+  /* A point of a slope or a bump: a round end of no length, so it stays a circle in a canvas that stretches. */
+  .chart-knot {
+    fill: none;
+    stroke: var(--category-mark, var(--chart-color));
+    stroke-width: calc(var(--chart-dot) * 2);
+    stroke-linecap: round;
+    vector-effect: non-scaling-stroke;
+    pointer-events: none;
+  }
+
+  /* A heatmap's cell: as much of its color as its value is of the range, --chart-tone, parted from its neighbors. */
+  .chart-cell {
+    fill: color-mix(in oklab, var(--category-mark, var(--chart-color)) var(--chart-tone, 100%), var(--chart-surface));
+    stroke: none;
+    clip-path: inset(1px round 3px);
+
+    @media (forced-colors: active) {
+      forced-color-adjust: none;
+    }
+  }
+
+  /* Under the pointer a cell takes the gap around it. */
+  @media (hover: hover) {
+    .chart-point:hover .chart-cell {
+      clip-path: inset(0 round 3px);
+    }
+  }
+
+  /* A waffle's unit: one percent of the whole. */
+  .chart-unit {
+    fill: var(--category-mark, var(--chart-color));
+    stroke: none;
+    clip-path: inset(1.5px round 3px);
+    transition: opacity 400ms var(--easing-glide) calc(min(var(--chart-index, 0), 12) * 60ms);
+
+    @starting-style {
+      opacity: 0;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: none;
+    }
+  }
+
+  /* A funnel's stage: a step lighter than the stage before it. */
+  .chart-stage {
+    fill: color-mix(in oklab, var(--category-mark, var(--chart-color)) var(--chart-tone, 100%), var(--chart-surface));
+    stroke: transparent;
+    stroke-width: 0;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+    transition: opacity 480ms var(--easing-glide) calc(min(var(--chart-index, 0), 12) * 60ms);
+
+    @starting-style {
+      opacity: 0;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: none;
+    }
+  }
+
+  /* A treemap's tile: a tint that holds its name, in its category's surface or a wash of ink. */
+  .chart-tile {
+    fill: var(--category-surface, color-mix(in oklab, var(--chart-color) 7%, var(--chart-surface)));
+    stroke: none;
+    clip-path: inset(1px round calc(var(--chart-bar-radius) * 1.25));
+  }
+
+  @media (hover: hover) {
+    .chart-point:hover .chart-tile {
+      fill: color-mix(in oklab, var(--category-mark, var(--chart-color)) 16%, var(--chart-surface));
+    }
+  }
+
+  .chart-point:focus .chart-tile {
+    fill: color-mix(in oklab, var(--category-mark, var(--chart-color)) 16%, var(--chart-surface));
   }
 
   /* What stands in a donut's hole or within rings: a figure and what it counts. */

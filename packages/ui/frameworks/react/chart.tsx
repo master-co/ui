@@ -13,14 +13,16 @@ export interface ChartProps extends Omit<ComponentProps<'figure'>, 'defaultValue
 }
 
 const style = (properties: Record<string, string | number>) => properties as CSSProperties
-/** A share of the plot, as short as the behavior writes it. */
-const share = (number: number) => Number(number.toFixed(4))
 
-const mark = (item: ChartMark, index: number) => {
-  const shared = { 'className': item.category ? `${item.classes} category-${item.category}` : item.classes, 'data-name': item.name, 'data-value': item.name === undefined ? undefined : item.value ?? '' }
-  if (item.kind === 'bar') return <rect {...shared} x={item.x} y={item.y} width={item.width} height={item.height} key={index} />
-  if (item.kind === 'dot') return <circle {...shared} cx={item.cx} cy={item.cy} r={item.r || undefined} key={index} />
-  return <path {...shared} d={item.d} strokeWidth={item.stroke || undefined} pathLength={item.kind === 'arc' ? 1 : undefined} key={index} />
+const drawn = (item: ChartMark, index: number) => {
+  const className = item.category ? `${item.classes} category-${item.category}` : item.classes
+  const named = { 'data-name': item.name, 'data-value': item.name === undefined ? undefined : item.value ?? '' }
+  // What only this mark knows, a share of its color or a bubble's size, goes on as a custom property.
+  const known = item.tone === undefined && item.size === undefined ? undefined : style({ ...(item.tone === undefined ? null : { '--chart-tone': `${item.tone}%` }), ...(item.size === undefined ? null : { '--chart-dot': `${item.size}px` }) })
+  if (item.kind === 'bar') return <rect className={className} x={item.x} y={item.y} width={item.width} height={item.height} style={known} {...named} key={index} />
+  if (item.kind === 'dot') return <circle className={className} cx={item.cx} cy={item.cy} r={item.r || undefined} style={known} {...named} key={index} />
+  if (item.kind === 'line') return <line className={className} x1={item.x1} y1={item.y1} x2={item.x2} y2={item.y2} {...named} key={index} />
+  return <path className={className} d={item.d} strokeWidth={item.stroke || undefined} pathLength={item.kind === 'arc' ? 1 : undefined} style={known} {...named} key={index} />
 }
 
 const hit = (area: NonNullable<ChartPoint['hit']>) => 'd' in area
@@ -34,28 +36,28 @@ const entry = (key: ChartLayout['legend'][number]) => (
 )
 
 /**
- * A chart: lines, areas, bars, a pie, a donut, rings, a radar or a scatter, in one SVG. React writes it from
+ * A chart, in every form the chart behavior lays out, in one SVG. React writes it from
  * `chartLayout()`, the same layout the behavior writes, so it is in the first HTML; the behavior shows the
  * readout of the point under the pointer or the keys, and says which series the legend hides.
  */
-export function Chart({ type, label, labels, series, stacked, horizontal, curve, min, max, ticks, format, tickFormat, xMin, xMax, xTicks, xFormat, dots, values, current, legend, toggle, legendLabel, hole, center, locale, value, defaultValue, onValueChange, className, ...root }: ChartProps) {
+export function Chart({ type, label, labels, series, stacked, horizontal, mark, curve, min, max, ticks, axis, format, tickFormat, xMin, xMax, xTicks, xFormat, dots, values, current, legend, toggle, legendLabel, hole, center, total, bins, ascending, words, locale, value, defaultValue, onValueChange, className, ...root }: ChartProps) {
   const [first] = useState(() => value ?? defaultValue ?? [])
   const [hidden, setHidden] = useState(first)
   const layout = useMemo(
-    () => chartLayout({ type, label, labels, series, stacked, horizontal, curve, min, max, ticks, format, tickFormat, xMin, xMax, xTicks, xFormat, dots, values, current, legend, toggle, legendLabel, hole, center, locale, hidden }),
-    [type, label, labels, series, stacked, horizontal, curve, min, max, ticks, format, tickFormat, xMin, xMax, xTicks, xFormat, dots, values, current, legend, toggle, legendLabel, hole, center, locale, hidden],
+    () => chartLayout({ type, label, labels, series, stacked, horizontal, mark, curve, min, max, ticks, axis, format, tickFormat, xMin, xMax, xTicks, xFormat, dots, values, current, legend, toggle, legendLabel, hole, center, total, bins, ascending, words, locale, hidden }),
+    [type, label, labels, series, stacked, horizontal, mark, curve, min, max, ticks, axis, format, tickFormat, xMin, xMax, xTicks, xFormat, dots, values, current, legend, toggle, legendLabel, hole, center, total, bins, ascending, words, locale, hidden],
   )
   const ref = useBehavior(chart, { hidden: first, draw: setHidden }, { value, defaultValue, onValueChange })
 
   // The first point is the stop in the tab order of the first render; the behavior moves it from there.
   const points = layout.points.map((point, index) => (
-    <g className="chart-point" role="listitem" aria-label={point.text} aria-current={point.current ? 'true' : undefined} data-label={point.label} tabIndex={index ? -1 : 0} style={style({ '--chart-x': share(point.x), '--chart-y': share(point.y), '--chart-reach': share(point.reach), '--chart-index': point.index })} key={point.index}>
+    <g className="chart-point" role="listitem" aria-label={point.text} aria-current={point.current ? 'true' : undefined} data-label={point.label} tabIndex={index ? -1 : 0} style={style({ '--chart-x': point.x, '--chart-y': point.y, '--chart-reach': point.reach, '--chart-index': point.index })} key={point.index}>
       {point.hit ? hit(point.hit) : null}
       {point.cursor ? <line className="chart-cursor" x1={point.cursor.x1} y1={point.cursor.y1} x2={point.cursor.x2} y2={point.cursor.y2} /> : null}
-      {point.marks.map(mark)}
+      {point.marks.map(drawn)}
     </g>
   ))
-  const paths = layout.paths.map((path, index) => <path className={path.category ? `${path.classes} category-${path.category}` : path.classes} d={path.d} key={index} />)
+  const paths = layout.paths.map((path, index) => <path className={path.category ? `${path.classes} category-${path.category}` : path.classes} d={path.d} style={path.tone === undefined ? undefined : style({ '--chart-tone': `${path.tone}%` })} key={index} />)
 
   return (
     <figure className={className ? `chart ${className}` : 'chart'} ref={ref} {...root}>
@@ -65,7 +67,7 @@ export function Chart({ type, label, labels, series, stacked, horizontal, curve,
             {layout.grid.map((line, index) => <line className={line.base ? 'chart-grid chart-grid-base' : 'chart-grid'} x1={line.x1} y1={line.y1} x2={line.x2} y2={line.y2} key={index} />)}
             {layout.ticks.map((tick, index) => <text className={tick.classes} x={tick.x} y={tick.y} style={tick.at ? style({ '--chart-x': tick.at[0], '--chart-y': tick.at[1] }) : undefined} key={index}>{tick.text}</text>)}
           </g>
-          <svg className="chart-canvas" viewBox={layout.viewBox} preserveAspectRatio={layout.stretch ? 'none' : undefined} aria-hidden={layout.stretch ? 'true' : undefined} role={layout.stretch ? undefined : 'presentation'}>{paths}{layout.radial ? points : null}</svg>
+          <svg className="chart-canvas" viewBox={layout.viewBox} preserveAspectRatio={layout.stretch ? 'none' : undefined} role={layout.radial ? 'presentation' : undefined} aria-hidden={layout.radial ? undefined : 'true'}>{paths}{layout.radial ? points : null}</svg>
           {layout.radial ? null : points}
           {layout.values.length ? <g aria-hidden="true">{layout.values.map((written, index) => <text className={written.classes} x={written.x} y={written.y} key={index}>{written.text}</text>)}</g> : null}
         </svg>
