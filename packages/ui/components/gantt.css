@@ -8,6 +8,12 @@
  * marked aria-current has an ink bar. A milestone is a point, not a span: a small ink diamond at --from.
  * gantt-now draws an ink line down the rows at --gantt-now.
  * In a narrow container the name stands over its bar instead of beside it.
+ * A bar the reader moves is one the page marks role="slider"; the behavior then writes --from and --to as it
+ * is dragged or moved with the keys. Such a bar shows a grab cursor, a grip at each end on hover and focus
+ * (always on a touch screen, where it is also 44px tall), and the focus ring. Held, it says aria-busy: it lifts
+ * with the lifted shadow and a firmer tint, and follows the pointer at once, while a key or a value set from
+ * outside glides it to its place. gantt-resize-start and gantt-resize-end mark the end the pointer holds, so
+ * the cursor resizes wherever the pointer goes. A read-only or disabled bar has none of this.
  */
 @layer components {
   .gantt {
@@ -42,6 +48,17 @@
       margin-inline-start: calc((var(--gantt-now) - var(--gantt-from)) / var(--gantt-span) * 100% - .5px);
       background: var(--color-text-strong);
       pointer-events: none;
+    }
+
+    /* While a bar is held, the cursor stays what it was at the press, wherever the pointer goes. */
+    &:has(.gantt-bar[aria-busy="true"]) {
+      cursor: grabbing;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    &:has(.gantt-resize-start, .gantt-resize-end) {
+      cursor: ew-resize;
     }
 
     /* Under the pointer a row's bar is a step firmer and its name takes the strong ink, at once. */
@@ -175,6 +192,110 @@
       background: linear-gradient(270deg, var(--gantt-done) calc(var(--progress, 0) * 1%), var(--gantt-tint) 0);
     }
 
+    /* A bar the reader moves: one stop in the tab order for the whole chart, with the focus ring above the rows. */
+    &[role="slider"] {
+      position: relative;
+
+      &:focus-visible {
+        z-index: 3;
+        @apply --focus-ring;
+      }
+    }
+
+    &[role="slider"]:not([aria-readonly="true"], [aria-disabled="true"]) {
+      cursor: grab;
+      /* A finger that moves along the bar drags it; one that moves down the page still scrolls it. */
+      touch-action: pan-y;
+      user-select: none;
+      -webkit-user-select: none;
+      /* A key or a value set from outside glides the bar to its place; the pointer moves it at once. */
+      transition-property: margin-inline-start, width;
+      transition-duration: var(--duration-quick);
+      transition-timing-function: var(--easing-glide);
+
+      /* The grips: an end of the bar is where the pointer resizes it, marked with a short upright line. */
+      &::before, &::after {
+        content: '';
+        position: absolute;
+        inset-block: 0;
+        width: min(.5rem, 30%);
+        background: linear-gradient(currentColor 0 0) center / 2px .75rem no-repeat;
+        opacity: 0;
+        cursor: ew-resize;
+        transition: opacity var(--duration-quick) var(--easing-glide);
+      }
+
+      &::before {
+        inset-inline-start: 0;
+      }
+
+      &::after {
+        inset-inline-end: 0;
+      }
+
+      @media (hover: hover) {
+        &:hover::before, &:hover::after {
+          opacity: .45;
+        }
+      }
+
+      &:focus-visible::before, &:focus-visible::after, &[aria-busy="true"]::before, &[aria-busy="true"]::after {
+        opacity: .45;
+      }
+
+      /* A milestone is a point: it moves, and has no ends to resize. */
+      &.gantt-milestone {
+        &::before, &::after {
+          content: none;
+        }
+      }
+
+      /* Held: it lifts above the rows on a firmer tint, and follows the pointer with no easing. */
+      &[aria-busy="true"] {
+        --gantt-tint: color-mix(in oklab, var(--gantt-color) 16%, transparent);
+        --gantt-done: color-mix(in oklab, var(--gantt-color) 30%, transparent);
+        z-index: 3;
+        box-shadow: var(--shadow-lifted);
+        cursor: grabbing;
+        transition-property: none;
+      }
+
+      /* The end the pointer holds: its grip is firm and the cursor resizes. */
+      &.gantt-resize-start, &.gantt-resize-end {
+        cursor: ew-resize;
+      }
+
+      &.gantt-resize-start::before, &.gantt-resize-end::after {
+        opacity: 1;
+      }
+
+      /* A touch screen has no hover to show the grips, and a finger needs a 44px bar. */
+      @media (pointer: coarse) {
+        &:not(.gantt-milestone) {
+          height: 2.75rem;
+          padding-block: .75rem;
+        }
+
+        &::before, &::after {
+          width: min(.75rem, 30%);
+          opacity: .45;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        transition-property: none;
+
+        &::before, &::after {
+          transition: none;
+        }
+      }
+    }
+
+    /* A disabled bar is drawn in the disabled ink; a read-only one looks as any bar does. */
+    &[aria-disabled="true"] {
+      color: var(--color-text-disabled);
+    }
+
     /* A milestone: a point in time, drawn as a diamond on it. Its text is kept for assistive technology. */
     &.gantt-milestone {
       width: .75rem;
@@ -200,6 +321,11 @@
       &.gantt-milestone {
         background: CanvasText;
       }
+
+      &[role="slider"]:focus-visible, &[aria-busy="true"] {
+        outline: 2px solid Highlight;
+        outline-offset: 2px;
+      }
     }
   }
 
@@ -216,6 +342,18 @@
     font-size: .71875rem;
     line-height: 1.25rem;
     list-style: none;
+    white-space: nowrap;
+  }
+
+  /* What the status region says is for assistive technology: it takes no room. */
+  .gantt-status {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
     white-space: nowrap;
   }
 }

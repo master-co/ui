@@ -1,7 +1,7 @@
 import { afterEach, test } from 'node:test'
 import assert from 'node:assert/strict'
 import { dom } from './dom.ts'
-import { calendar, calendarMonth, combobox, command, compare, dial, listbox, otp, splitter, stepper, tour, tree, wheel } from '../../behaviors/index.js'
+import { calendar, calendarMonth, combobox, command, compare, dial, gantt, listbox, otp, splitter, stepper, tour, tree, wheel } from '../../behaviors/index.js'
 
 /** happy-dom catches what a listener throws and reports it on the window; a test must not pass over it. */
 const thrown: unknown[] = []
@@ -457,5 +457,21 @@ test('tour: value reads and opens the step the tour is on, null when it is not r
   handle.value = null
   assert.equal(handle.value, null)
   assert.equal(isOpen(one('#second')), false)
+  assert.deepEqual(heard, [])
+})
+
+test('gantt: value is each bar\'s range by its row\'s id; set, it moves the bars, rows written later too, and says nothing', () => {
+  const { one, all, heard } = setup(`<ol class="gantt" style="--gantt-from: 0; --gantt-to: 10" aria-label="Plan">
+  <li class="gantt-row" data-value="design" style="--from: 2; --to: 6"><span class="gantt-label">Design</span><span class="gantt-bar" role="slider">Days 3 to 6</span></li>
+</ol>`)
+  const root = one<HTMLElement>('.gantt')
+  const handle = gantt(root, { text: false })
+  assert.deepEqual(handle.value, { design: [2, 6] })
+  root.insertAdjacentHTML('beforeend', '<li class="gantt-row" style="--from: 7; --to: 9"><span class="gantt-label">Build</span><span class="gantt-bar" role="slider">Days 8 to 9</span></li>')
+  assert.deepEqual(handle.value, { design: [2, 6], Build: [7, 9] }, 'a row without data-value stands for its label')
+  handle.value = { design: [3, 7], Build: [6, 8] }
+  assert.equal(one<HTMLElement>('.gantt-row').style.getPropertyValue('--from'), '3')
+  assert.equal(all('.gantt-bar')[1].getAttribute('aria-valuetext'), '6 to 8')
+  assert.equal(all('.gantt-bar')[1].textContent, 'Days 8 to 9', 'with text false the renderer writes the text')
   assert.deepEqual(heard, [])
 })

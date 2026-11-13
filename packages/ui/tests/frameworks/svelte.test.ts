@@ -182,6 +182,7 @@ test('svelte: the first HTML, rendered on a server, holds the state, and hydrate
     'tree': [() => page.all('.tree-item').map(row => row.getAttribute('aria-checked')), ['mixed', 'true', 'false']],
     'tags': [() => page.all('.chip').map(chip => chip.getAttribute('data-value')), ['design', 'research']],
     'editable': [() => [page.one('.editable-preview').textContent?.trim(), ...values('.editable-field')], ['Quarterly report', 'Quarterly report']],
+    'gantt': [() => page.all<HTMLElement>('.gantt-row').map(row => [row.style.getPropertyValue('--from'), row.style.getPropertyValue('--to'), row.querySelector('.gantt-bar')!.textContent]), [['0', '3', '0 to 3'], ['3', '7', '3 to 7']]],
     'sortable': [() => page.all('.sortable-item').map(item => item.getAttribute('data-value')), ['search', 'onboarding', 'billing']],
     'color-picker': [() => [page.one<HTMLElement>('.color-picker').style.getPropertyValue('--color-picker-hue'), page.one<HTMLSelectElement>('.color-picker-format').value, ...values('.color-picker-text')], ['260', 'oklch', 'oklch(62% 0.19 260)']],
   }

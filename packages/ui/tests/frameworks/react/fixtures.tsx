@@ -8,6 +8,7 @@ import { Compare } from '../../../frameworks/react/compare.tsx'
 import { Dial } from '../../../frameworks/react/dial.tsx'
 import { Dialog } from '../../../frameworks/react/dialog.tsx'
 import { Field } from '../../../frameworks/react/field.tsx'
+import { Gantt } from '../../../frameworks/react/gantt.tsx'
 import { Listbox } from '../../../frameworks/react/listbox.tsx'
 import { Menu, type MenuProps } from '../../../frameworks/react/menu.tsx'
 import { Otp } from '../../../frameworks/react/otp.tsx'
@@ -162,6 +163,7 @@ export const fixtures = {
   'dialog': DialogExample,
   'editable': Editable,
   'field': FieldExample,
+  'gantt': Gantt,
   'listbox': Listbox,
   'menu': MenuExample,
   'otp': Otp,

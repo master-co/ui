@@ -11,6 +11,7 @@ export const first: [string, Record<string, unknown>, RegExp][] = [
   ['otp', { length: 4, value: '48', 'aria-label': 'Verification code' }, /value="4"[\s\S]*value="8"/],
   ['tags', { value: ['design', 'research'], name: 'labels', 'aria-label': 'Labels' }, /data-value="design"[\s\S]*name="labels" value="design"[\s\S]*data-value="research"/],
   ['editable', { value: 'Quarterly report', label: 'Title' }, /class="editable-preview"[^>]*>(<!--.*?-->)*Quarterly report[\s\S]*value="Quarterly report"/],
+  ['gantt', { rows: [{ id: 'research', label: 'Research', start: 0, end: 3 }, { id: 'design', label: 'Design', start: 2, end: 6 }], from: 0, to: 10, value: { design: [3, 7] }, 'aria-label': 'Plan' }, /data-value="design"[^>]*--from: 3; --to: 7[\s\S]*tabindex="-1"[\s\S]*aria-valuenow="3" aria-valuetext="3 to 7"[^>]*>3 to 7</],
   ['sortable', { value: ['search', 'onboarding', 'billing'] }, /data-value="search"[\s\S]*data-value="onboarding"[\s\S]*data-value="billing"/],
   ['color-picker', { value: 'oklch(62% 0.19 260)', label: 'Accent color', name: 'accent' }, /--color-picker-hue: 260[\s\S]*aria-valuetext="Lightness 62%, chroma 0.19"[\s\S]*value="oklch" selected[\s\S]*name="accent" value="oklch\(62% 0.19 260\)"/],
   ['context-menu', { items: [{ label: 'Rename' }], 'aria-label': 'Project' }, /class="menu menu-context"/],

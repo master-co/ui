@@ -151,6 +151,14 @@ async function treeLater(driver: Driver, page: Page) {
   await driver.act(() => mounted.unmount())
 }
 
+/** A sprint in days: a done phase, the current one, one that is read only and a milestone. */
+const plan = [
+  { id: 'research', label: 'Research', start: 0, end: 3, progress: 100 },
+  { id: 'design', label: 'Design', start: 2, end: 6, current: true },
+  { id: 'build', label: 'Build', start: 4, end: 8, readOnly: true },
+  { id: 'launch', label: 'Launch', start: 8 },
+]
+
 /** The combobox with several values: chips in the field, which the framework writes from the value. */
 async function comboboxSeveral(driver: Driver, page: Page) {
   const { mounted, heard } = await owned(driver, 'combobox', { options: regions, value: ['hnd'], multiple: true, name: 'regions', listLabel: 'Regions', toggleLabel: 'Show regions', 'aria-label': 'Regions' })
@@ -798,6 +806,79 @@ export const scenarios: Record<string, Scenario> = {
     conforms(page)
     assert.equal(page.one('.editable-placeholder').textContent, 'Add a description', 'an empty value shows the placeholder')
     assert.equal(page.one('.editable-field').localName, 'textarea')
+  },
+
+  async gantt(driver, page) {
+    const committed: unknown[] = []
+    const asked: unknown[] = []
+    let refuse = false
+    const { mounted, heard } = await owned(driver, 'gantt', {
+      rows: plan,
+      from: 0,
+      to: 10,
+      now: 4,
+      ticks: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
+      'aria-label': 'Sprint plan, in days',
+      format: (start: number, end: number) => (start === end ? `Day ${start + 1}` : `Days ${start + 1} to ${end}`),
+      onValueCommit: (value: unknown) => committed.push(value),
+      onBeforeChange: (event: CustomEvent) => {
+        asked.push(event.detail)
+        if (refuse) event.preventDefault()
+      },
+    })
+    conforms(page)
+    const root = page.one<HTMLElement>('.gantt')
+    const row = (id: string) => page.one<HTMLElement>(`.gantt-row[data-value="${id}"]`)
+    const bar = (id: string) => page.one<HTMLElement>(`.gantt-row[data-value="${id}"] .gantt-bar`)
+    const range = (id: string) => [row(id).style.getPropertyValue('--from'), row(id).style.getPropertyValue('--to')]
+    assert.ok(root.classList.contains('gantt-now'))
+    assert.equal(page.all('.gantt-ticks li').length, 10, 'the scale names its units')
+    assert.deepEqual(range('design'), ['2', '6'], 'each bar is placed from the first render')
+    assert.equal(bar('design').textContent, 'Days 3 to 6')
+    assert.equal(bar('design').getAttribute('aria-valuetext'), 'Days 3 to 6')
+    assert.equal(bar('design').getAttribute('aria-labelledby'), row('design').querySelector('.gantt-label')!.id, 'a bar is named by its row')
+    assert.equal(row('design').getAttribute('aria-current'), 'true')
+    assert.ok(bar('launch').classList.contains('gantt-milestone'), 'a row without an end is a milestone')
+    assert.deepEqual(page.all<HTMLElement>('.gantt-bar').map(each => each.tabIndex), [0, -1, -1, -1], 'one stop in the tab order')
+    assert.ok(root.nextElementSibling?.matches('.gantt-status[role="status"]'), 'a status region follows the chart')
+
+    await driver.act(() => {
+      bar('design').focus()
+      page.key(bar('design'), 'ArrowRight')
+    })
+    const moved = { research: [0, 3], design: [3, 7], build: [4, 8], launch: [8, 8] }
+    assert.deepEqual(asked, [{ id: 'design', range: [3, 7], previous: [2, 6] }], 'the page is asked first')
+    assert.deepEqual(heard.at(-1), moved, 'the ranges come out')
+    assert.deepEqual(committed, [moved], 'and are committed, after the value')
+    assert.deepEqual(range('design'), ['3', '7'])
+    assert.equal(bar('design').textContent, 'Days 4 to 7', 'the framework writes the bar\'s text')
+    assert.equal(page.document.activeElement, bar('design'))
+
+    await driver.act(() => page.key(bar('design'), 'ArrowRight', { shiftKey: true }))
+    assert.deepEqual(range('design'), ['3', '8'], 'Shift moves the end')
+
+    refuse = true
+    const count = heard.length
+    await driver.act(() => page.key(bar('design'), 'ArrowRight'))
+    assert.deepEqual(range('design'), ['3', '8'], 'a refused change is not taken')
+    assert.equal(heard.length, count)
+    refuse = false
+
+    await driver.act(() => page.key(bar('build'), 'ArrowRight'))
+    assert.deepEqual(range('build'), ['4', '8'], 'a read-only bar does not move')
+
+    await driver.act(() => page.key(bar('design'), 'ArrowDown'))
+    assert.equal(page.document.activeElement, bar('build'), 'the arrows walk the bars')
+
+    await driver.act(() => mounted.set({ value: { ...moved, design: [1, 4], launch: [9, 9] } }))
+    assert.deepEqual(range('design'), ['1', '4'], 'ranges set by the owner are written')
+    assert.equal(bar('design').textContent, 'Days 2 to 4')
+    assert.equal(bar('design').getAttribute('aria-valuenow'), '1')
+    assert.equal(row('launch').style.getPropertyValue('--from'), '9')
+    assert.equal(heard.length, count, 'and say nothing')
+    conforms(page)
+    await driver.act(() => mounted.unmount())
+    assert.equal(page.all('.gantt').length, 0)
   },
 
   async sortable(driver, page) {
