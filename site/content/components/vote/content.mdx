@@ -1,0 +1,117 @@
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+
+A vote is a score that each reader may move up or down by one: the score of an answer, a post or a comment. The two arrows are native radios of one group, drawn as quiet square buttons, and the score between them is a CSS counter, so a press moves the number with no script.
+
+<ComponentPreview name="default" height={160} narrowHeight={192} title="Vote" background="plain" html={`<article class="sheet max-w(440) w-full flex items-start gap-sm p(12)">
+  <fieldset class="vote" aria-label="Vote on this answer" style="--votes: 41">
+    <input type="radio" class="vote-up" name="answer-vote" value="up" aria-label="Upvote">
+    <output class="vote-score"></output>
+    <input type="radio" class="vote-down" name="answer-vote" value="down" aria-label="Downvote">
+  </fieldset>
+  <div class="flex flex-col gap(4) pt(6) pr(8)">
+    <p class="m(0) text-sm font-medium fg-text-strong">Put the focus ring on the group</p>
+    <p class="m(0) text-sm fg-text-body">A mask cuts the element it is drawn on, ring and all. Draw the ring on the container while one of its inputs has focus.</p>
+  </div>
+</article>`} caption="Press an arrow to vote; press the other to change your vote." />
+
+## The score \{#score\}
+
+Set `--votes` on the group to the score without the reader's vote. The checked up arrow adds one and the checked down arrow takes one away, so a page that knows the reader's vote checks that arrow and gives the score of everyone else. Leave `vote-score` empty and the counter writes the score, with a true minus sign when it is below zero; write text inside it, such as `1.4k`, for a score too large to count by one.
+
+## In a row \{#horizontal\}
+
+`vote-horizontal` puts the arrows on either side of the score, for a row of actions under a comment. The score keeps the width of three figures, so the arrows do not move when it changes.
+
+<ComponentPreview name="horizontal" height={208} title="In a row" background="plain" bodyClass="p-lg" html={`<div class="card max-w(480) mx-auto">
+  <ol class="thread">
+    <li class="thread-item">
+      <span class="thread-avatar"><span class="avatar">KJ</span></span>
+      <div class="thread-body">
+        <p class="thread-header"><span class="thread-author">Katherine Johnson</span> <time class="thread-meta" datetime="2026-11-12T10:54">12m</time></p>
+        <p class="thread-text">The figures in the second table are right. The third needs another pass.</p>
+        <div class="flex items-center gap(4) mt(6) ml(-8)">
+          <fieldset class="vote vote-horizontal" aria-label="Vote on this comment" style="--votes: 12">
+            <input type="radio" class="vote-up" name="comment-vote" value="up" aria-label="Upvote" checked>
+            <output class="vote-score"></output>
+            <input type="radio" class="vote-down" name="comment-vote" value="down" aria-label="Downvote">
+          </fieldset>
+          <button type="button" class="btn btn-quiet btn-sm">Reply</button>
+        </div>
+      </div>
+    </li>
+  </ol>
+</div>`} />
+
+## States \{#states\}
+
+At rest an arrow is an outline in muted ink with no face of its own. Under the pointer it rises as a small sheet, under a press it sinks into a well, and chosen it fills with ink. Up and down are told apart by direction, not by hue. Disable the fieldset to show a score that cannot be voted on, such as one on the reader's own post: the arrows fade and the score stays.
+
+<ComponentPreview name="states" height={136} title="States" background="plain" bodyClass="flex flex-wrap items-center justify-center gap-xl p-lg" html={`<fieldset class="vote" aria-label="Vote on this answer" style="--votes: 3">
+  <input type="radio" class="vote-up" name="vote-down-state" value="up" aria-label="Upvote">
+  <output class="vote-score"></output>
+  <input type="radio" class="vote-down" name="vote-down-state" value="down" aria-label="Downvote" checked>
+</fieldset>
+<fieldset class="vote" aria-label="Vote on this answer" style="--votes: -2">
+  <input type="radio" class="vote-up" name="vote-negative" value="up" aria-label="Upvote">
+  <output class="vote-score"></output>
+  <input type="radio" class="vote-down" name="vote-negative" value="down" aria-label="Downvote">
+</fieldset>
+<fieldset class="vote" aria-label="Votes on your answer" disabled>
+  <input type="radio" class="vote-up" name="vote-own" value="up" aria-label="Upvote">
+  <output class="vote-score">1.4k</output>
+  <input type="radio" class="vote-down" name="vote-own" value="down" aria-label="Downvote">
+</fieldset>`} />
+
+## Taking a vote back \{#taking-back\}
+
+A radio cannot be cleared by pressing it again, so without a script a reader can change a vote but not withdraw it. These lines let a second press on the chosen arrow, or Space on it, clear the vote, and the score returns to `--votes`.
+
+<ComponentPreview name="taking-back" height={136} title="Taking a vote back" background="plain" html={`<fieldset class="vote" id="vote-clear" aria-label="Vote on this answer" style="--votes: 7">
+  <input type="radio" class="vote-up" name="vote-clear" value="up" aria-label="Upvote" checked>
+  <output class="vote-score"></output>
+  <input type="radio" class="vote-down" name="vote-clear" value="down" aria-label="Downvote">
+</fieldset>
+<script>
+  const vote = document.getElementById('vote-clear')
+  let chosen = vote.querySelector(':checked')
+
+  vote.addEventListener('click', function (event) {
+    const arrow = event.target.closest('.vote-up, .vote-down')
+    if (!arrow) return
+    if (arrow === chosen) {
+      arrow.checked = false
+      arrow.dispatchEvent(new Event('change', { bubbles: true }))
+      chosen = null
+    } else {
+      chosen = arrow
+    }
+  })
+
+  vote.addEventListener('keydown', function (event) {
+    if (event.key === ' ' && event.target === chosen) {
+      event.preventDefault()
+      chosen.click()
+    }
+  })
+</script>`} caption="Press the filled arrow again to take the vote back." />
+
+## Accessibility \{#accessibility\}
+
+- Name the group with `aria-label` or a `<legend>`, and each radio: "Upvote" and "Downvote".
+- Put the score in an `<output>`. It is read where it stands, between the two arrows, and as a status it is announced when a vote changes it.
+- The arrows keep their focus ring: the glyph is drawn on a pseudo-element, so no mask cuts the ring. Arrow keys move the vote between the two radios, as in any radio group.
+- Each arrow is 32px, and 44px on a touch screen. In forced colors the glyphs take the button text color, and the chosen one the highlight color.
+
+## Classes \{#classes\}
+
+<ContractTable name="vote" />
+
+## Custom properties \{#custom-properties\}
+
+<ContractTable name="vote" show="properties" />
+
+## Source \{#source\}
+
+<ComponentSource name="vote" />

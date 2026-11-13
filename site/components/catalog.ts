@@ -48,6 +48,7 @@ export const components = [
   { slug: 'scale', name: 'Scale', category: 'Forms', description: 'One answer on a row of numbers, from one end to the other.' },
   { slug: 'checklist', name: 'Checklist', category: 'Forms', description: 'A short list of things to do that counts how many are done.' },
   { slug: 'rating', name: 'Rating', category: 'Forms', description: 'A score out of a few stars, as native radios.' },
+  { slug: 'vote', name: 'Vote', category: 'Forms', description: 'A score that a reader moves up or down by one.' },
   { slug: 'dropzone', name: 'Dropzone', category: 'Forms', description: 'A wide target for choosing or dropping files.' },
   { slug: 'otp', name: 'OTP', category: 'Forms', description: 'A short code typed one character to a slot.' },
   { slug: 'keypad', name: 'Keypad', category: 'Forms', description: 'The keys of a phone, for a code or an amount typed with a thumb.' },

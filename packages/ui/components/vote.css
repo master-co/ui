@@ -1,0 +1,155 @@
+/*
+ * Vote: a score that a reader moves up or down by one.
+ * The two arrows are native radios of one group, drawn as quiet square buttons, so a press, the arrow keys
+ * and the form value work as they do for any radio. The score is a CSS counter: the group starts it at --votes,
+ * the score without the reader's vote, and the checked arrow adds one or takes one away, so the number is
+ * right after every press with no script. A negative score is written with a true minus sign.
+ * At rest an arrow is an outline in muted ink with no face; under the pointer it rises as a small sheet, under a
+ * press it sinks into a well, and chosen it fills with ink. There is no hue: up and down are told apart by the
+ * arrow's direction, and the number says the rest.
+ * Geometry: 32px arrows with a small control's corner (44 on a touch screen) and a 16px glyph, the score on a
+ * 20px line between them in tabular figures. Stacked beside a post by default; in a row with vote-horizontal.
+ * Radios cannot be cleared by a second press; a few lines of script add that, and without them a vote can
+ * still be changed from up to down.
+ */
+@counter-style vote-score {
+  system: extends decimal;
+  negative: '\2212';
+}
+
+@layer components {
+  .vote {
+    --vote-size: 2rem;
+    --votes: 0;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    vertical-align: middle;
+    counter-reset: vote var(--votes);
+
+    &:has(.vote-up:checked) {
+      counter-increment: vote;
+    }
+
+    &:has(.vote-down:checked) {
+      counter-increment: vote -1;
+    }
+
+    /* In a row: the score stands between the arrows, as wide as three figures so a change does not move them. */
+    &.vote-horizontal {
+      flex-direction: row;
+
+      .vote-score {
+        min-width: 3ch;
+      }
+    }
+
+    @media (pointer: coarse) {
+      --vote-size: 2.75rem;
+    }
+  }
+
+  .vote-up, .vote-down {
+    position: relative;
+    display: inline-grid;
+    flex: none;
+    place-items: center;
+    width: var(--vote-size);
+    height: var(--vote-size);
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: calc(var(--radius-control-sm) * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    background: transparent;
+    color: var(--color-text-muted);
+    box-shadow: none;
+    appearance: none;
+    -webkit-tap-highlight-color: transparent;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition-property: box-shadow, color;
+    transition-duration: var(--duration-quick);
+    transition-timing-function: var(--easing-glide);
+
+    /* The arrow: an outline at rest, filled with ink when it is the reader's vote. */
+    &::before {
+      content: '';
+      width: 1rem;
+      height: 1rem;
+      background: currentColor;
+      mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.25' stroke-linejoin='round'%3E%3Cpath d='M7.21 3.15 3.41 7.5Q2.75 8.25 3.75 8.25H5.75v4q0 1 1 1h2.5q1 0 1-1v-4h2q1 0 .34-.75L8.79 3.15q-.79-.9-1.58 0Z'/%3E%3C/svg%3E") center / contain no-repeat;
+    }
+
+    @media (hover: hover) {
+      &:hover:not(:disabled) {
+        @apply --surface-sheet;
+        color: var(--color-text-strong);
+        box-shadow: var(--shadow-raised);
+      }
+    }
+
+    &:active:not(:disabled) {
+      background: var(--color-surface-inset);
+      color: var(--color-text-strong);
+      box-shadow: var(--shadow-pressed);
+      transition-duration: var(--duration-press);
+    }
+
+    &:checked {
+      color: var(--color-text-strong);
+
+      &::before {
+        mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='black' stroke='black' stroke-width='1.25' stroke-linejoin='round'%3E%3Cpath d='M7.21 3.15 3.41 7.5Q2.75 8.25 3.75 8.25H5.75v4q0 1 1 1h2.5q1 0 1-1v-4h2q1 0 .34-.75L8.79 3.15q-.79-.9-1.58 0Z'/%3E%3C/svg%3E");
+      }
+    }
+
+    &:focus-visible {
+      @apply --focus-ring;
+    }
+
+    &:disabled {
+      color: var(--color-text-disabled);
+      cursor: not-allowed;
+    }
+
+    @media (forced-colors: active) {
+      &::before {
+        background: ButtonText;
+        forced-color-adjust: none;
+      }
+
+      &:checked::before {
+        background: Highlight;
+      }
+
+      &:disabled::before {
+        background: GrayText;
+      }
+    }
+  }
+
+  .vote-down::before {
+    rotate: .5turn;
+  }
+
+  /* The score, from the counter; text written inside it is shown instead, for a score too large to count by one. */
+  .vote-score {
+    display: block;
+    min-width: 2ch;
+    color: var(--color-text-strong);
+    font: var(--font-weight-control) .875rem/1rem var(--font-family-sans);
+    font-feature-settings: inherit;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+    white-space: nowrap;
+
+    &:empty::before {
+      content: counter(vote, vote-score);
+    }
+  }
+}

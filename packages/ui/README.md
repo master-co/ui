@@ -90,6 +90,7 @@ Or import only the theme and the components you use:
 | Chip | `chip`, `chip-input`, `chip-remove` |
 | Swatch | `swatch`, `swatch-input`, `swatch-sm`, `swatch-lg`, `swatch-square` |
 | Rating | `rating`, `rating-input`, `rating-sm`, `rating-lg` |
+| Vote | `vote`, `vote-horizontal`, `vote-up`, `vote-score`, `vote-down` |
 | Choice | `choice`, `choice-body`, `choice-title`, `choice-description`, `choice-end` |
 | Poll | `poll`, `poll-title`, `poll-option`, `poll-input`, `poll-label`, `poll-value`, `poll-meta` |
 | Scale | `scale`, `scale-option`, `scale-input`, `scale-ends` |
