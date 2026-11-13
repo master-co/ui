@@ -1,34 +1,8 @@
 import { mount as render, type Component } from 'svelte'
-import Calendar from '../../../frameworks/svelte/Calendar.svelte'
-import Combobox from '../../../frameworks/svelte/Combobox.svelte'
-import Command from '../../../frameworks/svelte/Command.svelte'
-import Editable from '../../../frameworks/svelte/Editable.svelte'
-import Listbox from '../../../frameworks/svelte/Listbox.svelte'
-import Otp from '../../../frameworks/svelte/Otp.svelte'
-import Stepper from '../../../frameworks/svelte/Stepper.svelte'
-import Tabs from '../../../frameworks/svelte/Tabs.svelte'
-import Tags from '../../../frameworks/svelte/Tags.svelte'
-import Toaster, { toast } from '../../../frameworks/svelte/Toaster.svelte'
-import Tree from '../../../frameworks/svelte/Tree.svelte'
-import Wheel from '../../../frameworks/svelte/Wheel.svelte'
-import CompareExample from '../svelte/CompareExample.svelte'
-import ContextMenuExample from '../svelte/ContextMenuExample.svelte'
-import DialogExample from '../svelte/DialogExample.svelte'
-import FieldExample from '../svelte/FieldExample.svelte'
-import MenuExample from '../svelte/MenuExample.svelte'
-import PopoverExample from '../svelte/PopoverExample.svelte'
-import SortableExample from '../svelte/SortableExample.svelte'
-import SplitterExample from '../svelte/SplitterExample.svelte'
-import ToolbarExample from '../svelte/ToolbarExample.svelte'
-import TooltipExample from '../svelte/TooltipExample.svelte'
+import { fixtures as shared, toast } from '../svelte/fixtures.ts'
 import Owner from './Owner.svelte'
 
-const fixtures = {
-  'calendar': Calendar, 'combobox': Combobox, 'command': Command, 'compare': CompareExample, 'context-menu': ContextMenuExample,
-  'dialog': DialogExample, 'field': FieldExample, 'listbox': Listbox, 'menu': MenuExample, 'otp': Otp, 'popover': PopoverExample,
-  'splitter': SplitterExample, 'stepper': Stepper, 'tabs': Tabs, 'toast': Toaster, 'tooltip': TooltipExample, 'tree': Tree, 'wheel': Wheel,
-  'editable': Editable, 'tags': Tags, 'sortable': SortableExample, 'toolbar': ToolbarExample,
-} as unknown as Record<string, Component<Record<string, unknown>>>
+const fixtures = shared as unknown as Record<string, Component<Record<string, unknown>>>
 
 export function mount(name: string, target: HTMLElement, props: Record<string, unknown>) {
   render(Owner, { target, props: { component: fixtures[name], props } })
