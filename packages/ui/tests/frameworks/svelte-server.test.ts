@@ -30,7 +30,6 @@ const others: Record<string, Record<string, unknown>> = {
   'toolbar': {},
   'tooltip': {},
   'tour': { spotlight: true },
-  'tree': { nodes: [{ label: 'themes', children: [{ label: 'paper.css', value: 'themes/paper.css' }] }], 'aria-label': 'Files' },
 }
 
 test('svelte: every fixture renders on a server', () => {

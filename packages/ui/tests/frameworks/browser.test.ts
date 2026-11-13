@@ -261,7 +261,7 @@ for (const framework of ['react', 'svelte', 'vue']) {
       await page.keyboard.press('ArrowUp')
       assert.equal(await focused(page), 'themes')
       await page.keyboard.press('ArrowRight')
-      assert.equal(await tree.getByText('themes', { exact: true }).getAttribute('aria-expanded'), 'true')
+      assert.equal(await tree.getByRole('treeitem', { name: 'themes', exact: true }).getAttribute('aria-expanded'), 'true')
     })
 
     await t.test('a wheel turns to the next option and gives its value once it rests', async () => {

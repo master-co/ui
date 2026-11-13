@@ -4,6 +4,12 @@
  * keys the browser already gives it. With a script that provides the tree pattern, the same classes read
  * aria-expanded instead. Rows are dense and quiet; the current one takes a chip tone, and each level is set
  * in on a hairline guide.
+ *
+ * The tree pattern can say more, and the stylesheet draws it from the same attributes: a tree with
+ * aria-multiselectable="true" marks each selected row as it marks one; a checkbox tree gives each row a
+ * tree-check, the checkbox's own well drawn from the row's aria-checked; a branch whose rows are on their way
+ * says aria-busy="true", and a spinner it holds takes the chevron's place; and a label being renamed is an
+ * editable in place, its text where the label's was.
  */
 @layer components {
   .tree {
@@ -159,5 +165,130 @@
   /* Driven by script: a row that says it is collapsed hides the rows that follow it. */
   .tree-item[aria-expanded="false"] + .tree-sub {
     display: none;
+  }
+
+  /* The words of a row: a long one ends in an ellipsis instead of widening the tree. */
+  .tree-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /*
+   * A row's check, in a checkbox tree: the checkbox's well at a row's scale, empty, checked or mixed as the
+   * row's aria-checked says. It stands after the chevron's column, so checks line up level by level.
+   */
+  .tree-check {
+    display: inline-grid;
+    flex: none;
+    place-items: center;
+    width: 1rem;
+    height: 1rem;
+    border-radius: calc((var(--radius-chip) - 1px) * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    @apply --check-well;
+    transition-property: background-color, box-shadow;
+    transition-duration: var(--duration-quick);
+    transition-timing-function: var(--easing-glide);
+
+    &::after {
+      content: '';
+      width: .5625rem;
+      height: .5625rem;
+      opacity: 0;
+      scale: .6;
+      background: var(--color-text-inverse);
+      @apply --check-mark;
+      /* The mark leaves at once and arrives with a short settle, as the checkbox's does. */
+      transition: opacity var(--duration-press) linear, scale var(--duration-press) linear;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      &::after {
+        scale: 1;
+      }
+    }
+  }
+
+  @media (hover: hover) {
+    .tree-item:hover:not([aria-checked="true"], [aria-checked="mixed"], [aria-disabled="true"]) .tree-check {
+      @apply --check-well-hover;
+    }
+  }
+
+  .tree-item:is([aria-checked="true"], [aria-checked="mixed"]) .tree-check {
+    @apply --check-ink;
+
+    &::after {
+      opacity: 1;
+      scale: 1;
+      transition: opacity var(--duration-quick) var(--easing-glide), scale var(--duration-base) var(--easing-glide);
+    }
+  }
+
+  .tree-item[aria-checked="mixed"] .tree-check::after {
+    @apply --check-dash;
+  }
+
+  .tree-item[aria-disabled="true"] .tree-check {
+    opacity: .5;
+  }
+
+  @media (forced-colors: active) {
+    .tree-check {
+      forced-color-adjust: none;
+      background: Field;
+      box-shadow: inset 0 0 0 1px FieldText;
+
+      &::after {
+        background: HighlightText;
+      }
+    }
+
+    .tree-item:is([aria-checked="true"], [aria-checked="mixed"]) .tree-check {
+      background: Highlight;
+      box-shadow: none;
+    }
+
+    .tree-item[aria-disabled="true"] .tree-check {
+      opacity: 1;
+      box-shadow: inset 0 0 0 1px GrayText;
+    }
+  }
+
+  /*
+   * A branch whose rows are on their way: the spinner it holds stands in the chevron's column until they
+   * arrive, and is not drawn otherwise. Put the spinner first in the row.
+   */
+  .tree-item .spinner {
+    --spinner-size: .875rem;
+    display: none;
+  }
+
+  .tree-item[aria-busy="true"] {
+    cursor: progress;
+
+    &::before {
+      display: none;
+    }
+
+    .spinner {
+      display: inline-block;
+    }
+  }
+
+  /*
+   * Renaming: the editable that takes the label's place reaches out by its padding, so its text stands where
+   * the label's stood. The row around it takes no selection; the field does.
+   */
+  .tree-item .editable {
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+
+  .tree-item .editable-field {
+    cursor: text;
+    user-select: text;
+    -webkit-user-select: text;
   }
 }

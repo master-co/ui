@@ -64,6 +64,93 @@ const regions = [
   { value: 'fra', label: 'Frankfurt', description: 'Germany' },
 ]
 
+const files = [
+  { label: 'components', value: 'components', open: true, children: [{ label: 'button.css', value: 'button' }, { label: 'input.css', value: 'input' }] },
+  { label: 'README.md', value: 'readme' },
+]
+
+/** A tree where any number of rows are selected: the value is the list of them. */
+async function treeSeveral(driver: Driver, page: Page) {
+  const { mounted, heard } = await owned(driver, 'tree', { nodes: files, multiple: true, value: ['input'], 'aria-label': 'Files' })
+  conforms(page)
+  const row = (value: string) => page.one<HTMLElement>(`.tree-item[data-value="${value}"]`)
+  const selected = () => page.all('.tree-item[aria-selected="true"]').map(item => item.getAttribute('data-value'))
+  assert.equal(page.one('.tree').getAttribute('aria-multiselectable'), 'true')
+  assert.deepEqual(selected(), ['input'], 'the value is drawn from the first render')
+  assert.equal(row('button').getAttribute('aria-selected'), 'false', 'a row that can be selected says when it is not')
+
+  await driver.act(() => page.click(row('button'), { ctrlKey: true }))
+  assert.deepEqual(heard, [['button', 'input']], 'Control with a click selects one more')
+  await driver.act(() => { row('button').focus(); page.key(row('button'), 'a', { ctrlKey: true }) })
+  assert.deepEqual(heard.at(-1), ['button', 'input', 'readme'], 'Control with A selects every row')
+  await driver.act(() => page.click(row('readme')))
+  assert.deepEqual(heard.at(-1), ['readme'], 'a click selects one row alone')
+
+  await driver.act(() => mounted.set({ value: ['button'] }))
+  assert.deepEqual(selected(), ['button'])
+  assert.equal(heard.length, 3, 'a value set from outside is not said back')
+  await driver.act(() => mounted.unmount())
+}
+
+/** A checkbox tree: a branch says what its rows say, and the value is the checked leaves. */
+async function treeChecks(driver: Driver, page: Page) {
+  const { mounted, heard } = await owned(driver, 'tree', { nodes: files, checkable: true, value: ['button'], 'aria-label': 'Files' })
+  conforms(page)
+  const row = (value: string) => page.one<HTMLElement>(`.tree-item[data-value="${value}"]`)
+  const state = () => page.all('.tree-item').map(item => `${item.getAttribute('data-value')}:${item.getAttribute('aria-checked')}`)
+  assert.equal(page.all('.tree-item .tree-check').length, 4, 'every row has a check')
+  assert.deepEqual(state(), ['components:mixed', 'button:true', 'input:false', 'readme:false'], 'the branch is mixed from the first render')
+
+  await driver.act(() => { row('components').focus(); page.key(row('components'), ' ') })
+  assert.deepEqual(heard, [['button', 'input']], 'checking a branch checks its rows, and the value is the leaves')
+  assert.deepEqual(state(), ['components:true', 'button:true', 'input:true', 'readme:false'])
+  await driver.act(() => page.click(row('input')))
+  assert.deepEqual(heard.at(-1), ['button'])
+  assert.equal(row('components').getAttribute('aria-checked'), 'mixed')
+
+  await driver.act(() => mounted.set({ value: ['input', 'readme'] }))
+  assert.deepEqual(state(), ['components:mixed', 'button:false', 'input:true', 'readme:true'])
+  assert.equal(heard.length, 2)
+  await driver.act(() => mounted.unmount())
+}
+
+/** A branch whose rows come later, and a row renamed in place: the owner hears both and writes the rows. */
+async function treeLater(driver: Driver, page: Page) {
+  const expanded: string[] = []
+  const renamed: [string, string][] = []
+  const notes = { label: 'notes.md', value: 'notes' }
+  const mounted = await driver.mount('tree', {
+    nodes: [{ label: 'remote', value: 'remote', children: [] }, notes],
+    'aria-label': 'Files',
+    onExpand: (value: string) => expanded.push(value),
+    onRename: (value: string, label: string) => renamed.push([value, label]),
+  })
+  conforms(page)
+  const row = (value: string) => page.one<HTMLElement>(`.tree-item[data-value="${value}"]`)
+  assert.ok(row('remote').querySelector('.spinner'), 'a branch whose rows come later holds a spinner')
+
+  await driver.act(() => { row('remote').focus(); page.key(row('remote'), 'ArrowRight') })
+  assert.deepEqual(expanded, ['remote'], 'the owner hears the branch open')
+  assert.equal(row('remote').getAttribute('aria-busy'), 'true')
+  await driver.act(() => mounted.set({ nodes: [{ label: 'remote', value: 'remote', children: [{ label: 'origin', value: 'origin' }] }, notes] }))
+  assert.equal(row('remote').hasAttribute('aria-busy'), false, 'the rows arrived')
+  assert.equal(row('origin').getAttribute('tabindex'), '-1')
+  await driver.act(() => page.key(row('remote'), 'ArrowRight'))
+  assert.equal(page.document.activeElement, row('origin'), 'the keys reach the rows at once')
+
+  await driver.act(() => { row('notes').focus(); page.key(row('notes'), 'F2') })
+  const field = page.one<HTMLInputElement>('.tree .editable-field')
+  assert.equal(page.document.activeElement, field)
+  await driver.act(() => page.type(field, 'todo.md'))
+  await driver.act(() => page.key(field, 'Enter'))
+  assert.deepEqual(renamed, [['notes', 'todo.md']], 'the owner hears the value and the new label')
+  assert.equal(page.document.activeElement, row('notes'), 'focus returns to the row')
+  await driver.act(() => mounted.set({ nodes: [{ label: 'remote', value: 'remote', children: [{ label: 'origin', value: 'origin' }] }, { label: 'todo.md', value: 'notes' }] }))
+  assert.equal(row('notes').querySelector('.tree-label')?.textContent, 'todo.md', 'the owner keeps the label')
+  conforms(page)
+  await driver.act(() => mounted.unmount())
+}
+
 /** The combobox with several values: chips in the field, which the framework writes from the value. */
 async function comboboxSeveral(driver: Driver, page: Page) {
   const { mounted, heard } = await owned(driver, 'combobox', { options: regions, value: ['hnd'], multiple: true, name: 'regions', listLabel: 'Regions', toggleLabel: 'Show regions', 'aria-label': 'Regions' })
@@ -474,6 +561,10 @@ export const scenarios: Record<string, Scenario> = {
     assert.deepEqual(page.all('[aria-selected="true"]').map(row => row.textContent?.trim()), ['README.md'])
     assert.deepEqual(heard, ['components/button.css'])
     await driver.act(() => mounted.unmount())
+
+    await treeSeveral(driver, page)
+    await treeChecks(driver, page)
+    await treeLater(driver, page)
   },
 
   async wheel(driver, page) {

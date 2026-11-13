@@ -158,7 +158,7 @@ Or import only the theme and the components you use:
 | Timeline | `timeline`, `timeline-item`, `timeline-marker`, `timeline-body`, `timeline-title`, `timeline-description`, `timeline-time` |
 | Trace | `trace`, `trace-step`, `trace-failed`, `trace-summary`, `trace-marker`, `trace-meta`, `trace-detail` |
 | Calendar | `calendar`, `calendar-header`, `calendar-title`, `calendar-grid`, `calendar-week`, `calendar-weekday`, `calendar-day`, `calendar-day-outside`, `calendar-day-range-start`, `calendar-day-range`, `calendar-day-range-end` |
-| Tree | `tree`, `tree-item`, `tree-toggle`, `tree-group`, `tree-sub` |
+| Tree | `tree`, `tree-item`, `tree-label`, `tree-check`, `tree-toggle`, `tree-group`, `tree-sub` |
 | Carousel | `carousel`, `carousel-slide`, `carousel-2`, `carousel-3`, `carousel-center` |
 | Marquee | `marquee`, `marquee-reverse`, `marquee-track` |
 | Waveform | `waveform`, `waveform-sm`, `waveform-lg`, `waveform-bar`, `waveform-seek`, `waveform-time` |

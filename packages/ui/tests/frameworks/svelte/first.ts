@@ -13,4 +13,5 @@ export const first: [string, Record<string, unknown>, RegExp][] = [
   ['editable', { value: 'Quarterly report', label: 'Title' }, /class="editable-preview"[^>]*>(<!--.*?-->)*Quarterly report[\s\S]*value="Quarterly report"/],
   ['sortable', { value: ['search', 'onboarding', 'billing'] }, /data-value="search"[\s\S]*data-value="onboarding"[\s\S]*data-value="billing"/],
   ['context-menu', { items: [{ label: 'Rename' }], 'aria-label': 'Project' }, /class="menu menu-context"/],
+  ['tree', { nodes: [{ label: 'themes', value: 'themes', children: [{ label: 'paper.css', value: 'paper' }, { label: 'dark.css', value: 'dark' }] }], checkable: true, value: ['paper'], 'aria-label': 'Files' }, /data-value="themes"[^>]*aria-checked="mixed"[\s\S]*data-value="paper"[^>]*aria-checked="true"[\s\S]*data-value="dark"[^>]*aria-checked="false"/],
 ]

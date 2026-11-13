@@ -129,6 +129,7 @@ test('react: the first HTML, rendered on a server, holds the state, and hydrates
     ['wheel', { columns: [{ label: 'Hour', options: ['09', '10'] }], value: ['10'], 'aria-label': 'Time' }, /data-value="10" aria-selected="true"/],
     ['otp', { length: 4, value: '48', 'aria-label': 'Verification code' }, /value="4"[\s\S]*value="8"/],
     ['tree', { nodes: [{ label: 'a.css', value: 'a' }, { label: 'b.css', value: 'b' }], value: 'b', 'aria-label': 'Files' }, /data-value="b" aria-selected="true"/],
+    ['tree', { nodes: [{ label: 'themes', value: 'themes', children: [{ label: 'paper.css', value: 'paper' }, { label: 'dark.css', value: 'dark' }] }], checkable: true, value: ['paper'], 'aria-label': 'Files' }, /data-value="themes"[^>]*aria-checked="mixed"[\s\S]*data-value="paper"[^>]*aria-checked="true"/],
   ]
   for (const [name, props, expected] of examples) {
     const html = renderToString(createElement(fixtures[name], props))
