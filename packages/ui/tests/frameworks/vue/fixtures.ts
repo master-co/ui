@@ -1,5 +1,6 @@
 import type { Component } from 'vue'
 import Calendar from '../../../frameworks/vue/Calendar.vue'
+import ColorPicker from '../../../frameworks/vue/ColorPicker.vue'
 import Combobox from '../../../frameworks/vue/Combobox.vue'
 import Command from '../../../frameworks/vue/Command.vue'
 import Editable from '../../../frameworks/vue/Editable.vue'
@@ -12,6 +13,7 @@ import Tags from '../../../frameworks/vue/Tags.vue'
 import Toaster, { toast } from '../../../frameworks/vue/Toaster.vue'
 import Tree from '../../../frameworks/vue/Tree.vue'
 import Wheel from '../../../frameworks/vue/Wheel.vue'
+import ColorPickerPopoverExample from './ColorPickerPopoverExample.vue'
 import CompareExample from './CompareExample.vue'
 import ContextMenuExample from './ContextMenuExample.vue'
 import DialogExample from './DialogExample.vue'
@@ -30,6 +32,8 @@ import TourExample from './TourExample.vue'
  */
 export const fixtures: Record<string, Component> = {
   'calendar': Calendar,
+  'color-picker': ColorPicker,
+  'color-picker-popover': ColorPickerPopoverExample,
   'combobox': Combobox,
   'command': Command,
   'compare': CompareExample,

@@ -11,6 +11,7 @@
  * read it for what is chosen, set it to choose from outside. Setting it dispatches nothing.
  */
 import { calendar, calendarMonth } from './calendar.js'
+import { colorPicker, colorPickerState } from './color-picker.js'
 import { combobox } from './combobox.js'
 import { command } from './command.js'
 import { compare } from './compare.js'
@@ -30,7 +31,7 @@ import { tour } from './tour.js'
 import { tree } from './tree.js'
 import { wheel } from './wheel.js'
 
-export { calendar, calendarMonth, combobox, command, compare, contextMenu, dial, editable, listbox, menu, otp, range, sortable, splitter, stepper, tabs, tags, toolbar, tour, tree, wheel }
+export { calendar, calendarMonth, colorPicker, colorPickerState, combobox, command, compare, contextMenu, dial, editable, listbox, menu, otp, range, sortable, splitter, stepper, tabs, tags, toolbar, tour, tree, wheel }
 
 /**
  * Each pattern's root class and the behavior that drives it.
@@ -55,6 +56,7 @@ const patterns = [
   ['.sortable', sortable],
   ['.toolbar[role="toolbar"]', toolbar],
   ['.coachmark-tour', tour],
+  ['.color-picker', colorPicker],
 ]
 
 /**

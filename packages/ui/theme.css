@@ -411,3 +411,60 @@
     }
   }
 }
+
+/*
+ * The color picker's drawings. The picker chooses in OKLCH, the space every color of this theme is written in,
+ * and its behavior publishes the color it holds as four numbers on its root: --color-picker-lightness (0 to 1),
+ * --color-picker-chroma, --color-picker-hue (degrees) and --color-picker-alpha (0 to 1). These mixins are where
+ * the numbers become colors, since a component writes no color function of its own.
+ *
+ * The color held, and the same color opaque: what a swatch, the thumb and the opacity track show.
+ */
+@mixin --color-picker-color {
+  --color-picker-color: oklch(var(--color-picker-lightness) var(--color-picker-chroma) var(--color-picker-hue) / var(--color-picker-alpha));
+  --color-picker-solid: oklch(var(--color-picker-lightness) var(--color-picker-chroma) var(--color-picker-hue));
+}
+
+/*
+ * The hue track: the circle of hues at one lightness and chroma, a stop every 30°, so the chord Oklab draws from
+ * one stop to the next stays within 4% of the circle. These stops are the hue wheel itself, the one drawing here
+ * that does not follow the color held. --color-picker-run turns it around right to left.
+ */
+@mixin --color-picker-hues {
+  --slider-background: linear-gradient(var(--color-picker-run, 90deg), oklch(72% .15 0), oklch(72% .15 30), oklch(72% .15 60), oklch(72% .15 90), oklch(72% .15 120), oklch(72% .15 150), oklch(72% .15 180), oklch(72% .15 210), oklch(72% .15 240), oklch(72% .15 270), oklch(72% .15 300), oklch(72% .15 330), oklch(72% .15 360));
+}
+
+/*
+ * The field: lightness from 100% at the top to 0 at the bottom and chroma from 0 to .37 (as far as Display P3
+ * reaches) along the line, at the hue held. A gradient runs along one axis only, so the field is drawn in rows,
+ * each exact along the line: grey to .37 at the row's lightness, interpolated in Oklab, which keeps the hue.
+ * --color-picker-field draws nine rows at every eighth of the lightness; --color-picker-field-between draws the
+ * eight halfway between them, which the stylesheet lays over the first under a mask that rises and falls from
+ * one row to the next. The first rows reach a pixel past their eighth, where the rows between them are whole, so
+ * no seam shows when an edge falls between two pixels; and the field stays within a just noticeable difference
+ * of the color under the thumb. The browser fits a row's colors to the screen as it fits the thumb's own.
+ */
+@mixin --color-picker-field {
+  background:
+    linear-gradient(var(--color-picker-run, 90deg), oklch(100% 0 var(--color-picker-hue)), oklch(100% .37 var(--color-picker-hue))) 0 0 / 100% calc(6.25% + 1px) no-repeat,
+    linear-gradient(var(--color-picker-run, 90deg), oklch(87.5% 0 var(--color-picker-hue)), oklch(87.5% .37 var(--color-picker-hue))) 0 7.1429% / 100% calc(12.5% + 1px) no-repeat,
+    linear-gradient(var(--color-picker-run, 90deg), oklch(75% 0 var(--color-picker-hue)), oklch(75% .37 var(--color-picker-hue))) 0 21.4286% / 100% calc(12.5% + 1px) no-repeat,
+    linear-gradient(var(--color-picker-run, 90deg), oklch(62.5% 0 var(--color-picker-hue)), oklch(62.5% .37 var(--color-picker-hue))) 0 35.7143% / 100% calc(12.5% + 1px) no-repeat,
+    linear-gradient(var(--color-picker-run, 90deg), oklch(50% 0 var(--color-picker-hue)), oklch(50% .37 var(--color-picker-hue))) 0 50% / 100% calc(12.5% + 1px) no-repeat,
+    linear-gradient(var(--color-picker-run, 90deg), oklch(37.5% 0 var(--color-picker-hue)), oklch(37.5% .37 var(--color-picker-hue))) 0 64.2857% / 100% calc(12.5% + 1px) no-repeat,
+    linear-gradient(var(--color-picker-run, 90deg), oklch(25% 0 var(--color-picker-hue)), oklch(25% .37 var(--color-picker-hue))) 0 78.5714% / 100% calc(12.5% + 1px) no-repeat,
+    linear-gradient(var(--color-picker-run, 90deg), oklch(12.5% 0 var(--color-picker-hue)), oklch(12.5% .37 var(--color-picker-hue))) 0 92.8571% / 100% calc(12.5% + 1px) no-repeat,
+    linear-gradient(var(--color-picker-run, 90deg), oklch(0% 0 var(--color-picker-hue)), oklch(0% .37 var(--color-picker-hue))) 0 100% / 100% calc(6.25% + 1px) no-repeat;
+}
+
+@mixin --color-picker-field-between {
+  background:
+    linear-gradient(var(--color-picker-run, 90deg), oklch(93.75% 0 var(--color-picker-hue)), oklch(93.75% .37 var(--color-picker-hue))) 0 0 / 100% 12.5% no-repeat,
+    linear-gradient(var(--color-picker-run, 90deg), oklch(81.25% 0 var(--color-picker-hue)), oklch(81.25% .37 var(--color-picker-hue))) 0 14.2857% / 100% 12.5% no-repeat,
+    linear-gradient(var(--color-picker-run, 90deg), oklch(68.75% 0 var(--color-picker-hue)), oklch(68.75% .37 var(--color-picker-hue))) 0 28.5714% / 100% 12.5% no-repeat,
+    linear-gradient(var(--color-picker-run, 90deg), oklch(56.25% 0 var(--color-picker-hue)), oklch(56.25% .37 var(--color-picker-hue))) 0 42.8571% / 100% 12.5% no-repeat,
+    linear-gradient(var(--color-picker-run, 90deg), oklch(43.75% 0 var(--color-picker-hue)), oklch(43.75% .37 var(--color-picker-hue))) 0 57.1429% / 100% 12.5% no-repeat,
+    linear-gradient(var(--color-picker-run, 90deg), oklch(31.25% 0 var(--color-picker-hue)), oklch(31.25% .37 var(--color-picker-hue))) 0 71.4286% / 100% 12.5% no-repeat,
+    linear-gradient(var(--color-picker-run, 90deg), oklch(18.75% 0 var(--color-picker-hue)), oklch(18.75% .37 var(--color-picker-hue))) 0 85.7143% / 100% 12.5% no-repeat,
+    linear-gradient(var(--color-picker-run, 90deg), oklch(6.25% 0 var(--color-picker-hue)), oklch(6.25% .37 var(--color-picker-hue))) 0 100% / 100% 12.5% no-repeat;
+}

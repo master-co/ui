@@ -1,0 +1,225 @@
+/*
+ * Color picker: a color chosen in OKLCH, the space the theme's own colors are written in. A field of the hue held,
+ * lightness from top to bottom and chroma from start to end, under one thumb; the hue and the opacity on two
+ * sliders; a swatch of the color; and the color as text in hex, rgb() or oklch(), beside the select that picks
+ * which. Its behavior publishes the color as four numbers on the root (--color-picker-lightness, -chroma, -hue
+ * and -alpha); the stylesheet places the thumb from them and the theme's mixins turn them into colors.
+ *
+ * Material: the field is a picture set into the surface, with a control's corner and a half-pixel ring of the
+ * line on color inside its edge, so a white field reads on a white sheet. The thumb is the color itself in a
+ * ring of pearl, as large as a slider's thumb, with the same fading shadow. The two tracks are sliders twice as
+ * thick, one painted with the hues, the other with the color fading in over a checker. Inline, the root is a
+ * column 16rem wide; opened from a button, the root holds the button and a popover, and the popover is the column.
+ *
+ * Without the script the field shows the color the markup was written with, and the sliders and the text field
+ * are plain controls that do not follow one another.
+ */
+@layer components {
+  .color-picker {
+    --color-picker-width: 16rem;
+    --color-picker-lightness: 0;
+    --color-picker-chroma: 0;
+    --color-picker-hue: 0;
+    --color-picker-alpha: 1;
+    /* Which way chroma and hue run: toward the end of the line. */
+    --color-picker-run: 90deg;
+    /* The ground under a color that is not opaque. */
+    --color-picker-checker: repeating-conic-gradient(var(--color-line-strong) 0 25%, transparent 0 50%) 0 0 / .5rem .5rem;
+    @apply --color-picker-color;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: .75rem;
+    inline-size: var(--color-picker-width);
+    max-inline-size: 100%;
+
+    &:dir(rtl) {
+      --color-picker-run: 270deg;
+    }
+
+    /* A swatch in the column stands at the start of the two sliders. */
+    &:has(.color-picker-swatch) {
+      grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    /* Opened from a button: the root only holds the button, and the popover is the column. */
+    &:has(.color-picker-popover) {
+      display: inline-block;
+      inline-size: auto;
+      max-inline-size: none;
+    }
+  }
+
+  .color-picker-popover {
+    --popover-padding: .75rem;
+    grid-template-columns: minmax(0, 1fr);
+    gap: .75rem;
+    box-sizing: content-box;
+    width: var(--color-picker-width);
+    /* The thumb and its focus ring stand half outside the field at its edges. */
+    overflow: visible;
+
+    &:popover-open {
+      display: grid;
+    }
+
+    &:has(.color-picker-swatch) {
+      grid-template-columns: auto minmax(0, 1fr);
+    }
+  }
+
+  /*
+   * The field. Its rows are the theme's: nine on the element, and the eight between them on a layer above,
+   * whose mask is whole on each of its rows and gone on the rows around it, so one row fades into the next.
+   */
+  .color-picker-area {
+    position: relative;
+    grid-column: 1 / -1;
+    aspect-ratio: 3 / 2;
+    border-radius: calc(var(--radius-control) * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    @apply --color-picker-field;
+    cursor: crosshair;
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    /* The colors are what the reader came for: forced colors keep them. */
+    forced-color-adjust: none;
+
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      corner-shape: inherit;
+      @apply --color-picker-field-between;
+      mask: repeating-linear-gradient(transparent, black 6.25%, transparent 12.5%);
+      pointer-events: none;
+    }
+
+    /* The edge, over both layers of rows. */
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      corner-shape: inherit;
+      box-shadow: inset 0 0 0 .5px var(--color-line-on-color);
+      pointer-events: none;
+    }
+
+    &:has(.color-picker-thumb[aria-disabled="true"]) {
+      opacity: .5;
+      cursor: not-allowed;
+    }
+
+    @media (forced-colors: active) {
+      outline: 1px solid CanvasText;
+    }
+  }
+
+  /*
+   * The thumb: placed by its middle, from the numbers on the root. Chroma past the end of the field (a color
+   * typed with more than .37) stands at the end.
+   */
+  .color-picker-thumb {
+    --color-picker-thumb: 1.125rem;
+    position: absolute;
+    z-index: 1;
+    inset-inline-start: calc(clamp(0, var(--color-picker-chroma) / .37, 1) * 100%);
+    top: calc((1 - clamp(0, var(--color-picker-lightness), 1)) * 100%);
+    box-sizing: border-box;
+    width: var(--color-picker-thumb);
+    height: var(--color-picker-thumb);
+    margin-block-start: calc(var(--color-picker-thumb) / -2);
+    margin-inline-start: calc(var(--color-picker-thumb) / -2);
+    border-radius: 999px;
+    corner-shape: round;
+    background: var(--color-picker-solid);
+    box-shadow:
+      inset 0 0 0 3px var(--color-thumb-high), inset 0 0 0 3.5px var(--color-line-on-color),
+      0 0 0 .5px var(--color-line-strong), 0 1px 2px -.5px var(--color-shade-1), 0 2px 4px -1px var(--color-shade-2), 0 4px 8px -4px var(--color-shade-3);
+    transition: scale var(--duration-quick) var(--easing-glide);
+
+    &:focus-visible {
+      @apply --focus-ring;
+    }
+
+    @media (pointer: coarse) {
+      --color-picker-thumb: 1.5rem;
+    }
+
+    @media (forced-colors: active) {
+      &:focus-visible {
+        outline-color: Highlight;
+      }
+    }
+  }
+
+  /* Held, the thumb grows a little under the finger, as a slider's does. */
+  .color-picker-area:active .color-picker-thumb:not([aria-disabled="true"]) {
+    scale: 1.08;
+
+    @media (prefers-reduced-motion: reduce) {
+      scale: none;
+    }
+  }
+
+  /* The two tracks: sliders twice as thick, painted with what they choose, with no fill over it. */
+  .color-picker-hue,
+  .color-picker-alpha {
+    --slider-track: .75rem;
+    --slider-color: transparent;
+    grid-column: -2;
+
+    @media (forced-colors: active) {
+      &::-webkit-slider-runnable-track {
+        background: var(--slider-background);
+        box-shadow: inset 0 0 0 1px CanvasText;
+      }
+
+      &::-moz-range-track {
+        background: var(--slider-background);
+      }
+    }
+  }
+
+  .color-picker-hue {
+    @apply --color-picker-hues;
+  }
+
+  .color-picker-alpha {
+    --slider-background: linear-gradient(var(--color-picker-run), transparent, var(--color-picker-solid)), var(--color-picker-checker), var(--color-surface-raised);
+  }
+
+  /* The swatch: the color over the checker, so an opacity under 100% shows. In the column it spans both tracks. */
+  .color-picker-swatch {
+    --swatch: linear-gradient(var(--color-picker-color) 0 0), var(--color-picker-checker), var(--color-surface-raised);
+    grid-row: span 2;
+    align-self: center;
+  }
+
+  .color-picker:not(:has(.color-picker-alpha)) .color-picker-swatch {
+    grid-row: auto;
+  }
+
+  /* The text: the format, then the color written in it. */
+  .color-picker-fields {
+    display: flex;
+    grid-column: 1 / -1;
+    align-items: center;
+    gap: .5rem;
+    min-width: 0;
+  }
+
+  .color-picker-format {
+    flex: none;
+    width: auto;
+  }
+
+  .color-picker-text {
+    flex: 1;
+    min-width: 0;
+    font-variant-numeric: tabular-nums;
+  }
+}

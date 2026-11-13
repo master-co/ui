@@ -18,6 +18,7 @@ test('svelte: the first HTML, rendered on a server, holds the state', () => {
 
 /** The least each of the other fixtures needs. */
 const others: Record<string, Record<string, unknown>> = {
+  'color-picker-popover': { value: '#3b82f6', label: 'Accent color' },
   'command': { items: [{ label: 'New project', group: 'Suggestions' }], searchLabel: 'Search commands', listLabel: 'Commands', 'aria-label': 'Command palette' },
   'compare': { label: 'Show more of the second picture' },
   'dialog': {},

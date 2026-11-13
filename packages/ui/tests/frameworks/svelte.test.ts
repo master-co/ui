@@ -183,6 +183,7 @@ test('svelte: the first HTML, rendered on a server, holds the state, and hydrate
     'tags': [() => page.all('.chip').map(chip => chip.getAttribute('data-value')), ['design', 'research']],
     'editable': [() => [page.one('.editable-preview').textContent?.trim(), ...values('.editable-field')], ['Quarterly report', 'Quarterly report']],
     'sortable': [() => page.all('.sortable-item').map(item => item.getAttribute('data-value')), ['search', 'onboarding', 'billing']],
+    'color-picker': [() => [page.one<HTMLElement>('.color-picker').style.getPropertyValue('--color-picker-hue'), page.one<HTMLSelectElement>('.color-picker-format').value, ...values('.color-picker-text')], ['260', 'oklch', 'oklch(62% 0.19 260)']],
   }
   for (const [name, props, expected] of first) {
     const [state, after] = held[name]

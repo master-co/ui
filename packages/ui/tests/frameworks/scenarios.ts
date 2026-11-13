@@ -712,6 +712,58 @@ export const scenarios: Record<string, Scenario> = {
     assert.equal(page.all('.tags').length, 0)
   },
 
+  async 'color-picker'(driver, page) {
+    const { mounted, heard } = await owned(driver, 'color-picker', { value: 'oklch(62% 0.19 260)', label: 'Accent color', name: 'accent' })
+    conforms(page)
+    const root = page.one<HTMLElement>('.color-picker')
+    const thumb = page.one<HTMLElement>('.color-picker-thumb')
+    const hue = page.one<HTMLInputElement>('.color-picker-hue')
+    const format = page.one<HTMLSelectElement>('.color-picker-format')
+    const text = page.one<HTMLInputElement>('.color-picker-text')
+    /** Change a native control as the reader does: its value, then the events it sends. */
+    const change = (control: HTMLInputElement | HTMLSelectElement, value: string) => {
+      control.value = value
+      control.dispatchEvent(new page.window.Event('input', { bubbles: true }) as unknown as Event)
+      control.dispatchEvent(new page.window.Event('change', { bubbles: true }) as unknown as Event)
+    }
+    assert.equal(root.style.getPropertyValue('--color-picker-hue'), '260', 'the value is drawn from the first render')
+    assert.equal(thumb.getAttribute('aria-valuetext'), 'Lightness 62%, chroma 0.19')
+    assert.equal(text.value, 'oklch(62% 0.19 260)')
+    assert.equal(text.name, 'accent')
+    assert.equal(format.value, 'oklch')
+
+    await driver.act(() => page.key(thumb, 'ArrowUp'))
+    assert.deepEqual(heard, ['oklch(63% 0.19 260)'], 'a key moves the color, and the value comes out once')
+    await driver.act(() => change(hue, '30'))
+    assert.equal(heard.at(-1), 'oklch(63% 0.19 30)', 'so does the hue')
+    await driver.act(() => change(format, 'hex'))
+    assert.match(String(heard.at(-1)), /^#[\da-f]{6}$/, 'a format chosen writes the value in it')
+    assert.equal(text.value, heard.at(-1))
+
+    const said = heard.length
+    await driver.act(() => mounted.set({ value: 'rgb(255 0 0)' }))
+    assert.equal(text.value, 'rgb(255 0 0)', 'a value set by the owner is written')
+    assert.equal(format.value, 'rgb', 'in its own format')
+    assert.equal(heard.length, said, 'and says nothing')
+
+    await driver.act(() => mounted.set({ disabled: true }))
+    assert.equal(thumb.getAttribute('aria-disabled'), 'true')
+    assert.equal(hue.disabled, true)
+    assert.equal(page.key(thumb, 'ArrowUp'), false, 'a disabled field takes no key')
+    conforms(page)
+    await driver.act(() => mounted.unmount())
+
+    await driver.mount('color-picker-popover', { value: '#3b82f6', label: 'Accent color', alpha: false })
+    conforms(page)
+    const trigger = page.one<HTMLButtonElement>('button[popovertarget]')
+    const popover = page.one<HTMLElement>('.color-picker-popover')
+    assert.equal(trigger.getAttribute('popovertarget'), popover.id, 'the page\'s button opens the popover')
+    assert.ok(popover.closest('.color-picker') && trigger.closest('.color-picker'), 'both stand in the root, so the button\'s swatch reads the color')
+    assert.ok(trigger.querySelector('.color-picker-swatch'))
+    assert.equal(page.all('.color-picker-alpha').length, 0, 'without opacity there is no opacity slider')
+    assert.equal(page.one<HTMLInputElement>('.color-picker-text').value, '#3b82f6')
+  },
+
   async editable(driver, page) {
     const { mounted, heard } = await owned(driver, 'editable', { value: 'Quarterly report', label: 'Title', required: true })
     conforms(page)

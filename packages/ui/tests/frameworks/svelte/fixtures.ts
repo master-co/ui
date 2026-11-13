@@ -1,5 +1,6 @@
 import type { Component } from 'svelte'
 import Calendar from '../../../frameworks/svelte/Calendar.svelte'
+import ColorPicker from '../../../frameworks/svelte/ColorPicker.svelte'
 import Combobox from '../../../frameworks/svelte/Combobox.svelte'
 import Command from '../../../frameworks/svelte/Command.svelte'
 import Editable from '../../../frameworks/svelte/Editable.svelte'
@@ -12,6 +13,7 @@ import Tags from '../../../frameworks/svelte/Tags.svelte'
 import Toaster, { toast } from '../../../frameworks/svelte/Toaster.svelte'
 import Tree from '../../../frameworks/svelte/Tree.svelte'
 import Wheel from '../../../frameworks/svelte/Wheel.svelte'
+import ColorPickerPopoverExample from './ColorPickerPopoverExample.svelte'
 import CompareExample from './CompareExample.svelte'
 import ContextMenuExample from './ContextMenuExample.svelte'
 import DialogExample from './DialogExample.svelte'
@@ -30,6 +32,8 @@ import TourExample from './TourExample.svelte'
  */
 export const fixtures = {
   'calendar': Calendar,
+  'color-picker': ColorPicker,
+  'color-picker-popover': ColorPickerPopoverExample,
   'combobox': Combobox,
   'command': Command,
   'compare': CompareExample,

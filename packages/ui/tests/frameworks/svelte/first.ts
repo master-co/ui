@@ -12,6 +12,7 @@ export const first: [string, Record<string, unknown>, RegExp][] = [
   ['tags', { value: ['design', 'research'], name: 'labels', 'aria-label': 'Labels' }, /data-value="design"[\s\S]*name="labels" value="design"[\s\S]*data-value="research"/],
   ['editable', { value: 'Quarterly report', label: 'Title' }, /class="editable-preview"[^>]*>(<!--.*?-->)*Quarterly report[\s\S]*value="Quarterly report"/],
   ['sortable', { value: ['search', 'onboarding', 'billing'] }, /data-value="search"[\s\S]*data-value="onboarding"[\s\S]*data-value="billing"/],
+  ['color-picker', { value: 'oklch(62% 0.19 260)', label: 'Accent color', name: 'accent' }, /--color-picker-hue: 260[\s\S]*aria-valuetext="Lightness 62%, chroma 0.19"[\s\S]*value="oklch" selected[\s\S]*name="accent" value="oklch\(62% 0.19 260\)"/],
   ['context-menu', { items: [{ label: 'Rename' }], 'aria-label': 'Project' }, /class="menu menu-context"/],
   ['tree', { nodes: [{ label: 'themes', value: 'themes', children: [{ label: 'paper.css', value: 'paper' }, { label: 'dark.css', value: 'dark' }] }], checkable: true, value: ['paper'], 'aria-label': 'Files' }, /data-value="themes"[^>]*aria-checked="mixed"[\s\S]*data-value="paper"[^>]*aria-checked="true"[\s\S]*data-value="dark"[^>]*aria-checked="false"/],
 ]

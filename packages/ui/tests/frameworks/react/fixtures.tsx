@@ -1,5 +1,6 @@
 import { useRef, type ComponentType } from 'react'
 import { Calendar } from '../../../frameworks/react/calendar.tsx'
+import { ColorPicker, type ColorPickerProps } from '../../../frameworks/react/color-picker.tsx'
 import { Combobox } from '../../../frameworks/react/combobox.tsx'
 import { Editable } from '../../../frameworks/react/editable.tsx'
 import { Command } from '../../../frameworks/react/command.tsx'
@@ -132,6 +133,15 @@ function PopoverExample(props: PopoverProps) {
   )
 }
 
+function ColorPickerPopoverExample(props: ColorPickerProps) {
+  return (
+    <ColorPicker
+      trigger={attributes => <button type="button" className="btn" {...attributes}><span className="swatch swatch-sm color-picker-swatch" />Accent</button>}
+      {...props}
+    />
+  )
+}
+
 function TooltipExample() {
   return <Tooltip trigger={attributes => <button type="button" className="btn" {...attributes}>Deploy</button>}>Ships the main branch to production</Tooltip>
 }
@@ -142,6 +152,8 @@ function FieldExample(props: Omit<FieldProps, 'children'>) {
 
 export const fixtures = {
   'calendar': Calendar,
+  'color-picker': ColorPicker,
+  'color-picker-popover': ColorPickerPopoverExample,
   'combobox': Combobox,
   'command': Command,
   'compare': CompareExample,
