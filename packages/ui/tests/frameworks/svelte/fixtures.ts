@@ -8,6 +8,7 @@ import Dial from '../../../frameworks/svelte/Dial.svelte'
 import Gantt from '../../../frameworks/svelte/Gantt.svelte'
 import Listbox from '../../../frameworks/svelte/Listbox.svelte'
 import Otp from '../../../frameworks/svelte/Otp.svelte'
+import Signature from '../../../frameworks/svelte/Signature.svelte'
 import Stepper from '../../../frameworks/svelte/Stepper.svelte'
 import Tabs from '../../../frameworks/svelte/Tabs.svelte'
 import Tags from '../../../frameworks/svelte/Tags.svelte'
@@ -48,6 +49,7 @@ export const fixtures = {
   'menu': MenuExample,
   'otp': Otp,
   'popover': PopoverExample,
+  'signature': Signature,
   'sortable': SortableExample,
   'splitter': SplitterExample,
   'stepper': Stepper,

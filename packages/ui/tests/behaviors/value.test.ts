@@ -1,7 +1,7 @@
 import { afterEach, test } from 'node:test'
 import assert from 'node:assert/strict'
 import { dom } from './dom.ts'
-import { calendar, calendarMonth, combobox, command, compare, dial, gantt, listbox, otp, splitter, stepper, tour, tree, wheel } from '../../behaviors/index.js'
+import { calendar, calendarMonth, combobox, command, compare, dial, gantt, listbox, otp, signature, splitter, stepper, tour, tree, wheel } from '../../behaviors/index.js'
 
 /** happy-dom catches what a listener throws and reports it on the window; a test must not pass over it. */
 const thrown: unknown[] = []
@@ -473,5 +473,25 @@ test('gantt: value is each bar\'s range by its row\'s id; set, it moves the bars
   assert.equal(one<HTMLElement>('.gantt-row').style.getPropertyValue('--from'), '3')
   assert.equal(all('.gantt-bar')[1].getAttribute('aria-valuetext'), '6 to 8')
   assert.equal(all('.gantt-bar')[1].textContent, 'Days 8 to 9', 'with text false the renderer writes the text')
+  assert.deepEqual(heard, [])
+})
+
+test('signature: value reads and draws the strokes, a copy is given out, and setting it says nothing', () => {
+  const { one, all, heard } = setup(`<fieldset class="signature">
+  <legend class="signature-label">Sign the agreement</legend>
+  <div class="signature-pad">
+    <svg class="signature-ink" viewBox="0 0 400 160" role="img" aria-label="Your drawn signature"></svg>
+  </div>
+  <input type="hidden" class="signature-value" name="signature">
+</fieldset>`)
+  const handle = signature(one<HTMLElement>('.signature'))
+  assert.deepEqual(handle.value, [])
+  handle.value = [[[40, 80, .5], [90, 70, .6]]]
+  assert.equal(all('.signature-stroke').length, 1)
+  assert.match(one<HTMLInputElement>('.signature-value').value, /^<svg/)
+  const read = handle.value
+  read[0][0][0] = 0
+  assert.equal(handle.value[0][0][0], 40, 'what is read out does not change the drawing')
+  handle.value = [[[40, 80, .5], [90, 70, .6]]]
   assert.deepEqual(heard, [])
 })

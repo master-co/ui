@@ -55,6 +55,7 @@ export const components = [
   { slug: 'rating', name: 'Rating', category: 'Forms', description: 'A score out of a few stars, as native radios.' },
   { slug: 'vote', name: 'Vote', category: 'Forms', description: 'A score that a reader moves up or down by one.' },
   { slug: 'dropzone', name: 'Dropzone', category: 'Forms', description: 'A wide target for choosing or dropping files.' },
+  { slug: 'signature', name: 'Signature', category: 'Forms', description: 'A well to sign in with a finger, a pen or a mouse, or a name typed instead.' },
   { slug: 'otp', name: 'OTP', category: 'Forms', description: 'A short code typed one character to a slot.' },
   { slug: 'keypad', name: 'Keypad', category: 'Forms', description: 'The keys of a phone, for a code or an amount typed with a thumb.' },
   { slug: 'stepper', name: 'Stepper', category: 'Forms', description: 'A number between the two buttons that step it.' },

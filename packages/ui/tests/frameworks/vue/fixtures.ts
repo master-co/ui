@@ -8,6 +8,7 @@ import Dial from '../../../frameworks/vue/Dial.vue'
 import Gantt from '../../../frameworks/vue/Gantt.vue'
 import Listbox from '../../../frameworks/vue/Listbox.vue'
 import Otp from '../../../frameworks/vue/Otp.vue'
+import Signature from '../../../frameworks/vue/Signature.vue'
 import Stepper from '../../../frameworks/vue/Stepper.vue'
 import Tabs from '../../../frameworks/vue/Tabs.vue'
 import Tags from '../../../frameworks/vue/Tags.vue'
@@ -48,6 +49,7 @@ export const fixtures: Record<string, Component> = {
   'menu': MenuExample,
   'otp': Otp,
   'popover': PopoverExample,
+  'signature': Signature,
   'sortable': SortableExample,
   'splitter': SplitterExample,
   'stepper': Stepper,

@@ -185,6 +185,7 @@ test('svelte: the first HTML, rendered on a server, holds the state, and hydrate
     'gantt': [() => page.all<HTMLElement>('.gantt-row').map(row => [row.style.getPropertyValue('--from'), row.style.getPropertyValue('--to'), row.querySelector('.gantt-bar')!.textContent]), [['0', '3', '0 to 3'], ['3', '7', '3 to 7']]],
     'sortable': [() => page.all('.sortable-item').map(item => item.getAttribute('data-value')), ['search', 'onboarding', 'billing']],
     'color-picker': [() => [page.one<HTMLElement>('.color-picker').style.getPropertyValue('--color-picker-hue'), page.one<HTMLSelectElement>('.color-picker-format').value, ...values('.color-picker-text')], ['260', 'oklch', 'oklch(62% 0.19 260)']],
+    'signature': [() => [page.all('.signature-stroke').length, page.one('.signature-undo').getAttribute('aria-disabled'), values('.signature-value')[0]?.startsWith('<svg ')], [1, null, true]],
   }
   for (const [name, props, expected] of first) {
     const [state, after] = held[name]

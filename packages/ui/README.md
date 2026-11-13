@@ -100,6 +100,7 @@ Or import only the theme and the components you use:
 | Keypad | `keypad`, `keypad-key`, `keypad-key-quiet`, `keypad-letters` |
 | Checklist | `checklist`, `checklist-item`, `checklist-label`, `checklist-body`, `checklist-title`, `checklist-description`, `checklist-end`, `checklist-count` |
 | Dropzone | `dropzone`, `dropzone-input`, `dropzone-title`, `dropzone-description` |
+| Signature | `signature`, `signature-readonly`, `signature-label`, `signature-pad`, `signature-ink`, `signature-stroke`, `signature-line`, `signature-placeholder`, `signature-actions`, `signature-undo`, `signature-clear`, `signature-name`, `signature-value`, `signature-status` |
 | OTP | `otp`, `otp-slot`, `otp-separator` |
 | Stepper | `stepper`, `stepper-field` |
 | Wheel | `wheel`, `wheel-sm`, `wheel-column`, `wheel-option`, `wheel-separator` |

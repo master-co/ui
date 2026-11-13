@@ -13,6 +13,7 @@ import { Listbox } from '../../../frameworks/react/listbox.tsx'
 import { Menu, type MenuProps } from '../../../frameworks/react/menu.tsx'
 import { Otp } from '../../../frameworks/react/otp.tsx'
 import { Popover, type PopoverProps } from '../../../frameworks/react/popover.tsx'
+import { Signature } from '../../../frameworks/react/signature.tsx'
 import { Sortable, type SortableProps } from '../../../frameworks/react/sortable.tsx'
 import { Splitter, type SplitterProps } from '../../../frameworks/react/splitter.tsx'
 import { Stepper } from '../../../frameworks/react/stepper.tsx'
@@ -168,6 +169,7 @@ export const fixtures = {
   'menu': MenuExample,
   'otp': Otp,
   'popover': PopoverExample,
+  'signature': Signature,
   'sortable': SortableExample,
   'splitter': SplitterExample,
   'stepper': Stepper,

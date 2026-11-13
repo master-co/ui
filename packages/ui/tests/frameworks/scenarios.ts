@@ -505,6 +505,51 @@ export const scenarios: Record<string, Scenario> = {
     await driver.act(() => mounted.unmount())
   },
 
+  async signature(driver, page) {
+    const { mounted, heard } = await owned(driver, 'signature', { value: [], label: 'Sign the agreement', name: 'signature', typedName: 'signer', required: true })
+    conforms(page)
+    const pad = page.one<HTMLElement>('.signature-pad')
+    // happy-dom has no layout: the drawing is as large as its viewBox, at the corner of the page.
+    page.one<HTMLElement>('.signature-ink').getBoundingClientRect = () => ({ left: 0, top: 0, right: 400, bottom: 160, width: 400, height: 160, x: 0, y: 0 }) as DOMRect
+    pad.setPointerCapture = () => {}
+    const name = page.one<HTMLInputElement>('.signature-name')
+    const field = page.one<HTMLInputElement>('.signature-value')
+    assert.equal(field.name, 'signature')
+    assert.equal(name.name, 'signer')
+    assert.equal(name.required, true, 'without a drawing, the typed name signs')
+    assert.deepEqual(page.all('.signature-undo, .signature-clear').map(button => button.getAttribute('aria-disabled')), ['true', 'true'])
+
+    const pen = { pointerId: 1, isPrimary: true, button: 0, pointerType: 'pen', pressure: .5 }
+    await driver.act(() => {
+      page.pointer(pad, 'pointerdown', { ...pen, clientX: 50, clientY: 80 })
+      page.pointer(pad, 'pointermove', { ...pen, clientX: 120, clientY: 90 })
+      page.pointer(pad, 'pointerup', { ...pen, clientX: 120, clientY: 90 })
+    })
+    assert.deepEqual(heard, [[[[50, 80, .5]]], [[[50, 80, .5], [120, 90, .5]]]], 'the stroke comes out as it is drawn')
+    assert.equal(page.all('.signature-stroke').length, 1)
+    assert.match(field.value, /^<svg /, 'the form gets the drawing')
+    assert.equal(name.required, false, 'the drawing signs')
+
+    const two = [[[10, 10, .5], [20, 20, .5]], [[30, 30, .5], [40, 40, .5]]]
+    await driver.act(() => mounted.set({ value: two }))
+    assert.equal(page.all('.signature-stroke').length, 2, 'a value set by the owner is drawn')
+    assert.equal(heard.length, 2, 'and says nothing')
+    await driver.act(() => page.click(page.one('.signature-undo')))
+    assert.deepEqual(heard.at(-1), [two[0]])
+    await driver.act(() => page.click(page.one('.signature-clear')))
+    assert.deepEqual(heard.at(-1), [])
+    assert.equal(page.all('.signature-stroke').length, 0)
+    assert.equal(field.value, '')
+    assert.equal(name.required, true)
+    await driver.act(() => mounted.unmount())
+
+    // The first value is drawn into the first render, before the behavior attaches.
+    const drawn = await driver.mount('signature', { value: two, label: 'Signed' })
+    assert.equal(page.all('.signature-stroke').length, 2)
+    assert.equal(page.one('.signature-undo').getAttribute('aria-disabled'), null)
+    await driver.act(() => drawn.unmount())
+  },
+
   async menu(driver, page) {
     const ran: string[] = []
     const items = [
