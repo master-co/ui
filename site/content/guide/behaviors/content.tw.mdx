@@ -1,0 +1,324 @@
+---
+title: "行為"
+description: "掛上參考行為、讀取其值與事件，並以原生 JavaScript 或框架管理其生命週期。"
+---
+import GuideFigure from '../../../components/GuideFigure.astro'
+
+大多數元件不需要腳本：它們所套用樣式的元素本身就具備對應的行為。少數模式沒有原生元素，例如 combobox、日曆格線或分隔條。這些模式由樣式表根據 ARIA 與原生屬性繪製各種狀態，而行為（behavior）則是協調輸入、焦點與選取的參考腳本。本指南說明如何掛上行為、讀取其值，以及在元素離開頁面時釋放其監聽器。
+
+## 什麼是行為 \{#what-a-behavior-is\}
+
+一個行為就是一個檔案、一個函式，並以模式命名。它接收根元素，回傳一個清理函式，用來停止其監聽器、觀察器與計時器。清理不會還原原本的標記；例如日曆會保留它已繪製的月份。它是一般的 ES 模組，沒有相依套件、不需要框架，也不需要建置步驟。
+
+| 行為會做的事 | 行為絕不做的事 |
+| --- | --- |
+| 設定與移除 ARIA 及原生屬性：`aria-selected`、`aria-checked`、`aria-expanded`、`aria-activedescendant`、`aria-valuenow`、`hidden`、`tabindex`、`open`、欄位的值 | 設定樣式、代表狀態的 class、尺寸或位置 |
+| 移動焦點，並呼叫平台功能：`showPopover()`、`showModal()`、`stepUp()`、`scrollIntoView()` | 重新實作平台功能：開啟 popover 或對話框、點擊外部關閉（light dismiss）、強制回應對話框的焦點鎖定與 Escape |
+| 透過契約公開的自訂屬性傳遞只有事件才知道的資訊：`--menu-x`、`--splitter-size` | 定位元素或套用限制。由樣式表讀取該屬性並完成這兩件事 |
+| 當模式中重複的列是資料時（例如一個月的各週），以契約的 class 建立這些列 | 讀寫契約以外的任何東西：它透過契約的 class 與角色尋找各部件 |
+
+樣式表也可以搭配另一個維護同一份契約的腳本運作：屬性、值與鍵盤行為仍必須一致。框架元件掛上的就是這些行為，而不是重新實作其按鍵處理。
+
+<GuideFigure name="behaviors" title="從輸入到可見狀態">
+
+**DOM 屬性連接行為與外觀。** 在作用中的 listbox 選項上按下 Enter，行為會設定 `aria-checked="true"`。樣式表讀取該屬性並顯示勾選記號。腳本負責選擇選項；CSS 負責繪製其已選狀態。
+
+</GuideFigure>
+
+## 行為一覽 \{#the-behaviors\}
+
+每個行為都從 `@master/ui/behaviors/<name>.js` 匯入。最後一欄是[契約](/guide/contracts)的 `script` 欄位：`required` 表示該模式沒有腳本就無法運作，`optional` 表示腳本是在原本已能運作的標記上增添功能。
+
+| 模式 | 匯入 | 腳本做的事 | 腳本 |
+| --- | --- | --- | --- |
+| [日曆](/components/calendar) | `calendar` | 寫入所顯示月份的各週，標示今天、已選的日期或範圍以及無法選擇的日期，並在格線中移動 | 必要 |
+| [Combobox](/components/combobox) | `combobox` | 隱藏與輸入內容不符的選項、移動作用中選項、開關清單，並將已選選項寫入欄位 | 必要 |
+| [命令面板](/components/command) | `command` | 篩選命令、移動作用中選項、按下 Enter 時點擊該選項並關閉對話框；可在任何地方以快速鍵開啟 | 必要 |
+| [Compare](/components/compare) | `compare` | 在瀏覽器不支援捲動驅動動畫時，將範圍輸入的值複製到 `--compare-position`；支援時不做任何改變 | 必要 |
+| [Listbox](/components/listbox) | `listbox` | 以方向鍵與輸入字母移動作用中選項，並勾選已選的選項，在可多選的清單中則可勾選多個 | 必要 |
+| [選單](/components/menu) | `menu`、`contextMenu` | 以方向鍵與輸入字母在項目間移動焦點，以指向子選單的方向鍵開啟子選單；`contextMenu` 在指標位置開啟選單 | 選用 |
+| [OTP](/components/otp) | `otp` | 在格位間移動焦點，並將貼上或自動填入的代碼分散到各格位 | 必要 |
+| [分隔條](/components/splitter) | `splitter` | 拖曳控制桿或以按鍵移動時，將第一個窗格的尺寸寫入 `--splitter-size` 與 `aria-valuenow` | 必要 |
+| [Stepper](/components/stepper) | `stepper` | 讓兩個按鈕對數字欄位呼叫 `stepDown()` 與 `stepUp()`，並停用已達上下限的那個按鈕 | 必要 |
+| [分頁](/components/tabs#tab-panels) | `tabs` | 在 `role="tablist"` 中：只讓一個分頁留在 Tab 鍵順序中，以方向鍵移動並選取，並顯示所選分頁的面板 | 選用 |
+| [樹狀結構](/components/tree) | `tree` | 讓整棵樹成為單一 Tab 停駐點，以方向鍵瀏覽與展開收合 | 選用 |
+| [Wheel](/components/wheel) | `wheel` | 將 `aria-selected` 移到停在選取標示下方的選項，並讓取得焦點的欄具備 listbox 的按鍵操作 | 必要 |
+
+## 掛上單一行為 \{#attach-one\}
+
+先[載入樣式表](/guide/installation)，再撰寫契約的標記。在根元素存在之後執行模組，並傳入帶有根 class 的元素。以下的裸套件匯入假設你的應用程式能解析 npm 模組；直接在瀏覽器中執行的模組則需要可解析的 URL 或 import map。
+
+```html
+<div class="combobox">
+  <div class="input-group">
+    <input class="input-group-field" id="region" role="combobox" aria-expanded="false" aria-controls="region-list" aria-autocomplete="list" autocomplete="off" aria-label="Region">
+    <button type="button" class="combobox-toggle" tabindex="-1" aria-label="Show regions"></button>
+  </div>
+  <div id="region-list" popover="manual" class="listbox" role="listbox" aria-label="Regions">
+    <div class="listbox-option" role="option" id="region-hnd" data-value="hnd" aria-checked="false">Tokyo</div>
+    <div class="listbox-option" role="option" id="region-sin" data-value="sin" aria-checked="false">Singapore</div>
+    <div class="listbox-empty">No regions match.</div>
+  </div>
+</div>
+```
+
+```js name=app.js
+import { combobox } from '@master/ui/behaviors/combobox.js'
+
+const detach = combobox(document.querySelector('.combobox'))
+```
+
+輸入「Tok」，按下 ArrowDown 與 Enter，確認欄位顯示 Tokyo，且 `detach.value` 為 `hnd`。當元素離開頁面時呼叫 `detach()`。對同一個根元素重複掛上同一個行為，會卸載先前的實例；但不會清理你的應用程式自行加入的監聽器。
+
+## 一次掛上全部 \{#attach-all\}
+
+`attach()` 依根 class 找出每個模式並掛上對應的行為。它會搜尋整份文件，或是搜尋傳入的元素及其內部，並回傳一個函式，用來卸載它掛上的所有行為。
+
+```js name=app.js
+import { attach } from '@master/ui/behaviors'
+
+const detach = attach()
+```
+
+在選擇它而非逐一匯入之前，有三件事需要知道：
+
+- 它也會掛上選用的行為。每個 `menu` 都會支援方向鍵，每個 `tree` 都會成為單一 Tab 停駐點，每個屬於 `role="tablist"` 的 `tabs` 都會切換其面板。若要讓某個模式維持平台原本的行為，請依名稱匯入行為。
+- 它不傳入任何選項。選取範圍、或有起始日與結束日的日曆，需依名稱掛上。
+- 右鍵選單所屬的目標只有頁面知道，因此 `attach()` 不會掛上右鍵選單。請呼叫 `contextMenu(target, menu)`。
+
+它不會監看文件。對於之後才加入的標記，請對新加入的部分呼叫 `attach(element)`，並同樣保留該次呼叫的清理函式。移除對應的根元素之前，先呼叫各自的清理函式。
+
+## 在框架中 \{#in-a-framework\}
+
+在 React、Svelte 與 Vue 中，這些模式各有一個可複製到專案的元件：它會渲染標記、掛上行為，並傳入與傳出值。[React、Svelte 與 Vue](/guide/frameworks) 列出了這些元件。本節其餘內容說明如何在你自己的元件中自行掛上行為。
+
+以下程式碼片段只展示掛上與清理；請將[掛上單一行為](#attach-one)中完整的 combobox 標記放入各個根元素內。設定選項改變時請重新掛上。若需處理應用程式的值與會變動的選項，建議使用複製的框架元件或其[轉接輔助函式](/guide/frameworks#your-own)。
+
+在 React 中，`useEffect` 以卸載函式作為其清理函式：
+
+```jsx name=Combobox.jsx
+import { useEffect, useRef } from 'react'
+import { combobox } from '@master/ui/behaviors/combobox.js'
+
+export function Combobox({ children }) {
+  const root = useRef(null)
+  useEffect(() => combobox(root.current), [])
+  return <div className="combobox" ref={root}>{children}</div>
+}
+```
+
+在 Svelte 中，行為的簽章與 attachment 相同，因此 `{@attach}` 可以直接使用它：
+
+```svelte name=Combobox.svelte
+<script>
+  import { combobox } from '@master/ui/behaviors/combobox.js'
+</script>
+
+<div class="combobox" {@attach combobox}>
+  <!-- the field and the listbox -->
+</div>
+```
+
+action 回傳的是物件，因此在沒有 attachment 的 Svelte 版本中，請包裝行為：`const action = (node) => ({ destroy: combobox(node) })`，再使用 `use:action`。
+
+在 Vue 中，於元件掛載時掛上行為，於元件卸載時將其卸下：
+
+```vue name=Combobox.vue
+<script setup>
+import { onMounted, onUnmounted, ref } from 'vue'
+import { combobox } from '@master/ui/behaviors/combobox.js'
+
+const root = ref(null)
+let detach
+
+onMounted(() => { detach = combobox(root.value) })
+onUnmounted(() => detach?.())
+</script>
+
+<template>
+  <div class="combobox" ref="root"><slot /></div>
+</template>
+```
+
+## 選項 \{#options\}
+
+下列行為以第二個引數接收選項物件，例如 `calendar(root, options)`。
+
+### 日曆 \{#calendar-options\}
+
+- `value`：已選的日期，格式為 `YYYY-MM-DD`，或範圍的兩端。
+- `month`：最先顯示的月份，格式為 `YYYY-MM`。
+- `min`、`max`：可選擇的第一天與最後一天。
+- `range`：選擇兩個日期以及其間的每一天。
+- `weekStart`：第一欄的星期，從代表星期日的 0 到代表星期六的 6。
+- `locale`：用於顯示名稱的 BCP 47 語言標籤。
+- `disabled`：回傳某一天是否無法選擇的函式。
+- `draw`：[取代行為渲染格線](#a-grid-of-your-own)的函式。
+
+### Combobox \{#combobox-options\}
+
+`filter` 預設為 `true`：行為會隱藏文字中不包含輸入內容的選項。當[由應用程式提供相符選項](#options-from-a-server)時，請設為 `false`。
+
+### 命令面板 \{#command-options\}
+
+`shortcut` 是與 Command 或 Control 組合、用來開關命令面板的按鍵。預設為 `'k'`；設為 `false` 可停用快速鍵。`filter` 的作用與 combobox 相同。
+
+### OTP \{#otp-options\}
+
+`pattern` 是每個字元必須符合的正規表示式。省略時，行為會讀取第一個格位的 `pattern` 屬性；若沒有該屬性，則退回只接受數字。
+
+### 分隔條 \{#splitter-options\}
+
+`step` 設定按一次方向鍵時控制桿移動的距離，單位為百分點。預設為 5。
+
+## 事件 \{#events\}
+
+行為回報變更的方式與原生控制項相同：派送一個會冒泡的 DOM 事件。請以 `addEventListener` 監聽，或使用框架本身繫結原生事件的方式。
+
+| 行為 | 事件 | 派送來源 | 攜帶內容 |
+| --- | --- | --- | --- |
+| `combobox` | 選擇選項時，依序派送 `input` 與 `change` | 欄位 | 值即為欄位的 `value` |
+| `listbox` | 依序派送 `input` 與 `change` | listbox | 讀取其選項上的 `aria-checked="true"` |
+| `stepper` | 按鈕改變數字時，依序派送 `input` 與 `change` | 欄位 | 值即為欄位的 `value` |
+| `splitter` | 尺寸每次改變時派送 `input`；拖曳結束或以按鍵移動控制桿時派送 `change` | 控制桿 | 讀取 `aria-valuenow` |
+| `otp` | 腳本寫入的格位派送 `input`；所有格位填滿時派送 `change` | 格位；根元素 | `detail.value`：代碼 |
+| `calendar` | `change` | 根元素 | `detail.value`：格式為 `YYYY-MM-DD` 的日期，或在範圍兩端都選定後為 `[start, end]` |
+| `wheel` | 某一欄停在另一個選項上時派送 `change` | 該欄 | `detail.value`：選項的 `data-value` 或其文字；`detail.option`：該元素 |
+| `tree` | 選取帶有 `role="treeitem"` 且非分支的列時派送 `change` | 根元素 | `detail.item`：該列 |
+| `tabs` | 選取另一個分頁時派送 `change` | tablist | `detail.value`：分頁的 `data-value` 或其文字；`detail.tab`：該元素 |
+
+OTP 欄位、日曆、wheel、樹狀結構與 tablist 的 `change` 是 `CustomEvent`，因為其值不在單一原生控制項上。OTP 欄位的格位是原生 input，因此格位本身的 `change` 也會冒泡經過根元素，但不帶 `detail`。命令面板、選單與 compare 不會派送自己的事件。命令由其選項的 `click` 執行，按下 Enter 也會送出這個事件；而選單的項目是原生的按鈕、連結與 input。
+
+```js name=app.js
+import { calendar } from '@master/ui/behaviors/calendar.js'
+
+const root = document.querySelector('.calendar')
+const detach = calendar(root, { value: '2026-11-13', min: '2026-11-01' })
+
+root.addEventListener('change', (event) => {
+  console.log(event.detail.value)
+})
+```
+
+## 值 \{#the-value\}
+
+當模式擁有一個不由任何單一原生控制項保存的值時，其行為回傳的函式會帶有 `value`。讀取它可得知目前選了什麼。設定它則可從外部進行選擇：這會標示模式而不派送任何事件，就像設定原生 input 的 `value` 一樣。
+
+| 行為 | `value` |
+| --- | --- |
+| `calendar` | 格式為 `YYYY-MM-DD` 的日期；範圍模式下為 `[start, end]`，結束日在選定前為 `null`；未選擇時為 `null`。設定它會顯示新值所在的月份 |
+| `combobox` | 已選選項所代表的值；當欄位中的文字並非來自選擇的選項時為 `null`。設定它會將選項的文字寫入欄位 |
+| `listbox` | 已選選項所代表的值，未選擇時為 `null`；當 listbox 具有 `aria-multiselectable="true"` 時則為這些值的清單 |
+| `otp` | 各格位依序保存的字元 |
+| `splitter` | 第一個窗格的尺寸，以百分比表示 |
+| `stepper` | 欄位的數字；欄位為空時為 `null` |
+| `compare` | 範圍輸入的數字 |
+| `tabs`、`tree` | 所選分頁或列所代表的值；未選擇時為 `null` |
+| `wheel` | 每一欄所選選項代表的值，依欄的順序排列 |
+
+選項、分頁與列代表其 `data-value`；若沒有 `data-value`，則代表其文字。當文字不是應用程式要儲存的內容時，請提供 `data-value`：例如在顯示 Tokyo 的選項上加上 `data-value="hnd"`。
+
+```js name=app.js
+import { combobox } from '@master/ui/behaviors/combobox.js'
+
+const region = combobox(document.querySelector('.combobox'))
+region.value = 'hnd'        // checks the option, writes "Tokyo" into the field
+console.log(region.value)   // "hnd"
+```
+
+腳本寫入欄位的值會經由元素原型上的 setter。React 會遮蔽 input 上的 `value` 以察覺自己的寫入，並忽略帶有它已見過之值的 `input` 事件；以這種方式寫入，選擇就能像輸入一樣觸發 `onChange`。
+
+## 來自伺服器的選項 \{#options-from-a-server\}
+
+預設情況下，combobox 與命令面板會篩選標記中既有的選項。當由頁面決定哪些選項相符時（例如向伺服器查詢或搜尋索引），請傳入 `filter: false`：腳本不會隱藏任何選項，由頁面在讀者輸入時寫入選項。在清單開啟期間才送達的選項會重新取得作用中選項，因此 <kbd>Enter</kbd> 仍會選擇第一個相符項目。
+
+```js name=app.js
+import { combobox } from '@master/ui/behaviors/combobox.js'
+
+const root = document.querySelector('.combobox')
+const list = root.querySelector('[role="listbox"]')
+const selection = combobox(root, { filter: false })
+let request = 0
+
+root.querySelector('[role="combobox"]').addEventListener('input', async (event) => {
+  const current = ++request
+  if (selection.value !== null) return // Choosing an option also dispatches input.
+  const regions = await search(event.target.value)
+  if (current !== request || !root.isConnected) return
+  list.replaceChildren(...regions.map(option))
+})
+```
+
+此處的 `search(text)` 是應用程式的非同步搜尋函式，`option(region)` 則建立一個帶有 `listbox-option`、`role="option"`、唯一 id、`data-value` 與 `aria-checked="false"` 的元素。請以文字設定標籤，而不是將伺服器傳來的字串當成 HTML 注入。請求計數器可避免較舊的回應取代較新的結果；載入中、無結果與錯誤的回饋請由應用程式提供。
+
+## 自行渲染格線 \{#a-grid-of-your-own\}
+
+日曆是唯一會寫入元素的行為：它會寫入所顯示月份的各週。若要由渲染器自行寫入這些元素（例如樣板，或在伺服器上渲染的框架），請傳入 `draw`。此時腳本不會寫入任何元素。每當要顯示的月份不是格線中的月份時，它會以 `YYYY-MM` 格式的月份呼叫 `draw`，並在日期出現後加以標示：今天、已選的日期、無法選擇的日期，以及位於 Tab 鍵順序中的那一天。
+
+`calendarMonth()` 以資料形式提供一個月份，與腳本繪製時所用的資料相同：標題、七個星期名稱以及各週。每一天都是一個 `calendar-day` 按鈕，其 `value` 為日期；腳本就是藉此辨識那些不是它寫入的日期。若提供 `value`（以及用於兩端的 `range`），資料也會說明每一天該如何繪製：`selected`、代表位於 Tab 鍵順序中那一天的 `tab`，以及代表範圍內日期 class 的 `range`。寫入這些資訊的渲染器，在任何腳本執行之前，其第一份 HTML 中就已包含已選的日期。
+
+```js
+import { calendarMonth } from '@master/ui/behaviors/calendar.js'
+
+const month = calendarMonth('2026-11', {
+  value: '2026-11-13',
+  locale: 'en-GB'
+})
+
+const chosen = month.weeks.flat().find(day => day.selected)
+console.log(chosen.date) // "2026-11-13"
+console.log(chosen.tab)  // true
+```
+
+渲染器使用這些資料產生契約的標記：
+
+| 資料 | 渲染為 |
+| --- | --- |
+| `title` | `calendar-title` 的文字 |
+| `weekdays` | `calendar-weekday` 欄標題，以簡稱為文字、完整名稱為 `aria-label` |
+| `weeks` | 每週一個 `calendar-week` 列 |
+| 某一天的 `date`、`text`、`label` | 按鈕的 `value`、文字與 `aria-label` |
+| `selected`、`tab` | 初始已選日期為 `aria-selected` 與 `tabindex="0"`，其他日期為 `-1` |
+| `outside`、`range` | 需要時加上 `calendar-day-outside`，以及回傳的範圍 class 名稱 |
+
+格線存在之後，以相同的初始值與 locale 掛上 `calendar(root, { value, locale, draw })`。你的 `draw(month)` 回呼負責渲染另一個月份的列；這些列出現後，行為會標示目前的選取與焦點。替換列時，請保留標題、星期欄標題與格線的標籤。
+
+React、Svelte 與 Vue 的[日曆元件](/guide/frameworks)就是以這種方式撰寫，因此月份會出現在第一份 HTML 中。
+
+## 按鍵 \{#the-keys\}
+
+契約的 `keyboard` 清單規範了該模式隨附的行為。以 `npx master-ui contract combobox` 讀取：
+
+| 按鍵 | 動作 |
+| --- | --- |
+| ArrowDown、ArrowUp | 開啟清單並移動作用中選項，到達兩端時循環 |
+| Home、End | 清單開啟時移到第一個或最後一個選項 |
+| Enter | 選擇作用中選項並關閉清單 |
+| Escape | 關閉清單；欄位保留其文字 |
+| 輸入文字 | 篩選選項，並在出現第一個相符項目時開啟清單 |
+
+行為處理的按鍵會呼叫 `preventDefault()`。它不處理的按鍵則維持原樣，因此在沒有作用中選項的 combobox 中按下 Enter，仍會送出表單。隱藏的項目以及具有 `disabled` 或 `aria-disabled="true"` 的項目會被略過，而水平方向鍵會依循文字的方向。
+
+## 擁有行為 \{#own-a-behavior\}
+
+只要套件中的行為能滿足應用程式的需求，就繼續匯入它；如此一來，套件升級時就能帶來其修正。當專案需要不同的鍵盤或選取行為時，請取得原始碼並自行維護該實作：
+
+```bash
+npx master-ui own combobox
+```
+
+`own` 會將元件的樣式表、契約與行為複製到專案中，預設為 `ui/combobox.css`、`ui/combobox.json` 與 `ui/combobox.js`。從此之後，這個腳本就屬於專案。請從該處匯入，而不是從套件匯入。[自訂](/guide/customization#own-a-component)說明了擁有元件的其餘事項。
+
+combobox、command、listbox 與 menu 的行為會從 `./internal.js` 匯入共用的輔助函式；`own` 會將它一併複製到旁邊。
+
+編輯時請讓契約保持正確：腳本變動的屬性就是樣式表讀取的屬性，而 `keyboard` 清單應說明按鍵現在的作用。
+
+## 不使用任何腳本 \{#without-any-script\}
+
+上表列出的是套件中的行為，而非應用程式中所有可能需要 JavaScript 的動作。在瀏覽器支援的情況下，原生控制項會提供自己的互動；漸進增強的備援方式請參考[瀏覽器支援指南](/guide/browser-support)。表中有幾個模式也有不需要行為的形式：
+
+- **分頁**可以是連結或單選控制項。選用的行為用於會選取並顯示相關面板的 tablist。
+- **樹狀結構**是巢狀的 `<details>` 元素，其 `<summary>` 就是列。分支會自行展開與收合，每一列都是 Tab 停駐點。
+- **選單**是由按鈕與連結組成的 popover。由瀏覽器負責開關，Tab 在項目間移動，Escape 將焦點交還給按鈕。只有在搭配行為時才加上 `role="menu"`，因為這個角色意味著支援方向鍵。
+
+另有少數契約將腳本標為 `optional`，卻沒有指定行為。這些情況下的腳本只有一兩行，用於 HTML 沒有對應屬性的功能，例如核取方塊的 `indeterminate` 狀態，而元件在沒有它時也能運作。

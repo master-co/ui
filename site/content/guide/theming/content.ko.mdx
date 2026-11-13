@@ -1,0 +1,202 @@
+---
+title: "테마 설정"
+description: "토큰을 재정의하고, 재질 레시피를 정의하고, Paper를 실제 예제로 삼아 자체 테마를 만듭니다."
+---
+import GuideFigure from '../../../components/GuideFigure.astro'
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+
+export const specimen = `<div class="tray max-w(440) mx-auto">
+  <div class="sheet flex flex-col gap-lg p-lg">
+    <div class="flex flex-wrap items-center gap-sm">
+      <button type="button" class="btn btn-primary">Deploy</button>
+      <button type="button" class="btn">Preview</button>
+      <button type="button" class="btn btn-quiet">Cancel</button>
+      <button type="button" class="btn btn-brand">Upgrade</button>
+    </div>
+    <div class="field">
+      <label for="theme-domain">Domain</label>
+      <input class="input" id="theme-domain" value="atlas.dev">
+    </div>
+    <div class="flex flex-wrap items-center gap-lg">
+      <label class="check"><input type="checkbox" class="checkbox" checked> Preview builds</label>
+      <label class="check"><input type="radio" class="radio" name="theme-plan" checked> Team</label>
+      <label class="check"><input type="checkbox" role="switch" class="switch" checked> Alerts</label>
+    </div>
+    <div class="segmented" role="radiogroup" aria-label="Environment">
+      <label class="segmented-item"><input type="radio" class="segmented-input" name="theme-environment" checked>Production</label>
+      <label class="segmented-item"><input type="radio" class="segmented-input" name="theme-environment">Preview</label>
+      <label class="segmented-item"><input type="radio" class="segmented-input" name="theme-environment">Local</label>
+    </div>
+    <input type="range" class="slider" value="60" aria-label="Traffic to the new release">
+    <div class="flex flex-wrap items-center gap-sm">
+      <span class="badge">Draft</span>
+      <span class="badge badge-success badge-dot">Ready</span>
+      <span class="badge badge-ink">New</span>
+    </div>
+    <div class="sheet sheet-inverse p-md text-sm">Ship the release when the checks pass.</div>
+  </div>
+</div>`
+
+테마는 토큰에 값을 부여하고, 컴포넌트가 읽는 재질 레시피를 정의합니다. 컴포넌트의 마크업과 동작은 그대로 유지하면서 하나의 공유 값을 바꾸거나, 그 변경을 페이지의 일부로 한정하거나, 인터페이스 전체의 재질을 교체할 수 있습니다.
+
+Moonstone과 Obsidian의 재질 선택에 대해서는 [디자인](/guide/design)을 참고하세요. 그 토큰의 역할과 값은 [기본 테마](/guide/theme)에서 문서화합니다. 변경이 테마에 속하는지 컴포넌트에 속하는지 결정하려면 [사용자 지정](/guide/customization)부터 시작하세요.
+
+## 토큰 조정하기 \{#retune-tokens\}
+
+가져오기 뒤에 토큰을 재정의합니다. 그 토큰을 읽는 모든 컴포넌트가 따라갑니다.
+
+```css name=app.css
+@import '@master/css';
+@import '@master/ui';
+
+@theme {
+  --color-brand: oklch(58% .19 28);
+  --color-brand-ink: oklch(99% .01 28);
+  --radius-control: .5rem;
+}
+```
+
+이렇게 하면 브랜드 표면과 기본 컨트롤 반경이 바뀝니다. 작은 컨트롤과 큰 컨트롤은 각자의 반경 토큰을 사용합니다. 새 면에 대해 `--color-brand-ink`를 확인하세요. 브랜드 색 텍스트는 별도의 `--color-brand-text` 토큰을 사용하므로 새 색조를 자동으로 따르지 않습니다.
+
+### 재정의를 한 영역으로 한정하기 \{#scope\}
+
+토큰은 사용자 지정 속성이므로 캐스케이드도 됩니다. 요소에 토큰을 설정하면 두 번째 빌드 없이 그 하위 요소들을 조정할 수 있습니다. 여기서 결제 영역의 두 버튼은 더 작은 반경을 상속하고, 그 영역 밖의 버튼은 기본값을 유지합니다.
+
+<GuideFigure name="theming" title="토큰의 범위와 상속">
+
+**범위는 하위 요소가 상속하는 값을 바꿉니다.** 결제 영역은 Review와 Pay에 대해 기본 10px `--radius-control`을 4px로 대체합니다. Continue browsing은 영역 밖에 있으므로 10px을 유지합니다. 각 버튼 자체의 `--btn-radius`가 그 상속된 토큰을 읽습니다. 조상 요소의 `--btn-radius`는 버튼의 선언을 대체할 수 없습니다. 표시된 값은 테마의 모서리 배율을 적용하기 전의 값입니다.
+
+</GuideFigure>
+
+<ComponentPreview name="scope" height={232} narrowHeight={280} title="결제 영역으로 범위를 한정한 토큰" background="plain" bodyClass="p-lg" html={`<div class="flex flex-col gap-lg w-full max-w(440) mx-auto">
+  <div class="sheet flex flex-col gap-sm p-md" style="--radius-control: .25rem">
+    <span class="text-xs fg-text-muted">Inside checkout · 4px radius token</span>
+    <div class="flex flex-wrap gap-sm">
+      <button type="button" class="btn">Review</button>
+      <button type="button" class="btn">Pay</button>
+    </div>
+  </div>
+  <div class="flex flex-wrap items-center gap-sm">
+    <button type="button" class="btn">Continue browsing</button>
+    <span class="text-xs fg-text-muted">Outside · default 10px token</span>
+  </div>
+</div>`} />
+
+버튼은 자체 `--btn-radius` 속성을 통해 `--radius-control`을 읽습니다. 결제 컨테이너에만 `--btn-radius`를 설정하면 이런 효과가 나지 않습니다. 각 버튼이 그 속성을 자기 자신에게 선언하기 때문입니다. 영역에는 테마 토큰을 사용하거나, 버튼에 직접 [컴포넌트 속성](/guide/customization#property)을 설정하세요. 인라인 선언은 그 컨테이너에 적용하는 프로젝트 클래스에 두어도 됩니다.
+
+### 원형 모서리 유지하기 \{#circular-corners\}
+
+기본 테마는 지원되는 곳에서 연속 곡률 모서리를 사용합니다. 모든 곳에서 원형 모서리를 유지하려면 두 모서리 속성을 모두 설정하세요.
+
+```css name=app.css
+:root {
+  --corner-shape: round;
+  --corner-scale: 1;
+}
+```
+
+`@theme`에 선언된 토큰은 유틸리티로도 사용할 수 있습니다. `bg-surface-tray`와 `shadow-lifted`는 직접 만든 요소에도 컴포넌트와 같은 재질을 부여합니다. Master UI를 가져오면 프리셋의 공유 의미론적 토큰이 기본 테마로 설정되며, 재정의는 그 토큰을 읽는 컴포넌트와 유틸리티를 모두 조정합니다.
+
+## 테마가 결정하는 것 \{#what-a-theme-decides\}
+
+테마를 만들 때 이 체크리스트를 사용하세요. 토큰의 역할과 기본값은 [기본 테마](/guide/theme)에서 설명합니다.
+
+| 결정 사항 | 토큰 |
+| --- | --- |
+| 각 표면의 톤 | `--color-surface-base`, `-tray`, `-raised`, `-raised-low`, `-inset`, `-inset-hover`, `-floating`, `-chip`, `-inverse`, `-scrim` |
+| 각 선의 뚜렷함 | `--color-line-hair`, `-contour`, `-divider`, `-strong`, `-mark` |
+| 잉크 | `--color-text-strong`, `-body`, `-muted`, `-disabled`, `-inverse`, `--color-focus`, `--color-focus-halo` |
+| 빛이 떨어지는 위치 | `--color-highlight`, `--color-lip`, `--color-shade-1`부터 `-5`까지 |
+| 깊이 | `--shadow-pressed`, `-flat`, `-raised`, `-raised-hover`, `-lifted`, `-floating`, `-overlay` |
+| 잉크 면 | `--color-surface-inverse-high`, `-low`, `--color-ink-high`, `-low`, 그 `-hover` 형태, `--color-ink-pressed`, `--color-ink-highlight`, `--color-ink-edge`, `--shadow-ink`, `-ink-hover`, `-ink-pressed`, `-ink-mark`, `-ink-well`, `-ink-top`, `--color-surface-tip`, `--shadow-tip` |
+| 썸 | `--color-thumb-high`, `-low`, `--color-thumb-on-high`, `-on-low`, `--shadow-thumb-on-ink` |
+| 색조 | `--color-brand`, `-brand-ink`, `-brand-text`, `--color-info`, `-success`, `-warning`, `-danger`, `--color-tone-highlight`, `-tone-highlight-soft` |
+| 이미지와 제공된 색상 | `--color-line-image`, `-image-strong`, `--color-line-on-color`, `--color-highlight-on-color`, `--color-on-image`, `-on-image-shade`, `--color-mark`, `-mark-underline`, `--color-sheen` |
+| 모양 | `--radius-chip`, `-control-sm`, `-control`, `-control-lg`, `-surface`, `--corner-shape`, `--corner-scale` |
+| 이동과 시간 | `--lift`, `--duration-press`, `-quick`, `-base`, `--easing-glide` |
+| 글꼴 | `--font-weight-control`, 그리고 프리셋의 `--font-sans`와 `--font-mono` |
+
+패키지 테스트는 컴포넌트 스타일시트의 색상 리터럴을 거부하여 색상이 테마의 통제 아래 있도록 합니다. 토큰과 레시피 전체를 확인할 때는 설치된 `@master/ui/theme.css`를 소스로 사용하세요.
+
+## 두 번째 테마, Paper \{#paper\}
+
+Paper는 `@master/ui/themes/paper.css`로 게시됩니다. 기본 재질을 평면적인 면, 선으로 그린 가장자리, 더 작은 원형 모서리, 따뜻한 중립색, 녹색 브랜드로 대체합니다. `--lift: 0px`는 그 토큰이 만드는 호버와 누르기의 이동을 제거하지만, 스위치 썸의 이동 같은 컴포넌트 애니메이션은 계속 작동합니다. 어떤 컴포넌트 스타일시트도 바꾸지 않습니다.
+
+```css name=app.css
+@import '@master/css';
+@import '@master/ui';
+@import '@master/ui/themes/paper.css';
+```
+
+각 테마에서 같은 마크업을 보면 다음과 같습니다.
+
+<ComponentPreview name="moonstone" height={536} narrowHeight={688} title="Moonstone" theme bodyClass="p-lg" html={specimen} />
+
+<ComponentPreview name="paper" height={536} narrowHeight={688} title="Paper" theme stylesheet="paper" bodyClass="p-lg" html={specimen} />
+
+그 소스를 템플릿으로 읽어 보세요. 토큰 목록, 모서리 설정, 그리고 레시피 하나로 이루어져 있습니다.
+
+<ComponentSource name="paper" directory="themes" />
+
+### 테마 파일 시작하기 \{#create-a-theme\}
+
+평면적인 출발점을 원한다면 설치된 패키지에서 Paper를 복사하고, 기본 재질을 출발점으로 유지하려면 `theme.css`를 복사하세요.
+
+```bash
+mkdir -p themes
+cp node_modules/@master/ui/themes/paper.css themes/app.css
+```
+
+라이브러리 뒤에 파일을 가져온 다음, 토큰과 레시피를 편집합니다.
+
+```css name=app.css
+@import '@master/css';
+@import '@master/ui';
+@import './themes/app.css';
+```
+
+기존 Master CSS 통합으로 다시 빌드합니다. 컴포넌트 마크업은 그대로입니다. 앱 전체에 테마를 적용하기 전에 버튼, 필드, 잉크 표면, 오버레이를 두 색 구성표에서 비교하세요.
+
+## 레시피 \{#recipes\}
+
+몇몇 재질은 하나의 값 이상입니다. 빛이 떨어지는 면, 상태마다 면이 있는 컨트롤이 그렇습니다. 테마는 이를 믹스인으로 작성하고, 컴포넌트는 이름으로 적용합니다. 테마 파일은 믹스인을 다시 정의할 수 있으며, 마지막 정의가 모든 컴포넌트에 적용됩니다.
+
+| 믹스인 | 그리는 것 | Paper |
+| --- | --- | --- |
+| `--surface-sheet` | 솟은 면 | `--color-surface-raised-low`를 통한 평면 |
+| `--surface-ink` | 잉크 시트: 반전 시트, 보낸 메시지 | `-inverse-high`와 `-low` 토큰을 통한 평면 |
+| `--control-ink`, `-hover`, `-pressed` | 각 상태에서 기본 버튼의 면과 그림자 | 잉크 토큰을 통한 평면 |
+| `--control-tone`, `-hover`, `-pressed` | 컨트롤 자체의 `--tone`으로 혼합한 색조 컨트롤 | 재정의됨: 하나의 평면 색조 |
+| `--surface-thumb` | 스위치와 슬라이더의 썸 | 썸 토큰을 통한 평면 |
+| `--focus-ring` | 키보드 포커스 | 변경 없음 |
+| `--on-ink` | 잉크 표면이 담고 있는 인라인 칩에 전달하는 것 | 변경 없음 |
+| `--anchored`, `--pop` | 팝오버가 놓이는 위치, 그리고 등장과 퇴장 방식 | 변경 없음 |
+
+먼저 토큰을 사용하세요. Paper는 색조 컨트롤만 재정의합니다. 그 레시피는 컨트롤이 자기 자신에게 설정한 색조로부터 면을 혼합하는데, 루트의 토큰은 그 색조를 읽을 수 없기 때문입니다.
+
+토큰은 사용자 지정 속성이므로 런타임에 어떤 요소에서든 작동합니다. 믹스인은 Master CSS가 스타일시트를 컴파일할 때 결정되므로, 재정의한 믹스인은 빌드 전체에 적용됩니다.
+
+## Master CSS 없이 사용하기 \{#without-master-css\}
+
+패키지는 각 테마를 컴포넌트와 함께 일반 CSS로 컴파일한 파일도 제공합니다. CSS 번들러는 설치된 패키지에서 Paper를 가져올 수 있습니다. 기본 standalone 스타일시트 대신 이것을 사용하세요.
+
+```css name=app.css
+@import '@master/ui/dist/themes/paper.css';
+
+:root {
+  --color-brand: oklch(58% .19 28);
+}
+```
+
+번들러가 없는 페이지에서는 그 컴파일된 파일을 정적 자산에서 제공하세요. 리셋과 유틸리티의 제약은 [설치](/guide/installation#without-master-css)를 참고하세요. `dist/standalone.css`에는 moonstone과 obsidian이 들어 있습니다. 컴파일된 파일은 사용자 지정 속성의 재정의를 받아들이지만, 믹스인을 다시 정의하려면 Master CSS로 테마를 컴파일해야 합니다.
+
+## 테마의 규칙 \{#rules\}
+
+- **테마는 컴포넌트를 선택하지 않습니다.** 테마는 토큰을 설정하고 믹스인을 정의합니다. 테마 안의 `.btn { … }` 같은 규칙은 컴포넌트 재정의입니다. 그것이 어디에 속하는지는 [사용자 지정](/guide/customization)을 참고하세요.
+- **쌍을 유지하세요.** 표면과 그 위의 잉크, 선과 그 아래의 표면은 함께 선택합니다. 모든 표면에서 본문 텍스트의 대비를 두 색 구성표 모두에서 확인하세요.
+- **가장자리를 찾을 수 있게 유지하세요.** 테마가 빛과 그림자를 제거하면, 선이 경계의 더 많은 부분을 담당합니다. Paper는 역할과 색 구성표마다 따로 조정한 더 뚜렷한 선 토큰을 사용합니다.
+- **아무것도 그리지 않는 그림자 토큰은 `none`이 아니라 `0 0 0 0 transparent`입니다.** 컴포넌트는 그림자를 목록으로 조합하며, `none`은 목록 안에서 유효하지 않습니다.
+- **더 높은 대비 요청에 응답하세요.** 테마는 `prefers-contrast: more`에서 선과 두 가지 조용한 잉크를 더 뚜렷하게 합니다. 자체 선을 설정하는 테마는 Paper처럼 그 블록도 작성합니다. 레시피를 바꿀 때 컴포넌트의 강제 색상 및 동작 줄이기 동작을 유지하세요.
+
+라이트와 다크에서 키보드 포커스, 호버, 누르기, 비활성화된 컨트롤, 유효하지 않은 필드로 결과를 확인하세요. 페이지 위에 메뉴나 대화 상자를 열어 실제 배경에 대한 가장자리와 텍스트를 판단하세요. 동작 줄이기와 강제 색상에서도 반복하세요. 정지 상태에서 깔끔해 보이는 테마도 상태를 숨기거나 유일하게 보이는 경계를 없앨 수 있습니다.

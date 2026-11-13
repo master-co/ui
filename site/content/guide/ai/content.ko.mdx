@@ -1,0 +1,145 @@
+---
+title: "AI와 함께 작업하기"
+description: "에이전트에게 버전에 맞는 계약을 제공하고, 마크업을 검사하고, 편집을 받아들이기 전에 렌더링된 인터페이스를 확인합니다."
+---
+import GuideFigure from '../../../components/GuideFigure.astro'
+
+코딩 에이전트에게 프로젝트가 사용하는 버전의 계약을 제공한 다음, 에이전트가 변경한 마크업을 검사하게 하세요. 계약은 클래스 이름, 필수 요소, 상태 속성, 공개 사용자 지정 속성을 제공하며, 검사기는 페이지를 렌더링하지 않고도 흔한 구조적 실수를 찾아냅니다.
+
+에이전트가 라이브러리를 설치하게 하려면 [설정 프롬프트](/guide/installation#set-up-with-an-ai-agent)를 에이전트에 붙여 넣으세요. 이 프롬프트는 스킬과 아래의 안내도 함께 설치합니다.
+
+편집하기 전에 에이전트는 프로젝트가 Master UI를 어떻게 가져오는지, 어떤 테마를 사용하는지, `master-ui.json`에 로컬에서 소유한 컴포넌트가 기록되어 있는지 확인해야 합니다. 이러한 로컬 계약은 패키지의 기본값보다 우선합니다. 편집 후에는 정적 검사와 브라우저 검토가 서로 다른 질문에 답합니다. 유효한 마크업이라도 레이아웃이 잘못되었거나, 상호작용에 접근할 수 없거나, 동작 스크립트가 빠져 있을 수 있습니다.
+
+<GuideFigure name="ai" title="계약 검사와 브라우저 검토">
+
+**소스와 렌더링된 결과를 모두 확인합니다.** 설치된 계약이나 로컬에서 소유한 계약을 바탕으로 마크업을 작성합니다. CLI는 읽을 수 있는 요소, 클래스, 속성을 검사하고, 브라우저는 레이아웃, 키보드, 상태 동작을 드러냅니다. 편집을 받아들이기 전에 두 검사에서 발견된 문제를 모두 해결하세요.
+
+</GuideFigure>
+
+## 스킬 \{#the-skill\}
+
+`master-ui` 스킬은 이 라이브러리를 사용하는 프로젝트에서 작업하는 에이전트를 위한 것입니다. 다음 명령으로 설치합니다.
+
+```bash
+npx skills add master-co/ui --skill master-ui
+```
+
+| 파일 | 내용 |
+| --- | --- |
+| `SKILL.md` | 프로젝트가 라이브러리를 어떻게 가져오고 무엇을 소유하는지 알아내는 방법, 계약을 바탕으로 마크업을 작성하는 규칙, 라이브러리에 무언가가 없을 때 할 일, 확인 방법 |
+| `references/choosing.md` | 여러 컴포넌트가 가능할 때 어떤 컴포넌트가 작업에 맞는지: 페이지 위에 놓이는 것, 메시지, 옵션 중 선택, 숫자, 내비게이션, 레코드 집합 |
+| `references/customizing.md` | [사용자 지정 사다리](/guide/customization)와 컴포넌트를 소유하기 위한 조건 |
+| `references/frameworks.md` | [React, Svelte, Vue](/guide/frameworks)에서 마크업으로 남는 것, 복사할 컴포넌트가 있는 패턴, 그리고 그 컴포넌트를 만드는 방법 |
+
+이 스킬은 프로젝트가 이미 Master UI를 가져오는 경우에 에이전트가 Master UI를 사용하도록 안내합니다. 다른 라이브러리를 사용하는 프로젝트에 이 라이브러리를 도입하지는 않습니다.
+
+## 사이트가 프로그램용으로 게시하는 것 \{#for-programs\}
+
+사이트는 구조화된 데이터와 이식 가능한 Markdown을 게시합니다. 컴포넌트 Markdown은 계약으로부터 생성되며, 가이드, 레이아웃, 블록, 페이지는 작성된 페이지에서 내보냅니다. 이러한 출력은 사이트의 상호작용 가능한 사본이 아니라 텍스트와 코드를 제공합니다.
+
+| URL | 내용 |
+| --- | --- |
+| `https://ui.master.co/llms.txt` | 색인: Master UI 마크업 작성 규칙과 모든 페이지의 Markdown 링크 |
+| `https://ui.master.co/<section>/<slug>.md` | 모든 페이지의 Markdown. 섹션은 `guide`, `components`, `blocks`, `pages` 중 하나입니다. 컴포넌트 페이지는 계약으로부터 작성됩니다: 마크업, 클래스, 상태, 속성, 스크립트, 키보드, 플랫폼. 컴포넌트에 포함된 레이아웃은 작성된 페이지를 유지하고, 그 뒤에 계약이 붙습니다 |
+| `https://ui.master.co/contracts.json` | 모든 계약을 데이터로 제공 |
+| `https://ui.master.co/contract.schema.json` | 모든 계약이 따르는 JSON Schema |
+| `https://ui.master.co/theme.json` | 테마의 모든 토큰과 그 값 |
+| `https://ui.master.co/r/registry.json` | [레지스트리](/guide/registry): 프로젝트로 복사할 소스 |
+
+셸이 없는 에이전트는 `llms.txt`에서 시작해 `https://ui.master.co/components/dialog.md` 같은 관련 컴포넌트 페이지를 읽습니다. 공개 사이트는 배포된 라이브러리 버전을 설명하며, 이는 프로젝트에 설치된 버전과 다를 수 있습니다. 패키지를 사용할 수 있다면 패키지의 `@master/ui/contracts.json`과 `@master/ui/theme.json`을 우선 사용하고, 프로젝트에 로컬 계약이 있다면 아래의 CLI를 사용하세요.
+
+## 계약 조회하기 \{#look-up-a-contract\}
+
+[패키지를 설치](/guide/installation)한 후 프로젝트 루트에서 CLI를 실행합니다. CLI는 설치된 패키지와 프로젝트에서 계약을 읽습니다. 조회 과정에서 설치되지 않은 명령이 관계없는 버전을 가져오게 하지 마세요.
+
+```bash
+npx master-ui list             # every contract, one line each
+npx master-ui contract dialog  # one contract as JSON
+```
+
+클래스 이름도 이름으로 사용할 수 있으므로 `npx master-ui contract btn-primary`는 버튼의 계약을 출력합니다. `npx master-ui list --json`은 목록을 데이터로 출력합니다.
+
+두 명령은 `master-ui.json`에 설정된 디렉터리(기본값 `ui/`)와 추가 계약 경로도 읽습니다. 프로젝트가 [소유한](/guide/customization#own-a-component) 컴포넌트는 그 사본이 설명하며, [프로젝트가 직접 작성한 컴포넌트](/guide/contracts#your-own)는 라이브러리의 컴포넌트와 나란히 나열됩니다.
+
+## 마크업 검사하기 \{#check-the-markup\}
+
+`npx master-ui check`는 마크업을 읽고 계약을 위반하는 위치를 보고합니다. 예를 들어 이 파일에는 오류 세 개와 경고 한 개가 있습니다.
+
+```html name=page.html
+<button type="button" class="btn-primary">Save changes</button>
+<button type="button" class="btn btn-outline">Cancel</button>
+<button type="button" class="btn btn-square">
+  <svg aria-hidden="true" viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8"/></svg>
+</button>
+<div class="dialog">
+  <h2 class="dialog-title">Delete this project?</h2>
+</div>
+```
+
+```bash
+npx master-ui check page.html
+```
+
+```
+page.html:1:1 error missing-base "btn-primary" modifies "btn": write class="btn btn-primary".
+page.html:2:1 warning unknown-class "btn-outline" is not a class of btn. It has: btn, btn-primary, btn-quiet, btn-brand, btn-danger, btn-sm, btn-lg, btn-square, btn-pill, btn-group.
+page.html:3:1 error label "btn-square" needs an accessible name: text of its own, aria-label, aria-labelledby, or a <label> that wraps or points at it.
+page.html:6:1 error element "dialog" goes on <dialog>, not <div>.
+
+1 files checked: 3 errors, 1 warnings.
+```
+
+각 줄은 위치, 심각도, 코드, 그리고 대신 작성해야 할 내용을 알려 주므로, 에이전트는 마크업을 수정하고 결과가 깨끗해질 때까지 명령을 다시 실행할 수 있습니다. 모든 코드는 [계약](/guide/contracts#diagnostics)에 나열되어 있습니다.
+
+- **경로.** 인수 없이 실행하면 `node_modules`와 빌드 출력을 제외한 작업 디렉터리 아래의 모든 `.html`, `.htm`, `.astro`, `.svelte`, `.vue`, `.jsx`, `.tsx`, `.mdx`, `.erb`, `.php`, `.njk`, `.liquid`, `.hbs` 파일을 검사합니다. 범위를 좁히려면 파일, 디렉터리 또는 glob을 전달하세요.
+- **검사하지 않는 것.** 브라우저를 실행하지 않고 태그, 클래스, 속성을 읽습니다. 표현식에서 오는 클래스나 루트가 다른 파일에 있는 부분처럼 알 수 없는 것은 보고하지 않습니다.
+- **`--json`**은 결과를 데이터로 출력합니다. 파일 수와, 발견 사항이 있는 각 파일의 진단을 포함하며, 각 진단에는 `code`, `severity`, `className`, `contract`, `message`, `line`, `column`이 있습니다.
+- **`--strict`**는 `unknown-class`를 오류로 보고합니다. 컴포넌트의 루트 클래스와 대시로 시작하지만 어떤 계약에도 없는 클래스는 유틸리티일 수 있으므로 기본적으로 경고입니다. 프로젝트에 Master CSS가 설치되어 있으면 검사기는 프리셋 유틸리티를 인식합니다. 프로젝트에서 정의한 클래스에 대한 진단도 검토하세요. 깨끗한 결과가 모든 사용자 지정 유틸리티나 동적으로 계산된 클래스를 검증하지는 않습니다.
+
+이 명령은 오류를 발견하면 종료 코드 1로 종료하므로, 그대로 CI 단계를 실패시킵니다.
+
+```json name=package.json
+{
+  "scripts": {
+    "check:ui": "master-ui check --strict"
+  }
+}
+```
+
+프로그래밍 방식으로 검사하려면 `@master/ui/check`를 사용하세요. 검사기가 읽는 데이터는 [계약](/guide/contracts)에서 설명합니다. 브라우저 검사는 에이전트의 완료 기준에 계속 포함하세요. 필요한 동작 연결을 포함해 영향을 받는 키보드 조작, 상태, 좁은 레이아웃, 색 구성표를 테스트하세요.
+
+## 에이전트에게 알리기 \{#agents-md\}
+
+에이전트는 프로젝트 자체의 지침을 가장 먼저 따릅니다. 다음 내용을 `AGENTS.md` 또는 에이전트가 읽는 파일에 붙여 넣으세요.
+
+```md name=AGENTS.md
+## Master UI
+
+This project builds its interface with Master UI: classes on native elements, each described by a contract.
+
+- Read the contract before writing a component's markup: `npx master-ui contract <name>`, and `npx master-ui list` to find one. Do not write markup from memory.
+- Never invent a Master UI component class. Use the installed or locally owned contract, and keep project-defined classes outside the library's class families.
+- Mark a state with the attribute the contract lists (`disabled`, `aria-pressed="true"`, `open`). Never add a class for a state.
+- A component is a class on a native element in any framework. Do not wrap one in a component to rename it. The patterns that hold state have a component to copy: `npx master-ui add` lists them, and `ui/` may already hold one.
+- To change how something looks, take the lowest step that works: a utility on the element, a theme token, a public custom property, a theme file, and only then `npx master-ui own <name>`. A project rule may select a library class to set its documented custom properties; change its implementation through owned source.
+- Run `npx master-ui check` after changing markup. Fix every error and read each warning. Check the affected interactions in a browser, including the keyboard, a narrow viewport and both color schemes.
+```
+
+## MCP \{#mcp\}
+
+Master UI 패키지는 위에서 설명한 CLI와 계약 파일을 제공합니다. 에이전트가 Master CSS MCP 서버에도 연결되어 있다면, 컴포넌트 계약 조회를 그 연결에 의존하기 전에 사용 가능한 도구를 확인하세요. 도구의 사용 가능 여부는 연결된 서버에 따라 다르며, 설치된 CLI는 프로젝트에서 실제로 적용되는 계약을 읽는 직접적인 방법으로 남아 있습니다.
+
+## 채팅 샌드박스나 아티팩트에서 \{#without-a-build\}
+
+CSS 컴파일이 없는 채팅 아티팩트나 정적 HTML 프로토타입에서는 사이트의 컴파일된 스타일시트를 링크하세요. 환경이 기본 리셋을 제공하지 않는다면 base 리셋도 포함하세요.
+
+```html
+<link rel="stylesheet" href="https://ui.master.co/base.css">
+<link rel="stylesheet" href="https://ui.master.co/standalone.css">
+
+<button type="button" class="btn btn-primary">Save changes</button>
+```
+
+이 URL은 배포된 사이트를 따라가므로 일회용 프로토타입에 적합합니다. 유지 관리하는 프로젝트에서는 [고정된 패키지의 컴파일된 파일을 제공](/guide/installation#without-master-css)하고 같은 버전에서 계약을 읽으세요. CSS를 불러온다고 해서 동작 스크립트가 연결되지는 않습니다. 동작 스크립트가 필요한 패턴에는 여전히 브라우저 모듈이나 프레임워크 컴포넌트가 필요합니다.
+
+이 환경에서는 유틸리티를 사용할 수 없습니다. `flex`나 `gap-md` 같은 클래스는 Master CSS가 생성해야 하므로, 페이지 레이아웃은 `style` 속성이나 작은 스타일 블록에 자체 CSS로 작성하세요. 테마의 토큰은 사용자 지정 속성이므로 작동합니다. `color: var(--color-text-muted)`는 테마를 읽습니다.

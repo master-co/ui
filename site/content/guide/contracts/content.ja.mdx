@@ -1,0 +1,211 @@
+---
+title: "コントラクト"
+description: "コンポーネントのマークアップと公開プロパティを読み取り、チェッカーが検証する内容を理解し、独自のコンポーネントを記述します。"
+---
+import GuideFigure from '../../../components/GuideFigure.astro'
+
+パッケージ内のすべてのスタイルシートには、隣にコントラクトがあります。`button.css` と `button.json` です。コントラクトは、スタイルシートが約束する内容を、プログラムが読める形で示します。そのクラス、各クラスを置く場所、描画する状態、公開するカスタムプロパティ、そして最小限の正しいマークアップです。
+
+チェッカー、生成されるコンポーネント表、ポータブルなコンポーネントページ、[レジストリ](/guide/registry)は、これらのコントラクトを読み取ります。クラスのルールを 1 つのソースにまとめることで重複が減り、パッケージのテストがコントラクトとスタイルシートの一致を確認します。コントラクトはサポートされるマークアップを記述しますが、操作、アクセシビリティ、見た目の振る舞いをブラウザーで確認する作業の代わりにはなりません。
+
+まず `npx master-ui contract button` を実行し、ボタンのマークアップと公開プロパティを確認してください。`@master/ui/components/button.json` としてインポートすることも、`@master/ui/contracts.json` や `https://ui.master.co/contracts.json` からすべてを取得することもできます。スキーマは `https://ui.master.co/contract.schema.json` です。
+
+## コントラクトの内容 \{#keys\}
+
+| キー | 内容 |
+| --- | --- |
+| `name`、`title`、`tier`、`category`、`description` | スラッグ（スタイルシートのファイル名）、読み手に見える名前、`component` または `layout`、所属するグループ、それが何であるかを示す 1 文 |
+| `use` | どのような場合に使うか |
+| `instead` | 別の状況で適切な選択肢となる近いコンポーネント。それぞれ `when` と、`use` にある別のコントラクトの名前で表します |
+| `composes` | マークアップでそのクラスを使う他のコントラクト。たとえばコンボボックスなら `input` と `listbox` です。それらのスタイルシートもインポートする必要があります |
+| `script` | `none`、`optional`、`required` のいずれか |
+| `behavior` | パターンを動かすリファレンススクリプト |
+| `keyboard` | ネイティブに、またはビヘイビアをアタッチした後に、各キーが行うこと |
+| `platform` | エンハンスメントとして使う各プラットフォーム機能と、その機能のないブラウザーでの表示 |
+| `classes` | スタイルシートが定義するすべてのクラス。それ以外は含みません |
+| `states` | スタイルシートが描画する各状態と、それを示す属性または疑似クラス |
+| `properties` | 公開カスタムプロパティ |
+| `example` | 最小限の正しいマークアップ |
+
+`name`、`title`、`tier`、`category`、`description`、`use`、`script`、`classes`、`example` は必須です。スキーマでは、この表にあるキーと `$schema` 以外のキーは許可されません。
+
+## クラス \{#classes\}
+
+各クラスには `name`、`kind`、`description` があります。kind はクラスを置ける場所を示します。
+
+<GuideFigure name="contracts" title="ルート、モディファイア、パーツ">
+
+**モディファイアは要素を共有し、パーツはその中に置かれます。** ルート `dialog` とモディファイア `dialog-drawer` は、同じダイアログ要素に付けます。その子の見出しにはパーツ `dialog-title` を付けます。モディファイアを別の要素に付けても、この関係は満たされません。
+
+</GuideFigure>
+
+| kind | 置く場所 | 例 |
+| --- | --- | --- |
+| `root` | 単独で置きます。1 つのスタイルシートに複数あることもあります | `btn`、`btn-group`、`dialog` |
+| `part` | `of` で指定したルートの内側 | `dialog` の `dialog-title` |
+| `modifier` | `of` で指定したベースと同じ要素 | `btn` の `btn-primary` |
+
+パーツのモディファイアは、そのパーツを指定します。`menu-item-danger` は `menu-item` の（`of`）モディファイアです。クラスが複数のうちいずれか 1 つと組み合わせられる場合、`of` はリストになります。以下はボタンの `classes` にある 3 つのエントリーです。
+
+```json name=button.json
+{ "name": "btn", "kind": "root", "description": "The raised base button", "elements": ["button", "a", "summary", "label", "input"] },
+{ "name": "btn-sm", "kind": "modifier", "of": "btn", "exclusive": "size", "description": "32px tall; the default is 38px" },
+{ "name": "btn-square", "kind": "modifier", "of": "btn", "label": true, "description": "A square button for one icon; it needs an accessible name" }
+```
+
+## チェッカーが強制する内容 \{#constraints\}
+
+kind だけで、チェッカーには 2 つのルールが与えられます。モディファイアにはベースが必要で、パーツにはルートが必要です。クラスに付けられる 4 つの任意のキーは、ドキュメント上のルールを `master-ui check` が報告する項目に変えます。誤った制約は誰かのプロジェクトで誤ったエラーになるため、コントラクトにこれらのキーを追加するのは、スタイルシートやプラットフォームがそれを必要とする場合だけです。
+
+| キー | 意味 | 例 |
+| --- | --- | --- |
+| `elements` | クラスはこれらの要素でのみ機能します。どの要素でもよい場合は省略します | `["dialog"]` の `dialog` |
+| `attributes` | 要素が持たなければならない属性。任意の値なら `true`、1 つの値なら文字列、複数のうちいずれかなら配列 | `switch`：`{ "type": "checkbox", "role": "switch" }` |
+| `label` | 要素にアクセシブルな名前が必要です | `btn-square`、`dialog-close` |
+| `exclusive` | グループのキー。同じキーを持つ 2 つのモディファイアは、同じ要素に付けられません | `btn-sm` と `btn-lg` はどちらも `"size"` です |
+
+5 つ目のキーはルールを緩めます。`"anywhere": true` は、ルートの外に置いてもよいパーツを示します。たとえば `field-hint` は `field` のパーツですが、`field` の外に置くこともできます。
+
+## 状態とプロパティ \{#states-and-properties\}
+
+状態はスタイルシートが描画し、マークアップではネイティブ属性または ARIA 属性で示します。状態を表すクラスはありません。各エントリーは、`on` にマークを持つクラス、短い `name`、マークアップまたは CSS に書かれる形の `mark` を指定します。
+
+```json name=button.json
+{ "on": "btn", "name": "pressed", "mark": "aria-pressed=\"true\"", "description": "A quiet toggle that is on stays sunk into a well" }
+```
+
+`:user-invalid` や `:popover-open` のようにコロンで始まるマークは、ブラウザーが設定する疑似クラスです。自分で書くものはありません。
+
+`properties` には、公開 API であるカスタムプロパティ、つまりプロジェクトが設定してよいものが並びます。各プロパティには `name` と `description` があり、それを宣言または読み取るクラスが最初のルートでない場合は `on` にそのクラスが、スタイルシートが既定値を宣言している場合は `default` があります。
+
+```json name=button.json
+{ "name": "--btn-height", "default": "2.375rem", "description": "Minimum block size" }
+```
+
+このリストにない、コンポーネント固有のカスタムプロパティは実装の詳細です。テーマトークンはコンポーネント間で共有される別の公開インターフェースで、その役割は[既定のテーマ](/guide/theme)で説明しています。テーマトークンとコンポーネントのプロパティのどちらを使うかは[カスタマイズ](/guide/customization#property)を、現在のバージョンポリシーは[安定性](/guide/stability)を参照してください。
+
+## スクリプトとビヘイビア \{#script\}
+
+`script` は、コンポーネントがどの程度 JavaScript に依存するかを示します。
+
+| 値 | 意味 |
+| --- | --- |
+| `none` | すべての状態がスクリプトなしで機能します |
+| `optional` | メニューの矢印キー操作のように、スクリプトは利便性を追加しますが、ページはスクリプトなしでも機能します |
+| `required` | パターンにネイティブ要素がないため、スクリプトが属性を変更します |
+
+`behavior` は、`@master/ui/behaviors/<behavior>.js` として公開されるリファレンススクリプトを指定します。コンボボックスのコントラクトには `"script": "required"` と `"behavior": "combobox"` とあります。
+
+```js
+import { combobox } from '@master/ui/behaviors/combobox.js'
+
+combobox(document.querySelector('.combobox'))
+```
+
+ビヘイビアは、スタイルシートが読み取る属性を変更します。スプリッターのようなパターンでは、イベントから得た値も公開カスタムプロパティを通じて渡し、その描画方法はスタイルシートが決めます。`keyboard` には、ビヘイビアをアタッチした後に各キーが行うこと、またはネイティブ要素がすでに行うことが並びます。[ビヘイビア](/guide/behaviors)を参照してください。
+
+## サンプル \{#example\}
+
+`example` は、実際の文言を含む、最小限の正しいマークアップです。パッケージのテストは、すべてのサンプルに対してチェッカーを実行し、診断が出ないことを確認します。これをマークアップの基準とし、ページに合わせてラベル、一意な id、アプリケーションのアクション、必要なビヘイビアを用意してください。
+
+```html
+<button type="button" class="btn btn-primary">Save changes</button>
+```
+
+## 独自のコンポーネントのコントラクトを書く \{#your-own\}
+
+ライブラリにないもの、つまりマテリアル、状態、プラットフォームの振る舞い、またはパーツ同士が共有するジオメトリーを持つものが必要なとき、プロジェクトは独自のコンポーネントを追加します。そのスタイルシートはクラスセレクターとトークンを使って `@layer components` の中に書き、コントラクトを `ui/` にその隣に書きます。コントラクトはライブラリのものと同じスキーマに従います。
+
+```css name=ui/price-tag.css
+@layer components {
+  .price-tag {
+    --price-tag-size: 1.125rem;
+    display: inline-flex;
+    align-items: baseline;
+    gap: .375rem;
+    color: var(--color-text-strong);
+    font-size: var(--price-tag-size);
+    font-variant-numeric: tabular-nums;
+
+    &.price-tag-sale {
+      color: var(--color-danger);
+    }
+  }
+
+  .price-tag-was {
+    color: var(--color-text-muted);
+    font-size: .75em;
+  }
+}
+```
+
+```json name=ui/price-tag.json
+{
+  "$schema": "https://ui.master.co/contract.schema.json",
+  "name": "price-tag",
+  "title": "Price tag",
+  "tier": "component",
+  "category": "Commerce",
+  "description": "The price of one product, with the price it replaces.",
+  "use": "A price on a product card or in a cart row. Add price-tag-sale and the old price when the product is reduced.",
+  "script": "none",
+  "classes": [
+    { "name": "price-tag", "kind": "root", "description": "The current price, in strong ink and tabular figures" },
+    { "name": "price-tag-sale", "kind": "modifier", "of": "price-tag", "description": "A reduced price, in the danger hue" },
+    { "name": "price-tag-was", "kind": "part", "of": "price-tag", "elements": ["s"], "description": "The price before the reduction, struck through in muted ink" }
+  ],
+  "properties": [
+    { "name": "--price-tag-size", "default": "1.125rem", "description": "Font size of the current price" }
+  ],
+  "example": "<p class=\"price-tag price-tag-sale\">$24 <s class=\"price-tag-was\">$32</s></p>"
+}
+```
+
+サンプルが描画されるように、アプリケーションのスタイルシートで Master UI の後に `ui/price-tag.css` をインポートします。CLI は、この CSS のインポートとは別に、隣にあるコントラクトを見つけます。
+
+```css name=app.css
+@import '@master/css';
+@import '@master/ui';
+@import './ui/price-tag.css';
+```
+
+これで、プロジェクトのコンポーネントを同じツールで扱えるようになります。
+
+- `npx master-ui list` で一覧に表示され、`npx master-ui contract price-tag` で出力されます。マークアップを書く前にコントラクトを読むエージェントも、同じ方法でこれを見つけます。
+- `npx master-ui check` でマークアップがこれに照らして検査されます。ここでは `npx master-ui check cart.html` が 3 つの誤りを報告します。
+
+```html name=cart.html
+<p class="price-tag-sale">$24</p>
+<p class="price-tag">$24 <span class="price-tag-was">$32</span></p>
+<p class="price-tag price-tag-large">$24</p>
+```
+
+```
+cart.html:1:1 error missing-base "price-tag-sale" modifies "price-tag": write class="price-tag price-tag-sale".
+cart.html:2:26 error element "price-tag-was" goes on <s>, not <span>.
+cart.html:3:1 warning unknown-class "price-tag-large" is not a class of price-tag. It has: price-tag, price-tag-sale, price-tag-was.
+
+1 files checked: 2 errors, 1 warnings.
+```
+
+3 つの詳細があります。
+
+- **コントラクトを読み取る場所。** プロジェクトの `ui/` ディレクトリーにあり、`name` と `classes` 配列を持つすべての `.json` ファイルです。`master-ui.json` では、`directory` で別のディレクトリーを、`contracts` 配列で追加のパターンを指定できます。
+- **スキーマの行。** `"$schema": "https://ui.master.co/contract.schema.json"` により、エディターが書きながらファイルを検証できます。
+- **ライブラリにすでにある名前。** ライブラリのコントラクトと同じ名前を持つプロジェクトのコントラクトは、それを置き換えます。[所有したコンポーネント](/guide/customization#own-a-component)がそのコピーによって記述されるのは、この仕組みによるものです。
+
+## 診断 \{#diagnostics\}
+
+`master-ui check` は、検出した項目ごとに 1 行を出力します。ファイル、行と列、重大度、コード、メッセージです。すべてのコードはエラーですが、`unknown-class` だけは警告で、`--strict` を渡した場合にエラーになります。
+
+| コード | 意味 | 修正方法 |
+| --- | --- | --- |
+| `unknown-class` | ルートの名前とダッシュで始まるクラスが、どのコントラクトにもありません | メッセージに並ぶクラスのいずれかを使います。プロジェクト独自のクラスなら、`ui/` のコントラクトに追加するか、コンポーネントの名前空間の外にある名前を付けます |
+| `missing-base` | モディファイアが、修飾対象のクラスを持たない要素に付いています | その隣にベースを追加します：`class="btn btn-primary"` |
+| `outside-root` | パーツに、そのルートクラスを持つ祖先がありません | ルートの中に移すか、コンテナーにルートクラスを追加します |
+| `exclusive` | 2 つのサイズのように、同じグループの 2 つのモディファイアが 1 つの要素に付いています | 1 つだけ残します |
+| `element` | コントラクトが許可していない要素にクラスが付いています | メッセージが示す要素を使います。`dialog` はダイアログ要素に付けます |
+| `attribute` | クラスが必要とする属性が要素にないか、別の値になっています | `role="switch"` のように、メッセージが示す属性を追加します |
+| `label` | コントロールにアクセシブルな名前がありません | 自身のテキスト、`aria-label`、`aria-labelledby`、またはそれを囲むか参照するラベルを付けます |
+
+チェッカーはページをレンダリングするのではなく、ソースを読み取ります。式の中のリテラルのクラスは検査できますが、計算で決まるクラス名を解決することや、フレームワークコンポーネントが子をどこにレンダリングするかを確定すること、別ファイルにあるルートを検査することはできません。確実でない場合は何も報告しません。問題が報告されなくても、フォーカス順序、コントラスト、ブラウザーサポート、選んだコンポーネントが用途に合っているかどうかは検証されていません。

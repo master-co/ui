@@ -1,0 +1,347 @@
+---
+title: "React、Svelte 和 Vue"
+description: "将有状态的组件复制到 React、Svelte 或 Vue 中，连接应用的值，并保持服务器渲染的标记正确。"
+---
+import GuideFigure from '../../../components/GuideFigure.astro'
+import FrameworkPreview from '~/site/components/FrameworkPreview.astro'
+
+无状态的组件使用原生标记；当应用需要协调值、数据、id 或生命周期时，再复制框架组件。复制的组件在 React、Svelte 和 Vue 中渲染相同的契约，并附加软件包中的行为。请先完成[安装](/guide/installation)，确保其样式可用；复制组件并不会导入它的 CSS。
+
+## 标记仍然是标记 \{#markup\}
+
+按钮就是一个带有 `btn btn-primary` 的 `<button>`，在 React、Svelte 和 Vue 中都一样。这里没有 `Button` 组件，项目也不应该编写一个只把 props 转换成 class 的组件。
+
+```tsx name=Toolbar.tsx
+export function Toolbar({ saving }: { saving: boolean }) {
+  return (
+    <button type="button" className="btn btn-primary" disabled={saving} aria-busy={saving}>
+      Save changes
+    </button>
+  )
+}
+```
+
+- **没有需要组件负责的东西。** 按钮没有要传递的值，没有要渲染的行，没有要关联的 id，也没有要附加的东西。它的状态就是框架本来就会设置的属性。
+- **检查器读取的是 class。** [`master-ui check`](/guide/ai#check-the-markup) 会读取 `.jsx`、`.tsx`、`.svelte`、`.vue` 和 `.astro` 文件。它能看到 `className="btn btn-outline"` 并指出不存在这个 class；但它看不到 `<Button variant="outline">` 的含义。
+- **标记不需要客户端脚本。** 带有 class 的原生元素在服务器上渲染，并就此保持不变。在 React Server Components 中，它不会给客户端包增加任何内容。
+
+不同的只有语法：
+
+| 在 HTML 中 | 在 JSX 中 | 在 Svelte 和 Vue 中 |
+| --- | --- | --- |
+| `class="btn btn-primary"` | `className="btn btn-primary"` | 相同 |
+| `for="email"` | `htmlFor="email"` | 相同 |
+| `tabindex="-1"`、`popovertarget="share"` | `tabIndex={-1}`、`popoverTarget="share"` | 相同 |
+| `commandfor="confirm"` 搭配 `command="show-modal"`、`interestfor="tip"` | 在 React 的类型尚未列出它们时，用展开语法传入 | 相同 |
+
+当标记在项目中重复出现时，请用项目自己的组件、以项目自己的写法包装它，并在其中以字面字符串保留契约的 class。
+
+## 框架负责什么 \{#what-a-framework-owns\}
+
+当框架至少需要负责以下四件事之一时，才需要框架组件：
+
+1. **应用读取或设置的值。** 组合框中选中的内容、对话框是否打开。
+2. **根据数据渲染的行。** 列表框的选项、一个月中的各天、菜单的各项。
+3. **关联各部件的 id。** 标签与其控件、按钮与它打开的 popover、标签页与其面板。
+4. **生命周期。** 在元素存在时附加、在元素消失时解除的[行为](/guide/behaviors)。
+
+这与库对 [class](/guide/introduction#tiers) 所用的检验标准相同：看的是需要掌握的知识，而不是重复的标记。有十七个模式通过了这项检验。
+
+| 组件 | 渲染的契约 | 框架负责 |
+| --- | --- | --- |
+| `calendar` | [日历](/components/calendar) | 值，以及它绘制的月份 |
+| `combobox` | [组合框](/components/combobox) | 值、选项 |
+| `command` | [命令面板](/components/command) | 是否打开、命令 |
+| `compare` | [对比](/components/compare) | 位置 |
+| `dialog` | [对话框](/components/dialog) | 是否打开、其触发元素引用的 id |
+| `field` | [字段](/components/input#hint-and-error) | 关联标签、控件、提示和错误的 id |
+| `listbox` | [列表框](/components/listbox) | 值、选项 |
+| `menu` | [菜单](/components/menu) | 菜单项、其触发元素引用的 id、上下文菜单的目标 |
+| `otp` | [OTP](/components/otp) | 验证码、输入格的数量 |
+| `popover` | [弹出层](/components/popover) | 是否打开、其触发元素引用的 id |
+| `splitter` | [分隔条](/components/splitter) | 尺寸 |
+| `stepper` | [步进器](/components/stepper) | 数字 |
+| `tabs` | [标签页](/components/tabs#tab-panels) | 选中的标签、关联标签和面板的 id |
+| `toast` | [提示消息](/components/toast) | 队列：一个 `toast()` 函数和显示它的区域 |
+| `tooltip` | [工具提示](/components/tooltip) | 关联控件与其标签的 id |
+| `tree` | [树](/components/tree) | 选中的行、各行 |
+| `wheel` | [滚轮](/components/wheel) | 每一列的值、选项 |
+
+其他所有契约都只是标记。选择框是 `<select class="select">`，开关是带 `role="switch"` 的复选框，手风琴是 `<details>`：它们的状态由浏览器保存，框架像绑定任何原生控件一样绑定它。
+
+## 添加组件 \{#add\}
+
+组件是你项目中的源码，而不是从软件包导入的模块。`master-ui` 命令负责复制它：
+
+```bash
+npx master-ui add combobox --framework=react
+```
+
+```
+Add combobox: ui/combobox.tsx, ui/use-behavior.ts.
+  It renders the markup of "master-ui contract combobox" and needs that stylesheet from @master/ui.
+```
+
+- 当 `package.json` 中恰好只出现 React、Svelte 和 Vue 之一时，会从中读取框架；第一次之后，框架会记录在 `master-ui.json` 中。
+- 组件从同一目录导入的小型辅助模块会一并复制：React 和 Vue 为 `use-behavior.ts`，Svelte 为 `behavior.svelte.ts`。
+- 文件会放在项目根目录的 `ui/` 中。`--directory` 可以指定其他位置，并会被记住：在源码位于 `src` 下的 SvelteKit 中用 `--directory=src/lib/ui`，在 Nuxt 中用 `--directory=app/ui`。
+- 在它们旁边，`ui/.base/` 保存每个文件获取时的原样。之后 `diff` 就是用这份副本与上游比较；请不要改动它。
+- 不带名称运行 `npx master-ui add` 会列出所有组件。
+- 已存在的副本会被保留。它归你所有，可能已经被编辑过。
+
+复制的组件负责渲染、生命周期和值的同步。它从 `@master/ui/behaviors` 导入行为，因此升级该依赖时，键盘和焦点方面的修复也会随之而来。当组件本身在上游发生变化时，使用 [`status` 和 `diff`](/guide/customization#upstream-changes) 审查差异，并把你需要的变更合并到工作副本中。然后运行 `accept`，把已安装软件包的版本记录为新的已保存基准；它会更新 `.base/` 和跟踪元数据，而不会改动你的工作文件。[注册表](/guide/registry#items)以 `react-combobox`、`svelte-combobox` 和 `vue-combobox` 提供相同的文件。
+
+## 使用组件 \{#use\}
+
+使用你所用的框架运行 `add combobox`，然后从复制文件实际所在的目录导入它。下面的示例假定默认的 `ui/` 目录位于示例文件旁边。每个示例都以对应框架自己的写法展示同一个组合框。其中 Svelte 示例是可运行的：它在服务器上渲染，并在预览中完成水合，使用的正是项目会得到的组件和行为。它的 Code 视图就是该文件。
+
+```tsx name=Region.tsx
+'use client'
+import { useState } from 'react'
+import { Combobox } from './ui/combobox'
+
+const regions = [
+  { value: 'hnd', label: 'Tokyo' },
+  { value: 'sin', label: 'Singapore' },
+  { value: 'fra', label: 'Frankfurt', description: 'Germany' },
+]
+
+export function Region() {
+  const [region, setRegion] = useState<string | null>(null)
+  return (
+    <Combobox options={regions} value={region} onValueChange={setRegion}
+      aria-label="Region" listLabel="Regions" toggleLabel="Show regions" empty="No regions match." />
+  )
+}
+```
+
+<FrameworkPreview name="Region" height={304} title="Region.svelte" bodyClass="flex items-start justify-center p-lg min-h(300)" caption="输入文字进行筛选，用 Enter 或点击进行选择，然后在已选内容上继续输入：应用保存的值会随之变化。" />
+
+```vue name=Region.vue
+<script setup lang="ts">
+import { ref } from 'vue'
+import Combobox from './ui/Combobox.vue'
+
+const regions = [
+  { value: 'hnd', label: 'Tokyo' },
+  { value: 'sin', label: 'Singapore' },
+  { value: 'fra', label: 'Frankfurt', description: 'Germany' },
+]
+const region = ref<string | null>(null)
+</script>
+
+<template>
+  <Combobox :options="regions" v-model="region"
+    aria-label="Region" list-label="Regions" toggle-label="Show regions" empty="No regions match." />
+</template>
+```
+
+选择 Tokyo，并确认应用保存的是 `hnd`；字段显示的是选项的标签。在该选择之上继续输入，值就会变为 `null`，直到再次选中某个选项。模型保存的是选项的值，而不是任意的搜索文本。
+
+| | 值 | 是否打开 | 其他输出 |
+| --- | --- | --- | --- |
+| React | `value`，或用 `defaultValue` 让组件自行保存，以及 `onValueChange` | `open`、`onOpenChange` | `onComplete`、`onValueCommit`、`onSearch` |
+| Svelte | `bind:value`，以及 `onValueChange` | `bind:open`，以及 `onOpenChange` | 相同的回调 props |
+| Vue | `v-model` | `v-model:open` | `@complete`、`@value-commit`、`@search` |
+
+各适配层对值的归属处理不同。在 React 中，`value` 由所有者说了算：当读者改变了组件，而所有者没有在 `onValueChange` 中接受这个变化时，组件会恢复到传入的值，就像受控的 `<input>` 一样。`open` 也是如此。Svelte 和 Vue 没有这样的规则。不通过 `bind:` 或 `v-model` 传入的值只是组件的初始值，之后组件会保留读者所做的选择。若要在这两个框架中拒绝某个变化，请自行把绑定的值设回去。
+
+不属于组件自身的 props 会传给读者预期的那个元素：组合框的字段、对话框的 `<dialog>`、列表框的根元素。组合框就是这样获得它的 `aria-label`、`placeholder` 和 `name` 的。
+
+### 页面自己的标记 \{#the-pages-own-markup\}
+
+使用这些示例之前，请先添加所需的组件，例如 `npx master-ui add dialog --framework=react` 或 `--framework=vue`。对话框、popover、菜单和工具提示由属于页面的控件打开。组件不会渲染自己的按钮。它把引用自身的属性交给页面，由页面把这些属性展开到自己的按钮上；之后浏览器就会打开对话框，与在普通页面上一样。
+
+```tsx name=DeleteProject.tsx
+'use client'
+import { useState } from 'react'
+import { Dialog } from './ui/dialog'
+
+export function DeleteProject({ remove }: { remove: () => Promise<void> }) {
+  const [open, setOpen] = useState(false)
+  async function confirm() {
+    await remove()
+    setOpen(false)
+  }
+  return (
+    <Dialog id="delete-project" aria-labelledby="delete-project-title"
+      open={open} onOpenChange={setOpen}
+      trigger={attributes => <button type="button" className="btn" {...attributes}>Delete project</button>}>
+      <header className="dialog-header">
+        <h2 className="dialog-title" id="delete-project-title">Delete this project?</h2>
+        <p className="dialog-description">Atlas and its 14 deployments are removed.</p>
+      </header>
+      <footer className="dialog-footer">
+        <button type="button" className="btn" {...{ commandfor: 'delete-project', command: 'close' }}>Cancel</button>
+        <button type="button" className="btn btn-primary" onClick={confirm}>Delete project</button>
+      </footer>
+    </Dialog>
+  )
+}
+```
+
+<FrameworkPreview name="DeleteProject" height={320} title="DeleteProject.svelte" bodyClass="flex items-start justify-center p-lg min-h(320)" caption="按钮通过 commandfor 打开对话框，自身没有任何处理函数。应用会得知对话框已打开，并在项目删除后根据自身的状态将其关闭。" />
+
+```vue name=DeleteProject.vue
+<script setup lang="ts">
+import { ref } from 'vue'
+import Dialog from './ui/Dialog.vue'
+
+const props = defineProps<{ remove: () => Promise<void> }>()
+const open = ref(false)
+async function confirm() {
+  await props.remove()
+  open.value = false
+}
+</script>
+
+<template>
+  <Dialog id="delete-project" aria-labelledby="delete-project-title" v-model:open="open">
+    <template #trigger="attributes">
+      <button type="button" class="btn" v-bind="attributes">Delete project</button>
+    </template>
+    <header class="dialog-header">
+      <h2 class="dialog-title" id="delete-project-title">Delete this project?</h2>
+      <p class="dialog-description">Atlas and its 14 deployments are removed.</p>
+    </header>
+    <footer class="dialog-footer">
+      <button type="button" class="btn" commandfor="delete-project" command="close">Cancel</button>
+      <button type="button" class="btn btn-primary" @click="confirm">Delete project</button>
+    </footer>
+  </Dialog>
+</template>
+```
+
+这里的 `remove` 是由调用方提供的应用删除函数。示例在它完成后关闭对话框；请围绕这个请求加上应用的忙碌状态和错误状态。对话框内部的各部分是契约的标记，而不是组件：`dialog-header`、`dialog-title` 和 `dialog-footer` 不负责任何东西。只有在需要由应用决定时才传入 `open`，例如在请求失败后打开对话框，或在路由变化时关闭对话框。不传入时，触发元素和浏览器会完成全部工作。
+
+[字段](/components/input#hint-and-error)的工作方式相同，只是方向相反。它负责 id，并把携带这些 id 的属性交给页面的控件：
+
+```tsx name=Email.tsx
+import { Field } from './ui/field'
+
+export function Email({ error }: { error?: string }) {
+  return (
+    <Field label="Work email" hint="We only send receipts." error={error}>
+      {control => <input className="input" type="email" name="email" {...control} />}
+    </Field>
+  )
+}
+```
+
+### 提示消息 \{#toasts\}
+
+提示消息在有事情发生之前没有任何元素，因此它的组件是一个队列：一个可以在任何地方调用的 `toast()` 函数，以及一个只渲染一次、用来显示队列内容的区域。
+
+```tsx name=App.tsx
+'use client'
+import { toast, Toaster } from './ui/toast'
+
+export function ToastExample() {
+  return (
+    <>
+      <Toaster />
+      <button type="button" className="btn" onClick={() => toast({
+        title: 'Preview ready', description: 'The build can now be reviewed.', status: 'success'
+      })}>Show notification</button>
+    </>
+  )
+}
+```
+
+在 Svelte 和 Vue 中，`toast` 是 `Toaster.svelte` 和 `Toaster.vue` 的具名导出。提示消息会在六秒后自行消失；`duration` 可以设置其他时长，`duration: false` 则让它一直保留到被关闭为止。
+
+## 逻辑在哪里 \{#where-the-logic-is\}
+
+对于带有行为的模式，适配层把键盘处理和选择规则交给该行为。它有三项职责：
+
+- **渲染契约的标记**，并在其中绘制好初始值。在任何脚本运行之前，首份 HTML 就是正确的。
+- **附加行为**，并在选项变化时重新附加。
+- **传递值。** 当应用设置了另一个值时，它写入行为的 [`value`](/guide/behaviors#the-value)；每当 `input` 和 `change` 到达根元素时，它读取该值。
+
+首次渲染之后，由行为来改变属性，就像在普通页面上一样。共享的行为代码让键盘处理集中在一处。共享的测试场景会检查每个框架适配层：挂载、依据契约检查标记、按下按键、读取输出的值、设置值、卸载。
+
+若要改变某个按键的作用或选择的含义，请[接管该行为](/guide/behaviors#own-a-behavior)。之后再运行 `master-ui add` 创建新的组件文件时，会使用这份本地行为。如果你已经添加了组件，请自行更新它的导入；`add` 会保留已有的文件。
+
+## 在服务器上 \{#on-a-server\}
+
+<GuideFigure name="frameworks" title="渲染与行为的生命周期">
+
+**渲染和交互有不同的生命周期。** 列表框中选中的值在服务器 HTML 中就已经标记好。挂载之后，适配层附加行为，并把应用的值与其同步。卸载时会调用清理函数，停止监听器和观察器；清理不会恢复原始标记。
+
+</GuideFigure>
+
+- **首份 HTML 就包含状态。** 选中的选项、选中的标签、分隔条的尺寸、日历的月份及其选中的日期，都在服务器发送的标记中。只有浏览器才能知道的标记（例如日历中的今天）会在行为附加时出现。
+- **在服务器上渲染日历时，请为它提供 `locale`。** 月份和星期的名称来自 `Intl`，而服务器和浏览器使用的语言并不总是一致。
+- **在 React Server Components 中，** 附加行为或保存状态的组件是客户端组件，会声明 `'use client'`。向这些组件传递函数（`trigger`、`onValueChange` 或某项的 `onSelect`）的文件也是客户端组件，这就是上面的示例以 `'use client'` 开头的原因：Server Component 无法把函数传给客户端组件。`Field` 和 `Tooltip` 只负责关联 id，因此可以在服务器上渲染，前提是所在文件不渲染其他来自客户端的内容。所有属于标记的内容，在哪里编写就在哪里渲染。
+- **id 由框架生成：** React 和 Vue 中使用 `useId`，Svelte 中使用 `$props.id()`，因此服务器和浏览器之间的 id 能够一致。Vue 在单个应用内为 id 编号。如果页面挂载了多个 Vue 应用（就像 islands 那样），请为每个应用设置 `app.config.idPrefix`，否则其中两个应用会把不同的元素都命名为 `v-0`。
+
+## 你自己的组件 \{#your-own\}
+
+当你需要围绕同一个行为进行不同的渲染时，请使用 `master-ui add` 复制的辅助模块。例如，为所选框架添加 `listbox` 以获得其辅助模块，然后在 `ui/` 目录旁边编写一个 `Sizes` 组件，正如下面的导入所假定的那样。把初始选择渲染到标记中，让服务器 HTML 保持正确，再由辅助模块同步之后的值。在 React 中，辅助模块是一个返回 ref 的 hook：
+
+```tsx name=Sizes.tsx
+'use client'
+import { useState } from 'react'
+import { listbox } from '@master/ui/behaviors/listbox.js'
+import { useBehavior } from './ui/use-behavior'
+
+export function Sizes({ value, onValueChange }: { value: string, onValueChange: (value: string | string[] | null) => void }) {
+  const ref = useBehavior(listbox, undefined, { value, onValueChange })
+  const [first] = useState(() => value)
+  return (
+    <div className="listbox" role="listbox" aria-label="Size" tabIndex={0} ref={ref}>
+      {['Small', 'Medium', 'Large'].map(size => (
+        <div className="listbox-option" role="option" aria-checked={size === first} key={size}>{size}</div>
+      ))}
+    </div>
+  )
+}
+```
+
+它的第二个参数是行为的选项，第三个参数是值以及接收变化的回调。在 Svelte 中，辅助模块会生成一个 attachment；在 Vue 中，它是一个接收模板 ref 和 model 的组合式函数：
+
+```svelte name=Sizes.svelte
+<script lang="ts">
+  import { untrack } from 'svelte'
+  import { listbox } from '@master/ui/behaviors/listbox.js'
+  import { behavior } from './ui/behavior.svelte.js'
+
+  let { value = $bindable() }: { value?: string | string[] | null } = $props()
+  const first = untrack(() => [value ?? []].flat())
+  const attach = behavior(listbox, undefined, { value: () => value, change: next => { value = next } })
+</script>
+
+<div class="listbox" role="listbox" aria-label="Size" tabindex="0" {@attach attach}>
+  {#each ['Small', 'Medium', 'Large'] as size}
+    <!-- The behavior writes aria-selected on the active option. -->
+    <!-- svelte-ignore a11y_role_has_required_aria_props -->
+    <div class="listbox-option" role="option" aria-checked={first.includes(size)}>{size}</div>
+  {/each}
+</div>
+```
+
+```vue name=Sizes.vue
+<script setup lang="ts">
+import { useTemplateRef } from 'vue'
+import { listbox } from '@master/ui/behaviors/listbox.js'
+import { useBehavior } from './ui/use-behavior'
+
+const value = defineModel<string | string[] | null>()
+const first = [value.value ?? []].flat()
+useBehavior(useTemplateRef<HTMLElement>('root'), listbox, undefined, value)
+</script>
+
+<template>
+  <div class="listbox" role="listbox" aria-label="Size" tabindex="0" ref="root">
+    <div v-for="size in ['Small', 'Medium', 'Large']" :key="size" class="listbox-option" role="option" :aria-checked="first.includes(size)">{{ size }}</div>
+  </div>
+</template>
+```
+
+[行为](/guide/behaviors#in-a-framework)介绍了在各框架中不借助辅助模块、直接附加行为的方法。
+
+## 其他无头组件库 \{#headless-libraries\}
+
+随附的组件使用浏览器平台和 Master UI 的行为，不依赖任何无头组件库。
+
+如果应用需要使用其他库的行为，请把契约的 class 放到对应的元素上，并依据契约检查每种状态、键盘操作和焦点转移。写入不同属性的适配层可能需要一份接管的样式表。仅有 CSS class 并不能确立兼容性；在整个项目中推广这种集成之前，先完整实现一个交互。

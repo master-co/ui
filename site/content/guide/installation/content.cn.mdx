@@ -1,0 +1,160 @@
+---
+title: "安装"
+description: "安装锁定版本的软件包，选择源码或预编译 CSS，并验证你的第一个组件。"
+---
+import DocumentPrompt from '@master/internal-site/components/DocumentPrompt.astro'
+import GuideFigure from '../../../components/GuideFigure.astro'
+
+安装 `@master/ui`，加载它的样式表，并渲染一个带有组件 class 的原生元素。如果你的项目使用 Master CSS，请将该软件包的源码与应用样式一起编译。否则，请使用[预编译样式表](#without-master-css)；它提供组件，但不包含 Master CSS 工具类。
+
+<GuideFigure name="installation" title="获取组件样式的两种途径">
+
+**选择一种途径将样式送到页面。** 源码导入会经过应用的 Master CSS 编译器，与用于生成工具类的 class 一同处理。软件包中的 `standalone.css` 已经编译完成，可以直接加载。两种途径都提供组件样式；独立途径需要你自己编写布局用的 CSS。
+
+</GuideFigure>
+
+## 使用 AI 智能体进行设置 \{#set-up-with-an-ai-agent\}
+
+编程智能体可以替你完成这项设置。在应用的根目录下，将下面的提示词粘贴给智能体。它会先检查项目，并在修改文件之前询问你样式表途径、导入范围、智能体设置，以及如何处理现有的组件库。然后它会安装锁定版本的软件包、导入样式表，并在浏览器中以及通过 `master-ui check` 检查第一个组件。
+
+<DocumentPrompt title="设置 Master UI" text={`You are working in an existing web application. Set up Master UI end to end.
+Documentation: https://ui.master.co/guide/installation.md
+
+First inspect the project before editing: package manager, framework and build tool, whether Master CSS is set up (the installed @master/css version, and the app stylesheet that contains @import '@master/css' and where it is loaded), any component library or styling system already in use, React, Svelte or Vue, an existing master-ui.json, the dev/lint/build/test commands, and agent guidance files such as AGENTS.md.
+
+Before editing, ask me these and wait for the answers. Do not choose them yourself:
+- Stylesheet route: source (the default; @import '@master/ui' compiled by Master CSS 2.1 or later, with utilities for layout) or precompiled (@master/ui/standalone.css, no Master CSS and no utilities). If the project has no Master CSS and I choose source, set it up first by following https://css.master.co/guide/installation.
+- Import scope: the full library in one import (the default), or npx master-ui init, which writes ui/index.css with one @import per stylesheet and master-ui.json for components the project may later own. See https://ui.master.co/guide/installation#one-import-per-stylesheet.
+- Agent setup: the full setup (the master-ui skill, Master UI guidance in AGENTS.md and a check:ui script) or minimal (package and stylesheet only).
+- Existing components: if the project already uses another component library, whether to leave it in place (the default) and use Master UI only for new interface, or replace the components I name. Never replace components I have not named.
+
+Then adopt Master UI conservatively:
+1. Run every command from the app root, where its package.json lives, with the project's package manager.
+2. Install the package at an exact version: npm install @master/ui --save-exact (bun add @master/ui --exact, pnpm add @master/ui --save-exact). Master UI is experimental and any 0.x release may break what it published, so keep the version pinned.
+3. Load the stylesheet in the stylesheet the app already loads. Source route: add @import '@master/ui'; on the line after @import '@master/css';, or, with npx master-ui init, @import './ui/index.css'; in its place (adjust the path to where ui/ is). Precompiled route: @import '@master/ui/base.css'; then @import '@master/ui/standalone.css';, and omit base.css if the project already has an equivalent reset. Installing the package alone does not load anything.
+4. Add no behavior script and no framework component yet. When a pattern that needs one is used later, follow https://ui.master.co/guide/behaviors, or https://ui.master.co/guide/frameworks with npx master-ui add <name> in React, Svelte or Vue.
+5. If I chose the full agent setup: install the skill with npx skills add master-co/ui --skill master-ui, append the Master UI block from https://ui.master.co/guide/ai.md#agents-md to AGENTS.md with the project's actual validation commands below it, and add "check:ui": "master-ui check --strict" to the package.json scripts.
+6. If I chose to replace named components, rewrite each one's markup from its contract (npx master-ui contract <name>), keep its behavior and accessible names, and remove the old dependency only after nothing uses it.
+7. Preserve the existing architecture, styling and component library unless I chose otherwise, and avoid unrelated refactors.
+8. Verify: start the dev server and render <button type="button" class="btn btn-primary">Save changes</button> on a visible page (className in JSX). Confirm an ink face in light mode, a pale face in dark mode and a visible focus ring when it is reached with Tab. If it looks like an unstyled browser button, confirm the page loads the stylesheet and the compiled CSS contains .btn. Run npx master-ui check on the file that holds the button and fix what it reports. Then remove the button unless I want to keep it, and run the project's lint, build and tests.
+
+When finished, summarize the changed files, the installed version, the route and options chosen, behavior intentionally left unchanged, the validation results, and anything not verified in a browser.`} />
+
+## 设置 Master CSS \{#set-up-master-css\}
+
+使用源码样式表时，请先设置 Master CSS 2.1 或更高版本，以及适用于你的框架的集成。Vite、Astro、Next.js、Svelte 等的设置方法请参阅 [Master CSS 安装指南](https://css.master.co/guide/installation)。
+
+## 安装软件包 \{#install-the-package\}
+
+```bash
+npm install @master/ui --save-exact
+```
+
+任何包管理器都可以，例如 `bun add @master/ui --exact` 或 `pnpm add @master/ui --save-exact`。Master UI 仍处于实验阶段，任何版本都可能破坏它已发布的内容，因此请锁定版本，并有意识地进行升级；[稳定性](/guide/stability#experimental)说明了升级后需要运行什么。
+
+## 导入样式表 \{#import-the-stylesheet\}
+
+在应用样式表中，在 Master CSS 预设之后导入 Master UI：
+
+```css name=app.css
+@import '@master/css';
+@import '@master/ui';
+```
+
+预设声明了层顺序 `theme, base, defaults, components, utilities`。Master UI 将其规则添加到 `components`，因此标记中的工具类仍然会生效。
+
+## 验证安装 \{#verify-the-installation\}
+
+确认应用已加载 `app.css`，然后在一个会渲染的页面中添加一个按钮。在 JSX 中，请使用 `className` 而不是 `class`：
+
+```html
+<button type="button" class="btn btn-primary">Save changes</button>
+```
+
+通过现有的开发命令运行应用。该按钮在浅色模式下应呈现墨色表面，在深色模式下呈现浅色表面，并带有可见的键盘焦点环。它的外观不需要行为脚本；但保存更改仍需要应用自己的操作处理函数。
+
+如果它看起来像一个没有样式的浏览器按钮，请检查页面是否加载了 `app.css`，以及编译输出中是否包含 `.btn`。使用源码导入时，请确认 Master CSS 集成会处理这个样式表。然后[检查标记](#check-your-markup)。
+
+## 只导入用到的部分 \{#import-only-what-you-use\}
+
+每个组件也会单独导出。先导入共享主题，再导入应用需要的组件：
+
+```css name=app.css
+@import '@master/css';
+@import '@master/ui/theme.css';
+@import '@master/ui/components/button.css';
+@import '@master/ui/components/switch.css';
+```
+
+请包含标记中所用全部 class 对应的样式表。例如，包含 `icon` 或 `spinner` 的按钮也需要这些组件的样式表。完整导入可以免去你自行维护这份列表。
+
+## 每个样式表一行导入 \{#one-import-per-stylesheet\}
+
+该软件包附带一个小型命令行工具。`init` 会写入 `ui/index.css`，其中导入主题，并将每个样式表各自写成一行；同时写入 `master-ui.json`，记录项目接管了哪些内容：
+
+```bash
+npx master-ui init
+```
+
+```css name=app.css
+@import '@master/css';
+@import './ui/index.css';
+```
+
+用这个入口文件代替完整的 `@master/ui` 导入。它是可选的：当你想自行维护导入列表，或[接管部分组件的源码](/guide/registry)时再选择它。只有在标记不再使用某一行对应的 class 时，才删除那一行。
+
+## 行为 \{#behaviors\}
+
+大多数组件不需要脚本。少数模式没有原生元素（组合框、命令面板、日历），软件包为每个模式都提供了参考脚本：
+
+```js name=app.js
+import { attach } from '@master/ui/behaviors'
+
+const detach = attach()
+```
+
+请在标记已存在之后，在浏览器端代码中调用 `attach()`。它会附加当时能识别的模式，并返回一个清理函数；在移除这些标记之前调用 `detach()`。它不会监听之后插入的内容，也不会配置上下文菜单的目标。限定范围的附加与单独的函数请参阅[行为](/guide/behaviors)。在 React、Svelte 或 Vue 中，请使用[框架组件](/guide/frameworks)来管理它们的生命周期。
+
+## 不使用 Master CSS \{#without-master-css\}
+
+该软件包包含已编译为普通 CSS 的组件。支持 CSS 导入的打包工具可以直接使用已安装且锁定版本的软件包：
+
+```css name=app.css
+@import '@master/ui/base.css';
+@import '@master/ui/standalone.css';
+```
+
+`base.css` 提供预设的重置样式，包括 `box-sizing: border-box` 和表单控件的字体。如果你的项目已经提供了等效的重置样式，请省略这个导入。
+
+对于静态页面，请将已编译的文件从已安装的软件包复制到服务器对外提供的目录中。例如，当 `public/` 在 `/` 下提供时：
+
+```bash
+mkdir -p public/styles
+cp node_modules/@master/ui/dist/base.css public/styles/master-ui-base.css
+cp node_modules/@master/ui/dist/standalone.css public/styles/master-ui.css
+```
+
+```html
+<link rel="stylesheet" href="/styles/master-ui-base.css">
+<link rel="stylesheet" href="/styles/master-ui.css">
+
+<button type="button" class="btn btn-primary">Save changes</button>
+```
+
+复制的文件来自你所安装的确切软件包版本。当你有意升级该版本时，请重新复制。这种途径不需要在应用中编译 CSS。
+
+编译后的样式表声明了与源码构建相同的层和令牌。它跟随读者的配色方案；`data-theme="light"` 或 `data-theme="dark"` 可以为整个页面或某个子树固定配色方案。它不包含 Master CSS 工具类：请用你自己的 CSS 实现布局，并在复制[布局](/components#layouts)、[区块](/blocks)或[页面](/pages)时替换其中的工具类 class。
+
+## 检查标记 \{#check-your-markup\}
+
+每个样式表都有一份[契约](/guide/contracts)：它的 class、每个 class 应用于哪个元素，以及需要哪些属性。`check` 会读取你的模板，并报告违反契约之处：
+
+```bash
+npx master-ui check
+```
+
+请在已安装该软件包的项目根目录下运行它。它检查 HTML 以及 JSX、Svelte、Vue 和 Astro 等模板，而不渲染它们。解决它报告的诊断问题后，再在浏览器中检查可见结果和键盘交互；静态检查通过并不代表无障碍或浏览器支持已经得到保证。[与 AI 协作](/guide/ai#check-the-markup)介绍了诊断信息以及在 CI 中的用法。
+
+## 自定义主题 \{#customize-the-theme\}
+
+使用[主题定制](/guide/theming#retune-tokens)来修改品牌色、圆角或焦点颜色等共享值。[默认主题](/guide/theme)解释了它们的作用和默认值。如果修改只影响一个实例或一个组件，请先阅读[自定义](/guide/customization)，选择合适的层级。

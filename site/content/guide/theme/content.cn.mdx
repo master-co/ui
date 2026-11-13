@@ -1,0 +1,257 @@
+---
+title: "默认主题"
+description: "moonstone 与 obsidian：Master UI 的默认材质、令牌角色与实现值。"
+---
+import GuideFigure from '../../../components/GuideFigure.astro'
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+
+Master UI 的默认主题只有一种材质语言。浅色模式是 **moonstone**，一种洁净的锌色珍珠质感。深色模式是 **obsidian**，一种哑光的锌色玻璃质感，其表面层层分明，并保留清晰可辨的边缘。两者都由来自上方略偏左的同一光源照亮，因此每个凸起的表面都会在顶边承接一道光线，并落下一道短而渐隐的阴影。
+
+整体风格是克制的：用墨色而非彩色，半像素的轮廓，嵌套的圆角，以及随状态变化的深度。细节来自光影而非装饰，任何边缘都不会比让人找到它所需的程度更生硬。
+
+借助以下各节，为你的界面选择表面、线条、文字或深度的角色。这些值描述的是当前软件包中的默认主题；[主题定制](/guide/theming)介绍了如何覆盖它们，或构建另一种材质。
+
+<ComponentPreview name="overview" height={248} title="moonstone 与 obsidian" theme bodyClass="p-lg" html={`<div class="tray">
+  <div class="sheet flex flex-col gap-md p-lg">
+    <div class="flex items-center justify-between gap-md">
+      <span class="text-sm fg-text-strong">Production</span>
+      <span class="badge badge-success badge-dot">Ready</span>
+    </div>
+    <input class="input" value="atlas.dev" aria-label="Domain">
+    <div class="flex items-center justify-between gap-md">
+      <label class="check"><input type="checkbox" role="switch" class="switch" checked> Preview builds</label>
+      <button type="button" class="btn btn-primary">Deploy</button>
+    </div>
+  </div>
+</div>`} caption="切换主题以比较 moonstone 与 obsidian。两者来自同一份样式表。" />
+
+<GuideFigure name="theme" title="状态与深度">
+
+**状态会改变同一控件的深度。** 静止、悬停和按下状态分别使用 raised、raised-hover 和 pressed 阴影令牌；按下时还会使用内凹的表面。默认的 `--lift` 会在支持悬停的指针设备上让按钮在悬停时上移 0.5px，在按下时下移 0.5px。剖面图夸大了深度。请使用实时预览，在两种配色方案中体验实际的交互。
+
+</GuideFigure>
+
+## 原则 \{#principles\}
+
+[设计](/guide/design)解释了默认材质、层次、几何关系和交互状态背后的决策。请依据那些指引做出设计选择；本页记录的是 `@master/ui` 所实现的令牌和配方。
+
+`packages/ui/theme.css` 是这些值的可执行来源。组件样式读取这些令牌，而 Paper 之类的主题可以替换它们，无需重写组件。
+
+## 表面 \{#surfaces\}
+
+表面构成一个阶梯。每一级都是一个角色，而不是一种颜色：根据表面的用途选择层级，主题会解析它在浅色和深色模式下的值。
+
+<ComponentPreview name="surfaces" height={296} title="材质阶梯" theme bodyClass="p-lg" html={`<div class="tray">
+  <p class="m(0) px-md py-sm text-xs fg-text-muted">Tray</p>
+  <div class="sheet flex flex-col gap-md p-lg">
+    <p class="m(0) text-xs fg-text-muted">Raised sheet</p>
+    <div class="well p-md text-xs fg-text-muted">Inset well</div>
+    <div class="sheet sheet-floating p-md text-xs fg-text-muted">Floating</div>
+  </div>
+</div>`} />
+
+| 令牌 | 角色 | Moonstone | Obsidian |
+| --- | --- | --- | --- |
+| `--color-surface-base` | 页面画布 | 98.6% | 19.4% |
+| `--color-surface-tray` | 容纳面板的凹陷容器 | 96% | 17.4% |
+| `--color-surface-raised` | 凸起的表面：卡片、按钮 | 100% | 24.2% |
+| `--color-surface-raised-low` | 凸起表面渐变的下端 | 99.3% | 22.8% |
+| `--color-surface-inset` | 凹槽：字段、轨道 | 96.6% | 16.4% |
+| `--color-surface-inset-hover` | 指针悬停时的同一凹槽 | 95.8% | 15.4% |
+| `--color-surface-floating` | 位于内容之上的弹出层和菜单 | 100% | 26.4% |
+| `--color-surface-chip` | 中性的标签（chip）和徽章 | 96.5% | 白色 7% |
+| `--color-surface-inverse` | 墨色：主要按钮、已选中的控件 | 22% | 95% |
+| `--color-surface-scrim` | 模态框背后的遮罩 | 18%，不透明度 20% | 黑色，不透明度 55% |
+
+除非注明不透明度，否则这些值均为 OKLCH 亮度。凸起的表面是从 `raised` 到 `raised-low` 的自上而下渐变，`@apply --surface-sheet` 会替你写好。请根据用途选择角色：`floating` 用于区分位于面板之上的菜单，而 `inset` 用于标示面板内部的字段。颜色令牌不会决定元素的位置，也不会为它添加阴影。
+
+## 线条 \{#lines\}
+
+线条在 moonstone 上是带透明度的中性墨色，在 obsidian 上是带透明度的白色。其中两种是 1px 的分隔线。另外三种是轮廓，以零模糊的 `box-shadow` 绘制成半像素的环，不占用布局空间；它们的透明度是针对这个宽度调校的，因此轮廓看起来是精细的，而不是浅淡的。
+
+| 令牌 | Moonstone | Obsidian | 绘制粗细 | 用于 |
+| --- | --- | --- | --- | --- |
+| `--color-line-hair` | 6.5% | 7.5% | 1px | 表面内部不显眼的分隔 |
+| `--color-line-divider` | 12% | 13% | 1px | 各区块之间的分隔线、标签页行 |
+| `--color-line-contour` | 12% | 14% | .5px | 每个表面的轮廓 |
+| `--color-line-strong` | 20% | 23% | .5px | 悬停时的轮廓、开关轨道、键帽 |
+| `--color-line-mark` | 32% | 36% | .5px | 复选框、获得焦点的字段的轮廓 |
+| `--color-texture` | 20% | 23% | 点和 .5px 细线 | [纹理](/components/texture)的标记；在主题设置它之前，它跟随 `--color-line-strong` |
+
+必须一眼就能找到的控件，其轮廓比表面更明显：字段叠加两层轮廓环，复选框则使用 mark 线条。
+
+## 文字 \{#text\}
+
+文字使用柔和的墨色，从不使用纯黑或纯白。
+
+| 令牌 | 用于 |
+| --- | --- |
+| `--color-text-strong` | 标题、标签和值 |
+| `--color-text-body` | 正文 |
+| `--color-text-muted` | 提示、说明文字和未激活的选项 |
+| `--color-text-disabled` | 禁用的控件 |
+| `--color-text-inverse` | 墨色上的文字 |
+| `--color-focus` | 焦点轮廓 |
+
+## 层级高度 \{#elevation\}
+
+层级高度是深度的顺序，从按下的凹槽到浮层。凸起的表面由顶边的内嵌高光、一道半像素轮廓，以及三到六层下落的阴影组合而成。
+
+<ComponentPreview name="elevation" height={224} narrowHeight={240} title="层级高度" theme bodyClass="grid grid-cols(3) gap-lg p-xl" html={`<div class="p-lg r-lg bg-surface-inset shadow-pressed text-xs fg-text-muted">pressed</div>
+<div class="p-lg r-lg bg-surface-raised shadow-flat text-xs fg-text-muted">flat</div>
+<div class="p-lg r-lg bg-surface-raised shadow-raised text-xs fg-text-muted">raised</div>
+<div class="p-lg r-lg bg-surface-raised shadow-raised-hover text-xs fg-text-muted">raised-hover</div>
+<div class="p-lg r-lg bg-surface-raised shadow-lifted text-xs fg-text-muted">lifted</div>
+<div class="p-lg r-lg bg-surface-floating shadow-floating text-xs fg-text-muted">floating</div>`} />
+
+| 令牌 | 用于 |
+| --- | --- |
+| `--shadow-pressed` | 凹槽和按下的控件 |
+| `--shadow-flat` | 只有一道轮廓、没有抬升的表面 |
+| `--shadow-raised` | 静止状态的按钮、标签和小卡片 |
+| `--shadow-raised-hover` | 指针悬停时的同一元素，轮廓更明显 |
+| `--shadow-lifted` | 卡片和面板 |
+| `--shadow-floating` | 菜单和弹出层 |
+| `--shadow-overlay` | 对话框 |
+
+例如，`--shadow-raised` 在其高光和轮廓之下叠加了 `0 1px 2px -1px`、`0 2px 4px -2px` 和 `0 4px 8px -4px`。更高的层级高度使用范围更大的一系列偏移。负的扩展值让阴影贴近物体，而模糊则柔化其边缘。这些令牌绘制的是深度；堆叠顺序仍然取决于元素的布局和平台行为。
+
+## 墨色 \{#ink\}
+
+墨色是以反色填充的表面：主要按钮、已选中的复选框、已发送的消息、页面中唯一的[反色面板](/components/surface)。每个墨色表面都在顶边承接同样的一道光线，四周带有同样的细线，因此无论尺寸大小，它们看起来都是同一种材质。
+
+| 令牌 | 角色 |
+| --- | --- |
+| `--color-surface-inverse-high`、`--color-surface-inverse-low` | 墨色面板上的光线衰减 |
+| `--color-ink-high`、`--color-ink-low` | 静止状态的墨色控件上更圆润的光线衰减 |
+| `--color-ink-high-hover`、`--color-ink-low-hover`、`--color-ink-pressed` | 同一控件在指针悬停和按下时的状态 |
+| `--color-ink-highlight` | 任何墨色表面顶边的那道光线 |
+| `--color-ink-edge` | 它四周的细线 |
+| `--color-surface-tip` | 工具提示：在 moonstone 上是墨色，在 obsidian 上是较浅的平板 |
+| `--shadow-ink`、`--shadow-ink-hover`、`--shadow-ink-pressed` | 墨色控件在各状态下的深度 |
+| `--shadow-ink-mark` | 小面积的选中填充：复选框、单选按钮、选中的日期 |
+| `--shadow-ink-well`、`--shadow-thumb-on-ink` | 已填充的轨道，以及在其上滑动的滑块 |
+| `--shadow-tip` | 工具提示和图表的数值 |
+
+带色相的控件（品牌色、破坏性操作的确认）会根据自身的色相混合出表面、边缘和光晕；`--color-tone-highlight` 和 `--color-tone-highlight-soft` 是它承接的光线。
+
+## 滑块、图片与外部提供的颜色 \{#thumbs-and-pictures\}
+
+| 令牌 | 角色 |
+| --- | --- |
+| `--color-thumb-high`、`--color-thumb-low` | 开关、滑动条和对比组件的珍珠色滑块 |
+| `--color-thumb-on-high`、`--color-thumb-on-low` | 处于开启状态的开关的滑块 |
+| `--color-line-image`、`--color-line-image-strong` | 图片和头像向内的线条，使两者都不会与所在表面融在一起 |
+| `--color-line-on-color`、`--color-highlight-on-color` | 页面所提供颜色（如色板）上的边缘和光线 |
+| `--color-on-image`、`--color-on-image-shade` | 绘制在图片之上的内容：在两种主题中都是带深色阴影的白色 |
+| `--color-mark`、`--color-mark-underline` | 荧光笔笔触及其下划线形式 |
+| `--color-sheen` | 掠过骨架屏的光泽 |
+| `--color-focus-halo` | 获得焦点的字段在轮廓外显示的柔和光晕 |
+
+## 形状 \{#shape\}
+
+圆角和表面一样，也是角色。标签（chip）是小型标记，控件是被按下或输入的东西，表面则是面板。由于这些令牌位于 `@theme` 中，它们同时也是工具类：`r-control` 使用控件的基础圆角。组件还会额外应用下文介绍的连续曲率圆角形状和缩放；仅靠圆角工具类无法重现这种处理。
+
+| 令牌 | 值 | 适用对象 |
+| --- | --- | --- |
+| `--radius-chip` | 6px | 徽章、键帽、复选框、骨架屏 |
+| `--radius-control-sm` | 8px | 小型按钮和字段、菜单行、选项、分段控件的滑块 |
+| `--radius-control` | 10px | 按钮、字段、凹槽 |
+| `--radius-control-lg` | 12px | 大型按钮和字段、警告、选项卡片、消息提示 |
+| `--radius-surface` | 16px | 面板、卡片 |
+
+容器没有自己的圆角。它根据所容纳的内容推导出自己的圆角：内部圆角加上两者之间的内缩量。托盘是面板的圆角加 4px，菜单是行的圆角加 4px，分段控件的轨道是其滑块的圆角加上内缩量，而字段内的按钮是字段的圆角减 4px。因此，间隙在转弯处始终保持同样的宽度。只有胶囊形、圆点和头像更圆。
+
+<ComponentPreview name="nesting" height={208} title="嵌套圆角" bodyClass="p-lg" html={`<div class="tray max-w(360) mx-auto">
+  <div class="sheet flex flex-col gap-md p-lg">
+    <div class="input-group">
+      <input class="input-group-field" value="atlas.dev" aria-label="Domain">
+      <button type="button" class="btn">Verify</button>
+    </div>
+    <div class="segmented" role="radiogroup" aria-label="Environment">
+      <label class="segmented-item"><input type="radio" class="segmented-input" name="environment" checked>Production</label>
+      <label class="segmented-item"><input type="radio" class="segmented-input" name="environment">Preview</label>
+    </div>
+  </div>
+</div>`} />
+
+### 连续曲率圆角 \{#continuous-corners\}
+
+`border-radius` 绘制的是四分之一圆。在四分之一圆与直边相接的地方，曲率会从零一下子跳到最大值，眼睛会把这个接合处看成一个肩角。用 `corner-shape: squircle` 绘制的超椭圆圆角（squircle）会更早开始转弯，并逐渐收紧，因此边缘能顺畅地过渡到圆角。
+
+在浏览器支持 `corner-shape` 的地方，组件绘制超椭圆圆角，其他情况下则绘制四分之一圆。在相同半径下，超椭圆圆角比圆形更贴近其角落，因此组件会把半径乘以 `--corner-scale`，以保持相同的视觉圆润度：使用超椭圆圆角时为 1.6，不使用时为 1。这两个值都在主题中统一设置，每个组件都会读取它们。
+
+| 属性 | 支持 `corner-shape` 时 | 不支持时 |
+| --- | --- | --- |
+| `--corner-shape` | `squircle` | `round` |
+| `--corner-scale` | `1.6` | `1` |
+
+胶囊形、圆点、头像和滑块保持真正的圆形。[主题定制](/guide/theming#retune-tokens)介绍了如何在所有地方保持圆形圆角。
+
+## 字体 \{#type\}
+
+主题不会下载字体。文档使用 Geist，控件读取预设的字体族令牌。在选用字体之前，请先在应用中加载它；本站的排版设置如下：
+
+```css name=app.css
+@theme {
+  --font-sans: 'Geist';
+  --font-feature-sans: 'ss02', 'ss03', 'ss04', 'ss06', 'ss07', 'ss08';
+}
+
+body {
+  font-weight: 350;
+}
+```
+
+控件标签使用 `--font-weight-control`（460），这是一种偏轻的中等字重，清晰易读而不显厚重。标题保持常规字重：由字号和墨色体现层次。
+
+## 动效 \{#motion\}
+
+一组缓动曲线让交互保持迅捷、讲解保持平稳，一个长度决定控件移动的距离：`--lift` 是凸起的控件在指针悬停时上升、在按下时下沉的半个像素。卡片上升的距离是它的两倍。若主题不需要位移，请将它设为 `0px`；减少动态效果模式已经这样处理了。
+
+| 令牌 | 值 | 用于 |
+| --- | --- | --- |
+| `--easing-glide` | `cubic-bezier(.22, 1, .36, 1)` | 所有状态变化 |
+| `--duration-press` | 60ms | 按下控件 |
+| `--duration-quick` | 160ms | 悬停和焦点；弹出层、菜单和工具提示；所有退出动画 |
+| `--duration-base` | 280ms | 移动的滑块和面板；对话框出现 |
+| `--lift` | .5px | 凸起的控件上升和下沉的距离 |
+
+浮层在 CSS 中同时编写进入和退出两个方向。`@starting-style` 指定元素出现时的起始帧，`display` 和 `overlay` 借助 `allow-discrete` 进行过渡，因此退出动画会在元素离开顶层之前播放完毕。退出比进入更短。在减少动态效果模式下，位移和缩放会被移除，只保留淡入淡出。
+
+## 状态色与品牌色 \{#status-and-brand\}
+
+`--color-info`、`--color-success`、`--color-warning` 和 `--color-danger` 是界面用来传达信息的仅有色相。每一种都经过调校，在各自的主题上作为文字时清晰可读。
+
+品牌色是唯一一个不表示状态的色相。它出现在 [`btn-brand`](/components/button#variants) 上，每个视图只出现一次。
+
+| 令牌 | 值 | 用于 |
+| --- | --- | --- |
+| `--color-brand` | `var(--color-indigo-50)` | 品牌表面的底色 |
+| `--color-brand-ink` | 接近白色 | 品牌表面上的文字 |
+| `--color-brand-text` | moonstone 上为 indigo-60，obsidian 上为 indigo-30 | 页面上的品牌色文字 |
+
+品牌表面会根据 `--color-brand` 混合出其边缘、光线和光晕，因此只需覆盖这一个令牌就能重新调整它。如果你的品牌色较浅，请将 `--color-brand-ink` 设为深色墨色。
+
+<ComponentPreview name="status" height={96} narrowHeight={136} title="状态色与品牌色" html={`<span class="badge badge-info badge-dot">Info</span>
+<span class="badge badge-success badge-dot">Success</span>
+<span class="badge badge-warning badge-dot">Warning</span>
+<span class="badge badge-danger badge-dot">Danger</span>
+<button type="button" class="btn btn-brand btn-sm">Upgrade</button>`} />
+
+## 配色方案 \{#color-schemes\}
+
+在不同方案之间有差异的颜色使用 `light-dark()`；部分高光以及绘制在图片之上的颜色在两种方案中保持不变。主题跟随元素的 `color-scheme`。Master CSS 预设在根元素上设置 `color-scheme: light dark`，并允许你为整个页面或某个子树固定配色方案：
+
+```html
+<html data-theme="dark">
+  …
+  <aside data-theme="light">A moonstone panel on an obsidian page</aside>
+</html>
+```
+
+深色模式没有第二份样式表，组件也没有仅用于深色模式的 class。
+
+## 自定义 \{#customize\}
+
+参阅[主题定制](/guide/theming)以覆盖令牌或构建完整的主题，参阅[自定义](/guide/customization)以在工具类、令牌、组件属性和接管源码之间做出选择。

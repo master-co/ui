@@ -1,5 +1,7 @@
 import { defineSite } from '@master/internal-site/config'
+import i18n from '@master/internal-site/common/i18n.config.js'
 import translations from './i18n/translations'
+import { englishOnlySections } from './i18n/sections'
 
 const section = (name: string) => new URL(import.meta.resolve(`@master/internal-site/sections/${name}.astro`))
 const library = new URL('./sections/library.astro', import.meta.url)
@@ -18,14 +20,14 @@ export default defineSite({
   content: new URL('./content/', import.meta.url),
   app: new URL('./app-config.ts', import.meta.url),
   highlighter: new URL(import.meta.resolve('@master/internal-site/css/highlight.ts')),
-  // English first. Add locales together with i18n.validation (resources and reviews) when translating.
+  // English is the source. A translated edition is a sibling `content.<locale>.mdx` with an independent review in
+  // `i18n/reviews.json`; `i18n/resources.ts` lists everything the production gate holds to those reviews.
   i18n: {
-    defaultLocale: 'en',
-    locales: ['en'],
-    hreflangOfLocale: { en: 'en' },
-    nameOfLocale: { en: 'English' },
-    localizablePathnameRoots: ['guide', 'components', 'blocks', 'pages'],
-    translations
+    ...i18n,
+    localizablePathnameRoots: ['guide'],
+    sectionLocales: Object.fromEntries(englishOnlySections.map(section => [section, ['en']])),
+    translations,
+    validation: { reviews: new URL('./i18n/reviews.json', import.meta.url), resources: new URL('./i18n/resources.ts', import.meta.url) }
   },
   // The guide and the three sections of the library share one documentation shell, and each has a sidebar of its own.
   // A section's overview leaves the sidebar out, and so does every block and every page, which are shown at full width.

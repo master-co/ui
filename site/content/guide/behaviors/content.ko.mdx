@@ -1,0 +1,324 @@
+---
+title: "동작"
+description: "참조 동작을 연결하고, 그 값과 이벤트를 읽고, 순수 JavaScript나 프레임워크에서 생명 주기를 관리합니다."
+---
+import GuideFigure from '../../../components/GuideFigure.astro'
+
+대부분의 컴포넌트에는 스크립트가 필요하지 않습니다. 컴포넌트가 스타일을 입히는 요소가 이미 그 동작을 갖추고 있기 때문입니다. 콤보박스, 캘린더 그리드, 스플리터처럼 대응하는 네이티브 요소가 없는 패턴도 몇 가지 있습니다. 이런 패턴에서는 스타일시트가 ARIA 속성과 네이티브 속성으로 상태를 그리고, 동작(behavior)은 입력, 포커스, 선택을 조율하는 참조 스크립트가 됩니다. 이 가이드에서는 동작을 연결하고, 그 값을 읽고, 요소가 페이지를 떠날 때 리스너를 해제하는 방법을 설명합니다.
+
+## 동작이란 \{#what-a-behavior-is\}
+
+동작은 패턴의 이름을 딴 함수 하나를 담은 파일 하나입니다. 루트 요소를 받아, 자신의 리스너, 옵저버, 타이머를 중지하는 정리 함수를 반환합니다. 정리 함수는 원래 마크업을 복원하지 않습니다. 예를 들어 캘린더는 자신이 그린 달을 그대로 유지합니다. 동작은 의존성도, 프레임워크도, 빌드 단계도 없는 순수 ES 모듈입니다.
+
+| 동작이 하는 일 | 동작이 절대 하지 않는 일 |
+| --- | --- |
+| ARIA 속성과 네이티브 속성을 설정하고 제거합니다: `aria-selected`, `aria-checked`, `aria-expanded`, `aria-activedescendant`, `aria-valuenow`, `hidden`, `tabindex`, `open`, 필드의 값 | 스타일, 상태를 나타내는 클래스, 크기나 위치를 설정하는 일 |
+| 포커스를 옮기고 플랫폼 기능을 호출합니다: `showPopover()`, `showModal()`, `stepUp()`, `scrollIntoView()` | 플랫폼 기능을 다시 구현하는 일: 팝오버나 대화 상자 열기, 가벼운 닫기(light dismiss), 모달의 포커스 트랩과 Escape |
+| 이벤트만 알 수 있는 정보를 계약이 공개하는 사용자 지정 속성으로 전달합니다: `--menu-x`, `--splitter-size` | 요소를 배치하거나 한계를 적용하는 일. 스타일시트가 속성을 읽어 둘 다 처리합니다 |
+| 패턴이 반복하는 행이 데이터일 때, 예를 들어 한 달의 주들을 계약의 클래스로 생성합니다 | 계약 밖의 것을 읽거나 쓰는 일: 동작은 계약의 클래스와 역할로 부분을 찾습니다 |
+
+스타일시트는 같은 계약을 유지하는 다른 스크립트와도 함께 동작할 수 있습니다. 다만 속성, 값, 키보드 동작은 여전히 일치해야 합니다. 프레임워크 컴포넌트는 키 처리를 다시 구현하지 않고 이와 같은 동작을 연결합니다.
+
+<GuideFigure name="behaviors" title="입력에서 보이는 상태까지">
+
+**DOM 속성이 동작과 외관을 연결합니다.** 활성 리스트박스 옵션에서 Enter를 누르면 동작이 `aria-checked="true"`를 설정합니다. 스타일시트는 그 속성을 읽어 체크 표시를 드러냅니다. 스크립트는 옵션을 선택하고, CSS는 선택된 상태를 그립니다.
+
+</GuideFigure>
+
+## 동작 목록 \{#the-behaviors\}
+
+각 동작은 `@master/ui/behaviors/<name>.js`에서 가져옵니다. 마지막 열은 [계약](/guide/contracts)의 `script` 필드입니다. `required`는 스크립트 없이는 패턴이 동작하지 않는다는 뜻이고, `optional`은 이미 동작하는 마크업에 스크립트가 기능을 더한다는 뜻입니다.
+
+| 패턴 | 가져오기 | 스크립트가 하는 일 | 스크립트 |
+| --- | --- | --- | --- |
+| [캘린더](/components/calendar) | `calendar` | 표시된 달의 주를 작성하고, 오늘, 선택된 날짜나 범위, 선택할 수 없는 날짜를 표시하며, 그리드 안을 이동합니다 | 필수 |
+| [콤보박스](/components/combobox) | `combobox` | 입력한 내용과 일치하지 않는 옵션을 숨기고, 활성 옵션을 이동하고, 목록을 열고 닫으며, 선택한 옵션을 필드에 씁니다 | 필수 |
+| [명령 팔레트](/components/command) | `command` | 명령을 필터링하고, 활성 옵션을 이동하고, Enter로 클릭한 뒤 대화 상자를 닫습니다. 단축키로 어디서든 엽니다 | 필수 |
+| [비교](/components/compare) | `compare` | 브라우저에 스크롤 기반 애니메이션이 없으면 범위 입력의 값을 `--compare-position`에 복사하고, 있으면 아무것도 바꾸지 않습니다 | 필수 |
+| [리스트박스](/components/listbox) | `listbox` | 화살표 키와 입력한 글자로 활성 옵션을 이동하고, 선택한 옵션을 체크합니다. 다중 선택 목록에서는 여러 개를 체크합니다 | 필수 |
+| [메뉴](/components/menu) | `menu`, `contextMenu` | 화살표 키와 입력한 글자로 항목 사이에서 포커스를 이동하고, 하위 메뉴 쪽을 가리키는 화살표 키로 하위 메뉴를 엽니다. `contextMenu`는 포인터 위치에 메뉴를 엽니다 | 선택 |
+| [OTP](/components/otp) | `otp` | 슬롯에서 슬롯으로 포커스를 옮기고, 붙여넣거나 자동 완성된 코드를 슬롯에 나누어 넣습니다 | 필수 |
+| [스플리터](/components/splitter) | `splitter` | 핸들을 드래그하거나 키로 움직일 때 첫 번째 창의 크기를 `--splitter-size`와 `aria-valuenow`에 씁니다 | 필수 |
+| [스테퍼](/components/stepper) | `stepper` | 두 버튼이 숫자 필드의 `stepDown()`과 `stepUp()`을 호출하게 하고, 한계에 도달한 쪽 버튼을 비활성화합니다 | 필수 |
+| [탭](/components/tabs#tab-panels) | `tabs` | `role="tablist"`에서: 탭 순서에 탭 하나만 남기고, 화살표 키로 이동하고 선택하며, 선택된 탭의 패널을 표시합니다 | 선택 |
+| [트리](/components/tree) | `tree` | 트리를 하나의 탭 정지 지점으로 만들고, 화살표 키로 탐색하고 접고 펼칩니다 | 선택 |
+| [휠](/components/wheel) | `wheel` | 표시선 아래에 멈춘 옵션으로 `aria-selected`를 옮기고, 포커스된 열에 리스트박스의 키 조작을 부여합니다 | 필수 |
+
+## 하나 연결하기 \{#attach-one\}
+
+먼저 [스타일시트를 불러온](/guide/installation) 다음, 계약의 마크업을 작성합니다. 루트 요소가 존재한 뒤에 모듈을 실행하고, 루트 클래스를 가진 요소를 전달합니다. 아래의 패키지 이름만 쓴 가져오기는 애플리케이션이 npm 모듈을 해석할 수 있다고 가정합니다. 브라우저에서 모듈을 그대로 실행하려면 해석 가능한 URL이나 import map이 필요합니다.
+
+```html
+<div class="combobox">
+  <div class="input-group">
+    <input class="input-group-field" id="region" role="combobox" aria-expanded="false" aria-controls="region-list" aria-autocomplete="list" autocomplete="off" aria-label="Region">
+    <button type="button" class="combobox-toggle" tabindex="-1" aria-label="Show regions"></button>
+  </div>
+  <div id="region-list" popover="manual" class="listbox" role="listbox" aria-label="Regions">
+    <div class="listbox-option" role="option" id="region-hnd" data-value="hnd" aria-checked="false">Tokyo</div>
+    <div class="listbox-option" role="option" id="region-sin" data-value="sin" aria-checked="false">Singapore</div>
+    <div class="listbox-empty">No regions match.</div>
+  </div>
+</div>
+```
+
+```js name=app.js
+import { combobox } from '@master/ui/behaviors/combobox.js'
+
+const detach = combobox(document.querySelector('.combobox'))
+```
+
+“Tok”을 입력하고 ArrowDown과 Enter를 누른 뒤, 필드에 Tokyo가 표시되고 `detach.value`가 `hnd`인지 확인하세요. 요소가 페이지를 떠날 때 `detach()`를 호출합니다. 같은 루트에 같은 동작을 두 번 연결하면 이전 인스턴스가 해제됩니다. 다만 애플리케이션이 추가한 리스너는 정리하지 않습니다.
+
+## 모두 연결하기 \{#attach-all\}
+
+`attach()`는 루트 클래스로 모든 패턴을 찾아 각각의 동작을 연결합니다. 문서 전체를 살펴보거나, 전달받은 요소와 그 하위를 살펴보며, 연결한 모든 것을 해제하는 함수 하나를 반환합니다.
+
+```js name=app.js
+import { attach } from '@master/ui/behaviors'
+
+const detach = attach()
+```
+
+개별 가져오기 대신 이 방식을 선택하기 전에 알아 둘 세 가지가 있습니다.
+
+- 선택적 동작도 연결합니다. 모든 `menu`에 화살표 키가 생기고, 모든 `tree`가 하나의 탭 정지 지점이 되며, `role="tablist"`인 모든 `tabs`가 패널을 전환합니다. 플랫폼 기본 상태로 두고 싶은 것이 있다면 동작을 이름으로 가져오세요.
+- 옵션을 전달하지 않습니다. 범위를 선택하거나 첫날과 마지막 날이 정해진 캘린더는 이름으로 연결합니다.
+- 컨텍스트 메뉴는 페이지만 아는 대상에 속하므로 `attach()`는 이를 연결하지 않습니다. `contextMenu(target, menu)`를 호출하세요.
+
+`attach()`는 문서를 감시하지 않습니다. 나중에 추가된 마크업에는 추가된 요소에 대해 `attach(element)`를 호출하고, 그 호출의 정리 함수도 보관하세요. 해당 루트를 제거하기 전에 각 정리 함수를 호출합니다.
+
+## 프레임워크에서 \{#in-a-framework\}
+
+React, Svelte, Vue에는 이 패턴마다 프로젝트에 복사할 컴포넌트가 있습니다. 그 컴포넌트가 마크업을 렌더링하고, 동작을 연결하고, 값을 주고받습니다. 목록은 [React, Svelte, Vue](/guide/frameworks)에 있습니다. 이 섹션의 나머지는 직접 만든 컴포넌트에서 동작을 직접 연결하는 경우를 다룹니다.
+
+다음 코드 조각은 연결과 정리만 보여 줍니다. 각 루트 안에는 [하나 연결하기](#attach-one)의 전체 콤보박스 마크업을 넣으세요. 설정 옵션이 바뀌면 다시 연결합니다. 애플리케이션 값과 바뀌는 옵션을 다룰 때는 복사한 프레임워크 컴포넌트나 그 [어댑터 헬퍼](/guide/frameworks#your-own)를 사용하는 편이 좋습니다.
+
+React에서는 `useEffect`가 해제 함수를 정리 함수로 받습니다.
+
+```jsx name=Combobox.jsx
+import { useEffect, useRef } from 'react'
+import { combobox } from '@master/ui/behaviors/combobox.js'
+
+export function Combobox({ children }) {
+  const root = useRef(null)
+  useEffect(() => combobox(root.current), [])
+  return <div className="combobox" ref={root}>{children}</div>
+}
+```
+
+Svelte에서는 동작이 attachment와 같은 시그니처를 가지므로 `{@attach}`가 그대로 받습니다.
+
+```svelte name=Combobox.svelte
+<script>
+  import { combobox } from '@master/ui/behaviors/combobox.js'
+</script>
+
+<div class="combobox" {@attach combobox}>
+  <!-- the field and the listbox -->
+</div>
+```
+
+action은 객체를 반환하므로, attachment가 없는 Svelte 버전에서는 동작을 감싸세요. `const action = (node) => ({ destroy: combobox(node) })`로 정의한 뒤 `use:action`을 사용합니다.
+
+Vue에서는 컴포넌트가 마운트될 때 연결하고 언마운트될 때 해제합니다.
+
+```vue name=Combobox.vue
+<script setup>
+import { onMounted, onUnmounted, ref } from 'vue'
+import { combobox } from '@master/ui/behaviors/combobox.js'
+
+const root = ref(null)
+let detach
+
+onMounted(() => { detach = combobox(root.value) })
+onUnmounted(() => detach?.())
+</script>
+
+<template>
+  <div class="combobox" ref="root"><slot /></div>
+</template>
+```
+
+## 옵션 \{#options\}
+
+아래 동작은 두 번째 인수로 옵션 객체를 받습니다. 예: `calendar(root, options)`.
+
+### 캘린더 \{#calendar-options\}
+
+- `value`: 선택된 날짜(`YYYY-MM-DD`) 또는 범위의 양 끝.
+- `month`: 처음 표시할 달(`YYYY-MM`).
+- `min`, `max`: 선택할 수 있는 첫날과 마지막 날.
+- `range`: 두 날짜와 그 사이의 모든 날짜를 선택합니다.
+- `weekStart`: 첫 번째 열의 요일. 0(일요일)부터 6(토요일)까지입니다.
+- `locale`: 표시되는 이름에 쓰는 BCP 47 언어 태그.
+- `disabled`: 어떤 날짜를 선택할 수 없는지 반환하는 함수.
+- `draw`: [동작 대신 그리드를 렌더링하는](#a-grid-of-your-own) 함수.
+
+### 콤보박스 \{#combobox-options\}
+
+`filter`의 기본값은 `true`입니다. 동작은 텍스트에 입력한 내용이 포함되지 않은 옵션을 숨깁니다. [애플리케이션이 일치하는 옵션을 제공할](#options-from-a-server) 때는 `false`로 설정하세요.
+
+### 명령 팔레트 \{#command-options\}
+
+`shortcut`은 Command 또는 Control과 함께 눌러 팔레트를 열고 닫는 키입니다. 기본값은 `'k'`이며, `false`로 설정하면 단축키가 비활성화됩니다. `filter`는 콤보박스와 같은 방식으로 동작합니다.
+
+### OTP \{#otp-options\}
+
+`pattern`은 각 문자가 일치해야 하는 정규 표현식입니다. 생략하면 동작은 첫 번째 슬롯의 `pattern` 속성을 읽고, 그 속성이 없으면 숫자로 폴백합니다.
+
+### 스플리터 \{#splitter-options\}
+
+`step`은 화살표 키 한 번에 핸들이 움직이는 거리를 퍼센트포인트 단위로 설정합니다. 기본값은 5입니다.
+
+## 이벤트 \{#events\}
+
+동작은 네이티브 컨트롤과 같은 방식으로 변경을 알립니다. 즉, 버블링되는 DOM 이벤트를 사용합니다. `addEventListener`나 프레임워크의 네이티브 이벤트 바인딩으로 수신하세요.
+
+| 동작 | 이벤트 | 발생 위치 | 전달하는 내용 |
+| --- | --- | --- | --- |
+| `combobox` | 옵션을 선택하면 `input`, 이어서 `change` | 필드 | 값은 필드의 `value`입니다 |
+| `listbox` | `input`, 이어서 `change` | 리스트박스 | 옵션의 `aria-checked="true"`를 읽습니다 |
+| `stepper` | 버튼이 숫자를 바꾸면 `input`, 이어서 `change` | 필드 | 값은 필드의 `value`입니다 |
+| `splitter` | 크기가 바뀔 때마다 `input`, 드래그가 끝나거나 키로 핸들을 움직이면 `change` | 핸들 | `aria-valuenow`를 읽습니다 |
+| `otp` | 스크립트가 값을 쓴 슬롯에서 `input`, 모든 슬롯이 채워지면 `change` | 슬롯, 루트 | `detail.value`: 코드 |
+| `calendar` | `change` | 루트 | `detail.value`: `YYYY-MM-DD` 형식의 날짜, 또는 범위의 양 끝이 모두 선택되면 `[start, end]` |
+| `wheel` | 열이 다른 옵션에 멈추면 `change` | 열 | `detail.value`: 옵션의 `data-value` 또는 텍스트, `detail.option`: 해당 요소 |
+| `tree` | 분기가 아닌 `role="treeitem"` 행이 선택되면 `change` | 루트 | `detail.item`: 해당 행 |
+| `tabs` | 다른 탭이 선택되면 `change` | 탭 목록 | `detail.value`: 탭의 `data-value` 또는 텍스트, `detail.tab`: 해당 요소 |
+
+OTP 필드, 캘린더, 휠, 트리, 탭 목록의 `change`는 `CustomEvent`입니다. 값이 하나의 네이티브 컨트롤에 있지 않기 때문입니다. OTP 필드의 슬롯은 네이티브 입력이므로, 슬롯 자체의 `change`도 `detail` 없이 루트를 거쳐 버블링됩니다. 명령 팔레트, 메뉴, 비교는 자체 이벤트를 발생시키지 않습니다. 명령은 옵션의 `click`으로 실행되며 Enter도 이 클릭을 보냅니다. 메뉴의 항목은 네이티브 버튼, 링크, 입력입니다.
+
+```js name=app.js
+import { calendar } from '@master/ui/behaviors/calendar.js'
+
+const root = document.querySelector('.calendar')
+const detach = calendar(root, { value: '2026-11-13', min: '2026-11-01' })
+
+root.addEventListener('change', (event) => {
+  console.log(event.detail.value)
+})
+```
+
+## 값 \{#the-value\}
+
+패턴의 값을 하나의 네이티브 컨트롤이 보유하지 않는 경우, 동작이 반환하는 함수에 `value`가 있습니다. 현재 선택된 것을 알려면 이를 읽으세요. 외부에서 선택하려면 이를 설정하세요. 설정하면 패턴에 표시가 반영될 뿐 이벤트는 발생하지 않습니다. 네이티브 입력의 `value`를 설정할 때와 같습니다.
+
+| 동작 | `value` |
+| --- | --- |
+| `calendar` | `YYYY-MM-DD` 형식의 날짜, 또는 범위에서는 `[start, end]`이며 끝은 선택되기 전까지 `null`입니다. 선택이 없으면 `null`입니다. 설정하면 새 값의 달을 표시합니다 |
+| `combobox` | 선택된 옵션이 나타내는 값. 필드에 어떤 옵션도 선택되지 않은 텍스트가 있는 동안은 `null`입니다. 설정하면 옵션의 텍스트를 필드에 씁니다 |
+| `listbox` | 선택된 옵션이 나타내는 값이며, 선택이 없으면 `null`입니다. 리스트박스에 `aria-multiselectable="true"`가 있으면 그 값들의 목록입니다 |
+| `otp` | 슬롯이 보유한 문자들(순서대로) |
+| `splitter` | 첫 번째 창의 크기(퍼센트) |
+| `stepper` | 필드의 숫자. 비어 있는 동안은 `null`입니다 |
+| `compare` | 범위 입력의 숫자 |
+| `tabs`, `tree` | 선택된 탭이나 행이 나타내는 값. 선택이 없으면 `null`입니다 |
+| `wheel` | 각 열에서 선택된 옵션이 나타내는 값(열 순서대로) |
+
+옵션, 탭, 행은 자신의 `data-value`를 나타내며, 그것이 없으면 텍스트를 나타냅니다. 텍스트가 애플리케이션이 저장하는 값이 아닐 때는 `data-value`를 지정하세요. 예를 들어 Tokyo라고 표시되는 옵션에 `data-value="hnd"`를 지정합니다.
+
+```js name=app.js
+import { combobox } from '@master/ui/behaviors/combobox.js'
+
+const region = combobox(document.querySelector('.combobox'))
+region.value = 'hnd'        // checks the option, writes "Tokyo" into the field
+console.log(region.value)   // "hnd"
+```
+
+스크립트가 필드에 쓰는 값은 요소 프로토타입의 setter를 거칩니다. React는 자신의 쓰기를 감지하기 위해 input의 `value`를 가리고(shadow), 이미 본 값에 대한 `input` 이벤트는 무시합니다. 이 방식으로 쓰면 선택이 타이핑과 마찬가지로 `onChange`에 전달됩니다.
+
+## 서버에서 오는 옵션 \{#options-from-a-server\}
+
+기본적으로 콤보박스와 명령 팔레트는 마크업에 있는 옵션을 필터링합니다. 서버에 묻거나 인덱스를 검색하는 등 페이지가 일치 여부를 결정한다면 `filter: false`를 전달하세요. 그러면 스크립트는 아무것도 숨기지 않고, 독자가 입력하는 대로 페이지가 옵션을 작성합니다. 목록이 열려 있는 동안 도착한 옵션에는 다시 활성 옵션이 지정되므로, <kbd>Enter</kbd>는 여전히 첫 번째 일치 항목을 선택합니다.
+
+```js name=app.js
+import { combobox } from '@master/ui/behaviors/combobox.js'
+
+const root = document.querySelector('.combobox')
+const list = root.querySelector('[role="listbox"]')
+const selection = combobox(root, { filter: false })
+let request = 0
+
+root.querySelector('[role="combobox"]').addEventListener('input', async (event) => {
+  const current = ++request
+  if (selection.value !== null) return // Choosing an option also dispatches input.
+  const regions = await search(event.target.value)
+  if (current !== request || !root.isConnected) return
+  list.replaceChildren(...regions.map(option))
+})
+```
+
+여기서 `search(text)`는 애플리케이션의 비동기 검색 함수이고, `option(region)`은 `listbox-option`, `role="option"`, 고유한 id, `data-value`, `aria-checked="false"`를 가진 요소 하나를 만듭니다. 서버 문자열을 HTML로 주입하지 말고 레이블을 텍스트로 유지하세요. 요청 카운터는 오래된 응답이 새 결과를 덮어쓰는 것을 막습니다. 로딩, 빈 결과, 오류 피드백은 애플리케이션에서 제공하세요.
+
+## 직접 만드는 그리드 \{#a-grid-of-your-own\}
+
+캘린더는 요소를 작성하는 유일한 동작입니다. 표시하는 달의 주들을 작성합니다. 템플릿이나 서버에서 렌더링하는 프레임워크처럼 직접 주를 작성해야 하는 렌더러는 `draw`를 전달합니다. 그러면 스크립트는 요소를 작성하지 않습니다. 표시할 달이 그리드에 있는 달과 다를 때마다 그 달을 `YYYY-MM` 형식으로 넘겨 `draw`를 호출하고, 날짜가 생기면 오늘, 선택된 날짜, 선택할 수 없는 날짜, 탭 순서에 있는 날짜를 표시합니다.
+
+`calendarMonth()`는 스크립트가 그릴 때 쓰는 것과 같은 데이터로 한 달을 제공합니다. 제목, 일곱 개의 요일 이름, 주들입니다. 각 날짜는 `value`가 해당 날짜인 `calendar-day` 버튼이며, 스크립트는 이를 통해 자신이 작성하지 않은 날짜를 알아봅니다. `value`를 주고, 양 끝을 원하면 `range`도 주면, 데이터는 각 날짜를 어떻게 그려야 하는지도 알려 줍니다. `selected`, 탭 순서에 있는 하나의 날짜를 나타내는 `tab`, 범위 안에 있는 날짜의 클래스를 나타내는 `range`입니다. 이를 작성하는 렌더러는 스크립트가 실행되기 전, 첫 HTML에 이미 선택된 날짜를 담습니다.
+
+```js
+import { calendarMonth } from '@master/ui/behaviors/calendar.js'
+
+const month = calendarMonth('2026-11', {
+  value: '2026-11-13',
+  locale: 'en-GB'
+})
+
+const chosen = month.weeks.flat().find(day => day.selected)
+console.log(chosen.date) // "2026-11-13"
+console.log(chosen.tab)  // true
+```
+
+렌더러는 이 데이터로 계약의 마크업을 만듭니다.
+
+| 데이터 | 렌더링 방법 |
+| --- | --- |
+| `title` | `calendar-title`의 텍스트 |
+| `weekdays` | 짧은 이름을 텍스트로, 전체 이름을 `aria-label`로 가진 `calendar-weekday` 열 머리글 |
+| `weeks` | 주마다 `calendar-week` 행 하나 |
+| 날짜의 `date`, `text`, `label` | 버튼의 `value`, 텍스트, `aria-label` |
+| `selected`, `tab` | 처음 선택된 날짜에 `aria-selected`와 `tabindex="0"`, 나머지에는 `-1` |
+| `outside`, `range` | 필요할 때 `calendar-day-outside`, 그리고 반환된 범위 클래스 이름 |
+
+그리드가 생긴 뒤 같은 초기값과 로캘로 `calendar(root, { value, locale, draw })`를 연결하세요. `draw(month)` 콜백은 다른 달의 행을 렌더링하고, 동작은 그 행이 생기면 현재 선택과 포커스를 표시합니다. 행을 교체할 때는 제목, 요일 머리글, 그리드의 레이블을 유지하세요.
+
+React, Svelte, Vue용 [캘린더 컴포넌트](/guide/frameworks)는 이 방식으로 작성되어 있으므로 첫 HTML에 달이 들어 있습니다.
+
+## 키 \{#the-keys\}
+
+계약의 `keyboard` 목록은 해당 패턴과 함께 제공되는 동작을 명시합니다. `npx master-ui contract combobox`로 읽을 수 있습니다.
+
+| 키 | 동작 |
+| --- | --- |
+| ArrowDown, ArrowUp | 목록을 열고 활성 옵션을 이동합니다. 양 끝에서는 반대쪽으로 순환합니다 |
+| Home, End | 목록이 열려 있는 동안 첫 번째 또는 마지막 옵션으로 이동합니다 |
+| Enter | 활성 옵션을 선택하고 목록을 닫습니다 |
+| Escape | 목록을 닫습니다. 필드의 텍스트는 유지됩니다 |
+| 입력 | 옵션을 필터링하고 첫 번째 일치 항목이 있으면 목록을 엽니다 |
+
+동작이 처리하는 키는 `preventDefault()`를 호출합니다. 처리하지 않는 키는 그대로 두므로, 활성 옵션이 없는 콤보박스에서 Enter를 누르면 여전히 폼이 제출됩니다. 숨겨진 항목과 `disabled` 또는 `aria-disabled="true"`가 있는 항목은 건너뛰며, 가로 화살표 키는 텍스트 방향을 따릅니다.
+
+## 동작 소유하기 \{#own-a-behavior\}
+
+패키지에 포함된 동작이 애플리케이션의 요구를 충족하는 동안은 계속 패키지에서 가져오세요. 그러면 패키지를 업그레이드할 때 수정 사항도 함께 받습니다. 프로젝트에 다른 키보드 동작이나 선택 동작이 필요하다면 소스를 가져와 그 구현을 직접 유지 관리하세요.
+
+```bash
+npx master-ui own combobox
+```
+
+`own`은 컴포넌트의 스타일시트, 계약, 동작을 프로젝트에 복사합니다. 기본 위치는 `ui/combobox.css`, `ui/combobox.json`, `ui/combobox.js`입니다. 이후 그 스크립트는 프로젝트의 것입니다. 패키지 대신 그곳에서 가져오세요. 컴포넌트 소유의 나머지 내용은 [사용자 지정](/guide/customization#own-a-component)에서 다룹니다.
+
+combobox, command, listbox, menu 동작은 `./internal.js`에서 공용 헬퍼를 가져옵니다. `own`은 이 파일도 함께 복사합니다.
+
+편집하는 동안 계약이 사실과 맞도록 유지하세요. 스크립트가 바꾸는 속성은 스타일시트가 읽는 속성이어야 하고, `keyboard` 목록은 키가 이제 무엇을 하는지 나타내야 합니다.
+
+## 스크립트 없이 \{#without-any-script\}
+
+표에는 패키지에 포함된 동작이 나와 있을 뿐, JavaScript가 필요할 수 있는 모든 애플리케이션 동작이 나와 있지는 않습니다. 네이티브 컨트롤은 브라우저가 지원하는 범위에서 자체 상호작용을 제공합니다. 점진적 향상의 폴백은 [브라우저 지원 가이드](/guide/browser-support)를 참고하세요. 표의 몇몇 패턴에는 동작이 없는 형태도 있습니다.
+
+- **탭**은 링크나 라디오 컨트롤로 만들 수 있습니다. 선택적 동작은 연결된 패널을 선택하고 표시하는 탭 목록을 위한 것입니다.
+- **트리**는 `<summary>`가 행 역할을 하는 중첩된 `<details>` 요소입니다. 분기는 스스로 열리고 닫히며 모든 행이 탭 정지 지점입니다.
+- **메뉴**는 버튼과 링크로 이루어진 팝오버입니다. 브라우저가 열고 닫으며, Tab으로 항목 사이를 이동하고 Escape를 누르면 포커스가 버튼으로 돌아갑니다. `role="menu"`는 화살표 키를 약속하는 역할이므로 반드시 동작과 함께 추가하세요.
+
+그 밖의 몇몇 계약은 스크립트를 `optional`로 표시하지만 동작을 지정하지 않습니다. 그 경우 스크립트는 체크박스의 `indeterminate` 상태처럼 HTML에 해당 속성이 없는 것을 위한 한두 줄이며, 컴포넌트는 스크립트 없이도 동작합니다.

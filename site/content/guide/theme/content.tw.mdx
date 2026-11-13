@@ -1,0 +1,257 @@
+---
+title: "預設主題"
+description: "moonstone 與 obsidian：Master UI 的預設材質、token 角色與實作數值。"
+---
+import GuideFigure from '../../../components/GuideFigure.astro'
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+
+Master UI 的預設主題只有一種材質語言。淺色模式是 **moonstone**，一種潔淨的鋅色珍珠。深色模式是 **obsidian**，一種霧面的鋅色玻璃，其表面層層分明，並保有清晰可辨的邊緣。兩者都由位於上方略偏左的單一光源照亮，因此每個凸起的表面都會在頂部邊緣捕捉一道光，並落在一道短而漸淡的陰影上。
+
+它的性格是克制的：以墨色而非彩色、半像素的輪廓、層層巢狀的圓角，以及隨狀態改變的深度。細節來自光線而非裝飾，任何邊緣都不會比「能被找到」所需的更硬。
+
+使用以下各節，為你的介面選擇表面、線條、文字或深度的角色。這些數值描述的是目前套件中的預設主題；[主題設定](/guide/theming)說明如何覆寫它們，或打造另一種材質。
+
+<ComponentPreview name="overview" height={248} title="moonstone 與 obsidian" theme bodyClass="p-lg" html={`<div class="tray">
+  <div class="sheet flex flex-col gap-md p-lg">
+    <div class="flex items-center justify-between gap-md">
+      <span class="text-sm fg-text-strong">Production</span>
+      <span class="badge badge-success badge-dot">Ready</span>
+    </div>
+    <input class="input" value="atlas.dev" aria-label="Domain">
+    <div class="flex items-center justify-between gap-md">
+      <label class="check"><input type="checkbox" role="switch" class="switch" checked> Preview builds</label>
+      <button type="button" class="btn btn-primary">Deploy</button>
+    </div>
+  </div>
+</div>`} caption="切換主題以比較 moonstone 與 obsidian。兩者來自同一份樣式表。" />
+
+<GuideFigure name="theme" title="狀態與深度">
+
+**狀態會改變同一個控制項的深度。** 靜止、懸停與按下分別使用 raised、raised-hover 與 pressed 陰影 token；按下時還會換成內凹的表面。在支援懸停的指標裝置上，預設的 `--lift` 會在懸停時讓按鈕上移 0.5px，在按下時下移 0.5px。剖面圖誇大了深度。請使用即時預覽，在兩種色彩配置下試試實際的互動。
+
+</GuideFigure>
+
+## 原則 \{#principles\}
+
+[設計](/guide/design)說明預設材質、層級、幾何與互動狀態背後的決策。請依據那些指引做設計上的選擇；本頁則記載 `@master/ui` 所實作的 token 與配方。
+
+`packages/ui/theme.css` 是這些數值的可執行來源。元件樣式會讀取這些 token，而 Paper 之類的主題可以在不改寫元件的情況下替換它們。
+
+## 表面 \{#surfaces\}
+
+表面構成一道階梯。每一階都是一個角色，而不是一種顏色：依照表面的用途選擇階層，主題會在淺色與深色模式下解析出它的值。
+
+<ComponentPreview name="surfaces" height={296} title="材質階梯" theme bodyClass="p-lg" html={`<div class="tray">
+  <p class="m(0) px-md py-sm text-xs fg-text-muted">Tray</p>
+  <div class="sheet flex flex-col gap-md p-lg">
+    <p class="m(0) text-xs fg-text-muted">Raised sheet</p>
+    <div class="well p-md text-xs fg-text-muted">Inset well</div>
+    <div class="sheet sheet-floating p-md text-xs fg-text-muted">Floating</div>
+  </div>
+</div>`} />
+
+| Token | 角色 | Moonstone | Obsidian |
+| --- | --- | --- | --- |
+| `--color-surface-base` | 頁面畫布 | 98.6% | 19.4% |
+| `--color-surface-tray` | 容納 sheet 的凹陷容器 | 96% | 17.4% |
+| `--color-surface-raised` | 凸起的表面：卡片、按鈕 | 100% | 24.2% |
+| `--color-surface-raised-low` | 凸起表面漸層的較低端 | 99.3% | 22.8% |
+| `--color-surface-inset` | 凹槽：欄位、軌道 | 96.6% | 16.4% |
+| `--color-surface-inset-hover` | 指標下的同一個凹槽 | 95.8% | 15.4% |
+| `--color-surface-floating` | 位於內容上方的 popover 與選單 | 100% | 26.4% |
+| `--color-surface-chip` | 中性的 chip 與徽章 | 96.5% | white 7% |
+| `--color-surface-inverse` | 墨色：主要按鈕、已勾選的控制項 | 22% | 95% |
+| `--color-surface-scrim` | 強制回應對話框後方的背景遮罩 | 18%，不透明度 20% | 黑色，不透明度 55% |
+
+除非註明不透明度，數值皆為 OKLCH 亮度。凸起的表面是一道由 `raised` 到 `raised-low` 的上下漸層，`@apply --surface-sheet` 會替你寫好。請依用途選擇角色：`floating` 用來區分位於 sheet 上方的選單，`inset` 則標示 sheet 內的欄位。顏色 token 不會決定元素的位置，也不會為它加上陰影。
+
+## 線條 \{#lines\}
+
+在 moonstone 上，線條是帶透明度的中性墨色；在 obsidian 上則是帶透明度的白色。其中兩種是 1px 的分隔線。另外三種是輪廓，以零模糊的 `box-shadow` 畫成半像素的環，不佔版面空間；它們的透明度是針對這個寬度調校的，因此輪廓看起來細緻而不淺淡。
+
+| Token | Moonstone | Obsidian | 繪製寬度 | 用於 |
+| --- | --- | --- | --- | --- |
+| `--color-line-hair` | 6.5% | 7.5% | 1px | 表面內低調的分隔 |
+| `--color-line-divider` | 12% | 13% | 1px | 區段之間的分隔線、分頁列 |
+| `--color-line-contour` | 12% | 14% | .5px | 每個表面的輪廓 |
+| `--color-line-strong` | 20% | 23% | .5px | 懸停時的輪廓、開關軌道、按鍵帽 |
+| `--color-line-mark` | 32% | 36% | .5px | 核取方塊、取得焦點之欄位的輪廓 |
+| `--color-texture` | 20% | 23% | 點與 .5px 細線 | [紋理](/components/texture)的筆觸；在主題設定它之前，它會跟隨 `--color-line-strong` |
+
+必須一眼就能找到的控制項，會使用比表面更明確的輪廓：欄位疊了兩道輪廓環，核取方塊則使用 mark 線條。
+
+## 文字 \{#text\}
+
+文字是柔和的墨色，絕不是純黑或純白。
+
+| Token | 用於 |
+| --- | --- |
+| `--color-text-strong` | 標題、標籤與數值 |
+| `--color-text-body` | 內文 |
+| `--color-text-muted` | 提示、說明文字與未啟用的選項 |
+| `--color-text-disabled` | 停用的控制項 |
+| `--color-text-inverse` | 墨色上的文字 |
+| `--color-focus` | 焦點外框 |
+
+## 高度層次 \{#elevation\}
+
+高度層次是深度的順序，從按下的凹槽到覆蓋層。凸起的表面結合了頂部邊緣的內側高光、一道半像素輪廓，以及三到六層向下的陰影。
+
+<ComponentPreview name="elevation" height={224} narrowHeight={240} title="高度層次" theme bodyClass="grid grid-cols(3) gap-lg p-xl" html={`<div class="p-lg r-lg bg-surface-inset shadow-pressed text-xs fg-text-muted">pressed</div>
+<div class="p-lg r-lg bg-surface-raised shadow-flat text-xs fg-text-muted">flat</div>
+<div class="p-lg r-lg bg-surface-raised shadow-raised text-xs fg-text-muted">raised</div>
+<div class="p-lg r-lg bg-surface-raised shadow-raised-hover text-xs fg-text-muted">raised-hover</div>
+<div class="p-lg r-lg bg-surface-raised shadow-lifted text-xs fg-text-muted">lifted</div>
+<div class="p-lg r-lg bg-surface-floating shadow-floating text-xs fg-text-muted">floating</div>`} />
+
+| Token | 用於 |
+| --- | --- |
+| `--shadow-pressed` | 凹槽與按下的控制項 |
+| `--shadow-flat` | 只有一道輪廓、沒有抬升的表面 |
+| `--shadow-raised` | 靜止狀態的按鈕、chip 與小型卡片 |
+| `--shadow-raised-hover` | 同上，但位於指標下，輪廓更明確 |
+| `--shadow-lifted` | 卡片與面板 |
+| `--shadow-floating` | 選單與 popover |
+| `--shadow-overlay` | 對話框 |
+
+例如，`--shadow-raised` 在其高光與輪廓下方疊了 `0 1px 2px -1px`、`0 2px 4px -2px` 與 `0 4px 8px -4px`。較高的層次使用範圍更大的一系列位移。負的擴散值讓陰影貼近物件，模糊則柔化它的邊緣。這些 token 繪製的是深度；堆疊順序仍取決於元素的版面與平台行為。
+
+## 墨色 \{#ink\}
+
+墨色是以反轉色填滿的表面：主要按鈕、已勾選的核取方塊、已送出的訊息，以及頁面中唯一的[反轉 sheet](/components/surface)。每個墨色表面都會在頂部邊緣捕捉同樣的一道光，並在周圍帶著同樣的細線，因此無論大小，它們看起來都是同一種材質。
+
+| Token | 角色 |
+| --- | --- |
+| `--color-surface-inverse-high`、`--color-surface-inverse-low` | 光線落在墨色 sheet 上的變化 |
+| `--color-ink-high`、`--color-ink-low` | 靜止時，光線落在墨色控制項上較圓潤的變化 |
+| `--color-ink-high-hover`、`--color-ink-low-hover`、`--color-ink-pressed` | 同一個控制項在指標下與按下時的變化 |
+| `--color-ink-highlight` | 任何墨色表面頂部邊緣的那道光 |
+| `--color-ink-edge` | 它周圍的細線 |
+| `--color-surface-tip` | 工具提示：在 moonstone 上為墨色，在 obsidian 上為較淺的板面 |
+| `--shadow-ink`、`--shadow-ink-hover`、`--shadow-ink-pressed` | 墨色控制項在各狀態下的深度 |
+| `--shadow-ink-mark` | 小型的勾選填色：核取方塊、單選按鈕、選定的日期 |
+| `--shadow-ink-well`、`--shadow-thumb-on-ink` | 已填色的軌道，以及在其上滑動的滑塊 |
+| `--shadow-tip` | 工具提示與圖表的數值 |
+
+帶色相的控制項（品牌、破壞性操作的確認）會以它自己的色相混合出表面、邊緣與光暈；`--color-tone-highlight` 與 `--color-tone-highlight-soft` 是它捕捉到的光。
+
+## 滑塊、圖片與外部提供的顏色 \{#thumbs-and-pictures\}
+
+| Token | 角色 |
+| --- | --- |
+| `--color-thumb-high`、`--color-thumb-low` | 開關、滑桿與比較元件的珍珠色滑塊 |
+| `--color-thumb-on-high`、`--color-thumb-on-low` | 開啟狀態的開關滑塊 |
+| `--color-line-image`、`--color-line-image-strong` | 圖片與頭像內側的線條，讓兩者都不會與所在表面混在一起 |
+| `--color-line-on-color`、`--color-highlight-on-color` | 頁面提供之顏色（例如色票）上的邊緣與光線 |
+| `--color-on-image`、`--color-on-image-shade` | 畫在圖片上方的內容：在兩種主題中都是白色搭配深色陰影 |
+| `--color-mark`、`--color-mark-underline` | 螢光筆筆觸及其底線形式 |
+| `--color-sheen` | 掠過 skeleton 的光 |
+| `--color-focus-halo` | 取得焦點的欄位在輪廓外圍呈現的柔和光暈 |
+
+## 形狀 \{#shape\}
+
+圓角和表面一樣是角色。chip 是小型標記，控制項是被按下或輸入的對象，表面則是 sheet。由於這些 token 位於 `@theme` 中，它們也是 utility：`r-control` 使用控制項的基礎圓角。元件還會額外套用下方所述的連續曲率圓角形狀與縮放；單靠圓角 utility 無法重現這種處理。
+
+| Token | 值 | 使用處 |
+| --- | --- | --- |
+| `--radius-chip` | 6px | 徽章、按鍵帽、核取方塊、skeleton |
+| `--radius-control-sm` | 8px | 小型按鈕與欄位、選單列、選項、segmented 滑塊 |
+| `--radius-control` | 10px | 按鈕、欄位、凹槽 |
+| `--radius-control-lg` | 12px | 大型按鈕與欄位、alert、choice、toast |
+| `--radius-surface` | 16px | sheet、卡片 |
+
+容器沒有自己的圓角。它從所容納的內容推導出自己的圓角：內側圓角加上兩者之間的內縮量。tray 是 sheet 的圓角加 4px，選單是列的圓角加 4px，segmented 軌道是其滑塊的圓角加上內縮量，而欄位內的按鈕則是欄位的圓角減 4px。因此兩者之間的間隙在轉彎處保持同一寬度。只有膠囊形、圓點與頭像會更圓。
+
+<ComponentPreview name="nesting" height={208} title="巢狀圓角" bodyClass="p-lg" html={`<div class="tray max-w(360) mx-auto">
+  <div class="sheet flex flex-col gap-md p-lg">
+    <div class="input-group">
+      <input class="input-group-field" value="atlas.dev" aria-label="Domain">
+      <button type="button" class="btn">Verify</button>
+    </div>
+    <div class="segmented" role="radiogroup" aria-label="Environment">
+      <label class="segmented-item"><input type="radio" class="segmented-input" name="environment" checked>Production</label>
+      <label class="segmented-item"><input type="radio" class="segmented-input" name="environment">Preview</label>
+    </div>
+  </div>
+</div>`} />
+
+### 連續曲率圓角 \{#continuous-corners\}
+
+`border-radius` 畫的是四分之一圓。在四分之一圓與直線邊緣相接處，曲率會瞬間從零跳到最大值，眼睛會把這個接點看成一個肩部。以 `corner-shape: squircle` 畫出的超橢圓（squircle）會更早開始轉彎並逐漸收緊，讓邊緣順暢地流入圓角。
+
+在支援 `corner-shape` 的瀏覽器中，元件會畫出超橢圓，其他瀏覽器則畫四分之一圓。超橢圓比相同半徑的圓更貼近角落，因此元件會將圓角乘以 `--corner-scale`，以維持相同的視覺圓潤度：使用超橢圓時為 1.6，不使用時為 1。這兩個值都只在主題中設定一次，每個元件都會讀取它們。
+
+| 屬性 | 支援 `corner-shape` | 不支援 |
+| --- | --- | --- |
+| `--corner-shape` | `squircle` | `round` |
+| `--corner-scale` | `1.6` | `1` |
+
+膠囊形、圓點、頭像與滑塊仍維持正圓。[主題設定](/guide/theming#retune-tokens)說明如何在所有地方保留圓形圓角。
+
+## 字體 \{#type\}
+
+主題不會下載字型。文件使用 Geist，控制項則讀取預設組的 font-family token。請先在應用程式中載入字型，再選用它；本網站的字體設定如下：
+
+```css name=app.css
+@theme {
+  --font-sans: 'Geist';
+  --font-feature-sans: 'ss02', 'ss03', 'ss04', 'ss06', 'ss07', 'ss08';
+}
+
+body {
+  font-weight: 350;
+}
+```
+
+控制項標籤使用 `--font-weight-control`（460），這是一種偏輕的中等字重，清晰易讀而不顯厚重。標題維持一般字重：由大小與墨色區分層級。
+
+## 動態 \{#motion\}
+
+一組緩動曲線讓互動保持迅速、說明保持從容，而一個長度決定控制項移動多遠：`--lift` 是凸起的控制項在指標下升起、在按下時沉下的那半個像素。卡片升起的距離是它的兩倍。若主題不要位移，請將它設為 `0px`；減少動態效果時已經會這樣做。
+
+| Token | 值 | 用於 |
+| --- | --- | --- |
+| `--easing-glide` | `cubic-bezier(.22, 1, .36, 1)` | 所有狀態變化 |
+| `--duration-press` | 60ms | 按下控制項 |
+| `--duration-quick` | 160ms | 懸停與焦點；popover、選單與工具提示；任何退場 |
+| `--duration-base` | 280ms | 會移動的滑塊與面板；對話框進場 |
+| `--lift` | .5px | 凸起的控制項升起與沉下的距離 |
+
+覆蓋層在 CSS 中同時寫出進場與退場兩個方向。`@starting-style` 提供元素進場時的起始畫面，而 `display` 與 `overlay` 以 `allow-discrete` 進行轉場，因此退場動畫會在元素離開頂層之前播放。退場比進場短。在減少動態效果時，位移與縮放會被移除，只保留淡入淡出。
+
+## 狀態與品牌 \{#status-and-brand\}
+
+`--color-info`、`--color-success`、`--color-warning` 與 `--color-danger` 是介面用來傳達訊息的唯一色相。每一種都經過調校，在其主題上作為文字時清晰可讀。
+
+品牌色是唯一不代表狀態的色相。它出現在 [`btn-brand`](/components/button#variants) 上，每個檢視只出現一次。
+
+| Token | 值 | 用於 |
+| --- | --- | --- |
+| `--color-brand` | `var(--color-indigo-50)` | 品牌表面本身的顏色 |
+| `--color-brand-ink` | 接近白色 | 品牌表面上的文字 |
+| `--color-brand-text` | moonstone 上為 indigo-60，obsidian 上為 indigo-30 | 頁面上的品牌色文字 |
+
+品牌表面會從 `--color-brand` 混合出邊緣、光線與光暈，因此只要覆寫這一個 token 就能重新調整它。如果你的品牌色偏淺，請將 `--color-brand-ink` 設為深色墨色。
+
+<ComponentPreview name="status" height={96} narrowHeight={136} title="狀態與品牌" html={`<span class="badge badge-info badge-dot">Info</span>
+<span class="badge badge-success badge-dot">Success</span>
+<span class="badge badge-warning badge-dot">Warning</span>
+<span class="badge badge-danger badge-dot">Danger</span>
+<button type="button" class="btn btn-brand btn-sm">Upgrade</button>`} />
+
+## 色彩配置 \{#color-schemes\}
+
+在不同配置間有差異的顏色使用 `light-dark()`；部分高光與畫在圖片上的顏色在兩種配置中都相同。主題會跟隨元素的 `color-scheme`。Master CSS 預設組會在根元素上設定 `color-scheme: light dark`，並讓你為整個頁面或某個子樹固定配置：
+
+```html
+<html data-theme="dark">
+  …
+  <aside data-theme="light">A moonstone panel on an obsidian page</aside>
+</html>
+```
+
+深色模式沒有第二份樣式表，元件上也沒有僅用於深色模式的 class。
+
+## 自訂 \{#customize\}
+
+若要覆寫 token 或打造完整的主題，請參閱[主題設定](/guide/theming)；若要在 utility、token、元件屬性與擁有原始碼之間做選擇，請參閱[自訂](/guide/customization)。

@@ -1,0 +1,108 @@
+---
+title: "Master UI 简介"
+description: "在安装 Master UI 之前，先了解原生标记、组件契约、主题与可选行为如何协同工作。"
+---
+import GuideFigure from '../../../components/GuideFigure.astro'
+
+Master UI 为 HTML 界面提供一套共享的组件 class、设计令牌和有文档说明的状态。你编写原生标记，例如 `<button class="btn">`，并在服务端模板、React、Svelte 或 Vue 中使用同样的 class。该软件包提供 CSS、标记契约，以及需要脚本的模式所用的脚本。
+
+如果你想保留对标记的控制权，同时在整个项目中共享组件的外观与行为，就可以使用它。你可以从默认的 moonstone 与 obsidian 主题开始，重新调整它的令牌，或者把某个组件的源码放进自己的项目。Master UI 仍处于实验阶段：[请锁定已安装的版本并审查每次升级](/guide/stability#experimental)。
+
+## 契约与实现 \{#a-contract-and-an-implementation\}
+
+契约描述样式表能够理解的标记：class、元素、状态属性和公开的自定义属性。它让开发者与编程智能体使用同一套词汇，并提供检查常见错误的方法。实现则提供实际的外观与行为。
+
+<GuideFigure name="introduction" title="标记、契约与实现">
+
+**契约把标记与其实现连接起来。** 按钮的 `btn` class 在 HTML 和 CSS 中指向同一个界面。契约还描述元素、状态属性和公开属性。更换主题会替换材质的值，而这些名称依然可用。对于需要脚本的模式，输入会改变属性，再由 CSS 绘制相应的状态。
+
+</GuideFigure>
+
+| 部分 | 提供什么 | 如何使用 |
+| --- | --- | --- |
+| [契约](/guide/contracts) | 每个样式表旁的一份 JSON 描述，包含一个正确示例 | 编写标记前先阅读已安装的契约 |
+| 实现 | 绘制契约的样式表 | 调整[令牌、主题或你自己的副本](/guide/customization) |
+| [行为](/guide/behaviors) | 为需要处理键盘、值或焦点的模式提供的参考脚本 | 直接附加，或通过随附的框架组件附加 |
+| 检查 | 针对检查器可读取的标记进行的静态诊断 | 在每次编辑后和 CI 中运行，然后验证渲染出的界面 |
+
+契约是封闭的：除非某个契约声明了它，否则不存在 `btn-outline`，即使写了，检查器也会报告它。实现是开放的：可以用令牌重新调整，用[主题](/guide/theming)替换它的材质，或把组件的源码放进你的项目。修改令牌和主题不会破坏契约。如果你接管了某个组件并修改了它的结构或状态，请同时更新它的本地契约和使用它的代码。[与 AI 协作](/guide/ai)介绍了智能体会读取和运行哪些内容。
+
+## 各部分如何组合 \{#how-it-fits-together\}
+
+| 层级 | 归属 | 示例 |
+| --- | --- | --- |
+| 设计令牌 | Master CSS 预设与 `@master/ui/theme.css` | `--color-surface-raised`、`--shadow-raised` |
+| 组件样式 | `@master/ui` | `.btn`、`.btn-primary`、`.input` |
+| 布局 class | `@master/ui` | `.page`、`.shell`、`.auto-grid`、`.form` |
+| 局部调整 | 你的标记 | `w-full`、`mt-md`、`px-lg` |
+
+组件 class 位于 `components` 层，工具类位于更靠后的 `utilities` 层，因此单个实例上的工具类总会生效，无需 `!important` 或选择器技巧：
+
+```html
+<button type="button" class="btn btn-primary w-full">Save changes</button>
+```
+
+## 组件、布局、区块与页面 \{#tiers\}
+
+这个库分为四个层级，从一个部件到整个屏幕。区分它们的不是大小，而是是否存在值得放进一个 class 的知识。
+
+| 层级 | 是什么 | 如何发布 |
+| --- | --- | --- |
+| [组件](/components) | 一个具有材质、状态、平台行为，或其各部分共享某种几何关系的部件 | `@master/ui` 中的语义化 class |
+| [布局](/components#layouts) | 区域内部空间的排布方式：堆叠、自动网格、便当盒（bento）、瀑布流（masonry）、让图片突破其外的栏 | 工具类，以及在工具类无法表达时使用的布局 class。它们与组件列在一起 |
+| [区块](/blocks) | 页面中具有特定用途的一段：主视觉、价格表、页脚 | 可复制的标记：由组件和工具类组合而成 |
+| [页面](/pages) | 整个屏幕：各区域放在哪里，以及哪些部分滚动 | 可复制的标记，基于 `page` 和 `shell` 两种框架之一 |
+
+一个事物至少具备以下四类知识之一时，才值得拥有一个 class：
+
+1. **材质。** 必须位于材质阶梯上的表面、轮廓、阴影或圆角。
+2. **状态。** 悬停、焦点、选中、展开、禁用或无效，从原生属性或 ARIA 中读取。
+3. **平台行为。** 锚点定位、滚动状态查询、在顶层中的入场：这些是工具类无法写出的。
+4. **各部分共享的几何关系。** 按内缩量嵌套的圆角，尺寸跟随其容器的子元素。
+
+按钮结合了材质、状态和几何关系。由分栏链接组成的页脚不需要新的组件 class：它是一个用工具类构建的区块。由此得出三条规则。
+
+- **组件不掌控页面。** 它从不决定自己所处的位置，除非处于那个位置正是它的行为：导航栏会吸附，对话框会进入顶层。
+- **布局不掌控材质。** 它决定区域与滚动；这些区域中的表面是面板、托盘和卡片。
+- **拥有 class 的门槛是知识，而不是重复。** 重复出现的标记应当复制，而不是命名。
+
+少数布局包含工具类无法表达的内容，例如以 `dvh` 为单位的高度、手机的安全区域、容器阈值或一组网格轨道。这些就是布局 class：两种框架 [`page`](/pages/page) 和 [`shell`](/pages/app-shell)，以及 [`auto-grid`](/components/auto-grid)、[`bento`](/components/bento)、[`masonry`](/components/masonry)、[`breakout`](/components/breakout)、[`sticky-stack`](/components/sticky-stack) 和 [`form`](/components/form)。
+
+## 原则 \{#principles\}
+
+- **原生元素优先。** 组件使用本身就具备正确语义的元素，并尽可能保留其原生行为。如果某个模式没有对应的原生元素，样式表就根据 ARIA 绘制其状态，并由[一小段脚本切换这些状态](#patterns-that-need-a-script)。
+- **平台先于脚本。** 浏览器如今能自行完成的事，组件不会重新实现。参见下文的[平台](#the-platform)。
+- **光影，而非装饰。** 凸起的表面承接一道光线，并落下短而渐隐的阴影；凹槽则下沉于周围。状态以深度而非颜色表达，边缘是柔和的。参见[默认主题](/guide/theme)。
+- **使用令牌，而非硬编码的值。** 表面、线条、层级高度、圆角和动效都来自主题令牌，如果组件自行写入颜色，测试就会失败；只需覆盖一次令牌，即可重新调整所有组件。
+- **精简的公开词汇。** 一个基础 class、少量修饰 class（如 `btn-primary` 和 `btn-sm`），以及有文档说明的自定义属性（如 `--btn-height`）。
+- **一份样式表同时支持浅色与深色。** 语义令牌通过 `light-dark()` 解析，跟随页面的配色方案。
+
+## 平台 \{#the-platform\}
+
+原生元素负责它们本身已支持的工作：复选框存储选中值，select 参与表单，模态对话框让其后方的页面变为 inert。Master UI 为它们的属性和状态提供样式。
+
+样式表仍然有浏览器基线要求。层叠层、嵌套和 `light-dark()` 等特性是必需的；锚点定位和连续曲率圆角等可选特性则在可用的基线之上提供增强。有些回退方案需要应用代码：不支持 invoker commands 的浏览器需要一个调用 `dialog.showModal()` 的点击处理函数。
+
+阅读[浏览器支持](/guide/browser-support)，了解基线要求、增强特性的回退方案，以及如何测试你的应用所用的特性。组件页面会在示例旁注明相关的回退方案。
+
+## 需要脚本的模式 \{#patterns-that-need-a-script\}
+
+少数模式目前还没有原生元素：[组合框](/components/combobox)、[命令面板](/components/command)、[日历](/components/calendar)、用方向键浏览的[树](/components/tree)、[上下文菜单](/components/menu#context-menu)、会自动跳到下一格的 [OTP 输入框](/components/otp)、在两个窗格之间拖动的[分隔条](/components/splitter)、原地切换面板的[标签页](/components/tabs#tab-panels)。Master UI 仍然为它们各自提供一份样式表。分工每次都一样：
+
+- **样式表根据 ARIA 绘制每一种状态**：`aria-selected` 表示当前选项，`aria-checked` 表示已选中的项，`aria-expanded` 表示展开的分支，`aria-current="date"` 表示今天，`aria-orientation` 表示分隔条的方向。它还负责放置表面并为其添加动画，并用 `:has()` 推导出它能推导的内容，例如空状态。
+- **脚本处理输入并更新状态。** 该软件包随附参考[行为](/guide/behaviors)，并针对其契约所列的按键进行了测试。它们更新原生属性和 ARIA 属性；指针位置或其他 CSS 无法推导的值可以通过自定义属性传入。材质与放置规则由 CSS 负责。
+- **只要存在原生容器，就使用原生容器。** 命令面板是一个由 `command="show-modal"` 打开的 `<dialog>`；日期选择器的日历位于一个 `popover` 中；没有脚本的树是嵌套的 `<details>`。
+
+依照这些属性编写的标记就是契约，因此无论由什么渲染都能正常工作：模板、框架组件或智能体。
+
+## 在 React、Svelte 和 Vue 中 \{#in-a-framework\}
+
+这个库的大部分内容在框架中与在普通页面上相同：原生元素上的一个 class，用框架自身的语法书写。一个只是把 `btn btn-primary` 换个名字的 `<Button>` 没有任何增益，还会让[检查器](/guide/ai#check-the-markup)看不到这个 class。
+
+只有在框架掌控某些东西时，才会有框架组件：应用读取或设置的值、根据数据渲染的行、把一个部件与另一个部件关联起来的 id，或者生命周期。例如上文提到的模式、由状态打开的对话框、消息提示队列，以及带有标签和错误信息的字段。每个框架组件都渲染契约中的标记并附加行为，而行为本身仍保留在软件包中；组件本身是用 `npx master-ui add combobox` 复制到项目中的源码。[React、Svelte 和 Vue](/guide/frameworks) 列出了这些组件。
+
+## 此 alpha 版本发布的内容 \{#what-comes-next\}
+
+契约、样式表、行为、第二个主题、检查器、一个可复制源码的[注册表](/guide/registry)，以及为保存状态的模式提供的 React、Svelte 和 Vue 组件。框架组件以源码形式随 `@master/ui` 发布，而不是作为单独的绑定软件包。共享的交互逻辑保留在行为中；每个框架组件处理自己的渲染与生命周期。[稳定性](/guide/stability)说明了哪些是公开的，哪些可能会变化。
+
+接下来请阅读[安装](/guide/installation)，然后[选择组件](/guide/choosing)或浏览[组件](/components)。

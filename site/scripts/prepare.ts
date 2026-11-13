@@ -9,6 +9,8 @@ import { dirname, join, relative, sep } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { generateSearchPages } from '@master/internal-site/utils/search-pages'
 import type { DefinedMetadata } from '@master/internal-site/types/Metadata'
+import { defaultLocale, locales } from '@master/internal-site/common/locales.js'
+import { englishOnlySections } from '../i18n/sections.ts'
 import { verifySiteUIInstance } from '../../scripts/verify-package-source.mjs'
 
 /** Sidebar category order; unknown categories follow alphabetically. */
@@ -72,7 +74,15 @@ for (const [section, pages] of sections) {
   console.log(`Generated .categories/${section}.json (${categories.length} categories, ${pages.length} pages)`)
 }
 
-await generateSearchPages({ cwd: site, defaultLocale: 'en', locales: ['en'], dictionariesDir: join(site, 'i18n'), write: true })
+// One index per language; a translated index holds only the pages that have that edition. A section's overview
+// has no MDX edition to check, so the English-only sections are left out of the translated indexes by their URL.
+const searchPages = await generateSearchPages({ cwd: site, defaultLocale, locales, dictionariesDir: join(site, 'i18n'), write: false })
+for (const locale of locales) {
+  const englishOnly = new RegExp(`^/${locale}/(?:${englishOnlySections.join('|')})(?:/|$)`)
+  const pages = locale === defaultLocale ? searchPages[locale] : searchPages[locale].filter((page: { url: string }) => !englishOnly.test(page.url))
+  await writeIfChanged(join(site, `public/search/${locale}.json`), JSON.stringify(pages))
+  console.log(`Generated public/search/${locale}.json (${pages.length} pages)`)
+}
 
 // What a program reads: llms.txt, each page as Markdown, the contracts, the compiled CSS and the registry.
 await import('./exports.ts')

@@ -1,0 +1,202 @@
+---
+title: "テーマ設定"
+description: "トークンを上書きし、マテリアルのレシピを定義して、独自のテーマを作ります。動作例として Paper を取り上げます。"
+---
+import GuideFigure from '../../../components/GuideFigure.astro'
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+
+export const specimen = `<div class="tray max-w(440) mx-auto">
+  <div class="sheet flex flex-col gap-lg p-lg">
+    <div class="flex flex-wrap items-center gap-sm">
+      <button type="button" class="btn btn-primary">Deploy</button>
+      <button type="button" class="btn">Preview</button>
+      <button type="button" class="btn btn-quiet">Cancel</button>
+      <button type="button" class="btn btn-brand">Upgrade</button>
+    </div>
+    <div class="field">
+      <label for="theme-domain">Domain</label>
+      <input class="input" id="theme-domain" value="atlas.dev">
+    </div>
+    <div class="flex flex-wrap items-center gap-lg">
+      <label class="check"><input type="checkbox" class="checkbox" checked> Preview builds</label>
+      <label class="check"><input type="radio" class="radio" name="theme-plan" checked> Team</label>
+      <label class="check"><input type="checkbox" role="switch" class="switch" checked> Alerts</label>
+    </div>
+    <div class="segmented" role="radiogroup" aria-label="Environment">
+      <label class="segmented-item"><input type="radio" class="segmented-input" name="theme-environment" checked>Production</label>
+      <label class="segmented-item"><input type="radio" class="segmented-input" name="theme-environment">Preview</label>
+      <label class="segmented-item"><input type="radio" class="segmented-input" name="theme-environment">Local</label>
+    </div>
+    <input type="range" class="slider" value="60" aria-label="Traffic to the new release">
+    <div class="flex flex-wrap items-center gap-sm">
+      <span class="badge">Draft</span>
+      <span class="badge badge-success badge-dot">Ready</span>
+      <span class="badge badge-ink">New</span>
+    </div>
+    <div class="sheet sheet-inverse p-md text-sm">Ship the release when the checks pass.</div>
+  </div>
+</div>`
+
+テーマはトークンに値を与え、コンポーネントが読むマテリアルのレシピを定義します。コンポーネントのマークアップと振る舞いはそのままに、共通の値を 1 つ変更することも、変更をページの一部に限定することも、インターフェース全体のマテリアルを置き換えることもできます。
+
+moonstone と obsidian の背後にあるマテリアルの選択については[デザイン](/guide/design)を参照してください。それらのトークンの役割と値は[既定のテーマ](/guide/theme)でドキュメント化しています。変更がテーマとコンポーネントのどちらに属するかを判断するには、[カスタマイズ](/guide/customization)から始めてください。
+
+## トークンを調整する \{#retune-tokens\}
+
+インポートの後でトークンを上書きします。それを読むすべてのコンポーネントが追従します。
+
+```css name=app.css
+@import '@master/css';
+@import '@master/ui';
+
+@theme {
+  --color-brand: oklch(58% .19 28);
+  --color-brand-ink: oklch(99% .01 28);
+  --radius-control: .5rem;
+}
+```
+
+これにより、ブランドのサーフェスとコントロールの既定の角丸が変わります。小さいコントロールと大きいコントロールは、それぞれ独自の角丸トークンを使います。新しい面に対して `--color-brand-ink` を確認してください。ブランドカラーのテキストは別の `--color-brand-text` トークンを使うため、新しい色相が自動的に適用されることはありません。
+
+### 上書きを 1 つの領域に限定する \{#scope\}
+
+トークンはカスタムプロパティなので、カスケードもします。要素に設定すると、2 回目のビルドなしにその子孫を調整できます。この例では、チェックアウト内の 2 つのボタンが小さい角丸を継承し、その領域の外にあるボタンは既定のままです。
+
+<GuideFigure name="theming" title="トークンのスコープと継承">
+
+**スコープは、その子孫が継承するものを変えます。** チェックアウトは、Review と Pay について既定の 10px の `--radius-control` を 4px に置き換えます。Continue browsing は外側にあり、10px のままです。各ボタン自身の `--btn-radius` が、その継承されたトークンを読みます。祖先の `--btn-radius` では、ボタンの宣言を置き換えられません。示している値は、テーマの角のスケールを適用する前のものです。
+
+</GuideFigure>
+
+<ComponentPreview name="scope" height={232} narrowHeight={280} title="チェックアウトに限定したトークン" background="plain" bodyClass="p-lg" html={`<div class="flex flex-col gap-lg w-full max-w(440) mx-auto">
+  <div class="sheet flex flex-col gap-sm p-md" style="--radius-control: .25rem">
+    <span class="text-xs fg-text-muted">Inside checkout · 4px radius token</span>
+    <div class="flex flex-wrap gap-sm">
+      <button type="button" class="btn">Review</button>
+      <button type="button" class="btn">Pay</button>
+    </div>
+  </div>
+  <div class="flex flex-wrap items-center gap-sm">
+    <button type="button" class="btn">Continue browsing</button>
+    <span class="text-xs fg-text-muted">Outside · default 10px token</span>
+  </div>
+</div>`} />
+
+ボタンは自身の `--btn-radius` プロパティを通じて `--radius-control` を読みます。`--btn-radius` をチェックアウトのコンテナーにだけ設定しても、この効果は得られません。各ボタンがそのプロパティを自分自身に宣言しているためです。領域にはテーマトークンを使うか、ボタンに直接[コンポーネントのプロパティ](/guide/customization#property)を設定してください。インラインの宣言は、そのコンテナーに適用するプロジェクトのクラスに置くこともできます。
+
+### 円形の角を保つ \{#circular-corners\}
+
+既定のテーマは、対応している環境では連続曲率の角を使います。あらゆる場所で円形の角を保つには、両方の角のプロパティを設定します。
+
+```css name=app.css
+:root {
+  --corner-shape: round;
+  --corner-scale: 1;
+}
+```
+
+`@theme` で宣言したトークンは、ユーティリティとしても使えます。`bg-surface-tray` や `shadow-lifted` は、独自の要素にコンポーネントと同じマテリアルを与えます。Master UI をインポートすると、プリセットの共通セマンティックトークンが既定のテーマに設定されます。上書きすると、それらを読むコンポーネントとユーティリティの両方が調整されます。
+
+## テーマが決めること \{#what-a-theme-decides\}
+
+テーマを作るときは、このチェックリストを使ってください。トークンの役割とその既定値は[既定のテーマ](/guide/theme)で説明しています。
+
+| 決めること | トークン |
+| --- | --- |
+| 各サーフェスのトーン | `--color-surface-base`、`-tray`、`-raised`、`-raised-low`、`-inset`、`-inset-hover`、`-floating`、`-chip`、`-inverse`、`-scrim` |
+| 各線のしっかり具合 | `--color-line-hair`、`-contour`、`-divider`、`-strong`、`-mark` |
+| インク | `--color-text-strong`、`-body`、`-muted`、`-disabled`、`-inverse`、`--color-focus`、`--color-focus-halo` |
+| 光の当たり方 | `--color-highlight`、`--color-lip`、`--color-shade-1`〜`-5` |
+| 奥行き | `--shadow-pressed`、`-flat`、`-raised`、`-raised-hover`、`-lifted`、`-floating`、`-overlay` |
+| インクの面 | `--color-surface-inverse-high`、`-low`、`--color-ink-high`、`-low`、それらの `-hover` 形、`--color-ink-pressed`、`--color-ink-highlight`、`--color-ink-edge`、`--shadow-ink`、`-ink-hover`、`-ink-pressed`、`-ink-mark`、`-ink-well`、`-ink-top`、`--color-surface-tip`、`--shadow-tip` |
+| つまみ | `--color-thumb-high`、`-low`、`--color-thumb-on-high`、`-on-low`、`--shadow-thumb-on-ink` |
+| 色相 | `--color-brand`、`-brand-ink`、`-brand-text`、`--color-info`、`-success`、`-warning`、`-danger`、`--color-tone-highlight`、`-tone-highlight-soft` |
+| 画像と外部から与えられる色 | `--color-line-image`、`-image-strong`、`--color-line-on-color`、`--color-highlight-on-color`、`--color-on-image`、`-on-image-shade`、`--color-mark`、`-mark-underline`、`--color-sheen` |
+| 形状 | `--radius-chip`、`-control-sm`、`-control`、`-control-lg`、`-surface`、`--corner-shape`、`--corner-scale` |
+| 移動量と時間 | `--lift`、`--duration-press`、`-quick`、`-base`、`--easing-glide` |
+| 書体 | `--font-weight-control`、およびプリセットの `--font-sans` と `--font-mono` |
+
+パッケージのテストは、コンポーネントのスタイルシート内の色リテラルを拒否し、色をテーマの管理下に保ちます。トークンとレシピの全体を確認するときは、インストール済みの `@master/ui/theme.css` をソースとして使ってください。
+
+## 2 つ目のテーマ、Paper \{#paper\}
+
+Paper は `@master/ui/themes/paper.css` で公開されています。既定のマテリアルを、フラットな面、罫線のエッジ、より小さな円形の角、暖かみのあるニュートラル、緑のブランドカラーに置き換えます。その `--lift: 0px` は、このトークンによって駆動されるホバー時と押下時の移動を取り除きます。スイッチのつまみが動くといったコンポーネントのアニメーションは引き続き機能します。コンポーネントのスタイルシートには何の変更も加えません。
+
+```css name=app.css
+@import '@master/css';
+@import '@master/ui';
+@import '@master/ui/themes/paper.css';
+```
+
+同じマークアップを、それぞれのテーマで示します。
+
+<ComponentPreview name="moonstone" height={536} narrowHeight={688} title="Moonstone" theme bodyClass="p-lg" html={specimen} />
+
+<ComponentPreview name="paper" height={536} narrowHeight={688} title="Paper" theme stylesheet="paper" bodyClass="p-lg" html={specimen} />
+
+そのソースをテンプレートとして読んでください。トークンのリスト、角の設定、そして 1 つのレシピで構成されています。
+
+<ComponentSource name="paper" directory="themes" />
+
+### テーマファイルを作り始める \{#create-a-theme\}
+
+フラットな出発点がほしい場合はインストール済みのパッケージから Paper をコピーし、既定のマテリアルを出発点として残したい場合は `theme.css` をコピーします。
+
+```bash
+mkdir -p themes
+cp node_modules/@master/ui/themes/paper.css themes/app.css
+```
+
+ライブラリの後で自分のファイルをインポートし、そのトークンとレシピを編集します。
+
+```css name=app.css
+@import '@master/css';
+@import '@master/ui';
+@import './themes/app.css';
+```
+
+既存の Master CSS のインテグレーションでリビルドします。コンポーネントのマークアップは変わりません。テーマをアプリ全体に適用する前に、ボタン、フィールド、インクのサーフェス、オーバーレイを両方のカラースキームで比較してください。
+
+## レシピ \{#recipes\}
+
+いくつかのマテリアルは、1 つの値では表せません。光の変化を伴う面や、状態ごとに面を持つコントロールなどです。テーマはこれらをミックスインとして書き、コンポーネントはそれを名前で適用します。テーマファイルはミックスインを再定義できます。最後の定義が、すべてのコンポーネントに適用されるものになります。
+
+| ミックスイン | 描画するもの | Paper |
+| --- | --- | --- |
+| `--surface-sheet` | 浮き上がった面 | フラット。`--color-surface-raised-low` を使います |
+| `--surface-ink` | インクのシート。反転シート、送信済みのメッセージ | フラット。`-inverse-high` と `-low` のトークンを使います |
+| `--control-ink`、`-hover`、`-pressed` | 各状態におけるプライマリボタンの面と影 | フラット。インクのトークンを使います |
+| `--control-tone`、`-hover`、`-pressed` | コントロール自身の `--tone` から混ぜ合わせる、色相を持つコントロール | 再定義：フラットな 1 つの色相 |
+| `--surface-thumb` | スイッチとスライダーのつまみ | フラット。つまみのトークンを使います |
+| `--focus-ring` | キーボードフォーカス | 変更なし |
+| `--on-ink` | インクのサーフェスが、その中のインラインのチップに伝えるもの | 変更なし |
+| `--anchored`、`--pop` | ポップオーバーの位置と、その登場と退出 | 変更なし |
+
+まずはトークンを使ってください。Paper が再定義しているのは色相を持つコントロールだけです。そのレシピは、コントロールが自分自身に設定する色相から面を混ぜ合わせるため、ルートのトークンでは読み取れないからです。
+
+トークンはカスタムプロパティであり、ランタイムにどの要素の上でも機能します。ミックスインは Master CSS がスタイルシートをコンパイルするときに解決されるため、再定義したミックスインはビルド全体に適用されます。
+
+## Master CSS を使わない場合 \{#without-master-css\}
+
+パッケージには、各テーマをコンポーネントと一緒に通常の CSS にコンパイルしたものも同梱されています。CSS バンドラーは、インストール済みのパッケージから Paper をインポートできます。既定のスタンドアロンのスタイルシートの代わりにこれを使ってください。
+
+```css name=app.css
+@import '@master/ui/dist/themes/paper.css';
+
+:root {
+  --color-brand: oklch(58% .19 28);
+}
+```
+
+バンドラーを使わないページでは、そのコンパイル済みファイルを静的アセットから配信します。リセットとユーティリティに関する制限については[インストール](/guide/installation#without-master-css)を参照してください。`dist/standalone.css` には moonstone と obsidian が含まれています。コンパイル済みファイルはカスタムプロパティの上書きを受け付けますが、ミックスインを再定義するには Master CSS でテーマをコンパイルする必要があります。
+
+## テーマのルール \{#rules\}
+
+- **テーマはコンポーネントを選択しません。** トークンを設定し、ミックスインを定義します。テーマ内の `.btn { … }` のようなルールはコンポーネントの上書きです。それがどこに属するかは[カスタマイズ](/guide/customization)を参照してください。
+- **組み合わせを保ちます。** サーフェスとその上のインク、線とその下のサーフェスは、一緒に選びます。すべてのサーフェス上の本文テキストのコントラストを、両方のカラースキームで確認してください。
+- **エッジを見つけられるようにします。** テーマが光と陰影を取り除くと、境界の多くを線が担うことになります。Paper は、役割とカラースキームごとに個別に調整した、よりしっかりした線のトークンを使っています。
+- **何も描画しない影トークンは `none` ではなく `0 0 0 0 transparent` です。** コンポーネントは影をリストとして組み合わせますが、`none` はリストの中では有効ではありません。
+- **コントラストを高める要求に応えます。** テーマは `prefers-contrast: more` のもとで、線と 2 つの控えめなインクをよりしっかりさせます。独自の線を設定するテーマは、Paper のようにそのブロックも書きます。レシピを変更するときは、コンポーネントの強制カラーと動きを抑える設定での振る舞いを保ってください。
+
+結果は、キーボードフォーカス、ホバー、押下、無効なコントロール、不正なフィールドを、ライトとダークで確認します。ページの上にメニューやダイアログを開き、実際の背景に対するエッジとテキストを判断してください。動きを抑える設定と強制カラーでも繰り返します。静止時にははっきり見えるテーマでも、状態を隠したり、唯一の見える境界を取り除いたりしている可能性があります。

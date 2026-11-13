@@ -1,0 +1,228 @@
+---
+title: "自訂"
+description: "為變更選擇合適的層級：utility、主題 token、元件屬性、主題，或擁有原始碼。"
+---
+import GuideFigure from '../../../components/GuideFigure.astro'
+
+依據需要改變的對象選擇自訂方式：單一實例、共用的設計值、元件的幾何、材質，或實作本身。從能表達結果的最小變更開始，讓套件能繼續維護其餘的部分。
+
+使用[設計](/guide/design#customization-boundaries)讓材質與狀態之間的關係保持一致。預設 token 的角色與值請參閱[預設主題](/guide/theme)。選定 token 或主題的變更後，[主題設定](/guide/theming)說明如何實作。
+
+<GuideFigure name="customization" title="選擇自訂層級">
+
+**有四個自訂點會保留套件的實作。** utility、token、公開屬性與主題會改變版面、值或材質。執行 `init` 之後，`master-ui own` 會複製元件的原始碼，並將它的樣式表匯入指向副本。若要執行複製出來的行為，還需要把使用它的地方的匯入改成本地檔案。這份原始碼由你的專案維護；其他元件仍留在套件中。這些步驟描述的是責任歸屬，而不是程式碼長度。
+
+</GuideFigure>
+
+## 階梯 \{#the-ladder\}
+
+| 步驟 | 你要做的事 | 用途 | 仍跟隨上游的部分 |
+| --- | --- | --- | --- |
+| 1. Utility | 在元素上加入 utility：`class="btn w-full"` | 單一實例 | 全部 |
+| 2. Token | 在 `@theme` 中覆寫主題 token，或在某個元素上覆寫以影響其子樹 | 品牌色、圓角、密度、焦點、位移量、表面的色調 | 全部 |
+| 3. 屬性 | 設定元件的公開自訂屬性，可在單一元素上設定，或透過專案自己的 class 設定 | 單一元件的尺寸或間距，可套用到所有地方或某個範圍 | 全部 |
+| 4. 主題 | 撰寫主題檔案：token，以及在配方需要時加上 mixin | 另一種材質：扁平、帶邊框、帶色調 | 所有元件 |
+| 5. 擁有 | `npx master-ui own <name>`：將樣式表、契約與行為複製到 `ui/`，並讓匯入指向副本 | 結構、部件、狀態、行為 | 其他元件；此元件則在你要求時跟隨 |
+
+「跟隨上游」表示實作來自你安裝的套件版本。升級仍需要審視，而你的覆寫會持續取代它們所選定的值；請參閱[穩定性](/guide/stability#experimental)。
+
+## 看層級，而非行數 \{#which-layer\}
+
+並沒有一個「覆寫了三分之一的宣告就該擁有元件」之類的比例門檻。衡量標準是變更觸及哪個層級，而不是需要幾行。
+
+一個包含兩百個 token 值的主題只觸及主題。它屬於步驟 4，所有元件仍然跟隨上游。而一個推翻樣式表為按下狀態的按鈕所繪製之效果、且沒有任何 token 或屬性能表達的宣告，觸及的是元件的狀態。無論它多短，它都屬於步驟 5。若以行數計算，第一個變更會被放得太高，第二個則太低。
+
+所以要問的是：這項變更針對的是什麼？單一實例、每個元件都會讀取的值、某個元件公開的值、材質，還是元件的結構、狀態與行為。答案就是對應的步驟。
+
+## 1. Utility \{#utility\}
+
+元件 class 位於 `components` 層，utility 位於較後的 `utilities` 層，因此元素上的 utility 不需要 `!important`，也不需要在樣式表中寫規則就會生效。
+
+```html
+<button type="button" class="btn btn-primary w-full">Save changes</button>
+```
+
+用它處理屬於單一實例的事：寬度、外距，以及它在版面中的位置。
+
+## 2. Token \{#token\}
+
+主題 token 控制共用的設計值，例如顏色、陰影與圓角。在匯入之後覆寫某個 token，所有讀取它的元件都會跟著改變。例如，變更 `--color-brand` 會重新調整品牌表面，而一般按鈕仍保有中性的材質：
+
+```css name=app.css
+@import '@master/css';
+@import '@master/ui';
+
+@theme {
+  --color-brand: oklch(58% .19 28);
+}
+```
+
+當某個共用值需要改變、而材質保持不變時，使用這個步驟。[重新調整 token](/guide/theming#retune-tokens) 說明相關的值，以及限定於頁面某部分的覆寫。
+
+## 3. 公開自訂屬性 \{#property\}
+
+契約會列出元件公開的自訂屬性。`npx master-ui contract button` 會印出它們：`--btn-height`、`--btn-padding-x`、`--btn-gap`、`--btn-font-size`、`--btn-radius` 與 `--icon-size`。它們用於單一元件的尺寸與間距。
+
+在單一元素上，直接以行內方式設定屬性：
+
+```html
+<button type="button" class="btn" style="--btn-height: 2rem">Filter</button>
+```
+
+對於會重複出現的變體，請撰寫一個專案自己的 class，只設定公開屬性而不做其他事，並將它放在元件 class 旁邊：
+
+```css name=app.css
+.compact-control {
+  --btn-height: 2rem;
+  --btn-padding-x: .75rem;
+}
+```
+
+```html
+<button type="button" class="btn compact-control">Filter</button>
+```
+
+若要套用到頁面某個部分中的所有按鈕，請將屬性交給該範圍內的按鈕：
+
+```css name=app.css
+.editor-tools .btn {
+  --btn-height: 2rem;
+  --btn-padding-x: .75rem;
+}
+```
+
+元件會在自己的 class 上宣告這些屬性，因此只設定在祖先元素上的值不會傳到它身上。這就是最後一條規則要指名 `.btn` 的原因。它指名 `.btn` 是為了設定契約公開的值；它沒有宣告任何表面、邊緣或陰影。
+
+專案的 class 請取在元件庫的名稱之外。[檢查器](/guide/contracts#diagnostics)會將以元件根 class 加上連字號開頭的 class（例如 `btn-compact`）回報為 `unknown-class`。
+
+## 4. 主題 \{#theme\}
+
+當變更針對的是材質，例如扁平的表面、以線條勾勒的邊緣或帶色調的中性色，那就是主題：一個在元件庫之後匯入的 token 檔案。Paper 是套件中發布的第二個主題，它不會改變任何元件。
+
+```css name=app.css
+@import '@master/css';
+@import '@master/ui';
+@import '@master/ui/themes/paper.css';
+```
+
+主題設定 token 並定義材質配方；它從不選取元件。當數個值需要一起構成另一種材質時，使用這個步驟。[主題設定](/guide/theming#paper)會逐步說明 Paper、它的原始碼，以及打造你自己的主題時的規則。
+
+## 擁有元件 \{#own-a-component\}
+
+步驟 5 用於結構、部件、狀態或行為的變更，這些是任何值都無法表達的。元件的原始碼會被複製到專案中，並在那裡編輯。
+
+只有在符合以下任一情況時，才擁有該元件。在那之前，請停留在步驟 1 到 4。
+
+- 變更需要樣式表中沒有的選擇器：另一個部件、另一種巢狀結構、另一個元素。
+- 想要的狀態處理方式無法以主題 token 或元件的公開屬性表達。
+- 變更涉及行為：按鍵、焦點、選取代表什麼。
+- 專案需要獨立維護這個元件的實作。如果你只需要掌控主題值，請改為[保留一份本地主題](/guide/stability#pin-the-theme)。
+
+### 取得原始碼 \{#take-the-source\}
+
+```bash
+npx master-ui init      # once: writes ui/index.css with one @import per stylesheet
+npx master-ui own menu  # copies ui/menu.css, ui/menu.json and its behavior; repoints the import
+```
+
+`init` 會寫入 `ui/index.css` 與 `master-ui.json`。請在預設組之後匯入 `ui/index.css`，取代 `@import '@master/ui'`：
+
+```css name=app.css
+@import '@master/css';
+@import './ui/index.css';
+```
+
+接著 `own` 會做四件事：
+
+| 內容 | 位置 |
+| --- | --- |
+| 複製樣式表與契約 | `ui/menu.css`、`ui/menu.json` |
+| 當契約指名行為時，複製該行為 | `ui/menu.js` |
+| 為每個檔案保留一份取得當下的副本 | `ui/.base/` |
+| 記錄元件與每個檔案的雜湊值 | `master-ui.json` |
+
+它也會修改 `ui/index.css` 中的一行，將 `@import '@master/ui/components/menu.css';` 改為 `@import './menu.css';`。若專案中沒有這一行，`own` 會印出需要手動替換的內容。除非傳入 `--force`，否則它不會覆寫 `ui/` 中已經存在的檔案。
+
+副本仍會讀取主題的 token 並套用它的 mixin，因此會跟隨主題。其他所有元件仍然來自套件。
+
+### 讓契約保持正確 \{#keep-the-contract-true\}
+
+當 CLI 讀取這個專案的設定時，複製出來的契約 `ui/menu.json` 會取代元件庫的契約。代理也應該閱讀這份本地契約。當你在 `ui/menu.css` 中新增、重新命名或移除 class 時，請一併修改 `ui/menu.json`。以下在樣式表中新增了一個部件，接著是要附加到契約 `classes` 陣列中的項目：
+
+```css name=ui/menu.css
+@layer components {
+  /* A quiet line under the last group: the account that is signed in. */
+  .menu-note {
+    padding: .4375rem .5rem;
+    color: var(--color-text-muted);
+    font-size: .71875rem;
+  }
+}
+```
+
+```json name=ui/menu.json
+{ "name": "menu-note", "kind": "part", "of": "menu", "description": "A quiet line under the last group" }
+```
+
+保留既有的 class 名稱與狀態屬性，代表區塊、行為與文件仍然適用。[契約](/guide/contracts)說明了每個鍵。
+
+針對使用新部件的標記執行 `npx master-ui check`，再於瀏覽器中檢查該元件。檢查器驗證的是標記契約；它無法證明複製出來的 CSS 實作了你想要的狀態、對比或鍵盤行為。
+
+### 跟進上游變更 \{#upstream-changes\}
+
+被擁有的元件不會再隨套件更新而改變。有三個指令可以顯示套件改了什麼，並記錄已合併的內容。
+
+```bash
+npx master-ui status       # which owned components changed upstream since they were taken
+npx master-ui diff menu    # the change, against the copy kept in ui/.base/
+npx master-ui accept menu  # after merging what is wanted: record the new base
+```
+
+`status` 會為每個被擁有的元件印出一行，並在其中任何一個於上游有變更時以代碼 2 結束，因此排程工作可以回報它：
+
+```
+menu  upstream changed: menu.css (master-ui diff menu); edited here: menu.css
+```
+
+`diff` 會比較取得時的副本與套件目前的檔案，因此只顯示上游做了什麼，不含專案自己的編輯：
+
+```
+# menu.css: taken (-) and upstream now (+)
+    .menu-label {
+      padding: .4375rem .5rem .3125rem;
+      color: var(--color-text-muted);
++     font-size: .71875rem;
+-     font-size: .6875rem;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+```
+
+請手動將需要的部分合併到 `ui/menu.css`。接著 `accept` 會將套件目前的版本設為基準。它不會更動 `ui/` 中的副本。
+
+### 把元件還給套件 \{#give-back\}
+
+將樣式表匯入改回指向套件，並將應用程式或框架對其行為的匯入恢復為 `@master/ui/behaviors`。從 `master-ui.json` 的 `owned` 中移除該元件的項目；元件庫的契約便會再次生效。
+
+只刪除沒有被其他擁有或新增的元件使用的工作檔案與基準檔案。行為之間可能共用一個複製出來的輔助檔案，例如 `ui/internal.js`，而框架元件也可能匯入本地的行為。移除檔案前請先檢查這些匯入，然後建置並實際操作還回去的元件。
+
+### 當元件庫有大部分被擁有時 \{#own-all\}
+
+如果在整個專案中維護一致的實作，比協調本地副本與套件樣式更容易，就可以考慮擁有更多原始碼。單憑已複製的元件數量，並不構成接手其餘部分的理由。token、契約、檢查器與 [skill](/guide/ai#the-skill) 仍然適用；[擁有原始碼](/guide/registry)比較了套件與登錄庫的工作流程。
+
+## 哪些不算自訂 \{#what-is-not\}
+
+這些覆寫可以改變結果，但它們會繞過受支援的自訂點，並讓你必須自行追蹤它們所取代的實作：
+
+- **選取元件庫 class 並重新宣告其表面、邊緣或陰影的規則。** 請使用 token、屬性，或擁有該元件。
+- **未記載於文件中的元件屬性。** 請使用契約中列出的屬性，或另外記載於文件中的主題 token。元件的內部屬性可能在未經通知的情況下變動。
+- **從外部重新設定元件庫元件樣式的新 class**，例如帶有材質宣告的 `.my-btn.btn`。專案的 class 可以設定公開屬性與版面。新的材質就是新的元件，或是被擁有的元件。
+- **以強制手段勝出。** 絕不要提高選擇器權重或使用 `!important` 來壓過元件。utility 已經憑藉它所在的層勝出，而需要更多手段的覆寫，正是擁有該元件的理由。
+
+```css name=app.css
+/* Not a customization: it redraws what button.css draws, and will not follow it. */
+.btn {
+  background: white;
+  box-shadow: 0 1px 2px rgb(0 0 0 / .2);
+}
+```

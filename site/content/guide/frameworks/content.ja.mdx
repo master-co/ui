@@ -1,0 +1,347 @@
+---
+title: "React、Svelte、Vue"
+description: "状態を持つコンポーネントを React、Svelte、Vue にコピーし、アプリケーションの値を接続して、サーバーでレンダリングされるマークアップを正しく保ちます。"
+---
+import GuideFigure from '../../../components/GuideFigure.astro'
+import FrameworkPreview from '~/site/components/FrameworkPreview.astro'
+
+状態を持たないコンポーネントにはネイティブのマークアップを使い、アプリケーションが値、データ、id、ライフタイムを調整する必要がある場合はフレームワークコンポーネントをコピーします。コピーしたコンポーネントは、React、Svelte、Vue で同じコントラクトをレンダリングし、パッケージのビヘイビアをアタッチします。スタイルを使えるようにするため、まず[インストール](/guide/installation)を済ませてください。コンポーネントをコピーしても、その CSS はインポートされません。
+
+## マークアップはマークアップのまま \{#markup\}
+
+ボタンは、React でも Svelte でも Vue でも、`btn btn-primary` を持つ `<button>` です。`Button` コンポーネントはなく、プロジェクトでも props をクラスに変換するだけのコンポーネントを書くべきではありません。
+
+```tsx name=Toolbar.tsx
+export function Toolbar({ saving }: { saving: boolean }) {
+  return (
+    <button type="button" className="btn btn-primary" disabled={saving} aria-busy={saving}>
+      Save changes
+    </button>
+  )
+}
+```
+
+- **コンポーネントが所有するものがありません。** ボタンには渡す値も、レンダリングする行も、結び付ける id も、アタッチするものもありません。その状態は、フレームワークがすでに設定する属性です。
+- **チェッカーはクラスを読み取ります。** [`master-ui check`](/guide/ai#check-the-markup) は `.jsx`、`.tsx`、`.svelte`、`.vue`、`.astro` ファイルを読み取ります。`className="btn btn-outline"` は読み取ってそのようなクラスはないと指摘できますが、`<Button variant="outline">` は読み取れません。
+- **マークアップにクライアントスクリプトは不要です。** クラスを付けたネイティブ要素はサーバーでレンダリングされ、そのままサーバー側にとどまります。React Server Components では、クライアントバンドルに何も追加しません。
+
+異なるのは構文だけです。
+
+| HTML | JSX | Svelte と Vue |
+| --- | --- | --- |
+| `class="btn btn-primary"` | `className="btn btn-primary"` | 同じ |
+| `for="email"` | `htmlFor="email"` | 同じ |
+| `tabindex="-1"`、`popovertarget="share"` | `tabIndex={-1}`、`popoverTarget="share"` | 同じ |
+| `command="show-modal"` を伴う `commandfor="confirm"`、`interestfor="tip"` | React の型にまだ含まれていない場合はスプレッドで渡します | 同じ |
+
+プロジェクト内でマークアップが繰り返される場合は、プロジェクト独自のコンポーネントでその流儀に沿ってラップし、コントラクトのクラスはその中にリテラル文字列として残してください。
+
+## フレームワークが所有するもの \{#what-a-framework-owns\}
+
+フレームワークコンポーネントが存在するのは、次の 4 つのうち少なくとも 1 つをフレームワークが所有する場合です。
+
+1. **アプリケーションが読み書きする値。** コンボボックスで選ばれているもの、ダイアログが開いているかどうか。
+2. **データからレンダリングされる行。** リストボックスのオプション、月の日、メニューの項目。
+3. **パーツを結び付ける id。** ラベルとそのコントロール、ボタンとそれが開くポップオーバー、タブとそのパネル。
+4. **ライフタイム。** 要素が存在したときにアタッチし、なくなったときに解除する[ビヘイビア](/guide/behaviors)。
+
+これは、ライブラリが[クラス](/guide/introduction#tiers)に適用するのと同じ基準です。基準は知識であり、繰り返されるマークアップではありません。この基準を満たすパターンは 17 個あります。
+
+| コンポーネント | レンダリングするコントラクト | フレームワークが所有するもの |
+| --- | --- | --- |
+| `calendar` | [Calendar](/components/calendar) | 値と、描画する月 |
+| `combobox` | [Combobox](/components/combobox) | 値、オプション |
+| `command` | [Command palette](/components/command) | 開いているかどうか、コマンド |
+| `compare` | [Compare](/components/compare) | 位置 |
+| `dialog` | [Dialog](/components/dialog) | 開いているかどうか、トリガーが指定する id |
+| `field` | [Field](/components/input#hint-and-error) | ラベル、コントロール、ヒント、エラーを結び付ける id |
+| `listbox` | [Listbox](/components/listbox) | 値、オプション |
+| `menu` | [Menu](/components/menu) | 項目、トリガーが指定する id、コンテキストメニューのターゲット |
+| `otp` | [OTP](/components/otp) | コード、スロットの数 |
+| `popover` | [Popover](/components/popover) | 開いているかどうか、トリガーが指定する id |
+| `splitter` | [Splitter](/components/splitter) | サイズ |
+| `stepper` | [Stepper](/components/stepper) | 数値 |
+| `tabs` | [Tabs](/components/tabs#tab-panels) | 選択されたタブ、タブとパネルを結び付ける id |
+| `toast` | [Toast](/components/toast) | キュー：`toast()` 関数と、それを表示する領域 |
+| `tooltip` | [Tooltip](/components/tooltip) | コントロールとそのラベルを結び付ける id |
+| `tree` | [Tree](/components/tree) | 選択された行、行 |
+| `wheel` | [Wheel](/components/wheel) | 各列の値、オプション |
+
+それ以外のコントラクトはすべてマークアップです。セレクトは `<select class="select">`、スイッチは `role="switch"` を持つチェックボックス、アコーディオンは `<details>` です。状態はブラウザーが保持し、フレームワークはほかのネイティブコントロールと同じようにそれをバインドします。
+
+## コンポーネントを追加する \{#add\}
+
+コンポーネントはパッケージからインポートするものではなく、プロジェクト内のソースです。`master-ui` コマンドでコピーします。
+
+```bash
+npx master-ui add combobox --framework=react
+```
+
+```
+Add combobox: ui/combobox.tsx, ui/use-behavior.ts.
+  It renders the markup of "master-ui contract combobox" and needs that stylesheet from @master/ui.
+```
+
+- フレームワークは、`package.json` が React、Svelte、Vue のうちちょうど 1 つを指定している場合にそこから読み取られ、初回以降は `master-ui.json` に記録されます。
+- コンポーネントが隣からインポートする小さなヘルパーも一緒にコピーされます。React と Vue では `use-behavior.ts`、Svelte では `behavior.svelte.ts` です。
+- ファイルはプロジェクトのルートにある `ui/` に置かれます。`--directory` で別の場所を指定でき、その指定も記録されます。ソースが `src` 配下にある SvelteKit では `--directory=src/lib/ui`、Nuxt では `--directory=app/ui` です。
+- その隣の `ui/.base/` には、各ファイルが取り込まれた時点の状態が保存されます。このコピーは、後で `diff` がアップストリームと比較する対象です。手を加えないでください。
+- 名前を付けずに `npx master-ui add` を実行すると、コンポーネントの一覧が表示されます。
+- すでに存在するコピーはそのまま残されます。それはあなたのものであり、編集されている可能性があるからです。
+
+コピーしたコンポーネントは、レンダリング、ライフサイクル、値の同期を所有します。ビヘイビアは `@master/ui/behaviors` からインポートするため、キーボードとフォーカスの修正は、その依存関係をアップグレードしたときに取り込まれます。アップストリームでコンポーネント自体が変わった場合は、[`status` と `diff`](/guide/customization#upstream-changes) で差分を確認し、必要な変更を作業中のコピーにマージします。その後 `accept` を実行して、インストール済みパッケージのバージョンを新しい保存済みのベースとして記録します。これは作業中のファイルを変更せずに、`.base/` と追跡用のメタデータを更新します。[レジストリ](/guide/registry#items)には、同じファイルが `react-combobox`、`svelte-combobox`、`vue-combobox` として収録されています。
+
+## コンポーネントを使う \{#use\}
+
+使用するフレームワークを指定して `add combobox` を実行し、コピーしたファイルを実際のディレクトリーからインポートします。以下の例は、既定の `ui/` ディレクトリーが例のファイルの隣にあることを前提としています。それぞれ、同じコンボボックスを各フレームワークの流儀で示しています。Svelte の例は実際に動作します。プロジェクトが受け取るのと同じコンポーネントとビヘイビアで、サーバーでレンダリングされ、プレビュー内でハイドレートされます。その Code ビューがファイルそのものです。
+
+```tsx name=Region.tsx
+'use client'
+import { useState } from 'react'
+import { Combobox } from './ui/combobox'
+
+const regions = [
+  { value: 'hnd', label: 'Tokyo' },
+  { value: 'sin', label: 'Singapore' },
+  { value: 'fra', label: 'Frankfurt', description: 'Germany' },
+]
+
+export function Region() {
+  const [region, setRegion] = useState<string | null>(null)
+  return (
+    <Combobox options={regions} value={region} onValueChange={setRegion}
+      aria-label="Region" listLabel="Regions" toggleLabel="Show regions" empty="No regions match." />
+  )
+}
+```
+
+<FrameworkPreview name="Region" height={304} title="Region.svelte" bodyClass="flex items-start justify-center p-lg min-h(300)" caption="入力して絞り込み、Enter またはクリックで選び、選んだ内容の上から入力してください。アプリケーションが保持する値がそれに追従します。" />
+
+```vue name=Region.vue
+<script setup lang="ts">
+import { ref } from 'vue'
+import Combobox from './ui/Combobox.vue'
+
+const regions = [
+  { value: 'hnd', label: 'Tokyo' },
+  { value: 'sin', label: 'Singapore' },
+  { value: 'fra', label: 'Frankfurt', description: 'Germany' },
+]
+const region = ref<string | null>(null)
+</script>
+
+<template>
+  <Combobox :options="regions" v-model="region"
+    aria-label="Region" list-label="Regions" toggle-label="Show regions" empty="No regions match." />
+</template>
+```
+
+Tokyo を選び、アプリケーションが `hnd` を保持していることを確認します。フィールドにはオプションのラベルが表示されます。その選択の上から入力すると、再びオプションが選ばれるまで値は `null` になります。モデルが保持するのはオプションの値であり、任意の検索テキストではありません。
+
+| | 値 | 開いているかどうか | その他の出力 |
+| --- | --- | --- | --- |
+| React | `value`（コンポーネントに保持させる場合は `defaultValue`）と `onValueChange` | `open`、`onOpenChange` | `onComplete`、`onValueCommit`、`onSearch` |
+| Svelte | `bind:value` と `onValueChange` | `bind:open` と `onOpenChange` | 同じコールバック props |
+| Vue | `v-model` | `v-model:open` | `@complete`、`@value-commit`、`@search` |
+
+値の所有はアダプターによって異なります。React では `value` は所有者の決定です。読み手がコンポーネントを変更し、所有者が `onValueChange` でその変更を受け入れなかった場合、コンポーネントは制御された `<input>` と同じように、与えられた値に戻ります。`open` についても同様です。Svelte と Vue にはこのようなルールはありません。`bind:` や `v-model` なしで渡された値はコンポーネントの初期値となり、その後はコンポーネントが読み手の選んだものを保持します。そこで変更を拒否するには、バインドした値を自分で元に戻してください。
+
+コンポーネント自身のものではない props は、読み手が想定する要素に渡されます。コンボボックスならフィールド、ダイアログなら `<dialog>`、リストボックスならルートです。コンボボックスの `aria-label`、`placeholder`、`name` はこのようにして設定されます。
+
+### ページ自身のマークアップ \{#the-pages-own-markup\}
+
+これらの例を使う前に、`npx master-ui add dialog --framework=react` や `--framework=vue` のように、必要なコンポーネントを追加してください。ダイアログ、ポップオーバー、メニュー、ツールチップは、ページに属するコントロールによって開かれます。コンポーネントは独自のボタンをレンダリングしません。自身を指定する属性をページに渡し、ページがそれを自身のボタンにスプレッドします。すると、通常のページと同じように、ブラウザーがダイアログを開きます。
+
+```tsx name=DeleteProject.tsx
+'use client'
+import { useState } from 'react'
+import { Dialog } from './ui/dialog'
+
+export function DeleteProject({ remove }: { remove: () => Promise<void> }) {
+  const [open, setOpen] = useState(false)
+  async function confirm() {
+    await remove()
+    setOpen(false)
+  }
+  return (
+    <Dialog id="delete-project" aria-labelledby="delete-project-title"
+      open={open} onOpenChange={setOpen}
+      trigger={attributes => <button type="button" className="btn" {...attributes}>Delete project</button>}>
+      <header className="dialog-header">
+        <h2 className="dialog-title" id="delete-project-title">Delete this project?</h2>
+        <p className="dialog-description">Atlas and its 14 deployments are removed.</p>
+      </header>
+      <footer className="dialog-footer">
+        <button type="button" className="btn" {...{ commandfor: 'delete-project', command: 'close' }}>Cancel</button>
+        <button type="button" className="btn btn-primary" onClick={confirm}>Delete project</button>
+      </footer>
+    </Dialog>
+  )
+}
+```
+
+<FrameworkPreview name="DeleteProject" height={320} title="DeleteProject.svelte" bodyClass="flex items-start justify-center p-lg min-h(320)" caption="ボタンは独自のハンドラーを持たず、commandfor によってダイアログを開きます。アプリケーションはダイアログが開いたことを受け取り、プロジェクトが削除されたら自身の状態からダイアログを閉じます。" />
+
+```vue name=DeleteProject.vue
+<script setup lang="ts">
+import { ref } from 'vue'
+import Dialog from './ui/Dialog.vue'
+
+const props = defineProps<{ remove: () => Promise<void> }>()
+const open = ref(false)
+async function confirm() {
+  await props.remove()
+  open.value = false
+}
+</script>
+
+<template>
+  <Dialog id="delete-project" aria-labelledby="delete-project-title" v-model:open="open">
+    <template #trigger="attributes">
+      <button type="button" class="btn" v-bind="attributes">Delete project</button>
+    </template>
+    <header class="dialog-header">
+      <h2 class="dialog-title" id="delete-project-title">Delete this project?</h2>
+      <p class="dialog-description">Atlas and its 14 deployments are removed.</p>
+    </header>
+    <footer class="dialog-footer">
+      <button type="button" class="btn" commandfor="delete-project" command="close">Cancel</button>
+      <button type="button" class="btn btn-primary" @click="confirm">Delete project</button>
+    </footer>
+  </Dialog>
+</template>
+```
+
+ここで `remove` は、呼び出し側が渡すアプリケーションの削除関数です。例では、それが完了した後にダイアログを閉じています。このリクエストの前後には、アプリケーションの処理中状態とエラー状態を追加してください。ダイアログ内のパーツはコンポーネントではなく、コントラクトのマークアップです。`dialog-header`、`dialog-title`、`dialog-footer` は何も所有しません。`open` を渡すのは、リクエストが失敗した後にダイアログを開く、ルートが変わったときにダイアログを閉じるなど、アプリケーションがそれを決める場合だけにしてください。渡さなければ、トリガーとブラウザーがすべてを行います。
+
+[field](/components/input#hint-and-error) も、逆方向に同じ仕組みで機能します。field は id を所有し、それを運ぶ属性をページのコントロールに渡します。
+
+```tsx name=Email.tsx
+import { Field } from './ui/field'
+
+export function Email({ error }: { error?: string }) {
+  return (
+    <Field label="Work email" hint="We only send receipts." error={error}>
+      {control => <input className="input" type="email" name="email" {...control} />}
+    </Field>
+  )
+}
+```
+
+### トースト \{#toasts\}
+
+トーストは何かが起きるまで要素を持たないため、そのコンポーネントはキューです。どこからでも呼び出せる `toast()` 関数と、一度だけレンダリングされ、キューの中身を表示する領域で構成されます。
+
+```tsx name=App.tsx
+'use client'
+import { toast, Toaster } from './ui/toast'
+
+export function ToastExample() {
+  return (
+    <>
+      <Toaster />
+      <button type="button" className="btn" onClick={() => toast({
+        title: 'Preview ready', description: 'The build can now be reviewed.', status: 'success'
+      })}>Show notification</button>
+    </>
+  )
+}
+```
+
+Svelte と Vue では、`toast` は `Toaster.svelte` と `Toaster.vue` の名前付きエクスポートです。トーストは 6 秒後に自動的に消えます。`duration` で別の時間を設定でき、`duration: false` にすると閉じられるまで表示されたままになります。
+
+## ロジックの所在 \{#where-the-logic-is\}
+
+ビヘイビアを持つパターンでは、アダプターはキーボード操作と選択のルールをそのビヘイビアに任せます。アダプターの責任は 3 つです。
+
+- **コントラクトのマークアップをレンダリングします。** 最初の値はすでにその中に描画されています。最初の HTML は、スクリプトが動く前から正しい状態です。
+- **ビヘイビアをアタッチします。** オプションが変わったときは再アタッチします。
+- **値を受け渡します。** アプリケーションが別の値を設定したときはビヘイビアの [`value`](/guide/behaviors#the-value) に書き込み、ルートに届くすべての `input` と `change` でそれを読み取ります。
+
+最初のレンダリングの後は、通常のページと同じようにビヘイビアが属性を変更します。ビヘイビアのコードを共有することで、キーボード操作は 1 か所にまとまります。共有のテストシナリオが各フレームワークのアダプターを検査します。マウントし、マークアップをコントラクトに照らして確認し、キーを押し、出力された値を読み取り、値を設定し、アンマウントします。
+
+キーの動作や選択の意味を変えるには、[ビヘイビアを所有](/guide/behaviors#own-a-behavior)してください。以後の `master-ui add` は、新しいコンポーネントファイルを作成するときにそのローカルのビヘイビアを使います。すでに追加済みのコンポーネントがある場合は、そのインポートを自分で更新してください。`add` は既存のファイルを保持します。
+
+## サーバーで使う \{#on-a-server\}
+
+<GuideFigure name="frameworks" title="レンダリングとビヘイビアのライフタイム">
+
+**レンダリングと操作では、ライフタイムが異なります。** 選ばれたリストボックスの値は、サーバーの HTML の時点ですでに示されています。マウント後、アダプターはビヘイビアをアタッチし、アプリケーションの値をそれと同期します。アンマウント時にはクリーンアップ関数を呼び出してリスナーとオブザーバーを停止します。クリーンアップで元のマークアップが復元されるわけではありません。
+
+</GuideFigure>
+
+- **最初の HTML が状態を保持します。** 選ばれたオプション、選択されたタブ、スプリッターのサイズ、カレンダーの月と選ばれた日は、サーバーが送るマークアップに含まれています。カレンダーの今日のように、ブラウザーだけが知りうるマークは、ビヘイビアがアタッチされたときに表示されます。
+- **サーバーでレンダリングするカレンダーには `locale` を渡してください。** 月と曜日の名前は `Intl` から取得され、使用する言語についてサーバーとブラウザーの判断が常に一致するとは限りません。
+- **React Server Components では、** ビヘイビアをアタッチするコンポーネントや状態を保持するコンポーネントはクライアントコンポーネントで、`'use client'` を宣言しています。それらに関数（`trigger`、`onValueChange`、項目の `onSelect`）を渡すファイルもクライアントコンポーネントになります。上の例が `'use client'` で始まっているのはそのためで、Server Component はクライアントコンポーネントに関数を渡せません。`Field` と `Tooltip` は id を結び付けるだけなので、クライアントのものをほかに何もレンダリングしないファイルであれば、サーバーでレンダリングされます。マークアップであるものはすべて、書かれた場所でレンダリングされます。
+- **id はフレームワークから取得します。** React と Vue では `useId`、Svelte では `$props.id()` を使うため、サーバーとブラウザーの間で一致します。Vue は 1 つのアプリケーション内で番号を振ります。アイランドのように複数の Vue アプリケーションをマウントするページでは、それぞれに `app.config.idPrefix` を与えてください。そうしないと、2 つのアプリケーションが別々の要素に `v-0` という名前を付けてしまいます。
+
+## 独自のコンポーネント \{#your-own\}
+
+同じビヘイビアの周りで異なるレンダリングが必要な場合は、`master-ui add` がコピーするヘルパーを使います。たとえば、選択したフレームワーク向けに `listbox` を追加してヘルパーを取得し、以下のインポートが前提としているように、`ui/` ディレクトリーの隣に `Sizes` コンポーネントを書きます。サーバーの HTML が正しくなるよう初期の選択をマークアップにレンダリングし、その後の値はヘルパーに同期させます。React では、ヘルパーは ref を返すフックです。
+
+```tsx name=Sizes.tsx
+'use client'
+import { useState } from 'react'
+import { listbox } from '@master/ui/behaviors/listbox.js'
+import { useBehavior } from './ui/use-behavior'
+
+export function Sizes({ value, onValueChange }: { value: string, onValueChange: (value: string | string[] | null) => void }) {
+  const ref = useBehavior(listbox, undefined, { value, onValueChange })
+  const [first] = useState(() => value)
+  return (
+    <div className="listbox" role="listbox" aria-label="Size" tabIndex={0} ref={ref}>
+      {['Small', 'Medium', 'Large'].map(size => (
+        <div className="listbox-option" role="option" aria-checked={size === first} key={size}>{size}</div>
+      ))}
+    </div>
+  )
+}
+```
+
+第 2 引数はビヘイビアのオプション、第 3 引数は値とそれを受け取るものです。Svelte ではヘルパーがアタッチメントを作り、Vue ではテンプレート ref とモデルを受け取るコンポーザブルです。
+
+```svelte name=Sizes.svelte
+<script lang="ts">
+  import { untrack } from 'svelte'
+  import { listbox } from '@master/ui/behaviors/listbox.js'
+  import { behavior } from './ui/behavior.svelte.js'
+
+  let { value = $bindable() }: { value?: string | string[] | null } = $props()
+  const first = untrack(() => [value ?? []].flat())
+  const attach = behavior(listbox, undefined, { value: () => value, change: next => { value = next } })
+</script>
+
+<div class="listbox" role="listbox" aria-label="Size" tabindex="0" {@attach attach}>
+  {#each ['Small', 'Medium', 'Large'] as size}
+    <!-- The behavior writes aria-selected on the active option. -->
+    <!-- svelte-ignore a11y_role_has_required_aria_props -->
+    <div class="listbox-option" role="option" aria-checked={first.includes(size)}>{size}</div>
+  {/each}
+</div>
+```
+
+```vue name=Sizes.vue
+<script setup lang="ts">
+import { useTemplateRef } from 'vue'
+import { listbox } from '@master/ui/behaviors/listbox.js'
+import { useBehavior } from './ui/use-behavior'
+
+const value = defineModel<string | string[] | null>()
+const first = [value.value ?? []].flat()
+useBehavior(useTemplateRef<HTMLElement>('root'), listbox, undefined, value)
+</script>
+
+<template>
+  <div class="listbox" role="listbox" aria-label="Size" tabindex="0" ref="root">
+    <div v-for="size in ['Small', 'Medium', 'Large']" :key="size" class="listbox-option" role="option" :aria-checked="first.includes(size)">{{ size }}</div>
+  </div>
+</template>
+```
+
+ヘルパーを使わずに各フレームワークでビヘイビアをアタッチする素朴な方法は、[ビヘイビア](/guide/behaviors#in-a-framework)で紹介しています。
+
+## その他のヘッドレスライブラリ \{#headless-libraries\}
+
+付属のコンポーネントは、ブラウザーのプラットフォームと Master UI のビヘイビアを使っています。ヘッドレスコンポーネントライブラリには依存していません。
+
+アプリケーションが別のライブラリの振る舞いを必要とする場合は、コントラクトのクラスを対応する要素に付け、すべての状態、キーボード操作、フォーカスの遷移をコントラクトに照らして確認してください。異なる属性を書き込むアダプターには、所有したスタイルシートが必要になることがあります。CSS クラスだけでは互換性は確立されません。プロジェクト全体に統合を適用する前に、まず 1 つの操作を最初から最後まで確認してください。

@@ -1,0 +1,146 @@
+---
+title: "稳定性"
+description: "识别公开接口，掌控项目使用的源码和主题，并在 Master UI 处于实验阶段时审慎升级。"
+---
+import GuideFigure from '../../../components/GuideFigure.astro'
+
+项目通过 class 名称、自定义属性、导入和命令依赖 Master UI。基于这个库构建时，请使用下面列出的公开接口；升级时也要逐一检查它们。
+
+Master UI 目前处于实验阶段：即使是公开接口，也可能在 0.x 版本中发生变化。“公开”指的是当前版本所支持的用法，并不保证与下一个版本兼容。请[有计划地升级](#experimental)，检查会影响项目的变更。
+
+## 公开 \{#public\}
+
+| 内容 | 说明位置 | 示例 |
+| --- | --- | --- |
+| class 名称 | 契约中的 `classes` | `btn`、`btn-primary`、`dialog-header` |
+| class 所需的元素和属性 | 该 class 的 `elements`、`attributes` 和 `label` | `switch` 用在带 `type="checkbox"` 和 `role="switch"` 的 `<input>` 上，并且需要无障碍名称 |
+| 状态标记 | 契约中的 `states` | `btn` 上的 `aria-pressed="true"`，`switch` 上的 `:checked` |
+| 组件的自定义属性 | 契约中的 `properties` | `--btn-height`、`--splitter-size` |
+| 主题令牌 | `theme.css` 中的 `@theme`；`@master/ui/theme.json` 列出了每个令牌及其值 | `--color-surface-raised`、`--radius-control`、`--lift` |
+| mixin 名称 | `theme.css` 中的 `@mixin` | `--surface-sheet`、`--focus-ring`、`--anchored` |
+| 契约 schema | `@master/ui/contract.schema.json` | 契约的字段及各字段的含义 |
+| 行为 | `@master/ui/behaviors` 的导出 | `combobox(root)`、`attach()`、`calendarMonth()`，各自返回的函数及其 `value` |
+| 框架组件的名称 | `frameworks/manifest.json`，由 `master-ui add` 读取 | `combobox`、`dialog`、`toast` |
+| 检查器 | `@master/ui/check` 的导出 | `check`、`createIndex`、`parse`、`format`、`owners` |
+| 命令 | `master-ui` | `list`、`contract`、`check`、`init`、`own`、`add`、`status`、`diff`、`accept` |
+| 导入路径 | 软件包 `package.json` 中的 `exports` | 见下表 |
+
+契约列出了已安装版本中某个组件的接口。依赖某个 class 或属性之前，先把契约打印出来：
+
+```bash
+npx master-ui contract button
+```
+
+契约的 `properties` 列表定义了组件专属的扩展点。未列出的内部属性可能会改变。共享的主题令牌是另一项独立的公开接口，在 `theme.css` 中定义。
+
+### 导入路径 \{#import-paths\}
+
+| 路径 | 内容 |
+| --- | --- |
+| `@master/ui`、`@master/ui/master.css` | 主题、所有组件和布局 class，以 Master CSS 源码形式提供 |
+| `@master/ui/theme.css` | 默认主题的令牌和 mixin |
+| `@master/ui/components/<name>.css`、`@master/ui/layouts/<name>.css` | 单个样式表 |
+| `@master/ui/components/<name>.json`、`@master/ui/layouts/<name>.json` | 它的契约 |
+| `@master/ui/themes/<name>.css` | 其他主题，例如 `paper` |
+| `@master/ui/contract.schema.json` | 契约的 JSON Schema |
+| `@master/ui/contracts.json` | 汇总在一个文件中的所有契约 |
+| `@master/ui/theme.json` | 主题的所有令牌及其值 |
+| `@master/ui/standalone.css` | 编译为普通 CSS 的主题和所有组件 |
+| `@master/ui/base.css` | 组件所依赖的小型重置样式 |
+| `@master/ui/behaviors`、`@master/ui/behaviors/<name>.js` | 带 `attach()` 的全部行为，或单个行为，附带 TypeScript 类型 |
+| `@master/ui/check` | 作为模块提供的契约检查器 |
+
+编译后的文件也可以通过 `@master/ui/dist/` 访问，这是 CDN 提供的路径：`dist/standalone.css`、`dist/base.css`、`dist/themes/<name>.css`、`dist/contracts.json` 和 `dist/theme.json`。
+
+## 私有 \{#private\}
+
+| 内容 | 示例 | 替代做法 |
+| --- | --- | --- |
+| 契约未列出的组件内部属性 | `--btn-lift`，button 用它在自身的规则之间传递位移量 | 已列出的属性，或主题令牌：`--lift` |
+| 选择器的结构 | 规则如何嵌套、由哪个伪元素绘制标记、规则在 `components` 层中的选择器优先级 | class 和状态标记；元素上的工具类优先于任何组件规则 |
+| 默认主题的值 | `--shadow-raised` 背后的阴影列表，`--surface-sheet` 中渐变的色标 | 令牌或 mixin 名称，在你自己的主题中重新定义 |
+| 样式表中声明和规则的顺序 | 两条规则中哪一条在后 | 文件之外没有任何东西依赖它 |
+| `behaviors/internal.js` | combobox、command、listbox 和 menu 行为共享的辅助函数。文件自身的头部注释说明它不是行为 | 行为的函数；或者[接管该行为](/guide/behaviors#own-a-behavior)，并在旁边保留这个文件的副本 |
+| 本页未提及的 `dist/` 下的文件 | 构建在那里留下的其他任何文件 | 上表中的路径 |
+| `frameworks/` 下的文件 | 软件包中保存的 [React、Svelte 和 Vue 组件](/guide/frameworks)。它们是用于复制的源码，而不是用于导入的模块，其 props 可能在版本之间改变 | `npx master-ui add <name>`，用于复制其中一个；副本归你所有，不会随版本发布而改变 |
+
+在契约不变的情况下，实现细节可能改变。例如，阴影可以重新调整，标记可以改由另一个伪元素绘制，而组件接受的标记保持不变。但结果看起来仍可能不同，因此视觉审查仍是升级的一部分。
+
+```css name=app.css
+/* Public: the button contract lists --btn-height. */
+.checkout .btn {
+  --btn-height: 2.75rem;
+}
+
+/* Private: no contract lists --btn-lift, so a release may rename it. */
+.checkout .btn {
+  --btn-lift: 0px;
+}
+
+/* The public way to say the same thing is the theme token. */
+.checkout {
+  --lift: 0px;
+}
+```
+
+## 变更意味着什么 \{#what-a-change-means\}
+
+| 变更 | 是否破坏性 |
+| --- | --- |
+| 删除或重命名公开名称：class、必需属性、状态标记、已列出的属性、令牌、mixin、导出、命令、导入路径 | 是 |
+| 重新调整默认主题：色调、阴影、渐变、时长 | 否 |
+| 私有列表中的任何内容发生变化 | 否 |
+| 软件包中的框架组件发生变化：prop、标记 | 否。项目中的副本保持获取时的状态；`master-ui status` 会提示上游已变化 |
+
+视觉上的重新调整可以保持契约不变。请决定项目需要掌控哪一部分：已安装的版本、某个组件的实现，还是主题的值。
+
+**接管组件。** `own` 会复制组件的样式表、契约以及行为（如果有）。让页面改用这些副本，之后的软件包版本就不会替换这份实现。复制的样式表仍然读取主题令牌，因此仅接管组件并不能冻结它的外观。参见[自定义](/guide/customization#own-a-component)。
+
+```bash
+npx master-ui own button
+```
+
+### 保留本地主题 \{#pin-the-theme\}
+
+将 `node_modules/@master/ui/theme.css` 复制到项目中，并在库之后导入。其中的令牌和 mixin 定义会优先于软件包中的定义。这样可以保留你复制的值；但新增的令牌，以及组件使用令牌方式的变化，仍可能影响结果。[主题定制](/guide/theming)介绍了如何维护这个文件。
+
+```css name=app.css
+@import '@master/css';
+@import '@master/ui';
+@import './ui/theme.css';
+```
+
+## 实验阶段期间 \{#experimental\}
+
+Master UI 处于实验阶段：其版本号为 0.x。在 1.0 之前，上面的表格描述的是名称的性质，而不是保留它的承诺。任何版本都可能重命名或删除公开名称，并且不会提供弃用期、兼容层或迁移指南。版本说明会列出变更内容。
+
+因此，请安装确切版本，并有计划地升级：
+
+```bash
+npm install @master/ui --save-exact
+```
+
+`--save-exact` 记录的是选定的版本，而不是允许的版本范围。请将软件包清单和 lockfile 一起提交，让其他检出安装相同的依赖集合。这样，本地主题或组件副本就可以对照一个已知版本进行审查。
+
+对于项目接管的组件，命令行工具会报告哪些内容发生了变化。`status` 将每个已接管的组件与已安装的软件包进行比较，并列出自获取以来上游发生变化的文件：
+
+```bash
+npx master-ui status
+```
+
+当某个已接管的组件在上游发生变化时，它会以退出码 2 退出，因此在升级后运行的任务可以报告这一情况。`npx master-ui diff button` 显示已保存的基准与已安装软件包之间的差异。你自行审查并合并之后，`npx master-ui accept button` 会更新已保存的基准；它不会合并或编辑你的工作副本。[自定义](/guide/customization#upstream-changes)逐步讲解了这些命令。
+
+<GuideFigure name="stability" title="合并上游变更">
+
+**先比较、再合并，最后记录新的基准。** `diff` 比较已保存的基准与已安装的软件包，你的工作副本不参与这次比较。你把需要的变更合并到工作副本中。之后，`accept` 将已安装的上游文件复制到已保存的基准中，并更新接管记录；它不会改动你已合并的工作副本。图中的文件标记只是示意，并非某个具体版本的差异。
+
+</GuideFigure>
+
+每次升级时：
+
+1. 阅读版本说明，更新确切的依赖版本和 lockfile。
+2. 对项目的标记运行 `npx master-ui check`，找出不再符合契约的 class、元素或属性。
+3. 查看已接管和已添加组件的 `status` 与 `diff`；先合并，再接受新的基准。
+4. 构建应用，并实际操作受影响的控件、浮层和键盘路径。比较浅色和深色外观，包括任何本地主题。
+
+检查器依据契约验证标记；它无法确认应用行为或渲染结果没有改变。

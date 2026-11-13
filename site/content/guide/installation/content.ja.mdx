@@ -1,0 +1,160 @@
+---
+title: "インストール"
+description: "バージョンを固定したパッケージをインストールし、ソースかコンパイル済みの CSS を選んで、最初のコンポーネントを確認します。"
+---
+import DocumentPrompt from '@master/internal-site/components/DocumentPrompt.astro'
+import GuideFigure from '../../../components/GuideFigure.astro'
+
+`@master/ui` をインストールし、そのスタイルシートを読み込んで、コンポーネントクラスを付けたネイティブ要素をレンダリングします。プロジェクトで Master CSS を使っている場合は、パッケージのソースをアプリのスタイルと一緒にコンパイルします。そうでない場合は、[コンパイル済みのスタイルシート](#without-master-css)を使います。こちらは Master CSS のユーティリティなしでコンポーネントを提供します。
+
+<GuideFigure name="installation" title="コンポーネントのスタイルに至る 2 つの経路">
+
+**ページに至る経路を 1 つ選びます。** ソースのインポートは、ユーティリティの生成に使われるクラスと一緒に、アプリの Master CSS コンパイラーを通ります。パッケージの `standalone.css` はすでにコンパイル済みで、そのまま読み込めます。どちらの経路でもコンポーネントのスタイルが提供されます。スタンドアロンの経路では、レイアウトに独自の CSS が必要です。
+
+</GuideFigure>
+
+## AI エージェントでセットアップする \{#set-up-with-an-ai-agent\}
+
+このセットアップはコーディングエージェントに任せることができます。アプリのルートディレクトリーで、下のプロンプトをエージェントに貼り付けてください。エージェントはプロジェクトを調べ、ファイルを変更する前に、スタイルシートの経路、インポートの範囲、エージェントのセットアップ、既存のコンポーネントライブラリの扱いについてあなたに確認します。その後、バージョンを固定したパッケージをインストールし、スタイルシートをインポートして、最初のコンポーネントをブラウザーと `master-ui check` で確認します。
+
+<DocumentPrompt title="Master UI をセットアップする" text={`You are working in an existing web application. Set up Master UI end to end.
+Documentation: https://ui.master.co/guide/installation.md
+
+First inspect the project before editing: package manager, framework and build tool, whether Master CSS is set up (the installed @master/css version, and the app stylesheet that contains @import '@master/css' and where it is loaded), any component library or styling system already in use, React, Svelte or Vue, an existing master-ui.json, the dev/lint/build/test commands, and agent guidance files such as AGENTS.md.
+
+Before editing, ask me these and wait for the answers. Do not choose them yourself:
+- Stylesheet route: source (the default; @import '@master/ui' compiled by Master CSS 2.1 or later, with utilities for layout) or precompiled (@master/ui/standalone.css, no Master CSS and no utilities). If the project has no Master CSS and I choose source, set it up first by following https://css.master.co/guide/installation.
+- Import scope: the full library in one import (the default), or npx master-ui init, which writes ui/index.css with one @import per stylesheet and master-ui.json for components the project may later own. See https://ui.master.co/guide/installation#one-import-per-stylesheet.
+- Agent setup: the full setup (the master-ui skill, Master UI guidance in AGENTS.md and a check:ui script) or minimal (package and stylesheet only).
+- Existing components: if the project already uses another component library, whether to leave it in place (the default) and use Master UI only for new interface, or replace the components I name. Never replace components I have not named.
+
+Then adopt Master UI conservatively:
+1. Run every command from the app root, where its package.json lives, with the project's package manager.
+2. Install the package at an exact version: npm install @master/ui --save-exact (bun add @master/ui --exact, pnpm add @master/ui --save-exact). Master UI is experimental and any 0.x release may break what it published, so keep the version pinned.
+3. Load the stylesheet in the stylesheet the app already loads. Source route: add @import '@master/ui'; on the line after @import '@master/css';, or, with npx master-ui init, @import './ui/index.css'; in its place (adjust the path to where ui/ is). Precompiled route: @import '@master/ui/base.css'; then @import '@master/ui/standalone.css';, and omit base.css if the project already has an equivalent reset. Installing the package alone does not load anything.
+4. Add no behavior script and no framework component yet. When a pattern that needs one is used later, follow https://ui.master.co/guide/behaviors, or https://ui.master.co/guide/frameworks with npx master-ui add <name> in React, Svelte or Vue.
+5. If I chose the full agent setup: install the skill with npx skills add master-co/ui --skill master-ui, append the Master UI block from https://ui.master.co/guide/ai.md#agents-md to AGENTS.md with the project's actual validation commands below it, and add "check:ui": "master-ui check --strict" to the package.json scripts.
+6. If I chose to replace named components, rewrite each one's markup from its contract (npx master-ui contract <name>), keep its behavior and accessible names, and remove the old dependency only after nothing uses it.
+7. Preserve the existing architecture, styling and component library unless I chose otherwise, and avoid unrelated refactors.
+8. Verify: start the dev server and render <button type="button" class="btn btn-primary">Save changes</button> on a visible page (className in JSX). Confirm an ink face in light mode, a pale face in dark mode and a visible focus ring when it is reached with Tab. If it looks like an unstyled browser button, confirm the page loads the stylesheet and the compiled CSS contains .btn. Run npx master-ui check on the file that holds the button and fix what it reports. Then remove the button unless I want to keep it, and run the project's lint, build and tests.
+
+When finished, summarize the changed files, the installed version, the route and options chosen, behavior intentionally left unchanged, the validation results, and anything not verified in a browser.`} />
+
+## Master CSS をセットアップする \{#set-up-master-css\}
+
+ソースのスタイルシートを使う場合は、まず Master CSS 2.1 以降と、使用するフレームワーク向けのインテグレーションをセットアップします。Vite、Astro、Next.js、Svelte などについては [Master CSS のインストールガイド](https://css.master.co/guide/installation)に従ってください。
+
+## パッケージをインストールする \{#install-the-package\}
+
+```bash
+npm install @master/ui --save-exact
+```
+
+`bun add @master/ui --exact` や `pnpm add @master/ui --save-exact` など、どのパッケージマネージャーでも使えます。Master UI は実験段階で、どのリリースでも公開済みの内容が壊れる可能性があります。バージョンを固定し、意図してアップグレードしてください。アップグレード後に何を実行するかは[安定性](/guide/stability#experimental)に記載しています。
+
+## スタイルシートをインポートする \{#import-the-stylesheet\}
+
+アプリのスタイルシートで、Master CSS のプリセットの後に Master UI をインポートします。
+
+```css name=app.css
+@import '@master/css';
+@import '@master/ui';
+```
+
+プリセットは `theme, base, defaults, components, utilities` というレイヤー順序を宣言します。Master UI はそのルールを `components` に追加するため、マークアップ内のユーティリティが引き続き優先されます。
+
+## インストールを確認する \{#verify-the-installation\}
+
+`app.css` がアプリで読み込まれていることを確認し、レンダリングされるページにボタンを追加します。JSX では `class` の代わりに `className` と書きます。
+
+```html
+<button type="button" class="btn btn-primary">Save changes</button>
+```
+
+既存の開発用コマンドでアプリを起動します。ボタンはライトモードではインク色の面、ダークモードでは淡い色の面になり、キーボードフォーカスリングが見えるはずです。見た目にビヘイビアスクリプトは不要ですが、変更の保存には引き続きアプリケーションのアクションハンドラーが必要です。
+
+スタイルが適用されていないブラウザー標準のボタンに見える場合は、ページが `app.css` を読み込んでいること、そしてコンパイル結果に `.btn` が含まれていることを確認してください。ソースのインポートを使う場合は、Master CSS のインテグレーションがこのスタイルシートを処理していることを確認します。その後、[マークアップをチェック](#check-your-markup)します。
+
+## 使うものだけをインポートする \{#import-only-what-you-use\}
+
+各コンポーネントは個別にもエクスポートされています。まず共通のテーマをインポートし、次にアプリに必要なコンポーネントをインポートします。
+
+```css name=app.css
+@import '@master/css';
+@import '@master/ui/theme.css';
+@import '@master/ui/components/button.css';
+@import '@master/ui/components/switch.css';
+```
+
+マークアップで使うすべてのクラスのスタイルシートを含めてください。たとえば、`icon` や `spinner` を含むボタンには、そのコンポーネントのスタイルシートも必要です。全体をインポートすれば、このリストを自分で管理する必要はありません。
+
+## スタイルシートごとに 1 つのインポート \{#one-import-per-stylesheet\}
+
+パッケージには小さなコマンドラインツールが付属しています。`init` は、テーマと各スタイルシートをそれぞれ 1 行でインポートする `ui/index.css` と、プロジェクトが所有するものを記録する `master-ui.json` を書き出します。
+
+```bash
+npx master-ui init
+```
+
+```css name=app.css
+@import '@master/css';
+@import './ui/index.css';
+```
+
+このエントリーファイルは、`@master/ui` 全体のインポートの代わりに使います。これは任意です。インポートのリストを自分で管理したい場合や、[一部のコンポーネントのソースを所有したい](/guide/registry)場合に選んでください。行を削除するのは、マークアップがそのクラスを使わなくなったときだけにしてください。
+
+## ビヘイビア \{#behaviors\}
+
+ほとんどのコンポーネントにスクリプトは不要です。いくつかのパターン（コンボボックス、コマンドパレット、カレンダー）にはネイティブ要素がなく、パッケージはそれぞれのリファレンススクリプトを同梱しています。
+
+```js name=app.js
+import { attach } from '@master/ui/behaviors'
+
+const detach = attach()
+```
+
+マークアップが存在した後に、ブラウザー側のコードで `attach()` を呼び出します。その時点で認識したパターンをアタッチし、クリーンアップ関数を返します。そのマークアップを削除する前に `detach()` を呼び出してください。後から挿入されたものは監視せず、コンテキストメニューの対象も設定しません。範囲を限定したアタッチと個別の関数については[ビヘイビア](/guide/behaviors)を参照してください。React、Svelte、Vue では、[フレームワークコンポーネント](/guide/frameworks)を使ってそのライフタイムを管理します。
+
+## Master CSS を使わない場合 \{#without-master-css\}
+
+パッケージには、通常の CSS にコンパイル済みのコンポーネントが含まれています。CSS のインポートに対応したバンドラーであれば、インストールしてバージョンを固定したパッケージをそのまま使えます。
+
+```css name=app.css
+@import '@master/ui/base.css';
+@import '@master/ui/standalone.css';
+```
+
+`base.css` は、`box-sizing: border-box` やフォームコントロールのフォントを含む、プリセットのリセットを提供します。プロジェクトにすでに同等のリセットがある場合は、このインポートを省略してください。
+
+静的なページでは、インストール済みのパッケージからコンパイル済みのファイルを、サーバーが公開するディレクトリーにコピーします。たとえば `public/` が `/` で配信される場合は次のようにします。
+
+```bash
+mkdir -p public/styles
+cp node_modules/@master/ui/dist/base.css public/styles/master-ui-base.css
+cp node_modules/@master/ui/dist/standalone.css public/styles/master-ui.css
+```
+
+```html
+<link rel="stylesheet" href="/styles/master-ui-base.css">
+<link rel="stylesheet" href="/styles/master-ui.css">
+
+<button type="button" class="btn btn-primary">Save changes</button>
+```
+
+コピーしたファイルは、インストールしたパッケージの正確なバージョンのものです。そのバージョンを意図的にアップグレードしたときに、もう一度コピーしてください。この経路では、アプリ内での CSS のコンパイルは不要です。
+
+コンパイル済みのスタイルシートは、ソースからのビルドと同じレイヤーとトークンを宣言します。読み手のカラースキームに従い、`data-theme="light"` または `data-theme="dark"` でページやサブツリーのスキームを固定できます。Master CSS のユーティリティは含まれていません。レイアウトには独自の CSS を使い、[レイアウト](/components#layouts)、[ブロック](/blocks)、[ページ](/pages)をコピーするときはユーティリティクラスを置き換えてください。
+
+## マークアップをチェックする \{#check-your-markup\}
+
+各スタイルシートには[コントラクト](/guide/contracts)があります。そのクラス、各クラスを付ける要素、必要な属性です。`check` はテンプレートを読み取り、コントラクトに違反している箇所を報告します。
+
+```bash
+npx master-ui check
+```
+
+パッケージをインストールした状態で、プロジェクトのルートから実行します。HTML と、JSX、Svelte、Vue、Astro などのテンプレートを、レンダリングせずにチェックします。診断を解消したら、ブラウザーで見た目とキーボード操作を確認してください。静的チェックで問題がなくても、アクセシビリティやブラウザーサポートが保証されるわけではありません。診断と CI での使い方は [AI との協働](/guide/ai#check-the-markup)で説明しています。
+
+## テーマをカスタマイズする \{#customize-the-theme\}
+
+ブランドカラー、角丸、フォーカスカラーなどの共通の値を変更するには[テーマ設定](/guide/theming#retune-tokens)を参照してください。それらの役割と既定値は[既定のテーマ](/guide/theme)で説明しています。変更が 1 つのインスタンスや 1 つのコンポーネントだけに関わる場合は、[カスタマイズ](/guide/customization)から始めて適切なレイヤーを選んでください。

@@ -1,0 +1,147 @@
+---
+title: "接管源码"
+description: "在软件包导入、按已安装版本跟踪的副本和 注册表文件之间做出选择，并将复制的源码接入你的项目。"
+---
+import GuideFigure from '../../../components/GuideFigure.astro'
+
+希望通过升级来更新组件实现时，就把组件留在软件包中。项目需要修改源码时，再复制源码。两者可以结合使用：导入 Master UI 的大部分内容，同时维护少数本地组件。
+
+<GuideFigure name="registry" title="导入与源码接管">
+
+**复制方式决定了你如何跟踪更新。** 导入读取的是已安装的软件包。`own` 和 `add` 会把已安装的源码复制到项目中，并为 `status` 和 `diff` 保存基准文件和接管记录。注册表客户端把托管的文件复制到项目中，但不会生成这些 Master UI 记录，因此需要你自己维护它们的更新历史。
+
+</GuideFigure>
+
+根据源码应来自哪里、以及之后如何跟踪变更，来选择复制工具：
+
+| 方式 | 来源 | 更新如何进入项目 |
+| --- | --- | --- |
+| 导入 `@master/ui` | 已安装的软件包 | 升级依赖 |
+| `master-ui own` 或 `master-ui add` | 已安装的软件包 | 查看 `status` 和 `diff`，再合并到本地副本 |
+| 注册表客户端 | 注册表 URL 提供的文件 | 用你自己的工作流程审查并合并复制的文件 |
+
+副本必须与已安装版本一致时，请使用官方命令。托管的注册表 跟随网站已发布的源码，而不是由项目的 lockfile 选定。
+
+## 默认使用软件包 \{#the-package\}
+
+来自软件包的组件会持续跟随上游：焦点环的修复、强制颜色模式下的轮廓，或新的平台特性，都会随更新进入项目。大多数外观上的改动并不需要组件源码。工具类、令牌、公开的自定义属性或主题都能满足这些需求，[自定义](/guide/customization)列出了在什么条件下[接管组件](/guide/customization#own-a-component)才是正确的做法。
+
+## 可以复制什么 \{#always-source\}
+
+- **区块和页面提供页面标记。** 从 Code 视图、页面的 Markdown 或其 注册表条目中复制，再调整内容。它所使用的组件样式要保持安装；使用了布局 class（如 `page`、`shell`、`auto-grid` 或 `form`）的标记，还需要相应布局的样式。
+- **行为可以留在软件包中。** 导入参考脚本，例如 `@master/ui/behaviors/combobox.js`；当按键、焦点或选择需要有所不同时，则采用随组件一起提供的副本。只复制样式表并不会重定向现有的行为导入。参见[行为](/guide/behaviors)。
+- **框架组件是本地源码。** `add` 会复制 React、Svelte 或 Vue 组件及其本地辅助模块。软件包更新可能会改进这份源码，但只有在你合并后，你的副本才会改变。它的行为导入通常仍然使用软件包。参见 [React、Svelte 和 Vue](/guide/frameworks)。
+
+## 注册表 \{#the-registry\}
+
+注册表是一组 JSON 文件，与软件包由同一份源码生成。
+
+| URL | 内容 |
+| --- | --- |
+| `https://ui.master.co/r/registry.json` | 索引：每个条目及其文件路径，不含文件内容 |
+| `https://ui.master.co/r/<name>.json` | 单个条目，包含每个文件的内容 |
+
+每个条目遵循 [shadcn registry-item schema](https://ui.shadcn.com/docs/registry/registry-item-json)。条目使用 `registry:item`，其文件使用带明确目标路径的 `registry:file`。因此，注册表可以分发 CSS、HTML 和框架源码，而不需要 Tailwind 样式表。下面是 button 条目的结构，省略了文件内容：
+
+```json name=button.json
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "button",
+  "type": "registry:item",
+  "title": "Button",
+  "description": "A raised control that lifts on hover and sinks when pressed.",
+  "dependencies": ["@master/css"],
+  "registryDependencies": [
+    "https://ui.master.co/r/theme.json",
+    "https://ui.master.co/r/icon.json",
+    "https://ui.master.co/r/spinner.json"
+  ],
+  "files": [
+    { "path": "ui/button.css", "type": "registry:file", "target": "~/ui/button.css", "content": "…" },
+    { "path": "ui/button.json", "type": "registry:file", "target": "~/ui/button.json", "content": "…" }
+  ],
+  "categories": ["Actions"],
+  "docs": "Import ui/button.css after ui/theme.css. Its contract is ui/button.json; markup: https://ui.master.co/components/button.md"
+}
+```
+
+`registryDependencies` 列出主题以及该组件所组合的契约。组件的条目还有一个 `meta` 键，记录其层级、是否需要脚本、它的 class，以及其样式表读取的令牌和 mixin。
+
+## 条目 \{#items\}
+
+| 条目 | 名称 | 文件 |
+| --- | --- | --- |
+| 主题 | `theme` | `ui/theme.css` |
+| Paper 主题 | `theme-paper` | `ui/themes/paper.css` |
+| 组件或布局 class | 其契约的名称：`button`、`dialog`、`shell` | `ui/<name>.css` 和 `ui/<name>.json`；带有行为时，还有 `ui/<behavior>.js` 及其导入的辅助模块 `ui/internal.js` |
+| 框架组件 | `<framework>-<name>`，例如 `react-combobox`、`svelte-dialog`、`vue-toast` | 组件本身，例如 `ui/combobox.tsx`、`ui/Dialog.svelte` 或 `ui/Toaster.vue`，以及它从同一目录导入的辅助模块 |
+| 区块 | `block-<slug>`，例如 `block-hero` | `ui/blocks/<slug>.html` |
+| 页面 | `page-<slug>`，例如 `page-dashboard` | `ui/pages/<slug>.html` |
+
+区块或页面的文件，是其页面上第一个预览的标记。它的 `registryDependencies` 是该标记所使用的组件。
+
+## 用 master-ui 获取组件 \{#master-ui\}
+
+软件包中的 `master-ui` 命令是官方方式。它从已安装的软件包复制，因此源码与项目当前运行的版本一致。
+
+从一个[已安装 Master UI](/guide/installation) 的项目开始，在其根目录运行以下命令：
+
+```bash
+npx master-ui init        # once: ui/index.css, one @import per stylesheet
+npx master-ui own button  # ui/button.css and ui/button.json; the import now points at the copy
+```
+
+用生成的 `ui/index.css` 替代完整的 `@master/ui` 导入。检查其中的 button 导入是否指向 `./button.css`；否则页面绘制的仍然是软件包中的 button。[接管组件](/guide/customization#own-a-component)展示了样式表的配置方式。
+
+该命令会在 `ui/.base/` 中记录基准副本，并在 `master-ui.json` 中记录哈希值。请将它们与你接管的源码一起提交，以便其他检出可以与之后安装的软件包进行比较。更新的工作流程参见[审查上游变更](/guide/customization#upstream-changes)。
+
+`own` 适用于有契约的内容：组件和布局 class。区块和页面则从各自的页面或注册表复制。
+
+框架组件通过 `add` 获取。它的记录方式相同，因此 `status`、`diff` 和 `accept` 同样适用。
+
+```bash
+npx master-ui add combobox --framework=react   # ui/combobox.tsx and ui/use-behavior.ts
+npx master-ui add dialog                       # the framework is remembered
+```
+
+## 使用 shadcn CLI \{#shadcn-cli\}
+
+当你需要托管目录中的条目（包括区块或页面的标记）时，请使用 注册表客户端。对于 shadcn CLI，请在 `components.json` 中添加命名空间；如果已有配置，将这个字段合并进去：
+
+```json name=components.json
+{
+  "registries": {
+    "@master": "https://ui.master.co/r/{name}.json"
+  }
+}
+```
+
+然后按名称添加条目：
+
+```bash
+npx shadcn@latest add @master/button
+```
+
+文件会放到各自的目标路径 `ui/button.css` 和 `ui/button.json`。按照条目的 `docs` 所述，在主题之后导入该样式表。
+
+框架组件的添加方式相同，写作 `@master/react-combobox`；也可以直接使用其地址，完全不需要 `components.json`：
+
+```bash
+npx shadcn@latest add https://ui.master.co/r/react-combobox.json
+```
+
+带明确目标路径的通用条目，可以使用只包含 `registries` 的配置，不需要 Tailwind 项目。参见[注册表 API 文档](https://ui.shadcn.com/docs/registry/api-reference)。条目的目标路径会把这些文件放在项目的 `ui/` 目录下。
+
+框架条目将 `@master/ui` 和对应框架声明为依赖；样式表条目则声明 `@master/css` 及其 注册表依赖。安装后请检查软件包清单和 lockfile，并确认复制的源码与已安装的依赖能够协同工作。运行页面，检查复制组件的各种状态和键盘行为。
+
+通过注册表安装不会生成 Master UI 的基准副本和接管记录。因此，`master-ui status` 和 `master-ui diff` 无法跟踪这种安装。如果需要它们的更新工作流程，请选择 `own` 或 `add`。
+
+## 保持不变的部分 \{#what-stays-the-same\}
+
+接管组件改变的是由谁维护它的样式表，并不会改变它的契约。
+
+- 副本附带其契约 `ui/<name>.json`。在这个项目中，它取代库中的契约：`master-ui check`、`master-ui contract` 和智能体读取的都是这份副本。
+- 在获取组件的当天，class、每个 class 所在的元素、状态属性和公开的自定义属性都保持不变。区块、行为和文档仍然像以前一样适用。
+- 副本仍然读取主题的令牌并应用其 mixin，因此会跟随主题变化，包括你自己的主题。
+
+只要契约保持准确，这一点就不会变：样式表新增、重命名或删除 class 时，契约也要随之更新。[契约](/guide/contracts)说明了契约包含哪些内容。

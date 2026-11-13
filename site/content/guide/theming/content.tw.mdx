@@ -1,0 +1,202 @@
+---
+title: "主題設定"
+description: "覆寫 token、定義材質配方，並以 Paper 為實際範例打造你自己的主題。"
+---
+import GuideFigure from '../../../components/GuideFigure.astro'
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+
+export const specimen = `<div class="tray max-w(440) mx-auto">
+  <div class="sheet flex flex-col gap-lg p-lg">
+    <div class="flex flex-wrap items-center gap-sm">
+      <button type="button" class="btn btn-primary">Deploy</button>
+      <button type="button" class="btn">Preview</button>
+      <button type="button" class="btn btn-quiet">Cancel</button>
+      <button type="button" class="btn btn-brand">Upgrade</button>
+    </div>
+    <div class="field">
+      <label for="theme-domain">Domain</label>
+      <input class="input" id="theme-domain" value="atlas.dev">
+    </div>
+    <div class="flex flex-wrap items-center gap-lg">
+      <label class="check"><input type="checkbox" class="checkbox" checked> Preview builds</label>
+      <label class="check"><input type="radio" class="radio" name="theme-plan" checked> Team</label>
+      <label class="check"><input type="checkbox" role="switch" class="switch" checked> Alerts</label>
+    </div>
+    <div class="segmented" role="radiogroup" aria-label="Environment">
+      <label class="segmented-item"><input type="radio" class="segmented-input" name="theme-environment" checked>Production</label>
+      <label class="segmented-item"><input type="radio" class="segmented-input" name="theme-environment">Preview</label>
+      <label class="segmented-item"><input type="radio" class="segmented-input" name="theme-environment">Local</label>
+    </div>
+    <input type="range" class="slider" value="60" aria-label="Traffic to the new release">
+    <div class="flex flex-wrap items-center gap-sm">
+      <span class="badge">Draft</span>
+      <span class="badge badge-success badge-dot">Ready</span>
+      <span class="badge badge-ink">New</span>
+    </div>
+    <div class="sheet sheet-inverse p-md text-sm">Ship the release when the checks pass.</div>
+  </div>
+</div>`
+
+主題為 token 賦值，並定義元件所讀取的材質配方。你可以變更一個共用值、將它限定在頁面的某個部分，或在保留元件標記與行為的同時，替換整個介面的材質。
+
+Moonstone 與 Obsidian 背後的材質選擇請參閱[設計](/guide/design)。[預設主題](/guide/theme)記載了它們的 token 角色與數值。若要判斷某項變更應該放在主題還是元件中，請從[自訂](/guide/customization)開始。
+
+## 重新調整 token \{#retune-tokens\}
+
+在匯入之後覆寫 token。所有讀取它的元件都會跟著改變。
+
+```css name=app.css
+@import '@master/css';
+@import '@master/ui';
+
+@theme {
+  --color-brand: oklch(58% .19 28);
+  --color-brand-ink: oklch(99% .01 28);
+  --radius-control: .5rem;
+}
+```
+
+這會改變品牌表面與預設的控制項圓角。小型與大型控制項使用各自的圓角 token。請對照新的表面檢查 `--color-brand-ink`；品牌色文字使用另一個獨立的 `--color-brand-text` token，不會自動套用新的色相。
+
+### 將覆寫限定在一個區域 \{#scope\}
+
+token 是自訂屬性，因此它也會沿著階層串接傳遞。在某個元素上設定 token，就能重新調整它的子孫元素，而不需要第二次建置。這裡的兩個結帳按鈕會繼承較小的圓角，而該區域外的按鈕則保留預設值：
+
+<GuideFigure name="theming" title="Token 作用範圍與繼承">
+
+**作用範圍會改變其子孫元素繼承到的值。** Checkout 將預設 10px 的 `--radius-control` 替換為 4px，套用於 Review 與 Pay；Continue browsing 位於範圍外，維持 10px。每個按鈕自己的 `--btn-radius` 會讀取這個繼承而來的 token。祖先元素上的 `--btn-radius` 無法取代按鈕自身的宣告。所示數值為套用主題的圓角縮放之前的值。
+
+</GuideFigure>
+
+<ComponentPreview name="scope" height={232} narrowHeight={280} title="限定於結帳區域的 token" background="plain" bodyClass="p-lg" html={`<div class="flex flex-col gap-lg w-full max-w(440) mx-auto">
+  <div class="sheet flex flex-col gap-sm p-md" style="--radius-control: .25rem">
+    <span class="text-xs fg-text-muted">Inside checkout · 4px radius token</span>
+    <div class="flex flex-wrap gap-sm">
+      <button type="button" class="btn">Review</button>
+      <button type="button" class="btn">Pay</button>
+    </div>
+  </div>
+  <div class="flex flex-wrap items-center gap-sm">
+    <button type="button" class="btn">Continue browsing</button>
+    <span class="text-xs fg-text-muted">Outside · default 10px token</span>
+  </div>
+</div>`} />
+
+按鈕透過它自己的 `--btn-radius` 屬性讀取 `--radius-control`。只在結帳容器上設定 `--btn-radius` 不會有這個效果，因為每個按鈕都會在自己身上宣告該屬性。請為區域使用主題 token，或直接在按鈕上設定[元件屬性](/guide/customization#property)。這段行內宣告也可以放在套用於該容器的專案 class 中。
+
+### 保留圓形圓角 \{#circular-corners\}
+
+預設主題會在支援的地方使用連續曲率圓角。若要在所有地方保留圓形圓角，請設定這兩個圓角屬性：
+
+```css name=app.css
+:root {
+  --corner-shape: round;
+  --corner-scale: 1;
+}
+```
+
+在 `@theme` 中宣告的 token 也可以作為 utility 使用：`bg-surface-tray` 與 `shadow-lifted` 讓自訂元素擁有與元件相同的材質。匯入 Master UI 會將預設組共用的語意 token 設為預設主題；覆寫會同時重新調整讀取這些 token 的元件與 utility。
+
+## 主題要決定什麼 \{#what-a-theme-decides\}
+
+打造主題時請使用這份檢查清單。[預設主題](/guide/theme)說明了 token 的角色與預設值。
+
+| 決定 | Token |
+| --- | --- |
+| 每個表面的色調 | `--color-surface-base`、`-tray`、`-raised`、`-raised-low`、`-inset`、`-inset-hover`、`-floating`、`-chip`、`-inverse`、`-scrim` |
+| 每種線條的明確程度 | `--color-line-hair`、`-contour`、`-divider`、`-strong`、`-mark` |
+| 墨色 | `--color-text-strong`、`-body`、`-muted`、`-disabled`、`-inverse`、`--color-focus`、`--color-focus-halo` |
+| 光線落在哪裡 | `--color-highlight`、`--color-lip`、`--color-shade-1` 到 `-5` |
+| 深度 | `--shadow-pressed`、`-flat`、`-raised`、`-raised-hover`、`-lifted`、`-floating`、`-overlay` |
+| 墨色表面 | `--color-surface-inverse-high`、`-low`、`--color-ink-high`、`-low`、它們的 `-hover` 形式、`--color-ink-pressed`、`--color-ink-highlight`、`--color-ink-edge`、`--shadow-ink`、`-ink-hover`、`-ink-pressed`、`-ink-mark`、`-ink-well`、`-ink-top`、`--color-surface-tip`、`--shadow-tip` |
+| 滑塊 | `--color-thumb-high`、`-low`、`--color-thumb-on-high`、`-on-low`、`--shadow-thumb-on-ink` |
+| 色相 | `--color-brand`、`-brand-ink`、`-brand-text`、`--color-info`、`-success`、`-warning`、`-danger`、`--color-tone-highlight`、`-tone-highlight-soft` |
+| 圖片與外部提供的顏色 | `--color-line-image`、`-image-strong`、`--color-line-on-color`、`--color-highlight-on-color`、`--color-on-image`、`-on-image-shade`、`--color-mark`、`-mark-underline`、`--color-sheen` |
+| 形狀 | `--radius-chip`、`-control-sm`、`-control`、`-control-lg`、`-surface`、`--corner-shape`、`--corner-scale` |
+| 位移與時間 | `--lift`、`--duration-press`、`-quick`、`-base`、`--easing-glide` |
+| 字體 | `--font-weight-control`，以及預設組的 `--font-sans` 與 `--font-mono` |
+
+套件中有一項測試會拒絕元件樣式表中的顏色字面值，讓它們的顏色維持由主題掌控。檢查完整的 token 與配方時，請以已安裝的 `@master/ui/theme.css` 為來源。
+
+## Paper，第二個主題 \{#paper\}
+
+Paper 發布於 `@master/ui/themes/paper.css`。它以扁平的表面、以線條勾勒的邊緣、較小的圓形圓角、溫暖的中性色與綠色品牌色，取代預設的材質。它的 `--lift: 0px` 會移除由該 token 驅動的懸停與按下位移；元件動畫（例如開關滑塊的移動）仍然有效。它不會改變任何元件樣式表。
+
+```css name=app.css
+@import '@master/css';
+@import '@master/ui';
+@import '@master/ui/themes/paper.css';
+```
+
+相同的標記，分別套用各個主題：
+
+<ComponentPreview name="moonstone" height={536} narrowHeight={688} title="Moonstone" theme bodyClass="p-lg" html={specimen} />
+
+<ComponentPreview name="paper" height={536} narrowHeight={688} title="Paper" theme stylesheet="paper" bodyClass="p-lg" html={specimen} />
+
+請把它的原始碼當作範本來閱讀。它由一份 token 清單、一項圓角設定與一個配方組成。
+
+<ComponentSource name="paper" directory="themes" />
+
+### 建立主題檔案 \{#create-a-theme\}
+
+如果你想要扁平的起點，請從已安裝的套件複製 Paper；若要以預設材質為起點，則複製 `theme.css`：
+
+```bash
+mkdir -p themes
+cp node_modules/@master/ui/themes/paper.css themes/app.css
+```
+
+在元件庫之後匯入你的檔案，然後編輯它的 token 與配方：
+
+```css name=app.css
+@import '@master/css';
+@import '@master/ui';
+@import './themes/app.css';
+```
+
+使用既有的 Master CSS 整合重新建置。元件標記保持不變；在將主題套用到整個應用程式之前，請在兩種色彩配置下比較按鈕、欄位、墨色表面與覆蓋層。
+
+## 配方 \{#recipes\}
+
+有些材質不只是一個值：一個帶有光線變化的表面、一個在每種狀態下各有表面的控制項。主題將這些寫成 mixin，元件則依名稱套用它們。主題檔案可以重新定義 mixin；最後一個定義就是每個元件所取得的版本。
+
+| Mixin | 繪製的內容 | Paper |
+| --- | --- | --- |
+| `--surface-sheet` | 凸起的表面 | 扁平，透過 `--color-surface-raised-low` |
+| `--surface-ink` | 墨色 sheet：反轉 sheet、已送出的訊息 | 扁平，透過 `-inverse-high` 與 `-low` token |
+| `--control-ink`、`-hover`、`-pressed` | 主要按鈕在各狀態下的表面與陰影 | 扁平，透過墨色 token |
+| `--control-tone`、`-hover`、`-pressed` | 帶色相的控制項，由控制項自己的 `--tone` 混合而成 | 重新定義：單一扁平色相 |
+| `--surface-thumb` | 開關與滑桿的滑塊 | 扁平，透過滑塊 token |
+| `--focus-ring` | 鍵盤焦點 | 不變 |
+| `--on-ink` | 墨色表面傳達給其內含之行內 chip 的資訊 | 不變 |
+| `--anchored`、`--pop` | popover 的位置，以及它進場與退場的方式 | 不變 |
+
+請優先使用 token。Paper 只重新定義了帶色相的控制項，因為該配方是從控制項設定在自己身上的色相混合出表面，而位於根元素的 token 無法讀取這個色相。
+
+token 是自訂屬性，在執行階段作用於任何元素上。mixin 則在 Master CSS 編譯樣式表時解析，因此重新定義的 mixin 會套用到整個建置結果。
+
+## 不使用 Master CSS \{#without-master-css\}
+
+套件也提供每個主題與元件一起編譯成一般 CSS 的版本。CSS 打包工具可以從已安裝的套件匯入 Paper；用它取代預設的 standalone 樣式表：
+
+```css name=app.css
+@import '@master/ui/dist/themes/paper.css';
+
+:root {
+  --color-brand: oklch(58% .19 28);
+}
+```
+
+若頁面沒有使用打包工具，請從你的靜態資源提供該編譯檔案；重設樣式與 utility 的限制請參閱[安裝](/guide/installation#without-master-css)。`dist/standalone.css` 包含 moonstone 與 obsidian。編譯後的檔案接受自訂屬性的覆寫，但重新定義 mixin 需要以 Master CSS 編譯主題。
+
+## 主題的規則 \{#rules\}
+
+- **主題從不選取元件。** 它設定 token 並定義 mixin。主題中像 `.btn { … }` 這樣的規則是元件覆寫；它該放在哪裡，請參閱[自訂](/guide/customization)。
+- **保持成對。** 表面與其上的墨色、線條與其下的表面，要一起選擇。請在兩種色彩配置下，檢查每個表面上內文的對比。
+- **讓邊緣保持可辨識。** 如果主題移除了光影，它的線條就要承擔更多界定邊界的工作。Paper 使用更明確的線條 token，並針對每個角色與色彩配置分別調校。
+- **不繪製任何東西的陰影 token 應寫成 `0 0 0 0 transparent`，而不是 `none`。** 元件會以清單組合陰影，而 `none` 在清單中是無效的。
+- **回應提高對比的需求。** 在 `prefers-contrast: more` 下，主題會讓線條與兩種低調的墨色更明確；自行設定線條的主題也要寫出這個區塊，就像 Paper 一樣。變更配方時，請保留元件在強制色彩與減少動態效果下的行為。
+
+請以鍵盤焦點、懸停、按下、停用的控制項與無效的欄位，在淺色與深色模式下檢查結果。在頁面上開啟選單或對話框，依實際的背景判斷它的邊緣與文字。再以減少動態效果與強制色彩模式重複檢查：靜止時看起來清楚的主題，仍可能隱藏某個狀態，或移除唯一可見的邊界。

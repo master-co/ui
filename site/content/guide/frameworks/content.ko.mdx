@@ -1,0 +1,347 @@
+---
+title: "React, Svelte, Vue"
+description: "상태를 가진 컴포넌트를 React, Svelte, Vue에 복사하고, 애플리케이션 값을 연결하며, 서버에서 렌더링된 마크업을 올바르게 유지합니다."
+---
+import GuideFigure from '../../../components/GuideFigure.astro'
+import FrameworkPreview from '~/site/components/FrameworkPreview.astro'
+
+상태가 없는 컴포넌트에는 네이티브 마크업을 사용하고, 애플리케이션이 값, 데이터, id, 생명 주기를 조율해야 할 때는 프레임워크 컴포넌트를 복사하세요. 복사한 컴포넌트는 React, Svelte, Vue에서 같은 계약을 렌더링하고 패키지에 포함된 동작을 연결합니다. 스타일을 사용할 수 있도록 [설치](/guide/installation)부터 시작하세요. 컴포넌트를 복사해도 그 CSS는 가져오지 않습니다.
+
+## 마크업은 마크업으로 \{#markup\}
+
+버튼은 React, Svelte, Vue 어디에서나 `btn btn-primary`를 가진 `<button>`입니다. `Button` 컴포넌트는 없으며, 프로젝트도 props를 클래스로 바꾸기만 하는 컴포넌트를 작성해서는 안 됩니다.
+
+```tsx name=Toolbar.tsx
+export function Toolbar({ saving }: { saving: boolean }) {
+  return (
+    <button type="button" className="btn btn-primary" disabled={saving} aria-busy={saving}>
+      Save changes
+    </button>
+  )
+}
+```
+
+- **컴포넌트가 소유할 것이 없습니다.** 버튼에는 전달할 값도, 렌더링할 행도, 연결할 id도, 연결할 동작도 없습니다. 버튼의 상태는 프레임워크가 이미 설정하는 속성입니다.
+- **검사기는 클래스를 읽습니다.** [`master-ui check`](/guide/ai#check-the-markup)는 `.jsx`, `.tsx`, `.svelte`, `.vue`, `.astro` 파일을 읽습니다. `className="btn btn-outline"`을 보면 그런 클래스가 없다고 알려 주지만, `<Button variant="outline">`은 볼 수 없습니다.
+- **마크업에는 클라이언트 스크립트가 필요하지 않습니다.** 클래스를 가진 네이티브 요소는 서버에서 렌더링되고 그대로 남습니다. React Server Components에서는 클라이언트 번들에 아무것도 추가하지 않습니다.
+
+달라지는 것은 구문뿐입니다.
+
+| HTML에서 | JSX에서 | Svelte와 Vue에서 |
+| --- | --- | --- |
+| `class="btn btn-primary"` | `className="btn btn-primary"` | 같음 |
+| `for="email"` | `htmlFor="email"` | 같음 |
+| `tabindex="-1"`, `popovertarget="share"` | `tabIndex={-1}`, `popoverTarget="share"` | 같음 |
+| `command="show-modal"`과 함께 쓰는 `commandfor="confirm"`, `interestfor="tip"` | React의 타입에 아직 없는 경우 스프레드로 전달합니다 | 같음 |
+
+프로젝트에서 마크업이 반복되면 프로젝트 자체의 방식으로 프로젝트 자체 컴포넌트에 감싸고, 계약의 클래스는 그 안에 리터럴 문자열로 유지하세요.
+
+## 프레임워크가 소유하는 것 \{#what-a-framework-owns\}
+
+프레임워크 컴포넌트는 프레임워크가 다음 네 가지 중 하나 이상을 소유할 때 존재합니다.
+
+1. **애플리케이션이 읽거나 설정하는 값.** 콤보박스에서 선택된 것, 대화 상자가 열려 있는지 여부.
+2. **데이터로부터 렌더링되는 행.** 리스트박스의 옵션, 한 달의 날짜, 메뉴의 항목.
+3. **부분을 연결하는 id.** 레이블과 그 컨트롤, 버튼과 그것이 여는 팝오버, 탭과 그 패널.
+4. **생명 주기.** 요소가 존재할 때 연결하고 사라질 때 해제하는 [동작](/guide/behaviors).
+
+이는 라이브러리가 [클래스](/guide/introduction#tiers)에 적용하는 것과 같은 기준입니다. 반복되는 마크업이 아니라 지식이 기준입니다. 이를 통과하는 패턴은 열일곱 가지입니다.
+
+| 컴포넌트 | 렌더링하는 계약 | 프레임워크가 소유하는 것 |
+| --- | --- | --- |
+| `calendar` | [캘린더](/components/calendar) | 값, 그리고 그리는 달 |
+| `combobox` | [콤보박스](/components/combobox) | 값, 옵션 |
+| `command` | [명령 팔레트](/components/command) | 열려 있는지 여부, 명령 |
+| `compare` | [비교](/components/compare) | 위치 |
+| `dialog` | [대화 상자](/components/dialog) | 열려 있는지 여부, 트리거가 지정하는 id |
+| `field` | [필드](/components/input#hint-and-error) | 레이블, 컨트롤, 힌트, 오류를 연결하는 id |
+| `listbox` | [리스트박스](/components/listbox) | 값, 옵션 |
+| `menu` | [메뉴](/components/menu) | 항목, 트리거가 지정하는 id, 컨텍스트 메뉴의 대상 |
+| `otp` | [OTP](/components/otp) | 코드, 슬롯 수 |
+| `popover` | [팝오버](/components/popover) | 열려 있는지 여부, 트리거가 지정하는 id |
+| `splitter` | [스플리터](/components/splitter) | 크기 |
+| `stepper` | [스테퍼](/components/stepper) | 숫자 |
+| `tabs` | [탭](/components/tabs#tab-panels) | 선택된 탭, 탭과 패널을 연결하는 id |
+| `toast` | [토스트](/components/toast) | 대기열: `toast()` 함수와 이를 보여 주는 영역 |
+| `tooltip` | [툴팁](/components/tooltip) | 컨트롤과 그 레이블을 연결하는 id |
+| `tree` | [트리](/components/tree) | 선택된 행, 행 |
+| `wheel` | [휠](/components/wheel) | 각 열의 값, 옵션 |
+
+나머지 계약은 모두 마크업입니다. 셀렉트는 `<select class="select">`, 스위치는 `role="switch"`를 가진 체크박스, 아코디언은 `<details>`입니다. 이들의 상태는 브라우저가 보유하며, 프레임워크는 다른 네이티브 컨트롤과 마찬가지로 이를 바인딩합니다.
+
+## 컴포넌트 추가하기 \{#add\}
+
+컴포넌트는 패키지에서 가져오는 것이 아니라 프로젝트 안의 소스입니다. `master-ui` 명령이 이를 복사합니다.
+
+```bash
+npx master-ui add combobox --framework=react
+```
+
+```
+Add combobox: ui/combobox.tsx, ui/use-behavior.ts.
+  It renders the markup of "master-ui contract combobox" and needs that stylesheet from @master/ui.
+```
+
+- `package.json`이 React, Svelte, Vue 중 정확히 하나를 지정하면 프레임워크를 그곳에서 읽으며, 처음 한 번 이후에는 `master-ui.json`에 기억합니다.
+- 컴포넌트가 옆에서 가져오는 작은 헬퍼도 함께 복사됩니다. React와 Vue는 `use-behavior.ts`, Svelte는 `behavior.svelte.ts`입니다.
+- 파일은 프로젝트 루트의 `ui/`에 놓입니다. `--directory`로 다른 위치를 지정할 수 있으며, 이 값도 기억됩니다. 소스가 `src` 아래에 있는 SvelteKit에서는 `--directory=src/lib/ui`, Nuxt에서는 `--directory=app/ui`입니다.
+- 그 옆의 `ui/.base/`는 각 파일을 가져온 당시의 모습으로 보관합니다. 이 복사본은 나중에 `diff`가 업스트림과 비교하는 대상이므로 그대로 두세요.
+- 이름 없이 `npx master-ui add`를 실행하면 컴포넌트 목록을 보여 줍니다.
+- 이미 있는 복사본은 유지됩니다. 그 파일은 여러분의 것이며 편집되었을 수 있습니다.
+
+복사한 컴포넌트는 렌더링, 생명 주기, 값 동기화를 소유합니다. 동작은 `@master/ui/behaviors`에서 가져오므로, 그 의존성을 업그레이드하면 키보드와 포커스 수정 사항이 함께 들어옵니다. 컴포넌트 자체가 업스트림에서 바뀌면 [`status`와 `diff`](/guide/customization#upstream-changes)로 차이를 검토하고, 원하는 변경을 작업 복사본에 병합하세요. 그런 다음 `accept`를 실행해 설치된 패키지의 버전을 새 저장 기준으로 기록합니다. 이 명령은 작업 파일을 바꾸지 않고 `.base/`와 추적 메타데이터를 업데이트합니다. [레지스트리](/guide/registry#items)에는 같은 파일이 `react-combobox`, `svelte-combobox`, `vue-combobox`로 들어 있습니다.
+
+## 컴포넌트 사용하기 \{#use\}
+
+사용하는 프레임워크로 `add combobox`를 실행한 다음, 복사한 파일을 실제 디렉터리에서 가져오세요. 아래 예제는 예제 파일 옆에 기본 `ui/` 디렉터리가 있다고 가정합니다. 각 예제는 같은 콤보박스를 해당 프레임워크의 방식으로 보여 줍니다. Svelte 예제는 실제로 실행됩니다. 프로젝트가 받게 되는 컴포넌트와 동작으로 서버에서 렌더링되고 미리 보기에서 하이드레이션됩니다. 코드 보기에 나오는 것이 그 파일입니다.
+
+```tsx name=Region.tsx
+'use client'
+import { useState } from 'react'
+import { Combobox } from './ui/combobox'
+
+const regions = [
+  { value: 'hnd', label: 'Tokyo' },
+  { value: 'sin', label: 'Singapore' },
+  { value: 'fra', label: 'Frankfurt', description: 'Germany' },
+]
+
+export function Region() {
+  const [region, setRegion] = useState<string | null>(null)
+  return (
+    <Combobox options={regions} value={region} onValueChange={setRegion}
+      aria-label="Region" listLabel="Regions" toggleLabel="Show regions" empty="No regions match." />
+  )
+}
+```
+
+<FrameworkPreview name="Region" height={304} title="Region.svelte" bodyClass="flex items-start justify-center p-lg min-h(300)" caption="입력해서 필터링하고, Enter나 클릭으로 선택한 다음, 선택한 내용 위에 다시 입력해 보세요. 애플리케이션이 보유한 값이 그에 따라 바뀝니다." />
+
+```vue name=Region.vue
+<script setup lang="ts">
+import { ref } from 'vue'
+import Combobox from './ui/Combobox.vue'
+
+const regions = [
+  { value: 'hnd', label: 'Tokyo' },
+  { value: 'sin', label: 'Singapore' },
+  { value: 'fra', label: 'Frankfurt', description: 'Germany' },
+]
+const region = ref<string | null>(null)
+</script>
+
+<template>
+  <Combobox :options="regions" v-model="region"
+    aria-label="Region" list-label="Regions" toggle-label="Show regions" empty="No regions match." />
+</template>
+```
+
+Tokyo를 선택하고 애플리케이션이 `hnd`를 보유하는지 확인하세요. 필드에는 옵션의 레이블이 표시됩니다. 그 선택 위에 다시 입력하면 옵션을 다시 선택할 때까지 값은 `null`이 됩니다. 모델은 임의의 검색 텍스트가 아니라 옵션 값을 보유합니다.
+
+| | 값 | 열려 있는지 여부 | 그 밖의 출력 |
+| --- | --- | --- | --- |
+| React | `value`, 또는 컴포넌트가 값을 유지하게 하는 `defaultValue`, 그리고 `onValueChange` | `open`, `onOpenChange` | `onComplete`, `onValueCommit`, `onSearch` |
+| Svelte | `bind:value`, 그리고 `onValueChange` | `bind:open`, 그리고 `onOpenChange` | 같은 콜백 props |
+| Vue | `v-model` | `v-model:open` | `@complete`, `@value-commit`, `@search` |
+
+값의 소유 방식은 어댑터마다 다릅니다. React에서 `value`는 소유자가 정한 값입니다. 독자가 컴포넌트를 바꿨는데 소유자가 `onValueChange`에서 그 변경을 받아들이지 않으면, 제어되는 `<input>`처럼 컴포넌트는 전달받은 값으로 되돌아갑니다. `open`도 마찬가지입니다. Svelte와 Vue에는 이런 규칙이 없습니다. `bind:`나 `v-model` 없이 전달된 값은 컴포넌트의 시작점일 뿐이고, 그 이후에는 독자가 선택한 것을 컴포넌트가 유지합니다. 그곳에서 변경을 거부하려면 바인딩된 값을 직접 되돌리세요.
+
+컴포넌트 자체의 것이 아닌 props는 독자가 예상할 만한 요소로 전달됩니다. 콤보박스의 필드, 대화 상자의 `<dialog>`, 리스트박스의 루트입니다. 콤보박스는 이렇게 `aria-label`, `placeholder`, `name`을 받습니다.
+
+### 페이지 자체의 마크업 \{#the-pages-own-markup\}
+
+이 예제를 사용하기 전에 `npx master-ui add dialog --framework=react`나 `--framework=vue`처럼 필요한 컴포넌트를 추가하세요. 대화 상자, 팝오버, 메뉴, 툴팁은 페이지에 속한 컨트롤이 엽니다. 컴포넌트는 자체 버튼을 렌더링하지 않습니다. 컴포넌트는 자신을 지정하는 속성을 페이지에 넘겨주고, 페이지는 그 속성을 자체 버튼에 스프레드합니다. 그러면 일반 페이지에서와 마찬가지로 브라우저가 대화 상자를 엽니다.
+
+```tsx name=DeleteProject.tsx
+'use client'
+import { useState } from 'react'
+import { Dialog } from './ui/dialog'
+
+export function DeleteProject({ remove }: { remove: () => Promise<void> }) {
+  const [open, setOpen] = useState(false)
+  async function confirm() {
+    await remove()
+    setOpen(false)
+  }
+  return (
+    <Dialog id="delete-project" aria-labelledby="delete-project-title"
+      open={open} onOpenChange={setOpen}
+      trigger={attributes => <button type="button" className="btn" {...attributes}>Delete project</button>}>
+      <header className="dialog-header">
+        <h2 className="dialog-title" id="delete-project-title">Delete this project?</h2>
+        <p className="dialog-description">Atlas and its 14 deployments are removed.</p>
+      </header>
+      <footer className="dialog-footer">
+        <button type="button" className="btn" {...{ commandfor: 'delete-project', command: 'close' }}>Cancel</button>
+        <button type="button" className="btn btn-primary" onClick={confirm}>Delete project</button>
+      </footer>
+    </Dialog>
+  )
+}
+```
+
+<FrameworkPreview name="DeleteProject" height={320} title="DeleteProject.svelte" bodyClass="flex items-start justify-center p-lg min-h(320)" caption="버튼은 자체 핸들러 없이 commandfor로 대화 상자를 엽니다. 애플리케이션은 대화 상자가 열렸다는 것을 전달받고, 프로젝트가 삭제되면 자체 상태로 대화 상자를 닫습니다." />
+
+```vue name=DeleteProject.vue
+<script setup lang="ts">
+import { ref } from 'vue'
+import Dialog from './ui/Dialog.vue'
+
+const props = defineProps<{ remove: () => Promise<void> }>()
+const open = ref(false)
+async function confirm() {
+  await props.remove()
+  open.value = false
+}
+</script>
+
+<template>
+  <Dialog id="delete-project" aria-labelledby="delete-project-title" v-model:open="open">
+    <template #trigger="attributes">
+      <button type="button" class="btn" v-bind="attributes">Delete project</button>
+    </template>
+    <header class="dialog-header">
+      <h2 class="dialog-title" id="delete-project-title">Delete this project?</h2>
+      <p class="dialog-description">Atlas and its 14 deployments are removed.</p>
+    </header>
+    <footer class="dialog-footer">
+      <button type="button" class="btn" commandfor="delete-project" command="close">Cancel</button>
+      <button type="button" class="btn btn-primary" @click="confirm">Delete project</button>
+    </footer>
+  </Dialog>
+</template>
+```
+
+여기서 `remove`는 호출하는 쪽이 제공하는 애플리케이션의 삭제 함수입니다. 예제는 이 함수가 완료된 뒤 대화 상자를 닫습니다. 요청 전후로 애플리케이션의 처리 중 상태와 오류 상태를 추가하세요. 대화 상자 안의 부분은 컴포넌트가 아니라 계약의 마크업입니다. `dialog-header`, `dialog-title`, `dialog-footer`는 아무것도 소유하지 않습니다. `open`은 요청이 실패한 뒤 대화 상자를 열거나 경로가 바뀔 때 닫는 것처럼 애플리케이션이 결정할 때만 전달하세요. 이것이 없으면 트리거와 브라우저가 모든 일을 처리합니다.
+
+[필드](/components/input#hint-and-error)는 반대 방향으로 같은 방식으로 동작합니다. 필드는 id를 소유하고, 그 id를 담은 속성을 페이지의 컨트롤에 넘겨줍니다.
+
+```tsx name=Email.tsx
+import { Field } from './ui/field'
+
+export function Email({ error }: { error?: string }) {
+  return (
+    <Field label="Work email" hint="We only send receipts." error={error}>
+      {control => <input className="input" type="email" name="email" {...control} />}
+    </Field>
+  )
+}
+```
+
+### 토스트 \{#toasts\}
+
+토스트는 무언가 일어나기 전까지 요소가 없으므로, 그 컴포넌트는 대기열입니다. 어디서든 호출할 수 있는 `toast()` 함수와, 한 번 렌더링되어 대기열의 내용을 보여 주는 영역으로 이루어집니다.
+
+```tsx name=App.tsx
+'use client'
+import { toast, Toaster } from './ui/toast'
+
+export function ToastExample() {
+  return (
+    <>
+      <Toaster />
+      <button type="button" className="btn" onClick={() => toast({
+        title: 'Preview ready', description: 'The build can now be reviewed.', status: 'success'
+      })}>Show notification</button>
+    </>
+  )
+}
+```
+
+Svelte와 Vue에서 `toast`는 `Toaster.svelte`와 `Toaster.vue`의 이름 있는 내보내기입니다. 토스트는 6초 후 스스로 사라집니다. `duration`으로 다른 시간을 설정할 수 있고, `duration: false`로 설정하면 닫을 때까지 유지됩니다.
+
+## 로직의 위치 \{#where-the-logic-is\}
+
+동작이 있는 패턴에서 어댑터는 키보드 처리와 선택 규칙을 그 동작에 맡깁니다. 어댑터의 책임은 세 가지입니다.
+
+- **계약의 마크업을 렌더링합니다.** 첫 번째 값이 이미 그려진 상태로 렌더링하므로, 어떤 스크립트도 실행되기 전에 첫 HTML이 올바릅니다.
+- **동작을 연결합니다.** 옵션이 바뀌면 다시 연결합니다.
+- **값을 전달합니다.** 애플리케이션이 다른 값을 설정하면 동작의 [`value`](/guide/behaviors#the-value)에 쓰고, 루트에 도달하는 모든 `input`과 `change`에서 이를 읽습니다.
+
+첫 렌더링 이후에는 일반 페이지에서와 마찬가지로 동작이 속성을 바꿉니다. 공유되는 동작 코드는 키보드 처리를 한 곳에 둡니다. 공유되는 테스트 시나리오는 각 프레임워크 어댑터를 검사합니다. 마운트하고, 마크업을 계약과 대조하고, 키를 누르고, 나온 값을 읽고, 값을 설정하고, 언마운트합니다.
+
+키가 하는 일이나 선택의 의미를 바꾸려면 [동작을 소유하세요](/guide/behaviors#own-a-behavior). 이후의 `master-ui add`는 새 컴포넌트 파일을 만들 때 그 로컬 동작을 사용합니다. 이미 컴포넌트를 추가했다면 가져오기 경로를 직접 업데이트하세요. `add`는 기존 파일을 보존합니다.
+
+## 서버에서 \{#on-a-server\}
+
+<GuideFigure name="frameworks" title="렌더링과 동작의 생명 주기">
+
+**렌더링과 상호작용은 생명 주기가 다릅니다.** 선택된 리스트박스 값은 서버 HTML에 이미 표시되어 있습니다. 마운트 후 어댑터는 동작을 연결하고 애플리케이션 값을 동작과 동기화합니다. 언마운트하면 정리 함수를 호출해 리스너와 옵저버를 중지합니다. 정리 함수는 원래 마크업을 복원하지 않습니다.
+
+</GuideFigure>
+
+- **첫 HTML이 상태를 담습니다.** 선택된 옵션, 선택된 탭, 스플리터의 크기, 캘린더의 달과 선택된 날짜는 서버가 보내는 마크업에 들어 있습니다. 캘린더의 오늘처럼 브라우저만 알 수 있는 표시는 동작이 연결될 때 나타납니다.
+- **서버에서 렌더링하는 캘린더에는 `locale`을 지정하세요.** 달과 요일의 이름은 `Intl`에서 오며, 서버와 브라우저가 사용할 언어에 항상 동의하지는 않습니다.
+- **React Server Components에서는** 동작을 연결하거나 상태를 유지하는 컴포넌트가 클라이언트 컴포넌트이며 `'use client'`를 선언합니다. 그런 컴포넌트에 함수, 즉 `trigger`, `onValueChange`, 항목의 `onSelect`를 넘기는 파일도 클라이언트 컴포넌트입니다. 위 예제가 `'use client'`로 시작하는 이유가 이것입니다. Server Component는 클라이언트 컴포넌트에 함수를 전달할 수 없습니다. `Field`와 `Tooltip`은 id만 연결하므로, 클라이언트의 다른 것을 렌더링하지 않는 파일 안에서는 서버에서 렌더링됩니다. 마크업인 것은 모두 작성된 곳에서 렌더링됩니다.
+- **id는 프레임워크에서 옵니다.** React와 Vue에서는 `useId`, Svelte에서는 `$props.id()`이므로 서버와 브라우저 사이에서 일치합니다. Vue는 하나의 애플리케이션 안에서 번호를 매깁니다. 아일랜드처럼 여러 Vue 애플리케이션을 마운트하는 페이지에서는 각각에 `app.config.idPrefix`를 지정하세요. 그렇지 않으면 두 애플리케이션이 서로 다른 요소를 `v-0`으로 부르게 됩니다.
+
+## 직접 만드는 컴포넌트 \{#your-own\}
+
+같은 동작을 두고 다른 렌더링이 필요할 때는 `master-ui add`가 복사한 헬퍼를 사용하세요. 예를 들어 선택한 프레임워크용 `listbox`를 추가해 헬퍼를 얻은 다음, 아래 가져오기 경로가 가정하듯 `ui/` 디렉터리 옆에 `Sizes` 컴포넌트를 작성합니다. 서버 HTML이 올바르도록 초기 선택을 마크업에 렌더링하고, 이후의 값은 헬퍼가 동기화하게 하세요. React에서 헬퍼는 ref를 반환하는 훅입니다.
+
+```tsx name=Sizes.tsx
+'use client'
+import { useState } from 'react'
+import { listbox } from '@master/ui/behaviors/listbox.js'
+import { useBehavior } from './ui/use-behavior'
+
+export function Sizes({ value, onValueChange }: { value: string, onValueChange: (value: string | string[] | null) => void }) {
+  const ref = useBehavior(listbox, undefined, { value, onValueChange })
+  const [first] = useState(() => value)
+  return (
+    <div className="listbox" role="listbox" aria-label="Size" tabIndex={0} ref={ref}>
+      {['Small', 'Medium', 'Large'].map(size => (
+        <div className="listbox-option" role="option" aria-checked={size === first} key={size}>{size}</div>
+      ))}
+    </div>
+  )
+}
+```
+
+두 번째 인수는 동작의 옵션이고, 세 번째 인수는 값과 그 값을 전달받는 쪽입니다. Svelte에서 헬퍼는 attachment를 만들고, Vue에서는 템플릿 ref와 모델을 받는 컴포저블입니다.
+
+```svelte name=Sizes.svelte
+<script lang="ts">
+  import { untrack } from 'svelte'
+  import { listbox } from '@master/ui/behaviors/listbox.js'
+  import { behavior } from './ui/behavior.svelte.js'
+
+  let { value = $bindable() }: { value?: string | string[] | null } = $props()
+  const first = untrack(() => [value ?? []].flat())
+  const attach = behavior(listbox, undefined, { value: () => value, change: next => { value = next } })
+</script>
+
+<div class="listbox" role="listbox" aria-label="Size" tabindex="0" {@attach attach}>
+  {#each ['Small', 'Medium', 'Large'] as size}
+    <!-- The behavior writes aria-selected on the active option. -->
+    <!-- svelte-ignore a11y_role_has_required_aria_props -->
+    <div class="listbox-option" role="option" aria-checked={first.includes(size)}>{size}</div>
+  {/each}
+</div>
+```
+
+```vue name=Sizes.vue
+<script setup lang="ts">
+import { useTemplateRef } from 'vue'
+import { listbox } from '@master/ui/behaviors/listbox.js'
+import { useBehavior } from './ui/use-behavior'
+
+const value = defineModel<string | string[] | null>()
+const first = [value.value ?? []].flat()
+useBehavior(useTemplateRef<HTMLElement>('root'), listbox, undefined, value)
+</script>
+
+<template>
+  <div class="listbox" role="listbox" aria-label="Size" tabindex="0" ref="root">
+    <div v-for="size in ['Small', 'Medium', 'Large']" :key="size" class="listbox-option" role="option" :aria-checked="first.includes(size)">{{ size }}</div>
+  </div>
+</template>
+```
+
+헬퍼 없이 각 프레임워크에서 동작을 연결하는 기본 방법은 [동작](/guide/behaviors#in-a-framework)에 나와 있습니다.
+
+## 다른 헤드리스 라이브러리 \{#headless-libraries\}
+
+제공되는 컴포넌트는 브라우저 플랫폼과 Master UI의 동작을 사용합니다. 헤드리스 컴포넌트 라이브러리에 의존하지 않습니다.
+
+애플리케이션에 다른 라이브러리의 동작이 필요하다면, 계약의 클래스를 그 라이브러리의 대응하는 요소에 붙이고 모든 상태, 키보드 조작, 포커스 전환을 계약과 대조해 확인하세요. 다른 속성을 쓰는 어댑터에는 소유한 스타일시트가 필요할 수 있습니다. CSS 클래스만으로는 호환성이 성립하지 않습니다. 프로젝트 전체에 통합을 적용하기 전에 하나의 완전한 상호작용부터 시작하세요.

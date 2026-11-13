@@ -3,6 +3,7 @@
  *
  *   /llms.txt                         the index: how to use the library, and a link to every page as Markdown
  *   /<section>/<slug>.md              each page as Markdown; a component's page is written from its contract
+ *   /<locale>/llms.txt, /<locale>/guide/<slug>.md   the same for each translated edition of the guide
  *   /contracts.json, /theme.json      the contracts and the tokens, as data
  *   /contract.schema.json             the schema every contract follows
  *   /standalone.css, /themes/*.css    the library compiled to plain CSS
@@ -20,6 +21,8 @@ import { previewMarkdown } from '../utils/preview-markdown.ts'
 import { anchorMarkdown } from '../utils/anchor-markdown.ts'
 import { figureMarkdown } from '../utils/figure-markdown.ts'
 import { promptMarkdown } from '../utils/prompt-markdown.ts'
+import { locales } from '@master/internal-site/common/locales.js'
+import { readLocalizedDocument } from '@master/internal-site/build/localization.ts'
 
 const site = fileURLToPath(new URL('../', import.meta.url))
 const ui = join(site, '../packages/ui')
@@ -61,6 +64,9 @@ function frameworkFiles(framework: string, entry: string) {
 
 // `layouts/` is the retired section: its pages moved to the components and the pages, and `_redirects` sends them there.
 for (const generated of ['r', 'themes', 'layouts']) rmSync(join(out, generated), { recursive: true, force: true })
+/** The languages other than English; each has its own `llms.txt` and the guide pages translated into it. */
+const translatedLocales = locales.filter(locale => locale !== 'en')
+for (const locale of translatedLocales) rmSync(join(out, locale), { recursive: true, force: true })
 for (const section of ['guide', 'components', 'blocks', 'pages']) {
   if (existsSync(join(out, section))) for (const file of readdirSync(join(out, section))) if (file.endsWith('.md')) rmSync(join(out, section, file))
 }
@@ -107,16 +113,20 @@ function contractMarkdown(contract: any) {
   ].filter(Boolean).join('\n\n') + '\n'
 }
 
-/** An MDX page as Markdown: previews become fenced markup, components that only draw are dropped. */
-function mdxMarkdown(source: string, title: string, description: string) {
-  const body = figureMarkdown(promptMarkdown(previewMarkdown(source)))
+/**
+ * An MDX page as Markdown: previews become fenced markup, components that only draw are dropped. A translated
+ * edition links to the guide in its own language; the library is linked in English, the only edition it has.
+ */
+function mdxMarkdown(source: string, title: string, description: string, locale = 'en') {
+  const prefix = locale === 'en' ? '' : `/${locale}`
+  const body = figureMarkdown(promptMarkdown(previewMarkdown(source.trimStart())))
     // The imports of the page itself, at its top. An import inside a code sample is part of the sample.
     .replace(/^(?:import .*\n)+/, '')
     .replace(/<FrameworkPreview name="([^"]+)"[\s\S]*?\/>/g, (_, name) => `\`\`\`svelte\n${exampleSource(name)}\n\`\`\``)
     .replace(/<ComponentSource name="([^"]+)"(?: directory="([^"]+)")? \/>/g, (_, name, directory = 'components') => `\`\`\`css\n${read(join(ui, directory, `${name}.css`)).trim()}\n\`\`\``)
     .replace(/<ComponentLinks slugs=\{\[([^\]]*)\]\}(?: kind="(\w+)")? \/>/g, (_, slugs, kind = 'components') => slugs.split(',').map((slug: string) => slug.trim().replace(/['"]/g, '')).filter(Boolean).map((slug: string) => `- [${slug}](${origin}/${kind}/${slug}.md)`).join('\n'))
     .replace(/<Contract\w* [^>]*\/>/g, '')
-    .replace(/\]\(\/(guide|components|blocks|pages)\/([\w-]+)(#[\w-]+)?\)/g, (_, section, slug, hash = '') => `](${origin}/${section}/${slug}.md${hash})`)
+    .replace(/\]\(\/(guide|components|blocks|pages)\/([\w-]+)(#[\w-]+)?\)/g, (_, section, slug, hash = '') => `](${origin}${section === 'guide' ? prefix : ''}/${section}/${slug}.md${hash})`)
     .replace(/\n{3,}/g, '\n\n')
     .trim()
   return `# ${title}\n\n${description}\n\n${anchorMarkdown(body)}\n`
@@ -140,6 +150,18 @@ for (const slug of readdirSync(join(site, 'content/guide'))) {
 const categoryRank = ['Getting started', 'Customizing', 'Building', 'Reference']
 pages.guide.sort((a: any, b: any) => categoryRank.indexOf(a.category) - categoryRank.indexOf(b.category) || a.order - b.order)
 
+/** Each translated guide page: its title and description come from the edition's frontmatter. */
+const translatedGuide: Record<string, { slug: string, title: string, description: string }[]> = {}
+for (const locale of translatedLocales) {
+  translatedGuide[locale] = (await Promise.all(pages.guide.map(async page => {
+    if (!existsSync(join(site, 'content/guide', page.slug, `content.${locale}.mdx`))) return []
+    const { content, frontmatter } = await readLocalizedDocument({ sourceFile: join(site, 'content/guide', page.slug, 'content.mdx'), locale })
+    const { title, description } = frontmatter as { title: string, description: string }
+    write(`${locale}/guide/${page.slug}.md`, mdxMarkdown(content, title, description, locale))
+    return [{ slug: page.slug, title, description }]
+  }))).flat()
+}
+
 /*
  * A component's page is its contract. A layout among the components is read for its page first, the way it is built
  * and when to use it, with its contract after; the arrangements have no contract and are their page alone. A block or
@@ -161,8 +183,13 @@ for (const [kind, list] of [['blocks', blocks], ['pages', pageLayouts]] as const
   }
 }
 
-const links = (section: string) => pages[section].map(page => `- [${page.title}](${origin}/${section}/${page.slug}.md): ${page.description}`).join('\n')
-write('llms.txt', `# Master UI
+/** The index for one language: the rules, then every page, the guide in that language where it has been translated. */
+const llms = (locale: string) => {
+  const guide = locale === 'en' ? pages.guide : translatedGuide[locale]
+  const prefix = locale === 'en' ? '' : `/${locale}`
+  const list = (section: string, items: typeof pages.guide, at = '') => items.map(page => `- [${page.title}](${origin}${at}/${section}/${page.slug}.md): ${page.description}`).join('\n')
+  const links = (section: string) => section === 'guide' ? list('guide', guide, prefix) : list(section, pages[section])
+  return `# Master UI
 
 > Native HTML and CSS interface components for Master CSS, with a contract for each: the classes, where they go, the states the stylesheet draws, the public custom properties and the smallest correct markup. Blocks and pages are markup to copy.
 
@@ -197,7 +224,10 @@ ${links('blocks')}
 ## Pages
 
 ${links('pages')}
-`)
+`
+}
+write('llms.txt', llms('en'))
+for (const locale of translatedLocales) if (translatedGuide[locale].length) write(`${locale}/llms.txt`, llms(locale))
 
 /* ---------------------------------------------------------------- Registry */
 
@@ -286,4 +316,4 @@ write('r/registry.json', `${JSON.stringify({
   items: items.map(({ files, $schema, ...entry }) => ({ ...entry, files: files.map(({ content, ...rest }: any) => rest) })),
 }, null, 2)}\n`)
 
-console.log(`Generated llms.txt, ${Object.values(pages).flat().length} Markdown pages, contracts.json, theme.json, standalone.css and a registry of ${items.length} items`)
+console.log(`Generated llms.txt, ${Object.values(pages).flat().length + Object.values(translatedGuide).flat().length} Markdown pages, contracts.json, theme.json, standalone.css and a registry of ${items.length} items`)

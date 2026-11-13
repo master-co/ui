@@ -1,0 +1,145 @@
+---
+title: "AI との協働"
+description: "バージョンに合ったコントラクトをエージェントに渡し、そのマークアップをチェックし、編集を受け入れる前にレンダリングされたインターフェースを確認します。"
+---
+import GuideFigure from '../../../components/GuideFigure.astro'
+
+プロジェクトで使っているバージョンのコントラクトをコーディングエージェントに渡し、変更したマークアップをエージェント自身にチェックさせます。コントラクトはクラス名、必須の要素、状態属性、公開カスタムプロパティを提供し、チェッカーはページをレンダリングせずに、よくある構造上の誤りを検出します。
+
+エージェントにライブラリをインストールさせるには、[セットアッププロンプト](/guide/installation#set-up-with-an-ai-agent)をエージェントに貼り付けます。このプロンプトは、スキルと下記のガイダンスもインストールします。
+
+編集の前に、エージェントはプロジェクトが Master UI をどのようにインポートしているか、どのテーマを使っているか、`master-ui.json` にローカルで所有するコンポーネントが記録されているかを調べるべきです。それらのローカルのコントラクトは、パッケージの既定より優先されます。編集の後、静的チェックとブラウザーでの確認は異なる問いに答えます。マークアップが妥当でも、レイアウトが誤っていたり、操作がアクセシブルでなかったり、ビヘイビアスクリプトが欠けていたりすることがあります。
+
+<GuideFigure name="ai" title="コントラクトのチェックとブラウザーでの確認">
+
+**ソースとレンダリング結果の両方を確認します。** インストール済み、またはローカルで所有するコントラクトに基づいてマークアップを書きます。CLI は読み取れる要素、クラス、属性をチェックし、ブラウザーはレイアウト、キーボード、状態の振る舞いを明らかにします。編集を受け入れる前に、どちらのチェックで見つかった問題も解消してください。
+
+</GuideFigure>
+
+## スキル \{#the-skill\}
+
+`master-ui` スキルは、このライブラリを使うプロジェクトで作業するエージェント向けです。次のコマンドでインストールします。
+
+```bash
+npx skills add master-co/ui --skill master-ui
+```
+
+| ファイル | 内容 |
+| --- | --- |
+| `SKILL.md` | プロジェクトがライブラリをどのように取得し、何を所有しているかを調べる方法、コントラクトからマークアップを書くためのルール、ライブラリに足りないものがあるときの対処、確認の方法 |
+| `references/choosing.md` | 複数の候補があるときに、どのコンポーネントが用途に合うか。ページの上に重なるもの、メッセージ、選択肢からの選択、数値、ナビゲーション、レコードの集合 |
+| `references/customizing.md` | [カスタマイズの段階](/guide/customization)と、コンポーネントを所有する条件 |
+| `references/frameworks.md` | [React、Svelte、Vue](/guide/frameworks) で何がマークアップのまま残るか、どのパターンにコピーするコンポーネントがあるか、そしてそれがどう構築されているか |
+
+このスキルは、プロジェクトがすでに Master UI をインポートしている場合に、それを使うようエージェントに指示します。別のライブラリを使っているプロジェクトに Master UI を持ち込むことはしません。
+
+## サイトがプログラム向けに公開しているもの \{#for-programs\}
+
+サイトは構造化データとポータブルな Markdown を公開しています。コンポーネントの Markdown はコントラクトから生成され、ガイド、レイアウト、ブロック、ページは執筆されたページからエクスポートされます。これらの出力はテキストとコードを提供するもので、サイトのインタラクティブな複製ではありません。
+
+| URL | 内容 |
+| --- | --- |
+| `https://ui.master.co/llms.txt` | インデックス。Master UI のマークアップを書くためのルールと、各ページの Markdown へのリンク |
+| `https://ui.master.co/<section>/<slug>.md` | 任意のページの Markdown。section は `guide`、`components`、`blocks`、`pages` のいずれかです。コンポーネントのページはコントラクトから書かれます。マークアップ、クラス、状態、プロパティ、スクリプト、キーボード、プラットフォームです。コンポーネントの中のレイアウトは執筆されたページを保持し、その後にコントラクトが続きます |
+| `https://ui.master.co/contracts.json` | すべてのコントラクトをデータとして |
+| `https://ui.master.co/contract.schema.json` | すべてのコントラクトが従う JSON Schema |
+| `https://ui.master.co/theme.json` | テーマのすべてのトークンとその値 |
+| `https://ui.master.co/r/registry.json` | [レジストリ](/guide/registry)。プロジェクトにコピーするソース |
+
+シェルを使えないエージェントは `llms.txt` から始め、`https://ui.master.co/components/dialog.md` のような該当するコンポーネントのページを読みます。公開サイトはデプロイされているライブラリのバージョンを説明しており、プロジェクトにインストールされたバージョンとは異なる場合があります。パッケージが利用できる場合は、その `@master/ui/contracts.json` と `@master/ui/theme.json` を優先し、プロジェクトにローカルのコントラクトがある場合は下記の CLI を優先してください。
+
+## コントラクトを調べる \{#look-up-a-contract\}
+
+[パッケージをインストール](/guide/installation)した後、プロジェクトのルートから CLI を実行します。CLI はインストール済みのパッケージとプロジェクトからコントラクトを読み取ります。調べる過程で、インストールされていないコマンドに無関係なバージョンを取得させないでください。
+
+```bash
+npx master-ui list             # every contract, one line each
+npx master-ui contract dialog  # one contract as JSON
+```
+
+名前にはクラス名も使えるため、`npx master-ui contract btn-primary` はボタンのコントラクトを出力します。`npx master-ui list --json` は一覧をデータとして出力します。
+
+どちらのコマンドも、`master-ui.json` に設定されたディレクトリー（既定は `ui/`）と追加のコントラクトパスを読み取ります。プロジェクトが[所有する](/guide/customization#own-a-component)コンポーネントはそのコピーによって記述され、[プロジェクトが書いたコンポーネント](/guide/contracts#your-own)はライブラリのものと並べて一覧に表示されます。
+
+## マークアップをチェックする \{#check-the-markup\}
+
+`npx master-ui check` はマークアップを読み取り、コントラクトに違反している箇所を報告します。たとえば、次のファイルには 3 つのエラーと 1 つの警告があります。
+
+```html name=page.html
+<button type="button" class="btn-primary">Save changes</button>
+<button type="button" class="btn btn-outline">Cancel</button>
+<button type="button" class="btn btn-square">
+  <svg aria-hidden="true" viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8"/></svg>
+</button>
+<div class="dialog">
+  <h2 class="dialog-title">Delete this project?</h2>
+</div>
+```
+
+```bash
+npx master-ui check page.html
+```
+
+```
+page.html:1:1 error missing-base "btn-primary" modifies "btn": write class="btn btn-primary".
+page.html:2:1 warning unknown-class "btn-outline" is not a class of btn. It has: btn, btn-primary, btn-quiet, btn-brand, btn-danger, btn-sm, btn-lg, btn-square, btn-pill, btn-group.
+page.html:3:1 error label "btn-square" needs an accessible name: text of its own, aria-label, aria-labelledby, or a <label> that wraps or points at it.
+page.html:6:1 error element "dialog" goes on <dialog>, not <div>.
+
+1 files checked: 3 errors, 1 warnings.
+```
+
+各行には場所、重大度、コード、そして代わりに何を書くべきかが示されます。そのため、エージェントはマークアップを修正し、問題がなくなるまでコマンドを再実行できます。すべてのコードは[コントラクト](/guide/contracts#diagnostics)に一覧があります。
+
+- **パス。** 引数なしの場合、作業ディレクトリー以下の `node_modules` とビルド出力を除くすべての `.html`、`.htm`、`.astro`、`.svelte`、`.vue`、`.jsx`、`.tsx`、`.mdx`、`.erb`、`.php`、`.njk`、`.liquid`、`.hbs` ファイルをチェックします。範囲を絞るには、ファイル、ディレクトリー、glob を渡します。
+- **対象にしないもの。** ブラウザーを実行せずに、タグ、クラス、属性を読み取ります。式から得られるクラスや、ルートが別のファイルにあるパーツなど、知り得ないものは報告しません。
+- **`--json`** は結果をデータとして出力します。ファイル数と、検出事項のある各ファイルの診断で、各診断は `code`、`severity`、`className`、`contract`、`message`、`line`、`column` を持ちます。
+- **`--strict`** は `unknown-class` をエラーとして報告します。コンポーネントのルートクラスとダッシュで始まり、どのコントラクトにもないクラスは、ユーティリティである可能性があるため、既定では警告になります。プロジェクトに Master CSS がインストールされている場合、チェッカーはプリセットのユーティリティを認識します。プロジェクトで定義したクラスに対する診断も確認してください。結果に問題がなくても、すべての独自ユーティリティや動的に算出されるクラスが検証されたわけではありません。
+
+このコマンドはエラーを検出すると終了コード 1 で終了するため、そのままで CI のステップを失敗させます。
+
+```json name=package.json
+{
+  "scripts": {
+    "check:ui": "master-ui check --strict"
+  }
+}
+```
+
+プログラムからチェックするには `@master/ui/check` を使います。チェッカーが読み取るデータは[コントラクト](/guide/contracts)で説明しています。エージェントの完了条件にはブラウザーでのチェックを含めてください。影響を受けるキーボード操作、状態、狭いレイアウト、カラースキームを、必要なビヘイビアのアタッチも含めてテストします。
+
+## エージェントに伝える \{#agents-md\}
+
+エージェントはまずプロジェクト自身の指示に従います。次の内容を `AGENTS.md`、またはエージェントが読むファイルに貼り付けてください。
+
+```md name=AGENTS.md
+## Master UI
+
+This project builds its interface with Master UI: classes on native elements, each described by a contract.
+
+- Read the contract before writing a component's markup: `npx master-ui contract <name>`, and `npx master-ui list` to find one. Do not write markup from memory.
+- Never invent a Master UI component class. Use the installed or locally owned contract, and keep project-defined classes outside the library's class families.
+- Mark a state with the attribute the contract lists (`disabled`, `aria-pressed="true"`, `open`). Never add a class for a state.
+- A component is a class on a native element in any framework. Do not wrap one in a component to rename it. The patterns that hold state have a component to copy: `npx master-ui add` lists them, and `ui/` may already hold one.
+- To change how something looks, take the lowest step that works: a utility on the element, a theme token, a public custom property, a theme file, and only then `npx master-ui own <name>`. A project rule may select a library class to set its documented custom properties; change its implementation through owned source.
+- Run `npx master-ui check` after changing markup. Fix every error and read each warning. Check the affected interactions in a browser, including the keyboard, a narrow viewport and both color schemes.
+```
+
+## MCP \{#mcp\}
+
+Master UI のパッケージは、上記の CLI とコントラクトファイルを提供します。エージェントが Master CSS の MCP サーバーにも接続している場合は、コンポーネントのコントラクトの参照をそれに頼る前に、その接続で利用できるツールを確認してください。利用できるツールは接続先のサーバーによって異なります。インストール済みの CLI は、プロジェクトで有効なコントラクトを読み取る直接的な手段であり続けます。
+
+## チャットのサンドボックスやアーティファクトで \{#without-a-build\}
+
+CSS のコンパイルを行わないチャットのアーティファクトや静的な HTML プロトタイプでは、サイトのコンパイル済みスタイルシートをリンクします。環境にベースのリセットがない場合は、それも含めてください。
+
+```html
+<link rel="stylesheet" href="https://ui.master.co/base.css">
+<link rel="stylesheet" href="https://ui.master.co/standalone.css">
+
+<button type="button" class="btn btn-primary">Save changes</button>
+```
+
+これらの URL はデプロイされたサイトに追従するため、使い捨てのプロトタイプに適しています。継続的に保守するプロジェクトでは、[バージョンを固定したパッケージからコンパイル済みファイルを配信](/guide/installation#without-master-css)し、同じバージョンからコントラクトを読み取ってください。CSS を読み込んでもビヘイビアスクリプトはアタッチされません。それを必要とするパターンには、引き続きブラウザーモジュールかフレームワークコンポーネントが必要です。
+
+そこではユーティリティは使えません。`flex` や `gap-md` のようなクラスは Master CSS による生成が必要なため、ページのレイアウトは `style` 属性や小さなスタイルブロックに書いた独自の CSS で行います。テーマのトークンは、カスタムプロパティなので機能します。`color: var(--color-text-muted)` はテーマを参照します。

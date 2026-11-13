@@ -1,0 +1,145 @@
+---
+title: "搭配 AI 使用"
+description: "提供代理與版本相符的契約、檢查它撰寫的標記，並在接受編輯前確認渲染後的介面。"
+---
+import GuideFigure from '../../../components/GuideFigure.astro'
+
+提供程式設計代理與你的專案所用版本相符的契約，再讓它檢查自己變更的標記。契約提供 class 名稱、必要元素、狀態屬性與公開的自訂屬性；檢查器則能在不渲染頁面的情況下找出常見的結構錯誤。
+
+若要讓代理安裝這個元件庫，請將[設定提示詞](/guide/installation#set-up-with-an-ai-agent)貼給它；它也會安裝 skill 與下方的指引。
+
+在編輯之前，代理應該檢查你的專案如何匯入 Master UI、使用哪個主題，以及 `master-ui.json` 是否記錄了本地擁有的元件。這些本地契約優先於套件的預設值。編輯之後，靜態檢查與瀏覽器檢視回答的是不同的問題：有效的標記仍可能版面錯誤、互動不符合無障礙需求，或缺少行為腳本。
+
+<GuideFigure name="ai" title="契約檢查與瀏覽器檢視">
+
+**同時檢查原始碼與渲染結果。** 依照已安裝或本地擁有的契約撰寫標記。CLI 會檢查它能讀取的元素、class 與屬性；瀏覽器則會揭露版面、鍵盤與狀態行為。接受編輯前，請解決任一項檢查發現的問題。
+
+</GuideFigure>
+
+## Skill \{#the-skill\}
+
+`master-ui` skill 適用於在使用此元件庫的專案中工作的代理。使用以下指令安裝：
+
+```bash
+npx skills add master-co/ui --skill master-ui
+```
+
+| 檔案 | 內容 |
+| --- | --- |
+| `SKILL.md` | 如何查明專案取得元件庫的方式與它擁有哪些內容、依照契約撰寫標記的規則、元件庫缺少某樣東西時該怎麼做，以及如何驗證 |
+| `references/choosing.md` | 當有多個元件都可能適用時，哪個最適合某項工作：覆蓋在頁面上的內容、訊息、在選項中做選擇、數字、導覽、一組紀錄 |
+| `references/customizing.md` | [自訂階梯](/guide/customization)與擁有元件的條件 |
+| `references/frameworks.md` | 在 [React、Svelte 與 Vue](/guide/frameworks) 中哪些仍然是標記、哪些模式有可複製的元件，以及元件如何建構 |
+
+這個 skill 會告訴代理，在已經匯入 Master UI 的專案中使用它。它不會把元件庫引入使用其他元件庫的專案。
+
+## 網站為程式發布的內容 \{#for-programs\}
+
+網站會發布結構化資料與可攜的 Markdown。元件的 Markdown 由契約產生；指南、版面、區塊與頁面則從其撰寫的頁面匯出。這些輸出提供的是文字與程式碼，而不是網站的互動副本。
+
+| URL | 內容 |
+| --- | --- |
+| `https://ui.master.co/llms.txt` | 索引：撰寫 Master UI 標記的規則，以及每個頁面的 Markdown 連結 |
+| `https://ui.master.co/<section>/<slug>.md` | 任一頁面的 Markdown，其中 section 為 `guide`、`components`、`blocks` 或 `pages`。元件頁面由其契約寫成：標記、class、狀態、屬性、腳本、鍵盤與平台。列在元件中的版面保留其撰寫的頁面，並在後面附上契約 |
+| `https://ui.master.co/contracts.json` | 所有契約，以資料形式提供 |
+| `https://ui.master.co/contract.schema.json` | 每份契約所遵循的 JSON Schema |
+| `https://ui.master.co/theme.json` | 主題的每個 token 及其值 |
+| `https://ui.master.co/r/registry.json` | [登錄庫](/guide/registry)：可複製到專案中的原始碼 |
+
+沒有 shell 的代理從 `llms.txt` 開始，並閱讀相關的元件頁面，例如 `https://ui.master.co/components/dialog.md`。公開網站描述的是它部署的元件庫版本，可能與專案安裝的版本不同。若可以取得套件，請優先使用其中的 `@master/ui/contracts.json` 與 `@master/ui/theme.json`；專案有本地契約時，則使用下方的 CLI。
+
+## 查詢契約 \{#look-up-a-contract\}
+
+[安裝套件](/guide/installation)後，請在專案根目錄執行 CLI。它會從已安裝的套件與專案讀取契約；不要在查詢時讓未安裝的指令去抓取一個不相干的版本。
+
+```bash
+npx master-ui list             # every contract, one line each
+npx master-ui contract dialog  # one contract as JSON
+```
+
+名稱也可以使用 class 名稱，因此 `npx master-ui contract btn-primary` 會印出按鈕的契約。`npx master-ui list --json` 則以資料形式印出清單。
+
+這兩個指令也會讀取 `master-ui.json` 中設定的資料夾與額外的契約路徑（預設為 `ui/`）。專案[擁有](/guide/customization#own-a-component)的元件由其副本描述，而[專案自己撰寫的元件](/guide/contracts#your-own)則會與元件庫的元件並列。
+
+## 檢查標記 \{#check-the-markup\}
+
+`npx master-ui check` 會讀取標記並回報違反契約之處。例如，這個檔案有三個錯誤與一個警告：
+
+```html name=page.html
+<button type="button" class="btn-primary">Save changes</button>
+<button type="button" class="btn btn-outline">Cancel</button>
+<button type="button" class="btn btn-square">
+  <svg aria-hidden="true" viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8"/></svg>
+</button>
+<div class="dialog">
+  <h2 class="dialog-title">Delete this project?</h2>
+</div>
+```
+
+```bash
+npx master-ui check page.html
+```
+
+```
+page.html:1:1 error missing-base "btn-primary" modifies "btn": write class="btn btn-primary".
+page.html:2:1 warning unknown-class "btn-outline" is not a class of btn. It has: btn, btn-primary, btn-quiet, btn-brand, btn-danger, btn-sm, btn-lg, btn-square, btn-pill, btn-group.
+page.html:3:1 error label "btn-square" needs an accessible name: text of its own, aria-label, aria-labelledby, or a <label> that wraps or points at it.
+page.html:6:1 error element "dialog" goes on <dialog>, not <div>.
+
+1 files checked: 3 errors, 1 warnings.
+```
+
+每一行都列出位置、嚴重程度、代碼與應改寫成什麼，因此代理可以修正標記並重新執行指令，直到沒有問題為止。[契約](/guide/contracts#diagnostics)列出了所有代碼。
+
+- **路徑。** 不帶參數時，它會檢查工作目錄下所有 `.html`、`.htm`、`.astro`、`.svelte`、`.vue`、`.jsx`、`.tsx`、`.mdx`、`.erb`、`.php`、`.njk`、`.liquid` 與 `.hbs` 檔案，但排除 `node_modules` 與建置輸出。傳入檔案、資料夾或 glob 可以縮小範圍。
+- **它不處理的部分。** 它在不執行瀏覽器的情況下讀取標籤、class 與屬性。它無法得知的內容，例如來自運算式的 class，或根元素位於另一個檔案中的部件，它不會回報。
+- **`--json`** 以資料形式印出結果：檔案數量，以及每個有發現問題之檔案的診斷，每筆診斷包含 `code`、`severity`、`className`、`contract`、`message`、`line` 與 `column`。
+- **`--strict`** 會將 `unknown-class` 回報為錯誤。以元件根 class 加上連字號開頭、但不在任何契約中的 class，預設為警告，因為它可能是 utility。當專案安裝了 Master CSS 時，檢查器能辨識預設組的 utility。專案自訂的 class 也請檢視其診斷；沒有問題的結果並不代表每個自訂 utility 或動態計算的 class 都已驗證。
+
+指令發現錯誤時會以代碼 1 結束，因此不需額外設定就能讓 CI 步驟失敗：
+
+```json name=package.json
+{
+  "scripts": {
+    "check:ui": "master-ui check --strict"
+  }
+}
+```
+
+若要以程式進行檢查，請使用 `@master/ui/check`；[契約](/guide/contracts)記載了檢查器讀取的資料。請將瀏覽器檢查保留在代理的完成條件中：測試受影響的鍵盤操作、狀態、窄版版面與色彩配置，包括任何必要的行為掛載。
+
+## 告訴你的代理 \{#agents-md\}
+
+代理會優先遵循專案自己的指示。請將以下內容貼到 `AGENTS.md`，或你的代理會讀取的檔案中：
+
+```md name=AGENTS.md
+## Master UI
+
+This project builds its interface with Master UI: classes on native elements, each described by a contract.
+
+- Read the contract before writing a component's markup: `npx master-ui contract <name>`, and `npx master-ui list` to find one. Do not write markup from memory.
+- Never invent a Master UI component class. Use the installed or locally owned contract, and keep project-defined classes outside the library's class families.
+- Mark a state with the attribute the contract lists (`disabled`, `aria-pressed="true"`, `open`). Never add a class for a state.
+- A component is a class on a native element in any framework. Do not wrap one in a component to rename it. The patterns that hold state have a component to copy: `npx master-ui add` lists them, and `ui/` may already hold one.
+- To change how something looks, take the lowest step that works: a utility on the element, a theme token, a public custom property, a theme file, and only then `npx master-ui own <name>`. A project rule may select a library class to set its documented custom properties; change its implementation through owned source.
+- Run `npx master-ui check` after changing markup. Fix every error and read each warning. Check the affected interactions in a browser, including the keyboard, a narrow viewport and both color schemes.
+```
+
+## MCP \{#mcp\}
+
+Master UI 套件提供上述的 CLI 與契約檔案。如果你的代理也連接了 Master CSS MCP 伺服器，請先檢查該連線提供哪些工具，再依賴它查詢元件契約。可用的工具取決於所連接的伺服器；已安裝的 CLI 仍是讀取專案實際生效之契約的直接方式。
+
+## 在聊天沙盒或 artifact 中 \{#without-a-build\}
+
+若是沒有 CSS 編譯的聊天 artifact 或靜態 HTML 原型，請連結網站上已編譯的樣式表。如果環境沒有提供基礎重設樣式，請一併加入：
+
+```html
+<link rel="stylesheet" href="https://ui.master.co/base.css">
+<link rel="stylesheet" href="https://ui.master.co/standalone.css">
+
+<button type="button" class="btn btn-primary">Save changes</button>
+```
+
+這些 URL 會跟著已部署的網站變動，因此適合用完即丟的原型。若是需要維護的專案，請[從固定版本的套件提供編譯檔案](/guide/installation#without-master-css)，並從同一版本讀取契約。載入 CSS 不會掛上行為腳本；需要它們的模式仍需要瀏覽器模組或框架元件。
+
+那裡無法使用 utility。像 `flex` 或 `gap-md` 這樣的 class 需要由 Master CSS 產生，因此請用頁面自己的 CSS 排版，寫在 `style` 屬性或一小段 style 區塊中。主題的 token 仍然可用，因為它們是自訂屬性：`color: var(--color-text-muted)` 會讀取主題。

@@ -1,0 +1,257 @@
+---
+title: "既定のテーマ"
+description: "moonstone と obsidian：Master UI の既定のマテリアル、トークンの役割、実装上の値。"
+---
+import GuideFigure from '../../../components/GuideFigure.astro'
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+
+Master UI の既定のテーマは、1 つのマテリアル言語を持っています。ライトモードは **moonstone**、澄んだジンクのパールです。ダークモードは **obsidian**、マットなジンクのガラスで、サーフェスは段階的に離れ、判読できるエッジを保ちます。どちらも上方やや左にある 1 つの光源に照らされるため、浮き上がった面はすべて上端に一筋の光を受け、消えていく短い影の上に載ります。
+
+その性格は抑制的です。色ではなくインク、0.5 ピクセルの輪郭、入れ子になる角、状態によって変わる奥行き。ディテールは装飾ではなく光から生まれ、どのエッジも、見つけられるのに必要な以上に硬くはありません。
+
+以下のセクションを参考に、インターフェースに使うサーフェス、線、テキスト、奥行きの役割を選んでください。値は現在のパッケージにおける既定のテーマを説明しています。それらを上書きする方法や別のマテリアルを作る方法は[テーマ設定](/guide/theming)で説明しています。
+
+<ComponentPreview name="overview" height={248} title="moonstone と obsidian" theme bodyClass="p-lg" html={`<div class="tray">
+  <div class="sheet flex flex-col gap-md p-lg">
+    <div class="flex items-center justify-between gap-md">
+      <span class="text-sm fg-text-strong">Production</span>
+      <span class="badge badge-success badge-dot">Ready</span>
+    </div>
+    <input class="input" value="atlas.dev" aria-label="Domain">
+    <div class="flex items-center justify-between gap-md">
+      <label class="check"><input type="checkbox" role="switch" class="switch" checked> Preview builds</label>
+      <button type="button" class="btn btn-primary">Deploy</button>
+    </div>
+  </div>
+</div>`} caption="テーマを切り替えて moonstone と obsidian を比較してください。どちらも同じスタイルシートから生まれています。" />
+
+<GuideFigure name="theme" title="状態と奥行き">
+
+**状態は同じコントロールの奥行きを変えます。** 静止、ホバー、アクティブでは、それぞれ raised、raised-hover、pressed の影トークンを使います。アクティブではさらに面がくぼみます。既定の `--lift` は、ホバーに対応したポインターではボタンを 0.5px 持ち上げ、アクティブの間は 0.5px 沈めます。断面図は奥行きを誇張しています。実際の操作は、ライブプレビューで両方のカラースキームで試してください。
+
+</GuideFigure>
+
+## 原則 \{#principles\}
+
+既定のマテリアル、階層、ジオメトリー、操作の状態の背後にある判断は[デザイン](/guide/design)で説明しています。デザイン上の選択にはそちらの指針を使ってください。このページでは、`@master/ui` が実装するトークンとレシピをドキュメント化しています。
+
+`packages/ui/theme.css` がこれらの値の実行可能なソースです。コンポーネントのスタイルはそれらのトークンを読み、Paper のようなテーマはコンポーネントを書き直さずにそれらを置き換えられます。
+
+## サーフェス \{#surfaces\}
+
+サーフェスは 1 つの段階を構成します。各段は色ではなく役割です。サーフェスが何をするかで段を選べば、テーマがライトとダークでその値を解決します。
+
+<ComponentPreview name="surfaces" height={296} title="マテリアルの段階" theme bodyClass="p-lg" html={`<div class="tray">
+  <p class="m(0) px-md py-sm text-xs fg-text-muted">Tray</p>
+  <div class="sheet flex flex-col gap-md p-lg">
+    <p class="m(0) text-xs fg-text-muted">Raised sheet</p>
+    <div class="well p-md text-xs fg-text-muted">Inset well</div>
+    <div class="sheet sheet-floating p-md text-xs fg-text-muted">Floating</div>
+  </div>
+</div>`} />
+
+| トークン | 役割 | moonstone | obsidian |
+| --- | --- | --- | --- |
+| `--color-surface-base` | ページのキャンバス | 98.6% | 19.4% |
+| `--color-surface-tray` | シートを収める、くぼんだ受け皿 | 96% | 17.4% |
+| `--color-surface-raised` | 浮き上がった面：カード、ボタン | 100% | 24.2% |
+| `--color-surface-raised-low` | 浮き上がった面のグラデーションの下端 | 99.3% | 22.8% |
+| `--color-surface-inset` | ウェル：フィールド、トラック | 96.6% | 16.4% |
+| `--color-surface-inset-hover` | ポインターが乗った同じウェル | 95.8% | 15.4% |
+| `--color-surface-floating` | コンテンツの上に重なるポップオーバーとメニュー | 100% | 26.4% |
+| `--color-surface-chip` | ニュートラルなチップとバッジ | 96.5% | 白 7% |
+| `--color-surface-inverse` | インク：プライマリボタン、チェックされたコントロール | 22% | 95% |
+| `--color-surface-scrim` | モーダルの背後の背景 | 18%、不透明度 20% | 黒、不透明度 55% |
+
+不透明度が記載されていない限り、値は OKLCH の明度です。浮き上がった面は `raised` から `raised-low` への上から下へのグラデーションで、`@apply --surface-sheet` がこれを書いてくれます。役割は目的で選びます。`floating` はシートの上に重なるメニューを区別し、`inset` はシート内のフィールドを示します。色のトークンは要素を配置したり、影を付けたりはしません。
+
+## 線 \{#lines\}
+
+線は、moonstone ではニュートラルなインクのアルファ、obsidian では白のアルファです。そのうち 2 つは 1px の罫線です。残りの 3 つは輪郭で、ぼかしゼロの `box-shadow` による 0.5 ピクセルのリングとして描かれ、レイアウト上のスペースを取りません。アルファはその幅に合わせて調整されているため、輪郭はかすかではなく繊細に見えます。
+
+| トークン | moonstone | obsidian | 描画幅 | 用途 |
+| --- | --- | --- | --- | --- |
+| `--color-line-hair` | 6.5% | 7.5% | 1px | サーフェス内の控えめな区切り |
+| `--color-line-divider` | 12% | 13% | 1px | セクション間の罫線、タブの行 |
+| `--color-line-contour` | 12% | 14% | .5px | すべてのサーフェスの輪郭 |
+| `--color-line-strong` | 20% | 23% | .5px | ホバー時の輪郭、スイッチのトラック、キーキャップ |
+| `--color-line-mark` | 32% | 36% | .5px | チェックボックス、フォーカスされたフィールドの輪郭 |
+| `--color-texture` | 20% | 23% | 点と .5px の細線 | [テクスチャー](/components/texture)の模様。テーマが設定するまでは `--color-line-strong` に従います |
+
+ひと目で見つけられる必要があるコントロールは、サーフェスよりもしっかりした輪郭を持ちます。フィールドは輪郭のリングを 2 つ重ね、チェックボックスは mark を使います。
+
+## テキスト \{#text\}
+
+テキストは柔らかなインクで、純粋な黒や白にはなりません。
+
+| トークン | 用途 |
+| --- | --- |
+| `--color-text-strong` | 見出し、ラベル、値 |
+| `--color-text-body` | 本文 |
+| `--color-text-muted` | ヒント、キャプション、非アクティブな選択肢 |
+| `--color-text-disabled` | 無効なコントロール |
+| `--color-text-inverse` | インク上のテキスト |
+| `--color-focus` | フォーカスのアウトライン |
+
+## エレベーション \{#elevation\}
+
+エレベーションは、押し込まれたウェルからオーバーレイまでの奥行きの順序です。浮き上がった面は、上端の内側のハイライト、0.5 ピクセルの輪郭 1 本、そして 3〜6 層の落ちる影を組み合わせたものです。
+
+<ComponentPreview name="elevation" height={224} narrowHeight={240} title="エレベーション" theme bodyClass="grid grid-cols(3) gap-lg p-xl" html={`<div class="p-lg r-lg bg-surface-inset shadow-pressed text-xs fg-text-muted">pressed</div>
+<div class="p-lg r-lg bg-surface-raised shadow-flat text-xs fg-text-muted">flat</div>
+<div class="p-lg r-lg bg-surface-raised shadow-raised text-xs fg-text-muted">raised</div>
+<div class="p-lg r-lg bg-surface-raised shadow-raised-hover text-xs fg-text-muted">raised-hover</div>
+<div class="p-lg r-lg bg-surface-raised shadow-lifted text-xs fg-text-muted">lifted</div>
+<div class="p-lg r-lg bg-surface-floating shadow-floating text-xs fg-text-muted">floating</div>`} />
+
+| トークン | 用途 |
+| --- | --- |
+| `--shadow-pressed` | ウェルと押されたコントロール |
+| `--shadow-flat` | 輪郭が 1 本で浮き上がりのないサーフェス |
+| `--shadow-raised` | 静止状態のボタン、チップ、小さなカード |
+| `--shadow-raised-hover` | ポインターが乗った同じもの。輪郭がよりしっかりします |
+| `--shadow-lifted` | カードとパネル |
+| `--shadow-floating` | メニューとポップオーバー |
+| `--shadow-overlay` | ダイアログ |
+
+たとえば `--shadow-raised` は、ハイライトと輪郭の下に `0 1px 2px -1px`、`0 2px 4px -2px`、`0 4px 8px -4px` を重ねます。より高いエレベーションでは、より広いオフセットの並びを使います。負の広がりは影を対象の近くにとどめ、ぼかしはそのエッジを柔らかくします。これらのトークンは奥行きを描画するものであり、重なり順は引き続き要素のレイアウトとプラットフォームの振る舞いによって決まります。
+
+## インク \{#ink\}
+
+インクは反転色で塗られた面です。プライマリボタン、チェックされたチェックボックス、送信済みのメッセージ、ページで唯一の[反転シート](/components/surface)などです。すべてのインクの面は上端に同じ一筋の光を受け、周囲に同じ細線を持つため、どのサイズでも 1 つのマテリアルとして見えます。
+
+| トークン | 役割 |
+| --- | --- |
+| `--color-surface-inverse-high`、`--color-surface-inverse-low` | インクのシートに落ちる光の変化 |
+| `--color-ink-high`、`--color-ink-low` | 静止状態のインクのコントロールに落ちる、より丸みのある光の変化 |
+| `--color-ink-high-hover`、`--color-ink-low-hover`、`--color-ink-pressed` | 同じコントロールのポインターが乗ったときと押されたとき |
+| `--color-ink-highlight` | あらゆるインクの面の上端にある一筋の光 |
+| `--color-ink-edge` | その周囲の細線 |
+| `--color-surface-tip` | ツールチップ。moonstone ではインク、obsidian ではより明るい板 |
+| `--shadow-ink`、`--shadow-ink-hover`、`--shadow-ink-pressed` | 各状態におけるインクのコントロールの奥行き |
+| `--shadow-ink-mark` | チェックされた小さな塗り。チェックボックス、ラジオ、選択された日 |
+| `--shadow-ink-well`、`--shadow-thumb-on-ink` | 塗られたトラックと、その上を動くつまみ |
+| `--shadow-tip` | ツールチップとチャートの値 |
+
+色相を持つコントロール（ブランド、破壊的な操作の確認）は、面、エッジ、グローを自身の色相から混ぜ合わせます。`--color-tone-highlight` と `--color-tone-highlight-soft` は、それが受ける光です。
+
+## つまみ、画像、外部から与えられる色 \{#thumbs-and-pictures\}
+
+| トークン | 役割 |
+| --- | --- |
+| `--color-thumb-high`、`--color-thumb-low` | スイッチ、スライダー、比較のパール色のつまみ |
+| `--color-thumb-on-high`、`--color-thumb-on-low` | オンになったスイッチのつまみ |
+| `--color-line-image`、`--color-line-image-strong` | 画像とアバターが持つ内向きの線。どちらもサーフェスに溶け込まないようにします |
+| `--color-line-on-color`、`--color-highlight-on-color` | スウォッチなど、ページが与える色の上のエッジと光 |
+| `--color-on-image`、`--color-on-image-shade` | 画像の上に描かれるもの。どちらのテーマでも暗い陰影を伴う白 |
+| `--color-mark`、`--color-mark-underline` | 蛍光ペンの線と、その下線の形 |
+| `--color-sheen` | スケルトンの上を通り過ぎる光 |
+| `--color-focus-halo` | フォーカスされたフィールドが輪郭の外側にまとう柔らかなハロー |
+
+## 形状 \{#shape\}
+
+角丸は、サーフェスと同様に役割です。チップは小さな印、コントロールは押したり入力したりするもの、サーフェスはシートです。トークンは `@theme` にあるため、ユーティリティにもなります。`r-control` はコントロールの基本の角丸を使います。コンポーネントはさらに、以下で説明する連続曲率の角の形状とスケールを適用します。角丸のユーティリティだけでは、その処理は再現されません。
+
+| トークン | 値 | 使用箇所 |
+| --- | --- | --- |
+| `--radius-chip` | 6px | バッジ、キーキャップ、チェックボックス、スケルトン |
+| `--radius-control-sm` | 8px | 小さなボタンとフィールド、メニューの行、オプション、セグメントのつまみ |
+| `--radius-control` | 10px | ボタン、フィールド、ウェル |
+| `--radius-control-lg` | 12px | 大きなボタンとフィールド、アラート、選択肢、トースト |
+| `--radius-surface` | 16px | シート、カード |
+
+受け皿となる要素は独自の角丸を持ちません。その角は、収めるものから導き出されます。内側の角丸に、両者の間のインセットを足したものです。トレイはシートの角に 4px を足したもの、メニューは行の角に 4px を足したもの、セグメントのトラックはつまみの角にそのインセットを足したもの、フィールド内のボタンはフィールドの角から 4px を引いたものです。そのため、隙間は曲がり角の周りで一定の幅を保ちます。これより丸いのは、ピル、ドット、アバターだけです。
+
+<ComponentPreview name="nesting" height={208} title="入れ子になる角" bodyClass="p-lg" html={`<div class="tray max-w(360) mx-auto">
+  <div class="sheet flex flex-col gap-md p-lg">
+    <div class="input-group">
+      <input class="input-group-field" value="atlas.dev" aria-label="Domain">
+      <button type="button" class="btn">Verify</button>
+    </div>
+    <div class="segmented" role="radiogroup" aria-label="Environment">
+      <label class="segmented-item"><input type="radio" class="segmented-input" name="environment" checked>Production</label>
+      <label class="segmented-item"><input type="radio" class="segmented-input" name="environment">Preview</label>
+    </div>
+  </div>
+</div>`} />
+
+### 連続曲率の角 \{#continuous-corners\}
+
+`border-radius` は四分円を描きます。四分円が直線のエッジと接する所では、曲率がゼロから一気に最大値へ跳ね上がり、目はその継ぎ目を肩のように感じ取ります。`corner-shape: squircle` で描くスクワークルは、より早く曲がり始めて徐々にきつくなるため、エッジが角へと滑らかにつながります。
+
+コンポーネントは、ブラウザーが `corner-shape` に対応している場合はスクワークルを、それ以外では四分円を描きます。スクワークルは同じ半径の円よりも角に密着するため、コンポーネントは見た目の丸さを保つために角丸に `--corner-scale` を掛けます。スクワークルでは 1.6、そうでなければ 1 です。どちらの値もテーマで一度だけ設定され、すべてのコンポーネントがそれを読みます。
+
+| プロパティ | `corner-shape` あり | なし |
+| --- | --- | --- |
+| `--corner-shape` | `squircle` | `round` |
+| `--corner-scale` | `1.6` | `1` |
+
+ピル、ドット、アバター、つまみは真円のままです。あらゆる場所で円形の角を保つ方法は[テーマ設定](/guide/theming#retune-tokens)で説明しています。
+
+## 書体 \{#type\}
+
+テーマはフォントをダウンロードしません。ドキュメントでは Geist を使っており、コントロールはプリセットの font-family トークンを読みます。フォントを指定する前に、アプリでそのフォントを読み込んでください。サイトのタイポグラフィー設定は次のとおりです。
+
+```css name=app.css
+@theme {
+  --font-sans: 'Geist';
+  --font-feature-sans: 'ss02', 'ss03', 'ss04', 'ss06', 'ss07', 'ss08';
+}
+
+body {
+  font-weight: 350;
+}
+```
+
+コントロールのラベルは `--font-weight-control`（460）を使います。重く見えずにはっきり読める、軽めのミディアムです。見出しはレギュラーのままで、サイズとインクが段階を担います。
+
+## モーション \{#motion\}
+
+1 つのイージングの系統で、操作は素早く、説明は穏やかに保たれます。そして 1 つの長さが、コントロールの移動量を決めます。`--lift` は、浮き上がったコントロールがポインターの下で持ち上がり、押されると沈む 0.5 ピクセルです。カードはその 2 倍持ち上がります。移動のないテーマにするには `0px` に設定します。動きを抑える設定では、すでにそうなっています。
+
+| トークン | 値 | 用途 |
+| --- | --- | --- |
+| `--easing-glide` | `cubic-bezier(.22, 1, .36, 1)` | すべての状態変化 |
+| `--duration-press` | 60ms | コントロールを押す |
+| `--duration-quick` | 160ms | ホバーとフォーカス。ポップオーバー、メニュー、ツールチップ。あらゆる退出 |
+| `--duration-base` | 280ms | 動くつまみとパネル。ダイアログの登場 |
+| `--lift` | .5px | 浮き上がったコントロールが持ち上がり、沈む距離 |
+
+オーバーレイは両方向を CSS で書きます。`@starting-style` は要素が登場するときの開始フレームを与え、`display` と `overlay` は `allow-discrete` でトランジションするため、要素がトップレイヤーを離れる前に退出のアニメーションが再生されます。退出は登場より短くなります。動きを抑える設定では、移動と拡大縮小が取り除かれ、フェードは残ります。
+
+## ステータスとブランド \{#status-and-brand\}
+
+`--color-info`、`--color-success`、`--color-warning`、`--color-danger` は、インターフェースが何かを伝えるために使う唯一の色相です。それぞれ、そのテーマ上でテキストとして読めるよう調整されています。
+
+ブランドカラーは、ステータスではない唯一の色相です。[`btn-brand`](/components/button#variants) に、1 つのビューにつき 1 回現れます。
+
+| トークン | 値 | 用途 |
+| --- | --- | --- |
+| `--color-brand` | `var(--color-indigo-50)` | ブランドのサーフェスの面 |
+| `--color-brand-ink` | ほぼ白 | ブランドのサーフェス上のテキスト |
+| `--color-brand-text` | moonstone では indigo-60、obsidian では indigo-30 | ページ上のブランドカラーのテキスト |
+
+ブランドのサーフェスは、エッジ、光、グローを `--color-brand` から混ぜ合わせるため、このトークン 1 つを上書きするだけで調整されます。ブランドカラーが明るい場合は、`--color-brand-ink` を暗いインクに設定してください。
+
+<ComponentPreview name="status" height={96} narrowHeight={136} title="ステータスとブランド" html={`<span class="badge badge-info badge-dot">Info</span>
+<span class="badge badge-success badge-dot">Success</span>
+<span class="badge badge-warning badge-dot">Warning</span>
+<span class="badge badge-danger badge-dot">Danger</span>
+<button type="button" class="btn btn-brand btn-sm">Upgrade</button>`} />
+
+## カラースキーム \{#color-schemes\}
+
+スキーム間で異なる色は `light-dark()` を使います。一部のハイライトや画像の上に描かれる色は、どちらでも同じままです。テーマは要素の `color-scheme` に従います。Master CSS のプリセットはルートに `color-scheme: light dark` を設定し、ページ全体または 1 つのサブツリーのスキームを固定できるようにしています。
+
+```html
+<html data-theme="dark">
+  …
+  <aside data-theme="light">A moonstone panel on an obsidian page</aside>
+</html>
+```
+
+ダークモード用の 2 つ目のスタイルシートも、コンポーネントのダーク専用クラスもありません。
+
+## カスタマイズ \{#customize\}
+
+トークンを上書きしたり完全なテーマを作ったりするには[テーマ設定](/guide/theming)を、ユーティリティ、トークン、コンポーネントのプロパティ、ソースの所有のどれを選ぶかについては[カスタマイズ](/guide/customization)を参照してください。

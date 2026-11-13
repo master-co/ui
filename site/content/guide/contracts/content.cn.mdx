@@ -1,0 +1,211 @@
+---
+title: "契约"
+description: "读懂组件的标记和公开属性，了解检查器验证哪些内容，并为你自己的组件编写描述。"
+---
+import GuideFigure from '../../../components/GuideFigure.astro'
+
+软件包中的每个样式表旁边都有一份契约：`button.css` 和 `button.json`。契约以程序可读取的形式说明样式表所承诺的内容：它的 class、每个 class 的使用位置、它绘制的状态、它公开的自定义属性，以及最简的正确标记。
+
+检查器、生成的组件表格、可移植的组件页面和[注册表](/guide/registry)都会读取这些契约。把 class 规则集中在一个来源中可以减少重复；软件包的测试会检查契约与样式表是否一致。契约描述的是受支持的标记，但不能取代在浏览器中对交互、无障碍或视觉表现的检查。
+
+先运行 `npx master-ui contract button`，查看按钮的标记和公开属性。也可以通过 `@master/ui/components/button.json` 导入它，或者从 `@master/ui/contracts.json` 或 `https://ui.master.co/contracts.json` 获取全部契约。schema 位于 `https://ui.master.co/contract.schema.json`。
+
+## 契约包含什么 \{#keys\}
+
+| 键 | 内容 |
+| --- | --- |
+| `name`、`title`、`tier`、`category`、`description` | slug，即样式表的文件名；读者看到的名称；`component` 或 `layout`；所属分组；一句话说明它是什么 |
+| `use` | 何时使用它 |
+| `instead` | 在其他情况下更合适的相邻组件，每项包含一个 `when`，以及 `use` 中另一份契约的名称 |
+| `composes` | 其标记会用到 class 的其他契约，例如 combobox 用到的 `input` 和 `listbox`。它们的样式表也必须导入 |
+| `script` | `none`、`optional` 或 `required` |
+| `behavior` | 驱动该模式的参考脚本 |
+| `keyboard` | 按键的作用，无论是原生行为，还是附加行为之后的效果 |
+| `platform` | 作为渐进增强使用的每项平台特性，以及不支持该特性的浏览器会显示什么 |
+| `classes` | 样式表定义的每个 class，不多也不少 |
+| `states` | 样式表绘制的每种状态，以及标记该状态的属性或伪类 |
+| `properties` | 公开的自定义属性 |
+| `example` | 最简的正确标记 |
+
+`name`、`title`、`tier`、`category`、`description`、`use`、`script`、`classes` 和 `example` 为必填项。除了此表中的键和 `$schema`，schema 不允许任何其他键。
+
+## Class \{#classes\}
+
+每个 class 都有 `name`、`kind` 和 `description`。kind 说明这个 class 可以放在哪里。
+
+<GuideFigure name="contracts" title="根、修饰符与部件">
+
+**修饰符与基础 class 共用同一个元素；部件位于其内部。** 根 `dialog` 和修饰符 `dialog-drawer` 应位于同一个 dialog 元素上。它的子标题带有部件 `dialog-title`。把修饰符加到另一个独立的元素上，就不满足这种关系。
+
+</GuideFigure>
+
+| Kind | 放置位置 | 示例 |
+| --- | --- | --- |
+| `root` | 独立使用。一个样式表可以有多个 | `btn`、`btn-group`、`dialog` |
+| `part` | 位于其根内部，根的名称写在 `of` 中 | `dialog` 的 `dialog-title` |
+| `modifier` | 与其基础 class 位于同一元素上，基础 class 的名称写在 `of` 中 | `btn` 的 `btn-primary` |
+
+部件的修饰符以该部件为基础：`menu-item-danger` 的 `of` 是 `menu-item`。当一个 class 可以搭配多个 class 中的任意一个时，`of` 是一个列表。下面是按钮 `classes` 中的三项：
+
+```json name=button.json
+{ "name": "btn", "kind": "root", "description": "The raised base button", "elements": ["button", "a", "summary", "label", "input"] },
+{ "name": "btn-sm", "kind": "modifier", "of": "btn", "exclusive": "size", "description": "32px tall; the default is 38px" },
+{ "name": "btn-square", "kind": "modifier", "of": "btn", "label": true, "description": "A square button for one icon; it needs an accessible name" }
+```
+
+## 检查器强制执行的规则 \{#constraints\}
+
+kind 本身已经给检查器提供了两条规则：修饰符需要其基础 class，部件需要其根。class 上的四个可选键，会把文档中的规则变成 `master-ui check` 能够报告的内容。只有当样式表或平台确实要求时，契约才会添加这些键，因为错误的约束会在别人的项目中造成误报。
+
+| 键 | 含义 | 示例 |
+| --- | --- | --- |
+| `elements` | 该 class 只在这些元素上有效。任何元素都可以时省略 | `dialog` 对应 `["dialog"]` |
+| `attributes` | 元素必须具有的属性：`true` 表示任意值，字符串表示一个特定值，数组表示多个值之一 | `switch`：`{ "type": "checkbox", "role": "switch" }` |
+| `label` | 元素需要无障碍名称 | `btn-square`、`dialog-close` |
+| `exclusive` | 分组键。键相同的两个修饰符不能位于同一元素上 | `btn-sm` 和 `btn-lg` 都是 `"size"` |
+
+第五个键用于放宽规则。`"anywhere": true` 标记一个可以位于其根之外的部件，例如 `field-hint`：它是 `field` 的部件，但也可以单独位于 field 之外。
+
+## 状态与属性 \{#states-and-properties\}
+
+状态由样式表绘制，并在标记中用原生属性或 ARIA 属性标记。状态永远不会用 class 表示。每个条目在 `on` 中写明承载标记的 class，给出简短的 `name`，以及按标记或 CSS 中写法给出的 `mark`。
+
+```json name=button.json
+{ "on": "btn", "name": "pressed", "mark": "aria-pressed=\"true\"", "description": "A quiet toggle that is on stays sunk into a well" }
+```
+
+以冒号开头的标记，例如 `:user-invalid` 或 `:popover-open`，是由浏览器设置的伪类，不需要你写任何东西。
+
+`properties` 列出属于公开 API 的自定义属性，即项目可以设置的那些。每项都有 `name` 和 `description`；如果声明或读取它的 class 不是第一个根，则在 `on` 中写明该 class；如果样式表声明了默认值，则还有 `default`。
+
+```json name=button.json
+{ "name": "--btn-height", "default": "2.375rem", "description": "Minimum block size" }
+```
+
+不在此列表中的组件专属自定义属性属于实现细节。主题令牌是另一套在各组件间共享的公开接口；它们的角色参见[默认主题](/guide/theme)。在主题令牌和组件属性之间如何选择，参见[自定义](/guide/customization#property)；当前版本的策略参见[稳定性](/guide/stability)。
+
+## 脚本与行为 \{#script\}
+
+`script` 说明组件在多大程度上依赖 JavaScript。
+
+| 值 | 含义 |
+| --- | --- |
+| `none` | 所有状态在没有脚本时都能正常工作 |
+| `optional` | 脚本提供便利功能，例如菜单中的方向键，没有脚本页面也能正常工作 |
+| `required` | 该模式没有对应的原生元素，因此需要由脚本来改变其属性 |
+
+`behavior` 指明参考脚本，发布为 `@master/ui/behaviors/<behavior>.js`。combobox 的契约写的是 `"script": "required"` 和 `"behavior": "combobox"`：
+
+```js
+import { combobox } from '@master/ui/behaviors/combobox.js'
+
+combobox(document.querySelector('.combobox'))
+```
+
+行为负责改变样式表所读取的属性。splitter 等模式还会通过公开的自定义属性传递由事件得出的值；如何绘制它们由样式表决定。`keyboard` 列出附加行为之后按键的作用，或原生元素本身已有的作用。参见[行为](/guide/behaviors)。
+
+## 示例 \{#example\}
+
+`example` 是包含真实文字的最简正确标记。软件包测试会对每个示例运行检查器，并要求没有任何诊断。请将它作为标记的基准，再为你的页面提供标签、唯一 id、应用操作以及所需的行为。
+
+```html
+<button type="button" class="btn btn-primary">Save changes</button>
+```
+
+## 为你自己的组件编写契约 \{#your-own\}
+
+当项目需要库中没有的东西，而它具有材质、状态、平台行为，或其各部分共享的几何形状时，就可以添加自己的组件。在 `@layer components` 中用 class 选择器和令牌编写它的样式表，并在 `ui/` 中、紧挨样式表编写它的契约。契约遵循与库相同的 schema。
+
+```css name=ui/price-tag.css
+@layer components {
+  .price-tag {
+    --price-tag-size: 1.125rem;
+    display: inline-flex;
+    align-items: baseline;
+    gap: .375rem;
+    color: var(--color-text-strong);
+    font-size: var(--price-tag-size);
+    font-variant-numeric: tabular-nums;
+
+    &.price-tag-sale {
+      color: var(--color-danger);
+    }
+  }
+
+  .price-tag-was {
+    color: var(--color-text-muted);
+    font-size: .75em;
+  }
+}
+```
+
+```json name=ui/price-tag.json
+{
+  "$schema": "https://ui.master.co/contract.schema.json",
+  "name": "price-tag",
+  "title": "Price tag",
+  "tier": "component",
+  "category": "Commerce",
+  "description": "The price of one product, with the price it replaces.",
+  "use": "A price on a product card or in a cart row. Add price-tag-sale and the old price when the product is reduced.",
+  "script": "none",
+  "classes": [
+    { "name": "price-tag", "kind": "root", "description": "The current price, in strong ink and tabular figures" },
+    { "name": "price-tag-sale", "kind": "modifier", "of": "price-tag", "description": "A reduced price, in the danger hue" },
+    { "name": "price-tag-was", "kind": "part", "of": "price-tag", "elements": ["s"], "description": "The price before the reduction, struck through in muted ink" }
+  ],
+  "properties": [
+    { "name": "--price-tag-size", "default": "1.125rem", "description": "Font size of the current price" }
+  ],
+  "example": "<p class=\"price-tag price-tag-sale\">$24 <s class=\"price-tag-was\">$32</s></p>"
+}
+```
+
+在应用样式表中，于 Master UI 之后导入 `ui/price-tag.css`，示例才会被绘制出来。CLI 会独立于这条 CSS 导入发现旁边的契约：
+
+```css name=app.css
+@import '@master/css';
+@import '@master/ui';
+@import './ui/price-tag.css';
+```
+
+之后，项目自己的组件也能被同样的工具使用：
+
+- `npx master-ui list` 会列出它，`npx master-ui contract price-tag` 会打印它。在编写标记前读取契约的智能体，也会以同样的方式找到它。
+- `npx master-ui check` 会依据它检查标记。这里 `npx master-ui check cart.html` 报告了三处错误：
+
+```html name=cart.html
+<p class="price-tag-sale">$24</p>
+<p class="price-tag">$24 <span class="price-tag-was">$32</span></p>
+<p class="price-tag price-tag-large">$24</p>
+```
+
+```
+cart.html:1:1 error missing-base "price-tag-sale" modifies "price-tag": write class="price-tag price-tag-sale".
+cart.html:2:26 error element "price-tag-was" goes on <s>, not <span>.
+cart.html:3:1 warning unknown-class "price-tag-large" is not a class of price-tag. It has: price-tag, price-tag-sale, price-tag-was.
+
+1 files checked: 2 errors, 1 warnings.
+```
+
+三个细节：
+
+- **从哪里读取契约。** 项目 `ui/` 目录中所有带有 `name` 和 `classes` 数组的 `.json` 文件。`master-ui.json` 可以在 `directory` 中指定另一个目录，并在 `contracts` 数组中添加更多匹配模式。
+- **schema 行。** `"$schema": "https://ui.master.co/contract.schema.json"` 让编辑器能在编写文件时进行验证。
+- **与库中重名的契约。** 项目契约若与库中某份契约同名，就会取代它。[已接管的组件](/guide/customization#own-a-component)正是以这种方式由其副本来描述的。
+
+## 诊断 \{#diagnostics\}
+
+`master-ui check` 为每项发现输出一行：文件、行号和列号、严重程度、代码和消息。除 `unknown-class` 外，所有代码都是错误；`unknown-class` 是警告，除非传入了 `--strict`。
+
+| 代码 | 含义 | 修复方法 |
+| --- | --- | --- |
+| `unknown-class` | 某个 class 以某个根的名称加连字符开头，但不在任何契约中 | 使用消息中列出的某个 class。如果是项目自己的 class，就把它添加到 `ui/` 中的契约里，或者给它起一个不在该组件命名范围内的名称 |
+| `missing-base` | 修饰符所在的元素上没有它所修饰的 class | 在旁边加上基础 class：`class="btn btn-primary"` |
+| `outside-root` | 部件没有带其根 class 的祖先元素 | 把它移到根内部，或者给容器加上根 class |
+| `exclusive` | 同一分组的两个修饰符位于同一元素上，例如两种尺寸 | 只保留一个 |
+| `element` | class 所在的元素不在其契约允许的范围内 | 使用消息中指明的元素：`dialog` 应放在 dialog 元素上 |
+| `attribute` | 元素缺少该 class 要求的属性，或者属性值不同 | 添加消息中指明的属性，例如 `role="switch"` |
+| `label` | 控件没有无障碍名称 | 为它提供自身的文字、`aria-label`、`aria-labelledby`，或者包裹它或指向它的 label |
+
+检查器读取的是源码，而不是渲染页面。它可以检查表达式中的字面 class，但无法解析计算出来的 class 名称，无法确定框架组件在哪里渲染其子元素，也无法检查位于另一个文件中的根。对于不确定的情况，它不做处理。检查通过并不能验证焦点顺序、对比度、浏览器支持，也不能说明所选组件是否适合当前任务。
