@@ -92,7 +92,7 @@ Or import only the theme and the components you use:
 | Tags | `tags` |
 | Editable | `editable`, `editable-preview`, `editable-field`, `editable-placeholder` |
 | Swatch | `swatch`, `swatch-input`, `swatch-sm`, `swatch-lg`, `swatch-square` |
-| Rating | `rating`, `rating-input`, `rating-sm`, `rating-lg` |
+| Rating | `rating`, `rating-input`, `rating-sm`, `rating-lg`, `rating-half`, `rating-display` |
 | Vote | `vote`, `vote-horizontal`, `vote-up`, `vote-score`, `vote-down` |
 | Choice | `choice`, `choice-body`, `choice-title`, `choice-description`, `choice-end` |
 | Poll | `poll`, `poll-title`, `poll-option`, `poll-input`, `poll-label`, `poll-value`, `poll-meta` |
