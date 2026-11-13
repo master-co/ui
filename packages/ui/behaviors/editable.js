@@ -1,0 +1,142 @@
+/**
+ * Editable: a value read as text that becomes a field in place.
+ *
+ * The root, the element with the `editable` class, holds a button with `editable-preview` that shows the
+ * saved value, and a field with `editable-field`, an input or a textarea, that starts `hidden`. Pressing the
+ * preview hides it, shows the field with the saved value and selects its text. Enter saves, and in a
+ * textarea Control or Command with Enter, since Enter there starts a line; Escape puts the saved value back.
+ * Either way the field hides, the preview shows the saved value and takes focus again. Leaving the field
+ * saves too, or cancels with `blur: 'cancel'`.
+ *
+ * A value the field's own constraints refuse (`required`, `pattern`, `maxlength`) is not saved: Enter keeps
+ * the field open and lets the browser say why, and leaving the field puts the saved value back.
+ *
+ * Saving a different value writes it into the preview and dispatches `input` and `change` from the field.
+ * With an empty value the preview shows the field's `placeholder` in an `editable-placeholder`. Where the
+ * value goes after that is the page's: while it is on its way, set `aria-busy="true"` on the root; if it is
+ * refused, set the value back, or call `edit()` and mark the field `aria-invalid="true"`.
+ *
+ * The function it returns has a `value`, the saved value, and `edit()`, which opens the field. Setting the
+ * value writes the preview and the field and dispatches nothing.
+ */
+import { valued, write } from './internal.js'
+
+/** @type {WeakMap<Element, AbortController>} */
+const attached = new WeakMap()
+
+/**
+ * @param {HTMLElement} root The element with the `editable` class.
+ * @param {{ blur?: 'save' | 'cancel' }} [options] `blur`: what leaving the field does. `'save'` by default.
+ * @returns {(() => void) & { value: string, edit: () => void }} Removes everything the behavior added. Its
+ *   `value` is the saved value; `edit()` opens the field.
+ */
+export function editable(root, { blur = 'save' } = {}) {
+  attached.get(root)?.abort()
+  const controller = new AbortController()
+  const { signal } = controller
+  attached.set(root, controller)
+
+  const preview = /** @type {HTMLButtonElement | null} */ (root.querySelector('.editable-preview'))
+  const field = /** @type {HTMLInputElement | HTMLTextAreaElement | null} */ (root.querySelector('.editable-field'))
+  let saved = field?.defaultValue ?? field?.value ?? preview?.textContent ?? ''
+
+  /** Write a value into the preview, or the field's placeholder when it is empty. */
+  const show = (/** @type {string} */ value) => {
+    if (!preview) return
+    if (value) {
+      preview.textContent = value
+      return
+    }
+    const placeholder = field?.getAttribute('placeholder')
+    if (!placeholder) {
+      preview.textContent = ''
+      return
+    }
+    const part = root.ownerDocument.createElement('span')
+    part.className = 'editable-placeholder'
+    part.textContent = placeholder
+    preview.replaceChildren(part)
+  }
+
+  const editing = () => !!field && !field.hidden
+
+  const edit = () => {
+    if (!field || !preview || editing() || preview.disabled || root.getAttribute('aria-busy') === 'true') return
+    write(field, saved)
+    preview.hidden = true
+    field.hidden = false
+    field.focus()
+    field.select()
+  }
+
+  /** Close the field. Focus returns to the preview when it was in the field, never from elsewhere. */
+  const close = () => {
+    if (!field || !preview) return
+    const focused = root.ownerDocument.activeElement === field
+    field.hidden = true
+    preview.hidden = false
+    if (focused) preview.focus()
+  }
+
+  const cancel = () => {
+    if (!field) return
+    write(field, saved)
+    field.removeAttribute('aria-invalid')
+    close()
+  }
+
+  /** Save what the field holds. Returns false, and keeps the field open, when its constraints refuse it. */
+  const save = () => {
+    if (!field) return false
+    if (!field.checkValidity()) return false
+    const value = field.value
+    close()
+    if (value === saved) return true
+    saved = value
+    show(value)
+    field.dispatchEvent(new Event('input', { bubbles: true }))
+    field.dispatchEvent(new Event('change', { bubbles: true }))
+    return true
+  }
+
+  const detach = /** @type {(() => void) & { value: string, edit: () => void }} */ (valued(
+    () => controller.abort(),
+    () => saved,
+    (next) => {
+      const value = next === null || next === undefined ? '' : String(next)
+      if (value === saved) return
+      saved = value
+      show(value)
+      if (field) write(field, value)
+    }
+  ))
+  detach.edit = edit
+  if (!field || !preview) return detach
+
+  preview.addEventListener('click', edit, { signal })
+
+  field.addEventListener('keydown', (/** @type {Event} */ pressed) => {
+    const event = /** @type {KeyboardEvent} */ (pressed)
+    if (event.isComposing) return
+    const multiline = field.localName === 'textarea'
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      cancel()
+      return
+    }
+    if (event.key !== 'Enter' || event.altKey || event.shiftKey) return
+    if (multiline && !(event.ctrlKey || event.metaKey)) return
+    event.preventDefault()
+    if (!save()) field.reportValidity()
+  }, { signal })
+
+  field.addEventListener('input', () => field.removeAttribute('aria-invalid'), { signal })
+
+  // Leaving the field, for anything but the window losing focus, saves or cancels.
+  field.addEventListener('blur', () => {
+    if (!editing() || root.ownerDocument.activeElement === field) return
+    if (blur === 'cancel' || !save()) cancel()
+  }, { signal })
+
+  return detach
+}

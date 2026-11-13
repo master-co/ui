@@ -1,0 +1,122 @@
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+A sortable is a list whose items are put in order by dragging a handle or with the keys. It has no row of its own: put it on a [list](/components/list), a stack of cards or anything that holds items, and give each item a handle, a button named with what it moves. The `sortable` [behavior](/guide/behaviors) carries an item while the others make room for it, and moves its node once, when it is dropped.
+
+<ComponentPreview name="default" height={296} title="Sortable" background="plain" bodyClass="content-start p-lg" behaviors html={`<div class="max-w(420) mx-auto">
+  <ol class="list sortable" aria-label="Priorities this quarter">
+    <li class="list-row sortable-item" data-value="onboarding">
+      <button type="button" class="sortable-handle" aria-pressed="false" aria-label="Move Onboarding"></button>
+      <span class="list-body"><span class="list-title">Onboarding</span><span class="list-description">First run, invitations and the empty states</span></span>
+      <span class="list-end">Mar 2</span>
+    </li>
+    <li class="list-row sortable-item" data-value="billing">
+      <button type="button" class="sortable-handle" aria-pressed="false" aria-label="Move Billing"></button>
+      <span class="list-body"><span class="list-title">Billing</span><span class="list-description">Invoices in every currency</span></span>
+      <span class="list-end">Mar 16</span>
+    </li>
+    <li class="list-row sortable-item" data-value="search">
+      <button type="button" class="sortable-handle" aria-pressed="false" aria-label="Move Search"></button>
+      <span class="list-body"><span class="list-title">Search</span><span class="list-description">Filters that can be saved and shared</span></span>
+      <span class="list-end">Apr 6</span>
+    </li>
+    <li class="list-row sortable-item" data-value="exports">
+      <button type="button" class="sortable-handle" aria-pressed="false" aria-label="Move Exports"></button>
+      <span class="list-body"><span class="list-title">Exports</span><span class="list-description">CSV and PDF for every report</span></span>
+      <span class="list-end">Apr 27</span>
+    </li>
+  </ol>
+  <p class="sortable-status" role="status"></p>
+</div>`} caption="Drag a grip, or focus it and press Space, move with the arrow keys and press Space again." />
+
+## What the stylesheet draws \{#what-the-stylesheet-draws\}
+
+- **The handle.** A grip of six points, quiet until the pointer or the keys reach it, with a closed-hand cursor. It is 24 by 28px and reaches 44px on a touch screen without moving the grip. It takes `touch-action: none`, so a drag that starts on it never scrolls the page, and the rest of the item still does.
+- **The carried item** lifts: a raised sheet grows around it a little past its edges, so its content does not move, with the lifted shadow and a 1.5% swell. It follows the pointer through `--sortable-offset`, which the behavior writes, with no easing between the pointer and the item. A rule the row draws under itself, such as a list's hairline, stays with the row it parted.
+- **Making room.** The items between the carried one's place and where it would land glide aside, `sortable-item-back` toward the start and `sortable-item-forward` toward the end, by `--sortable-size`: the carried item's size with the gap after it, measured as it is picked up. The gap that opens is where it lands. Its own place stays empty, so the reader sees where it came from.
+- **The drop.** The items that made room already stand where they land, so the move takes the room away and puts the node in the gap in one change. Inside a view transition, each item its own picture through `view-transition-name: match-element`, only the carried item travels, from where it was released to its place. The root says `aria-busy="true"` while that happens, and nothing else glides.
+
+Without view transitions the carried item takes its place at once; the others are already there. With reduced motion there is no swell, no glide and no transition.
+
+## Cards \{#cards\}
+
+Anything that holds items can be sorted. Here each item is a [card](/components/card) in a stack with a gap, which the room the cards make includes; the sheet a carried card lifts on takes the card's corner through `--sortable-radius`.
+
+<ComponentPreview name="cards" height={344} title="Cards" bodyClass="content-start p-lg" behaviors html={`<div class="max-w(360) mx-auto">
+<ol class="list sortable gap-xs" aria-label="Release checklist" style="--sortable-radius: var(--radius-surface)">
+  <li class="card sortable-item flex items-center gap-sm p-sm" data-value="freeze">
+    <button type="button" class="sortable-handle" aria-pressed="false" aria-label="Move Freeze the branch"></button>
+    <span class="text-sm fg-text-strong">Freeze the branch</span>
+  </li>
+  <li class="card sortable-item flex items-center gap-sm p-sm" data-value="notes">
+    <button type="button" class="sortable-handle" aria-pressed="false" aria-label="Move Write the release notes"></button>
+    <span class="text-sm fg-text-strong">Write the release notes</span>
+  </li>
+  <li class="card sortable-item flex items-center gap-sm p-sm" data-value="staging">
+    <button type="button" class="sortable-handle" aria-pressed="false" aria-label="Move Deploy to staging"></button>
+    <span class="text-sm fg-text-strong">Deploy to staging</span>
+  </li>
+  <li class="card sortable-item flex items-center gap-sm p-sm" data-value="announce">
+    <button type="button" class="sortable-handle" aria-pressed="false" aria-label="Move Announce the release"></button>
+    <span class="text-sm fg-text-strong">Announce the release</span>
+  </li>
+</ol>
+<p class="sortable-status" role="status"></p>
+</div>`} />
+
+## The behavior \{#behavior\}
+
+`sortable` takes the root, the element with the `sortable` class, and returns the function that detaches it.
+
+```js name=app.js
+import { sortable } from '@master/ui/behaviors/sortable.js'
+
+const priorities = sortable(document.querySelector('.sortable'))
+
+priorities.value // ['onboarding', 'billing', 'search', 'exports']
+```
+
+- **The pointer.** A press on a handle that moves more than 4px picks the item up; less is a press. The handle says `aria-pressed="true"` while it is carried, the item follows the pointer and the items it passes make room. Where it would land is read from where the items stand in the layout, not from the room they are making, so the place never chases itself. The release moves it, and <kbd class="kbd">Escape</kbd> puts it back while the others glide home. A list that scrolls is scrolled while the pointer is near one of its ends, faster the further in it is. Only the pointer that started the drag moves it.
+- **The keys.** <kbd class="kbd">Enter</kbd> or <kbd class="kbd">Space</kbd> on a handle picks the item up. The arrow keys along the list move it one place at a time; they do nothing until an item is picked up, so a screen reader's own arrow keys keep working. <kbd class="kbd">Enter</kbd> or <kbd class="kbd">Space</kbd> drops it, <kbd class="kbd">Escape</kbd> puts it back where it was picked up, and leaving the handle drops it.
+- **What it says.** Each pick, move, drop and cancel is said in the `sortable-status` region, a `role="status"` inside the root or right after it, with the item's name and its place: "Billing, position 3 of 4." Pass `messages` to say it in the page's language.
+- **The move** is the item node itself moving, with `moveBefore()` where the browser has it, so what the item holds keeps its state: a field's text, a playing video, focus. Elsewhere it is inserted again and its handle is focused again.
+- **Events.** The root dispatches `input` and `change` after a drop that changed the order. The function it returns has a `value`, the order of the items, each one's `data-value` or its text. Set it to put them in that order; that dispatches nothing.
+
+`sortable-row` turns the list across: the offset is horizontal, the landing line stands upright, and <kbd class="kbd">ArrowLeft</kbd> and <kbd class="kbd">ArrowRight</kbd> move, the other way around from right to left.
+
+Without the behavior the list keeps its order and stays readable.
+
+## Keyboard \{#keyboard\}
+
+<ContractTable name="sortable" show="keyboard" />
+
+## Accessibility \{#accessibility\}
+
+- Name each handle with what it moves: "Move Billing". The handle is the item's only control for its order, and the pointer is never the only way: every move the pointer makes, the keys make too.
+- Keep the status region in the page from the start, empty: a region added at the moment it speaks is often not heard.
+- When the order matters to what the page does, such as priority or the steps of a workflow, say so near the list, and save the new order the way the page saves anything else.
+
+## React, Svelte and Vue \{#frameworks\}
+
+The `sortable` component writes the items in the order it holds, attaches the behavior, and moves an item in its own list when the behavior asks, so the framework's rows and the page agree. Copy it into the project with `npx master-ui add sortable`; [React, Svelte and Vue](/guide/frameworks) says how the components are built and used.
+
+<FrameworkSource name="sortable" />
+
+## Classes \{#classes\}
+
+<ContractTable name="sortable" />
+
+## Custom properties \{#custom-properties\}
+
+<ContractTable name="sortable" show="properties" />
+
+## Related \{#related\}
+
+<ComponentLinks slugs={['list', 'card', 'swipe']} />
+
+## Source \{#source\}
+
+<ComponentSource name="sortable" />

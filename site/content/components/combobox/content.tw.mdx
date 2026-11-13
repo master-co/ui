@@ -41,7 +41,7 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
 ## 行為 \{#behavior\}
 
-`combobox` 接收根元素，也就是帶有 `combobox` 類別的元素，並傳回用來解除行為的函式。它無須任何選項設定，會透過 `role="combobox"` 找到欄位，並透過 `role="listbox"` 找到清單。
+`combobox` 接收根元素，也就是帶有 `combobox` 類別的元素，並傳回用來解除行為的函式。它會透過 `role="combobox"` 找到欄位，並透過 `role="listbox"` 找到清單。若頁面會自行寫入相符的選項，請傳入 `filter: false`。
 
 ```js name=app.js
 import { combobox } from '@master/ui/behaviors/combobox.js'
@@ -58,6 +58,36 @@ const detach = combobox(document.querySelector('.combobox'))
 停用或隱藏的選項會被略過。輸入法組字期間，<kbd>Enter</kbd> 和方向鍵會交由輸入法處理。
 
 未掛上行為時，欄位會維持為文字輸入欄位。使用者仍可輸入值，清單則保持關閉。
+
+## 多個值 \{#several-values\}
+
+設有 `aria-multiselectable="true"` 的清單方塊可以容納多個值。這時欄位改用帶有 `input-group-wrap` 的輸入群組，與[標籤輸入](/components/tags)相同，每個選取的選項都會以[膠囊標籤](/components/chip)顯示在欄位前方。選取時會勾選或取消勾選該選項、清空欄位並讓清單維持開啟，只要再按幾個鍵就能加入下一個值。選項會保留勾選狀態，因此清單和膠囊標籤一樣能看出已選取哪些值。
+
+<ComponentPreview name="several" height={352} title="多個值" background="plain" bodyClass="content-start p-lg min-h(352)" behaviors html={`<div class="field max-w(360) mx-auto">
+  <label for="regions">Regions</label>
+  <div class="combobox">
+    <div class="input-group input-group-wrap">
+      <span class="chip" data-value="hnd">Tokyo<input type="hidden" name="regions" value="hnd"><button type="button" class="chip-remove" tabindex="-1" aria-label="Remove Tokyo"></button></span>
+      <input class="input-group-field" id="regions" role="combobox" aria-expanded="false" aria-controls="regions-list" aria-autocomplete="list" autocomplete="off" placeholder="Add a region">
+      <button type="button" class="combobox-toggle" tabindex="-1" aria-label="Show regions"></button>
+    </div>
+    <div id="regions-list" popover="manual" class="listbox" role="listbox" aria-label="Regions" aria-multiselectable="true">
+      <div class="listbox-option" role="option" data-value="hnd" aria-checked="true">Tokyo</div>
+      <div class="listbox-option" role="option" data-value="sin" aria-checked="false">Singapore</div>
+      <div class="listbox-option" role="option" data-value="fra" aria-checked="false">Frankfurt</div>
+      <div class="listbox-option" role="option" data-value="lhr" aria-checked="false">London</div>
+      <div class="listbox-option" role="option" data-value="iad" aria-checked="false">Virginia</div>
+      <div class="listbox-empty">No regions match.</div>
+    </div>
+  </div>
+</div>`} caption="選取幾個地區。在空白欄位中按 Backspace 會移到最後一個膠囊標籤，再按一次 Backspace 即可移除。" />
+
+- **欄位只負責搜尋。** 輸入文字只會篩選清單，不會取消任何勾選；已選取的值由膠囊標籤保留。
+- **膠囊標籤。** 欄位是唯一的 Tab 停駐點。在空白欄位中按 <kbd class="kbd">Backspace</kbd>，或按往回方向的方向鍵，就能移到膠囊標籤上，此時的按鍵操作與[標籤輸入](/components/tags#keyboard)相同。用移除按鈕或 <kbd class="kbd">Backspace</kbd> 移除膠囊標籤時，會取消勾選對應的選項。
+- **表單。** 若現有的膠囊標籤已帶有設定 `name` 的隱藏輸入元件，或有傳入 `name`，行為寫入的膠囊標籤就會帶有一個存放該值的隱藏輸入元件。`removeLabel` 用頁面的語言為移除按鈕命名。
+- **值**是已選取值的清單，依選取的先後排列。
+
+若值是自由輸入、而不是從清單中選取，請使用[標籤輸入](/components/tags)。
 
 ## 選擇控制項 \{#choosing-a-control\}
 
@@ -78,7 +108,7 @@ const detach = combobox(document.querySelector('.combobox'))
 
 ## React、Svelte 和 Vue \{#frameworks\}
 
-`combobox` 元件會根據選項清單產生這套標記、掛上行為，並支援傳入及傳出選取值。用 `npx master-ui add combobox` 將元件複製到專案中。元件的建置與使用方式請參閱 [React、Svelte 和 Vue](/guide/frameworks)。
+`combobox` 元件會根據選項清單產生這套標記、掛上行為，並支援傳入及傳出選取值。設定 `multiple` 時，元件會根據值寫入膠囊標籤，此時值是一個清單。用 `npx master-ui add combobox` 將元件複製到專案中。元件的建置與使用方式請參閱 [React、Svelte 和 Vue](/guide/frameworks)。
 
 <FrameworkSource name="combobox" />
 
@@ -92,7 +122,7 @@ const detach = combobox(document.querySelector('.combobox'))
 
 組合方塊由下列元件組成，各元件保有自己的類別與狀態。
 
-<ComponentLinks slugs={['input', 'listbox', 'select']} />
+<ComponentLinks slugs={['input', 'listbox', 'tags', 'select']} />
 
 ## 原始碼 \{#source\}
 

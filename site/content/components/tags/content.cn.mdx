@@ -1,0 +1,112 @@
+---
+title: "标签输入"
+description: "将输入的文字转为值的输入框，每个值都是凹槽中的一个胶囊标签。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+标签输入框将输入的文字转为值，每个值都是凹槽中的一个[胶囊标签](/components/chip)。它是一个带有 `input-group-wrap` 和 `tags` 类的[输入组](/components/input#several-values)：凹槽、凹槽的各种状态以及同心的胶囊标签都由输入组提供，胶囊标签后面的输入框用来接收下一个值。`tags` [行为脚本](/guide/behaviors)负责将文字转为胶囊标签，并在胶囊标签之间移动焦点。
+
+<ComponentPreview name="default" height={176} narrowHeight={208} title="标签输入" background="plain" bodyClass="content-start p-lg" behaviors html={`<div class="field max-w(420) mx-auto">
+  <label for="labels">Labels</label>
+  <div class="tags input-group input-group-wrap">
+    <span class="chip" data-value="design">design<input type="hidden" name="labels" value="design"><button type="button" class="chip-remove" tabindex="-1" aria-label="Remove design"></button></span>
+    <span class="chip" data-value="research">research<input type="hidden" name="labels" value="research"><button type="button" class="chip-remove" tabindex="-1" aria-label="Remove research"></button></span>
+    <span class="chip" data-value="accessibility">accessibility<input type="hidden" name="labels" value="accessibility"><button type="button" class="chip-remove" tabindex="-1" aria-label="Remove accessibility"></button></span>
+    <input class="input-group-field" id="labels" placeholder="Add a label" autocomplete="off">
+  </div>
+  <p class="field-hint">Press Enter or type a comma after each label.</p>
+</div>`} caption="输入一个标签后按 Enter。在空输入框中按 Backspace 会定位到最后一个标签，再按一次 Backspace 即可将其删除。" />
+
+## 在输入组之上增加的内容 \{#what-it-adds\}
+
+- **添加值时。** 新的胶囊标签从插入光标所在的位置长出来，以快速时长从 80% 缩放到原大，而不是直接出现。启用减少动态效果时，只会淡入。
+- **为一个词留出空间。** 输入框至少保持 `--tags-field-min` 的宽度，默认为 6rem。剩余空间不足时，输入框会换到单独一行，避免插入光标被挤在行末的窄缝里。
+- **键盘定位到的值**会整体显示焦点环，因为此时按 <kbd class="kbd">Backspace</kbd> 会删除整个值，值上的叉号也会采用按下时的色调。焦点环由胶囊标签自身绘制：带有 `chip-remove` 的胶囊标签无论放在哪里都会这样绘制。
+- **被拒绝的值**会将输入框标记为 `aria-invalid="true"`，输入组会将其绘制为危险色轮廓，直到文字发生变化。
+
+浏览器不支持 `@starting-style` 时，新值会直接出现。
+
+## 行为脚本 \{#behavior\}
+
+`tags` 接收根元素，即带有 `tags` 类的输入组，并返回一个用于解除绑定的函数。
+
+```js name=app.js
+import { tags } from '@master/ui/behaviors/tags.js'
+
+const detach = tags(document.querySelector('.tags'), { max: 10 })
+```
+
+- **添加。** 按 <kbd class="kbd">Enter</kbd> 或输入分隔符（默认为逗号）时，输入框中的文字会转为一个值：脚本在输入框之前写入一个胶囊标签，并清空输入框。粘贴的文字中含有分隔符、换行符或制表符时，会拆分成相应数量的值，最后一个分隔符之后的内容留在输入框中。
+- **拒绝。** 值为空、已存在、超出 `max`，或被 `validate` 拒绝时，不会被添加。输入框保留这段文字，因此输入的内容不会丢失，并在文字改变前一直带有 `aria-invalid="true"`。
+- **删除。** 点击胶囊标签的移除按钮即可删除该值，焦点随后回到输入框。
+- **表单。** 如果现有胶囊标签已带有设置了 `name` 的隐藏输入框，或传入了 `name` 选项，新的胶囊标签也会带有一个保存其值的隐藏输入框，这样表单会以该名称提交所有值。重置表单时，会恢复输入框最初的那些值。
+- **事件。** 每次添加或删除值时，根元素都会派发 `input` 和 `change`。返回的函数带有 `value` 属性，按顺序列出各个值；为它赋值会替换这些值，但不会派发任何事件。
+
+| 选项 | 默认值 | |
+| --- | --- | --- |
+| `delimiters` | `[',']` | 与 <kbd class="kbd">Enter</kbd> 一样会添加值的按键；设为 `[]` 时只保留 <kbd class="kbd">Enter</kbd> |
+| `max` | 无 | 输入框最多可容纳的值的数量 |
+| `validate` | 无 | 判断某个值能否添加的函数 |
+| `name` | 沿用胶囊标签的 | 新胶囊标签所带隐藏输入框的名称 |
+| `removeLabel` | `Remove <value>` | 胶囊标签移除按钮的无障碍名称，使用页面的语言 |
+| `draw` | 无 | 接管胶囊标签的写入，供根据自身列表写入胶囊标签的渲染器使用 |
+
+胶囊标签代表其 `data-value`，未设置时代表其文本。没有行为脚本时，输入框只是普通的文本输入框，胶囊标签固定不变，但表单仍会提交它们所带的隐藏输入框。
+
+## 输入建议 \{#suggestions\}
+
+`<datalist>` 无需任何脚本即可为输入框提供浏览器自带的建议：读者选中一项后，按 <kbd class="kbd">Enter</kbd> 将其添加。如果值必须来自某个列表，请改用[多值组合框](/components/combobox#several-values)。
+
+<ComponentPreview name="suggestions" height={160} narrowHeight={192} title="输入建议" background="plain" bodyClass="content-start p-lg" behaviors html={`<div class="field max-w(420) mx-auto">
+  <label for="recipients">Recipients</label>
+  <div class="tags input-group input-group-wrap">
+    <span class="chip" data-value="ada@example.com">ada@example.com<input type="hidden" name="to" value="ada@example.com"><button type="button" class="chip-remove" tabindex="-1" aria-label="Remove ada@example.com"></button></span>
+    <input class="input-group-field" id="recipients" type="email" list="recipient-suggestions" placeholder="Add a recipient" autocomplete="off">
+  </div>
+  <datalist id="recipient-suggestions">
+    <option value="grace@example.com"></option>
+    <option value="linus@example.com"></option>
+    <option value="margaret@example.com"></option>
+  </datalist>
+</div>`} />
+
+## 键盘操作 \{#keyboard\}
+
+输入框是唯一的 Tab 停靠点。胶囊标签需从输入框进入，其移除按钮通过 `tabindex="-1"` 移出 Tab 顺序。输入法处于组字状态时，<kbd class="kbd">Enter</kbd> 由输入法处理。
+
+<ContractTable name="tags" show="keyboard" />
+
+## 无障碍 \{#accessibility\}
+
+- 用 `<label>` 或 `aria-label` 为输入框提供标签。在输入框下方的提示中说明如何添加值，因为逗号或 <kbd class="kbd">Enter</kbd> 的用法并不显而易见。
+- 用页面的语言为每个移除按钮命名，名称中包含它所删除的值。对于行为脚本写入的胶囊标签，`removeLabel` 会完成这件事。
+- 值被拒绝时，文字会留在输入框中，输入框被标记为无效；与其他字段一样，在字段的提示或错误信息中说明原因。
+
+## React、Svelte 和 Vue \{#frameworks\}
+
+`tags` 组件根据值写入胶囊标签，并绑定行为脚本，由脚本将输入的文字转为值。使用 `npx master-ui add tags` 将组件复制到项目中。有关这些组件的实现和用法，请参阅 [React、Svelte 和 Vue](/guide/frameworks)。
+
+<FrameworkSource name="tags" />
+
+## 类名 \{#classes\}
+
+<ContractTable name="tags" />
+
+它与 [`input-group`](/components/input#several-values)、`input-group-wrap`、`input-group-field`，以及每个值对应的带 `chip-remove` 的 [`chip`](/components/chip) 配合使用。
+
+## 自定义属性 \{#custom-properties\}
+
+<ContractTable name="tags" show="properties" />
+
+## 相关内容 \{#related\}
+
+<ComponentLinks slugs={['input', 'chip', 'combobox']} />
+
+## 源码 \{#source\}
+
+<ComponentSource name="tags" />

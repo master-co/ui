@@ -1,0 +1,203 @@
+/*
+ * Sortable: a list whose items are put in order by dragging a handle or with the keys.
+ * It has no row of its own: it is put on a list, a stack of cards or anything that holds items, and adds
+ * three things. The handle, a quiet grip that says the item can be carried. The carried item, which lifts:
+ * a raised sheet grows around it a little past its edges, so its content does not move, with the lifted
+ * shadow and a slight swell, and it follows the pointer through --sortable-offset. And the room it would land
+ * in: the items between its place and that one glide aside by --sortable-size, so the gap is where it goes.
+ * The behavior moves the node once, on the drop, inside a view transition where there is one; the items that
+ * made room are already where they land, so only the carried one travels.
+ */
+@layer components {
+  .sortable {
+    --sortable-radius: var(--radius-control);
+
+    /* While an item is carried, the cursor is a closed hand wherever the pointer goes. */
+    &:has(.sortable-handle[aria-pressed="true"]) {
+      cursor: grabbing;
+      user-select: none;
+      -webkit-user-select: none;
+
+      /* Each item is its own picture in the view transition of a move, so each slides to its place. */
+      .sortable-item {
+        view-transition-name: match-element;
+      }
+    }
+
+    /* While the items change places, nothing glides but the transition, or an item would travel twice. */
+    &[aria-busy="true"] .sortable-item {
+      transition: none;
+    }
+  }
+
+  .sortable-item {
+    position: relative;
+    scroll-margin: .5rem;
+    transition-property: translate, scale;
+    transition-duration: var(--duration-base);
+    transition-timing-function: var(--easing-glide);
+
+    /* Making room for the carried item: toward the start of the list, or toward its end. */
+    &.sortable-item-back {
+      translate: 0 calc(-1 * var(--sortable-size, 0px));
+    }
+
+    &.sortable-item-forward {
+      translate: 0 var(--sortable-size, 0px);
+    }
+
+    /* Carried: above the others, a little larger, on a raised sheet, and under the pointer. */
+    &:has(.sortable-handle[aria-pressed="true"]) {
+      z-index: 2;
+      scale: 1.015;
+      translate: 0 var(--sortable-offset, 0px);
+      pointer-events: none;
+      /* The pointer moves it: no easing between the pointer and the item. */
+      transition-property: scale;
+
+      &::before {
+        content: '';
+        position: absolute;
+        inset: -.25rem -.5rem;
+        z-index: -1;
+        border-radius: calc(var(--sortable-radius) * var(--corner-scale));
+        corner-shape: var(--corner-shape);
+        @apply --surface-sheet;
+        box-shadow: var(--shadow-lifted);
+      }
+
+      /* A rule the row draws under itself, such as a list's hairline, stays with the row it parted. */
+      &::after {
+        opacity: 0;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      transition-property: none;
+
+      &:has(.sortable-handle[aria-pressed="true"]) {
+        scale: 1;
+      }
+    }
+
+    @media (forced-colors: active) {
+      &:has(.sortable-handle[aria-pressed="true"])::before {
+        outline: 2px solid Highlight;
+      }
+    }
+  }
+
+  /* Across: the items run along the line, and both the offset and the room are horizontal. */
+  .sortable-row .sortable-item {
+    &.sortable-item-back {
+      translate: calc(-1 * var(--sortable-size, 0px)) 0;
+    }
+
+    &.sortable-item-forward {
+      translate: var(--sortable-size, 0px) 0;
+    }
+
+    &:dir(rtl) {
+      &.sortable-item-back {
+        translate: var(--sortable-size, 0px) 0;
+      }
+
+      &.sortable-item-forward {
+        translate: calc(-1 * var(--sortable-size, 0px)) 0;
+      }
+    }
+
+    &:has(.sortable-handle[aria-pressed="true"]) {
+      translate: var(--sortable-offset, 0px) 0;
+    }
+  }
+
+  /* The handle: a grip of six points, quiet until the pointer or the keys reach it. */
+  .sortable-handle {
+    position: relative;
+    display: inline-grid;
+    flex: none;
+    place-items: center;
+    width: 1.5rem;
+    height: 1.75rem;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: calc(var(--radius-chip) * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    background: transparent;
+    color: var(--color-text-muted);
+    appearance: none;
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    transition-property: background-color, color;
+    transition-duration: var(--duration-quick);
+    transition-timing-function: var(--easing-glide);
+
+    &::before {
+      content: '';
+      width: .875rem;
+      height: .875rem;
+      background: currentColor;
+      mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cg fill='black'%3E%3Ccircle cx='5.75' cy='3.5' r='1.25'/%3E%3Ccircle cx='10.25' cy='3.5' r='1.25'/%3E%3Ccircle cx='5.75' cy='8' r='1.25'/%3E%3Ccircle cx='10.25' cy='8' r='1.25'/%3E%3Ccircle cx='5.75' cy='12.5' r='1.25'/%3E%3Ccircle cx='10.25' cy='12.5' r='1.25'/%3E%3C/g%3E%3C/svg%3E") center / contain no-repeat;
+    }
+
+    /* The target reaches 44px on touch without moving the grip. */
+    &::after {
+      content: '';
+      position: absolute;
+      inset: -.25rem;
+
+      @media (pointer: coarse) {
+        inset: min(-.25rem, calc((100% - 2.75rem) / 2));
+      }
+    }
+
+    @media (hover: hover) {
+      &:hover:not(:disabled) {
+        background: var(--color-surface-chip);
+        color: var(--color-text-strong);
+      }
+    }
+
+    &:focus-visible {
+      @apply --focus-ring;
+      outline-offset: 0;
+      color: var(--color-text-strong);
+    }
+
+    /* Carried: the grip sits in a well, as a pressed button does. */
+    &[aria-pressed="true"] {
+      background: var(--color-surface-inset);
+      color: var(--color-text-strong);
+      box-shadow: var(--shadow-pressed);
+      cursor: grabbing;
+    }
+
+    &:disabled {
+      color: var(--color-text-disabled);
+      cursor: not-allowed;
+    }
+
+    @media (forced-colors: active) {
+      &::before {
+        background: ButtonText;
+      }
+    }
+  }
+
+  /* What the status region says is for assistive technology: it takes no room. */
+  .sortable-status {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}

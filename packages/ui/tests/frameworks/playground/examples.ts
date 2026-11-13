@@ -36,6 +36,10 @@ export const examples: Record<string, Record<string, unknown>> = {
   'tooltip': {},
   'field': { label: 'Work email', hint: 'We only send receipts.' },
   'toast': {},
+  'tags': { value: ['design', 'research'], name: 'labels', 'aria-label': 'Labels', placeholder: 'Add a label' },
+  'editable': { value: 'Quarterly report', label: 'Title', required: true, placeholder: 'Add a title' },
+  'sortable': { value: ['onboarding', 'billing', 'search'] },
+  'toolbar': {},
 }
 
 /** What each component gives out, so the playground listens for that and nothing else. */
@@ -44,6 +48,7 @@ export const outputs: Record<string, string[]> = {
   'otp': ['onValueChange', 'onComplete'], 'splitter': ['onValueChange', 'onValueCommit'], 'stepper': ['onValueChange'],
   'compare': ['onValueChange'], 'tree': ['onValueChange'], 'wheel': ['onValueChange'], 'tabs': ['onValueChange'],
   'dialog': ['onOpenChange'], 'popover': ['onOpenChange'],
+  'tags': ['onValueChange'], 'editable': ['onValueChange'], 'sortable': ['onValueChange'],
 }
 
 export const toasts = [

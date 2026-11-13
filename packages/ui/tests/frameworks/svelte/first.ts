@@ -8,5 +8,8 @@ export const first: [string, Record<string, unknown>, RegExp][] = [
   ['splitter', { value: 36, label: 'Resize' }, /--splitter-size: 36%[\s\S]*aria-valuenow="36"/],
   ['wheel', { columns: [{ label: 'Hour', options: ['09', '10'] }], value: ['10'], 'aria-label': 'Time' }, /data-value="10" aria-selected="true"/],
   ['otp', { length: 4, value: '48', 'aria-label': 'Verification code' }, /value="4"[\s\S]*value="8"/],
+  ['tags', { value: ['design', 'research'], name: 'labels', 'aria-label': 'Labels' }, /data-value="design"[\s\S]*name="labels" value="design"[\s\S]*data-value="research"/],
+  ['editable', { value: 'Quarterly report', label: 'Title' }, /class="editable-preview"[^>]*>(<!--.*?-->)*Quarterly report[\s\S]*value="Quarterly report"/],
+  ['sortable', { value: ['search', 'onboarding', 'billing'] }, /data-value="search"[\s\S]*data-value="onboarding"[\s\S]*data-value="billing"/],
   ['context-menu', { items: [{ label: 'Rename' }], 'aria-label': 'Project' }, /class="menu menu-context"/],
 ]

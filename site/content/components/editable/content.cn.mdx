@@ -1,0 +1,105 @@
+---
+title: "行内编辑"
+description: "以文本形式阅读、可在原位变为输入框的值。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+行内编辑是平时以文本形式阅读、需要时在原位变为输入框的值，例如标题、名称或表格单元格。静止时，它是沿用所在容器字体排印的纯文本；指针悬停时，文字周围出现一道浅淡的凹槽，末端显示铅笔图标；按下后，凹槽变为已聚焦的[输入框](/components/input)，并选中其中的值。预览和输入框共用同一个网格单元格、同一种字体、同样的内边距和圆角，因此两者互相替换时，文字不会移动分毫。`editable` [行为脚本](/guide/behaviors)负责在两者之间切换并保存值。
+
+<ComponentPreview name="default" height={176} title="行内编辑" background="plain" bodyClass="content-start p-lg" behaviors html={`<div class="max-w(420) mx-auto">
+  <span class="block mb-xs text-xs fg-text-muted" id="doc-title-label">Title</span>
+  <h2 class="heading heading-xl">
+    <span class="editable">
+      <button type="button" class="editable-preview" id="doc-title-preview" aria-labelledby="doc-title-label doc-title-preview">Quarterly report</button>
+      <input class="editable-field" value="Quarterly report" aria-labelledby="doc-title-label" required maxlength="80" hidden>
+    </span>
+  </h2>
+  <span class="block mt-xs text-sm fg-text-muted">Last edited by Ada, 2 minutes ago</span>
+</div>`} caption="按下标题并输入，然后按 Enter 保存，或按 Esc 恢复原值。" />
+
+## 文字的位置 \{#geometry\}
+
+值与所在列的文字对齐：根元素向两侧各外扩 `--editable-padding-x`，因此凹槽在文字周围展开，而不会把文字向内挤。内边距以 `em` 为单位，因此标题的凹槽相对其字号同样宽裕，单元格的凹槽也是如此。
+
+- **静止时**，预览是纯文本。它是一个按钮，因此可以获得焦点，铅笔图标会随焦点环一起显示。
+- **指针悬停时**，文字周围出现内嵌色调和半像素轮廓，铅笔图标位于最后一个词之后。在没有悬停指针的屏幕上，铅笔图标始终显示，只是稍微淡一些：这是文字可以修改的唯一提示。
+- **编辑时**，输入框与已聚焦的输入框一样，是升到面板层级的凹槽，带有一道墨色轮廓和光晕。预览虽然隐藏，仍会撑开单元格，因此下方内容不会移动。浏览器支持 `field-sizing: content` 时，输入框会随值变长而超出预览的宽度；不支持时，文字在预览宽度内滚动。
+- **等待中。** 值正在提交时，为根元素设置 `aria-busy="true"`：预览显示为弱化样式，并且不响应按下。
+
+## 多行 \{#several-lines\}
+
+以 `<textarea>` 作为输入框时，可以容纳多行值。在其中按 <kbd class="kbd">Enter</kbd> 会换行，因此要按 <kbd class="kbd">Control</kbd> 或 <kbd class="kbd">Command</kbd> 加 <kbd class="kbd">Enter</kbd> 保存。值为空时，预览在 `editable-placeholder` 中显示输入框的 `placeholder`。
+
+<ComponentPreview name="multiline" height={200} title="多行" background="plain" bodyClass="content-start p-lg" behaviors html={`<div class="max-w(420) mx-auto text-sm fg-text-body">
+  <span class="block mb-xs text-xs fg-text-muted" id="doc-summary-label">Summary</span>
+  <div class="editable w-full">
+    <button type="button" class="editable-preview" id="doc-summary-preview" aria-labelledby="doc-summary-label doc-summary-preview"><span class="editable-placeholder">Add a summary for the team</span></button>
+    <textarea class="editable-field" aria-labelledby="doc-summary-label" placeholder="Add a summary for the team" rows="3" hidden></textarea>
+  </div>
+</div>`} />
+
+## 行为脚本 \{#behavior\}
+
+`editable` 接收根元素，即带有 `editable` 类的元素，并返回一个用于解除绑定的函数。
+
+```js name=app.js
+import { editable } from '@master/ui/behaviors/editable.js'
+
+const title = editable(document.querySelector('.editable'))
+
+title.edit() // open the field
+title.value // the saved value
+```
+
+- **打开。** 按下预览会将其隐藏，显示带有已保存值的输入框，并选中其中的文字。
+- **保存。** 按 <kbd class="kbd">Enter</kbd> 会保存，离开输入框也会保存。输入框自身的约束（`required`、`maxlength`、`pattern`）不接受的值不会被保存：按 <kbd class="kbd">Enter</kbd> 时输入框保持打开，由浏览器说明原因；离开输入框时则恢复已保存的值。传入 `blur: 'cancel'` 可让离开输入框改为取消编辑。
+- **取消。** 按 <kbd class="kbd">Esc</kbd> 会恢复已保存的值。
+- **焦点**在按 <kbd class="kbd">Enter</kbd> 和 <kbd class="kbd">Esc</kbd> 后回到预览；如果读者已将焦点移到别处，则不会移回。
+- **事件。** 保存一个不同的值时，脚本会将其写入预览，并从输入框派发 `input` 和 `change`。返回的函数带有 `value`（已保存的值）和 `edit()`；为 `value` 赋值会同时写入预览和输入框，但不会派发任何事件。
+
+值之后要送往何处由页面决定。值正在提交时，为根元素设置 `aria-busy="true"`。如果服务器拒绝了这个值，可以将值改回原样并在旁边说明原因，或者调用 `edit()` 并将输入框标记为 `aria-invalid="true"`，显示危险色轮廓：已输入的内容会保留下来，供读者修改。
+
+没有行为脚本时，预览是一个不执行任何操作的按钮，值仍然可读。
+
+## 适用场景 \{#choosing-it\}
+
+行内编辑适合阅读远多于修改、并且在原位逐个修改的值。如果需要同时修改多个值并一次性保存，使用由[输入框](/components/input)和“保存”按钮组成的表单，能更清楚地说明保存了什么、何时保存。
+
+## 键盘操作 \{#keyboard\}
+
+<ContractTable name="editable" show="keyboard" />
+
+输入法处于组字状态时，<kbd class="kbd">Enter</kbd> 和 <kbd class="kbd">Esc</kbd> 由输入法处理。
+
+## 无障碍 \{#accessibility\}
+
+- 用值所代表的含义为值和输入框命名。示例中，可见的标签为输入框命名，预览则通过 `aria-labelledby` 同时以标签和自身命名，因此会被读作“Title, Quarterly report, button”。
+- 确保已保存的值在没有脚本时仍然可读：它就是预览的文本。
+- 保存失败时，在值旁边用文字说明，不要只依靠危险色轮廓。
+
+## React、Svelte 和 Vue \{#frameworks\}
+
+`editable` 组件在首次渲染时绘制初始值，并绑定行为脚本，此后由行为脚本写入预览。组件传出的值始终是已保存的值，而不是正在输入的内容。使用 `npx master-ui add editable` 将组件复制到项目中。有关这些组件的实现和用法，请参阅 [React、Svelte 和 Vue](/guide/frameworks)。
+
+<FrameworkSource name="editable" />
+
+## 类名 \{#classes\}
+
+<ContractTable name="editable" />
+
+## 自定义属性 \{#custom-properties\}
+
+<ContractTable name="editable" show="properties" />
+
+## 相关内容 \{#related\}
+
+<ComponentLinks slugs={['input', 'heading', 'table']} />
+
+## 源码 \{#source\}
+
+<ComponentSource name="editable" />

@@ -178,6 +178,9 @@ test('svelte: the first HTML, rendered on a server, holds the state, and hydrate
     'wheel': [() => page.all('[aria-selected="true"]').map(option => option.getAttribute('data-value')), ['10']],
     'otp': [() => values('.otp-slot'), ['4', '8', '', '']],
     'context-menu': [() => page.all('.menu.menu-context').length, 1],
+    'tags': [() => page.all('.chip').map(chip => chip.getAttribute('data-value')), ['design', 'research']],
+    'editable': [() => [page.one('.editable-preview').textContent?.trim(), ...values('.editable-field')], ['Quarterly report', 'Quarterly report']],
+    'sortable': [() => page.all('.sortable-item').map(item => item.getAttribute('data-value')), ['search', 'onboarding', 'billing']],
   }
   for (const [name, props, expected] of first) {
     const [state, after] = held[name]

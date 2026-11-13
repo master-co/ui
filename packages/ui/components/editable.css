@@ -1,0 +1,188 @@
+/*
+ * Editable: a value read as text that becomes a field in place.
+ * The preview and the field stand in one grid cell with the same font, padding and corner, so the text does
+ * not move by a pixel when one replaces the other: the preview stays in the layout while it is hidden and
+ * holds the cell open. At rest the value is plain text, set out from the column by the padding it bleeds
+ * into; under the pointer a faint well appears around it with a pencil at its end, and while editing the
+ * well is a focused field. Its type is whatever it stands in: a heading, a cell, a line of a form.
+ * The editable behavior switches the two and saves; without it the preview is a button that does nothing.
+ */
+@layer components {
+  .editable {
+    --editable-padding-x: .375em;
+    --editable-padding-y: .125em;
+    --editable-radius: var(--radius-control-sm);
+    position: relative;
+    display: inline-grid;
+    grid-template: auto / minmax(0, auto);
+    max-width: calc(100% + var(--editable-padding-x) * 2);
+    /* The text lines up with the column; the well reaches out around it. */
+    margin-inline: calc(-1 * var(--editable-padding-x));
+    vertical-align: baseline;
+
+    /* While the value is on its way, the preview waits: it reads as pending and takes no press. */
+    &[aria-busy="true"] .editable-preview {
+      color: var(--color-text-muted);
+      cursor: progress;
+      pointer-events: none;
+
+      &::after {
+        opacity: 0;
+      }
+    }
+  }
+
+  /* What the preview and the field share, so that one sits exactly where the other was. */
+  .editable-preview,
+  .editable-field {
+    grid-area: 1 / 1;
+    box-sizing: border-box;
+    min-width: 0;
+    margin: 0;
+    padding: var(--editable-padding-y) var(--editable-padding-x);
+    border: 0;
+    border-radius: calc(var(--editable-radius) * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    font: inherit;
+    font-feature-settings: inherit;
+    letter-spacing: inherit;
+    text-align: start;
+    text-transform: inherit;
+  }
+
+  .editable-preview {
+    position: relative;
+    display: block;
+    background: transparent;
+    color: inherit;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    appearance: none;
+    cursor: text;
+    -webkit-tap-highlight-color: transparent;
+    transition-property: background-color, box-shadow;
+    transition-duration: var(--duration-quick);
+    transition-timing-function: var(--easing-glide);
+
+    /* The pencil: it follows the last word, so it says what the press will do where the eye already is. */
+    &::after {
+      content: '';
+      display: inline-block;
+      width: .8125em;
+      height: .8125em;
+      margin-inline-start: .375em;
+      background: var(--color-text-muted);
+      vertical-align: -.0625em;
+      mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10.5 3 13 5.5 6 12.5 3 13l.5-3z'/%3E%3C/svg%3E") center / contain no-repeat;
+      opacity: 0;
+      transition: opacity var(--duration-quick) var(--easing-glide);
+    }
+
+    @media (hover: hover) {
+      &:hover:not(:disabled) {
+        background: var(--color-surface-inset);
+        box-shadow: inset 0 0 0 .5px var(--color-line-contour);
+
+        &::after {
+          opacity: 1;
+        }
+      }
+    }
+
+    /* Without a pointer that hovers, the pencil is always there: the only sign the text can be changed. */
+    @media (hover: none) {
+      &:not(:disabled)::after {
+        opacity: .7;
+      }
+    }
+
+    &:focus-visible {
+      @apply --focus-ring;
+      outline-offset: 0;
+
+      &::after {
+        opacity: 1;
+      }
+    }
+
+    &:active:not(:disabled) {
+      background: var(--color-surface-inset-hover);
+    }
+
+    &:disabled {
+      cursor: default;
+    }
+
+    /* Hidden, it still holds the cell open, so the field takes its place and nothing below moves. */
+    &[hidden] {
+      display: block;
+      visibility: hidden;
+    }
+
+    /* A touch target reaches 44px tall without moving the text. */
+    @media (pointer: coarse) {
+      &::before {
+        content: '';
+        position: absolute;
+        inset: min(0px, calc((100% - 2.75rem) / 2)) 0;
+      }
+    }
+
+    @media (forced-colors: active) {
+      &::after {
+        background: ButtonText;
+      }
+
+      &:hover {
+        outline: 1px solid ButtonText;
+      }
+    }
+  }
+
+  /* The field: a well risen to the sheet with one ink contour and a halo, as a focused input is. */
+  .editable-field {
+    display: block;
+    width: 100%;
+    outline: none;
+    background: var(--color-surface-raised);
+    color: inherit;
+    box-shadow: inset 0 0 0 .5px var(--color-line-mark), 0 0 0 .5px var(--color-line-mark), 0 0 0 3.5px var(--color-focus-halo);
+    caret-color: var(--color-text-strong);
+    resize: none;
+    appearance: none;
+
+    &::placeholder {
+      color: var(--color-text-muted);
+      opacity: 1;
+    }
+
+    /* Where the field can size itself, it grows past the preview as the value does. */
+    @supports (field-sizing: content) {
+      field-sizing: content;
+      min-width: 100%;
+    }
+
+    &:is([aria-invalid="true"], :user-invalid) {
+      box-shadow: inset 0 0 0 .5px var(--color-danger), 0 0 0 .5px var(--color-danger), 0 0 0 3.5px color-mix(in oklab, var(--color-danger) 15%, transparent);
+    }
+
+    &[hidden] {
+      display: none;
+    }
+
+    @media (pointer: coarse) {
+      /* Below 16px iOS zooms the page on focus; that is worth the text growing as the field opens. */
+      font-size: max(1em, 1rem);
+    }
+
+    @media (forced-colors: active) {
+      outline: 2px solid Highlight;
+      outline-offset: -2px;
+    }
+  }
+
+  /* What the preview says while the value is empty: the field's placeholder, in the muted ink. */
+  .editable-placeholder {
+    color: var(--color-text-muted);
+  }
+}

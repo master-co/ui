@@ -17,8 +17,16 @@
  * With `filter: false` the script hides nothing: the page, or a server, decides which options the list
  * holds, and writes them while the reader types. Options that arrive while the list is open get an active
  * option again.
+ *
+ * A list with `aria-multiselectable="true"` holds several values. The field is then an input group with
+ * `input-group-wrap`, and each chosen option is a chip before the field. Choosing checks or unchecks an
+ * option, empties the field and keeps the list open, so the next value is a few keys away. The field is the
+ * one tab stop: Backspace in an empty field reaches the last chip, and the keys on a chip are those of the
+ * tags field. Removing a chip unchecks its option. The `value` is then the list of chosen values, in the
+ * order they were chosen. A chip this script writes carries a hidden input with the value when the chips
+ * already carry one with a `name`, or when `name` is given; with `draw`, the page writes the chips itself.
  */
-import { activate, enabled, filter, isOpen, label, options, step, valued, valueOf, write } from './internal.js'
+import { activate, chipKeys, chipName, chipValue, chipsOf, enabled, filter, isOpen, label, options, step, valued, valueOf, write, writeChip } from './internal.js'
 
 /** @type {WeakMap<Element, AbortController>} */
 const attached = new WeakMap()
@@ -34,13 +42,24 @@ function text(option) {
 }
 
 /**
- * @param {HTMLElement} root The element with the `combobox` class.
- * @param {{ filter?: boolean }} [options] `filter`: hide the options that do not hold what is typed. True by
- *   default; false when the page writes the matching options itself.
- * @returns {(() => void) & { value: string | null }} Removes everything the behavior added. Its `value` is
- *   what the chosen option stands for.
+ * @typedef {object} ComboboxOptions
+ * @property {boolean} [filter] Hide the options that do not hold what is typed. True by default; false when
+ *   the page writes the matching options itself.
+ * @property {string} [name] With several values: the name of the hidden input a new chip carries. The name
+ *   the chips already carry by default.
+ * @property {(text: string) => string} [removeLabel] With several values: the accessible name of a chip's
+ *   remove button. `Remove <value>` by default.
+ * @property {(values: string[]) => void} [draw] With several values: takes over writing the chips, called
+ *   with the chosen values whenever they change.
  */
-export function combobox(root, { filter: filtering = true } = {}) {
+
+/**
+ * @param {HTMLElement} root The element with the `combobox` class.
+ * @param {ComboboxOptions} [options]
+ * @returns {(() => void) & { value: string | string[] | null }} Removes everything the behavior added. Its
+ *   `value` is what the chosen option stands for, or the list of them when the list is multiselectable.
+ */
+export function combobox(root, { filter: filtering = true, name, removeLabel = (text) => `Remove ${text}`, draw } = {}) {
   attached.get(root)?.abort()
   const controller = new AbortController()
   const { signal } = controller
@@ -50,14 +69,50 @@ export function combobox(root, { filter: filtering = true } = {}) {
   const list = /** @type {HTMLElement | null} */ (root.querySelector('[role="listbox"]'))
   const toggle = root.querySelector('.combobox-toggle')
   const all = () => (list ? [...list.querySelectorAll('[role="option"]')] : [])
+  const multiple = () => list?.getAttribute('aria-multiselectable') === 'true'
+  const group = field?.closest('.input-group') ?? root
+  const named = name ?? chipName(group)
+
+  /**
+   * The chosen values, in the order they were chosen: the chips' order when the script attaches, then each
+   * value as it is chosen. A checked option it has not seen chosen comes last, in the order of the list.
+   */
+  let order = chipsOf(group).map(chipValue)
+  const chosen = () => {
+    const checked = all().filter((option) => option.getAttribute('aria-checked') === 'true').map(valueOf)
+    const known = order.filter((value) => checked.includes(value))
+    return [...known, ...checked.filter((value) => !known.includes(value))]
+  }
+
+  /** Write the chips for the chosen values: the ones that stay are kept, the rest written or removed. */
+  const chips = (/** @type {string[]} */ next = chosen()) => {
+    order = [...next]
+    if (!multiple() || !field) return
+    if (draw) return draw(next)
+    const kept = new Map(chipsOf(group).map((chip) => [chipValue(chip), chip]))
+    for (const [value, chip] of kept) if (!next.includes(value)) chip.remove()
+    for (const value of next) {
+      const option = all().find((each) => valueOf(each) === value)
+      const chip = kept.get(value) ?? writeChip(root.ownerDocument, { value, text: option ? text(option) : value, name: named, removeLabel })
+      field.before(chip)
+    }
+  }
+
   const detach = valued(
     () => controller.abort(),
     () => {
-      const chosen = list?.querySelector('[role="option"][aria-checked="true"]')
-      return chosen ? valueOf(chosen) : null
+      if (multiple()) return chosen()
+      const checked = list?.querySelector('[role="option"][aria-checked="true"]')
+      return checked ? valueOf(checked) : null
     },
     (next) => {
       if (!field || !list) return
+      if (multiple()) {
+        const values = [next ?? []].flat().map(String)
+        for (const option of all()) option.setAttribute('aria-checked', String(values.includes(valueOf(option))))
+        chips(values.filter((value) => all().some((option) => valueOf(option) === value)))
+        return
+      }
       const option = next === null || next === undefined ? undefined : all().find((each) => valueOf(each) === next)
       for (const other of all()) other.setAttribute('aria-checked', String(other === option))
       if (option) field.value = text(option)
@@ -92,23 +147,47 @@ export function combobox(root, { filter: filtering = true } = {}) {
     sync()
   }
 
-  /** @param {Element} option */
-  const choose = (option) => {
-    write(field, text(option))
-    for (const other of all()) other.setAttribute('aria-checked', String(other === option))
-    close()
+  const announce = () => {
     choosing = true
     field.dispatchEvent(new Event('input', { bubbles: true }))
     field.dispatchEvent(new Event('change', { bubbles: true }))
     choosing = false
   }
 
+  /** @param {Element} option */
+  const choose = (option) => {
+    if (multiple()) {
+      const next = chosen().filter((value) => value !== valueOf(option))
+      const checking = option.getAttribute('aria-checked') !== 'true'
+      option.setAttribute('aria-checked', String(checking))
+      chips(checking ? [...next, valueOf(option)] : next)
+      // The field starts the next search; the list stays open on the option just chosen.
+      write(field, '')
+      if (filtering) filter(list, '')
+      announce()
+      return
+    }
+    write(field, text(option))
+    for (const other of all()) other.setAttribute('aria-checked', String(other === option))
+    close()
+    announce()
+  }
+
+  /** Remove a chip's value: its option is unchecked. */
+  const unchoose = (/** @type {HTMLElement} */ chip) => {
+    const value = chipValue(chip)
+    for (const option of all()) if (valueOf(option) === value) option.setAttribute('aria-checked', 'false')
+    chips(chosen().filter((each) => each !== value))
+    announce()
+  }
+
   field.addEventListener('input', () => {
     if (choosing) return
     if (filtering) filter(list, field.value)
-    // Typing over a chosen value takes its check away: the field no longer holds it.
-    const chosen = list.querySelector('[role="option"][aria-checked="true"]')
-    if (chosen && text(chosen) !== field.value) chosen.setAttribute('aria-checked', 'false')
+    // Typing over a chosen value takes its check away: the field no longer holds it. With several values the
+    // field only searches, and the chips keep what is chosen.
+    const checked = multiple() ? null : list.querySelector('[role="option"][aria-checked="true"]')
+    if (checked && text(checked) !== field.value) checked.setAttribute('aria-checked', 'false')
     open()
     seeking = true
     activate(field, list, options(list)[0])
@@ -160,6 +239,16 @@ export function combobox(root, { filter: filtering = true } = {}) {
   }, { signal })
 
   field.addEventListener('click', open, { signal })
+
+  // With several values, the chips before the field: the keys between them, and their remove buttons.
+  const walk = chipKeys(field, unchoose)
+  group.addEventListener('keydown', (event) => { if (multiple()) walk(/** @type {KeyboardEvent} */ (event)) }, { signal })
+  group.addEventListener('click', (event) => {
+    const chip = /** @type {Element} */ (event.target).closest('.chip-remove')?.closest('.chip')
+    if (!chip || !multiple() || field.disabled || field.readOnly) return
+    unchoose(/** @type {HTMLElement} */ (chip))
+    field.focus()
+  }, { signal })
 
   // The list closes when focus leaves the field for something outside the combobox.
   root.addEventListener('focusout', (event) => {

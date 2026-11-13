@@ -41,7 +41,7 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
 ## 行为脚本 \{#behavior\}
 
-`combobox` 接收带有 `combobox` 类的根元素，并返回一个用于解除绑定的函数。它没有配置选项，通过 `role="combobox"` 查找输入框，通过 `role="listbox"` 查找列表。
+`combobox` 接收带有 `combobox` 类的根元素，并返回一个用于解除绑定的函数。它通过 `role="combobox"` 查找输入框，通过 `role="listbox"` 查找列表。如果由页面自行写入匹配的选项，请传入 `filter: false`。
 
 ```js name=app.js
 import { combobox } from '@master/ui/behaviors/combobox.js'
@@ -58,6 +58,36 @@ const detach = combobox(document.querySelector('.combobox'))
 移动时会跳过禁用和隐藏的选项。输入法处于组字状态时，<kbd>Enter</kbd> 和方向键由输入法处理。
 
 未加载行为脚本时，输入框仍可接受文本输入，列表保持关闭。
+
+## 多个值 \{#several-values\}
+
+带有 `aria-multiselectable="true"` 的列表框可以容纳多个值。此时输入区域是带有 `input-group-wrap` 的输入组，与[标签输入](/components/tags)相同，每个已选选项都以[胶囊标签](/components/chip)显示在输入框之前。选择选项会勾选或取消勾选该选项，清空输入框并保持列表打开，因此只需再按几个键就能选择下一个值。选项会保留勾选标记，因此列表和胶囊标签一样能表明已选择了哪些值。
+
+<ComponentPreview name="several" height={352} title="多个值" background="plain" bodyClass="content-start p-lg min-h(352)" behaviors html={`<div class="field max-w(360) mx-auto">
+  <label for="regions">Regions</label>
+  <div class="combobox">
+    <div class="input-group input-group-wrap">
+      <span class="chip" data-value="hnd">Tokyo<input type="hidden" name="regions" value="hnd"><button type="button" class="chip-remove" tabindex="-1" aria-label="Remove Tokyo"></button></span>
+      <input class="input-group-field" id="regions" role="combobox" aria-expanded="false" aria-controls="regions-list" aria-autocomplete="list" autocomplete="off" placeholder="Add a region">
+      <button type="button" class="combobox-toggle" tabindex="-1" aria-label="Show regions"></button>
+    </div>
+    <div id="regions-list" popover="manual" class="listbox" role="listbox" aria-label="Regions" aria-multiselectable="true">
+      <div class="listbox-option" role="option" data-value="hnd" aria-checked="true">Tokyo</div>
+      <div class="listbox-option" role="option" data-value="sin" aria-checked="false">Singapore</div>
+      <div class="listbox-option" role="option" data-value="fra" aria-checked="false">Frankfurt</div>
+      <div class="listbox-option" role="option" data-value="lhr" aria-checked="false">London</div>
+      <div class="listbox-option" role="option" data-value="iad" aria-checked="false">Virginia</div>
+      <div class="listbox-empty">No regions match.</div>
+    </div>
+  </div>
+</div>`} caption="选择几个区域。在空输入框中按 Backspace 会定位到最后一个胶囊标签，再按一次 Backspace 即可将其删除。" />
+
+- **输入框只负责搜索。** 输入文字只会筛选列表，不会取消任何勾选；已选的值由胶囊标签保存。
+- **胶囊标签。** 输入框是唯一的 Tab 停靠点。在空输入框中按 <kbd class="kbd">Backspace</kbd>，或按指向前一项的方向键，会定位到胶囊标签，在胶囊标签上的按键操作与[标签输入](/components/tags#keyboard)相同。用移除按钮或 <kbd class="kbd">Backspace</kbd> 删除胶囊标签时，会取消勾选对应的选项。
+- **表单。** 如果现有胶囊标签已带有设置了 `name` 的隐藏输入框，或传入了 `name` 选项，行为脚本写入的胶囊标签也会带有一个保存该值的隐藏输入框。`removeLabel` 以页面的语言为移除按钮命名。
+- **值**是已选值的列表，按选择的先后排序。
+
+如果值由读者自由输入，而不是从列表中选择，请使用[标签输入](/components/tags)。
 
 ## 选择控件 \{#choosing-a-control\}
 
@@ -78,7 +108,7 @@ const detach = combobox(document.querySelector('.combobox'))
 
 ## React、Svelte 和 Vue \{#frameworks\}
 
-`combobox` 组件根据选项列表渲染这段标记，绑定行为脚本，并接收和传出选中的值。使用 `npx master-ui add combobox` 将组件复制到项目中。有关这些组件的实现和用法，请参阅 [React、Svelte 和 Vue](/guide/frameworks)。
+`combobox` 组件根据选项列表渲染这段标记，绑定行为脚本，并接收和传出选中的值。设置 `multiple` 时，组件会根据值写入胶囊标签，此时值是一个列表。使用 `npx master-ui add combobox` 将组件复制到项目中。有关这些组件的实现和用法，请参阅 [React、Svelte 和 Vue](/guide/frameworks)。
 
 <FrameworkSource name="combobox" />
 
@@ -92,7 +122,7 @@ const detach = combobox(document.querySelector('.combobox'))
 
 组合框由以下组件组成，各组件保留自己的类名和状态。
 
-<ComponentLinks slugs={['input', 'listbox', 'select']} />
+<ComponentLinks slugs={['input', 'listbox', 'tags', 'select']} />
 
 ## 源码 \{#source\}
 

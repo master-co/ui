@@ -320,3 +320,95 @@ test('combobox: detach removes the listeners, and attaching twice leaves one beh
   click(one('#region-lhr'))
   assert.equal(field.value, 'lon')
 })
+
+/** The combobox with a multiselectable list: chips before the field in an input group that wraps. */
+const several = `<form><div class="combobox">
+  <div class="input-group input-group-wrap">
+    <span class="chip" data-value="region-hnd">Tokyo<input type="hidden" name="regions" value="region-hnd"><button type="button" class="chip-remove" tabindex="-1" aria-label="Remove Tokyo"></button></span>
+    <input class="input-group-field" id="region" role="combobox" aria-expanded="false" aria-controls="region-list" aria-autocomplete="list" autocomplete="off" aria-label="Regions">
+    <button type="button" class="combobox-toggle" tabindex="-1" aria-label="Show regions"></button>
+  </div>
+  <div id="region-list" popover="manual" class="listbox" role="listbox" aria-label="Regions" aria-multiselectable="true">
+    <div class="listbox-option" role="option" id="region-hnd" data-value="region-hnd" aria-checked="true">Tokyo</div>
+    <div class="listbox-option" role="option" id="region-sin" data-value="region-sin" aria-checked="false">Singapore <span class="listbox-description">Asia Pacific</span></div>
+    <div class="listbox-option" role="option" id="region-fra" data-value="region-fra" aria-checked="false">Frankfurt</div>
+    <div class="listbox-empty">No regions match.</div>
+  </div>
+</div></form>`
+
+test('combobox: with several values, Enter checks the active option, writes its chip, empties the field and keeps the list open', () => {
+  const { root, field, type, key, expanded, checked, shown, heard, all } = setup(several)
+  const handle = combobox(root)
+  type(field, 'sing')
+  heard.length = 0
+  assert.equal(key(field, 'Enter'), true)
+  assert.deepEqual(checked(), ['region-hnd', 'region-sin'])
+  assert.equal(field.value, '')
+  assert.equal(expanded(), true)
+  assert.equal(shown().length, 3, 'the empty field shows every option again')
+  assert.deepEqual(all('.chip').map((chip: any) => [chip.getAttribute('data-value'), chip.firstChild.textContent]), [['region-hnd', 'Tokyo'], ['region-sin', 'Singapore']], 'the chip says the option without its description')
+  assert.deepEqual(all<HTMLInputElement>('.chip input[type="hidden"]').map(input => `${input.name}=${input.value}`), ['regions=region-hnd', 'regions=region-sin'])
+  assert.deepEqual(heard, ['input', 'change'])
+  assert.deepEqual(handle.value, ['region-hnd', 'region-sin'])
+})
+
+test('combobox: with several values, choosing a checked option again unchecks it and takes its chip away', () => {
+  const { root, field, click, one, checked, all } = setup(several)
+  const handle = combobox(root)
+  click(field)
+  click(one('#region-hnd'))
+  assert.deepEqual(checked(), [])
+  assert.deepEqual(all('.chip'), [])
+  assert.deepEqual(handle.value, [])
+})
+
+test('combobox: with several values, the value is in the order the values were chosen', () => {
+  const { root, field, click, one } = setup(several)
+  const handle = combobox(root)
+  click(field)
+  click(one('#region-fra'))
+  click(one('#region-sin'))
+  assert.deepEqual(handle.value, ['region-hnd', 'region-fra', 'region-sin'])
+})
+
+test('combobox: with several values, Backspace in an empty field reaches the last chip, and Backspace there unchecks it', () => {
+  const { root, field, key, checked, document, all } = setup(several)
+  combobox(root)
+  field.focus()
+  assert.equal(key(field, 'Backspace'), true)
+  const remove = root.querySelector('.chip-remove')
+  assert.equal(document.activeElement, remove)
+  key(remove, 'Backspace')
+  assert.deepEqual(checked(), [])
+  assert.deepEqual(all('.chip'), [])
+  assert.equal(document.activeElement, field)
+})
+
+test('combobox: with several values, a chip\'s remove button unchecks its option; typing leaves the checks alone', () => {
+  const { root, field, click, type, checked } = setup(several)
+  combobox(root)
+  type(field, 'Frank')
+  assert.deepEqual(checked(), ['region-hnd'], 'the field only searches')
+  click(root.querySelector('.chip-remove'))
+  assert.deepEqual(checked(), [])
+})
+
+test('combobox: with several values, value can be set from outside; it writes the chips and dispatches nothing', () => {
+  const { root, checked, heard, all } = setup(several)
+  const handle = combobox(root)
+  handle.value = ['region-fra', 'region-sin', 'nowhere']
+  assert.deepEqual(checked(), ['region-sin', 'region-fra'])
+  assert.deepEqual(all('.chip').map((chip: any) => chip.getAttribute('data-value')), ['region-fra', 'region-sin'])
+  assert.deepEqual(handle.value, ['region-fra', 'region-sin'])
+  assert.deepEqual(heard, [])
+})
+
+test('combobox: with several values and draw, the page writes the chips', () => {
+  const { root, field, type, key, all } = setup(several)
+  const drawn: string[][] = []
+  combobox(root, { draw: values => drawn.push(values) })
+  type(field, 'frank')
+  key(field, 'Enter')
+  assert.deepEqual(drawn, [['region-hnd', 'region-fra']])
+  assert.equal(all('.chip').length, 1)
+})

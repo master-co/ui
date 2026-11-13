@@ -1,0 +1,105 @@
+---
+title: "인라인 편집"
+description: "텍스트로 읽히다가 그 자리에서 필드로 바뀌는 값입니다."
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+인라인 편집은 제목, 이름, 표의 셀처럼 평소에는 텍스트로 읽히다가 그 자리에서 필드로 바뀌는 값입니다. 기본 상태에서는 감싸는 요소의 글꼴을 그대로 따르는 일반 텍스트이고, 포인터를 올리면 텍스트 주위에 옅은 오목한 영역과 끝에 연필 아이콘이 나타납니다. 누르면 이 영역이 값 전체를 선택한 상태의 포커스된 [필드](/components/input)로 바뀝니다. 미리 보기와 필드는 그리드 셀 하나와 글꼴, 안쪽 여백, 모서리를 공유하므로, 둘이 서로 바뀌어도 텍스트는 1픽셀도 움직이지 않습니다. `editable` [동작](/guide/behaviors)은 둘을 전환하고 값을 저장합니다.
+
+<ComponentPreview name="default" height={176} title="인라인 편집" background="plain" bodyClass="content-start p-lg" behaviors html={`<div class="max-w(420) mx-auto">
+  <span class="block mb-xs text-xs fg-text-muted" id="doc-title-label">Title</span>
+  <h2 class="heading heading-xl">
+    <span class="editable">
+      <button type="button" class="editable-preview" id="doc-title-preview" aria-labelledby="doc-title-label doc-title-preview">Quarterly report</button>
+      <input class="editable-field" value="Quarterly report" aria-labelledby="doc-title-label" required maxlength="80" hidden>
+    </span>
+  </h2>
+  <span class="block mt-xs text-sm fg-text-muted">Last edited by Ada, 2 minutes ago</span>
+</div>`} caption="제목을 누르고 텍스트를 입력한 뒤, Enter 키를 눌러 저장하거나 Escape 키를 눌러 원래대로 되돌리세요." />
+
+## 텍스트의 위치 \{#geometry\}
+
+값은 자신이 놓인 열에 맞춰 정렬됩니다. 루트 요소가 양쪽으로 `--editable-padding-x`만큼 바깥으로 확장되므로, 오목한 영역은 텍스트를 안쪽으로 밀어내지 않고 텍스트 주위로 넓어집니다. 안쪽 여백은 `em` 단위이므로 제목의 오목한 영역은 제목 크기에 맞게, 셀의 오목한 영역은 셀 크기에 맞게 넉넉한 여백을 갖습니다.
+
+- **기본 상태**에서 미리 보기는 일반 텍스트입니다. 버튼이므로 포커스를 받을 수 있으며, 포커스를 받으면 포커스 링과 함께 연필 아이콘이 표시됩니다.
+- **포인터를 올리면** 텍스트 주위에 오목한 영역의 색조와 0.5픽셀 윤곽선이 나타나고, 마지막 단어 뒤에 연필 아이콘이 표시됩니다. 호버할 수 있는 포인터가 없는 화면에서는 연필 아이콘이 조금 더 옅은 모습으로 항상 표시됩니다. 텍스트를 바꿀 수 있다는 것을 알려 주는 표시가 이것뿐이기 때문입니다.
+- **편집 중**에는 포커스된 입력 필드와 마찬가지로 필드가 표면 높이까지 올라온 오목한 영역이 되며, 잉크 색 윤곽선 하나와 헤일로가 표시됩니다. 숨겨진 미리 보기도 셀의 공간을 계속 차지하므로 아래쪽 요소는 움직이지 않습니다. `field-sizing: content`를 지원하는 브라우저에서는 값이 길어지는 만큼 필드가 미리 보기보다 넓어지고, 그 밖의 브라우저에서는 미리 보기 너비 안에서 텍스트가 스크롤됩니다.
+- **대기 중.** 값을 전송하는 동안 루트 요소에 `aria-busy="true"`를 설정하세요. 미리 보기가 흐리게 표시되고 누를 수 없게 됩니다.
+
+## 여러 줄 \{#several-lines\}
+
+필드로 `<textarea>`를 사용하면 여러 줄로 된 값을 담을 수 있습니다. 이때 <kbd class="kbd">Enter</kbd> 키는 줄을 바꾸므로, 저장하려면 <kbd class="kbd">Control</kbd> 또는 <kbd class="kbd">Command</kbd> 키와 <kbd class="kbd">Enter</kbd> 키를 함께 누릅니다. 값이 비어 있는 동안에는 미리 보기가 `editable-placeholder` 안에 필드의 `placeholder`를 표시합니다.
+
+<ComponentPreview name="multiline" height={200} title="여러 줄" background="plain" bodyClass="content-start p-lg" behaviors html={`<div class="max-w(420) mx-auto text-sm fg-text-body">
+  <span class="block mb-xs text-xs fg-text-muted" id="doc-summary-label">Summary</span>
+  <div class="editable w-full">
+    <button type="button" class="editable-preview" id="doc-summary-preview" aria-labelledby="doc-summary-label doc-summary-preview"><span class="editable-placeholder">Add a summary for the team</span></button>
+    <textarea class="editable-field" aria-labelledby="doc-summary-label" placeholder="Add a summary for the team" rows="3" hidden></textarea>
+  </div>
+</div>`} />
+
+## 동작 \{#behavior\}
+
+`editable` 동작은 `editable` 클래스가 있는 루트 요소를 받아, 연결한 동작을 해제하는 함수를 반환합니다.
+
+```js name=app.js
+import { editable } from '@master/ui/behaviors/editable.js'
+
+const title = editable(document.querySelector('.editable'))
+
+title.edit() // open the field
+title.value // the saved value
+```
+
+- **열기.** 미리 보기를 누르면 미리 보기가 숨겨지고, 저장된 값이 들어 있는 필드가 표시되며 텍스트가 선택됩니다.
+- **저장.** <kbd class="kbd">Enter</kbd> 키를 누르거나 필드를 벗어나면 값이 저장됩니다. 필드 자체의 제약 조건(`required`, `maxlength`, `pattern`)이 거부하는 값은 저장되지 않습니다. 이때 <kbd class="kbd">Enter</kbd> 키를 누르면 필드가 열린 채로 유지되고 브라우저가 이유를 알려 주며, 필드를 벗어나면 저장된 값으로 되돌아갑니다. 필드를 벗어날 때 취소되게 하려면 `blur: 'cancel'`을 전달하세요.
+- **취소.** <kbd class="kbd">Escape</kbd> 키를 누르면 저장된 값으로 되돌아갑니다.
+- **포커스**는 <kbd class="kbd">Enter</kbd> 또는 <kbd class="kbd">Escape</kbd> 키를 누른 뒤 미리 보기로 돌아갑니다. 사용자가 포커스를 다른 곳으로 옮겼을 때는 돌아가지 않습니다.
+- **이벤트.** 다른 값을 저장하면 그 값을 미리 보기에 작성하고, 필드에서 `input`과 `change` 이벤트를 발생시킵니다. 반환된 함수에는 저장된 값인 `value`와 `edit()`가 있습니다. 값을 설정하면 미리 보기와 필드에 작성되며, 이때는 이벤트가 발생하지 않습니다.
+
+그 이후 값을 어디로 보낼지는 페이지에서 정합니다. 값을 전송하는 동안 루트 요소에 `aria-busy="true"`를 설정하세요. 서버가 값을 거부하면 값을 원래대로 되돌리고 그 옆에 이유를 표시하거나, `edit()`를 호출한 뒤 필드에 `aria-invalid="true"`를 설정해 위험 색상 테두리를 표시하세요. 이렇게 하면 입력한 내용이 남아 있어 사용자가 고칠 수 있습니다.
+
+동작을 연결하지 않으면 미리 보기는 아무 일도 하지 않는 버튼이 되며, 값은 그대로 읽을 수 있습니다.
+
+## 선택 기준 \{#choosing-it\}
+
+인라인 편집은 바꾸는 일보다 읽는 일이 훨씬 많고, 바꿀 때도 그 자리에서 하나씩 바꾸는 값에 적합합니다. 여러 값을 함께 바꾸고 한 번에 저장해야 한다면, [입력 필드](/components/input)와 저장 버튼으로 구성한 폼이 무엇을 언제 저장하는지 더 분명하게 보여 줍니다.
+
+## 키보드 \{#keyboard\}
+
+<ContractTable name="editable" show="keyboard" />
+
+입력기로 문자를 조합하는 동안에는 입력기가 <kbd class="kbd">Enter</kbd>와 <kbd class="kbd">Escape</kbd> 키를 처리합니다.
+
+## 접근성 \{#accessibility\}
+
+- 값과 필드에 그 값이 무엇인지 나타내는 이름을 지정하세요. 예시에서는 보이는 레이블이 필드의 이름이 되고, 미리 보기는 `aria-labelledby`로 레이블과 자기 자신을 이름으로 사용합니다. 따라서 "Title, Quarterly report, 버튼"처럼 읽힙니다.
+- 스크립트 없이도 저장된 값을 읽을 수 있게 하세요. 저장된 값은 미리 보기의 텍스트입니다.
+- 저장에 실패하면 위험 색상 테두리만으로 알리지 말고, 값 옆에 문구로 알려 주세요.
+
+## React, Svelte, Vue \{#frameworks\}
+
+`editable` 컴포넌트는 첫 렌더링에 초기 값을 그리고 동작을 연결하며, 그 이후에는 동작이 미리 보기를 작성합니다. 컴포넌트가 외부로 전달하는 값은 저장된 값이며, 입력 중인 값은 전달하지 않습니다. `npx master-ui add editable` 명령을 실행해 프로젝트에 복사하세요. 컴포넌트의 구성과 사용 방법은 [React, Svelte, Vue](/guide/frameworks)에서 확인할 수 있습니다.
+
+<FrameworkSource name="editable" />
+
+## 클래스 \{#classes\}
+
+<ContractTable name="editable" />
+
+## 사용자 지정 속성 \{#custom-properties\}
+
+<ContractTable name="editable" show="properties" />
+
+## 관련 항목 \{#related\}
+
+<ComponentLinks slugs={['input', 'heading', 'table']} />
+
+## 소스 \{#source\}
+
+<ComponentSource name="editable" />

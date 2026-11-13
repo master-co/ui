@@ -41,7 +41,7 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
 ## 동작 \{#behavior\}
 
-`combobox` 동작은 `combobox` 클래스가 있는 루트 요소를 받아, 연결한 동작을 해제하는 함수를 반환합니다. 별도의 설정 옵션은 없습니다. `role="combobox"`로 필드를 찾고 `role="listbox"`로 목록을 찾습니다.
+`combobox` 동작은 `combobox` 클래스가 있는 루트 요소를 받아, 연결한 동작을 해제하는 함수를 반환합니다. `role="combobox"`로 필드를 찾고 `role="listbox"`로 목록을 찾습니다. 일치하는 옵션을 페이지에서 직접 작성한다면 `filter: false`를 전달하세요.
 
 ```js name=app.js
 import { combobox } from '@master/ui/behaviors/combobox.js'
@@ -58,6 +58,36 @@ const detach = combobox(document.querySelector('.combobox'))
 비활성화되거나 숨겨진 옵션은 건너뜁니다. 입력기로 문자를 조합하는 동안에는 입력기가 <kbd>Enter</kbd> 키와 방향키를 처리합니다.
 
 동작을 연결하지 않으면 필드는 일반 텍스트 입력란으로 작동합니다. 값을 직접 입력할 수 있으며 목록은 열리지 않습니다.
+
+## 여러 값 선택 \{#several-values\}
+
+`aria-multiselectable="true"`가 설정된 목록 상자에는 여러 값을 담을 수 있습니다. 이때 필드는 [태그 입력](/components/tags)과 마찬가지로 `input-group-wrap`을 적용한 입력 그룹이 되며, 선택한 옵션은 각각 필드 앞에 [칩](/components/chip)으로 표시됩니다. 옵션을 선택하면 체크 표시가 켜지거나 꺼지고, 필드가 비워지며, 목록은 열린 상태로 유지됩니다. 따라서 다음 값도 키 몇 번으로 바로 고를 수 있습니다. 옵션의 체크 표시도 유지되므로, 칩과 마찬가지로 목록에서도 무엇을 선택했는지 알 수 있습니다.
+
+<ComponentPreview name="several" height={352} title="여러 값 선택" background="plain" bodyClass="content-start p-lg min-h(352)" behaviors html={`<div class="field max-w(360) mx-auto">
+  <label for="regions">Regions</label>
+  <div class="combobox">
+    <div class="input-group input-group-wrap">
+      <span class="chip" data-value="hnd">Tokyo<input type="hidden" name="regions" value="hnd"><button type="button" class="chip-remove" tabindex="-1" aria-label="Remove Tokyo"></button></span>
+      <input class="input-group-field" id="regions" role="combobox" aria-expanded="false" aria-controls="regions-list" aria-autocomplete="list" autocomplete="off" placeholder="Add a region">
+      <button type="button" class="combobox-toggle" tabindex="-1" aria-label="Show regions"></button>
+    </div>
+    <div id="regions-list" popover="manual" class="listbox" role="listbox" aria-label="Regions" aria-multiselectable="true">
+      <div class="listbox-option" role="option" data-value="hnd" aria-checked="true">Tokyo</div>
+      <div class="listbox-option" role="option" data-value="sin" aria-checked="false">Singapore</div>
+      <div class="listbox-option" role="option" data-value="fra" aria-checked="false">Frankfurt</div>
+      <div class="listbox-option" role="option" data-value="lhr" aria-checked="false">London</div>
+      <div class="listbox-option" role="option" data-value="iad" aria-checked="false">Virginia</div>
+      <div class="listbox-empty">No regions match.</div>
+    </div>
+  </div>
+</div>`} caption="지역을 몇 개 선택해 보세요. 빈 필드에서 Backspace 키를 누르면 마지막 칩으로 이동하고, 한 번 더 누르면 그 칩이 삭제됩니다." />
+
+- **필드는 검색에만 사용합니다.** 텍스트를 입력하면 목록이 필터링될 뿐, 체크 표시가 해제되지는 않습니다. 선택한 값은 칩이 유지합니다.
+- **칩.** 탭 순서에서 멈추는 곳은 필드 하나뿐입니다. 빈 필드에서 <kbd class="kbd">Backspace</kbd> 키를 누르거나 뒤쪽을 가리키는 방향키를 누르면 칩으로 이동하며, 칩에서 사용하는 키는 [태그 입력](/components/tags#keyboard)과 같습니다. 칩의 버튼이나 <kbd class="kbd">Backspace</kbd> 키로 칩을 삭제하면 해당 옵션의 체크 표시도 해제됩니다.
+- **폼.** 기존 칩에 `name`이 있는 숨겨진 입력 요소가 이미 들어 있거나 `name` 옵션을 지정하면, 동작이 작성하는 칩에도 값을 담은 숨겨진 입력 요소가 포함됩니다. `removeLabel`은 페이지 언어로 칩의 삭제 버튼 이름을 지정합니다.
+- **값**은 선택한 값을 선택한 순서대로 담은 목록입니다.
+
+목록에서 고르지 않고 값을 자유롭게 입력해야 한다면 [태그 입력](/components/tags)을 사용하세요.
 
 ## 컨트롤 선택 기준 \{#choosing-a-control\}
 
@@ -78,7 +108,7 @@ const detach = combobox(document.querySelector('.combobox'))
 
 ## React, Svelte, Vue \{#frameworks\}
 
-`combobox` 컴포넌트는 옵션 목록을 바탕으로 이 마크업을 렌더링하고 동작을 연결하며, 선택한 값을 받아 외부로 전달할 수 있습니다. `npx master-ui add combobox` 명령을 실행해 프로젝트에 복사하세요. 컴포넌트의 구성과 사용 방법은 [React, Svelte, Vue](/guide/frameworks)에서 확인할 수 있습니다.
+`combobox` 컴포넌트는 옵션 목록을 바탕으로 이 마크업을 렌더링하고 동작을 연결하며, 선택한 값을 받아 외부로 전달할 수 있습니다. `multiple`을 지정하면 값이 목록이 되고, 컴포넌트가 그 값으로 칩을 작성합니다. `npx master-ui add combobox` 명령을 실행해 프로젝트에 복사하세요. 컴포넌트의 구성과 사용 방법은 [React, Svelte, Vue](/guide/frameworks)에서 확인할 수 있습니다.
 
 <FrameworkSource name="combobox" />
 
@@ -92,7 +122,7 @@ const detach = combobox(document.querySelector('.combobox'))
 
 콤보박스는 다음 컴포넌트로 구성되며, 각 컴포넌트는 자체 클래스와 상태를 유지합니다.
 
-<ComponentLinks slugs={['input', 'listbox', 'select']} />
+<ComponentLinks slugs={['input', 'listbox', 'tags', 'select']} />
 
 ## 소스 코드 \{#source\}
 

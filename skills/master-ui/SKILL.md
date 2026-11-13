@@ -43,7 +43,7 @@ Then:
 Read [frameworks](references/frameworks.md) before writing a component in one of them. In short:
 
 - Most of the library is the same markup, in the framework's syntax: `className` and `htmlFor` in JSX, nothing else changes. Do not wrap a class in a component to rename it: `<Button variant="primary">` hides `btn btn-primary` from the checker and from the next reader. Wrap markup only when the project already does, and keep the contract's classes as literal strings.
-- Seventeen patterns hold state and have a component to copy: calendar, combobox, command, compare, dialog, field, listbox, menu, otp, popover, splitter, stepper, tabs, toast, tooltip, tree, wheel. `npx master-ui add <name>` copies it into `ui/`; `npx master-ui add` lists them. Look in `ui/` first: the project may already have it, edited.
+- Twenty-one patterns hold state and have a component to copy: calendar, combobox, command, compare, dialog, editable, field, listbox, menu, otp, popover, sortable, splitter, stepper, tabs, tags, toast, toolbar, tooltip, tree, wheel. `npx master-ui add <name>` copies it into `ui/`; `npx master-ui add` lists them. Look in `ui/` first: the project may already have it, edited.
 - Never write the keys, the focus or the state attributes of one of those patterns in a component. They are in `@master/ui/behaviors`; the component gives the behavior a root and passes the value.
 
 ## Choose the component

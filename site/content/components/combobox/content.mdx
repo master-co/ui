@@ -36,7 +36,7 @@ In a browser without anchor positioning the listbox still opens, centered in the
 
 ## The behavior \{#behavior\}
 
-`combobox` takes the root, the element with the `combobox` class, and returns the function that detaches it. It has no options. It finds the field by `role="combobox"` and the list by `role="listbox"`.
+`combobox` takes the root, the element with the `combobox` class, and returns the function that detaches it. It finds the field by `role="combobox"` and the list by `role="listbox"`. Pass `filter: false` when the page writes the matching options itself.
 
 ```js name=app.js
 import { combobox } from '@master/ui/behaviors/combobox.js'
@@ -53,6 +53,36 @@ const detach = combobox(document.querySelector('.combobox'))
 Disabled and hidden options are skipped. While an input method composes, <kbd>Enter</kbd> and the arrows belong to it.
 
 Without the behavior the field is a text input: the reader can type a value, and the list does not open.
+
+## Several values \{#several-values\}
+
+A listbox with `aria-multiselectable="true"` holds several values. The field is then an input group with `input-group-wrap`, as in a [tags field](/components/tags), and each chosen option is a [chip](/components/chip) before it. Choosing checks or unchecks an option, empties the field and keeps the list open, so the next value is a few keys away. The options keep their checks, so the list says what is chosen as well as the chips do.
+
+<ComponentPreview name="several" height={352} title="Several values" background="plain" bodyClass="content-start p-lg min-h(352)" behaviors html={`<div class="field max-w(360) mx-auto">
+  <label for="regions">Regions</label>
+  <div class="combobox">
+    <div class="input-group input-group-wrap">
+      <span class="chip" data-value="hnd">Tokyo<input type="hidden" name="regions" value="hnd"><button type="button" class="chip-remove" tabindex="-1" aria-label="Remove Tokyo"></button></span>
+      <input class="input-group-field" id="regions" role="combobox" aria-expanded="false" aria-controls="regions-list" aria-autocomplete="list" autocomplete="off" placeholder="Add a region">
+      <button type="button" class="combobox-toggle" tabindex="-1" aria-label="Show regions"></button>
+    </div>
+    <div id="regions-list" popover="manual" class="listbox" role="listbox" aria-label="Regions" aria-multiselectable="true">
+      <div class="listbox-option" role="option" data-value="hnd" aria-checked="true">Tokyo</div>
+      <div class="listbox-option" role="option" data-value="sin" aria-checked="false">Singapore</div>
+      <div class="listbox-option" role="option" data-value="fra" aria-checked="false">Frankfurt</div>
+      <div class="listbox-option" role="option" data-value="lhr" aria-checked="false">London</div>
+      <div class="listbox-option" role="option" data-value="iad" aria-checked="false">Virginia</div>
+      <div class="listbox-empty">No regions match.</div>
+    </div>
+  </div>
+</div>`} caption="Choose a few regions. Backspace in the empty field reaches the last chip, and Backspace again removes it." />
+
+- **The field only searches.** Typing filters the list and never takes a check away; the chips keep what is chosen.
+- **The chips.** The field is the one tab stop. <kbd class="kbd">Backspace</kbd> in an empty field and the arrow key that points back reach the chips, and the keys there are those of the [tags field](/components/tags#keyboard). Removing a chip, with its button or <kbd class="kbd">Backspace</kbd>, unchecks its option.
+- **The form.** A chip the behavior writes carries a hidden input with the value when the chips already carry one with a `name`, or when `name` is given. `removeLabel` names its remove button in the page's language.
+- **The value** is the list of chosen values, in the order they were chosen.
+
+When the values are typed freely rather than chosen from a list, use a [tags field](/components/tags).
 
 ## Choosing a control \{#choosing-a-control\}
 
@@ -73,7 +103,7 @@ The keys are those of the behavior. With the list closed, and with <kbd>Shift</k
 
 ## React, Svelte and Vue \{#frameworks\}
 
-The `combobox` component renders this markup from a list of options, attaches the behavior and passes the chosen value in and out. Copy it into the project with `npx master-ui add combobox`; [React, Svelte and Vue](/guide/frameworks) says how the components are built and used.
+The `combobox` component renders this markup from a list of options, attaches the behavior and passes the chosen value in and out. With `multiple` it writes the chips from the value, which is then a list. Copy it into the project with `npx master-ui add combobox`; [React, Svelte and Vue](/guide/frameworks) says how the components are built and used.
 
 <FrameworkSource name="combobox" />
 
@@ -87,7 +117,7 @@ It is used with [`input-group`](/components/input#input-group), `input-group-fie
 
 A combobox is composed from these components; each keeps its own classes and states.
 
-<ComponentLinks slugs={['input', 'listbox', 'select']} />
+<ComponentLinks slugs={['input', 'listbox', 'tags', 'select']} />
 
 ## Source \{#source\}
 

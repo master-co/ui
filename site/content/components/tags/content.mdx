@@ -1,0 +1,107 @@
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+A tags field turns what is typed into values, each a [chip](/components/chip) in the well. It is an [input group](/components/input#several-values) with `input-group-wrap` and the `tags` class: the well, its states and the concentric chips are the input group's, and the field after the chips takes the next value. The `tags` [behavior](/guide/behaviors) turns the text into chips and moves focus between them.
+
+<ComponentPreview name="default" height={176} narrowHeight={208} title="Tags" background="plain" bodyClass="content-start p-lg" behaviors html={`<div class="field max-w(420) mx-auto">
+  <label for="labels">Labels</label>
+  <div class="tags input-group input-group-wrap">
+    <span class="chip" data-value="design">design<input type="hidden" name="labels" value="design"><button type="button" class="chip-remove" tabindex="-1" aria-label="Remove design"></button></span>
+    <span class="chip" data-value="research">research<input type="hidden" name="labels" value="research"><button type="button" class="chip-remove" tabindex="-1" aria-label="Remove research"></button></span>
+    <span class="chip" data-value="accessibility">accessibility<input type="hidden" name="labels" value="accessibility"><button type="button" class="chip-remove" tabindex="-1" aria-label="Remove accessibility"></button></span>
+    <input class="input-group-field" id="labels" placeholder="Add a label" autocomplete="off">
+  </div>
+  <p class="field-hint">Press Enter or type a comma after each label.</p>
+</div>`} caption="Type a label and press Enter. Backspace in the empty field reaches the last label, and Backspace again removes it." />
+
+## What it adds to the input group \{#what-it-adds\}
+
+- **A value arrives.** A new chip grows out of the place the caret stood in, a short scale from 80% with the quick duration, instead of appearing. With reduced motion it only fades in.
+- **Room for a word.** The field keeps at least `--tags-field-min`, 6rem by default, and takes a line of its own below that, so the caret is never squeezed into a sliver at the end of a line.
+- **A value the keys are on** wears the focus ring as a whole, since <kbd class="kbd">Backspace</kbd> there removes all of it, and its cross takes the pressed tone. The ring is the chip's: a chip with a `chip-remove` draws it wherever it stands.
+- **A value that is refused** marks the field `aria-invalid="true"`, which the input group draws as the danger edge until the text changes.
+
+Without `@starting-style` a new value appears at once.
+
+## The behavior \{#behavior\}
+
+`tags` takes the root, the input group with the `tags` class, and returns the function that detaches it.
+
+```js name=app.js
+import { tags } from '@master/ui/behaviors/tags.js'
+
+const detach = tags(document.querySelector('.tags'), { max: 10 })
+```
+
+- **Adding.** <kbd class="kbd">Enter</kbd>, and a delimiter, a comma by default, turn the field's text into a value: a chip is written before the field and the field is emptied. Pasted text with delimiters, line breaks or tabs in it becomes as many values, and what follows the last delimiter stays in the field.
+- **Refusing.** A value that is empty, already there, past `max` or refused by `validate` is not added. The field keeps the text, so nothing typed is lost, and says `aria-invalid="true"` until it changes.
+- **Removing.** A chip's remove button removes it on a click, and focus returns to the field.
+- **The form.** A chip carries a hidden input with its value when the chips already carry one with a `name`, or when `name` is given, so a form submits every value under that name. A form's reset puts back the values the field started with.
+- **Events.** The root dispatches `input` and `change` each time a value is added or removed. The function it returns has a `value`, the values in order; set it to replace them, which dispatches nothing.
+
+| Option | Default | |
+| --- | --- | --- |
+| `delimiters` | `[',']` | Keys that add the value as <kbd class="kbd">Enter</kbd> does; `[]` leaves only <kbd class="kbd">Enter</kbd> |
+| `max` | none | How many values the field holds at most |
+| `validate` | none | A function that says whether a value may be added |
+| `name` | the chips' | The name of the hidden input a new chip carries |
+| `removeLabel` | `Remove <value>` | The accessible name of a chip's remove button, in the page's language |
+| `draw` | none | Takes over writing the chips, for a renderer that writes them from its own list |
+
+A chip stands for its `data-value`, or for its text. Without the behavior the field is a text input and its chips are fixed: a form still submits the hidden inputs they carry.
+
+## Suggestions \{#suggestions\}
+
+A `<datalist>` gives the field the browser's own suggestions with no script of its own: the reader picks one, then presses <kbd class="kbd">Enter</kbd> to add it. When the values have to come from a list, use a [combobox with several values](/components/combobox#several-values) instead.
+
+<ComponentPreview name="suggestions" height={160} narrowHeight={192} title="Suggestions" background="plain" bodyClass="content-start p-lg" behaviors html={`<div class="field max-w(420) mx-auto">
+  <label for="recipients">Recipients</label>
+  <div class="tags input-group input-group-wrap">
+    <span class="chip" data-value="ada@example.com">ada@example.com<input type="hidden" name="to" value="ada@example.com"><button type="button" class="chip-remove" tabindex="-1" aria-label="Remove ada@example.com"></button></span>
+    <input class="input-group-field" id="recipients" type="email" list="recipient-suggestions" placeholder="Add a recipient" autocomplete="off">
+  </div>
+  <datalist id="recipient-suggestions">
+    <option value="grace@example.com"></option>
+    <option value="linus@example.com"></option>
+    <option value="margaret@example.com"></option>
+  </datalist>
+</div>`} />
+
+## Keyboard \{#keyboard\}
+
+The field is the one tab stop. The chips are reached from it, and their remove buttons are out of the tab order with `tabindex="-1"`. While an input method composes, <kbd class="kbd">Enter</kbd> belongs to it.
+
+<ContractTable name="tags" show="keyboard" />
+
+## Accessibility \{#accessibility\}
+
+- Label the field, with a `<label>` or `aria-label`. Say how a value is added in a hint under it: a comma or <kbd class="kbd">Enter</kbd> is not obvious.
+- Name each remove button with the value it removes, in the page's language: `removeLabel` does that for the chips the behavior writes.
+- A value that is refused leaves the text in the field and marks it invalid; say why in the field's hint or error, as for any field.
+
+## React, Svelte and Vue \{#frameworks\}
+
+The `tags` component writes the chips from the value and attaches the behavior, which turns what is typed into values. Copy it into the project with `npx master-ui add tags`; [React, Svelte and Vue](/guide/frameworks) says how the components are built and used.
+
+<FrameworkSource name="tags" />
+
+## Classes \{#classes\}
+
+<ContractTable name="tags" />
+
+It is used with [`input-group`](/components/input#several-values), `input-group-wrap`, `input-group-field`, and a [`chip`](/components/chip) with a `chip-remove` for each value.
+
+## Custom properties \{#custom-properties\}
+
+<ContractTable name="tags" show="properties" />
+
+## Related \{#related\}
+
+<ComponentLinks slugs={['input', 'chip', 'combobox']} />
+
+## Source \{#source\}
+
+<ComponentSource name="tags" />

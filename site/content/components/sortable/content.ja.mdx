@@ -1,0 +1,126 @@
+---
+title: "並べ替えリスト"
+description: "ハンドルのドラッグまたはキー操作で項目の順序を変えられるリスト。"
+---
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+並べ替えリストは、ハンドルのドラッグまたはキー操作で項目の順序を変えられるリストです。独自の行のスタイルは持ちません。[リスト](/components/list)、カードを積み重ねた列など、項目を収める任意の要素に適用し、各項目にハンドルを付けます。ハンドルは、移動する対象を名前に含めたボタンです。`sortable` の[ビヘイビア](/guide/behaviors)は、ほかの項目が場所を空けるなかで項目を運び、ドロップしたときに一度だけそのノードを移動します。
+
+<ComponentPreview name="default" height={296} title="並べ替えリスト" background="plain" bodyClass="content-start p-lg" behaviors html={`<div class="max-w(420) mx-auto">
+  <ol class="list sortable" aria-label="Priorities this quarter">
+    <li class="list-row sortable-item" data-value="onboarding">
+      <button type="button" class="sortable-handle" aria-pressed="false" aria-label="Move Onboarding"></button>
+      <span class="list-body"><span class="list-title">Onboarding</span><span class="list-description">First run, invitations and the empty states</span></span>
+      <span class="list-end">Mar 2</span>
+    </li>
+    <li class="list-row sortable-item" data-value="billing">
+      <button type="button" class="sortable-handle" aria-pressed="false" aria-label="Move Billing"></button>
+      <span class="list-body"><span class="list-title">Billing</span><span class="list-description">Invoices in every currency</span></span>
+      <span class="list-end">Mar 16</span>
+    </li>
+    <li class="list-row sortable-item" data-value="search">
+      <button type="button" class="sortable-handle" aria-pressed="false" aria-label="Move Search"></button>
+      <span class="list-body"><span class="list-title">Search</span><span class="list-description">Filters that can be saved and shared</span></span>
+      <span class="list-end">Apr 6</span>
+    </li>
+    <li class="list-row sortable-item" data-value="exports">
+      <button type="button" class="sortable-handle" aria-pressed="false" aria-label="Move Exports"></button>
+      <span class="list-body"><span class="list-title">Exports</span><span class="list-description">CSV and PDF for every report</span></span>
+      <span class="list-end">Apr 27</span>
+    </li>
+  </ol>
+  <p class="sortable-status" role="status"></p>
+</div>`} caption="グリップをドラッグします。または、グリップにフォーカスして Space キーを押し、矢印キーで移動してから、もう一度 Space キーを押します。" />
+
+## スタイルシートの描画内容 \{#what-the-stylesheet-draws\}
+
+- **ハンドル**　6 つの点で描いたグリップです。ポインターやキー操作が届くまでは控えめに表示され、カーソルは握った手の形になります。大きさは 24×28px で、タッチ画面ではグリップの位置を変えずに 44px まで広がります。`touch-action: none` が指定されているため、ハンドルから始めたドラッグでページがスクロールすることはありません。項目のほかの部分では、通常どおりスクロールできます。
+- **運ばれている項目**　項目が持ち上がります。浮き上がったシートが項目の端から少しはみ出す大きさで周囲に広がるため、中身は動きません。浮き上がりを示す影が付き、1.5% だけ膨らみます。項目は、ビヘイビアが書き込む `--sortable-offset` によってポインターに追従し、ポインターと項目の間にイージングはかかりません。リストの細い罫線のように行が自身の下に描く線は、その行に属するものとして行とともに運ばれ、運ばれている間は表示されません。
+- **場所を空ける動き**　運ばれている項目の元の位置と移動先の間にある項目が、`--sortable-size` の分だけ滑るように位置をずらします。先頭方向へは `sortable-item-back`、末尾方向へは `sortable-item-forward` です。`--sortable-size` は、持ち上げた時点で計測した、運ばれている項目の大きさとその後ろの間隔を合わせた値です。空いた隙間が移動先になります。元の位置は空いたままなので、どこから運んできたかがわかります。
+- **ドロップ**　場所を空けた項目はすでに移動先に並んでいるため、空けた場所の解消と隙間へのノードの配置が 1 回の変更で行われます。各項目を `view-transition-name: match-element` によって個別の画像として扱うビュートランジションの中で、運ばれていた項目だけが、離した位置から移動先へ移動します。その間、ルート要素は `aria-busy="true"` を示し、ほかの項目は動きません。
+
+ビュートランジションに対応していないブラウザーでは、運ばれていた項目はすぐに移動先に収まります。ほかの項目はすでに移動先にあります。動きを抑える設定では、膨らみ、滑るような移動、トランジションのいずれも行いません。
+
+## カード \{#cards\}
+
+項目を収める要素であれば、何でも並べ替えられます。この例では、各項目が間隔をあけて積み重ねた[カード](/components/card)です。カードが空ける場所には、この間隔も含まれます。運ばれているカードが乗るシートは、`--sortable-radius` によってカードと同じ角丸になります。
+
+<ComponentPreview name="cards" height={344} title="カード" bodyClass="content-start p-lg" behaviors html={`<div class="max-w(360) mx-auto">
+<ol class="list sortable gap-xs" aria-label="Release checklist" style="--sortable-radius: var(--radius-surface)">
+  <li class="card sortable-item flex items-center gap-sm p-sm" data-value="freeze">
+    <button type="button" class="sortable-handle" aria-pressed="false" aria-label="Move Freeze the branch"></button>
+    <span class="text-sm fg-text-strong">Freeze the branch</span>
+  </li>
+  <li class="card sortable-item flex items-center gap-sm p-sm" data-value="notes">
+    <button type="button" class="sortable-handle" aria-pressed="false" aria-label="Move Write the release notes"></button>
+    <span class="text-sm fg-text-strong">Write the release notes</span>
+  </li>
+  <li class="card sortable-item flex items-center gap-sm p-sm" data-value="staging">
+    <button type="button" class="sortable-handle" aria-pressed="false" aria-label="Move Deploy to staging"></button>
+    <span class="text-sm fg-text-strong">Deploy to staging</span>
+  </li>
+  <li class="card sortable-item flex items-center gap-sm p-sm" data-value="announce">
+    <button type="button" class="sortable-handle" aria-pressed="false" aria-label="Move Announce the release"></button>
+    <span class="text-sm fg-text-strong">Announce the release</span>
+  </li>
+</ol>
+<p class="sortable-status" role="status"></p>
+</div>`} />
+
+## ビヘイビア \{#behavior\}
+
+`sortable` は、`sortable` クラスを持つルート要素を受け取り、ビヘイビアを解除する関数を返します。
+
+```js name=app.js
+import { sortable } from '@master/ui/behaviors/sortable.js'
+
+const priorities = sortable(document.querySelector('.sortable'))
+
+priorities.value // ['onboarding', 'billing', 'search', 'exports']
+```
+
+- **ポインター**　ハンドルを押したまま 4px を超えて動かすと、項目が持ち上がります。それ未満なら通常の押下として扱います。運んでいる間、ハンドルは `aria-pressed="true"` を示し、項目はポインターに追従し、通過した項目が場所を空けます。移動先は、場所を空ける途中の位置ではなく、レイアウト上の項目の位置から判定するため、移動先が自身を追いかけるように揺れ動くことはありません。ポインターを離すと項目が移動し、<kbd class="kbd">Escape</kbd> を押すと、ほかの項目が元の位置へ滑って戻るなかで項目も元の位置に戻ります。スクロールするリストでは、ポインターがリストのどちらかの端に近づくとリストがスクロールし、端に寄るほど速くなります。項目を動かせるのは、ドラッグを始めたポインターだけです。
+- **キー操作**　ハンドルで <kbd class="kbd">Enter</kbd> または <kbd class="kbd">Space</kbd> を押すと、項目が持ち上がります。リストの並びに沿った矢印キーで、項目を 1 つずつ移動します。矢印キーは項目を持ち上げるまで何もしないため、スクリーンリーダー独自の矢印キー操作はそのまま使えます。<kbd class="kbd">Enter</kbd> または <kbd class="kbd">Space</kbd> でドロップし、<kbd class="kbd">Escape</kbd> で持ち上げた位置に戻します。ハンドルからフォーカスが外れた場合もドロップします。
+- **読み上げ**　持ち上げ、移動、ドロップ、取り消しのたびに、`sortable-status` 領域で項目の名前と位置を伝えます（例：「Billing, position 3 of 4.」）。この領域は、ルート要素の中、またはその直後に置く `role="status"` の要素です。ページの言語で伝えるには `messages` を渡します。
+- **移動**　移動するのは項目のノードそのものです。ブラウザーが `moveBefore()` に対応していればそれを使うため、項目内の状態（フィールドのテキスト、再生中の動画、フォーカス）が保たれます。対応していない場合は項目を挿入し直し、ハンドルにフォーカスを戻します。
+- **イベント**　ドロップによって順序が変わると、ルート要素が `input` と `change` を発行します。返される関数の `value` は項目の順序で、各項目の `data-value`、なければテキストを並べたものです。`value` に代入するとその順序に並べ替えますが、イベントは発行されません。
+
+`sortable-row` を指定するとリストが横並びになります。ずらす方向が水平になり、移動先を示す線は縦になります。移動には <kbd class="kbd">ArrowLeft</kbd> と <kbd class="kbd">ArrowRight</kbd> を使い、右から左に並ぶ場合は方向が逆になります。
+
+ビヘイビアを適用しない場合も、リストは元の順序のまま読めます。
+
+## キーボード操作 \{#keyboard\}
+
+<ContractTable name="sortable" show="keyboard" />
+
+## アクセシビリティ \{#accessibility\}
+
+- 各ハンドルには、移動する対象を含む名前を付けます（例：「Move Billing」）。ハンドルは項目の順序を変える唯一のコントロールですが、ポインターだけが手段になることはありません。ポインターでできる移動は、すべてキー操作でもできます。
+- ステータス領域は、最初から空の状態でページに置いておきます。読み上げる瞬間に追加した領域は、読み上げられないことがよくあります。
+- 優先度やワークフローの手順など、順序がページの動作に関わる場合は、リストの近くでそのことを説明し、新しい順序はページのほかのデータと同じ方法で保存します。
+
+## React、Svelte、Vue \{#frameworks\}
+
+`sortable` コンポーネントは、保持している順序で項目を描画してビヘイビアを適用し、ビヘイビアから求められると自身のリスト内で項目を移動します。そのため、フレームワークが管理する行とページの表示が一致します。`npx master-ui add sortable` でプロジェクトにコピーできます。コンポーネントの構成と使い方は [React、Svelte、Vue](/guide/frameworks) を参照してください。
+
+<FrameworkSource name="sortable" />
+
+## クラス \{#classes\}
+
+<ContractTable name="sortable" />
+
+## カスタムプロパティ \{#custom-properties\}
+
+<ContractTable name="sortable" show="properties" />
+
+## 関連コンポーネント \{#related\}
+
+<ComponentLinks slugs={['list', 'card', 'swipe']} />
+
+## ソース \{#source\}
+
+<ComponentSource name="sortable" />

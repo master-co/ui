@@ -14,16 +14,20 @@ import { calendar, calendarMonth } from './calendar.js'
 import { combobox } from './combobox.js'
 import { command } from './command.js'
 import { compare } from './compare.js'
+import { editable } from './editable.js'
 import { listbox } from './listbox.js'
 import { contextMenu, menu } from './menu.js'
 import { otp } from './otp.js'
+import { sortable } from './sortable.js'
 import { splitter } from './splitter.js'
 import { stepper } from './stepper.js'
 import { tabs } from './tabs.js'
+import { tags } from './tags.js'
+import { toolbar } from './toolbar.js'
 import { tree } from './tree.js'
 import { wheel } from './wheel.js'
 
-export { calendar, calendarMonth, combobox, command, compare, contextMenu, listbox, menu, otp, splitter, stepper, tabs, tree, wheel }
+export { calendar, calendarMonth, combobox, command, compare, contextMenu, editable, listbox, menu, otp, sortable, splitter, stepper, tabs, tags, toolbar, tree, wheel }
 
 /**
  * Each pattern's root class and the behavior that drives it.
@@ -42,6 +46,10 @@ const patterns = [
   ['.wheel', wheel],
   ['.compare', compare],
   ['.listbox', listbox],
+  ['.tags', tags],
+  ['.editable', editable],
+  ['.sortable', sortable],
+  ['.toolbar[role="toolbar"]', toolbar],
 ]
 
 /**

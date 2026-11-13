@@ -1,0 +1,104 @@
+---
+title: "インライン編集"
+description: "テキストとして表示され、その場で入力フィールドに切り替わる値。"
+---
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+インライン編集は、テキストとして表示され、その場で入力フィールドに切り替わる値です。タイトル、名前、セルなどに使います。通常時は、囲んでいる要素の書体で表示されるただのテキストです。ポインターを重ねると周囲に淡いくぼみが現れ、末尾に鉛筆アイコンが表示されます。押すと、くぼみがフォーカスされた[入力フィールド](/components/input)に変わり、値が選択された状態になります。プレビューとフィールドは同じグリッドセル、フォント、パディング、角丸を共有するため、切り替わってもテキストは 1px も動きません。`editable` の[ビヘイビア](/guide/behaviors)が表示の切り替えと保存を行います。
+
+<ComponentPreview name="default" height={176} title="インライン編集" background="plain" bodyClass="content-start p-lg" behaviors html={`<div class="max-w(420) mx-auto">
+  <span class="block mb-xs text-xs fg-text-muted" id="doc-title-label">Title</span>
+  <h2 class="heading heading-xl">
+    <span class="editable">
+      <button type="button" class="editable-preview" id="doc-title-preview" aria-labelledby="doc-title-label doc-title-preview">Quarterly report</button>
+      <input class="editable-field" value="Quarterly report" aria-labelledby="doc-title-label" required maxlength="80" hidden>
+    </span>
+  </h2>
+  <span class="block mt-xs text-sm fg-text-muted">Last edited by Ada, 2 minutes ago</span>
+</div>`} caption="タイトルを押して入力し、Enter キーで保存するか、Escape キーで元に戻します。" />
+
+## テキストの位置 \{#geometry\}
+
+値は、置かれている列の位置に揃います。ルート要素は左右に `--editable-padding-x` だけはみ出すため、くぼみはテキストを内側に押し込まず、テキストの周りに広がります。パディングは `em` 単位なので、見出しのくぼみは見出しの大きさに、セルのくぼみはセルの大きさに見合ったゆとりを持ちます。
+
+- **通常時**　プレビューはただのテキストです。ボタンなのでフォーカスを受け取り、フォーカスリングとともに鉛筆アイコンが表示されます。
+- **ポインターを重ねたとき**　テキストの周りにくぼみの色調と 0.5px の輪郭が現れ、最後の単語の後ろに鉛筆アイコンが表示されます。ホバーできるポインターがない画面では、鉛筆アイコンが少し控えめな色で常に表示されます。テキストを変更できることを示す唯一の手がかりだからです。
+- **編集中**　フィールドは、フォーカスされた入力欄と同様に、シートの高さまで持ち上がったくぼみになり、インク色の輪郭 1 本とハローが付きます。プレビューは非表示になってもセルの大きさを保つため、下にある要素は動きません。ブラウザーが `field-sizing: content` に対応していれば、値に合わせてフィールドがプレビューより広がります。対応していない場合は、プレビューの幅の中でテキストがスクロールします。
+- **保存待ち**　値の送信中は、ルート要素に `aria-busy="true"` を設定します。プレビューは控えめな色になり、押しても反応しなくなります。
+
+## 複数行 \{#several-lines\}
+
+フィールドに `<textarea>` を使うと、複数行の値を扱えます。その中では <kbd class="kbd">Enter</kbd> で改行するため、保存には <kbd class="kbd">Control</kbd> または <kbd class="kbd">Command</kbd> と <kbd class="kbd">Enter</kbd> を使います。値が空の間、プレビューにはフィールドの `placeholder` が `editable-placeholder` で表示されます。
+
+<ComponentPreview name="multiline" height={200} title="複数行" background="plain" bodyClass="content-start p-lg" behaviors html={`<div class="max-w(420) mx-auto text-sm fg-text-body">
+  <span class="block mb-xs text-xs fg-text-muted" id="doc-summary-label">Summary</span>
+  <div class="editable w-full">
+    <button type="button" class="editable-preview" id="doc-summary-preview" aria-labelledby="doc-summary-label doc-summary-preview"><span class="editable-placeholder">Add a summary for the team</span></button>
+    <textarea class="editable-field" aria-labelledby="doc-summary-label" placeholder="Add a summary for the team" rows="3" hidden></textarea>
+  </div>
+</div>`} />
+
+## ビヘイビア \{#behavior\}
+
+`editable` は、`editable` クラスを持つルート要素を受け取り、ビヘイビアを解除する関数を返します。
+
+```js name=app.js
+import { editable } from '@master/ui/behaviors/editable.js'
+
+const title = editable(document.querySelector('.editable'))
+
+title.edit() // open the field
+title.value // the saved value
+```
+
+- **編集の開始**　プレビューを押すとプレビューが非表示になり、保存済みの値を入れたフィールドが表示され、そのテキストが選択されます。
+- **保存**　<kbd class="kbd">Enter</kbd> を押すか、フィールドからフォーカスが外れると保存されます。フィールド自体の制約（`required`、`maxlength`、`pattern`）を満たさない値は保存されません。<kbd class="kbd">Enter</kbd> の場合はフィールドが開いたままになり、ブラウザーが理由を表示します。フォーカスが外れた場合は保存済みの値に戻ります。フォーカスが外れたときに編集を取り消すには、`blur: 'cancel'` を渡します。
+- **取り消し**　<kbd class="kbd">Escape</kbd> を押すと保存済みの値に戻ります。
+- **フォーカス**　<kbd class="kbd">Enter</kbd> と <kbd class="kbd">Escape</kbd> のあとはプレビューに戻ります。利用者がフォーカスをほかの場所に移した場合は戻しません。
+- **イベント**　異なる値を保存すると、その値をプレビューに書き込み、フィールドから `input` と `change` を発行します。返される関数は、保存済みの値を表す `value` と `edit()` を持ちます。`value` に代入するとプレビューとフィールドに書き込まれますが、イベントは発行されません。
+
+その後に値をどこへ送るかは、ページ側で決めます。送信中はルート要素に `aria-busy="true"` を設定します。サーバーが値を受け付けなかった場合は、値を元に戻してその横に理由を表示するか、`edit()` を呼び出してフィールドに `aria-invalid="true"` を設定します。後者では危険を示す色の縁が表示され、入力した内容は利用者が修正できるように保持されます。
+
+ビヘイビアを適用しない場合、プレビューは何もしないボタンになり、値はそのまま読めます。
+
+## 使いどころ \{#choosing-it\}
+
+インライン編集は、変更されるよりも読まれることがはるかに多く、その場で 1 つずつ変更される値に適しています。複数の値をまとめて変更し、一度に保存する場合は、[入力フィールド](/components/input)と保存ボタンを備えたフォームのほうが、何がいつ保存されるかを明確に伝えられます。
+
+## キーボード操作 \{#keyboard\}
+
+<ContractTable name="editable" show="keyboard" />
+
+入力メソッドで文字が未確定の間は、<kbd class="kbd">Enter</kbd> と <kbd class="kbd">Escape</kbd> を入力メソッドが処理します。
+
+## アクセシビリティ \{#accessibility\}
+
+- 値とフィールドには、それが何の値かがわかる名前を付けます。例では、表示されたラベルでフィールドに名前を付け、プレビューには `aria-labelledby` でラベルとプレビュー自身を参照させています。そのため、「Title, Quarterly report, button」のように読み上げられます。
+- スクリプトがなくても保存済みの値を読めるようにします。保存済みの値はプレビューのテキストです。
+- 保存に失敗したことは、危険を示す色の縁だけに頼らず、値の横に言葉で伝えます。
+
+## React、Svelte、Vue \{#frameworks\}
+
+`editable` コンポーネントは、最初の描画で初期値を表示し、ビヘイビアを適用します。それ以降のプレビューはビヘイビアが書き込みます。外部に渡される値は保存済みの値で、入力途中の値は渡されません。`npx master-ui add editable` でプロジェクトにコピーできます。コンポーネントの構成と使い方は [React、Svelte、Vue](/guide/frameworks) を参照してください。
+
+<FrameworkSource name="editable" />
+
+## クラス \{#classes\}
+
+<ContractTable name="editable" />
+
+## カスタムプロパティ \{#custom-properties\}
+
+<ContractTable name="editable" show="properties" />
+
+## 関連コンポーネント \{#related\}
+
+<ComponentLinks slugs={['input', 'heading', 'table']} />
+
+## ソース \{#source\}
+
+<ComponentSource name="editable" />

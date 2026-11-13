@@ -1,0 +1,127 @@
+---
+title: "정렬 가능 목록"
+description: "핸들을 드래그하거나 키보드로 항목의 순서를 정하는 목록입니다."
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+정렬 가능 목록은 핸들을 드래그하거나 키보드로 항목의 순서를 정하는 목록입니다. 자체 행 스타일은 없습니다. [목록](/components/list), 카드 스택 등 항목을 담는 요소라면 어디에나 적용하고, 각 항목에 핸들을 하나씩 두세요. 핸들은 무엇을 옮기는지 이름으로 밝힌 버튼입니다. `sortable` [동작](/guide/behaviors)은 다른 항목이 자리를 비켜 주는 동안 항목을 옮기고, 항목을 놓을 때 노드를 한 번만 이동합니다.
+
+<ComponentPreview name="default" height={296} title="정렬 가능 목록" background="plain" bodyClass="content-start p-lg" behaviors html={`<div class="max-w(420) mx-auto">
+  <ol class="list sortable" aria-label="Priorities this quarter">
+    <li class="list-row sortable-item" data-value="onboarding">
+      <button type="button" class="sortable-handle" aria-pressed="false" aria-label="Move Onboarding"></button>
+      <span class="list-body"><span class="list-title">Onboarding</span><span class="list-description">First run, invitations and the empty states</span></span>
+      <span class="list-end">Mar 2</span>
+    </li>
+    <li class="list-row sortable-item" data-value="billing">
+      <button type="button" class="sortable-handle" aria-pressed="false" aria-label="Move Billing"></button>
+      <span class="list-body"><span class="list-title">Billing</span><span class="list-description">Invoices in every currency</span></span>
+      <span class="list-end">Mar 16</span>
+    </li>
+    <li class="list-row sortable-item" data-value="search">
+      <button type="button" class="sortable-handle" aria-pressed="false" aria-label="Move Search"></button>
+      <span class="list-body"><span class="list-title">Search</span><span class="list-description">Filters that can be saved and shared</span></span>
+      <span class="list-end">Apr 6</span>
+    </li>
+    <li class="list-row sortable-item" data-value="exports">
+      <button type="button" class="sortable-handle" aria-pressed="false" aria-label="Move Exports"></button>
+      <span class="list-body"><span class="list-title">Exports</span><span class="list-description">CSV and PDF for every report</span></span>
+      <span class="list-end">Apr 27</span>
+    </li>
+  </ol>
+  <p class="sortable-status" role="status"></p>
+</div>`} caption="손잡이를 드래그하거나, 손잡이에 포커스를 두고 Space 키를 누른 뒤 방향키로 옮기고 Space 키를 다시 누르세요." />
+
+## 스타일시트가 그리는 요소 \{#what-the-stylesheet-draws\}
+
+- **핸들.** 점 여섯 개로 된 손잡이로, 포인터나 키보드 포커스가 닿기 전까지는 눈에 띄지 않으며 커서는 주먹 쥔 손 모양입니다. 크기는 24×28px이고, 터치 화면에서는 손잡이 위치는 그대로 둔 채 조작 영역이 44px로 커집니다. `touch-action: none`이 적용되어 있으므로 핸들에서 시작한 드래그는 페이지를 스크롤하지 않으며, 항목의 나머지 부분에서는 여전히 스크롤할 수 있습니다.
+- **옮기는 항목**은 위로 들어 올려집니다. 솟은 표면이 항목 가장자리보다 조금 더 바깥으로 커지므로 항목의 내용은 움직이지 않으며, 떠오른 그림자가 생기고 1.5% 커집니다. 항목은 동작이 작성하는 `--sortable-offset`을 통해 포인터를 따라가며, 포인터와 항목 사이에 이징은 없습니다. 목록의 가는 구분선처럼 행이 자기 아래에 그리는 선은 옮기는 항목을 따라가지 않고, 그 선이 구분하던 행 쪽에 남습니다.
+- **자리 비켜 주기.** 옮기는 항목의 원래 자리와 놓일 자리 사이에 있는 항목들이 `--sortable-size`만큼 옆으로 부드럽게 비켜납니다. `sortable-item-back`은 시작 쪽으로, `sortable-item-forward`는 끝 쪽으로 이동합니다. `--sortable-size`는 항목을 집어 들 때 측정한, 옮기는 항목의 크기와 그 뒤 간격을 더한 값입니다. 이렇게 생긴 빈자리가 항목이 놓일 곳입니다. 항목의 원래 자리는 비어 있으므로 사용자는 항목이 어디서 왔는지 알 수 있습니다.
+- **놓기.** 자리를 비켜 준 항목들은 이미 최종 위치에 있으므로, 이동은 비켜 준 공간을 없애고 노드를 빈자리에 넣는 작업을 한 번의 변경으로 처리합니다. 뷰 트랜지션(view transition) 안에서는 `view-transition-name: match-element`로 각 항목이 개별 스냅샷이 되며, 옮기는 항목만 손을 놓은 위치에서 새 자리로 이동합니다. 이 동안 루트 요소에는 `aria-busy="true"`가 설정되며, 다른 요소는 움직이지 않습니다.
+
+뷰 트랜지션을 지원하지 않는 브라우저에서는 옮기는 항목이 바로 새 자리에 놓입니다. 다른 항목은 이미 제자리에 있습니다. 동작 줄이기 설정이 켜져 있으면 커지는 효과, 비켜나는 움직임, 트랜지션이 모두 생략됩니다.
+
+## 카드 \{#cards\}
+
+항목을 담는 요소라면 무엇이든 정렬할 수 있습니다. 이 예시에서는 각 항목이 간격을 둔 스택 안의 [카드](/components/card)이며, 카드가 비켜 주는 공간에는 이 간격도 포함됩니다. 옮기는 카드를 들어 올리는 표면은 `--sortable-radius`를 통해 카드의 모서리 반경을 따릅니다.
+
+<ComponentPreview name="cards" height={344} title="카드" bodyClass="content-start p-lg" behaviors html={`<div class="max-w(360) mx-auto">
+<ol class="list sortable gap-xs" aria-label="Release checklist" style="--sortable-radius: var(--radius-surface)">
+  <li class="card sortable-item flex items-center gap-sm p-sm" data-value="freeze">
+    <button type="button" class="sortable-handle" aria-pressed="false" aria-label="Move Freeze the branch"></button>
+    <span class="text-sm fg-text-strong">Freeze the branch</span>
+  </li>
+  <li class="card sortable-item flex items-center gap-sm p-sm" data-value="notes">
+    <button type="button" class="sortable-handle" aria-pressed="false" aria-label="Move Write the release notes"></button>
+    <span class="text-sm fg-text-strong">Write the release notes</span>
+  </li>
+  <li class="card sortable-item flex items-center gap-sm p-sm" data-value="staging">
+    <button type="button" class="sortable-handle" aria-pressed="false" aria-label="Move Deploy to staging"></button>
+    <span class="text-sm fg-text-strong">Deploy to staging</span>
+  </li>
+  <li class="card sortable-item flex items-center gap-sm p-sm" data-value="announce">
+    <button type="button" class="sortable-handle" aria-pressed="false" aria-label="Move Announce the release"></button>
+    <span class="text-sm fg-text-strong">Announce the release</span>
+  </li>
+</ol>
+<p class="sortable-status" role="status"></p>
+</div>`} />
+
+## 동작 \{#behavior\}
+
+`sortable` 동작은 `sortable` 클래스가 있는 루트 요소를 받아, 연결한 동작을 해제하는 함수를 반환합니다.
+
+```js name=app.js
+import { sortable } from '@master/ui/behaviors/sortable.js'
+
+const priorities = sortable(document.querySelector('.sortable'))
+
+priorities.value // ['onboarding', 'billing', 'search', 'exports']
+```
+
+- **포인터.** 핸들을 누른 채 4px 넘게 움직이면 항목을 집어 들고, 그보다 적게 움직이면 일반 누르기로 처리합니다. 항목을 옮기는 동안 핸들에는 `aria-pressed="true"`가 설정되고, 항목은 포인터를 따라가며, 항목이 지나치는 다른 항목은 자리를 비켜 줍니다. 놓일 자리는 비켜 주는 중인 위치가 아니라 레이아웃상 항목들의 원래 위치를 기준으로 판단하므로, 놓일 자리가 계속 바뀌며 서로를 쫓는 일이 없습니다. 포인터를 놓으면 항목이 이동하고, <kbd class="kbd">Escape</kbd> 키를 누르면 다른 항목이 제자리로 부드럽게 돌아가는 동안 항목이 원래 자리로 돌아갑니다. 스크롤되는 목록에서는 포인터가 목록의 한쪽 끝 가까이에 있는 동안 목록을 스크롤하며, 끝 쪽으로 더 들어갈수록 더 빠르게 스크롤합니다. 드래그를 시작한 포인터만 항목을 옮길 수 있습니다.
+- **키보드.** 핸들에서 <kbd class="kbd">Enter</kbd> 또는 <kbd class="kbd">Space</kbd> 키를 누르면 항목을 집어 듭니다. 목록 방향의 방향키를 누르면 한 칸씩 이동합니다. 항목을 집어 들기 전에는 방향키가 아무 동작도 하지 않으므로, 스크린 리더 자체의 방향키 조작은 그대로 작동합니다. <kbd class="kbd">Enter</kbd> 또는 <kbd class="kbd">Space</kbd> 키를 누르면 항목을 놓고, <kbd class="kbd">Escape</kbd> 키를 누르면 집어 든 자리로 되돌립니다. 핸들에서 포커스가 벗어나도 항목을 놓습니다.
+- **안내 메시지.** 집어 들기, 이동, 놓기, 취소는 각각 `sortable-status` 영역에서 항목의 이름과 위치와 함께 안내합니다(예: "Billing, position 3 of 4."). 이 영역은 루트 요소 안이나 바로 뒤에 두는 `role="status"` 요소입니다. 페이지 언어로 안내하려면 `messages`를 전달하세요.
+- **이동**은 항목 노드 자체를 옮기는 것입니다. 브라우저가 지원하면 `moveBefore()`를 사용하므로, 필드의 텍스트, 재생 중인 동영상, 포커스처럼 항목 안의 상태가 유지됩니다. 그 밖의 브라우저에서는 항목을 다시 삽입하고 핸들에 포커스를 다시 맞춥니다.
+- **이벤트.** 놓기로 순서가 바뀌면 루트 요소에서 `input`과 `change` 이벤트를 발생시킵니다. 반환된 함수에는 항목의 순서인 `value`가 있으며, 각 항목은 `data-value` 값이나 텍스트로 나타냅니다. 이 속성에 값을 설정하면 항목이 그 순서로 정렬되며, 이때는 이벤트가 발생하지 않습니다.
+
+`sortable-row`를 사용하면 목록이 가로 방향이 됩니다. 이동 거리는 가로 방향으로 적용되고, 놓일 위치를 나타내는 선은 세로로 서며, <kbd class="kbd">ArrowLeft</kbd>와 <kbd class="kbd">ArrowRight</kbd> 키로 이동합니다. 오른쪽에서 왼쪽으로 쓰는 언어에서는 방향이 반대입니다.
+
+동작을 연결하지 않으면 목록은 원래 순서를 유지하며 그대로 읽을 수 있습니다.
+
+## 키보드 \{#keyboard\}
+
+<ContractTable name="sortable" show="keyboard" />
+
+## 접근성 \{#accessibility\}
+
+- 각 핸들의 이름에는 무엇을 옮기는지 밝히세요(예: "Move Billing"). 핸들은 항목의 순서를 바꾸는 유일한 컨트롤이지만, 포인터만 사용해야 하는 일은 없습니다. 포인터로 할 수 있는 모든 이동은 키보드로도 할 수 있습니다.
+- 상태 영역은 처음부터 비어 있는 상태로 페이지에 두세요. 안내하는 순간에 추가한 영역은 스크린 리더가 읽지 못하는 경우가 많습니다.
+- 우선순위나 작업 흐름의 단계처럼 순서가 페이지의 기능에 중요하다면 목록 근처에 그 사실을 알리고, 페이지에서 다른 데이터를 저장하는 방식과 같은 방식으로 새 순서를 저장하세요.
+
+## React, Svelte, Vue \{#frameworks\}
+
+`sortable` 컴포넌트는 자신이 가진 순서대로 항목을 작성하고 동작을 연결하며, 동작이 요청하면 자체 목록에서 항목을 옮깁니다. 따라서 프레임워크가 관리하는 행과 페이지의 순서가 항상 일치합니다. `npx master-ui add sortable` 명령을 실행해 프로젝트에 복사하세요. 컴포넌트의 구성과 사용 방법은 [React, Svelte, Vue](/guide/frameworks)에서 확인할 수 있습니다.
+
+<FrameworkSource name="sortable" />
+
+## 클래스 \{#classes\}
+
+<ContractTable name="sortable" />
+
+## 사용자 지정 속성 \{#custom-properties\}
+
+<ContractTable name="sortable" show="properties" />
+
+## 관련 항목 \{#related\}
+
+<ComponentLinks slugs={['list', 'card', 'swipe']} />
+
+## 소스 \{#source\}
+
+<ComponentSource name="sortable" />

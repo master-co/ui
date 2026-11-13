@@ -27,6 +27,7 @@ const others: Record<string, Record<string, unknown>> = {
   'popover': {},
   'stepper': { value: 4, decrementLabel: 'Fewer seats', incrementLabel: 'More seats', 'aria-label': 'Seats' },
   'toast': {},
+  'toolbar': {},
   'tooltip': {},
   'tree': { nodes: [{ label: 'themes', children: [{ label: 'paper.css', value: 'themes/paper.css' }] }], 'aria-label': 'Files' },
 }

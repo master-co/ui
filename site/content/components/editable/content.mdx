@@ -1,0 +1,100 @@
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+An editable is a value read as text that becomes a field in place: a title, a name, a cell. At rest it is plain text in the type of whatever holds it; under the pointer a faint well appears around it with a pencil at its end; pressed, the well becomes a focused [field](/components/input) with the value selected. The preview and the field share one grid cell, one font, one padding and one corner, so the text does not move by a pixel when one replaces the other. The `editable` [behavior](/guide/behaviors) switches the two and saves.
+
+<ComponentPreview name="default" height={176} title="Editable" background="plain" bodyClass="content-start p-lg" behaviors html={`<div class="max-w(420) mx-auto">
+  <span class="block mb-xs text-xs fg-text-muted" id="doc-title-label">Title</span>
+  <h2 class="heading heading-xl">
+    <span class="editable">
+      <button type="button" class="editable-preview" id="doc-title-preview" aria-labelledby="doc-title-label doc-title-preview">Quarterly report</button>
+      <input class="editable-field" value="Quarterly report" aria-labelledby="doc-title-label" required maxlength="80" hidden>
+    </span>
+  </h2>
+  <span class="block mt-xs text-sm fg-text-muted">Last edited by Ada, 2 minutes ago</span>
+</div>`} caption="Press the title, type, then Enter to save or Escape to put it back." />
+
+## Where the text stands \{#geometry\}
+
+The value lines up with the column it stands in: the root reaches out by `--editable-padding-x` on both sides, so the well grows around the text instead of pushing it in. The padding is in `em`, so a heading's well is as generous for its size as a cell's is for its own.
+
+- **At rest** the preview is plain text. It is a button, so it takes focus, and the pencil shows with the focus ring.
+- **Under the pointer** the inset tone and a half-pixel contour appear around the text, with the pencil after the last word. On a screen without a hovering pointer the pencil is always there, a little quieter: it is the only sign that the text can be changed.
+- **Editing**, the field is a well risen to the sheet with one ink contour and a halo, as a focused input is. Hidden, the preview still holds the cell open, so nothing below moves. Where the browser has `field-sizing: content`, the field grows past the preview as the value does; elsewhere its text scrolls inside the preview's width.
+- **Pending.** While the value is on its way, set `aria-busy="true"` on the root: the preview reads muted and takes no press.
+
+## Several lines \{#several-lines\}
+
+A `<textarea>` as the field holds a value of several lines. <kbd class="kbd">Enter</kbd> starts a line there, so <kbd class="kbd">Control</kbd> or <kbd class="kbd">Command</kbd> with <kbd class="kbd">Enter</kbd> saves. While the value is empty the preview says the field's `placeholder`, in `editable-placeholder`.
+
+<ComponentPreview name="multiline" height={200} title="Several lines" background="plain" bodyClass="content-start p-lg" behaviors html={`<div class="max-w(420) mx-auto text-sm fg-text-body">
+  <span class="block mb-xs text-xs fg-text-muted" id="doc-summary-label">Summary</span>
+  <div class="editable w-full">
+    <button type="button" class="editable-preview" id="doc-summary-preview" aria-labelledby="doc-summary-label doc-summary-preview"><span class="editable-placeholder">Add a summary for the team</span></button>
+    <textarea class="editable-field" aria-labelledby="doc-summary-label" placeholder="Add a summary for the team" rows="3" hidden></textarea>
+  </div>
+</div>`} />
+
+## The behavior \{#behavior\}
+
+`editable` takes the root, the element with the `editable` class, and returns the function that detaches it.
+
+```js name=app.js
+import { editable } from '@master/ui/behaviors/editable.js'
+
+const title = editable(document.querySelector('.editable'))
+
+title.edit() // open the field
+title.value // the saved value
+```
+
+- **Opening.** Pressing the preview hides it, shows the field with the saved value and selects its text.
+- **Saving.** <kbd class="kbd">Enter</kbd> saves, and so does leaving the field. A value the field's own constraints refuse (`required`, `maxlength`, `pattern`) is not saved: <kbd class="kbd">Enter</kbd> keeps the field open and lets the browser say why, and leaving puts the saved value back. Pass `blur: 'cancel'` to make leaving cancel.
+- **Cancelling.** <kbd class="kbd">Escape</kbd> puts the saved value back.
+- **Focus** returns to the preview after <kbd class="kbd">Enter</kbd> and <kbd class="kbd">Escape</kbd>, never when the reader moved it elsewhere.
+- **Events.** Saving a different value writes it into the preview and dispatches `input` and `change` from the field. The function it returns has a `value`, the saved value, and `edit()`; setting the value writes the preview and the field and dispatches nothing.
+
+Where the value goes after that is the page's. Set `aria-busy="true"` on the root while it is on its way. If the server refuses it, set the value back and say why next to it, or call `edit()` and mark the field `aria-invalid="true"`, which draws the danger edge: what was typed is kept for the reader to correct.
+
+Without the behavior the preview is a button that does nothing, and the value stays readable.
+
+## Choosing it \{#choosing-it\}
+
+An editable suits a value read far more often than it is changed, and changed one at a time where it stands. When several values are changed together and saved at once, a form of [inputs](/components/input) with a Save button says more plainly what is saved and when.
+
+## Keyboard \{#keyboard\}
+
+<ContractTable name="editable" show="keyboard" />
+
+While an input method composes, <kbd class="kbd">Enter</kbd> and <kbd class="kbd">Escape</kbd> belong to it.
+
+## Accessibility \{#accessibility\}
+
+- Name the value and its field with what it is. In the examples a visible label names the field, and the preview is named by the label and itself through `aria-labelledby`, so it is read as "Title, Quarterly report, button".
+- Keep the saved value readable without the script: it is the preview's text.
+- Say a save that fails next to the value, in words, not with the danger edge alone.
+
+## React, Svelte and Vue \{#frameworks\}
+
+The `editable` component draws the first value into the first render and attaches the behavior, which writes the preview after that. The value that comes out is the saved one, never what is being typed. Copy it into the project with `npx master-ui add editable`; [React, Svelte and Vue](/guide/frameworks) says how the components are built and used.
+
+<FrameworkSource name="editable" />
+
+## Classes \{#classes\}
+
+<ContractTable name="editable" />
+
+## Custom properties \{#custom-properties\}
+
+<ContractTable name="editable" show="properties" />
+
+## Related \{#related\}
+
+<ComponentLinks slugs={['input', 'heading', 'table']} />
+
+## Source \{#source\}
+
+<ComponentSource name="editable" />

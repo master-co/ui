@@ -1,0 +1,112 @@
+---
+title: "標籤輸入"
+description: "將輸入的文字轉成值的欄位，每個值都以膠囊標籤顯示在凹槽內。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+標籤輸入會將輸入的文字轉成值，每個值都以[膠囊標籤](/components/chip)顯示在凹槽內。它是帶有 `input-group-wrap` 和 `tags` 類別的[輸入群組](/components/input#several-values)：凹槽、凹槽的各種狀態和同心圓角的膠囊標籤都來自輸入群組，膠囊標籤後方的欄位則用來輸入下一個值。`tags` [行為](/guide/behaviors)負責將文字轉成膠囊標籤，並在膠囊標籤之間移動焦點。
+
+<ComponentPreview name="default" height={176} narrowHeight={208} title="標籤輸入" background="plain" bodyClass="content-start p-lg" behaviors html={`<div class="field max-w(420) mx-auto">
+  <label for="labels">Labels</label>
+  <div class="tags input-group input-group-wrap">
+    <span class="chip" data-value="design">design<input type="hidden" name="labels" value="design"><button type="button" class="chip-remove" tabindex="-1" aria-label="Remove design"></button></span>
+    <span class="chip" data-value="research">research<input type="hidden" name="labels" value="research"><button type="button" class="chip-remove" tabindex="-1" aria-label="Remove research"></button></span>
+    <span class="chip" data-value="accessibility">accessibility<input type="hidden" name="labels" value="accessibility"><button type="button" class="chip-remove" tabindex="-1" aria-label="Remove accessibility"></button></span>
+    <input class="input-group-field" id="labels" placeholder="Add a label" autocomplete="off">
+  </div>
+  <p class="field-hint">Press Enter or type a comma after each label.</p>
+</div>`} caption="輸入標籤後按 Enter。在空白欄位中按 Backspace 會移到最後一個標籤，再按一次 Backspace 即可移除。" />
+
+## 在輸入群組之外增加的功能 \{#what-it-adds\}
+
+- **新增值時。** 新的膠囊標籤會從文字游標原本的位置長出來，以快速的時間長度從 80% 縮放至原尺寸，而不是直接出現。啟用減少動態效果時，只會淡入。
+- **保留輸入空間。** 欄位寬度至少為 `--tags-field-min`，預設為 6rem；剩餘空間小於這個寬度時，欄位會換到下一列，文字游標就不會被擠在列尾的窄縫裡。
+- **鍵盤焦點所在的值**整個顯示焦點外框，因為在這裡按 <kbd class="kbd">Backspace</kbd> 會移除整個值，值上的叉號也會呈現按下時的色調。焦點外框屬於膠囊標籤本身：帶有 `chip-remove` 的膠囊標籤無論放在哪裡都會顯示。
+- **被拒絕的值**會讓欄位設為 `aria-invalid="true"`，輸入群組會將其顯示為危險色邊框，直到文字變更為止。
+
+瀏覽器若不支援 `@starting-style`，新的值會直接出現。
+
+## 行為 \{#behavior\}
+
+`tags` 接收根元素，也就是帶有 `tags` 類別的輸入群組，並傳回用來解除行為的函式。
+
+```js name=app.js
+import { tags } from '@master/ui/behaviors/tags.js'
+
+const detach = tags(document.querySelector('.tags'), { max: 10 })
+```
+
+- **新增。** 按 <kbd class="kbd">Enter</kbd> 或輸入分隔符號（預設為逗號）時，欄位中的文字會轉成一個值：膠囊標籤會寫在欄位前方，欄位隨即清空。貼上的文字若含有分隔符號、換行或 Tab 字元，就會拆成相應數量的值，最後一個分隔符號之後的文字則留在欄位中。
+- **拒絕。** 空白的值、已存在的值、超過 `max` 的值，或被 `validate` 拒絕的值都不會加入。欄位會保留文字，因此輸入的內容不會遺失，並會維持 `aria-invalid="true"`，直到文字變更為止。
+- **移除。** 點擊膠囊標籤的移除按鈕即可移除該值，焦點會回到欄位。
+- **表單。** 若現有的膠囊標籤已帶有設定 `name` 的隱藏輸入元件，或有傳入 `name`，每個膠囊標籤都會帶有一個存放其值的隱藏輸入元件，因此表單會以該名稱送出所有值。重設表單時，會還原欄位一開始的值。
+- **事件。** 每次新增或移除值時，根元素都會派送 `input` 和 `change`。傳回的函式帶有 `value`，依序列出所有值；設定 `value` 會取代這些值，但不會派送任何事件。
+
+| 選項 | 預設值 | |
+| --- | --- | --- |
+| `delimiters` | `[',']` | 與 <kbd class="kbd">Enter</kbd> 一樣會新增值的按鍵；設為 `[]` 時只有 <kbd class="kbd">Enter</kbd> 會新增 |
+| `max` | 無 | 欄位最多可容納的值數量 |
+| `validate` | 無 | 判斷值是否可以加入的函式 |
+| `name` | 沿用膠囊標籤的名稱 | 新膠囊標籤所帶隱藏輸入元件的名稱 |
+| `removeLabel` | `Remove <value>` | 膠囊標籤移除按鈕的無障礙名稱，請使用頁面的語言 |
+| `draw` | 無 | 接手寫入膠囊標籤，適用於依自己的清單寫入膠囊標籤的渲染器 |
+
+膠囊標籤代表其 `data-value`，沒有時則代表其文字。未掛上行為時，欄位就是一般的文字輸入欄位，膠囊標籤也固定不變；表單仍會送出膠囊標籤所帶的隱藏輸入元件。
+
+## 建議值 \{#suggestions\}
+
+`<datalist>` 不需要額外腳本，就能讓欄位顯示瀏覽器內建的建議值：使用者先選取一個建議，再按 <kbd class="kbd">Enter</kbd> 加入。若值必須來自既定清單，請改用[多值組合方塊](/components/combobox#several-values)。
+
+<ComponentPreview name="suggestions" height={160} narrowHeight={192} title="建議值" background="plain" bodyClass="content-start p-lg" behaviors html={`<div class="field max-w(420) mx-auto">
+  <label for="recipients">Recipients</label>
+  <div class="tags input-group input-group-wrap">
+    <span class="chip" data-value="ada@example.com">ada@example.com<input type="hidden" name="to" value="ada@example.com"><button type="button" class="chip-remove" tabindex="-1" aria-label="Remove ada@example.com"></button></span>
+    <input class="input-group-field" id="recipients" type="email" list="recipient-suggestions" placeholder="Add a recipient" autocomplete="off">
+  </div>
+  <datalist id="recipient-suggestions">
+    <option value="grace@example.com"></option>
+    <option value="linus@example.com"></option>
+    <option value="margaret@example.com"></option>
+  </datalist>
+</div>`} />
+
+## 鍵盤操作 \{#keyboard\}
+
+欄位是唯一的 Tab 停駐點。膠囊標籤要從欄位移過去，膠囊標籤的移除按鈕則以 `tabindex="-1"` 移出 Tab 順序。輸入法組字期間，<kbd class="kbd">Enter</kbd> 會交由輸入法處理。
+
+<ContractTable name="tags" show="keyboard" />
+
+## 無障礙 \{#accessibility\}
+
+- 用 `<label>` 或 `aria-label` 為欄位加上標籤。在欄位下方的提示中說明如何新增值，因為使用者不一定知道可以用逗號或 <kbd class="kbd">Enter</kbd> 新增。
+- 用頁面的語言，以要移除的值為每個移除按鈕命名；行為寫入的膠囊標籤可透過 `removeLabel` 設定。
+- 被拒絕的值會將文字留在欄位中，並將欄位標示為無效。請和其他欄位一樣，在欄位的提示或錯誤訊息中說明原因。
+
+## React、Svelte 和 Vue \{#frameworks\}
+
+`tags` 元件會根據值寫入膠囊標籤，並掛上將輸入文字轉成值的行為。用 `npx master-ui add tags` 將元件複製到專案中。元件的建置與使用方式請參閱 [React、Svelte 和 Vue](/guide/frameworks)。
+
+<FrameworkSource name="tags" />
+
+## 類別 \{#classes\}
+
+<ContractTable name="tags" />
+
+搭配 [`input-group`](/components/input#several-values)、`input-group-wrap`、`input-group-field` 使用，每個值則是一個帶有 `chip-remove` 的 [`chip`](/components/chip)。
+
+## 自訂屬性 \{#custom-properties\}
+
+<ContractTable name="tags" show="properties" />
+
+## 相關元件 \{#related\}
+
+<ComponentLinks slugs={['input', 'chip', 'combobox']} />
+
+## 原始碼 \{#source\}
+
+<ComponentSource name="tags" />

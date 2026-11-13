@@ -1,10 +1,11 @@
 import ComponentPreview from '~/site/components/ComponentPreview.astro'
 import ComponentSource from '~/site/components/ComponentSource.astro'
 import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
 A toolbar is a small raised sheet that holds a row of quiet controls. Its 4px inset makes the corners nest: the toolbar's corner is a small control's corner plus the inset, so small quiet [buttons](/components/button), [selects](/components/select) and [segmented controls](/components/segmented) sit in it concentrically. It is 40px tall around 32px controls.
 
-<ComponentPreview name="default" height={104} title="Toolbar" html={`<div class="toolbar" role="toolbar" aria-label="Formatting">
+<ComponentPreview name="default" height={104} title="Toolbar" behaviors html={`<div class="toolbar" role="toolbar" aria-label="Formatting" focusgroup="toolbar wrap">
   <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Bold" aria-pressed="true">
     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 5h6a3.5 3.5 0 0 1 0 7H7zM7 12h7a3.5 3.5 0 0 1 0 7H7z"/></svg>
   </button>
@@ -19,11 +20,47 @@ A toolbar is a small raised sheet that holds a row of quiet controls. Its 4px in
     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>
     Link
   </button>
-</div>`} />
+</div>`} caption="Tab into the toolbar, move with the arrow keys and press the toggles with Space." />
 
 ## State in a toolbar \{#state-in-a-toolbar\}
 
 A quiet button has no material until touched, so the toolbar's own sheet shows through. Under the pointer the button rises as a sheet of its own; pressed, or with `aria-pressed="true"`, it sinks into a well. The toolbar is where the [state order](/guide/theme#principles) is easiest to see: well, sheet, raised.
+
+## One stop in the tab order \{#keys\}
+
+A toolbar is one stop in the tab order: <kbd class="kbd">Tab</kbd> enters it on the control focused last and leaves it, and the arrow keys move between its controls. Give it `focusgroup="toolbar wrap"`, and where the browser has [focusgroup](https://open-ui.org/components/scoped-focusgroup.explainer/) it does that by itself. The `toolbar` [behavior](/guide/behaviors) does it elsewhere, keeping one control at `tabindex="0"`, and steps aside where the browser has it.
+
+```js name=app.js
+import { toolbar } from '@master/ui/behaviors/toolbar.js'
+
+const detach = toolbar(document.querySelector('.toolbar'))
+```
+
+- **Moving.** <kbd class="kbd">ArrowRight</kbd> and <kbd class="kbd">ArrowLeft</kbd> move along the toolbar, wrapping at the ends and following the reading direction; <kbd class="kbd">Home</kbd> and <kbd class="kbd">End</kbd> go to the first and the last control. Disabled controls are skipped. A control with `aria-disabled="true"` stays reachable, as a toolbar's controls should, and its click is stopped.
+- **Toggles.** A button with `aria-pressed` presses on a click: `false` turns to `true` and back. A button without it is an action and keeps no state.
+- **Controls with keys of their own.** A [segmented control](/components/segmented) or another native radio group counts as one control, its checked radio: the arrows leave it, and <kbd class="kbd">Space</kbd> chooses the focused radio. A select and a text field keep their own arrows.
+
+Without either, every control is a tab stop, which works and is only slower.
+
+## Standing \{#vertical\}
+
+With `aria-orientation="vertical"` the controls stack into a column beside a canvas, the separators lie flat, and <kbd class="kbd">ArrowDown</kbd> and <kbd class="kbd">ArrowUp</kbd> move between them. Give it `focusgroup="toolbar wrap block"`.
+
+<ComponentPreview name="vertical" height={232} title="Standing" behaviors html={`<div class="toolbar" role="toolbar" aria-label="Tools" aria-orientation="vertical" focusgroup="toolbar wrap block">
+  <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Select" aria-pressed="true">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 4 12 7-5.5 1.5L10 18z"/></svg>
+  </button>
+  <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Hand" aria-pressed="false">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 12V6.5a1.5 1.5 0 0 1 3 0V11M11 10.5v-6a1.5 1.5 0 0 1 3 0V11M14 10.5V6a1.5 1.5 0 0 1 3 0v7.5a6.5 6.5 0 0 1-11.6 4L4 15.4a1.5 1.5 0 0 1 2.3-1.9L8 15"/></svg>
+  </button>
+  <span class="toolbar-separator" role="separator"></span>
+  <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Rectangle">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="6.5" width="15" height="11" rx="2"/></svg>
+  </button>
+  <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Text">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6h12M12 6v13"/></svg>
+  </button>
+</div>`} />
 
 ## Floating \{#floating\}
 
@@ -39,9 +76,19 @@ A quiet button has no material until touched, so the toolbar's own sheet shows t
 
 ## Accessibility \{#accessibility\}
 
-- Give the container `role="toolbar"` and a label.
-- The toolbar pattern moves between controls with the arrow keys and keeps one tab stop. That needs a small script of the page's own; without it every control is a tab stop, which works and is only slower.
-- Name icon-only buttons with `aria-label`, and say toggles with `aria-pressed`.
+- Give the container `role="toolbar"` and a label. Use it only for controls that act on something else, such as an editor or a canvas; navigation is a [navbar](/components/navbar).
+- Name icon-only buttons with `aria-label`, and say toggles with `aria-pressed`, without changing their label as they press.
+- Disable a control with `aria-disabled="true"` rather than `disabled`, so the arrow keys still reach it and it can say why it is unavailable.
+
+## Keyboard \{#keyboard\}
+
+<ContractTable name="toolbar" show="keyboard" />
+
+## React, Svelte and Vue \{#frameworks\}
+
+The `toolbar` component renders the root with its role, its label and `focusgroup`, and attaches the behavior for as long as it is on the page; the controls in it are yours. Copy it into the project with `npx master-ui add toolbar`; [React, Svelte and Vue](/guide/frameworks) says how the components are built and used.
+
+<FrameworkSource name="toolbar" />
 
 ## Classes \{#classes\}
 

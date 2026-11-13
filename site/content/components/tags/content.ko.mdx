@@ -1,0 +1,112 @@
+---
+title: "태그 입력"
+description: "입력한 텍스트를 값으로 바꾸어 오목한 영역 안에 칩으로 하나씩 표시하는 필드입니다."
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+태그 입력은 입력한 텍스트를 값으로 바꾸고, 각 값을 오목한 영역 안에 [칩](/components/chip)으로 표시하는 필드입니다. `input-group-wrap`과 `tags` 클래스를 적용한 [입력 그룹](/components/input#several-values)으로 구성합니다. 오목한 영역과 그 상태, 영역과 둥근 모서리의 중심이 일치하는 칩은 모두 입력 그룹에서 제공하며, 칩 뒤에 오는 필드가 다음 값을 입력받습니다. `tags` [동작](/guide/behaviors)은 텍스트를 칩으로 바꾸고 칩 사이에서 포커스를 이동합니다.
+
+<ComponentPreview name="default" height={176} narrowHeight={208} title="태그 입력" background="plain" bodyClass="content-start p-lg" behaviors html={`<div class="field max-w(420) mx-auto">
+  <label for="labels">Labels</label>
+  <div class="tags input-group input-group-wrap">
+    <span class="chip" data-value="design">design<input type="hidden" name="labels" value="design"><button type="button" class="chip-remove" tabindex="-1" aria-label="Remove design"></button></span>
+    <span class="chip" data-value="research">research<input type="hidden" name="labels" value="research"><button type="button" class="chip-remove" tabindex="-1" aria-label="Remove research"></button></span>
+    <span class="chip" data-value="accessibility">accessibility<input type="hidden" name="labels" value="accessibility"><button type="button" class="chip-remove" tabindex="-1" aria-label="Remove accessibility"></button></span>
+    <input class="input-group-field" id="labels" placeholder="Add a label" autocomplete="off">
+  </div>
+  <p class="field-hint">Press Enter or type a comma after each label.</p>
+</div>`} caption="레이블을 입력하고 Enter 키를 누르세요. 빈 필드에서 Backspace 키를 누르면 마지막 레이블로 이동하고, 한 번 더 누르면 그 레이블이 삭제됩니다." />
+
+## 입력 그룹에 더해지는 기능 \{#what-it-adds\}
+
+- **값 추가.** 새 칩은 갑자기 나타나지 않고, 캐럿이 있던 자리에서 80% 크기부터 짧은 지속 시간에 걸쳐 커지며 나타납니다. 동작 줄이기 설정이 켜져 있으면 서서히 나타나기만 합니다.
+- **단어를 입력할 공간.** 필드는 최소 `--tags-field-min`(기본값 6rem)의 너비를 유지하며, 그보다 좁아지면 아래쪽에 한 줄을 따로 차지합니다. 따라서 캐럿이 줄 끝의 좁은 틈에 끼는 일이 없습니다.
+- **키보드 포커스가 있는 값**에는 칩 전체에 포커스 링이 표시됩니다. 그 상태에서 <kbd class="kbd">Backspace</kbd> 키를 누르면 값 전체가 삭제되기 때문입니다. 삭제 버튼의 X 표시는 눌린 상태의 색조로 바뀝니다. 이 포커스 링은 칩이 그리는 것이므로, `chip-remove`가 있는 칩이라면 어디에 있든 표시됩니다.
+- **거부된 값**이 있으면 필드에 `aria-invalid="true"`가 설정되고, 입력 그룹은 텍스트가 바뀔 때까지 위험 색상 테두리를 표시합니다.
+
+`@starting-style`을 지원하지 않는 브라우저에서는 새 값이 바로 나타납니다.
+
+## 동작 \{#behavior\}
+
+`tags` 동작은 `tags` 클래스가 있는 입력 그룹을 루트 요소로 받아, 연결한 동작을 해제하는 함수를 반환합니다.
+
+```js name=app.js
+import { tags } from '@master/ui/behaviors/tags.js'
+
+const detach = tags(document.querySelector('.tags'), { max: 10 })
+```
+
+- **추가.** <kbd class="kbd">Enter</kbd> 키나 구분 문자(기본값은 쉼표)를 입력하면 필드의 텍스트가 값이 됩니다. 필드 앞에 칩이 작성되고 필드는 비워집니다. 구분 문자, 줄바꿈, 탭이 들어 있는 텍스트를 붙여 넣으면 그 수만큼 값이 만들어지며, 마지막 구분 문자 뒤의 텍스트는 필드에 남습니다.
+- **거부.** 비어 있는 값, 이미 있는 값, `max`를 넘는 값, `validate`가 거부한 값은 추가되지 않습니다. 입력한 내용이 사라지지 않도록 필드는 텍스트를 그대로 유지하며, 텍스트가 바뀔 때까지 `aria-invalid="true"` 상태가 됩니다.
+- **삭제.** 칩의 삭제 버튼을 클릭하면 칩이 삭제되고 포커스는 필드로 돌아갑니다.
+- **폼.** 기존 칩에 `name`이 있는 숨겨진 입력 요소가 이미 들어 있거나 `name` 옵션을 지정하면, 각 칩에 값을 담은 숨겨진 입력 요소가 포함됩니다. 따라서 폼은 모든 값을 해당 이름으로 제출합니다. 폼을 초기화하면 필드에 처음 있던 값으로 되돌아갑니다.
+- **이벤트.** 값을 추가하거나 삭제할 때마다 루트 요소에서 `input`과 `change` 이벤트를 발생시킵니다. 반환된 함수에는 값을 순서대로 담은 `value`가 있습니다. 이 속성에 값을 설정하면 기존 값이 대체되며, 이때는 이벤트가 발생하지 않습니다.
+
+| 옵션 | 기본값 | |
+| --- | --- | --- |
+| `delimiters` | `[',']` | <kbd class="kbd">Enter</kbd> 키처럼 값을 추가하는 키입니다. `[]`로 지정하면 <kbd class="kbd">Enter</kbd> 키만 남습니다. |
+| `max` | 없음 | 필드에 담을 수 있는 최대 값 개수입니다. |
+| `validate` | 없음 | 값을 추가할 수 있는지 판단하는 함수입니다. |
+| `name` | 기존 칩의 이름 | 새 칩에 포함되는 숨겨진 입력 요소의 이름입니다. |
+| `removeLabel` | `Remove <value>` | 페이지 언어로 지정하는 칩 삭제 버튼의 접근 가능한 이름입니다. |
+| `draw` | 없음 | 칩 작성을 대신 맡습니다. 자체 목록을 바탕으로 칩을 작성하는 렌더러에 사용합니다. |
+
+칩은 `data-value` 값을 나타내며, 이 속성이 없으면 칩의 텍스트를 값으로 사용합니다. 동작을 연결하지 않으면 필드는 일반 텍스트 입력란이 되고 칩은 고정됩니다. 이때도 폼은 칩에 포함된 숨겨진 입력 요소를 제출합니다.
+
+## 추천 항목 \{#suggestions\}
+
+`<datalist>`를 사용하면 별도의 스크립트 없이 브라우저 자체의 추천 항목을 필드에 제공할 수 있습니다. 사용자가 추천 항목을 고른 다음 <kbd class="kbd">Enter</kbd> 키를 눌러 값으로 추가합니다. 값을 반드시 목록에서 골라야 한다면 [여러 값을 선택하는 콤보박스](/components/combobox#several-values)를 사용하세요.
+
+<ComponentPreview name="suggestions" height={160} narrowHeight={192} title="추천 항목" background="plain" bodyClass="content-start p-lg" behaviors html={`<div class="field max-w(420) mx-auto">
+  <label for="recipients">Recipients</label>
+  <div class="tags input-group input-group-wrap">
+    <span class="chip" data-value="ada@example.com">ada@example.com<input type="hidden" name="to" value="ada@example.com"><button type="button" class="chip-remove" tabindex="-1" aria-label="Remove ada@example.com"></button></span>
+    <input class="input-group-field" id="recipients" type="email" list="recipient-suggestions" placeholder="Add a recipient" autocomplete="off">
+  </div>
+  <datalist id="recipient-suggestions">
+    <option value="grace@example.com"></option>
+    <option value="linus@example.com"></option>
+    <option value="margaret@example.com"></option>
+  </datalist>
+</div>`} />
+
+## 키보드 \{#keyboard\}
+
+탭 순서에서 멈추는 곳은 필드 하나뿐입니다. 칩에는 필드에서 이동하며, 칩의 삭제 버튼은 `tabindex="-1"`로 탭 순서에서 제외됩니다. 입력기로 문자를 조합하는 동안에는 입력기가 <kbd class="kbd">Enter</kbd> 키를 처리합니다.
+
+<ContractTable name="tags" show="keyboard" />
+
+## 접근성 \{#accessibility\}
+
+- `<label>`이나 `aria-label`로 필드에 레이블을 지정하세요. 쉼표나 <kbd class="kbd">Enter</kbd> 키로 값을 추가한다는 사실은 바로 알기 어려우므로, 필드 아래의 힌트로 값을 추가하는 방법을 알려 주세요.
+- 각 삭제 버튼의 이름에는 삭제할 값을 페이지 언어로 포함하세요. 동작이 작성하는 칩에는 `removeLabel`이 이름을 지정합니다.
+- 거부된 값은 필드에 텍스트로 남고 필드는 유효하지 않은 상태로 표시됩니다. 다른 필드와 마찬가지로 필드의 힌트나 오류 메시지로 그 이유를 알려 주세요.
+
+## React, Svelte, Vue \{#frameworks\}
+
+`tags` 컴포넌트는 값을 바탕으로 칩을 작성하고, 입력한 텍스트를 값으로 바꾸는 동작을 연결합니다. `npx master-ui add tags` 명령을 실행해 프로젝트에 복사하세요. 컴포넌트의 구성과 사용 방법은 [React, Svelte, Vue](/guide/frameworks)에서 확인할 수 있습니다.
+
+<FrameworkSource name="tags" />
+
+## 클래스 \{#classes\}
+
+<ContractTable name="tags" />
+
+[`input-group`](/components/input#several-values), `input-group-wrap`, `input-group-field`, 그리고 값마다 `chip-remove`를 포함한 [`chip`](/components/chip)과 함께 사용합니다.
+
+## 사용자 지정 속성 \{#custom-properties\}
+
+<ContractTable name="tags" show="properties" />
+
+## 관련 항목 \{#related\}
+
+<ComponentLinks slugs={['input', 'chip', 'combobox']} />
+
+## 소스 \{#source\}
+
+<ComponentSource name="tags" />

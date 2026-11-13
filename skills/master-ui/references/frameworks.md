@@ -26,15 +26,19 @@ These hold a value, render rows from data, join parts by id or have a lifetime, 
 | `command` | command | Whether it is open, the commands |
 | `compare` | compare | The position |
 | `dialog` | dialog | Whether it is open, the id its trigger names |
+| `editable` | editable | The saved value, the ids that name the preview |
 | `field` | input (`field`) | The ids that join the label, the control, the hint and the error |
 | `listbox` | listbox | The value, the options |
 | `menu` | menu | The items, the id its trigger names, the target of a context menu |
 | `otp` | otp | The code, the number of slots |
 | `popover` | popover | Whether it is open, the id its trigger names |
+| `sortable` | sortable | The order, the items |
 | `splitter` | splitter | The size |
 | `stepper` | stepper | The number |
 | `tabs` | tabs (a tablist) | The selected tab, the ids that join tabs and panels |
+| `tags` | tags | The values, their chips |
 | `toast` | toast | The queue: `toast()` and the region that shows it |
+| `toolbar` | toolbar | The lifetime of its behavior |
 | `tooltip` | tooltip | The id that joins the control and its label |
 | `tree` | tree | The selected row, the rows |
 | `wheel` | wheel | The value of each column, the options |

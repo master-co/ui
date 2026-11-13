@@ -1,0 +1,127 @@
+---
+title: "可排序列表"
+description: "可拖动手柄或用键盘调整项目顺序的列表。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+可排序列表是可以拖动手柄或用键盘调整项目顺序的列表。它没有自己的行样式：可以用在[列表](/components/list)、一叠卡片或任何容纳项目的元素上，并为每个项目提供一个手柄，即一个以所移动内容命名的按钮。`sortable` [行为脚本](/guide/behaviors)在拖动某个项目时让其他项目为它让出空间，并在放下时只移动一次该项目的节点。
+
+<ComponentPreview name="default" height={296} title="可排序列表" background="plain" bodyClass="content-start p-lg" behaviors html={`<div class="max-w(420) mx-auto">
+  <ol class="list sortable" aria-label="Priorities this quarter">
+    <li class="list-row sortable-item" data-value="onboarding">
+      <button type="button" class="sortable-handle" aria-pressed="false" aria-label="Move Onboarding"></button>
+      <span class="list-body"><span class="list-title">Onboarding</span><span class="list-description">First run, invitations and the empty states</span></span>
+      <span class="list-end">Mar 2</span>
+    </li>
+    <li class="list-row sortable-item" data-value="billing">
+      <button type="button" class="sortable-handle" aria-pressed="false" aria-label="Move Billing"></button>
+      <span class="list-body"><span class="list-title">Billing</span><span class="list-description">Invoices in every currency</span></span>
+      <span class="list-end">Mar 16</span>
+    </li>
+    <li class="list-row sortable-item" data-value="search">
+      <button type="button" class="sortable-handle" aria-pressed="false" aria-label="Move Search"></button>
+      <span class="list-body"><span class="list-title">Search</span><span class="list-description">Filters that can be saved and shared</span></span>
+      <span class="list-end">Apr 6</span>
+    </li>
+    <li class="list-row sortable-item" data-value="exports">
+      <button type="button" class="sortable-handle" aria-pressed="false" aria-label="Move Exports"></button>
+      <span class="list-body"><span class="list-title">Exports</span><span class="list-description">CSV and PDF for every report</span></span>
+      <span class="list-end">Apr 27</span>
+    </li>
+  </ol>
+  <p class="sortable-status" role="status"></p>
+</div>`} caption="拖动握把；或者聚焦握把后按空格键，用方向键移动，再按一次空格键放下。" />
+
+## 样式表绘制的内容 \{#what-the-stylesheet-draws\}
+
+- **手柄。** 由六个点组成的握把，指针或键盘到达前保持低调，光标为握拳的手形。手柄大小为 24 × 28px，在触屏上扩展到 44px，握把位置不变。手柄设置了 `touch-action: none`，因此从手柄开始的拖动不会滚动页面，而项目的其余部分仍可滚动页面。
+- **被拖动的项目**会抬起：周围出现一块略超出项目边缘的凸起面板，因此项目内容不会移动，同时带有抬起阴影并放大 1.5%。项目通过行为脚本写入的 `--sortable-offset` 跟随指针，指针和项目之间没有缓动。行在自身下方绘制的线条（例如列表的分隔细线）会留在被它分开的那一行上。
+- **让出空间。** 位于被拖动项目原位置和其落点之间的项目会平滑移开，`sortable-item-back` 移向开头，`sortable-item-forward` 移向末尾，移动距离为 `--sortable-size`，即拿起项目时测得的项目尺寸加上其后的间距。腾出的空隙就是落点。项目原来的位置保持空白，读者可以看出它来自哪里。
+- **放下。** 让出空间的项目已经位于各自的落点，因此移动操作只需一次变更：撤销让出的空间，并将节点放入空隙。在视图过渡中，每个项目通过 `view-transition-name: match-element` 各自成为一幅画面，只有被拖动的项目会从松开的位置移到它的新位置。这期间根元素带有 `aria-busy="true"`，其他内容都不会滑动。
+
+浏览器不支持视图过渡时，被拖动的项目会立即就位，其他项目则已在各自的位置上。启用减少动态效果时，没有放大、滑动和过渡。
+
+## 卡片 \{#cards\}
+
+任何容纳项目的元素都可以排序。下面每个项目都是一叠带间距的[卡片](/components/card)中的一张，卡片让出的空间也包含这段间距；被拖动卡片下方抬起的面板通过 `--sortable-radius` 沿用卡片的圆角。
+
+<ComponentPreview name="cards" height={344} title="卡片" bodyClass="content-start p-lg" behaviors html={`<div class="max-w(360) mx-auto">
+<ol class="list sortable gap-xs" aria-label="Release checklist" style="--sortable-radius: var(--radius-surface)">
+  <li class="card sortable-item flex items-center gap-sm p-sm" data-value="freeze">
+    <button type="button" class="sortable-handle" aria-pressed="false" aria-label="Move Freeze the branch"></button>
+    <span class="text-sm fg-text-strong">Freeze the branch</span>
+  </li>
+  <li class="card sortable-item flex items-center gap-sm p-sm" data-value="notes">
+    <button type="button" class="sortable-handle" aria-pressed="false" aria-label="Move Write the release notes"></button>
+    <span class="text-sm fg-text-strong">Write the release notes</span>
+  </li>
+  <li class="card sortable-item flex items-center gap-sm p-sm" data-value="staging">
+    <button type="button" class="sortable-handle" aria-pressed="false" aria-label="Move Deploy to staging"></button>
+    <span class="text-sm fg-text-strong">Deploy to staging</span>
+  </li>
+  <li class="card sortable-item flex items-center gap-sm p-sm" data-value="announce">
+    <button type="button" class="sortable-handle" aria-pressed="false" aria-label="Move Announce the release"></button>
+    <span class="text-sm fg-text-strong">Announce the release</span>
+  </li>
+</ol>
+<p class="sortable-status" role="status"></p>
+</div>`} />
+
+## 行为脚本 \{#behavior\}
+
+`sortable` 接收根元素，即带有 `sortable` 类的元素，并返回一个用于解除绑定的函数。
+
+```js name=app.js
+import { sortable } from '@master/ui/behaviors/sortable.js'
+
+const priorities = sortable(document.querySelector('.sortable'))
+
+priorities.value // ['onboarding', 'billing', 'search', 'exports']
+```
+
+- **指针。** 在手柄上按下并移动超过 4px 时，会拿起项目；移动不足 4px 则视为一次按下。项目被拖动期间，手柄带有 `aria-pressed="true"`，项目跟随指针，经过的项目会让出空间。落点根据各项目在布局中的实际位置判断，而不是根据它们让出空间后的位置，因此落点不会追着自己跑。松开指针即完成移动，按 <kbd class="kbd">Esc</kbd> 则会放回项目，其他项目也会滑回原位。列表可以滚动时，指针靠近列表任一端会滚动列表，越靠近末端滚动越快。只有开始拖动的那个指针能移动项目。
+- **键盘。** 在手柄上按 <kbd class="kbd">Enter</kbd> 或 <kbd class="kbd">空格键</kbd> 会拿起项目。沿列表方向的方向键每次将项目移动一个位置；拿起项目之前，这些方向键不起作用，因此屏幕阅读器自身的方向键操作仍然可用。按 <kbd class="kbd">Enter</kbd> 或 <kbd class="kbd">空格键</kbd> 放下项目，按 <kbd class="kbd">Esc</kbd> 将其放回拿起时的位置，焦点离开手柄也会放下项目。
+- **播报。** 每次拿起、移动、放下和取消都会在 `sortable-status` 区域中播报，内容包括项目名称和位置，例如“Billing, position 3 of 4.”。该区域是位于根元素内部或紧随其后的 `role="status"`。传入 `messages` 可使用页面的语言播报。
+- **移动**的是项目节点本身；浏览器支持 `moveBefore()` 时使用该方法，因此项目内的内容会保留状态，例如输入框中的文字、正在播放的视频和焦点。不支持时，节点会被重新插入，手柄也会重新获得焦点。
+- **事件。** 放下项目后，如果顺序发生了变化，根元素会派发 `input` 和 `change`。返回的函数带有 `value`，即项目的顺序，每项取其 `data-value`，未设置时取其文本。为它赋值可将项目按该顺序排列，但不会派发任何事件。
+
+`sortable-row` 让列表横向排列：偏移改为水平方向，落点线改为竖直，由 <kbd class="kbd">ArrowLeft</kbd> 和 <kbd class="kbd">ArrowRight</kbd> 移动项目；在从右到左的布局中，方向相反。
+
+没有行为脚本时，列表保持原有顺序，内容仍然可读。
+
+## 键盘操作 \{#keyboard\}
+
+<ContractTable name="sortable" show="keyboard" />
+
+## 无障碍 \{#accessibility\}
+
+- 用手柄所移动的内容为其命名，例如“Move Billing”。手柄是项目上唯一用于调整顺序的控件，而指针从来都不是唯一的方式：指针能完成的每一次移动，键盘也都能完成。
+- 让状态区域从一开始就以空内容存在于页面中：在需要播报时才添加的区域往往不会被读出。
+- 如果顺序会影响页面的功能，例如优先级或工作流程的步骤，请在列表附近说明，并像页面保存其他内容一样保存新的顺序。
+
+## React、Svelte 和 Vue \{#frameworks\}
+
+`sortable` 组件按其持有的顺序写入项目，绑定行为脚本，并在行为脚本请求时移动自身列表中的项目，使框架渲染的行与页面保持一致。使用 `npx master-ui add sortable` 将组件复制到项目中。有关这些组件的实现和用法，请参阅 [React、Svelte 和 Vue](/guide/frameworks)。
+
+<FrameworkSource name="sortable" />
+
+## 类名 \{#classes\}
+
+<ContractTable name="sortable" />
+
+## 自定义属性 \{#custom-properties\}
+
+<ContractTable name="sortable" show="properties" />
+
+## 相关内容 \{#related\}
+
+<ComponentLinks slugs={['list', 'card', 'swipe']} />
+
+## 源码 \{#source\}
+
+<ComponentSource name="sortable" />

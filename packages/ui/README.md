@@ -88,6 +88,8 @@ Or import only the theme and the components you use:
 | Range | `range`, `range-start`, `range-end` |
 | Segmented control | `segmented`, `segmented-item`, `segmented-input`, `segmented-sm`, `segmented-lg` |
 | Chip | `chip`, `chip-input`, `chip-remove` |
+| Tags | `tags` |
+| Editable | `editable`, `editable-preview`, `editable-field`, `editable-placeholder` |
 | Swatch | `swatch`, `swatch-input`, `swatch-sm`, `swatch-lg`, `swatch-square` |
 | Rating | `rating`, `rating-input`, `rating-sm`, `rating-lg` |
 | Vote | `vote`, `vote-horizontal`, `vote-up`, `vote-score`, `vote-down` |
@@ -141,6 +143,7 @@ Or import only the theme and the components you use:
 | Expand | `expand`, `expand-toggle`, `expand-more`, `expand-less` |
 | Table | `table`, `table-row`, `table-heading`, `table-cell`, `table-primary`, `table-numeric`, `table-compact`, `table-interactive`, `table-sticky` |
 | List | `list`, `list-row`, `list-media`, `list-body`, `list-title`, `list-description`, `list-end`, `list-interactive` |
+| Sortable | `sortable`, `sortable-row`, `sortable-item`, `sortable-item-back`, `sortable-item-forward`, `sortable-handle`, `sortable-status` |
 | Swipe | `swipe`, `swipe-content`, `swipe-actions`, `swipe-action`, `swipe-action-danger` |
 | Data list | `data-list`, `data-list-item`, `data-list-term`, `data-list-value` |
 | File | `file`, `file-failed`, `file-sm`, `file-interactive`, `file-page`, `file-thumb`, `file-body`, `file-name`, `file-meta`, `file-end`, `file-progress` |
@@ -224,7 +227,7 @@ stop.value = 'hnd'                                          // where a pattern h
 
 ## React, Svelte and Vue
 
-A component is a class on a native element, so in a framework most of the library is the same markup in that framework's syntax; there is no `Button` to import. Seventeen patterns hold state, render rows from data, join parts by id or have a lifetime, and each has a component: calendar, combobox, command, compare, dialog, field, listbox, menu, otp, popover, splitter, stepper, tabs, toast, tooltip, tree and wheel.
+A component is a class on a native element, so in a framework most of the library is the same markup in that framework's syntax; there is no `Button` to import. Twenty-one patterns hold state, render rows from data, join parts by id or have a lifetime, and each has a component: calendar, combobox, command, compare, dialog, editable, field, listbox, menu, otp, popover, sortable, splitter, stepper, tabs, tags, toast, toolbar, tooltip, tree and wheel.
 
 ```sh
 npx master-ui add combobox --framework=react   # ui/combobox.tsx and ui/use-behavior.ts

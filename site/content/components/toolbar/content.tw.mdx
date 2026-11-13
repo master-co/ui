@@ -6,10 +6,11 @@ description: "小型凸起表面，容納一排低調的控制項。"
 import ComponentPreview from '~/site/components/ComponentPreview.astro'
 import ComponentSource from '~/site/components/ComponentSource.astro'
 import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
-工具列是小型凸起表面，容納一排低調的控制項。工具列留有 4px 內距，外側圓角半徑等於小型控制項的圓角半徑加上這段內距，讓小型低調[按鈕](/components/button)、[選擇器](/components/select)和[分段控制項](/components/segmented)的圓角與工具列同心。工具列高 40px，控制項高 32px。
+工具列是小型凸起表面，容納一排低調的控制項。工具列留有 4px 內距，外側圓角半徑等於小型控制項的圓角半徑加上這段內距，讓小型低調[按鈕](/components/button)、[下拉選單](/components/select)和[分段控制項](/components/segmented)的圓角與工具列同心。工具列高 40px，控制項高 32px。
 
-<ComponentPreview name="default" height={104} title="工具列" html={`<div class="toolbar" role="toolbar" aria-label="Formatting">
+<ComponentPreview name="default" height={104} title="工具列" behaviors html={`<div class="toolbar" role="toolbar" aria-label="Formatting" focusgroup="toolbar wrap">
   <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Bold" aria-pressed="true">
     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 5h6a3.5 3.5 0 0 1 0 7H7zM7 12h7a3.5 3.5 0 0 1 0 7H7z"/></svg>
   </button>
@@ -24,11 +25,47 @@ import ContractTable from '~/site/components/ContractTable.astro'
     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>
     Link
   </button>
-</div>`} />
+</div>`} caption="按 Tab 進入工具列，用方向鍵移動，再按 Space 切換按鈕。" />
 
 ## 工具列中的狀態 \{#state-in-a-toolbar\}
 
 低調按鈕在預設狀態下沒有自己的底色，會透出工具列表面。指標移到按鈕上時，按鈕會凸起並顯示自己的表面。按下按鈕或設定 `aria-pressed="true"` 時，按鈕會呈現凹槽效果。工具列最容易看出[狀態順序](/guide/theme#principles)，依序為凹槽、平面、凸起。
+
+## Tab 順序中只有一站 \{#keys\}
+
+工具列在 Tab 順序中只占一站：按 <kbd class="kbd">Tab</kbd> 會進入工具列，焦點落在上次取得焦點的控制項上，再按一次就會離開，控制項之間則用方向鍵移動。請為工具列加上 `focusgroup="toolbar wrap"`，瀏覽器若支援 [focusgroup](https://open-ui.org/components/scoped-focusgroup.explainer/)，就會自動處理這些操作。在其他瀏覽器中，由 `toolbar` [行為](/guide/behaviors)負責，讓一個控制項維持 `tabindex="0"`；瀏覽器支援 focusgroup 時，行為就不會介入。
+
+```js name=app.js
+import { toolbar } from '@master/ui/behaviors/toolbar.js'
+
+const detach = toolbar(document.querySelector('.toolbar'))
+```
+
+- **移動。** <kbd class="kbd">ArrowRight</kbd> 和 <kbd class="kbd">ArrowLeft</kbd> 會依閱讀方向在工具列中移動，到達首尾時循環；<kbd class="kbd">Home</kbd> 和 <kbd class="kbd">End</kbd> 會移到第一個和最後一個控制項。停用的控制項會被略過。帶有 `aria-disabled="true"` 的控制項仍可用方向鍵移到，這正是工具列控制項應有的做法，但點擊會被攔下。
+- **切換按鈕。** 帶有 `aria-pressed` 的按鈕在點擊時會切換按下狀態：`false` 變為 `true`，再點一次則變回來。沒有這個屬性的按鈕是執行動作的按鈕，不保留狀態。
+- **有自己按鍵操作的控制項。** [分段控制項](/components/segmented)或其他原生單選按鈕群組會算作一個控制項，也就是其中已選取的單選按鈕：方向鍵會離開該群組，按 <kbd class="kbd">Space</kbd> 則選取取得焦點的單選按鈕。下拉選單和文字欄位保留自己的方向鍵操作。
+
+瀏覽器不支援 focusgroup、也沒有掛上行為時，每個控制項都是 Tab 停駐點，使用者仍可操作，只是比較慢。
+
+## 直立 \{#vertical\}
+
+設定 `aria-orientation="vertical"` 時，控制項會排成一欄放在畫布旁，分隔線改為橫放，並以 <kbd class="kbd">ArrowDown</kbd> 和 <kbd class="kbd">ArrowUp</kbd> 在控制項之間移動。請為工具列加上 `focusgroup="toolbar wrap block"`。
+
+<ComponentPreview name="vertical" height={232} title="直立" behaviors html={`<div class="toolbar" role="toolbar" aria-label="Tools" aria-orientation="vertical" focusgroup="toolbar wrap block">
+  <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Select" aria-pressed="true">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 4 12 7-5.5 1.5L10 18z"/></svg>
+  </button>
+  <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Hand" aria-pressed="false">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 12V6.5a1.5 1.5 0 0 1 3 0V11M11 10.5v-6a1.5 1.5 0 0 1 3 0V11M14 10.5V6a1.5 1.5 0 0 1 3 0v7.5a6.5 6.5 0 0 1-11.6 4L4 15.4a1.5 1.5 0 0 1 2.3-1.9L8 15"/></svg>
+  </button>
+  <span class="toolbar-separator" role="separator"></span>
+  <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Rectangle">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="6.5" width="15" height="11" rx="2"/></svg>
+  </button>
+  <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Text">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6h12M12 6v13"/></svg>
+  </button>
+</div>`} />
 
 ## 浮動 \{#floating\}
 
@@ -44,9 +81,19 @@ import ContractTable from '~/site/components/ContractTable.astro'
 
 ## 無障礙 \{#accessibility\}
 
-- 為容器設定 `role="toolbar"` 和標籤。
-- 工具列的鍵盤操作模式會以方向鍵切換控制項，整列只保留一個 Tab 停駐點。這需要在頁面加上一小段腳本。若未加入腳本，每個控制項都會是 Tab 停駐點，使用者仍可操作，只是需要多按幾次 Tab。
-- 用 `aria-label` 為只有圖示的按鈕命名，並用 `aria-pressed` 表達切換按鈕的狀態。
+- 為容器設定 `role="toolbar"` 和標籤。工具列只用於操作其他對象的控制項，例如編輯器或畫布；導覽請使用[導覽列](/components/navbar)。
+- 用 `aria-label` 為只有圖示的按鈕命名，並用 `aria-pressed` 表達切換按鈕的狀態，按下時不要變更按鈕的標籤。
+- 停用控制項時，請使用 `aria-disabled="true"` 而非 `disabled`，讓方向鍵仍能移到該控制項，並能說明它無法使用的原因。
+
+## 鍵盤操作 \{#keyboard\}
+
+<ContractTable name="toolbar" show="keyboard" />
+
+## React、Svelte 和 Vue \{#frameworks\}
+
+`toolbar` 元件會產生帶有角色、標籤和 `focusgroup` 的根元素，並在元件位於頁面上期間掛上行為；其中的控制項由你自行放入。用 `npx master-ui add toolbar` 將元件複製到專案中。元件的建置與使用方式請參閱 [React、Svelte 和 Vue](/guide/frameworks)。
+
+<FrameworkSource name="toolbar" />
 
 ## 類別 \{#classes\}
 

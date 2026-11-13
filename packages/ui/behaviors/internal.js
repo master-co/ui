@@ -148,3 +148,142 @@ export function typeahead() {
     return [...items.slice(start), ...items.slice(0, start)].find((item) => label(item).toLowerCase().startsWith(text))
   }
 }
+
+/*
+ * Values as chips. A field that collects several values, the tags field and a combobox with a
+ * multiselectable list, shows each value as a chip in an input group with `input-group-wrap`, before the
+ * text field. What follows is what the two share: the chip a value is written as, what a chip stands for,
+ * and the keys that walk from the field to the chips and back.
+ */
+
+/**
+ * The chips a field holds, in the order of the document.
+ * @param {Element} group The input group, or anything that holds the chips and the field.
+ * @returns {HTMLElement[]}
+ */
+export function chipsOf(group) {
+  return /** @type {HTMLElement[]} */ ([...group.querySelectorAll('.chip')])
+}
+
+/**
+ * What a chip stands for: its `data-value`, or what it says.
+ * @param {Element} chip
+ */
+export function chipValue(chip) {
+  return chip.getAttribute('data-value') ?? label(chip)
+}
+
+/**
+ * A chip for a value, written with the contract's classes: the text, a hidden input that carries the value
+ * into a form when there is a `name`, and a remove button out of the tab order, named with the value.
+ * @param {Document} document
+ * @param {{ value: string, text?: string, name?: string | null, removeLabel: (text: string) => string }} chip
+ */
+export function writeChip(document, { value, text = value, name, removeLabel }) {
+  const chip = document.createElement('span')
+  chip.className = 'chip'
+  chip.setAttribute('data-value', value)
+  chip.append(text)
+  if (name) {
+    const hidden = document.createElement('input')
+    hidden.type = 'hidden'
+    hidden.name = name
+    hidden.value = value
+    chip.append(hidden)
+  }
+  const remove = document.createElement('button')
+  remove.type = 'button'
+  remove.className = 'chip-remove'
+  remove.tabIndex = -1
+  remove.setAttribute('aria-label', removeLabel(text))
+  chip.append(remove)
+  return chip
+}
+
+/**
+ * The name a new chip's hidden input takes: the name the chips already carry.
+ * @param {Element} group
+ */
+export function chipName(group) {
+  return group.querySelector('.chip input[type="hidden"][name]')?.getAttribute('name') ?? null
+}
+
+/**
+ * Whether the caret stands at the start of a field with nothing selected, where the keys reach the chips.
+ * @param {HTMLInputElement} field
+ */
+function atStart(field) {
+  return field.selectionStart === 0 && field.selectionEnd === 0
+}
+
+/**
+ * The keys between a field and the chips before it. The field is the one tab stop; a chip is reached with
+ * Backspace or the arrow key that points at it, and its remove button takes focus. On a chip the arrows walk
+ * the chips and back to the field, Backspace and Delete remove it, Escape and any letter return to the field.
+ * Returns the listener to add, with the abort signal, to the element that holds the chips and the field.
+ * @param {HTMLInputElement} field
+ * @param {(chip: HTMLElement) => void} remove Removes a chip's value. Called only while the field is enabled.
+ */
+export function chipKeys(field, remove) {
+  /** @param {KeyboardEvent} event */
+  return (event) => {
+    if (event.isComposing || event.ctrlKey || event.metaKey || event.altKey) return
+    const group = /** @type {HTMLElement} */ (event.currentTarget)
+    const target = /** @type {HTMLElement} */ (event.target)
+    const chips = chipsOf(group)
+    const rtl = getComputedStyle(group).direction === 'rtl'
+    const back = rtl ? 'ArrowRight' : 'ArrowLeft'
+    const forward = rtl ? 'ArrowLeft' : 'ArrowRight'
+    /** @param {HTMLElement | undefined} chip */
+    const focus = (chip) => {
+      const button = /** @type {HTMLElement | null | undefined} */ (chip?.querySelector('.chip-remove'))
+      if (button) button.focus()
+      else field.focus()
+    }
+
+    if (target === field) {
+      if (!chips.length || !atStart(field)) return
+      if (event.key === back || (event.key === 'Backspace' && !field.value)) {
+        event.preventDefault()
+        focus(chips.at(-1))
+      }
+      return
+    }
+
+    const chip = /** @type {HTMLElement | null} */ (target.closest('.chip'))
+    if (!chip || !target.matches('.chip-remove')) return
+    const index = chips.indexOf(chip)
+    switch (event.key) {
+      case back:
+        event.preventDefault()
+        focus(chips[Math.max(0, index - 1)])
+        break
+      case forward:
+        event.preventDefault()
+        focus(chips[index + 1])
+        break
+      case 'Home':
+        event.preventDefault()
+        focus(chips[0])
+        break
+      case 'End':
+      case 'Escape':
+        event.preventDefault()
+        field.focus()
+        break
+      case 'Backspace':
+      case 'Delete': {
+        event.preventDefault()
+        if (field.disabled || field.readOnly) return
+        // Backspace leaves focus on the chip before, Delete on the one after; with neither, the field.
+        const next = event.key === 'Backspace' ? chips[index - 1] ?? chips[index + 1] : chips[index + 1]
+        remove(chip)
+        focus(next)
+        break
+      }
+      default:
+        // A letter typed on a chip is meant for the field: focus moves before the key is read.
+        if (event.key.length === 1) field.focus()
+    }
+  }
+}

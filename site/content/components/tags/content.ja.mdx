@@ -1,0 +1,111 @@
+---
+title: "タグ入力"
+description: "入力したテキストを値に変え、各値を入力枠内のチップとして表示するフィールド。"
+---
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+タグ入力は、入力したテキストを値に変え、各値を入力枠内の[チップ](/components/chip)として表示します。`input-group-wrap` と `tags` クラスを指定した[入力グループ](/components/input#several-values)で構成します。入力枠とその状態、枠と同心の角を持つチップは入力グループが描画し、チップの後ろにあるフィールドが次の値を受け付けます。`tags` の[ビヘイビア](/guide/behaviors)が、テキストをチップに変換し、チップ間でフォーカスを移動します。
+
+<ComponentPreview name="default" height={176} narrowHeight={208} title="タグ入力" background="plain" bodyClass="content-start p-lg" behaviors html={`<div class="field max-w(420) mx-auto">
+  <label for="labels">Labels</label>
+  <div class="tags input-group input-group-wrap">
+    <span class="chip" data-value="design">design<input type="hidden" name="labels" value="design"><button type="button" class="chip-remove" tabindex="-1" aria-label="Remove design"></button></span>
+    <span class="chip" data-value="research">research<input type="hidden" name="labels" value="research"><button type="button" class="chip-remove" tabindex="-1" aria-label="Remove research"></button></span>
+    <span class="chip" data-value="accessibility">accessibility<input type="hidden" name="labels" value="accessibility"><button type="button" class="chip-remove" tabindex="-1" aria-label="Remove accessibility"></button></span>
+    <input class="input-group-field" id="labels" placeholder="Add a label" autocomplete="off">
+  </div>
+  <p class="field-hint">Press Enter or type a comma after each label.</p>
+</div>`} caption="ラベルを入力して Enter キーを押します。空のフィールドで Backspace キーを押すと最後のラベルに移動し、もう一度押すとそのラベルを削除します。" />
+
+## 入力グループに加わる機能 \{#what-it-adds\}
+
+- **値の追加**　新しいチップは、いきなり表示されるのではなく、キャレットのあった位置から quick の再生時間で 80% から短く拡大して現れます。動きを抑える設定では、フェードインだけになります。
+- **単語 1 つ分の幅**　フィールドは少なくとも `--tags-field-min`（既定は 6rem）の幅を保ち、それより狭くなる場合は下の行に単独で移ります。そのため、行末の細い隙間にキャレットが押し込まれることはありません。
+- **キー操作の対象になっている値**　チップ全体にフォーカスリングが表示されます。その位置で <kbd class="kbd">Backspace</kbd> を押すと値全体が削除されるためです。削除ボタンの×印は押下状態の色調になります。このリングはチップ自体のもので、`chip-remove` を持つチップであれば、どこに置かれていても表示されます。
+- **受け付けられなかった値**　フィールドに `aria-invalid="true"` が設定され、テキストが変わるまで、入力グループが危険を示す色の縁を表示します。
+
+`@starting-style` に対応していないブラウザーでは、新しい値はすぐに表示されます。
+
+## ビヘイビア \{#behavior\}
+
+`tags` は、ルート要素（`tags` クラスを持つ入力グループ）を受け取り、ビヘイビアを解除する関数を返します。
+
+```js name=app.js
+import { tags } from '@master/ui/behaviors/tags.js'
+
+const detach = tags(document.querySelector('.tags'), { max: 10 })
+```
+
+- **追加**　<kbd class="kbd">Enter</kbd> を押すか、区切り文字（既定はカンマ）を入力すると、フィールドのテキストが値になります。フィールドの前にチップが書き込まれ、フィールドは空になります。区切り文字、改行、タブを含むテキストを貼り付けると、その数だけ値が作られ、最後の区切り文字より後ろのテキストはフィールドに残ります。
+- **拒否**　空の値、すでにある値、`max` を超える値、`validate` が拒否した値は追加されません。入力したテキストが失われないようにフィールドはテキストを保持し、テキストが変わるまで `aria-invalid="true"` を示します。
+- **削除**　チップの削除ボタンをクリックするとそのチップが削除され、フォーカスはフィールドに戻ります。
+- **フォーム**　既存のチップが `name` 付きの hidden input を持っている場合、または `name` を指定した場合、各チップは値を持つ hidden input を含みます。そのため、フォームはすべての値をその名前で送信します。フォームをリセットすると、フィールドに最初にあった値に戻ります。
+- **イベント**　値を追加または削除するたびに、ルート要素が `input` と `change` を発行します。返される関数の `value` は、値を順番どおりに並べたものです。`value` に代入すると値が置き換わりますが、イベントは発行されません。
+
+| オプション | 既定値 | |
+| --- | --- | --- |
+| `delimiters` | `[',']` | <kbd class="kbd">Enter</kbd> と同様に値を追加するキー。`[]` にすると <kbd class="kbd">Enter</kbd> だけになります |
+| `max` | なし | フィールドに入れられる値の最大数 |
+| `validate` | なし | 値を追加してよいかどうかを判定する関数 |
+| `name` | 既存のチップの名前 | 新しいチップが持つ hidden input の名前 |
+| `removeLabel` | `Remove <value>` | チップの削除ボタンのアクセシブルネーム。ページの言語で指定します |
+| `draw` | なし | チップの書き込みを肩代わりします。独自のリストからチップを描画するレンダラー向けです |
+
+チップは `data-value`、なければテキストを値とします。ビヘイビアを適用しない場合、フィールドは通常のテキスト入力で、チップは固定されます。その場合も、チップが持つ hidden input はフォームで送信されます。
+
+## 入力候補 \{#suggestions\}
+
+`<datalist>` を使うと、専用のスクリプトなしでブラウザー標準の入力候補をフィールドに表示できます。候補を選んでから <kbd class="kbd">Enter</kbd> を押すと追加されます。値をリストから選ぶ必要がある場合は、代わりに[複数の値を選べるコンボボックス](/components/combobox#several-values)を使います。
+
+<ComponentPreview name="suggestions" height={160} narrowHeight={192} title="入力候補" background="plain" bodyClass="content-start p-lg" behaviors html={`<div class="field max-w(420) mx-auto">
+  <label for="recipients">Recipients</label>
+  <div class="tags input-group input-group-wrap">
+    <span class="chip" data-value="ada@example.com">ada@example.com<input type="hidden" name="to" value="ada@example.com"><button type="button" class="chip-remove" tabindex="-1" aria-label="Remove ada@example.com"></button></span>
+    <input class="input-group-field" id="recipients" type="email" list="recipient-suggestions" placeholder="Add a recipient" autocomplete="off">
+  </div>
+  <datalist id="recipient-suggestions">
+    <option value="grace@example.com"></option>
+    <option value="linus@example.com"></option>
+    <option value="margaret@example.com"></option>
+  </datalist>
+</div>`} />
+
+## キーボード操作 \{#keyboard\}
+
+Tab キーで止まるのはフィールドだけです。チップへはフィールドから移動し、チップの削除ボタンは `tabindex="-1"` で Tab キーの移動順序から外します。入力メソッドで文字が未確定の間は、<kbd class="kbd">Enter</kbd> を入力メソッドが処理します。
+
+<ContractTable name="tags" show="keyboard" />
+
+## アクセシビリティ \{#accessibility\}
+
+- `<label>` または `aria-label` でフィールドにラベルを付けます。カンマや <kbd class="kbd">Enter</kbd> で値を追加できることはわかりにくいため、フィールドの下のヒントで値の追加方法を説明します。
+- 各削除ボタンには、削除する値を含む名前をページの言語で付けます。ビヘイビアが書き込むチップには、`removeLabel` がこの名前を付けます。
+- 受け付けられなかった値はフィールドにテキストのまま残り、フィールドは無効な入力として示されます。ほかのフィールドと同様に、その理由をフィールドのヒントまたはエラーで説明します。
+
+## React、Svelte、Vue \{#frameworks\}
+
+`tags` コンポーネントは、値からチップを描画し、ビヘイビアを適用します。入力したテキストはビヘイビアが値に変換します。`npx master-ui add tags` でプロジェクトにコピーできます。コンポーネントの構成と使い方は [React、Svelte、Vue](/guide/frameworks) を参照してください。
+
+<FrameworkSource name="tags" />
+
+## クラス \{#classes\}
+
+<ContractTable name="tags" />
+
+[`input-group`](/components/input#several-values)、`input-group-wrap`、`input-group-field`、および値ごとに `chip-remove` を持つ [`chip`](/components/chip) と組み合わせて使います。
+
+## カスタムプロパティ \{#custom-properties\}
+
+<ContractTable name="tags" show="properties" />
+
+## 関連コンポーネント \{#related\}
+
+<ComponentLinks slugs={['input', 'chip', 'combobox']} />
+
+## ソース \{#source\}
+
+<ComponentSource name="tags" />

@@ -282,3 +282,60 @@ test('listbox: detach removes the listeners, and attaching twice leaves one beha
   assert.deepEqual(checked(), ['fw-next'])
   assert.equal(heard.length, 2)
 })
+
+test('listbox: in a multiselectable list Shift with an arrow checks the run from the option chosen last', () => {
+  const { root, one, click, key, active, checked, heard } = setup(markup('aria-multiselectable="true"'))
+  listbox(root)
+  click(one('#fw-next'))
+  assert.deepEqual(checked(), ['fw-astro', 'fw-next'])
+  heard.length = 0
+  assert.equal(key(root, 'ArrowDown', { shiftKey: true }), true)
+  assert.equal(active(), 'fw-svelte', 'Nuxt is disabled')
+  assert.deepEqual(checked(), ['fw-astro', 'fw-next', 'fw-svelte'], 'the disabled option in the run stays as it is')
+  assert.deepEqual(heard, ['input', 'change'])
+  key(root, 'ArrowDown', { shiftKey: true })
+  assert.deepEqual(checked(), ['fw-astro', 'fw-next', 'fw-svelte', 'fw-solid'])
+})
+
+test('listbox: Shift with Space and a Shift-click check the run up to the option', () => {
+  const { root, one, click, key, checked } = setup(markup('aria-multiselectable="true"').replace('aria-selected="true" aria-checked="true"', 'aria-checked="false"').replace(' aria-activedescendant="fw-astro"', ''))
+  listbox(root)
+  click(one('#fw-next'))
+  click(one('#fw-solid'), { shiftKey: true })
+  assert.deepEqual(checked(), ['fw-next', 'fw-svelte', 'fw-solid'])
+  click(one('#fw-astro'))
+  key(root, 'ArrowDown')
+  key(root, ' ', { shiftKey: true })
+  assert.deepEqual(checked(), ['fw-astro', 'fw-next', 'fw-svelte', 'fw-solid'], 'Astro to Next.js, both already or now checked')
+})
+
+test('listbox: Control or Command with Shift and Home or End checks up to the first or the last', () => {
+  const { root, one, click, key, active, checked } = setup(markup('aria-multiselectable="true"').replace('aria-selected="true" aria-checked="true"', 'aria-checked="false"').replace(' aria-activedescendant="fw-astro"', ''))
+  listbox(root)
+  click(one('#fw-svelte'))
+  assert.equal(key(root, 'End', { shiftKey: true, ctrlKey: true }), true)
+  assert.equal(active(), 'fw-solid')
+  assert.deepEqual(checked(), ['fw-svelte', 'fw-solid'])
+  key(root, 'Home', { shiftKey: true, metaKey: true })
+  assert.equal(active(), 'fw-astro')
+  assert.deepEqual(checked(), ['fw-astro', 'fw-next', 'fw-svelte', 'fw-solid'])
+})
+
+test('listbox: Control or Command with A checks every option, and unchecks them all once they are', () => {
+  const { root, key, checked, heard } = setup(markup('aria-multiselectable="true"'))
+  listbox(root)
+  assert.equal(key(root, 'a', { ctrlKey: true }), true)
+  assert.deepEqual(checked(), ['fw-astro', 'fw-next', 'fw-svelte', 'fw-solid'])
+  key(root, 'A', { metaKey: true })
+  assert.deepEqual(checked(), [])
+  assert.deepEqual(heard, ['input', 'change', 'input', 'change'])
+})
+
+test('listbox: in a list of one choice, the run keys and Control with A are left alone', () => {
+  const { root, key, active, checked } = setup()
+  listbox(root)
+  assert.equal(key(root, 'a', { ctrlKey: true }), false)
+  key(root, 'ArrowDown', { shiftKey: true })
+  assert.equal(active(), 'fw-next', 'Shift with an arrow still moves')
+  assert.deepEqual(checked(), ['fw-astro'])
+})

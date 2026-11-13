@@ -1,0 +1,105 @@
+---
+title: "行內編輯"
+description: "平時以文字顯示、可在原處變成欄位的值。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+行內編輯是平時以文字顯示、可在原處變成欄位的值，例如標題、名稱或儲存格。靜止時，它是沿用外層字型樣式的純文字；指標移到上面時，文字周圍會出現淡淡的凹槽，末端顯示鉛筆圖示；按下後，凹槽會變成已取得焦點的[欄位](/components/input)，並選取其中的值。預覽和欄位共用同一個格線儲存格、同一種字型、同樣的內距和圓角，因此兩者互換時，文字連一個像素都不會移動。`editable` [行為](/guide/behaviors)負責切換兩者並儲存值。
+
+<ComponentPreview name="default" height={176} title="行內編輯" background="plain" bodyClass="content-start p-lg" behaviors html={`<div class="max-w(420) mx-auto">
+  <span class="block mb-xs text-xs fg-text-muted" id="doc-title-label">Title</span>
+  <h2 class="heading heading-xl">
+    <span class="editable">
+      <button type="button" class="editable-preview" id="doc-title-preview" aria-labelledby="doc-title-label doc-title-preview">Quarterly report</button>
+      <input class="editable-field" value="Quarterly report" aria-labelledby="doc-title-label" required maxlength="80" hidden>
+    </span>
+  </h2>
+  <span class="block mt-xs text-sm fg-text-muted">Last edited by Ada, 2 minutes ago</span>
+</div>`} caption="按下標題後輸入文字，再按 Enter 儲存，或按 Escape 還原。" />
+
+## 文字的位置 \{#geometry\}
+
+值會與所在的欄對齊：根元素會在兩側各向外延伸 `--editable-padding-x`，讓凹槽在文字周圍展開，而不是把文字往內推。內距以 `em` 為單位，因此標題的凹槽相對於標題大小，和儲存格的凹槽相對於儲存格一樣寬裕。
+
+- **靜止時**，預覽是純文字。它是一個按鈕，因此可以取得焦點，鉛筆圖示會和焦點外框一起出現。
+- **指標移到上面時**，文字周圍會出現內凹色調和半像素的輪廓線，鉛筆圖示則在最後一個字後方。在沒有可懸停指標的螢幕上，鉛筆圖示會一直顯示，只是稍淡一些，因為這是文字可以修改的唯一提示。
+- **編輯時**，欄位是升至表面高度的凹槽，帶有一道墨色輪廓線和光暈，與取得焦點的輸入欄位相同。預覽隱藏後仍會撐開儲存格，因此下方內容不會移動。瀏覽器若支援 `field-sizing: content`，欄位會隨值變長而超出預覽的寬度；在其他瀏覽器中，文字會在預覽的寬度內捲動。
+- **等待中。** 值正在傳送時，請在根元素上設定 `aria-busy="true"`：預覽會以較淡的文字顯示，且無法按下。
+
+## 多行 \{#several-lines\}
+
+使用 `<textarea>` 作為欄位時，就能容納多行的值。在其中按 <kbd class="kbd">Enter</kbd> 會換行，因此要按 <kbd class="kbd">Control</kbd> 或 <kbd class="kbd">Command</kbd> 加 <kbd class="kbd">Enter</kbd> 才會儲存。值為空時，預覽會在 `editable-placeholder` 中顯示欄位的 `placeholder`。
+
+<ComponentPreview name="multiline" height={200} title="多行" background="plain" bodyClass="content-start p-lg" behaviors html={`<div class="max-w(420) mx-auto text-sm fg-text-body">
+  <span class="block mb-xs text-xs fg-text-muted" id="doc-summary-label">Summary</span>
+  <div class="editable w-full">
+    <button type="button" class="editable-preview" id="doc-summary-preview" aria-labelledby="doc-summary-label doc-summary-preview"><span class="editable-placeholder">Add a summary for the team</span></button>
+    <textarea class="editable-field" aria-labelledby="doc-summary-label" placeholder="Add a summary for the team" rows="3" hidden></textarea>
+  </div>
+</div>`} />
+
+## 行為 \{#behavior\}
+
+`editable` 接收根元素，也就是帶有 `editable` 類別的元素，並傳回用來解除行為的函式。
+
+```js name=app.js
+import { editable } from '@master/ui/behaviors/editable.js'
+
+const title = editable(document.querySelector('.editable'))
+
+title.edit() // open the field
+title.value // the saved value
+```
+
+- **開啟。** 按下預覽時，預覽會隱藏，並顯示帶有已儲存值的欄位，同時選取其中的文字。
+- **儲存。** 按 <kbd class="kbd">Enter</kbd> 會儲存，離開欄位時也會儲存。欄位本身的限制條件（`required`、`maxlength`、`pattern`）所拒絕的值不會儲存：按 <kbd class="kbd">Enter</kbd> 時欄位會維持開啟，由瀏覽器說明原因；離開欄位時則會還原已儲存的值。若要讓離開欄位改為取消編輯，請傳入 `blur: 'cancel'`。
+- **取消。** 按 <kbd class="kbd">Escape</kbd> 會還原已儲存的值。
+- **焦點**在按 <kbd class="kbd">Enter</kbd> 或 <kbd class="kbd">Escape</kbd> 後會回到預覽；若使用者已將焦點移到別處，則不會移回。
+- **事件。** 儲存與原本不同的值時，會將值寫入預覽，並由欄位派送 `input` 和 `change`。傳回的函式帶有 `value`（已儲存的值）和 `edit()`；設定 `value` 會同時寫入預覽和欄位，但不會派送任何事件。
+
+值接下來要送到哪裡，由頁面決定。值正在傳送時，請在根元素上設定 `aria-busy="true"`。若伺服器拒絕這個值，請將值設回原本的內容，並在旁邊說明原因；或呼叫 `edit()` 並將欄位標示為 `aria-invalid="true"`，以顯示危險色邊框，這樣使用者輸入的內容會保留下來，方便修正。
+
+未掛上行為時，預覽是一個沒有作用的按鈕，值仍然可以閱讀。
+
+## 適用時機 \{#choosing-it\}
+
+行內編輯適合閱讀次數遠多於修改次數、而且一次只在原處修改一個的值。若要一起修改多個值並一次儲存，使用由[輸入欄位](/components/input)和「儲存」按鈕組成的表單，更能清楚表達儲存的內容和時機。
+
+## 鍵盤操作 \{#keyboard\}
+
+<ContractTable name="editable" show="keyboard" />
+
+輸入法組字期間，<kbd class="kbd">Enter</kbd> 和 <kbd class="kbd">Escape</kbd> 會交由輸入法處理。
+
+## 無障礙 \{#accessibility\}
+
+- 以值的用途為值和欄位命名。範例中由可見的標籤為欄位命名，預覽則透過 `aria-labelledby` 由標籤和預覽本身命名，因此會被讀成「Title, Quarterly report, button」。
+- 確保沒有腳本時仍能讀到已儲存的值：也就是預覽的文字。
+- 儲存失敗時，請在值的旁邊用文字說明，不要只靠危險色邊框表達。
+
+## React、Svelte 和 Vue \{#frameworks\}
+
+`editable` 元件會在第一次渲染時寫入初始值並掛上行為，之後由行為更新預覽。元件輸出的值是已儲存的值，而不是正在輸入的內容。用 `npx master-ui add editable` 將元件複製到專案中。元件的建置與使用方式請參閱 [React、Svelte 和 Vue](/guide/frameworks)。
+
+<FrameworkSource name="editable" />
+
+## 類別 \{#classes\}
+
+<ContractTable name="editable" />
+
+## 自訂屬性 \{#custom-properties\}
+
+<ContractTable name="editable" show="properties" />
+
+## 相關元件 \{#related\}
+
+<ComponentLinks slugs={['input', 'heading', 'table']} />
+
+## 原始碼 \{#source\}
+
+<ComponentSource name="editable" />

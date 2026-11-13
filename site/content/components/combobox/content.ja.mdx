@@ -40,7 +40,7 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
 ## ビヘイビア \{#behavior\}
 
-`combobox` は、`combobox` クラスを持つルート要素を受け取り、ビヘイビアを解除する関数を返します。オプションはありません。フィールドは `role="combobox"`、リストは `role="listbox"` で探します。
+`combobox` は、`combobox` クラスを持つルート要素を受け取り、ビヘイビアを解除する関数を返します。フィールドは `role="combobox"`、リストは `role="listbox"` で探します。一致する選択肢をページ側で書き込む場合は、`filter: false` を渡します。
 
 ```js name=app.js
 import { combobox } from '@master/ui/behaviors/combobox.js'
@@ -57,6 +57,36 @@ const detach = combobox(document.querySelector('.combobox'))
 無効または非表示の選択肢はスキップされます。入力メソッドで文字が未確定の間は、<kbd>Enter</kbd> と矢印キーを入力メソッドが処理します。
 
 ビヘイビアを適用しない場合、フィールドは通常のテキスト入力として機能します。値は入力できますが、リストは開きません。
+
+## 複数の値 \{#several-values\}
+
+`aria-multiselectable="true"` を指定したリストボックスでは、複数の値を選べます。その場合、フィールドは[タグ入力](/components/tags)と同様に `input-group-wrap` を指定した入力グループになり、選択した各選択肢がフィールドの前に[チップ](/components/chip)として並びます。選択肢を選ぶとチェックが切り替わり、フィールドは空になり、リストは開いたままになります。そのため、少ないキー操作で次の値を選べます。選択肢のチェックは維持されるため、チップと同様にリストでも何が選ばれているかがわかります。
+
+<ComponentPreview name="several" height={352} title="複数の値" background="plain" bodyClass="content-start p-lg min-h(352)" behaviors html={`<div class="field max-w(360) mx-auto">
+  <label for="regions">Regions</label>
+  <div class="combobox">
+    <div class="input-group input-group-wrap">
+      <span class="chip" data-value="hnd">Tokyo<input type="hidden" name="regions" value="hnd"><button type="button" class="chip-remove" tabindex="-1" aria-label="Remove Tokyo"></button></span>
+      <input class="input-group-field" id="regions" role="combobox" aria-expanded="false" aria-controls="regions-list" aria-autocomplete="list" autocomplete="off" placeholder="Add a region">
+      <button type="button" class="combobox-toggle" tabindex="-1" aria-label="Show regions"></button>
+    </div>
+    <div id="regions-list" popover="manual" class="listbox" role="listbox" aria-label="Regions" aria-multiselectable="true">
+      <div class="listbox-option" role="option" data-value="hnd" aria-checked="true">Tokyo</div>
+      <div class="listbox-option" role="option" data-value="sin" aria-checked="false">Singapore</div>
+      <div class="listbox-option" role="option" data-value="fra" aria-checked="false">Frankfurt</div>
+      <div class="listbox-option" role="option" data-value="lhr" aria-checked="false">London</div>
+      <div class="listbox-option" role="option" data-value="iad" aria-checked="false">Virginia</div>
+      <div class="listbox-empty">No regions match.</div>
+    </div>
+  </div>
+</div>`} caption="リージョンをいくつか選びます。空のフィールドで Backspace キーを押すと最後のチップに移動し、もう一度押すとそのチップを削除します。" />
+
+- **フィールドは検索専用**　文字を入力するとリストが絞り込まれますが、チェックが外れることはありません。選択した値はチップが保持します。
+- **チップ**　Tab キーで止まるのはフィールドだけです。空のフィールドで <kbd class="kbd">Backspace</kbd> を押すか、戻る方向を指す矢印キーを押すとチップに移動します。チップ上でのキー操作は[タグ入力](/components/tags#keyboard)と同じです。削除ボタンまたは <kbd class="kbd">Backspace</kbd> でチップを削除すると、対応する選択肢のチェックが外れます。
+- **フォーム**　既存のチップが `name` 付きの hidden input を持っている場合、または `name` を指定した場合、ビヘイビアが書き込むチップは値を持つ hidden input を含みます。`removeLabel` で、削除ボタンの名前をページの言語で指定できます。
+- **値**　選択した値を、選択した順に並べたものです。
+
+値をリストから選ぶのではなく自由に入力する場合は、[タグ入力](/components/tags)を使います。
 
 ## コントロールの選び方 \{#choosing-a-control\}
 
@@ -77,7 +107,7 @@ const detach = combobox(document.querySelector('.combobox'))
 
 ## React、Svelte、Vue \{#frameworks\}
 
-`combobox` コンポーネントは、選択肢のリストからこのマークアップを生成し、ビヘイビアを適用します。選択値の受け渡しにも対応します。`npx master-ui add combobox` でプロジェクトにコピーできます。コンポーネントの構成と使い方は [React、Svelte、Vue](/guide/frameworks) を参照してください。
+`combobox` コンポーネントは、選択肢のリストからこのマークアップを生成し、ビヘイビアを適用します。選択値の受け渡しにも対応します。`multiple` を指定すると値はリストになり、その値からチップを描画します。`npx master-ui add combobox` でプロジェクトにコピーできます。コンポーネントの構成と使い方は [React、Svelte、Vue](/guide/frameworks) を参照してください。
 
 <FrameworkSource name="combobox" />
 
@@ -91,7 +121,7 @@ const detach = combobox(document.querySelector('.combobox'))
 
 コンボボックスは、以下のコンポーネントを組み合わせて構成します。それぞれが固有のクラスと状態を持ちます。
 
-<ComponentLinks slugs={['input', 'listbox', 'select']} />
+<ComponentLinks slugs={['input', 'listbox', 'tags', 'select']} />
 
 ## ソース \{#source\}
 

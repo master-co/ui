@@ -56,6 +56,37 @@ const regions = [
   { value: 'fra', label: 'Frankfurt', description: 'Germany' },
 ]
 
+/** The combobox with several values: chips in the field, which the framework writes from the value. */
+async function comboboxSeveral(driver: Driver, page: Page) {
+  const { mounted, heard } = await owned(driver, 'combobox', { options: regions, value: ['hnd'], multiple: true, name: 'regions', listLabel: 'Regions', toggleLabel: 'Show regions', 'aria-label': 'Regions' })
+  conforms(page)
+  const field = page.one<HTMLInputElement>('[role="combobox"]')
+  const chips = () => page.all('.chip').map(chip => chip.getAttribute('data-value'))
+  assert.equal(page.one('[role="listbox"]').getAttribute('aria-multiselectable'), 'true')
+  assert.ok(page.one('.input-group').classList.contains('input-group-wrap'))
+  assert.deepEqual(chips(), ['hnd'], 'the value is drawn from the first render')
+  assert.equal(field.value, '')
+
+  await driver.act(() => page.type(field, 'frank'))
+  await driver.act(() => page.key(field, 'Enter'))
+  assert.deepEqual(heard, [['hnd', 'fra']], 'the chosen value comes out')
+  assert.deepEqual(chips(), ['hnd', 'fra'], 'the framework writes its chip')
+  assert.equal(page.one('.chip[data-value="fra"]').firstChild?.textContent?.trim(), 'Frankfurt', 'a chip says the label, without the description')
+  assert.deepEqual(page.all<HTMLInputElement>('.chip input[type="hidden"]').map(input => input.value), ['hnd', 'fra'])
+  assert.equal(field.value, '')
+
+  await driver.act(() => page.click(page.one('.chip[data-value="hnd"] .chip-remove')))
+  assert.deepEqual(heard.at(-1), ['fra'], 'a chip removed takes its value away')
+  assert.deepEqual(chips(), ['fra'])
+
+  await driver.act(() => mounted.set({ value: ['sin'] }))
+  assert.deepEqual(chips(), ['sin'], 'a value set by the owner is written')
+  assert.deepEqual(page.all('[aria-checked="true"]').map(option => option.getAttribute('data-value')), ['sin'])
+  assert.equal(heard.length, 2, 'and says nothing')
+  conforms(page)
+  await driver.act(() => mounted.unmount())
+}
+
 export const scenarios: Record<string, Scenario> = {
   async combobox(driver, page) {
     const { mounted, heard } = await owned(driver, 'combobox', { options: regions, value: null, listLabel: 'Regions', toggleLabel: 'Show regions', empty: 'No regions match.', 'aria-label': 'Region' })
@@ -90,6 +121,8 @@ export const scenarios: Record<string, Scenario> = {
 
     await driver.act(() => mounted.unmount())
     assert.equal(page.all('.combobox').length, 0)
+
+    await comboboxSeveral(driver, page)
   },
 
   async listbox(driver, page) {
@@ -447,6 +480,120 @@ export const scenarios: Record<string, Scenario> = {
     assert.deepEqual(control.getAttribute('aria-describedby')?.split(' '), [page.one('.field-hint').id, page.one('.field-error').id])
     await driver.act(() => mounted.unmount())
   },
+
+  async tags(driver, page) {
+    const { mounted, heard } = await owned(driver, 'tags', { value: ['design'], name: 'labels', 'aria-label': 'Labels' })
+    conforms(page)
+    const field = page.one<HTMLInputElement>('.input-group-field')
+    const chips = () => page.all('.chip').map(chip => chip.getAttribute('data-value'))
+    assert.deepEqual(chips(), ['design'], 'the value is drawn from the first render')
+
+    await driver.act(() => { page.type(field, 'research'); page.key(field, 'Enter') })
+    assert.deepEqual(heard, [['design', 'research']], 'a typed value comes out')
+    assert.deepEqual(chips(), ['design', 'research'], 'the framework writes its chip')
+    assert.deepEqual(page.all<HTMLInputElement>('.chip input[type="hidden"]').map(input => `${input.name}=${input.value}`), ['labels=design', 'labels=research'])
+    assert.equal(field.value, '')
+
+    await driver.act(() => { field.focus(); page.key(field, 'Backspace') })
+    const last = page.one('.chip[data-value="research"] .chip-remove')
+    assert.equal(page.document.activeElement, last, 'Backspace reaches the last chip')
+    await driver.act(() => page.key(last, 'Backspace'))
+    assert.deepEqual(heard.at(-1), ['design'])
+    assert.deepEqual(chips(), ['design'])
+
+    await driver.act(() => mounted.set({ value: ['ops', 'design'] }))
+    assert.deepEqual(chips(), ['ops', 'design'], 'a value set by the owner is written')
+    assert.equal(heard.length, 2, 'and says nothing')
+    conforms(page)
+    await driver.act(() => mounted.unmount())
+    assert.equal(page.all('.tags').length, 0)
+  },
+
+  async editable(driver, page) {
+    const { mounted, heard } = await owned(driver, 'editable', { value: 'Quarterly report', label: 'Title', required: true })
+    conforms(page)
+    const root = page.one('.editable')
+    const preview = page.one<HTMLButtonElement>('.editable-preview')
+    const field = page.one<HTMLInputElement>('.editable-field')
+    assert.equal(preview.textContent?.trim(), 'Quarterly report', 'the value is drawn from the first render')
+    assert.equal(field.hidden, true)
+    assert.equal(field.value, 'Quarterly report')
+    assert.ok(preview.getAttribute('aria-labelledby')?.split(' ').every(id => page.document.getElementById(id)), 'the preview is named by the label and itself')
+
+    await driver.act(() => page.click(preview))
+    assert.equal(field.hidden, false)
+    assert.equal(page.document.activeElement, field)
+    await driver.act(() => { page.type(field, 'Annual report'); page.key(field, 'Enter') })
+    assert.deepEqual(heard, ['Annual report'], 'the saved value comes out')
+    assert.equal(field.hidden, true)
+    assert.equal(preview.textContent, 'Annual report')
+
+    await driver.act(() => { page.click(preview); page.type(field, 'Never mind'); page.key(field, 'Escape') })
+    assert.deepEqual(heard, ['Annual report'], 'Escape saves nothing')
+
+    await driver.act(() => mounted.set({ value: 'From the server' }))
+    assert.equal(preview.textContent, 'From the server', 'a value set by the owner is written')
+    assert.deepEqual(heard, ['Annual report'], 'and says nothing')
+
+    await driver.act(() => mounted.set({ busy: true }))
+    assert.equal(root.getAttribute('aria-busy'), 'true')
+    await driver.act(() => mounted.unmount())
+
+    await driver.mount('editable', { label: 'Description', placeholder: 'Add a description', multiline: true })
+    conforms(page)
+    assert.equal(page.one('.editable-placeholder').textContent, 'Add a description', 'an empty value shows the placeholder')
+    assert.equal(page.one('.editable-field').localName, 'textarea')
+  },
+
+  async sortable(driver, page) {
+    const { mounted, heard } = await owned(driver, 'sortable', {})
+    conforms(page)
+    const order = () => page.all('.sortable-item').map(item => item.getAttribute('data-value'))
+    const handle = (value: string) => page.one<HTMLButtonElement>(`.sortable-item[data-value="${value}"] .sortable-handle`)
+    assert.deepEqual(order(), ['onboarding', 'billing', 'search'], 'the order of the items')
+    assert.equal(handle('billing').getAttribute('aria-label'), 'Move Billing')
+    assert.ok(page.one('.sortable').nextElementSibling?.matches('.sortable-status[role="status"]'), 'a status region follows the list')
+
+    await driver.act(async () => {
+      handle('billing').focus()
+      page.click(handle('billing'), { detail: 0 })
+    })
+    assert.equal(handle('billing').getAttribute('aria-pressed'), 'true', 'Enter picks the item up')
+    await driver.act(async () => {
+      page.key(handle('billing'), 'ArrowUp')
+      await new Promise(resolve => setTimeout(resolve, 0))
+    })
+    assert.deepEqual(order(), ['billing', 'onboarding', 'search'], 'the framework moved the item')
+    assert.deepEqual(heard.at(-1), ['billing', 'onboarding', 'search'], 'the order comes out')
+    assert.equal(page.document.activeElement, handle('billing'), 'the handle keeps focus')
+    await driver.act(() => page.click(handle('billing'), { detail: 0 }))
+    assert.equal(handle('billing').getAttribute('aria-pressed'), 'false', 'Enter again drops it')
+
+    await driver.act(() => mounted.set({ value: ['search', 'billing', 'onboarding'] }))
+    assert.deepEqual(order(), ['search', 'billing', 'onboarding'], 'an order set by the owner is written')
+    conforms(page)
+    await driver.act(() => mounted.unmount())
+    assert.equal(page.all('.sortable').length, 0)
+  },
+
+  async toolbar(driver, page) {
+    const mounted = await driver.mount('toolbar', {})
+    conforms(page)
+    const root = page.one('[role="toolbar"]')
+    const [bold, italic, link] = page.all<HTMLButtonElement>('.toolbar .btn')
+    assert.equal(root.getAttribute('aria-label'), 'Formatting')
+    assert.equal(root.getAttribute('focusgroup'), 'toolbar wrap')
+    assert.deepEqual([bold, italic, link].map(button => button!.tabIndex), [0, -1, -1], 'one stop in the tab order')
+    await driver.act(() => { bold!.focus(); page.key(bold, 'ArrowRight') })
+    assert.equal(page.document.activeElement, italic, 'the arrows move between the controls')
+    await driver.act(() => page.click(italic))
+    assert.equal(italic!.getAttribute('aria-pressed'), 'true', 'a toggle presses')
+    await driver.act(() => mounted.set({ vertical: true }))
+    assert.equal(root.getAttribute('aria-orientation'), 'vertical')
+    await driver.act(() => mounted.unmount())
+    assert.equal(page.all('.toolbar').length, 0)
+  },
+
 
   async toast(driver, page) {
     const mounted = await driver.mount('toast')
