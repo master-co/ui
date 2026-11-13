@@ -14,6 +14,18 @@ Compact desktop tools can be dense while remaining keyboard accessible. Touch ta
 
 Content determines minimum space. Use minimum height with padding rather than a fixed height where labels can wrap. Avoid width assumptions based on one translated string, a single number of digits or a placeholder.
 
+## Compare footprints
+
+A visible 16px icon can sit inside a 44px target, while a nearby text label uses the project's normal size. These are specimen dimensions that explain three independent bounds: content, visible surface and interactive area. An invisible target extension is useful only when it does not intercept a neighboring control.
+
+Density also changes how much a person must scan and scroll. A compact data table may support comparison; a long service form may benefit from more separation. Do not infer a person's preferred density solely from screen width. Input precision, task frequency and text growth all matter.
+
+## Apply a density change coherently
+
+Coordinate field padding, adjacent actions, row spacing and focus clearance. Preserve entered values and selection when a density control changes presentation. A label's line-height is not a substitute for a target's measured height.
+
+Switch density with a long field value, an error message and a focused action. Confirm the information and behavior remain the same, targets do not overlap, and the tightest layout still accommodates the intended input methods.
+
 ## Review
 
 Measure the rendered target, not just its declared CSS width; flex shrinking can reduce it. Check neighboring targets, focus rings and scroll clipping. Test long labels, zoom, touch and combined controls. If density makes the task fragile, change the composition or offer a justified density choice instead of hiding essential information.

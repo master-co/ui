@@ -18,6 +18,14 @@ For a table that needs two-dimensional comparison, horizontal scrolling can be a
 
 Keep actions reachable without hover. Touch targets can grow independently from their glyphs. Preserve focus indicators at overflow boundaries and account for sticky bars and safe areas. Test both themes and forced colors rather than treating responsive work as geometry alone.
 
+## Transform relationships
+
+Compare a wide reading layout with a body and contents rail against a narrow one with the rail placed in a disclosure before the body. The regions change position but their roles, destinations and DOM reading order remain meaningful. A desktop screenshot scaled down would preserve neither legibility nor useful targets.
+
+For data comparison, keeping a locally scrolling table may be more useful than turning every row into a card. For a simple record list, stacked labels can work well. Choose against the actual comparison task and make hidden information reachable.
+
+The software keyboard can reduce available height without changing width. Keep a focused input, error and relevant action reachable in that condition. A full-height panel should use the appropriate viewport model with a fallback, and still allow content growth.
+
 ## Acceptance scenario
 
 Complete the primary task at 320 CSS pixels, a representative tablet width and a wide desktop width. Repeat with 200% text, long content, keyboard and touch. Check no loss of content or functionality, meaningful source order and nonoverlapping targets. See [sizing](../foundations/sizing.md) and [spacing](../foundations/spacing.md).
