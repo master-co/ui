@@ -57,6 +57,7 @@ Read the row that matches the job, then the contract of the component it names.
 | A quick vote that shows how everyone answered | `poll` |
 | A degree on a row of numbers with named ends: how likely, how satisfied | `scale` |
 | A date or a range of dates | `calendar`, in a `popover` for a picker |
+| Events in time: a day, a week, a month, an agenda | `schedule`, and a `schedule-view` with the `schedule` behavior for one the reader moves through |
 
 ## A number or a text
 

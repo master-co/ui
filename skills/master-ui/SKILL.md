@@ -43,7 +43,7 @@ Then:
 Read [frameworks](references/frameworks.md) before writing a component in one of them. In short:
 
 - Most of the library is the same markup, in the framework's syntax: `className` and `htmlFor` in JSX, nothing else changes. Do not wrap a class in a component to rename it: `<Button variant="primary">` hides `btn btn-primary` from the checker and from the next reader. Wrap markup only when the project already does, and keep the contract's classes as literal strings.
-- Twenty-one patterns hold state and have a component to copy: calendar, combobox, command, compare, dialog, editable, field, listbox, menu, otp, popover, sortable, splitter, stepper, tabs, tags, toast, toolbar, tooltip, tree, wheel. `npx master-ui add <name>` copies it into `ui/`; `npx master-ui add` lists them. Look in `ui/` first: the project may already have it, edited.
+- Twenty-four patterns hold state and have a component to copy: avatar, calendar, carousel, combobox, command, compare, dialog, editable, field, listbox, menu, otp, popover, schedule, sortable, splitter, stepper, tabs, tags, toast, toolbar, tooltip, tree, wheel. `npx master-ui add <name>` copies it into `ui/`; `npx master-ui add` lists them. Look in `ui/` first: the project may already have it, edited.
 - Never write the keys, the focus or the state attributes of one of those patterns in a component. They are in `@master/ui/behaviors`; the component gives the behavior a root and passes the value.
 
 ## Choose the component
@@ -61,6 +61,8 @@ Read [customizing](references/customizing.md) before overriding anything. In sho
 3. A public custom property of the component, set on the element that has the class.
 4. A theme file, for another material.
 5. Own the component's source, when the change is to its structure, its states or its behavior.
+
+Color has four jobs, and chrome is neutral by default. A status (done, failing) is a tone such as `badge-success`, always with words. A category of data (a project, a calendar, a label) is a `category-<name>` class on the row, card or event, read only by `badge-category`, `chip-category`, `schedule-event-category` and `icon-frame-category`, and always beside the category's name. A color that is the data itself goes in a `swatch`. The brand color stays on `btn-brand`, once per view. Never tint a button, a field or a dialog with a category, and never use `category-red` for a danger.
 
 A project rule may select a library class only to set its public custom properties. Never write one that redeclares or undoes what the stylesheet declares, never raise specificity or use `!important` to win, and never restyle a component by its private custom properties.
 
