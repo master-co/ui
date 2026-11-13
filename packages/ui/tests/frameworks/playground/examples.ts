@@ -40,6 +40,18 @@ export const examples: Record<string, Record<string, unknown>> = {
   'editable': { value: 'Quarterly report', label: 'Title', required: true, placeholder: 'Add a title' },
   'sortable': { value: ['onboarding', 'billing', 'search'] },
   'toolbar': {},
+  'dial': { value: 40, label: 'Volume', text: (value: number) => `${value}%` },
+  'color-picker': { value: 'oklch(62% 0.19 260)', label: 'Accent color', name: 'accent' },
+  'color-picker-popover': { value: '#3b82f6', label: 'Accent color' },
+  'signature': { label: 'Sign the agreement', name: 'signature' },
+  'cropper': { value: { x: 64, y: 48, width: 320, height: 240 }, label: 'Crop the photo' },
+  'gantt': { rows: [{ id: 'research', label: 'Research', start: 0, end: 3 }, { id: 'design', label: 'Design', start: 2, end: 6 }, { id: 'launch', label: 'Launch', start: 8 }], from: 0, to: 10, value: { design: [2, 6] }, 'aria-label': 'Plan' },
+  'panel': { value: { x: 24, y: 24, width: 288, height: null, minimized: false } },
+  'player': { src: '/demo/recording.m4a', label: 'A short recording' },
+  'transcript': { cues: [{ start: 0.3, text: 'This is a short recording.' }, { start: 3, text: 'It says a few words.' }] },
+  'log': { rows: ['Cloning master-co/ui', 'Installing packages'], latestLabel: 'Jump to latest', 'aria-label': 'Build log' },
+  'tour': { spotlight: true },
+  'dialog-sheet': {},
 }
 
 /** What each component gives out, so the playground listens for that and nothing else. */
@@ -49,6 +61,9 @@ export const outputs: Record<string, string[]> = {
   'compare': ['onValueChange'], 'tree': ['onValueChange'], 'wheel': ['onValueChange'], 'tabs': ['onValueChange'],
   'dialog': ['onOpenChange'], 'popover': ['onOpenChange'],
   'tags': ['onValueChange'], 'editable': ['onValueChange'], 'sortable': ['onValueChange'],
+  'dial': ['onValueChange', 'onValueCommit'], 'color-picker': ['onValueChange'], 'signature': ['onValueChange'],
+  'cropper': ['onValueChange', 'onValueCommit'], 'gantt': ['onValueChange', 'onValueCommit'], 'panel': ['onValueChange', 'onValueCommit'],
+  'tour': ['onValueChange'],
 }
 
 export const toasts = [

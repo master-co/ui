@@ -3,7 +3,7 @@ import ComponentSource from '~/site/components/ComponentSource.astro'
 import ContractTable from '~/site/components/ContractTable.astro'
 import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
-A toast is a brief message over the page about something that just happened: saved, deployed, copied. Each toast is a non-modal `<dialog>` inside a fixed `toast-region`. Being a dialog, it can be dismissed without script, and it enters and leaves with motion the stylesheet writes in CSS.
+A toast is a brief message over the page about something that just happened (saved, deployed, copied), or about work under way whose end it will report. Each toast is a non-modal `<dialog>` inside a fixed `toast-region`. Being a dialog, it can be dismissed without script, and it enters and leaves with motion the stylesheet writes in CSS.
 
 <ComponentPreview name="default" height={240} title="Toast" bodyClass="content-start p-lg min-h(240)" html={`<div class="toast-region" role="region" aria-label="Notifications" aria-live="polite">
   <dialog open class="toast toast-success" aria-labelledby="toast-deployed">
@@ -23,12 +23,12 @@ A toast is a brief message over the page about something that just happened: sav
 ## Showing and dismissing \{#showing-and-dismissing\}
 
 - A toast with the `open` attribute is shown when the page loads, which suits a message rendered by the server after a form post.
-- From script, call `toast.show()` on a toast in the region, or append a new `<dialog open class="toast">` to it. `@starting-style` gives the toast the frame it arrives from in both cases.
+- From script, append a new `<dialog open class="toast">` to the region, or set `open` on a toast that is there. `@starting-style` gives the toast the frame it arrives from in both cases. Do not call `show()`: it moves focus into the toast, away from what the reader was doing.
 - A `<form method="dialog">` around a button dismisses the toast, as does a button with `commandfor` and `command="close"`. `display` transitions with `allow-discrete`, so the exit plays before the toast stops taking space.
 
 ## Timed \{#timed\}
 
-`toast-timed` makes a toast leave by itself after six seconds. The clock is a CSS animation that ends in `display: none`, and it pauses while the pointer or the keyboard is on the toast, so a reader is never raced. A hairline along the toast's foot runs out with the clock and stops when the clock does. Set `--toast-duration` to change the time. Keep a timed toast free of actions a reader might still need: anything important belongs in an [alert](/components/alert) that stays.
+`toast-timed` makes a toast leave by itself after six seconds. The clock is a CSS animation that ends in `display: none`, and it pauses while the pointer or the keyboard is on the toast, so a reader is never raced. A hairline along the toast's foot runs out with the clock and stops when the clock does. Set `--toast-duration` to change the time. A busy toast keeps no clock; its clock starts once the work has ended.
 
 <ComponentPreview name="timed" height={200} title="Timed" bodyClass="content-start p-lg min-h(200)" html={`<div class="toast-region" role="region" aria-label="Notifications" aria-live="polite">
   <dialog open class="toast toast-timed" aria-label="Link copied">
@@ -40,7 +40,9 @@ A toast is a brief message over the page about something that just happened: sav
 
 ## With an action \{#with-an-action\}
 
-A [button](/components/button) after the body sits at the end of the row. A status modifier colors the icon only; the words stay in ink.
+A toast may offer one action beside its dismiss button, such as Undo or View. `toast-action` sits after the words: a `<form method="dialog">` around a `btn btn-sm`, so the action dismisses the toast once it has run. Give the button a `value`: the dialog's `returnValue` then says which button closed it, and one `close` listener runs the action. The action is a real button, reached with <kbd>Tab</kbd>, and a timed toast waits while the action holds focus or the pointer is on the toast.
+
+A toast leaves by itself and a reader may never see it, so an action in it is a shortcut, never the only way. Anything important (restoring what was deleted, retrying a failed save) also lives somewhere that stays: the item's own menu, a trash, an [alert](/components/alert) beside the failed form. A status modifier colors the icon only; the words stay in ink.
 
 <ComponentPreview name="action" height={304} title="With an action" bodyClass="content-start p-lg min-h(300)" html={`<div class="toast-region" role="region" aria-label="Notifications" aria-live="polite">
   <dialog open class="toast" aria-labelledby="toast-archived">
@@ -48,7 +50,14 @@ A [button](/components/button) after the body sits at the end of the row. A stat
       <p class="toast-title" id="toast-archived">Project archived</p>
       <p class="toast-description">Atlas is hidden from the dashboard.</p>
     </div>
-    <form method="dialog"><button class="btn btn-sm">Undo</button></form>
+    <form method="dialog" class="toast-action">
+      <button class="btn btn-sm" value="undo">Undo</button>
+    </form>
+    <form method="dialog" class="toast-close">
+      <button class="btn btn-quiet btn-square btn-sm" aria-label="Dismiss">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </form>
   </dialog>
   <dialog open class="toast toast-danger" aria-labelledby="toast-failed">
     <svg class="icon toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16v.01"/></svg>
@@ -56,13 +65,68 @@ A [button](/components/button) after the body sits at the end of the row. A stat
       <p class="toast-title" id="toast-failed">The build failed</p>
       <p class="toast-description">The install step exited with code 1.</p>
     </div>
+    <form method="dialog" class="toast-action">
+      <button class="btn btn-sm" value="logs">View logs</button>
+    </form>
     <form method="dialog" class="toast-close">
       <button class="btn btn-quiet btn-square btn-sm" aria-label="Dismiss">
         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
       </button>
     </form>
   </dialog>
-</div>`} />
+</div>`} caption="Tab to Undo and press Enter, or press Dismiss: each closes its toast through its form, without script." />
+
+## Pending, then updated in place \{#pending\}
+
+A toast can report work as it runs and then say how it ended, in the same place. While the work runs, the toast carries `aria-busy="true"` and holds a [spinner](/components/spinner) with `toast-icon` where its icon goes; its clock does not run, however long the work takes. When the work ends, change the same toast: its words, its status, its icon, and remove `aria-busy`. The toast does not enter again and keeps its place in the stack; only the new icon grows into place.
+
+<ComponentPreview name="pending" height={280} title="Pending" bodyClass="content-start p-lg min-h(280)" html={`<button class="btn" type="button" id="deploy-run">Deploy</button>
+<div class="toast-region" id="deploy-region" role="region" aria-label="Notifications" aria-live="polite"></div>
+<template id="deploy-pending">
+  <dialog open class="toast" aria-labelledby="deploy-title" aria-busy="true" aria-atomic="true">
+    <span class="spinner spinner-inline toast-icon" aria-hidden="true"></span>
+    <div class="toast-body">
+      <p class="toast-title" id="deploy-title">Deploying Atlas</p>
+      <p class="toast-description">Building for 14 regions.</p>
+    </div>
+    <form method="dialog" class="toast-close">
+      <button class="btn btn-quiet btn-square btn-sm" aria-label="Dismiss">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </form>
+    <template>
+      <svg class="icon toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 4.5-5.5"/></svg>
+    </template>
+  </dialog>
+</template>
+<script>
+  var region = document.getElementById('deploy-region')
+  var count = 0
+  document.getElementById('deploy-run').addEventListener('click', function () {
+    var toast = document.getElementById('deploy-pending').content.firstElementChild.cloneNode(true)
+    var title = toast.querySelector('.toast-title')
+    title.id = 'deploy-title-' + ++count
+    toast.setAttribute('aria-labelledby', title.id)
+    region.append(toast)
+    // When the work ends, the same toast says so: its icon, its words and its status change, and it is no longer busy.
+    setTimeout(function () {
+      toast.querySelector('.toast-icon').replaceWith(toast.querySelector('template').content.firstElementChild.cloneNode(true))
+      title.textContent = 'Deployed to production'
+      toast.querySelector('.toast-description').textContent = 'atlas.dev is live in 14 regions.'
+      toast.classList.add('toast-success', 'toast-timed')
+      toast.removeAttribute('aria-busy')
+    }, 2400)
+  })
+  // A toast that has run out, or was dismissed and has left, is removed.
+  region.addEventListener('animationend', function (event) {
+    if (event.animationName === 'toast-expire') event.target.remove()
+  })
+  region.addEventListener('close', function (event) {
+    setTimeout(function () { event.target.remove() }, 300)
+  }, true)
+</script>`} caption="Press Deploy: the toast is busy for two seconds, then says the deploy is done in the same place and leaves six seconds later." />
+
+The same toast can change again, from one count to the next while files upload, or from a failure to a retry. Each change starts its clock again, so a reader gets the whole time for the new words. A busy toast is not the place to follow a long task that matters: [progress](/components/progress) beside the work stays where it is.
 
 ## The region \{#the-region\}
 
@@ -80,12 +144,29 @@ The region is an ordinary fixed element with a `z-index`. To show toasts above a
 
 - Make the region a live region with `aria-live="polite"`, so a toast is announced when it appears, and name the region with `aria-label`.
 - Name each toast with `aria-labelledby` pointing at its title, or with `aria-label`.
+- Give a toast whose words change in place `aria-atomic="true"`, so a change is announced once, as the whole toast, not piece by piece. While it is busy, a screen reader may hold the announcement until the work has ended.
 - A toast is for confirmation. A reader must be able to miss it without losing anything, so do not put the only way to an action in one.
-- With reduced motion a toast fades in place.
+- A toast does not take focus when it appears. Its action and dismiss buttons are in the tab order, and a timed toast waits while either holds focus.
+- With reduced motion a toast fades in place, and a new icon fades in at its size.
 
 ## React, Svelte and Vue \{#frameworks\}
 
 The `toast` component is a queue: a `toast()` function to call from anywhere, and the region, rendered once, that shows what is in it. Copy it into the project with `npx master-ui add toast`; [React, Svelte and Vue](/guide/frameworks) says how the components are built and used.
+
+- `toast(message)` shows a toast and returns a handle. `update(message)` says something else in the same toast, with no second entrance, and starts its clock again; `dismiss()` lets it leave as its own button would. A message has a `title`, a `description`, a `status`, a `duration` in milliseconds (`false` keeps the toast) and an `action`; a string is a description.
+- `status: 'pending'` shows the spinner and sets `aria-busy`, and keeps the toast until it is updated.
+- `action: { label, onClick }` is the one button the toast offers. It runs `onClick`, then dismisses the toast, unless the handler calls `event.preventDefault()`.
+- `toast.promise(promise, { loading, success, error })` shows `loading` as a pending toast, then turns the same toast into `success`, or into a failure with the `danger` status. Either may be a function of the value or of the reason. It returns the promise, to await or chain.
+
+```tsx
+toast({ title: 'Project archived', action: { label: 'Undo', onClick: () => restore(project) } })
+
+await toast.promise(deploy(project), {
+  loading: { title: 'Deploying Atlas' },
+  success: (release) => ({ title: 'Deployed to production', description: `${release.url} is live.` }),
+  error: (error) => ({ title: 'The deploy failed', description: String(error), duration: false }),
+})
+```
 
 <FrameworkSource name="toast" />
 

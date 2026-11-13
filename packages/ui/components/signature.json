@@ -1,0 +1,48 @@
+{
+  "$schema": "../contract.schema.json",
+  "name": "signature",
+  "title": "Signature",
+  "tier": "component",
+  "category": "Forms",
+  "description": "A well to sign in with a finger, a pen or a mouse, or a name typed instead.",
+  "use": "Consent the reader gives by signing: an agreement, a delivery, a form to authorize. The drawing goes into the form as SVG; the typed name is the keyboard's way to sign and the whole signature without a script.",
+  "instead": [
+    { "when": "A typed name or a checkbox is all the consent needs", "use": "input" },
+    { "when": "The reader gives a picture of a signature they already have", "use": "dropzone" }
+  ],
+  "composes": ["input", "button"],
+  "script": "required",
+  "behavior": "signature",
+  "keyboard": [
+    { "keys": "Tab", "action": "Moves to the typed name, which signs with the keyboard, and to Undo and Clear once something is drawn. The pad itself takes no focus: a drawing has no keys" },
+    { "keys": "Enter, Space", "action": "On Undo, takes back the last stroke; on Clear, takes back every stroke, as native buttons do" }
+  ],
+  "classes": [
+    { "name": "signature", "kind": "root", "elements": ["fieldset"], "description": "The group, on a <fieldset> with a legend: the pad, its buttons, the typed name, the field a form submits and the status" },
+    { "name": "signature-readonly", "kind": "modifier", "of": "signature", "description": "Shows the drawing as it is: nothing draws on it and Undo and Clear step aside. Make the typed name readonly too" },
+    { "name": "signature-label", "kind": "part", "of": "signature", "elements": ["legend"], "description": "The <legend>: what is being signed" },
+    { "name": "signature-pad", "kind": "part", "of": "signature", "description": "The well the pointer draws in; it takes no touch gesture of the browser's, so a finger draws instead of scrolling" },
+    { "name": "signature-ink", "kind": "part", "of": "signature", "elements": ["svg"], "attributes": { "role": "img" }, "label": true, "description": "The drawing, an inline <svg> in the pad. Its viewBox sets the pad's proportions and the units of a stroke; name it as an image" },
+    { "name": "signature-stroke", "kind": "part", "of": "signature", "elements": ["path"], "description": "One stroke, a filled outline the script writes into the drawing" },
+    { "name": "signature-line", "kind": "part", "of": "signature", "description": "The line to sign on, with a fine cross where the name begins; hide it with aria-hidden=\"true\"" },
+    { "name": "signature-placeholder", "kind": "part", "of": "signature", "description": "Words that say where to sign, shown until the first stroke; hide them with aria-hidden=\"true\", the drawing's name says it" },
+    { "name": "signature-actions", "kind": "part", "of": "signature", "description": "The row of Undo and Clear, in the pad's top corner" },
+    { "name": "signature-undo", "kind": "part", "of": "signature", "elements": ["button"], "description": "A button that takes back the last stroke; out of sight until there is one, and marked aria-disabled by the script while there is none" },
+    { "name": "signature-clear", "kind": "part", "of": "signature", "elements": ["button"], "description": "A button that takes back every stroke; out of sight until there is one, and marked aria-disabled by the script while there is none" },
+    { "name": "signature-name", "kind": "part", "of": "signature", "elements": ["input"], "description": "The typed name, on an input with the input class, set in a script face. Give it a visible label" },
+    { "name": "signature-value", "kind": "part", "of": "signature", "elements": ["input"], "attributes": { "type": "hidden" }, "description": "The field a form submits: the drawing as an SVG document, written by the script. Give it a name" },
+    { "name": "signature-status", "kind": "part", "of": "signature", "attributes": { "role": "status" }, "description": "Clipped out of sight: what the script says when the pad is signed or emptied, for assistive technology" }
+  ],
+  "states": [
+    { "on": "signature", "name": "disabled", "mark": ":disabled", "description": "The fieldset is disabled: nothing draws, the ink and the words turn to disabled ink, and the fieldset disables its buttons and the typed name" },
+    { "on": "signature-name", "name": "invalid", "mark": "aria-invalid=\"true\"", "description": "The signature is missing or refused: the field and the pad take the danger contour. Say why under the field and point to it with aria-describedby" },
+    { "on": "signature-name", "name": "required", "mark": ":user-invalid", "description": "Required and empty once the reader tried to submit: the field and the pad take the danger contour. The script lifts required while there is a drawing" }
+  ],
+  "properties": [
+    { "name": "--signature-ink", "default": "var(--color-text-strong)", "description": "The color of the strokes" },
+    { "name": "--signature-weight", "default": "2.5", "description": "The width of a stroke at an even pressure, in the units of the drawing's viewBox; the script reads it when it writes a stroke" },
+    { "name": "--signature-radius", "default": "var(--radius-control-lg)", "description": "Corner of the pad" },
+    { "name": "--signature-font", "default": "\"Snell Roundhand\", \"Segoe Script\", \"Bradley Hand\", \"Apple Chancery\", cursive", "description": "The script face the typed name is set in" }
+  ],
+  "example": "<fieldset class=\"signature\">\n  <legend class=\"signature-label\">Sign the agreement</legend>\n  <div class=\"signature-pad\">\n    <svg class=\"signature-ink\" viewBox=\"0 0 400 160\" role=\"img\" aria-label=\"Your drawn signature\"></svg>\n    <span class=\"signature-line\" aria-hidden=\"true\"></span>\n    <span class=\"signature-placeholder\" aria-hidden=\"true\">Sign here</span>\n    <div class=\"signature-actions\">\n      <button type=\"button\" class=\"btn btn-sm btn-quiet signature-undo\">Undo</button>\n      <button type=\"button\" class=\"btn btn-sm btn-quiet signature-clear\">Clear</button>\n    </div>\n  </div>\n  <label class=\"field\">Or type your full name\n    <input class=\"input signature-name\" name=\"signer\" autocomplete=\"name\" required>\n  </label>\n  <input type=\"hidden\" class=\"signature-value\" name=\"signature\">\n  <span class=\"signature-status\" role=\"status\"></span>\n</fieldset>"
+}

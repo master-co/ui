@@ -14,6 +14,8 @@ const contracts = readdirSync(directory('components'))
   .map(file => JSON.parse(readFileSync(new URL(file, directory('components')), 'utf8')) as { name: string, behavior?: string, example?: string })
 const driven = contracts.filter(contract => contract.behavior)
 const exported = behaviors as unknown as Record<string, unknown>
+/** A behavior's file is named like its stylesheet, and its export is the same words in camel case. */
+const exportOf = (file: string) => file.replace(/-(\w)/g, (_, letter: string) => letter.toUpperCase())
 
 test('index: there are contracts that name a behavior', () => {
   assert.ok(driven.length >= 11, `only ${driven.length} contracts name a behavior`)
@@ -22,14 +24,14 @@ test('index: there are contracts that name a behavior', () => {
 for (const contract of driven) {
   test(`index: ${contract.name}.json names a behavior that has a file and an export`, () => {
     assert.ok(existsSync(new URL(`${contract.behavior}.js`, directory('behaviors'))), `behaviors/${contract.behavior}.js is missing`)
-    assert.equal(typeof exported[contract.behavior!], 'function', `index.js does not export ${contract.behavior}`)
+    assert.equal(typeof exported[exportOf(contract.behavior!)], 'function', `index.js does not export ${exportOf(contract.behavior!)}`)
   })
 }
 
 test('index: every behavior file is exported under its own name', async () => {
   const files = readdirSync(directory('behaviors')).filter(file => file.endsWith('.js') && !['index.js', 'internal.js'].includes(file))
   for (const file of files) {
-    const name = file.replace(/\.js$/, '')
+    const name = exportOf(file.replace(/\.js$/, ''))
     const module = await import(new URL(file, directory('behaviors')).href)
     assert.equal(typeof module[name], 'function', `${file} does not export ${name}`)
     assert.equal(exported[name], module[name], `index.js does not export ${name} from ${file}`)

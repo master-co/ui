@@ -3,6 +3,9 @@
  * Each toast is a non-modal <dialog>, so it can be dismissed without script by a form with method="dialog" or
  * a button with command="close", and it enters and leaves through @starting-style and discrete transitions.
  * A timed toast leaves by itself and waits while it is hovered or focused. Toasts stack in a fixed region.
+ * A pending toast (aria-busy="true") holds a spinner for its icon and keeps no clock until its work settles;
+ * the same toast then says how it ended, in place, without a second entrance. One action button may sit
+ * before the dismiss button.
  */
 @layer components {
   /*
@@ -95,9 +98,9 @@
 
     /*
      * Timed: after --toast-duration the toast leaves by itself. The clock stops while the pointer or the
-     * keyboard is on it, so a reader is never raced.
+     * keyboard is on it, so a reader is never raced, and does not run at all while the toast is busy.
      */
-    &.toast-timed[open] {
+    &.toast-timed[open]:not([aria-busy="true"]) {
       animation: toast-expire var(--toast-duration, 6s) linear forwards;
 
       /* A hairline along the foot runs out with the clock, and stops when the clock does. */
@@ -122,11 +125,17 @@
       }
     }
 
-    /* A status colors the icon; the words stay in ink. */
-    &.toast-info { --icon-color: var(--color-info); }
-    &.toast-success { --icon-color: var(--color-success); }
-    &.toast-warning { --icon-color: var(--color-warning); }
-    &.toast-danger { --icon-color: var(--color-danger); }
+    /*
+     * A status colors the toast's own icon, and only that: the words, the action and the dismiss button stay
+     * in ink, so the hue is handed to toast-icon instead of to every icon inside.
+     */
+    &.toast-info { --toast-hue: var(--color-info); }
+    &.toast-success { --toast-hue: var(--color-success); }
+    &.toast-warning { --toast-hue: var(--color-warning); }
+    &.toast-danger { --toast-hue: var(--color-danger); }
+
+    /* Pending: the work it reports is under way. Its spinner stays quiet; how the work ended takes the hue. */
+    &[aria-busy="true"] { --toast-hue: var(--color-text-muted); }
 
     @media (prefers-reduced-motion: reduce) {
       scale: none;
@@ -158,9 +167,27 @@
     --toast-shift: -.75rem;
   }
 
-  /* The icon centers on the first line of text. */
+  /*
+   * The icon centers on the first line of text. A spinner takes the same place and the same ink. When the
+   * icon is replaced, as a pending toast settles, the new one grows into place; the toast itself stays put.
+   */
   .toast-icon {
+    --icon-color: var(--toast-hue);
     margin-block: calc((1lh - var(--icon-size)) / 2);
+    color: var(--toast-hue, inherit);
+    transition-property: opacity, scale;
+    transition-duration: var(--duration-base);
+    transition-timing-function: var(--easing-glide);
+
+    @starting-style {
+      opacity: 0;
+      scale: .5;
+    }
+
+    /* With reduced motion the new icon fades in at its size. */
+    @media (prefers-reduced-motion: reduce) {
+      transition-property: opacity;
+    }
   }
 
   .toast-body {
@@ -183,6 +210,15 @@
     color: var(--color-text-muted);
     text-wrap: pretty;
     overflow-wrap: anywhere;
+  }
+
+  /*
+   * The action: one button that does what the toast offers (Undo, View) and dismisses it. It sits after the
+   * words, on the first line, and takes no more height than the dismiss button beside it.
+   */
+  .toast-action {
+    flex: none;
+    margin-block: -.25rem;
   }
 
   /* The form or button that dismisses the toast sits at the end, pulled into the padding. */

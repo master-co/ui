@@ -1,0 +1,245 @@
+/*
+ * Signature: a well to sign in with a finger, a pen or a mouse, and a field to type the name instead.
+ * The pad is the same well as a text field, cut into its surface, with a hairline to sign on and a fine cross
+ * where the name begins. The drawing is an inline <svg> whose viewBox sets the pad's proportions; a script
+ * writes each stroke into it as a filled path, an outline as wide as the pen pressed or, for a finger and a
+ * mouse, as slowly as it moved, so the ink and its weight come from this stylesheet and the line from the hand.
+ * Until there is a stroke the pad shows its placeholder, and Undo and Clear stay out of sight.
+ *
+ * A drawing has no keyboard, so the typed name is part of the pattern: a native field whose words are set in
+ * a script face. It is the whole signature without a script, and the keyboard's way to sign with one. In
+ * forced colors the strokes are drawn in CanvasText and the line and the cross in GrayText.
+ */
+@layer components {
+  .signature {
+    --signature-ink: var(--color-text-strong);
+    --signature-weight: 2.5;
+    --signature-radius: var(--radius-control-lg);
+    --signature-font: "Snell Roundhand", "Segoe Script", "Bradley Hand", "Apple Chancery", cursive;
+    display: grid;
+    gap: .75rem;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  /* The <legend>: what is being signed, in the voice of a field's label. */
+  .signature-label {
+    margin-bottom: .5rem;
+    padding: 0;
+    color: var(--color-text-strong);
+    font-size: .875rem;
+    font-weight: var(--font-weight-control);
+    line-height: 1.4;
+  }
+
+  /*
+   * The pad: a well the pointer draws in. It takes no gesture of the browser's, so a finger draws instead of
+   * scrolling the page, and no selection, so a quick stroke does not select the placeholder.
+   */
+  .signature-pad {
+    position: relative;
+    min-width: 0;
+    border-radius: calc(var(--signature-radius) * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    background: var(--color-surface-inset);
+    box-shadow: var(--shadow-pressed);
+    cursor: crosshair;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    transition-property: box-shadow, background-color;
+    transition-duration: var(--duration-quick);
+    transition-timing-function: var(--easing-glide);
+
+    @media (hover: hover) {
+      &:hover {
+        background: var(--color-surface-inset-hover);
+      }
+    }
+
+    @media (forced-colors: active) {
+      outline: 1px solid FieldText;
+      outline-offset: -1px;
+    }
+  }
+
+  /* The drawing: as wide as the pad and as tall as its viewBox makes it, clipped to the pad's corner. */
+  .signature-ink {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: inherit;
+    corner-shape: inherit;
+    overflow: hidden;
+  }
+
+  /* One stroke, written by the script: a filled outline, so its width can follow the pressure along it. */
+  .signature-stroke {
+    fill: var(--signature-ink);
+    stroke: none;
+
+    @media (forced-colors: active) {
+      fill: CanvasText;
+      forced-color-adjust: none;
+    }
+  }
+
+  /* The line to sign on, a quarter of the way up, with a fine cross where the name begins. */
+  .signature-line {
+    position: absolute;
+    inset-inline: 1.5rem;
+    bottom: 26%;
+    height: 1px;
+    background: var(--color-line-strong);
+    pointer-events: none;
+
+    &::before {
+      content: '';
+      position: absolute;
+      inset-inline-start: 0;
+      bottom: .4375rem;
+      width: .625rem;
+      height: .625rem;
+      background: var(--color-text-muted);
+      mask:
+        linear-gradient(45deg, transparent calc(50% - .75px), currentColor 0 calc(50% + .75px), transparent 0),
+        linear-gradient(-45deg, transparent calc(50% - .75px), currentColor 0 calc(50% + .75px), transparent 0);
+    }
+
+    @media (forced-colors: active) {
+      background: GrayText;
+      forced-color-adjust: none;
+
+      &::before {
+        background: GrayText;
+      }
+    }
+  }
+
+  /* Says where to sign, above the line, until the first stroke. */
+  .signature-placeholder {
+    position: absolute;
+    inset-inline: 1.5rem;
+    bottom: calc(26% + 1.25rem);
+    color: var(--color-text-muted);
+    font-size: .8125rem;
+    line-height: 1.5;
+    text-align: center;
+    pointer-events: none;
+  }
+
+  /* Undo and Clear, in the pad's top corner: the drawing rarely reaches it. */
+  .signature-actions {
+    position: absolute;
+    inset-block-start: .375rem;
+    inset-inline-end: .375rem;
+    display: flex;
+    gap: .25rem;
+    cursor: default;
+  }
+
+  /*
+   * Undo and Clear have nothing to do until there is a stroke, so they wait out of sight. The one that just
+   * emptied the pad keeps its focus, and stays until focus moves on, marked aria-disabled by the script.
+   */
+  .signature-undo, .signature-clear {
+    transition-property: opacity, visibility;
+    transition-duration: var(--duration-quick);
+    transition-timing-function: var(--easing-glide);
+  }
+
+  .signature:not(:has(.signature-stroke)) :is(.signature-undo, .signature-clear):not(:focus) {
+    opacity: 0;
+    visibility: hidden;
+  }
+
+  .signature-pad:has(.signature-stroke) .signature-placeholder {
+    visibility: hidden;
+  }
+
+  /* The typed name, set in a script face at the size of a large field; the placeholder stays in the face of the interface. */
+  .signature-name {
+    min-height: 2.75rem;
+    padding-block: .5rem;
+    font-family: var(--signature-font);
+    font-size: 1.5rem;
+    line-height: 1.75rem;
+
+    &::placeholder {
+      font-family: var(--font-family-sans);
+      font-size: .875rem;
+    }
+  }
+
+  /* The field a form submits: the drawing as SVG, written by the script. It never takes room. */
+  .signature-value {
+    display: none;
+  }
+
+  /* What the script says when the drawing changes, for assistive technology; clipped out of sight. */
+  .signature-status {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /*
+   * Invalid: the typed name is marked, or it is required and empty once the reader has tried. The name and the
+   * drawing are one signature, so the pad takes the danger contour the field does; say why under the field.
+   */
+  .signature:has(.signature-name:is([aria-invalid="true"], :user-invalid)) .signature-pad {
+    box-shadow: var(--shadow-pressed), inset 0 0 0 .5px var(--color-danger), 0 0 0 .5px color-mix(in oklab, var(--color-danger) 45%, transparent);
+  }
+
+  /* Read-only: the drawing is shown as it is; nothing draws on it and nothing clears it. */
+  .signature.signature-readonly {
+    .signature-pad {
+      cursor: default;
+
+      @media (hover: hover) {
+        &:hover {
+          background: var(--color-surface-inset);
+        }
+      }
+    }
+
+    :is(.signature-undo, .signature-clear) {
+      display: none;
+    }
+  }
+
+  /* Disabled, on the <fieldset>: the well keeps its place, the ink and the words turn to disabled ink. */
+  .signature:disabled {
+    --signature-ink: var(--color-text-disabled);
+
+    .signature-label, .signature-placeholder {
+      color: var(--color-text-disabled);
+    }
+
+    .signature-line::before {
+      background: var(--color-text-disabled);
+    }
+
+    .signature-pad {
+      cursor: not-allowed;
+
+      @media (hover: hover) {
+        &:hover {
+          background: var(--color-surface-inset);
+        }
+      }
+    }
+
+    :is(.signature-undo, .signature-clear) {
+      display: none;
+    }
+  }
+}

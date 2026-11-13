@@ -1,0 +1,67 @@
+{
+  "$schema": "../contract.schema.json",
+  "name": "player",
+  "title": "Player",
+  "tier": "component",
+  "category": "Media",
+  "description": "Controls of the page's own over a native audio or video element.",
+  "use": "An episode, a talk, a product film: a recording a reader plays, seeks and listens to at their own speed, with controls drawn in the page's material. The media stays a native audio or video element with its controls attribute, which the browser's own controls answer until the behavior attaches and takes it away.",
+  "instead": [
+    { "when": "A short voice message in a conversation, drawn as the shape of its sound", "use": "waveform" },
+    { "when": "A picture or a video that plays by itself, with a caption", "use": "figure" },
+    { "when": "What the recording says, to read and to seek from", "use": "transcript" }
+  ],
+  "composes": ["slider", "icon", "menu"],
+  "script": "optional",
+  "behavior": "player",
+  "keyboard": [
+    { "keys": "Space, K", "action": "Play or pause. Space on a button presses that button instead" },
+    { "keys": "ArrowLeft, ArrowRight", "action": "Seek back or forward 5 seconds; on the seek track ArrowDown and ArrowUp do the same. The two change places in a right-to-left player. On the volume slider, the arrows set the volume as the native input does" },
+    { "keys": "J, L", "action": "Seek back or forward 10 seconds" },
+    { "keys": "ArrowUp, ArrowDown", "action": "Turn the volume up or down a tenth, away from the seek track and the volume slider" },
+    { "keys": "M", "action": "Mute or unmute" },
+    { "keys": "C", "action": "Turn the captions on or off, when the video has a captions or subtitles track" },
+    { "keys": "F", "action": "Enter or leave full screen, for a video where the browser allows it" },
+    { "keys": "Home, End", "action": "Go to the start or the end. On the volume slider they set the least and the most volume" }
+  ],
+  "platform": [
+    { "feature": "The controls attribute of the media element", "fallback": "Without the behavior the media keeps it, and the browser's own controls play the recording; the player's row is hidden" },
+    { "feature": "The Fullscreen API and Picture-in-Picture", "fallback": "The behavior hides a button the browser cannot use. On an iPhone, full screen is the system's own player" },
+    { "feature": "Container queries", "fallback": "The volume slider, the time so far and picture in picture stay in the row at every width of the player" },
+    { "feature": "Style queries on a custom property (@container style())", "fallback": "Over a still video the controls still fade; the pointer stays visible over the picture" }
+  ],
+  "classes": [
+    { "name": "player", "kind": "root", "description": "The player of an audio recording: a raised sheet holding the row of controls, 6px in. Give it role=\"group\" and an aria-label that names the recording" },
+    { "name": "player-video", "kind": "modifier", "of": "player", "description": "The player of a video: the frame itself, a dark field with a surface's corner, with the controls over its lower edge in the dark scheme. They fade while the video plays and the pointer is still" },
+    { "name": "player-media", "kind": "part", "of": "player", "elements": ["audio", "video"], "description": "The native audio or video element, with its controls attribute: the fallback the behavior removes as it attaches" },
+    { "name": "player-controls", "kind": "part", "of": "player", "description": "The row of buttons, times and the seek track. Hidden while the media has its controls attribute" },
+    { "name": "player-button", "kind": "part", "of": "player", "elements": ["button"], "label": true, "description": "A quiet 32px control with one icon, 44px on touch screens. A toggle has aria-pressed and a fixed name: with player-off and player-on faces it shows the one for its state; with one face it sinks into a well while it is on" },
+    { "name": "player-play", "kind": "modifier", "of": "player-button", "description": "Play and pause, its icon a size up: pressed while the media plays. Name it Play" },
+    { "name": "player-mute", "kind": "modifier", "of": "player-button", "description": "Sound and silence: pressed while the media is muted. Name it Mute" },
+    { "name": "player-speed", "kind": "modifier", "of": "player-button", "description": "The speed, in figures, that opens a menu of speeds through popovertarget: a menu of label items, each around a radio menu-input whose value is a playback rate" },
+    { "name": "player-captions", "kind": "modifier", "of": "player-button", "description": "Captions on or off: pressed while the first captions or subtitles track is showing. Hidden when the video has none" },
+    { "name": "player-pip", "kind": "modifier", "of": "player-button", "description": "Picture in picture: pressed while the video plays in its own window. Hidden where the browser has none, and in a player narrower than 24rem" },
+    { "name": "player-fullscreen", "kind": "modifier", "of": "player-button", "description": "Full screen: pressed while the player fills the screen. Hidden where the browser does not allow it" },
+    { "name": "player-off", "kind": "part", "of": "player", "description": "The face of a toggle while it is off: the icon for play, sound, into full screen" },
+    { "name": "player-on", "kind": "part", "of": "player", "description": "The face of a toggle while it is on: the icon for pause, silence, out of full screen" },
+    { "name": "player-elapsed", "kind": "part", "of": "player", "description": "How much has played, in small tabular figures, left out of a player narrower than 24rem. The behavior writes it" },
+    { "name": "player-duration", "kind": "part", "of": "player", "description": "How long the recording is, in small tabular figures. The behavior writes it once the media knows" },
+    { "name": "player-seek", "kind": "part", "of": "player", "elements": ["input"], "attributes": { "type": "range" }, "label": true, "description": "The seek track: a slider as long as the row allows, with what has loaded drawn under what has played. The behavior sets its max, its value and an aria-valuetext in words" },
+    { "name": "player-volume", "kind": "part", "of": "player", "elements": ["input"], "attributes": { "type": "range" }, "label": true, "description": "The volume: a short slider from 0 to 1 beside the mute button, left out where the player is narrower than 26rem and hidden where the device does not let a page set it" }
+  ],
+  "states": [
+    { "on": "player-media", "name": "native controls", "mark": "controls", "description": "The browser's controls are shown and the player's row is hidden: the behavior has not attached" },
+    { "on": "player-button", "name": "pressed", "mark": "aria-pressed=\"true\"", "description": "A toggle that is on: it shows its player-on face, or sinks into a well when it has one face" },
+    { "on": "player-button", "name": "disabled", "mark": ":disabled", "description": "Disabled ink and no answer to the pointer" },
+    { "on": "player-button", "name": "focus-visible", "mark": ":focus-visible", "description": "The focus ring. Over a video, the controls do not fade while anything in the player has it" },
+    { "on": "player-button", "name": "hidden", "mark": "hidden", "description": "A control the browser cannot use, hidden by the behavior" }
+  ],
+  "properties": [
+    { "name": "--player-buffered", "on": "player", "default": "0", "description": "How much of the recording has loaded, from 0 to 1, drawn on the seek track. The behavior sets it" },
+    { "name": "--player-idle", "on": "player", "default": "0", "description": "1 while a playing video has had no pointer movement for a while, and the controls fade out; 0 otherwise. The behavior sets it" },
+    { "name": "--player-ratio", "on": "player-video", "description": "The video's aspect ratio, held before it loads; without it the frame takes the video's own shape" },
+    { "name": "--player-inset", "on": "player", "default": "6px", "description": "Space between the sheet of an audio player and its controls" },
+    { "name": "--player-radius", "on": "player", "default": "calc(var(--radius-control) + var(--player-inset))", "description": "The player's corner: a control's corner plus the inset, and a surface's corner for a video" }
+  ],
+  "example": "<div class=\"player\" role=\"group\" aria-label=\"Episode 12: Field recordings\">\n  <audio class=\"player-media\" src=\"episode-12.m4a\" controls preload=\"metadata\"></audio>\n  <div class=\"player-controls\">\n    <button type=\"button\" class=\"player-button player-play\" aria-label=\"Play\" aria-pressed=\"false\">\n      <svg class=\"icon player-off\" viewBox=\"0 0 24 24\" fill=\"currentColor\" aria-hidden=\"true\"><path d=\"M7 4.8v14.4a1 1 0 0 0 1.5.86l11.5-7.2a1 1 0 0 0 0-1.72L8.5 3.94A1 1 0 0 0 7 4.8\"/></svg>\n      <svg class=\"icon player-on\" viewBox=\"0 0 24 24\" fill=\"currentColor\" aria-hidden=\"true\"><rect x=\"6\" y=\"4\" width=\"4\" height=\"16\" rx=\"1\"/><rect x=\"14\" y=\"4\" width=\"4\" height=\"16\" rx=\"1\"/></svg>\n    </button>\n    <span class=\"player-elapsed\">0:00</span>\n    <input type=\"range\" class=\"slider player-seek\" min=\"0\" max=\"0\" step=\"any\" value=\"0\" aria-label=\"Seek\">\n    <span class=\"player-duration\">0:00</span>\n    <button type=\"button\" class=\"player-button player-mute\" aria-label=\"Mute\" aria-pressed=\"false\">\n      <svg class=\"icon player-off\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M11 5 6 9H3v6h3l5 4z\"/><path d=\"M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13\"/></svg>\n      <svg class=\"icon player-on\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M11 5 6 9H3v6h3l5 4z\"/><path d=\"m16 9 6 6M22 9l-6 6\"/></svg>\n    </button>\n  </div>\n</div>"
+}

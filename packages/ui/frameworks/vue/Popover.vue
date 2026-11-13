@@ -5,14 +5,20 @@ defineOptions({ inheritAttrs: false })
 
 const { id, mode = 'auto' } = defineProps<{
   id?: string
-  /** `auto` closes on a press outside and on Esc; `manual` stays until it is closed. */
-  mode?: 'auto' | 'manual'
+  /**
+   * `auto` closes on a press outside and on Esc; `manual` stays until it is closed; `hint` is a preview the
+   * trigger shows while it is hovered or focused, and does not close another popover that is open.
+   */
+  mode?: 'auto' | 'manual' | 'hint'
 }>()
 /** Whether the popover is open: `v-model:open`. Leave it out and the trigger opens it. */
 const open = defineModel<boolean>('open')
 defineSlots<{
-  /** The button that opens the popover: bind what it is given on a button of your own. */
-  trigger?: (attributes: { popovertarget: string }) => unknown
+  /**
+   * The button that opens the popover: bind what it is given on a button of your own. In `hint` mode it is
+   * the link or the button that shows it on hover and on focus, and is given `interestfor`.
+   */
+  trigger?: (attributes: { popovertarget: string } | { interestfor: string }) => unknown
   default?: () => unknown
 }>()
 
@@ -22,6 +28,7 @@ defineSlots<{
  */
 const generated = useId()
 const name = computed(() => id ?? generated)
+const triggerAttributes = computed(() => mode === 'hint' ? { interestfor: name.value } : { popovertarget: name.value })
 const root = useTemplateRef<HTMLDivElement>('root')
 /** What the owner knows: the last state it set or was told. */
 let known = false
@@ -47,6 +54,6 @@ watch(open, sync, { flush: 'post' })
 </script>
 
 <template>
-  <slot name="trigger" v-bind="{ popovertarget: name }" />
+  <slot name="trigger" v-bind="triggerAttributes" />
   <div :id="name" :popover="mode" class="popover" ref="root" v-bind="$attrs" @toggle="report"><slot /></div>
 </template>

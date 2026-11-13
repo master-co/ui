@@ -1,0 +1,273 @@
+/*
+ * Dial: a value set by turning a thumb around a circle, the input sibling of the gauge.
+ * An element with role="slider" draws a round track in its fill's own ink, stepped back, fills it with ink from
+ * where it starts to the value, and carries the slider's pearl thumb at the value's angle. The figure stands in
+ * the middle in tabular figures. By default the dial is a knob: 270 degrees, open at the foot, from its least
+ * value at the lower left to its greatest at the lower right. dial-full is the whole circle, from the top, for
+ * an angle that comes round again. The script reads where it starts and how far it sweeps from this stylesheet.
+ * Clockwise is more in every writing direction: a dial turns like a clock or a knob, so it is not mirrored.
+ * Where the browser supports typed attr(), the dial reads aria-valuenow, aria-valuemin and aria-valuemax
+ * itself; elsewhere it reads --dial-value, which the behavior writes with every change. The fill follows the
+ * hand at once, with no easing: an input that lags behind the pointer feels broken.
+ * A dial is 120px across (88 small, 160 large); its track is a twentieth of that, and its thumb is the slider's
+ * 18px, 24px on touch screens. Ticks and marks take a rim outside the thumb's path, so the dial keeps its size.
+ */
+@property --dial-value {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+
+@property --dial-start {
+  syntax: '<angle>';
+  inherits: true;
+  initial-value: 225deg;
+}
+
+@property --dial-sweep {
+  syntax: '<angle>';
+  inherits: true;
+  initial-value: 270deg;
+}
+
+@layer components {
+  .dial {
+    --dial-size: 7.5rem;
+    --dial-track: calc(var(--dial-size) / 20);
+    --dial-thumb: 1.125rem;
+    --dial-color: var(--color-surface-inverse);
+    --dial-min: 0;
+    --dial-max: 100;
+    --dial-start: 225deg;
+    --dial-sweep: 270deg;
+    /* Room between the thumb's path and the edge, for ticks and marks; none without them. */
+    --dial-rim: 0rem;
+    /* How far along the track the value is, from nothing to all of it, and the angle that puts it at. */
+    --dial-share: clamp(0, calc((var(--dial-value) - var(--dial-min)) / (var(--dial-max) - var(--dial-min))), 1);
+    --dial-angle: calc(var(--dial-start) + var(--dial-share) * var(--dial-sweep));
+    /* The middle of the track, where the thumb's centre runs. */
+    --dial-radius: calc((var(--dial-size) - var(--dial-thumb)) / 2 - var(--dial-rim));
+    position: relative;
+    display: inline-grid;
+    flex: none;
+    place-items: center;
+    box-sizing: border-box;
+    width: var(--dial-size);
+    height: var(--dial-size);
+    margin: 0;
+    /* A circle takes the pointer, so the corners of its box do not. */
+    border-radius: 999px;
+    color: var(--color-text-strong);
+    font: var(--font-weight-control) calc(var(--dial-radius) * .44)/1 var(--font-family-sans);
+    font-feature-settings: inherit;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -.02em;
+    text-align: center;
+    vertical-align: middle;
+    cursor: pointer;
+    /* A finger that turns the dial does not scroll the page, and a drag selects no text. */
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+
+    @supports (x: attr(x type(*))) {
+      &[aria-valuenow] {
+        --dial-value: attr(aria-valuenow type(<number>), 0);
+      }
+
+      &[aria-valuemin] {
+        --dial-min: attr(aria-valuemin type(<number>), 0);
+      }
+
+      &[aria-valuemax] {
+        --dial-max: attr(aria-valuemax type(<number>), 100);
+      }
+    }
+
+    &:focus-visible {
+      outline: none;
+    }
+
+    /* Both drawings cover the dial, cut down to the track's ring. */
+    &::before, &::after {
+      --dial-inner: calc(var(--dial-radius) - var(--dial-track) / 2);
+      --dial-outer: calc(var(--dial-radius) + var(--dial-track) / 2);
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 999px;
+      mask: radial-gradient(circle, transparent calc(var(--dial-inner) - .5px), black var(--dial-inner), black var(--dial-outer), transparent calc(var(--dial-outer) + .5px));
+      pointer-events: none;
+    }
+
+    /*
+     * The track: the whole sweep, with a dot at each end to round it. It is drawn in the fill's own color and
+     * stepped back as one layer, so the dots and the arc never add up. Around the full circle the dots meet.
+     */
+    &::before {
+      --dial-end: calc(var(--dial-start) + var(--dial-sweep));
+      background:
+        radial-gradient(circle at calc(50% + var(--dial-radius) * sin(var(--dial-start))) calc(50% - var(--dial-radius) * cos(var(--dial-start))), var(--dial-color) calc(var(--dial-track) / 2 - .5px), transparent calc(var(--dial-track) / 2)),
+        radial-gradient(circle at calc(50% + var(--dial-radius) * sin(var(--dial-end))) calc(50% - var(--dial-radius) * cos(var(--dial-end))), var(--dial-color) calc(var(--dial-track) / 2 - .5px), transparent calc(var(--dial-track) / 2)),
+        conic-gradient(from var(--dial-start), var(--dial-color) var(--dial-sweep), transparent 0);
+      opacity: .12;
+    }
+
+    /* The fill: the same track as far as the value. Its dots have no radius at nothing, so an empty dial is an empty track. */
+    &::after {
+      --dial-cap: calc(var(--dial-track) / 2 * min(1, var(--dial-share) * 200));
+      background:
+        radial-gradient(circle at calc(50% + var(--dial-radius) * sin(var(--dial-start))) calc(50% - var(--dial-radius) * cos(var(--dial-start))), var(--dial-color) calc(var(--dial-cap) - .5px), transparent var(--dial-cap)),
+        radial-gradient(circle at calc(50% + var(--dial-radius) * sin(var(--dial-angle))) calc(50% - var(--dial-radius) * cos(var(--dial-angle))), var(--dial-color) calc(var(--dial-cap) - .5px), transparent var(--dial-cap)),
+        conic-gradient(from var(--dial-start), var(--dial-color) calc(var(--dial-share) * var(--dial-sweep)), transparent 0);
+    }
+
+    /* Ticks take a narrow rim outside the thumb's path; marks a wider one, outside the ticks. */
+    &:has(.dial-ticks) {
+      --dial-rim: .5rem;
+    }
+
+    &:has(.dial-mark) {
+      --dial-rim: 1.375rem;
+    }
+
+    &.dial-full {
+      --dial-start: 0deg;
+      --dial-sweep: 360deg;
+    }
+
+    &.dial-sm {
+      --dial-size: 5.5rem;
+    }
+
+    &.dial-lg {
+      --dial-size: 10rem;
+    }
+
+    &[aria-disabled="true"] {
+      opacity: .5;
+      cursor: not-allowed;
+    }
+
+    @media (pointer: coarse) {
+      --dial-thumb: 1.5rem;
+    }
+
+    @media (forced-colors: active) {
+      --dial-color: Highlight;
+      forced-color-adjust: none;
+      color: CanvasText;
+
+      &::before {
+        --dial-color: GrayText;
+        opacity: 1;
+      }
+
+      &[aria-disabled="true"] {
+        --dial-color: GrayText;
+      }
+    }
+  }
+
+  /* The thumb: the slider's pearl disc, standing on the track at the value's angle. */
+  .dial-thumb {
+    position: absolute;
+    z-index: 1;
+    top: calc(50% - var(--dial-radius) * cos(var(--dial-angle)));
+    left: calc(50% + var(--dial-radius) * sin(var(--dial-angle)));
+    box-sizing: border-box;
+    width: var(--dial-thumb);
+    height: var(--dial-thumb);
+    translate: -50% -50%;
+    border-radius: 999px;
+    corner-shape: round;
+    @apply --surface-thumb;
+    box-shadow: 0 0 0 .5px var(--color-line-strong), 0 1px 2px -.5px var(--color-shade-1), 0 2px 4px -1px var(--color-shade-2), 0 4px 8px -4px var(--color-shade-3);
+    transition: scale var(--duration-quick) var(--easing-glide);
+
+    /* Held, the thumb grows a little under the finger. */
+    .dial:active:not([aria-disabled="true"]) & {
+      scale: 1.08;
+    }
+
+    /* Focus rings the thumb, as it does on a slider: the thumb is what the keys move. */
+    .dial:focus-visible & {
+      @apply --focus-ring;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: none;
+
+      .dial:active:not([aria-disabled="true"]) & {
+        scale: none;
+      }
+    }
+
+    @media (forced-colors: active) {
+      background: ButtonText;
+      box-shadow: 0 0 0 1px Canvas;
+
+      .dial:focus-visible & {
+        outline-color: CanvasText;
+      }
+    }
+  }
+
+  /* The value as text, in the dial's own figures, in the middle. */
+  .dial-value {
+    position: relative;
+    z-index: 1;
+    max-width: calc(var(--dial-radius) * 1.4);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /*
+   * Ticks: --dial-ticks equal steps across the sweep, as fine lines in the rim just outside the thumb's path.
+   * A knob shows one more tick than steps, at both ends; the full circle shows as many as steps.
+   */
+  .dial-ticks {
+    --dial-ticks: 10;
+    --dial-tick-inner: calc(var(--dial-size) / 2 - var(--dial-rim) + .125rem);
+    --dial-tick-outer: calc(var(--dial-tick-inner) + .3125rem);
+    position: absolute;
+    inset: 0;
+    border-radius: 999px;
+    color: var(--color-line-mark);
+    /* Each tick is feathered at its sides: a hard stop in a conic gradient draws a jagged line. */
+    background: repeating-conic-gradient(from calc(var(--dial-start) - .75deg), transparent 0, currentColor .3deg 1.2deg, transparent 1.5deg calc(var(--dial-sweep) / var(--dial-ticks)));
+    mask:
+      radial-gradient(circle, transparent calc(var(--dial-tick-inner) - .5px), black var(--dial-tick-inner), black var(--dial-tick-outer), transparent calc(var(--dial-tick-outer) + .5px)),
+      conic-gradient(from calc(var(--dial-start) - 1deg), black calc(var(--dial-sweep) + 2deg), transparent 0);
+    mask-composite: intersect;
+    pointer-events: none;
+
+    @media (forced-colors: active) {
+      color: GrayText;
+    }
+  }
+
+  /* A mark: a short word or figure in the rim, at the value --dial-at stands for. */
+  .dial-mark {
+    --dial-at: 0;
+    --dial-mark-angle: calc(var(--dial-start) + clamp(0, calc((var(--dial-at) - var(--dial-min)) / (var(--dial-max) - var(--dial-min))), 1) * var(--dial-sweep));
+    --dial-mark-radius: calc(var(--dial-size) / 2 - .4375rem);
+    position: absolute;
+    top: calc(50% - var(--dial-mark-radius) * cos(var(--dial-mark-angle)));
+    left: calc(50% + var(--dial-mark-radius) * sin(var(--dial-mark-angle)));
+    translate: -50% -50%;
+    color: var(--color-text-muted);
+    font: 400 .6875rem/1 var(--font-family-sans);
+    font-feature-settings: inherit;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0;
+    white-space: nowrap;
+    pointer-events: none;
+
+    @media (forced-colors: active) {
+      color: CanvasText;
+    }
+  }
+}

@@ -1,8 +1,9 @@
 import ComponentPreview from '~/site/components/ComponentPreview.astro'
 import ComponentSource from '~/site/components/ComponentSource.astro'
 import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
-A gantt shows things that last as bars on one scale of time: the phases of a project, on-call shifts, a release train. It is a list. Each row carries where its bar begins and ends, its name, and what the bar says as text, and the stylesheet does the placing: names in one column, bars in the other, a hairline at every unit of the scale. There is no script and no SVG.
+A gantt shows things that last as bars on one scale of time: the phases of a project, on-call shifts, a release train. It is a list. Each row carries where its bar begins and ends, its name, and what the bar says as text, and the stylesheet does the placing: names in one column, bars in the other, a hairline at every unit of the scale. The chart needs no script and no SVG; where the reader plans, the `gantt` [behavior](/guide/behaviors) lets them [move and resize the bars](#moving-the-bars).
 
 <ComponentPreview name="default" height={248} narrowHeight={320} title="Gantt" bodyClass="p-lg" html={`<div class="card max-w(560) mx-auto">
   <ol class="gantt gantt-now" style="--gantt-from: 0; --gantt-to: 8; --gantt-now: 4.4" aria-label="Launch plan, in weeks">
@@ -53,6 +54,122 @@ A row with `gantt-scale` names the units. It holds one `gantt-ticks` list with a
 
 The gantt is a size container. Under 26rem of its own width each name stands over its bar instead of beside it, so the track keeps the whole width. Keep the scale short on a phone: eight units read, thirty do not.
 
+## Moving the bars \{#moving-the-bars\}
+
+Mark a bar `role="slider"` and attach the `gantt` behavior, and the reader moves it: drag its body to move it along the scale, or one of its ends to make it start or finish at another time. It snaps to whole units of the scale, here days, and its text says the range it would take while it is held. <kbd class="kbd">Escape</kbd> puts it back. The keys do everything the pointer does.
+
+<ComponentPreview name="moving" height={344} narrowHeight={436} title="Moving the bars" bodyClass="p-lg" behaviors html={`<div class="card max-w(640) mx-auto">
+  <ol class="gantt gantt-now" id="sprint" style="--gantt-from: 0; --gantt-to: 12; --gantt-now: 4.5" aria-label="Sprint plan, November 2 to 13">
+    <li class="gantt-row gantt-scale" aria-hidden="true">
+      <ol class="gantt-ticks"><li>2</li><li>3</li><li>4</li><li>5</li><li>6</li><li>7</li><li>8</li><li>9</li><li>10</li><li>11</li><li>12</li><li>13</li></ol>
+    </li>
+    <li class="gantt-row" data-value="research" style="--from: 0; --to: 3; --progress: 100"><span class="gantt-label">Research</span><span class="gantt-bar" role="slider">Nov 2 – 4 · 3 days</span></li>
+    <li class="gantt-row" data-value="design" aria-current="true" style="--from: 2; --to: 6"><span class="gantt-label">Design</span><span class="gantt-bar" role="slider">Nov 4 – 7 · 4 days</span></li>
+    <li class="gantt-row" data-value="build" style="--from: 5; --to: 10; --progress: 20"><span class="gantt-label">Build</span><span class="gantt-bar" role="slider">Nov 7 – 11 · 5 days</span></li>
+    <li class="gantt-row" data-value="review" style="--from: 9; --to: 11"><span class="gantt-label">Review</span><span class="gantt-bar" role="slider">Nov 11 – 12 · 2 days</span></li>
+    <li class="gantt-row" data-value="launch" style="--from: 11"><span class="gantt-label">Launch</span><span class="gantt-bar gantt-milestone" role="slider">Nov 13</span></li>
+  </ol>
+  <p class="gantt-status" role="status"></p>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  var day = new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric' })
+  var date = function (offset) { return new Date(2026, 10, 2 + offset) }
+  MasterUI.gantt(document.getElementById('sprint'), {
+    format: function (start, end) {
+      if (start === end) return day.format(date(start))
+      var length = end - start
+      return day.formatRange(date(start), date(end - 1)) + ' · ' + length + (length === 1 ? ' day' : ' days')
+    }
+  })
+})
+</script>`} caption="Drag a bar, or one of its ends. Or press Tab to reach the chart, ArrowUp and ArrowDown to choose a bar, and ArrowLeft and ArrowRight to move it; with Shift they move its end, with Alt (Option) its start." />
+
+What the stylesheet draws for a bar that moves:
+
+- **At rest** it looks as any bar does, with a grab cursor. Under the pointer and with focus a short upright grip shows at each end, where the cursor turns into a resize arrow; on a touch screen, which has no hover, the grips stay, and the bar is 44px tall.
+- **Focused**, it has the focus ring, drawn over the rows around it.
+- **Held**, it says `aria-busy="true"`: it lifts with the lifted shadow on a firmer tint, follows the pointer with no easing, and the cursor stays a closed hand, or a resize arrow while an end is held (`gantt-resize-start`, `gantt-resize-end`), wherever the pointer goes. A key or a value set from outside glides it to its place; with reduced motion it jumps.
+- **Read only** (`aria-readonly="true"`), it takes focus and is read, and does not move. **Disabled** (`aria-disabled="true"`), it does not move, the keys pass over it and its text takes the disabled ink.
+
+A milestone moves as a point and has no ends to resize.
+
+## The behavior \{#behavior\}
+
+`gantt` takes the root, the element with the `gantt` class, and returns the function that detaches it. Only the bars marked `role="slider"` move; the others stay pictures. On each of them it writes what a slider needs and the page left out: its name, from the row's `gantt-label`; `aria-valuemin` and `aria-valuemax`, the earliest start and the latest end, from the scale; `aria-valuenow`, its start; and `aria-valuetext`, what `format` says of its range. Write `aria-valuemin` and `aria-valuemax` on a bar yourself to keep it inside a narrower window.
+
+```js name=app.js
+import { gantt } from '@master/ui/behaviors/gantt.js'
+
+const plan = gantt(document.querySelector('.gantt'), {
+  // What a bar says for a range, as its text and to assistive technology.
+  format: (start, end) => `Days ${start + 1} to ${end}`,
+})
+
+plan.value // { research: [0, 3], design: [2, 6], … }
+plan.value = { design: [3, 7] }
+```
+
+- **The value** is each bar's range, `[start, end]` in the scale's unit, keyed by its row's `data-value`, or by its label's text. A milestone's range begins and ends at its point. Set it to move bars from outside; that dispatches nothing.
+- **Events.** The root dispatches `input` each time a bar's range changes, while it is dragged too, and `change` once a drop or a key has changed it.
+- **The pointer.** A press that moves more than 4px is a drag; less only focuses the bar. A press on a grip, the width the stylesheet draws it at each end, moves that end; anywhere else moves the bar. A unit of the scale is read from how wide the bars are drawn, so the drag snaps to `step` units, 1 by default, in any layout. A finger that moves down the page still scrolls it (`touch-action: pan-y`).
+- **Limits.** A bar stays between its `aria-valuemin` and `aria-valuemax` and is never shorter than a step, or than it already is.
+- **What it says.** A bar says its new range as a slider says its value, through `aria-valuetext`, once the drop or the key has taken it. What a value cannot say, that a change was refused or a drag cancelled, is said in the `gantt-status` region, a `role="status"` right after the root. Pass `messages` to say it in the page's language.
+- **Where the page runs from right to left**, the scale does too, and so do the pointer and the arrow keys: <kbd class="kbd">ArrowLeft</kbd> is later.
+
+Without the behavior the chart stays a readable list of things and their dates.
+
+## Rules of the page \{#rules\}
+
+Dependencies, resources and working days are the page's to know. Before a bar takes a range, it dispatches a cancelable `beforechange` event with the bar's `id`, the `range` it would take and the `previous` one. Call `preventDefault()` to refuse it: a key does nothing and a drop goes back to where the drag began, and the status region says the bar stayed. Here Build cannot start before Design is done, and the freeze is the release team's, so it is read only.
+
+<ComponentPreview name="rules" height={268} narrowHeight={332} title="Rules of the page" bodyClass="p-lg" behaviors html={`<div class="card max-w(560) mx-auto">
+  <ol class="gantt" id="release" style="--gantt-from: 0; --gantt-to: 12" aria-label="Release plan, November 2 to 13">
+    <li class="gantt-row" data-value="design" style="--from: 0; --to: 4"><span class="gantt-label">Design</span><span class="gantt-bar" role="slider">Nov 2 – 5 · 4 days</span></li>
+    <li class="gantt-row" data-value="build" style="--from: 4; --to: 9"><span class="gantt-label">Build</span><span class="gantt-bar" role="slider">Nov 6 – 10 · 5 days</span></li>
+    <li class="gantt-row" data-value="freeze" style="--from: 9; --to: 11"><span class="gantt-label">Freeze</span><span class="gantt-bar" role="slider" aria-readonly="true">Nov 11 – 12 · 2 days</span></li>
+  </ol>
+  <p class="gantt-status" role="status"></p>
+  <p class="mb(0) mt-sm text-sm fg-text-muted" id="release-note">Build starts once Design is done.</p>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  var day = new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric' })
+  var date = function (offset) { return new Date(2026, 10, 2 + offset) }
+  var root = document.getElementById('release')
+  var note = document.getElementById('release-note')
+  var plan = MasterUI.gantt(root, {
+    format: function (start, end) {
+      var length = end - start
+      return day.formatRange(date(start), date(end - 1)) + ' · ' + length + (length === 1 ? ' day' : ' days')
+    }
+  })
+  root.addEventListener('beforechange', function (event) {
+    var ranges = plan.value
+    ranges[event.detail.id] = event.detail.range
+    if (ranges.build[0] < ranges.design[1]) {
+      event.preventDefault()
+      note.textContent = 'Build starts once Design is done, on ' + day.format(date(ranges.design[1])) + ' at the earliest.'
+    } else note.textContent = 'Build starts once Design is done.'
+  })
+})
+</script>`} caption="Drag Build before the end of Design, or Design past the start of Build: the bar goes back." />
+
+```js name=app.js
+root.addEventListener('beforechange', (event) => {
+  const ranges = { ...plan.value, [event.detail.id]: event.detail.range }
+  if (ranges.build[0] < ranges.design[1]) event.preventDefault()
+})
+```
+
+The event bubbles, so one listener on the root hears every bar. It is asked when a key would move a bar and when a drag is dropped, not at every step of the drag, so the reader can carry a bar across a place it may not stay in.
+
+## Keyboard \{#keyboard\}
+
+<ContractTable name="gantt" show="keyboard" />
+
+The chart is one stop in the tab order, as a [toolbar](/components/toolbar) or a [tree](/components/tree) is, so that a long plan is not dozens of stops. <kbd class="kbd">ArrowUp</kbd> and <kbd class="kbd">ArrowDown</kbd> walk the bars because the rows are stacked that way, and <kbd class="kbd">ArrowLeft</kbd> and <kbd class="kbd">ArrowRight</kbd> move a bar because time runs that way: the arrows follow the picture. The chart stays a list rather than a grid, since a row has only one thing to operate, the bar, whose arrow keys would otherwise have to wait behind a mode.
+
 ## Gantt, timeline or chart \{#gantt-timeline-or-chart\}
 
 A gantt is for things with a beginning and an end. Moments in the order they happened are a [timeline](/components/timeline). Amounts compared with each other, with no place in time, are a [chart](/components/chart).
@@ -62,6 +179,16 @@ A gantt is for things with a beginning and an end. Moments in the order they hap
 - Write it as an `<ol>` and name it with `aria-label` or a heading. Each row is an item whose name and bar text are read in order: "Design, weeks 3 to 6".
 - The bars, the hairlines and the line of now are drawn by the stylesheet. Say in the text what they show: a bar's dates, and that a row is the current one where it matters.
 - Colour is not used: the current row is told apart by ink against a tint, and in forced colors by a filled bar against outlined ones.
+- A bar that moves is a slider named by its row, whose value is its range in the page's words: "Design, slider, Nov 4 – 7 · 4 days". Give `format` the words the bar's text uses, so the two say the same.
+- Keep the `gantt-status` region in the page from the start, empty: a region added at the moment it speaks is often not heard. It says only what the slider's own value cannot, so nothing is said twice.
+- The keys do everything the pointer does. For a reader who uses a pointer but cannot drag, give the row a way to set its dates without dragging too, such as fields in a [dialog](/components/dialog) opened from it.
+- Say near the chart how the keys move a bar, as the caption above does: a slider whose ends move with Shift and Alt is not something a reader can guess.
+
+## React, Svelte and Vue \{#frameworks\}
+
+The `gantt` component writes the rows from data, each with an `id`, a `label`, a `start` and an `end` (a row without one is a milestone), and each bar's place and text from its value, `{ [id]: [start, end] }`. It takes the scale as `from` and `to`, `now` and the names of its units as `ticks`, reports `onValueChange` as a bar moves and `onValueCommit` once it is dropped, and asks `onBeforeChange` (an emitted `beforeChange` in Vue) before a bar takes a range. Copy it into the project with `npx master-ui add gantt`; [React, Svelte and Vue](/guide/frameworks) says how the components are built and used.
+
+<FrameworkSource name="gantt" />
 
 ## Classes \{#classes\}
 

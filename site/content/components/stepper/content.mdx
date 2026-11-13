@@ -28,7 +28,7 @@ The stylesheet removes the browser's own spin buttons, because the two buttons r
 
 ## The behavior \{#behavior\}
 
-The `stepper` [behavior](/guide/behaviors) makes the two buttons step the number between them. It takes the root, the element with the `stepper` class, has no options, and returns the function that detaches it.
+The `stepper` [behavior](/guide/behaviors) makes the two buttons step the number between them. It takes the root, the element with the `stepper` class, and the options of a [formatted figure](#formatted) and a [scrub](#scrub), and returns the function that detaches it.
 
 ```js name=app.js
 import { stepper } from '@master/ui/behaviors/stepper.js'
@@ -85,6 +85,69 @@ A unit is an `input-group-addon` after the field, and a larger `step` moves a la
   <button type="button" class="btn btn-square" value="1" tabindex="-1" aria-label="More replicas"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
 </div>`} />
 
+## A formatted figure \{#formatted\}
+
+A price, a percentage or a large count reads better written out: `$1,250`, `12%`, `1,250,000`. Put the field and a `stepper-display` in a `stepper-value`, and give the behavior `format`, the options of [`Intl.NumberFormat`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Intl/NumberFormat/NumberFormat), and a `locale` if the page's is not the one to write in.
+
+```js name=app.js
+stepper(root, { format: { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }, locale: 'en-US' })
+```
+
+<ComponentPreview name="formatted" height={152} title="A formatted figure" bodyClass="flex flex-col items-center gap-md p-lg" behaviors html={`<div class="input-group stepper">
+  <button type="button" class="btn btn-square" value="-1" tabindex="-1" aria-label="Lower the budget"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+  <span class="stepper-value">
+    <input class="input-group-field stepper-field" type="number" min="0" step="250" value="1250" aria-label="Monthly budget">
+    <span class="stepper-display" aria-hidden="true"></span>
+  </span>
+  <button type="button" class="btn btn-square" value="1" tabindex="-1" aria-label="Raise the budget"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+</div>
+<div class="input-group stepper">
+  <button type="button" class="btn btn-square" value="-1" tabindex="-1" aria-label="Fewer requests"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+  <span class="stepper-value">
+    <input class="input-group-field stepper-field" type="number" min="0" step="50000" value="1250000" aria-label="Requests a month">
+    <span class="stepper-display" aria-hidden="true"></span>
+  </span>
+  <button type="button" class="btn btn-square" value="1" tabindex="-1" aria-label="More requests"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  const [budget, requests] = document.querySelectorAll('.stepper')
+  MasterUI.stepper(budget, { format: { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }, locale: 'en-US' })
+  MasterUI.stepper(requests, { locale: 'en-US' })
+})
+</script>`} caption="Step the budget or click into it: while the field has the focus it holds the plain number to edit, and the figure is written again as it leaves. The second display has no format and only groups the digits." />
+
+`attach()` passes no options, so this preview calls `stepper` itself, after `attach()` has run: a second call on one root replaces the first. `MasterUI` is the bundle a preview loads; in a project, import `stepper` as [the behavior](#behavior) section shows.
+
+- **The field keeps the number.** The display stands in the field's place while the field is not focused, and the field's own digits are clear. Focus the field and the display steps aside: the reader edits `1250`, not `$1,250`, and the arrow keys, `min`, `max`, `step`, validation and the value a form sends are the number input's as before.
+- **The words.** The behavior writes the figure into the display as the value changes, from a button, a key, typing or a value set from outside, and into the field's `aria-valuetext`, so a screen reader says "$1,250" too. The display has `aria-hidden="true"`.
+- **Without a format.** A stepper with a `stepper-display` and no `format` groups the digits as the locale does. `format` may also be a function of the number, for a figure `Intl.NumberFormat` does not write.
+- **The width.** The figure's box is as wide as the wider of the field and the display, between `--stepper-min` and `--stepper-max`, so focusing the field does not move the buttons.
+- **Without the script** the display is empty and the field shows its number as usual.
+
+## Scrubbing \{#scrub\}
+
+In a design tool a number is often changed by dragging its label. Give a `<label>` of the field, anywhere on the page, or a handle in the well the `stepper-scrub` class: dragged sideways, it steps the number by one step every 4px, toward the end of the line for more. Hold <kbd>Shift</kbd> to take ten steps at a time.
+
+<ComponentPreview name="scrub" height={152} title="Scrubbing" bodyClass="flex flex-col items-center gap-md p-lg" behaviors html={`<div class="flex items-center gap-md">
+  <label class="stepper-scrub text-sm fg-text-strong" for="opacity">Opacity</label>
+  <div class="input-group input-group-sm stepper">
+    <input class="input-group-field stepper-field" id="opacity" type="number" min="0" max="100" step="1" value="64">
+    <span class="input-group-addon">%</span>
+  </div>
+</div>
+<div class="input-group input-group-sm stepper" style="--stepper-min: 4ch">
+  <span class="input-group-addon stepper-scrub" aria-hidden="true">W</span>
+  <input class="input-group-field stepper-field" type="number" min="1" max="4096" value="320" aria-label="Width">
+  <span class="input-group-addon">px</span>
+</div>`} caption="Drag the Opacity label, or the W at the start of the second field, to the side. A press without a drag still focuses the field." />
+
+- **A drag, not a press.** The drag starts once the pointer has moved 3px, so a press on a label still focuses the field. The click that ends a drag is swallowed.
+- **Pointer lock.** With a mouse the pointer is locked while it drags, where the browser can, so a long drag never runs into the edge of the screen; it comes back where it was. A pen or a finger is captured by the handle instead, and a vertical swipe on a touch screen still scrolls the page.
+- **Events.** The field dispatches `input` at each step and `change` once when the drag ends.
+- **Direction.** In a right-to-left page, dragging toward the start of the line, to the left, is more.
+- A scrub is a convenience for a pointer. The keys, the buttons and typing do everything it does, so it needs no key of its own and the handle stays out of the tab order.
+
 ## Disabled \{#disabled\}
 
 Disable the field and both buttons. The well keeps its place and its figure takes the disabled ink. The behavior does not step a field that is disabled or read-only. This preview is markup only, with no script attached.
@@ -103,7 +166,7 @@ Disable the field and both buttons. The well keeps its place and its figure take
 
 ## Keyboard \{#keyboard\}
 
-The keys are the number input's own; the behavior adds none.
+The keys are the number input's own; the behavior adds none. Shift only matters to a scrub.
 
 <ContractTable name="stepper" show="keyboard" />
 
@@ -112,10 +175,11 @@ The keys are the number input's own; the behavior adds none.
 - Label the field with a `<label>`, a [field](/components/input#field) or `aria-label`. Each button needs its own name that says what it changes: "More seats", not "Plus".
 - Keep `min`, `max` and `step` on the field. They are what the keys, the buttons and assistive technology all read.
 - The buttons stay out of the tab order. A reader on a keyboard steps with the arrow keys in the field; a reader with a pointer has targets of 30px, and a finger 36px inside a 44px well.
+- A formatted figure is said through the field's `aria-valuetext`, and the display that shows it is hidden from assistive technology. A scrub handle in the well is hidden too: it repeats what the keys do.
 
 ## React, Svelte and Vue \{#frameworks\}
 
-The `stepper` component attaches the behavior and passes the number in and out. Copy it into the project with `npx master-ui add stepper`; [React, Svelte and Vue](/guide/frameworks) says how the components are built and used.
+The `stepper` component attaches the behavior and passes the number in and out. Give it `format`, and `locale` if needed, for a [formatted figure](#formatted): it renders the `stepper-value` and the display, with the first figure already written, so the HTML a server sends shows it. A label of its field with the `stepper-scrub` class scrubs it as it does without a framework. Copy it into the project with `npx master-ui add stepper`; [React, Svelte and Vue](/guide/frameworks) says how the components are built and used.
 
 <FrameworkSource name="stepper" />
 

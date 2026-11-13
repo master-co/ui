@@ -1,0 +1,56 @@
+{
+  "$schema": "../contract.schema.json",
+  "name": "dial",
+  "title": "Dial",
+  "tier": "component",
+  "category": "Forms",
+  "description": "A value set by turning a thumb around a circle.",
+  "use": "A value that is a turn: an angle, a direction, or a level set like a knob, where the circle says more than a line would and the dial has room of its own. It is a role=\"slider\" the behavior moves; a hidden input inside it carries the value to a form.",
+  "instead": [
+    { "when": "A value along a line, which works without a script and in every form", "use": "slider" },
+    { "when": "The value is read, not set", "use": "gauge" },
+    { "when": "The exact number matters and the reader steps it", "use": "stepper" },
+    { "when": "The exact number matters and the reader types it", "use": "input" }
+  ],
+  "script": "required",
+  "behavior": "dial",
+  "keyboard": [
+    { "keys": "ArrowUp, ArrowRight", "action": "Turn the value up by a step, clockwise in every writing direction; around a full circle, past the greatest value it comes round to the least" },
+    { "keys": "ArrowDown, ArrowLeft", "action": "Turn the value down by a step, anticlockwise; around a full circle, below the least it comes round to the greatest" },
+    { "keys": "PageUp, PageDown", "action": "Turn the value up or down by a larger step, a tenth of the range unless the page sets another" },
+    { "keys": "Home, End", "action": "Move to aria-valuemin or aria-valuemax; around a full circle, End is the last step before the value comes round" }
+  ],
+  "platform": [
+    { "feature": "Typed attr(), as in attr(aria-valuenow type(<number>))", "fallback": "The dial does not read aria-valuenow, aria-valuemin and aria-valuemax: the behavior writes --dial-value with every change, and the first markup writes it in a style attribute, with --dial-min and --dial-max when the range is not 0 to 100" }
+  ],
+  "classes": [
+    { "name": "dial", "kind": "root", "attributes": { "role": "slider", "tabindex": ["0", "-1"], "aria-valuenow": true }, "label": true, "description": "The dial, 120px across, on a focusable role=\"slider\" with an accessible name, aria-valuenow, aria-valuemin and aria-valuemax: a round track filled with ink from its start to the value. By default a knob of 270 degrees, open at the foot" },
+    { "name": "dial-full", "kind": "modifier", "of": "dial", "description": "The whole circle, starting at the top: an angle, which comes round again past its greatest value" },
+    { "name": "dial-sm", "kind": "modifier", "of": "dial", "exclusive": "size", "description": "An 88px dial; the default is 120px" },
+    { "name": "dial-lg", "kind": "modifier", "of": "dial", "exclusive": "size", "description": "A 160px dial; the default is 120px" },
+    { "name": "dial-thumb", "kind": "part", "of": "dial", "description": "The pearl thumb on the track at the value's angle, an empty element. Focus rings it, and a press on it turns the dial without a jump" },
+    { "name": "dial-value", "kind": "part", "of": "dial", "description": "The value as text, in tabular figures at the middle of the dial; the behavior writes it with every change" },
+    { "name": "dial-ticks", "kind": "part", "of": "dial", "description": "An empty element that draws --dial-ticks equal steps as fine lines just outside the thumb's path" },
+    { "name": "dial-mark", "kind": "part", "of": "dial", "description": "A short word or figure in the rim, at the value its --dial-at stands for" }
+  ],
+  "states": [
+    { "on": "dial", "name": "value", "mark": "aria-valuenow=\"40\"", "description": "The value, between aria-valuemin and aria-valuemax or 0 and 100. The fill follows it at once" },
+    { "on": "dial", "name": "focus", "mark": ":focus-visible", "description": "The thumb takes the focus ring" },
+    { "on": "dial", "name": "held", "mark": ":active", "description": "The thumb grows a little while the dial is held, except with reduced motion" },
+    { "on": "dial", "name": "disabled", "mark": "aria-disabled=\"true\"", "description": "The dial fades and takes no pointer, key or wheel" }
+  ],
+  "properties": [
+    { "name": "--dial-value", "description": "The value. It comes from aria-valuenow where typed attr() is supported; the behavior writes it too" },
+    { "name": "--dial-min", "default": "0", "description": "The least value. It comes from aria-valuemin where typed attr() is supported" },
+    { "name": "--dial-max", "default": "100", "description": "The greatest value. It comes from aria-valuemax where typed attr() is supported" },
+    { "name": "--dial-start", "default": "225deg", "description": "Where the least value stands, clockwise from the top; 0deg on dial-full. The behavior reads it to turn a pointer into a value" },
+    { "name": "--dial-sweep", "default": "270deg", "description": "How far the track runs from the start, clockwise; 360deg on dial-full, which makes the value come round. The behavior reads it too" },
+    { "name": "--dial-size", "default": "7.5rem", "description": "The dial's diameter" },
+    { "name": "--dial-track", "default": "calc(var(--dial-size) / 20)", "description": "Thickness of the track" },
+    { "name": "--dial-thumb", "default": "1.125rem", "description": "Thumb diameter; 1.5rem on touch screens" },
+    { "name": "--dial-color", "default": "var(--color-surface-inverse)", "description": "The ink of the fill; the track is the same color stepped back" },
+    { "name": "--dial-ticks", "on": "dial-ticks", "default": "10", "description": "How many equal steps the ticks mark across the sweep" },
+    { "name": "--dial-at", "on": "dial-mark", "default": "0", "description": "The value a mark stands at" }
+  ],
+  "example": "<div class=\"dial\" role=\"slider\" tabindex=\"0\" aria-label=\"Volume\" aria-valuenow=\"40\" aria-valuemin=\"0\" aria-valuemax=\"100\" style=\"--dial-value: 40\">\n  <span class=\"dial-value\">40</span>\n  <span class=\"dial-thumb\"></span>\n  <input type=\"hidden\" name=\"volume\" value=\"40\">\n</div>"
+}

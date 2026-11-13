@@ -12,6 +12,8 @@ export interface Control<V> {
   onValueChange?: (value: V) => void
   /** Listeners for events of the root, such as the `change` a behavior dispatches when a code is complete. */
   on?: Record<string, (event: Event) => void>
+  /** Takes what the behavior returned each time it attaches, and null when it detaches, for a handle with more than a `value`. */
+  attached?: (handle: Handle<V> | null) => void
 }
 
 const same = (a: unknown, b: unknown) => a === b || JSON.stringify(a) === JSON.stringify(b)
@@ -58,6 +60,7 @@ export function useBehavior<E extends HTMLElement, O extends object, V = never>(
     const first = control.value ?? control.defaultValue
     if (first !== undefined) handle.value = first
     kept.current = handle.value
+    live.current.control.attached?.(handle)
 
     const controller = new AbortController()
     const hear = () => {
@@ -76,6 +79,7 @@ export function useBehavior<E extends HTMLElement, O extends object, V = never>(
       controller.abort()
       handle()
       attached.current = null
+      live.current.control.attached?.(null)
     }
     // The behavior reads the options once, when it attaches: `key` stands for them.
     // eslint-disable-next-line react-hooks/exhaustive-deps

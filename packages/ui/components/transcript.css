@@ -1,0 +1,151 @@
+/*
+ * Transcript: what a recording says, as a list of cues that follows the media as it plays.
+ * Each cue is a row with the time it begins, a small tabular button that is the row's way in from the keyboard,
+ * and its words. Three inks say where the media is: a cue already played is quiet, the current cue
+ * (aria-current="true") is strong and rests on a raised sheet, one step of depth like every current row, and the
+ * cues still to come are in the body's ink. Played is derived from the current cue alone: every cue before it.
+ * The list scrolls inside a height of its own (--transcript-height, 20rem) and the behavior keeps the current cue
+ * in its middle. When the reader scrolls it away, the list stops following and a pill, transcript-return, stands
+ * at its lower edge to bring it back.
+ * Rows answer the pointer at once, with no fade. Without the behavior the cues are a list a reader reads, and
+ * nothing is marked current.
+ */
+@layer components {
+  .transcript {
+    --transcript-height: 20rem;
+    --transcript-row-radius: var(--radius-control);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    margin: 0;
+  }
+
+  /* The cues, in a scroller of their own. Add scroll-area to fade the edges where the list goes on. */
+  .transcript-list {
+    display: grid;
+    align-content: start;
+    gap: 2px;
+    min-height: 0;
+    max-height: var(--transcript-height);
+    margin: 0;
+    padding: .25rem;
+    overflow: auto;
+    list-style: none;
+    scroll-padding-block: 1rem;
+  }
+
+  /* One cue: its time, then its words. The whole row seeks under the pointer. */
+  .transcript-cue {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: baseline;
+    gap: .375rem;
+    margin: 0;
+    padding: .375rem .625rem .375rem .25rem;
+    border-radius: calc(var(--transcript-row-radius) * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    color: var(--color-text-body);
+    cursor: pointer;
+
+    @media (hover: hover) {
+      &:hover:not([aria-current="true"]) {
+        background: var(--color-surface-inset);
+      }
+    }
+
+    /* Already played: every cue before the current one. */
+    &:has(~ .transcript-cue[aria-current="true"]) {
+      color: var(--color-text-muted);
+    }
+
+    /* The cue being spoken: strong ink on a raised sheet. */
+    &[aria-current="true"] {
+      @apply --surface-sheet;
+      color: var(--color-text-strong);
+      box-shadow: var(--shadow-raised);
+    }
+
+    @media (forced-colors: active) {
+      &[aria-current="true"] {
+        outline: 2px solid Highlight;
+        outline-offset: -2px;
+      }
+    }
+  }
+
+  /* When the cue begins, as a button: Enter or a press on it plays from there. */
+  .transcript-time {
+    min-width: 2.75rem;
+    margin: 0;
+    padding: .1875rem .375rem;
+    border: 0;
+    border-radius: calc(var(--radius-chip) * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    background: transparent;
+    color: var(--color-text-muted);
+    font: var(--font-weight-control) .75rem/1.2 var(--font-family-sans);
+    font-variant-numeric: tabular-nums;
+    text-align: end;
+    appearance: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+
+    .transcript-cue[aria-current="true"] & {
+      color: var(--color-text-strong);
+    }
+
+    &:focus-visible {
+      @apply --focus-ring;
+      outline-offset: 0;
+    }
+
+    @media (forced-colors: active) {
+      &:focus-visible {
+        outline-color: Highlight;
+      }
+    }
+  }
+
+  /* The words of a cue. */
+  .transcript-text {
+    margin: 0;
+    font-size: .875rem;
+    line-height: 1.5;
+    text-wrap: pretty;
+    overflow-wrap: anywhere;
+  }
+
+  /* Who speaks, before the words, when the recording has several voices. */
+  .transcript-speaker {
+    display: block;
+    color: var(--color-text-strong);
+    font-size: .75rem;
+    font-weight: var(--font-weight-control);
+    line-height: 1.5;
+  }
+
+  /*
+   * Back to the current cue: a pill at the list's lower edge, shown only while the reader has scrolled away.
+   * Write it as a small button (btn btn-sm btn-pill); this part places it and lets it fade in.
+   */
+  .transcript-return {
+    position: absolute;
+    inset-inline: 0;
+    bottom: .75rem;
+    width: fit-content;
+    margin-inline: auto;
+    transition-property: opacity, display, box-shadow, translate, color;
+    transition-behavior: allow-discrete;
+
+    &[hidden] {
+      display: none;
+      opacity: 0;
+    }
+
+    @starting-style {
+      opacity: 0;
+    }
+  }
+}

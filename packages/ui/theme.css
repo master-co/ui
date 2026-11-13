@@ -98,6 +98,14 @@
   --color-highlight-on-color: oklch(100% 0 none / .18);
   --color-on-image: oklch(100% 0 none);
   --color-on-image-shade: oklch(0% 0 none / .2);
+  /* The part of a picture left out of a crop: dimmed, the same in both themes, so the crop reads as lit. */
+  --color-image-dim: oklch(0% 0 none / .55);
+  /*
+   * A moving picture: the dark field a video stands on before it loads and around its letterbox, and the shade
+   * that rises from the frame's lower edge under the controls drawn over it. Dark in both themes, as a screen is.
+   */
+  --color-surface-media: oklch(13% .002 265);
+  --color-on-image-scrim: oklch(0% 0 none / .62);
 
   /* A highlighter stroke, its underline form, and the light that passes over a skeleton. */
   --color-mark: light-dark(oklch(22% .002 265 / .1), oklch(100% 0 none / .16));
@@ -212,6 +220,22 @@
   --color-category-red-line: light-dark(oklch(55% .2 28.6 / .3), oklch(80% .1032 28.6 / .3));
   --color-category-red-mark: light-dark(oklch(65.3% .2 28.6), oklch(75% .1449 28.6));
   /* category:end */
+
+  /*
+   * Identity: the colors that tell people apart, such as the pointers and carets of collaborators. Hue here
+   * is a name, not a meaning: each person keeps one of the eight for the session, always beside their name.
+   * They share one lightness, so --color-identity-ink reads on every one of them at 4.8:1 or more, and each
+   * stands out from the page at about 5:1 in light and 9:1 in dark.
+   */
+  --color-identity-1: light-dark(oklch(53% .13 25), oklch(80% .11 25));
+  --color-identity-2: light-dark(oklch(53% .12 55), oklch(80% .11 55));
+  --color-identity-3: light-dark(oklch(53% .095 85), oklch(80% .11 85));
+  --color-identity-4: light-dark(oklch(53% .13 145), oklch(80% .11 145));
+  --color-identity-5: light-dark(oklch(53% .085 190), oklch(80% .1 190));
+  --color-identity-6: light-dark(oklch(53% .13 245), oklch(80% .1 245));
+  --color-identity-7: light-dark(oklch(53% .15 290), oklch(80% .1 290));
+  --color-identity-8: light-dark(oklch(53% .14 340), oklch(80% .11 340));
+  --color-identity-ink: light-dark(oklch(99% 0 none), oklch(20% .003 265));
 
   /*
    * Brand: indigo, kept for one moment per view. --color-brand is the face of a brand surface and
@@ -432,6 +456,33 @@
   --citation-fill-ink: var(--surface-color, var(--color-surface-inverse));
 }
 
+/*
+ * The check: a small well with a firmer edge than a surface, found at a glance, which fills with ink and
+ * shows a check or a dash. The checkbox and the checkable rows of a tree are drawn with it.
+ */
+@mixin --check-well {
+  background: var(--color-surface-inset);
+  box-shadow: var(--shadow-pressed), inset 0 0 0 .5px var(--color-line-strong);
+}
+
+@mixin --check-well-hover {
+  background: var(--color-surface-inset-hover);
+  box-shadow: var(--shadow-pressed), inset 0 0 0 .5px var(--color-text-muted);
+}
+
+@mixin --check-ink {
+  background: var(--color-surface-inverse);
+  box-shadow: var(--shadow-ink-mark);
+}
+
+@mixin --check-mark {
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M2 5.2 4.1 7.3 8 2.8' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+@mixin --check-dash {
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M2.5 5h5' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
 /* Keyboard focus: an ink outline, never a colored glow. */
 @mixin --focus-ring {
   outline: 2px solid var(--color-focus);
@@ -486,4 +537,61 @@
       }
     }
   }
+}
+
+/*
+ * The color picker's drawings. The picker chooses in OKLCH, the space every color of this theme is written in,
+ * and its behavior publishes the color it holds as four numbers on its root: --color-picker-lightness (0 to 1),
+ * --color-picker-chroma, --color-picker-hue (degrees) and --color-picker-alpha (0 to 1). These mixins are where
+ * the numbers become colors, since a component writes no color function of its own.
+ *
+ * The color held, and the same color opaque: what a swatch, the thumb and the opacity track show.
+ */
+@mixin --color-picker-color {
+  --color-picker-color: oklch(var(--color-picker-lightness) var(--color-picker-chroma) var(--color-picker-hue) / var(--color-picker-alpha));
+  --color-picker-solid: oklch(var(--color-picker-lightness) var(--color-picker-chroma) var(--color-picker-hue));
+}
+
+/*
+ * The hue track: the circle of hues at one lightness and chroma, a stop every 30°, so the chord Oklab draws from
+ * one stop to the next stays within 4% of the circle. These stops are the hue wheel itself, the one drawing here
+ * that does not follow the color held. --color-picker-run turns it around right to left.
+ */
+@mixin --color-picker-hues {
+  --slider-background: linear-gradient(var(--color-picker-run, 90deg), oklch(72% .15 0), oklch(72% .15 30), oklch(72% .15 60), oklch(72% .15 90), oklch(72% .15 120), oklch(72% .15 150), oklch(72% .15 180), oklch(72% .15 210), oklch(72% .15 240), oklch(72% .15 270), oklch(72% .15 300), oklch(72% .15 330), oklch(72% .15 360));
+}
+
+/*
+ * The field: lightness from 100% at the top to 0 at the bottom and chroma from 0 to .37 (as far as Display P3
+ * reaches) along the line, at the hue held. A gradient runs along one axis only, so the field is drawn in rows,
+ * each exact along the line: grey to .37 at the row's lightness, interpolated in Oklab, which keeps the hue.
+ * --color-picker-field draws nine rows at every eighth of the lightness; --color-picker-field-between draws the
+ * eight halfway between them, which the stylesheet lays over the first under a mask that rises and falls from
+ * one row to the next. The first rows reach a pixel past their eighth, where the rows between them are whole, so
+ * no seam shows when an edge falls between two pixels; and the field stays within a just noticeable difference
+ * of the color under the thumb. The browser fits a row's colors to the screen as it fits the thumb's own.
+ */
+@mixin --color-picker-field {
+  background:
+    linear-gradient(var(--color-picker-run, 90deg), oklch(100% 0 var(--color-picker-hue)), oklch(100% .37 var(--color-picker-hue))) 0 0 / 100% calc(6.25% + 1px) no-repeat,
+    linear-gradient(var(--color-picker-run, 90deg), oklch(87.5% 0 var(--color-picker-hue)), oklch(87.5% .37 var(--color-picker-hue))) 0 7.1429% / 100% calc(12.5% + 1px) no-repeat,
+    linear-gradient(var(--color-picker-run, 90deg), oklch(75% 0 var(--color-picker-hue)), oklch(75% .37 var(--color-picker-hue))) 0 21.4286% / 100% calc(12.5% + 1px) no-repeat,
+    linear-gradient(var(--color-picker-run, 90deg), oklch(62.5% 0 var(--color-picker-hue)), oklch(62.5% .37 var(--color-picker-hue))) 0 35.7143% / 100% calc(12.5% + 1px) no-repeat,
+    linear-gradient(var(--color-picker-run, 90deg), oklch(50% 0 var(--color-picker-hue)), oklch(50% .37 var(--color-picker-hue))) 0 50% / 100% calc(12.5% + 1px) no-repeat,
+    linear-gradient(var(--color-picker-run, 90deg), oklch(37.5% 0 var(--color-picker-hue)), oklch(37.5% .37 var(--color-picker-hue))) 0 64.2857% / 100% calc(12.5% + 1px) no-repeat,
+    linear-gradient(var(--color-picker-run, 90deg), oklch(25% 0 var(--color-picker-hue)), oklch(25% .37 var(--color-picker-hue))) 0 78.5714% / 100% calc(12.5% + 1px) no-repeat,
+    linear-gradient(var(--color-picker-run, 90deg), oklch(12.5% 0 var(--color-picker-hue)), oklch(12.5% .37 var(--color-picker-hue))) 0 92.8571% / 100% calc(12.5% + 1px) no-repeat,
+    linear-gradient(var(--color-picker-run, 90deg), oklch(0% 0 var(--color-picker-hue)), oklch(0% .37 var(--color-picker-hue))) 0 100% / 100% calc(6.25% + 1px) no-repeat;
+}
+
+@mixin --color-picker-field-between {
+  background:
+    linear-gradient(var(--color-picker-run, 90deg), oklch(93.75% 0 var(--color-picker-hue)), oklch(93.75% .37 var(--color-picker-hue))) 0 0 / 100% 12.5% no-repeat,
+    linear-gradient(var(--color-picker-run, 90deg), oklch(81.25% 0 var(--color-picker-hue)), oklch(81.25% .37 var(--color-picker-hue))) 0 14.2857% / 100% 12.5% no-repeat,
+    linear-gradient(var(--color-picker-run, 90deg), oklch(68.75% 0 var(--color-picker-hue)), oklch(68.75% .37 var(--color-picker-hue))) 0 28.5714% / 100% 12.5% no-repeat,
+    linear-gradient(var(--color-picker-run, 90deg), oklch(56.25% 0 var(--color-picker-hue)), oklch(56.25% .37 var(--color-picker-hue))) 0 42.8571% / 100% 12.5% no-repeat,
+    linear-gradient(var(--color-picker-run, 90deg), oklch(43.75% 0 var(--color-picker-hue)), oklch(43.75% .37 var(--color-picker-hue))) 0 57.1429% / 100% 12.5% no-repeat,
+    linear-gradient(var(--color-picker-run, 90deg), oklch(31.25% 0 var(--color-picker-hue)), oklch(31.25% .37 var(--color-picker-hue))) 0 71.4286% / 100% 12.5% no-repeat,
+    linear-gradient(var(--color-picker-run, 90deg), oklch(18.75% 0 var(--color-picker-hue)), oklch(18.75% .37 var(--color-picker-hue))) 0 85.7143% / 100% 12.5% no-repeat,
+    linear-gradient(var(--color-picker-run, 90deg), oklch(6.25% 0 var(--color-picker-hue)), oklch(6.25% .37 var(--color-picker-hue))) 0 100% / 100% 12.5% no-repeat;
 }

@@ -17,7 +17,8 @@ const signature = (options?: object) => Object.entries(options ?? {}).map(([name
  * `on` holds listeners for events of the root, such as the `change` a behavior dispatches when a code is
  * complete. They hear an event after the model has, so what they say is said of the value the model holds.
  *
- * Returns a function that reads the behavior's value as it is now.
+ * Returns a function that reads the behavior's value as it is now. Its `handle` gives what the behavior
+ * returned, for a handle with more than a `value`.
  */
 export function useBehavior<E extends HTMLElement, O extends object, V = never>(
   root: Readonly<ShallowRef<E | null>>,
@@ -83,5 +84,5 @@ export function useBehavior<E extends HTMLElement, O extends object, V = never>(
   // Rows written again from data carry the first value's attributes; the model goes over them.
   onUpdated(write)
 
-  return () => handle?.value
+  return Object.assign(() => handle?.value, { handle: () => handle })
 }

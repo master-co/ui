@@ -5,7 +5,7 @@
   "tier": "component",
   "category": "Overlays",
   "description": "A native modal on an overlay sheet, opened and closed without script.",
-  "use": "A decision or a short task that must be finished or dismissed before the page is used again: confirm a destructive act, fill a short form. With dialog-drawer it is a side panel for filters, details or navigation; with dialog-sheet it is a panel from the bottom edge on a small screen.",
+  "use": "A decision or a short task that must be finished or dismissed before the page is used again: confirm a destructive act, fill a short form. With dialog-drawer it is a side panel for filters, details or navigation; with dialog-sheet it is a panel from the bottom edge on a small screen. Add dialog-swipe to a drawer or a sheet that should follow a finger and be let go of to close, and dialog-detents to a sheet that should also rest at half height.",
   "instead": [
     { "when": "The content belongs to one button and the page stays usable around it", "use": "popover" },
     { "when": "It is a list of actions opened from a button", "use": "menu" },
@@ -15,17 +15,25 @@
     { "when": "The overlay holds one picture and nothing to decide", "use": "lightbox" }
   ],
   "composes": ["button"],
-  "script": "none",
+  "script": "optional",
+  "behavior": "drawer",
   "keyboard": [
     { "keys": "Enter, Space", "action": "On a button with commandfor and command=\"show-modal\": open the dialog and move focus into it, to the element with autofocus when there is one" },
     { "keys": "Tab, Shift+Tab", "action": "Move between the controls inside the dialog; the page behind it is inert" },
     { "keys": "Escape", "action": "Close the dialog and return focus to the button that opened it" },
-    { "keys": "Enter", "action": "In a form with method=\"dialog\": submit it, which closes the dialog and sets its returnValue" }
+    { "keys": "Enter", "action": "In a form with method=\"dialog\": submit it, which closes the dialog and sets its returnValue" },
+    { "keys": "Enter, Space", "action": "On the dialog-handle of a sheet with dialog-detents, once the drawer behavior is attached: move the sheet to the other rest, half or full height" },
+    { "keys": "ArrowUp", "action": "On the dialog-handle of a sheet with dialog-detents: grow the sheet to full height" },
+    { "keys": "ArrowDown", "action": "On the dialog-handle of a sheet with dialog-detents: shrink the sheet to half height" }
   ],
   "platform": [
     { "feature": "commandfor with command=\"show-modal\" and command=\"close\" (invoker commands)", "fallback": "Call dialog.showModal() and dialog.close() from a click handler; the stylesheet is the same" },
     { "feature": "closedby=\"any\" (light dismiss)", "fallback": "A click on the scrim does nothing; Escape and the close buttons still close the dialog" },
-    { "feature": "@starting-style and transition-behavior: allow-discrete", "fallback": "The dialog and its scrim appear and leave at once, without the fade" }
+    { "feature": "@starting-style and transition-behavior: allow-discrete", "fallback": "The dialog and its scrim appear and leave at once, without the fade" },
+    { "feature": "Scroll snapping on the track of a dialog-swipe (the browser follows the hand, carries a fling and settles on a rest)", "fallback": "Baseline everywhere. A mouse cannot scroll by dragging, so the drawer behavior scrolls the track for it" },
+    { "feature": "@media (scripting: enabled) for the gone rest of a dialog-swipe", "fallback": "Without scripting, or before the media feature is known, a panel let go of past its edge springs back; Escape and the close buttons close the dialog" },
+    { "feature": "scroll-initial-target on the half rest of dialog-detents", "fallback": "The sheet opens at full height until the drawer behavior moves it to half height; without the behavior it stays at full height" },
+    { "feature": "The drawer behavior, for the scrim of a dialog-swipe", "fallback": "The scrim does not thin as the panel leaves; it stays until the dialog closes, then fades" }
   ],
   "classes": [
     { "name": "dialog", "kind": "root", "elements": ["dialog"], "label": true, "description": "The overlay sheet, on a dialog element named with aria-labelledby or aria-label. It is 28rem wide and keeps 1rem clear of the viewport" },
@@ -34,6 +42,10 @@
     { "name": "dialog-drawer", "kind": "modifier", "of": "dialog", "exclusive": "position", "description": "A panel on the inline-end edge, 24rem wide, for work that keeps the page in view. It floats 8px inside the viewport and slides in from the edge it rests on" },
     { "name": "dialog-drawer-start", "kind": "modifier", "of": "dialog", "description": "With dialog-drawer: the panel rests on the inline-start edge, 18rem wide, where navigation lives" },
     { "name": "dialog-sheet", "kind": "modifier", "of": "dialog", "exclusive": "position", "description": "A panel that rises from the bottom edge, with square lower corners, clear of the home indicator" },
+    { "name": "dialog-swipe", "kind": "modifier", "of": "dialog", "description": "With dialog-drawer or dialog-sheet: the dialog becomes a transparent track as large as the viewport, and its dialog-panel follows a finger, a trackpad, a wheel or a mouse and is let go of to close. Attach the drawer behavior" },
+    { "name": "dialog-detents", "kind": "modifier", "of": "dialog", "description": "With dialog-sheet and dialog-swipe: the sheet is as tall as it may be, opens showing half the viewport and rests there or at full height" },
+    { "name": "dialog-panel", "kind": "part", "of": "dialog", "description": "In a dialog-swipe, the drawer or the sheet itself: it wears the material and holds the header, the body, the footer and the close button" },
+    { "name": "dialog-handle", "kind": "part", "of": "dialog", "description": "A grab handle: a short groove in a sheet's top edge, at the start of its dialog-panel. A button named for what it does in a sheet with dialog-detents, where the behavior moves the sheet with it and sets aria-expanded; otherwise a div with aria-hidden=\"true\"" },
     { "name": "dialog-header", "kind": "part", "of": "dialog", "description": "Holds the title and the description at the top of the sheet" },
     { "name": "dialog-title", "kind": "part", "of": "dialog", "description": "The title; point the dialog's aria-labelledby at it" },
     { "name": "dialog-description", "kind": "part", "of": "dialog", "description": "A quiet sentence under the title that says what the title means" },
@@ -43,12 +55,14 @@
   ],
   "states": [
     { "on": "dialog", "name": "open", "mark": "open", "description": "Set by the browser when the dialog is shown. Do not write it in markup: a dialog that starts with open is not modal" },
-    { "on": "dialog", "name": "modal", "mark": ":modal", "description": "Opened with show-modal or showModal(): the page behind it does not scroll" }
+    { "on": "dialog", "name": "modal", "mark": ":modal", "description": "Opened with show-modal or showModal(): the page behind it does not scroll" },
+    { "on": "dialog-handle", "name": "held", "mark": ":active", "description": "Held by a pointer: the groove takes ink, and while a fine pointer holds the panel the track stops snapping" }
   ],
   "properties": [
     { "name": "--dialog-width", "default": "28rem", "description": "Preferred width" },
     { "name": "--dialog-padding", "default": "1.5rem", "description": "Padding around the parts" },
-    { "name": "--dialog-radius", "default": "1.25rem", "description": "Corner radius" }
+    { "name": "--dialog-radius", "default": "1.25rem", "description": "Corner radius" },
+    { "name": "--dialog-scrim", "description": "In a dialog-swipe, how much of the scrim is left, from 1 (all of it, when unset) down to 0 as the panel leaves. The drawer behavior writes it" }
   ],
   "example": "<button type=\"button\" class=\"btn\" commandfor=\"delete-project\" command=\"show-modal\">Delete project</button>\n\n<dialog id=\"delete-project\" class=\"dialog\" closedby=\"any\" aria-labelledby=\"delete-project-title\">\n  <header class=\"dialog-header\">\n    <h2 class=\"dialog-title\" id=\"delete-project-title\">Delete this project?</h2>\n    <p class=\"dialog-description\">Atlas and its 14 deployments are removed, and its domains stop resolving at once.</p>\n  </header>\n  <footer class=\"dialog-footer\">\n    <button type=\"button\" class=\"btn\" commandfor=\"delete-project\" command=\"close\" autofocus>Cancel</button>\n    <button type=\"button\" class=\"btn btn-primary\" commandfor=\"delete-project\" command=\"close\">Delete project</button>\n  </footer>\n</dialog>"
 }

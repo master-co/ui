@@ -2,6 +2,9 @@
  * Rating: a score out of a few stars, as a group of native radios drawn as stars in ink.
  * :has() fills every star up to the checked one, and up to the one under the pointer as a preview, so the
  * markup is five radios in reading order with no reversed rows and no script.
+ * rating-half gives each star two radios, each drawn as one half of it, so the score moves by halves with the
+ * same keys and the same fill. rating-display draws a score that is not a choice, such as an average of 4.3:
+ * one element, the stars cut by a repeated mask and filled from the start to the score, the last one in part.
  */
 @layer components {
   .rating {
@@ -24,6 +27,51 @@
 
     &.rating-sm { --rating-size: 1rem; }
     &.rating-lg { --rating-size: 1.5rem; }
+
+    /* Two radios to a star: the gap stands between stars, not between the halves of one. */
+    &.rating-half {
+      gap: 0;
+    }
+
+    /*
+     * A score to read, not to set: no radios, the element is the picture. Each star stands in a tile one gap
+     * wider than itself, so the fill runs whole tiles for the whole stars and the star's own width for the
+     * fraction of the last. Half a gap overhangs each end and the margin takes it back.
+     */
+    &.rating-display {
+      --rating-max: 5;
+      --rating-star: var(--rating-size);
+      --rating-tile: calc(var(--rating-star) + .125rem);
+      --rating-fill: calc(var(--rating-value, 0) * var(--rating-tile));
+      display: inline-block;
+      width: calc(var(--rating-max) * var(--rating-tile));
+      height: var(--rating-star);
+      margin-inline: -.0625rem;
+      background: linear-gradient(90deg, var(--color-text-strong) var(--rating-fill), var(--color-line-strong) 0);
+      mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2.6c.4 0 .8.2 1 .6l2.5 5.2 5.7.8c.9.1 1.3 1.3.6 1.9l-4.1 4 1 5.7c.2.9-.8 1.6-1.6 1.2L12 19.3l-5.1 2.7c-.8.4-1.8-.3-1.6-1.2l1-5.7-4.1-4c-.7-.6-.3-1.8.6-1.9l5.7-.8L11 3.2c.2-.4.6-.6 1-.6Z'/%3E%3C/svg%3E") 0 0 / var(--rating-tile) var(--rating-star) repeat-x;
+
+      /* Exact where round() exists: whole tiles, half a gap, then the fraction of one star. */
+      @supports (width: round(down, 1px, 1px)) {
+        --rating-fill: calc(round(down, var(--rating-value, 0), 1) * var(--rating-tile) + .0625rem + (var(--rating-value, 0) - round(down, var(--rating-value, 0), 1)) * var(--rating-star));
+      }
+
+      &:dir(rtl) {
+        background: linear-gradient(270deg, var(--color-text-strong) var(--rating-fill), var(--color-line-strong) 0);
+      }
+
+      @media (pointer: coarse) {
+        --rating-star: max(var(--rating-size), 1.75rem);
+      }
+
+      @media (forced-colors: active) {
+        forced-color-adjust: none;
+        background: linear-gradient(90deg, Highlight var(--rating-fill), GrayText 0);
+
+        &:dir(rtl) {
+          background: linear-gradient(270deg, Highlight var(--rating-fill), GrayText 0);
+        }
+      }
+    }
 
     /* The 44px targets of a touch screen stand edge to edge. */
     @media (pointer: coarse) {
@@ -90,6 +138,49 @@
 
       &:is(:checked, :has(~ .rating-input:checked)) {
         background: Highlight;
+      }
+    }
+  }
+
+  /*
+   * Half stars. A radio is half a star wide and shows one half of a whole star centred on the seam between
+   * the pair: the first of each pair its start half, the second its end half. The fill and the preview are
+   * the ones above, so a score of 3.5 fills seven halves.
+   */
+  .rating-half .rating-input {
+    --rating-star: var(--rating-size);
+    width: calc(var(--rating-star) / 2);
+    mask-size: var(--rating-star);
+    mask-position: calc(100% + var(--rating-star) / 2) center;
+
+    &:nth-child(even of .rating-input) {
+      mask-position: calc(var(--rating-star) / -2) center;
+    }
+
+    &:nth-child(odd of .rating-input):not(:nth-child(1 of .rating-input)) {
+      margin-inline-start: .125rem;
+    }
+
+    /* Right to left the pair turns around: the first radio is the half on the right. */
+    &:dir(rtl) {
+      mask-position: calc(var(--rating-star) / -2) center;
+
+      &:nth-child(even of .rating-input) {
+        mask-position: calc(100% + var(--rating-star) / 2) center;
+      }
+    }
+
+    /* On a touch screen a half is 24px wide and the 44px of height, so a star is a 48px target. */
+    @media (pointer: coarse) {
+      --rating-star: max(var(--rating-size), 1.75rem);
+      width: max(calc(var(--rating-size) / 2), .875rem);
+
+      &:not(:disabled) {
+        width: 1.5rem;
+      }
+
+      &:nth-child(odd of .rating-input):not(:nth-child(1 of .rating-input)) {
+        margin-inline-start: 0;
       }
     }
   }

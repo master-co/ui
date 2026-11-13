@@ -4,8 +4,8 @@
   "title": "Calendar",
   "tier": "component",
   "category": "Forms",
-  "description": "A month of days to pick from, with ranges.",
-  "use": "Picking a day or a range of days in the page, with the week in view. It is an ARIA grid of buttons: the stylesheet draws every state, and the script supplies the dates, the month buttons and the keys. It has no surface of its own: put it in a card, or in a popover to make a date picker.",
+  "description": "A month of days to pick from: one day, a range or several days, a month or more at a time.",
+  "use": "Picking a day, a range of days or several separate days in the page, with the week in view. It is an ARIA grid of buttons: the stylesheet draws every state, and the script supplies the dates, the month buttons and the keys. Its title can jump to the months of the year and the years of a decade, and two months side by side show a range across them. It has no surface of its own: put it in a card, or in a popover to make a date picker.",
   "instead": [
     { "when": "A plain date is all the form needs, or the reader is on a phone: a native date input opens the picker of the device", "use": "input" },
     { "when": "The value is a time, picked by touch", "use": "wheel" }
@@ -14,31 +14,40 @@
   "script": "required",
   "behavior": "calendar",
   "keyboard": [
-    { "keys": "ArrowLeft, ArrowRight", "action": "Move focus to the day before or the day after; the other way around from right to left" },
-    { "keys": "ArrowUp, ArrowDown", "action": "Move focus to the same weekday of the week before or after" },
-    { "keys": "Home, End", "action": "Move focus to the first or the last day of the week" },
-    { "keys": "PageUp, PageDown", "action": "Show the month before or after and move focus to the same day in it, or to its last day when it is shorter" },
+    { "keys": "ArrowLeft, ArrowRight", "action": "Move focus to the day before or the day after, the other way around from right to left; from the last day of a month to the first of the next, in the grid beside it when several months are shown. In the months or the years, to the one before or after" },
+    { "keys": "ArrowUp, ArrowDown", "action": "Move focus to the same weekday of the week before or after; in the months or the years, to the one three before or after, in the row above or below" },
+    { "keys": "Home, End", "action": "Move focus to the first or the last day of the week, or of the row in the months or the years" },
+    { "keys": "PageUp, PageDown", "action": "Show the month before or after and move focus to the same day in it, or to its last day when it is shorter. In the months or the years, show the year or the decade before or after" },
     { "keys": "Shift+PageUp, Shift+PageDown", "action": "Show the same month of the year before or after and move focus to the same day in it" },
-    { "keys": "Enter, Space", "action": "Choose the day that has focus; the day is a button, so the browser turns the key into its click" },
-    { "keys": "Tab", "action": "Enters the grid at the chosen day, or at today, or at the first day of a month that holds neither; the grid is one tab stop" }
+    { "keys": "Enter, Space", "action": "Choose the day that has focus, or turn it on or off with multiple; on a month or a year, show its days or its months. The cell is a button, so the browser turns the key into its click" },
+    { "keys": "Escape", "action": "In the months or the years, go back to the days, with focus on the day it had. In the days it is left to what holds the calendar, such as a popover" },
+    { "keys": "Tab", "action": "Enters the grid at the chosen day, the first of them, or at today, or at the first day of the months shown when they hold neither; the grids of several months are one tab stop together" }
   ],
   "classes": [
-    { "name": "calendar", "kind": "root", "description": "The month: a header over a grid of days" },
-    { "name": "calendar-header", "kind": "part", "of": "calendar", "description": "The row over the grid: a button to the month before, the title, a button to the month after" },
-    { "name": "calendar-title", "kind": "part", "of": "calendar", "description": "The name of the month, centered between the two buttons; give it aria-live=\"polite\" so a change of month is announced" },
-    { "name": "calendar-grid", "kind": "part", "of": "calendar", "description": "The seven-column grid, with role=\"grid\" and labelled by the title" },
-    { "name": "calendar-week", "kind": "part", "of": "calendar", "description": "A row on the grid's columns, with role=\"row\": the weekday names, or a week of days" },
+    { "name": "calendar", "kind": "root", "description": "The calendar: a header over a grid of days, or a calendar-month for each of several months side by side" },
+    { "name": "calendar-month", "kind": "part", "of": "calendar", "description": "One of several months side by side: its own calendar-header and calendar-grid. The days outside it are left blank, since the month beside it shows them; the months wrap to a column where the row has no room" },
+    { "name": "calendar-header", "kind": "part", "of": "calendar", "description": "The row over the grid: a button to the month before, the title, a button to the month after. With several months, the first month's header holds the button before and the last one's the button after" },
+    { "name": "calendar-title", "kind": "part", "of": "calendar", "description": "The name of the month, centered between the two buttons; give it aria-live=\"polite\" so a change of month is announced. It may hold a calendar-title-button" },
+    { "name": "calendar-title-button", "kind": "part", "of": "calendar", "elements": ["button"], "description": "The title as a button, in a calendar of one month: it shows the twelve months of the year in the grid, then the years of the decade, where it is disabled. The behavior writes the title into it" },
+    { "name": "calendar-grid", "kind": "part", "of": "calendar", "description": "The seven-column grid, with role=\"grid\" and labelled by the title; aria-multiselectable=\"true\" when a range or several days can be chosen. In the months or the years it has three columns" },
+    { "name": "calendar-week", "kind": "part", "of": "calendar", "description": "A row on the grid's columns, with role=\"row\": the weekday names, a week of days, or three months or years" },
     { "name": "calendar-weekday", "kind": "part", "of": "calendar", "description": "A column heading with role=\"columnheader\"; give it the full name of the day as aria-label" },
     { "name": "calendar-day", "kind": "part", "of": "calendar", "elements": ["button"], "description": "A day, on a button with role=\"gridcell\". One day is in the tab order; the others have tabindex=\"-1\". Its value is its date as YYYY-MM-DD: the behavior writes it, and reads it from days that something else wrote" },
     { "name": "calendar-day-outside", "kind": "modifier", "of": "calendar-day", "description": "A day of the month before or after, shown in muted ink to complete a week" },
     { "name": "calendar-day-range-start", "kind": "modifier", "of": "calendar-day", "description": "The first day of a range: an ink day on the half of the band that faces the range. With calendar-day-range-end on the same day, a range of one day" },
     { "name": "calendar-day-range", "kind": "modifier", "of": "calendar-day", "description": "A day between the ends of a range: a chip-toned band from cell to cell, rounded where a week ends" },
-    { "name": "calendar-day-range-end", "kind": "modifier", "of": "calendar-day", "description": "The last day of a range: an ink day on the half of the band that faces the range" }
+    { "name": "calendar-day-range-end", "kind": "modifier", "of": "calendar-day", "description": "The last day of a range: an ink day on the half of the band that faces the range" },
+    { "name": "calendar-period", "kind": "part", "of": "calendar", "elements": ["button"], "description": "A month or a year, on a button with role=\"gridcell\" in the grid the title jumps to, drawn in the day's material and four rows as tall as six weeks. Its value is YYYY-MM for a month and YYYY for a year" },
+    { "name": "calendar-period-outside", "kind": "modifier", "of": "calendar-period", "description": "The year before or after the decade, shown in muted ink to complete the rows" }
   ],
   "states": [
     { "on": "calendar-day", "name": "today", "mark": "aria-current=\"date\"", "description": "A dot under the number, kept when the day is chosen" },
-    { "on": "calendar-day", "name": "chosen", "mark": "aria-selected=\"true\"", "description": "Fills with ink, the way a checked checkbox does. Every day of a range carries it. aria-pressed=\"true\" draws the same" },
-    { "on": "calendar-day", "name": "unavailable", "mark": "disabled", "description": "Or aria-disabled=\"true\": disabled ink" }
+    { "on": "calendar-day", "name": "chosen", "mark": "aria-selected=\"true\"", "description": "Fills with ink, the way a checked checkbox does. Every day of a range carries it, and every day chosen with multiple. aria-pressed=\"true\" draws the same" },
+    { "on": "calendar-day", "name": "unavailable", "mark": "disabled", "description": "Or aria-disabled=\"true\": disabled ink" },
+    { "on": "calendar-period", "name": "current", "mark": "aria-current=\"date\"", "description": "The month or the year of today: a dot under its name" },
+    { "on": "calendar-period", "name": "chosen", "mark": "aria-selected=\"true\"", "description": "The month or the year that holds a chosen day: ink" },
+    { "on": "calendar-period", "name": "unavailable", "mark": "disabled", "description": "No day of it is between min and max: disabled ink" },
+    { "on": "calendar-title-button", "name": "at the top", "mark": "disabled", "description": "In the years, where the title goes no further: it keeps the title's ink" }
   ],
   "properties": [
     { "name": "--calendar-cell", "default": "2.25rem", "description": "Width and height of a day; 2.75rem on touch screens" },

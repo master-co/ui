@@ -6,11 +6,20 @@
     /** Whether the popover is open. Bind it, or leave it out and the trigger opens it. */
     open?: boolean
     onOpenChange?: (open: boolean) => void
-    /** The button that opens the popover: spread what it is given on a button of your own. */
-    trigger?: Snippet<[{ popovertarget: string }]>
-    /** `auto` closes on a press outside and on Esc; `manual` stays until it is closed. */
-    mode?: 'auto' | 'manual'
+    /**
+     * The button that opens the popover: spread what it is given on a button of your own. In `hint` mode it
+     * is the link or the button that shows it on hover and on focus, and is given `interestfor`.
+     */
+    trigger?: Snippet<[PopoverTriggerAttributes]>
+    /**
+     * `auto` closes on a press outside and on Esc; `manual` stays until it is closed; `hint` is a preview the
+     * trigger shows while it is hovered or focused, and does not close another popover that is open.
+     */
+    mode?: 'auto' | 'manual' | 'hint'
   }
+
+  /** What the trigger is given: `popovertarget` to open the popover, or `interestfor` to show a hint. */
+  export type PopoverTriggerAttributes = { popovertarget: string } | { interestfor: string }
 </script>
 
 <script lang="ts">
@@ -46,5 +55,5 @@
   A popover. The browser opens it from the trigger, places it against the trigger and dismisses it; this
   component only opens and closes it from `open`, and says when the browser did.
 -->
-{@render trigger?.({ popovertarget: name })}
+{@render trigger?.(mode === 'hint' ? { interestfor: name } : { popovertarget: name })}
 <div id={name} popover={mode} class={['popover', className]} {@attach presence} {...root}>{@render children?.()}</div>

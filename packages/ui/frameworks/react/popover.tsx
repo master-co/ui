@@ -5,11 +5,20 @@ export interface PopoverProps extends Omit<ComponentProps<'div'>, 'popover'> {
   /** Whether the popover is open, when this component is told. Leave it out and the trigger opens it. */
   open?: boolean
   onOpenChange?: (open: boolean) => void
-  /** The button that opens the popover: spread what it is given on a button of your own. */
-  trigger?: (attributes: { popoverTarget: string }) => ReactNode
-  /** `auto` closes on a press outside and on Esc; `manual` stays until it is closed. */
-  mode?: 'auto' | 'manual'
+  /**
+   * The button that opens the popover: spread what it is given on a button of your own. In `hint` mode it
+   * is the link or the button that shows it on hover and on focus, and is given `interestfor`.
+   */
+  trigger?: (attributes: PopoverTriggerAttributes) => ReactNode
+  /**
+   * `auto` closes on a press outside and on Esc; `manual` stays until it is closed; `hint` is a preview the
+   * trigger shows while it is hovered or focused, and does not close another popover that is open.
+   */
+  mode?: 'auto' | 'manual' | 'hint'
 }
+
+/** What the trigger is given: `popoverTarget` to open the popover, or `interestfor` to show a hint. */
+export type PopoverTriggerAttributes = { popoverTarget: string } | { interestfor: string }
 
 /**
  * A popover. The browser opens it from the trigger, places it against the trigger and dismisses it; this
@@ -49,7 +58,7 @@ export function Popover({ open, onOpenChange, trigger, mode = 'auto', className,
 
   return (
     <>
-      {trigger?.({ popoverTarget: name })}
+      {trigger?.(mode === 'hint' ? { interestfor: name } : { popoverTarget: name })}
       <div id={name} popover={mode} className={className ? `popover ${className}` : 'popover'} ref={element} {...root}>{children}</div>
     </>
   )

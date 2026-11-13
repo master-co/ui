@@ -3,6 +3,21 @@
  * The browser supplies the top layer, the focus trap, Escape and, with closedby="any", light dismiss.
  * The stylesheet supplies the overlay sheet, the scrim, and the motion in and out through @starting-style
  * and discrete transitions. Geometry: a 20px corner, 24px of padding, 10px controls.
+ *
+ * Swipe: with dialog-swipe a drawer or a sheet follows a finger, a trackpad or a wheel, and is let go of to
+ * close. The dialog becomes the track the panel moves on: as large as the viewport, transparent, scrolled
+ * and snapped, holding the dialog-panel, which wears the material, and an empty stretch past the edge the
+ * panel rests on. Scroll snapping makes the panel rest open, at half height in a sheet with dialog-detents,
+ * or gone past the edge; following the hand, the momentum and the fling are the browser's own. The track is
+ * a reversed flex line where the panel rests at the end, so it starts scrolled to the open rest with no
+ * script. The drawer behavior closes the dialog once the panel has gone, gives closedby="any" back on the
+ * track, lets a mouse drag the panel (a mouse cannot scroll by dragging; the track stops snapping while a
+ * fine pointer holds the panel), writes how much scrim is left to --dialog-scrim and gives the handle its
+ * keys. The scrim is not a scroll-driven animation: in a reversed scroller Chromium and WebKit run scroll
+ * and view timelines in opposite directions. Fallbacks: without scripting the gone rest is left out, so a
+ * panel let go of springs back and Escape and the close buttons close it; without the behavior the scrim
+ * stays whole until the dialog closes; without scroll-initial-target (outside Chromium) a sheet with
+ * detents opens at full height until the behavior puts it at half.
  */
 @layer components {
   .dialog {
@@ -153,6 +168,100 @@
       }
     }
 
+    /*
+     * Swipe: the dialog is the track, the whole viewport, and the panel inside it is the drawer or the sheet.
+     * Only the panel takes the pointer, so a press beside it lands on the scrim, and a wheel there moves nothing.
+     * It enters and leaves as the drawer or the sheet does: the whole track slides.
+     */
+    &.dialog-swipe {
+      inset: 0;
+      width: auto;
+      height: auto;
+      max-width: none;
+      max-height: none;
+      margin: 0;
+      padding: 0;
+      gap: 0;
+      border-radius: 0;
+      overflow: auto;
+      overscroll-behavior: contain;
+      scrollbar-width: none;
+      background: transparent;
+      box-shadow: none;
+      pointer-events: none;
+
+      &::-webkit-scrollbar {
+        display: none;
+      }
+
+      /* The stretch past the edge, as large as the track: where the panel goes when it is let go of. */
+      &::after {
+        content: '';
+        flex: none;
+      }
+
+      /* The gone rest exists only where a script can close the dialog that rests there. */
+      @media (scripting: enabled) {
+        &::after {
+          scroll-snap-align: start;
+        }
+      }
+
+      @media (prefers-reduced-motion: no-preference) {
+        scroll-behavior: smooth;
+      }
+
+      /* A mouse drags the panel by scrolling the track from the behavior; the track does not snap meanwhile. */
+      @media (pointer: fine) {
+        &:has(.dialog-panel:active) {
+          scroll-snap-type: none;
+        }
+      }
+
+      @media (forced-colors: active) {
+        outline: none;
+      }
+    }
+
+    /* The scrim thins as the panel leaves: the behavior writes how much of it is left to --dialog-scrim. */
+    &.dialog-swipe::backdrop {
+      background: color-mix(in oklab, var(--color-surface-scrim) calc(var(--dialog-scrim, 1) * 100%), transparent);
+      backdrop-filter: blur(calc(var(--dialog-scrim, 1) * 3px));
+      pointer-events: auto;
+    }
+
+    /* A swiped drawer moves across: the panel rests at the inline end, the stretch lies before it. */
+    &.dialog-drawer.dialog-swipe {
+      width: auto;
+      height: auto;
+      margin: 0;
+      flex-direction: row-reverse;
+      scroll-snap-type: x mandatory;
+
+      &::after {
+        inline-size: 100%;
+      }
+    }
+
+    &.dialog-drawer.dialog-drawer-start.dialog-swipe {
+      margin: 0;
+      flex-direction: row;
+    }
+
+    /* A swiped sheet moves down: the panel rests on the bottom edge, the stretch lies above it. */
+    &.dialog-sheet.dialog-swipe {
+      width: auto;
+      max-height: none;
+      margin: 0;
+      padding: 0;
+      flex-direction: column-reverse;
+      scroll-snap-type: y mandatory;
+
+      &::after {
+        block-size: 100%;
+      }
+    }
+
     @media (prefers-reduced-motion: reduce) {
       scale: none;
       translate: none;
@@ -235,6 +344,156 @@
     position: absolute;
     top: calc(var(--dialog-padding) - .4375rem);
     inset-inline-end: calc(var(--dialog-padding) - .4375rem);
+  }
+
+  /*
+   * The panel: in a dialog-swipe, the drawer or the sheet itself. It wears the dialog's material and lays out
+   * its parts as the dialog does, and it is the container their queries measure. It clips its corners
+   * without becoming a scroller, so what it holds snaps on the track.
+   */
+  .dialog-swipe .dialog-panel {
+    --surface-color: var(--color-surface-floating);
+    position: relative;
+    container: dialog / inline-size;
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    gap: 1.25rem;
+    box-sizing: border-box;
+    padding: var(--dialog-padding) 0;
+    border-radius: calc(var(--dialog-radius) * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    overflow: clip;
+    background: var(--color-surface-floating);
+    box-shadow: var(--shadow-overlay);
+    pointer-events: auto;
+
+    @media (forced-colors: active) {
+      outline: 1px solid CanvasText;
+      outline-offset: -1px;
+    }
+  }
+
+  /* In a drawer it floats 8px inside the viewport, at the inline end or, with dialog-drawer-start, the start. */
+  .dialog-drawer .dialog-panel {
+    width: min(var(--dialog-width), calc(100% - 1rem));
+    margin: .5rem;
+    scroll-margin: .5rem;
+    scroll-snap-align: end;
+  }
+
+  .dialog-drawer-start .dialog-panel {
+    scroll-snap-align: start;
+  }
+
+  /* In a sheet it stands on the bottom edge with square lower corners, clear of the home indicator. */
+  .dialog-sheet .dialog-panel {
+    width: min(var(--dialog-width), 100%);
+    max-height: calc(100% - 3rem);
+    margin-inline: auto;
+    padding-bottom: max(var(--dialog-padding), env(safe-area-inset-bottom));
+    border-end-start-radius: 0;
+    border-end-end-radius: 0;
+    scroll-snap-align: end;
+  }
+
+  /*
+   * Detents: the sheet is as tall as it may be and also rests showing half the track, where it opens. The
+   * half rest is an empty box from the panel's top edge down half the track, snapped to the track's bottom.
+   */
+  .dialog-detents .dialog-panel {
+    height: calc(100% - 3rem);
+
+    &::before {
+      content: '';
+      position: absolute;
+      inset-block-start: 0;
+      inset-inline: 0;
+      block-size: calc((100% + 3rem) / 2);
+      pointer-events: none;
+      scroll-snap-align: end;
+      /* A fling from full height stops here; only one from half height lets the sheet go. */
+      scroll-snap-stop: always;
+      scroll-initial-target: nearest;
+    }
+  }
+
+  /* On a touch screen a drag that reaches the top of a scrolled body goes on to move the sheet. */
+  @media (pointer: coarse) {
+    .dialog-sheet.dialog-swipe .dialog-body {
+      overscroll-behavior-y: auto;
+    }
+  }
+
+  /*
+   * The grab handle: a short groove in the sheet's top edge, centered over the title. Its target is 64 by
+   * 24px, 44px tall on a touch screen. It takes ink while it is held. In a sheet with dialog-detents it is a
+   * button the behavior gives keys: it moves the sheet between half and full height and says which with
+   * aria-expanded. Elsewhere it only shows where to take hold, and is hidden from assistive technology.
+   */
+  .dialog-handle {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline: 0;
+    z-index: 1;
+    width: 4rem;
+    height: var(--dialog-padding);
+    margin: 0 auto;
+    padding: 0;
+    border: 0;
+    outline: none;
+    background: none;
+    color: inherit;
+    cursor: grab;
+    appearance: none;
+    -webkit-tap-highlight-color: transparent;
+
+    &::before {
+      content: '';
+      position: absolute;
+      inset-block-start: .5rem;
+      inset-inline: 0;
+      width: 2.25rem;
+      height: .3125rem;
+      margin-inline: auto;
+      border-radius: 999px;
+      corner-shape: round;
+      background: var(--color-line-strong);
+      transition: background-color var(--duration-quick) var(--easing-glide);
+    }
+
+    @media (hover: hover) {
+      &:hover::before {
+        background: var(--color-line-mark);
+      }
+    }
+
+    &:active {
+      cursor: grabbing;
+    }
+
+    &:active::before {
+      background: var(--color-text-muted);
+    }
+
+    &:focus-visible::before {
+      @apply --focus-ring;
+    }
+
+    @media (pointer: coarse) {
+      width: 5.5rem;
+      height: 2.75rem;
+    }
+
+    @media (forced-colors: active) {
+      &::before {
+        background: CanvasText;
+      }
+
+      &:focus-visible::before {
+        outline-color: Highlight;
+      }
+    }
   }
 
   /* While a modal dialog is open the page behind it does not scroll. */

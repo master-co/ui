@@ -5,7 +5,7 @@
   "tier": "component",
   "category": "Overlays",
   "description": "One step of a tour, pointing at the control it explains.",
-  "use": "A short explanation tied to one place on the page: what a new control does, or one step of a tour through a screen. A beacon marks the place and opens it, or a script opens the steps of a tour in turn. Keep it to a title, a sentence and a way on; the reader should be able to leave a tour at any step.",
+  "use": "A short explanation tied to one place on the page: what a new control does, or one step of a tour through a screen. A beacon marks the place and opens it, or the tour behavior opens the steps of a tour in turn. Keep it to a title, a sentence and a way on; the reader should be able to leave a tour at any step.",
   "instead": [
     {
       "when": "It is a few words that name a control, with nothing in it to act on",
@@ -28,32 +28,37 @@
     "button"
   ],
   "script": "optional",
+  "behavior": "tour",
   "keyboard": [
     {
       "keys": "Enter, Space",
-      "action": "On the beacon: open or close its coachmark. An action inside with autofocus takes focus as it opens"
+      "action": "On the beacon: open or close its coachmark. On a step of a tour: Next, Back, Skip or Done, as the button says in its value. An action inside with autofocus takes focus as a coachmark opens; a step without one takes focus itself"
     },
     {
       "keys": "Tab",
-      "action": "Move between the actions in the coachmark, and from it back to the page after the beacon"
+      "action": "Move between the actions in the coachmark, and from it back to the page after the beacon. A step does not keep focus: the page stays usable while it is open"
     },
     {
       "keys": "Escape",
-      "action": "Close a coachmark opened with popover=\"auto\" and return focus to the beacon. A tour's steps are popover=\"manual\", so the tour's script closes them on Escape"
+      "action": "Close a coachmark opened with popover=\"auto\" and return focus to the beacon. In a tour, with focus in the step: end the tour, skipped, and return focus to where it was when the tour started"
     }
   ],
   "platform": [
     {
-      "feature": "The popover attribute with popovertarget on a beacon, or showPopover({ source }) from a tour's script",
+      "feature": "The popover attribute with popovertarget on a beacon, or showPopover({ source }) from the tour behavior",
       "fallback": "Supported in all current browsers. Where the source option of showPopover() is missing, a tour's step opens without an anchor, where the browser places a popover"
     },
     {
       "feature": "CSS anchor positioning (position-area, position-try-fallbacks and anchor() with anchor-name and anchor-scope)",
-      "fallback": "The coachmark still opens and closes; it appears centered in the viewport, where the browser places any popover, and has no arrow"
+      "fallback": "The coachmark still opens and closes; it appears centered in the viewport, where the browser places any popover, and has no arrow. A tour's spotlight stays a point and dims nothing"
+    },
+    {
+      "feature": "Invoker commands: a button with command=\"--start\" and commandfor naming the tour",
+      "fallback": "The tour behavior hears the button's click itself and starts the tour"
     },
     {
       "feature": "@starting-style and transition-behavior: allow-discrete",
-      "fallback": "The coachmark appears and leaves at once, without the fade and the short slide"
+      "fallback": "The coachmark and the spotlight's scrim appear and leave at once, without the fade and the short slide"
     }
   ],
   "classes": [
@@ -96,6 +101,26 @@
       "description": "A row of small buttons along the foot, 12px from the card's edges: the first of several stands at the start (Skip), the others at the end (Back, Next). A default button reads as the action on ink, and a quiet one takes the card's ink"
     },
     {
+      "name": "coachmark-tour",
+      "kind": "root",
+      "description": "Holds the steps of a tour, each a coachmark with popover=\"manual\", in the order they are taken, and its spotlight. The tour behavior attaches to it; give it an id for the button that starts it. It draws nothing, and keeps the name of what its arrows point at to itself"
+    },
+    {
+      "name": "coachmark-spotlight",
+      "kind": "part",
+      "of": "coachmark-tour",
+      "attributes": {
+        "popover": "manual"
+      },
+      "description": "An empty popover the tour opens over each step's target, before the step: it covers the target and 4px around it, and the open step's arrow points at it wherever the step stands in the markup. By itself it draws nothing and lets the pointer through"
+    },
+    {
+      "name": "coachmark-spotlight-dim",
+      "kind": "modifier",
+      "of": "coachmark-spotlight",
+      "description": "Dims the page around the target with the scrim of a dialog, and leaves the target lit. The page under the scrim stays usable. In forced colors an outline of the system's highlight marks the target instead"
+    },
+    {
       "name": "coachmark-beacon",
       "kind": "root",
       "elements": [
@@ -117,6 +142,12 @@
       "name": "found",
       "mark": ":has(+ .coachmark:popover-open)",
       "description": "Its coachmark, right after it, is open: the ring rests as a halo"
+    },
+    {
+      "on": "coachmark-spotlight",
+      "name": "open",
+      "mark": ":popover-open",
+      "description": "Open over the current step's target; dimmed, its scrim fades in"
     }
   ],
   "properties": [
@@ -145,6 +176,18 @@
       "on": "coachmark-beacon",
       "default": ".625rem",
       "description": "The beacon dot's diameter"
+    },
+    {
+      "name": "--coachmark-spotlight-inset",
+      "on": "coachmark-spotlight",
+      "default": "4px",
+      "description": "How far the spotlight reaches past its target on every side"
+    },
+    {
+      "name": "--coachmark-spotlight-radius",
+      "on": "coachmark-spotlight",
+      "default": "var(--radius-control)",
+      "description": "The corner of the target it lights; the spotlight's corner is this plus the inset"
     }
   ],
   "example": "<button type=\"button\" class=\"coachmark-beacon\" popovertarget=\"tip-filter\" aria-label=\"What is new in Filter\"></button>\n<div id=\"tip-filter\" popover class=\"coachmark\" role=\"dialog\" aria-labelledby=\"tip-filter-title\">\n  <p class=\"coachmark-count\">New</p>\n  <h2 class=\"coachmark-title\" id=\"tip-filter-title\">Filter by author</h2>\n  <p class=\"coachmark-text\">Narrow the deployments to the ones you shipped.</p>\n  <div class=\"coachmark-actions\">\n    <button type=\"button\" class=\"btn btn-sm\" popovertarget=\"tip-filter\" popovertargetaction=\"hide\" autofocus>Got it</button>\n  </div>\n</div>"

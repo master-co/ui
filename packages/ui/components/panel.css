@@ -1,0 +1,247 @@
+/*
+ * Panel: a floating surface the reader moves, resizes, folds to its header and closes, while the page under it
+ * stays usable: layers beside a canvas, a color picker, an inspector, a chat. It is a popover="manual" in the
+ * top layer, so it floats over everything without a z-index; panels stack in the order they were shown, and the
+ * behavior brings the one the reader reaches into to the front.
+ *
+ * Material: the floating sheet of a popover, with the floating shadow, and the overlay shadow while it is held,
+ * so a panel being dragged rises a step. The header is a bar of the same sheet over a hairline; its whole face is
+ * one button, the handle, so a press anywhere on the bar that is not a control picks the panel up, and focus on
+ * the handle rings the panel the keys move.
+ *
+ * Geometry: the header holds small (32px) buttons 6px from its edges, so the panel's corner is a small control's
+ * corner plus that inset, 14px. The panel is 20rem wide unless told otherwise, never narrower than 12rem.
+ *
+ * Placement is the stylesheet's. A script writes what only an event knows, the place and the size asked for
+ * (--panel-x, --panel-y, --panel-width, --panel-height); the stylesheet clamps them to the viewport, the box a
+ * fixed element's percentages are read from, so a panel is never wider or taller than the window, the whole of
+ * its width stays in it and its header can never leave it. The window narrowing pushes a panel in; widening it
+ * again lets the panel go back to the place it was given. Without a place, a panel opens at the top end corner.
+ */
+@layer components {
+  .panel {
+    --panel-x: 100%;
+    --panel-y: 0px;
+    --panel-width: 20rem;
+    --panel-height: auto;
+    --panel-min-width: 12rem;
+    --panel-gutter: .5rem;
+    --panel-inset: .375rem;
+    --panel-radius: calc(var(--radius-control-sm) + var(--panel-inset));
+    --panel-padding: 1rem;
+    /* The header's height: a small button and the inset around it. The part of the panel that never leaves the viewport. */
+    --panel-bar: calc(2rem + 2 * var(--panel-inset));
+    /* The width it is drawn at: the width asked for, no less than the least, no more than the viewport gives. */
+    --panel-drawn-width: min(max(var(--panel-min-width), var(--panel-width)), 100% - 2 * var(--panel-gutter));
+    --surface-color: var(--color-surface-floating);
+    position: fixed;
+    inset: auto;
+    top: clamp(var(--panel-gutter), var(--panel-y), 100% - var(--panel-bar) - var(--panel-gutter));
+    left: clamp(var(--panel-gutter), var(--panel-x), 100% - var(--panel-drawn-width) - var(--panel-gutter));
+    flex-direction: column;
+    width: var(--panel-drawn-width);
+    height: var(--panel-height);
+    min-height: var(--panel-bar);
+    max-height: calc(100% - 2 * var(--panel-gutter));
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: calc(var(--panel-radius) * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    /* The header's tone and the body's scroll are finished by the panel's corner. */
+    overflow: clip;
+    background: var(--color-surface-floating);
+    color: var(--color-text-body);
+    box-shadow: var(--shadow-floating);
+    font-size: .875rem;
+    line-height: 1.5;
+    transform-origin: top;
+    @apply --pop;
+    transition-property: opacity, scale, box-shadow, overlay, display;
+
+    /* With no place given, a panel from right to left opens at the top left. */
+    &:dir(rtl) {
+      --panel-x: 0px;
+    }
+
+    &:popover-open {
+      display: flex;
+    }
+
+    /* Held by its handle or its corner: it rises to the overlay shadow, and the drag selects nothing. */
+    &:has(.panel-handle:active, .panel-resize:active) {
+      box-shadow: var(--shadow-overlay);
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    /* The keys move the whole panel, so focus on its handle rings the whole panel. */
+    &:has(.panel-handle:focus-visible) {
+      @apply --focus-ring;
+    }
+
+    /*
+     * Folded to its header: only as tall as the header, with no body and no corner to resize from. The body is
+     * hidden from sight, focus and assistive technology even where a utility gives it a display of its own.
+     */
+    &:has(.panel-minimize[aria-pressed="true"]) {
+      height: var(--panel-bar);
+
+      .panel-body,
+      .panel-resize {
+        display: none;
+        visibility: hidden;
+      }
+    }
+
+    @media (pointer: coarse) {
+      --panel-bar: calc(2.75rem + 2 * var(--panel-inset));
+    }
+
+    @media (forced-colors: active) {
+      outline: 1px solid CanvasText;
+      outline-offset: -1px;
+
+      &:has(.panel-handle:focus-visible) {
+        outline: 2px solid Highlight;
+        outline-offset: 2px;
+      }
+    }
+  }
+
+  /* The header: the title at the start, the actions at the end, and the handle under both. */
+  .panel-header {
+    position: relative;
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: .25rem;
+    min-height: var(--panel-bar);
+    padding: var(--panel-inset);
+    padding-inline-start: .875rem;
+  }
+
+  /*
+   * The handle: a button the size of the header, under the title and the actions, so the bar is what the hand
+   * grabs. It draws nothing of its own; its focus is drawn on the panel.
+   */
+  .panel-handle {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    outline: none;
+    background: transparent;
+    color: inherit;
+    appearance: none;
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+
+    &:active {
+      cursor: grabbing;
+    }
+  }
+
+  /* The title takes no pointer, so a press on it reaches the handle under it. */
+  .panel-title {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin: 0;
+    overflow: hidden;
+    color: var(--color-text-strong);
+    font: var(--font-weight-control) .875rem/1.25 var(--font-family-sans);
+    font-feature-settings: inherit;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+
+  /* The controls at the end of the header, over the handle. */
+  .panel-actions {
+    position: relative;
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: 2px;
+    margin-inline-start: auto;
+  }
+
+  /* The minimize button is a quiet toggle: pressed, it sits in a well, and the panel is folded to its header. */
+  .panel-minimize {
+    flex: none;
+  }
+
+  /* What the panel holds, under a hairline. A long body scrolls inside the panel. */
+  .panel-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: var(--panel-padding);
+    border-top: 1px solid var(--color-line-hair);
+    overflow: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-line-strong) transparent;
+  }
+
+  /*
+   * The corner a pointer resizes from, at the bottom end: two short diagonal lines in the ink of a firm line,
+   * on a 16px target, 44px on touch screens. The keys resize from the handle.
+   */
+  .panel-resize {
+    position: absolute;
+    inset-block-end: 0;
+    inset-inline-end: 0;
+    width: 1rem;
+    height: 1rem;
+    color: var(--color-line-mark);
+    cursor: nwse-resize;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    transition: color var(--duration-quick) var(--easing-glide);
+
+    &::before {
+      content: '';
+      position: absolute;
+      inset-block-end: .3125rem;
+      inset-inline-end: .3125rem;
+      width: .5rem;
+      height: .5rem;
+      background: linear-gradient(135deg, transparent 38%, currentColor 38% 50%, transparent 50% 70%, currentColor 70% 82%, transparent 82%);
+    }
+
+    &:dir(rtl) {
+      cursor: nesw-resize;
+
+      &::before {
+        scale: -1 1;
+      }
+    }
+
+    @media (hover: hover) {
+      &:hover {
+        color: var(--color-text-muted);
+      }
+    }
+
+    &:active {
+      color: var(--color-text-strong);
+    }
+
+    @media (pointer: coarse) {
+      width: 2.75rem;
+      height: 2.75rem;
+      color: var(--color-text-muted);
+    }
+
+    @media (forced-colors: active) {
+      color: CanvasText;
+    }
+  }
+}

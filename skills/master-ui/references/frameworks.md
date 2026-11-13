@@ -22,16 +22,24 @@ These hold a value, render rows from data, join parts by id or have a lifetime, 
 | Component | Renders the contract of | The framework owns |
 | --- | --- | --- |
 | `calendar` | calendar | The value, the month it draws |
+| `color-picker` | color-picker | The color, the format it is written in |
 | `combobox` | combobox | The value, the options |
 | `command` | command | Whether it is open, the commands |
 | `compare` | compare | The position |
+| `cropper` | cropper | The crop, and the zoom |
+| `dial` | dial | The value |
 | `dialog` | dialog | Whether it is open, the id its trigger names |
 | `editable` | editable | The saved value, the ids that name the preview |
 | `field` | input (`field`) | The ids that join the label, the control, the hint and the error |
+| `gantt` | gantt | The ranges, the rows |
 | `listbox` | listbox | The value, the options |
+| `log` | scroll-area | Whether it follows the end, the lifetime of its behavior |
 | `menu` | menu | The items, the id its trigger names, the target of a context menu |
 | `otp` | otp | The code, the number of slots |
+| `panel` | panel | Whether it is open, its place, its size and whether it is minimized |
+| `player` | player | The time, whether it plays, the tracks |
 | `popover` | popover | Whether it is open, the id its trigger names |
+| `signature` | signature | The strokes |
 | `sortable` | sortable | The order, the items |
 | `splitter` | splitter | The size |
 | `stepper` | stepper | The number |
@@ -40,6 +48,8 @@ These hold a value, render rows from data, join parts by id or have a lifetime, 
 | `toast` | toast | The queue: `toast()` and the region that shows it |
 | `toolbar` | toolbar | The lifetime of its behavior |
 | `tooltip` | tooltip | The id that joins the control and its label |
+| `tour` | coachmark | The step, the steps, the ids that join each to its target |
+| `transcript` | transcript | The cues |
 | `tree` | tree | The selected row, the rows |
 | `wheel` | wheel | The value of each column, the options |
 

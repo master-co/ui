@@ -153,6 +153,100 @@ Add `dialog-drawer-start` and the drawer rests on the inline-start edge, 18rem w
   </footer>
 </dialog>`} />
 
+## Swipe \{#swipe\}
+
+Add `dialog-swipe` to a drawer or a sheet, and it follows a finger, a trackpad or a mouse and is let go of to close. The dialog becomes the track the panel moves on: transparent and as large as the viewport. Put everything the dialog held in a `dialog-panel`, which wears the material, and give a sheet a `dialog-handle`, a short groove at its top edge that shows where to take hold. Attach the `drawer` behavior; `attach()` finds every `dialog-swipe`.
+
+<ComponentPreview name="swipe" height={420} title="A sheet to swipe away" behaviors bodyClass="flex items-center justify-center p-lg min-h(416)" caption="Open it, then drag the sheet down by its groove or its title, or flick it, to let it go. Let go of it less than halfway and it settles back. On a phone, swipe it." html={`<button type="button" class="btn" commandfor="share-swipe" command="show-modal">Share</button>
+
+<dialog id="share-swipe" class="dialog dialog-sheet dialog-swipe" closedby="any" aria-labelledby="share-swipe-title">
+  <div class="dialog-panel">
+    <div class="dialog-handle" aria-hidden="true"></div>
+    <header class="dialog-header">
+      <h2 class="dialog-title" id="share-swipe-title">Share this project</h2>
+      <p class="dialog-description">Anyone with the link can view the latest deployment.</p>
+    </header>
+    <div class="dialog-body">
+      <div class="input-group">
+        <input class="input-group-field" value="https://atlas.dev/p/9f2c" readonly aria-label="Link">
+        <button type="button" class="btn">Copy</button>
+      </div>
+    </div>
+    <footer class="dialog-footer">
+      <button type="button" class="btn btn-primary" commandfor="share-swipe" command="close">Done</button>
+    </footer>
+  </div>
+</dialog>`} />
+
+A drawer swipes the same way, toward the edge it rests on, and needs no handle: the whole panel takes hold.
+
+<ComponentPreview name="swipe-drawer" height={400} title="A drawer to swipe away" behaviors bodyClass="flex items-center justify-center p-lg min-h(400)" caption="Drag the panel toward the edge, or press the scrim beside it." html={`<button type="button" class="btn" commandfor="filters-swipe" command="show-modal">Filters</button>
+
+<dialog id="filters-swipe" class="dialog dialog-drawer dialog-swipe" closedby="any" aria-labelledby="filters-swipe-title">
+  <div class="dialog-panel">
+    <header class="dialog-header">
+      <h2 class="dialog-title" id="filters-swipe-title">Filters</h2>
+      <p class="dialog-description">Narrow the list of deployments.</p>
+    </header>
+    <div class="dialog-body flex flex-col gap-md">
+      <label class="field">
+        Branch
+        <input class="input" value="main">
+      </label>
+      <label class="check"><input type="checkbox" class="checkbox" checked> Production only</label>
+    </div>
+    <footer class="dialog-footer">
+      <button type="button" class="btn" commandfor="filters-swipe" command="close">Reset</button>
+      <button type="button" class="btn btn-primary" commandfor="filters-swipe" command="close">Apply</button>
+    </footer>
+  </div>
+</dialog>`} />
+
+What a swipe is made of:
+
+- **The browser moves the panel.** The track is a scroller with snap points: the open rest, and a stretch past the edge as large as the viewport where the panel goes when it is let go of. A finger, a trackpad and a wheel scroll it, so following the hand, the momentum of a flick and the choice of where to settle are the browser's own. The track is a reversed flex line with the panel at its end, so it starts at the open rest with no script.
+- **The behavior does what scrolling cannot.** It closes the dialog once the panel has left the track, by whatever way it left. It gives `closedby="any"` back: the track covers the scrim the browser listens on, so the behavior closes the dialog on a press beside the panel. It lets a mouse, which cannot scroll by dragging, take the panel by its handle or by any part that is not a control or the body, and lets it go to the rest it was flung toward or the nearer one; while a fine pointer holds the panel the track stops snapping. It writes how much of the scrim is left to `--dialog-scrim`, so the scrim thins as the panel leaves.
+- **The dialog stays a dialog.** <kbd>Esc</kbd>, the close buttons, the focus trap, the focus that returns to the trigger and the slide in and out are the same as for any drawer or sheet.
+- **A body that scrolls keeps its own scroll.** With a mouse or a wheel a drag in `dialog-body` scrolls it or selects text. On a touch screen a drag that reaches the top of the body goes on to move the sheet.
+
+Swiping is a shortcut: keep a close button or an action that closes the dialog, and keep <kbd>Esc</kbd>.
+
+### Detents \{#detents\}
+
+Add `dialog-detents` to a swiped sheet and it rests at two heights: half the viewport, where it opens, and full height. A drag or a flick moves it between them; a flick down from full height stops at half, and only one from half height lets it go. Make the handle a `<button>` with an accessible name: a press, <kbd>Enter</kbd> or <kbd>Space</kbd> moves the sheet to the other height, <kbd>↑</kbd> grows it to full height and <kbd>↓</kbd> shrinks it to half. Its `aria-expanded` says whether the sheet is at full height.
+
+<ComponentPreview name="detents" height={480} title="A sheet with detents" behaviors bodyClass="flex items-center justify-center p-lg min-h(476)" caption="It opens at half height. Drag it up, press the handle, or Tab to the handle and press ↑ and ↓." html={`<button type="button" class="btn" commandfor="comments-sheet" command="show-modal">Comments</button>
+
+<dialog id="comments-sheet" class="dialog dialog-sheet dialog-swipe dialog-detents" closedby="any" aria-labelledby="comments-sheet-title">
+  <div class="dialog-panel">
+    <button type="button" class="dialog-handle" aria-label="Sheet height"></button>
+    <header class="dialog-header">
+      <h2 class="dialog-title" id="comments-sheet-title">Comments</h2>
+      <p class="dialog-description">Five people reviewed this deployment.</p>
+    </header>
+    <div class="dialog-body flex flex-col gap-md">
+      <p class="m(0)">Ada: the build on main is green again.</p>
+      <p class="m(0)">Grace: the preview for the pricing page loads in 1.2s.</p>
+      <p class="m(0)">Linus: the cache headers on the fonts are right now.</p>
+      <p class="m(0)">Margaret: the rollback plan is in the runbook.</p>
+      <p class="m(0)">Alan: ship it after the 3pm check.</p>
+    </div>
+    <button type="button" class="btn btn-quiet btn-square btn-sm dialog-close" commandfor="comments-sheet" command="close" aria-label="Close">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+</dialog>`} />
+
+At half height the lower half of the sheet waits below the edge, its footer too: detents suit a sheet to browse, a list, comments or a map, whose actions sit at its top. A sheet shorter than half the viewport has one rest, full height, and its handle says so.
+
+### Without a feature \{#swipe-fallbacks\}
+
+- Without scripting, the stretch past the edge is not a rest (`@media (scripting: enabled)`): a panel let go of springs back, and <kbd>Esc</kbd> and the close buttons close the dialog. Attach the behavior wherever scripts run, or a panel let go of rests off screen while the page stays inert.
+- Without the behavior the scrim stays whole until the dialog closes. It is not a scroll-driven animation: in a reversed scroller Chromium and WebKit run scroll and view timelines in opposite directions.
+- Where `scroll-initial-target` is supported (Chromium), a sheet with detents opens at half height before any script runs; elsewhere it opens at full height until the behavior moves it.
+
+Swiping was verified in Chromium and WebKit, with a mouse, a wheel and, in Chromium, touch. Scroll snapping, reversed flex scrolling and `scrollend` are in every current browser.
+
 ## Motion \{#motion\}
 
 The dialog fades in from 97% of its size and half a rem below, over 280ms; it leaves in 160ms. The stylesheet writes both directions in CSS: `@starting-style` gives the first rendered frame, and `display` and `overlay` transition with `allow-discrete`, so the exit plays before the dialog leaves the top layer. With reduced motion only the fade remains.
@@ -162,10 +256,11 @@ The dialog fades in from 97% of its size and half a rem below, over 280ms; it le
 - Name the dialog with `aria-labelledby` pointing at its `dialog-title`.
 - Opened with `show-modal`, focus moves into the dialog and returns to the invoking button on close. Put `autofocus` on the field a reader should start in. For a destructive confirmation, put it on the safe action.
 - `command` and `commandfor` are supported in current Chrome, Edge, Firefox and Safari. In an older browser, call `dialog.showModal()` from a click handler; the stylesheet is the same.
+- A swipe is never the only way to close: keep a close button or an action that closes, and <kbd>Esc</kbd> still does. In a sheet with detents the handle is a button with a name, such as "Sheet height", whose keys and press change the height a drag changes; without detents it is a groove hidden from assistive technology. Its target is 64 by 24px, 44px tall on a touch screen.
 
 ## React, Svelte and Vue \{#frameworks\}
 
-The `dialog` component opens and closes the dialog from the application's state and says when the browser did. The trigger and the parts inside stay the page's own markup. Copy it into the project with `npx master-ui add dialog`; [React, Svelte and Vue](/guide/frameworks) says how the components are built and used.
+The `dialog` component opens and closes the dialog from the application's state and says when the browser did. The trigger and the parts inside stay the page's own markup. It attaches the `drawer` behavior to every dialog, so a drawer or a sheet given `dialog-swipe` and a `dialog-panel` is let go of to close and says so like any other close; on a dialog without `dialog-swipe` the behavior does nothing. Copy it into the project with `npx master-ui add dialog`; [React, Svelte and Vue](/guide/frameworks) says how the components are built and used.
 
 <FrameworkSource name="dialog" />
 

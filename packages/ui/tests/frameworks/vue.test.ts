@@ -24,7 +24,7 @@ const compiled = await compile()
 const { fixtures, toast } = await import(compiled('tests/frameworks/vue/fixtures.ts'))
 
 /** The scenarios' props, as Vue names them: the value is the model, and a change of it an update. */
-const names: Record<string, string> = { value: 'modelValue', onValueChange: 'onUpdate:modelValue', onOpenChange: 'onUpdate:open' }
+const names: Record<string, string> = { value: 'modelValue', onValueChange: 'onUpdate:modelValue', onOpenChange: 'onUpdate:open', onQueryChange: 'onUpdate:query', onTimeChange: 'onUpdate:time', onPlayingChange: 'onUpdate:playing', onFollowingChange: 'onUpdate:following' }
 const translate = (props: Record<string, unknown>) => Object.fromEntries(Object.entries(props).map(([name, value]) => [names[name] ?? name, value]))
 const settle = () => new Promise(resolve => setTimeout(resolve, 0))
 
@@ -167,7 +167,7 @@ test('vue: rows written again from data are marked from the model, not from the 
 
 test('vue: a function among the options does not attach the behavior again', async () => {
   await rendered('calendar', { value: '2026-11-13', locale: 'en-GB', disabled: () => false }, async (page, mounted) => {
-    await act(() => page.click(page.all<HTMLButtonElement>('.calendar-header button')[1]))
+    await act(() => page.click(page.one<HTMLButtonElement>('.calendar-header .btn[aria-label="Next month"]')))
     assert.equal(page.one('.calendar-title').textContent, 'December 2026')
     // Attached again, the calendar would go back to the month of its value.
     await act(() => mounted.set({ disabled: (date: Date) => date.getDate() === 25 }))
@@ -192,8 +192,11 @@ test('vue: the first HTML, rendered on a server, holds the state, and hydrates w
     ['calendar', { value: '2026-11-13', locale: 'en-GB', weekStart: 1 }, /November 2026[\s\S]*<button[^>]*tabindex="0"[^>]*value="2026-11-13"[^>]*aria-selected="true"/],
     ['tabs', { tabs: [{ value: 'a', label: 'A', content: 'Panel A' }, { value: 'b', label: 'B', content: 'Panel B' }], value: 'b', 'aria-label': 'Account' }, /data-value="b" aria-selected="true"[\s\S]* hidden>(<!--\[-->)?Panel A/],
     ['splitter', { value: 36, label: 'Resize', style: 'height:20rem' }, /--splitter-size:36%;height:20rem[\s\S]*aria-valuenow="36"/],
+    ['dial', { value: 90, full: true, label: 'Angle', name: 'angle', text: (value: number) => `${value}°` }, /class="dial dial-full"[\s\S]*aria-valuenow="90"[\s\S]*aria-valuetext="90°"[\s\S]*--dial-value:90[\s\S]*>90°<[\s\S]*value="90"/],
     ['wheel', { columns: [{ label: 'Hour', options: ['09', '10'] }], value: ['10'], 'aria-label': 'Time' }, /data-value="10" aria-selected="true"/],
     ['otp', { length: 4, value: '48', 'aria-label': 'Verification code' }, /value="4"[\s\S]*value="8"/],
+    ['gantt', { rows: [{ id: 'research', label: 'Research', start: 0, end: 3 }, { id: 'design', label: 'Design', start: 2, end: 6 }], from: 0, to: 10, value: { design: [3, 7] }, 'aria-label': 'Plan' }, /data-value="design"[^>]*--from:3;--to:7[\s\S]*aria-valuenow="3" aria-valuetext="3 to 7"[^>]*>3 to 7</],
+    ['cropper', { value: { x: 64, y: 48, width: 320, height: 240 }, label: 'Crop the photo' }, /--cropper-x:0\.1;--cropper-y:0\.1;--cropper-width:0\.5;--cropper-height:0\.5[\s\S]*role="application"/],
   ]
   for (const [name, props, expected] of examples) {
     const html = await renderToString(createSSRApp({ render: () => h(fixtures[name], translate(props)) }))
@@ -208,7 +211,7 @@ test('vue: the first HTML, rendered on a server, holds the state, and hydrates w
   }
 
   // A toast that waits is not the server's to write: it shows once the page has mounted.
-  const dismiss = toast('Saved.')
+  const saved = toast('Saved.')
   const html = await renderToString(createSSRApp({ render: () => h(fixtures.toast) }))
   assert.doesNotMatch(html, /<dialog/)
   const { page, mount, done, restore } = stage(`<div id="app">${html}</div>`)
@@ -216,7 +219,8 @@ test('vue: the first HTML, rendered on a server, holds the state, and hydrates w
     const mounted = mount('toast', {}, page.one('#app'))
     await act()
     assert.equal(page.all('dialog.toast').length, 1)
-    await act(dismiss)
+    await act(() => saved.dismiss())
+    await act(() => new Promise(resolve => setTimeout(resolve, 350)))
     assert.equal(page.all('dialog.toast').length, 0)
     await act(() => mounted.unmount())
   } finally { restore() }

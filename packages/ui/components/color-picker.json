@@ -1,0 +1,54 @@
+{
+  "$schema": "../contract.schema.json",
+  "name": "color-picker",
+  "title": "Color picker",
+  "tier": "component",
+  "category": "Forms",
+  "description": "Any color, chosen on a field of lightness and chroma, a hue and an opacity, or typed.",
+  "use": "A color the reader may choose freely, such as a brand color, a label's color or a theme token. It chooses in OKLCH, so lightness and chroma move as the eye sees them, and it writes the color in hex, rgb() or oklch(). Inline, or opened from a button in a popover.",
+  "instead": [
+    { "when": "The color is one of a few the page offers", "use": "swatch" },
+    { "when": "The platform's own picker is enough, with no opacity and no OKLCH", "use": "input" }
+  ],
+  "composes": ["slider", "swatch", "select", "input", "popover", "button"],
+  "script": "required",
+  "behavior": "color-picker",
+  "keyboard": [
+    { "keys": "ArrowUp, ArrowDown", "action": "On the field's thumb, make the color lighter or darker by 1% of lightness" },
+    { "keys": "ArrowRight, ArrowLeft", "action": "On the field's thumb, add or take away .005 of chroma, toward the end of the line or its start (mirrored right to left)" },
+    { "keys": "Shift with an arrow", "action": "On the field's thumb, ten times the step: 10% of lightness or .05 of chroma" },
+    { "keys": "PageUp, PageDown", "action": "On the field's thumb, make the color lighter or darker by 10% of lightness" },
+    { "keys": "Home, End", "action": "On the field's thumb, take the chroma to none (a grey) or to the end of the field" },
+    { "keys": "ArrowLeft, ArrowRight, ArrowUp, ArrowDown, Home, End, PageUp, PageDown", "action": "On the hue and the opacity, what the native range input does" },
+    { "keys": "Enter", "action": "In the text field, take what is typed; the field is written again in the format chosen, or put back when it is not a color" }
+  ],
+  "platform": [
+    { "feature": "oklch() and gradients interpolated in Oklab", "fallback": "Supported in all current browsers. An older one leaves the field and the tracks unpainted; the text field still takes and writes the color" },
+    { "feature": "The popover attribute and CSS anchor positioning", "fallback": "Opened from a button, the picker is a popover: without anchor positioning it opens centered, as the browser places any popover" }
+  ],
+  "classes": [
+    { "name": "color-picker", "kind": "root", "description": "The picker: a column 16rem wide of the field, the tracks and the text. When it holds a color-picker-popover it holds only the button and the popover, which takes the column" },
+    { "name": "color-picker-area", "kind": "part", "of": "color-picker", "description": "The field: lightness from 100% at the top to 0 at the bottom, chroma from 0 to .37 along the line, at the hue held. It holds the thumb and takes the pointer" },
+    { "name": "color-picker-thumb", "kind": "part", "of": "color-picker", "attributes": { "role": "slider", "tabindex": "0" }, "label": true, "description": "The one thumb of the field, placed from the numbers on the root: a slider whose value is the lightness and whose aria-valuetext names the lightness and the chroma" },
+    { "name": "color-picker-hue", "kind": "part", "of": "color-picker", "elements": ["input"], "attributes": { "type": "range" }, "label": true, "description": "On a slider from 0 to 360: the hue, on a track painted with the circle of hues" },
+    { "name": "color-picker-alpha", "kind": "part", "of": "color-picker", "elements": ["input"], "attributes": { "type": "range" }, "label": true, "description": "On a slider from 0 to 100: the opacity, on a track where the color fades in over a checker. Leave it out for an opaque color" },
+    { "name": "color-picker-swatch", "kind": "part", "of": "color-picker", "description": "On a swatch: the color held, over a checker. In the column it stands at the start of the two tracks; in the button that opens a popover it shows the color while the picker is closed" },
+    { "name": "color-picker-fields", "kind": "part", "of": "color-picker", "description": "The row of the format and the text" },
+    { "name": "color-picker-format", "kind": "part", "of": "color-picker", "elements": ["select"], "label": true, "description": "On a small select: the format the text is written in, with the options hex, rgb and oklch" },
+    { "name": "color-picker-text", "kind": "part", "of": "color-picker", "elements": ["input"], "label": true, "description": "On a small text field: the color, written in the format chosen. It takes a color typed in any of the three, and carries the name a form submits" },
+    { "name": "color-picker-popover", "kind": "part", "of": "color-picker", "attributes": { "popover": true }, "description": "On a popover inside the root: the column, opened from a button beside it, whose swatch shows the color" }
+  ],
+  "states": [
+    { "on": "color-picker-thumb", "name": "disabled", "mark": "aria-disabled=\"true\"", "description": "The field fades and takes no pointer and no key; disable the sliders and the fields beside it" },
+    { "on": "color-picker-popover", "name": "open", "mark": ":popover-open", "description": "The popover is the column" }
+  ],
+  "properties": [
+    { "name": "--color-picker-width", "default": "16rem", "description": "Width of the column" },
+    { "name": "--color-picker-lightness", "default": "0", "description": "The color's lightness, from 0 to 1. The behavior writes it on the root; write the first value in the markup's style" },
+    { "name": "--color-picker-chroma", "default": "0", "description": "The color's chroma, from 0; the field reaches .37" },
+    { "name": "--color-picker-hue", "default": "0", "description": "The color's hue, in degrees without a unit" },
+    { "name": "--color-picker-alpha", "default": "1", "description": "The color's opacity, from 0 to 1" },
+    { "name": "--color-picker-color", "description": "The color held, made from the four numbers: read it for anything else inside the root that shows the color" }
+  ],
+  "example": "<div class=\"color-picker\" style=\"--color-picker-lightness: .62; --color-picker-chroma: .19; --color-picker-hue: 260\">\n  <div class=\"color-picker-area\">\n    <div class=\"color-picker-thumb\" role=\"slider\" tabindex=\"0\" aria-label=\"Lightness and chroma\" aria-valuemin=\"0\" aria-valuemax=\"100\" aria-valuenow=\"62\" aria-valuetext=\"Lightness 62%, chroma 0.19\"></div>\n  </div>\n  <span class=\"swatch swatch-lg color-picker-swatch\"></span>\n  <input type=\"range\" class=\"slider color-picker-hue\" min=\"0\" max=\"360\" value=\"260\" aria-label=\"Hue\">\n  <input type=\"range\" class=\"slider color-picker-alpha\" min=\"0\" max=\"100\" value=\"100\" aria-label=\"Opacity\">\n  <div class=\"color-picker-fields\">\n    <select class=\"select select-sm color-picker-format\" aria-label=\"Format\">\n      <option value=\"hex\">Hex</option>\n      <option value=\"rgb\">RGB</option>\n      <option value=\"oklch\" selected>OKLCH</option>\n    </select>\n    <input class=\"input input-sm color-picker-text\" value=\"oklch(62% 0.19 260)\" aria-label=\"Color\" spellcheck=\"false\" autocomplete=\"off\">\n  </div>\n</div>"
+}

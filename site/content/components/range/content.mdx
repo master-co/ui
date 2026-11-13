@@ -30,13 +30,49 @@ A range picks two values on one scale: the lowest and the highest price, the sta
 
 Each thumb is a view timeline inside its own input, the way a single slider reads its fill. The group takes both timelines with `timeline-scope`, runs one animation on each and so knows two percentages. It paints from the lesser to the greater, which means the thumbs may cross: the fill is still between them, and the lower of the two values is still the start of the range.
 
-Read the pair the same way in your form handler: the smaller value is the lower bound. If the two must keep a distance, clamp them on `input`; nothing in the drawing depends on it.
+Read the pair the same way in your form handler: the smaller value is the lower bound. If the two must not cross, or must keep a distance, attach [the behavior](#keeping-a-distance); nothing in the drawing depends on it.
 
 Where the browser has no scroll-driven animations the track is a plain well under the two thumbs, and both inputs work as they always have. Chromium and Safari 26 draw the fill.
 
 ## How the thumbs share a track \{#how-the-thumbs-share-a-track\}
 
 The two inputs lie in the same grid cell. Each gives up its own track and takes the pointer only on its thumb, so a press between the thumbs reaches neither and a thumb is never hidden behind the other input's empty track. The one being moved comes to the front. A press on the bare track does nothing: with two thumbs it could not say which one it meant.
+
+## Keeping a distance \{#keeping-a-distance\}
+
+The `range` [behavior](/guide/behaviors) keeps the thumbs apart: `range-start` never passes `range-end`, and with `distance` the two stop that far from each other. The thumb that is moved stops; the one that stands still is never pushed. It corrects the value inside the `input` the thumb is moved with, before the input or anything around the range hears it, so every listener reads a pair that keeps the distance and the thumb never shows a value it was refused. The keys, the dragging and the form values stay the inputs' own.
+
+<ComponentPreview name="distance" height={112} title="Keeping a distance" background="plain" bodyClass="p-lg" behaviors html={`<div class="flex flex-col gap-sm max-w(360) mx-auto">
+  <div class="flex items-baseline justify-between text-sm">
+    <span class="fg-text-strong" id="hours">Opening hours</span>
+    <output class="fg-text-muted" id="hours-output">9:00 to 17:00</output>
+  </div>
+  <div class="range" id="hours-range" role="group" aria-labelledby="hours">
+    <input type="range" class="slider range-start" min="0" max="24" value="9" aria-label="Opens at">
+    <input type="range" class="slider range-end" min="0" max="24" value="17" aria-label="Closes at">
+  </div>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  var range = document.getElementById('hours-range')
+  MasterUI.range(range, { distance: 2 })
+  range.addEventListener('input', function () {
+    var start = range.querySelector('.range-start').value
+    var end = range.querySelector('.range-end').value
+    document.getElementById('hours-output').textContent = start + ':00 to ' + end + ':00'
+  })
+})
+</script>`} caption="Drag either thumb toward the other: they stop two hours apart." />
+
+`attach()` leaves a range as the platform has it, so its thumbs may cross. To keep them apart, call `range` on it, with `distance` to keep them that far apart, as this preview does; a second call on one root replaces the first. `MasterUI` is the bundle a preview loads; in a project, import `range`:
+
+```js name=app.js
+import { range } from '@master/ui/behaviors/range.js'
+
+const detach = range(document.querySelector('.range'), { distance: 2 })
+```
+
+The distance is in the inputs' own units. Give a multiple of their `step`: the input rounds what is written to its step, and the behavior takes the closest step that keeps the distance.
 
 ## Disabled \{#disabled\}
 

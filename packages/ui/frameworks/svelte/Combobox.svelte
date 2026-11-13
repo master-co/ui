@@ -7,6 +7,8 @@
     /** What the option says, and what the field holds once it is chosen. */
     label: string
     description?: string
+    /** The caption of the group the option belongs to. Options of one group are written together, under it. */
+    group?: string
     disabled?: boolean
   }
 
@@ -18,13 +20,20 @@
      */
     value?: string | string[] | null
     onValueChange?: (value: string | string[] | null) => void
+    /**
+     * The text in the field, what the reader is looking for. Bind it, or leave it out. It is not the value;
+     * with one value it holds the chosen option's label once one is chosen.
+     */
+    query?: string
+    /** Called with the text in the field each time the reader changes it, by typing or by choosing. */
+    onQueryChange?: (query: string) => void
     /** Several values, each a chip in the field. */
     multiple?: boolean
     /** With `multiple`: the name each value is submitted with, in a hidden input of its chip. */
     name?: string
     /** With `multiple`: the accessible name of a chip's remove button. `Remove <label>` by default. */
     removeLabel?: (label: string) => string
-    /** False when `options` are already the matches, from a server or a search of your own. */
+    /** False when `options` are already the matches: search for `query` and give the matches as `options`. */
     filter?: boolean
     /** The name of the list, for assistive technology. */
     listLabel: string
@@ -40,20 +49,51 @@
   import { combobox } from '@master/ui/behaviors/combobox.js'
   import { behavior } from './behavior.svelte.js'
 
-  let { options, value = $bindable(), onValueChange, multiple, name, removeLabel = (label: string) => `Remove ${label}`, filter = true, listLabel, toggleLabel, empty, class: className, ...field }: ComboboxProps = $props()
+  let { options, value = $bindable(), onValueChange, query = $bindable(), onQueryChange, multiple, name, removeLabel = (label: string) => `Remove ${label}`, filter = true, listLabel, toggleLabel, empty, class: className, ...field }: ComboboxProps = $props()
   const id = $props.id()
   const first = untrack(() => value)
   const several = untrack(() => multiple)
   const firsts = [first ?? []].flat() as string[]
-  const text = several ? undefined : untrack(() => options.find(option => option.value === first)?.label)
+  const text = (several ? undefined : untrack(() => options.find(option => option.value === first)?.label)) ?? untrack(() => query)
   // With several values the behavior asks for the chips it wants; Svelte writes them from this list.
   let chips = $state(several ? firsts : [])
   const labelOf = (each: string) => options.find(option => option.value === each)?.label ?? each
+  const groups = $derived([...new Set(options.map(option => option.group))])
+  let handle = $state.raw<ReturnType<typeof combobox> | null>(null)
+  /** The last query the owner gave or was told. */
+  let known: string | undefined
   const attach = behavior(combobox, () => (multiple ? { filter, removeLabel, draw: (values: string[]) => { chips = values } } : { filter }), {
     value: () => value,
     change: (next) => { value = next; onValueChange?.(next) },
+    attached: (attached) => { handle = attached as ReturnType<typeof combobox> | null },
+    on: {
+      input: () => {
+        const next = handle?.query
+        if (next === undefined || next === known) return
+        query = known = next
+        onQueryChange?.(next)
+      },
+    },
+  })
+
+  $effect(() => {
+    const next = query
+    if (next === undefined || !handle || next === known) return
+    handle.query = known = next
   })
 </script>
+
+{#snippet row(option: ComboboxOption)}
+  <!-- The behavior writes `aria-selected` on the option the keys are on. -->
+  <!-- svelte-ignore a11y_role_has_required_aria_props -->
+  <div class="listbox-option" role="option" data-value={option.value} aria-checked={several ? firsts.includes(option.value) : option.value === first} aria-disabled={option.disabled || undefined}>
+    {#if option.description}
+      <span class="listbox-body"><span>{option.label}</span><span class="listbox-description">{option.description}</span></span>
+    {:else}
+      {option.label}
+    {/if}
+  </div>
+{/snippet}
 
 <!--
   @component
@@ -74,16 +114,15 @@
     <button type="button" class="combobox-toggle" tabindex={-1} aria-label={toggleLabel}></button>
   </div>
   <div id="{id}list" popover="manual" class="listbox" role="listbox" aria-label={listLabel} aria-multiselectable={several || undefined}>
-    {#each options as option (option.value)}
-      <!-- The behavior writes `aria-selected` on the option the keys are on. -->
-      <!-- svelte-ignore a11y_role_has_required_aria_props -->
-      <div class="listbox-option" role="option" data-value={option.value} aria-checked={several ? firsts.includes(option.value) : option.value === first} aria-disabled={option.disabled || undefined}>
-        {#if option.description}
-          <span class="listbox-body"><span>{option.label}</span><span class="listbox-description">{option.description}</span></span>
-        {:else}
-          {option.label}
-        {/if}
-      </div>
+    {#each groups as group, index (group)}
+      {#if group === undefined}
+        {#each options.filter(option => option.group === undefined) as option (option.value)}{@render row(option)}{/each}
+      {:else}
+        <div class="listbox-group" role="group" aria-labelledby="{id}group{index}">
+          <div class="listbox-label" id="{id}group{index}">{group}</div>
+          {#each options.filter(option => option.group === group) as option (option.value)}{@render row(option)}{/each}
+        </div>
+      {/if}
     {/each}
     {#if empty !== undefined}<div class="listbox-empty">{empty}</div>{/if}
   </div>

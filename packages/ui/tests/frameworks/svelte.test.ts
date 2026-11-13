@@ -130,7 +130,7 @@ test('svelte: a value or another function among the options does not attach a be
   await mounted(Harness, { component: fixtures.calendar, initial: props }, async (app) => {
     const title = () => page.one('.calendar-title').textContent
     const day = (date: string) => page.one<HTMLButtonElement>(`button[value="${date}"]`)
-    await act(() => page.click(page.all('.calendar-header button')[1]))
+    await act(() => page.click(page.one('.calendar-header .btn[aria-label="Next month"]')))
     assert.equal(title(), 'December 2026')
     // Attached again, the calendar would start over from its options and show November.
     await act(() => app.set({ value: '2026-11-13', disabled: (date: Date) => date.getDate() === 15, onValueChange: (value: unknown) => heard.push(value) }))
@@ -172,15 +172,23 @@ test('svelte: the first HTML, rendered on a server, holds the state, and hydrate
   /** What the page holds once the behavior is attached to the server's HTML: the same state. */
   const held: Record<string, [() => unknown, unknown]> = {
     'combobox': [() => [...values('[role="combobox"]'), ...checked()], ['Singapore', 'sin']],
-    'calendar': [() => values('[aria-selected="true"]'), ['2026-11-13']],
+    'calendar': [() => values('[aria-selected="true"]:not(.calendar-day-outside)'), ['2026-11-13', '2026-12-02']],
     'tabs': [() => page.all<HTMLElement>('[role="tabpanel"]').filter(panel => !panel.hidden).map(panel => panel.textContent?.trim()), ['Panel B']],
     'splitter': [() => page.one<HTMLElement>('.splitter').style.getPropertyValue('--splitter-size'), '36%'],
+    'dial': [() => [page.one<HTMLElement>('.dial').style.getPropertyValue('--dial-value'), page.one('.dial-value').textContent, values('input[type="hidden"]')[0]], ['90', '90°', '90']],
     'wheel': [() => page.all('[aria-selected="true"]').map(option => option.getAttribute('data-value')), ['10']],
     'otp': [() => values('.otp-slot'), ['4', '8', '', '']],
+    'cropper': [() => ['x', 'y', 'width', 'height'].map(name => page.one<HTMLElement>('.cropper').style.getPropertyValue(`--cropper-${name}`)), ['0.1', '0.1', '0.5', '0.5']],
     'context-menu': [() => page.all('.menu.menu-context').length, 1],
+    'tree': [() => page.all('.tree-item').map(row => row.getAttribute('aria-checked')), ['mixed', 'true', 'false']],
     'tags': [() => page.all('.chip').map(chip => chip.getAttribute('data-value')), ['design', 'research']],
     'editable': [() => [page.one('.editable-preview').textContent?.trim(), ...values('.editable-field')], ['Quarterly report', 'Quarterly report']],
+    'gantt': [() => page.all<HTMLElement>('.gantt-row').map(row => [row.style.getPropertyValue('--from'), row.style.getPropertyValue('--to'), row.querySelector('.gantt-bar')!.textContent]), [['0', '3', '0 to 3'], ['3', '7', '3 to 7']]],
+    'panel': [() => [page.one<HTMLElement>('.panel').style.getPropertyValue('--panel-x'), page.one('.panel-minimize').getAttribute('aria-pressed')], ['120px', 'true']],
     'sortable': [() => page.all('.sortable-item').map(item => item.getAttribute('data-value')), ['search', 'onboarding', 'billing']],
+    'stepper': [() => [page.one('.stepper-display').textContent, page.one('.stepper-field').getAttribute('aria-valuetext'), ...values('.stepper-field')], ['$1,250', '$1,250', '1250']],
+    'color-picker': [() => [page.one<HTMLElement>('.color-picker').style.getPropertyValue('--color-picker-hue'), page.one<HTMLSelectElement>('.color-picker-format').value, ...values('.color-picker-text')], ['260', 'oklch', 'oklch(62% 0.19 260)']],
+    'signature': [() => [page.all('.signature-stroke').length, page.one('.signature-undo').getAttribute('aria-disabled'), values('.signature-value')[0]?.startsWith('<svg ')], [1, null, true]],
   }
   for (const [name, props, expected] of first) {
     const [state, after] = held[name]

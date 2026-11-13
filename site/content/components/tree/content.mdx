@@ -101,24 +101,161 @@ The WAI-ARIA tree pattern gives one tab stop and arrow keys that walk and fold t
   </li>
 </ul>`} caption="Focus the tree and use the arrow keys. Enter, Space or a click opens a branch, or selects a row that is not one." />
 
-`tree` takes the root, the element with the `tree` class, has no options, and returns the function that detaches it.
+`tree` takes the root, the element with the `tree` class, and returns the function that detaches it. Its options turn on [renaming](#rename): `rename: true` and `renameLabel`, the accessible name of the field, `Rename <label>` by default.
 
 ```js name=app.js
 import { tree } from '@master/ui/behaviors/tree.js'
 
 const root = document.querySelector('.tree')
-tree(root)
+const files = tree(root)
 
-root.addEventListener('change', (event) => console.log(event.detail.item))
+root.addEventListener('change', () => console.log(files.value))
 ```
 
 - **One tab stop.** The behavior keeps one row in the tab order with `tabindex`: the row the markup gave `tabindex="0"`, or the selected or current row, or the first. A row that takes focus becomes the tab stop. Detaching gives every row back the `tabindex` it had.
 - **Walking.** The keys skip rows inside a closed branch, `hidden` rows and disabled ones.
 - **Activation.** A summary, a link and a button keep the activation the browser gives them. A row that has none, `role="treeitem"` on a `div`, is activated by <kbd>Enter</kbd>, <kbd>Space</kbd> and a click: a branch opens or closes, and a leaf becomes the selected row. `aria-selected="true"` moves to it from the row that had it.
-- **The event.** Selecting a row dispatches a bubbling `change` from the root with the row in `detail.item`.
-- **Disabled.** A row with `disabled` or `aria-disabled="true"` does nothing: its link is not followed and its branch stays as it is.
+- **The value.** The function `tree` returns has a `value`: what the selected row stands for, its `data-value` or its text, null when none is. In a [multiselectable tree](#several) and a [checkbox tree](#checkbox) it is a list. Set it to select or check rows from outside; that dispatches nothing.
+- **Events.** Each bubbles from the root, with the row in `detail.item`. Selecting or checking dispatches `change`. Opening a branch dispatches `expand`, with what the row stands for in `detail.value`. Renaming dispatches `rename`, with `detail.value` and the new label in `detail.label`.
+- **Disabled.** A row with `disabled` or `aria-disabled="true"` does nothing: its link is not followed, its branch stays as it is, and it is not selected, checked or renamed.
 
 The behavior serves a tree of `<details>` too, as in the first two previews, which run without it. It opens and closes a `tree-group` through `open`, and the tree becomes one tab stop walked with the same keys. `attach()` attaches it to every tree; to keep a tree of `<details>` as the platform has it, import behaviors by name.
+
+## Several rows \{#several\}
+
+With `aria-multiselectable="true"` on the tree, any number of leaves are selected, the way a file list selects. Every row that can be selected says `aria-selected`, `true` or `false`; a branch is not selected, it folds. The value is the list of the selected rows, in the order of the tree.
+
+<ComponentPreview name="several" height={252} title="Several rows" background="plain" bodyClass="content-start p-lg" behaviors html={`<ul class="tree max-w(260) mx-auto" role="tree" aria-label="Files" aria-multiselectable="true">
+  <li role="none">
+    <div class="tree-item tree-toggle" role="treeitem" aria-expanded="true">components</div>
+    <ul class="tree-sub" role="group">
+      <li role="none"><div class="tree-item" role="treeitem" aria-selected="true">button.css</div></li>
+      <li role="none"><div class="tree-item" role="treeitem" aria-selected="true">input.css</div></li>
+      <li role="none"><div class="tree-item" role="treeitem" aria-selected="false">theme.css</div></li>
+      <li role="none"><div class="tree-item" role="treeitem" aria-selected="false">tree.css</div></li>
+    </ul>
+  </li>
+  <li role="none">
+    <div class="tree-item tree-toggle" role="treeitem" aria-expanded="false">themes</div>
+    <ul class="tree-sub" role="group">
+      <li role="none"><div class="tree-item" role="treeitem" aria-selected="false">paper.css</div></li>
+    </ul>
+  </li>
+  <li role="none"><div class="tree-item" role="treeitem" aria-selected="false">README.md</div></li>
+</ul>`} caption="Click a row, then Shift-click another to select the rows between. Control or Command with a click adds one; Space does the same from the keys." />
+
+- **A click** selects that row alone. <kbd>Control</kbd> or <kbd>Command</kbd> with a click selects or unselects one row and keeps the others. <kbd>Enter</kbd> does what a click does.
+- **<kbd>Space</kbd>** selects or unselects the row in focus. The arrow keys only move.
+- **A run.** The row chosen last is the anchor. <kbd>Shift</kbd> with a click, with <kbd>Space</kbd> or with <kbd>ArrowDown</kbd> or <kbd>ArrowUp</kbd> selects every visible row from it to the row; <kbd>Control</kbd> or <kbd>Command</kbd> with <kbd>Shift</kbd> and <kbd>Home</kbd> or <kbd>End</kbd> runs to the first or the last. Rows inside a closed branch and disabled rows are passed over.
+- **Everything.** <kbd>Control</kbd> or <kbd>Command</kbd> with <kbd>A</kbd> selects every visible row, or none when they all are.
+
+## Checkbox tree \{#checkbox\}
+
+When its rows carry `aria-checked`, the tree is a checkbox tree: each row has a check, and checking a branch checks every row under it, inside closed branches too. A branch says what its rows say: `true` when all are checked, `false` when none is, `mixed` otherwise. Put `tree-check` with `aria-hidden="true"` in each row, after the chevron's column and before the label: it is the [checkbox](/components/checkbox)'s own well, drawn from the row's `aria-checked`, so the row says its state once.
+
+<ComponentPreview name="checkbox" height={252} title="Checkbox tree" background="plain" bodyClass="content-start p-lg" behaviors html={`<ul class="tree max-w(260) mx-auto" role="tree" aria-label="Files to publish" aria-multiselectable="true">
+  <li role="none">
+    <div class="tree-item tree-toggle" role="treeitem" aria-expanded="true" aria-checked="mixed"><span class="tree-check" aria-hidden="true"></span>components</div>
+    <ul class="tree-sub" role="group">
+      <li role="none"><div class="tree-item" role="treeitem" aria-checked="true"><span class="tree-check" aria-hidden="true"></span>button.css</div></li>
+      <li role="none"><div class="tree-item" role="treeitem" aria-checked="true"><span class="tree-check" aria-hidden="true"></span>input.css</div></li>
+      <li role="none"><div class="tree-item" role="treeitem" aria-checked="false"><span class="tree-check" aria-hidden="true"></span>theme.css</div></li>
+      <li role="none"><div class="tree-item" role="treeitem" aria-checked="false"><span class="tree-check" aria-hidden="true"></span>tree.css</div></li>
+    </ul>
+  </li>
+  <li role="none">
+    <div class="tree-item tree-toggle" role="treeitem" aria-expanded="false" aria-checked="false"><span class="tree-check" aria-hidden="true"></span>themes</div>
+    <ul class="tree-sub" role="group">
+      <li role="none"><div class="tree-item" role="treeitem" aria-checked="false"><span class="tree-check" aria-hidden="true"></span>paper.css</div></li>
+    </ul>
+  </li>
+  <li role="none"><div class="tree-item" role="treeitem" aria-checked="true"><span class="tree-check" aria-hidden="true"></span>README.md</div></li>
+</ul>`} caption="Check themes: paper.css inside it is checked too. Uncheck one file of components and the branch turns mixed." />
+
+- **<kbd>Space</kbd>** checks or unchecks the row in focus, a branch with all its rows. A mixed branch is checked, or unchecked when every row under it that can change is checked already.
+- **A click** on a leaf checks it; on a branch, a click on its check checks it and a click on the rest of the row folds it. <kbd>Enter</kbd> does what a click on the row does.
+- **Disabled rows** keep their check when their branch is checked, so the branch may stay mixed.
+- **The value** is the list of the checked leaves, in the order of the tree. **Branches are not in it**: a branch's check says what its rows say, so the value names each file, never the folder. A branch whose rows have not been loaded yet is not in it either; when its rows arrive under a checked branch they are checked, and the tree dispatches `change`.
+
+Put `aria-multiselectable="true"` on the tree as well: a checkbox tree is one where any number of rows are chosen, and it is announced as one.
+
+## Loading rows later \{#loading\}
+
+A branch whose rows come from a server is a row with `aria-expanded="false"` and an empty `tree-sub`. When it opens with no rows under it, the behavior marks it `aria-busy="true"` and dispatches `expand`. Put a [spinner](/components/spinner) first in the row: it is not drawn at rest, and while the row is busy it takes the chevron's place, so nothing moves.
+
+<ComponentPreview name="loading" height={200} title="Loading rows later" background="plain" bodyClass="content-start p-lg" behaviors html={`<ul class="tree max-w(260) mx-auto" role="tree" aria-label="Repositories" id="repositories">
+  <li role="none">
+    <div class="tree-item tree-toggle" role="treeitem" aria-expanded="false"><span class="spinner" aria-hidden="true"></span>master-co/ui</div>
+    <ul class="tree-sub" role="group"></ul>
+  </li>
+  <li role="none">
+    <div class="tree-item tree-toggle" role="treeitem" aria-expanded="false"><span class="spinner" aria-hidden="true"></span>master-co/css</div>
+    <ul class="tree-sub" role="group"></ul>
+  </li>
+</ul>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  document.getElementById('repositories').addEventListener('expand', function (event) {
+    var row = event.detail.item
+    if (row.getAttribute('aria-busy') !== 'true') return
+    // A page fetches the rows here; this one waits a moment instead.
+    setTimeout(function () {
+      row.nextElementSibling.innerHTML = ['packages', 'site', 'README.md'].map(function (name) {
+        return '<li role="none"><div class="tree-item" role="treeitem">' + name + '</div></li>'
+      }).join('')
+    }, 1200)
+  })
+})
+</script>`} caption="Open a repository: it spins until its rows arrive, then the arrow keys walk into them." />
+
+The page listens for `expand` and writes the rows into the branch's `tree-sub` with the contract's classes and roles. The behavior hears them arrive: it takes `aria-busy` away and gives them the keys at once, out of the tab order and walked with the arrows. `expand` is dispatched for every branch the behavior opens, so check `aria-busy` to know whether rows are wanted. If the branch turns out to have none, remove its `aria-busy` and its `aria-expanded`: it is a leaf.
+
+```js name=app.js
+root.addEventListener('expand', async (event) => {
+  const row = event.detail.item
+  if (row.getAttribute('aria-busy') !== 'true') return
+  const children = await fetch(`/api/folders/${event.detail.value}`).then((response) => response.json())
+  row.nextElementSibling.replaceChildren(...children.map(rowFor))
+})
+```
+
+## Renaming \{#rename\}
+
+With `rename: true`, <kbd>F2</kbd> on a row turns its label into an [editable](/components/editable) in place, its text selected. The label must be a `tree-label`, which also ends a long name in an ellipsis. <kbd>Enter</kbd> saves and <kbd>Escape</kbd> puts the label back; either way focus returns to the row. Leaving the field saves it, and an empty label is not saved.
+
+<ComponentPreview name="rename" height={168} title="Renaming" background="plain" bodyClass="content-start p-lg" behaviors html={`<ul class="tree max-w(260) mx-auto" role="tree" aria-label="Pages" id="pages">
+  <li role="none">
+    <div class="tree-item tree-toggle" role="treeitem" aria-expanded="true"><span class="tree-label">Guide</span></div>
+    <ul class="tree-sub" role="group">
+      <li role="none"><div class="tree-item" role="treeitem" data-value="introduction"><span class="tree-label">Introduction</span></div></li>
+      <li role="none"><div class="tree-item" role="treeitem" data-value="installation"><span class="tree-label">Installation</span></div></li>
+    </ul>
+  </li>
+  <li role="none"><div class="tree-item" role="treeitem" data-value="changelog"><span class="tree-label">Changelog</span></div></li>
+</ul>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.tree(document.getElementById('pages'), { rename: true })
+})
+</script>`} caption="Focus a row, press F2 and type a name, then Enter to save or Escape to put it back." />
+
+`attach()` passes no options, so this preview calls `tree` itself after `attach()` has run: a second call on one root replaces the first.
+
+The behavior writes the new label into the `tree-label` and dispatches `rename` from the root, with what the row stood for in `detail.value` and the new label in `detail.label`; the field's own `input` and `change` stay inside it. Saving the label is the page's: if the server refuses it, write the old label back. Give each row a `data-value` that does not change with its name, so the value it stands for survives the rename.
+
+A reader without <kbd>F2</kbd>, on a touch screen, needs another way in: `edit(row)` on the function `tree` returns does what <kbd>F2</kbd> does, with or without the option, for a Rename item in a [context menu](/components/menu) or a button.
+
+```js name=app.js
+const pages = tree(root, { rename: true })
+
+root.addEventListener('rename', async (event) => {
+  const { item, value, label } = event.detail
+  const saved = await fetch(`/api/pages/${value}`, { method: 'PATCH', body: JSON.stringify({ title: label }) })
+  if (!saved.ok) item.querySelector('.tree-label').textContent = previous(value)
+})
+
+renameItem.addEventListener('click', () => pages.edit(selectedRow))
+```
 
 ## Tree or nav \{#tree-or-nav\}
 
@@ -132,11 +269,19 @@ A [nav](/components/nav) is a short list of destinations with one level of group
 
 - With `<details>`, do not add tree roles: the native disclosure is announced correctly as it is, and without the behavior every row is a tab stop.
 - Mark the current row with `aria-current="page"`, or `aria-selected="true"` inside the tree pattern.
+- Several rows, checks, loading and renaming are the tree pattern's, and need `role="tree"` and the behavior.
+- In a checkbox tree the row says `aria-checked`; its `tree-check` is `aria-hidden="true"`, so the state is announced once.
+- A busy branch says so with `aria-busy="true"`; its spinner is `aria-hidden="true"`.
+- The rename field is named `Rename <label>`; pass `renameLabel` in the page's language.
 - On touch screens a row is 44px.
 
 ## React, Svelte and Vue \{#frameworks\}
 
 The `tree` component renders the rows from data, attaches the behavior and passes the selected row in and out. Copy it into the project with `npx master-ui add tree`; [React, Svelte and Vue](/guide/frameworks) says how the components are built and used.
+
+- `multiple` selects any number of rows, and `checkable` gives every row a check; with either, the value is a list. The first value is drawn into the first render, a branch's mixed check among it.
+- A node with `children: []` is a branch whose rows come later: it holds a spinner, and `onExpand` (Vue: `@expand`) is called with its value when it opens. Give it its children in `nodes`.
+- `onRename` (Vue: `@rename`) turns renaming on and is called with the row's value and its new label. Keep the label in `nodes`.
 
 <FrameworkSource name="tree" />
 

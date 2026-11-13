@@ -1,0 +1,175 @@
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+A signature is a well to sign in with a finger, a pen or a mouse, and a field to type the name instead. The pad is the same well as a [text field](/components/input), with a hairline to sign on and a fine cross where the name begins. Each stroke is written into an inline `<svg>` as a filled outline, as wide as the pen pressed, and the drawing goes into the form as an SVG document. The group is a native `<fieldset>`: its legend names what is signed, and `disabled` on it stops the pad and disables everything inside.
+
+<ComponentPreview name="default" height={344} title="Signature" background="plain" bodyClass="p-lg" behaviors html={`<fieldset class="signature max-w(440) mx-auto">
+  <legend class="signature-label">Sign the lease</legend>
+  <div class="signature-pad">
+    <svg class="signature-ink" viewBox="0 0 400 160" role="img" aria-label="Your drawn signature"></svg>
+    <span class="signature-line" aria-hidden="true"></span>
+    <span class="signature-placeholder" aria-hidden="true">Sign here</span>
+    <div class="signature-actions">
+      <button type="button" class="btn btn-sm btn-quiet signature-undo">Undo</button>
+      <button type="button" class="btn btn-sm btn-quiet signature-clear">Clear</button>
+    </div>
+  </div>
+  <label class="field">Or type your full name
+    <input class="input signature-name" name="signer" autocomplete="name" placeholder="Ada Lovelace">
+  </label>
+  <input type="hidden" class="signature-value" name="signature">
+  <span class="signature-status" role="status"></span>
+</fieldset>`} caption="Sign with a finger, a pen or the mouse. Undo takes back the last stroke and Clear every one; or type a name, which is set in a script face." />
+
+## The behavior \{#behavior\}
+
+The pad needs a script to draw. The `signature` [behavior](/guide/behaviors) takes the root, the element with the `signature` class, and returns the function that detaches it.
+
+```js name=app.js
+import { signature } from '@master/ui/behaviors/signature.js'
+
+const pad = signature(document.querySelector('.signature'))
+
+pad.value // [[[x, y, pressure], …], …], one list of points a stroke
+pad.svg   // '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 160" …>…</svg>', or '' when nothing is drawn
+```
+
+- **Strokes.** A stroke is the points the pointer passed through, in the units of the drawing's `viewBox`, each with a pressure from 0 to 1. A pen gives its own; a finger and a mouse give none, so a stroke is drawn heavier where it moved slowly, as ink pools where a pen lingers. Each stroke becomes a `signature-stroke` path: a filled outline `--signature-weight` wide at an even pressure, smoothed by curves through its points, with round ends. Where the browser merges pointer moves, the merged ones are read too, so a fast hand keeps its curves.
+- **The value.** `value` is the strokes, and setting it draws them and dispatches nothing. `svg` is the drawing as an SVG document, and the `signature-value` field holds the same document, so a form submits it. The paths take `currentColor`, which is black in an image.
+- **Events.** The field dispatches `input` as a stroke is drawn and `change` when it ends, and both when Undo or Clear takes strokes back.
+- **Undo and Clear.** Undo takes back the last stroke and Clear every one. Until there is a stroke they wait out of sight; the script marks them `aria-disabled` while there is nothing to take, so the one that just emptied the pad keeps its focus and says so.
+- **Status.** `signature-status` says "Signature drawn" when the first stroke ends, "Signature cleared" when the pad is emptied and "Last stroke removed" after Undo.
+
+| Option | What it sets |
+| --- | --- |
+| `drawn` | What the status says when the first stroke ends. "Signature drawn" by default |
+| `cleared` | What it says when the pad is emptied. "Signature cleared" by default |
+| `undone` | What it says when Undo takes a stroke back. "Last stroke removed" by default |
+
+The behavior also exports `signaturePath(stroke, weight)` and `signatureSvg(strokes, { viewBox, weight })`, which turn strokes into a path and a document without a page: a server can draw a saved signature into its first HTML with them.
+
+## A typed name \{#a-typed-name\}
+
+A drawing has no keyboard. Someone who signs with a keyboard, a switch or a screen reader, or whose hand will not hold a stroke, signs by typing their name, so the typed name is part of the pattern and not an extra. It is a native [input](/components/input) with the `signature-name` class, set in a script face from `--signature-font`, a stack of the faces systems ship ("Snell Roundhand" on Apple systems, "Segoe Script" on Windows) that ends at `cursive`. Its placeholder stays in the face of the interface.
+
+Without the script, the pad cannot draw, and the typed name is the whole signature: the form submits it under its own `name`, as any field.
+
+## In a form \{#in-a-form\}
+
+Mark the typed name `required` when a signature is. The drawing answers the same requirement: while there is a stroke the behavior lifts `required` from the typed name, and gives it back when the pad is emptied. A reader who submits with neither gets the browser's own message on the typed name, and once they have tried, `:user-invalid` draws the danger contour on the field and on the pad, and a `field-error` in the field shows.
+
+<ComponentPreview name="form" height={416} title="In a form" background="plain" bodyClass="p-lg" behaviors html={`<form class="grid gap-md max-w(440) mx-auto" id="lease-form">
+  <fieldset class="signature">
+    <legend class="signature-label">Sign the lease</legend>
+    <div class="signature-pad">
+      <svg class="signature-ink" viewBox="0 0 400 160" role="img" aria-label="Your drawn signature"></svg>
+      <span class="signature-line" aria-hidden="true"></span>
+      <span class="signature-placeholder" aria-hidden="true">Sign here</span>
+      <div class="signature-actions">
+        <button type="button" class="btn btn-sm btn-quiet signature-undo">Undo</button>
+        <button type="button" class="btn btn-sm btn-quiet signature-clear">Clear</button>
+      </div>
+    </div>
+    <label class="field">Or type your full name
+      <input class="input signature-name" name="signer" autocomplete="name" required aria-describedby="lease-error">
+      <span class="field-error" id="lease-error">Sign in the box, or type your name.</span>
+    </label>
+    <input type="hidden" class="signature-value" name="signature">
+    <span class="signature-status" role="status"></span>
+  </fieldset>
+  <div class="flex items-center gap-sm">
+    <button class="btn btn-primary">Sign the lease</button>
+    <output class="text-sm fg-text-muted" id="lease-output"></output>
+  </div>
+</form>
+<script>
+  document.getElementById('lease-form').addEventListener('submit', function (event) {
+    event.preventDefault()
+    var data = new FormData(event.target)
+    var drawn = data.get('signature')
+    document.getElementById('lease-output').textContent = drawn ? 'Signed with a drawing of ' + drawn.length + ' characters of SVG' : 'Signed as ' + data.get('signer')
+  })
+</script>`} caption="Press Sign the lease with nothing drawn or typed: the browser asks for a signature and the pad turns to danger. Draw, and the requirement is met." />
+
+Where the application refuses a signature, mark the typed name `aria-invalid="true"` and say why in its `field-error`: the pad takes the danger contour with it, since the two are one signature.
+
+## Read-only and disabled \{#read-only-and-disabled\}
+
+`signature-readonly` on the root shows a signature as it was given: nothing draws on it, and Undo and Clear step aside. Give the typed name `readonly` as well, or leave it out. `disabled` on the `<fieldset>` stops the pad, turns the ink and the words to disabled ink and disables every control inside, as a fieldset does.
+
+<ComponentPreview name="read-only" height={264} title="Read-only" background="plain" bodyClass="p-lg" html={`<fieldset class="signature signature-readonly max-w(440) mx-auto">
+  <legend class="signature-label">Signed by the tenant on 12 November</legend>
+  <div class="signature-pad">
+    <svg class="signature-ink" viewBox="0 0 400 160" role="img" aria-label="The tenant's signature">
+      <path class="signature-stroke" d="M62.9 73.4Q61.4 76.1 61.4 78.9Q61.3 81.6 62.5 85.7Q63.6 89.7 66.3 94.2Q68.9 98.7 73 102.7Q77.1 106.7 82.4 109.3Q87.7 112 93.6 112.7Q99.6 113.3 105.4 111.8Q111.3 110.3 116.4 107Q121.5 103.6 125.3 99Q129.1 94.5 131.5 89.6Q133.8 84.8 134.7 80.6Q135.7 76.4 135.5 73.6Q135.3 70.9 133.7 70.1Q132.2 69.3 131.5 71.3Q130.8 73.3 131 76.9Q131.2 80.5 132.6 85.4Q134 90.2 136.8 95.4Q139.6 100.5 143.9 105.1Q148.1 109.6 153.4 112.7Q158.7 115.8 164.5 116.9Q170.3 118 176 116.9Q181.8 115.8 186.7 112.9Q191.6 109.9 195.3 105.8Q199 101.7 201.3 97.3Q203.5 92.9 204.3 89.1Q205.2 85.3 204.9 82.8Q204.6 80.3 202.6 80Q200.5 79.6 199.8 81.9Q199.2 84.2 199.5 88Q199.8 91.8 201.5 96.5Q203.1 101.2 206.2 106Q209.4 110.8 213.9 114.6Q218.4 118.5 224 120.7Q229.5 122.9 235.5 122.9Q241.4 122.8 247 120.6Q252.6 118.4 257.3 114.3Q262 110.3 265.4 105.3Q268.8 100.2 270.7 95.1Q272.6 90 273.1 85.7Q273.7 81.4 273.3 78.6Q272.9 75.9 271.5 75.2Q270.1 74.5 269.5 76.4Q269 78.2 269.5 81.6Q269.9 84.9 271.3 89.1L272.6 93.3A1 1 0 0 0 274.6 92.7Q271.8 84.4 271.3 81.3Q270.8 78.2 271 77Q271.3 75.8 271.3 76.1Q271.3 76.5 271.6 78.9Q272 81.3 271.4 85.4Q270.8 89.5 268.9 94.4Q267 99.3 263.8 104.1Q260.5 108.9 256 112.6Q251.5 116.3 246.2 118.3Q240.9 120.3 235.5 120.2Q230.1 120.1 225 118.1Q220 116 215.8 112.4Q211.7 108.7 208.9 104.3Q206 99.8 204.5 95.4Q203.1 91.1 202.8 87.7Q202.5 84.4 202.8 82.9Q203.1 81.5 202.4 81.5Q201.7 81.5 202 83.3Q202.2 85.1 201.5 88.5Q200.8 91.9 198.9 96.1Q196.9 100.2 193.5 104.2Q190.1 108.1 185.5 111Q181 113.8 175.7 114.9Q170.3 116 164.8 115Q159.3 114.1 154.2 111.2Q149.2 108.3 145.1 103.9Q141 99.6 138.3 94.6Q135.5 89.5 134.2 84.9Q132.9 80.2 132.8 76.8Q132.7 73.4 133.1 72.1Q133.6 70.8 133.3 71.1Q133.1 71.4 133.2 73.8Q133.2 76.1 132.3 80Q131.3 83.9 129 88.4Q126.8 92.9 123.1 97.1Q119.5 101.3 114.7 104.4Q110 107.4 104.7 108.7Q99.3 110.1 94 109.4Q88.6 108.8 83.8 106.4Q79 104 75.2 100.3Q71.4 96.6 68.9 92.5Q66.5 88.4 65.3 84.8Q64.2 81.1 64.2 78.8Q64.1 76.5 64.6 75.6L65.1 74.6A1.3 1.3 0 0 0 62.9 73.4Z"></path>
+      <path class="signature-stroke" d="M96.2 127.6Q127.6 123.9 143.3 122.5Q159 121.1 174.6 120.4Q190.3 119.7 206 120Q221.6 120.2 237.3 121.3Q253 122.5 268.7 124.4Q284.4 126.3 300.1 128.6L315.9 130.9A0.9 0.9 0 0 0 316.1 129.1Q284.7 124.3 269 122.3Q253.2 120.3 237.5 119.1Q221.8 117.8 206 117.5Q190.3 117.2 174.5 117.7Q158.8 118.3 143 119.6Q127.3 121 111.5 122.7L95.8 124.4A1.6 1.6 0 0 0 96.2 127.6Z"></path>
+    </svg>
+    <span class="signature-line" aria-hidden="true"></span>
+  </div>
+</fieldset>`} />
+
+## Proportions and ink \{#proportions-and-ink\}
+
+The drawing's `viewBox` sets the pad's proportions and the units of a stroke: the pad is as wide as its column and as tall as the `viewBox` makes it, so a signature drawn on a phone and shown on a desktop keeps its shape. `0 0 400 160` suits a line of a form; a wider box such as `0 0 480 140` suits a page with room. The ink is `--signature-ink`, the strong text color by default, and `--signature-weight` is a stroke's width at an even pressure, in the units of the `viewBox`, read when a stroke is written. The pad's corner is `--signature-radius`.
+
+## A picture of it \{#a-picture-of-it\}
+
+The drawing leaves as SVG, which scales and stays small. Where a PNG is wanted, for a PDF library or an email, the application draws the SVG on a canvas:
+
+```js name=png.js
+async function png(svg, scale = 2) {
+  const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }))
+  const image = new Image()
+  image.src = url
+  await image.decode()
+  const canvas = document.createElement('canvas')
+  canvas.width = image.naturalWidth * scale
+  canvas.height = image.naturalHeight * scale
+  canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height)
+  URL.revokeObjectURL(url)
+  return new Promise((resolve) => canvas.toBlob(resolve, 'image/png'))
+}
+
+const blob = await png(pad.svg)
+```
+
+The document carries its size in `width` and `height`, taken from the `viewBox`, so `scale` sets the resolution. The canvas is transparent where nothing is drawn.
+
+## Keyboard \{#keyboard\}
+
+<ContractTable name="signature" show="keyboard" />
+
+## Accessibility \{#accessibility\}
+
+- Group the pad and the typed name in a `<fieldset>` whose legend says what is being signed.
+- Name the drawing as an image, `role="img"` with an `aria-label`, and hide the line and the placeholder with `aria-hidden="true"`: the drawing's name already says where to sign.
+- The pad takes no focus, because no key draws. Give the typed name a visible label that offers it as the other way to sign.
+- The status is polite: it speaks when the pad is signed or emptied, not with every stroke.
+- On the pad a finger draws instead of scrolling the page (`touch-action: none`). Keep the pad no taller than a signature needs, so a reader on a phone can still scroll past it.
+- In forced colors the strokes are drawn in `CanvasText`, the line and the cross in `GrayText`, and the pad keeps an outline.
+- What makes a mark a signature in law, such as consent, the signer's identity and a record of when, belongs to the application and its jurisdiction, not to the component.
+
+## React, Svelte and Vue \{#frameworks\}
+
+The `signature` component renders the group, attaches the behavior and passes the strokes in and out; the typed name is a second value, `typed`. A first value is drawn into the first render, so a server sends the signature already on the pad. Copy it into the project with `npx master-ui add signature`; [React, Svelte and Vue](/guide/frameworks) says how the components are built and used.
+
+<FrameworkSource name="signature" />
+
+## Classes \{#classes\}
+
+<ContractTable name="signature" />
+
+## Custom properties \{#custom-properties\}
+
+<ContractTable name="signature" show="properties" />
+
+## Related \{#related\}
+
+<ComponentLinks slugs={['input', 'dropzone', 'otp']} />
+
+## Source \{#source\}
+
+<ComponentSource name="signature" />

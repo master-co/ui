@@ -1,0 +1,183 @@
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+import ComponentSource from '~/site/components/ComponentSource.astro'
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
+
+A panel is a floating surface that stays open beside the work while the page under it stays usable: the layers of a canvas, a color picker, an inspector, a chat. The reader drags it by its header, resizes it from its corner, folds it to its header and closes it. It is a `popover="manual"` with `role="dialog"`, so the browser opens it from a button and lifts it into the top layer, over everything on the page, with no `z-index` to keep in order. The `panel` [behavior](/guide/behaviors) does the rest: moving, resizing, folding, Escape, focus and which panel is in front.
+
+<ComponentPreview name="default" height={440} title="Panel" background="plain" bodyClass="flex items-end justify-center gap-sm p-lg" behaviors html={`<button type="button" class="btn btn-sm" commandfor="layers" command="toggle-popover">Layers</button>
+<button type="button" class="btn btn-sm" commandfor="comments" command="toggle-popover">Comments</button>
+
+<div id="layers" popover="manual" role="dialog" class="panel" aria-labelledby="layers-title" style="--panel-x: 24px; --panel-y: 24px; --panel-width: 232px">
+  <div class="panel-header">
+    <button type="button" class="panel-handle" aria-label="Move the Layers panel with the arrow keys"></button>
+    <h2 class="panel-title" id="layers-title">Layers</h2>
+    <div class="panel-actions">
+      <button type="button" class="btn btn-quiet btn-sm btn-square panel-minimize" aria-pressed="false" aria-label="Minimize">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><path d="M6 12h12"/></svg>
+      </button>
+      <button type="button" class="btn btn-quiet btn-sm btn-square" commandfor="layers" command="hide-popover" aria-label="Close">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="panel-body">
+    <ol class="list">
+      <li class="list-row"><span class="list-body"><span class="list-title">Header</span></span></li>
+      <li class="list-row"><span class="list-body"><span class="list-title">Hero image</span></span></li>
+      <li class="list-row"><span class="list-body"><span class="list-title">Pricing table</span></span></li>
+      <li class="list-row"><span class="list-body"><span class="list-title">Footer</span></span></li>
+    </ol>
+  </div>
+  <span class="panel-resize" aria-hidden="true"></span>
+</div>
+
+<div id="comments" popover="manual" role="dialog" class="panel" aria-labelledby="comments-title" style="--panel-x: 296px; --panel-y: 64px; --panel-width: 272px">
+  <div class="panel-header">
+    <button type="button" class="panel-handle" aria-label="Move the Comments panel with the arrow keys"></button>
+    <h2 class="panel-title" id="comments-title">Comments</h2>
+    <div class="panel-actions">
+      <button type="button" class="btn btn-quiet btn-sm btn-square panel-minimize" aria-pressed="false" aria-label="Minimize">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><path d="M6 12h12"/></svg>
+      </button>
+      <button type="button" class="btn btn-quiet btn-sm btn-square" commandfor="comments" command="hide-popover" aria-label="Close">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="panel-body">
+    <div class="flex flex-col gap-sm">
+      <p class="m(0)"><span class="fg-text-strong">Mira</span> The hero image crops the product on narrow screens.</p>
+      <p class="m(0)"><span class="fg-text-strong">Jun</span> Fixed in the next build: it keeps the middle third.</p>
+      <input class="input input-sm" type="text" placeholder="Reply" aria-label="Reply">
+    </div>
+  </div>
+  <span class="panel-resize" aria-hidden="true"></span>
+</div>
+
+<script>
+  document.getElementById('layers').showPopover()
+  document.getElementById('comments').showPopover()
+</script>`} caption="Drag a header, or the corner at its bottom end. Press inside the panel behind to bring it to the front. Tab to a header and use the arrow keys, Shift for longer steps, Alt to resize; Escape closes the panel." />
+
+## What the stylesheet draws \{#what-the-stylesheet-draws\}
+
+- **The sheet.** The floating face of a popover, with the floating shadow. While it is held by its header or its corner it rises to the overlay shadow, and the drag selects no text. Its corner is a small button's corner plus the 6px the header keeps around it, 14px.
+- **The header** is a bar of the same sheet over a hairline, with the title at the start and the actions at the end. Under both lies the handle, a button the size of the bar, so a press anywhere on the header that is not a control picks the panel up, with an open hand and then a closed one. The title takes no pointer, so a press on it reaches the handle.
+- **Focus on the handle** rings the whole panel, since what the keys move is the whole panel.
+- **Folded,** when the minimize button is pressed, the panel is only its header: the body and the corner are hidden, and the button sits in a well.
+- **The body** scrolls inside the panel when it is longer than the room it has, without moving the page under it.
+- **The corner** at the bottom end, two short diagonal lines, is a 16px target, 44px on a touch screen, where the header grows to hold 44px buttons too.
+
+## Where it stands \{#placement\}
+
+The place and the size are custom properties: `--panel-x` and `--panel-y` for the top left corner, in pixels from the viewport's top left corner, and `--panel-width` and `--panel-height`. The behavior writes them from the pointer and the keys, because only an event knows them; a page may write them too, as the preview does to start each panel somewhere.
+
+The stylesheet does the placing and the limits with `clamp()`, against the viewport a fixed element's percentages are read from, which leaves out a scrollbar:
+
+- The panel is never wider than the viewport, never narrower than `--panel-min-width` (12rem), and the whole of its width stays inside.
+- Its header never leaves the viewport, so a panel can always be found and dragged back; it is never taller than the viewport, and a body that does not fit scrolls.
+- A narrower window pushes a panel in. A wider one lets it go back to the place it was given, since the place it holds is not changed by the clamp.
+- Given no place, a panel opens at the top end corner, 8px (`--panel-gutter`) inside it.
+
+At the end of each move and resize the behavior reads where the stylesheet drew the panel and keeps that, so the value an application saves is the place the reader saw.
+
+## Several panels \{#stacking\}
+
+Panels stand in the top layer in the order they were shown: the last one shown is in front. A press or focus inside a panel behind another brings it to the front: the behavior shows it again, which puts it last in the top layer. It hides and shows it in one task, before the browser draws, so nothing is seen to leave, no entrance plays, and the browser reports one `toggle` from open to open. Focus stays where the reader put it.
+
+## The behavior \{#behavior\}
+
+`panel` takes the root, the element with the `panel` class, and returns the function that detaches it. Its `value` is where the panel is, how large and whether it is folded: `{ x, y, width, height, minimized }`, the four numbers in pixels or `null` where the stylesheet's default holds. Keep it, and set it back when the page loads.
+
+```js name=app.js
+import { panel } from '@master/ui/behaviors/panel.js'
+
+const root = document.querySelector('#layers')
+const layers = panel(root)
+
+const saved = localStorage.getItem('layers-panel')
+if (saved) layers.value = JSON.parse(saved)
+
+root.addEventListener('change', (event) => {
+  if (event.target === root) localStorage.setItem('layers-panel', JSON.stringify(layers.value))
+})
+```
+
+- **Moving.** A drag of the handle writes `--panel-x` and `--panel-y`; the point the panel was picked up by stays under the pointer. The arrow keys on the handle move it 16px, four times as far with <kbd class="kbd">Shift</kbd>.
+- **Resizing.** A drag of the corner writes `--panel-width` and `--panel-height`; <kbd class="kbd">Alt</kbd> with the arrow keys on the handle does the same, a step at a time. From right to left the corner is at the bottom left, so the panel widens to the left and <kbd class="kbd">Alt</kbd>+<kbd class="kbd">ArrowLeft</kbd> makes it wider.
+- **Folding.** A click on the minimize button turns its `aria-pressed`.
+- **Closing.** <kbd class="kbd">Escape</kbd> with focus in the panel closes it, unless a control inside handled the key, such as a menu that closes first. The close button needs no script: it is `command="hide-popover"`.
+- **Focus.** A panel opened from a control moves focus to its handle and gives it back to that control when it closes with focus inside. A panel a page opens as it loads leaves focus where it is.
+- **Events.** The root dispatches `input` while the panel moves or resizes, and `change` when a drag ends, a key moved it or it was folded. Both bubble, so a field in the body says them too: compare `event.target` with the root.
+
+| Option | What it sets |
+| --- | --- |
+| `step` | How far an arrow key moves or resizes the panel, in pixels. 16 by default |
+
+Without the behavior a panel still opens from its button over the page, in the top layer, and closes from its close button; it stays where its custom properties put it.
+
+## Opened from a button \{#opened-from-a-button\}
+
+A button with `commandfor` and `command="toggle-popover"` opens and closes the panel; `popovertarget` does the same. The panel is next in the tab order after its button, and focus goes to its handle when it opens, so the arrow keys can move it at once. Close it, with its button, its close button or <kbd class="kbd">Escape</kbd>, and focus returns to the button.
+
+<ComponentPreview name="opened" height={360} title="Opened from a button" background="plain" behaviors html={`<button type="button" class="btn" commandfor="inspector" command="toggle-popover">Inspect</button>
+
+<div id="inspector" popover="manual" role="dialog" class="panel" aria-labelledby="inspector-title" style="--panel-x: 24px; --panel-y: 24px; --panel-width: 264px">
+  <div class="panel-header">
+    <button type="button" class="panel-handle" aria-label="Move the Inspector panel with the arrow keys"></button>
+    <h2 class="panel-title" id="inspector-title">Inspector</h2>
+    <div class="panel-actions">
+      <button type="button" class="btn btn-quiet btn-sm btn-square panel-minimize" aria-pressed="false" aria-label="Minimize">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><path d="M6 12h12"/></svg>
+      </button>
+      <button type="button" class="btn btn-quiet btn-sm btn-square" commandfor="inspector" command="hide-popover" aria-label="Close">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="panel-body">
+    <dl class="data-list">
+      <div class="data-list-item"><dt class="data-list-term">Element</dt><dd class="data-list-value">Hero image</dd></div>
+      <div class="data-list-item"><dt class="data-list-term">Size</dt><dd class="data-list-value">1280 × 720</dd></div>
+      <div class="data-list-item"><dt class="data-list-term">Format</dt><dd class="data-list-value">AVIF</dd></div>
+    </dl>
+  </div>
+  <span class="panel-resize" aria-hidden="true"></span>
+</div>`} caption="Open the panel: focus moves to its header. Close it with Escape and focus returns to the button." />
+
+## Keyboard \{#keyboard\}
+
+<ContractTable name="panel" show="keyboard" />
+
+## Accessibility \{#accessibility\}
+
+- The panel is a `role="dialog"` named by its title with `aria-labelledby`. It is not modal: there is no `aria-modal`, the page stays usable and Tab leaves the panel. Use a [dialog](/components/dialog) when the task must be finished first.
+- The handle is a real button, so it is announced and reached like one. Name it with what it moves and how: "Move the Layers panel with the arrow keys". The corner is hidden from assistive technology, since the keys resize from the handle.
+- Every drag has a key: the arrows move, Alt with the arrows resizes. Where a reader who uses a pointer cannot drag, offer a single press too: a menu in the header whose items set the value, such as "Dock left", is enough.
+- The minimize button keeps its name and says its state with `aria-pressed`.
+- On a touch screen the header grows to hold 44px buttons, and the corner is a 44px target.
+- In forced colors the panel is outlined in the system's text color, and focus on the handle in its highlight.
+
+## React, Svelte and Vue \{#frameworks\}
+
+The `panel` component renders the header, its handle and its buttons, opens and closes the panel from `open`, and passes the value in and out: `onValueChange` as it moves and `onValueCommit` when a move ends, the moment to save it. The trigger and the body stay the page's own markup. Copy it into the project with `npx master-ui add panel`; [React, Svelte and Vue](/guide/frameworks) says how the components are built and used.
+
+<FrameworkSource name="panel" />
+
+## Classes \{#classes\}
+
+<ContractTable name="panel" />
+
+## Custom properties \{#custom-properties\}
+
+<ContractTable name="panel" show="properties" />
+
+## Related \{#related\}
+
+<ComponentLinks slugs={['dialog', 'popover', 'splitter', 'toolbar']} />
+
+## Source \{#source\}
+
+<ComponentSource name="panel" />

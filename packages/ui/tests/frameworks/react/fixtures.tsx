@@ -2,17 +2,25 @@ import { useRef, type ComponentType } from 'react'
 import { Avatar } from '../../../frameworks/react/avatar.tsx'
 import { Calendar } from '../../../frameworks/react/calendar.tsx'
 import { Carousel, type CarouselProps } from '../../../frameworks/react/carousel.tsx'
+import { ColorPicker, type ColorPickerProps } from '../../../frameworks/react/color-picker.tsx'
 import { Combobox } from '../../../frameworks/react/combobox.tsx'
 import { Editable } from '../../../frameworks/react/editable.tsx'
 import { Command } from '../../../frameworks/react/command.tsx'
 import { Compare } from '../../../frameworks/react/compare.tsx'
+import { Dial } from '../../../frameworks/react/dial.tsx'
+import { Cropper, type CropperProps } from '../../../frameworks/react/cropper.tsx'
 import { Dialog } from '../../../frameworks/react/dialog.tsx'
 import { Field } from '../../../frameworks/react/field.tsx'
+import { Gantt } from '../../../frameworks/react/gantt.tsx'
 import { Listbox } from '../../../frameworks/react/listbox.tsx'
+import { Log, type LogProps } from '../../../frameworks/react/log.tsx'
 import { Menu, type MenuProps } from '../../../frameworks/react/menu.tsx'
 import { Otp } from '../../../frameworks/react/otp.tsx'
 import { Schedule } from '../../../frameworks/react/schedule.tsx'
+import { Panel, type PanelProps } from '../../../frameworks/react/panel.tsx'
+import { Player } from '../../../frameworks/react/player.tsx'
 import { Popover, type PopoverProps } from '../../../frameworks/react/popover.tsx'
+import { Signature } from '../../../frameworks/react/signature.tsx'
 import { Sortable, type SortableProps } from '../../../frameworks/react/sortable.tsx'
 import { Splitter, type SplitterProps } from '../../../frameworks/react/splitter.tsx'
 import { Stepper } from '../../../frameworks/react/stepper.tsx'
@@ -21,6 +29,8 @@ import { Tags } from '../../../frameworks/react/tags.tsx'
 import { toast, Toaster } from '../../../frameworks/react/toast.tsx'
 import { Toolbar, type ToolbarProps } from '../../../frameworks/react/toolbar.tsx'
 import { Tooltip } from '../../../frameworks/react/tooltip.tsx'
+import { Tour, type TourProps } from '../../../frameworks/react/tour.tsx'
+import { Transcript, type TranscriptProps } from '../../../frameworks/react/transcript.tsx'
 import { Tree } from '../../../frameworks/react/tree.tsx'
 import { Wheel } from '../../../frameworks/react/wheel.tsx'
 import { type CompareProps } from '../../../frameworks/react/compare.tsx'
@@ -80,6 +90,28 @@ function ToolbarExample(props: Omit<ToolbarProps, 'label'>) {
   )
 }
 
+function TourExample(props: Omit<TourProps, 'steps' | 'trigger'>) {
+  const share = useRef<HTMLButtonElement>(null)
+  return (
+    <>
+      <div className="toolbar" role="toolbar" aria-label="Deployments">
+        <button type="button" className="btn btn-quiet btn-sm" id="tour-search">Search</button>
+        <button type="button" className="btn btn-quiet btn-sm" id="tour-filter">Filter</button>
+        <button type="button" className="btn btn-quiet btn-sm" ref={share}>Share</button>
+      </div>
+      <Tour
+        trigger={attributes => <button type="button" className="btn" {...attributes}>Take the tour</button>}
+        steps={[
+          { target: '#tour-search', title: 'Search every deployment', text: 'Find one by its branch, its commit or the person who shipped it.' },
+          { target: () => document.getElementById('tour-filter'), title: 'Filter the list', text: 'Keep only the deployments of one branch, one author or one status.' },
+          { target: share, title: 'Share a deployment', text: 'Copy a link to it, open for anyone on the team.' },
+        ]}
+        {...props}
+      />
+    </>
+  )
+}
+
 function SplitterExample(props: Omit<SplitterProps, 'start' | 'end'>) {
   return <Splitter start={<p>Files</p>} end={<p>Editor</p>} {...props} />
 }
@@ -90,6 +122,18 @@ function CompareExample(props: CompareProps) {
       <img className="compare-before" src="/demo/moonstone.svg" alt="The valley before grading" width="800" height="500" />
       <img className="compare-after" src="/demo/portrait-1.svg" alt="The valley after grading" />
     </Compare>
+  )
+}
+
+function CropperExample(props: Omit<CropperProps, 'src' | 'alt' | 'width' | 'height'>) {
+  return <Cropper src="/demo/harbor.svg" alt="The harbor at dusk" width={640} height={480} zoom={attributes => <input className="slider" aria-label="Zoom" {...attributes} />} {...props} />
+}
+
+function LogExample({ rows = [], ...props }: Omit<LogProps, 'children'> & { rows?: string[] }) {
+  return (
+    <Log {...props}>
+      <ol>{rows.map(row => <li key={row}>{row}</li>)}</ol>
+    </Log>
   )
 }
 
@@ -122,11 +166,46 @@ function DialogExample(props: DialogProps) {
   )
 }
 
+function PanelExample(props: Omit<PanelProps, 'title' | 'handleLabel'>) {
+  return (
+    <Panel id="layers" title="Layers" handleLabel="Move the Layers panel with the arrow keys" trigger={attributes => <button type="button" className="btn" {...attributes}>Layers</button>} {...props}>
+      <p>Header, Hero image, Pricing table</p>
+    </Panel>
+  )
+}
+
+/** A sheet the reader swipes: the track holds the panel, and the handle moves it between half and full height. */
+function DialogSheetExample(props: DialogProps) {
+  return (
+    <Dialog id="comments" className="dialog-sheet dialog-swipe dialog-detents" aria-labelledby="comments-title" trigger={attributes => <button type="button" className="btn" {...attributes}>Comments</button>} {...props}>
+      <div className="dialog-panel">
+        <button type="button" className="dialog-handle" aria-label="Sheet height"></button>
+        <header className="dialog-header">
+          <h2 className="dialog-title" id="comments-title">Comments</h2>
+          <p className="dialog-description">Three people reviewed this deployment.</p>
+        </header>
+        <div className="dialog-body">
+          <p>Ada: the build on main is green again.</p>
+        </div>
+      </div>
+    </Dialog>
+  )
+}
+
 function PopoverExample(props: PopoverProps) {
   return (
     <Popover trigger={attributes => <button type="button" className="btn" {...attributes}>Share</button>} {...props}>
       <p>Anyone with the link can view the latest deployment.</p>
     </Popover>
+  )
+}
+
+function ColorPickerPopoverExample(props: ColorPickerProps) {
+  return (
+    <ColorPicker
+      trigger={attributes => <button type="button" className="btn" {...attributes}><span className="swatch swatch-sm color-picker-swatch" />Accent</button>}
+      {...props}
+    />
   )
 }
 
@@ -138,22 +217,41 @@ function FieldExample(props: Omit<FieldProps, 'children'>) {
   return <Field {...props}>{control => <input className="input" type="email" {...control} />}</Field>
 }
 
+function TranscriptExample(props: Omit<TranscriptProps, 'media'>) {
+  return (
+    <>
+      <Player id="talk" src="/demo/recording.m4a" label="A short recording" />
+      <Transcript media="talk" aria-label="Transcript" {...props} />
+    </>
+  )
+}
+
 export const fixtures = {
   'avatar': Avatar,
   'calendar': Calendar,
   'carousel': CarouselExample,
+  'color-picker': ColorPicker,
+  'color-picker-popover': ColorPickerPopoverExample,
   'combobox': Combobox,
   'command': Command,
   'compare': CompareExample,
+  'cropper': CropperExample,
   'context-menu': ContextMenuExample,
+  'dial': Dial,
   'dialog': DialogExample,
   'editable': Editable,
+  'dialog-sheet': DialogSheetExample,
   'field': FieldExample,
+  'gantt': Gantt,
   'listbox': Listbox,
+  'log': LogExample,
   'menu': MenuExample,
   'otp': Otp,
   'schedule': Schedule,
+  'panel': PanelExample,
+  'player': Player,
   'popover': PopoverExample,
+  'signature': Signature,
   'sortable': SortableExample,
   'splitter': SplitterExample,
   'stepper': Stepper,
@@ -162,6 +260,8 @@ export const fixtures = {
   'toast': Toaster,
   'toolbar': ToolbarExample,
   'tooltip': TooltipExample,
+  'tour': TourExample,
+  'transcript': TranscriptExample,
   'tree': Tree,
   'wheel': Wheel,
 } as unknown as Record<string, ComponentType<Record<string, unknown>>>

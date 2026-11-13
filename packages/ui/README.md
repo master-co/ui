@@ -73,7 +73,7 @@ Or import only the theme and the components you use:
 | Divider | `divider`, `divider-vertical`, `divider-label` |
 | Texture | `texture`, `texture-grid`, `texture-stripes`, `texture-crosshatch`, `texture-checker`, `texture-fade` |
 | Category | `category-stone`, `category-gray`, `category-zinc`, `category-neutral`, `category-slate`, `category-brown`, `category-orange`, `category-amber`, `category-yellow`, `category-lime`, `category-green`, `category-beryl`, `category-teal`, `category-cyan`, `category-sky`, `category-blue`, `category-indigo`, `category-violet`, `category-purple`, `category-fuchsia`, `category-pink`, `category-crimson`, `category-red` |
-| Scroll area | `scroll-area`, `scroll-area-inline` |
+| Scroll area | `scroll-area`, `scroll-area-inline`, `scroll-area-latest` |
 | Reveal | `reveal` |
 | Icon | `icon` |
 | Icon frame | `icon-frame`, `icon-frame-xs`, `icon-frame-sm`, `icon-frame-lg`, `icon-frame-raised`, `icon-frame-info`, `icon-frame-success`, `icon-frame-warning`, `icon-frame-danger`, `icon-frame-category` |
@@ -87,14 +87,15 @@ Or import only the theme and the components you use:
 | Checkbox | `check`, `checkbox` |
 | Radio | `radio` |
 | Switch | `switch`, `switch-sm`, `switch-lg` |
-| Slider | `slider` |
+| Slider | `slider`, `slider-vertical` |
 | Range | `range`, `range-start`, `range-end` |
+| Dial | `dial`, `dial-full`, `dial-sm`, `dial-lg`, `dial-thumb`, `dial-value`, `dial-ticks`, `dial-mark` |
 | Segmented control | `segmented`, `segmented-item`, `segmented-input`, `segmented-sm`, `segmented-lg` |
 | Chip | `chip`, `chip-sm`, `chip-lg`, `chip-category`, `chip-input`, `chip-remove`, `chip-label`, `chip-media`, `chip-dot`, `chip-count` |
 | Tags | `tags` |
 | Editable | `editable`, `editable-preview`, `editable-field`, `editable-placeholder` |
 | Swatch | `swatch`, `swatch-input`, `swatch-sm`, `swatch-lg`, `swatch-square` |
-| Rating | `rating`, `rating-input`, `rating-sm`, `rating-lg` |
+| Rating | `rating`, `rating-input`, `rating-sm`, `rating-lg`, `rating-half`, `rating-display` |
 | Vote | `vote`, `vote-horizontal`, `vote-up`, `vote-score`, `vote-down` |
 | Choice | `choice`, `choice-body`, `choice-title`, `choice-description`, `choice-end` |
 | Poll | `poll`, `poll-title`, `poll-option`, `poll-input`, `poll-label`, `poll-value`, `poll-meta` |
@@ -102,8 +103,9 @@ Or import only the theme and the components you use:
 | Keypad | `keypad`, `keypad-key`, `keypad-key-quiet`, `keypad-letters` |
 | Checklist | `checklist`, `checklist-item`, `checklist-label`, `checklist-body`, `checklist-title`, `checklist-description`, `checklist-end`, `checklist-count` |
 | Dropzone | `dropzone`, `dropzone-input`, `dropzone-title`, `dropzone-description` |
+| Signature | `signature`, `signature-readonly`, `signature-label`, `signature-pad`, `signature-ink`, `signature-stroke`, `signature-line`, `signature-placeholder`, `signature-actions`, `signature-undo`, `signature-clear`, `signature-name`, `signature-value`, `signature-status` |
 | OTP | `otp`, `otp-slot`, `otp-separator` |
-| Stepper | `stepper`, `stepper-field` |
+| Stepper | `stepper`, `stepper-field`, `stepper-value`, `stepper-display`, `stepper-scrub` |
 | Wheel | `wheel`, `wheel-sm`, `wheel-column`, `wheel-option`, `wheel-separator` |
 | Composer | `composer`, `composer-field`, `composer-attachments`, `composer-toolbar`, `composer-end`, `composer-hint` |
 | Tabs | `tabs`, `tabs-item`, `tabs-sm` |
@@ -116,23 +118,25 @@ Or import only the theme and the components you use:
 | Pagination | `pagination`, `pagination-gap` |
 | Pager | `pager`, `pager-link`, `pager-label`, `pager-title` |
 | Steps | `steps`, `steps-vertical`, `steps-complete`, `steps-item`, `steps-body`, `steps-title`, `steps-description` |
-| Dialog | `dialog`, `dialog-sm`, `dialog-lg`, `dialog-drawer`, `dialog-drawer-start`, `dialog-sheet`, `dialog-header`, `dialog-title`, `dialog-description`, `dialog-body`, `dialog-footer`, `dialog-close` |
+| Dialog | `dialog`, `dialog-sm`, `dialog-lg`, `dialog-drawer`, `dialog-drawer-start`, `dialog-sheet`, `dialog-swipe`, `dialog-detents`, `dialog-panel`, `dialog-handle`, `dialog-header`, `dialog-title`, `dialog-description`, `dialog-body`, `dialog-footer`, `dialog-close` |
 | Lightbox | `lightbox`, `lightbox-media`, `lightbox-caption`, `lightbox-close` |
 | Popover | `popover`, `popover-end`, `popover-center`, `popover-top` |
+| Color picker | `color-picker`, `color-picker-area`, `color-picker-thumb`, `color-picker-hue`, `color-picker-alpha`, `color-picker-swatch`, `color-picker-fields`, `color-picker-format`, `color-picker-text`, `color-picker-popover` |
+| Panel | `panel`, `panel-header`, `panel-handle`, `panel-title`, `panel-actions`, `panel-minimize`, `panel-body`, `panel-resize` |
 | Menu | `menu`, `menu-end`, `menu-top`, `menu-sub`, `menu-context`, `menu-item`, `menu-item-danger`, `menu-input`, `menu-shortcut`, `menu-label`, `menu-separator` |
 | Listbox | `listbox`, `listbox-option`, `listbox-body`, `listbox-description`, `listbox-end`, `listbox-group`, `listbox-label`, `listbox-separator`, `listbox-empty` |
 | Combobox | `combobox`, `combobox-toggle` |
 | Command palette | `command`, `command-search`, `command-input`, `command-list`, `command-footer`, `command-hint` |
 | Tooltip | `tooltip`, `tooltip-bottom` |
-| Coachmark | `coachmark`, `coachmark-top`, `coachmark-count`, `coachmark-title`, `coachmark-text`, `coachmark-actions`, `coachmark-beacon` |
-| Toast | `toast-region`, `toast-region-top`, `toast-region-center`, `toast`, `toast-timed`, `toast-info`, `toast-success`, `toast-warning`, `toast-danger`, `toast-icon`, `toast-body`, `toast-title`, `toast-description`, `toast-close` |
+| Coachmark | `coachmark`, `coachmark-top`, `coachmark-count`, `coachmark-title`, `coachmark-text`, `coachmark-actions`, `coachmark-tour`, `coachmark-spotlight`, `coachmark-spotlight-dim`, `coachmark-beacon` |
+| Toast | `toast-region`, `toast-region-top`, `toast-region-center`, `toast`, `toast-timed`, `toast-info`, `toast-success`, `toast-warning`, `toast-danger`, `toast-icon`, `toast-body`, `toast-title`, `toast-description`, `toast-action`, `toast-close` |
 | Alert | `alert`, `alert-info`, `alert-success`, `alert-warning`, `alert-danger`, `alert-icon`, `alert-body`, `alert-title`, `alert-description` |
 | Banner | `banner`, `banner-dismissible`, `banner-info`, `banner-success`, `banner-warning`, `banner-danger`, `banner-inverse`, `banner-brand`, `banner-content`, `banner-title`, `banner-action`, `banner-close` |
 | Progress | `progress`, `progress-sm`, `progress-lg`, `progress-segmented`, `progress-label`, `progress-label-below`, `progress-marker`, `progress-ring`, `progress-ring-half`, `progress-ring-sm`, `progress-ring-lg`, `progress-ring-xl` |
 | Meter | `meter`, `meter-sm`, `meter-lg`, `meter-segmented` |
 | Gauge | `gauge`, `gauge-sm`, `gauge-lg`, `gauge-value`, `gauge-label` |
 | Uptime | `uptime`, `uptime-sm`, `uptime-day`, `uptime-degraded`, `uptime-down`, `uptime-none` |
-| Gantt | `gantt`, `gantt-now`, `gantt-row`, `gantt-scale`, `gantt-label`, `gantt-bar`, `gantt-milestone`, `gantt-ticks` |
+| Gantt | `gantt`, `gantt-now`, `gantt-row`, `gantt-scale`, `gantt-label`, `gantt-bar`, `gantt-milestone`, `gantt-resize-start`, `gantt-resize-end`, `gantt-ticks`, `gantt-status` |
 | Schedule | `schedule`, `schedule-now`, `schedule-rail`, `schedule-day`, `schedule-heading`, `schedule-events`, `schedule-event`, `schedule-title`, `schedule-time`, `schedule-event-lane`, `schedule-event-continued`, `schedule-event-continues`, `schedule-event-plain`, `schedule-event-category`, `schedule-allday`, `schedule-allday-label`, `schedule-month`, `schedule-weekdays`, `schedule-weekday`, `schedule-weeks`, `schedule-week`, `schedule-date`, `schedule-date-outside`, `schedule-date-number`, `schedule-more`, `schedule-list`, `schedule-agenda`, `schedule-agenda-day`, `schedule-agenda-date`, `schedule-view`, `schedule-view-header`, `schedule-view-title`, `schedule-view-previous`, `schedule-view-next`, `schedule-view-today`, `schedule-view-switch`, `schedule-view-body` |
 | Price | `price`, `price-sm`, `price-lg`, `price-amount`, `price-currency`, `price-period`, `price-was` |
 | Skeleton | `skeleton`, `skeleton-text`, `skeleton-circle` |
@@ -140,6 +144,7 @@ Or import only the theme and the components you use:
 | Spinner | `spinner`, `spinner-sm`, `spinner-lg`, `spinner-xl`, `spinner-inline` |
 | Busy | `busy` |
 | Caret | `caret`, `caret-block` |
+| Presence | `presence`, `presence-name`, `presence-message`, `presence-caret`, `presence-selection`, `presence-1`, `presence-2`, `presence-3`, `presence-4`, `presence-5`, `presence-6`, `presence-7`, `presence-8` |
 | Flash | `flash` |
 | Empty | `empty`, `empty-media`, `empty-title`, `empty-description`, `empty-actions` |
 | Accordion | `accordion`, `accordion-item`, `accordion-trigger`, `accordion-content` |
@@ -159,14 +164,17 @@ Or import only the theme and the components you use:
 | Heatmap | `heatmap`, `heatmap-lg`, `heatmap-cell` |
 | Timeline | `timeline`, `timeline-item`, `timeline-marker`, `timeline-body`, `timeline-title`, `timeline-description`, `timeline-time` |
 | Trace | `trace`, `trace-step`, `trace-failed`, `trace-summary`, `trace-marker`, `trace-meta`, `trace-detail` |
-| Calendar | `calendar`, `calendar-header`, `calendar-title`, `calendar-grid`, `calendar-week`, `calendar-weekday`, `calendar-day`, `calendar-day-outside`, `calendar-day-range-start`, `calendar-day-range`, `calendar-day-range-end` |
-| Tree | `tree`, `tree-item`, `tree-toggle`, `tree-group`, `tree-sub` |
+| Calendar | `calendar`, `calendar-month`, `calendar-header`, `calendar-title`, `calendar-title-button`, `calendar-grid`, `calendar-week`, `calendar-weekday`, `calendar-day`, `calendar-day-outside`, `calendar-day-range-start`, `calendar-day-range`, `calendar-day-range-end`, `calendar-period`, `calendar-period-outside` |
+| Tree | `tree`, `tree-item`, `tree-label`, `tree-check`, `tree-toggle`, `tree-group`, `tree-sub` |
 | Carousel | `carousel`, `carousel-slide`, `carousel-2`, `carousel-3`, `carousel-center`, `carousel-vertical`, `carousel-view`, `carousel-previous`, `carousel-next`, `carousel-dots`, `carousel-dot` |
 | Marquee | `marquee`, `marquee-reverse`, `marquee-track` |
 | Waveform | `waveform`, `waveform-sm`, `waveform-lg`, `waveform-bar`, `waveform-seek`, `waveform-time` |
+| Player | `player`, `player-video`, `player-media`, `player-controls`, `player-button`, `player-play`, `player-mute`, `player-speed`, `player-captions`, `player-pip`, `player-fullscreen`, `player-off`, `player-on`, `player-elapsed`, `player-duration`, `player-seek`, `player-volume` |
+| Transcript | `transcript`, `transcript-list`, `transcript-cue`, `transcript-time`, `transcript-text`, `transcript-speaker`, `transcript-return` |
 | Splitter | `splitter`, `splitter-pane`, `splitter-handle` |
 | Figure | `figure`, `figure-framed`, `figure-center`, `figure-media`, `figure-caption` |
 | Compare | `compare`, `compare-before`, `compare-after`, `compare-range` |
+| Cropper | `cropper`, `cropper-pan`, `cropper-round`, `cropper-image`, `cropper-box`, `cropper-handle`, `cropper-handle-top`, `cropper-handle-bottom`, `cropper-handle-left`, `cropper-handle-right`, `cropper-status` |
 | Quote | `quote`, `quote-lg`, `quote-text`, `quote-source`, `quote-name` |
 | Message | `message`, `message-sent`, `message-avatar`, `message-bubble`, `message-meta`, `message-typing` |
 | Thread | `thread`, `thread-item`, `thread-avatar`, `thread-body`, `thread-header`, `thread-text`, `thread-author`, `thread-meta`, `thread-replies` |
@@ -230,7 +238,7 @@ stop.value = 'hnd'                                          // where a pattern h
 
 ## React, Svelte and Vue
 
-A component is a class on a native element, so in a framework most of the library is the same markup in that framework's syntax; there is no `Button` to import. Twenty-four patterns hold state, render rows from data, join parts by id or have a lifetime, and each has a component: avatar, calendar, carousel, combobox, command, compare, dialog, editable, field, listbox, menu, otp, popover, schedule, sortable, splitter, stepper, tabs, tags, toast, toolbar, tooltip, tree and wheel.
+A component is a class on a native element, so in a framework most of the library is the same markup in that framework's syntax; there is no `Button` to import. Thirty-four patterns hold state, render rows from data, join parts by id or have a lifetime, and each has a component: avatar, calendar, carousel, color-picker, combobox, command, compare, cropper, dial, dialog, editable, field, gantt, listbox, log, menu, otp, panel, player, popover, schedule, signature, sortable, splitter, stepper, tabs, tags, toast, toolbar, tooltip, tour, transcript, tree and wheel.
 
 ```sh
 npx master-ui add combobox --framework=react   # ui/combobox.tsx and ui/use-behavior.ts

@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, useId, useTemplateRef, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, useId, useTemplateRef, watch } from 'vue'
+import { drawer } from '@master/ui/behaviors/drawer.js'
 
 defineOptions({ inheritAttrs: false })
 
@@ -19,6 +20,9 @@ defineSlots<{
  * only opens and closes it from `open`, and says when the browser did. Its default slot is the contract's
  * parts: `dialog-header`, `dialog-body`, `dialog-footer`. A button inside closes it with
  * `commandfor` and `command="close"`, or from a form with `method="dialog"`.
+ *
+ * A drawer or a sheet with `dialog-swipe` in its `class` holds a `dialog-panel` and is let go of to close;
+ * the drawer behavior, attached to every dialog, closes it and says so here like any other close.
  */
 const generated = useId()
 const name = computed(() => id ?? generated)
@@ -40,7 +44,12 @@ const report = () => {
   // An `open` this component is told wins: if its owner did not take the change, the dialog goes back.
   void nextTick(sync)
 }
-onMounted(sync)
+let detach: (() => void) | undefined
+onMounted(() => {
+  if (root.value) detach = drawer(root.value)
+  sync()
+})
+onBeforeUnmount(() => detach?.())
 watch(open, sync, { flush: 'post' })
 </script>
 

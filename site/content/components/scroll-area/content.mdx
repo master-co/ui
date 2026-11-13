@@ -1,8 +1,9 @@
 import ComponentPreview from '~/site/components/ComponentPreview.astro'
 import ComponentSource from '~/site/components/ComponentSource.astro'
 import ContractTable from '~/site/components/ContractTable.astro'
+import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
-A scroll area is a region that scrolls inside the page: a long list in a panel, a wide table, a log. It keeps the platform's own scrolling, with a thin quiet scrollbar, and adds one thing: where content continues past an edge, that edge fades out, and where the content ends, the edge is clean.
+A scroll area is a region that scrolls inside the page: a long list in a panel, a wide table, a log. It keeps the platform's own scrolling, with a thin quiet scrollbar, and adds one thing: where content continues past an edge, that edge fades out, and where the content ends, the edge is clean. A region that grows at its end while it is read, such as a chat or a build log, can also [follow what arrives](#follow).
 
 <ComponentPreview name="default" height={248} title="Scroll area" bodyClass="p-lg" html={`<div class="sheet max-w(360) mx-auto">
   <div class="scroll-area h(200) p-md text-sm fg-text-body leading-md" tabindex="0" role="region" aria-label="Release notes">
@@ -47,11 +48,129 @@ The page goes on scrolling past a scroll area along the block axis: a wheel or a
   </div>
 </div>`} />
 
+## Following what arrives \{#follow\}
+
+A chat, a build log or a streamed answer grows at its end while it is read. Give the region `role="log"` and attach the `follow` [behavior](/guide/behaviors): it keeps the end in view while content arrives, stops following the moment the reader scrolls away from the end, and follows again when they come back to it. Put a `scroll-area-latest` button after the content, with `hidden`: it appears only while the region does not follow, and pressing it scrolls to the end and follows again.
+
+<ComponentPreview name="follow" height={300} title="Following a build log" bodyClass="p-lg" behaviors html={`<div class="sheet max-w(440) mx-auto">
+  <div class="scroll-area h(240) p-md font-mono text-xs fg-text-body leading-md" tabindex="0" role="log" aria-label="Build log">
+    <div id="build-lines">
+      <p class="m(0)">Cloning master-co/ui at 3041b1c</p>
+      <p class="m(0)">Installing 596 packages</p>
+      <p class="m(0)">Compiling 112 stylesheets</p>
+    </div>
+    <button type="button" class="btn btn-sm btn-pill scroll-area-latest" hidden><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg>Jump to latest</button>
+  </div>
+</div>
+<script>
+  const steps = ['Checking contracts', 'Rendering /components', 'Rendering /blocks', 'Rendering /pages', 'Writing llms.txt', 'Writing the registry', 'Checking 2,914 links', 'Compressing assets', 'Uploading 71 pages']
+  const lines = document.getElementById('build-lines')
+  let count = 0
+  const timer = setInterval(() => {
+    const line = document.createElement('p')
+    line.className = 'm(0)'
+    line.textContent = steps[count % steps.length] + (count >= steps.length ? ' (pass ' + (Math.floor(count / steps.length) + 1) + ')' : '')
+    lines.append(line)
+    if (++count >= 120) clearInterval(timer)
+  }, 800)
+</script>`} caption="Lines keep arriving and the log keeps up. Scroll up while it runs: the log stays where you are and Jump to latest appears. Press it, or scroll back to the end, and the log follows again." />
+
+How it decides:
+
+- **Following.** The region follows from the moment the behavior is attached: it is scrolled to its end, and each time what it holds grows, whether a row is added, a streamed word lands in the last message or an image finishes loading, it is scrolled to the end again.
+- **Stopping.** Scrolling toward the start stops following, whatever did it: a wheel, a finger, the scrollbar, <kbd>↑</kbd>, <kbd>Page Up</kbd> or <kbd>Home</kbd>. A wheel turned toward the start stops it at once, before the region has moved, so a word arriving at that instant cannot pull the reader back.
+- **Following again.** Reaching the end again, with <kbd>End</kbd>, the scrollbar or the button, follows again. A few pixels short of the end still counts as the end.
+- **Events.** The region dispatches `change` each time the reader makes it follow or stop. The behavior's `value` says whether it follows; set it to `true` to bring the reader to the end, as an application does when the reader sends a message. Setting it dispatches nothing.
+
+```js name=app.js
+import { follow } from '@master/ui/behaviors/follow.js'
+
+const log = document.querySelector('.scroll-area[role="log"]')
+const following = follow(log)
+
+form.addEventListener('submit', () => { following.value = true })
+```
+
+Without the behavior the region is an ordinary scroll area: it stays where the reader left it, and the button stays hidden. The button stands sticky at the foot of the region, over the content and above the faded edge, and lays itself over the last row instead of after it, so showing it never makes the content taller.
+
+## Keeping the reader's place \{#keeping-the-place\}
+
+Content inserted above what the reader is looking at, such as older messages loaded at the top, would push what they are reading down. The browser prevents that by itself with scroll anchoring: the region moves with the content above, so the message being read stays where it was. The stylesheet keeps `overflow-anchor: auto` on the region and `none` on its button, which is never the element the browser holds still. Where a browser has no scroll anchoring, the `follow` behavior does the same itself, by as much as the content above moved. A line at the top that rows are inserted under, such as a note that more is loading, takes `overflow-anchor: none` too, so the browser holds a row still instead of the line.
+
+<ComponentPreview name="earlier" height={380} title="Earlier messages and a streamed answer" bodyClass="p-lg" behaviors html={`<div class="sheet max-w(440) mx-auto">
+  <div class="scroll-area h(320) p-md" tabindex="0" role="log" aria-label="Conversation with Ada">
+    <p class="m(0) pb-sm text-center text-xs fg-text-muted" style="overflow-anchor: none" id="earlier">Earlier messages load as you scroll up</p>
+    <ol class="m(0) p(0)" id="turns">
+      <li class="message message-sent"><div class="message-bubble">Can the docs build run on every push?</div></li>
+      <li class="message"><div class="message-bubble">Yes. It takes about two minutes.</div></li>
+    </ol>
+    <button type="button" class="btn btn-sm btn-pill scroll-area-latest" hidden><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg>Jump to latest</button>
+  </div>
+</div>
+<script>
+  const turns = document.getElementById('turns')
+  const turn = (text, sent) => {
+    const item = document.createElement('li')
+    item.className = sent ? 'message message-sent' : 'message'
+    const bubble = document.createElement('div')
+    bubble.className = 'message-bubble'
+    bubble.textContent = text
+    item.append(bubble)
+    return item
+  }
+  const older = [['Morning! Is the release still today?', false], ['It is, once the docs build passes.', true], ['Which build?', false], ['The one that checks every page and link.', true], ['Do we wait for it?', false], ['No, it reports here when it is done.', true]]
+  const log = turns.closest('.scroll-area')
+  log.addEventListener('scroll', () => {
+    if (log.scrollTop > 48 || !older.length) return
+    for (const [text, sent] of older.splice(-2).reverse()) turns.prepend(turn(text, sent))
+    if (!older.length) document.getElementById('earlier').textContent = 'The start of the conversation'
+  })
+  const exchanges = [
+    ['What does it check?', 'It renders every page in five languages, checks each preview against the contracts, follows every link and compares the registry with the package, then writes the search index.'],
+    ['And if a link is broken?', 'The build stops and names the page and the link, so nothing half checked reaches the site. Fix it and push again; the next run starts from the beginning.'],
+    ['Thanks!', 'Any time. I will post here when this one is done.']
+  ]
+  let at = 0
+  const next = () => {
+    if (at >= exchanges.length) return
+    const [question, answer] = exchanges[at++]
+    turns.append(turn(question, true))
+    const reply = turn('', false)
+    const bubble = reply.firstChild
+    bubble.setAttribute('aria-busy', 'true')
+    turns.append(reply)
+    const words = answer.split(' ')
+    const stream = setInterval(() => {
+      bubble.textContent += (bubble.textContent ? ' ' : '') + words.shift()
+      if (words.length) return
+      clearInterval(stream)
+      bubble.removeAttribute('aria-busy')
+      setTimeout(next, 2500)
+    }, 140)
+  }
+  setTimeout(next, 1200)
+</script>`} caption="The answer streams in and the conversation follows it. Scroll up: near the top, older turns arrive above, and the turn you were reading stays where it is." />
+
 ## Accessibility \{#accessibility\}
 
 - A region that scrolls must be reachable by the keys. Give it `tabindex="0"`, a `role` such as `region` and a label, unless it already holds focusable content.
 - The mask fades the region's own scrollbar at the same edges. In forced colors the mask is removed.
 - Give the region a height or a maximum height; without one it grows with its content and never scrolls.
+- `role="log"` is a polite live region: what is added to it is announced without moving the focus. While an answer streams into a message, give that message `aria-busy="true"` and remove it when the answer is complete, so it is read once, whole, instead of word by word.
+- The `scroll-area-latest` button is a real button in the tab order while it shows. Pressing it hides it, and the focus moves to the region, which then scrolls with the keys.
+- Following never moves the focus, and stops as soon as the reader scrolls away, so content that keeps arriving never takes the page out from under someone reading it.
+
+## Keyboard \{#keyboard\}
+
+The keys are the browser's own; the behavior only listens to the scroll they make.
+
+<ContractTable name="scroll-area" show="keyboard" />
+
+## React, Svelte and Vue \{#frameworks\}
+
+The `log` component renders a following scroll area around its children, with the button, attaches the behavior and passes `following` in and out. Copy it into the project with `npx master-ui add log`; [React, Svelte and Vue](/guide/frameworks) says how the components are built and used.
+
+<FrameworkSource name="scroll-area" />
 
 ## Classes \{#classes\}
 

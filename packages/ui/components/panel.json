@@ -1,0 +1,61 @@
+{
+  "$schema": "../contract.schema.json",
+  "name": "panel",
+  "title": "Panel",
+  "tier": "component",
+  "category": "Overlays",
+  "description": "A floating surface the reader moves, resizes, folds to its header and closes.",
+  "use": "Tools that stay open beside the work while the page stays usable: the layers of a canvas, a color picker, an inspector, a chat. The reader drags it by its header, resizes it from its corner, folds it to its header and closes it; the application keeps where it was through the behavior's value.",
+  "instead": [
+    { "when": "The task must be finished or dismissed before the page is used again", "use": "dialog" },
+    { "when": "The content belongs to one button and leaves on an outside click", "use": "popover" },
+    { "when": "The surface keeps a place in the layout and two regions share the space", "use": "splitter" },
+    { "when": "It is a picture of an application window, not a window that moves", "use": "window" },
+    { "when": "It is a row of tools over content, with no title or body", "use": "toolbar" }
+  ],
+  "composes": ["button", "icon"],
+  "script": "required",
+  "behavior": "panel",
+  "keyboard": [
+    { "keys": "Enter, Space", "action": "On a button with commandfor and command=\"toggle-popover\": open the panel and move focus to its handle; again, close it" },
+    { "keys": "ArrowLeft, ArrowRight, ArrowUp, ArrowDown", "action": "On the handle: move the panel a step, 16px, that way; it stops at the edges of the viewport" },
+    { "keys": "Shift+Arrow keys", "action": "On the handle: move the panel four steps" },
+    { "keys": "Alt+ArrowRight, Alt+ArrowLeft", "action": "On the handle: make the panel wider or narrower by a step, four with Shift; the other way around from right to left, where the corner it resizes from is at the left" },
+    { "keys": "Alt+ArrowDown, Alt+ArrowUp", "action": "On the handle: make the panel taller or shorter by a step, four with Shift; a folded panel keeps its height" },
+    { "keys": "Enter, Space", "action": "On the minimize button: fold the panel to its header, or unfold it" },
+    { "keys": "Escape", "action": "With focus in the panel: close it and return focus to the control that opened it. A control inside that handles Escape, such as an open menu, keeps it" },
+    { "keys": "Tab, Shift+Tab", "action": "Move between the handle, the actions and the body, and on to the page: the panel is not modal" }
+  ],
+  "platform": [
+    { "feature": "popover=\"manual\" with commandfor and command=\"toggle-popover\" (or popovertarget)", "fallback": "Supported in all current browsers: the panel opens over the page in the top layer and closes from its button without script. Where no button can point at it, call showPopover() and hidePopover(); the stylesheet is the same" },
+    { "feature": "@starting-style and transition-behavior: allow-discrete", "fallback": "The panel appears and leaves at once, without the fade" },
+    { "feature": ":has()", "fallback": "Supported in all current browsers; without it a folded panel keeps its body and a held one its shadow" }
+  ],
+  "classes": [
+    { "name": "panel", "kind": "root", "label": true, "attributes": { "popover": "manual", "role": "dialog" }, "description": "The floating sheet: a popover=\"manual\" with role=\"dialog\", named by its title with aria-labelledby. It stands where --panel-x and --panel-y say, kept inside the viewport, 20rem wide unless told otherwise, at the top end corner when given no place" },
+    { "name": "panel-header", "kind": "part", "of": "panel", "description": "The bar at the top: the title at the start, the actions at the end and the handle under both. It is the part that never leaves the viewport" },
+    { "name": "panel-handle", "kind": "part", "of": "panel", "elements": ["button"], "label": true, "attributes": { "type": "button" }, "description": "A button the size of the header, first in it, that carries the panel: a drag anywhere on the bar that is not a control moves it, and the arrow keys move it while it has focus. Name it with what it moves and how, such as \"Move the Layers panel with the arrow keys\". Its focus rings the panel" },
+    { "name": "panel-title", "kind": "part", "of": "panel", "description": "The title, on one line; point the panel's aria-labelledby at it. It takes no pointer, so a press on it reaches the handle" },
+    { "name": "panel-actions", "kind": "part", "of": "panel", "description": "The controls at the end of the header, over the handle: small quiet square buttons" },
+    { "name": "panel-minimize", "kind": "part", "of": "panel", "elements": ["button"], "label": true, "attributes": { "aria-pressed": ["true", "false"] }, "description": "The button that folds the panel to its header. Pressed, it sits in a well, and the body and the corner are hidden" },
+    { "name": "panel-body", "kind": "part", "of": "panel", "description": "What the panel holds, under a hairline, with --panel-padding around it. A long body scrolls inside the panel. Lay out what it holds in an element inside it: the panel hides the body when it is folded" },
+    { "name": "panel-resize", "kind": "part", "of": "panel", "attributes": { "aria-hidden": "true" }, "description": "The corner a pointer resizes the panel from, at the bottom end: a 16px target, 44px on touch screens. The keys resize from the handle, so hide it from assistive technology" }
+  ],
+  "states": [
+    { "on": "panel", "name": "open", "mark": ":popover-open", "description": "Shown by the browser, from its button or showPopover()" },
+    { "on": "panel-minimize", "name": "minimized", "mark": "aria-pressed=\"true\"", "description": "Folded to its header: the body and the corner are hidden and the panel is as tall as its header" },
+    { "on": "panel-handle", "name": "held", "mark": ":active", "description": "Carried by the pointer, as is panel-resize: the panel rises to the overlay shadow and the drag selects no text" },
+    { "on": "panel-handle", "name": "focused", "mark": ":focus-visible", "description": "The focus ring is drawn around the whole panel, the thing the keys move" }
+  ],
+  "properties": [
+    { "name": "--panel-x", "default": "100%", "description": "The left edge, from the viewport's left edge; the script writes it in pixels. It is kept so the whole width stays in the viewport, at the right edge by default and at the left from right to left" },
+    { "name": "--panel-y", "default": "0px", "description": "The top edge, from the viewport's top edge; the script writes it in pixels. It is kept so the header stays in the viewport" },
+    { "name": "--panel-width", "default": "20rem", "description": "The width; the script writes it in pixels. It is kept between --panel-min-width and the viewport's width" },
+    { "name": "--panel-height", "default": "auto", "description": "The height, as tall as the content by default; the script writes it in pixels. It is never more than the viewport's height" },
+    { "name": "--panel-min-width", "default": "12rem", "description": "The narrowest a resize makes it" },
+    { "name": "--panel-gutter", "default": ".5rem", "description": "The least room kept between the panel and the edges of the viewport" },
+    { "name": "--panel-padding", "default": "1rem", "description": "Padding around the body" },
+    { "name": "--panel-radius", "default": "calc(var(--radius-control-sm) + var(--panel-inset))", "description": "The corner: a small button's corner plus the 6px the header keeps around it" }
+  ],
+  "example": "<button type=\"button\" class=\"btn\" commandfor=\"layers\" command=\"toggle-popover\">Layers</button>\n\n<div id=\"layers\" popover=\"manual\" role=\"dialog\" class=\"panel\" aria-labelledby=\"layers-title\">\n  <div class=\"panel-header\">\n    <button type=\"button\" class=\"panel-handle\" aria-label=\"Move the Layers panel with the arrow keys\"></button>\n    <h2 class=\"panel-title\" id=\"layers-title\">Layers</h2>\n    <div class=\"panel-actions\">\n      <button type=\"button\" class=\"btn btn-quiet btn-sm btn-square panel-minimize\" aria-pressed=\"false\" aria-label=\"Minimize\">\n        <svg class=\"icon\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" aria-hidden=\"true\"><path d=\"M6 12h12\"/></svg>\n      </button>\n      <button type=\"button\" class=\"btn btn-quiet btn-sm btn-square\" commandfor=\"layers\" command=\"hide-popover\" aria-label=\"Close\">\n        <svg class=\"icon\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" aria-hidden=\"true\"><path d=\"M6 6l12 12M18 6 6 18\"/></svg>\n      </button>\n    </div>\n  </div>\n  <div class=\"panel-body\">Header, Hero image, Pricing table</div>\n  <span class=\"panel-resize\" aria-hidden=\"true\"></span>\n</div>"
+}

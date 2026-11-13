@@ -5,38 +5,51 @@
   "tier": "component",
   "category": "Navigation",
   "description": "Nested rows for things that contain things.",
-  "use": "Things that contain things, many levels deep: folders, an outline, categories. Without script a branch is a native details whose summary is the row. With the tree script the same classes read aria-expanded and aria-selected, and the tree is one tab stop walked with the arrow keys.",
+  "use": "Things that contain things, many levels deep: folders, an outline, categories. Without script a branch is a native details whose summary is the row. With the tree script the same classes read aria-expanded and aria-selected, and the tree is one tab stop walked with the arrow keys. With aria-multiselectable=\"true\" any number of rows are selected; with aria-checked on its rows it is a checkbox tree; a branch whose rows are loaded later says aria-busy=\"true\"; with the script's rename option, F2 renames a row in place.",
   "instead": [
     { "when": "It is a short list of destinations with one level of grouping", "use": "nav" },
     { "when": "A branch holds content to read instead of rows", "use": "accordion" }
   ],
-  "composes": ["icon"],
+  "composes": ["icon", "spinner", "editable"],
   "script": "optional",
   "behavior": "tree",
   "keyboard": [
     { "keys": "Tab", "action": "With details, every row is a tab stop. With the script, the tree is one tab stop: the current or selected row, or the first" },
-    { "keys": "Enter, Space", "action": "Open or close a branch, or follow the link of a row; on a summary the browser does it without script. With the script, a row with role=\"treeitem\" that is not a branch becomes the selected row" },
+    { "keys": "Enter, Space", "action": "Open or close a branch, or follow the link of a row; on a summary the browser does it without script. With the script, a row with role=\"treeitem\" that is not a branch becomes the selected row; in a checkbox tree Enter checks a leaf" },
     { "keys": "ArrowDown, ArrowUp", "action": "With the script: move to the next or the previous visible row" },
     { "keys": "ArrowRight", "action": "With the script: open a closed branch; on an open branch, move to its first row. ArrowLeft from right to left" },
     { "keys": "ArrowLeft", "action": "With the script: close an open branch; on a closed branch or a leaf, move to the row of its parent. ArrowRight from right to left" },
     { "keys": "Home, End", "action": "With the script: move to the first or the last visible row" },
     { "keys": "A character", "action": "With the script: move to the next visible row that starts with it; characters typed quickly are read as one word" },
-    { "keys": "*", "action": "With the script: open every closed branch at the level of the row that has focus" }
+    { "keys": "*", "action": "With the script: open every closed branch at the level of the row that has focus" },
+    { "keys": "Space", "action": "With the script, in a tree with aria-multiselectable=\"true\": select or unselect the row that has focus. In a checkbox tree: check or uncheck the row and every row under it" },
+    { "keys": "Control+click", "action": "In a multiselectable tree: select or unselect one row, keeping the others; a click alone selects only that row. Command on a Mac" },
+    { "keys": "Shift+ArrowDown, Shift+ArrowUp", "action": "In a multiselectable tree: move, and select every visible row from the one chosen last to the new one" },
+    { "keys": "Shift+Space, Shift+click", "action": "In a multiselectable tree: select every visible row from the one chosen last to this one" },
+    { "keys": "Control+Shift+Home, Control+Shift+End", "action": "In a multiselectable tree: select every visible row up to the first or the last; Command on a Mac" },
+    { "keys": "Control+A", "action": "In a multiselectable tree: select every visible row, or none when they all are; Command on a Mac" },
+    { "keys": "F2", "action": "With the script's rename option: turn the label of the row that has focus into a field, with its text selected" },
+    { "keys": "Enter, Escape", "action": "In the rename field: save the label, or put it back; either way focus returns to the row. Leaving the field saves it" }
   ],
   "classes": [
     { "name": "tree", "kind": "root", "description": "The list; role=\"tree\" with a label when the script drives it" },
     { "name": "tree-item", "kind": "part", "of": "tree", "description": "A row: a link, a button, the summary of a branch, or an element with role=\"treeitem\". It keeps the chevron's column, so a leaf lines up with the branches beside it" },
+    { "name": "tree-label", "kind": "part", "of": "tree", "description": "The words of a row: a long one ends in an ellipsis. The part the script's rename turns into an editable" },
+    { "name": "tree-check", "kind": "part", "of": "tree", "description": "In a checkbox tree, the row's check after the chevron's column: the checkbox's well, drawn from the row's aria-checked. Give it aria-hidden=\"true\": the row says its state" },
     { "name": "tree-toggle", "kind": "modifier", "of": "tree-item", "description": "On the row of a branch: draws a chevron in the leading column, which turns down while the branch is open" },
     { "name": "tree-group", "kind": "part", "of": "tree", "elements": ["details"], "description": "A details that holds a branch: its summary is the row, its tree-sub the rows under it" },
     { "name": "tree-sub", "kind": "part", "of": "tree", "description": "The rows under a branch, one level in, on a hairline that runs down from the chevron; role=\"group\" when the script drives the tree" }
   ],
   "states": [
     { "on": "tree-item", "name": "current", "mark": "aria-current=\"page\"", "description": "Or aria-current=\"true\": the row takes a chip tone and strong ink" },
-    { "on": "tree-item", "name": "selected", "mark": "aria-selected=\"true\"", "description": "Inside the tree pattern: drawn the same as current" },
+    { "on": "tree-item", "name": "selected", "mark": "aria-selected=\"true\"", "description": "Inside the tree pattern: drawn the same as current. In a tree with aria-multiselectable=\"true\" any number of rows, and the others say aria-selected=\"false\"" },
     { "on": "tree-item", "name": "disabled", "mark": "aria-disabled=\"true\"", "description": "Disabled ink" },
+    { "on": "tree-item", "name": "checked", "mark": "aria-checked=\"true\"", "description": "In a checkbox tree: the row's tree-check fills with ink and shows a check" },
+    { "on": "tree-item", "name": "mixed", "mark": "aria-checked=\"mixed\"", "description": "In a checkbox tree, a branch some of whose rows are checked: the tree-check shows a dash" },
     { "on": "tree-group", "name": "open", "mark": "open", "description": "The chevron of the branch's row turns down" },
     { "on": "tree-toggle", "name": "expanded", "mark": "aria-expanded=\"true\"", "description": "Driven by script: the chevron turns down" },
-    { "on": "tree-item", "name": "collapsed", "mark": "aria-expanded=\"false\"", "description": "Driven by script: the tree-sub that follows the row is hidden" }
+    { "on": "tree-item", "name": "collapsed", "mark": "aria-expanded=\"false\"", "description": "Driven by script: the tree-sub that follows the row is hidden" },
+    { "on": "tree-item", "name": "busy", "mark": "aria-busy=\"true\"", "description": "A branch whose rows are on their way: a spinner the row holds, first in the row, takes the chevron's place" }
   ],
   "properties": [
     { "name": "--tree-item-height", "default": "1.75rem", "description": "Row height; at least 2.75rem on touch screens" },

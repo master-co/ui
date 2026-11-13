@@ -7,6 +7,8 @@
  * The browser's own spin buttons are removed, since the two buttons replace them.
  * The well is as wide as its figure. Where field-sizing exists it follows the digits typed, between
  * --stepper-min and --stepper-max; elsewhere it keeps --stepper-min.
+ * A figure written with a unit, a currency or grouping stands in a stepper-display over the field, shown while
+ * the field is not focused; a stepper-scrub handle or label steps the number as it is dragged sideways.
  */
 @layer components {
   .stepper {
@@ -46,5 +48,65 @@
       max-width: calc(var(--stepper-max) + 1rem);
       field-sizing: content;
     }
+  }
+
+  /*
+   * A formatted figure: the field and its display stacked in one cell, as wide as the wider of the two. The
+   * field always fills the cell, so a press anywhere on the figure lands in it. While the field is not focused
+   * its own digits are clear and the display shows the formatted figure in the same place; while it is
+   * focused the display steps aside and the plain number is edited. Without the script the display is empty
+   * and the field shows its number as usual.
+   */
+  .stepper-value {
+    display: inline-grid;
+    flex: 1 1 auto;
+    align-self: stretch;
+    min-width: 0;
+
+    .stepper-field {
+      grid-area: 1 / 1;
+      min-width: 100%;
+    }
+
+    &:not(:focus-within):has(.stepper-display:not(:empty)) .stepper-field {
+      color: transparent;
+    }
+
+    &:focus-within .stepper-display {
+      visibility: hidden;
+    }
+
+    &:has(.stepper-field:disabled) .stepper-display {
+      color: var(--color-text-disabled);
+    }
+  }
+
+  .stepper-display {
+    grid-area: 1 / 1;
+    align-self: center;
+    min-width: calc(var(--stepper-min) + 1rem);
+    max-width: calc(var(--stepper-max) + 1rem);
+    padding-inline: .5rem;
+    overflow: hidden;
+    color: var(--color-text-strong);
+    font-weight: var(--font-weight-control);
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    pointer-events: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  /*
+   * A scrub handle: a handle in the well, or a label of the field anywhere in the page. Dragged sideways it
+   * steps the number. It keeps a vertical swipe for the page and takes the sideways one.
+   */
+  .stepper-scrub {
+    cursor: ew-resize;
+    touch-action: pan-y;
+    user-select: none;
+    -webkit-user-select: none;
   }
 }

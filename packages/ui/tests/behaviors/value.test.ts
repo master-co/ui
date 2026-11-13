@@ -1,7 +1,8 @@
 import { afterEach, test } from 'node:test'
 import assert from 'node:assert/strict'
 import { dom } from './dom.ts'
-import { calendar, calendarMonth, combobox, command, compare, listbox, otp, splitter, stepper, tree, wheel } from '../../behaviors/index.js'
+import { calendar, calendarMonth, calendarPeriods, combobox, command, compare, cropper, dial, gantt, listbox, otp, panel, player, signature, splitter, stepper, tour, tree, wheel } from '../../behaviors/index.js'
+import { stub } from './media.ts'
 
 /** happy-dom catches what a listener throws and reports it on the window; a test must not pass over it. */
 const thrown: unknown[] = []
@@ -65,6 +66,46 @@ test('combobox: setting value checks the option, writes its text and says nothin
   handle.value = null
   assert.equal(field.value, '')
   assert.deepEqual(heard, [], 'a value set from outside dispatches nothing')
+})
+
+test('combobox: query is the text in the field, typed or chosen, apart from the value', () => {
+  const { one, key, type } = setup(comboboxMarkup)
+  const field = one<HTMLInputElement>('[role="combobox"]')
+  const handle = combobox(one('.combobox'))
+  assert.equal(handle.query, '')
+  type(field, 'sing')
+  assert.equal(handle.query, 'sing')
+  assert.equal(handle.value, null, 'typing is a query, not a value')
+  key(field, 'Enter')
+  assert.equal(handle.query, 'Singapore', 'a choice writes its text, and the query is that text')
+  assert.equal(handle.value, 'sin')
+  handle.value = 'hnd'
+  assert.equal(handle.query, 'Tokyo', 'so does a value set from outside')
+})
+
+test('combobox: setting query writes the field and filters as typing does, and says nothing', () => {
+  const { one, all, heard, isOpen } = setup(comboboxMarkup)
+  const field = one<HTMLInputElement>('[role="combobox"]')
+  const list = one('[role="listbox"]')
+  const handle = combobox(one('.combobox'))
+  handle.query = 'fra'
+  assert.equal(field.value, 'fra')
+  assert.deepEqual(all('[role="option"]').map(option => option.hidden), [true, true, false])
+  assert.equal(isOpen(list), false, 'it does not open the list')
+  assert.equal(handle.value, null)
+  handle.query = ''
+  assert.deepEqual(all('[role="option"]').map(option => option.hidden), [false, false, false])
+  assert.deepEqual(heard, [], 'a query set from outside dispatches nothing')
+
+  const open = combobox(one('.combobox'))
+  list.showPopover()
+  open.query = 'sin'
+  assert.equal(field.getAttribute('aria-activedescendant'), all('[role="option"]')[1].id, 'an open list gets its first match as the active option')
+  open.query = ''
+
+  const own = combobox(one('.combobox'), { filter: false })
+  own.query = 'zzz'
+  assert.deepEqual(all('[role="option"]').map(option => option.hidden), [false, false, false], 'with filter: false the page writes the matches')
 })
 
 test('combobox: a choice is written through the prototype\'s setter, so a shadowed value still hears it', () => {
@@ -191,6 +232,44 @@ test('splitter: value reads and sets the size within its limits, and setting it 
   assert.equal(one('.splitter-handle').getAttribute('aria-valuenow'), '63')
   handle.value = 99
   assert.equal(handle.value, 85, 'it stops at aria-valuemax')
+  assert.deepEqual(heard, [])
+})
+
+test('dial: value reads and sets the number on a step within the ends, and setting it says nothing', () => {
+  const { one, heard } = setup(`<div class="dial" role="slider" tabindex="0" aria-label="Volume" aria-valuenow="40" aria-valuemin="0" aria-valuemax="100" style="--dial-value: 40">
+  <span class="dial-value">40%</span>
+  <span class="dial-thumb"></span>
+  <input type="hidden" name="volume" value="40">
+</div>`)
+  const root = one<HTMLElement>('.dial')
+  const handle = dial(root)
+  assert.equal(handle.value, 40)
+  handle.value = 62.6
+  assert.equal(handle.value, 63)
+  assert.equal(root.style.getPropertyValue('--dial-value'), '63')
+  assert.equal(one('.dial-value').textContent, '63%')
+  assert.equal(one<HTMLInputElement>('input[type="hidden"]').value, '63')
+  handle.value = -5
+  assert.equal(handle.value, 0, 'it stops at aria-valuemin')
+  assert.deepEqual(heard, [])
+})
+
+test('panel: value reads and sets the place, the size and the fold, and setting it says nothing', () => {
+  const { one, heard } = setup(`<div id="layers" popover="manual" role="dialog" class="panel" aria-labelledby="layers-title">
+  <div class="panel-header">
+    <button type="button" class="panel-handle" aria-label="Move the Layers panel with the arrow keys"></button>
+    <h2 class="panel-title" id="layers-title">Layers</h2>
+    <div class="panel-actions"><button type="button" class="btn btn-quiet btn-sm btn-square panel-minimize" aria-pressed="false" aria-label="Minimize"></button></div>
+  </div>
+  <div class="panel-body">Header</div>
+</div>`)
+  const root = one<HTMLElement>('.panel')
+  const handle = panel(root)
+  assert.deepEqual(handle.value, { x: null, y: null, width: null, height: null, minimized: false })
+  handle.value = { x: 40, y: 96, width: 288, height: 360, minimized: true }
+  assert.deepEqual(handle.value, { x: 40, y: 96, width: 288, height: 360, minimized: true })
+  assert.equal(root.style.getPropertyValue('--panel-x'), '40px')
+  assert.equal(one('.panel-minimize').getAttribute('aria-pressed'), 'true')
   assert.deepEqual(heard, [])
 })
 
@@ -376,5 +455,204 @@ test('compare: value reads and moves the range input, and setting it says nothin
   handle.value = 80
   assert.equal(one<HTMLInputElement>('.compare-range').value, '80')
   assert.equal(root.style.getPropertyValue('--compare-position'), '80%')
+  assert.deepEqual(heard, [])
+})
+
+test('tour: value reads and opens the step the tour is on, null when it is not running, and setting it says nothing', () => {
+  const { one, isOpen, document } = setup(`<button type="button" id="search">Search</button>
+<button type="button" id="share">Share</button>
+<div class="coachmark-tour">
+  <div class="coachmark" id="first" popover="manual" role="dialog" aria-label="Search" data-target="#search"></div>
+  <div class="coachmark" id="second" popover="manual" role="dialog" aria-label="Share" data-target="#share"></div>
+</div>`)
+  const root = one<HTMLElement>('.coachmark-tour')
+  const heard: string[] = []
+  for (const type of ['change', 'end']) root.addEventListener(type, () => heard.push(type))
+  const handle = tour(root)
+  assert.equal(handle.value, null)
+  handle.value = 1
+  assert.equal(handle.value, 1)
+  assert.equal(isOpen(one('#second')), true)
+  assert.equal(document.activeElement, one('#second'))
+  handle.value = null
+  assert.equal(handle.value, null)
+  assert.equal(isOpen(one('#second')), false)
+  assert.deepEqual(heard, [])
+})
+
+test('gantt: value is each bar\'s range by its row\'s id; set, it moves the bars, rows written later too, and says nothing', () => {
+  const { one, all, heard } = setup(`<ol class="gantt" style="--gantt-from: 0; --gantt-to: 10" aria-label="Plan">
+  <li class="gantt-row" data-value="design" style="--from: 2; --to: 6"><span class="gantt-label">Design</span><span class="gantt-bar" role="slider">Days 3 to 6</span></li>
+</ol>`)
+  const root = one<HTMLElement>('.gantt')
+  const handle = gantt(root, { text: false })
+  assert.deepEqual(handle.value, { design: [2, 6] })
+  root.insertAdjacentHTML('beforeend', '<li class="gantt-row" style="--from: 7; --to: 9"><span class="gantt-label">Build</span><span class="gantt-bar" role="slider">Days 8 to 9</span></li>')
+  assert.deepEqual(handle.value, { design: [2, 6], Build: [7, 9] }, 'a row without data-value stands for its label')
+  handle.value = { design: [3, 7], Build: [6, 8] }
+  assert.equal(one<HTMLElement>('.gantt-row').style.getPropertyValue('--from'), '3')
+  assert.equal(all('.gantt-bar')[1].getAttribute('aria-valuetext'), '6 to 8')
+  assert.equal(all('.gantt-bar')[1].textContent, 'Days 8 to 9', 'with text false the renderer writes the text')
+  assert.deepEqual(heard, [])
+})
+
+test('signature: value reads and draws the strokes, a copy is given out, and setting it says nothing', () => {
+  const { one, all, heard } = setup(`<fieldset class="signature">
+  <legend class="signature-label">Sign the agreement</legend>
+  <div class="signature-pad">
+    <svg class="signature-ink" viewBox="0 0 400 160" role="img" aria-label="Your drawn signature"></svg>
+  </div>
+  <input type="hidden" class="signature-value" name="signature">
+</fieldset>`)
+  const handle = signature(one<HTMLElement>('.signature'))
+  assert.deepEqual(handle.value, [])
+  handle.value = [[[40, 80, .5], [90, 70, .6]]]
+  assert.equal(all('.signature-stroke').length, 1)
+  assert.match(one<HTMLInputElement>('.signature-value').value, /^<svg/)
+  const read = handle.value
+  read[0][0][0] = 0
+  assert.equal(handle.value[0][0][0], 40, 'what is read out does not change the drawing')
+  handle.value = [[[40, 80, .5], [90, 70, .6]]]
+  assert.deepEqual(heard, [])
+})
+
+test('calendarMonth: several chosen days, the months after a month, and the month of the value by default', () => {
+  const days = (options: Record<string, unknown>) => calendarMonth('2026-11', { locale: 'en-GB', weekStart: 1, ...options }).weeks.flat().filter(day => day.selected || day.tab || day.range)
+  assert.deepEqual(days({ value: ['2026-11-20', '2026-11-13', 'soon'], multiple: true }).map(day => [day.date, day.selected, day.tab, day.range]), [
+    ['2026-11-13', true, true, ''],
+    ['2026-11-20', true, false, ''],
+  ], 'each chosen day is selected, and the first is the tab stop')
+  assert.deepEqual(days({ value: ['2026-11-12', '2026-11-14'], range: true, multiple: true }).map(day => day.range), ['calendar-day-range-start', 'calendar-day-range', 'calendar-day-range-end'], 'range wins over multiple')
+  assert.deepEqual(days({ value: '2026-10-31' }).map(day => [day.date, day.selected, day.tab]), [['2026-10-31', true, false]], 'a day shown only to complete a week is not the tab stop')
+  const next = calendarMonth('2026-11', { locale: 'en-GB', weekStart: 1, offset: 2 })
+  assert.deepEqual([next.month, next.title], ['2027-01', 'January 2027'])
+  assert.equal(calendarMonth(undefined, { value: ['2027-03-09', '2027-02-02'], multiple: true }).month, '2027-02', 'the month of the first chosen day')
+})
+
+test('calendarPeriods: the months of a year and the years of a decade, three to a row', () => {
+  const months = calendarPeriods('2026-11', { locale: 'en-GB' })
+  assert.deepEqual([months.view, months.title, months.rows.length], ['months', '2026', 4])
+  assert.ok(months.rows.every(row => row.length === 3))
+  assert.deepEqual(months.rows[0][0], { value: '2026-01', text: 'Jan', label: 'January 2026', outside: false })
+  assert.equal(calendarPeriods('2026-11-13', { locale: 'de' }).rows[2][2].text, 'Sep', 'the names follow the locale')
+  const years = calendarPeriods('2026', { view: 'years', locale: 'en-GB' })
+  assert.equal(years.view, 'years')
+  assert.match(years.title, /^2020\s?–\s?2029$/u)
+  assert.deepEqual(years.rows.flat().map(cell => cell.value), Array.from({ length: 12 }, (_, index) => String(2019 + index)))
+  assert.deepEqual(years.rows.flat().filter(cell => cell.outside).map(cell => cell.value), ['2019', '2030'])
+  assert.equal(calendarPeriods('2030-01', { view: 'years' }).rows[0][1].value, '2030', 'a year that ends in 0 starts its decade')
+})
+
+const twoMonthsMarkup = `<div class="calendar" lang="en-GB">
+  <div class="calendar-month">
+    <div class="calendar-header">
+      <button type="button" class="btn" aria-label="Previous month"></button>
+      <h3 class="calendar-title" id="first-title" aria-live="polite"></h3>
+    </div>
+    <div class="calendar-grid" role="grid" aria-labelledby="first-title"></div>
+  </div>
+  <div class="calendar-month">
+    <div class="calendar-header">
+      <h3 class="calendar-title" id="second-title" aria-live="polite"></h3>
+      <button type="button" class="btn" aria-label="Next month"></button>
+    </div>
+    <div class="calendar-grid" role="grid" aria-labelledby="second-title"></div>
+  </div>
+</div>`
+
+test('calendar: with draw and two months it asks for the first month, and marks the days of both once they are written', async () => {
+  const { one, all, key, document, settle } = setup(twoMonthsMarkup)
+  const asked: string[] = []
+  /** A renderer: what a framework component does with the first month it is given. */
+  const render = (month: string) => all('.calendar-grid').forEach((grid, offset) => {
+    const view = calendarMonth(month, { locale: 'en-GB', weekStart: 1, offset })
+    all('.calendar-title')[offset].textContent = view.title
+    grid.innerHTML = view.weeks.map(week => `<div class="calendar-week" role="row">${week.map(day => `<button type="button" class="calendar-day${day.outside ? ' calendar-day-outside' : ''}" role="gridcell" tabindex="-1" value="${day.date}" aria-label="${day.label}">${day.text}</button>`).join('')}</div>`).join('')
+  })
+  render('2026-11')
+  calendar(one('.calendar'), { value: ['2026-11-13', '2026-12-24'], multiple: true, draw: month => { asked.push(month); render(month) } })
+  assert.deepEqual(asked, [])
+  const chosen = () => all<HTMLButtonElement>('[aria-selected="true"]:not(.calendar-day-outside)').map(day => day.value)
+  assert.deepEqual(chosen(), ['2026-11-13', '2026-12-24'])
+  const stop = () => one<HTMLButtonElement>('.calendar-day[tabindex="0"]')
+  stop().focus()
+  key(stop(), 'PageDown')
+  assert.deepEqual(asked, [], 'December is shown')
+  key(stop(), 'PageDown')
+  assert.deepEqual(asked, ['2026-12'], 'past the last month it asks for the first of the months to show')
+  await settle()
+  assert.deepEqual(all('.calendar-title').map(title => title.textContent), ['December 2026', 'January 2027'])
+  assert.equal(stop().value, '2027-01-13')
+  assert.equal(document.activeElement, stop())
+  assert.deepEqual(chosen(), ['2026-12-24'])
+})
+
+test('calendar: with draw, a jump asks for the months or the years, and the renderer writes their cells', async () => {
+  const { one, all, click, key, settle, document } = setup(calendarMarkup.replace('aria-live="polite"></h3>', 'aria-live="polite"><button type="button" class="calendar-title-button"></button></h3>'))
+  const asked: [string, string][] = []
+  const grid = one('.calendar-grid')
+  const render = (month: string, view: string) => {
+    const button = one('.calendar-title-button')
+    if (view === 'days') {
+      const data = calendarMonth(month, { locale: 'en-GB', weekStart: 1 })
+      button.textContent = data.title
+      grid.innerHTML = data.weeks.map(week => `<div class="calendar-week" role="row">${week.map(day => `<button type="button" class="calendar-day${day.outside ? ' calendar-day-outside' : ''}" role="gridcell" tabindex="-1" value="${day.date}">${day.text}</button>`).join('')}</div>`).join('')
+      return
+    }
+    const data = calendarPeriods(month, { view: view as 'months' | 'years', locale: 'en-GB' })
+    button.textContent = data.title
+    grid.innerHTML = data.rows.map(row => `<div class="calendar-week" role="row">${row.map(cell => `<button type="button" class="calendar-period${cell.outside ? ' calendar-period-outside' : ''}" role="gridcell" tabindex="-1" value="${cell.value}" aria-label="${cell.label}">${cell.text}</button>`).join('')}</div>`).join('')
+  }
+  render('2026-11', 'days')
+  calendar(one('.calendar'), { value: '2026-11-13', draw: (month, view) => { asked.push([month, view]); render(month, view) } })
+  click(one('.calendar-title-button'))
+  assert.deepEqual(asked, [['2026-11', 'months']])
+  await settle()
+  assert.equal(one('.calendar-title-button').textContent, '2026')
+  assert.equal(one<HTMLButtonElement>('.calendar-period[tabindex="0"]').value, '2026-11', 'the cells it wrote are marked')
+  assert.equal(one<HTMLButtonElement>('.calendar-period[aria-selected="true"]').value, '2026-11')
+  one<HTMLButtonElement>('.calendar-period[tabindex="0"]').focus()
+  key(one('.calendar-period[tabindex="0"]'), 'ArrowRight')
+  assert.equal((document.activeElement as HTMLButtonElement).value, '2026-12')
+  click(one('.calendar-period[value="2026-12"]'))
+  assert.deepEqual(asked.at(-1), ['2026-12', 'days'])
+  await settle()
+  assert.equal(one('.calendar-title-button').textContent, 'December 2026')
+  assert.equal((document.activeElement as HTMLButtonElement).value, '2026-12-13', 'focus follows into the month that was written')
+  assert.equal(all('.calendar-period').length, 0)
+})
+
+test('cropper: value reads and sets the crop in the picture\'s pixels, fitted inside it, and setting it says nothing', () => {
+  const { one, heard } = setup(`<div class="cropper" style="--cropper-x: .1; --cropper-y: .1; --cropper-width: .5; --cropper-height: .5">
+  <img class="cropper-image" src="/a.jpg" alt="A harbor" width="800" height="600">
+  <div class="cropper-box" role="application" tabindex="0" aria-label="Crop"></div>
+</div>`)
+  const root = one<HTMLElement>('.cropper')
+  const handle = cropper(root)
+  assert.deepEqual(handle.value, { x: 80, y: 60, width: 400, height: 300 })
+  handle.value = { x: 200, y: 150, width: 400, height: 300 }
+  assert.equal(root.style.getPropertyValue('--cropper-x'), '0.25')
+  assert.equal(root.style.getPropertyValue('--cropper-y'), '0.25')
+  handle.value = { x: 700, y: 0, width: 400, height: 300 }
+  assert.deepEqual(handle.value, { x: 400, y: 0, width: 400, height: 300 }, 'a crop past the edge is kept inside the picture')
+  handle.value = { ...handle.value }
+  assert.deepEqual(heard, [])
+})
+
+test('player: value reads the media\'s time, and setting it seeks and says nothing a control would', () => {
+  const { one, heard } = setup(`<div class="player" role="group" aria-label="Episode">
+  <audio class="player-media" src="/episode.m4a" controls></audio>
+  <div class="player-controls">
+    <span class="player-elapsed">0:00</span>
+    <input type="range" class="slider player-seek" min="0" max="0" step="any" value="0" aria-label="Seek">
+  </div>
+</div>`)
+  stub(one('.player-media'), { duration: 60 })
+  const handle = player(one<HTMLElement>('.player'))
+  assert.equal(handle.value, 0)
+  handle.value = 42
+  assert.equal(one<HTMLMediaElement>('.player-media').currentTime, 42)
+  assert.equal(one<HTMLInputElement>('.player-seek').value, '42')
+  assert.equal(one('.player-elapsed').textContent, '0:42')
   assert.deepEqual(heard, [])
 })

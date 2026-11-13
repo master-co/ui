@@ -5,17 +5,17 @@
   "tier": "component",
   "category": "Feedback",
   "description": "A brief message over the page that can leave by itself.",
-  "use": "A confirmation of something that just happened: saved, deployed, copied. A reader must be able to miss it without losing anything, so the only way to an action never lives in a toast. Toasts stack in one toast-region per page, and each toast is a non-modal dialog.",
+  "use": "A confirmation of something that just happened (saved, deployed, copied), or of work that is under way and will say how it ended. A reader must be able to miss it without losing anything: an action in a toast, such as Undo, is a shortcut, and the same action also lives somewhere that stays. Toasts stack in one toast-region per page, and each toast is a non-modal dialog.",
   "instead": [
     { "when": "The message must stay until it is dealt with, or belongs to one part of the page", "use": "alert" },
     { "when": "It is news for everyone on the page and stays across its top", "use": "banner" },
     { "when": "It needs an answer before the reader goes on", "use": "dialog" },
-    { "when": "It reports work that is still under way", "use": "progress" }
+    { "when": "It reports how much of a long task is done", "use": "progress" }
   ],
-  "composes": ["button", "icon"],
+  "composes": ["button", "icon", "spinner"],
   "script": "none",
   "platform": [
-    { "feature": "A dialog with the open attribute, dismissed by a form with method=\"dialog\" or a button with commandfor and command=\"close\"", "fallback": "A toast rendered with open is shown and dismissed without script. To show one after the page has loaded, call show() on it or append a new dialog with open to the region" },
+    { "feature": "A dialog with the open attribute, dismissed by a form with method=\"dialog\" or a button with commandfor and command=\"close\"", "fallback": "A toast rendered with open is shown and dismissed without script. To show one after the page has loaded, append a new dialog with open to the region, or set open on one that is there: show() would move focus into the toast" },
     { "feature": "@starting-style and transition-behavior: allow-discrete", "fallback": "The toast appears and leaves at once, without the fade" },
     { "feature": "popover=\"manual\" on the region, shown once with showPopover()", "fallback": "Without it the region is a fixed element with a z-index and stays under an open modal dialog" }
   ],
@@ -23,20 +23,22 @@
     { "name": "toast-region", "kind": "root", "description": "The fixed stack at the bottom, at the end edge, with the newest toast last. Make it a live region with aria-live=\"polite\" and name it with aria-label. It takes no pointer events itself, and spans the width on a narrow screen" },
     { "name": "toast-region-top", "kind": "modifier", "of": "toast-region", "description": "The stack at the top; toasts arrive downward and the newest is on top" },
     { "name": "toast-region-center", "kind": "modifier", "of": "toast-region", "description": "The stack centered instead of at the end edge; it combines with toast-region-top" },
-    { "name": "toast", "kind": "root", "elements": ["dialog"], "label": true, "description": "A message, on a dialog element inside the region, named with aria-labelledby pointing at its title or with aria-label" },
-    { "name": "toast-timed", "kind": "modifier", "of": "toast", "description": "Leaves by itself after --toast-duration. The clock pauses while the toast is hovered or holds focus, and a hairline along its foot runs out with the clock" },
+    { "name": "toast", "kind": "root", "elements": ["dialog"], "label": true, "description": "A message, on a dialog element inside the region, named with aria-labelledby pointing at its title or with aria-label. Give it aria-atomic=\"true\" when its words change in place, so a change is announced once, as a whole" },
+    { "name": "toast-timed", "kind": "modifier", "of": "toast", "description": "Leaves by itself after --toast-duration. The clock pauses while the toast is hovered or holds focus, does not run while the toast is busy, and a hairline along its foot runs out with the clock" },
     { "name": "toast-info", "kind": "modifier", "of": "toast", "exclusive": "status", "description": "Colors the icon with the info hue; the words stay in ink" },
     { "name": "toast-success", "kind": "modifier", "of": "toast", "exclusive": "status", "description": "Colors the icon with the success hue; the words stay in ink" },
     { "name": "toast-warning", "kind": "modifier", "of": "toast", "exclusive": "status", "description": "Colors the icon with the warning hue; the words stay in ink" },
     { "name": "toast-danger", "kind": "modifier", "of": "toast", "exclusive": "status", "description": "Colors the icon with the danger hue; the words stay in ink" },
-    { "name": "toast-icon", "kind": "part", "of": "toast", "description": "Beside icon on the status icon: centers it on the first line of text" },
+    { "name": "toast-icon", "kind": "part", "of": "toast", "description": "Beside icon on the status icon, or beside spinner on the spinner of a pending toast: centers it on the first line of text and gives it the status hue. A new icon that replaces the old one grows into place" },
     { "name": "toast-body", "kind": "part", "of": "toast", "description": "Holds the words and takes the remaining width; a button after it sits at the end of the row" },
     { "name": "toast-title", "kind": "part", "of": "toast", "description": "The few strong words that say what happened" },
     { "name": "toast-description", "kind": "part", "of": "toast", "description": "A quiet sentence under the title, or the whole message of a toast without a title" },
+    { "name": "toast-action", "kind": "part", "of": "toast", "description": "The one action a toast may offer (Undo, View), after the body and before the dismiss button: a form with method=\"dialog\" around a btn btn-sm, or the button itself with commandfor and command=\"close\", so the action dismisses the toast once it has run" },
     { "name": "toast-close", "kind": "part", "of": "toast", "description": "The form with method=\"dialog\", or the button, that dismisses the toast, pulled into the padding at the end" }
   ],
   "states": [
-    { "on": "toast", "name": "open", "mark": "open", "description": "The toast is shown. Written in markup it shows the toast when the page loads; show() and close() set and remove it" }
+    { "on": "toast", "name": "open", "mark": "open", "description": "The toast is shown. Written in markup it shows the toast when the page loads; close(), or the form or button that dismisses the toast, removes it" },
+    { "on": "toast", "name": "pending", "mark": "aria-busy=\"true\"", "description": "The work the toast reports is under way: it holds a spinner for its icon and its clock does not run. Remove the attribute and say how the work ended in the same toast" }
   ],
   "properties": [
     { "name": "--toast-duration", "on": "toast", "description": "How long a toast-timed stays; 6s when not set" },

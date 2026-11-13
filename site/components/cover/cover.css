@@ -567,6 +567,13 @@
     background: var(--color-surface-chip);
     box-shadow: inset 0 0 0 .5px var(--color-line-contour);
     color: var(--color-text-body);
+
+    /* A flag of ink, such as a collaborator's name beside their pointer. */
+    &.cover-ink {
+      background: var(--color-surface-inverse);
+      box-shadow: 0 1px 2px -1px var(--color-shade-1), 0 2px 4px -2px var(--color-shade-2);
+      color: var(--color-text-inverse);
+    }
   }
 
   /* A keycap that catches the light. Its glyph is the component, so it is written. */
@@ -1093,6 +1100,52 @@
     }
   }
 
+  /*
+   * A dial: a knob's track of 270 degrees, open at the foot, filled with ink as far as --fill, a number from 0
+   * to 1, with the slider's thumb (a cover-knob inside it) at the end of the fill and its figure in the middle.
+   */
+  .cover-dial {
+    --fill: .5;
+    --d: 96px;
+    --w: 5px;
+    --radius: calc((var(--d) - 18px) / 2);
+    --end: calc(225deg + var(--fill) * 270deg);
+    position: relative;
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: var(--d);
+    height: var(--d);
+
+    &::before, &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 999px;
+      mask: radial-gradient(circle, transparent calc(var(--radius) - var(--w) / 2 - .5px), black calc(var(--radius) - var(--w) / 2), black calc(var(--radius) + var(--w) / 2), transparent calc(var(--radius) + var(--w) / 2 + .5px));
+    }
+
+    &::before {
+      background:
+        radial-gradient(circle at calc(50% + var(--radius) * sin(225deg)) calc(50% - var(--radius) * cos(225deg)), var(--color-surface-inverse) calc(var(--w) / 2 - .5px), transparent calc(var(--w) / 2)),
+        radial-gradient(circle at calc(50% + var(--radius) * sin(495deg)) calc(50% - var(--radius) * cos(495deg)), var(--color-surface-inverse) calc(var(--w) / 2 - .5px), transparent calc(var(--w) / 2)),
+        conic-gradient(from 225deg, var(--color-surface-inverse) 270deg, transparent 0);
+      opacity: .12;
+    }
+
+    &::after {
+      background:
+        radial-gradient(circle at calc(50% + var(--radius) * sin(225deg)) calc(50% - var(--radius) * cos(225deg)), var(--color-surface-inverse) calc(var(--w) / 2 - .5px), transparent calc(var(--w) / 2)),
+        conic-gradient(from 225deg, var(--color-surface-inverse) calc(var(--fill) * 270deg), transparent 0);
+    }
+
+    & .cover-knob {
+      z-index: 1;
+      top: calc(50% - var(--radius) * cos(var(--end)));
+      left: calc(50% + var(--radius) * sin(var(--end)));
+    }
+  }
+
   /* A breakdown's segment, --w of the bar wide and --tone of ink dark, and the dot of the same tone beside its name. */
   .cover-part, .cover-legend {
     display: block;
@@ -1275,6 +1328,28 @@
   }
 
   /* A hotspot's pin: a disc of ink with a white rim and a dark shade, placed by its middle. */
+  /*
+   * A crop: a box over a cover-media, which clips it. What lies outside is dimmed, the edge is the white line
+   * drawn over a picture, and the rule of thirds shows inside. Its corners are pearl discs, cover-crop-dot.
+   */
+  .cover-crop {
+    position: absolute;
+    background:
+      linear-gradient(to right, transparent calc(100% / 3 - .5px), color-mix(in oklch, var(--color-on-image) 60%, transparent) 0 calc(100% / 3 + .5px), transparent 0 calc(200% / 3 - .5px), color-mix(in oklch, var(--color-on-image) 60%, transparent) 0 calc(200% / 3 + .5px), transparent 0),
+      linear-gradient(to bottom, transparent calc(100% / 3 - .5px), color-mix(in oklch, var(--color-on-image) 60%, transparent) 0 calc(100% / 3 + .5px), transparent 0 calc(200% / 3 - .5px), color-mix(in oklch, var(--color-on-image) 60%, transparent) 0 calc(200% / 3 + .5px), transparent 0);
+    box-shadow: inset 0 0 0 1px var(--color-on-image), 0 0 0 999px var(--color-image-dim);
+  }
+
+  .cover-crop-dot {
+    position: absolute;
+    width: 9px;
+    height: 9px;
+    translate: -50% -50%;
+    border-radius: 999px;
+    background: linear-gradient(180deg, var(--color-thumb-high), var(--color-thumb-low));
+    box-shadow: 0 0 0 .5px var(--color-on-image-shade), 0 1px 2px -.5px var(--color-on-image-shade), 0 2px 5px -1px var(--color-on-image-shade);
+  }
+
   .cover-pin {
     position: absolute;
     display: grid;
@@ -1287,5 +1362,89 @@
     box-shadow: 0 0 0 1.5px var(--color-on-image), 0 0 0 2px var(--color-on-image-shade), 0 2px 6px 1px var(--color-on-image-shade);
     font-size: 10px;
     translate: -50% -50%;
+  }
+
+  /*
+   * A color picker's field, in steps of ink since a cover holds no hue: the tone deepens along it and falls
+   * toward the ink down it. Its thumb is the color in a pearl ring, placed by its middle at --x and --y.
+   */
+  .cover-field {
+    --r: var(--radius-control);
+    position: relative;
+    display: block;
+    border-radius: calc(var(--r) * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    background:
+      linear-gradient(180deg, transparent, var(--color-text-strong)),
+      linear-gradient(90deg, var(--color-surface-raised), color-mix(in oklch, var(--color-text-strong) 42%, var(--color-surface-raised)));
+    box-shadow: inset 0 0 0 .5px var(--color-line-contour);
+  }
+
+  .cover-field-thumb {
+    position: absolute;
+    left: var(--x);
+    top: var(--y);
+    width: 18px;
+    height: 18px;
+    translate: -50% -50%;
+    border-radius: 999px;
+    background: var(--swatch);
+    box-shadow: inset 0 0 0 3px oklch(100% 0 none), 0 0 0 .5px var(--color-line-strong), 0 1px 2px -.5px var(--color-shade-1), 0 2px 4px -1px var(--color-shade-2), 0 4px 8px -4px var(--color-shade-3);
+  }
+
+  /* A track as thick as a color picker's, painted with --paint instead of a fill. */
+  .cover-track.cover-paint {
+    height: 12px;
+    background: var(--paint);
+  }
+
+  /* A panel's resize corner: two short diagonal lines in the ink of a firm line, 5px inside the bottom end corner. */
+  .cover-resize {
+    position: absolute;
+    right: 5px;
+    bottom: 5px;
+    width: 8px;
+    height: 8px;
+    background: linear-gradient(135deg, transparent 38%, var(--color-line-mark) 38% 50%, transparent 50% 70%, var(--color-line-mark) 70% 82%, transparent 82%);
+  }
+
+  /*
+   * Another person's pointer: a 20px arrow of ink cut out of what it stands on by a ring of the raised surface.
+   * Its tip, 2px in from its corner, is the point; a flag after it stands beside the tip.
+   */
+  .cover-pointer {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+
+    &::before, &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+    }
+
+    &::before {
+      background: var(--color-surface-raised);
+      mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M2 2 18 8.6 10.6 10.6 8.6 18Z' fill='black' stroke='black' stroke-width='3.5' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+    }
+
+    &::after {
+      background: var(--color-surface-inverse);
+      mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M2 2 18 8.6 10.6 10.6 8.6 18Z' fill='black' stroke='black' stroke-width='1' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+    }
+
+    @media (forced-colors: active) {
+      &::before, &::after {
+        forced-color-adjust: none;
+      }
+
+      &::before {
+        background: Canvas;
+      }
+
+      &::after {
+        background: CanvasText;
+      }
+    }
   }
 }

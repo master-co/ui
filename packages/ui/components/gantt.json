@@ -5,32 +5,50 @@
   "tier": "component",
   "category": "Data display",
   "description": "Things that last, as bars on one scale of time.",
-  "use": "A plan or a record in which each thing has a beginning and an end: phases of a project, on-call shifts, a release train. The scale runs from --gantt-from to --gantt-to in any unit, and each row sets --from and --to. Write what a bar says as its text, so the list reads without the drawing.",
+  "use": "A plan or a record in which each thing has a beginning and an end: phases of a project, on-call shifts, a release train. The scale runs from --gantt-from to --gantt-to in any unit, and each row sets --from and --to. Write what a bar says as its text, so the list reads without the drawing. Where the reader plans, mark the bars that move role=\"slider\" and attach the behavior: they are dragged and resized with the pointer and moved with the keys, and the page keeps the right to refuse a change.",
   "instead": [
     { "when": "The events are moments, not spans, and their order is what matters", "use": "timeline" },
     { "when": "The amounts are compared with each other and have no place in time", "use": "chart" },
     { "when": "It is a fixed sequence the reader moves through", "use": "steps" }
   ],
-  "script": "none",
+  "script": "optional",
+  "behavior": "gantt",
+  "keyboard": [
+    { "keys": "Tab", "action": "Enter the chart on one bar, and leave it: the chart is one stop" },
+    { "keys": "ArrowUp, ArrowDown", "action": "Go to the bar above or below, passing over a disabled one" },
+    { "keys": "ArrowLeft, ArrowRight", "action": "Move the bar a step earlier or later, its length kept; from right to left, ArrowLeft is later" },
+    { "keys": "Shift+ArrowLeft, Shift+ArrowRight", "action": "Move the bar's end a step, never closer to its start than a step" },
+    { "keys": "Alt+ArrowLeft, Alt+ArrowRight", "action": "Move the bar's start a step (Option on a Mac)" },
+    { "keys": "Home, End", "action": "Move the bar to the earliest start or the latest end it may take; with Shift its end, with Alt its start" },
+    { "keys": "Escape", "action": "While a bar is dragged, put it back where the drag started" }
+  ],
   "classes": [
     { "name": "gantt", "kind": "root", "elements": ["ol", "ul"], "description": "The list: names in one column and bars in the other, on a scale from --gantt-from to --gantt-to with a hairline at every unit" },
     { "name": "gantt-now", "kind": "modifier", "of": "gantt", "description": "Draws an ink line down the rows at --gantt-now, for today" },
     { "name": "gantt-row", "kind": "part", "of": "gantt", "elements": ["li"], "description": "One row; set --from and --to in its style, and --progress for how far along it is. Under the pointer its bar is a step firmer. In a container under 26rem the name stands over the bar" },
     { "name": "gantt-scale", "kind": "modifier", "of": "gantt-row", "description": "The row that names the scale's units: it holds gantt-ticks and has no track. Hide it from assistive technology when the bars already say their dates" },
     { "name": "gantt-label", "kind": "part", "of": "gantt", "description": "What the row is, at the start; one line that ends in an ellipsis" },
-    { "name": "gantt-bar", "kind": "part", "of": "gantt", "description": "The bar, 28px tall: a tint of ink from --from to --to, filled with a firmer tint as far as --progress percent. Its text is what the bar says, such as its dates" },
+    { "name": "gantt-bar", "kind": "part", "of": "gantt", "description": "The bar, 28px tall: a tint of ink from --from to --to, filled with a firmer tint as far as --progress percent. Its text is what the bar says, such as its dates. Marked role=\"slider\", it moves: the pointer drags its body and resizes it by the grip at either end, and on a touch screen it is 44px tall" },
     { "name": "gantt-milestone", "kind": "modifier", "of": "gantt-bar", "description": "A point in time instead of a span: a small ink diamond at --from. Its text stays for assistive technology" },
-    { "name": "gantt-ticks", "kind": "part", "of": "gantt", "elements": ["ol", "ul"], "description": "The names of the scale's units inside gantt-scale, one item to a unit" }
+    { "name": "gantt-resize-start", "kind": "modifier", "of": "gantt-bar", "description": "Set by the behavior while the pointer holds the bar's start: its grip is firm and the cursor resizes wherever the pointer goes" },
+    { "name": "gantt-resize-end", "kind": "modifier", "of": "gantt-bar", "description": "Set by the behavior while the pointer holds the bar's end" },
+    { "name": "gantt-ticks", "kind": "part", "of": "gantt", "elements": ["ol", "ul"], "description": "The names of the scale's units inside gantt-scale, one item to a unit" },
+    { "name": "gantt-status", "kind": "part", "of": "gantt", "anywhere": true, "attributes": { "role": "status" }, "description": "A region right after the chart that says what a bar's value cannot: that a change was refused, or a drag cancelled. It takes no room" }
   ],
   "states": [
-    { "on": "gantt-row", "name": "current", "mark": "aria-current=\"true\"", "description": "The row that matters now: its bar is ink and its name takes the strong ink" }
+    { "on": "gantt-row", "name": "current", "mark": "aria-current=\"true\"", "description": "The row that matters now: its bar is ink and its name takes the strong ink" },
+    { "on": "gantt-bar", "name": "movable", "mark": "role=\"slider\"", "description": "The bar moves: a grab cursor, a grip at each end on hover and focus, and one stop in the tab order for the chart" },
+    { "on": "gantt-bar", "name": "focused", "mark": ":focus-visible", "description": "The focus ring, above the rows, and the grips" },
+    { "on": "gantt-bar", "name": "held", "mark": "aria-busy=\"true\"", "description": "Set by the behavior while the pointer carries the bar: it lifts on a firmer tint and follows the pointer with no easing" },
+    { "on": "gantt-bar", "name": "read-only", "mark": "aria-readonly=\"true\"", "description": "The bar takes focus and is read, and does not move" },
+    { "on": "gantt-bar", "name": "disabled", "mark": "aria-disabled=\"true\"", "description": "The bar does not move and the keys pass over it; its text is in the disabled ink" }
   ],
   "properties": [
     { "name": "--gantt-from", "default": "0", "description": "Where the scale begins" },
     { "name": "--gantt-to", "default": "12", "description": "Where the scale ends" },
     { "name": "--gantt-now", "default": "0", "description": "Where the line of gantt-now stands on the scale" },
-    { "name": "--from", "on": "gantt-row", "description": "Where the row's bar begins, in the scale's unit" },
-    { "name": "--to", "on": "gantt-row", "description": "Where the row's bar ends" },
+    { "name": "--from", "on": "gantt-row", "description": "Where the row's bar begins, in the scale's unit. The behavior writes it as the bar moves" },
+    { "name": "--to", "on": "gantt-row", "description": "Where the row's bar ends. The behavior writes it as the bar moves or is resized" },
     { "name": "--progress", "on": "gantt-row", "description": "How much of the bar is done, from 0 to 100" },
     { "name": "--gantt-gap", "default": ".375rem", "description": "Space between rows" },
     { "name": "--gantt-color", "default": "var(--color-surface-inverse)", "description": "The ink the bars are tinted with" }

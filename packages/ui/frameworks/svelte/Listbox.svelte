@@ -6,6 +6,8 @@
     value: string
     label: string
     description?: string
+    /** The caption of the group the option belongs to. Options of one group are written together, under it. */
+    group?: string
     disabled?: boolean
   }
 
@@ -25,27 +27,40 @@
   import { behavior } from './behavior.svelte.js'
 
   let { options, value = $bindable(), onValueChange, multiple, class: className, ...root }: ListboxProps = $props()
+  const id = $props.id()
   const first = untrack(() => [value ?? []].flat())
+  const groups = $derived([...new Set(options.map(option => option.group))])
   const attach = behavior(listbox, undefined, {
     value: () => value,
     change: (next) => { value = next; onValueChange?.(next) },
   })
 </script>
 
+{#snippet row(option: ListboxOption)}
+  <!-- The behavior writes `aria-selected` on the option the keys are on. -->
+  <!-- svelte-ignore a11y_role_has_required_aria_props -->
+  <div class="listbox-option" role="option" data-value={option.value} aria-checked={first.includes(option.value)} aria-disabled={option.disabled || undefined}>
+    {#if option.description}
+      <span class="listbox-body"><span>{option.label}</span><span class="listbox-description">{option.description}</span></span>
+    {:else}
+      {option.label}
+    {/if}
+  </div>
+{/snippet}
+
 <!--
   @component
   A listbox that stands in the page. Name it with `aria-label` or `aria-labelledby`.
 -->
 <div class={['listbox', className]} role="listbox" tabindex={0} aria-multiselectable={multiple || undefined} {@attach attach} {...root}>
-  {#each options as option (option.value)}
-    <!-- The behavior writes `aria-selected` on the option the keys are on. -->
-    <!-- svelte-ignore a11y_role_has_required_aria_props -->
-    <div class="listbox-option" role="option" data-value={option.value} aria-checked={first.includes(option.value)} aria-disabled={option.disabled || undefined}>
-      {#if option.description}
-        <span class="listbox-body"><span>{option.label}</span><span class="listbox-description">{option.description}</span></span>
-      {:else}
-        {option.label}
-      {/if}
-    </div>
+  {#each groups as group, index (group)}
+    {#if group === undefined}
+      {#each options.filter(option => option.group === undefined) as option (option.value)}{@render row(option)}{/each}
+    {:else}
+      <div class="listbox-group" role="group" aria-labelledby="{id}group{index}">
+        <div class="listbox-label" id="{id}group{index}">{group}</div>
+        {#each options.filter(option => option.group === group) as option (option.value)}{@render row(option)}{/each}
+      </div>
+    {/if}
   {/each}
 </div>

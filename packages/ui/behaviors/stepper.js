@@ -10,8 +10,19 @@
  * A button says which way it steps in its `value`, negative for down. Without one, the button before the
  * field steps down and the button after it steps up.
  *
+ * A formatted figure: where the stepper has a `stepper-display`, or is given `format`, the number is also
+ * written as `Intl.NumberFormat` writes it, with a unit, a currency or grouping. The display shows it while
+ * the field is not focused, and the field's `aria-valuetext` says it; the field itself keeps the plain number,
+ * which is what is typed, stepped and sent with a form.
+ *
+ * Scrubbing: dragging a `stepper-scrub` sideways, a handle in the stepper or a label of its field, steps the
+ * number by one step every few pixels, ten with Shift held, toward the end of the line for more. A mouse
+ * locks the pointer while it drags, where the browser can, so the drag never runs into the edge of the
+ * screen. The field dispatches `input` at each step and `change` when the drag ends. A drag starts after
+ * 3px, so a press on a label still focuses the field.
+ *
  * The function the behavior returns has a `value`: the field's number, null while it is empty. Set it to
- * write the field from outside; that dispatches nothing, and the buttons follow the new value.
+ * write the field from outside; that dispatches nothing, and the buttons and the display follow the new value.
  */
 
 /** @type {WeakMap<Element, AbortController>} */
@@ -20,13 +31,25 @@ const attached = new WeakMap()
 /** How long a button is held before it repeats, and how long between repeats, in milliseconds. */
 const DELAY = 400
 const EVERY = 60
+/** How far a pointer moves before a press on a scrub handle becomes a drag, in pixels. */
+const SLOP = 3
+
+/**
+ * @typedef {object} StepperOptions
+ * @property {Intl.NumberFormatOptions | ((value: number) => string)} [format] How the figure is written while
+ *   the field is not focused: options for `Intl.NumberFormat`, or a function of the number. A stepper with a
+ *   `stepper-display` and no `format` groups the digits as the locale does.
+ * @property {string | string[]} [locale] The locale `Intl.NumberFormat` writes in. The page's by default.
+ * @property {number} [pixels] How far a scrub moves for one step, in pixels. 4 by default.
+ */
 
 /**
  * @param {HTMLElement} root The element with the `stepper` class.
+ * @param {StepperOptions} [options]
  * @returns {(() => void) & { value: number | null }} Removes the listeners and gives the buttons back the
- *   `disabled` they had. Its `value` is the field's number.
+ *   `disabled` they had, and the display and the field the words they had. Its `value` is the field's number.
  */
-export function stepper(root) {
+export function stepper(root, { format, locale, pixels = 4 } = {}) {
   attached.get(root)?.abort()
   const controller = new AbortController()
   const { signal } = controller
@@ -61,8 +84,27 @@ export function stepper(root) {
     held = null
   }
 
+  /** The formatted figure: where it is shown, how it is written, and what the page had before. */
+  const display = /** @type {HTMLElement | null} */ (root.querySelector('.stepper-display'))
+  const written = display?.textContent ?? null
+  const spoken = field.getAttribute('aria-valuetext')
+  const formatter = typeof format === 'function'
+    ? format
+    : format || display ? new Intl.NumberFormat(locale, format).format : null
+
+  /** Write the number as the reader reads it, in the display and in the field's aria-valuetext. */
+  function figure() {
+    if (!formatter) return
+    const value = field.value === '' ? NaN : Number(field.value)
+    const text = Number.isFinite(value) ? formatter(value) : ''
+    if (display && display.textContent !== text) display.textContent = text
+    if (text && text !== field.value) field.setAttribute('aria-valuetext', text)
+    else field.removeAttribute('aria-valuetext')
+  }
+
   /** Disable the button whose limit the value has reached. An empty field has reached neither. */
   function sync() {
+    figure()
     const value = field.value === '' ? NaN : Number(field.value)
     for (const button of buttons) {
       const limit = down(button) ? field.min : field.max
@@ -124,10 +166,109 @@ export function stepper(root) {
   field.addEventListener('input', sync, { signal })
   field.addEventListener('change', sync, { signal })
 
+  /**
+   * Scrubbing. A handle belongs to this stepper when it stands in it, or is (or stands in) a label of its
+   * field; a label may be anywhere in the page, so the document hears the press.
+   * @param {EventTarget | null} target
+   */
+  const handleOf = (target) => {
+    const handle = /** @type {Element | null} */ (target instanceof Element ? target.closest('.stepper-scrub') : null)
+    if (!handle) return null
+    if (root.contains(handle)) return handle.closest('.stepper') === root ? handle : null
+    return [...(field.labels ?? [])].some((label) => label === handle || label.contains(handle)) ? handle : null
+  }
+  /** The drag under way: its own listeners, where it started, how far it has gone and whether it stepped. */
+  /** @type {AbortController | null} */
+  let drag = null
+  let swallow = false
+
+  const page = root.ownerDocument
+  page.addEventListener('pointerdown', (event) => {
+    const handle = handleOf(event.target)
+    if (!handle || event.button !== 0 || !event.isPrimary || field.disabled || field.readOnly) return
+    drag?.abort()
+    const gesture = new AbortController()
+    drag = gesture
+    // Detaching ends a drag under way: it aborts this one too.
+    const options = { signal: gesture.signal }
+    const start = event.clientX
+    const sign = getComputedStyle(root).direction === 'rtl' ? -1 : 1
+    let last = start
+    let travel = 0
+    let dragging = false
+    let changed = false
+    let locked = false
+
+    page.addEventListener('pointermove', (move) => {
+      if (move.pointerId !== event.pointerId) return
+      if (!dragging) {
+        if (Math.abs(move.clientX - start) < SLOP) return
+        dragging = true
+        last = move.clientX
+        // A mouse is held still while the drag goes on; a pen or a finger is captured by the handle.
+        if (event.pointerType === 'mouse' && 'requestPointerLock' in handle) {
+          locked = true
+          Promise.resolve(/** @type {any} */ (handle).requestPointerLock()).catch(() => { locked = false })
+        } else {
+          try { /** @type {HTMLElement} */ (handle).setPointerCapture(event.pointerId) } catch {}
+        }
+        return
+      }
+      const moved = page.pointerLockElement === handle ? move.movementX || 0 : move.clientX - last
+      last = move.clientX
+      travel += moved * sign
+      const count = Math.trunc(travel / pixels)
+      if (!count) return
+      travel -= count * pixels
+      const value = field.value
+      // One step at a time, as the keys take them, so each lands on the step and the last stops at a limit.
+      try {
+        for (let taken = 0; taken < Math.abs(count) * (move.shiftKey ? 10 : 1); taken++) {
+          const before = field.value
+          if (count < 0) field.stepDown()
+          else field.stepUp()
+          if (field.value === before) break
+        }
+      } catch {
+        return
+      }
+      if (field.value === value) return
+      changed = true
+      field.dispatchEvent(new Event('input', { bubbles: true }))
+    }, options)
+
+    const end = (/** @type {PointerEvent} */ up) => {
+      if (up.pointerId !== event.pointerId) return
+      gesture.abort()
+      if (drag === gesture) drag = null
+      if (locked && page.pointerLockElement === handle) page.exitPointerLock()
+      if (!dragging) return
+      // The click that ends a drag on a label would focus the field; the drag was the press.
+      swallow = true
+      setTimeout(() => { swallow = false })
+      if (changed) field.dispatchEvent(new Event('change', { bubbles: true }))
+    }
+    page.addEventListener('pointerup', end, options)
+    page.addEventListener('pointercancel', end, options)
+  }, { signal })
+
+  page.addEventListener('click', (event) => {
+    if (!swallow) return
+    swallow = false
+    event.preventDefault()
+    event.stopPropagation()
+  }, { signal, capture: true })
+
   signal.addEventListener('abort', () => {
     if (attached.get(root) === controller) attached.delete(root)
     release()
+    drag?.abort()
     buttons.forEach((button, index) => { button.disabled = before[index] })
+    if (formatter) {
+      if (display && written !== null) display.textContent = written
+      if (spoken === null) field.removeAttribute('aria-valuetext')
+      else field.setAttribute('aria-valuetext', spoken)
+    }
   })
 
   follow = sync
