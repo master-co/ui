@@ -48,7 +48,6 @@ const patterns = [
   ['.wheel', wheel],
   ['.compare', compare],
   ['.dial', dial],
-  ['.range', range],
   ['.listbox', listbox],
   ['.tags', tags],
   ['.editable', editable],
