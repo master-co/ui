@@ -1,6 +1,6 @@
 ---
 name: master-ui-charts
-description: Draw, extend and review the Master UI chart, the SVG unit in packages/ui that draws lines, areas, bars, a pie, a donut, rings, a radar and a scatter. Use when changing chart.css, chart.json or behaviors/chart.js, when adding a chart type or an option, when writing a chart into a page, a block or an example, when choosing between a chart and a smaller component such as a stat or a sparkline, and when reviewing a chart's scale, marks, colors, readout, keys or legend.
+description: Draw, extend and review the Master UI chart, the SVG unit in packages/ui that draws more than twenty forms, from lines and bars to a treemap and a sunburst. Use when changing chart.css, chart.json, behaviors/chart-core.js or a form's module (behaviors/chart-*.js), when adding a chart type or an option, when writing a chart into a page, a block or an example, when choosing between a chart and a smaller component such as a stat or a sparkline, and when reviewing a chart's scale, marks, colors, readout, keys or legend.
 license: MIT
 metadata:
   author: master-co
@@ -9,7 +9,13 @@ metadata:
 
 # Master UI charts
 
-The chart is one component with three parts that change together: `packages/ui/components/chart.css` draws, `packages/ui/components/chart.json` promises, and `packages/ui/behaviors/chart.js` lays out (`chartLayout`), writes markup (`chartMarkup`) and works a chart (`chart`). The framework components in `packages/ui/frameworks` render the same layout. This skill holds the decisions that are the chart's own.
+The chart is one component with three parts that change together: `packages/ui/components/chart.css` draws, `packages/ui/components/chart.json` promises, and the behavior lays out, writes markup and works a chart. The framework components in `packages/ui/frameworks` render the same layout. This skill holds the decisions that are the chart's own.
+
+The behavior is a core and its forms:
+
+- `behaviors/chart-core.js` holds what every form shares: the scale, the curve, the sector, the name and value axes, `chartLayout`, `chartMarkup`, the behavior `chartCore`, and `chartForms`, which takes the forms a page draws.
+- `behaviors/chart-<form>.js` is one form: a function of a `ChartKit` (the config, the layout to fill, the series and the core's tools) with the `types` it lays out and when its series take the palette. It imports nothing, so it is copied alone. Lines, areas and bars are one form, `chart-cartesian.js`, since they share a scale and may stand in one chart.
+- `behaviors/chart.js` is the core with every form taken. It is what the contract names, what `attach()` uses and what the framework components import; a page that should carry less imports the core and its forms.
 
 The site documents it in three places. `/charts` is a section of its own with one page to a form (`site/content/charts/<type>`, listed as `charts` in `site/components/catalog.ts`, each with a cover in `site/components/cover/art/charts`), grouped by what a reader has to see. `/components/chart` holds what every form shares: how it is drawn, the readout, the keys, the legend, the colors, every option and the contract. `/guide/charts` says which form to choose and when an engine is the better tool.
 
@@ -26,19 +32,28 @@ The job of the data picks the form, and sometimes the answer is not a chart.
 | The reader has to see | Use |
 | --- | --- |
 | How values go on over an ordered scale | `line`; `area` for one or two series |
-| Amounts compared with each other | `bar`; `horizontal` when the names are long |
-| What totals are made of, over time or across groups | `bar` or `area` with `stacked` |
-| What one whole is made of, in five parts at most | `donut` or `pie`; along one bar, a `breakdown` |
+| What rose and fell between two moments | `slope`; two values of each thing in a list, `dumbbell` |
+| How ranks changed | `bump` |
+| Amounts compared with each other | `bar`; `horizontal` when the names are long; `mark: 'lollipop'` for many or long bars |
+| How one figure became another | `waterfall` |
+| Spans between two values | `range` |
+| What totals are made of, over time or across groups | `bar` or `area` with `stacked`; `'percent'` when only the mix matters; `marimekko` when the groups differ in size |
+| What one whole is made of | `donut` or `pie` for five parts at most; `waffle` to the percent; `treemap` for many; `sunburst` for two levels; along one bar, a `breakdown` |
+| How much of a flow reaches each stage | `funnel` |
 | A few readings, each with a whole of its own | `rings` |
 | Two or three things on five to eight shared measures | `radar` |
-| Two measures against each other | `scatter` |
+| How readings are spread | `histogram`; several groups at once, `box` |
+| A pattern across two named scales | `heatmap` |
+| Two measures against each other | `scatter`; a `size` for a third |
 | One figure and how it moved | `stat` |
 | Which way a series went, in a sentence or a row | `sparkline` |
 | One reading and how near its limit it is | `gauge`, `meter` |
-| A pattern across many small values | `heatmap` |
+| A pattern across many small values, with no scales | the `heatmap` component |
 | Exact numbers compared in columns | `table` |
 
-One scale to a chart. Two measures of different size are two charts on the same steps, never a scale on each side. Past a few hundred marks, or with a zoom, a brush, streaming values, a map or a candlestick, the answer is a charting engine; `/guide/charts` says how one takes the theme.
+One scale to a chart. Two measures of different size are two charts on the same steps, never a scale on each side. Past a few hundred marks, or with a zoom, a brush or streaming values, the answer is a charting engine; `/guide/charts` says how one takes the theme.
+
+What was left out, and why, so it is not added by reflex: a candlestick (a few hundred marks is not a market's history, and it wants a zoom), a Sankey diagram (its layout is an iteration heavier than every other form together), a violin, a density, a ridgeline, a beeswarm, a hexbin and an ECDF (each needs a kernel, a packing or a statistic the application should own), a tree and a network (diagrams, with a force or a tidy-tree layout), maps and a globe (projections and geography), a vector field. A histogram's bins and a box plot's quartiles are plain arithmetic and are computed here.
 
 ## Geometry: nothing is measured
 
@@ -50,6 +65,9 @@ A chart fits any width with no script on resize. Keep it that way.
 - **Room for labels is counted, not measured.** `chartLayout` counts the widest figure beside the plot in digits (`gutter`, `tail`) and the stylesheet turns that into `ch`. Labels thin out with a container query on `chart-body`.
 - **The readout is placed by the stylesheet.** A point carries `--chart-x`, `--chart-y` and `--chart-reach`; the behavior copies them to `chart-tip`, and the stylesheet stands the readout on the side with more room and slides it along its own size so it never leaves the plot. A behavior never computes a position in pixels.
 - **A behavior may read the pointer only through the document.** Each point has a `chart-hit` larger than its marks, so `event.target.closest('.chart-point')` says which point; no rectangle is read.
+- **A point that is a path stands in the canvas.** A slope's line, a bump's curve and a funnel's stage cannot be placed by percentages, so those forms set `layout.radial` and keep `layout.stretch`: their points are written inside the stretched canvas. A dot there is a `chart-knot`, a path of no length with a round end, which stays a circle however the canvas stretches; its hit is `chart-hit-line`, a wide stroke nobody sees.
+- **What only one mark knows goes on as a custom property.** A share of a color is `tone` on the mark, written as `--chart-tone`; a bubble's radius is `size`, written as `--chart-dot`. The stylesheet does the mixing.
+- **Words on the plot are counted too.** A name on a treemap's tile is written only where the tile would hold it in the smallest plot a card gives, 20rem by 10rem, counted in digits. Labels at the ends of a slope are nudged apart by a share of the plot's height. Nothing is measured to decide either.
 
 A scale runs between round numbers. `scale()` picks the round step (1, 2, 5, and 2.5 only where it is whole) that marks the scale in the number of steps asked for, four by default, and of two equally near takes the finer. Bars and areas include zero; a scatter fits its points. Ticks are written in full under 10,000 and compact once the scale reaches it, one style to a scale.
 
@@ -66,6 +84,16 @@ A scale runs between round numbers. `scale()` picks the round step (1, 2, 5, and
 | Ring | A track in a tint of its own color and an arc from the top with round ends, shortened by the cap so the drawn length is the value |
 | Radar | A hairline web, each series an outline with a 14% wash, so two show through each other |
 | Grid | Hairlines across, `--color-line-hair`, the baseline one step firmer; no lines down except in a scatter and under bars that run across |
+| Band, whisker | What a value may be: a wash between `low` and `high` behind a line, a stroke halfway between ink and surface through a bar's end, so it reads on both |
+| Lollipop, dumbbell | A stem in a tint of the series' color and a dot at the value; a dumbbell's stem runs from its lowest dot to its highest |
+| Waterfall | Opening and closing bars in ink on the baseline; steps float, in the success ink up and the danger ink down, with the sign written beside every value |
+| Range | A floating bar with both ends turned; the scale fits the spans and has no baseline |
+| Slope, bump | One line to a series with a knot at each label; the series is the point, and the others step back under the pointer. Names stand at the last end, so there is no legend |
+| Histogram | Bins that meet, parted by a hairline of the surface; edges are the round ticks of the scale across |
+| Box | An ink box from the first quartile to the third, the median a line of the surface cut through it, whiskers to the furthest reading within one and a half boxes, outliers small and hollow |
+| Heatmap cell, funnel stage, sunburst child | Steps of one color, `--chart-tone`; the lowest heatmap value keeps a trace of ink |
+| Waffle | A hundred units filled from the foot, shares rounded by the largest remainder so they fill it exactly |
+| Treemap | Squarified, largest first; a tile is the category's surface or a wash of ink, so its name reads on it in the text tokens |
 
 Text never wears a series' color: names and values take the text tokens and a mark of the color stands beside them.
 
@@ -74,7 +102,8 @@ Text never wears a series' color: names and values take the text tokens and a ma
 - A chart of one series is ink, `--chart-color`. It takes a color only when the page gives the series a `category`.
 - Several series, and the parts of a whole, take categories in the fixed order in `palette` in `chart.js`: blue, orange, teal, violet, amber, pink, green, sky. The order was checked for separation under protanopia and deuteranopia in both schemes; do not reorder it or add a ninth without checking again. Past eight it repeats, so the page folds the rest into "Other".
 - Color follows the thing, not its place: a hidden series does not repaint the others, and a series the product already colors names its `category`.
-- A status color never stands for a series.
+- A status color never stands for a series. The one exception is a waterfall's steps, which are a change with a sign, as a stat's delta is: success up, danger down, always beside the signed value.
+- A form whose marks are steps of one measure (a histogram, a box plot, a heatmap, a funnel, a waterfall, a treemap) sets `palette: 'never'`: its series stay ink unless one names a category. The parts of a whole set `'always'`.
 - A mark reads `var(--category-mark, var(--chart-color))` from a `category-<name>` class on itself. The stylesheet writes no color.
 
 ## The point, the readout and the keys
@@ -87,13 +116,14 @@ Text never wears a series' color: names and values take the text tokens and a ma
 
 ## Adding a type or an option
 
-1. Decide the job it does that no existing form does. A variant of a form is an option, not a type.
-2. Lay it out in `chartLayout` as data that is ready to write: percentages for what stands on the plot, a `d` for the canvas, a sentence for each point. If it needs a pixel, the design is wrong; find the CSS length or the custom property that carries it.
-3. Write it in `plotMarkup` through `element()`, which escapes. Never write `class="` followed by an expression in a template: the site's preview checker reads the bundled script.
-4. Draw it in `chart.css` with tokens and the category roles; add each class and property to `chart.json` in the same change.
-5. Render it in the React, Svelte and Vue components, which follow `plotMarkup` element for element, and extend the `chart` scenario.
-6. Add cases to `tests/behaviors/chart.test.ts`: the layout's numbers, the contract check in `chartMarkup`, and an empty series.
-7. Give a new type a page: `site/content/charts/<type>/{metadata.ts,content.mdx}` with its previews and the options that matter to it, an entry in `charts` in `site/components/catalog.ts`, a cover in `site/components/cover/art/charts/<type>.astro` drawn from `chartLayout()` in steps of ink, and a row in the Forms table of `/components/chart`, in the table of `/guide/charts` and in the public skill's `references/charts.md`. A new option goes on the pages of the forms it changes and in the options table of `/components/chart`.
+1. Decide the job it does that no existing form does. A variant of a form is an option, not a type, and it goes in that form's module.
+2. Write the form: `behaviors/chart-<type>.js` exports `chart<Type>`, the layout function with its `types` (and `palette`) set by `Object.assign`. It takes a `ChartKit` and fills `kit.layout` with data that is ready to write: percentages for what stands on the plot, a `d` for the canvas, a sentence for each point. It imports nothing; what several forms need goes in the core and reaches them through the kit. If it needs a pixel, the design is wrong; find the CSS length or the custom property that carries it.
+3. Take it in `behaviors/chart.js` (`chartForms(…)`) and export it from `behaviors/index.js`; `tests/behaviors/index.test.ts` holds every file to an export of its own name. Add the type to `ChartType` and any new option to `ChartConfig` in the core.
+4. A new kind of mark is written in `plotMarkup` in the core through `element()`, which escapes. Never write `class="` followed by an expression in a template: the site's preview checker reads the bundled script.
+5. Draw it in `chart.css` with tokens and the category roles; add each class and property to `chart.json` in the same change.
+6. Render a new kind of mark in the React, Svelte and Vue components, which follow `plotMarkup` element for element, and extend the `chart` scenario.
+7. Add cases to `tests/behaviors/chart.test.ts`: the layout's numbers, the form's line in the contract check of `chartMarkup`, and the type in the list that is laid out with nothing to draw.
+8. Give a new type a page: `site/content/charts/<type>/{metadata.ts,content.mdx}` with its previews and the options that matter to it, an entry in `charts` in `site/components/catalog.ts`, a cover in `site/components/cover/art/charts/<type>.astro` drawn from `chartLayout()` in steps of ink, and a row in the Forms table and the modules table of `/components/chart`, in the table of `/guide/charts` and in the public skill's `references/charts.md`. A new option goes on the pages of the forms it changes and in the options table of `/components/chart`.
 
 ## Verification
 
