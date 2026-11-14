@@ -21,7 +21,10 @@ These hold a value, render rows from data, join parts by id or have a lifetime, 
 
 | Component | Renders the contract of | The framework owns |
 | --- | --- | --- |
+| `avatar` | avatar | Which of the photo and its fallback shows, as the photo loads or fails |
 | `calendar` | calendar | The value, the month it draws |
+| `carousel` | carousel | The current slide, the slides, the ids that join each dot to its slide |
+| `chart` | chart | The series it is drawn from, and which of them are hidden |
 | `color-picker` | color-picker | The color, the format it is written in |
 | `combobox` | combobox | The value, the options |
 | `command` | command | Whether it is open, the commands |
@@ -32,6 +35,7 @@ These hold a value, render rows from data, join parts by id or have a lifetime, 
 | `editable` | editable | The saved value, the ids that name the preview |
 | `field` | input (`field`) | The ids that join the label, the control, the hint and the error |
 | `gantt` | gantt | The ranges, the rows |
+| `gradient` | gradient | The gradient: its type, its angle or centre, and its stops |
 | `listbox` | listbox | The value, the options |
 | `log` | scroll-area | Whether it follows the end, the lifetime of its behavior |
 | `menu` | menu | The items, the id its trigger names, the target of a context menu |
@@ -39,6 +43,7 @@ These hold a value, render rows from data, join parts by id or have a lifetime, 
 | `panel` | panel | Whether it is open, its place, its size and whether it is minimized |
 | `player` | player | The time, whether it plays, the tracks |
 | `popover` | popover | Whether it is open, the id its trigger names |
+| `schedule` | schedule | The day and the view on show, the events |
 | `signature` | signature | The strokes |
 | `sortable` | sortable | The order, the items |
 | `splitter` | splitter | The size |

@@ -1,6 +1,6 @@
 # Charts
 
-`chart` draws lines, areas, bars, a pie, a donut, rings, a radar and a scatter as one SVG that fits the width it is given. Read its contract first: `npx master-ui contract chart`, or `https://ui.master.co/components/chart.md`.
+`chart` draws more than twenty forms, from lines, areas and bars to a pie, a donut, rings, a radar, a scatter, a treemap and a sunburst, as one SVG that fits the width it is given. Read its contract first: `npx master-ui contract chart`, or `https://ui.master.co/components/chart.md`.
 
 ## Is it a chart
 
@@ -91,5 +91,5 @@ Calling `chart()` again on the same element replaces the chart, and the function
 
 - Each point is a list item named with its values; do not hide the plot from assistive technology or replace it with an image.
 - A chart of two series or more keeps its legend. Its entries are checkboxes; `toggle: false` makes it a plain list.
-- The readout is a convenience. Where exact numbers are the point, set `values: true` on a few bars or put a `table` beside the chart.
+- The readout is a convenience. Where exact numbers are the point, set `values: true`, which writes every bar's value at its end, or put a `table` beside the chart.
 - Change how a chart looks through its custom properties and the theme's tokens, as [customizing](customizing.md) says, not by editing the markup it writes.

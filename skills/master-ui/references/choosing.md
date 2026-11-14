@@ -128,4 +128,4 @@ Read the row that matches the job, then the contract of the component it names.
 
 ## It is not a component
 
-Where regions go and what scrolls is a layout: `page`, `shell`, `auto-grid` and `form` are the only layout classes, and everything else is utilities. A stretch of a page with a purpose (a hero, a pricing table, a sign-in card) is a block: copy its markup. Do not invent a class for either.
+Where regions go and what scrolls is a layout: the frames `page` and `shell`, and `auto-grid`, `bento`, `masonry`, `breakout`, `sticky-stack` and `form`, are the only layout classes, and everything else is utilities. A stretch of a page with a purpose (a hero, a pricing table, a sign-in card) is a block: copy its markup. Do not invent a class for either.

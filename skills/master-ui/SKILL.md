@@ -15,7 +15,7 @@ Master UI is a contract and a default implementation of it. The contract of a co
 ## Establish the project
 
 - How the library arrives: `@import '@master/ui'` after `@import '@master/css'`, one import per stylesheet in `ui/index.css` (written by `master-ui init`), or the compiled `standalone.css` in a project without Master CSS. With the compiled file there are no utilities: lay out with the project's own CSS.
-- What the project owns: `master-ui.json` lists owned components; their source and contracts are in its `directory` (`ui/` by default). An owned contract replaces the library's. Read it before using that component.
+- What the project owns: `master-ui.json` lists the owned components (`owned`) and the framework components it added (`components`); their source and contracts are in its `directory` (`ui/` by default), and `contracts` may name more of the project's own contracts. An owned contract replaces the library's. Read it before using that component.
 - The theme: a file imported after the library, or `@theme` overrides in the app stylesheet. Read it before choosing a token.
 - The project's own instructions and nearby components come first. Match what is already there.
 - The version: Master UI is experimental, and any 0.x release may rename or remove a class, a token or an export. Read contracts from the installed package (`npx master-ui contract` does), not from memory. After an upgrade run `npx master-ui check` and `npx master-ui status`, and fix what they report.
@@ -42,7 +42,7 @@ Then:
 
 Read [frameworks](references/frameworks.md) before writing a component in one of them. In short:
 
-- Most of the library is the same markup, in the framework's syntax: `className` and `htmlFor` in JSX, nothing else changes. Do not wrap a class in a component to rename it: `<Button variant="primary">` hides `btn btn-primary` from the checker and from the next reader. Wrap markup only when the project already does, and keep the contract's classes as literal strings.
+- Most of the library is the same markup, in the framework's syntax: `className`, `htmlFor`, `tabIndex` and `popoverTarget` in JSX, and the invoker attributes spread as the [frameworks](references/frameworks.md) table shows; nothing else changes. Do not wrap a class in a component to rename it: `<Button variant="primary">` hides `btn btn-primary` from the checker and from the next reader. Wrap markup only when the project already does, and keep the contract's classes as literal strings.
 - Thirty-six patterns hold state and have a component to copy: avatar, calendar, carousel, chart, color-picker, combobox, command, compare, cropper, dial, dialog, editable, field, gantt, gradient, listbox, log, menu, otp, panel, player, popover, schedule, signature, sortable, splitter, stepper, tabs, tags, toast, toolbar, tooltip, tour, transcript, tree, wheel. `npx master-ui add <name>` copies it into `ui/`; `npx master-ui add` lists them. Look in `ui/` first: the project may already have it, edited.
 - Never write the keys, the focus or the state attributes of one of those patterns in a component. They are in `@master/ui/behaviors`; the component gives the behavior a root and passes the value.
 
@@ -64,7 +64,7 @@ Read [customizing](references/customizing.md) before overriding anything. In sho
 4. A theme file, for another material.
 5. Own the component's source, when the change is to its structure, its states or its behavior.
 
-Color has four jobs, and chrome is neutral by default. A status (done, failing) is a tone such as `badge-success`, always with words. A category of data (a project, a calendar, a label) is a `category-<name>` class on the row, card or event, read only by `badge-category`, `chip-category`, `schedule-event-category` and `icon-frame-category`, and always beside the category's name. A color that is the data itself goes in a `swatch`. The brand color stays on `btn-brand`, once per view. Never tint a button, a field or a dialog with a category, and never use `category-red` for a danger.
+Color has four jobs, and chrome is neutral by default. A status (done, failing) is a tone such as `badge-success`, always with words. A category of data (a project, a calendar, a label) is a `category-<name>` class on the row, card or event, read only by `badge-category`, `chip-category`, `schedule-event-category`, `icon-frame-category` and the marks of a `chart`, and always beside the category's name. A color that is the data itself goes in a `swatch`. The brand color stays on `btn-brand`, once per view. Never tint a button, a field or a dialog with a category, and never use `category-red` for a danger.
 
 A project rule may select a library class only to set its public custom properties. Never write one that redeclares or undoes what the stylesheet declares, never raise specificity or use `!important` to win, and never restyle a component by its private custom properties.
 
@@ -76,7 +76,7 @@ Use the `master-design` skill, when it is installed, for design judgment. [Maste
 
 ## Verify
 
-- `npx master-ui check` reports markup that breaks a contract: a modifier without its base, a part outside its root, a class on the wrong element, a missing attribute or name, a class that is in no contract. Fix every error; read each warning.
+- `npx master-ui check` reports markup that breaks a contract: a modifier without its base, a part outside its root, two classes of one group on an element (two sizes), a class on the wrong element, a missing attribute or name, a class that looks like one of the library's but is in no contract. Fix every error; read each warning.
 - Run the project's Master CSS lint for utilities.
 - In a browser, check each state the change touches (rest, hover, focus-visible, pressed, disabled, invalid, open), in light and dark, at a narrow width, and with the keyboard alone for anything interactive.
 - Report what was checked and what was not.
