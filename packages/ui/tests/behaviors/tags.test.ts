@@ -181,6 +181,24 @@ test('tags: from right to left the arrows turn around', () => {
   assert.equal(focused(), removeOf('design'))
 })
 
+test('tags: the direction is read for a horizontal arrow only, not for each key typed in the field', () => {
+  const { root, field, key, focused, removeOf } = setup()
+  const read = globalThis.getComputedStyle
+  let reads = 0
+  ;(globalThis as any).getComputedStyle = (element: Element) => { reads++; return read(element) }
+  tags(root)
+  field.focus()
+  for (const letter of 'design') key(field, letter)
+  key(field, 'Backspace')
+  key(field, 'Home')
+  assert.equal(reads, 0, 'letters, Backspace and Home in the field read no style')
+  key(field, 'ArrowLeft')
+  assert.equal(reads, 1)
+  assert.equal(focused(), removeOf('research'), 'the arrow still walks to the chips')
+  key(removeOf('research'), 'Delete')
+  assert.equal(reads, 1, 'Delete on a chip reads no style')
+})
+
 test('tags: Delete removes and moves to the value after; a remove button removes on a click and focus returns to the field', () => {
   const { root, field, key, click, chips, focused, removeOf } = setup()
   tags(root)

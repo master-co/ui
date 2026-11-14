@@ -366,18 +366,20 @@ export const scenarios: Record<string, Scenario> = {
 
     const range = await owned(driver, 'calendar', { value: null, range: true, month: '2026-11', locale: 'en-GB', weekStart: 1 })
     await driver.act(() => page.click(page.one('button[value="2026-11-28"]')))
+    assert.deepEqual(range.heard, [['2026-11-28', null]], 'the first end comes out as it is chosen, the second still null')
+    assert.deepEqual(selected(), ['2026-11-28'], 'the first end given back stays chosen')
     await driver.act(() => page.click(page.one('button[value="2026-12-03"]')))
-    assert.deepEqual(range.heard, [['2026-11-28', '2026-12-03']], 'a range comes out once both ends are chosen')
+    assert.deepEqual(range.heard, [['2026-11-28', null], ['2026-11-28', '2026-12-03']], 'the whole range comes out once, though the behavior says input and change')
     assert.equal(page.all('.calendar-day-range-start, .calendar-day-range, .calendar-day-range-end').length > 2, true)
     await driver.act(() => range.mounted.unmount())
 
-    // The first end of a range stays while the month turns to the second, though nothing has come out yet.
+    // The first end of a range stays while the month turns to the second, though only half of it has come out.
     const across = await owned(driver, 'calendar', { value: null, range: true, month: '2026-11', locale: 'en-GB', weekStart: 1 })
     const inside = (value: string) => page.one<HTMLButtonElement>(`.calendar-day[value="${value}"]:not(.calendar-day-outside)`)
     await driver.act(() => page.click(inside('2026-11-24')))
     await driver.act(() => page.click(page.one<HTMLButtonElement>('.calendar-header .btn[aria-label="Next month"]')))
     await driver.act(() => page.click(inside('2026-12-15')))
-    assert.deepEqual(across.heard, [['2026-11-24', '2026-12-15']], 'a range across a turned month')
+    assert.deepEqual(across.heard, [['2026-11-24', null], ['2026-11-24', '2026-12-15']], 'a range across a turned month')
     await driver.act(() => across.mounted.unmount())
 
     // Attached again for an option that changed, a calendar without a value from its owner keeps the day it was
@@ -443,7 +445,7 @@ export const scenarios: Record<string, Scenario> = {
     assert.equal(page.all('.calendar-grid button[tabindex="0"]').length, 1)
     await driver.act(() => page.click(page.one('.calendar-month:first-child button[value="2026-11-28"]')))
     await driver.act(() => page.click(page.one('.calendar-month:last-child button[value="2026-12-03"]:not(.calendar-day-outside)')))
-    assert.deepEqual(two.heard, [['2026-11-28', '2026-12-03']], 'a range across the two months')
+    assert.deepEqual(two.heard, [['2026-11-28', null], ['2026-11-28', '2026-12-03']], 'a range across the two months')
     const day = (value: string) => page.one<HTMLButtonElement>(`.calendar-day[value="${value}"]:not(.calendar-day-outside)`)
     await driver.act(() => { day('2026-12-03').focus(); page.key(day('2026-12-03'), 'PageDown') })
     assert.deepEqual(titles(), ['December 2026', 'January 2027'], 'past the last month the framework writes the months one on')
@@ -826,7 +828,7 @@ export const scenarios: Record<string, Scenario> = {
     await driver.act(() => { stop().focus(); page.key(stop(), 'ArrowDown') })
     assert.equal(stop(), rows()[1])
     await driver.act(() => page.key(stop(), 'Enter'))
-    assert.deepEqual(heard, ['components/button.css'], 'a selected row comes out as its value')
+    assert.deepEqual(heard, ['components/button.css'], 'a selected row comes out as its value, once, though the behavior says input and change')
     await driver.act(() => page.key(rows()[3], 'ArrowRight'))
     assert.equal(rows()[3].getAttribute('aria-expanded'), 'true', 'the keys fold and unfold')
 
@@ -846,7 +848,7 @@ export const scenarios: Record<string, Scenario> = {
       { label: 'Minute', options: ['00', '30'] },
       { label: 'Period', options: [{ value: 'am', label: 'AM' }, { value: 'pm', label: 'PM' }] },
     ]
-    const { mounted } = await owned(driver, 'wheel', { columns, value: ['10', '30', 'pm'], 'aria-label': 'Time' })
+    const { mounted, heard } = await owned(driver, 'wheel', { columns, value: ['10', '30', 'pm'], 'aria-label': 'Time' })
     conforms(page)
     const selected = () => page.all('.wheel-option[aria-selected="true"]').map(option => option.textContent?.trim())
     assert.equal(page.all('.wheel-column').length, 3)
@@ -855,6 +857,14 @@ export const scenarios: Record<string, Scenario> = {
 
     await driver.act(() => mounted.set({ value: ['11', '00', 'am'] }))
     assert.deepEqual(selected(), ['11', '00', 'AM'])
+    assert.deepEqual(heard, [], 'a value set from outside is not said back')
+
+    // A column that comes to rest says input and change; the value comes out once. With no layout, every option
+    // stands at the top, so the column rests on its first.
+    const hour = page.one<HTMLElement>('.wheel-column')
+    await driver.act(() => hour.dispatchEvent(new page.window.Event('scrollend') as unknown as Event))
+    assert.deepEqual(selected(), ['09', '00', 'AM'])
+    assert.deepEqual(heard, [['09', '00', 'am']], 'a column that rests on another option comes out once')
     await driver.act(() => mounted.unmount())
   },
 
@@ -881,9 +891,12 @@ export const scenarios: Record<string, Scenario> = {
     await driver.act(() => page.key(list[1], 'ArrowRight'))
     assert.deepEqual(heard, ['billing', 'profile'], 'a disabled tab is passed over')
 
-    await driver.act(() => mounted.set({ value: 'billing' }))
-    assert.deepEqual(shown(), ['Billing settings'])
-    assert.deepEqual(heard, ['billing', 'profile'])
+    await driver.act(() => page.click(list[1]))
+    assert.deepEqual(heard, ['billing', 'profile', 'billing'], 'a click comes out once, though the behavior says input and change')
+
+    await driver.act(() => mounted.set({ value: 'profile' }))
+    assert.deepEqual(shown(), ['Profile settings'])
+    assert.deepEqual(heard, ['billing', 'profile', 'billing'])
     await driver.act(() => mounted.unmount())
   },
 

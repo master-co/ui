@@ -248,6 +248,28 @@ test('calendar: the change event bubbles from the root', () => {
   assert.deepEqual(targets, [root])
 })
 
+test('calendar: choosing says input and then change, each with the value; the first end of a range says input alone', () => {
+  const said = (options: Record<string, unknown> = {}) => {
+    const page = setup(options)
+    const events: unknown[] = []
+    for (const type of ['input', 'change']) page.root.addEventListener(type, (event: any) => events.push([type, event.detail.value]))
+    return { ...page, events }
+  }
+  const one = said()
+  one.click(one.day(13))
+  assert.deepEqual(one.events, [['input', '2026-11-13'], ['change', '2026-11-13']])
+
+  const range = said({ range: true })
+  range.click(range.day(18))
+  assert.deepEqual(range.events, [['input', ['2026-11-18', null]]], 'the value moved and is not complete')
+  range.click(range.day(12))
+  assert.deepEqual(range.events.slice(1), [['input', ['2026-11-12', '2026-11-18']], ['change', ['2026-11-12', '2026-11-18']]])
+
+  const several = said({ multiple: true })
+  several.click(several.day(20))
+  assert.deepEqual(several.events, [['input', ['2026-11-20']], ['change', ['2026-11-20']]])
+})
+
 test('calendar: a key the grid has no use for is left alone', () => {
   const { day, key, focus, previous } = setup()
   day(11).focus()

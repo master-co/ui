@@ -20,10 +20,12 @@
  * months of the year in the grid, and again the years of the decade; choosing one goes back down, and Escape
  * goes back to the days. The title says where the grid is, and the month buttons turn a year or a decade.
  *
- * Choosing dispatches a bubbling `change` CustomEvent from the root with `detail.value`: the day as
- * `YYYY-MM-DD`, or `[start, end]` once both ends of a range are chosen, or the sorted days chosen with
- * `multiple`. The value lives in the script, not in the markup; read it from the returned function's `value`,
- * and set that to choose from outside, which shows the month of the new value and dispatches nothing.
+ * Choosing dispatches a bubbling `input` and then a `change` CustomEvent from the root, each with
+ * `detail.value`: the day as `YYYY-MM-DD`, or `[start, end]` once both ends of a range are chosen, or the
+ * sorted days chosen with `multiple`. The first end of a range dispatches `input` alone, with `[start, null]`:
+ * the value moved, and is not complete until the second end. The value lives in the script, not in the markup;
+ * read it from the returned function's `value`, and set that to choose from outside, which shows the month of
+ * the new value and dispatches nothing.
  *
  * The grid may be written by something else: a template, or a framework that renders it on a server. Give
  * `draw`, and the script writes no element. It calls `draw` with the month to show, as `YYYY-MM`, and the view,
@@ -618,6 +620,8 @@ export function calendar(root, options = {}) {
     else picked = [picked[0], key].sort()
     focused = date
     draw()
+    root.dispatchEvent(new CustomEvent('input', { bubbles: true, detail: { value: value() } }))
+    // The first end of a range moves the value without completing it: that is an input and no change.
     if (!range || picked.length === 2) root.dispatchEvent(new CustomEvent('change', { bubbles: true, detail: { value: value() } }))
   }
 

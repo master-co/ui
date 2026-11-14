@@ -2,8 +2,9 @@
  * Wheel: says which option rests under the mark.
  *
  * Turning a column is scrolling and coming to rest is scroll snapping; both are the platform's. When a
- * column has settled, this script moves `aria-selected="true"` to the option under the mark and the column
- * dispatches `change`, with the option and its value (`data-value`, or its text) in `detail`.
+ * column has settled on another option, this script moves `aria-selected="true"` to it and the column
+ * dispatches a bubbling `input` and then a `change` CustomEvent, each with the option and its value
+ * (`data-value`, or its text) in `detail`.
  *
  * It also brings each column's chosen option under the mark when it attaches and when the column is laid
  * out again, brings a clicked option there, gives a focused column the keys of a listbox, one option at a
@@ -105,7 +106,8 @@ export function wheel(root) {
     }
     const changed = option.getAttribute('aria-selected') !== 'true'
     select(column, option)
-    if (changed) column.dispatchEvent(new CustomEvent('change', { bubbles: true, detail: { value: valueOf(option), option } }))
+    if (!changed) return
+    for (const type of ['input', 'change']) column.dispatchEvent(new CustomEvent(type, { bubbles: true, detail: { value: valueOf(option), option } }))
   }
 
   /** Bring a column's chosen option under the mark, or choose the one that is there. @param {Element} column */

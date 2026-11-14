@@ -851,3 +851,31 @@ test('tree: detaching during a rename puts the label back', () => {
   assert.equal(field(), null)
   assert.equal(one('[data-value="a"] .tree-label').hidden, false)
 })
+
+test('tree: selecting or checking rows says input and then change, each with the row; setting the value says neither', () => {
+  const said = (page: ReturnType<typeof setup>) => {
+    const events: [string, string][] = []
+    for (const type of ['input', 'change']) page.root.addEventListener(type, (event: any) => events.push([type, page.text(event.detail.item)]))
+    return events
+  }
+  const one = setup(outline)
+  const first = said(one)
+  one.click(one.row('Principles'))
+  assert.deepEqual(first, [['input', 'Principles'], ['change', 'Principles']])
+  one.click(one.row('Principles'))
+  assert.equal(first.length, 2, 'the selected row says nothing again')
+
+  const many = several()
+  const second = said(many)
+  many.click(many.row('a.ts'), { ctrlKey: true })
+  assert.deepEqual(second, [['input', 'a.ts'], ['change', 'a.ts']])
+  many.control.value = ['b']
+  assert.equal(second.length, 2)
+
+  const checked = checkboxes()
+  const third = said(checked)
+  checked.click(checked.row('README.md'))
+  assert.deepEqual(third, [['input', 'README.md'], ['change', 'README.md']])
+  checked.control.value = []
+  assert.equal(third.length, 2)
+})

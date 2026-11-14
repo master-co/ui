@@ -86,6 +86,20 @@ test('wheel: when a column settles, the option under the mark is selected and th
   assert.deepEqual(changes.map(change => change.value), ['Month', 'Hour'])
 })
 
+test('wheel: a column that settles on another option says input and then change, each with the value and the option', () => {
+  const { root, column, all, scroll } = setup()
+  const handle = wheel(root)
+  const events: unknown[] = []
+  for (const type of ['input', 'change']) root.addEventListener(type, (event: any) => events.push([type, event.detail.value, event.detail.option, event.target]))
+  scroll(3 * row)
+  const month = all('.wheel-option')[3]
+  assert.deepEqual(events, [['input', 'Month', month, column], ['change', 'Month', month, column]])
+  scroll(3 * row + 10)
+  assert.equal(events.length, 2, 'the same option says nothing again')
+  handle.value = ['Hour']
+  assert.equal(events.length, 2, 'setting the value says neither')
+})
+
 test('wheel: the option nearest the mark is the one, and settling on the same one says nothing', () => {
   const { root, changes, selected, scroll } = setup()
   wheel(root)

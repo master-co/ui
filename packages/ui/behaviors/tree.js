@@ -12,8 +12,9 @@
  * disabled ones, and reads direction for the horizontal arrows. A summary, a link and a button keep the
  * activation the browser gives them. A row that has none, `role="treeitem"` on a `div`, is activated by
  * Enter, Space and a click: a branch opens or closes, and a leaf becomes the selected row
- * (`aria-selected="true"`, removed from the row that had it), which dispatches a bubbling `change`
- * CustomEvent from the root with the row in `detail.item`.
+ * (`aria-selected="true"`, removed from the row that had it), which dispatches a bubbling `input` and then a
+ * `change` CustomEvent from the root, each with the row in `detail.item`. Selecting or checking rows in the
+ * trees below dispatches the same two.
  *
  * Inside `role="tree"` it serves three more trees:
  *
@@ -164,7 +165,9 @@ export function tree(root, { rename = false, renameLabel = (label) => `Rename ${
   const isSelected = (item) => item.getAttribute('aria-selected') === 'true'
 
   /** @param {Element} item */
-  const changed = (item) => root.dispatchEvent(new CustomEvent('change', { bubbles: true, detail: { item } }))
+  const changed = (item) => {
+    for (const type of ['input', 'change']) root.dispatchEvent(new CustomEvent(type, { bubbles: true, detail: { item } }))
+  }
 
   /**
    * Mark the selected rows of a multiselectable tree, `true` or `false` on each row that can be selected.

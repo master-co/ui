@@ -99,8 +99,8 @@ export function useBehavior<E extends HTMLElement, O extends object, V = never>(
   onUpdated(() => {
     if (!handle) return
     // A row that comes back finds the behavior where it was left, holding what it last agreed on with the model,
-    // and the model elsewhere. A value the reader moved without the model hearing it, such as the first end of a
-    // range in a month that turns, is not where it was left, and stays.
+    // and the model elsewhere. A value the reader moved without the model hearing it is not where it was left,
+    // and stays.
     if (!same(handle.value, before) || (same(handle.value, kept) && model && model.value !== undefined && !same(kept, model.value))) write()
   })
 

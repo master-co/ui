@@ -9,9 +9,10 @@
  *
  * A tablist with `aria-orientation="vertical"` is walked with the up and down arrows instead.
  *
- * Selecting a tab dispatches a bubbling `change` CustomEvent from the tablist with `detail.value`, what the
- * tab stands for, its `data-value` or its text, and the tab in `detail.tab`. The function the behavior
- * returns has that `value` too; set it to select a tab from outside, which dispatches nothing.
+ * Selecting another tab dispatches a bubbling `input` and then a `change` CustomEvent from the tablist, each
+ * with `detail.value`, what the tab stands for, its `data-value` or its text, and the tab in `detail.tab`. The
+ * function the behavior returns has that `value` too; set it to select a tab from outside, which dispatches
+ * nothing.
  */
 
 /** @type {WeakMap<Element, AbortController>} */
@@ -63,7 +64,7 @@ export function tabs(root) {
   function select(tab) {
     if (tab.getAttribute('aria-selected') === 'true') return
     mark(tab)
-    root.dispatchEvent(new CustomEvent('change', { bubbles: true, detail: { value: valueOf(tab), tab } }))
+    for (const type of ['input', 'change']) root.dispatchEvent(new CustomEvent(type, { bubbles: true, detail: { value: valueOf(tab), tab } }))
   }
 
   const detach = /** @type {(() => void) & { value: string | null }} */ (Object.defineProperty(() => controller.abort(), 'value', {

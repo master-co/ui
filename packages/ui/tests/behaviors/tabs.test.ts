@@ -116,6 +116,21 @@ test('tabs: a click selects a tab; a disabled tab, a key with a modifier and an 
   assert.deepEqual(selected(), ['tab-keys'])
 })
 
+test('tabs: selecting another tab says input and then change, each with its value and the tab; setting the value says neither', () => {
+  const { root, one, click, key } = setup()
+  const handle = tabs(root)
+  const events: unknown[] = []
+  for (const type of ['input', 'change']) root.addEventListener(type, (event: any) => events.push([type, event.detail.value, event.detail.tab.id]))
+  click(one('#tab-keys'))
+  assert.deepEqual(events, [['input', 'Keys', 'tab-keys'], ['change', 'Keys', 'tab-keys']])
+  click(one('#tab-keys'))
+  assert.equal(events.length, 2, 'the selected tab says nothing again')
+  key(one('#tab-keys'), 'Home')
+  assert.deepEqual(events.slice(2).map(([type]: any) => type), ['input', 'change'], 'a key that selects says both')
+  handle.value = 'billing'
+  assert.equal(events.length, 4)
+})
+
 test('tabs: value reads the selected tab, and setting it selects without a change event', () => {
   const { root, selected, shown, stops, heard } = setup()
   const handle = tabs(root)

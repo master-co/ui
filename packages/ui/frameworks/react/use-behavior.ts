@@ -63,7 +63,7 @@ export function useBehavior<E extends HTMLElement, O extends object, V = never>(
     if (control.value === undefined) {
       // A component with a value, given none by its owner, answers for the last one it said: it is written back
       // over rows written again from data, and over a row that comes back after the one it was on had gone. A
-      // value the reader moved without saying it, such as the first end of a range, stays.
+      // value the reader moved without the behavior saying it stays.
       if (!('value' in control) || kept.current === undefined || same(handle.value, kept.current)) return
       if (same(handle.value, before) && !same(handle.value, held.current)) return
       handle.value = kept.current

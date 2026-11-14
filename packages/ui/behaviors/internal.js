@@ -231,7 +231,9 @@ export function chipKeys(field, remove) {
     const group = /** @type {HTMLElement} */ (event.currentTarget)
     const target = /** @type {HTMLElement} */ (event.target)
     const chips = chipsOf(group)
-    const rtl = getComputedStyle(group).direction === 'rtl'
+    // The direction is read only for a horizontal arrow, the one key it turns: reading the computed style for
+    // every letter typed in the field would ask the browser for styles on each of them.
+    const rtl = (event.key === 'ArrowLeft' || event.key === 'ArrowRight') && getComputedStyle(group).direction === 'rtl'
     const back = rtl ? 'ArrowRight' : 'ArrowLeft'
     const forward = rtl ? 'ArrowLeft' : 'ArrowRight'
     /** @param {HTMLElement | undefined} chip */
