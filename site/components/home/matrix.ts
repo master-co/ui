@@ -121,10 +121,12 @@ ${rows.map(([term, value]) => `    <div class="data-list-item"><dt class="data-l
 </div>`
 
 const quote = (text: string, portrait: number, name: string, role: string) => `<div class="sheet ui-mx-pad">
-  <blockquote class="quote">
-    <p class="quote-text">${text}</p>
-    <footer class="quote-source">${avatar(portrait, '', ' avatar-sm')}<span><span class="quote-name">${name}</span>${role}</span></footer>
-  </blockquote>
+  <figure class="quote">
+    <blockquote class="quote-body">
+      <p class="quote-text">${text}</p>
+    </blockquote>
+    <figcaption class="quote-source">${avatar(portrait, '', ' avatar-sm')}<span><span class="quote-name">${name}</span>${role}</span></figcaption>
+  </figure>
 </div>`
 
 const chips = (legend: string, items: [string, boolean][]) => `<div class="sheet ui-mx-pad">

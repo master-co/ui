@@ -5,6 +5,9 @@
  * line's band runs the whole scrolling width and the line breaks between the spans cost nothing. Lines can
  * be numbered by a CSS counter, highlighted, or marked as added and removed in a diff.
  * A panel puts a header over the block: the file's name and a control, in one well.
+ * Code is literal: the spacing a page may add between Han and Latin letters (text-autospace), the trimming of
+ * CJK punctuation (text-spacing-trim) and a hyphen at a line break would paint a form that is not the source,
+ * so the inline chip, the block and the title turn all three off.
  */
 @layer components {
   .code {
@@ -16,7 +19,12 @@
     box-shadow: inset 0 0 0 .5px var(--code-line, var(--color-line-contour));
     font: 400 .875em/1.4 var(--font-family-mono);
     font-variant-ligatures: none;
+    text-autospace: no-autospace;
+    text-spacing-trim: space-all;
+    hyphens: none;
     overflow-wrap: anywhere;
+    /* Set in a right-to-left sentence, a run of code keeps the order it was written in, signs and slashes included. */
+    unicode-bidi: plaintext;
     /* Broken across lines, each piece keeps the chip's padding, corner and edge. */
     -webkit-box-decoration-break: clone;
     box-decoration-break: clone;
@@ -42,6 +50,8 @@
     box-shadow: var(--shadow-pressed);
     font: 400 .8125rem/1.65 var(--font-family-mono);
     font-variant-ligatures: none;
+    text-autospace: no-autospace;
+    text-spacing-trim: space-all;
     tab-size: 2;
     white-space: pre;
     scrollbar-width: thin;
@@ -111,12 +121,17 @@
     }
   }
 
-  /* Numbered: each line counts itself in a quiet gutter that is not selected with the code. */
+  /*
+   * Numbered: each line counts itself in a quiet gutter that is not selected with the code. The gutter holds two
+   * digits; a listing of a hundred lines or more sets --code-gutter: 3ch, so every number ends on one edge.
+   */
   .code-numbered {
+    --code-gutter: 2ch;
+
     .code-line::before {
       content: counter(code-line);
       display: inline-block;
-      width: 2ch;
+      width: var(--code-gutter);
       margin-inline-end: 1.25rem;
       color: var(--color-text-disabled);
       text-align: end;
@@ -202,6 +217,8 @@
     color: var(--color-text-muted);
     font: 400 .75rem/1.4 var(--font-family-mono);
     font-variant-ligatures: none;
+    text-autospace: no-autospace;
+    text-spacing-trim: space-all;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
