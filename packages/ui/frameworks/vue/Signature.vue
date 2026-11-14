@@ -1,10 +1,12 @@
+<script lang="ts">
+/** One stroke: the points it passed through, in the units of the viewBox, each with the pressure there. */
+export type SignatureStroke = [x: number, y: number, pressure: number][]
+</script>
+
 <script setup lang="ts">
 import { useTemplateRef } from 'vue'
 import { signature, signaturePath, signatureSvg } from '@master/ui/behaviors/signature.js'
 import { useBehavior } from './use-behavior'
-
-/** One stroke: the points it passed through, in the units of the viewBox, each with the pressure there. */
-type SignatureStroke = [x: number, y: number, pressure: number][]
 
 defineOptions({ inheritAttrs: false })
 

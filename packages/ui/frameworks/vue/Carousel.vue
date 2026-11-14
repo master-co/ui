@@ -1,4 +1,11 @@
-<script setup lang="ts" generic="T extends { value: string }">
+<script lang="ts">
+export interface CarouselItem {
+  /** What the slide stands for: the carousel's value while it is current. Keep it the same when items move. */
+  value: string
+}
+</script>
+
+<script setup lang="ts" generic="T extends CarouselItem">
 import { useId, useTemplateRef } from 'vue'
 import { carousel } from '@master/ui/behaviors/carousel.js'
 import { useBehavior } from './use-behavior'
