@@ -1,4 +1,5 @@
-import { readdirSync, readFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
+import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -134,10 +135,59 @@ export interface Behavior {
 
 let cached: ReturnType<typeof measureNow> | undefined
 
-/** Everything the cost section needs, measured once per process. */
+/**
+ * Everything the cost section needs, measured once per process and kept on disk under the hash of what it is
+ * measured from. The measurement compiles every stylesheet on its own, which takes seconds; without the file each
+ * `astro dev` would spend them again on the first request for the home page.
+ */
 export function measure() {
-    cached ??= measureNow()
+    if (cached) return cached
+    const key = inputsHash()
+    try {
+        const stored = JSON.parse(readFileSync(cacheFile, 'utf8')) as { key: string, value: ReturnType<typeof measureNow> }
+        if (stored.key === key) return cached = stored.value
+    } catch {}
+    cached = measureNow()
+    try {
+        mkdirSync(dirname(cacheFile), { recursive: true })
+        const temporary = `${cacheFile}.${process.pid}`
+        writeFileSync(temporary, JSON.stringify({ key, value: cached }))
+        renameSync(temporary, cacheFile)
+    } catch {}
     return cached
+}
+
+const here = dirname(fileURLToPath(import.meta.url))
+const cacheFile = join(here, '../../../node_modules/.cache/master-ui-home-cost.json')
+
+/** The version of an installed package, from the package.json above the file it resolves to. */
+function versionOf(name: string, entry: string) {
+    let directory = dirname(fileURLToPath(import.meta.resolve(`${name}/${entry}`)))
+    while (dirname(directory) !== directory) {
+        const file = join(directory, 'package.json')
+        if (existsSync(file)) {
+            const manifest = JSON.parse(readFileSync(file, 'utf8')) as { name?: string, version?: string }
+            if (manifest.name === name) return manifest.version
+        }
+        directory = dirname(directory)
+    }
+}
+
+/** Every input of `measureNow`: the library files it reads, the tools it compiles with, its own code and the catalog order. */
+function inputsHash() {
+    const hash = createHash('sha256')
+    const add = (label: string, text = '') => hash.update(`${label}\0${text}\0`)
+    const files = [
+        'master.css', 'dist/standalone.css', 'dist/base.css',
+        ...imports.flatMap(file => [file, file.replace(/\.css$/, '.json')]),
+        ...readdirSync(join(uiRoot, 'behaviors')).filter(file => file.endsWith('.js')).sort().map(file => `behaviors/${file}`),
+    ]
+    for (const file of files) add(file, existsSync(join(uiRoot, file)) ? read(file) : undefined)
+    for (const file of ['measure.ts', 'assemble.ts']) add(file, readFileSync(join(here, file), 'utf8'))
+    add('preset', JSON.stringify(preset))
+    add('versions', JSON.stringify([versionOf('@master/css-compiler', 'node'), versionOf('@master/css', 'node'), require('esbuild/package.json').version]))
+    add('catalog', JSON.stringify(catalog.map(entry => entry.slug)))
+    return hash.digest('hex')
 }
 
 function measureNow() {
