@@ -108,7 +108,7 @@ const ladder = [
       <div class="home-customize-console">
         <div class="home-customize-bar">
           <p class="home-annotation" id="customize-styles-label">{t('Styles')}</p>
-          <button type="button" class="btn btn-quiet btn-square btn-sm home-customize-play" aria-label={t('Play the styles in turn')} data-customize-play hidden>
+          <button type="button" class="btn btn-quiet btn-square btn-sm home-customize-play" aria-label={t('Play the styles in turn')} data-play-label={t('Play the styles in turn')} data-pause-label={t('Pause the styles')} data-customize-play hidden>
             <IconPlayerPause class="icon home-customize-when-playing" aria-hidden="true" stroke={1.75} />
             <IconPlayerPlay class="icon home-customize-when-stopped" aria-hidden="true" stroke={1.75} />
           </button>
@@ -208,7 +208,8 @@ const ladder = [
     const sync = () => {
       figure.toggleAttribute('data-playing', playing)
       figure.toggleAttribute('data-paused', holds.size > 0)
-      play.setAttribute('aria-label', playing ? 'Pause the styles' : 'Play the styles in turn')
+      // The two names are translated on the page; the script only chooses between them.
+      play.setAttribute('aria-label', (playing ? play.dataset.pauseLabel : play.dataset.playLabel) ?? '')
     }
     const hold = (reason: string, on: boolean) => {
       if (on) holds.add(reason)
@@ -272,9 +273,11 @@ const ladder = [
       return /dark/.test(scheme) && (!/light/.test(scheme) || matchMedia('(prefers-color-scheme: dark)').matches)
     }
     let page = pageIsDark()
+    // The page's scheme is read once per change of the root's attributes, not twice.
     new MutationObserver(() => {
-      if (pageIsDark() === page) return
-      page = pageIsDark()
+      const now = pageIsDark()
+      if (now === page) return
+      page = now
       dark.checked = page
     }).observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'style', 'data-theme'] })
 

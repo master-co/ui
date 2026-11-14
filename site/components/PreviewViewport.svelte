@@ -68,19 +68,34 @@
     return () => { observer.disconnect(); resize?.disconnect() }
   })
   function drag(event: PointerEvent & { currentTarget: HTMLSpanElement }) {
+    // Only the primary button resizes; a right click keeps its menu.
+    if (event.button !== 0) return
+    event.preventDefault()
     const handle = event.currentTarget
     const start = { x: event.clientX, width: frame!.clientWidth }
     const scale = start.width < availableWidth - 1 ? 2 : 1
+    // The handle sits on the inline end, which is the left in a right-to-left page.
+    const direction = getComputedStyle(handle).direction === 'rtl' ? -1 : 1
+    let x = start.x
+    let pending = 0
     handle.setPointerCapture(event.pointerId)
-    const move = (next: PointerEvent) => { width = Math.round(Math.min(1600, Math.max(minimumWidth, start.width + (next.clientX - start.x) * scale))) }
+    // Pointer events can outnumber frames: the width follows the latest one, once a frame.
+    const apply = () => {
+      pending = 0
+      width = Math.round(Math.min(1600, Math.max(minimumWidth, start.width + (x - start.x) * scale * direction)))
+    }
+    const move = (next: PointerEvent) => {
+      x = next.clientX
+      pending ||= requestAnimationFrame(apply)
+    }
     const end = () => {
+      if (pending) { cancelAnimationFrame(pending); apply() }
       handle.removeEventListener('pointermove', move)
-      handle.removeEventListener('pointerup', end)
-      handle.removeEventListener('pointercancel', end)
+      handle.removeEventListener('lostpointercapture', end)
     }
     handle.addEventListener('pointermove', move)
-    handle.addEventListener('pointerup', end)
-    handle.addEventListener('pointercancel', end)
+    // Fires after pointerup and pointercancel alike, and whenever capture is lost some other way.
+    handle.addEventListener('lostpointercapture', end)
   }
 </script>
 

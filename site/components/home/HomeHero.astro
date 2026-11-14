@@ -147,11 +147,10 @@ const speeds = [34, 26, 40, 30, 44, 28, 38, 32]
       column.element.append(panel)
       column.length += height(panel) + spacing
     }
-    const fill = (column: Column) => {
-      const target = reach()
+    const fill = (column: Column, target = reach()) => {
       while (column.offset + column.length < target) append(column)
     }
-    columns.forEach(fill)
+    columns.forEach(column => fill(column))
     let frame = 0
     let last = 0
     let visible = false
@@ -159,6 +158,11 @@ const speeds = [34, 26, 40, 30, 44, 28, 38, 32]
       frame = 0
       const dt = Math.min((now - (last || now)) / 1000, 0.1)
       last = now
+      /*
+       * The plane's length is read once, before this frame writes anything: read after a column has moved or
+       * swapped a panel, it would force a layout for every column, every frame.
+       */
+      const target = reach()
       for (const column of columns) {
         column.offset += column.direction * column.speed * dt
         const { element } = column
@@ -172,7 +176,7 @@ const speeds = [34, 26, 40, 30, 44, 28, 38, 32]
             column.head++
             first = element.firstElementChild!
           }
-          fill(column)
+          fill(column, target)
         } else {
           // Falling: once a gap opens at the top, the last panel goes and the panel before the first joins the top.
           while (column.offset > 0) {
@@ -183,7 +187,7 @@ const speeds = [34, 26, 40, 30, 44, 28, 38, 32]
           }
           // The foot only needs to reach so far; what hangs below it is dropped.
           let last = element.lastElementChild!
-          while (column.offset + column.length - (height(last) + spacing) >= reach()) {
+          while (column.offset + column.length - (height(last) + spacing) >= target) {
             column.length -= height(last) + spacing
             last.remove()
             column.tail--
@@ -212,15 +216,30 @@ const speeds = [34, 26, 40, 30, 44, 28, 38, 32]
     motion.addEventListener('change', () => (motion.matches ? stop() : schedule()))
     addEventListener('resize', () => { spacing = gap() })
 
-    hero.addEventListener('pointermove', (event) => {
-      if (event.pointerType !== 'mouse' || motion.matches) return
+    /*
+     * The lean follows the latest pointer position once a frame: a mouse reports more often than the screen draws,
+     * and each report would otherwise measure the hero and restyle the plane.
+     */
+    let pointer: { x: number, y: number } | undefined
+    let leanFrame = 0
+    const lean = () => {
+      leanFrame = 0
+      if (!pointer) return
       const rect = hero.getBoundingClientRect()
-      const x = (event.clientX - rect.left) / rect.width - 0.5
-      const y = (event.clientY - rect.top) / rect.height - 0.5
+      const x = (pointer.x - rect.left) / rect.width - 0.5
+      const y = (pointer.y - rect.top) / rect.height - 0.5
       matrix.style.setProperty('--matrix-lean-x', `${(x * 5).toFixed(2)}deg`)
       matrix.style.setProperty('--matrix-lean-y', `${(-y * 4).toFixed(2)}deg`)
-    })
+    }
+    hero.addEventListener('pointermove', (event) => {
+      if (event.pointerType !== 'mouse' || motion.matches) return
+      pointer = { x: event.clientX, y: event.clientY }
+      leanFrame ||= requestAnimationFrame(lean)
+    }, { passive: true })
     hero.addEventListener('pointerleave', () => {
+      pointer = undefined
+      cancelAnimationFrame(leanFrame)
+      leanFrame = 0
       matrix.style.removeProperty('--matrix-lean-x')
       matrix.style.removeProperty('--matrix-lean-y')
     })

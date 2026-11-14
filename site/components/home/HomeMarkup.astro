@@ -229,13 +229,16 @@ const lines = (html: string) => html.split('\n').length
       const panel = current()
       if (panel) blank(panel)
       seen.observe(figure)
-      // A page printed before the slab came into view prints the example whole, not its blank.
-      addEventListener('beforeprint', () => {
+      // A page printed before the slab came into view prints the example whole, not its blank; a reader who turns
+      // motion off mid-decode, or before the slab arrives, gets the example whole at once, as the contracts run does.
+      const settle = () => {
         seen.disconnect()
         const shown = current()
         if (shown && !written.has(shown)) play(shown)
         finish?.()
-      })
+      }
+      addEventListener('beforeprint', settle)
+      motion.addEventListener('change', () => { if (motion.matches) settle() })
     }
   }
 </script>

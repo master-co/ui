@@ -257,7 +257,9 @@ const json = JSON.stringify(data).replace(/</g, '\\u003c')
     const motion = matchMedia('(prefers-reduced-motion: reduce)')
     const kB = (bytes: number, digits = 1) => bytes ? (bytes / 1000).toFixed(digits) : '0'
     const fill = (text: string, values: Record<string, string | number>) => text.replace(/\{(\w+)\}/g, (_, key) => String(values[key] ?? ''))
-    const list = (names: string[]) => new Intl.ListFormat(document.documentElement.lang || 'en', { type: 'conjunction' }).format(names)
+    // One formatter for the page: every change lists the modules again, and a formatter is costly to build.
+    const conjunction = new Intl.ListFormat(document.documentElement.lang || 'en', { type: 'conjunction' })
+    const list = (names: string[]) => conjunction.format(names)
     const byName = new Map(data.units.map(unit => [unit.name, unit]))
     const behaviors = new Map(data.behaviors.map(behavior => [behavior.name, behavior]))
     const rows = [...root.querySelectorAll<HTMLLabelElement>('[data-cost-row]')]
@@ -324,11 +326,14 @@ const json = JSON.stringify(data).replace(/</g, '\\u003c')
       const difference = before === undefined ? 0 : after - before
       const size = Math.abs(difference)
       element.textContent = difference ? `${difference > 0 ? '+' : '−'}${(size / 1000).toFixed(size < 100 ? 2 : 1)} kB` : ''
-      // The note shows, then fades: restarting its animation brings it back for the next change.
-      element.classList.remove('home-cost-delta-shown')
-      if (!difference) return
-      void element.offsetWidth
-      element.classList.add('home-cost-delta-shown')
+      // The note shows, then fades: restarting its animation brings it back for the next change. The running
+      // animation is rewound in place, so no layout has to be forced between taking the class off and putting it back.
+      if (!difference) {
+        element.classList.remove('home-cost-delta-shown')
+        return
+      }
+      if (!element.classList.contains('home-cost-delta-shown')) element.classList.add('home-cost-delta-shown')
+      else element.getAnimations().forEach(animation => { animation.currentTime = 0; animation.play() })
     }
     const cssFigure = $('[data-cost-css]')
     const cssReading = $('[data-cost-css-reading]')
@@ -348,13 +353,13 @@ const json = JSON.stringify(data).replace(/</g, '\\u003c')
     const flash = (before: Map<string, string>, except?: string) => {
       if (motion.matches) return
       const after = marks()
-      for (const [name, state] of after) {
-        if (name === except || before.get(name) === state) continue
-        const row = boxes.get(name)!.closest<HTMLElement>('[data-cost-row]')!
-        row.classList.remove('home-cost-row-flash')
-        void row.offsetWidth
-        row.classList.add('home-cost-row-flash')
-      }
+      const changed = [...after].filter(([name, state]) => name !== except && before.get(name) !== state)
+        .map(([name]) => boxes.get(name)!.closest<HTMLElement>('[data-cost-row]')!)
+      if (!changed.length) return
+      // One reflow restarts every row's flash: a reflow per row would lay the list out once for each of them.
+      changed.forEach(row => row.classList.remove('home-cost-row-flash'))
+      void root.offsetWidth
+      changed.forEach(row => row.classList.add('home-cost-row-flash'))
     }
     root.addEventListener('animationend', event => (event.target as HTMLElement).classList.remove('home-cost-row-flash'))
 
@@ -519,11 +524,15 @@ const json = JSON.stringify(data).replace(/</g, '\\u003c')
       $('[data-cost-no-match]').textContent = message
       $('[data-cost-live]').textContent = message
     }
-    filter.addEventListener('input', () => {
+    const search = () => {
       const all = views.find(input => input.value === 'all')
       if (filter.value.trim() && all && !all.checked) all.checked = true
       showRows()
-    })
+    }
+    // While an input method is composing, the text is not yet what the reader means: filter once it is committed,
+    // so a half-typed syllable is neither searched for nor announced as matching nothing.
+    filter.addEventListener('input', event => { if (!(event as InputEvent).isComposing) search() })
+    filter.addEventListener('compositionend', search)
     const choose = () => {
       pinned = new Set(closure(data.units, selected).map(unit => unit.name))
       showRows()

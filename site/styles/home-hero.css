@@ -144,9 +144,14 @@
     will-change: translate;
   }
 
+  /* With reduced motion nothing moves, so the columns give up the layers kept ready for moving. */
   @media (prefers-reduced-motion: reduce) {
     .ui-matrix-plane {
       transition: none;
+    }
+
+    .ui-matrix-column {
+      will-change: auto;
     }
   }
 
@@ -287,16 +292,22 @@
   .ui-hero-reading {
     display: grid;
     justify-items: start;
-    /* Wide enough for “crafted with Master CSS.”, the longer line, at the largest size: about 10.4em of 4rem. */
+    /* Wide enough for the title's longest line at the largest size, so it balances over lines of a like length. */
     max-width: 42rem;
     padding-block: 1rem;
   }
 
+  /*
+   * One line where it fits; on the narrowest phones the label wraps inside the pill, which grows to hold it
+   * instead of letting a second line spill out of a fixed height.
+   */
   .ui-hero-pill {
     display: inline-flex;
     align-items: center;
     gap: 0.625rem;
-    height: 1.875rem;
+    max-width: 100%;
+    min-height: 1.875rem;
+    padding-block: 0.25rem;
     padding-inline: 0.25rem 0.75rem;
     border-radius: calc(infinity * 1px);
     font-size: 0.8125rem;
@@ -306,6 +317,7 @@
     transition: box-shadow var(--home-quick) var(--home-ease), color var(--home-quick) var(--home-ease);
 
     & > svg {
+      flex: none;
       color: var(--home-text-faint);
       transition: translate var(--home-base) var(--home-ease);
     }
@@ -325,8 +337,15 @@
     }
   }
 
+  .ui-hero-pill-label {
+    min-width: 0;
+    line-height: 1.3;
+    text-wrap: balance;
+  }
+
   .ui-hero-pill-badge {
     display: inline-flex;
+    flex: none;
     align-items: center;
     height: 1.375rem;
     padding-inline: 0.5rem;
@@ -423,6 +442,8 @@
     letter-spacing: -0.005em;
     color: var(--stone-text);
     text-decoration: none;
+    /* The stone draws its own press, so the platform's grey tap flash would only cover it. */
+    -webkit-tap-highlight-color: transparent;
     text-shadow: 0 -1px 0 light-dark(rgb(0 0 0 / 0.45), rgb(255 255 255 / 0.7));
     background-color: var(--stone-mid);
     /* The curved top reflects the lamp as a sheen that follows it, and as a hot spot when the pointer brings it close. */
@@ -710,8 +731,14 @@
     }
   }
 
-  /* System colors draw the actions as plain buttons with their own borders. */
+  /* System colors draw the actions as plain buttons with their own borders, and the pill as a bordered link. */
   @media (forced-colors: active) {
+    .ui-hero-pill,
+    .ui-hero-pill-badge {
+      outline: 1px solid CanvasText;
+      outline-offset: -1px;
+    }
+
     :is(.ui-hero-start, .ui-hero-prompt, .ui-glass-action) {
       border: 1px solid ButtonText;
       background: ButtonFace;

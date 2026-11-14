@@ -151,7 +151,8 @@
 
   /*
    * The wipe's edge: a line of light with a shade on each side, which reads on every style's ground. It travels
-   * with the wipe and leaves the stage at its end.
+   * with the wipe and leaves the stage at its end, moved by translation across the stage's width (the stage is its
+   * container), so its travel lays nothing out again.
    */
   .home-customize-seam {
     position: absolute;
@@ -490,11 +491,13 @@
     }
   }
 
+  /* Five narrow columns: the wrap keeps a lone last word off a line of its own. */
   .home-customize-step-reach {
     margin: 0;
     font-size: 0.875rem;
     line-height: 1.5;
     color: var(--home-text-quiet);
+    text-wrap: pretty;
   }
 
   .home-customize-step-code {
@@ -513,11 +516,38 @@
     color: var(--home-text-faint);
   }
 
-  /* In forced colors a background is dropped: the seam is drawn in the text color instead. */
+  /*
+   * In forced colors a background is dropped: the seam and the time line are drawn in the text color instead. The
+   * shadows that edge the stage, the console and the files go too, so they are outlined; the chosen style, a
+   * raised sheet, is edged in the highlight color, and a focused file, ringed by a shadow, takes an outline.
+   */
   @media (forced-colors: active) {
-    .home-customize-seam {
+    .home-customize-seam,
+    .home-customize-option-time {
       forced-color-adjust: none;
       background-color: CanvasText;
+    }
+
+    .home-customize-stage,
+    .home-customize-console,
+    .home-customize-source {
+      outline: 1px solid CanvasText;
+      outline-offset: -1px;
+    }
+
+    /* A border on a free pseudo-element, so the focus ring, an outline, still shows on the chosen option. */
+    .home-customize-option:has(:checked)::before {
+      position: absolute;
+      inset: 0;
+      border: 2px solid Highlight;
+      border-radius: inherit;
+      pointer-events: none;
+      content: '';
+    }
+
+    .home-customize-source:has(.home-customize-code:focus-visible) {
+      outline: 2px solid Highlight;
+      outline-offset: -2px;
     }
   }
 
@@ -546,7 +576,7 @@
 
 @keyframes home-customize-seam {
   0% {
-    left: 0;
+    translate: -1px 0;
     opacity: 1;
   }
 
@@ -555,7 +585,7 @@
   }
 
   100% {
-    left: 100%;
+    translate: calc(100cqi - 1px) 0;
     opacity: 0;
   }
 }
