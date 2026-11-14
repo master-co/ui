@@ -46,6 +46,17 @@
       }
     }
 
+    /*
+     * Read only: the value can be read and copied, not changed, so the well rests flat and the caret is gone, as a
+     * read-only editor's does. It is as light as the base rule and comes before focus, so a reader who tabs into it
+     * still sees where the keys are, and an error after it still draws its edge.
+     */
+    &:where([readonly]:not(:disabled)) {
+      background: transparent;
+      box-shadow: var(--shadow-flat);
+      caret-color: transparent;
+    }
+
     &:focus {
       outline: none;
       background: var(--color-surface-raised);
@@ -278,8 +289,17 @@
         box-shadow: inset 0 0 0 .5px var(--color-line-on-color);
       }
 
+      /* Disabled, the swatch fades as a disabled slider does, so the color no longer reads as one to change. */
       &:disabled {
         cursor: not-allowed;
+
+        &::-webkit-color-swatch {
+          opacity: .5;
+        }
+
+        &::-moz-color-swatch {
+          opacity: .5;
+        }
       }
     }
 
@@ -345,6 +365,12 @@
       &:hover:not(:has(.input-group-field:is(:focus, :disabled, [readonly]))) {
         background: var(--color-surface-inset-hover);
       }
+    }
+
+    /* A read-only field rests flat, as a lone one does, and rises when it has focus, since focus is heavier. */
+    &:has(.input-group-field:where([readonly]:not(:disabled))) {
+      background: transparent;
+      box-shadow: var(--shadow-flat);
     }
 
     &:has(.input-group-field:focus) {
@@ -413,15 +439,54 @@
         padding-inline-start: var(--input-inset);
       }
 
+      /* An end is what the group draws: a hidden part before the first chip does not take the inset from it. */
+      &:has(.chip:nth-child(1 of :not([popover], [hidden], [type="hidden"]))) {
+        padding-inline-start: var(--input-inset);
+      }
+
       &.input-group-sm {
         --input-inset: 4px;
       }
 
+      /*
+       * A value longer than the well wraps inside its chip instead of running out of the well with its remove
+       * button. The line is set apart only past one line, so a chip of one line keeps its drawing.
+       */
       .chip {
         --chip-height: calc(var(--input-height) - var(--input-inset) * 2);
         --chip-padding-x: .5rem;
+        max-width: 100%;
+        padding-block: .1875rem;
         border-radius: calc(var(--input-radius) * var(--corner-scale) - var(--input-inset));
         corner-shape: var(--corner-shape);
+        line-height: 1.2;
+        white-space: normal;
+        overflow-wrap: anywhere;
+      }
+
+      /*
+       * A button in a wrapping well stands where a chip does, --input-inset in from every edge it meets, so the
+       * well keeps its height and the button its concentric corner.
+       */
+      .btn {
+        --btn-height: calc(var(--input-height) - var(--input-inset) * 2);
+        --btn-radius: calc(var(--input-radius) - var(--input-inset) / var(--corner-scale));
+
+        &:first-child {
+          margin-inline-start: calc(var(--input-inset) - var(--input-padding-x));
+        }
+
+        &:last-child {
+          margin-inline-end: calc(var(--input-inset) - var(--input-padding-x));
+        }
+
+        &:nth-child(1 of :not([popover], [hidden])) {
+          margin-inline-start: calc(var(--input-inset) - var(--input-padding-x));
+        }
+
+        &:nth-last-child(1 of :not([popover], [hidden])) {
+          margin-inline-end: calc(var(--input-inset) - var(--input-padding-x));
+        }
       }
 
       .input-group-field {
@@ -518,6 +583,11 @@
     /* The engine's autofill color never arrives, so the well under the field keeps drawing it. */
     &:autofill {
       transition: background-color 0s 600000s;
+    }
+
+    /* Read only: no caret, as on a lone read-only field. */
+    &:where([readonly]:not(:disabled)) {
+      caret-color: transparent;
     }
 
     &::-webkit-search-cancel-button {
@@ -630,6 +700,9 @@
     font-size: .875rem;
     font-weight: var(--font-weight-control);
     line-height: 1.4;
+    /* A long caption, or one in a language without spaces, wraps in the group's column instead of widening it. */
+    text-wrap: pretty;
+    overflow-wrap: anywhere;
 
     /* A disabled group's caption takes disabled ink with the controls it names, as a signature's label does. */
     .fieldset:disabled & {
@@ -650,15 +723,21 @@
     font-size: .875rem;
     font-weight: var(--font-weight-control);
     line-height: 1.4;
+    /* A label with a long word, an address or a URL wraps in its column instead of running past it. */
+    overflow-wrap: anywhere;
   }
 
-  /* Guidance sits closer to its control than the label does: 6px below against 8px above. */
+  /*
+   * Guidance sits closer to its control than the label does: 6px below against 8px above. An error often quotes
+   * what was typed, an address or a link, so it breaks anywhere rather than widen the form.
+   */
   .field-hint, .field-error {
     margin: -.125rem 0 0;
     font-size: .75rem;
     font-weight: 400;
     line-height: 1.5;
     text-wrap: pretty;
+    overflow-wrap: anywhere;
   }
 
   .field-hint {

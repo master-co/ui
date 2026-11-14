@@ -16,8 +16,8 @@ import ContractTable from '~/site/components/ContractTable.astro'
     <output class="fg-text-muted" id="price-output">$120 to $380</output>
   </div>
   <div class="range" role="group" aria-labelledby="price">
-    <input type="range" class="slider range-start" min="0" max="500" step="10" value="120" aria-label="Lowest price">
-    <input type="range" class="slider range-end" min="0" max="500" step="10" value="380" aria-label="Highest price">
+    <input type="range" class="slider range-start" min="0" max="500" step="10" value="120" aria-label="Lowest price" aria-valuetext="$120">
+    <input type="range" class="slider range-end" min="0" max="500" step="10" value="380" aria-label="Highest price" aria-valuetext="$380">
   </div>
 </div>
 <script>
@@ -25,7 +25,11 @@ import ContractTable from '~/site/components/ContractTable.astro'
   var range = document.querySelector('.range')
   var output = document.getElementById('price-output')
   range.addEventListener('input', function () {
-    var values = Array.from(range.querySelectorAll('.slider'), function (slider) { return Number(slider.value) })
+    var values = Array.from(range.querySelectorAll('.slider'), function (slider) {
+      // A thumb says its value as the page prints it, in dollars, not as a bare number.
+      slider.setAttribute('aria-valuetext', '$' + slider.value)
+      return Number(slider.value)
+    })
     output.textContent = '$' + Math.min.apply(null, values) + ' to $' + Math.max.apply(null, values)
   })
 })()
@@ -53,8 +57,8 @@ import ContractTable from '~/site/components/ContractTable.astro'
     <output class="fg-text-muted" id="hours-output">9:00 to 17:00</output>
   </div>
   <div class="range" id="hours-range" role="group" aria-labelledby="hours">
-    <input type="range" class="slider range-start" min="0" max="24" value="9" aria-label="Opens at">
-    <input type="range" class="slider range-end" min="0" max="24" value="17" aria-label="Closes at">
+    <input type="range" class="slider range-start" min="0" max="24" value="9" aria-label="Opens at" aria-valuetext="9:00">
+    <input type="range" class="slider range-end" min="0" max="24" value="17" aria-label="Closes at" aria-valuetext="17:00">
   </div>
 </div>
 <script>
@@ -62,9 +66,12 @@ addEventListener('DOMContentLoaded', function () {
   var range = document.getElementById('hours-range')
   MasterUI.range(range, { distance: 2 })
   range.addEventListener('input', function () {
-    var start = range.querySelector('.range-start').value
-    var end = range.querySelector('.range-end').value
-    document.getElementById('hours-output').textContent = start + ':00 to ' + end + ':00'
+    var start = range.querySelector('.range-start')
+    var end = range.querySelector('.range-end')
+    // Each thumb says its hour as a time, as the page prints it.
+    start.setAttribute('aria-valuetext', start.value + ':00')
+    end.setAttribute('aria-valuetext', end.value + ':00')
+    document.getElementById('hours-output').textContent = start.value + ':00 to ' + end.value + ':00'
   })
 })
 </script>`} caption="把任一滑柄拖向另一个：两者会在相距两小时处停下。" />
