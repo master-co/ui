@@ -215,7 +215,7 @@ npx master-ui diff menu           # what changed upstream since it was taken
 npx master-ui accept menu         # record that the change has been merged
 ```
 
-`check` reads HTML and templates that look like it (JSX, Svelte, Vue, Astro). It reports a modifier without its base, a part outside its root, two exclusive modifiers together, a class on the wrong element, a missing attribute or accessible name, and a class that looks like one of the library's but is in no contract. A project's own contracts in `ui/*.json` are read too, and one with the name of a library contract replaces it.
+`check` reads HTML and templates that look like it (JSX, Svelte, Vue, Astro). It reports a modifier without its base, a part outside its root, two exclusive modifiers together, a class on the wrong element, a missing attribute or accessible name, and a class that looks like one of the library's but is in no contract, which is a warning unless `--strict` makes it an error; `--json` prints the diagnostics for a program. A project's own contracts are read too, from `ui/*.json` and the globs `contracts` lists in `master-ui.json`, and one with the name of a library contract replaces it.
 
 ```js
 import { check, createIndex } from '@master/ui/check'
