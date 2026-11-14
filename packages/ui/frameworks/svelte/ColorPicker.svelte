@@ -61,7 +61,7 @@
 
 {#snippet panel()}
   <div class="color-picker-area">
-    <div class="color-picker-thumb" role="slider" tabindex="0" aria-label={labels.field ?? 'Lightness and chroma'} aria-valuemin={0} aria-valuemax={100} aria-valuenow={first.valueNow} aria-valuetext={first.valueText} aria-disabled={disabled || undefined}></div>
+    <div class="color-picker-thumb" role="slider" tabindex={disabled ? -1 : 0} aria-label={labels.field ?? 'Lightness and chroma'} aria-valuemin={0} aria-valuemax={100} aria-valuenow={first.valueNow} aria-valuetext={first.valueText} aria-disabled={disabled || undefined}></div>
   </div>
   <span class="swatch swatch-lg color-picker-swatch"></span>
   <input type="range" class="slider color-picker-hue" min="0" max="360" value={first.hue} aria-label={labels.hue ?? 'Hue'} {disabled} />

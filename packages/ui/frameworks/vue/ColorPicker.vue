@@ -47,7 +47,7 @@ useBehavior(root, colorPicker, () => ({ valueText }), model)
       <slot name="trigger" v-bind="{ popovertarget: `${id}-popover` }" />
       <div :id="`${id}-popover`" popover="auto" class="popover color-picker-popover">
         <div class="color-picker-area">
-          <div class="color-picker-thumb" role="slider" tabindex="0" :aria-label="labels.field ?? 'Lightness and chroma'" aria-valuemin="0" aria-valuemax="100" :aria-valuenow="first.valueNow" :aria-valuetext="first.valueText" :aria-disabled="disabled || undefined" />
+          <div class="color-picker-thumb" role="slider" :tabindex="disabled ? -1 : 0" :aria-label="labels.field ?? 'Lightness and chroma'" aria-valuemin="0" aria-valuemax="100" :aria-valuenow="first.valueNow" :aria-valuetext="first.valueText" :aria-disabled="disabled || undefined" />
         </div>
         <span class="swatch swatch-lg color-picker-swatch" />
         <input type="range" class="slider color-picker-hue" min="0" max="360" :value.attr="first.hue" :aria-label="labels.hue ?? 'Hue'" :disabled="disabled">
@@ -65,7 +65,7 @@ useBehavior(root, colorPicker, () => ({ valueText }), model)
     <!-- Inline, the same parts stand in the root's column. -->
     <template v-else>
       <div class="color-picker-area">
-        <div class="color-picker-thumb" role="slider" tabindex="0" :aria-label="labels.field ?? 'Lightness and chroma'" aria-valuemin="0" aria-valuemax="100" :aria-valuenow="first.valueNow" :aria-valuetext="first.valueText" :aria-disabled="disabled || undefined" />
+        <div class="color-picker-thumb" role="slider" :tabindex="disabled ? -1 : 0" :aria-label="labels.field ?? 'Lightness and chroma'" aria-valuemin="0" aria-valuemax="100" :aria-valuenow="first.valueNow" :aria-valuetext="first.valueText" :aria-disabled="disabled || undefined" />
       </div>
       <span class="swatch swatch-lg color-picker-swatch" />
       <input type="range" class="slider color-picker-hue" min="0" max="360" :value.attr="first.hue" :aria-label="labels.hue ?? 'Hue'" :disabled="disabled">

@@ -21,6 +21,11 @@
  * chosen. Set it, in any of the three, to choose a color and its format from outside; that dispatches nothing.
  * A form's reset gives the picker back the color it started with.
  *
+ * A thumb with `aria-disabled="true"` takes no pointer and no key, and leaves the tab order: the script gives it
+ * `tabindex="-1"` while it is disabled, and `tabindex="0"` again once it is not, however the attribute changes.
+ * Detaching gives the thumb back the `tabindex` the page wrote. The native controls beside it leave the tab order
+ * by their own `disabled`.
+ *
  * A hex or rgb() value is fitted to sRGB the way CSS Color 4 fits a color to a screen: chroma is taken away
  * until the color is within a just noticeable difference of one the format can write. An oklch() value is
  * written as it is held.
@@ -342,6 +347,32 @@ export function colorPicker(root, { valueText = describe } = {}) {
   )
 
   paint()
+
+  /*
+   * A disabled thumb is out of the tab order, as a disabled native control is: the script follows aria-disabled
+   * and gives the thumb its tabindex, and gives back the one the page wrote when it detaches.
+   */
+  /** @type {Map<HTMLElement, string | null>} Each thumb's tabindex as the page wrote it. */
+  const given = new Map()
+  const reachable = () => {
+    const handle = thumb()
+    if (!handle) return
+    if (!given.has(handle)) given.set(handle, handle.getAttribute('tabindex'))
+    const wanted = disabled() ? '-1' : '0'
+    if (handle.getAttribute('tabindex') !== wanted) handle.setAttribute('tabindex', wanted)
+  }
+  reachable()
+  if (typeof MutationObserver === 'function') {
+    const observer = new MutationObserver(reachable)
+    observer.observe(root, { attributes: true, attributeFilter: ['aria-disabled'], childList: true, subtree: true })
+    signal.addEventListener('abort', () => observer.disconnect())
+  }
+  signal.addEventListener('abort', () => {
+    for (const [handle, index] of given) {
+      if (index === null) handle.removeAttribute('tabindex')
+      else handle.setAttribute('tabindex', index)
+    }
+  })
 
   // A form's reset puts the controls back as the markup wrote them, without an event, and the thumb and the
   // root would keep the color they had: the color the picker started with is taken again once the reset is done.

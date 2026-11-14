@@ -54,7 +54,7 @@ export function ColorPicker({ value, defaultValue, onValueChange, label, name, a
       {trigger?.({ popoverTarget: `${id}popover` })}
       <Column {...column}>
         <div className="color-picker-area">
-          <div className="color-picker-thumb" role="slider" tabIndex={0} aria-label={labels.field ?? 'Lightness and chroma'} aria-valuemin={0} aria-valuemax={100} aria-valuenow={first.valueNow} aria-valuetext={first.valueText} aria-disabled={disabled || undefined} />
+          <div className="color-picker-thumb" role="slider" tabIndex={disabled ? -1 : 0} aria-label={labels.field ?? 'Lightness and chroma'} aria-valuemin={0} aria-valuemax={100} aria-valuenow={first.valueNow} aria-valuetext={first.valueText} aria-disabled={disabled || undefined} />
         </div>
         <span className="swatch swatch-lg color-picker-swatch" />
         <input type="range" className="slider color-picker-hue" min={0} max={360} defaultValue={first.hue} aria-label={labels.hue ?? 'Hue'} disabled={disabled} />
