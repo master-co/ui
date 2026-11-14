@@ -7,7 +7,9 @@
  * so returning to the toolbar returns to it, or the first. ArrowRight and ArrowLeft move along a toolbar
  * (ArrowDown and ArrowUp in one with `aria-orientation="vertical"`), wrapping at the ends and following the
  * reading direction; Home and End go to the first and the last control. Disabled and hidden controls are
- * skipped; a control with `aria-disabled="true"` stays reachable, as it should in a toolbar.
+ * skipped; a control with `aria-disabled="true"` stays reachable, as it should in a toolbar. When the control that
+ * holds the stop is disabled, hidden or removed (a Delete that empties the selection), the first control takes
+ * the stop, so the toolbar never drops out of the tab order.
  *
  * A native radio group counts as one control, its checked radio: the arrows leave it for the next control,
  * and Space chooses the focused radio. A select, a text field and a menu's list keep their own arrows.
@@ -98,10 +100,13 @@ export function toolbar(root) {
     }
   })
 
+  /** @type {HTMLElement | undefined} The control that holds the stop. */
+  let current
   /** Make one control the toolbar's tab stop. Radios of a group keep the platform's own tab stop. */
   const rove = (/** @type {HTMLElement | undefined} */ to) => {
     const list = items()
     const stop = to && list.includes(to) ? to : list[0]
+    current = stop
     for (const item of list) {
       if (item.matches('input[type="radio"]')) {
         const name = /** @type {HTMLInputElement} */ (item).name
@@ -152,5 +157,12 @@ export function toolbar(root) {
   }, { signal })
 
   rove(items().find((item) => item.tabIndex === 0) ?? undefined)
+
+  // A control that turns disabled or hidden, or leaves, takes the stop with it unless another control takes it over.
+  if (typeof MutationObserver === 'function') {
+    const observer = new MutationObserver(() => rove(current && itemOf(current)))
+    observer.observe(root, { subtree: true, childList: true, attributes: true, attributeFilter: ['disabled', 'hidden'] })
+    signal.addEventListener('abort', () => observer.disconnect())
+  }
   return detach
 }

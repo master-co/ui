@@ -14,6 +14,8 @@
     line-height: 1.45;
     /* A long word (a path, an address) breaks instead of pushing the label past its container, as a choice's title does. */
     overflow-wrap: anywhere;
+    /* A sentence that wraps does not leave one word alone on its last line. */
+    text-wrap: pretty;
     cursor: pointer;
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
@@ -23,10 +25,19 @@
       cursor: not-allowed;
     }
 
-    /* On touch the label is the target: it reaches 44px around its line without moving what stands near it. */
+    /*
+     * On touch the label is the target: an empty box reaches 44px above and below its line without moving what stands
+     * near it, so padding a page gives the row stays its own. It lies under the label's words, so a link among them
+     * (the terms of a sign-up) keeps its own taps.
+     */
     @media (pointer: coarse) {
-      padding-block: .75rem;
-      margin-block: -.75rem;
+      position: relative;
+      isolation: isolate;
+
+      &::after {
+        @apply --touch-target-block;
+        z-index: -1;
+      }
     }
   }
 
@@ -56,10 +67,11 @@
     transition-duration: var(--duration-quick);
     transition-timing-function: var(--easing-glide);
 
+    /* The mark is five ninths of the well (10px of 18), so it keeps its proportion where the well grows with the text. */
     &::after {
       content: '';
-      width: 10px;
-      height: 10px;
+      width: calc(var(--check-size) * 5 / 9);
+      height: calc(var(--check-size) * 5 / 9);
       opacity: 0;
       scale: .6;
       background: var(--color-text-inverse);
@@ -86,6 +98,14 @@
 
     &:focus-visible {
       @apply --focus-ring;
+    }
+
+    /*
+     * Invalid: a required box left empty once the reader has tried to send the form, or aria-invalid. The well takes
+     * the danger edge a field takes, under the pointer too; the words that say why are the field's error beside it.
+     */
+    &:is([aria-invalid="true"], :user-invalid):not(:checked, :indeterminate, :disabled) {
+      box-shadow: var(--shadow-pressed), inset 0 0 0 .5px var(--color-danger), 0 0 0 .5px color-mix(in oklab, var(--color-danger) 45%, transparent);
     }
 
     &:disabled {
@@ -117,6 +137,11 @@
       &:disabled {
         opacity: 1;
         box-shadow: inset 0 0 0 1px GrayText;
+      }
+
+      /* The danger edge is a theme color: the system's mark color says it here, as a field's outline does. */
+      &:is([aria-invalid="true"], :user-invalid):not(:checked, :indeterminate, :disabled) {
+        box-shadow: inset 0 0 0 2px Mark;
       }
 
       /* Checked and disabled: the fill takes the disabled system color, so it is not read as one that can change. */

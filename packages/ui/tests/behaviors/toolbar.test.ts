@@ -106,6 +106,26 @@ test('toolbar: where the browser has focusgroup, the keys are its own', () => {
   assert.equal(key(one('#bold'), 'ArrowRight'), false)
 })
 
+test('toolbar: when the control holding the stop is disabled, hidden or removed, the first control takes the stop', async () => {
+  const { root, one, stops } = setup()
+  toolbar(root)
+  one<HTMLElement>('#size').focus()
+  assert.deepEqual(stops(), ['size'])
+  one<HTMLSelectElement>('#size').disabled = true
+  await Promise.resolve()
+  assert.deepEqual(stops(), ['bold'], 'a disabled stop hands it to the first control')
+  one<HTMLElement>('#bold').hidden = true
+  await Promise.resolve()
+  assert.deepEqual(stops().filter(id => id !== 'bold'), ['italic'], 'a hidden stop hands it on; hidden, it cannot take focus')
+  one<HTMLElement>('#italic').remove()
+  await Promise.resolve()
+  assert.deepEqual(stops().filter(id => id !== 'bold'), ['left', 'center'], 'a removed stop hands it on, to a radio group as the platform keeps it')
+  one<HTMLElement>('#link').focus()
+  one<HTMLElement>('#bold').hidden = false
+  await Promise.resolve()
+  assert.deepEqual(stops(), ['link'], 'a stop still in place keeps it')
+})
+
 test('toolbar: detach removes the listeners', () => {
   const { root, one, key, click } = setup()
   toolbar(root)()
