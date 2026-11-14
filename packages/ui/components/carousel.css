@@ -3,7 +3,8 @@
  * The track is a scroll container with scroll snapping, so touch, trackpad, keys and assistive technology
  * all work as scrolling does. Where the browser supports them, ::scroll-button() adds previous and next
  * buttons and ::scroll-marker adds a dot per slide that follows the scroll position; both are real,
- * focusable controls the browser generates. Elsewhere the carousel is a swipeable, scrollable row.
+ * focusable controls the browser generates, named by --carousel-previous-label and --carousel-next-label, so a
+ * page names them in its own language. Elsewhere the carousel is a swipeable, scrollable row with a thin scrollbar.
  * carousel-vertical turns the row into a column --carousel-viewport tall, with its buttons above and below.
  *
  * A carousel-view holds a track and controls of the page's own: previous and next buttons and a row of dots,
@@ -28,9 +29,18 @@
     list-style: none;
     scroll-snap-type: x mandatory;
     scroll-behavior: smooth;
-    scrollbar-width: none;
+    /*
+     * Without generated buttons, a thin scrollbar is the way across for a mouse that cannot swipe. Where the browser
+     * draws the buttons and the dots, or in a view with buttons of the page's own, the scrollbar steps aside.
+     */
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-line-strong) transparent;
 
-    &::-webkit-scrollbar {
+    .carousel-view & {
+      scrollbar-width: none;
+    }
+
+    .carousel-view &::-webkit-scrollbar {
       display: none;
     }
 
@@ -80,6 +90,12 @@
     }
 
     @supports selector(::scroll-marker) {
+      scrollbar-width: none;
+
+      &::-webkit-scrollbar {
+        display: none;
+      }
+
       /* Room under the track for the markers, which sit on the carousel's own edge. */
       margin-block-end: 1.75rem;
       /* The controls anchor to their own carousel: the name is scoped, so several on a page do not share it. */
@@ -127,13 +143,13 @@
       }
 
       &::scroll-button(inline-start) {
-        content: '' / 'Previous slide';
+        content: '' / var(--carousel-previous-label, 'Previous slide');
         left: calc(anchor(left) + .5rem);
         scale: -1 1;
       }
 
       &::scroll-button(inline-end) {
-        content: '' / 'Next slide';
+        content: '' / var(--carousel-next-label, 'Next slide');
         right: calc(anchor(right) + .5rem);
       }
 
@@ -217,13 +233,13 @@
         }
 
         &::scroll-button(block-start) {
-          content: '' / 'Previous slide';
+          content: '' / var(--carousel-previous-label, 'Previous slide');
           top: calc(anchor(top) + .5rem);
           rotate: -90deg;
         }
 
         &::scroll-button(block-end) {
-          content: '' / 'Next slide';
+          content: '' / var(--carousel-next-label, 'Next slide');
           top: calc(anchor(bottom) - .5rem - var(--carousel-control));
           rotate: 90deg;
         }
@@ -319,6 +335,16 @@
 
   .carousel-next {
     justify-self: end;
+  }
+
+  /*
+   * Back and on point the way the slides run: where they run from the right, previous stands on the right and the
+   * chevrons turn round. An up or down chevron of a vertical view is the same either way.
+   */
+  .carousel-previous, .carousel-next {
+    &:dir(rtl) {
+      scale: -1 1;
+    }
   }
 
   /* A vertical view: the buttons at the middle of the top and the bottom, the dots in a column at the end. */
