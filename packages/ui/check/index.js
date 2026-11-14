@@ -20,6 +20,8 @@ const voidElements = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img',
 const rawText = new Set(['script', 'style'])
 /** Elements a word may run straight into, as in `Save<kbd>`. Any other `word<name` is read as a generic or a comparison. */
 const inlineElements = new Set(['a', 'abbr', 'b', 'bdi', 'bdo', 'br', 'button', 'cite', 'code', 'data', 'del', 'dfn', 'em', 'i', 'img', 'input', 'ins', 'kbd', 'label', 'mark', 'q', 's', 'samp', 'small', 'span', 'strong', 'sub', 'sup', 'svg', 'time', 'u', 'var', 'wbr', 'div', 'p', 'ul', 'ol', 'li', 'select', 'textarea'])
+/** Attributes whose value is a list of tokens, so a required value is one of them. */
+const tokenLists = new Set(['rel'])
 const tagName = /[A-Za-z][\w.:-]*/y
 const attributeName = /[^\s=/>{}"']+/y
 
@@ -243,7 +245,8 @@ export function check(source, contracts, options = {}) {
   /** @type {Diagnostic[]} */
   const diagnostics = []
   const present = new Set(elements.flatMap(element => element.classes))
-  const labelled = new Set(elements.filter(element => element.tag === 'label').map(element => element.attributes.get('for')).filter(value => typeof value === 'string'))
+  // A <label for> names its control only when it has words of its own.
+  const labelled = new Set(elements.filter(element => element.tag === 'label' && element.text).map(element => element.attributes.get('for')).filter(value => typeof value === 'string'))
 
   const report = (/** @type {Element} */ element, /** @type {Omit<Diagnostic, 'line' | 'column'>} */ diagnostic) => {
     diagnostics.push({ ...diagnostic, line: element.line, column: element.column })
@@ -295,7 +298,7 @@ export function check(source, contracts, options = {}) {
       if (entry.exclusive && !element.dynamic) {
         const key = `${contract.name}/${entry.exclusive}`
         const other = groups.get(key)
-        if (other) report(element, { code: 'exclusive', severity: 'error', className, contract: contract.name, message: `"${other}" and "${className}" are both a ${entry.exclusive} of ${contract.title.toLowerCase()}: keep one.` })
+        if (other) report(element, { code: 'exclusive', severity: 'error', className, contract: contract.name, message: `"${other}" and "${className}" are both in the "${entry.exclusive}" group of ${contract.name}: keep one.` })
         else groups.set(key, className)
       }
 
@@ -308,7 +311,9 @@ export function check(source, contracts, options = {}) {
           const actual = element.attributes.get(name)
           if (actual === null) continue
           const allowed = expected === true ? null : Array.isArray(expected) ? expected : [expected]
-          if (actual === undefined || (allowed && (actual === true ? !allowed.includes('') : !allowed.includes(actual)))) {
+          // `rel` is a list of tokens: rel="next nofollow" is a rel="next".
+          const values = typeof actual === 'string' && tokenLists.has(name) ? actual.trim().split(/\s+/) : [actual === true ? '' : actual]
+          if (actual === undefined || (allowed && !values.some(value => allowed.includes(value)))) {
             const wanted = allowed ? `${name}="${allowed.join('" or "')}"` : name
             report(element, { code: 'attribute', severity: 'error', className, contract: contract.name, message: `"${className}" needs ${wanted} on its element.` })
           }
@@ -327,7 +332,7 @@ export function check(source, contracts, options = {}) {
           if (!isNative(ancestor.tag) || ancestor.opaque) wrapped = true
         }
         if (!named && !element.text && !wrapped && id !== null && !(typeof id === 'string' && labelled.has(id))) {
-          report(element, { code: 'label', severity: 'error', className, contract: contract.name, message: `"${className}" needs an accessible name: text of its own, aria-label, aria-labelledby, or a <label> that wraps or points at it.` })
+          report(element, { code: 'label', severity: 'error', className, contract: contract.name, message: `"${className}" needs an accessible name: text of its own, aria-label, aria-labelledby, title, or a <label> that wraps or points at it.` })
         }
       }
     }

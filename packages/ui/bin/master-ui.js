@@ -2,18 +2,25 @@
 /**
  * master-ui: read the contracts, check markup against them, and take ownership of a component's source.
  *
- *   master-ui list                      every contract, one line each
- *   master-ui contract <name>           one contract as JSON: classes, states, properties, example
- *   master-ui check [paths…]            report markup that breaks a contract
- *   master-ui init                      write ui/index.css, one @import per component
+ *   master-ui list [--json]             every contract, one line each
+ *   master-ui contract <name…>          one contract as JSON: classes, states, properties, example; a class
+ *                                       name finds the contract it belongs to
+ *   master-ui check [paths…]            report markup that breaks a contract; a path is a file, a directory or a
+ *                                       glob (--strict: a class that only looks like one is an error, --json)
+ *   master-ui init                      write ui/index.css, one @import per stylesheet (--directory=src/ui for
+ *                                       another place than ui/, --force to write it again)
  *   master-ui own <name…>               copy a component's stylesheet, contract and behavior into the project
- *   master-ui add <name…>               copy a React, Svelte or Vue component into the project (--framework=react,
- *                                       --directory=src/lib/ui for another place than ui/)
- *   master-ui status                    which owned or added components changed upstream since they were taken
- *   master-ui diff <name>               what changed upstream in an owned or added component
+ *                                       (--force to replace a copy that is already there)
+ *   master-ui add [name…]               copy a React, Svelte or Vue component into the project, or list them
+ *                                       without a name (--framework=react, remembered; --directory=src/lib/ui
+ *                                       for another place than ui/; --force)
+ *   master-ui status [--json]           which owned or added components changed upstream since they were taken;
+ *                                       exits with 2 when one did
+ *   master-ui diff <name…>              what changed upstream in an owned or added component
  *   master-ui accept <name…>            record that upstream's current version has been merged
  *
- * It has no dependency. A project's own contracts and the components it owns are read from master-ui.json.
+ * It has no dependency. Where the project keeps its copies, which components it owns or added and where its own
+ * contracts are (`contracts`, globs beside ui/*.json) are read from master-ui.json.
  */
 import { createHash } from 'node:crypto'
 import { existsSync, globSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
@@ -185,8 +192,8 @@ const commands = {
   contract() {
     if (!names.length) fail('Name a contract: master-ui contract button')
     const all = contracts()
+    const index = createIndex(all)
     for (const name of names) {
-      const index = createIndex(all)
       const contract = all.find(item => item.name === name) ?? index.classes.get(name)?.contract
       if (!contract) fail(`No contract is named "${name}" and no contract has a class "${name}". Run "master-ui list".`)
       console.log(JSON.stringify(contract, null, 2))
@@ -242,8 +249,9 @@ const commands = {
       for (const [file, content] of Object.entries(files)) {
         // The base is what was taken: with it, a later upstream change can be merged into an edited copy.
         writeFileSync(join(directory, '.base', file), content)
-        if (existsSync(join(directory, file)) && !flags.has('--force')) console.log(`  kept ${settings.directory}/${file} (it exists; pass --force to replace it)`)
-        else writeFileSync(join(directory, file), content)
+        if (existsSync(join(directory, file)) && !flags.has('--force')) {
+          if (read(join(directory, file)) !== content) console.log(`  kept ${settings.directory}/${file} (it exists; pass --force to replace it)`)
+        } else writeFileSync(join(directory, file), content)
       }
       settings.owned[name] = { version: pkg.version ?? null, files: Object.fromEntries(Object.entries(files).map(([file, content]) => [file, hash(content)])) }
       const entry = join(cwd, settings.entry)
@@ -263,6 +271,7 @@ const commands = {
     const settings = config()
     const framework = option('framework') ?? settings.framework ?? detect()
     if (!framework) fail(`Say which framework: master-ui add combobox --framework=react. It is one of: ${Object.keys(manifest.frameworks).join(', ')}.`)
+    if (!manifest.frameworks[framework]) fail(`"${framework}" is not a framework Master UI has components for. It has: ${Object.keys(manifest.frameworks).join(', ')}.`)
     // A framework may keep its source somewhere of its own: src/lib in SvelteKit, app in Nuxt.
     if (option('directory')) {
       settings.directory = /** @type {string} */ (option('directory'))
@@ -271,7 +280,7 @@ const commands = {
     const directory = join(cwd, settings.directory)
     if (!names.length) {
       const width = Math.max(...Object.keys(manifest.components).map(name => name.length))
-      console.log(`The ${manifest.frameworks[framework]?.title ?? framework} components. Every other contract is a class on a native element: its markup is the same in every framework.\n`)
+      console.log(`The ${manifest.frameworks[framework].title} components. Every other contract is a class on a native element: its markup is the same in every framework.\n`)
       for (const [name, entry] of Object.entries(manifest.components)) console.log(`${name.padEnd(width)}  ${entry[framework]}`)
       return
     }
@@ -300,13 +309,13 @@ const commands = {
       return { name, taken: record.version, upstream: changed, edited }
     })
     if (flags.has('--json')) return console.log(JSON.stringify(rows, null, 2))
-    if (!rows.length) return console.log('This project owns no component. Everything follows @master/ui.')
+    if (!rows.length) return console.log('This project neither owns nor added a component. Everything follows @master/ui.')
     for (const row of rows) console.log(`${row.name}  ${row.upstream.length ? `upstream changed: ${row.upstream.join(', ')} (master-ui diff ${row.name})` : 'upstream unchanged'}${row.edited.length ? `; edited here: ${row.edited.join(', ')}` : ''}`)
     if (rows.some(row => row.upstream.length)) process.exitCode = 2
   },
 
   diff() {
-    if (!names.length) fail('Name an owned component: master-ui diff button')
+    if (!names.length) fail('Name an owned or added component: master-ui diff button')
     const settings = config()
     for (const name of names) {
       const found = taken(settings).filter(item => item.name === name)
@@ -321,7 +330,7 @@ const commands = {
   },
 
   accept() {
-    if (!names.length) fail('Name an owned component: master-ui accept button')
+    if (!names.length) fail('Name an owned or added component: master-ui accept button')
     const settings = config()
     for (const name of names) {
       const found = taken(settings).filter(item => item.name === name)
@@ -340,6 +349,7 @@ const commands = {
 }
 
 if (!command || command === 'help' || command === '--help' || !(command in commands)) {
+  if (command && command !== 'help' && command !== '--help') console.error(`"${command}" is not a command of master-ui.\n`)
   const source = read(fileURLToPath(import.meta.url)).split('\n')
   console.log(source.slice(2, source.indexOf(' */')).map(line => line.replace(/^ \* ?/, '')).join('\n'))
   process.exit(command && command !== 'help' && command !== '--help' ? 1 : 0)
