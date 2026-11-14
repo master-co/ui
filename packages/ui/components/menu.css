@@ -2,7 +2,8 @@
  * Menu: a popover holding a list of actions, placed against its button with anchor positioning.
  * Items are native buttons, links, or labels around a checkbox or radio; the row under the pointer or the keys
  * takes a chip tone. The menu's corner is a row's corner plus its 4px inset. A menu can also open beside an
- * item as a submenu, or at the pointer as a context menu.
+ * item as a submenu, or at the pointer as a context menu. A long menu scrolls inside the viewport, and a label
+ * longer than the menu is wide goes on to a second line rather than scrolling the menu sideways.
  */
 @layer components {
   .menu {
@@ -11,6 +12,7 @@
     --surface-color: var(--color-surface-floating);
     min-width: 11rem;
     max-width: min(20rem, calc(100vw - 1rem));
+    max-height: calc(100dvh - 1rem);
     padding: var(--menu-inset);
     border: 0;
     border-radius: calc(var(--menu-item-radius) * var(--corner-scale) + var(--menu-inset));
@@ -59,9 +61,10 @@
     }
 
     /*
-     * At the pointer: a context menu. The script sets --menu-x and --menu-y from the event and calls
-     * showPopover(). The menu opens down and to the end of that point, and @position-try turns it back
-     * toward the middle when it would cross an edge of the viewport.
+     * At the pointer: a context menu. The script sets --menu-x and --menu-y from the event, measured from the
+     * viewport's top left, and calls showPopover(). The menu opens down and to the end of that point: to the
+     * right, or to the left from right to left. @position-try turns it back toward the middle when it would
+     * cross an edge of the viewport.
      */
     &.menu-context {
       inset: var(--menu-y, 0px) auto auto var(--menu-x, 0px);
@@ -69,6 +72,12 @@
       position-area: none;
       position-try-fallbacks: --menu-context-start, --menu-context-up, --menu-context-up-start;
       transform-origin: top left;
+
+      &:dir(rtl) {
+        inset: var(--menu-y, 0px) calc(100% - var(--menu-x, 0px)) auto auto;
+        position-try-fallbacks: --menu-context-start-rtl, --menu-context-up, --menu-context-up-start-rtl;
+        transform-origin: top right;
+      }
     }
 
     @media (forced-colors: active) {
@@ -100,7 +109,7 @@
     font-feature-settings: inherit;
     text-align: start;
     text-decoration: none;
-    white-space: nowrap;
+    overflow-wrap: anywhere;
     appearance: none;
     user-select: none;
     -webkit-user-select: none;
@@ -242,6 +251,7 @@
 
   /* A shortcut at the end of an item. */
   .menu-shortcut {
+    flex: none;
     margin-inline-start: auto;
     padding-inline-start: 1.5rem;
     color: var(--color-text-muted);
@@ -249,6 +259,8 @@
     font-feature-settings: inherit;
     font-variant-numeric: tabular-nums;
     letter-spacing: .02em;
+    /* The label beside it may wrap; the keys stay on one line. */
+    white-space: nowrap;
   }
 
   /* A quiet caption over a group of items. */
@@ -290,4 +302,17 @@
   right: calc(100% - var(--menu-x, 0px));
   bottom: calc(100% - var(--menu-y, 0px));
   left: auto;
+}
+
+/* From right to left the menu opens to the left of the point, so it turns back to the right. */
+@position-try --menu-context-start-rtl {
+  right: auto;
+  left: var(--menu-x, 0px);
+}
+
+@position-try --menu-context-up-start-rtl {
+  top: auto;
+  right: auto;
+  bottom: calc(100% - var(--menu-y, 0px));
+  left: var(--menu-x, 0px);
 }
