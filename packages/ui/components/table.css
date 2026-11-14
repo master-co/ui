@@ -27,6 +27,9 @@
 
   /* A column heading: a quiet caption on a firmer rule than the rows below it. */
   .table-heading {
+    /* The chevron of a sorted column, and how far it turns: none points down, ascending turns it up. */
+    --table-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4.5 6.5 3.5 3.5 3.5-3.5'/%3E%3C/svg%3E");
+    --table-chevron-turn: none;
     display: table-cell;
     padding: .625rem var(--table-padding-x);
     border-block-end: 1px solid var(--color-line-divider);
@@ -40,32 +43,123 @@
     /* Sorted: the heading takes strong ink and a chevron that points the way the values run. */
     &:is([aria-sort="ascending"], [aria-sort="descending"]) {
       color: var(--color-text-strong);
-
-      &::after {
-        content: '';
-        display: inline-block;
-        width: .75rem;
-        height: .75rem;
-        margin-inline-start: .25rem;
-        background: currentColor;
-        mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4.5 6.5 3.5 3.5 3.5-3.5'/%3E%3C/svg%3E") center / contain no-repeat;
-        vertical-align: -.125em;
-      }
     }
 
-    &[aria-sort="ascending"]::after {
-      rotate: x 180deg;
+    &[aria-sort="ascending"] {
+      --table-chevron-turn: x 180deg;
     }
 
     @media (forced-colors: active) {
       border-block-end-color: CanvasText;
+    }
+  }
+
+  /*
+   * The chevron follows the label, and leads it on a numeric column, so the label keeps the end edge its
+   * figures stand on. With a sort button in the heading the chevron is the button's, pressed with the label.
+   */
+  .table-heading:is([aria-sort="ascending"], [aria-sort="descending"]) {
+    &:not(.table-numeric, :has(.table-sort))::after,
+    &.table-numeric:not(:has(.table-sort))::before,
+    &:not(.table-numeric) .table-sort::after,
+    &.table-numeric .table-sort::before {
+      content: '';
+      display: inline-block;
+      flex: none;
+      width: .75rem;
+      height: .75rem;
+      background: currentColor;
+      mask: var(--table-chevron) center / contain no-repeat;
+      rotate: var(--table-chevron-turn);
+      vertical-align: -.125em;
 
       /* As heavy as the chevron's own rule, so the system color wins over the forced current color. */
-      &:is([aria-sort="ascending"], [aria-sort="descending"])::after {
+      @media (forced-colors: active) {
         background: CanvasText;
         forced-color-adjust: none;
       }
     }
+
+    &:not(.table-numeric, :has(.table-sort))::after, &:not(.table-numeric) .table-sort::after {
+      margin-inline-start: .25rem;
+    }
+
+    &.table-numeric:not(:has(.table-sort))::before, &.table-numeric .table-sort::before {
+      margin-inline-end: .25rem;
+    }
+  }
+
+  /*
+   * A button in a heading that changes the order: the heading's own words, which sit on a chip under the pointer.
+   * It reaches 4px and 6px past its words, so they stay where a heading without one has them.
+   */
+  .table-sort {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    margin: -.25rem -.375rem;
+    padding: .25rem .375rem;
+    border: 0;
+    border-radius: calc(var(--radius-chip) * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-feature-settings: inherit;
+    letter-spacing: inherit;
+    text-align: inherit;
+    white-space: inherit;
+    appearance: none;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+
+    @media (hover: hover) {
+      &:hover {
+        background: var(--color-surface-chip);
+        color: var(--color-text-strong);
+      }
+    }
+
+    /* Pressed: a step deeper than the pointer's tone, so a tap is answered where there is no pointer. */
+    &:active {
+      background: var(--color-surface-inset-hover);
+      color: var(--color-text-strong);
+    }
+
+    &:focus-visible {
+      @apply --focus-ring;
+      outline-offset: 0;
+    }
+  }
+
+  /*
+   * Headings stand a column's padding apart, so on touch the button's target reaches 44px above and below only,
+   * on whichever of its pseudo-elements the chevron leaves free.
+   */
+  @media (pointer: coarse) {
+    .table-heading:not(.table-numeric) .table-sort::before {
+      @apply --touch-target-block;
+    }
+
+    .table-heading.table-numeric .table-sort::after {
+      @apply --touch-target-block;
+    }
+  }
+
+  /* The table's name, on a <caption>: a title at the start edge over the headings, not the browser's centered line. */
+  .table-title {
+    display: table-caption;
+    caption-side: top;
+    padding: .875rem var(--table-padding-x) .375rem;
+    color: var(--color-text-strong);
+    font-size: .875rem;
+    font-weight: var(--font-weight-control);
+    line-height: 1.4;
+    text-align: start;
+    text-wrap: balance;
   }
 
   .table-cell {
@@ -157,5 +251,10 @@
     inset-block-start: 0;
     z-index: 1;
     background: var(--surface-color, var(--color-surface-base));
+  }
+
+  /* A row or a cell the keys bring into view stops below the headings that stand over the rows, not under them. */
+  .table-sticky :is(.table-row, .table-cell) {
+    scroll-margin-block-start: 2.5rem;
   }
 }

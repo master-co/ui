@@ -69,6 +69,9 @@
       min-height: var(--navbar-height);
       margin: .75rem;
       margin-block-start: max(.75rem, env(safe-area-inset-top, 0px));
+      /* On a phone turned on its side the margin keeps the bar clear of the notch, on whichever side it is. */
+      margin-left: max(.75rem, env(safe-area-inset-left, 0px));
+      margin-right: max(.75rem, env(safe-area-inset-right, 0px));
       padding: 0 var(--navbar-padding-x);
       border-radius: calc(var(--radius-surface) * var(--corner-scale));
       corner-shape: var(--corner-shape);
@@ -120,6 +123,15 @@
     &:focus-visible {
       @apply --focus-ring;
     }
+
+    /* The mark and the name are shorter than a finger: on touch the target reaches 44px around them. */
+    @media (pointer: coarse) {
+      position: relative;
+
+      &::after {
+        @apply --touch-target;
+      }
+    }
   }
 
   /* The main links, as a row. Below 36rem of bar they leave; the toggle takes over. */
@@ -137,8 +149,12 @@
     }
   }
 
-  /* A link is a word at rest; under the pointer it sits on a chip. The current page is in ink. */
+  /*
+   * A link is a word at rest; under the pointer it sits on a chip. The current page is in ink, with a short mark
+   * of ink under its word, so it is told apart by more than its color.
+   */
   .navbar-link {
+    position: relative;
     display: inline-flex;
     align-items: center;
     gap: .375rem;
@@ -179,6 +195,18 @@
       color: var(--color-text-strong);
     }
 
+    &[aria-current="page"]::before {
+      content: '';
+      position: absolute;
+      inset-inline: .625rem;
+      inset-block-end: .125rem;
+      height: 1.5px;
+      border-radius: 999px;
+      corner-shape: round;
+      background: currentColor;
+      pointer-events: none;
+    }
+
     &:focus-visible {
       @apply --focus-ring;
       outline-offset: 0;
@@ -186,8 +214,6 @@
 
     /* Links stand 2px apart, so on touch a target reaches 44px above and below and keeps its width. */
     @media (pointer: coarse) {
-      position: relative;
-
       &::after {
         @apply --touch-target-block;
       }
@@ -199,9 +225,14 @@
       cursor: not-allowed;
     }
 
+    /* The mark is a fill the canvas would paint over: an underline stands for it. */
     @media (forced-colors: active) {
       &[aria-current="page"] {
         text-decoration: underline;
+      }
+
+      &[aria-current="page"]::before {
+        content: none;
       }
 
       &:is(:disabled, [aria-disabled="true"]) {
