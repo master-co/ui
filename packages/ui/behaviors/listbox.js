@@ -44,8 +44,15 @@ export function listbox(root) {
       return multiple() ? chosen : chosen[0] ?? null
     },
     (next) => {
-      const values = [next].flat()
-      for (const option of all()) option.setAttribute('aria-checked', String(values.includes(valueOf(option))))
+      // A value is compared as text, so a number names the option whose data-value writes it; a list of one
+      // choice checks the first option the value names, never two.
+      const values = [next].flat().filter((value) => value !== null && value !== undefined).map(String)
+      let found = false
+      for (const option of all()) {
+        const checked = values.includes(valueOf(option)) && (multiple() || !found)
+        if (checked) found = true
+        option.setAttribute('aria-checked', String(checked))
+      }
     }
   )
 
@@ -117,8 +124,10 @@ export function listbox(root) {
   for (const type of ['pointerup', 'pointercancel']) root.ownerDocument.addEventListener(type, () => { pressed = false }, { signal })
 
   // Focus arrives on a list with no active option: the keys start from what is chosen, or from the first option.
+  // An active option a renderer has since hidden or disabled is no place for the keys to start either.
   root.addEventListener('focus', () => {
-    if (active() || pressed) return
+    const current = active()
+    if ((current && enabled(current)) || pressed) return
     const items = options(root)
     activate(root, root, items.find((option) => option.getAttribute('aria-checked') === 'true') ?? items[0])
   }, { signal })
@@ -147,7 +156,8 @@ export function listbox(root) {
     }
     if (multiple() && command && !event.shiftKey && event.key.toLowerCase() === 'a') {
       event.preventDefault()
-      every()
+      // Held down, it would check every option and uncheck them all by turns.
+      if (!event.repeat) every()
       return
     }
     if (command) return
@@ -161,7 +171,8 @@ export function listbox(root) {
       case ' ':
         if (!current || !enabled(current)) return
         event.preventDefault()
-        choose(current)
+        // A key held down chooses once: in a multiselectable list its repeats would check and uncheck by turns.
+        if (!event.repeat) choose(current)
         return
       default:
         to = seek(event, items, current)

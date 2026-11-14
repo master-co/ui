@@ -304,3 +304,29 @@ test('splitter: a root without a handle attaches nothing', () => {
   assert.equal(typeof detach, 'function')
   detach()
 })
+
+test('splitter: a press beside the line does not make it jump: the line follows from where it was taken', () => {
+  const { root, handle, pointer, heard, size } = setup()
+  splitter(root)
+  // The line stands at 244; the press is 4px past it, on the handle's wider target.
+  pointer(handle, 'pointerdown', { pointerId: 1, clientX: 248 })
+  pointer(handle, 'pointermove', { pointerId: 1, clientX: 249 })
+  assert.equal(size(), '36.25%', 'a pixel of movement is a pixel of the line, not a jump of five')
+  pointer(handle, 'pointermove', { pointerId: 1, clientX: 304 })
+  assert.equal(size(), '50%')
+  pointer(handle, 'pointerup', { pointerId: 1 })
+  assert.deepEqual(heard, ['input', 'input', 'change'])
+})
+
+test('splitter: a second pointer that lands on the handle while one drags it takes nothing', () => {
+  const { root, handle, pointer, heard, size } = setup()
+  splitter(root)
+  pointer(handle, 'pointerdown', { pointerId: 1, clientX: 244 })
+  pointer(handle, 'pointerdown', { pointerId: 2, clientX: 244 })
+  pointer(handle, 'pointermove', { pointerId: 2, clientX: 400 })
+  assert.equal(size(), '36%')
+  pointer(handle, 'pointermove', { pointerId: 1, clientX: 300 })
+  assert.equal(size(), '50%', 'the first pointer still holds it')
+  pointer(handle, 'pointerup', { pointerId: 1 })
+  assert.deepEqual(heard, ['input', 'change'])
+})

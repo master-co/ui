@@ -77,7 +77,8 @@ export function otp(root, options = {}) {
    * @param {HTMLInputElement} slot @param {string} character
    */
   function write(slot, character) {
-    if (slot.value === character) return
+    // A read-only slot keeps its character: a code spread over it, or Backspace from the slot after, passes it by.
+    if (slot.value === character || slot.readOnly) return
     // The prototype's setter: a framework that shadows `value` to notice its own writes still hears the event.
     const set = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(slot), 'value')?.set
     if (set) set.call(slot, character)
@@ -159,7 +160,8 @@ export function otp(root, options = {}) {
     const slot = list[index]
     // A read-only slot is read, not edited: the script clears nothing in it, as the browser would not.
     if ((event.key === 'Backspace' || event.key === 'Delete') && slot.readOnly) return
-    const forward = getComputedStyle(root).direction === 'rtl' ? -1 : 1
+    // The direction is read only for the arrows: every character typed comes through here first.
+    const forward = () => (getComputedStyle(root).direction === 'rtl' ? -1 : 1)
     if (event.key === 'Backspace') {
       if (slot.value) write(slot, '')
       else if (index > 0) {
@@ -167,8 +169,8 @@ export function otp(root, options = {}) {
         focus(list[index - 1])
       }
     } else if (event.key === 'Delete') write(slot, '')
-    else if (event.key === 'ArrowLeft') focus(list[index - forward])
-    else if (event.key === 'ArrowRight') focus(list[index + forward])
+    else if (event.key === 'ArrowLeft') focus(list[index - forward()])
+    else if (event.key === 'ArrowRight') focus(list[index + forward()])
     else if (event.key === 'Home') focus(list[0])
     else if (event.key === 'End') focus(list[list.length - 1])
     else return

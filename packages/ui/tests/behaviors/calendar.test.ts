@@ -806,3 +806,32 @@ test('calendar: with several months, month shows the first of them, and a day th
   cell('2026-12-20').focus()
   assert.deepEqual(stops(), ['2026-12-20'])
 })
+
+test('calendar: Enter held down chooses once; its repeats do not press the day again', () => {
+  const { day, key, click, heard, selected } = setup({ multiple: true })
+  day(12).focus()
+  assert.equal(key(day(12), 'Enter'), false, 'Enter is left to the day, whose click chooses')
+  click(day(12))
+  assert.equal(key(day(12), 'Enter', { repeat: true }), true, 'a repeat is prevented, so the button is not pressed again')
+  assert.deepEqual(heard, [['2026-11-12']])
+  assert.deepEqual(selected(), ['Thursday, November 12, 2026'])
+})
+
+test('calendar: a day marked aria-disabled="true" is not chosen', () => {
+  const { day, click, heard, selected } = setup()
+  day(12).setAttribute('aria-disabled', 'true')
+  click(day(12))
+  assert.deepEqual(heard, [])
+  assert.deepEqual(selected(), [])
+})
+
+test('calendar: detach gives the month buttons the disabled their author gave them', () => {
+  const page = dom(markup())
+  const [previous, next] = page.all<HTMLButtonElement>('.calendar-header button')
+  next.disabled = true
+  const detach = calendar(page.one('.calendar'), { locale: 'en-US', weekStart: 1, min: '2026-11-01' })
+  assert.equal(previous.disabled, true, 'the month before min is out of reach')
+  detach()
+  assert.equal(previous.disabled, false)
+  assert.equal(next.disabled, true, 'the button the author disabled stays so')
+})

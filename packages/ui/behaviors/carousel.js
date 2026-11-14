@@ -100,7 +100,8 @@ export function carousel(root, options = {}) {
     // At an end, the button that has nowhere to go is disabled; focus it held moves to the other one.
     const limit = (/** @type {HTMLButtonElement | null} */ button, /** @type {boolean} */ reached, /** @type {HTMLButtonElement | null} */ other) => {
       if (!button || button.disabled === reached) return
-      if (reached && root.ownerDocument.activeElement === button) (other && !other.disabled ? other : track)?.focus()
+      // The other button stands beside it: focus moves there without scrolling the page, as a popover gives it back.
+      if (reached && root.ownerDocument.activeElement === button) (other && !other.disabled ? other : track)?.focus({ preventScroll: true })
       button.disabled = reached
     }
     limit(previous, at <= 0, next)
@@ -126,8 +127,11 @@ export function carousel(root, options = {}) {
    */
   function go(slide, now = false) {
     const still = now || (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches)
-    const align = /** @type {ScrollLogicalPosition} */ ((getComputedStyle(slide).scrollSnapAlign || 'start').split(' ').at(-1)?.replace('none', 'start') ?? 'start')
     const vertical = track && getComputedStyle(track).flexDirection.startsWith('column')
+    // `scroll-snap-align` names the block axis first and the inline axis second; one value is both. A track that
+    // scrolls down snaps on the first, one that scrolls across on the last.
+    const values = (getComputedStyle(slide).scrollSnapAlign || 'start').split(' ')
+    const align = /** @type {ScrollLogicalPosition} */ (((vertical ? values[0] : values.at(-1)) || 'start').replace('none', 'start'))
     slide.scrollIntoView(/** @type {ScrollIntoViewOptions} */ ({
       behavior: still ? 'instant' : 'smooth',
       block: vertical ? align : 'nearest',
@@ -200,14 +204,16 @@ export function carousel(root, options = {}) {
     }
     watch()
     signal.addEventListener('abort', () => watching.disconnect())
-    // Slides that come and go: watch the new set, and keep the current one if it is still there.
+    // Slides that come and go, added or removed, or shown and hidden with `hidden`: watch the new set, and keep
+    // the current one if it is still there. What changes inside a slide is not the set.
     if (typeof MutationObserver === 'function') {
-      const mutations = new MutationObserver(() => {
+      const mutations = new MutationObserver((records) => {
+        if (!records.some((record) => record.target === track || (record.type === 'attributes' && /** @type {Element} */ (record.target).classList.contains('carousel-slide')))) return
         watch()
         if (current !== null && !find(current)) current = null
         paint()
       })
-      mutations.observe(track, { childList: true })
+      mutations.observe(track, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] })
       signal.addEventListener('abort', () => mutations.disconnect())
     }
   }

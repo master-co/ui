@@ -248,3 +248,21 @@ test('signature: attaching twice keeps one set of listeners', () => {
   stroke([[150, 100], [200, 110]])
   assert.deepEqual(heard, ['input', 'input', 'change'])
 })
+
+test('signature: a stroke reads the layout and the weight once as it begins, not at every move', () => {
+  const { root, ink, stroke } = setup()
+  signature(root)
+  let boxes = 0
+  const box = ink.getBoundingClientRect
+  ink.getBoundingClientRect = () => { boxes++; return box() }
+  let styles = 0
+  const original = (globalThis as any).getComputedStyle
+  ;(globalThis as any).getComputedStyle = (...args: any[]) => { styles++; return original(...args) }
+  try {
+    stroke([[120, 60], [140, 80], [160, 90], [180, 100], [200, 120]])
+  } finally {
+    ;(globalThis as any).getComputedStyle = original
+  }
+  assert.equal(boxes, 1, 'the drawing\'s box is read as the stroke begins')
+  assert.equal(styles, 1, 'and its weight')
+})

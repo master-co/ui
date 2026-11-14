@@ -22,6 +22,9 @@ const attached = new WeakMap()
 
 const controls = 'button, select, input, textarea, a[href], [tabindex]'
 
+/** What holds controls of its own inside a toolbar: they are not the toolbar's to walk. */
+const nested = '[popover], dialog, [role="menu"], [role="listbox"]'
+
 /**
  * @param {HTMLElement} root The element with the `toolbar` class and `role="toolbar"`.
  * @returns {() => void} Removes everything the behavior added.
@@ -49,13 +52,23 @@ export function toolbar(root) {
   // The browser's focusgroup moves focus by itself; a second roving tabindex would fight it.
   if ('focusGroup' in HTMLElement.prototype && root.hasAttribute('focusgroup')) return detach
 
+  /**
+   * Whether an element stands in something the toolbar holds that matches: asked inside the toolbar only, so a
+   * toolbar in a dialog, a popover, a panel or a hidden tab panel still has its controls.
+   * @param {Element} element @param {string} selector
+   */
+  const within = (element, selector) => {
+    const found = element.closest(selector)
+    return Boolean(found && found !== root && root.contains(found))
+  }
+
   /** The controls the keys land on, in the order of the document: one per radio group. */
   const items = () => {
     /** @type {HTMLElement[]} */
     const found = []
     const groups = new Set()
     for (const element of /** @type {NodeListOf<HTMLElement>} */ (root.querySelectorAll(controls))) {
-      if (element.closest('[hidden], [popover], dialog') || /** @type {HTMLButtonElement} */ (element).disabled) continue
+      if (within(element, `[hidden], ${nested}`) || /** @type {HTMLButtonElement} */ (element).disabled) continue
       if (element.matches('input[type="hidden"]')) continue
       const radio = /** @type {HTMLInputElement} */ (element)
       if (radio.type === 'radio' && radio.name) {
@@ -113,11 +126,12 @@ export function toolbar(root) {
   }, { signal })
 
   root.addEventListener('keydown', (event) => {
-    if (event.ctrlKey || event.metaKey || event.altKey || event.isComposing) return
+    // A key a control inside has taken for itself, such as the arrows of a slider, is not the toolbar's.
+    if (event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey || event.isComposing) return
     const target = /** @type {HTMLElement} */ (event.target)
     // Fields and lists keep their own keys.
     if (target.matches('select, textarea, input:not([type="radio"], [type="checkbox"], [type="button"], [type="submit"], [type="reset"])')) return
-    if (target.closest('[popover], dialog, [role="menu"], [role="listbox"]') && target.closest('[popover], dialog, [role="menu"], [role="listbox"]') !== root) return
+    if (within(target, nested)) return
     const vertical = root.getAttribute('aria-orientation') === 'vertical'
     const rtl = getComputedStyle(root).direction === 'rtl'
     const steps = vertical

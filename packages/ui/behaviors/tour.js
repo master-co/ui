@@ -87,6 +87,8 @@ export function tour(root, { target, wait = 3000 } = {}) {
   /** Stops waiting for a target, and stops listening for the action an open step asks for. */
   let waiting = () => {}
   let listening = new AbortController()
+  /** The steps this script gave a `tabindex` to take focus, which it takes away again on detach. @type {Set<HTMLElement>} */
+  const given = new Set()
 
   /** Open a popover against an element, or where the browser places it where `source` is not understood. */
   const show = (/** @type {HTMLElement} */ popover, /** @type {Element} */ source) => {
@@ -125,7 +127,10 @@ export function tour(root, { target, wait = 3000 } = {}) {
         .find(enabled)
       if (first) first.focus()
       else {
-        if (!step.hasAttribute('tabindex')) step.tabIndex = -1
+        if (!step.hasAttribute('tabindex')) {
+          step.tabIndex = -1
+          given.add(step)
+        }
         step.focus()
       }
     }
@@ -237,7 +242,9 @@ export function tour(root, { target, wait = 3000 } = {}) {
   }, { signal })
 
   root.addEventListener('keydown', (event) => {
-    if (event.key !== 'Escape' || event.defaultPrevented || event.isComposing || !shown?.contains(/** @type {Node} */ (event.target))) return
+    // Escape alone, as a panel hears it: one held with another key is a shortcut of the page or the system.
+    if (event.key !== 'Escape' || event.defaultPrevented || event.isComposing || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return
+    if (!shown?.contains(/** @type {Node} */ (event.target))) return
     // A popover inside the step, such as a menu, closes first: Escape is its own.
     const inner = event.target instanceof Element ? event.target.closest('[popover]') : null
     if (inner && inner !== shown) return
@@ -271,6 +278,8 @@ export function tour(root, { target, wait = 3000 } = {}) {
     waiting()
     current = null
     close()
+    for (const step of given) if (step.getAttribute('tabindex') === '-1') step.removeAttribute('tabindex')
+    given.clear()
   })
 
   return valued(() => controller.abort(), () => current, (next) => {

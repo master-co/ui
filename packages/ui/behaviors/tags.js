@@ -142,20 +142,26 @@ export function tags(root, { delimiters = [','], max = Infinity, validate, name,
   }
 
   const walk = chipKeys(field, remove)
+  /** True from an Enter that turned the text into values until the key is let go. */
+  let entered = false
   root.addEventListener('keydown', (event) => {
     // Safari sends the Enter that ends a composition after it has ended, with isComposing false and keyCode 229.
     const composing = event.isComposing || event.keyCode === 229
     if (event.target === field && !composing && !event.ctrlKey && !event.metaKey && !event.altKey) {
       if (event.key === 'Enter' || delimiters.includes(event.key)) {
+        // Enter held down adds once: its repeats find the field empty, and must not submit the form for it.
+        if (event.key === 'Enter' && event.repeat && entered) return event.preventDefault()
         // Enter in an empty field is left alone, so it still submits the form.
         if (event.key === 'Enter' && !field.value.trim()) return
         event.preventDefault()
         if (!field.readOnly) commit()
+        if (event.key === 'Enter') entered = true
         return
       }
     }
     walk(event)
   }, { signal })
+  field.addEventListener('keyup', (event) => { if (event.key === 'Enter') entered = false }, { signal })
 
   field.addEventListener('input', () => field.removeAttribute('aria-invalid'), { signal })
 

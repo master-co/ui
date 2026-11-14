@@ -4,7 +4,8 @@
  * The stylesheet lays the panes out from `--splitter-size` and keeps both of them `--splitter-min` wide;
  * this script only passes the number on. A drag of the handle and the keys of a window splitter write the
  * first pane's size, as a percentage of the container, to `--splitter-size` on the root and to the handle's
- * `aria-valuenow`. The handle's `aria-valuemin` and `aria-valuemax` are the least and the greatest it goes.
+ * `aria-valuenow`. A drag carries the line with the pointer from where it took hold of it, so a press beside the
+ * line does not make it jump. The handle's `aria-valuemin` and `aria-valuemax` are the least and the greatest it goes.
  *
  * The handle dispatches `input` each time the size changes and `change` when a drag ends or a key moved it.
  *
@@ -75,26 +76,40 @@ export function splitter(root, { step = 5 } = {}) {
   read = size
   take = (value) => { set(value, true) }
 
-  /** The pointer that holds the handle, and whether it has moved it. */
+  /** The pointer that holds the handle, whether it has moved it, and how far from the line it took hold. */
   let held = /** @type {number | null} */ (null)
   let moved = false
+  let grip = 0
+
+  /**
+   * Where a pointer stands across the container, in percent: reading the container turns a place on the screen
+   * into a share of it; the stylesheet does the placing.
+   * @param {PointerEvent} event
+   */
+  const place = (event) => {
+    const box = root.getBoundingClientRect()
+    const share = stacked()
+      ? (event.clientY - box.top) / box.height
+      : rtl() ? (box.right - event.clientX) / box.width : (event.clientX - box.left) / box.width
+    return share * 100
+  }
 
   handle.addEventListener('pointerdown', (event) => {
-    if (event.button !== 0 || disabled()) return
+    // One pointer holds the handle: a second finger that lands on it while the first drags takes nothing.
+    if (event.button !== 0 || disabled() || (held !== null && held !== event.pointerId)) return
     held = event.pointerId
     moved = false
+    // The handle stays where it was taken hold of under the pointer, so a press beside the line does not jump.
+    const at = place(event)
+    grip = Number.isFinite(at) ? at - size() : 0
     // Capture keeps the moves coming when the pointer leaves the line. A scripted event has no pointer to capture.
     try { handle.setPointerCapture(event.pointerId) } catch {}
   }, { signal })
 
   handle.addEventListener('pointermove', (event) => {
     if (event.pointerId !== held) return
-    // Reading the container turns a place on the screen into a share of it; the stylesheet does the placing.
-    const box = root.getBoundingClientRect()
-    const share = stacked()
-      ? (event.clientY - box.top) / box.height
-      : rtl() ? (box.right - event.clientX) / box.width : (event.clientX - box.left) / box.width
-    if (Number.isFinite(share) && set(share * 100)) moved = true
+    const at = place(event)
+    if (Number.isFinite(at) && set(at - grip)) moved = true
   }, { signal })
 
   /** @param {PointerEvent} event */

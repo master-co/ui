@@ -335,3 +335,30 @@ test('tour: attaching twice keeps one tour', () => {
   click(one('#start'))
   assert.equal(heard.length, 1)
 })
+
+test('tour: Escape held with another key is not the tour\'s, as a panel leaves it', () => {
+  const { root, one, click, key, open } = setup()
+  tour(root)
+  click(one('#start'))
+  for (const modifier of ['ctrlKey', 'metaKey', 'altKey', 'shiftKey']) {
+    assert.equal(key(one('#next-1'), 'Escape', { [modifier]: true }), false, `${modifier} with Escape is left alone`)
+  }
+  assert.deepEqual(open(), ['step-search'])
+})
+
+test('tour: detach takes away the tabindex it gave a step to take focus, and leaves one the page wrote', () => {
+  const html = `<div class="coachmark-tour" id="t">
+    <button type="button" id="plan">Plan</button>
+    <div class="coachmark" id="step-plan" popover="manual" role="dialog" aria-label="Plan"><p>Choose a plan</p></div>
+    <button type="button" id="seat">Seat</button>
+    <div class="coachmark" id="step-seat" popover="manual" role="dialog" aria-label="Seat" tabindex="-1"><p>Pick a seat</p></div>
+  </div>`
+  const { root, one } = setup(html)
+  const handle = tour(root)
+  handle.value = 0
+  handle.value = 1
+  assert.equal(one('#step-plan').getAttribute('tabindex'), '-1')
+  handle()
+  assert.equal(one('#step-plan').hasAttribute('tabindex'), false, 'what the script added goes')
+  assert.equal(one('#step-seat').getAttribute('tabindex'), '-1', 'what the page wrote stays')
+})

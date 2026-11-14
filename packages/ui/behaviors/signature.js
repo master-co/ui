@@ -153,8 +153,8 @@ export function signature(root, { drawn = 'Signature drawn', cleared = 'Signatur
   const draw = (last = false) => {
     const svg = ink()
     // The weight is read once, before a path is written: read after, it would have the browser work out the
-    // styles again at every move of the pen, and twice.
-    const size = weight()
+    // styles again at every move of the pen, and twice. A stroke under way read it as it began.
+    const size = frame?.weight ?? weight()
     if (svg) {
       const paths = [...svg.querySelectorAll('.signature-stroke')]
       strokes.forEach((stroke, index) => {
@@ -209,22 +209,37 @@ export function signature(root, { drawn = 'Signature drawn', cleared = 'Signatur
   let stroke = []
 
   /**
+   * How a point on the screen maps into the drawing, in the units of the viewBox, read from the layout now.
+   * @returns {(x: number, y: number) => [number, number]}
+   */
+  const measure = () => {
+    const svg = /** @type {SVGSVGElement} */ (ink())
+    const matrix = svg.getScreenCTM?.()
+    if (matrix && typeof DOMPoint === 'function') {
+      const inverse = matrix.inverse()
+      return (x, y) => {
+        const point = new DOMPoint(x, y).matrixTransform(inverse)
+        return [point.x, point.y]
+      }
+    }
+    // Without a matrix, the drawing keeps its viewBox's proportions, so a scale maps one to the other.
+    const [left = 0, top = 0, width = 400, height = 160] = viewBox().split(/[\s,]+/).map(Number)
+    const box = svg.getBoundingClientRect()
+    return (x, y) => [left + (x - box.left) / (box.width || width) * width, top + (y - box.top) / (box.height || height) * height]
+  }
+  /**
+   * What a stroke reads of the layout and the style, once as it begins: each move writes a path, so reading
+   * them again on the next one would have the browser lay the page out again at every move of the pen.
+   * @type {{ map: (x: number, y: number) => [number, number], weight: number } | null}
+   */
+  let frame = null
+
+  /**
    * Where an event is in the drawing, in the units of the viewBox.
    * @param {PointerEvent} event
    * @returns {[number, number]}
    */
-  const place = (event) => {
-    const svg = /** @type {SVGSVGElement} */ (ink())
-    const matrix = svg.getScreenCTM?.()
-    if (matrix && typeof DOMPoint === 'function') {
-      const point = new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse())
-      return [point.x, point.y]
-    }
-    // Without a matrix, the drawing keeps its viewBox's proportions, so a scale maps one to the other.
-    const [x = 0, y = 0, width = 400, height = 160] = viewBox().split(/[\s,]+/).map(Number)
-    const box = svg.getBoundingClientRect()
-    return [x + (event.clientX - box.left) / (box.width || width) * width, y + (event.clientY - box.top) / (box.height || height) * height]
-  }
+  const place = (event) => (frame?.map ?? measure())(event.clientX, event.clientY)
 
   /**
    * The point an event adds. A pen says how hard it pressed; anything else is heavier the slower it moved, and
@@ -254,6 +269,7 @@ export function signature(root, { drawn = 'Signature drawn', cleared = 'Signatur
       // A button in the pad keeps its click.
       if (/** @type {Element} */ (event.target).closest('button, input, a, .signature-actions')) return
       held = event.pointerId
+      frame = { map: measure(), weight: weight() }
       time = event.timeStamp
       stroke = []
       stroke.push(point(event))
@@ -281,6 +297,7 @@ export function signature(root, { drawn = 'Signature drawn', cleared = 'Signatur
     const release = (event) => {
       if (event.pointerId !== held) return
       held = null
+      frame = null
       dispatch('change')
       if (strokes.length === 1) say(drawn)
     }

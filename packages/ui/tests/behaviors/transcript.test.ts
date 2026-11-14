@@ -242,3 +242,40 @@ test('transcript: detach removes the listeners and the marks', () => {
   control.advance(9)
   assert.deepEqual(current(), [])
 })
+
+test('transcript: detach gives each time back the tabindex the page wrote', () => {
+  const cues = cueMarkup.replace('class="transcript-time"', 'class="transcript-time" tabindex="0"')
+  const { root, control, stops } = setup({}, { cues })
+  const detach = transcript(root)
+  control.advance(9)
+  assert.deepEqual(stops(), ['-1', '-1', '0', '-1'])
+  detach()
+  assert.deepEqual(stops(), ['0', null, null, null], 'the first time keeps the stop the page gave it')
+})
+
+test('transcript: the times written from a track take the hours once a cue is an hour in', () => {
+  const tracks = [{ kind: 'captions', mode: 'showing', cues: [
+    { startTime: 5, endTime: 9, text: 'Opening.' },
+    { startTime: 3725, endTime: 3730, text: 'Late in the recording.' },
+  ] }]
+  const { root, all } = setup({ tracks, duration: 4000 }, { cues: '' })
+  transcript(root)
+  assert.deepEqual(all('.transcript-time').map(time => time.textContent), ['0:00:05', '1:02:05'], 'one form down the column, as the player writes its time')
+})
+
+test('transcript: hidden cues are passed over by the keys, and the stop is never on one', () => {
+  const { root, all, key, control, stops, document } = setup()
+  transcript(root)
+  const cues = all<HTMLElement>('.transcript-cue')
+  const times = all<HTMLButtonElement>('.transcript-time')
+  // A search filters the transcript: the second and the third cue are hidden.
+  cues[1].hidden = true
+  cues[2].hidden = true
+  control.advance(9)
+  assert.deepEqual(stops(), ['0', '-1', '-1', '-1'], 'the current cue is hidden: the stop is the shown one before it')
+  times[0].focus()
+  assert.equal(key(times[0], 'ArrowDown'), true)
+  assert.equal(document.activeElement, times[3], 'the hidden cues are passed over')
+  assert.equal(key(times[3], 'ArrowUp'), true)
+  assert.equal(document.activeElement, times[0])
+})

@@ -9,7 +9,7 @@
  *
  * A drag reads the pointer's angle around the middle of the dial and turns it into a value with the two
  * angles the stylesheet draws with, `--dial-start` and `--dial-sweep`. A press on the track moves the value
- * there; a press on the thumb keeps it where it was taken hold of. A dial that sweeps the whole circle comes
+ * there; a press on the thumb keeps it where it was taken hold of. A press gives the dial focus. A dial that sweeps the whole circle comes
  * round: past its greatest value it starts again from the least, and the greatest is the same place as the
  * least, so the value never reaches it. A knob does not come round: a drag through the gap at its foot stays
  * at the end it left until the pointer comes back.
@@ -200,6 +200,9 @@ export function dial(root, { step = 1, page, text, wheel = false } = {}) {
     frame = { box: root.getBoundingClientRect(), angles: angles() }
     // Capture keeps the moves coming when the pointer leaves the dial. A scripted event has no pointer to capture.
     try { root.setPointerCapture(event.pointerId) } catch {}
+    // The dial a finger turns has focus after, as one a mouse pressed does, so the keys go on from there; the
+    // page does not scroll to the dial under the pointer.
+    if (root.ownerDocument.activeElement !== root) root.focus({ preventScroll: true })
     const degrees = pointed(event)
     if (degrees === null) return
     const target = /** @type {Element | null} */ (event.target)

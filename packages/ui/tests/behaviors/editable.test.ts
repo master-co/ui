@@ -180,3 +180,21 @@ test('editable: detach removes the listeners', () => {
   click(preview)
   assert.equal(editing(), false)
 })
+
+test('editable: Enter held down saves once and does not open the field again from the preview', () => {
+  const { root, preview, field, click, key, type, editing, focused, heard } = setup()
+  editable(root)
+  click(preview)
+  type(field, 'Annual report')
+  heard.length = 0
+  assert.equal(key(field, 'Enter'), true)
+  assert.equal(editing(), false)
+  assert.equal(focused(), preview)
+  assert.equal(key(preview, 'Enter', { repeat: true }), true, 'the repeat does not press the preview')
+  assert.equal(key(preview, 'Enter'), false, 'a new press does')
+  click(preview)
+  assert.equal(editing(), true)
+  assert.equal(key(field, 'Enter', { repeat: true }), true, 'the repeat of the Enter that opened the field')
+  assert.equal(editing(), true, 'does not save it as soon as it opens')
+  assert.deepEqual(heard, ['input', 'change'])
+})

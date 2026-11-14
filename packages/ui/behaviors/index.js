@@ -105,6 +105,7 @@ const patterns = [
   ['.carousel-view', carousel],
   ['.schedule-view', schedule],
   ['.gradient', gradient],
+  ['.range', range],
 ]
 
 /**

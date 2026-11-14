@@ -91,7 +91,11 @@ export function command(root, { shortcut = 'k', filter: filtering = true } = {})
   if (shortcut) {
     root.ownerDocument.addEventListener('keydown', (event) => {
       if (!(event.metaKey || event.ctrlKey) || event.altKey || event.shiftKey) return
-      if (event.key?.toLowerCase() !== shortcut.toLowerCase()) return
+      // A layout that writes another script, Cyrillic or Greek, names the key in it: the key that stands where
+      // the letter does is the shortcut there.
+      const key = event.key?.toLowerCase() ?? ''
+      const latin = /^[a-z]$/i.test(shortcut)
+      if (key !== shortcut.toLowerCase() && !(latin && /[^\x00-\x7f]/.test(key) && event.code === `Key${shortcut.toUpperCase()}`)) return
       event.preventDefault()
       // A shortcut held down repeats: it opened the palette once, and must not close and open it again and again.
       if (event.repeat) return

@@ -191,7 +191,9 @@ export function drawer(root) {
     const own = panel()
     if (!own?.contains(target)) return
     const grip = target.closest('.dialog-handle')
-    if (!grip && target.closest(controls)) return
+    // Asked inside the panel only: a dialog given tabindex="-1" to take focus is not a control the press is on.
+    const control = target.closest(controls)
+    if (!grip && control && own.contains(control)) return
     // No text is selected and no focus moves; the panel is still :active, which stops the snapping.
     event.preventDefault()
     own.setPointerCapture?.(event.pointerId)
@@ -219,7 +221,9 @@ export function drawer(root) {
     const { moved, speed, grip, at } = drag
     drag = null
     if (!moved) return
-    dragged = Boolean(grip)
+    // Only a release is followed by the click that would press the handle; a drag the browser took back, or
+    // lost, is followed by none, and the next press of the handle, by a key too, must not be swallowed.
+    dragged = Boolean(grip) && event.type === 'pointerup'
     const found = measure()
     if (!found) return
     // A pointer that stood still before it let go throws nothing.
@@ -241,9 +245,11 @@ export function drawer(root) {
     if (grip && /** @type {Element} */ (event.target).closest?.('.dialog-handle') === grip) {
       if (dragged) return void (dragged = false)
       const found = measure()
+      // A sheet too short for a half rest stays at full height, and its handle goes on saying so.
+      if (found && found.rests.length < 3) return
       const full = grip.getAttribute('aria-expanded') === 'true'
       say(!full)
-      if (found && found.rests.length > 2) go(full ? found.rests[1] : 0)
+      if (found) go(full ? found.rests[1] : 0)
       return
     }
     dragged = false
@@ -255,16 +261,19 @@ export function drawer(root) {
     if (!grip || event.target !== grip || !swiping() || event.altKey || event.ctrlKey || event.metaKey) return
     if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return
     event.preventDefault()
+    const found = measure()
+    if (found && found.rests.length < 3) return
     const full = event.key === 'ArrowUp'
     say(full)
-    const found = measure()
-    if (found && found.rests.length > 2) go(full ? 0 : found.rests[1])
+    if (found) go(full ? 0 : found.rests[1])
   }, { signal })
 
   // Heard however the behavior ends: by its detach, or by attaching again, which aborts this one.
   signal.addEventListener('abort', () => {
     clearTimeout(timer)
     watching?.disconnect()
+    // The scrim it wrote goes with it: attached again, or not at all, the dialog does not keep a stale one.
+    root.style.removeProperty('--dialog-scrim')
     if (attached.get(root) === controller) attached.delete(root)
   })
 

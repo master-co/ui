@@ -180,35 +180,35 @@ export function gradient(root, options = {}) {
       mark(handle, 'aria-current', stop.id === hand ? 'true' : null)
       mark(handle, 'aria-disabled', locked() ? 'true' : null)
     }
+    // The controls too are written only where they change, so a drag along the bar leaves them alone.
+    const disable = (/** @type {HTMLInputElement | HTMLButtonElement | null | undefined} */ control, /** @type {boolean} */ off) => {
+      if (control && control.disabled !== off) control.disabled = off
+    }
+    const fill = (/** @type {HTMLInputElement | undefined} */ input, /** @type {number} */ number) => {
+      if (input && input !== from && input.value !== String(number)) input.value = String(number)
+    }
     const stop = /** @type {GradientStop} */ (stopOf(hand))
     for (const input of /** @type {HTMLInputElement[]} */ ([...root.querySelectorAll('.gradient-offset input')])) {
-      if (input !== from) input.value = String(stop.offset)
-      input.disabled = locked()
+      fill(input, stop.offset)
+      disable(input, locked())
     }
     if (picker && from !== pickerRoot && picker.value !== stop.color && colorPickerFormat(picker.value, 'hex') !== stop.color) picker.value = stop.color
     for (const radio of /** @type {HTMLInputElement[]} */ ([...root.querySelectorAll('.gradient-type input[type="radio"]')])) {
-      radio.checked = radio.value === value.type
-      radio.disabled = locked()
+      if (radio.checked !== (radio.value === value.type)) radio.checked = radio.value === value.type
+      disable(radio, locked())
     }
     // The angle is a linear and a conic gradient's, the centre a radial and a conic one's: the other is disabled.
     const angle = angleRoot
     if (turn && angle !== from && turn.value !== value.angle) turn.value = value.angle
-    if (angle) {
-      if (locked() || value.type === 'radial') angle.setAttribute('aria-disabled', 'true')
-      else angle.removeAttribute('aria-disabled')
-    }
+    if (angle) mark(angle, 'aria-disabled', locked() || value.type === 'radial' ? 'true' : null)
     const [x, y] = /** @type {HTMLInputElement[]} */ ([...root.querySelectorAll('.gradient-center input')])
-    if (x && x !== from) x.value = String(value.center[0])
-    if (y && y !== from) y.value = String(value.center[1])
-    for (const input of [x, y]) if (input) input.disabled = locked() || value.type === 'linear'
-    const remove = /** @type {HTMLButtonElement | null} */ (part('remove'))
-    if (remove) remove.disabled = locked() || value.stops.length <= 2
-    for (const name of ['add', 'reverse']) {
-      const button = /** @type {HTMLButtonElement | null} */ (part(name))
-      if (button) button.disabled = locked()
-    }
+    fill(x, value.center[0])
+    fill(y, value.center[1])
+    for (const input of [x, y]) disable(input, locked() || value.type === 'linear')
+    disable(/** @type {HTMLButtonElement | null} */ (part('remove')), locked() || value.stops.length <= 2)
+    for (const name of ['add', 'reverse']) disable(/** @type {HTMLButtonElement | null} */ (part(name)), locked())
     const output = part('css')
-    if (output) output.textContent = css.text
+    if (output && output.textContent !== css.text) output.textContent = css.text
   }
 
   /** Show the value: ask a renderer for the handles, or write them, then mark everything. */
@@ -218,8 +218,12 @@ export function gradient(root, options = {}) {
     paint(from)
   }
 
+  /** Whether an `input` has been said that no `change` has ended yet. */
+  let pending = false
+
   /**
-   * The reader changed the value. Says whether it did.
+   * The reader changed the value. Says whether it did. A control's `change` that brings nothing new still ends
+   * the moves its `input` said, as the native control's own does.
    * @param {(next: GradientValue) => void} change @param {'input' | 'change'} type @param {Element | null} [from]
    */
   function edit(change, type, from = null) {
@@ -227,12 +231,22 @@ export function gradient(root, options = {}) {
     const next = structuredClone(value)
     change(next)
     const settled = gradientValue(next)
-    if (same(settled, value)) return false
+    if (same(settled, value)) {
+      if (type === 'change' && pending) end()
+      return false
+    }
     value = settled
     show(from)
     say('input')
-    if (type === 'change') say('change')
+    if (type === 'change') end()
+    else pending = true
     return true
+  }
+
+  /** Say the `change` that ends the moves. */
+  function end() {
+    pending = false
+    say('change')
   }
 
   /** @param {string} id */
@@ -254,23 +268,35 @@ export function gradient(root, options = {}) {
   let held = /** @type {number | null} */ (null)
   /** Whether the stop in hand has moved since the press: a press that moves nothing changes nothing. */
   let dragged = false
+  /**
+   * The bar's box and direction, read once as a press begins. Each move paints the gradient, so reading the
+   * layout again on the next one would make the browser lay the page out again on every move.
+   * @type {{ box: DOMRect, backward: boolean } | null}
+   */
+  let frame = null
   /** The offset under the pointer, along the bar in its writing direction. @param {PointerEvent} event */
   const offsetAt = (event) => {
-    const box = /** @type {HTMLElement} */ (bar).getBoundingClientRect()
+    const { box, backward } = frame ?? { box: /** @type {HTMLElement} */ (bar).getBoundingClientRect(), backward: rtl() }
     const along = box.width ? (event.clientX - box.left) / box.width : 0
     // A drag lands on whole points; the keys and the number reach anything between.
-    return Math.round(clamp((rtl() ? 1 - along : along) * 100))
+    return Math.round(clamp((backward ? 1 - along : along) * 100))
   }
   bar?.addEventListener('pointerdown', (event) => {
     const handle = /** @type {HTMLElement | null} */ (/** @type {Element} */ (event.target).closest('.gradient-stop'))
     if (!handle || locked() || event.button !== 0) return
+    // A second finger while one drags a stop takes nothing from it; a primary pointer always starts afresh,
+    // even if the release of the one before was never heard.
+    if (held !== null && held !== event.pointerId && !event.isPrimary) return
     event.preventDefault()
     hand = handle.dataset.id ?? hand
     held = event.pointerId
     dragged = false
-    handle.setPointerCapture?.(event.pointerId)
+    frame = { box: /** @type {HTMLElement} */ (bar).getBoundingClientRect(), backward: rtl() }
+    // A scripted event has no pointer to capture.
+    try { handle.setPointerCapture?.(event.pointerId) } catch {}
     paint()
-    handle.focus()
+    // The press is on the handle, so the page has no reason to scroll to it under the pointer.
+    handle.focus({ preventScroll: true })
   }, { signal })
   bar?.addEventListener('pointermove', (event) => {
     if (held !== event.pointerId) return
@@ -280,11 +306,14 @@ export function gradient(root, options = {}) {
   const release = (/** @type {PointerEvent} */ event) => {
     if (held !== event.pointerId) return
     held = null
-    if (dragged) say('change')
+    frame = null
+    if (dragged) end()
     dragged = false
   }
   bar?.addEventListener('pointerup', release, { signal })
   bar?.addEventListener('pointercancel', release, { signal })
+  // A handle written again by a renderer while it is dragged loses the capture, and its release is never heard.
+  bar?.addEventListener('lostpointercapture', release, { signal })
   bar?.addEventListener('focusin', (event) => {
     const handle = /** @type {HTMLElement | null} */ (/** @type {Element} */ (event.target).closest('.gradient-stop'))
     if (!handle || handle.dataset.id === hand) return
@@ -324,7 +353,9 @@ export function gradient(root, options = {}) {
     const target = /** @type {Element} */ (event.target)
     if (target.closest('.gradient-add')) {
       const stop = /** @type {GradientStop} */ (stopOf(hand))
-      const id = `stop-${serial + 1}`
+      // An id no stop has: a value given from outside may already use the next number.
+      let id = `stop-${serial + 1}`
+      while (stopOf(id)) id = `stop-${++serial + 1}`
       // The new stop is in hand before the gradient says it changed, so a listener finds it there; a gradient
       // that is locked adds none, and the stop in hand stays where it was.
       const before = hand

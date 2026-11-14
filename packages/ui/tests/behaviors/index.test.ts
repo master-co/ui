@@ -113,3 +113,16 @@ test('index: attach takes the example of every contract that names a behavior', 
   const detach = behaviors.attach(document as unknown as Document)
   detach()
 })
+
+test('index: attach finds a range and keeps its thumbs from crossing', () => {
+  const { document, one, type } = dom(`<div class="range">
+    <input type="range" class="range-start" min="0" max="100" value="20" aria-label="Least">
+    <input type="range" class="range-end" min="0" max="100" value="60" aria-label="Most">
+  </div>`)
+  const detach = behaviors.attach(document as unknown as Document)
+  type(one('.range-start'), '80')
+  assert.equal(one<HTMLInputElement>('.range-start').value, '60', 'the start stops at the end')
+  detach()
+  type(one('.range-start'), '80')
+  assert.equal(one<HTMLInputElement>('.range-start').value, '80')
+})

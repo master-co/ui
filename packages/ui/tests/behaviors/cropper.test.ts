@@ -501,3 +501,15 @@ test('cropperFit: a crop inside the picture, at the least size, at a ratio or at
   assert.deepEqual(cropperFit(picture, null, { pan: true, ratio: 2, zoom: [1, 3] }), { x: 0, y: 0, width: 1000, height: 500, zoom: 1 })
   assert.deepEqual(cropperFit(picture, { x: 0, y: 0, width: 10, height: 5 }, { pan: true, ratio: 2, zoom: [1, 4] }), { x: 0, y: 0, width: 250, height: 125, zoom: 4 })
 })
+
+test('cropper: a key held down while focus leaves the box says its change as focus goes', () => {
+  const { root, box, key, heard, window } = setup()
+  cropper(root)
+  key(box, 'ArrowRight')
+  key(box, 'ArrowRight', { repeat: true })
+  assert.deepEqual(heard, ['input', 'change', 'input'])
+  box.dispatchEvent(new window.FocusEvent('blur'))
+  assert.deepEqual(heard, ['input', 'change', 'input', 'change'], 'the keyup will be heard elsewhere')
+  box.dispatchEvent(new window.KeyboardEvent('keyup', { key: 'ArrowRight', bubbles: true }))
+  assert.equal(heard.length, 4)
+})

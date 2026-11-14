@@ -360,3 +360,45 @@ test('panel: detach removes the listeners', () => {
   assert.equal(style('x'), '')
   assert.deepEqual(heard, [])
 })
+
+test('panel: a press that trembles a pixel or two is not a drag: it pins nothing and says nothing', () => {
+  const page = setup()
+  const { root, handle, pointer, heard, style } = page
+  panel(root)
+  open(page)
+  pointer(handle, 'pointerdown', { pointerId: 1, button: 0, clientX: 700, clientY: 20 })
+  pointer(handle, 'pointermove', { pointerId: 1, clientX: 702, clientY: 21 })
+  pointer(handle, 'pointerup', { pointerId: 1, clientX: 702, clientY: 21 })
+  assert.equal(style('x'), '', 'the panel keeps the stylesheet\'s place')
+  assert.deepEqual(heard, [])
+  pointer(handle, 'pointerdown', { pointerId: 2, button: 0, clientX: 700, clientY: 20 })
+  pointer(handle, 'pointermove', { pointerId: 2, clientX: 706, clientY: 20 })
+  assert.equal(style('x'), '678px', 'past the slop it follows from where it was picked up')
+})
+
+test('panel: a second pointer that lands while one holds the panel takes nothing', () => {
+  const page = setup()
+  const { root, handle, pointer, one, style } = page
+  panel(root)
+  open(page)
+  pointer(handle, 'pointerdown', { pointerId: 1, button: 0, clientX: 700, clientY: 20 })
+  pointer(one('.panel-resize'), 'pointerdown', { pointerId: 2, button: 0, clientX: 990, clientY: 206 })
+  pointer(handle, 'pointermove', { pointerId: 1, clientX: 600, clientY: 120 })
+  assert.equal(style('x'), '572px', 'the first pointer still carries it')
+  assert.equal(style('width'), '')
+})
+
+test('panel: a disabled handle moves the panel by neither the pointer nor the keys', () => {
+  const page = setup()
+  const { root, handle, pointer, key, heard, style } = page
+  panel(root)
+  open(page)
+  handle.setAttribute('aria-disabled', 'true')
+  pointer(handle, 'pointerdown', { pointerId: 1, button: 0, clientX: 700, clientY: 20 })
+  pointer(handle, 'pointermove', { pointerId: 1, clientX: 600, clientY: 120 })
+  assert.equal(key(handle, 'ArrowLeft'), false)
+  assert.equal(key(handle, 'ArrowRight', { altKey: true }), false)
+  assert.equal(style('x'), '')
+  assert.equal(style('width'), '')
+  assert.deepEqual(heard, [])
+})

@@ -480,8 +480,8 @@ export function scheduleLayout(given, options = {}) {
 /**
  * @param {HTMLElement} root The element with the `schedule-view` class.
  * @param {ScheduleOptions} [options]
- * @returns {(() => void) & { value: ScheduleValue }} Removes the listeners; the view it wrote stays. Its `value`
- *   is the day and the view on show.
+ * @returns {(() => void) & { value: ScheduleValue }} Removes the listeners and the tabindex it gave the title; the
+ *   view it wrote stays. Its `value` is the day and the view on show.
  */
 export function schedule(root, options = {}) {
   attached.get(root)?.abort()
@@ -611,6 +611,14 @@ export function schedule(root, options = {}) {
     root.dispatchEvent(new Event('change', { bubbles: true }))
   }
 
+  /** Whether the script gave the title its `tabindex`, to take focus; detaching takes it away again. */
+  let gave = false
+  signal.addEventListener('abort', () => {
+    // Not while the title holds focus, as it may when a renderer attaches again: taking it would drop the focus.
+    if (!gave || !title || title.getAttribute('tabindex') !== '-1' || root.ownerDocument.activeElement === title) return
+    title.removeAttribute('tabindex')
+  })
+
   root.addEventListener('click', (click) => {
     const target = /** @type {Element} */ (click.target)
     if (target.closest('.schedule-view-previous')) return move({ ...value, date: turn(value, -1) })
@@ -621,7 +629,10 @@ export function schedule(root, options = {}) {
       move({ date: number.value, view: 'day' })
       // The number that was pressed is gone with the month: focus goes to the name of the day now on show.
       if (title) {
-        if (!title.hasAttribute('tabindex')) title.setAttribute('tabindex', '-1')
+        if (!title.hasAttribute('tabindex')) {
+          title.setAttribute('tabindex', '-1')
+          gave = true
+        }
         title.focus()
       }
     }

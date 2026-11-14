@@ -5,8 +5,8 @@
  * saved value, and a field with `editable-field`, an input or a textarea, that starts `hidden`. Pressing the
  * preview hides it, shows the field with the saved value and selects its text. Enter saves, and in a
  * textarea Control or Command with Enter, since Enter there starts a line; Escape puts the saved value back.
- * Either way the field hides, the preview shows the saved value and takes focus again. Leaving the field
- * saves too, or cancels with `blur: 'cancel'`.
+ * Either way the field hides, the preview shows the saved value and takes focus again; Enter held down does
+ * either once. Leaving the field saves too, or cancels with `blur: 'cancel'`.
  *
  * A value the field's own constraints refuse (`required`, `pattern`, `maxlength`) is not saved: Enter keeps
  * the field open and lets the browser say why, and leaving the field puts the saved value back.
@@ -114,6 +114,9 @@ export function editable(root, { blur = 'save' } = {}) {
   if (!field || !preview) return detach
 
   preview.addEventListener('click', edit, { signal })
+  // Enter held down opens or saves once. Its repeats would press the preview again as it takes focus back, and
+  // save the field as soon as it opens: the field would open and close for as long as the key is down.
+  preview.addEventListener('keydown', (event) => { if (event.key === 'Enter' && event.repeat) event.preventDefault() }, { signal })
 
   field.addEventListener('keydown', (/** @type {Event} */ pressed) => {
     const event = /** @type {KeyboardEvent} */ (pressed)
@@ -129,6 +132,7 @@ export function editable(root, { blur = 'save' } = {}) {
     if (event.key !== 'Enter' || event.altKey || event.shiftKey) return
     if (multiline && !(event.ctrlKey || event.metaKey)) return
     event.preventDefault()
+    if (event.repeat) return
     if (!save()) field.reportValidity()
   }, { signal })
 

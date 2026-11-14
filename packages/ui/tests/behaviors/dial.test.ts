@@ -444,3 +444,27 @@ test('dial: a dial without a label or a field still turns', () => {
   assert.equal(key(root, 'ArrowUp'), true)
   assert.equal(root.getAttribute('aria-valuenow'), '4')
 })
+
+test('dial: a press gives the dial focus without scrolling the page, so the keys go on from it', () => {
+  const { root, pointer, toward, document, key, now } = setup()
+  dial(root)
+  const asked: unknown[] = []
+  const original = root.focus.bind(root)
+  root.focus = (options?: FocusOptions) => { asked.push(options); original(options) }
+  pointer(root, 'pointerdown', { pointerId: 1, pointerType: 'touch', ...toward(0) })
+  pointer(root, 'pointerup', { pointerId: 1 })
+  assert.equal(document.activeElement, root)
+  assert.deepEqual(asked, [{ preventScroll: true }])
+  const value = Number(now())
+  key(root, 'ArrowUp')
+  assert.equal(Number(now()), value + 1)
+  pointer(root, 'pointerdown', { pointerId: 2, ...toward(0) })
+  assert.equal(asked.length, 1, 'a dial that has focus is not focused again')
+})
+
+test('dial: a disabled dial takes no focus from a press', () => {
+  const { root, pointer, toward, document } = setup('aria-disabled="true"')
+  dial(root)
+  pointer(root, 'pointerdown', { pointerId: 1, ...toward(0) })
+  assert.notEqual(document.activeElement, root)
+})

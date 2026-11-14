@@ -74,6 +74,8 @@ export function transcript(root, options = {}) {
   const media = find()
 
   const cues = () => /** @type {HTMLElement[]} */ ([...list.querySelectorAll('.transcript-cue')])
+  /** The cues the keys may land on: not hidden, as by a search that filters the transcript. */
+  const shown = () => cues().filter((cue) => !cue.closest('[hidden]'))
   /** @param {Element} cue */
   const start = (cue) => Number(cue.getAttribute('data-start'))
   /** @param {Element | null | undefined} cue */
@@ -93,7 +95,10 @@ export function transcript(root, options = {}) {
   const source = options.track ?? tracks().find((each) => each.kind === 'captions' || each.kind === 'subtitles') ?? tracks().find((each) => each.kind !== 'metadata' && each.kind !== 'chapters')
   function write() {
     if (options.draw === false || !source?.cues?.length || cues().length) return
-    for (const cue of [...source.cues]) {
+    const all = [...source.cues]
+    // Every time in one form, with the hours once any cue is an hour in, as the player writes its time.
+    const hours = all.some((cue) => cue.startTime >= 3600)
+    for (const cue of all) {
       const { speaker, text } = words(/** @type {VTTCue} */ (cue).text ?? '', document)
       const row = document.createElement('li')
       row.className = 'transcript-cue'
@@ -101,7 +106,7 @@ export function transcript(root, options = {}) {
       const button = document.createElement('button')
       button.type = 'button'
       button.className = 'transcript-time'
-      button.textContent = clock(cue.startTime)
+      button.textContent = clock(cue.startTime, hours)
       const paragraph = document.createElement('p')
       paragraph.className = 'transcript-text'
       if (speaker) {
@@ -151,15 +156,26 @@ export function transcript(root, options = {}) {
     list.scrollTo({ top: Math.max(0, top), behavior: smooth && !reduced() ? 'smooth' : 'instant' })
   }
 
+  /** @type {Map<HTMLElement, string | null>} Each time's `tabindex` before the script wrote one, given back on detach. */
+  const original = new Map()
   /** The time a reader enters the list at: the current cue's, or the one focus is on, or the first. */
   const rove = () => {
     const inside = list.contains(document.activeElement) ? document.activeElement?.closest('.transcript-cue') : null
-    const stop = time(inside ?? current ?? cues()[0])
+    // A hidden cue cannot take focus: the stop is then the nearest shown cue before it, or the first shown.
+    const open = shown()
+    const before = (/** @type {Element | null | undefined} */ cue) => {
+      if (!cue) return undefined
+      if (open.includes(/** @type {HTMLElement} */ (cue))) return cue
+      return open.findLast((each) => each.compareDocumentPosition(cue) & Node.DOCUMENT_POSITION_FOLLOWING)
+    }
+    const stop = time(before(inside) ?? before(current) ?? open[0])
     // Asked at every timeupdate: a time is written only when its place in the tab order changes.
     for (const cue of cues()) {
       const button = time(cue)
+      if (!button) continue
+      if (!original.has(button)) original.set(button, button.getAttribute('tabindex'))
       const wanted = button === stop ? '0' : '-1'
-      if (button && button.getAttribute('tabindex') !== wanted) button.setAttribute('tabindex', wanted)
+      if (button.getAttribute('tabindex') !== wanted) button.setAttribute('tabindex', wanted)
     }
   }
 
@@ -215,13 +231,14 @@ export function transcript(root, options = {}) {
     if (event.ctrlKey || event.metaKey || event.altKey) return
     const button = /** @type {Element} */ (event.target).closest?.('.transcript-time')
     if (!button) return
-    const all = cues()
+    // Hidden cues are passed over, as hidden rows of a tree and hidden tabs are.
+    const all = shown()
     const at = all.findIndex((cue) => cue.contains(button))
     /** @type {number} */
     let next
     switch (event.key) {
       case 'ArrowDown': next = Math.min(all.length - 1, at + 1); break
-      case 'ArrowUp': next = Math.max(0, at - 1); break
+      case 'ArrowUp': next = at < 0 ? 0 : Math.max(0, at - 1); break
       case 'Home': next = 0; break
       case 'End': next = all.length - 1; break
       default: return
@@ -240,7 +257,11 @@ export function transcript(root, options = {}) {
 
   signal.addEventListener('abort', () => {
     for (const cue of list.querySelectorAll('.transcript-cue[aria-current]')) cue.removeAttribute('aria-current')
-    for (const button of list.querySelectorAll('.transcript-time[tabindex]')) button.removeAttribute('tabindex')
+    // Each time gets back the tabindex it had, as a tab and a row of a tree do: one the page wrote stays.
+    for (const [button, index] of original) {
+      if (index === null) button.removeAttribute('tabindex')
+      else button.setAttribute('tabindex', index)
+    }
     if (back) back.hidden = true
   })
 

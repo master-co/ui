@@ -47,6 +47,9 @@ const stack = []
 /** @type {(keyof Omit<PanelValue, 'minimized'>)[]} */
 const measures = ['x', 'y', 'width', 'height']
 
+/** How far a pointer moves before a press is a drag, in pixels, as a drawer's and a gantt's. */
+const slop = 4
+
 /** The arrow keys, as a step along each axis of the screen. */
 /** @type {Record<string, [number, number]>} */
 const arrows = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }
@@ -70,6 +73,8 @@ export function panel(root, { step = 16 } = {}) {
   const open = () => root.matches(':popover-open')
   const rtl = () => getComputedStyle(root).direction === 'rtl'
   const minimized = () => part('panel-minimize')?.getAttribute('aria-pressed') === 'true'
+  /** A part the page turned off: a disabled handle moves nothing, as a disabled minimize button folds nothing. */
+  const off = (/** @type {Element | undefined} */ element) => Boolean(element && (/** @type {HTMLButtonElement} */ (element).disabled || element.getAttribute('aria-disabled') === 'true'))
 
   /** @param {keyof Omit<PanelValue, 'minimized'>} name */
   const read = (name) => {
@@ -177,10 +182,13 @@ export function panel(root, { step = 16 } = {}) {
   let held = null
   root.addEventListener('pointerdown', (event) => {
     if (event.button !== 0 || !(event.target instanceof Element)) return
+    // One pointer carries the panel: a second finger that lands while the first holds it takes nothing.
+    if (held && held.id !== event.pointerId) return
     const handle = part('panel-handle')
     const corner = part('panel-resize')
     const resize = Boolean(corner?.contains(event.target))
     if (!resize && !(handle && handle.contains(event.target))) return
+    if (off(resize ? corner : handle)) return
     held = { id: event.pointerId, resize, box: root.getBoundingClientRect(), x: event.clientX, y: event.clientY, moved: false }
     // Capture keeps the moves coming when the pointer leaves the handle. A scripted event has no pointer to capture.
     try { /** @type {HTMLElement} */ (resize ? corner : handle).setPointerCapture(event.pointerId) } catch {}
@@ -191,6 +199,8 @@ export function panel(root, { step = 16 } = {}) {
     const { box } = held
     const across = event.clientX - held.x
     const down = event.clientY - held.y
+    // A press that trembles a pixel or two is a press: it neither pins the panel where it is nor says it moved.
+    if (!held.moved && Math.hypot(across, down) < slop) return
     if (held.resize) {
       // From right to left the corner is at the bottom left: it widens to the left and the right edge stays.
       const width = box.width + (rtl() ? -across : across)
@@ -230,7 +240,7 @@ export function panel(root, { step = 16 } = {}) {
       return
     }
     const arrow = arrows[event.key]
-    if (!arrow || event.target !== part('panel-handle') || event.ctrlKey || event.metaKey) return
+    if (!arrow || event.target !== part('panel-handle') || off(part('panel-handle')) || event.ctrlKey || event.metaKey) return
     event.preventDefault()
     const by = step * (event.shiftKey ? 4 : 1)
     const before = JSON.stringify(current())

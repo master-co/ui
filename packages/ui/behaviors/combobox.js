@@ -6,7 +6,8 @@
  * state by itself. The active option has `aria-selected="true"` and is named by `aria-activedescendant` on
  * the field. Choosing an option, with Enter or the pointer, writes its text into the field, marks it
  * `aria-checked="true"` and closes the list. The list is a `popover="manual"`: this script opens and closes
- * it and keeps the field's `aria-expanded` in step.
+ * it and keeps the field's `aria-expanded` in step. A disabled or read-only field neither opens the list nor
+ * takes an option.
  *
  * The field dispatches `input` and `change` when an option is chosen, as it does for typing.
  *
@@ -96,10 +97,16 @@ export function combobox(root, { filter: filtering = true, name, removeLabel = (
     if (draw) return draw(next)
     const kept = new Map(chipsOf(group).map((chip) => [chipValue(chip), chip]))
     for (const [value, chip] of kept) if (!next.includes(value)) chip.remove()
-    for (const value of next) {
+    // From the field back, a chip moves only when it is not where it belongs already, as in the tags field: a
+    // chip that stays is not taken out and put back, which would cost it focus and make a renderer's observer
+    // hear it leave.
+    /** @type {Element} */
+    let after = field
+    for (const value of [...next].reverse()) {
       const option = all().find((each) => valueOf(each) === value)
       const chip = kept.get(value) ?? writeChip(root.ownerDocument, { value, text: option ? text(option) : value, name: named, removeLabel })
-      field.before(chip)
+      if (chip.nextElementSibling !== after || !chip.isConnected) after.before(chip)
+      after = chip
     }
   }
 
@@ -113,15 +120,21 @@ export function combobox(root, { filter: filtering = true, name, removeLabel = (
     (next) => {
       if (!field || !list) return
       if (multiple()) {
-        const values = [next ?? []].flat().map(String)
+        const values = [next ?? []].flat().filter((value) => value !== null && value !== undefined).map(String)
         for (const option of all()) option.setAttribute('aria-checked', String(values.includes(valueOf(option))))
         chips(values.filter((value) => all().some((option) => valueOf(option) === value)))
         return
       }
-      const option = next === null || next === undefined ? undefined : all().find((each) => valueOf(each) === next)
+      // A value is compared as text, so a number names the option whose data-value writes it.
+      const given = next === null || next === undefined ? null : String(next)
+      const option = given === null ? undefined : all().find((each) => valueOf(each) === given)
       for (const other of all()) other.setAttribute('aria-checked', String(other === option))
+      const before = field.value
       if (option) field.value = text(option)
-      else if (next === null || next === undefined) field.value = ''
+      else if (given === null) field.value = ''
+      // The list is filtered by the text the field holds, as it is after typing or a choice: text written from
+      // outside does not leave it filtered by a query the field no longer says.
+      if (filtering && field.value !== before) filter(list, field.value)
     }
   )
   const handle = /** @type {typeof detach & { query: string }} */ (Object.defineProperty(detach, 'query', {
@@ -143,6 +156,8 @@ export function combobox(root, { filter: filtering = true, name, removeLabel = (
   let choosing = false
   /** True once typing has asked for an active option, until the list closes. */
   let seeking = false
+  /** True from an Enter that chose an option until the key is let go. */
+  let entered = false
 
   /** Keep `aria-expanded` in step with the popover. A closed list has no active option. */
   const sync = () => {
@@ -153,8 +168,11 @@ export function combobox(root, { filter: filtering = true, name, removeLabel = (
     }
   }
 
+  /** A disabled or read-only field takes no value: its list does not open and no option is chosen. */
+  const locked = () => field.disabled || field.readOnly
+
   const open = () => {
-    if (field.disabled) return
+    if (locked()) return
     if (!isOpen(list)) list.showPopover()
     sync()
   }
@@ -173,6 +191,7 @@ export function combobox(root, { filter: filtering = true, name, removeLabel = (
 
   /** @param {Element} option */
   const choose = (option) => {
+    if (locked()) return
     if (multiple()) {
       const next = chosen().filter((value) => value !== valueOf(option))
       const checking = option.getAttribute('aria-checked') !== 'true'
@@ -232,6 +251,8 @@ export function combobox(root, { filter: filtering = true, name, removeLabel = (
       case 'ArrowUp':
         event.preventDefault()
         open()
+        // A list that stays closed, on a read-only field, has no active option.
+        if (!isOpen(list)) return
         activate(field, list, step(options(list), current, event.key === 'ArrowDown' ? 1 : -1))
         break
       // With the list closed, and with Shift held, Home and End stay the field's own: they move the caret.
@@ -242,10 +263,14 @@ export function combobox(root, { filter: filtering = true, name, removeLabel = (
         activate(field, list, event.key === 'Home' ? options(list)[0] : options(list).at(-1))
         break
       // Without an active option Enter is left alone, so it still submits a form.
+      // Enter held down chooses once: its repeats neither check and uncheck an option by turns nor, once the
+      // list has closed, reach the form.
       case 'Enter':
+        if (event.repeat && entered) return event.preventDefault()
         if (!expanded || !current || !enabled(current)) return
         event.preventDefault()
         choose(current)
+        entered = true
         break
       // Prevented while the list is open, so a dialog around the field stays open.
       case 'Escape':
@@ -255,6 +280,8 @@ export function combobox(root, { filter: filtering = true, name, removeLabel = (
         break
     }
   }, { signal })
+
+  field.addEventListener('keyup', (event) => { if (event.key === 'Enter') entered = false }, { signal })
 
   field.addEventListener('click', open, { signal })
 

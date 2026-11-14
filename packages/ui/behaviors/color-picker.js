@@ -19,6 +19,7 @@
  * The thumb dispatches `input` while the color moves and `change` when a drag ends or a key moved it; the
  * native controls dispatch their own. The function it returns has a `value`: the color as text in the format
  * chosen. Set it, in any of the three, to choose a color and its format from outside; that dispatches nothing.
+ * A form's reset gives the picker back the color it started with.
  *
  * A hex or rgb() value is fitted to sRGB the way CSS Color 4 fits a color to a screen: chroma is taken away
  * until the color is within a just noticeable difference of one the format can write. An oklch() value is
@@ -301,13 +302,19 @@ export function colorPicker(root, { valueText = describe } = {}) {
    * @param {Element | null} [from]
    */
   const paint = (from = null) => {
-    for (const [name, value] of Object.entries(properties(color))) root.style.setProperty(name, value)
+    // A drag paints at every move: what did not change is not written again, as the gradient's handles are not.
+    for (const [name, value] of Object.entries(properties(color))) {
+      if (root.style.getPropertyValue(name) !== value) root.style.setProperty(name, value)
+    }
     const handle = thumb()
     if (handle) {
-      handle.setAttribute('aria-valuemin', '0')
-      handle.setAttribute('aria-valuemax', '100')
-      handle.setAttribute('aria-valuenow', String(fixed(color.l * 100, 1)))
-      handle.setAttribute('aria-valuetext', valueText(fixed(color.l * 100, 1), fixed(color.c, 3)))
+      const marks = {
+        'aria-valuemin': '0',
+        'aria-valuemax': '100',
+        'aria-valuenow': String(fixed(color.l * 100, 1)),
+        'aria-valuetext': valueText(fixed(color.l * 100, 1), fixed(color.c, 3)),
+      }
+      for (const [name, value] of Object.entries(marks)) if (handle.getAttribute(name) !== value) handle.setAttribute(name, value)
     }
     const hue = range('hue')
     if (hue && hue !== from) write(hue, String(fixed(color.h, 2)))
@@ -335,6 +342,16 @@ export function colorPicker(root, { valueText = describe } = {}) {
   )
 
   paint()
+
+  // A form's reset puts the controls back as the markup wrote them, without an event, and the thumb and the
+  // root would keep the color they had: the color the picker started with is taken again once the reset is done.
+  const first = { color: { ...color }, format }
+  root.closest('form')?.addEventListener('reset', () => setTimeout(() => {
+    if (signal.aborted) return
+    color = { ...first.color }
+    format = first.format
+    paint()
+  }), { signal })
 
   /* The field: a press puts the thumb under the pointer, a drag keeps it there. */
 

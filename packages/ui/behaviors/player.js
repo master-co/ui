@@ -94,7 +94,10 @@ export function player(root, options = {}) {
     get: () => found?.currentTime ?? 0,
     set: (/** @type {number} */ time) => {
       if (!found || !Number.isFinite(time)) return
-      found.currentTime = Math.max(0, time)
+      // The time it is at already changes nothing: a seek to it would still make the media seek, and load.
+      const next = Math.max(0, time)
+      if (next === found.currentTime) return
+      found.currentTime = next
       drawTime()
     },
   }))
@@ -118,6 +121,14 @@ export function player(root, options = {}) {
 
   /** @param {Element | null} button @param {boolean} on */
   const press = (button, on) => button?.setAttribute('aria-pressed', String(on))
+  /**
+   * Write what is asked four times a second, and on every move of the pointer, only when it changes: the same
+   * words again are a change to the document all the same, and a custom property again restyles the player.
+   * @param {Element | null} element @param {string} name @param {string} value
+   */
+  const attribute = (element, name, value) => { if (element && element.getAttribute(name) !== value) element.setAttribute(name, value) }
+  /** @param {string} name @param {string} value */
+  const property = (name, value) => { if (root.style.getPropertyValue(name) !== value) root.style.setProperty(name, value) }
   const length = () => (Number.isFinite(media.duration) ? media.duration : NaN)
   /** The first track a reader would call captions. */
   const track = () => [...(media.textTracks ?? [])].find((each) => each.kind === 'captions' || each.kind === 'subtitles')
@@ -153,10 +164,10 @@ export function player(root, options = {}) {
     const text = clock(now, hours)
     if (elapsed && elapsed.textContent !== text) elapsed.textContent = text
     if (seek && !dragging) {
-      seek.max = String(Number.isFinite(total) ? total : 0)
-      seek.value = String(now)
+      attribute(seek, 'max', String(Number.isFinite(total) ? total : 0))
+      if (seek.value !== String(now)) seek.value = String(now)
     }
-    seek?.setAttribute('aria-valuetext', valueText(now, total))
+    attribute(seek, 'aria-valuetext', valueText(now, total))
     drawBuffered()
   }
 
@@ -175,8 +186,8 @@ export function player(root, options = {}) {
       for (let index = 0; index < ranges.length; index++) {
         if (ranges.start(index) <= media.currentTime + 0.5 && ranges.end(index) >= media.currentTime) end = Math.max(end, ranges.end(index))
       }
-      root.style.setProperty('--player-buffered', String(Math.round(Math.min(1, end / total) * 1000) / 1000))
-    } else root.style.setProperty('--player-buffered', '0')
+      property('--player-buffered', String(Math.round(Math.min(1, end / total) * 1000) / 1000))
+    } else property('--player-buffered', '0')
   }
 
   function drawRate() {
@@ -257,7 +268,7 @@ export function player(root, options = {}) {
 
   // Idle: the pointer has not moved over the video for a while, or has left it.
   /** @param {boolean} still */
-  const idle = (still) => root.style.setProperty('--player-idle', still ? '1' : '0')
+  const idle = (still) => property('--player-idle', still ? '1' : '0')
   const wake = () => {
     idle(false)
     clearTimeout(timer)
@@ -288,8 +299,9 @@ export function player(root, options = {}) {
   seek?.addEventListener('pointerdown', () => { dragging = true }, listen)
   seek?.addEventListener('input', () => {
     media.currentTime = Number(seek.value)
-    if (elapsed) elapsed.textContent = clock(Number(seek.value), length() >= 3600)
-    seek.setAttribute('aria-valuetext', valueText(Number(seek.value), length()))
+    const text = clock(Number(seek.value), length() >= 3600)
+    if (elapsed && elapsed.textContent !== text) elapsed.textContent = text
+    attribute(seek, 'aria-valuetext', valueText(Number(seek.value), length()))
   }, listen)
   seek?.addEventListener('change', () => { dragging = false; drawTime() }, listen)
   // A drag the browser takes back, for a scroll or a gesture, ends too: the thumb follows the media again.

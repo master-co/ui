@@ -272,3 +272,13 @@ test('command: an option the markup marks active is named on the field from the 
   command(one('.command'))
   assert.equal(one('.command-input').getAttribute('aria-activedescendant'), 'new')
 })
+
+test('command: on a layout of another script the shortcut is the key where the letter stands', () => {
+  const { root, document, key } = setup()
+  command(root)
+  assert.equal(key(document.body, 'л', { ctrlKey: true, code: 'KeyK' }), true, 'Control with the key of K on a Russian layout')
+  assert.equal(root.open, true)
+  assert.equal(key(document.body, 'v', { ctrlKey: true, code: 'KeyK' }), false, 'a Latin layout that puts another letter there is read by its letter')
+  assert.equal(key(document.body, 'л', { ctrlKey: true, code: 'KeyL' }), false)
+  assert.equal(root.open, true)
+})

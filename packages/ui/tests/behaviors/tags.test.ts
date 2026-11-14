@@ -281,3 +281,16 @@ test('tags: detach removes the listeners', () => {
   key(field, 'Enter')
   assert.deepEqual(chips(), ['design', 'research'])
 })
+
+test('tags: Enter held down adds once, and its repeats in the emptied field do not reach the form', () => {
+  const { root, field, type, key, chips, heard, window } = setup()
+  tags(root)
+  type(field, 'writing')
+  assert.equal(key(field, 'Enter'), true)
+  assert.equal(field.value, '')
+  assert.equal(key(field, 'Enter', { repeat: true }), true, 'a repeat is prevented, though the field is empty')
+  assert.deepEqual(chips(), ['design', 'research', 'writing'])
+  assert.deepEqual(heard, ['input', 'change'])
+  field.dispatchEvent(new window.KeyboardEvent('keyup', { key: 'Enter', bubbles: true }))
+  assert.equal(key(field, 'Enter'), false, 'a new Enter in the empty field is the form\'s again')
+})

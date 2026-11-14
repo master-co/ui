@@ -661,11 +661,18 @@ export function chartCore(root, options = {}) {
   const boxes = () => /** @type {HTMLInputElement[]} */ ([...root.querySelectorAll('.chart-key-input')])
   const tip = () => /** @type {HTMLElement | null} */ (root.querySelector('.chart-tip'))
 
+  /** @type {WeakMap<Element, string | null>} Each point's `tabindex` before the script wrote one, given back on detach. */
+  const original = new WeakMap()
   /** One point is a stop in the tab order: the one last visited, or the first. @param {Element} [stop] */
   function rove(stop) {
     const all = points()
     const next = stop && all.includes(/** @type {SVGElement} */ (stop)) ? stop : all.find((point) => point.getAttribute('tabindex') === '0') ?? all[0]
-    for (const point of all) point.setAttribute('tabindex', point === next ? '0' : '-1')
+    // Asked after every change a renderer makes: a point is written only when its place in the tab order changes.
+    for (const point of all) {
+      if (!original.has(point)) original.set(point, point.getAttribute('tabindex'))
+      const wanted = point === next ? '0' : '-1'
+      if (point.getAttribute('tabindex') !== wanted) point.setAttribute('tabindex', wanted)
+    }
   }
 
   function write() {
@@ -822,6 +829,13 @@ export function chartCore(root, options = {}) {
   const detach = () => {
     controller.abort()
     hide()
+    // The points the page wrote get back the tabindex they had, as the rows of a tree and the tabs do.
+    for (const point of points()) {
+      if (!original.has(point)) continue
+      const index = original.get(point)
+      if (index === null || index === undefined) point.removeAttribute('tabindex')
+      else point.setAttribute('tabindex', index)
+    }
     if (attached.get(root)?.controller === controller) attached.delete(root)
   }
   return /** @type {(() => void) & { value: string[] }} */ (Object.defineProperty(detach, 'value', {

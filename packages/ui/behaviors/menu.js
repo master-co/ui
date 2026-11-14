@@ -58,6 +58,9 @@ export function menu(root) {
 
   root.addEventListener('toggle', (event) => {
     if (event.target !== root || !isOpen(root)) return
+    // An item with autofocus has taken focus as the browser opened the menu: it keeps it, as an action with
+    // autofocus does in a coachmark and as focus already inside a panel does.
+    if (root.contains(root.ownerDocument.activeElement)) return
     const first = items()[0]
     if (first) control(first).focus()
   }, { signal })

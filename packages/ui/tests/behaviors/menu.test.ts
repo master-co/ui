@@ -438,3 +438,13 @@ test('contextMenu: cancellation and detachment discard an unfinished pointer req
   pointer(document.body, 'pointerup', { button: 2 })
   assert.equal(isOpen(root), false)
 })
+
+test('menu: an item with autofocus that took focus as the menu opened keeps it', () => {
+  const { root, one, document, focused } = setup(markup().replace('id="duplicate"', 'id="duplicate" autofocus'))
+  menu(root)
+  // The browser's popover focusing steps run before the toggle event is heard.
+  document.addEventListener('toggle', () => one<HTMLElement>('#duplicate').focus(), { capture: true, once: true })
+  one('#project').focus()
+  root.showPopover()
+  assert.equal(focused(), 'duplicate')
+})

@@ -108,3 +108,16 @@ test('compare: a root without a handle attaches nothing', () => {
   assert.equal(root.getAttribute('style'), null)
   detach()
 })
+
+test('compare: a form\'s reset brings the line back with the handle', async () => {
+  const page = dom(`<form>${markup('min="0" max="100" value="30"')}</form>`)
+  const root = page.one('.compare')
+  const input = page.one<HTMLInputElement>('.compare-range')
+  compare(root)
+  page.type(input, '80')
+  assert.equal(root.style.getPropertyValue('--compare-position'), '80%')
+  page.one<HTMLFormElement>('form').reset()
+  await new Promise(resolve => setTimeout(resolve))
+  assert.equal(input.value, '30')
+  assert.equal(root.style.getPropertyValue('--compare-position'), '30%')
+})

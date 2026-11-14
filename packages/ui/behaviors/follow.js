@@ -128,9 +128,10 @@ export function follow(root) {
   }, { signal, passive: true, capture: true })
 
   // A wheel turned toward the start says so before the region has moved, while content may still arrive. With
-  // Control held it zooms the page, as a trackpad's pinch does, and scrolls nothing.
+  // Control held it zooms the page, as a trackpad's pinch does, and with Shift it scrolls across: neither moves
+  // the region toward its start.
   root.addEventListener('wheel', (event) => {
-    if (event.deltaY < 0 && !event.ctrlKey && root.scrollHeight > root.clientHeight) set(false)
+    if (event.deltaY < 0 && !event.ctrlKey && !event.shiftKey && root.scrollHeight > root.clientHeight) set(false)
   }, { signal, passive: true })
 
   // So does a key that scrolls toward the start: a smooth scroll that has not yet moved would be pulled back to the

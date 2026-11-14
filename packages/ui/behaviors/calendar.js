@@ -10,7 +10,7 @@
  * In the grid the keys are those of the Authoring Practices date grid. A move past the edge of the month
  * shows the neighboring month and keeps focus on the new day; a move never lands on a day that cannot be
  * chosen, and stops at `min` and `max`. Enter and Space are left to the day, which is a button: its click
- * chooses.
+ * chooses, once for an Enter held down. A day marked `aria-disabled="true"` is reached and not chosen.
  *
  * Several months side by side are a `calendar-month` each, a header and a grid, in one calendar: the script
  * shows consecutive months in them, keeps one day in the tab order across them and lets the keys cross from
@@ -671,6 +671,8 @@ export function calendar(root, options = {}) {
       if (view !== 'years') show(view === 'days' ? 'months' : 'years')
     } else if (button === previous) turn(-1)
     else if (button === next) turn(1)
+    // A cell a renderer marked aria-disabled="true" stays in reach of the keys, and cannot be chosen.
+    else if (button.getAttribute('aria-disabled') === 'true') return
     else if (button.classList.contains('calendar-period')) {
       if (cells.get(button.value) === button && !button.disabled) open(button.value)
     } else {
@@ -701,6 +703,12 @@ export function calendar(root, options = {}) {
       return
     }
     if (!inGrid(event.target)) return
+    // Enter held down chooses once: its repeats would press the day again and again, turning it off and on with
+    // multiple, or closing a range on the day it began.
+    if (event.key === 'Enter' && event.repeat) {
+      event.preventDefault()
+      return
+    }
     collect()
     const paging = event.key === 'PageUp' || event.key === 'PageDown'
     if (event.shiftKey && !paging) return
@@ -750,16 +758,18 @@ export function calendar(root, options = {}) {
     move(to, step)
   }, { signal })
 
+  // The buttons the script disables at a limit, and whether their author had disabled them: detach gives that back.
+  const authored = new Map([...turns(), jumper()].filter((button) => button).map((button) => [button, /** @type {HTMLButtonElement} */ (button).disabled]))
   signal.addEventListener('abort', () => {
     if (attached.get(root) === controller) attached.delete(root)
     const [previous, next] = turns()
     for (const button of [previous, next]) {
       if (!button) continue
-      button.disabled = false
+      button.disabled = authored.get(button) ?? false
       rename(button, null)
     }
     const button = jumper()
-    if (button) button.disabled = false
+    if (button) button.disabled = authored.get(button) ?? false
   })
 
   // The cells a renderer writes arrive after it was asked for them, and it may write them again at any time.

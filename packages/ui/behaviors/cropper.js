@@ -343,11 +343,14 @@ export function cropper(root, { ratio, step, min, maxZoom = 4, describe = sayCro
     if (event.repeat) repeating = true
     else settled()
   }, { signal })
-  box.addEventListener('keyup', () => {
-    if (!repeating) return
-    repeating = false
-    settled()
-  }, { signal })
+  // The key is let go, or focus leaves the box before it is, which takes its keyup elsewhere.
+  for (const type of ['keyup', 'blur']) {
+    box.addEventListener(type, () => {
+      if (!repeating) return
+      repeating = false
+      settled()
+    }, { signal })
+  }
 
   /** The pointers on the cropper, where each is now. */
   const pointers = /** @type {Map<number, { x: number, y: number }>} */ (new Map())

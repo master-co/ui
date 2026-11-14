@@ -124,3 +124,26 @@ test('toolbar: detach gives every control back the tabindex it had', () => {
   assert.equal(root.querySelector('#italic').getAttribute('tabindex'), '0', 'a tabindex the page wrote stays')
   assert.equal(root.querySelector('#bold').hasAttribute('tabindex'), false)
 })
+
+test('toolbar: in a dialog, a popover or a hidden panel it still walks its own controls', () => {
+  for (const [open, close] of [['<dialog open>', '</dialog>'], ['<div popover>', '</div>'], ['<div hidden>', '</div>']]) {
+    const { root, one, key, focused, stops } = setup(open + markup + close)
+    toolbar(root)
+    assert.deepEqual(stops(), ['bold'], `${open}: one stop`)
+    one<HTMLElement>('#bold').focus()
+    assert.equal(key(one('#bold'), 'ArrowRight'), true, `${open}: the arrow is the toolbar's`)
+    assert.equal(focused(), 'italic')
+  }
+})
+
+test('toolbar: a key a control inside has taken, such as a slider\'s arrow, stays with it', () => {
+  const { root, one, key, focused } = setup(markup.replace('<select', '<div id="level" role="slider" tabindex="0" aria-valuenow="2">2</div><select'))
+  toolbar(root)
+  const level = one<HTMLElement>('#level')
+  level.addEventListener('keydown', (event) => { if (event.key.startsWith('Arrow')) event.preventDefault() })
+  level.focus()
+  key(level, 'ArrowRight')
+  assert.equal(focused(), 'level', 'the slider keeps focus')
+  key(level, 'Home')
+  assert.equal(focused(), 'bold', 'a key it leaves is still the toolbar\'s')
+})

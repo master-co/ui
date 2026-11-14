@@ -372,3 +372,30 @@ test('player: attaching twice to one player answers each key once', () => {
   key(part('play'), 'l')
   assert.equal(media.currentTime, 10)
 })
+
+test('player: what is asked four times a second, and on every move, is written only when it changes', () => {
+  const { root, part, control, pointer } = setup('video', { duration: 60, currentTime: 10.1, buffered: [[0, 30]] })
+  player(root)
+  const writes: string[] = []
+  new MutationObserver(records => records.forEach(record => writes.push(`${(record.target as Element).className.split(' ').at(-1)} ${record.attributeName}`)))
+    .observe(root, { attributes: true, subtree: true })
+  // A quarter of a second on: the second, the words, the buffered share and the idle state are what they were.
+  control.advance(10.35)
+  pointer(root, 'pointermove', { pointerType: 'mouse' })
+  pointer(root, 'pointermove', { pointerType: 'mouse' })
+  assert.deepEqual(writes.filter(each => !each.endsWith(' value')), [], 'no attribute and no property is written again')
+  assert.equal(part('seek').getAttribute('aria-valuetext'), '10 seconds of 1 minute')
+  control.advance(11.2)
+  assert.equal(part('seek').getAttribute('aria-valuetext'), '11 seconds of 1 minute', 'a new second is said')
+})
+
+test('player: setting value to the time the media is at changes nothing', () => {
+  const { root, media } = setup('audio', { duration: 60, currentTime: 12 })
+  const handle = player(root)
+  const heard: string[] = []
+  for (const type of ['seeking', 'seeked']) media.addEventListener(type, () => heard.push(type))
+  handle.value = 12
+  assert.deepEqual(heard, [], 'the media is not asked to seek')
+  handle.value = 20
+  assert.deepEqual(heard, ['seeking', 'seeked'])
+})

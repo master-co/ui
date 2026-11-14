@@ -319,3 +319,32 @@ test('otp: attaching twice detaches the first', () => {
   second()
   assert.ok(slots.every((slot) => slot.getAttribute('maxlength') === '1'), 'the second gives back what the first found')
 })
+
+test('otp: a read-only slot among the others keeps its character from Backspace after it and from a code spread over it', () => {
+  const { slots, key, values, paste, given } = setup()
+  given('42')
+  slots[1].readOnly = true
+  slots[2].focus()
+  assert.equal(key(slots[2], 'Backspace'), true)
+  assert.equal(values(), '42····', 'Backspace in the empty slot after it goes back without clearing it')
+  slots[0].focus()
+  paste(slots[0], '913000')
+  assert.equal(values(), '923000', 'a whole code passes the read-only slot by')
+})
+
+test('otp: a character typed reads no direction; only the arrows do', () => {
+  const page = setup()
+  let read = 0
+  const original = (globalThis as any).getComputedStyle
+  ;(globalThis as any).getComputedStyle = (...args: any[]) => { read++; return original(...args) }
+  try {
+    page.slots[0].focus()
+    page.key(page.slots[0], '4')
+    page.key(page.slots[0], 'Backspace')
+    assert.equal(read, 0)
+    page.key(page.slots[0], 'ArrowRight')
+    assert.equal(read, 1)
+  } finally {
+    ;(globalThis as any).getComputedStyle = original
+  }
+})

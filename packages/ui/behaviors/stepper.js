@@ -4,7 +4,8 @@
  * The field stays a native number input: its arrow keys, `min`, `max`, `step` and spin button role are the
  * platform's. A button calls `stepDown()` or `stepUp()` on it, the methods those keys use, and the field
  * dispatches `input` and `change` as it does when typed in. A button is `disabled` while the value stands at
- * the limit it steps toward. A button held down steps again and again after a short delay, until the pointer
+ * the limit it steps toward, and hands the focus it had to the field; a form's reset brings the buttons back
+ * in step with the first number. A button held down steps again and again after a short delay, until the pointer
  * lifts, leaves or is cancelled, or the limit is reached.
  *
  * A button says which way it steps in its `value`, negative for down. Without one, the button before the
@@ -118,7 +119,11 @@ export function stepper(root, { format, locale, pixels = 4 } = {}) {
       }
       // A field that is disabled or read-only steps nothing, so its buttons stay as their author left them.
       const next = field.disabled || field.readOnly ? before[buttons.indexOf(button)] : reached
-      if (button.disabled !== next) button.disabled = next
+      if (button.disabled === next) continue
+      // A button pressed with the keys up to its limit would take focus with it as it is disabled: the field,
+      // the control it steps, has it instead.
+      if (next && root.ownerDocument.activeElement === button) field.focus({ preventScroll: true })
+      button.disabled = next
     }
   }
 
@@ -168,6 +173,8 @@ export function stepper(root, { format, locale, pixels = 4 } = {}) {
   // Typing and the field's own arrow keys move the value too.
   field.addEventListener('input', sync, { signal })
   field.addEventListener('change', sync, { signal })
+  // A form's reset puts the first number back without an event: the buttons and the figure follow once it has.
+  field.form?.addEventListener('reset', () => setTimeout(() => { if (!signal.aborted) sync() }), { signal })
 
   /**
    * Scrubbing. A handle belongs to this stepper when it stands in it, or is (or stands in) a label of its

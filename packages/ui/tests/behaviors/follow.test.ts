@@ -362,3 +362,12 @@ test('follow: attaching twice detaches the first', () => {
   scroll(100)
   assert.deepEqual(heard, ['change'])
 })
+
+test('follow: a wheel held with Shift scrolls across and leaves the region following', () => {
+  const { root, window } = setup()
+  const handle = follow(root)
+  const across = new window.WheelEvent('wheel', { deltaY: -40 })
+  Object.defineProperty(across, 'shiftKey', { value: true })
+  root.dispatchEvent(across)
+  assert.equal(handle.value, true)
+})

@@ -413,3 +413,78 @@ test('combobox: with several values and draw, the page writes the chips', () => 
   assert.deepEqual(drawn, [['region-hnd', 'region-fra']])
   assert.equal(all('.chip').length, 1)
 })
+
+test('combobox: a read-only field neither opens its list nor takes an option', () => {
+  const { root, field, key, click, one, expanded, active, checked, heard } = setup()
+  field.readOnly = true
+  combobox(root)
+  click(field)
+  assert.equal(expanded(), false, 'a press leaves the list closed')
+  assert.equal(key(field, 'ArrowDown'), true)
+  assert.equal(expanded(), false)
+  assert.equal(active(), null, 'a closed list has no active option')
+  one('#region-list').showPopover()
+  click(one('#region-sin'))
+  assert.equal(field.value, '', 'an option pressed in a list opened from outside writes nothing')
+  assert.deepEqual(checked(), [])
+  assert.deepEqual(heard, [])
+})
+
+test('combobox: Enter held down chooses once, and its repeats do not reach the form', () => {
+  const { root, field, key, checked, heard } = setup(several)
+  combobox(root)
+  key(field, 'ArrowDown')
+  key(field, 'ArrowDown')
+  assert.equal(key(field, 'Enter'), true)
+  assert.deepEqual(checked(), ['region-hnd', 'region-sin'])
+  assert.equal(key(field, 'Enter', { repeat: true }), true, 'a repeat is prevented')
+  assert.equal(key(field, 'Enter', { repeat: true }), true)
+  assert.deepEqual(checked(), ['region-hnd', 'region-sin'], 'and checks nothing again')
+  assert.deepEqual(heard, ['input', 'change'])
+  field.dispatchEvent(new (field.ownerDocument.defaultView as any).KeyboardEvent('keyup', { key: 'Enter', bubbles: true }))
+  assert.equal(key(field, 'Enter', { repeat: true }), true, 'a new press is answered again')
+  assert.deepEqual(checked(), ['region-hnd'])
+
+  const single = setup()
+  combobox(single.root)
+  single.key(single.field, 'ArrowDown')
+  assert.equal(single.key(single.field, 'Enter'), true)
+  assert.equal(single.field.value, 'Tokyo')
+  assert.equal(single.key(single.field, 'Enter', { repeat: true }), true, 'the closed list keeps the repeat from the form')
+})
+
+test('combobox: a value given as a number names the option whose data-value writes it', () => {
+  const { root, field, checked } = setup(markup.replace('id="region-sin"', 'id="region-sin" data-value="2"'))
+  const handle = combobox(root)
+  handle.value = 2 as never
+  assert.deepEqual(checked(), ['region-sin'])
+  assert.equal(field.value, 'Singapore')
+  assert.equal(handle.value, '2')
+})
+
+test('combobox: with several values, a chip that stays is not taken out and put back', async () => {
+  const { root, field, type, key } = setup(several)
+  combobox(root)
+  const group = root.querySelector('.input-group')
+  const left: string[] = []
+  const observer = new MutationObserver((records) => {
+    for (const record of records) for (const node of record.removedNodes) left.push((node as Element).getAttribute?.('data-value') ?? '')
+  })
+  observer.observe(group, { childList: true })
+  type(field, 'frank')
+  key(field, 'Enter')
+  await new Promise(resolve => setTimeout(resolve))
+  observer.disconnect()
+  assert.deepEqual(left, [], 'Tokyo\'s chip stays where it was')
+  assert.deepEqual([...group.querySelectorAll('.chip')].map((chip: any) => chip.getAttribute('data-value')), ['region-hnd', 'region-fra'])
+})
+
+test('combobox: a value set from outside filters the list by the text it writes, not by the query before it', () => {
+  const { root, field, type, key, shown } = setup()
+  const handle = combobox(root)
+  type(field, 'Tok')
+  key(field, 'Escape')
+  handle.value = 'Singapore'
+  assert.equal(field.value, 'Singapore')
+  assert.deepEqual(shown(), ['region-sin'], 'the checked option is in the list the field opens on')
+})

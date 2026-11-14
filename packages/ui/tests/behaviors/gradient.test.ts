@@ -200,3 +200,57 @@ test('gradient: the color picker of the stop in hand shows its color and changes
   assert.equal(text.value, '#0000ff', 'taking another stop in hand shows its color')
   assert.deepEqual(page.errors, [])
 })
+
+test('gradient: a control that says input as it moves and change at the end has the gradient say both', () => {
+  const { one, heard } = setup()
+  const number = one<HTMLInputElement>('.gradient-offset input[type="number"]')
+  number.value = '30'
+  number.dispatchEvent(new Event('input', { bubbles: true }))
+  assert.deepEqual(heard, ['input'])
+  number.dispatchEvent(new Event('change', { bubbles: true }))
+  assert.deepEqual(heard, ['input', 'change'], 'the change that brings nothing new still ends the moves')
+  number.dispatchEvent(new Event('change', { bubbles: true }))
+  assert.deepEqual(heard, ['input', 'change'], 'a change with no move before it says nothing')
+})
+
+test('gradient: add gives the new stop an id no stop has, though a value given from outside used the next number', () => {
+  const page = dom(markup)
+  const handle = gradient(page.one('.gradient'), { value: { ...value, stops: [{ id: 'stop-3', offset: 0, color: '#ff0000' }, { id: 'b', offset: 100, color: '#0000ff' }] } })
+  page.click(page.one('.gradient-add'))
+  const ids = handle.value.stops.map(stop => stop.id)
+  assert.equal(new Set(ids).size, 3, `every stop keeps an id of its own: ${ids}`)
+  assert.equal(page.all('.gradient-stop').length, 3)
+})
+
+test('gradient: a drag reads the bar once as it begins, holds off a second finger and focuses without scrolling', () => {
+  const { stop, pointer, one, handle, heard } = setup()
+  const bar = one<HTMLElement>('.gradient-bar')
+  let reads = 0
+  bar.getBoundingClientRect = () => { reads++; return { left: 0, top: 0, width: 200, height: 20, right: 200, bottom: 20, x: 0, y: 0 } as DOMRect }
+  const focused: unknown[] = []
+  const original = stop('b').focus.bind(stop('b'))
+  stop('b').focus = (options?: FocusOptions) => { focused.push(options); original(options) }
+  pointer(stop('b'), 'pointerdown', { button: 0, pointerId: 1, isPrimary: true })
+  assert.deepEqual(focused, [{ preventScroll: true }])
+  pointer(stop('b'), 'pointermove', { pointerId: 1, clientX: 100 })
+  pointer(stop('b'), 'pointermove', { pointerId: 1, clientX: 120 })
+  assert.equal(reads, 1, 'the box is read once, not at every move')
+  pointer(stop('a'), 'pointerdown', { button: 0, pointerId: 2, isPrimary: false })
+  pointer(stop('a'), 'pointermove', { pointerId: 2, clientX: 180 })
+  assert.equal(handle.value.stops.find(each => each.id === 'b')!.offset, 60, 'the second finger takes nothing')
+  assert.equal(stop('b').getAttribute('aria-current'), 'true')
+  pointer(stop('b'), 'lostpointercapture', { pointerId: 1 })
+  assert.deepEqual(heard.slice(-1), ['change'], 'a lost capture ends the drag')
+  pointer(stop('b'), 'pointermove', { pointerId: 1, clientX: 10 })
+  assert.equal(handle.value.stops.find(each => each.id === 'b')!.offset, 60)
+})
+
+test('gradient: a move of a stop leaves the controls it does not change alone', () => {
+  const { stop, key, one, window } = setup()
+  const observer = new window.MutationObserver(() => {})
+  observer.observe(one('.gradient-fields'), { attributes: true, subtree: true })
+  stop('a').focus()
+  key(stop('a'), 'ArrowRight')
+  assert.deepEqual(observer.takeRecords().map((record: any) => `${record.target.className}:${record.attributeName}`), [], 'no control is written again')
+  observer.disconnect()
+})

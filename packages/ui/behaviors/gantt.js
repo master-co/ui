@@ -418,7 +418,20 @@ export function gantt(root, { step = 1, format = (start, end) => (start === end 
     }
   }, { signal })
 
-  signal.addEventListener('abort', release)
+  // Detached while a bar is carried: it goes back where the drag started, without a word, so no range is left
+  // that the page never heard of with a `change`.
+  signal.addEventListener('abort', () => {
+    if (drag?.dragging && !same(drag.current, drag.original)) write(drag.row, drag.original, false)
+    release()
+  })
+
+  // Rows written after the script attached, by a page that adds a task, are given what a slider needs as the
+  // first ones were. What the script itself writes, a bar's text, changes nothing then; nor does a drag.
+  if (typeof MutationObserver === 'function') {
+    const observer = new MutationObserver(() => { if (!drag?.dragging) prepare() })
+    observer.observe(root, { childList: true, subtree: true })
+    signal.addEventListener('abort', () => observer.disconnect())
+  }
 
   return detach
 }

@@ -564,3 +564,20 @@ test('chart: attaching again replaces the first, and new series are written with
   assert.equal(all('.chart-legend').length, 0, 'one series needs no legend')
   assert.deepEqual(errors, [])
 })
+
+test('chart: a point is written only when its place in the tab order changes, and detach gives the page its tabindex back', async () => {
+  const page = dom(`<figure class="chart">${chartMarkup({ type: 'bar', labels: ['a', 'b', 'c'], series: [{ name: 'Sales', values: [1, 2, 3] }] })}</figure>`)
+  const root = page.one<HTMLElement>('.chart')
+  const points = page.all<HTMLElement>('.chart-point')
+  points[1].setAttribute('tabindex', '0')
+  const detach = chart(root)
+  assert.deepEqual(points.map(point => point.getAttribute('tabindex')), ['-1', '0', '-1'], 'the stop the page gave stays')
+  const writes: string[] = []
+  new MutationObserver(records => records.forEach(record => writes.push(record.attributeName!))).observe(root, { attributes: true, subtree: true, attributeFilter: ['tabindex'] })
+  points[0].setAttribute('data-label', 'A')
+  await new Promise(resolve => setTimeout(resolve, 0))
+  assert.deepEqual(writes, [], 'a renderer\'s change that moves no stop writes no tabindex')
+  detach()
+  assert.deepEqual(points.map(point => point.getAttribute('tabindex')), [null, '0', null], 'each point is as the page wrote it')
+  assert.deepEqual(page.errors, [])
+})

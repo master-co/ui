@@ -349,3 +349,39 @@ test('listbox: in a list of one choice, the run keys and Control with A are left
   assert.equal(active(), 'fw-next', 'Shift with an arrow still moves')
   assert.deepEqual(checked(), ['fw-astro'])
 })
+
+test('listbox: Space, Enter and Control+A held down choose once', () => {
+  const { root, key, checked, heard } = setup(markup('aria-multiselectable="true"'))
+  listbox(root)
+  key(root, 'ArrowDown')
+  assert.equal(key(root, ' '), true)
+  assert.deepEqual(checked(), ['fw-astro', 'fw-next'])
+  assert.equal(key(root, ' ', { repeat: true }), true, 'a repeat is still prevented')
+  assert.equal(key(root, 'Enter', { repeat: true }), true)
+  assert.deepEqual(checked(), ['fw-astro', 'fw-next'], 'and does not uncheck the option')
+  key(root, 'a', { ctrlKey: true })
+  assert.deepEqual(checked(), ['fw-astro', 'fw-next', 'fw-svelte', 'fw-solid'])
+  assert.equal(key(root, 'a', { ctrlKey: true, repeat: true }), true)
+  assert.deepEqual(checked(), ['fw-astro', 'fw-next', 'fw-svelte', 'fw-solid'], 'the repeat does not uncheck them all')
+  assert.deepEqual(heard, ['input', 'change', 'input', 'change'])
+})
+
+test('listbox: a value given as a number names the option whose data-value writes it, and checks one of a single list', () => {
+  const { root, checked } = setup(markup().replace('id="fw-next"', 'id="fw-next" data-value="2"').replace('id="fw-svelte"', 'id="fw-svelte" data-value="2"'))
+  const handle = listbox(root)
+  handle.value = 2 as never
+  assert.deepEqual(checked(), ['fw-next'], 'two options that stand for one value: the list of one choice checks the first')
+  assert.equal(handle.value, '2')
+  handle.value = null
+  assert.deepEqual(checked(), [])
+})
+
+test('listbox: focus that finds the active option hidden or disabled since starts from the chosen option', () => {
+  const { root, active, one } = setup()
+  listbox(root)
+  one('#fw-astro').removeAttribute('aria-checked')
+  one('#fw-svelte').setAttribute('aria-checked', 'true')
+  one('#fw-astro').hidden = true
+  root.dispatchEvent(new Event('focus'))
+  assert.equal(active(), 'fw-svelte')
+})

@@ -108,3 +108,68 @@ test('carousel: a slide chosen while several are equally in view stays current w
     delete (globalThis as any).IntersectionObserver
   }
 })
+
+test('carousel: a vertical track scrolls a slide to the block value of its snap alignment, a horizontal one to the inline value', () => {
+  const page = dom(markup)
+  const track = page.one<HTMLElement>('.carousel')
+  const scrolled: string[] = []
+  for (const slide of page.all('.carousel-slide')) slide.scrollIntoView = (init: any) => { scrolled.push(`${init?.block} ${init?.inline}`) }
+  const computed = globalThis.getComputedStyle
+  let direction = 'column'
+  globalThis.getComputedStyle = ((element: any, pseudo?: string) => {
+    if (element === track) return { ...computed(element), flexDirection: direction }
+    if (element.classList?.contains('carousel-slide')) return { ...computed(element), scrollSnapAlign: 'center end' }
+    return computed(element, pseudo)
+  }) as any
+  try {
+    const handle = carousel(page.one('.carousel-view'))
+    handle.value = 'borealis'
+    direction = 'row'
+    handle.value = 'cirrus'
+  } finally {
+    globalThis.getComputedStyle = computed
+  }
+  assert.deepEqual(scrolled, ['center nearest', 'nearest end'])
+})
+
+test('carousel: focus that leaves a button with nowhere to go does not scroll the page', () => {
+  const { click, next, previous } = setup()
+  const options: unknown[] = []
+  previous.focus = (init?: unknown) => { options.push(init) }
+  next.focus()
+  click(next)
+  click(next)
+  assert.equal(next.disabled, true)
+  assert.deepEqual(options, [{ preventScroll: true }])
+})
+
+test('carousel: a slide hidden when it attached and shown later is watched, and one hidden later is let go', async () => {
+  const watched = new Set<Element>()
+  ;(globalThis as any).IntersectionObserver = class {
+    observe(target: Element) { watched.add(target) }
+    disconnect() { watched.clear() }
+    takeRecords() { return [] }
+  }
+  try {
+    const page = dom(markup.replace('id="s-cirrus"', 'id="s-cirrus" hidden'))
+    const handle = carousel(page.one('.carousel-view'))
+    const cirrus = page.one<HTMLElement>('#s-cirrus')
+    assert.equal(watched.has(cirrus), false)
+    cirrus.hidden = false
+    await new Promise(resolve => setTimeout(resolve, 0))
+    assert.equal(watched.has(cirrus), true, 'the slide shown is watched')
+    handle.value = 'borealis'
+    assert.equal(page.one<HTMLButtonElement>('.carousel-next').disabled, false, 'and there is a slide after the second again')
+    cirrus.hidden = true
+    await new Promise(resolve => setTimeout(resolve, 0))
+    assert.equal(watched.has(cirrus), false)
+    assert.equal(page.one<HTMLButtonElement>('.carousel-next').disabled, true, 'the second is the last one now')
+    // What changes inside a slide is not the set: nothing is watched anew.
+    watched.clear()
+    page.one('#s-atlas').append('More')
+    await new Promise(resolve => setTimeout(resolve, 0))
+    assert.equal(watched.size, 0)
+  } finally {
+    delete (globalThis as any).IntersectionObserver
+  }
+})

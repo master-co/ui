@@ -207,3 +207,35 @@ test('schedule: detach removes the listeners, and attaching twice is safe', () =
   page.click(page.one('.schedule-view-next'))
   assert.equal(first.value.date, '2026-11-13')
 })
+
+test('schedule: detach takes away the tabindex it gave the title to take focus, and leaves one the page wrote', () => {
+  const open = (page: ReturnType<typeof dom>) => page.click(page.all<HTMLButtonElement>('.schedule-date-number').find(button => button.value === '2026-11-20'))
+  {
+    const page = dom(view)
+    const title = page.one<HTMLElement>('.schedule-view-title')
+    const detach = schedule(page.one('.schedule-view'), { ...base, events })
+    open(page)
+    assert.equal(title.getAttribute('tabindex'), '-1')
+    page.one<HTMLElement>('.schedule-view-next').focus()
+    detach()
+    assert.equal(title.hasAttribute('tabindex'), false, 'what the script added goes')
+  }
+  {
+    const page = dom(view)
+    const root = page.one('.schedule-view')
+    const title = page.one<HTMLElement>('.schedule-view-title')
+    schedule(root, { ...base, events })
+    open(page)
+    schedule(root, { ...base, events })
+    assert.equal(title.getAttribute('tabindex'), '-1', 'attached again while the title has focus, it keeps it')
+    assert.equal(page.document.activeElement, title)
+  }
+  {
+    const page = dom(view.replace('aria-live="polite"', 'aria-live="polite" tabindex="-1"'))
+    const detach = schedule(page.one('.schedule-view'), { ...base, events })
+    open(page)
+    page.one<HTMLElement>('.schedule-view-next').focus()
+    detach()
+    assert.equal(page.one('.schedule-view-title').getAttribute('tabindex'), '-1', 'the page\'s own stays')
+  }
+})

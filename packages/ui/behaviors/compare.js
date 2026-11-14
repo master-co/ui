@@ -3,7 +3,7 @@
  *
  * Where the browser has scroll-driven animations the stylesheet already reads the thumb's place and this
  * script changes nothing. Elsewhere it copies the range input's value, as a percentage of its range, into
- * `--compare-position` on the root: when it attaches, and each time the input moves.
+ * `--compare-position` on the root: when it attaches, each time the input moves, and after a form's reset.
  *
  * The function the behavior returns has a `value`: the range input's number. Set it to move the line from
  * outside; that dispatches nothing.
@@ -43,6 +43,8 @@ export function compare(root) {
     if (Number.isFinite(position)) root.style.setProperty('--compare-position', `${Math.round(position * 100) / 100}%`)
   }
   range.addEventListener('input', follow, { signal: controller.signal })
+  // A form's reset puts the input's first value back without an event: the line follows once it has.
+  range.form?.addEventListener('reset', () => setTimeout(() => { if (!controller.signal.aborted) follow() }), { signal: controller.signal })
   trace = follow
   follow()
 
