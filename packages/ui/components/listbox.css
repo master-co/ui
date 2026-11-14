@@ -17,13 +17,23 @@
     color: var(--color-text-strong);
     font: 400 .84375rem/1.2 var(--font-family-sans);
     font-feature-settings: inherit;
+    /* A label, a description or a query echoed in the empty state wraps rather than scroll the list sideways. */
+    overflow-wrap: anywhere;
     list-style: none;
     scrollbar-width: thin;
     scrollbar-color: var(--color-line-strong) transparent;
 
-    /* The list holds focus while aria-activedescendant moves through it: the active row shows where. */
+    /*
+     * The list holds focus while aria-activedescendant moves through it: the active row shows where, with the
+     * ink outline the keys leave inside a row, so it never reads as a row under the pointer.
+     */
     &:focus-visible {
       outline: none;
+
+      .listbox-option[aria-selected="true"] {
+        outline: 2px solid var(--color-focus);
+        outline-offset: -2px;
+      }
     }
 
     /* Floating: opened with showPopover() by the script that owns the field. */
@@ -134,10 +144,19 @@
     }
 
     @media (forced-colors: active) {
-      &:is(:hover, :focus-visible, [aria-selected="true"]):not([aria-disabled="true"]) {
+      &:is(:focus-visible, [aria-selected="true"]):not([aria-disabled="true"]) {
         background: Highlight;
         color: HighlightText;
         forced-color-adjust: none;
+      }
+
+      /* Only a pointer that hovers lights a row: a tap would leave it lit on a touch screen. */
+      @media (hover: hover) {
+        &:hover:not([aria-disabled="true"]) {
+          background: Highlight;
+          color: HighlightText;
+          forced-color-adjust: none;
+        }
       }
 
       &[aria-disabled="true"] {
@@ -210,6 +229,11 @@
     margin: var(--listbox-inset) calc(-1 * var(--listbox-inset));
     border: 0;
     background: var(--color-line-hair);
+
+    /* Forced colors repaint the background as the canvas; a system color keeps the rule. */
+    @media (forced-colors: active) {
+      background: CanvasText;
+    }
   }
 
   /* What the list says when nothing matches. It shows by itself once every option is hidden. */

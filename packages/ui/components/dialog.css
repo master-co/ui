@@ -43,10 +43,10 @@
     box-shadow: var(--shadow-overlay);
     font-size: .875rem;
     line-height: 1.55;
-    /* Closed is where it leaves to: it fades and settles back a little, faster than it arrived. */
+    /* Closed is where it leaves to: it fades and settles back half as far as it came, faster than it arrived. */
     opacity: 0;
-    scale: .97;
-    translate: 0 .5rem;
+    scale: .985;
+    translate: 0 .25rem;
     transition-property: opacity, scale, translate, overlay, display;
     transition-duration: var(--duration-quick);
     transition-timing-function: var(--easing-glide);
@@ -217,10 +217,6 @@
           scroll-snap-type: none;
         }
       }
-
-      @media (forced-colors: active) {
-        outline: none;
-      }
     }
 
     /* The scrim thins as the panel leaves: the behavior writes how much of it is left to --dialog-scrim. */
@@ -277,9 +273,19 @@
       }
     }
 
+    /*
+     * The edge in forced colors, also while the dialog itself has focus, which takes away its outline above.
+     * A swiped dialog is only the track: its panel draws the edge.
+     */
     @media (forced-colors: active) {
-      outline: 1px solid CanvasText;
-      outline-offset: -1px;
+      &, &:focus-visible {
+        outline: 1px solid CanvasText;
+        outline-offset: -1px;
+      }
+
+      &.dialog-swipe, &.dialog-swipe:focus-visible {
+        outline: none;
+      }
     }
   }
 
@@ -322,6 +328,7 @@
     overflow-y: auto;
     overscroll-behavior: contain;
     scrollbar-width: thin;
+    scrollbar-color: var(--color-line-strong) transparent;
   }
 
   /* Actions end the sheet, the main one last. In a narrow dialog they stack at full width, the main one first. */
@@ -342,7 +349,7 @@
   /* A quiet square button in the corner; give it an accessible name. */
   .dialog .dialog-close {
     position: absolute;
-    top: calc(var(--dialog-padding) - .4375rem);
+    inset-block-start: calc(var(--dialog-padding) - .4375rem);
     inset-inline-end: calc(var(--dialog-padding) - .4375rem);
   }
 
@@ -446,6 +453,8 @@
     color: inherit;
     cursor: grab;
     appearance: none;
+    /* A pan still moves the track; a double tap does not zoom the page. */
+    touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
 
     &::before {

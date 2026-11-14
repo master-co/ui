@@ -151,6 +151,8 @@
     touch-action: pan-y;
     user-select: none;
     -webkit-user-select: none;
+    /* A point a finger focuses is marked on its marks: the browser's tap flash would cover its whole box. */
+    -webkit-tap-highlight-color: transparent;
 
     &.chart-plot-radial {
       height: auto;
@@ -254,6 +256,13 @@
         display: none;
       }
     }
+
+    /* A fill named from a token is an author color: the names around a radar take the system's text. */
+    @media (forced-colors: active) {
+      &.chart-tick-around {
+        fill: CanvasText;
+      }
+    }
   }
 
   /* A line: one series from point to point. */
@@ -344,9 +353,19 @@
       }
     }
 
+    /*
+     * Every ring a point draws is the system's highlight, and along a line it stays a band of it, as it is
+     * without forced colors, so the line under it still shows.
+     */
     @media (forced-colors: active) {
-      &:focus-visible .chart-hit {
-        stroke: Highlight;
+      &:focus-visible {
+        .chart-hit, .chart-slice, .chart-track, .chart-stage, .chart-cell, .chart-unit, .chart-tile {
+          stroke: Highlight;
+        }
+
+        .chart-hit-line {
+          stroke: color-mix(in oklab, Highlight 24%, transparent);
+        }
       }
     }
   }
@@ -377,6 +396,11 @@
     shape-rendering: crispEdges;
     opacity: 0;
     pointer-events: none;
+
+    /* A hairline named from a token: in forced colors it is the system's gray, as the grid is. */
+    @media (forced-colors: active) {
+      stroke: GrayText;
+    }
   }
 
   /*
@@ -559,6 +583,11 @@
       font-weight: 400;
       transform: translate(.5rem, 1.5625rem);
     }
+
+    /* Its fill is named from a token, an author color: in forced colors every value takes the system's text. */
+    @media (forced-colors: active) {
+      fill: CanvasText;
+    }
   }
 
   /* A slice of a pie or a donut. It opens from the center when it first appears. */
@@ -692,6 +721,10 @@
     stroke-width: 1px;
     vector-effect: non-scaling-stroke;
     shape-rendering: crispEdges;
+
+    @media (forced-colors: active) {
+      stroke: GrayText;
+    }
   }
 
   /* A point of a slope or a bump: a round end of no length, so it stays a circle in a canvas that stretches. */
@@ -959,9 +992,13 @@
     corner-shape: round;
     background: var(--category-mark, currentColor);
 
-    /* It keeps its series' color in forced colors, as the legend's mark does, instead of the forced canvas. */
+    /*
+     * It keeps its series' color in forced colors, as the legend's mark does, instead of the forced canvas. A
+     * series with no category is the system's text, as its marks are, not the readout's own ink.
+     */
     @media (forced-colors: active) {
       forced-color-adjust: none;
+      background: var(--category-mark, CanvasText);
     }
   }
 
@@ -986,6 +1023,8 @@
     min-width: 0;
     margin: 0;
     padding: 0;
+    /* The entries' touch targets stand behind them, within the legend. */
+    isolation: isolate;
     color: var(--color-text-body);
     font-size: .75rem;
     line-height: 1.35;
@@ -1029,10 +1068,43 @@
       .chart-key-value {
         visibility: hidden;
       }
+
+      /* It can still be shown again: under the pointer its name comes a step forward, as a shown one's does. */
+      @media (hover: hover) {
+        &:hover {
+          color: var(--color-text-muted);
+        }
+      }
+
+      /* Forced colors would make the name the text color again and the outline an author color: both are the system's gray. */
+      @media (forced-colors: active) {
+        &, &:hover {
+          color: GrayText;
+        }
+
+        .chart-key-mark {
+          box-shadow: inset 0 0 0 1.5px GrayText;
+        }
+      }
     }
 
     &:has(.chart-key-input:focus-visible) {
       @apply --focus-ring;
+
+      @media (forced-colors: active) {
+        outline-color: Highlight;
+      }
+    }
+
+    /*
+     * A finger's target reaches above and below the entry, behind every entry, so where it overlaps the entry
+     * beside or under it in a column or a wrapped row, the entry that is seen is the one that is touched.
+     */
+    @media (pointer: coarse) {
+      &:has(.chart-key-input)::after {
+        @apply --touch-target-block;
+        z-index: -1;
+      }
     }
   }
 
@@ -1048,13 +1120,6 @@
     appearance: none;
     opacity: 0;
     cursor: inherit;
-
-    /* A finger gets a taller target around the same entry, so the legend keeps its height. */
-    @media (pointer: coarse) {
-      inset: -.625rem -.25rem;
-      width: calc(100% + .5rem);
-      height: calc(100% + 1.25rem);
-    }
   }
 
   /* The mark: a small block of the series' color, as a bar, an area or a slice is. */

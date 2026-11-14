@@ -59,10 +59,13 @@
 
   /*
    * The bar: the stops from start to end, whatever the type, as a short well. The handles stand on it, half
-   * a handle in from its ends at 0 and 100, so they never hang outside the gradient.
+   * a handle in from its ends at 0 and 100, so they never hang outside the gradient. Only a handle takes the
+   * press, so the bar leaves a finger to scroll the page; each handle reaches 44px on touch itself.
    */
   .gradient-bar {
     position: relative;
+    /* The stop in hand comes forward within the bar, never over the page around it. */
+    isolation: isolate;
     height: .75rem;
     margin-inline: calc(var(--gradient-handle) / 2);
     border-radius: 999px;
@@ -72,14 +75,6 @@
       repeating-conic-gradient(var(--gradient-check) 0 25%, transparent 0 50%) 0 0 / 8px 8px,
       var(--color-surface-raised);
     box-shadow: var(--shadow-pressed);
-    touch-action: none;
-
-    /* On touch the bar takes a finger 44px tall, under its handles, and keeps its height. */
-    @media (pointer: coarse) {
-      &::before {
-        @apply --touch-target-block;
-      }
-    }
 
     @media (forced-colors: active) {
       forced-color-adjust: none;
@@ -126,8 +121,9 @@
       outline-offset: 4px;
     }
 
+    /* Locked: as heavy as :active, and later, so a press shows no grip either. */
     &[aria-disabled="true"] {
-      cursor: default;
+      cursor: not-allowed;
     }
 
     /* On touch the target reaches 44px around the handle, which keeps its size. */
@@ -152,6 +148,15 @@
       &[aria-current="true"] {
         outline-color: Highlight;
         outline-width: 3px;
+      }
+
+      /* Opted out of forced colors, the focus ring would keep the theme's ink: it takes the system's own. */
+      &:focus-visible {
+        outline-color: Highlight;
+      }
+
+      &[aria-disabled="true"] {
+        outline-color: GrayText;
       }
     }
   }

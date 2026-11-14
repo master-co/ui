@@ -184,6 +184,25 @@
         width: calc(var(--coachmark-arrow) * 2 + 1px);
         height: calc(var(--coachmark-arrow) * 2 + 2px);
       }
+
+      /*
+       * Forced colors repaint both as the canvas, and the card would point at nothing: the arrow is kept in the
+       * system's text color, and the patch in the canvas the card is repainted with.
+       */
+      @media (forced-colors: active) {
+        &::before, &::after {
+          forced-color-adjust: none;
+        }
+
+        &::before {
+          background: CanvasText;
+          box-shadow: none;
+        }
+
+        &::after {
+          background: Canvas;
+        }
+      }
     }
 
     /* The element right before an open coachmark is what its arrow points at. */
@@ -286,19 +305,23 @@
     }
   }
 
-  /* A quiet button on ink takes a quieter step of the card's ink, and a tint of it under the pointer. */
-  .coachmark .btn-quiet:not(:disabled, [aria-disabled="true"]) {
+  /*
+   * A quiet button on ink takes a quieter step of the card's ink, and a tint of it under the pointer; busy, it
+   * does not answer the pointer. These rules outweigh the quiet button's own hover, which would otherwise lay
+   * a pearl sheet in the strong ink of a page on the card.
+   */
+  .coachmark .btn.btn-quiet:not(:disabled, [aria-disabled="true"]) {
     color: color-mix(in oklab, var(--color-text-inverse) 72%, transparent);
 
     @media (hover: hover) {
-      &:hover {
+      &:hover:not([aria-busy="true"]) {
         background: color-mix(in oklab, var(--color-text-inverse) 12%, transparent);
         color: var(--color-text-inverse);
         box-shadow: none;
       }
     }
 
-    &:active {
+    &:active:not([aria-busy="true"]) {
       background: color-mix(in oklab, var(--color-text-inverse) 18%, transparent);
       color: var(--color-text-inverse);
       box-shadow: none;
@@ -401,6 +424,18 @@
 
       &::before {
         animation: none;
+      }
+
+      /* The halo is a shadow, gone here: found, the dot takes the system's highlight instead. */
+      &:has(+ .coachmark:popover-open) {
+        outline-color: Highlight;
+        background: Highlight;
+      }
+
+      /* Keyboard focus is a ring of the highlight, as on a button. */
+      &:focus-visible {
+        outline: 2px solid Highlight;
+        outline-offset: 4px;
       }
     }
   }

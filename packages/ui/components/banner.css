@@ -8,6 +8,8 @@
   .banner {
     --banner-tone: var(--color-text-strong);
     --banner-color: var(--color-surface-tray);
+    /* The band is the surface what it holds stands on, in every tone, so a ring cut out of it shows the band. */
+    --surface-color: var(--banner-color);
     --icon-size: 1rem;
     --icon-color: var(--banner-tone);
     position: relative;
@@ -52,7 +54,6 @@
 
     /* Inverse: a band of ink, for the one announcement of a release. */
     &.banner-inverse {
-      --surface-color: var(--color-surface-inverse);
       @apply --on-ink;
       --banner-tone: var(--color-text-inverse);
       --banner-color: var(--color-surface-inverse);
@@ -62,7 +63,6 @@
 
     /* Brand: the brand's face, kept for the moment the brand speaks. */
     &.banner-brand {
-      --surface-color: var(--color-brand);
       @apply --on-ink;
       --banner-tone: var(--color-brand-ink);
       --banner-color: var(--color-brand);
@@ -136,7 +136,8 @@
 
   /* One link out. It takes the band's text color and keeps a fine underline, so it reads on every tone. */
   .banner-action {
-    border-radius: calc((var(--radius-chip) - 2px) * var(--corner-scale));
+    /* The small corner of a link's focus ring, as link draws it. */
+    border-radius: calc((var(--radius-chip) - 4px) * var(--corner-scale));
     corner-shape: var(--corner-shape);
     color: inherit;
     font-weight: var(--font-weight-control);
@@ -145,6 +146,8 @@
     text-decoration-thickness: .5px;
     text-decoration-color: color-mix(in oklab, currentColor 45%, transparent);
     text-underline-offset: .22em;
+    /* The underline answers a tap; the platform's grey box would answer it twice. */
+    -webkit-tap-highlight-color: transparent;
     transition: text-decoration-color var(--duration-quick) var(--easing-glide);
 
     @media (hover: hover) {
@@ -180,24 +183,39 @@
     color: inherit;
   }
 
-  /* On ink or brand the button is a tint of the band's ink under the pointer and a firmer one pressed, never a pearl sheet or well. */
+  /*
+   * On ink or brand the button takes the band's ink, a tint of it under the pointer and a firmer one pressed,
+   * never a pearl sheet or well: the same steps as a quiet button on a coachmark. Disabled, it keeps the
+   * button's own disabled ink; busy, it does not answer the pointer.
+   */
   .banner:is(.banner-inverse, .banner-brand) .banner-close .btn {
-    color: inherit;
+    &:not(:disabled, [aria-disabled="true"]) {
+      color: inherit;
 
-    @media (hover: hover) {
-      &:hover:not(:disabled) {
-        background: color-mix(in oklab, currentColor 14%, transparent);
+      @media (hover: hover) {
+        /* The quiet button's own hover would give the strong ink of a page, dark on a band of ink. */
+        &:hover:not([aria-busy="true"]) {
+          background: color-mix(in oklab, currentColor 12%, transparent);
+          color: inherit;
+          box-shadow: none;
+        }
+      }
+
+      &:active:not([aria-busy="true"]) {
+        background: color-mix(in oklab, currentColor 18%, transparent);
         box-shadow: none;
       }
     }
 
-    &:active:not(:disabled) {
-      background: color-mix(in oklab, currentColor 20%, transparent);
-      box-shadow: none;
-    }
-
     &:focus-visible {
       outline-color: currentColor;
+    }
+
+    /* Keyboard focus in forced colors is the system highlight, as on every other button. */
+    @media (forced-colors: active) {
+      &:focus-visible {
+        outline-color: Highlight;
+      }
     }
   }
 }

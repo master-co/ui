@@ -35,6 +35,8 @@
     font-feature-settings: inherit;
     font-variant-numeric: tabular-nums;
     list-style: none;
+    /* The bars, the line of now and a held bar stack inside the chart, never over a sticky header beside it. */
+    isolation: isolate;
 
     /* The line of now: drawn in every row, so it runs the height of the chart. */
     &.gantt-now .gantt-row:not(.gantt-scale)::after {
@@ -136,6 +138,20 @@
     &:dir(rtl)::before {
       background: repeating-linear-gradient(270deg, var(--color-line-hair) 0 1px, transparent 1px calc(100% / var(--gantt-span)));
       box-shadow: -1px 0 0 var(--color-line-hair);
+    }
+
+    /* The hairlines are a gradient and a shadow, which forced colors drop: kept, in the system's gray. */
+    @media (forced-colors: active) {
+      &::before {
+        forced-color-adjust: none;
+        background: repeating-linear-gradient(90deg, GrayText 0 1px, transparent 1px calc(100% / var(--gantt-span)));
+        box-shadow: 1px 0 0 GrayText;
+      }
+
+      &:dir(rtl)::before {
+        background: repeating-linear-gradient(270deg, GrayText 0 1px, transparent 1px calc(100% / var(--gantt-span)));
+        box-shadow: -1px 0 0 GrayText;
+      }
     }
 
     /* The row that matters now: its bar is ink. */
@@ -316,11 +332,12 @@
       rotate: 45deg;
     }
 
+    /* The canvas goes under the fill, so the part already done still shows, in either direction. */
     @media (forced-colors: active) {
       outline: 1px solid CanvasText;
       outline-offset: -1px;
       forced-color-adjust: none;
-      background: Canvas;
+      background-color: Canvas;
       color: CanvasText;
 
       &.gantt-milestone {

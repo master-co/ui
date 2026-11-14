@@ -79,6 +79,9 @@
 
     &:disabled {
       color: var(--color-text-disabled);
+      /* Safari paints a disabled field's text with its own fill and fades the field; the ink above is the whole state. */
+      -webkit-text-fill-color: currentColor;
+      opacity: 1;
       cursor: not-allowed;
 
       &::placeholder {
@@ -159,6 +162,12 @@
         background: FieldText;
         forced-color-adjust: none;
       }
+
+      /* The file button's face is drawn with shadows, which forced colors drop: an outline keeps it a button. */
+      &::file-selector-button {
+        outline: 1px solid ButtonText;
+        outline-offset: -1px;
+      }
     }
 
     &.input-sm {
@@ -219,7 +228,21 @@
         cursor: pointer;
       }
 
+      /* The button answers as a button in a group's well does: it lifts under the pointer and sinks when pressed. */
+      @media (hover: hover) {
+        &:hover:not(:disabled)::file-selector-button {
+          box-shadow: var(--shadow-raised-hover);
+        }
+      }
+
+      &:active:not(:disabled)::file-selector-button {
+        background: var(--color-surface-inset);
+        box-shadow: var(--shadow-pressed);
+      }
+
+      /* As heavy as the muted words above, which would otherwise keep their ink in a disabled field. */
       &:disabled {
+        color: var(--color-text-disabled);
         cursor: not-allowed;
       }
 
@@ -276,6 +299,15 @@
       &:focus {
         outline: 2px solid Highlight;
         outline-offset: -2px;
+      }
+
+      /* The danger edge and the halo are shadows, which forced colors drop: the outline says it instead, as an editor's does. */
+      &:is([aria-invalid="true"], :user-invalid) {
+        outline-color: Mark;
+      }
+
+      &:disabled {
+        outline-color: GrayText;
       }
     }
   }
@@ -413,12 +445,6 @@
       --btn-lift: 0px;
       --icon-size: .875rem;
       --icon-offset: -.0625rem;
-      min-height: var(--btn-height);
-
-      /* A square one stays square on touch, where a button alone would widen to 44px. */
-      &.btn-square {
-        min-width: var(--btn-height);
-      }
 
       &:first-child {
         margin-inline-start: calc(4px - var(--input-padding-x));
@@ -441,6 +467,14 @@
       &:has(.input-group-field:focus) {
         outline: 2px solid Highlight;
         outline-offset: -2px;
+      }
+
+      &:has(.input-group-field:is([aria-invalid="true"], :user-invalid)) {
+        outline-color: Mark;
+      }
+
+      &:has(.input-group-field:disabled) {
+        outline-color: GrayText;
       }
     }
   }
@@ -545,6 +579,8 @@
 
     &:disabled {
       color: var(--color-text-disabled);
+      -webkit-text-fill-color: currentColor;
+      opacity: 1;
       cursor: not-allowed;
 
       &::placeholder {

@@ -129,8 +129,10 @@
       }
     }
 
+    /* The ring that cuts the dot of now out of the line is the canvas, as a chart's and a heatmap's surface is. */
     @media (forced-colors: active) {
       --schedule-color: CanvasText;
+      --schedule-surface: Canvas;
     }
   }
 
@@ -194,6 +196,8 @@
     min-width: 0;
     margin: 0;
     padding: 0;
+    /* Events, the line of now and a focused event stack inside the day, never over a sticky heading above it. */
+    isolation: isolate;
     background:
       linear-gradient(var(--schedule-line), var(--schedule-line)) left / 1px 100% no-repeat,
       repeating-linear-gradient(180deg, var(--schedule-line) 0 1px, transparent 1px var(--schedule-hour)) right / calc(100% - 1px) 100% no-repeat;
@@ -431,6 +435,17 @@
         forced-color-adjust: none;
         background: Highlight;
         color: HighlightText;
+
+        /* The bar stands on the highlight now, so it takes the highlight's text color, as the words do. */
+        &::before {
+          background: HighlightText;
+        }
+      }
+
+      /* The focus ring is the system's highlight, as every control's is in forced colors. */
+      &:focus-visible, &:has(:focus-visible) {
+        outline: 2px solid Highlight;
+        outline-offset: 2px;
       }
     }
   }
@@ -512,6 +527,12 @@
     padding: 0 0 .375rem;
     box-shadow: 0 1px 0 var(--color-line-hair);
     list-style: none;
+
+    /* The closing hairline is a shadow, which forced colors drop: a line of the system's gray takes a pixel of the padding. */
+    @media (forced-colors: active) {
+      padding-block-end: calc(.375rem - 1px);
+      border-block-end: 1px solid GrayText;
+    }
   }
 
   /* The name of the band, in the rail: "All day". */
@@ -612,6 +633,19 @@
       background: color-mix(in oklab, var(--color-surface-tray) 45%, transparent);
       color: var(--color-text-muted);
     }
+
+    /*
+     * The month's hairlines are shadows, which forced colors drop: every day is outlined in the system's gray
+     * instead, half a pixel in, so the outlines of neighbors fall on one line. A day outside the month is gray too.
+     */
+    @media (forced-colors: active) {
+      outline: 1px solid GrayText;
+      outline-offset: -.5px;
+
+      &.schedule-date-outside {
+        color: GrayText;
+      }
+    }
   }
 
   /* The day's number: a round button that opens the day. Today's is ink. */
@@ -659,6 +693,10 @@
         background: Highlight;
         color: HighlightText;
       }
+
+      &:focus-visible {
+        outline-color: Highlight;
+      }
     }
   }
 
@@ -694,6 +732,10 @@
 
     &:focus-visible {
       @apply --focus-ring;
+
+      @media (forced-colors: active) {
+        outline-color: Highlight;
+      }
     }
   }
 
@@ -722,7 +764,7 @@
         content: '';
         width: calc(min(var(--count), 3) * 6px);
         height: 4px;
-        margin-top: .1875rem;
+        margin-block-start: .1875rem;
         background: radial-gradient(circle, var(--color-text-muted) 1.5px, transparent 2px) 0 0 / 6px 4px repeat-x;
 
         /* The dots are a gradient, which forced colors would drop: kept out of them, in the system's text color. */
@@ -784,6 +826,17 @@
 
     &:last-child {
       box-shadow: none;
+    }
+
+    /* The hairline between days is a shadow, which forced colors drop: a line of the system's gray takes a pixel of the padding. */
+    @media (forced-colors: active) {
+      padding-block-end: calc(.75rem - 1px);
+      border-block-end: 1px solid GrayText;
+
+      &:last-child {
+        padding-block-end: .75rem;
+        border-block-end: 0;
+      }
     }
   }
 
@@ -867,6 +920,10 @@
 
     &:focus-visible {
       @apply --focus-ring;
+
+      @media (forced-colors: active) {
+        outline-color: Highlight;
+      }
     }
   }
 }

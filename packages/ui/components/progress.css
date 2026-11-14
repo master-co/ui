@@ -118,6 +118,22 @@
       outline-offset: -1px;
       forced-color-adjust: none;
       background: Canvas;
+
+      /* A piece not yet reached is the system's gray, as a ring's track is; the inset tint would be an author color. */
+      &.progress-segmented {
+        background-color: GrayText;
+      }
+
+      /* The band travels over the canvas, not over the author's well, which the rule above it would otherwise keep. */
+      &:indeterminate {
+        background-color: Canvas;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        &:indeterminate {
+          background: GrayText;
+        }
+      }
     }
   }
 
@@ -155,7 +171,7 @@
   .progress-marker {
     --progress-marker-at: clamp(0, var(--progress-value), 100);
     position: absolute;
-    top: 0;
+    inset-block-start: 0;
     inset-inline-start: calc(var(--progress-marker-at) * 1%);
     display: inline-grid;
     place-items: center;
@@ -187,7 +203,7 @@
     &::after {
       content: '';
       position: absolute;
-      top: calc(100% - .25rem);
+      inset-block-start: calc(100% - .25rem);
       inset-inline-start: clamp(.5rem, calc(var(--progress-marker-at) * 1%), calc(100% - .5rem));
       width: .5rem;
       height: .5rem;
@@ -202,12 +218,10 @@
     }
 
     .progress-label-below & {
-      top: auto;
-      bottom: 0;
+      inset-block: auto 0;
 
       &::after {
-        top: auto;
-        bottom: calc(100% - .25rem);
+        inset-block: auto calc(100% - .25rem);
         background: var(--color-surface-raised);
         box-shadow: inset .5px .5px 0 var(--color-line-contour);
       }
@@ -240,7 +254,8 @@
     --progress-ring-color: var(--color-surface-inverse);
     --progress-ring-track: color-mix(in oklab, var(--progress-ring-color) 11%, transparent);
     --progress-ring-max: 100;
-    --progress-ring-turn: calc(var(--progress-ring-value) / var(--progress-ring-max));
+    /* As far round as the amount is of the whole, held between nothing and all of it, as a gauge's share is. */
+    --progress-ring-turn: clamp(0, calc(var(--progress-ring-value) / var(--progress-ring-max)), 1);
     position: relative;
     display: inline-grid;
     flex: none;
