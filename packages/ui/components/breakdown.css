@@ -56,9 +56,12 @@
     }
 
     @media (hover: hover) {
-      /* The tint is the bar's ink stepped back, so a part that has its own color steps back with the others. */
+      /*
+       * The tint is the bar's ink stepped back, so a part that has its own color steps back with the others. It
+       * is a property of its own, which a --breakdown-fill set in a part's style cannot outrank.
+       */
       &:has(.breakdown-item:hover) .breakdown-item:not(:hover, .breakdown-rest) {
-        --breakdown-fill: color-mix(in oklab, var(--breakdown-color) 9%, transparent);
+        --breakdown-back: color-mix(in oklab, var(--breakdown-color) 9%, transparent);
       }
 
       .breakdown-item:hover .breakdown-label, .breakdown-item:hover .breakdown-value {
@@ -92,7 +95,7 @@
       height: var(--breakdown-height);
       margin-inline-end: var(--breakdown-gap);
       border-radius: 1.5px;
-      background: var(--breakdown-fill);
+      background: var(--breakdown-back, var(--breakdown-fill));
       transition: flex-grow var(--duration-base) var(--easing-glide);
 
       @media (prefers-reduced-motion: reduce) {
@@ -143,16 +146,20 @@
     }
   }
 
-  /* The part's name in the legend, after a dot of its segment's color. */
+  /*
+   * The part's name in the legend, after a dot of its segment's color. A short name stays on one line; one longer
+   * than the legend wraps inside it rather than running out of the card, with the dot on its first line.
+   */
   .breakdown-label {
     display: inline-flex;
     order: 2;
-    align-items: center;
+    align-items: flex-start;
     gap: .4375rem;
     min-width: 0;
+    max-width: 100%;
     margin-block: .625rem 0;
     margin-inline: 0 1.125rem;
-    white-space: nowrap;
+    overflow-wrap: anywhere;
     /* It answers the pointer, and it is not a line to select: the arrow stays an arrow over it. */
     cursor: default;
 
@@ -161,9 +168,10 @@
       flex: none;
       width: .5rem;
       height: .5rem;
+      margin-block: calc((1lh - .5rem) / 2);
       border-radius: calc(.125rem * var(--corner-scale));
       corner-shape: var(--corner-shape);
-      background: var(--breakdown-fill);
+      background: var(--breakdown-back, var(--breakdown-fill));
 
       @media (forced-colors: active) {
         forced-color-adjust: none;
@@ -175,5 +183,7 @@
   .breakdown-value {
     color: var(--color-text-muted);
     font-variant-numeric: tabular-nums;
+    /* A figure and its unit are read as one: a long name wraps, never the figure. */
+    white-space: nowrap;
   }
 }

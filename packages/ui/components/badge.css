@@ -142,6 +142,8 @@
      * Compound: a smaller badge (badge-addon) and a message inside one capsule, such as "New · Theming has a
      * guide". The outer badge is taller by two insets, and its corner is the addon's corner plus the inset, so the
      * two curves run parallel. A link around it is one target: the capsule takes the hover and the focus ring.
+     * The message is an element (a badge-label) beside the addon: a selector cannot see bare text, so an addon that
+     * is the only element would count as both ends and pull the message against the edge. Alone, it takes neither.
      */
     &.badge-compound {
       --badge-height: 1.75rem;
@@ -150,11 +152,11 @@
       --badge-radius: calc(var(--radius-chip) + var(--badge-inset));
       gap: .5rem;
 
-      &:has(.badge-addon:first-child) {
+      &:has(.badge-addon:first-child:not(:only-child)) {
         padding-inline-start: var(--badge-inset);
       }
 
-      &:has(.badge-addon:last-child) {
+      &:has(.badge-addon:last-child:not(:only-child)) {
         padding-inline-end: var(--badge-inset);
       }
 
@@ -197,6 +199,17 @@
 
       &:focus-visible {
         @apply --focus-ring;
+      }
+
+      /* On touch a link's target reaches 44px around it; the capsule keeps its height and its corner. */
+      @media (pointer: coarse) {
+        &:not(.badge-corner) {
+          position: relative;
+        }
+
+        &::after {
+          @apply --touch-target;
+        }
       }
     }
 
