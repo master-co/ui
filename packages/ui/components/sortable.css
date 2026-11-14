@@ -4,7 +4,8 @@
  * three things. The handle, a quiet grip that says the item can be carried. The carried item, which lifts:
  * a raised sheet grows around it a little past its edges, so its content does not move, with the lifted
  * shadow and a slight swell, and it follows the pointer through --sortable-offset. And the room it would land
- * in: the items between its place and that one glide aside by --sortable-size, so the gap is where it goes.
+ * in: the items between its place and that one glide aside by --sortable-size, so the gap is where it goes,
+ * and nothing under the pointer answers it while they do.
  * The behavior moves the node once, on the drop, inside a view transition where there is one; the items that
  * made room are already where they land, so only the carried one travels.
  */
@@ -12,14 +13,21 @@
   .sortable {
     --sortable-radius: var(--radius-control);
 
-    /* While an item is carried, the cursor is a closed hand wherever the pointer goes. */
+    /*
+     * While an item is carried, the cursor is a closed hand wherever the pointer goes, and the items it passes
+     * are not under the pointer: a row's hover or a handle's open hand would flicker on each item as it glides
+     * aside beneath it. The pointer stays with the carried handle, which holds it.
+     */
     &:has(.sortable-handle[aria-pressed="true"]) {
       cursor: grabbing;
       user-select: none;
       -webkit-user-select: none;
 
-      /* Each item is its own picture in the view transition of a move, so each slides to its place. */
       .sortable-item {
+        pointer-events: none;
+        /* Each item glides on a layer of its own, so its words are not drawn again at every step. */
+        will-change: translate;
+        /* Each item is its own picture in the view transition of a move, so each slides to its place. */
         view-transition-name: match-element;
       }
     }

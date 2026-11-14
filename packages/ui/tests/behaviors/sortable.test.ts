@@ -244,6 +244,45 @@ test('sortable: carried toward the start, the items it passes make room toward t
   assert.deepEqual(all('.sortable-item-forward'), [], 'a cancelled drag takes the room away')
 })
 
+test('sortable: a pointer resting on the line between two places does not make them trade back and forth', () => {
+  const { root, handle, pointer, all, document, window } = setup()
+  all<HTMLElement>('.sortable-item').forEach((each, index) => {
+    each.getBoundingClientRect = () => ({ top: index * 40, bottom: index * 40 + 40, left: 0, right: 200, width: 200, height: 40 } as DOMRect)
+  })
+  sortable(root)
+  const back = () => all('.sortable-item-back').map(each => each.getAttribute('data-value'))
+  const move = (y: number) => document.dispatchEvent(new window.PointerEvent('pointermove', { bubbles: true, pointerId: 4, clientY: y }) as any)
+  pointer(handle('onboarding'), 'pointerdown', { button: 0, isPrimary: true, pointerId: 4, clientY: 20 })
+  // Billing's middle is at 60: the carried middle has to pass it by a few pixels to take its place.
+  move(58)
+  move(62)
+  assert.deepEqual(back(), [], 'just past the middle is not yet past it')
+  move(68)
+  assert.deepEqual(back(), ['billing'])
+  move(58)
+  assert.deepEqual(back(), ['billing'], 'and just back over it does not give the place back')
+  move(52)
+  assert.deepEqual(back(), [])
+  document.dispatchEvent(new window.PointerEvent('pointercancel', { bubbles: true, pointerId: 4 }) as any)
+})
+
+test('sortable: an item still gliding aside is measured where it stands in the layout, not where it has got to', () => {
+  const { root, handle, pointer, all, document, window } = setup()
+  // Billing is 30px into a glide back from the last drag: its box is drawn 30px lower than its place.
+  all<HTMLElement>('.sortable-item').forEach((each, index) => {
+    const drawn = each.getAttribute('data-value') === 'billing' ? 30 : 0
+    each.getBoundingClientRect = () => ({ top: index * 40 + drawn, bottom: index * 40 + 40 + drawn, left: 0, right: 200, width: 200, height: 40 } as DOMRect)
+  })
+  const computed = (globalThis as any).getComputedStyle
+  ;(globalThis as any).getComputedStyle = (element: Element) => ({ ...computed(element), translate: element.getAttribute('data-value') === 'billing' ? '0px 30px' : 'none', direction: 'ltr' })
+  sortable(root)
+  pointer(handle('onboarding'), 'pointerdown', { button: 0, isPrimary: true, pointerId: 5, clientY: 20 })
+  document.dispatchEvent(new window.PointerEvent('pointermove', { bubbles: true, pointerId: 5, clientY: 70 }) as any)
+  assert.equal(root.style.getPropertyValue('--sortable-size'), '40px', 'the room is measured in the layout too')
+  assert.deepEqual(all('.sortable-item-back').map(each => each.getAttribute('data-value')), ['billing'], 'past Billing\'s middle in the layout, 60, though it is drawn at 90')
+  document.dispatchEvent(new window.PointerEvent('pointercancel', { bubbles: true, pointerId: 5 }) as any)
+})
+
 test('sortable: Escape during a drag puts the item back', async () => {
   const { root, handle, order, pressed, pointer, all, heard, document, window } = setup()
   all<HTMLElement>('.sortable-item').forEach((each, index) => {

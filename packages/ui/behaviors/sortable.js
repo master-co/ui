@@ -8,9 +8,12 @@
  * `aria-pressed="true"` while it is carried and the item follows the pointer through `--sortable-offset`.
  * The items between its place and the one it would land in make room: they carry `sortable-item-back` or
  * `sortable-item-forward`, and the stylesheet moves them by `--sortable-size`, the carried item's size with
- * the gap after it, which the root carries during the drag. No node moves until the release, which moves the
- * item once, while the root says `aria-busy="true"`. Escape puts it back. A list that scrolls is scrolled
- * while the pointer is near its ends.
+ * the gap after it, which the root carries during the drag. Where each item stands is measured once, as the
+ * item is picked up, so an item still gliding aside never moves the place it is aimed at, and the place
+ * changes only once the carried item's middle is a few pixels past a neighbor's: a pointer that rests on the
+ * line between two places does not make them trade back and forth. No node moves until the release, which
+ * moves the item once, while the root says `aria-busy="true"`. Escape puts it back. A list that scrolls is
+ * scrolled while the pointer is near its ends.
  *
  * With the keys: Enter or Space on a handle picks the item up, the arrow keys along the list move it one
  * place at a time, Enter or Space drops it and Escape puts it back where it was picked up. Leaving the handle
@@ -52,6 +55,9 @@ const english = {
 
 /** How far a press moves before it is a drag, in pixels. */
 const threshold = 4
+
+/** How far past a neighbor's middle the carried item's middle goes before they trade places, in pixels. */
+const hysteresis = 6
 
 /**
  * @param {HTMLElement} root The element with the `sortable` class.
@@ -144,13 +150,18 @@ export function sortable(root, { messages = {}, move } = {}) {
    */
   const transition = (update) => {
     // While the items change places, the list is busy: the stylesheet lets nothing glide but the transition.
-    root.setAttribute('aria-busy', 'true')
+    // It turns busy inside the change, after the first picture is taken, so an item still gliding aside is
+    // pictured where it is and goes on from there instead of jumping to where it was going.
+    const change = () => {
+      root.setAttribute('aria-busy', 'true')
+      return update()
+    }
     const done = () => root.removeAttribute('aria-busy')
     const scoped = /** @type {any} */ (root).startViewTransition
     const whole = /** @type {any} */ (document).startViewTransition
     const named = typeof CSS !== 'undefined' && CSS.supports?.('view-transition-name', 'match-element')
-    if (!named || !motion() || (!scoped && !whole)) return Promise.resolve(update()).finally(done)
-    const running = scoped ? scoped.call(root, update) : whole.call(document, update)
+    if (!named || !motion() || (!scoped && !whole)) return Promise.resolve(change()).finally(done)
+    const running = scoped ? scoped.call(root, change) : whole.call(document, change)
     return running.finished.catch(() => {}).finally(done)
   }
 
@@ -272,7 +283,11 @@ export function sortable(root, { messages = {}, move } = {}) {
 
   /* The pointer. */
 
-  /** @type {{ item: HTMLElement, handle: HTMLElement, id: number, start: number, scroll: number, last: number, dragging: boolean, to: number, frame: number } | null} */
+  /**
+   * A drag in progress. `others` are the items it passes and `middles` where their middles stand in the root's
+   * scrolled content, and `middle` the carried item's own, all measured once as it is picked up.
+   * @type {{ item: HTMLElement, handle: HTMLElement, id: number, start: number, scroll: number, last: number, dragging: boolean, from: number, to: number, frame: number, others: HTMLElement[], middles: number[], middle: number, rtl: boolean } | null}
+   */
   let drag = null
   const axis = (/** @type {PointerEvent | MouseEvent} */ event) => (row() ? event.clientX : event.clientY)
   const scrollOf = () => (row() ? root.scrollLeft : root.scrollTop)
@@ -282,26 +297,63 @@ export function sortable(root, { messages = {}, move } = {}) {
     for (const item of items()) item.classList.remove('sortable-item-back', 'sortable-item-forward')
   }
 
+  /** The root's start along the list, on the screen. Its box never moves with the items inside it. */
+  const originOf = () => {
+    const box = root.getBoundingClientRect()
+    return row() ? box.left : box.top
+  }
+
   /**
-   * Find where the item would land from the pointer, and have the items between its place and that one make
-   * room: toward the start when it is carried toward the end, and the other way. Midpoints are read where the
-   * items stand in the layout, without the room they are making, so the place does not chase itself.
+   * An item's box in the layout: its box without the translate it wears now, which is wherever an item gliding
+   * aside, or back, has got to, so a measure taken mid-glide is still true.
+   * @param {HTMLElement} each
+   * @returns {{ start: number, size: number }} Along the list, on the screen.
+   */
+  const laid = (each) => {
+    const box = each.getBoundingClientRect()
+    const [x = 0, y = 0] = String(getComputedStyle(each)?.translate ?? '').split(' ').map((part) => parseFloat(part) || 0)
+    return row() ? { start: box.left - x, size: box.width } : { start: box.top - y, size: box.height }
+  }
+
+  /**
+   * Where an item's middle stands in the layout, in the root's scrolled content.
+   * @param {HTMLElement} each
+   * @param {number} origin The root's start on the screen.
+   */
+  const settled = (each, origin) => {
+    const { start, size } = laid(each)
+    return start + size / 2 - origin + scrollOf()
+  }
+
+  /** Measure the drag's items once, as the item is picked up; no node moves until the release. */
+  const measure = () => {
+    if (!drag) return
+    const origin = originOf()
+    const list = items()
+    drag.from = list.indexOf(drag.item)
+    drag.to = drag.from
+    drag.others = list.filter((each) => each !== drag?.item)
+    drag.middles = drag.others.map((each) => settled(each, origin))
+    drag.middle = settled(drag.item, origin)
+    drag.rtl = row() && getComputedStyle(root)?.direction === 'rtl'
+  }
+
+  /**
+   * Find where the item would land from its middle, and have the items between its place and that one make
+   * room: toward the start when it is carried toward the end, and the other way. Its middle is where it was
+   * measured plus how far it has been carried; a neighbor's is where it stands in the layout, without the room
+   * it is making, so the place does not chase itself. To trade places the carried middle has to pass a
+   * neighbor's by a few pixels, which keeps a resting pointer from flipping them.
    */
   const aim = () => {
     if (!drag) return
-    const { item } = drag
-    const list = items()
-    const from = list.indexOf(item)
-    const others = list.filter((each) => each !== item)
-    const rtl = row() && getComputedStyle(root).direction === 'rtl'
-    const last = drag.last
-    const size = parseFloat(root.style.getPropertyValue('--sortable-size')) || 0
-    const middleOf = (/** @type {HTMLElement} */ each) => {
-      const box = each.getBoundingClientRect()
-      const moved = each.classList.contains('sortable-item-back') ? -size : each.classList.contains('sortable-item-forward') ? size : 0
-      return (row() ? box.left + box.width / 2 : box.top + box.height / 2) - (rtl ? -moved : moved)
-    }
-    let to = others.findIndex((each) => (rtl ? last > middleOf(each) : last < middleOf(each)))
+    const { from, others, middles, rtl } = drag
+    // Both sides are read in the root's content, so a scroll of the root or of the page moves neither.
+    const carried = drag.middle + drag.last - drag.start + scrollOf() - drag.scroll
+    // Along the list: right to left, a place further on is further left.
+    const along = (/** @type {number} */ middle) => (rtl ? -middle : middle)
+    const current = drag.to
+    let to = others.findIndex((_, index) => along(carried) < along(middles[index]) + (index < current ? -hysteresis : hysteresis))
     if (to < 0) to = others.length
     drag.to = to
     others.forEach((each, index) => {
@@ -341,7 +393,7 @@ export function sortable(root, { messages = {}, move } = {}) {
 
   /**
    * How far an item makes room by: from the carried item's start to the next one's, which counts the gap
-   * between them. The carried item is measured once, as it is picked up.
+   * between them. The carried item is measured once, as it is picked up, where the items stand in the layout.
    * @param {HTMLElement} item
    */
   const room = (item) => {
@@ -349,11 +401,10 @@ export function sortable(root, { messages = {}, move } = {}) {
     const index = list.indexOf(item)
     const next = list[index + 1]
     const before = list[index - 1]
-    const box = item.getBoundingClientRect()
-    const start = (/** @type {DOMRect} */ each) => (row() ? each.left : each.top)
-    if (next) return Math.abs(start(next.getBoundingClientRect()) - start(box))
-    if (before) return Math.abs(start(box) - start(before.getBoundingClientRect()))
-    return row() ? box.width : box.height
+    const own = laid(item)
+    if (next) return Math.abs(laid(next).start - own.start)
+    if (before) return Math.abs(own.start - laid(before).start)
+    return own.size
   }
 
   const end = (/** @type {boolean} */ keep) => {
@@ -399,7 +450,8 @@ export function sortable(root, { messages = {}, move } = {}) {
     } catch {
       // A pointer the browser no longer knows cannot be captured; the document still hears it.
     }
-    drag = { item, handle, id: event.pointerId, start: axis(event), scroll: scrollOf(), last: axis(event), dragging: false, to: items().indexOf(item), frame: 0 }
+    const at = items().indexOf(item)
+    drag = { item, handle, id: event.pointerId, start: axis(event), scroll: scrollOf(), last: axis(event), dragging: false, from: at, to: at, frame: 0, others: [], middles: [], middle: 0, rtl: false }
   }, { signal })
 
   document.addEventListener('pointermove', (event) => {
@@ -408,6 +460,8 @@ export function sortable(root, { messages = {}, move } = {}) {
     if (!drag.dragging) {
       if (Math.abs(drag.last - drag.start) < threshold) return
       drag.dragging = true
+      // Measured before anything is carried or makes room.
+      measure()
       root.style.setProperty('--sortable-size', `${room(drag.item)}px`)
       drag.handle.setAttribute('aria-pressed', 'true')
       drag.frame = requestAnimationFrame((time) => scroll(time))
