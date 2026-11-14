@@ -16,7 +16,7 @@ export interface CropperZoomAttributes {
   'aria-controls': string
 }
 
-export interface CropperProps extends Omit<ComponentProps<'div'>, 'defaultValue' | 'children'> {
+export interface CropperProps extends Omit<ComponentProps<'div'>, 'defaultValue' | 'children' | 'ref'> {
   /** The picture. */
   src: string
   alt: string

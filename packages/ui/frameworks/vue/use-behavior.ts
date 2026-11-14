@@ -23,8 +23,8 @@ const signature = (options?: object) => Object.entries(options ?? {}).map(([name
  * The behavior is the one place the keys, the focus and the state attributes are decided; this composable
  * only gives it a root and a lifetime. `options` is a function, read again whenever what it reads changes:
  * the behavior is attached again when an option does. `model` is written to the behavior's `value` when it
- * changes, when the owner did not take a change, and when a render wrote rows again over it; it takes every
- * `input` and `change` that leaves the behavior with another value.
+ * changes, when the owner did not take a change, and when a render wrote rows again over it or brought back
+ * the row it was on; it takes every `input` and `change` that leaves the behavior with another value.
  * `on` holds listeners for events of the root, such as the `change` a behavior dispatches when a code is
  * complete. They hear an event after the model has, so what they say is said of the value the model holds.
  *
@@ -92,12 +92,17 @@ export function useBehavior<E extends HTMLElement, O extends object, V = never>(
   watch(() => signature(options?.()), attach, { flush: 'post' })
   // After the render, so that a value set together with new rows finds its row.
   if (model) watch(model, write, { flush: 'post', deep: true })
-  // Rows written again from data carry the first value's attributes; the model goes over them. A render that
-  // leaves the behavior's value as it was leaves what the reader is in the middle of, such as the first end of
-  // a range in a month that turns.
+  // Rows written again from data carry the first value's attributes; the model goes over them, and over rows
+  // that come back after the one it was on had gone.
   let before: V | undefined
   onBeforeUpdate(() => { before = handle?.value })
-  onUpdated(() => { if (handle && !same(handle.value, before)) write() })
+  onUpdated(() => {
+    if (!handle) return
+    // A row that comes back finds the behavior where it was left, holding what it last agreed on with the model,
+    // and the model elsewhere. A value the reader moved without the model hearing it, such as the first end of a
+    // range in a month that turns, is not where it was left, and stays.
+    if (!same(handle.value, before) || (same(handle.value, kept) && model && model.value !== undefined && !same(kept, model.value))) write()
+  })
 
   return Object.assign(() => handle?.value, { handle: () => handle })
 }

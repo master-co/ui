@@ -13,7 +13,7 @@ export interface ListboxOption {
   disabled?: boolean
 }
 
-export interface ListboxProps extends Omit<ComponentProps<'div'>, 'defaultValue' | 'role'> {
+export interface ListboxProps extends Omit<ComponentProps<'div'>, 'defaultValue' | 'children' | 'role' | 'ref'> {
   options: ListboxOption[]
   /** The value of the chosen option, null for none; a list of them when `multiple`. */
   value?: string | string[] | null

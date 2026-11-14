@@ -3,7 +3,7 @@ import { useState, type ComponentProps } from 'react'
 import { follow } from '@master/ui/behaviors/follow.js'
 import { useBehavior } from './use-behavior'
 
-export interface LogProps extends ComponentProps<'div'> {
+export interface LogProps extends Omit<ComponentProps<'div'>, 'ref'> {
   /** Whether the region keeps its end in view. It stops when the reader scrolls away and starts again at the end. */
   following?: boolean
   defaultFollowing?: boolean

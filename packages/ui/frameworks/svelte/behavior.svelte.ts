@@ -38,9 +38,9 @@ const signature = (options?: object) => Object.entries(options ?? {}).map(([name
  * An attachment that gives a Master UI behavior its root, and keeps a value in step with it.
  *
  * The behavior is the one place the keys, the focus and the state attributes are decided; this only gives
- * it a root and a lifetime. It is attached again when an option changes. `control.value` is written to the
- * behavior's `value` whenever it differs, and `control.change` hears every `input` and `change` that leaves
- * the behavior with another value.
+ * it a root and a lifetime. It is attached again when an option changes, from the value it was left at.
+ * `control.value` is written to the behavior's `value` whenever it differs, and `control.change` hears every
+ * `input` and `change` that leaves the behavior with another value.
  *
  * This file is a module with runes: an attachment runs again for anything it reads, so the options are read
  * through a derived string and the value in an effect of its own, or every value would attach again.
@@ -52,6 +52,8 @@ export function behavior<E extends HTMLElement, O extends object, V = never>(
   control: Control<V> = {},
 ): Attachment<E> {
   const key = $derived(signature(options?.()))
+  /** The last value the behavior said or was given, which an attachment made again for a new option starts from. */
+  let last: V | undefined
   return (root) => {
     // The behavior reads the options once, when it attaches: `key` stands for them.
     void key
@@ -63,6 +65,8 @@ export function behavior<E extends HTMLElement, O extends object, V = never>(
         typeof value === 'function' ? (...parameters: unknown[]) => (options!() as Record<string, (...parameters: unknown[]) => unknown>)[name]!(...parameters) : value,
       ])) as O
       const handle = attach(root, stable)
+      // Attached again, without a value from the owner, the behavior starts from the value the reader left.
+      if (last !== undefined && control.value?.() === undefined && !same(handle.value, last)) handle.value = last
       /** The last value the owner knows: the one it gave, or the one it was told. */
       let kept = handle.value
       if (kept !== undefined) control.settled?.(kept)
@@ -73,7 +77,7 @@ export function behavior<E extends HTMLElement, O extends object, V = never>(
         if (value === undefined) return
         untrack(() => {
           if (!same(handle.value, value)) handle.value = value
-          kept = handle.value
+          kept = last = handle.value
           if (kept !== undefined) control.settled?.(kept)
         })
       })
@@ -82,7 +86,7 @@ export function behavior<E extends HTMLElement, O extends object, V = never>(
       const hear = () => {
         const next = handle.value as V
         if (same(next, kept)) return
-        kept = next
+        kept = last = next
         control.change?.(next)
       }
       for (const type of ['input', 'change']) root.addEventListener(type, hear, { signal: controller.signal })

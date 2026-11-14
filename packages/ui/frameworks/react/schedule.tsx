@@ -18,7 +18,7 @@ export interface ScheduleLabels {
   agenda?: string
 }
 
-export interface ScheduleProps extends Omit<ComponentProps<'section'>, 'defaultValue'> {
+export interface ScheduleProps extends Omit<ComponentProps<'section'>, 'defaultValue' | 'children' | 'ref'> {
   events: ScheduleEvent[]
   /** The day and the view on show. Today's month by default. */
   value?: ScheduleValue

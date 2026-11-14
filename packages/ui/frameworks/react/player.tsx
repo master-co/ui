@@ -12,7 +12,7 @@ export interface PlayerTrack {
   default?: boolean
 }
 
-export interface PlayerProps extends Omit<ComponentProps<'div'>, 'children'> {
+export interface PlayerProps extends Omit<ComponentProps<'div'>, 'children' | 'ref'> {
   /** The recording. */
   src: string
   /** A video: the frame, with the controls over its lower edge. Without it, an audio player. */
@@ -98,7 +98,7 @@ export function Player({ src, video, poster, tracks = [], label, time, defaultTi
   return (
     <div className={[ 'player', video && 'player-video', className ].filter(Boolean).join(' ')} role="group" aria-label={label} ref={ref} {...root}>
       <Media className="player-media" src={src} poster={video ? poster : undefined} controls preload="metadata" playsInline={video || undefined} ref={media}>
-        {tracks.map(track => <track key={track.src} src={track.src} kind={track.kind ?? 'captions'} srcLang={track.srcLang} label={track.label} default={track.default} />)}
+        {video && tracks.map(track => <track key={track.src} src={track.src} kind={track.kind ?? 'captions'} srcLang={track.srcLang} label={track.label} default={track.default} />)}
       </Media>
       <div className="player-controls">
         <button type="button" className="player-button player-play" aria-label={name.play} aria-pressed="false">

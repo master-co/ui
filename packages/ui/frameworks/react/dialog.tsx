@@ -2,7 +2,7 @@
 import { useEffect, useId, useReducer, useRef, type ComponentProps, type ReactNode } from 'react'
 import { drawer } from '@master/ui/behaviors/drawer.js'
 
-export interface DialogProps extends Omit<ComponentProps<'dialog'>, 'open'> {
+export interface DialogProps extends Omit<ComponentProps<'dialog'>, 'open' | 'ref'> {
   /** Whether the dialog is open, when this component is told. Leave it out and the trigger opens it. */
   open?: boolean
   onOpenChange?: (open: boolean) => void

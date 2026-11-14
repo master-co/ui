@@ -102,6 +102,10 @@
 
 <script lang="ts">
   let { label = 'Notifications', dismissLabel = 'Dismiss', class: className, ...root }: ToasterProps = $props()
+  // A server renders no toast, and neither does the first render over its HTML: one shown before the page
+  // hydrated waits for it.
+  let mounted = $state(false)
+  $effect(() => { mounted = true })
 </script>
 
 <!--
@@ -109,7 +113,7 @@
   The stack that shows the toasts. Render it once, anywhere in the page.
 -->
 <div class={['toast-region', className]} role="region" aria-label={label} aria-live="polite" {...root}>
-  {#each shown as { id, version, leaving, title, description, status, icon, duration = 6000, action } (id)}
+  {#each mounted ? shown : [] as { id, version, leaving, title, description, status, icon, duration = 6000, action } (id)}
     {@const pending = status === 'pending'}
     {@const timed = !pending && duration !== false}
     <!-- An expired toast has left already. -->

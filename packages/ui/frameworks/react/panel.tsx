@@ -5,7 +5,7 @@ import { useBehavior } from './use-behavior'
 
 export type { PanelValue }
 
-export interface PanelProps extends Omit<ComponentProps<'div'>, 'title' | 'defaultValue' | 'popover' | 'role'> {
+export interface PanelProps extends Omit<ComponentProps<'div'>, 'title' | 'defaultValue' | 'popover' | 'role' | 'ref'> {
   /** The title in the header, which names the panel. */
   title: ReactNode
   /** The name of the handle: what it moves and how, such as "Move the Layers panel with the arrow keys". */

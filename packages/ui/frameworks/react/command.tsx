@@ -15,7 +15,7 @@ export interface CommandItem {
   disabled?: boolean
 }
 
-export interface CommandProps extends Omit<ComponentProps<'dialog'>, 'open' | 'onSelect'> {
+export interface CommandProps extends Omit<ComponentProps<'dialog'>, 'open' | 'onSelect' | 'children' | 'ref'> {
   items: CommandItem[]
   open?: boolean
   onOpenChange?: (open: boolean) => void

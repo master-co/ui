@@ -9,7 +9,7 @@ export interface DialMark {
   label?: string
 }
 
-export interface DialProps extends Omit<ComponentProps<'div'>, 'defaultValue' | 'children' | 'onChange'> {
+export interface DialProps extends Omit<ComponentProps<'div'>, 'defaultValue' | 'children' | 'onChange' | 'role' | 'ref'> {
   /** The number. */
   value?: number
   defaultValue?: number

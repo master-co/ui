@@ -6,7 +6,7 @@ import { useBehavior } from './use-behavior'
 /** A day as `YYYY-MM-DD`; in a range, its two ends, the second null until it is chosen; with `multiple`, the days chosen, sorted. */
 export type CalendarValue = string | [string, string | null] | string[] | null
 
-export interface CalendarProps extends Omit<ComponentProps<'div'>, 'defaultValue'> {
+export interface CalendarProps extends Omit<ComponentProps<'div'>, 'defaultValue' | 'children' | 'ref'> {
   value?: CalendarValue
   defaultValue?: CalendarValue
   onValueChange?: (value: CalendarValue) => void

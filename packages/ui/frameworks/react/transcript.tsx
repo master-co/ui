@@ -12,7 +12,7 @@ export interface TranscriptCue {
   speaker?: string
 }
 
-export interface TranscriptProps extends Omit<ComponentProps<'section'>, 'children'> {
+export interface TranscriptProps extends Omit<ComponentProps<'section'>, 'children' | 'ref'> {
   /** The id of the player, or of the audio or video element, the transcript follows. */
   media: string
   /** The cues, in the order they are spoken. */

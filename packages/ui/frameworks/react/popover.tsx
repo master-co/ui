@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useId, useReducer, useRef, type ComponentProps, type ReactNode } from 'react'
 
-export interface PopoverProps extends Omit<ComponentProps<'div'>, 'popover'> {
+export interface PopoverProps extends Omit<ComponentProps<'div'>, 'popover' | 'ref'> {
   /** Whether the popover is open, when this component is told. Leave it out and the trigger opens it. */
   open?: boolean
   onOpenChange?: (open: boolean) => void

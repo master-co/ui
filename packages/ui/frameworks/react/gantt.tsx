@@ -25,7 +25,7 @@ export interface GanttRow {
   max?: number
 }
 
-export interface GanttProps extends Omit<ComponentProps<'ol'>, 'children' | 'defaultValue' | 'onChange'> {
+export interface GanttProps extends Omit<ComponentProps<'ol'>, 'children' | 'defaultValue' | 'onChange' | 'ref'> {
   rows: GanttRow[]
   /** Where the scale begins and ends, in any unit: days, weeks, hours. */
   from: number

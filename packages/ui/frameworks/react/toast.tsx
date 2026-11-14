@@ -136,7 +136,7 @@ function Toast({ toast: { id, version, leaving, title, description, status, icon
   )
 }
 
-export interface ToasterProps extends ComponentProps<'div'> {
+export interface ToasterProps extends Omit<ComponentProps<'div'>, 'children'> {
   /** The name of the region, for assistive technology. */
   label?: string
   /** The name of the button that dismisses a toast. */

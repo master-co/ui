@@ -6,7 +6,7 @@ import { useBehavior } from './use-behavior'
 /** One stroke: the points it passed through, in the units of the viewBox, each with the pressure there. */
 export type SignatureStroke = [x: number, y: number, pressure: number][]
 
-export interface SignatureProps extends Omit<ComponentProps<'fieldset'>, 'defaultValue' | 'onChange' | 'name'> {
+export interface SignatureProps extends Omit<ComponentProps<'fieldset'>, 'defaultValue' | 'onChange' | 'name' | 'ref'> {
   /** What is being signed: the legend of the group. */
   label: string
   /** The strokes drawn. */

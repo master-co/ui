@@ -14,7 +14,7 @@ export interface ColorPickerLabels {
   format?: string
 }
 
-export interface ColorPickerProps extends Omit<ComponentProps<'div'>, 'defaultValue' | 'children'> {
+export interface ColorPickerProps extends Omit<ComponentProps<'div'>, 'defaultValue' | 'children' | 'ref'> {
   /** The color, in hex, rgb() or oklch(); the format it is written in is the one the picker writes. */
   value?: string
   defaultValue?: string

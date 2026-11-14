@@ -5,7 +5,7 @@ import { useBehavior } from './use-behavior'
 
 export type { ChartConfig, ChartSeries }
 
-export interface ChartProps extends Omit<ComponentProps<'figure'>, 'defaultValue'>, Omit<ChartConfig, 'hidden'> {
+export interface ChartProps extends Omit<ComponentProps<'figure'>, 'defaultValue' | 'children' | 'ref'>, Omit<ChartConfig, 'hidden'> {
   /** The names of the hidden series, as the legend's unchecked boxes say. None by default. */
   value?: string[]
   defaultValue?: string[]

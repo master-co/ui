@@ -24,7 +24,7 @@ export interface GradientLabels {
   css?: string
 }
 
-export interface GradientProps extends Omit<ComponentProps<'div'>, 'defaultValue' | 'children'> {
+export interface GradientProps extends Omit<ComponentProps<'div'>, 'defaultValue' | 'children' | 'ref'> {
   value?: GradientValue
   defaultValue?: GradientValue
   onValueChange?: (value: GradientValue) => void

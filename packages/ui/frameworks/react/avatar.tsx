@@ -3,7 +3,7 @@ import type { ComponentProps, ReactNode } from 'react'
 import { avatar } from '@master/ui/behaviors/avatar.js'
 import { useBehavior } from './use-behavior'
 
-export interface AvatarProps extends Omit<ComponentProps<'span'>, 'children'> {
+export interface AvatarProps extends Omit<ComponentProps<'span'>, 'children' | 'ref'> {
   /** The photo. Without one, or when it fails to load, the fallback shows. */
   src?: string
   /** Who it is: the avatar's accessible name. */

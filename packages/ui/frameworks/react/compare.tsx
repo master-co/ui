@@ -3,7 +3,7 @@ import { useState, type ComponentProps } from 'react'
 import { compare } from '@master/ui/behaviors/compare.js'
 import { useBehavior } from './use-behavior'
 
-export interface CompareProps extends Omit<ComponentProps<'figure'>, 'defaultValue'> {
+export interface CompareProps extends Omit<ComponentProps<'figure'>, 'defaultValue' | 'ref'> {
   /** How much of the second picture shows, from 0 to 100. */
   value?: number
   defaultValue?: number

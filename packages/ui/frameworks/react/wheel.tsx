@@ -11,7 +11,7 @@ export interface WheelColumn {
   separator?: string
 }
 
-export interface WheelProps extends Omit<ComponentProps<'div'>, 'defaultValue' | 'role'> {
+export interface WheelProps extends Omit<ComponentProps<'div'>, 'defaultValue' | 'role' | 'ref'> {
   columns: WheelColumn[]
   /** The value of each column, in the order of the columns. */
   value?: string[]

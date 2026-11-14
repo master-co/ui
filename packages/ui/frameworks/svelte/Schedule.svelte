@@ -17,7 +17,7 @@
     agenda?: string
   }
 
-  export interface ScheduleProps extends HTMLAttributes<HTMLElement> {
+  export interface ScheduleProps extends Omit<HTMLAttributes<HTMLElement>, 'children'> {
     events: ScheduleEvent[]
     /** The day and the view on show. Bind it, or leave it out: today's month. */
     value?: ScheduleValue

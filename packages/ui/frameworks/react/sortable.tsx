@@ -10,7 +10,7 @@ export interface SortableItem {
   label: string
 }
 
-export interface SortableProps<T extends SortableItem> extends Omit<ComponentProps<'ol'>, 'children' | 'defaultValue'> {
+export interface SortableProps<T extends SortableItem> extends Omit<ComponentProps<'ol'>, 'children' | 'defaultValue' | 'ref'> {
   items: T[]
   /** The order, as the items' values. The order of `items` by default. */
   value?: string[]

@@ -3,7 +3,7 @@ import { type ComponentProps } from 'react'
 import { toolbar } from '@master/ui/behaviors/toolbar.js'
 import { useBehavior } from './use-behavior'
 
-export interface ToolbarProps extends Omit<ComponentProps<'div'>, 'role'> {
+export interface ToolbarProps extends Omit<ComponentProps<'div'>, 'role' | 'ref'> {
   /** What the tools act on, for assistive technology. */
   label: string
   /** A column of tools, moved through with ArrowUp and ArrowDown. */

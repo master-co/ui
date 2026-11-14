@@ -22,18 +22,18 @@ export interface StepperProps extends Omit<ComponentProps<'input'>, 'value' | 'd
 
 /**
  * A number between two buttons. Name the field with `aria-label`, or give it an `id` a label points at;
- * `min`, `max`, `step` and every other prop of an input go to the field. A label with the `stepper-scrub`
- * class steps the number as it is dragged sideways.
+ * `min`, `max`, `step` and every other prop of an input go to the field; `disabled` disables the buttons too. A
+ * label with the `stepper-scrub` class steps the number as it is dragged sideways.
  */
-export function Stepper({ value, defaultValue, onValueChange, decrementLabel, incrementLabel, format, locale, className, ...field }: StepperProps) {
+export function Stepper({ value, defaultValue, onValueChange, decrementLabel, incrementLabel, format, locale, disabled, className, ...field }: StepperProps) {
   const ref = useBehavior(stepper, { format, locale }, { value, defaultValue, onValueChange })
   const [first] = useState(value ?? defaultValue)
   // The first figure is drawn into the first render, so the HTML a server sends shows it.
   const [written] = useState(() => (format && typeof first === 'number' ? new Intl.NumberFormat(locale, format).format(first) : undefined))
-  const input = <input className="input-group-field stepper-field" type="number" defaultValue={first ?? undefined} aria-valuetext={written} {...field} />
+  const input = <input className="input-group-field stepper-field" type="number" defaultValue={first ?? undefined} aria-valuetext={written} disabled={disabled} {...field} />
   return (
     <div className={className ? `input-group stepper ${className}` : 'input-group stepper'} ref={ref}>
-      <button type="button" className="btn btn-square" value="-1" tabIndex={-1} aria-label={decrementLabel}>
+      <button type="button" className="btn btn-square" value="-1" tabIndex={-1} aria-label={decrementLabel} disabled={disabled}>
         <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14" /></svg>
       </button>
       {format
@@ -44,7 +44,7 @@ export function Stepper({ value, defaultValue, onValueChange, decrementLabel, in
             </span>
           )
         : input}
-      <button type="button" className="btn btn-square" value="1" tabIndex={-1} aria-label={incrementLabel}>
+      <button type="button" className="btn btn-square" value="1" tabIndex={-1} aria-label={incrementLabel} disabled={disabled}>
         <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
       </button>
     </div>

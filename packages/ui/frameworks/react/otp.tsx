@@ -3,7 +3,7 @@ import { useState, type ComponentProps } from 'react'
 import { otp } from '@master/ui/behaviors/otp.js'
 import { useBehavior } from './use-behavior'
 
-export interface OtpProps extends Omit<ComponentProps<'fieldset'>, 'defaultValue' | 'onChange'> {
+export interface OtpProps extends Omit<ComponentProps<'fieldset'>, 'defaultValue' | 'onChange' | 'ref'> {
   /** How many characters the code has. */
   length?: number
   /** The characters typed so far. */

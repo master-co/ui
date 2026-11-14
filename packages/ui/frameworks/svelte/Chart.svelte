@@ -4,7 +4,7 @@
 
   export type { ChartConfig, ChartSeries }
 
-  export interface ChartProps extends HTMLAttributes<HTMLElement>, Omit<ChartConfig, 'hidden'> {
+  export interface ChartProps extends Omit<HTMLAttributes<HTMLElement>, 'children'>, Omit<ChartConfig, 'hidden'> {
     /** The names of the hidden series, as the legend's unchecked boxes say. Bind it, or leave it out: none. */
     value?: string[]
     onValueChange?: (value: string[]) => void

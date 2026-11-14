@@ -45,6 +45,8 @@
   let shown = $state(first)
   const words = $derived({ add: 'Add a stop', remove: 'Remove', reverse: 'Reverse', color: 'Color of the stop', position: 'Position', type: 'Type', linear: 'Linear', radial: 'Radial', conic: 'Conic', angle: 'Angle', center: 'Centre', centerX: 'Centre across, in percent', centerY: 'Centre down, in percent', css: 'The gradient as CSS', ...labels })
   const css = gradientCss(first)
+  // Svelte writes a style again whenever its owner changes it, so it writes the gradient the behavior holds.
+  const painted = $derived(gradientCss(shown))
   const color = colorPickerState(first.stops[0]!.color)!
   const attach = behavior(gradient, () => ({ value: first, draw: (next: GradientValue) => { shown = next } }), {
     value: () => value,
@@ -59,7 +61,7 @@
   A gradient editor. Svelte writes the controls and a handle for each stop from the value, so the first HTML
   holds the gradient; the behavior moves every state and asks for the stops again when they change.
 -->
-<div class={['gradient', className]} aria-readonly={readOnly || undefined} aria-disabled={disabled || undefined} style="--gradient: {css.css}; --gradient-fallback: {css.fallback}; {style ?? ''}" {@attach attach} {...root}>
+<div class={['gradient', className]} aria-readonly={readOnly || undefined} aria-disabled={disabled || undefined} {style} style:--gradient={painted.css} style:--gradient-fallback={painted.fallback} {@attach attach} {...root}>
   <div class="gradient-preview" aria-hidden="true"></div>
   <div class="gradient-bar">
     {#each gradientStops(shown.stops) as stop, index (stop.id)}

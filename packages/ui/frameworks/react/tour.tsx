@@ -18,7 +18,7 @@ export interface TourStep {
   advance?: string
 }
 
-export interface TourProps extends Omit<ComponentProps<'div'>, 'children' | 'defaultValue'> {
+export interface TourProps extends Omit<ComponentProps<'div'>, 'children' | 'defaultValue' | 'ref'> {
   steps: TourStep[]
   /** The index of the open step, or null while the tour is not running. */
   value?: number | null

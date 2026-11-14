@@ -8,7 +8,7 @@ export interface CarouselItem {
   value: string
 }
 
-export interface CarouselProps<T extends CarouselItem> extends Omit<ComponentProps<'div'>, 'children' | 'defaultValue'> {
+export interface CarouselProps<T extends CarouselItem> extends Omit<ComponentProps<'div'>, 'children' | 'defaultValue' | 'ref'> {
   items: T[]
   /** The current slide, as its item's value. The first slide by default. */
   value?: string

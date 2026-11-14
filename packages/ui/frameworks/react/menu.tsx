@@ -6,7 +6,7 @@ export type MenuItem =
   | { label: ReactNode, shortcut?: ReactNode, href?: string, onSelect?: () => void, danger?: boolean, disabled?: boolean }
   | { separator: true }
 
-export interface MenuProps extends Omit<ComponentProps<'div'>, 'children'> {
+export interface MenuProps extends Omit<ComponentProps<'div'>, 'children' | 'ref'> {
   items: MenuItem[]
   /** The button that opens the menu: spread what it is given on a button of your own. */
   trigger?: (attributes: { popoverTarget: string, 'aria-haspopup': 'menu' }) => ReactNode

@@ -12,7 +12,7 @@ export interface Tab {
   disabled?: boolean
 }
 
-export interface TabsProps extends Omit<ComponentProps<'div'>, 'defaultValue' | 'children' | 'role'> {
+export interface TabsProps extends Omit<ComponentProps<'div'>, 'defaultValue' | 'children' | 'role' | 'ref'> {
   tabs: Tab[]
   /** The value of the selected tab. The first tab by default. */
   value?: string

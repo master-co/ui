@@ -302,6 +302,21 @@ export const scenarios: Record<string, Scenario> = {
     assert.deepEqual(checked(), ['next'], 'options written again carry the value it holds')
     await driver.act(() => mounted.unmount())
 
+    // The chosen option goes and comes back: it is marked again, from the value the owner keeps or, without
+    // one, from the value the listbox keeps, whatever the first value was.
+    const later = await owned(driver, 'listbox', { options, value: null, 'aria-label': 'Framework' })
+    await driver.act(() => page.click(page.all('[role="option"]')[1]))
+    await driver.act(() => later.mounted.set({ options: options.slice(2) }))
+    await driver.act(() => later.mounted.set({ options }))
+    assert.deepEqual(checked(), ['next'], 'an option that comes back carries the value the owner keeps')
+    await driver.act(() => later.mounted.unmount())
+    const own = await driver.mount('listbox', { options, 'aria-label': 'Framework' })
+    await driver.act(() => page.click(page.all('[role="option"]')[1]))
+    await driver.act(() => own.set({ options: options.slice(2) }))
+    await driver.act(() => own.set({ options }))
+    assert.deepEqual(checked(), ['next'], 'and without an owner, the value the listbox keeps')
+    await driver.act(() => own.unmount())
+
     const several = await owned(driver, 'listbox', { options, value: ['astro'], multiple: true, 'aria-label': 'Frameworks' })
     assert.equal(page.one('.listbox').getAttribute('aria-multiselectable'), 'true')
     await driver.act(() => page.click(page.all('[role="option"]')[1]))
@@ -364,6 +379,14 @@ export const scenarios: Record<string, Scenario> = {
     await driver.act(() => page.click(inside('2026-12-15')))
     assert.deepEqual(across.heard, [['2026-11-24', '2026-12-15']], 'a range across a turned month')
     await driver.act(() => across.mounted.unmount())
+
+    // Attached again for an option that changed, a calendar without a value from its owner keeps the day it was
+    // left at.
+    const own = await driver.mount('calendar', { month: '2026-11', locale: 'en-GB', weekStart: 1 })
+    await driver.act(() => page.click(inside('2026-11-13')))
+    await driver.act(() => own.set({ min: '2026-01-01' }))
+    assert.deepEqual(selected(), ['2026-11-13'], 'an option that changes leaves the chosen day')
+    await driver.act(() => own.unmount())
 
     // The title jumps to the months and the years; the framework writes them when the behavior asks.
     const jumping = await owned(driver, 'calendar', { value: '2026-11-13', locale: 'en-GB', weekStart: 1 })
@@ -574,6 +597,12 @@ export const scenarios: Record<string, Scenario> = {
     assert.equal(fewer.disabled, false)
     await driver.act(() => mounted.unmount())
 
+    // A disabled stepper disables its field and both buttons, as the markup of the contract does.
+    const off = await driver.mount('stepper', { value: 4, min: 1, max: 6, disabled: true, decrementLabel: 'Fewer seats', incrementLabel: 'More seats', 'aria-label': 'Seats' })
+    conforms(page)
+    assert.deepEqual(page.all<HTMLInputElement | HTMLButtonElement>('.stepper button, .stepper-field').map(control => control.disabled), [true, true, true])
+    await driver.act(() => off.unmount())
+
     // A formatted figure: written into the first render, kept by the behavior after that, and the value stays a number.
     const budget = await owned(driver, 'stepper', { value: 1250, min: 0, step: 250, format: { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }, locale: 'en-US', decrementLabel: 'Lower the budget', incrementLabel: 'Raise the budget', 'aria-label': 'Monthly budget' })
     conforms(page)
@@ -729,6 +758,9 @@ export const scenarios: Record<string, Scenario> = {
     assert.equal(slider.value, '1')
     await driver.act(() => page.type(slider, '2'))
     assert.deepEqual(panned.heard, [{ x: 200, y: 120, width: 240, height: 240, zoom: 2 }], 'the largest square, zoomed about its middle')
+    assert.equal(slider.value, '2', 'the zoom stays where the reader put it while the owner takes the crop')
+    await driver.act(() => panned.mounted.set({ value: { x: 240, y: 160, width: 160, height: 160, zoom: 3 } }))
+    assert.equal(slider.value, '3')
     await driver.act(() => panned.mounted.set({ value: { x: 0, y: 0, width: 480, height: 480, zoom: 1 } }))
     assert.equal(slider.value, '1', 'a crop set by the owner moves the zoom')
     await driver.act(() => panned.mounted.unmount())

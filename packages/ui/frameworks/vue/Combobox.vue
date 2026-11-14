@@ -48,7 +48,8 @@ const query = defineModel<string>('query')
 
 /*
  * A combobox. Name the field with `aria-label`, or give it an `id` a label points at; every attribute but
- * the class goes to the field, so `@change` hears what is typed.
+ * the class goes to the field, so `@input` hears what is typed. With `multiple`, the chosen values are chips in
+ * the field, which Vue writes from the list the behavior asks for.
  */
 const id = useId()
 const attrs = useAttrs()

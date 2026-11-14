@@ -97,5 +97,6 @@ const shares = () => {
     </div>
     <p class="cropper-status" role="status" />
   </div>
-  <slot v-if="pan" name="zoom" v-bind="{ type: 'range', min: 1, max: maxZoom, step: 'any', value: first.zoom ?? 1, disabled, 'aria-controls': name() } as CropperZoomAttributes" />
+  <!-- Vue writes a field's value with every render, so the zoom it is given is the one the behavior holds. -->
+  <slot v-if="pan" name="zoom" v-bind="{ type: 'range', min: 1, max: maxZoom, step: 'any', value: crop().zoom ?? 1, disabled, 'aria-controls': name() } as CropperZoomAttributes" />
 </template>

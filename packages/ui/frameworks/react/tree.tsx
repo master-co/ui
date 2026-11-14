@@ -19,7 +19,7 @@ export interface TreeNode {
   disabled?: boolean
 }
 
-interface Shared extends Omit<ComponentProps<'ul'>, 'defaultValue' | 'children' | 'role'> {
+interface Shared extends Omit<ComponentProps<'ul'>, 'defaultValue' | 'children' | 'role' | 'ref'> {
   nodes: TreeNode[]
   /**
    * Called with a branch's value each time it opens. A branch with `children: []` is busy until its rows

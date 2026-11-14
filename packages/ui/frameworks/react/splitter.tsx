@@ -3,7 +3,7 @@ import { useRef, useState, type ComponentProps, type CSSProperties, type ReactNo
 import { splitter } from '@master/ui/behaviors/splitter.js'
 import { useBehavior } from './use-behavior'
 
-export interface SplitterProps extends Omit<ComponentProps<'div'>, 'defaultValue' | 'children'> {
+export interface SplitterProps extends Omit<ComponentProps<'div'>, 'defaultValue' | 'children' | 'ref'> {
   /** The first and the second pane. */
   start: ReactNode
   end: ReactNode
