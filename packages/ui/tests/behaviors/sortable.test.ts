@@ -119,14 +119,57 @@ test('sortable: leaving the handle drops the item', async () => {
   assert.deepEqual(heard, ['change'])
 })
 
-test('sortable: arrows do nothing until an item is picked up, and a pointer click picks nothing up', async () => {
-  const { root, handle, key, order, click, pressed } = setup()
+test('sortable: arrows do nothing until an item is picked up', async () => {
+  const { root, handle, key, order, pressed } = setup()
   sortable(root)
   handle('billing').focus()
   assert.equal(await key('billing', 'ArrowDown'), false)
-  click(handle('billing'), { detail: 1 })
   assert.deepEqual(pressed(), [])
   assert.deepEqual(order(), ['onboarding', 'billing', 'search', 'exports'])
+})
+
+test('sortable: without a drag, a press picks an item up, a press on another handle moves it there, and says so', async () => {
+  const { root, handle, click, pointer, order, pressed, said, heard, document } = setup()
+  sortable(root)
+  click(handle('billing'), { detail: 1 })
+  await settle()
+  assert.deepEqual(pressed(), ['billing'])
+  assert.equal(document.activeElement, handle('billing'), 'the handle takes focus, as a key\'s pick has it')
+  assert.match(await said() ?? '', /^Billing, picked up at position 2 of 4\. Press the handle of another item/)
+  const down = pointer(handle('exports'), 'pointerdown', { button: 0, isPrimary: true, pointerId: 1 })
+  assert.equal(down, false, 'the press keeps focus on the handle picked up, so it is not dropped before the click')
+  click(handle('exports'), { detail: 1 })
+  await settle()
+  assert.deepEqual(order(), ['onboarding', 'search', 'exports', 'billing'])
+  assert.deepEqual(pressed(), [])
+  assert.deepEqual(heard, ['change'])
+  assert.equal(await said(), 'Billing, dropped at position 4 of 4.')
+})
+
+test('sortable: a press on the handle picked up drops it where it is', async () => {
+  const { root, handle, click, order, pressed, heard } = setup()
+  sortable(root)
+  click(handle('search'), { detail: 1 })
+  await settle()
+  click(handle('search'), { detail: 1 })
+  await settle()
+  assert.deepEqual(pressed(), [])
+  assert.deepEqual(order(), ['onboarding', 'billing', 'search', 'exports'])
+  assert.deepEqual(heard, [])
+})
+
+test('sortable: the click a drag\'s release makes picks nothing up', async () => {
+  const { root, handle, click, pointer, pressed, all, document, window } = setup()
+  all<HTMLElement>('.sortable-item').forEach((each, index) => {
+    each.getBoundingClientRect = () => ({ top: index * 40, bottom: index * 40 + 40, left: 0, right: 200, width: 200, height: 40 } as DOMRect)
+  })
+  sortable(root)
+  pointer(handle('onboarding'), 'pointerdown', { button: 0, isPrimary: true, pointerId: 3, clientY: 20 })
+  document.dispatchEvent(new window.PointerEvent('pointermove', { bubbles: true, pointerId: 3, clientY: 70 }) as any)
+  document.dispatchEvent(new window.PointerEvent('pointerup', { bubbles: true, pointerId: 3, clientY: 70 }) as any)
+  click(handle('onboarding'), { detail: 1 })
+  await settle()
+  assert.deepEqual(pressed(), [])
 })
 
 test('sortable: across, in sortable-row, ArrowRight and ArrowLeft move, and turn around from right to left', async () => {

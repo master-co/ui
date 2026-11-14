@@ -152,6 +152,16 @@ test('wheel: ArrowDown and ArrowUp bring the option after and before under the m
   assert.deepEqual(changes.map(change => change.value), ['Month', 'Week', 'Day'])
 })
 
+test('wheel: the focused column names the option it rests on with aria-activedescendant, giving it an id', () => {
+  const { root, column, key, all } = setup(interval.replace('<div class="wheel-option" role="option" aria-selected="false">Day</div>', '<div class="wheel-option" role="option" aria-selected="false" id="interval-day">Day</div>'))
+  wheel(root)
+  const week = all('.wheel-option')[2]
+  assert.ok(week.id, 'an option without an id is given one')
+  assert.equal(column.getAttribute('aria-activedescendant'), week.id)
+  key(column, 'ArrowUp')
+  assert.equal(column.getAttribute('aria-activedescendant'), 'interval-day', 'an id the page wrote is kept')
+})
+
 test('wheel: the arrows stop at the ends and do not wrap', () => {
   const { root, column, key, sent, selected, scroll } = setup()
   wheel(root)
@@ -305,9 +315,9 @@ test('wheel: each column keeps its own option', () => {
   assert.deepEqual(page.all('[aria-selected="true"]').map(each => each.textContent), ['08', '30'])
 })
 
-test('wheel: it moves aria-selected and sets no style, class or other attribute', () => {
-  const { root, column, all, key } = setup()
-  const names = (element: any) => element.getAttributeNames().sort().join(' ')
+test('wheel: it moves aria-selected and aria-activedescendant and sets no style, class or other attribute', () => {
+  const { root, column, all, key } = setup(interval.replaceAll('role="option"', 'role="option" id="x"').replace(/id="x"/g, () => `id="option-${Math.random().toString(36).slice(2)}"`))
+  const names = (element: any) => element.getAttributeNames().filter((name: string) => name !== 'aria-activedescendant').sort().join(' ')
   const before = [root, column, ...all('.wheel-option')].map(names)
   wheel(root)
   key(column, 'ArrowDown')
@@ -315,7 +325,7 @@ test('wheel: it moves aria-selected and sets no style, class or other attribute'
   assert.deepEqual([root, column, ...all('.wheel-option')].map(names), before)
   assert.equal(root.getAttribute('style'), null)
   assert.equal(column.getAttribute('style'), null)
-  assert.equal(column.getAttribute('aria-activedescendant'), null)
+  assert.equal(column.getAttribute('aria-activedescendant'), all('.wheel-option')[0].id)
 })
 
 test('wheel: without scrollend a column has settled when it has stood still', (t) => {

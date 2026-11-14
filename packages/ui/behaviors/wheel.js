@@ -6,6 +6,9 @@
  * dispatches a bubbling `input` and then a `change` CustomEvent, each with the option and its value
  * (`data-value`, or its text) in `detail`.
  *
+ * The column keeps focus as it turns, so it names the option it rests on with `aria-activedescendant`, as a
+ * listbox does, and an option without an id is given one: a screen reader says each option the keys turn to.
+ *
  * It also brings each column's chosen option under the mark when it attaches and when the column is laid
  * out again, brings a clicked option there, gives a focused column the keys of a listbox, one option at a
  * time, and turns a column that came to rest on a disabled option on to the nearest one that is not.
@@ -21,6 +24,9 @@ const attached = new WeakMap()
 
 /** How long a column must stand still to have settled, where the browser has no `scrollend`. */
 const still = 120
+
+/** Ids given to options that have none. */
+let ids = 0
 
 /**
  * @param {HTMLElement} root The element with the `wheel` class.
@@ -91,6 +97,8 @@ export function wheel(root) {
       const selected = String(option === chosen)
       if (option.getAttribute('aria-selected') !== selected) option.setAttribute('aria-selected', selected)
     }
+    if (!chosen.id) chosen.id = `${column.id || 'wheel'}-option-${++ids}`
+    if (column.getAttribute('aria-activedescendant') !== chosen.id) column.setAttribute('aria-activedescendant', chosen.id)
   }
 
   /** A column has come to rest: the option under the mark is its value. @param {Element} column */

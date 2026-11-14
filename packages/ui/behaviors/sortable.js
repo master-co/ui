@@ -21,6 +21,11 @@
  * right after it: picked up, moved, dropped or put back, with the place it is in. An item is called by its
  * `aria-label`, or by the first words it holds.
  *
+ * Without a drag: a press on a handle that does not move, a click or a tap, picks the item up as Enter does
+ * and gives its handle focus. A press on another item's handle then moves it to that place and drops it, and a
+ * press on its own handle drops it where it is. Dragging is never the only way, for a pointer that cannot
+ * drag, a screen reader's double tap, or a hand that would rather not.
+ *
  * A move is the item node itself moving, with `moveBefore()` where the browser has it so what it holds keeps
  * its state, and inside a view transition where the browser has one and motion is not reduced: the items
  * slide to their places. The root dispatches `input` and `change` after a move. The function it returns has
@@ -40,6 +45,7 @@ const attached = new WeakMap()
  * @typedef {object} SortableMessages What the status region says, given the item's name, its place from 1
  *   and the number of items.
  * @property {(name: string, position: number, count: number) => string} [grab]
+ * @property {(name: string, position: number, count: number) => string} [point] Picked up by a press without a drag.
  * @property {(name: string, position: number, count: number) => string} [move]
  * @property {(name: string, position: number, count: number) => string} [drop]
  * @property {(name: string, position: number, count: number) => string} [cancel]
@@ -48,6 +54,7 @@ const attached = new WeakMap()
 /** @type {Required<SortableMessages>} */
 const english = {
   grab: (name, position, count) => `${name}, picked up at position ${position} of ${count}. Use the arrow keys to move it, Space to drop it, Escape to cancel.`,
+  point: (name, position, count) => `${name}, picked up at position ${position} of ${count}. Press the handle of another item to move it there, or this one to drop it.`,
   move: (name, position, count) => `${name}, position ${position} of ${count}.`,
   drop: (name, position, count) => `${name}, dropped at position ${position} of ${count}.`,
   cancel: (name, position, count) => `${name}, move cancelled. Back at position ${position} of ${count}.`,
@@ -200,15 +207,17 @@ export function sortable(root, { messages = {}, move } = {}) {
   let grabbed = null
   /** True while a key's move is running: the blur it may cause is not leaving the handle. */
   let moving = false
+  /** True once a drag has ended, until the next press: the click its release makes is not a press. */
+  let released = false
 
   const handleOf = (/** @type {Element | null} */ item) => /** @type {HTMLElement | null} */ (item?.querySelector('.sortable-handle') ?? null)
   /** @returns {[number, number]} */
   const position = (/** @type {HTMLElement} */ item) => [items().indexOf(item) + 1, items().length]
 
-  const pick = (/** @type {HTMLElement} */ item) => {
+  const pick = (/** @type {HTMLElement} */ item, pointed = false) => {
     grabbed = { item, from: items().indexOf(item) }
     handleOf(item)?.setAttribute('aria-pressed', 'true')
-    announce(say.grab(nameOf(item), ...position(item)))
+    announce((pointed ? say.point : say.grab)(nameOf(item), ...position(item)))
   }
 
   const drop = (/** @type {HTMLElement} */ item) => {
@@ -232,16 +241,46 @@ export function sortable(root, { messages = {}, move } = {}) {
     announce(say.cancel(nameOf(current), ...position(current)))
   }
 
-  root.addEventListener('click', (event) => {
-    const handle = /** @type {Element} */ (event.target).closest('.sortable-handle')
+  root.addEventListener('click', async (event) => {
+    const handle = /** @type {HTMLElement | null} */ (/** @type {Element} */ (event.target).closest('.sortable-handle'))
     const item = /** @type {HTMLElement | null} */ (handle?.closest('.sortable-item') ?? null)
-    // A click the pointer makes is a press, not a pick: only Enter and Space pick up and drop.
-    if (!handle || !item || item.closest('.sortable') !== root || /** @type {MouseEvent} */ (event).detail !== 0) return
+    if (!handle || !item || item.closest('.sortable') !== root) return
     if (/** @type {HTMLButtonElement} */ (handle).disabled) return
-    if (grabbed?.item === item) drop(item)
-    else {
-      if (grabbed) drop(grabbed.item)
-      pick(item)
+    // Enter and Space: pick up and drop where it is.
+    if (/** @type {MouseEvent} */ (event).detail === 0) {
+      if (grabbed?.item === item) drop(item)
+      else {
+        if (grabbed) drop(grabbed.item)
+        pick(item)
+      }
+      return
+    }
+    // The pointer: the click a drag's release makes has already moved the item.
+    if (released) {
+      released = false
+      return
+    }
+    if (moving) return
+    if (!grabbed) {
+      pick(item, true)
+      // The handle takes focus, as a key's pick has it: the arrows and Escape work from here, and a press
+      // elsewhere on the page drops the item where it is.
+      handle.focus({ preventScroll: true })
+      return
+    }
+    if (grabbed.item === item) {
+      drop(item)
+      return
+    }
+    // A press on another item's handle: the item picked up takes that place, and is dropped there.
+    const to = items().indexOf(item)
+    moving = true
+    await shift(grabbed.item, to)
+    moving = false
+    const current = move ? items()[to] : grabbed?.item
+    if (grabbed && current) {
+      grabbed.item = current
+      drop(current)
     }
   }, { signal })
 
@@ -413,6 +452,7 @@ export function sortable(root, { messages = {}, move } = {}) {
     cancelAnimationFrame(frame)
     drag = null
     if (!dragging) return
+    released = true
     const from = items().indexOf(item)
     if (!keep || to === from) {
       // The items that made room glide back, and so does the carried one.
@@ -440,8 +480,15 @@ export function sortable(root, { messages = {}, move } = {}) {
   root.addEventListener('pointerdown', (event) => {
     const handle = /** @type {HTMLElement | null} */ (/** @type {Element} */ (event.target).closest('.sortable-handle'))
     const item = /** @type {HTMLElement | null} */ (handle?.closest('.sortable-item') ?? null)
-    if (!handle || !item || item.closest('.sortable') !== root || event.button !== 0 || !event.isPrimary || drag || grabbed) return
+    if (!handle || !item || item.closest('.sortable') !== root || event.button !== 0 || !event.isPrimary || drag) return
     if (/** @type {HTMLButtonElement} */ (handle).disabled) return
+    released = false
+    // With an item picked up, a press on a handle chooses where it goes: focus stays on the picked handle, so
+    // the item is not dropped before the click.
+    if (grabbed) {
+      event.preventDefault()
+      return
+    }
     // No text is selected and nothing scrolls under the press; focus stays where it was, so a ring the keys
     // would show does not appear for the pointer.
     event.preventDefault()
