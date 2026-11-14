@@ -127,6 +127,7 @@
     line-height: 1.2;
     letter-spacing: -0.02em;
     color: var(--home-text);
+    text-wrap: balance;
   }
 
   .ui-contract-description {
@@ -308,6 +309,8 @@
    */
   .ui-contract-term {
     display: grid;
+    /* One track no wider than the slab, as the sheet beside it has: a caption too long for it wraps instead. */
+    grid-template-columns: minmax(0, 1fr);
     align-content: start;
     min-width: 0;
     padding-bottom: 0.5rem;
@@ -319,8 +322,10 @@
 
   .ui-contract-head {
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
-    gap: 1rem;
+    gap: 0 1rem;
+    overflow-wrap: anywhere;
     padding: 0.875rem 1.25rem 0.25rem;
     color: oklch(60% .0028 265);
 
@@ -406,9 +411,15 @@
 
     /* The line a finding is on: its number in the error ink, with a tick at the edge of the gutter. */
     &[data-flag]::before {
+      /* The tick stands on the gutter's end edge: the right of a left-to-right line, the left of a right-to-left one. */
+      --ui-contract-tick: -2px;
       color: var(--home-error);
-      box-shadow: inset -2px 0 0 -0.5px currentColor;
+      box-shadow: inset var(--ui-contract-tick) 0 0 -0.5px currentColor;
       transition: color var(--home-base) var(--home-ease), box-shadow var(--home-base) var(--home-ease);
+    }
+
+    &[data-flag]:dir(rtl)::before {
+      --ui-contract-tick: 2px;
     }
 
     &[data-flag][data-pending]::before {
@@ -433,7 +444,7 @@
     &::after {
       position: absolute;
       top: -0.05em;
-      left: 0;
+      inset-inline-start: 0;
       width: 0.55em;
       height: 1.2em;
       background-color: oklch(84% .002 265);
@@ -543,9 +554,10 @@
 
       & > code { font: inherit; }
 
+      /* The ring every text link on the page takes: the theme's 2px offset, on the chip's corner. */
       &:focus-visible {
         outline: 2px solid var(--home-ink);
-        outline-offset: 3px;
+        outline-offset: 2px;
       }
 
       @media (hover: hover) {
@@ -576,9 +588,11 @@
    * shadow, is outlined in the highlight color.
    */
   @media (forced-colors: active) {
+    /* An outline, not a border: a border would make the 1rem ring 2px larger and push the line it stands in. */
     .ui-contract-row[data-callout]::after,
     .ui-contract-out[data-callout]::before {
-      border: 1px solid CanvasText;
+      outline: 1px solid CanvasText;
+      outline-offset: -1px;
     }
 
     .ui-contract-sheet,
@@ -597,6 +611,13 @@
     .ui-contract-pre:focus-visible {
       outline: 2px solid Highlight;
       outline-offset: -2px;
+    }
+  }
+
+  /* Paper drops backgrounds, which would leave the terminal's light lines on white: it keeps its face in print. */
+  @media print {
+    .ui-contract-term {
+      print-color-adjust: exact;
     }
   }
 }

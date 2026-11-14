@@ -9,6 +9,8 @@
     position: relative;
     isolation: isolate;
     display: grid;
+    /* One track that may be narrower than what it holds, so a long word or a large root size wraps instead of widening the page. */
+    grid-template-columns: minmax(0, 1fr);
     align-content: center;
     min-height: max(42rem, 100svh);
     padding-block: clamp(7rem, 5rem + 5vw, 9rem) clamp(6rem, 4rem + 6vw, 9rem);
@@ -246,7 +248,7 @@
     border: 0;
 
     & > legend {
-      float: left;
+      float: inline-start;
       width: 100%;
       margin-bottom: 0.625rem;
       padding: 0;
@@ -291,6 +293,7 @@
   /* The words keep a column the plane fades away from. */
   .ui-hero-reading {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     justify-items: start;
     /* Wide enough for the title's longest line at the largest size, so it balances over lines of a like length. */
     max-width: 42rem;
@@ -317,9 +320,16 @@
     transition: box-shadow var(--home-quick) var(--home-ease), color var(--home-quick) var(--home-ease);
 
     & > svg {
+      --ui-hero-arrow: 1;
       flex: none;
       color: var(--home-text-faint);
       transition: translate var(--home-base) var(--home-ease);
+    }
+
+    /* From right to left the arrow points, and moves, the way the line reads. */
+    & > svg:dir(rtl) {
+      --ui-hero-arrow: -1;
+      scale: -1 1;
     }
 
     @media (hover: hover) {
@@ -327,7 +337,7 @@
         color: var(--home-text);
         box-shadow: inset 0 1px 0 var(--home-highlight), 0 0 0 0.5px var(--home-rule-strong), 0 1px 2px -1px var(--home-shade-far);
 
-        & > svg { translate: 2px 0; }
+        & > svg { translate: calc(var(--ui-hero-arrow) * 2px) 0; }
       }
     }
 
@@ -367,6 +377,16 @@
     letter-spacing: -0.048em;
     color: var(--home-text);
     text-wrap: balance;
+  }
+
+  /*
+   * Han glyphs fill their em box, so the display tracking that tightens Latin makes them touch. The section titles
+   * already ease it in Chinese (the shared home styles); the hero's title, a class of its own, follows them.
+   */
+  .home-page:lang(zh) .ui-hero-title {
+    letter-spacing: -0.015em;
+    word-break: keep-all;
+    overflow-wrap: anywhere;
   }
 
   .ui-hero-lead {
@@ -492,7 +512,13 @@
     }
 
     & > svg {
+      --ui-hero-arrow: 1;
       transition: translate var(--home-base) var(--home-ease);
+    }
+
+    & > svg:dir(rtl) {
+      --ui-hero-arrow: -1;
+      scale: -1 1;
     }
 
     /* The lift answers a pointer that can hover; a tap on a touch screen only presses. */
@@ -507,7 +533,7 @@
           var(--cast-x) var(--cast-y) 12px -3px var(--stone-cast),
           calc(var(--cast-x) * 3) calc(var(--cast-y) * 3) 34px -10px var(--stone-cast);
 
-        & > svg { translate: 3px 0; }
+        & > svg { translate: calc(var(--ui-hero-arrow) * 3px) 0; }
 
         &::after {
           background-position: 0 0;
@@ -549,7 +575,8 @@
     align-items: center;
     gap: 0.625rem;
     min-height: 3.25rem;
-    padding: 0.25rem 0.25rem 0.25rem 1.125rem;
+    padding-block: 0.25rem;
+    padding-inline: 1.125rem 0.25rem;
     border: 0;
     border-radius: calc(var(--radius-control-lg) * var(--corner-scale));
     corner-shape: var(--corner-shape);
@@ -677,7 +704,8 @@
     place-items: center;
     width: 2.75rem;
     height: 2.75rem;
-    border-radius: calc(var(--radius-control-sm) * var(--corner-scale));
+    /* Concentric with the pill: its corner less the 4px inset, taken after the scale as every nested corner is. */
+    border-radius: calc(var(--radius-control-lg) * var(--corner-scale) - 0.25rem);
     corner-shape: var(--corner-shape);
     color: var(--home-text-body);
     background-color: light-dark(oklch(0.22 0.002 265 / 0.045), rgb(255 255 255 / 0.06));
@@ -731,7 +759,7 @@
     }
   }
 
-  /* System colors draw the actions as plain buttons with their own borders, and the pill as a bordered link. */
+  /* System colors draw the actions as plain buttons with their own edges, and the pill as an outlined link. */
   @media (forced-colors: active) {
     .ui-hero-pill,
     .ui-hero-pill-badge {
@@ -739,8 +767,10 @@
       outline-offset: -1px;
     }
 
+    /* An outline, not a border: the edge must not change the pill's size or move its label. */
     :is(.ui-hero-start, .ui-hero-prompt, .ui-glass-action) {
-      border: 1px solid ButtonText;
+      outline: 1px solid ButtonText;
+      outline-offset: -1px;
       background: ButtonFace;
       color: ButtonText;
       box-shadow: none;

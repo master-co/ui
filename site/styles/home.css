@@ -102,6 +102,8 @@
   .ui-forge-code {
     container-type: inline-size;
     display: grid;
+    /* One column as wide as the slab, as the Frameworks slabs' file bar has: the bar wraps, the code scrolls. */
+    grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto minmax(0, 1fr);
     min-width: 0;
     border-radius: var(--home-radius-sheet);
@@ -130,7 +132,9 @@
 
   /* A file name is case-sensitive, so it keeps its own letters; the line count stays a label. */
   .ui-forge-file-name {
+    min-width: 0;
     margin-inline-end: auto;
+    overflow-wrap: anywhere;
     font-size: 0.75rem;
     letter-spacing: 0;
     text-transform: none;
@@ -208,9 +212,10 @@
     &::before {
       display: inline-block;
       width: 2ch;
-      margin-right: 1.5ch;
-      text-align: right;
-      color: oklch(54% .003 265);
+      margin-inline-end: 1.5ch;
+      text-align: end;
+      /* The gutter's ink of every slab on the page: the Frameworks slabs and the contracts terminal number theirs alike. */
+      color: oklch(48.6% .003 265);
       content: counter(line);
       /* Empty alternative text: a screen reader reads the markup, not a number before every line. */
       content: counter(line) / '';
@@ -218,7 +223,6 @@
   }
 
   .ui-forge-stage {
-    --color-texture: var(--color-line-hair);
     position: relative;
     min-height: 22rem;
     border-radius: var(--home-radius-sheet);
@@ -226,6 +230,16 @@
     box-shadow: inset 0 0 0 1px var(--home-hairline);
     /* A fixed toast region is placed within the stage, not the window. */
     contain: layout paint;
+  }
+
+  /*
+   * The dots as faint as every stage's: the texture's own ink, set where it outranks the texture's default (this file
+   * loads before texture.css), as the documentation's stages and the Customize pictures set theirs. Retuning the
+   * theme's --color-texture instead would also fade any texture the specimen itself holds.
+   */
+  .ui-forge-stage.texture,
+  .ui-platform-scene.texture {
+    --texture-ink: var(--color-line-hair);
   }
 
   /* The specimen fills the stage, so the reveal covers whatever the stage holds, a fixed toast region included. */
@@ -308,9 +322,10 @@
   }
 
   .ui-platform-scene {
-    --color-texture: var(--color-line-hair);
     container-type: inline-size;
     display: grid;
+    /* One track no wider than the stage: a scene wider than a narrow tile (a large root size) stays inside it. */
+    grid-template-columns: minmax(0, 1fr);
     flex: 1;
     place-items: center;
     min-height: 11rem;
@@ -341,19 +356,22 @@
         --carousel-slide: 60cqi;
         --carousel-gap: 0.875rem;
         width: 100%;
-        margin-bottom: 2.25rem;
+        margin-block-end: 2.25rem;
 
         @container (inline-size < 26rem) {
           --carousel-slide: 68cqi;
         }
       }
 
-      /* The dots sit 1rem under the pictures; each is padded into its target, which is larger on a touch screen. */
+      /*
+       * The dots sit 1rem under the pictures; each is padded into its target, which is larger on a touch screen, so
+       * the row rises by the extra padding (.1875rem a dot with a mouse, .5625rem under a finger) and the dot stays.
+       */
       & > .carousel::scroll-marker-group {
         top: calc(anchor(bottom) + .8125rem);
 
         @media (pointer: coarse) {
-          top: calc(anchor(bottom) + .5rem);
+          top: calc(anchor(bottom) + .4375rem);
         }
       }
 
@@ -367,6 +385,17 @@
 
       & > .carousel::scroll-button(inline-end) {
         right: calc(anchor(right) + (100cqi - var(--carousel-slide)) / 2 - var(--carousel-control) / 2);
+      }
+
+      /* Where slides run from the right, previous stands on the right edge and next on the left, as the carousel has them. */
+      & > .carousel:dir(rtl)::scroll-button(inline-start) {
+        right: calc(anchor(right) + (100cqi - var(--carousel-slide)) / 2 - var(--carousel-control) / 2);
+        left: auto;
+      }
+
+      & > .carousel:dir(rtl)::scroll-button(inline-end) {
+        right: auto;
+        left: calc(anchor(left) + (100cqi - var(--carousel-slide)) / 2 - var(--carousel-control) / 2);
       }
 
       & .figure {
@@ -447,6 +476,8 @@
       font-size: 0.75rem;
       line-height: 1.5;
       color: var(--home-text);
+      /* A name longer than a narrow tile breaks rather than running out of it. */
+      overflow-wrap: anywhere;
       background-color: var(--home-sheet);
       box-shadow: inset 0 0 0 0.5px var(--home-rule);
     }
@@ -482,7 +513,8 @@
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
-    padding: 0.875rem 1rem 0.875rem 1.125rem;
+    padding-block: 0.875rem;
+    padding-inline: 1.125rem 1rem;
   }
 
   .ui-scene-rows {
@@ -495,7 +527,8 @@
       grid-template-columns: auto minmax(0, 1fr) auto auto;
       align-items: center;
       gap: 0.75rem;
-      padding: 0.625rem 1rem 0.625rem 1.125rem;
+      padding-block: 0.625rem;
+      padding-inline: 1.125rem 1rem;
       border-top: 0.5px solid var(--color-line-hair);
       font-size: 0.8125rem;
       color: var(--color-text-body);
@@ -529,7 +562,8 @@
     align-items: center;
     gap: 0.75rem;
     width: min(100%, 19rem);
-    padding: 0.625rem 0.625rem 0.625rem 0.75rem;
+    padding-block: 0.625rem;
+    padding-inline: 0.75rem 0.625rem;
   }
 
   .ui-scene-file-icon {
@@ -663,14 +697,16 @@
   }
 
   /*
-   * Forced colors remove the shadows that draw every edge here, so the slab, the stages and the ledger's cells
-   * are outlined in the system's text color, and the status dot keeps a fill.
+   * Forced colors remove the shadows that draw every edge here, so the slab, the stages, the tiles and the names
+   * under them are outlined in the system's text color, as the contracts figure outlines its keys, and the status
+   * dot keeps a fill.
    */
   @media (forced-colors: active) {
     .ui-forge-code,
     .ui-forge-stage,
     .ui-platform-cell,
-    .ui-platform-scene {
+    .ui-platform-scene,
+    .ui-platform-names > code {
       outline: 1px solid CanvasText;
       outline-offset: -1px;
     }
@@ -684,6 +720,16 @@
     .ui-forge-code:has(> .ui-forge-pre:focus-visible) {
       outline: 2px solid Highlight;
       outline-offset: -2px;
+    }
+  }
+
+  /*
+   * Paper drops backgrounds unless told otherwise, which would leave the slab's light code on white: the slab keeps
+   * its obsidian face in print, as the Frameworks slabs and the contracts terminal do.
+   */
+  @media print {
+    .ui-forge-code {
+      print-color-adjust: exact;
     }
   }
 }
