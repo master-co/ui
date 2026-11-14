@@ -3,6 +3,10 @@
  * a category, read from --category-* (see category.css); the two are different facts and never share a badge.
  * A badge may hold a picture (badge-media), a label that truncates (badge-label) and, as a compound, a smaller
  * badge of its own (badge-addon) whose corner nests inside the outer one.
+ * The neutral face, the outline and the ink badge read their colors through --badge-surface, --badge-ink,
+ * --badge-line, --badge-line-strong, --badge-fill, --badge-fill-ink and --badge-fill-text, which a surface of
+ * ink sets with @apply --on-ink, so a badge in a primary button or a tooltip is drawn from that surface's own
+ * text color.
  */
 @layer components {
   .badge {
@@ -24,9 +28,9 @@
     padding: 0 var(--badge-padding-x);
     border-radius: calc(var(--badge-radius) * var(--corner-scale));
     corner-shape: var(--corner-shape);
-    background: var(--color-surface-chip);
-    color: var(--color-text-body);
-    box-shadow: inset 0 0 0 .5px var(--color-line-contour);
+    background: var(--badge-surface, var(--color-surface-chip));
+    color: var(--badge-ink, var(--color-text-body));
+    box-shadow: inset 0 0 0 .5px var(--badge-line, var(--color-line-contour));
     font: var(--font-weight-control) var(--badge-font-size)/1 var(--font-family-sans);
     font-feature-settings: inherit;
     font-variant-numeric: tabular-nums;
@@ -61,7 +65,7 @@
 
     &.badge-outline {
       background: transparent;
-      box-shadow: inset 0 0 0 .5px var(--color-line-strong);
+      box-shadow: inset 0 0 0 .5px var(--badge-line-strong, var(--color-line-strong));
     }
 
     /* Raised: a small sheet, for a badge that sits on a busy surface. */
@@ -73,8 +77,9 @@
 
     &.badge-ink {
       --badge-tone: currentColor;
-      background: var(--color-surface-inverse);
-      color: var(--color-text-inverse);
+      background: var(--badge-fill, var(--color-surface-inverse));
+      color: var(--badge-fill-ink, var(--color-text-inverse));
+      -webkit-text-fill-color: var(--badge-fill-text, currentColor);
       box-shadow: inset 0 .5px 0 var(--color-ink-highlight), 0 0 0 .5px var(--color-ink-edge);
     }
 
@@ -222,6 +227,11 @@
       &.badge-dot::before {
         background: CanvasText;
       }
+
+      /* The words keep the system's text color, whatever face an ink surface would paint them in. */
+      &.badge-ink {
+        -webkit-text-fill-color: currentColor;
+      }
     }
   }
 }
@@ -282,6 +292,14 @@
       outline: 1px solid CanvasText;
       outline-offset: -1px;
     }
+  }
+
+  /*
+   * In a neutral badge the addon's sheet keeps the page's ink. Off ink that is the badge's own; on ink the badge
+   * takes the surface's text color, which on a pearl sheet would vanish.
+   */
+  .badge:not(.badge-info, .badge-success, .badge-warning, .badge-danger, .badge-category, .badge-ink, .badge-raised) .badge-addon {
+    color: var(--color-text-body);
   }
 }
 

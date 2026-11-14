@@ -380,6 +380,15 @@
 }
 
 /*
+ * A band of the brand's color: a step lighter at its top edge, as light falls on it, and closed by an edge a
+ * step darker below. Both are mixed from --color-brand, so one override retunes the band.
+ */
+@mixin --surface-brand {
+  background: linear-gradient(180deg, color-mix(in oklab, var(--color-brand), white 10%), var(--color-brand)) var(--color-brand);
+  box-shadow: inset 0 -.5px 0 color-mix(in oklab, var(--color-brand), black 30%);
+}
+
+/*
  * A control of ink at rest, under the pointer and under a press: the primary button. Each carries its face
  * and its shadow, so a theme changes what "primary" looks like in one place.
  */
@@ -439,9 +448,15 @@
 
 /*
  * On ink. A surface filled with the inverse color holds the same sentences a page does. The small chips a
- * sentence carries (inline code, a keycap, a citation) take their ink, their tone and their edge from the
- * surface's own text color through their own properties, so they need no variant, and a raised control that
- * stands on the same surface is left alone.
+ * sentence carries (inline code, a keycap, a citation, a badge) and the highlighter over its words (a mark)
+ * take their ink, their tone and their edge from the surface's own text color through their own properties, so
+ * they need no variant, and a raised control that stands on the same surface is left alone. Off ink each of
+ * these properties is unset and the part keeps its own tokens.
+ *
+ * A part that fills with ink (a citation that is open, an ink badge, the current mark) fills here with the
+ * surface's text color. currentColor is only the surface's while the part keeps the color it inherits, so its
+ * -fill-ink leaves the color as it is, and the words are painted in the surface's own face through its
+ * -fill-text, which the part gives to -webkit-text-fill-color.
  */
 @mixin --on-ink {
   --code-ink: currentColor;
@@ -453,7 +468,20 @@
   --citation-tone: color-mix(in oklab, currentColor 14%, transparent);
   --citation-line: color-mix(in oklab, currentColor 22%, transparent);
   --citation-fill: currentColor;
-  --citation-fill-ink: var(--surface-color, var(--color-surface-inverse));
+  --citation-fill-ink: currentColor;
+  --citation-fill-text: var(--surface-color, var(--color-surface-inverse));
+  --badge-surface: color-mix(in oklab, currentColor 14%, transparent);
+  --badge-ink: currentColor;
+  --badge-line: color-mix(in oklab, currentColor 22%, transparent);
+  --badge-line-strong: color-mix(in oklab, currentColor 40%, transparent);
+  --badge-fill: currentColor;
+  --badge-fill-ink: currentColor;
+  --badge-fill-text: var(--surface-color, var(--color-surface-inverse));
+  --mark-tone: color-mix(in oklab, currentColor 20%, transparent);
+  --mark-line: color-mix(in oklab, currentColor 28%, transparent);
+  --mark-fill: currentColor;
+  --mark-fill-ink: currentColor;
+  --mark-fill-text: var(--surface-color, var(--color-surface-inverse));
 }
 
 /*
@@ -526,22 +554,26 @@
 /*
  * Pop: how a popover enters and leaves the top layer. It fades in from a slightly smaller size; display and
  * overlay transition discretely, so the exit plays before the element is removed. Reduced motion keeps the fade.
+ * A popover that appears often and under the pointer, such as a tooltip, sets --pop-scale (where it grows from,
+ * .97), --pop-enter and --pop-leave (how long it takes to arrive and to go, both --duration-quick) to come
+ * quicker and from nearer; it leaves no slower than it enters.
  */
 @mixin --pop {
   opacity: 0;
-  scale: .97;
+  scale: var(--pop-scale, .97);
   transition-property: opacity, scale, overlay, display;
-  transition-duration: var(--duration-quick);
+  transition-duration: var(--pop-leave, var(--duration-quick));
   transition-timing-function: var(--easing-glide);
   transition-behavior: allow-discrete;
 
   &:popover-open {
     opacity: 1;
     scale: 1;
+    transition-duration: var(--pop-enter, var(--duration-quick));
 
     @starting-style {
       opacity: 0;
-      scale: .97;
+      scale: var(--pop-scale, .97);
     }
   }
 

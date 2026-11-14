@@ -103,21 +103,26 @@
 
     /*
      * Drawer: a panel on the inline-end edge for work that keeps the page in view. It floats 8px inside the
-     * viewport, so its corner and its shadow stay whole, and it slides in from the edge it rests on.
+     * viewport, so its corner and its shadow stay whole, and it slides in from the edge it rests on. Like the
+     * sheet it keeps clear of what the device lays over the page: the status bar and the home indicator above
+     * and below it, and in landscape the notch at either side, which the device reports on both.
      */
     &.dialog-drawer {
       --dialog-width: 24rem;
-      --dialog-from: calc(100% + .5rem);
-      width: min(var(--dialog-width), calc(100% - 1rem));
-      height: calc(100dvh - 1rem);
+      --dialog-edge-top: max(.5rem, env(safe-area-inset-top));
+      --dialog-edge-bottom: max(.5rem, env(safe-area-inset-bottom));
+      --dialog-edge-inline: max(.5rem, env(safe-area-inset-left), env(safe-area-inset-right));
+      --dialog-from: calc(100% + var(--dialog-edge-inline));
+      width: min(var(--dialog-width), calc(100% - 2 * var(--dialog-edge-inline)));
+      height: calc(100dvh - var(--dialog-edge-top) - var(--dialog-edge-bottom));
       max-height: none;
-      margin: .5rem;
+      margin: var(--dialog-edge-top) var(--dialog-edge-inline) var(--dialog-edge-bottom);
       margin-inline-start: auto;
       scale: 1;
       translate: var(--dialog-from) 0;
 
       &:dir(rtl) {
-        --dialog-from: calc(-100% - .5rem);
+        --dialog-from: calc(-100% - var(--dialog-edge-inline));
       }
 
       &[open] {
@@ -136,11 +141,11 @@
      */
     &.dialog-drawer.dialog-drawer-start {
       --dialog-width: 18rem;
-      --dialog-from: calc(-100% - .5rem);
-      margin-inline: .5rem auto;
+      --dialog-from: calc(-100% - var(--dialog-edge-inline));
+      margin-inline: var(--dialog-edge-inline) auto;
 
       &:dir(rtl) {
-        --dialog-from: calc(100% + .5rem);
+        --dialog-from: calc(100% + var(--dialog-edge-inline));
       }
     }
 
@@ -381,11 +386,14 @@
     }
   }
 
-  /* In a drawer it floats 8px inside the viewport, at the inline end or, with dialog-drawer-start, the start. */
+  /*
+   * In a drawer it floats 8px inside the viewport, at the inline end or, with dialog-drawer-start, the start,
+   * and clear of the safe areas as the drawer itself is.
+   */
   .dialog-drawer .dialog-panel {
-    width: min(var(--dialog-width), calc(100% - 1rem));
-    margin: .5rem;
-    scroll-margin: .5rem;
+    width: min(var(--dialog-width), calc(100% - 2 * var(--dialog-edge-inline)));
+    margin: var(--dialog-edge-top) var(--dialog-edge-inline) var(--dialog-edge-bottom);
+    scroll-margin: var(--dialog-edge-top) var(--dialog-edge-inline) var(--dialog-edge-bottom);
     scroll-snap-align: end;
   }
 
