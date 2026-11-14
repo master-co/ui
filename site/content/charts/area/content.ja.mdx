@@ -1,12 +1,12 @@
 ---
 title: "面グラフ"
-description: "線の下を同じ色で淡く塗ります。単独でも、積み上げて合計を示すこともできます。"
+description: "折れ線の下を同系色で塗り、単独で表示したり、積み上げて合計を示したりします。"
 ---
 
 import ComponentPreview from '~/site/components/ComponentPreview.astro'
 import ComponentLinks from '~/site/components/ComponentLinks.astro'
 
-面は、折れ線の下にその色の淡い塗りを敷いたもので、塗りは下に向かって薄れていきます。1つか2つの系列に、ページ上でより大きな存在感を与えます。系列がそれより多いと塗りどうしが重なって隠れるため、折れ線のほうが読みやすくなります。
+面グラフでは、折れ線の下を同じ色で塗り、下に向かって徐々に色を薄くします。1〜2 系列を強調したいときに適しています。系列が増えると塗りが重なるため、折れ線グラフのほうが読み取りやすくなります。
 
 <ComponentPreview name="area" height={434} title="面グラフ" bodyClass="p-lg" behaviors html={`<div class="card max-w(560) mx-auto">
   <div class="card-header">
@@ -27,13 +27,13 @@ addEventListener('DOMContentLoaded', function () {
     ]
   })
 })
-</script>`} caption="月にポインターを重ねるか、Tabキーと矢印キーを押すと、その月の値を読めます。凡例の項目で、その系列を非表示にできます。" />
+</script>`} caption="月にポインターを合わせるか、Tab キーと矢印キーで移動すると、その月の値を確認できます。凡例の項目を操作すると、対応する系列を非表示にできます。" />
 
 ## 積み上げ \{#stacked\}
 
-系列が合計の内訳である場合は、`stacked`を指定します。各層は前の層の上に積み重なるため、上端が合計になります。各層は薄れていく塗りではなく、その層自身の淡い色で塗られます。
+各系列が合計の内訳を表す場合は、`stacked` を設定します。各層を直前の層の上に重ね、最上部の輪郭で合計を示します。各層はそれぞれの色の淡い単色で塗ります。
 
-<ComponentPreview name="stacked-area" height={434} title="積み上げ面" bodyClass="p-lg" behaviors html={`<div class="card max-w(560) mx-auto">
+<ComponentPreview name="stacked-area" height={434} title="積み上げ面グラフ" bodyClass="p-lg" behaviors html={`<div class="card max-w(560) mx-auto">
   <div class="card-header">
     <h3 class="card-title">Visits</h3>
     <p class="card-description">Thousands per month, by source</p>
@@ -56,11 +56,41 @@ addEventListener('DOMContentLoaded', function () {
 })
 </script>`} />
 
-## 系列が1つの場合 \{#one\}
+## ストリームグラフ \{#stream\}
 
-系列が1つのチャートはインクで描かれ、系列に `category` を指定したときだけ色が付きます。
+`stacked: 'stream'` を設定すると、基準線から上に積み上げる代わりに、中央線を中心に面を積み上げます。下の層の変動に各層の位置が左右されなくなるため、各位置で層の厚みを読み取れ、全体の膨らみや細まりも把握できます。ストリームグラフには目盛りがなく、値表示で各層の値を確認できます。
 
-<ComponentPreview name="one" height={396} title="系列が1つの場合" bodyClass="p-lg" behaviors html={`<div class="card max-w(560) mx-auto">
+<ComponentPreview name="stream" height={434} title="ストリームグラフ" bodyClass="p-lg" behaviors html={`<div class="card max-w(560) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Listening</h3>
+    <p class="card-description">Hours a month by genre</p>
+  </div>
+  <figure class="chart" id="genres"></figure>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.chart(document.getElementById('genres'), {
+    type: 'area',
+    stacked: 'stream',
+    label: 'Listening hours a month by genre',
+    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+    series: [
+      { name: 'Rock', values: [20, 24, 30, 28, 22, 18, 16, 20, 26, 30, 34, 30] },
+      { name: 'Jazz', values: [10, 12, 11, 16, 22, 26, 24, 20, 16, 12, 10, 12] },
+      { name: 'Pop', values: [14, 12, 16, 20, 24, 30, 36, 32, 26, 20, 16, 18] },
+      { name: 'Folk', values: [6, 8, 7, 6, 8, 10, 12, 14, 12, 9, 7, 6] }
+    ]
+  })
+})
+</script>`} />
+
+`stacked: 'percent'` を設定すると、各位置の合計が 100% になります。層全体が 0% から 100% まで描画領域を埋め、各層の割合を読み取れます。
+
+## 単一系列 \{#one\}
+
+系列が 1 つの場合は前景色で描画します。系列に `category` を指定した場合のみ、そのカテゴリの色を使います。
+
+<ComponentPreview name="one" height={396} title="単一系列" bodyClass="p-lg" behaviors html={`<div class="card max-w(560) mx-auto">
   <div class="card-header">
     <h3 class="card-title">Revenue</h3>
     <p class="card-description">Dollars per month, this year</p>
@@ -81,18 +111,18 @@ addEventListener('DOMContentLoaded', function () {
 
 ## オプション \{#options\}
 
-| オプション | 既定値 | |
+| オプション | 既定 | |
 | --- | --- | --- |
-| `label` | なし | チャートが何をどの単位で示すか。プロットのアクセシブルな名前になります |
-| `labels` | `[]` | スケールに沿って、またはレーダーチャートの周囲に並ぶ名前 |
-| `series` | `[]` | それぞれが`name`と`values`を持ちます。スライスやリングでは`value`、散布図では`points`を指定します。任意で`category`、`type`、リングの`max`を指定できます |
-| `stacked` | `false` | 棒または面を積み重ねます |
-| `curve` | `'smooth'` | `smooth`、`linear`、`step`のいずれか |
-| `min`、`max`、`ticks` | 自動調整、`4` | スケールの両端と、目盛りのおおよその段階数。散布図の横方向のスケールには`xMin`、`xMax`、`xTicks`を使います |
-| `format`、`tickFormat` | ロケールの書式 | 値と目盛りの書式。散布図の横方向のスケールには`xFormat`を使います |
-| `legend`、`toggle` | 系列が2つ以上あれば表示、`true` | 凡例を書き出すかどうかと、その項目をチェックボックスにするかどうか |
+| `label` | なし | グラフが示す内容と単位。描画領域のアクセシブル名になります |
+| `labels` | `[]` | 軸に沿って、レーダーチャートの周囲に、またはヒートマップの各列の上に表示する名前 |
+| `series` | `[]` | 各系列に `name` と、グラフ形式に応じた `values`、`value`、`points`、`ranges`、`children` のいずれかを指定します。`category`、`type`、`low` と `high`、リングの `max` は任意です |
+| `stacked` | `false` | 棒や面を積み上げます。`'percent'` は各積み上げの合計を 100% にし、`'stream'` は積み上げた面を中央線の周りに配置します |
+| `curve` | `'smooth'` | `smooth`、`linear`、`step` のいずれか |
+| `min`, `max`, `ticks` | データに合わせる、`4` | 軸の両端の値と目盛りの目安となる数。散布図の横軸には `xMin`、`xMax`、`xTicks` を使います |
+| `format`, `tickFormat` | ロケールに従う | 値と目盛りの表示形式。散布図の横軸には `xFormat` を使います |
+| `legend`, `toggle` | 2 系列の場合に表示、`true` | 凡例を表示するか、凡例の項目をチェックボックスにするか |
 
-値表示、キー操作、凡例、色、目盛りはどの種類でも共通です。[チャート](/components/chart)のページに、すべてのオプション、クラス、カスタムプロパティとあわせてまとめています。
+値表示、キー操作、凡例、色、目盛りは、どのグラフ形式でも共通です。すべてのオプション、CSS クラス、カスタムプロパティは [チャート](/components/chart) を参照してください。
 
 ## 関連項目 \{#related\}
 

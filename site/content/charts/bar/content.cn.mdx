@@ -1,14 +1,14 @@
 ---
-title: "条形图"
-description: "以立在基线上的条形比较数量，可并排、堆叠或横向排列。"
+title: "柱状图"
+description: "用从基线伸出的柱条比较数值，支持并排、堆叠和横向布局。"
 ---
 
 import ComponentPreview from '~/site/components/ComponentPreview.astro'
 import ComponentLinks from '~/site/components/ComponentLinks.astro'
 
-条形用于比较数量，例如一周中的每一天、一年中的各个季度。每根条形立在基线上，位于所属区间的正中，远离基线的一端为圆角。指针悬停时，其他条形立即退为浅色；指针的落点是整个区间，因此矮的条形和高的条形一样容易读取。
+柱状图适合比较一周中每天或一年中各季度的数值。每根柱都从基线起，居于对应的类别带中央，远离基线的一端采用圆角。指针移入时，其他柱会立即淡化。指针命中的是整个类别带，因此短柱和长柱一样容易查看。
 
-<ComponentPreview name="bar" height={348} title="条形图" bodyClass="p-lg" behaviors html={`<div class="card max-w(440) mx-auto">
+<ComponentPreview name="bar" height={348} title="柱状图" bodyClass="p-lg" behaviors html={`<div class="card max-w(440) mx-auto">
   <div class="card-header">
     <h3 class="card-title">Deployments</h3>
     <p class="card-description">311 this week</p>
@@ -26,7 +26,7 @@ addEventListener('DOMContentLoaded', function () {
 })
 </script>`} />
 
-小于零的数值从基线向下悬挂，此时基线位于零所在的位置。数值为零时，基线上仍留有一道短线，因此没有数据的一天仍然是一天。
+有负值时，基线位于零刻度处，负值柱从基线向下延伸。零值会在基线上留一道短线，因此没有数值的那一天也有标记。
 
 <ComponentPreview name="below" height={348} title="零值上下" bodyClass="p-lg" behaviors html={`<div class="card max-w(440) mx-auto">
   <div class="card-header">
@@ -46,11 +46,11 @@ addEventListener('DOMContentLoaded', function () {
 })
 </script>`} />
 
-## 突出一根条形 \{#quiet\}
+## 突出一根柱 \{#quiet\}
 
-在图表上加 `chart-quiet`，条形会变为浅色，只为标有 `aria-current` 的数据点保留墨色，例如一周中的今天、读者当前使用的套餐。用 `current` 给出它的索引。`values: true` 在每根条形的末端写出数值，适用于条形不多且重在精确数字的情况，也适用于没有悬停状态的触摸屏。
+给图表添加 `chart-quiet` 类可淡化各柱，仅为标记了 `aria-current` 的数据点保留墨色，例如一周中的今天，或读者当前使用的方案。通过 `current` 指定该数据点的索引。`values: true` 会在每根柱的末端显示数值，适合柱数较少且需要看清具体数值的图表，也适合没有悬停交互的触摸屏。
 
-<ComponentPreview name="quiet" height={348} title="低调样式并显示数值" bodyClass="p-lg" behaviors html={`<div class="card max-w(440) mx-auto">
+<ComponentPreview name="quiet" height={348} title="弱化其他柱并显示数值" bodyClass="p-lg" behaviors html={`<div class="card max-w(440) mx-auto">
   <div class="card-header">
     <h3 class="card-title">Build minutes</h3>
     <p class="card-description">Thursday so far</p>
@@ -72,7 +72,7 @@ addEventListener('DOMContentLoaded', function () {
 
 ## 并排或堆叠 \{#stacked\}
 
-多个数据系列在每个区间内并排，便于相互比较。设置 `stacked` 后，它们上下堆叠，便于比较总量，并显示每个总量的构成：一组堆叠中只有最外侧的条形带圆角，条形之间以一道表面色的间隙隔开。数值提示按所见的顺序，从顶部开始列出堆叠中的各项。
+多个数据系列在每个类别带内并排显示，方便比较各系列。启用 `stacked` 后，各系列依次堆叠，便于比较总量及其构成。每组堆叠只有最外侧的柱端带圆角，各柱之间留有一道露出背景的间隙。数值提示按图中从上到下的顺序列出各项。
 
 <ComponentPreview name="grouped" height={386} title="并排" bodyClass="p-lg" behaviors html={`<div class="card max-w(440) mx-auto">
   <div class="card-header">
@@ -95,7 +95,7 @@ addEventListener('DOMContentLoaded', function () {
 })
 </script>`} />
 
-<ComponentPreview name="stacked" height={386} title="堆叠条形图" bodyClass="p-lg" behaviors html={`<div class="card max-w(440) mx-auto">
+<ComponentPreview name="stacked" height={386} title="堆叠柱状图" bodyClass="p-lg" behaviors html={`<div class="card max-w(440) mx-auto">
   <div class="card-header">
     <h3 class="card-title">Tickets</h3>
     <p class="card-description">Opened per day, by priority</p>
@@ -118,11 +118,65 @@ addEventListener('DOMContentLoaded', function () {
 })
 </script>`} />
 
-## 横向条形 \{#across\}
+### 按占比堆叠 \{#percent\}
 
-`horizontal` 把条形改为横向，每个名称占一行，适用于名称比一列的宽度更长的榜单。名称位于各行旁边，刻度位于各行下方；超过十八个字母的名称会被截断，数值提示中显示完整名称。
+`stacked: 'percent'` 将每组堆叠归一化为 100%。每根柱的高度对应它在本组中的占比，因此各组总高度相同，可以直接比较构成。数值提示会同时显示原始数值和占比。
 
-<ComponentPreview name="across" height={348} title="横向条形" bodyClass="p-lg" behaviors html={`<div class="card max-w(520) mx-auto">
+<ComponentPreview name="percent" height={386} title="占比" bodyClass="p-lg" behaviors html={`<div class="card max-w(440) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Accounts</h3>
+    <p class="card-description">Share by plan, each quarter</p>
+  </div>
+  <figure class="chart" id="plans" style="--chart-height: 11rem"></figure>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.chart(document.getElementById('plans'), {
+    type: 'bar',
+    stacked: 'percent',
+    label: 'Share of accounts by plan, each quarter',
+    labels: ['Q1', 'Q2', 'Q3', 'Q4'],
+    series: [
+      { name: 'Free', values: [620, 640, 610, 580] },
+      { name: 'Pro', values: [240, 300, 360, 420] },
+      { name: 'Team', values: [60, 90, 130, 190] }
+    ]
+  })
+})
+</script>`} />
+
+### 向零值两侧延伸 \{#diverging\}
+
+负值从基线向下堆叠，正值向上堆叠。这样，符号相反的两个数据系列就会从中间的零线向两侧展开，例如赞成与反对、收入与支出。为各系列显式指定类别，使两侧的数据无论出现在什么位置都保持各自的颜色。
+
+<ComponentPreview name="diverging" height={386} title="向零值两侧延伸" bodyClass="p-lg" behaviors html={`<div class="card max-w(520) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Survey</h3>
+    <p class="card-description">Share who disagree and who agree</p>
+  </div>
+  <figure class="chart" id="survey" style="--chart-height: 11rem"></figure>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.chart(document.getElementById('survey'), {
+    type: 'bar',
+    stacked: true,
+    horizontal: true,
+    label: 'Share of answers that disagree and agree, by statement, in percent',
+    labels: ['Easy to set up', 'Fast', 'Well documented', 'Good value'],
+    series: [
+      { name: 'Disagree', category: 'orange', values: [-12, -24, -18, -30] },
+      { name: 'Agree', category: 'blue', values: [72, 58, 64, 46] }
+    ]
+  })
+})
+</script>`} />
+
+## 横向条形图 \{#across\}
+
+`horizontal` 将图表改为横向条形图，每个名称占一行，适合名称长于柱形类别带宽度的排名。名称显示在各行旁边，刻度在下方。超过 18 个字符的名称会被截断，数值提示中会显示全名。
+
+<ComponentPreview name="across" height={348} title="横向条形图" bodyClass="p-lg" behaviors html={`<div class="card max-w(520) mx-auto">
   <div class="card-header">
     <h3 class="card-title">Top pages</h3>
     <p class="card-description">Visitors in the last 7 days</p>
@@ -142,11 +196,56 @@ addEventListener('DOMContentLoaded', function () {
 })
 </script>`} />
 
-## 大量条形，以及叠在其上的折线 \{#many\}
+## 棒棒糖图与须线 \{#lollipop\}
 
-各区间平分宽度，因此原本放一周数据的空间也能放下一个月的数据，绘图区下方最多显示十二个名称；绘图区窄于 24rem 时，每隔一个名称会隐去一个。带有 `type: 'line'` 的数据系列会画成叠在条形之上的折线，使用同一刻度，例如目标值或移动平均值。刻度不同的两种度量应画成两个图表，绝不能画成两侧各有一个刻度的单个图表。
+`mark: 'lollipop'` 将每根柱画成一条末端带圆点的细线。它用更少的填充面积表达同样的数值，适合柱条较多或较长、实心柱条容易连成一片的图表。
 
-<ComponentPreview name="many" height={434} narrowHeight={454} title="三十天" bodyClass="p-lg" responsive behaviors html={`<div class="card max-w(600) mx-auto">
+<ComponentPreview name="lollipop" height={348} title="棒棒糖图" bodyClass="p-lg" behaviors html={`<div class="card max-w(520) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Response time</h3>
+    <p class="card-description">Median by endpoint, in milliseconds</p>
+  </div>
+  <figure class="chart" id="endpoints" style="--chart-height: 11rem"></figure>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.chart(document.getElementById('endpoints'), {
+    type: 'bar',
+    mark: 'lollipop',
+    horizontal: true,
+    values: true,
+    label: 'Median response time by endpoint, in milliseconds',
+    labels: ['/search', '/checkout', '/feed', '/profile', '/login'],
+    series: [{ name: 'Median', values: [412, 318, 240, 132, 96] }]
+  })
+})
+</script>`} />
+
+为数据系列的每个标签各提供一个 `low` 和一个 `high`，即可表示数值的可能范围，例如均值附近的区间或多次运行结果的范围。须线穿过柱条末端，数值提示会在数值之后显示该区间。
+
+<ComponentPreview name="whiskers" height={348} title="须线" bodyClass="p-lg" behaviors html={`<div class="card max-w(440) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Trial</h3>
+    <p class="card-description">Mean score by group, with its interval</p>
+  </div>
+  <figure class="chart" id="trial" style="--chart-height: 11rem"></figure>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.chart(document.getElementById('trial'), {
+    type: 'bar',
+    label: 'Mean score by group with its 95% interval',
+    labels: ['Control', 'A', 'B', 'C'],
+    series: [{ name: 'Score', values: [52, 61, 58, 70], low: [46, 55, 49, 64], high: [58, 67, 67, 76] }]
+  })
+})
+</script>`} />
+
+## 多柱布局与叠加折线 \{#many\}
+
+各类别带平分绘图区的宽度，因此原本显示一周的空间也能放下一个月的数据。绘图区下方最多显示 12 个名称，宽度小于 24rem 时隔一个显示一个。设置了 `type: 'line'` 的数据系列会以折线叠绘在柱条上，并与柱条共用刻度，可用于显示目标值或移动平均值。两个指标需要不同的刻度时，必须分成两张图，不能使用双轴图。
+
+<ComponentPreview name="many" height={434} narrowHeight={454} title="30 天" bodyClass="p-lg" responsive behaviors html={`<div class="card max-w(600) mx-auto">
   <div class="card-header">
     <h3 class="card-title">Requests</h3>
     <p class="card-description">Thousands per day in November, with the weekly average</p>
@@ -177,19 +276,20 @@ addEventListener('DOMContentLoaded', function () {
 
 | 选项 | 默认值 | |
 | --- | --- | --- |
-| `label` | 无 | 图表展示的内容及其单位，即绘图区的无障碍名称 |
-| `labels` | `[]` | 沿刻度排列的名称，或雷达图四周的名称 |
-| `series` | `[]` | 每个系列包含 `name` 和 `values`，扇区或圆环使用 `value`，散点图使用 `points`；还可选填 `category`、`type` 和圆环的 `max` |
-| `stacked` | `false` | 条形或面积上下堆叠 |
-| `horizontal` | `false` | 条形横向排列 |
-| `min`, `max`, `ticks` | 自动适配，`4` | 刻度的两端，以及大约分几段标出；散点图的横向刻度使用 `xMin`、`xMax` 和 `xTicks` |
-| `axis` | `true` | 是否写出刻度数字；`false` 只保留细线，适用于磁贴中的小图表 |
-| `format`, `tickFormat` | 按 locale 的格式 | 数值和刻度数字的书写方式；散点图的横向刻度使用 `xFormat` |
-| `dots`, `values` | `false` | 标出折线上的每个数据点；写出每根条形的数值 |
-| `current` | 无 | 标有 `aria-current` 的数据点的索引 |
-| `legend`, `toggle` | 有两个数据系列时生成，`true` | 是否生成图例，以及图例项是否为复选框 |
+| `label` | 无 | 绘图区的无障碍名称，说明图表展示的内容及其单位 |
+| `labels` | `[]` | 沿坐标轴、雷达图四周或热力图各列上方显示的名称 |
+| `series` | `[]` | 每个数据系列包含 `name` 和图表类型所需的数据，可为 `values`、`value`、`points`、`ranges` 或 `children`，还可指定 `category`、`type`、`low` 和 `high`，以及环形图的 `max` |
+| `stacked` | `false` | 堆叠柱条或面积。`'percent'` 将每组堆叠归一化为 100%，`'stream'` 让堆叠面积围绕中线分布 |
+| `horizontal` | `false` | 将柱状图、区间图、哑铃图和箱线图横向绘制 |
+| `mark` | `'bar'` | `'lollipop'` 将柱条画成末端带圆点的细线 |
+| `min`, `max`, `ticks` | 自适应, `4` | 坐标轴的取值范围和大致的刻度数。散点图的横轴使用 `xMin`、`xMax` 和 `xTicks` |
+| `axis` | `true` | 是否显示刻度数值。设为 `false` 时只保留细网格线，适合卡片中的小图表 |
+| `format`, `tickFormat` | 随区域设置 | 数值和刻度标签的显示格式。散点图的横轴使用 `xFormat` |
+| `dots`, `values` | `false` | 是否标记折线上的每个数据点，以及是否显示每根柱条的数值 |
+| `current` | 无 | 标记了 `aria-current` 的数据点索引 |
+| `legend`, `toggle` | 有两个数据系列时显示, `true` | 是否显示图例，以及是否将图例项显示为复选框 |
 
-数值提示、键盘操作、图例、颜色和刻度在每种图表类型中都相同：[图表](/components/chart)页面有完整说明，并列出全部选项、类名和自定义属性。
+各种图表共用同样的数值提示、键盘操作、图例、颜色和刻度机制。[图表](/components/chart) 文档列出了所有选项、类和自定义属性。
 
 ## 相关内容 \{#related\}
 

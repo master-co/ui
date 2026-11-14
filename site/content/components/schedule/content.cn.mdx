@@ -48,7 +48,7 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
 ## 当前时间与当前事件 \{#now\}
 
-日程表上的 `schedule-now` 在 `--now` 指定的位置绘制一条墨色线，和事件一样以小时为单位，并在线与当天区域起始边缘的交点画一个圆点。线从事件下方穿过，不会划过事件的文字。
+日程表上的 `schedule-now` 在 `--now` 指定的位置绘制一条墨色线，和事件一样以小时为单位，并在线与当天区域起始边缘的交点画一个圆点。时间线绘制在事件的底层，因此不会划过事件文字。
 
 用 `aria-current="true"` 标记的事件显示为墨色面板，表示该事件正在进行，或其详情已在日程表旁打开。
 
@@ -151,7 +151,7 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
 ## 可操作的日程表 \{#schedule-view\}
 
-`schedule-view` 在主体上方放一个控件标题栏，主体由 [`schedule` 行为脚本](/guide/behaviors)写入。标题栏包含“今天”、上一个和下一个按钮、当前时段的名称，以及在日、周、月和日程列表之间切换的开关。上一个和下一个按钮按当前视图的时段长度后退或前进，点击日期数字会打开当天，时段名称变化时会被朗读出来。空间较窄时，名称单独占一行。
+`schedule-view` 在主体上方放一个控件标题栏，主体由 [`schedule` 行为脚本](/guide/behaviors)写入。标题栏包含“今天”、上一个和下一个按钮、当前时段的名称，以及用于在日视图、周视图、月视图和日程列表之间切换的控件。上一个和下一个按钮按当前视图的时段长度后退或前进，点击日期数字会打开当天，时段名称变化时会被朗读出来。空间较窄时，名称单独占一行。
 
 <ComponentPreview name="view" height={640} narrowHeight={600} title="可操作的日程表" background="plain" bodyClass="content-start p-lg" behaviors html={`<section class="schedule-view" id="team" aria-labelledby="team-title">
   <div class="schedule-view-header">
@@ -190,7 +190,7 @@ addEventListener('DOMContentLoaded', function () {
 
 ### 事件 \{#the-events\}
 
-每个事件都有一个稳定的 `id`、一个 `title`、一个 `start` 和一个 `end`。全天事件设置 `allDay: true`，起止用日期表示，格式为 `YYYY-MM-DD`；其他事件使用本地时间，格式为 `YYYY-MM-DDTHH:mm`。`end` 不包含在内：只在 13 日的全天事件结束于 14 日，在午夜结束的事件则归入前一天。`category` 指定一个色板，例如 `blue` 对应 `category-blue`；设置 `href` 后事件成为链接，否则它是一个按钮，其 `value` 为事件 id，由页面监听。
+每个事件都有一个稳定的 `id`、一个 `title`、一个 `start` 和一个 `end`。全天事件设置 `allDay: true`，起止用日期表示，格式为 `YYYY-MM-DD`；其他事件使用本地时间，格式为 `YYYY-MM-DDTHH:mm`。`end` 是排除在事件范围之外的结束边界：仅占 13 日一天的全天事件以 14 日为结束日期，在午夜结束的事件则持续到前一天结束为止。`category` 指定一个色板，例如 `blue` 对应 `category-blue`；设置 `href` 后事件成为链接，否则它是一个按钮，其 `value` 为事件 id，由页面监听。
 
 时间应当已经是日程表显示所用的时区，重复事件应以逐次发生的事件传入：时区和重复规则由应用自行处理。日期按日历计数，并固定在中午，因此夏令时切换不会把全天事件移到前一天。视图不会编辑、移动或存储事件，只负责显示事件，并告知哪个事件被点击。
 
@@ -224,7 +224,7 @@ team.value // { date: '2026-11-13', view: 'month' }
 ## 无障碍 \{#accessibility\}
 
 - 按时间顺序将事件写成一个 `<ol>`，并为列表提供无障碍名称。只显示一天时使用 `aria-label`，多天并排时，在每天的 `schedule-day` 上用 `aria-labelledby` 引用各自的标题。
-- 每个事件都用文字写明标题和时间，并用 `<time datetime>` 标记时刻，这样即使脱离图形布局，也能读出“设计评审，10:00 至 11:30”。时间轴是同一刻度的视觉呈现，用 `aria-hidden="true"` 将其对辅助技术隐藏。
+- 每个事件都用文字写明标题和时间，并用 `<time datetime>` 标记时刻，这样即使脱离图形布局，也能读出“设计评审，10:00 至 11:30”。时间轴以图形方式呈现同一时间刻度，请用 `aria-hidden="true"` 将其从无障碍树中隐藏。
 - 用 `aria-current` 标记当前事件和今天，屏幕阅读器会读出相应状态。当前时间线由样式表绘制，需要传达当前时间时，用文字写明。
 - 在强制颜色模式下，每个事件都有轮廓线，当前事件以高亮色填充，细线和当前时间线使用系统颜色。
 - 月视图不是日期网格：其中的日期是打开当天的数字按钮，事件是链接或按钮，名称包含标题和时间。“更多”按钮应说明它列出了哪一天的几个事件。分类颜色绝不能是区分事件的唯一方式。

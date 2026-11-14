@@ -1,12 +1,12 @@
 ---
 title: "面积图"
-description: "在折线下方淡染同色，可单独呈现，也可堆叠成总量。"
+description: "在线条下方填充同色的淡色区域，可单独显示，也可堆叠以展示总量。"
 ---
 
 import ComponentPreview from '~/site/components/ComponentPreview.astro'
 import ComponentLinks from '~/site/components/ComponentLinks.astro'
 
-面积图是一条折线，线下铺有同色的淡色填充，并向下逐渐淡出。它让一两个数据系列在页面上更有分量；系列更多时，各填充会相互遮盖，改用折线更易读。
+面积图在线条下方填充同色，并让颜色向下逐渐淡出。这种填充能突出一两个数据系列。系列更多时，填充区域会相互遮挡，用折线图更容易看清。
 
 <ComponentPreview name="area" height={434} title="面积图" bodyClass="p-lg" behaviors html={`<div class="card max-w(560) mx-auto">
   <div class="card-header">
@@ -27,11 +27,11 @@ addEventListener('DOMContentLoaded', function () {
     ]
   })
 })
-</script>`} caption="将指针移到某个月份上，或按 Tab 键和方向键，即可读取该月的数值。图例中的每一项都可以隐藏对应的数据系列。" />
+</script>`} caption="将指针移到某个月份上，或按 Tab 键和方向键，即可查看该月的数值。点击图例项可隐藏对应的数据系列。" />
 
 ## 堆叠 \{#stacked\}
 
-各数据系列是总量的组成部分时，设置 `stacked`。每一层叠在前一层之上，因此顶部边缘就是总量；每一层使用各自的浅色，不再渐隐。
+当各数据系列组成一个总量时，设置 `stacked`。各层依次叠加，最上方的边界表示总量。每层用各自的淡色填充，不使用渐变。
 
 <ComponentPreview name="stacked-area" height={434} title="堆叠面积图" bodyClass="p-lg" behaviors html={`<div class="card max-w(560) mx-auto">
   <div class="card-header">
@@ -56,11 +56,41 @@ addEventListener('DOMContentLoaded', function () {
 })
 </script>`} />
 
-## 单个系列 \{#one\}
+## 流图 \{#stream\}
 
-只有一个系列的图表以墨色绘制；只有为系列指定 `category` 时才会着色。
+`stacked: 'stream'` 让堆叠面积围绕中线分布，不再从基线向上堆叠。这样，每层的位置就不会被下方各层的起伏推移。各层在当前位置的厚度反映该处的数据量，整体轮廓则呈现时宽时窄的变化。流图没有刻度，数值提示会显示各层的数值。
 
-<ComponentPreview name="one" height={396} title="单个系列" bodyClass="p-lg" behaviors html={`<div class="card max-w(560) mx-auto">
+<ComponentPreview name="stream" height={434} title="流图" bodyClass="p-lg" behaviors html={`<div class="card max-w(560) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Listening</h3>
+    <p class="card-description">Hours a month by genre</p>
+  </div>
+  <figure class="chart" id="genres"></figure>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.chart(document.getElementById('genres'), {
+    type: 'area',
+    stacked: 'stream',
+    label: 'Listening hours a month by genre',
+    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+    series: [
+      { name: 'Rock', values: [20, 24, 30, 28, 22, 18, 16, 20, 26, 30, 34, 30] },
+      { name: 'Jazz', values: [10, 12, 11, 16, 22, 26, 24, 20, 16, 12, 10, 12] },
+      { name: 'Pop', values: [14, 12, 16, 20, 24, 30, 36, 32, 26, 20, 16, 18] },
+      { name: 'Folk', values: [6, 8, 7, 6, 8, 10, 12, 14, 12, 9, 7, 6] }
+    ]
+  })
+})
+</script>`} />
+
+`stacked: 'percent'` 将每个位置的总量归一化为 100%。各层从 0% 到 100% 填满绘图区，图中显示的是各层所占的比例。
+
+## 单个数据系列 \{#one\}
+
+只有一个数据系列时，图表默认使用墨色绘制。只有为该系列指定 `category` 时才会使用类别颜色。
+
+<ComponentPreview name="one" height={396} title="单个数据系列" bodyClass="p-lg" behaviors html={`<div class="card max-w(560) mx-auto">
   <div class="card-header">
     <h3 class="card-title">Revenue</h3>
     <p class="card-description">Dollars per month, this year</p>
@@ -83,16 +113,16 @@ addEventListener('DOMContentLoaded', function () {
 
 | 选项 | 默认值 | |
 | --- | --- | --- |
-| `label` | 无 | 图表展示的内容及其单位，即绘图区的无障碍名称 |
-| `labels` | `[]` | 沿刻度排列的名称，或雷达图四周的名称 |
-| `series` | `[]` | 每个系列包含 `name` 和 `values`，扇区或圆环使用 `value`，散点图使用 `points`；还可选填 `category`、`type` 和圆环的 `max` |
-| `stacked` | `false` | 条形或面积上下堆叠 |
+| `label` | 无 | 绘图区的无障碍名称，说明图表展示的内容及其单位 |
+| `labels` | `[]` | 沿坐标轴、雷达图四周或热力图各列上方显示的名称 |
+| `series` | `[]` | 每个数据系列包含 `name` 和图表类型所需的数据，可为 `values`、`value`、`points`、`ranges` 或 `children`，还可指定 `category`、`type`、`low` 和 `high`，以及环形图的 `max` |
+| `stacked` | `false` | 堆叠柱条或面积。`'percent'` 将每组堆叠归一化为 100%，`'stream'` 让堆叠面积围绕中线分布 |
 | `curve` | `'smooth'` | `smooth`、`linear` 或 `step` |
-| `min`, `max`, `ticks` | 自动适配，`4` | 刻度的两端，以及大约分几段标出；散点图的横向刻度使用 `xMin`、`xMax` 和 `xTicks` |
-| `format`, `tickFormat` | 按 locale 的格式 | 数值和刻度数字的书写方式；散点图的横向刻度使用 `xFormat` |
-| `legend`, `toggle` | 有两个数据系列时生成，`true` | 是否生成图例，以及图例项是否为复选框 |
+| `min`, `max`, `ticks` | 自适应, `4` | 坐标轴的取值范围和大致的刻度数。散点图的横轴使用 `xMin`、`xMax` 和 `xTicks` |
+| `format`, `tickFormat` | 随区域设置 | 数值和刻度标签的显示格式。散点图的横轴使用 `xFormat` |
+| `legend`, `toggle` | 有两个数据系列时显示, `true` | 是否显示图例，以及是否将图例项显示为复选框 |
 
-数值提示、键盘操作、图例、颜色和刻度在每种图表类型中都相同：[图表](/components/chart)页面有完整说明，并列出全部选项、类名和自定义属性。
+各种图表共用同样的数值提示、键盘操作、图例、颜色和刻度机制。[图表](/components/chart) 文档列出了所有选项、类和自定义属性。
 
 ## 相关内容 \{#related\}
 

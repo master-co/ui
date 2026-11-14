@@ -42,7 +42,7 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
 ## 列 \{#rows\}
 
-- `tree-item` 代表一列，可以是連結、按鈕或分支的 `<summary>`。每列高 28px，排列緊湊、色調低調。指標停留的列和目前所在列會套用標籤色調。
+- `tree-item` 代表一列，可以是連結、按鈕或分支的 `<summary>`。每列高 28px，排列緊湊、色調低調。指標停留的列會套用膠囊標籤的底色，目前所在列則以帶有層次感的小面板樣式浮起，並使用加深的文字顏色。
 - 在分支列加上 `tree-toggle`，即可在最前方的欄位顯示箭頭。分支展開時，箭頭會轉向下方。每列都保留這一欄，因此末端項目會與同層分支對齊。
 - `tree-sub` 容納分支下一層的列，並沿著從箭頭向下延伸的細線縮排。
 
@@ -121,7 +121,7 @@ root.addEventListener('change', () => console.log(files.value))
 - **移動。** 使用方向鍵移動時，會跳過收合分支內的列、標記為 `hidden` 的列，以及停用的列。
 - **啟用。** 摘要列、連結和按鈕沿用瀏覽器原有的啟用方式。若列本身沒有原生啟用方式，例如加上 `role="treeitem"` 的 `div`，可用 <kbd>Enter</kbd>、<kbd>Space</kbd> 或點擊啟用。分支會展開或收合，末端項目則會成為已選取的列，`aria-selected="true"` 也會從原先選取的列移到該列。
 - **值。** `tree` 傳回的函式帶有 `value`：已選取的列所代表的值，也就是它的 `data-value` 或文字，沒有選取任何列時為 null。在[可多選的樹狀檢視](#several)和[核取方塊樹狀檢視](#checkbox)中，它是一個清單。從外部設定它即可選取或勾選列，不會派發事件。
-- **事件。** 每個事件都會從根元素向上冒泡，並在 `detail.item` 中提供該列。選取或勾選時派發 `change`。展開分支時派發 `expand`，並在 `detail.value` 中提供該列所代表的值。重新命名時派發 `rename`，附帶 `detail.value`，以及放在 `detail.label` 中的新標籤。
+- **事件。** 每個事件都會從根元素向上冒泡，並在 `detail.item` 中提供該列。選取或勾選時依序派發 `input` 和 `change`。展開分支時派發 `expand`，並在 `detail.value` 中提供該列所代表的值。重新命名時派發 `rename`，附帶 `detail.value`，以及放在 `detail.label` 中的新標籤。
 - **停用。** 帶有 `disabled` 或 `aria-disabled="true"` 的列不會回應操作：連結不會開啟，分支會維持原狀，也不會被選取、勾選或重新命名。
 
 此行為也適用於以 `<details>` 建立的樹狀檢視，例如前兩個未套用此行為的預覽。它透過 `open` 展開或收合 `tree-group`，並讓整棵樹只保留一個 Tab 停駐點，沿用同一套方向鍵操作。`attach()` 會將此行為套用到所有樹狀檢視。若要保留 `<details>` 樹狀檢視的原生操作方式，請依名稱匯入所需的行為。
@@ -151,7 +151,7 @@ root.addEventListener('change', () => console.log(files.value))
 
 - **點擊**只會選取該列。按住 <kbd>Control</kbd> 或 <kbd>Command</kbd> 再點擊，會選取或取消選取一列，並保留其他列的選取狀態。<kbd>Enter</kbd> 的作用與點擊相同。
 - **<kbd>Space</kbd>** 會選取或取消選取取得焦點的列。方向鍵只會移動。
-- **連續範圍。** 最後選擇的列是錨點。按住 <kbd>Shift</kbd> 再點擊、按 <kbd>Space</kbd>，或按 <kbd>ArrowDown</kbd>、<kbd>ArrowUp</kbd>，會選取從錨點到該列之間所有可見的列；按住 <kbd>Control</kbd> 或 <kbd>Command</kbd> 加上 <kbd>Shift</kbd>，再按 <kbd>Home</kbd> 或 <kbd>End</kbd>，會一路選到第一列或最後一列。收合分支內的列和停用的列會被略過。
+- **連續範圍。** 最後選擇的列是錨點。按住 <kbd>Shift</kbd> 的同時點擊或按下 <kbd>Space</kbd>、<kbd>ArrowDown</kbd> 或 <kbd>ArrowUp</kbd>，會選取從錨點到該列之間所有可見的列；按住 <kbd>Control</kbd> 或 <kbd>Command</kbd> 加上 <kbd>Shift</kbd>，再按 <kbd>Home</kbd> 或 <kbd>End</kbd>，會一路選到第一列或最後一列。收合分支內的列和停用的列會被略過。
 - **全部。** 按住 <kbd>Control</kbd> 或 <kbd>Command</kbd> 再按 <kbd>A</kbd>，會選取所有可見的列；若已全部選取，則全部取消。
 
 ## 核取方塊樹狀檢視 \{#checkbox\}
@@ -180,7 +180,7 @@ root.addEventListener('change', () => console.log(files.value))
 - **<kbd>Space</kbd>** 會勾選或取消勾選取得焦點的列；若是分支，則連同其下所有列一起變更。部分勾選的分支會被勾選；若其下所有可變更的列都已勾選，則改為取消勾選。
 - **點擊**末端項目會勾選它；點擊分支時，點擊勾選框會勾選分支，點擊該列其他位置則會展開或收合。<kbd>Enter</kbd> 的作用與點擊該列相同。
 - **停用的列**在其分支被勾選時會維持原本的勾選狀態，因此分支可能仍為部分勾選。
-- **值**是已勾選的末端項目組成的清單，依樹狀檢視中的順序排列。**分支不包含在內**：分支的勾選狀態只是反映其下各列，因此值會列出每個檔案，而不會列出資料夾。尚未載入列的分支也不包含在內；當它的列在已勾選的分支下送達時，這些列會被勾選，樹狀檢視也會派發 `change`。
+- **值**是已勾選的末端項目組成的清單，依樹狀檢視中的順序排列。**分支不包含在內**：分支的勾選狀態只是反映其下各列，因此值會列出每個檔案，而不會列出資料夾。尚未載入列的分支也不包含在內；當它的列在已勾選的分支下送達時，這些列會被勾選，樹狀檢視也會依序派發 `input` 和 `change`。
 
 也請在樹狀檢視上設定 `aria-multiselectable="true"`：核取方塊樹狀檢視可以選擇任意數量的列，也應該被這樣播報。
 
@@ -211,7 +211,7 @@ addEventListener('DOMContentLoaded', function () {
     }, 1200)
   })
 })
-</script>`} caption="展開一個儲存庫：它會持續旋轉，直到列送達，之後即可用方向鍵移入其中。" />
+</script>`} caption="展開儲存庫後，載入指示器會持續旋轉，直到子項目載入完成。接著即可用方向鍵移到這些子項目。" />
 
 頁面監聽 `expand`，並依照契約的類別與角色，把列寫入分支的 `tree-sub`。行為會察覺列已送達：它會移除 `aria-busy`，並立即讓這些列支援按鍵操作，不列入 Tab 順序，以方向鍵瀏覽。行為展開的每個分支都會派發 `expand`，因此請檢查 `aria-busy` 來判斷是否需要載入列。如果分支最後其實沒有任何列，請移除它的 `aria-busy` 和 `aria-expanded`：它是末端項目。
 
@@ -246,7 +246,7 @@ addEventListener('DOMContentLoaded', function () {
 
 `attach()` 不會傳入任何選項，因此這個預覽會在 `attach()` 執行後自行呼叫 `tree`；對同一個根元素再次呼叫會取代前一次。
 
-行為會把新標籤寫入 `tree-label`，並從根元素派發 `rename`，在 `detail.value` 中提供該列所代表的值，在 `detail.label` 中提供新標籤；欄位本身的 `input` 和 `change` 不會傳出欄位。儲存標籤由頁面負責：如果伺服器拒絕，請把舊標籤寫回去。請為每列設定不會隨名稱改變的 `data-value`，讓它所代表的值在重新命名後仍然有效。
+行為會把新標籤寫入 `tree-label`，並從根元素派發 `rename`，在 `detail.value` 中提供該列重新命名前所代表的值，在 `detail.label` 中提供新標籤；欄位本身的 `input` 和 `change` 不會傳出欄位。儲存標籤由頁面負責：如果伺服器拒絕，請把舊標籤寫回去。請為每列設定不會隨名稱改變的 `data-value`，讓它所代表的值在重新命名後仍然有效。
 
 沒有 <kbd>F2</kbd> 的讀者（例如使用觸控螢幕）需要其他入口：無論有沒有設定這個選項，對 `tree` 傳回的函式呼叫 `edit(row)` 都能達到與 <kbd>F2</kbd> 相同的效果，適合用於[快顯選單](/components/menu)中的「重新命名」項目或按鈕。
 

@@ -1,14 +1,14 @@
 ---
 title: "折线图"
-description: "用折线连接各点，呈现前后相连的数值变化。"
+description: "逐点连线，展示数值如何随顺序变化。"
 ---
 
 import ComponentPreview from '~/site/components/ComponentPreview.astro'
 import ComponentLinks from '~/site/components/ComponentLinks.astro'
 
-折线呈现前后相续的数值，例如各月的延迟、每天的价格。图表中没有条形时，折线从绘图区的一侧边缘延伸到另一侧边缘。指针所在的刻度位置由一条细线标出，每个数据系列在该位置的数值由一个圆点标出。
+折线按顺序连接各个数值，例如逐月变化的延迟或逐日变化的价格。图中没有柱形时，折线从绘图区的一侧延伸到另一侧。指针所指的数据位置会显示一条细线，各数据系列在该位置的数值用圆点标出。
 
-<ComponentPreview name="line" height={434} title="折线图" bodyClass="p-lg" behaviors html={`<div class="card max-w(560) mx-auto">
+<ComponentPreview name="line" height={434} title="折线" bodyClass="p-lg" behaviors html={`<div class="card max-w(560) mx-auto">
   <div class="card-header">
     <h3 class="card-title">Latency</h3>
     <p class="card-description">Median by region, in milliseconds</p>
@@ -32,7 +32,7 @@ addEventListener('DOMContentLoaded', function () {
 
 ## 曲线 \{#curve\}
 
-`curve` 决定折线如何从一个数据点走到下一个数据点。默认值 `smooth` 是一条不会越过数值的曲线：它不会高出数据中不存在的峰值，也不会低于数据中不存在的谷值。`linear` 绘制直线段。`step` 让每个数值保持到下一个数值出现，适用于一次性变化的量，例如套餐的席位数或价格。
+`curve` 决定如何连接各个数据点。默认值 `smooth` 绘制平滑曲线，曲线不会越过数据的峰值或谷值。`linear` 用直线段连接各点，`step` 将每个值保持到下一点，适合套餐席位数、价格等在某一时刻突变的数值。
 
 <ComponentPreview name="step" height={348} title="阶梯线" bodyClass="p-lg" behaviors html={`<div class="card max-w(560) mx-auto">
   <div class="card-header">
@@ -54,11 +54,11 @@ addEventListener('DOMContentLoaded', function () {
 })
 </script>`} />
 
-## 缺口与数据点 \{#gaps\}
+## 断点与圆点标记 \{#gaps\}
 
-值为 `null` 时，折线在该处留出缺口，对应的数据点只说明有数值的数据系列。`dots: true` 会标出折线上的每个数据点，而不只是指针所在的那一个；仅在折线只有少数几个数据点时使用。
+值为 `null` 时，折线会在该位置断开，读数提示仅显示在该位置有值的数据系列。`dots: true` 会标出折线上的所有数据点，包括指针未指向的点，适合数据点较少的折线。
 
-<ComponentPreview name="gaps" height={348} title="带缺口并标出数据点" bodyClass="p-lg" behaviors html={`<div class="card max-w(560) mx-auto">
+<ComponentPreview name="gaps" height={348} title="带圆点标记和断点的折线" bodyClass="p-lg" behaviors html={`<div class="card max-w(560) mx-auto">
   <div class="card-header">
     <h3 class="card-title">Uptime</h3>
     <p class="card-description">Percent per month; no reading in May</p>
@@ -81,24 +81,51 @@ addEventListener('DOMContentLoaded', function () {
 })
 </script>`} />
 
-## 叠在条形上的折线 \{#over-bars\}
+## 数值区间 \{#band\}
 
-在[条形图](/charts/bar#many)中，设置了 `type: 'line'` 的系列会以折线叠在条形之上，并使用同一刻度，例如目标值或移动平均。
+数据系列可以通过 `low` 和 `high` 为每个标签分别指定下限和上限，用来表示预测范围或两次运行结果之间的区间。图表会在折线后方用同色的浅色带绘制这个区间，读数提示也会在数值后显示该区间。
+
+<ComponentPreview name="band" height={396} title="带状区间" bodyClass="p-lg" behaviors html={`<div class="card max-w(560) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Sessions</h3>
+    <p class="card-description">Thousands per month, with the range the forecast allows</p>
+  </div>
+  <figure class="chart" id="forecast"></figure>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.chart(document.getElementById('forecast'), {
+    type: 'line',
+    label: 'Sessions per month with the range of the forecast, in thousands',
+    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+    series: [{
+      name: 'Sessions',
+      values: [320, 360, 340, 410, 460, 440, 520, 560, 540, 610, 680, 720],
+      low: [300, 335, 310, 370, 410, 385, 450, 470, 440, 490, 540, 560],
+      high: [340, 385, 372, 452, 512, 498, 592, 650, 640, 730, 820, 880]
+    }]
+  })
+})
+</script>`} />
+
+## 在柱形上叠加折线 \{#over-bars\}
+
+在[柱状图](/charts/bar#many)中，将数据系列设为 `type: 'line'`，即可在柱形上叠加一条与柱形共用同一标度的折线，例如目标线或移动平均线。
 
 ## 选项 \{#options\}
 
 | 选项 | 默认值 | |
 | --- | --- | --- |
-| `label` | 无 | 图表展示的内容及其单位，即绘图区的无障碍名称 |
-| `labels` | `[]` | 沿刻度排列的名称，或雷达图四周的名称 |
-| `series` | `[]` | 每个系列包含 `name` 和 `values`，扇区或圆环使用 `value`，散点图使用 `points`；还可选填 `category`、`type` 和圆环的 `max` |
+| `label` | 无 | 说明图表展示的内容及其单位，用作绘图区的无障碍名称 |
+| `labels` | `[]` | 沿刻度轴、环绕雷达图或位于热力图各列上方的标签 |
+| `series` | `[]` | 每个系列包含 `name` 和对应图表类型所需的数据，即 `values`、`value`、`points`、`ranges` 或 `children`；还可指定 `category`、`type`、`low` 和 `high`，以及圆环的 `max` |
 | `curve` | `'smooth'` | `smooth`、`linear` 或 `step` |
-| `min`, `max`, `ticks` | 自动适配，`4` | 刻度的两端，以及大约分几段标出；散点图的横向刻度使用 `xMin`、`xMax` 和 `xTicks` |
-| `format`, `tickFormat` | 按 locale 的格式 | 数值和刻度数字的书写方式；散点图的横向刻度使用 `xFormat` |
-| `dots`, `values` | `false` | 标出折线上的每个数据点；写出每根条形的数值 |
-| `legend`, `toggle` | 有两个数据系列时生成，`true` | 是否生成图例，以及图例项是否为复选框 |
+| `min`, `max`, `ticks` | 自动适配, `4` | 刻度范围的两端及大致的刻度数；散点图的横轴使用 `xMin`、`xMax` 和 `xTicks` |
+| `format`, `tickFormat` | 由区域设置决定 | 数值和刻度的显示格式；散点图的横轴使用 `xFormat` |
+| `dots`, `values` | `false` | 分别用于标出折线上的每个数据点和显示每根柱形的数值 |
+| `legend`, `toggle` | 有两个数据系列时显示, `true` | 分别控制是否显示图例，以及图例项是否以复选框呈现 |
 
-数值提示、键盘操作、图例、颜色和刻度在每种图表类型中都相同：[图表](/components/chart)页面有完整说明，并列出全部选项、类名和自定义属性。
+所有图表类型共用相同的读数提示、键盘操作、图例、配色和刻度机制。[图表](/components/chart) 组件文档列出了全部选项、CSS 类和自定义属性。
 
 ## 相关内容 \{#related\}
 

@@ -1,6 +1,7 @@
 ---
 title: "图表"
-description: "用一个 SVG 把数值画成折线、面积、条形、饼图、环形图、同心圆环、雷达图或散点图。"
+description: "用一个自适应宽度的 SVG 绘制数据，支持从折线图到旭日图的二十多种形式。"
+category: "数据展示"
 ---
 
 import ComponentPreview from '~/site/components/ComponentPreview.astro'
@@ -9,7 +10,7 @@ import ComponentLinks from '~/site/components/ComponentLinks.astro'
 import ContractTable from '~/site/components/ContractTable.astro'
 import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
-图表把数值画成折线、面积、条形、饼图、环形图、同心圆环、雷达图或散点图。整个图表是一个 SVG，会适应所给的宽度：刻度上的内容按百分比定位，无论绘图区拉伸多宽，线条都保持原有粗细，文字也不会被缩放。只有一个数据系列的图表使用墨色，和[进度条](/components/progress)的填充一样；有多个数据系列时，各系列使用[类别](/components/category)的颜色。每个数据点都是一个列表项，用文字说明自己的数值。
+图表用适合读者所问问题的形式呈现数据，包括折线图、柱状图、环形图、直方图、漏斗图，[总计二十多种](#forms)。各种形式都使用一个适应可用宽度的 SVG：按刻度定位的元素使用百分比，绘图区无论拉伸多宽，线条粗细和文字大小都保持不变。单个数据系列使用墨色绘制，就像[进度条](/components/progress)用墨色填充一样。多个数据系列则使用[类别](/components/category)配色。每个数据点都是一个列表项，用文字说明其数值。
 
 <ComponentPreview name="default" height={434} title="图表" bodyClass="p-lg" behaviors html={`<div class="card max-w(560) mx-auto">
   <div class="card-header">
@@ -30,19 +31,19 @@ addEventListener('DOMContentLoaded', function () {
     ]
   })
 })
-</script>`} caption="将指针移到某个月份上，或按 Tab 键和方向键，即可读取该月的数值。图例中的每一项都可以隐藏对应的数据系列。" />
+</script>`} caption="将指针移到某个月份上，或用 Tab 键聚焦后按方向键，即可查看该月的数值。切换图例项可隐藏对应的数据系列。" />
 
-## 绘制方式 \{#how-it-is-drawn\}
+## 绘制原理 \{#how-it-is-drawn\}
 
-绘图区是一个没有 `viewBox` 的 `<svg>`：宽度与可用空间相同，高度为 `--chart-height`，未另行指定时为 14rem。细线、刻度标签、条形和圆点都以绘图区的百分比写入，因此位于 `x="42%"` 的条形在任何宽度下都保持在 42% 处，同时圆角半径和文字大小保持不变。
+绘图区是一个没有 `viewBox` 的 `<svg>`，宽度等于可用宽度，高度由 `--chart-height` 设置，默认是 14rem。细线、刻度、柱子和圆点都以绘图区的百分比定位，因此设为 `x="42%"` 的柱子在任何宽度下都位于 42% 处，圆角半径和文字大小也保持不变。
 
-只有必须用路径绘制的图形，即折线、面积和扇区，才画在 `chart-canvas` 中。它是一个嵌套的 SVG，坐标框为 100 × 100，并拉伸到与绘图区同样大小。其中的描边不随之缩放，因此无论卡片宽窄，折线的粗细都是 `--chart-stroke`。
+只有折线、面积和扇区这类必须用路径表示的图形才绘制在 `chart-canvas` 中。它是一个坐标范围为 100 × 100 的嵌套 SVG，会拉伸以填满绘图区。描边不会随其缩放，因此无论卡片宽窄，线条宽度都是 `--chart-stroke`。
 
-宽度变化时无需测量，也无需重绘，因此服务器、[框架组件](#frameworks)和行为脚本生成的标记完全相同。图表会占满所给的宽度：与其他内容排成一行时，请为它设置宽度，或让它伸展。
+宽度变化时无需测量或重绘，因此服务器、[框架组件](#frameworks)和行为生成的标记相同。图表会占满分配给它的宽度。如果图表与其他元素并排排列，请为它设置宽度，或允许它伸展。
 
 ## 绘制图表 \{#draw\}
 
-行为脚本把图表写入带有 `chart` 类的元素。`label` 说明图表展示的内容及其单位；`labels` 为刻度上的各个位置命名，每个数据系列在每个位置上各有一个数值。
+图表行为会把图表写入类名为 `chart` 的元素。`label` 说明图表展示的内容及其单位，`labels` 为刻度上的各个位置命名，每个数据系列在每个位置上各有一个数值。
 
 ```js name=app.js
 import { chart } from '@master/ui/behaviors/chart.js'
@@ -58,7 +59,7 @@ chart(document.querySelector('.chart'), {
 })
 ```
 
-在服务器上，`chartMarkup()` 以字符串形式返回同一个图表，其中的所有文字都已转义；把它放进元素中，页面在任何脚本运行之前就能阅读。`chartLayout()` 以数据形式返回图中的全部内容：刻度及其刻度值、每个数据系列的路径，以及每个数据点及其图形和描述它的句子。
+在服务器上，`chartMarkup()` 将同一个图表作为字符串返回，其中的所有文本都经过转义。将它写入元素后，页面在脚本运行前就可以阅读。`chartLayout()` 以数据形式返回绘图所需的信息，包括标尺及其刻度、每个数据系列的路径，以及每个数据点的图形标记和描述语句。
 
 ```js name=server.js
 import { chartMarkup } from '@master/ui/behaviors/chart.js'
@@ -66,74 +67,119 @@ import { chartMarkup } from '@master/ui/behaviors/chart.js'
 const html = `<figure class="chart">${chartMarkup({ type: 'bar', label, labels, series })}</figure>`
 ```
 
-在该元素上调用 `chart()` 且不传入数据系列时，行为脚本会按现有标记让图表运作；`@master/ui/behaviors` 中的 `attach()` 会对页面上的每个图表这样做。
+在该元素上调用 `chart()` 时，如果不传入数据系列，行为会直接接管已有标记。使用 `@master/ui/behaviors` 中的 `attach()` 可为页面上的所有图表附加行为。
 
-## 图表类型 \{#forms\}
+### 只加载页面用到的图表形式 \{#forms-only\}
 
-每种图表类型都有自己的页面，包含示例和与之相关的选项。
+`chart.js` 包含所有图表形式，压缩并经 gzip 打包后约为 16 kB。如果页面只绘制一两种图表，可以只加载所需形式。`chart-core.js` 是不含任何图表形式的核心模块，约为 6 kB。每种图表形式都是可传给 `chartForms()` 的模块。折线图、面积图和柱状图共用标尺，合计增加约 2 kB，其余图表形式各不到 1 kB。
 
-| 类型 | `type` | 用途 |
+```js name=app.js
+import { chartCore, chartForms } from '@master/ui/behaviors/chart-core.js'
+import { chartCartesian } from '@master/ui/behaviors/chart-cartesian.js'
+
+chartForms(chartCartesian)
+chartCore(document.querySelector('.chart'), { type: 'line', label, labels, series })
+```
+
+| 模块 | 可绘制的图表 |
+| --- | --- |
+| `chart-cartesian.js` | `line`, `area`, `bar` |
+| `chart-scatter.js` | `scatter` |
+| `chart-pie.js` | `pie`, `donut` |
+| `chart-rings.js`, `chart-radar.js`, `chart-sunburst.js` | `rings`, `radar`, `sunburst` |
+| `chart-waterfall.js`, `chart-range.js` | `waterfall`; `range`, `dumbbell` |
+| `chart-slope.js`, `chart-bump.js` | `slope`, `bump` |
+| `chart-marimekko.js`, `chart-funnel.js`, `chart-waffle.js`, `chart-treemap.js` | `marimekko`, `funnel`, `waffle`, `treemap` |
+| `chart-histogram.js`, `chart-box.js`, `chart-heatmap.js` | `histogram`, `box`, `heatmap` |
+
+如果指定的类型没有对应的绘制模块，错误信息会指出需要导入哪个模块，便于立即发现缺失项。
+
+## 图表形式 \{#forms\}
+
+每种图表形式都有独立页面，列出示例和相关选项。
+
+| 图表形式 | `type` | 适用场景 |
 | --- | --- | --- |
-| [折线图](/charts/line) | `line` | 用折线连接各点，呈现前后相连的数值变化。 |
-| [面积图](/charts/area) | `area` | 在折线下方淡染同色，可单独呈现，也可堆叠成总量。 |
-| [条形图](/charts/bar) | `bar` | 以立在基线上的条形比较数量，可并排、堆叠或横向排列。 |
-| [雷达图](/charts/radar) | `radar` | 在相同的指标上比较少数几个对象，每个对象是一圈围绕中心的轮廓。 |
-| [饼图](/charts/pie) | `pie` | 用圆的扇区呈现一个整体由哪些部分组成。 |
-| [环形图](/charts/donut) | `donut` | 整体的各个部分围成一圈，中央放一个数字。 |
-| [同心圆环](/charts/rings) | `rings` | 少数几个读数，各自在自己的圆环上朝目标填满。 |
-| [散点图](/charts/scatter) | `scatter` | 两个指标相互对照，每个对象是一个点。 |
+| [折线图](/charts/line) | `line` | 逐点连线，展示数值随顺序变化的趋势。 |
+| [面积图](/charts/area) | `area` | 用与折线同色的浅色填充线下区域，可单独展示，也可堆叠展示总量。 |
+| [斜率图](/charts/slope) | `slope` | 通过连线的斜率和交叉，展示两个时点之间哪些数值上升、下降或相互超越。 |
+| [排名变化图](/charts/bump) | `bump` | 展示若干对象的排名变化，一个对象超越另一个对象时，连线会交叉。 |
+| [柱状图](/charts/bar) | `bar` | 用共用基线的柱子比较数值，可并排、堆叠，也可横向绘制为条形图。 |
+| [雷达图](/charts/radar) | `radar` | 按相同指标比较若干对象，每个对象在同一中心周围形成一条轮廓线。 |
+| [瀑布图](/charts/waterfall) | `waterfall` | 用逐步增减的柱子，展示起始值如何变为最终值。 |
+| [区间图](/charts/range) | `range` | 展示每个区间的跨度及其起止值。 |
+| [哑铃图](/charts/dumbbell) | `dumbbell` | 用一条线连接每个对象的两个数值，突出两者的差距。 |
+| [饼图](/charts/pie) | `pie` | 用圆形中的各个扇区展示整体的构成。 |
+| [环形图](/charts/donut) | `donut` | 围绕中心的一个数值展示整体的各个组成部分。 |
+| [多环进度图](/charts/rings) | `rings` | 用独立的圆环展示每项读数占其总量的比例。 |
+| [马赛克图](/charts/marimekko) | `marimekko` | 用柱宽表示各组总量，再将每根柱子划分为各个组成部分。 |
+| [漏斗图](/charts/funnel) | `funnel` | 展示同一流程中依次收窄的各个阶段。 |
+| [华夫格图](/charts/waffle) | `waffle` | 用 100 个方格展示整体，每格代表 1%。 |
+| [矩形树图](/charts/treemap) | `treemap` | 用多个矩形展示整体的各个部分，每个矩形的面积与其占比成正比。 |
+| [旭日图](/charts/sunburst) | `sunburst` | 用两层圆环展示整体、各组成部分及其下一级构成。 |
+| [直方图](/charts/histogram) | `histogram` | 按易读的整值划分区间，用柱高表示每个区间内的观测数量，展示数据分布。 |
+| [箱线图](/charts/box) | `box` | 每组用五个统计量概括分布，通过箱体、中位线和须呈现。 |
+| [热力图](/charts/heatmap) | `heatmap` | 展示两个维度上的数据规律，用单元格颜色深浅表示数值大小。 |
+| [散点图](/charts/scatter) | `scatter` | 用两个指标分别确定点的位置，每个点代表一个对象。 |
 
-## 数值提示与键盘操作 \{#readout\}
+折线、面积和柱子共用同一个标尺，可以绘制在同一张图表中。为数据系列单独设置 `type`，即可按该类型绘制，例如在柱子上叠加折线。
 
-`chart-tip` 是数值提示：先是数据点的名称，然后每个数据系列占一行，包含一道该系列颜色的短线、系列名称和数值。它位于数据点旁空间更大的一侧，并沿自身高度滑动，因此不会离开绘图区，也无需由脚本定位。行为脚本根据数据点的图形所携带的信息填充它，并将数据点的位置以 `--chart-x`、`--chart-y` 和 `--chart-reach` 传递给它。
+## 数据提示与键盘操作 \{#readout\}
 
-无论有多少个数据点，绘图区在 Tab 顺序中只占一个停靠点。方向键在数据点之间移动，并显示每个数据点的数值提示；手指沿图表滑动也有同样的效果。
+`chart-tip` 是数据提示，先显示数据点名称，再为每个数据系列各显示一行，列出对应颜色的短线、系列名称和数值。提示框放在数据点旁空间较大的一侧，并可在自身高度范围内上下移动，因此始终位于绘图区内，无需脚本计算提示框的位置。行为从数据点的图形标记中读取内容，并通过 `--chart-x`、`--chart-y` 和 `--chart-reach` 传递数据点的位置。
+
+无论有多少数据点，整个绘图区在 Tab 顺序中只占一个焦点位置。按方向键可在数据点之间移动并查看各点的数据提示，沿图表滑动手指也可以逐点查看。
 
 <ContractTable name="chart" show="keyboard" />
 
 ## 图例 \{#legend\}
 
-有两个或更多数据系列的图表带有图例：颜色绝不是区分数据系列的唯一方式。每个图例项是一个包裹复选框的 label，因此可以按 Tab 键到达，按空格键切换；取消勾选后，对应的数据系列从图表中移除，刻度按剩余内容调整，其他系列保持原有颜色。只有一个数据系列的图表没有图例，因为标题已经说明了所画的内容。
+包含两个或更多数据系列的图表带有图例，读者可以根据名称区分各个系列。每个图例项都是包裹复选框的标签，可用 Tab 键聚焦，用空格键切换。取消选中后，对应的数据系列会从图表中隐藏，标尺会适配剩余数据，其他系列的颜色保持不变。只有一个数据系列时无需图例，标题已经说明了绘制内容。
 
-`toggle: false` 把图例写成普通列表；`legend: false` 则不生成图例，适用于周围文字已说明各数据系列名称的图表。图表的值是隐藏的数据系列的名称：可从 `chart()` 的返回值读取，也可设置它，从外部隐藏数据系列。
+`toggle: false` 将图例呈现为普通列表。若图表周围的文字已列出各数据系列的名称，可以用 `legend: false` 省略图例。图表的值是隐藏的数据系列名称列表，可以从 `chart()` 的返回值中读取，也可以从外部设置它来隐藏数据系列。
 
 ## 颜色 \{#color\}
 
-只有一个数据系列的图表用 `--chart-color` 绘制，即墨色。图表有多个数据系列时，各系列以及整体的各个部分按固定顺序各取一种类别：蓝色、橙色、蓝绿色、紫罗兰色、琥珀色、粉色、绿色和天蓝色。在浅色和深色两种配色方案下，这一顺序中相邻的颜色对常见类型的色觉障碍者而言都能区分开。超过八个后，顺序从头开始，因此请把其余部分归入“其他”，或另画一个图表。
+只有一个数据系列时，图表使用 `--chart-color` 指定的墨色绘制。多个数据系列或整体的各组成部分依次使用固定的类别配色：蓝色、橙色、蓝绿色、紫色、琥珀色、粉色、绿色和天蓝色。在两种配色方案下，常见色觉障碍的用户都能区分该顺序中相邻的颜色。超过八种后，配色会从头循环，可将剩余项目归入“其他”，或另绘一张图表。
 
-颜色跟随对象本身时，为数据系列指定自己的 `category`：无论 Tokyo 在列表中排在第几位，它在图表、[徽标](/components/badge)和表格行中都是蓝色。状态颜色绝不用来代表数据系列；出现故障的数据系列用文字说明。
+如果某个对象需要始终使用同一种颜色，请为对应的数据系列指定 `category`。例如，不论东京在列表中排第几，它在图表、[徽章](/components/badge)和表格对应行中都使用蓝色。状态色不能用来标识数据系列。数据系列出现异常时，用文字注明状态。
 
-## 刻度与数字 \{#scale\}
+## 标尺与数值 \{#scale\}
 
-刻度从零开始，有小于零的数值时从零以下开始，到高于最大值的一个整数为止，大约分四段标出。`min` 和 `max` 可固定任一端，`ticks` 可要求分成其他段数。条形图的刻度应从零开始：条形的长度就是它的数值。
+标尺从零开始，有负值时则从零以下开始，终点是高于最大值的易读整值，通常划分为约四个间隔。`min` 和 `max` 可固定两端，`ticks` 可指定其他间隔数量。柱状图的标尺应从零开始，因为柱长代表数值大小。
 
-`format` 决定数值提示中和条形末端的数值如何书写，`tickFormat` 决定刻度数字如何书写；刻度数字在 10,000 以下完整写出，超过后采用紧凑写法。两者都接收数字并返回字符串。`locale` 是用于数字的 BCP 47 标签，默认为 `en-US`；由服务器生成图表时请给出它，使两端保持一致。
+`format` 用于设置数据提示和柱子末端的数值格式，`tickFormat` 用于设置刻度数字的格式。刻度数字小于 10,000 时完整显示，超过 10,000 时使用紧凑格式。两者都接收数值并返回字符串。`locale` 是用于数字格式化的 BCP 47 语言标签，默认值为 `en-US`。由服务器生成图表时请指定它，以确保两端格式一致。
 
 | 选项 | 默认值 | |
 | --- | --- | --- |
-| `type` | `'bar'` | `line`、`area`、`bar`、`pie`、`donut`、`rings`、`radar` 或 `scatter` |
-| `label` | 无 | 图表展示的内容及其单位，即绘图区的无障碍名称 |
-| `labels` | `[]` | 沿刻度排列的名称，或雷达图四周的名称 |
-| `series` | `[]` | 每个系列包含 `name` 和 `values`，扇区或圆环使用 `value`，散点图使用 `points`；还可选填 `category`、`type` 和圆环的 `max` |
-| `stacked` | `false` | 条形或面积上下堆叠 |
-| `horizontal` | `false` | 条形横向排列 |
+| `type` | `'bar'` | 图表形式，取[图表形式](#forms)中的一种类型 |
+| `label` | 无 | 说明图表展示的内容及其单位，用作绘图区的无障碍名称 |
+| `labels` | `[]` | 标尺旁、雷达图周围或热力图各列上方的标签 |
+| `series` | `[]` | 每个系列包含 `name` 和该图表形式所需的 `values`、`value`、`points`、`ranges` 或 `children`，还可设置 `category`、`type`、`low`、`high` 以及圆环的 `max` |
+| `stacked` | `false` | 堆叠柱子或面积。`'percent'` 将每组堆叠归一化为一个整体，`'stream'` 让堆叠面积围绕中线分布 |
+| `horizontal` | `false` | 将柱子、区间、哑铃和箱体横向绘制 |
+| `mark` | `'bar'` | `'lollipop'` 将柱子绘制成末端带圆点的细线 |
 | `curve` | `'smooth'` | `smooth`、`linear` 或 `step` |
-| `min`, `max`, `ticks` | 自动适配，`4` | 刻度的两端，以及大约分几段标出；散点图的横向刻度使用 `xMin`、`xMax` 和 `xTicks` |
-| `axis` | `true` | 是否写出刻度数字；`false` 只保留细线，适用于磁贴中的小图表 |
-| `format`, `tickFormat` | 按 locale 的格式 | 数值和刻度数字的书写方式；散点图的横向刻度使用 `xFormat` |
-| `dots`, `values` | `false` | 标出折线上的每个数据点；写出每根条形的数值 |
-| `current` | 无 | 标有 `aria-current` 的数据点的索引 |
-| `legend`, `toggle` | 有两个数据系列时生成，`true` | 是否生成图例，以及图例项是否为复选框 |
-| `hole`, `center` | `.7`，无 | 环形图的中空部分，以及环形图或同心圆环中央显示的内容 |
-| `hidden` | `[]` | 不显示的数据系列的名称 |
-| `locale` | `'en-US'` | 用于数字的 BCP 47 标签 |
-| `draw` | 无 | 接管图表的生成：调用时传入隐藏的名称，供自行生成图表的渲染器使用 |
+| `min`, `max`, `ticks` | 自动适配，`4` | 标尺的两端及大致间隔数，散点图的横轴使用 `xMin`、`xMax` 和 `xTicks` |
+| `axis` | `true` | 是否显示刻度数字。设为 `false` 时只保留细线，适合卡片中的小图表 |
+| `format`, `tickFormat` | 由语言区域设置决定 | 数据值和刻度数字的显示格式，散点图的横轴使用 `xFormat` |
+| `dots`, `values` | `false` | 分别用于标出折线上的每个点和显示每根柱子的数值 |
+| `current` | 无 | 标记为 `aria-current` 的数据点索引 |
+| `legend`, `toggle` | 至少两个数据系列时显示，`true` | 是否显示图例，以及图例项是否使用复选框 |
+| `hole`, `center` | `.7`，无 | 环形图的内孔大小，以及环形图或多环图的中心内容 |
+| `total` | 无 | 瀑布图末尾汇总柱的名称 |
+| `bins` | 根据数据数量确定 | 直方图用来划分观测值的大致区间数 |
+| `ascending` | `false` | 在排名变化图中让最低值排第一 |
+| `words` | 英语 | 箱线图五个统计量的名称：`min`、`q1`、`median`、`q3` 和 `max` |
+| `hidden` | `[]` | 隐藏的数据系列名称 |
+| `locale` | `'en-US'` | 用于数字格式化的 BCP 47 语言标签 |
+| `draw` | 无 | 由渲染器接管图表生成时使用的回调，调用时传入隐藏的数据系列名称 |
 
-## 不使用脚本 \{#without-a-script\}
+## 无脚本时 \{#without-a-script\}
 
-标记本身就是图表：由服务器生成时，无需脚本即已完整。数据点仍会向屏幕阅读器说明自己的数值，样式表也能独自响应指针：显示细线和圆点，并让其他条形退为浅色。脚本增加的是数值提示、键盘操作和图例的切换功能。
+服务器生成的标记本身就是完整的图表，无需脚本。屏幕阅读器仍能读出各点的数值，样式表也能独立响应指针，显示细线和圆点，并淡化其余柱子。脚本会补充数据提示、键盘操作和图例切换功能。
 
-<ComponentPreview name="static" height={230} title="直接写成标记" bodyClass="p-lg" html={`<figure class="chart max-w(400) mx-auto" style="--chart-height: 10rem">
+<ComponentPreview name="static" height={230} title="用标记编写" bodyClass="p-lg" html={`<figure class="chart max-w(400) mx-auto" style="--chart-height: 10rem">
   <div class="chart-body" style="--chart-gutter: 2">
     <svg class="chart-plot" role="list" aria-label="Deployments per day, Monday to Friday">
       <g aria-hidden="true">
@@ -175,37 +221,37 @@ const html = `<figure class="chart">${chartMarkup({ type: 'bar', label, labels, 
       </g>
     </svg>
   </div>
-</figure>`} caption="不使用脚本：条形按百分比定位，指针悬停时其他条形退为浅色。" />
+</figure>`} caption="无需脚本：柱子按百分比定位，指针悬停在一根柱子上时，其余柱子会淡化。" />
 
-## 动态效果 \{#motion\}
+## 动效 \{#motion\}
 
-图形首次出现时会自行画出：条形依次从基线升起，折线从起点画入，扇区和雷达图的形状从中心展开，圆环逐渐填充。数值提示在数据点之间平滑滑动，而标示数据点的细线、圆点和退为浅色的条形则立即响应，因为高亮必须跟得上手的移动。启用减少动态效果时，没有任何位移动画：图形直接以画好的状态出现，数值提示立即变换位置。
+图形标记首次出现时会逐步绘出：柱子依次从基线升起，折线从起点向前绘制，扇区和雷达图轮廓从中心展开，圆环逐渐填满。数据提示会在数据点之间滑动，细线、圆点和柱子的淡化则立即更新，让高亮跟上操作。启用减少动态效果的偏好后，图形标记直接以完整状态呈现，数据提示也会立即切换位置。
 
-## 平台提供的能力 \{#platform\}
+## 浏览器原生功能 \{#platform\}
 
-- **条形的圆角和升起效果**由 SVG 形状上的 `clip-path` 实现。不支持用 CSS 形状裁剪 SVG 形状的浏览器会以完整长度绘制方角条形。
-- **面积的渐隐**由路径上的 `mask-image` 实现。不支持时，面积为均匀的浅色。
-- **圆点的半径**是 CSS 的 `r` 属性，由 `--chart-dot` 设置。不支持时，圆点保持标记中写明的半径。
-- **标签的精简**由绘图区主体上的容器查询实现。不支持时，所有标签都保留。
-- **画入效果**由 `@starting-style` 实现。不支持时，图形直接以画好的状态出现。
+- **柱子的圆角和上升动效**通过 SVG 图形上的 `clip-path` 实现。如果浏览器不支持用 CSS 形状裁剪 SVG 图形，柱子会以直角和完整长度显示。
+- **面积的渐隐效果**通过路径上的 `mask-image` 实现。缺少这项支持时，面积会以均匀的浅色填充。
+- **圆点半径**由 CSS `r` 属性控制，并通过 `--chart-dot` 设置。浏览器不支持该属性时，圆点会保留标记中指定的半径。
+- **减少标签数量**通过绘图区主体上的容器查询实现。浏览器不支持容器查询时，会保留所有标签。
+- **入场绘制动效**通过 `@starting-style` 实现。浏览器不支持时，图形标记会直接以完整状态呈现。
 
-## 图表不够用时 \{#limits\}
+## 何时需要其他图表方案 \{#limits\}
 
-图表为几百个图形而设计，每个图形都是读者可以到达的元素。成千上万个数据点、持续流入的数值、缩放、刷选、地图或 K 线图，应交给在 canvas 上绘图的图表引擎。用不着整个图表时，有更小的组件可选：句子中的趋势用[迷你趋势线](/components/sparkline)，单个数字用[统计指标](/components/stat)，单个读数用[计量条](/components/meter)或[仪表盘](/components/gauge)，沿一根条形展示总量的各个部分用[占比分布](/components/breakdown)，呈现大量较小数值的整体规律用[热力图](/components/heatmap)。[图表](/guide/charts)指南说明该选哪一种。
+图表组件适合绘制几百个图形标记，每个标记都是读者可以访问的元素。如果要展示数千个点或实时流入的数据，或者需要缩放、刷选、地图或蜡烛图，请使用基于画布绘制的图表引擎。更简单的场景可以用更小的组件：用[迷你折线图](/components/sparkline)在句子中展示趋势，用[统计值](/components/stat)展示单个数字，用[计量条](/components/meter)或[仪表盘](/components/gauge)展示单项读数，用[构成条](/components/breakdown)在一根条中展示总量构成，或用[热力图](/components/heatmap)呈现大量小数值之间的变化规律。[图表指南](/guide/charts)介绍了如何选择。
 
 ## 无障碍 \{#accessibility\}
 
-- 为 `label` 写一句话，说明测量的内容及其单位：它是绘图区的名称，而绘图区是一个列表。
-- 每个数据点都是一个以其数值命名的列表项，例如“Thu: Tokyo 71, Osaka 49”，因此屏幕阅读器像读列表一样读出图表，无需脚本，也无需表格。细线、刻度标签和数值提示对屏幕阅读器隐藏，因为它们只是重复数据点已说明的内容。
-- 数值提示是为视觉阅读提供的便利。它在指针悬停、获得焦点和手指触碰时出现，按 <kbd class="kbd">Esc</kbd> 可将其隐藏。
-- 颜色从不单独承担含义：数据系列在图例中有名称，数值提示也在数值旁写出系列名称。类别不是状态。
-- 获得焦点的数据点，其轮廓画在所属区间、圆点、扇区或圆环上，而不是围绕一个方框。
-- 在强制颜色模式下，墨色和细线使用系统颜色，焦点以高亮色绘制。数据系列保持所指定的颜色，因此请在图例中写出它们的名称。
-- 在任何语言中，刻度都从左侧开始。名称、数值和图例跟随页面的文字方向。
+- 用一句话为 `label` 说明测量的内容及其单位。这句话是绘图区的无障碍名称，绘图区以列表的形式呈现。
+- 每个数据点都是一个列表项，名称包含该点的数值，例如 "Thu: Tokyo 71, Osaka 49"。屏幕阅读器可以像读取普通列表一样读取图表，无需脚本或表格。细线、刻度和数据提示会对屏幕阅读器隐藏，因为这些信息已由数据点提供。
+- 数据提示便于直接查看数值。在悬停、聚焦或手指触碰时显示，按 <kbd class="kbd">Esc</kbd> 隐藏。
+- 除颜色外，图例还会标明数据系列的名称，数据提示也会在数值旁列出系列名称。类别与状态各有独立含义。
+- 数据点获得焦点时，焦点轮廓沿对应的带状区域、圆点、扇区或圆环绘制，不包围外接矩形。
+- 在强制颜色模式下，墨色和细线采用系统颜色，焦点轮廓使用系统高亮色。各数据系列会保留指定的颜色，因此请在图例中标明系列名称。
+- 在所有语言下，标尺都从左侧开始。名称、数值和图例遵循页面的文字方向。
 
 ## React、Svelte 和 Vue \{#frameworks\}
 
-`chart` 组件根据 `chartLayout()` 生成图表，因此服务器发送的初始 HTML 中就包含图表；组件还会绑定行为脚本，由它填充数值提示并响应键盘操作。组件以 prop 的形式接收上文的选项，它的值是隐藏的数据系列的名称。使用 `npx master-ui add chart` 将组件复制到项目中，参见 [React、Svelte 和 Vue](/guide/frameworks) 了解这些组件的实现和用法。
+`chart` 组件根据 `chartLayout()` 生成图表，因此服务器首次发送的 HTML 就包含图表。组件还会附加行为，用于填充数据提示和响应键盘操作。它将上面的选项作为 props 接收，其值为隐藏的数据系列名称列表。使用 `npx master-ui add chart` 将组件复制到项目中。[React、Svelte 和 Vue](/guide/frameworks)介绍了这些组件的实现和用法。
 
 <FrameworkSource name="chart" />
 

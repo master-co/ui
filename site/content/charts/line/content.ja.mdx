@@ -1,12 +1,12 @@
 ---
 title: "折れ線グラフ"
-description: "連続して変化する値を、点から点へ結ぶ線で表します。"
+description: "連続する値を、点と点を結ぶ線で表します。"
 ---
 
 import ComponentPreview from '~/site/components/ComponentPreview.astro'
 import ComponentLinks from '~/site/components/ComponentLinks.astro'
 
-折れ線は、月ごとのレイテンシや日ごとの価格のように、前の値から次の値へと続いていく値をたどります。チャートに棒がなければ、折れ線はプロットの端から端まで伸びます。ポインターを重ねると、細線がその区分を示し、ドットがその区分での各系列の値を示します。
+折れ線は、月ごとのレイテンシーや日ごとの価格など、連続する値の推移を表します。グラフに棒がなければ、線はプロット領域の端から端まで伸びます。ポインターを重ねると、対応するデータ位置を細い線で示し、その位置での各系列の値を点で示します。
 
 <ComponentPreview name="line" height={434} title="折れ線" bodyClass="p-lg" behaviors html={`<div class="card max-w(560) mx-auto">
   <div class="card-header">
@@ -32,9 +32,9 @@ addEventListener('DOMContentLoaded', function () {
 
 ## 曲線 \{#curve\}
 
-`curve`は、折れ線がポイントからポイントへどう進むかを指定します。既定の`smooth`は、値を行き過ぎることのない曲線です。データにない山より高くなることも、データにない谷より低くなることもありません。`linear`は直線の線分を描きます。`step`は次の値まで各値を保ち、プランの席数や価格のように、一度に切り替わる量に使います。
+`curve` は点と点の結び方を指定します。既定の `smooth` は、隣り合う点の値の範囲を超えないように滑らかな曲線を描きます。`linear` は直線で結びます。`step` は次の点まで値を一定に保つので、プランの利用枠数や価格など、ある時点で値が切り替わるデータに適しています。
 
-<ComponentPreview name="step" height={348} title="階段状" bodyClass="p-lg" behaviors html={`<div class="card max-w(560) mx-auto">
+<ComponentPreview name="step" height={348} title="ステップ" bodyClass="p-lg" behaviors html={`<div class="card max-w(560) mx-auto">
   <div class="card-header">
     <h3 class="card-title">Seats</h3>
     <p class="card-description">On the plan, this year</p>
@@ -56,9 +56,9 @@ addEventListener('DOMContentLoaded', function () {
 
 ## 欠損と点 \{#gaps\}
 
-値が`null`の箇所では折れ線が途切れ、そのポイントは値のある系列だけを伝えます。`dots: true`は、ポインターを重ねたポイントだけでなく、折れ線のすべてのポイントにドットを付けます。ポイントの少ない折れ線に限って使います。
+値が `null` の箇所では線が途切れ、その位置の値表示には値がある系列だけが表示されます。`dots: true` を指定すると、ポインターを重ねた点に加え、折れ線上のすべての点に印が付きます。点の少ない折れ線に使います。
 
-<ComponentPreview name="gaps" height={348} title="欠損と点の表示" bodyClass="p-lg" behaviors html={`<div class="card max-w(560) mx-auto">
+<ComponentPreview name="gaps" height={348} title="欠損と点" bodyClass="p-lg" behaviors html={`<div class="card max-w(560) mx-auto">
   <div class="card-header">
     <h3 class="card-title">Uptime</h3>
     <p class="card-description">Percent per month; no reading in May</p>
@@ -81,24 +81,51 @@ addEventListener('DOMContentLoaded', function () {
 })
 </script>`} />
 
-## 棒の上に重ねる線 \{#over-bars\}
+## 値の範囲 \{#band\}
 
-[棒グラフ](/charts/bar#many)の中で `type: 'line'` を指定した系列は、同じ目盛りを使って棒の上に線として描かれます。目標値や移動平均に使います。
+系列の各ラベルに `low` と `high` を1つずつ指定すると、予測の幅や2回の実行結果のばらつきなど、値が取りうる範囲を示せます。この範囲は折れ線の背後に線と同系色の淡い帯で描かれ、値表示では値に続けて表示されます。
+
+<ComponentPreview name="band" height={396} title="帯" bodyClass="p-lg" behaviors html={`<div class="card max-w(560) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Sessions</h3>
+    <p class="card-description">Thousands per month, with the range the forecast allows</p>
+  </div>
+  <figure class="chart" id="forecast"></figure>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.chart(document.getElementById('forecast'), {
+    type: 'line',
+    label: 'Sessions per month with the range of the forecast, in thousands',
+    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+    series: [{
+      name: 'Sessions',
+      values: [320, 360, 340, 410, 460, 440, 520, 560, 540, 610, 680, 720],
+      low: [300, 335, 310, 370, 410, 385, 450, 470, 440, 490, 540, 560],
+      high: [340, 385, 372, 452, 512, 498, 592, 650, 640, 730, 820, 880]
+    }]
+  })
+})
+</script>`} />
+
+## 棒に重ねる折れ線 \{#over-bars\}
+
+[棒グラフ](/charts/bar#many)で `type: 'line'` を指定した系列は、棒と同じ目盛りを使って折れ線として重ねて描画されます。目標値や移動平均を示すのに使えます。
 
 ## オプション \{#options\}
 
 | オプション | 既定値 | |
 | --- | --- | --- |
-| `label` | なし | チャートが何をどの単位で示すか。プロットのアクセシブルな名前になります |
-| `labels` | `[]` | スケールに沿って、またはレーダーチャートの周囲に並ぶ名前 |
-| `series` | `[]` | それぞれが`name`と`values`を持ちます。スライスやリングでは`value`、散布図では`points`を指定します。任意で`category`、`type`、リングの`max`を指定できます |
-| `curve` | `'smooth'` | `smooth`、`linear`、`step`のいずれか |
-| `min`、`max`、`ticks` | 自動調整、`4` | スケールの両端と、目盛りのおおよその段階数。散布図の横方向のスケールには`xMin`、`xMax`、`xTicks`を使います |
-| `format`、`tickFormat` | ロケールの書式 | 値と目盛りの書式。散布図の横方向のスケールには`xFormat`を使います |
-| `dots`、`values` | `false` | 折れ線のすべてのポイントにドットを付けます。すべての棒の値を書き出します |
-| `legend`、`toggle` | 系列が2つ以上あれば表示、`true` | 凡例を書き出すかどうかと、その項目をチェックボックスにするかどうか |
+| `label` | なし | グラフが何をどの単位で示すかを伝える、プロットのアクセシブルな名前 |
+| `labels` | `[]` | 目盛りに沿って、レーダーチャートの周囲に、またはヒートマップの列の上に並ぶ名前 |
+| `series` | `[]` | 各系列に `name` と、グラフ形式に応じて `values`、単一の `value`、`points`、`ranges`、`children` のいずれかを指定。`category`、`type`、`low` と `high`、リングの `max` は任意 |
+| `curve` | `'smooth'` | `smooth`、`linear`、`step` のいずれか |
+| `min`, `max`, `ticks` | データに合わせる、`4` | 目盛りの下限と上限、およその目盛り数。散布図の横軸には `xMin`、`xMax`、`xTicks` を使用 |
+| `format`, `tickFormat` | ロケールに従う | 値と目盛りの表示形式。散布図の横軸には `xFormat` を使用 |
+| `dots`, `values` | `false` | 折れ線のすべての点に印を付けるか、各棒の値を表示するか |
+| `legend`, `toggle` | 2系列の場合、`true` | 凡例を表示するか、凡例の各項目をチェックボックスにするか |
 
-値表示、キー操作、凡例、色、目盛りはどの種類でも共通です。[チャート](/components/chart)のページに、すべてのオプション、クラス、カスタムプロパティとあわせてまとめています。
+値表示、キー操作、凡例、色、目盛りはすべてのグラフ形式で共通です。[チャート](/components/chart)に、すべてのオプション、クラス、カスタムプロパティとあわせて記載しています。
 
 ## 関連項目 \{#related\}
 

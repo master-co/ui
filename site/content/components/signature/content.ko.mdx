@@ -45,7 +45,7 @@ pad.svg   // '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 160" …>
 - **획.** 획은 포인터가 지나간 점들로, 그림의 `viewBox` 단위로 나타내며 각 점에는 0부터 1까지의 압력 값이 있습니다. 펜은 자체 압력 값을 제공하지만 손가락과 마우스는 제공하지 않으므로, 펜이 머무른 곳에 잉크가 고이듯 천천히 움직인 부분이 더 굵게 그려집니다. 각 획은 `signature-stroke` 경로가 됩니다. 고른 압력에서 `--signature-weight` 두께를 가진 채운 윤곽선으로, 점들을 지나는 곡선으로 매끄럽게 다듬어지고 끝은 둥급니다. 브라우저가 포인터 이동을 병합하는 경우 병합된 이동도 읽으므로, 손을 빠르게 움직여도 곡선이 유지됩니다.
 - **값.** `value`는 획 목록이며, 이 값을 설정하면 획을 그리고 이벤트는 발생하지 않습니다. `svg`는 그림을 SVG 문서로 나타낸 것이며, `signature-value` 필드에도 같은 문서가 담기므로 폼이 이를 제출합니다. 경로는 `currentColor`를 사용하며, 이미지에서는 검은색이 됩니다.
 - **이벤트.** 필드는 획을 그리는 동안 `input`을, 획이 끝나면 `change`를 발생시키며, Undo나 Clear로 획을 지울 때는 두 이벤트를 모두 발생시킵니다.
-- **Undo와 Clear.** Undo는 마지막 획을, Clear는 모든 획을 지웁니다. 획이 생기기 전까지 두 버튼은 보이지 않는 곳에서 대기합니다. 지울 것이 없는 동안 스크립트가 버튼에 `aria-disabled`를 설정하므로, 방금 패드를 비운 버튼은 포커스를 유지하며 그 상태를 알립니다.
+- **Undo와 Clear.** Undo는 마지막 획을, Clear는 모든 획을 지웁니다. 첫 획이 생기기 전까지 두 버튼은 화면에 표시되지 않습니다. 지울 것이 없는 동안 스크립트가 버튼에 `aria-disabled`를 설정하므로, 방금 패드를 비운 버튼은 포커스를 유지하며 그 상태를 알립니다.
 - **상태.** `signature-status`는 첫 획이 끝나면 "Signature drawn", 패드가 비워지면 "Signature cleared", Undo 뒤에는 "Last stroke removed"라고 안내합니다.
 
 | 옵션 | 설정하는 내용 |
@@ -103,7 +103,7 @@ pad.svg   // '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 160" …>
 
 ## 읽기 전용과 비활성화 \{#read-only-and-disabled\}
 
-루트에 `signature-readonly`를 적용하면 서명을 제출된 그대로 보여 줍니다. 그 위에는 아무것도 그려지지 않으며 Undo와 Clear는 사라집니다. 이름 입력에도 `readonly`를 설정하거나 이름 입력을 생략하세요. `<fieldset>`에 `disabled`를 설정하면 패드가 멈추고, 잉크와 문구가 비활성 색으로 바뀌며, fieldset이 원래 그러하듯 안의 모든 컨트롤이 비활성화됩니다.
+루트에 `signature-readonly`를 적용하면 전달받은 서명을 그대로 보여 줍니다. 그 위에는 아무것도 그려지지 않으며 Undo와 Clear는 사라집니다. 이름 입력에도 `readonly`를 설정하거나 이름 입력을 생략하세요. `<fieldset>`에 `disabled`를 설정하면 패드가 멈추고, 잉크와 문구가 비활성 색으로 바뀌며, fieldset이 원래 그러하듯 안의 모든 컨트롤이 비활성화됩니다.
 
 <ComponentPreview name="read-only" height={264} title="읽기 전용" background="plain" bodyClass="p-lg" html={`<fieldset class="signature signature-readonly max-w(440) mx-auto">
   <legend class="signature-label">Signed by the tenant on 12 November</legend>
@@ -150,9 +150,9 @@ const blob = await png(pad.svg)
 ## 접근성 \{#accessibility\}
 
 - 패드와 이름 입력을 무엇에 서명하는지 밝히는 legend가 있는 `<fieldset>`으로 묶으세요.
-- 그림에 `role="img"`와 `aria-label`을 설정해 이미지로 이름을 지정하고, 기준선과 플레이스홀더는 `aria-hidden="true"`로 숨기세요. 그림의 이름이 이미 어디에 서명할지 알려 줍니다.
+- 그림에 `role="img"`로 이미지 역할을 지정하고 `aria-label`로 이름을 붙인 뒤, 기준선과 플레이스홀더는 `aria-hidden="true"`로 숨기세요. 그림의 이름이 이미 어디에 서명할지 알려 줍니다.
 - 키로 그릴 수 없으므로 패드는 포커스를 받지 않습니다. 이름 입력에는 서명하는 또 다른 방법임을 알리는 보이는 레이블을 지정하세요.
-- 상태 영역은 polite입니다. 획마다 안내하지 않고, 패드에 서명했거나 패드가 비워졌을 때 안내합니다.
+- 상태 영역은 보조 기술의 현재 안내를 끊지 않고 상태를 알립니다. 획마다 안내하지 않고, 패드에 서명했거나 패드가 비워졌을 때 안내합니다.
 - 패드 위에서는 손가락이 페이지를 스크롤하지 않고 그림을 그립니다(`touch-action: none`). 휴대폰 사용자가 패드를 지나 스크롤할 수 있도록 패드의 높이를 서명에 필요한 만큼만 유지하세요.
 - 강제 색상 모드에서는 획을 `CanvasText`로, 기준선과 십자 표시를 `GrayText`로 그리며, 패드는 윤곽선을 유지합니다.
 - 동의, 서명자의 신원, 서명 시점의 기록처럼 어떤 표시를 법적으로 서명이 되게 하는 요소는 컴포넌트가 아니라 애플리케이션과 해당 관할 지역의 몫입니다.

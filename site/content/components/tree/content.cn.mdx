@@ -42,7 +42,7 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
 ## 行 \{#rows\}
 
-- `tree-item` 表示一行，可以是链接、按钮或分支的 `<summary>`。每行高 28px，排列紧凑，样式低调。指针悬停的行和当前行采用胶囊标签的色调。
+- `tree-item` 表示一行，可以是链接、按钮或分支的 `<summary>`。每行高 28px，排列紧凑，样式低调。指针悬停的行采用胶囊标签的色调，当前行则呈现为浮在底面上的小面板，并使用加深的文字颜色。
 - 在分支行上使用 `tree-toggle`，会在行首一列绘制箭头。分支展开时，箭头转为朝下。每行都保留这一列，让叶节点与同级分支对齐。
 - `tree-sub` 容纳分支下的各行，将它们缩进一级，并沿着从箭头向下延伸的细线排列。
 
@@ -121,7 +121,7 @@ root.addEventListener('change', () => console.log(files.value))
 - **方向键导航。** 按方向键移动时会跳过折叠分支内的行、带有 `hidden` 属性的行和禁用行。
 - **激活。** summary、链接和按钮沿用浏览器原生的激活方式。对于没有原生激活方式的行，也就是在 `div` 上使用 `role="treeitem"` 的行，可按 <kbd>Enter</kbd>、<kbd>空格键</kbd> 或点击来激活。激活分支会切换其展开或折叠状态，激活叶节点会选中该行。`aria-selected="true"` 会从原先所在的行移到新选中的行。
 - **值。** `tree` 返回的函数带有 `value`：选中行所代表的值，即其 `data-value` 或文本；没有选中行时为 null。在[多选树形视图](#several)和[复选框树形视图](#checkbox)中，它是一个列表。设置它可从外部选中或勾选行，且不会派发事件。
-- **事件。** 所有事件都从根元素冒泡，`detail.item` 中包含该行。选中或勾选时派发 `change`。展开分支时派发 `expand`，`detail.value` 为该行代表的值。重命名时派发 `rename`，附带 `detail.value`，新标签位于 `detail.label`。
+- **事件。** 所有事件都从根元素冒泡，`detail.item` 中包含该行。选中或勾选时先派发 `input`，再派发 `change`。展开分支时派发 `expand`，`detail.value` 为该行代表的值。重命名时派发 `rename`，附带 `detail.value`，新标签位于 `detail.label`。
 - **禁用。** 带有 `disabled` 或 `aria-disabled="true"` 的行不会响应激活。链接不会跳转，分支维持原来的展开或折叠状态，该行也不会被选中、勾选或重命名。
 
 行为脚本也适用于由 `<details>` 构成的树形视图。前两个预览展示了这类树形视图无需脚本的用法。脚本通过 `open` 展开或折叠 `tree-group`，使整棵树只有一个 Tab 停靠点，并支持用同样的按键导航。`attach()` 会为所有树形视图绑定该脚本。要让由 `<details>` 构成的树形视图保留浏览器原生行为，请按名称导入所需的行为脚本。
@@ -156,7 +156,7 @@ root.addEventListener('change', () => console.log(files.value))
 
 ## 复选框树形视图 \{#checkbox\}
 
-各行带有 `aria-checked` 时，树形视图就是复选框树形视图：每行都有一个勾选框，勾选分支会勾选其下的所有行，包括折叠分支中的行。分支的状态反映其下各行的状态：全部勾选时为 `true`，均未勾选时为 `false`，其他情况为 `mixed`。在每行中放置带有 `aria-hidden="true"` 的 `tree-check`，位于箭头列之后、标签之前：它就是[复选框](/components/checkbox)本身的凹槽，根据该行的 `aria-checked` 绘制，因此该行的状态只播报一次。
+各行带有 `aria-checked` 时，树形视图就是复选框树形视图：每行都有一个勾选框，勾选分支会勾选其下的所有行，包括折叠分支中的行。分支的状态反映其下各行的状态：全部勾选时为 `true`，均未勾选时为 `false`，其他情况为 `mixed`。在每行中放置带有 `aria-hidden="true"` 的 `tree-check`，位于箭头列之后、标签之前：它沿用[复选框](/components/checkbox)的方框样式，根据该行的 `aria-checked` 绘制，因此该行的状态只播报一次。
 
 <ComponentPreview name="checkbox" height={252} title="复选框树形视图" background="plain" bodyClass="content-start p-lg" behaviors html={`<ul class="tree max-w(260) mx-auto" role="tree" aria-label="Files to publish" aria-multiselectable="true">
   <li role="none">
@@ -180,13 +180,13 @@ root.addEventListener('change', () => console.log(files.value))
 - **<kbd>空格键</kbd>** 勾选或取消勾选当前获得焦点的行；对于分支，会连同其下所有行一起勾选或取消勾选。部分勾选的分支会被勾选；如果其下所有可更改的行都已勾选，则取消勾选。
 - **点击**叶节点会勾选它；对于分支，点击其勾选框会勾选它，点击该行的其他部分会展开或折叠它。<kbd>Enter</kbd> 的效果与点击该行相同。
 - **禁用行**在其分支被勾选时保持原有的勾选状态，因此分支可能仍处于部分勾选状态。
-- **值**是已勾选叶节点的列表，按它们在树中的顺序排列。**分支不包含在内**：分支的勾选状态只反映其下各行，因此值中列出的是每个文件，而不是文件夹。尚未加载下级行的分支也不包含在内；当它的行在已勾选的分支下加载完成时，这些行会被勾选，树形视图会派发 `change`。
+- **值**是已勾选叶节点的列表，按它们在树中的顺序排列。**分支不包含在内**：分支的勾选状态只反映其下各行，因此值中列出的是每个文件，而不是文件夹。尚未加载下级行的分支也不包含在内；如果该分支已勾选，其下级行加载后也会被勾选，树形视图会先派发 `input`，再派发 `change`。
 
 同时在树形视图上设置 `aria-multiselectable="true"`：复选框树形视图允许选择任意数量的行，也会作为这样的树形视图来播报。
 
 ## 延迟加载行 \{#loading\}
 
-下级行来自服务器的分支，是一个带有 `aria-expanded="false"` 和空 `tree-sub` 的行。它展开时如果下面没有行，行为脚本会将它标记为 `aria-busy="true"` 并派发 `expand`。在该行开头放一个[加载指示器](/components/spinner)：静止时不绘制，该行忙碌时它会占据箭头的位置，因此不会有任何内容移动。
+下级行来自服务器的分支，是一个带有 `aria-expanded="false"` 和空 `tree-sub` 的行。它展开时如果下面没有行，行为脚本会将它标记为 `aria-busy="true"` 并派发 `expand`。在该行开头放一个[加载指示器](/components/spinner)：该行未处于忙碌状态时不显示加载指示器，进入忙碌状态后，加载指示器会占据箭头的位置，因此不会有任何内容移动。
 
 <ComponentPreview name="loading" height={200} title="延迟加载行" background="plain" bodyClass="content-start p-lg" behaviors html={`<ul class="tree max-w(260) mx-auto" role="tree" aria-label="Repositories" id="repositories">
   <li role="none">

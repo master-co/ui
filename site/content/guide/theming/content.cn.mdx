@@ -66,7 +66,7 @@ Moonstone 和 Obsidian 的材质选择见[设计](/guide/design)。[默认主题
 
 <GuideFigure name="theming" title="令牌的作用域与继承">
 
-**作用域决定后代元素继承的值。** 结账区将 `--radius-control` 的默认值从 10px 改为 4px，供“核对订单”和“付款”按钮使用。“继续浏览”按钮位于结账区外，保留 10px。每个按钮都通过自身的 `--btn-radius` 读取继承的令牌。按钮自身的声明优先于祖先元素的 `--btn-radius`。图中数值尚未乘以主题的圆角缩放系数。
+**作用域决定后代元素继承的值。** 结账区将 `--radius-control` 的默认值从 10px 改为 4px，供“核对订单”和“付款”按钮使用。“继续浏览”按钮位于结账区外，保留 10px。每个按钮都通过自身的 `--btn-radius` 读取继承的令牌。祖先元素上的 `--btn-radius` 无法替换按钮自身对该属性的声明。图中数值尚未乘以主题的圆角缩放系数。
 
 </GuideFigure>
 
@@ -136,7 +136,7 @@ Paper 随 `@master/ui/themes/paper.css` 发布。它将默认材质换成平坦�
 
 <ComponentPreview name="paper" height={536} narrowHeight={688} title="Paper" theme stylesheet="paper" bodyClass="p-lg" html={specimen} />
 
-可以用 Paper 的源码作为模板。源码包含一组令牌、一项圆角设置和一条材质配方。
+可以用 Paper 的源码作为模板。源码包含一组令牌、一项圆角设置和两条材质配方。
 
 <ComponentSource name="paper" directory="themes" />
 
@@ -167,16 +167,17 @@ cp node_modules/@master/ui/themes/paper.css themes/app.css
 | --- | --- | --- |
 | `--surface-sheet` | 凸起的表面 | 通过 `--color-surface-raised-low` 呈现平面效果 |
 | `--surface-ink` | 墨色表面，例如反色面板或已发送的消息 | 通过 `-inverse-high` 和 `-low` 令牌呈现平面效果 |
+| `--surface-brand` | 品牌色色带，例如品牌色横幅 | 重新定义为单一纯色 |
 | `--control-ink`, `-hover`, `-pressed` | 主按钮在各状态下的表面和阴影 | 通过墨色令牌呈现平面效果 |
 | `--control-tone`, `-hover`, `-pressed` | 带色调的控件，以控件自身的 `--tone` 为基础混色 | 重新定义为单一纯色 |
 | `--surface-thumb` | 开关和滑动条的滑块 | 通过滑块令牌呈现平面效果 |
 | `--focus-ring` | 键盘焦点 | 保持不变 |
-| `--on-ink` | 墨色表面传给其中行内标签的样式信息 | 保持不变 |
+| `--on-ink` | 墨色表面传给其中行内胶囊标签、徽标和文本高亮的样式信息 | 保持不变 |
 | `--anchored`, `--pop` | 弹出层的位置及其进出场效果 | 保持不变 |
 
 分类的四个角色也是主题令牌：`--color-category-<name>-surface`、`-text`、`-line` 和 `-mark`。因此主题可以像调整任何颜色一样重新调整色板，同时保持[默认主题](/guide/theme#category)所保证的对比度：文字在自身底色及所在的各个表面上达到 4.5:1，标记达到 3:1。在 `packages/ui` 中，`scripts/category.ts` 根据预设的色板生成默认的分类令牌。
 
-优先使用主题令牌。Paper 只重新定义带色调控件的混入，因为配方用控件自身设置的色相混出表面颜色，而根元素上的令牌无法读取该色相。
+优先使用主题令牌。Paper 只重新定义两条配方，因为两者都用色相混出表面颜色，而不是读取令牌：带色调控件的配方用控件自身设置的色相混色，而根元素上的令牌无法读取该色相；品牌色带的配方用 `--color-brand` 混出更亮的顶部和更暗的边缘，这两处颜色均未由令牌直接设置。
 
 主题令牌是 CSS 自定义属性，可在运行时用于任何元素。Master CSS 编译样式表时会解析混入，因此重新定义的混入对整个构建生效。
 
@@ -192,7 +193,7 @@ cp node_modules/@master/ui/themes/paper.css themes/app.css
 }
 ```
 
-页面没有使用打包工具时，可将编译后的文件作为静态资源提供。样式重置和工具类的使用限制见[安装](/guide/installation#without-master-css)。`dist/standalone.css` 包含 Moonstone 和 Obsidian。编译后的文件支持覆盖自定义属性，重新定义混入则需要用 Master CSS 编译主题。
+页面没有使用打包工具时，可将编译后的文件作为静态资源提供。样式重置和工具类的使用限制见[安装](/guide/installation#without-master-css)。`dist/standalone.css` 包含 moonstone 和 obsidian。编译后的文件支持覆盖自定义属性，重新定义混入则需要用 Master CSS 编译主题。
 
 ## 主题编写规则 \{#rules\}
 

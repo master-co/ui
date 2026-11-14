@@ -9,7 +9,7 @@ import ComponentLinks from '~/site/components/ComponentLinks.astro'
 import ContractTable from '~/site/components/ContractTable.astro'
 import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
-图片裁剪是在图片上覆盖一个框，用来标明要保留的部分：发布前裁剪照片、按横幅比例修剪封面、在圆形中框选头像。图片放在一个凹槽中。框外的部分会变暗，框的边缘是绘制在图片上的白线，手柄是位于四角的珍珠质感圆片和位于四边的胶囊形。按住框或用键盘操作时，框内会显示三分法参考线。
+图片裁剪是在图片上覆盖一个框，用来标明要保留的部分：发布前裁剪照片、按横幅比例修剪封面、在圆形中框选头像。图片放在一个凹槽中。框外的部分会变暗，裁剪框的边缘是在图片上绘制的白线，四角是珍珠质感的圆形手柄，四边是胶囊形手柄。按住框或用键盘操作时，框内会显示三分法参考线。
 
 <ComponentPreview name="default" height={432} narrowHeight={304} title="图片裁剪" bodyClass="p-lg" behaviors html={`<div class="cropper max-w(480) mx-auto" style="--cropper-x: .16; --cropper-y: .14; --cropper-width: .62; --cropper-height: .66">
   <img class="cropper-image" src="/demo/harbor.svg" alt="A harbor at dusk" width="640" height="480">
@@ -50,9 +50,9 @@ root.addEventListener('change', () => {
 - **图片像素。** 裁剪区域以 `cropper-image` 的 `width` 和 `height` 计算。请在其中写入文件本身的尺寸：这也能避免图片加载时框架发生位移。
 - **按键。** 方向键按一个步长移动裁剪区域，按住 <kbd class="kbd">Shift</kbd> 时移动十个步长。按住 <kbd class="kbd">Alt</kbd>（Mac 上为 <kbd class="kbd">Option</kbd>）时，方向键从远端的边调整大小：向右和向下放大，向左和向上缩小。
 - **事件。** 每次裁剪区域变化时，框派发 `input`；拖动或按键结束后派发一次 `change`。两者都会冒泡。
-- **播报内容。** 每次 `change` 之后，行为脚本会把裁剪区域的尺寸写入 `cropper-status`，这是一个礼貌型实时区域，内容如“480 by 270 pixels, 64 from the left and 96 from the top”。传入 `describe` 可用页面的语言表述。
+- **播报内容。** 每次 `change` 之后，行为脚本会把裁剪区域的尺寸写入 `cropper-status`，这是一个非打断式实时区域，播报内容例如“宽 480 像素，高 270 像素，距左边缘 64 像素，距上边缘 96 像素”。传入 `describe` 可用页面的语言表述。
 
-图片没有书写方向，因此在任何书写方向下，框都从左边和顶边定位，方向键也都表示向左和向右。
+图片没有书写方向，因此在任何书写方向下，框都从左边和顶边定位，左右方向键也始终分别对应向左和向右。
 
 | 选项 | 设置的内容 |
 | --- | --- |
@@ -132,7 +132,7 @@ addEventListener('DOMContentLoaded', function () {
   </div>
 </div>`} caption="拖动图片、双指缩放，或移动滑块。聚焦圆形后，方向键平移，+ 和 - 缩放。" />
 
-在任何缩放倍数下，图片都会填满框，因此平移模式的裁剪区域始终位于图片之内。键盘操作方面，方向键像其他情况一样移动裁剪区域；按住 <kbd class="kbd">Alt</kbd> 再按方向键，或按 <kbd class="kbd">+</kbd> 和 <kbd class="kbd">-</kbd>，会以框的中心为基准缩放。框没有手柄，`--cropper-inset` 即框周围的空间会显示一圈变暗的图片，让读者看到哪些部分被排除在外。
+在任何缩放倍数下，图片都会填满框，因此平移模式的裁剪区域始终位于图片之内。键盘操作方面，方向键像其他情况一样移动裁剪区域；按住 <kbd class="kbd">Alt</kbd> 再按方向键，或按 <kbd class="kbd">+</kbd> 或 <kbd class="kbd">-</kbd>，会以框的中心为基准缩放。框没有手柄，`--cropper-inset` 即框周围的空间会显示一圈变暗的图片，让读者看到哪些部分被排除在外。
 
 ## 裁切图片 \{#cutting-the-picture\}
 
@@ -151,7 +151,7 @@ function cut(image, { x, y, width, height }, type = 'image/webp') {
 const file = await cut(document.querySelector('.cropper-image'), crop.value)
 ```
 
-- 图片必须来自页面自身的源，或者带有 `crossorigin` 并通过 CORS 提供：绘制过其他源图片的 canvas 会拒绝导出内容。
+- 图片必须来自页面自身的源，或者带有 `crossorigin` 并通过 CORS 提供：如果跨源图片未经 CORS 授权，绘制后便无法从 canvas 导出内容。
 - 如果图片的 `width` 和 `height` 不是文件本身的尺寸，请先将裁剪区域乘以 `image.naturalWidth / width`。
 - 圆形裁剪的结果保持为正方形：[头像](/components/avatar)会自行绘制成圆形。只有文件本身必须是圆形时，才用 `arc()` 裁剪 canvas。
 
@@ -161,12 +161,12 @@ const file = await cut(document.querySelector('.cropper-image'), crop.value)
 
 ## 无障碍 \{#accessibility\}
 
-- 框是唯一的 Tab 停靠点。它带有 `role="application"`：它是一个拥有自己按键操作的单一控件，没有其他角色能描述它，而这个角色会让屏幕阅读器把方向键交给它处理。请按被裁剪的内容为它命名，并用页面的语言为它设置 `aria-roledescription`，使其被播报为裁剪框而不是应用程序。
-- 手柄不获取焦点。再多八个 Tab 停靠点，并不能为键盘用户提供框本身之外的任何能力：方向键移动裁剪区域，按住 <kbd class="kbd">Alt</kbd> 再按方向键调整大小，凡是手柄能得到的裁剪区域都能这样得到。移动起始边，就是先移动再调整大小。
-- 每次变化后，`cropper-status` 以礼貌方式播报裁剪区域的像素尺寸。请从一开始就把它放在标记中，让屏幕阅读器在它第一次播报前就已注册它。
+- 按 Tab 导航时，裁剪框是唯一可聚焦的位置。它带有 `role="application"`：它是一个拥有自己按键操作的单一控件，没有其他角色能描述它，而这个角色会让屏幕阅读器把方向键交给它处理。请按被裁剪的内容为它命名，并用页面的语言为它设置 `aria-roledescription`，使其被播报为裁剪框而不是应用程序。
+- 手柄不获取焦点。再增加八个可通过 Tab 键聚焦的位置，也不会为键盘用户增加任何操作：方向键移动裁剪区域，按住 <kbd class="kbd">Alt</kbd> 再按方向键调整大小，凡是手柄能得到的裁剪区域都能这样得到。移动起始边，就是先移动再调整大小。
+- 每次触发 change 事件后，`cropper-status` 会播报裁剪区域的像素尺寸，且不会打断当前朗读。请从一开始就把它放在标记中，让屏幕阅读器在它第一次播报前就已注册它。
 - 每一种拖动都有替代方式：按键、在图片上按下以把框移到该处，以及缩放滑块。
 - 为图片提供说明其内容的 `alt`：读者正在决定要保留其中哪些部分。
-- 手柄的点击目标为 24px，在触摸屏上为 44px，其中绘制的圆片或胶囊形保持原尺寸；图片周围的空间随之增大。整个框架都会接收指针事件，因此请把图片裁剪放在手指无需滚动经过它的位置，例如对话框或编辑器中。
+- 手柄的命中区域为 24px，在触摸屏上为 44px。可见的圆形或胶囊形手柄大小不变，图片周围的留白随命中区域增大。整个框架都会接收指针事件，因此请把图片裁剪放在手指无需滚动经过它的位置，例如对话框或编辑器中。
 - 启用减少动态效果时，按住手柄不会放大。在强制颜色模式下，框用系统轮廓线绘制，手柄使用按钮颜色，变暗效果保留。
 
 ## React、Svelte 和 Vue \{#frameworks\}

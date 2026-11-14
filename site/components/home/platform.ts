@@ -4,7 +4,7 @@
  * browser without a feature shows is on /guide/browser-support, linked above the bento. Ids are prefixed, since
  * other sections render live markup too.
  */
-import { chartMarkup } from '@master/ui/behaviors/chart.js'
+import { chartMarkup } from './chart'
 
 export interface PlatformFeature {
   id: string

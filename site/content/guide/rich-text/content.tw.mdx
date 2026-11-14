@@ -5,7 +5,7 @@ description: "將 TipTap 放進編輯器外框：固定的工具列、欄位的�
 
 import PagePreview from '~/site/components/PagePreview.astro'
 
-Master UI 沒有自己的編輯器。編輯格式化文字，包括文件模型、選取範圍、復原紀錄、貼上和輸入法組字，是大型引擎的工作，而市面上已有優秀的引擎。Master UI 提供給這類引擎的是一個外框：[`editor`](/components/editor) 契約負責繪製凹槽、工具列橫帶、各種狀態和文件內容，讓富文字欄位的外觀與行為和頁面上的其他欄位一致。本指南以純 JavaScript 將 [TipTap](https://tiptap.dev/docs/editor/getting-started/install/vanilla-javascript) 放進這個外框。
+Master UI 沒有自己的編輯器。編輯格式化文字，包括文件模型、選取範圍、復原與重做紀錄、貼上和輸入法組字，是大型引擎的工作，而市面上已有優秀的引擎。Master UI 提供給這類引擎的是一個外框：[`editor`](/components/editor) 契約定義編輯區、工具列、各種狀態和文件內容的外觀，讓富文字欄位的外觀與行為和頁面上的其他欄位一致。本指南以純 JavaScript 將 [TipTap](https://tiptap.dev/docs/editor/getting-started/install/vanilla-javascript) 放進這個外框。
 
 <PagePreview name="default" title="富文字" example="rich-text" caption="撰寫內容、以工具列或快捷鍵設定格式、加入連結、切換狀態，並展開值。" />
 
@@ -14,7 +14,7 @@ Master UI 沒有自己的編輯器。編輯格式化文字，包括文件模型�
 | | 負責 |
 | --- | --- |
 | TipTap | 文件及其結構定義、選取範圍、復原與重做、按鍵與快捷鍵、貼上、輸入法，以及它設為可編輯的元素 |
-| `editor` | 外框及其狀態、工具列橫帶、文件的大小，以及段落、標題、清單、引文、連結和分隔線的外觀 |
+| `editor` | 外框及其狀態、工具列區域、文件的大小，以及段落、標題、清單、引文、連結和分隔線的外觀 |
 | [`toolbar`](/components/toolbar) 及其行為 | 讓所有控制項只占一個 Tab 停駐點、以方向鍵在控制項之間移動，以及按下狀態的按鈕 |
 | 你的頁面 | 連接兩者：每個按鈕執行哪個指令、它的狀態為何，以及值要送往何處 |
 
@@ -53,12 +53,12 @@ const editor = new Editor({
 
 ## 連接工具列 \{#toolbar\}
 
-工具列是加上 `editor-toolbar` 的[工具列](/components/toolbar)，平鋪在凹槽頂端。它的行為讓它只占一個 Tab 停駐點，可以用方向鍵在其中移動，並以 `aria-pressed` 表示按鈕的按下狀態；每個按鈕做什麼、說明什麼，則由頁面決定。
+工具列是加上 `editor-toolbar` 的[工具列](/components/toolbar)，平貼在編輯區頂端。它的行為讓它只占一個 Tab 停駐點，可以用方向鍵在其中移動，並以 `aria-pressed` 表示按鈕的按下狀態；每個按鈕做什麼、說明什麼，則由頁面決定。
 
 - **按下按鈕會執行指令並交回焦點。** `editor.chain().focus().toggleBold().run()`：讀者會回到文件中原本書寫的位置，並保有 TipTap 所保留的選取範圍。
 - **由選取範圍決定按下狀態。** 每次發生 transaction 時，每個按鈕的 `aria-pressed` 都會設為 `editor.isActive(...)` 的結果，因此只要游標位於粗體文字中，「粗體」就會顯示為按下狀態，文字樣式下拉選單也會顯示游標所在的區塊類型。
-- **無法執行的操作會停用。** `editor.can()` 會試行一個指令：沒有可復原的內容時停用「復原」；編輯器為唯讀或停用時，則停用所有控制項。
-- **連結使用小型表單，而不是 prompt。** 連結按鈕會開啟一個帶有 URL 欄位的[彈出面板](/components/popover)。欄位本身的驗證會檢查網址；「套用」會將連結加到選取範圍上，若未選取任何內容，則以文字插入連結；「移除」則會拿掉連結。TipTap 會拒絕 `javascript:` 之類的網址，連結也會帶有 `rel="noopener noreferrer nofollow"`。
+- **無法執行的操作會停用。** `editor.can()` 會試行一個指令：沒有可復原的操作時停用「復原」；編輯器為唯讀或停用時，則停用所有控制項。
+- **連結使用小型表單取代瀏覽器的輸入對話框。** 連結按鈕會開啟一個帶有 URL 欄位的[彈出面板](/components/popover)。欄位本身的驗證會檢查網址；「套用」會將連結加到選取範圍上，若未選取任何內容，則以文字插入連結；「移除」則會拿掉連結。TipTap 會拒絕 `javascript:` 之類的網址，連結也會帶有 `rel="noopener noreferrer nofollow"`。
 
 請為每個圖示按鈕命名，並在 `aria-keyshortcuts` 中寫出 TipTap 已處理的快捷鍵，讓螢幕閱讀器能同時讀出兩者。
 
@@ -66,8 +66,8 @@ const editor = new Editor({
 
 | 狀態 | 標記 | 範例的設定方式 |
 | --- | --- | --- |
-| 焦點 | `editor-document` 上的 `:focus` | 由瀏覽器在文件取得焦點時設定；外框會以欄位的光暈浮起 |
-| 無效 | `editor-document` 上的 `aria-invalid="true"` | 內容留空時：外框顯示錯誤狀態的邊緣，並顯示欄位的 `field-error`，直到讀者再次輸入 |
+| 焦點 | `editor-document` 上的 `:focus` | 由瀏覽器在文件取得焦點時設定；外框會顯示欄位的焦點光暈 |
+| 無效 | `editor-document` 上的 `aria-invalid="true"` | 內容留空時：外框會套用錯誤狀態的邊框樣式，並顯示欄位的 `field-error`，直到讀者再次輸入 |
 | 唯讀 | `editor-document` 上的 `aria-readonly="true"` | `editor.setEditable(false)` 加上該屬性；文字仍可閱讀和複製 |
 | 停用 | `editor` 上的 `aria-disabled="true"` | `editor.setEditable(false)`、該屬性，並停用所有控制項 |
 
@@ -75,13 +75,13 @@ const editor = new Editor({
 
 ## 值 \{#value\}
 
-TipTap 的文件是資料。`editor.getJSON()` 是應用程式要儲存的內容，`editor.commands.setContent(json)` 則會載入已儲存的內容，就像「**Load other notes**」和「**Reset**」所做的那樣。範例以 `textContent` 寫出 JSON：讀者輸入的任何內容都不會被當成標記放進頁面。若必須在編輯器以外以 HTML 顯示內容，請在伺服器上從 JSON 渲染，並經過清理器處理。
+TipTap 的文件是資料。應用程式儲存 `editor.getJSON()` 傳回的資料，`editor.commands.setContent(json)` 則會載入已儲存的內容，就像「**載入其他筆記**」和「**重設**」所做的那樣。範例以 `textContent` 寫出 JSON：讀者輸入的任何內容都不會被當成標記放進頁面。若必須在編輯器以外以 HTML 顯示內容，請在伺服器上從 JSON 渲染，並經過清理器處理。
 
 監聽 `update` 來儲存或驗證，監聽 `transaction` 來繪製工具列；兩者都不會改變文件。頁面不會在文件上加入自己的按鍵處理程式：以輸入法組字日文、中文或韓文時會使用 Enter 和方向鍵，而 TipTap 知道何時正在組字。請在 `blur` 時驗證，而不是在按鍵時。
 
 ## 銷毀 \{#destroy\}
 
-編輯器持有監聽器、一個檢視和它的復原紀錄。`mount()` 會傳回一個函式，用來卸除工具列行為、移除頁面的監聽器，並呼叫 `editor.destroy()`；請在欄位離開頁面時呼叫它，就像框架在元件卸載時所做的那樣。
+編輯器會保留監聽器、檢視，以及復原與重做紀錄。`mount()` 會傳回一個函式，用來卸除工具列行為、移除頁面的監聽器，並呼叫 `editor.destroy()`；請在欄位離開頁面時呼叫它，就像框架在元件卸載時所做的那樣。
 
 ## 未涵蓋的部分 \{#leaves-out\}
 

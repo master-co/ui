@@ -1,12 +1,12 @@
 ---
 title: "영역 차트"
-description: "선 아래를 같은 색으로 옅게 채웁니다. 단독으로, 또는 합계가 되도록 쌓아서 씁니다."
+description: "선 아래를 같은 색으로 채웁니다. 단일 계열을 표시하거나 여러 계열을 쌓아 합계를 보여 줍니다."
 ---
 
 import ComponentPreview from '~/site/components/ComponentPreview.astro'
 import ComponentLinks from '~/site/components/ComponentLinks.astro'
 
-영역은 선 아래에 선과 같은 색을 옅게 깔고 아래로 갈수록 흐려지게 한 것입니다. 계열 한두 개에 페이지에서 더 큰 무게감을 줍니다. 계열이 더 많으면 옅은 색이 서로를 덮으므로 선으로 그리는 편이 읽기 좋습니다.
+영역 차트는 선 아래를 같은 색으로 채우고 아래로 갈수록 투명하게 표시합니다. 계열이 한두 개일 때는 선만 그릴 때보다 눈에 잘 띕니다. 계열이 더 많으면 채운 영역이 서로 가리므로 선 차트가 읽기 쉽습니다.
 
 <ComponentPreview name="area" height={434} title="영역 차트" bodyClass="p-lg" behaviors html={`<div class="card max-w(560) mx-auto">
   <div class="card-header">
@@ -27,11 +27,11 @@ addEventListener('DOMContentLoaded', function () {
     ]
   })
 })
-</script>`} caption="월에 포인터를 올리거나 Tab 키와 방향키를 눌러 해당 월의 값을 읽으세요. 범례의 항목은 해당 계열을 숨깁니다." />
+</script>`} caption="월에 포인터를 올리거나 Tab 키와 방향키를 눌러 값을 확인합니다. 범례 항목을 선택하면 해당 계열을 숨길 수 있습니다." />
 
 ## 누적 \{#stacked\}
 
-계열이 합계를 이루는 부분일 때는 `stacked`를 설정하세요. 각 층이 앞선 층 위에 놓이므로 맨 위 가장자리가 합계가 되고, 각 층은 흐려지는 색 대신 저마다의 옅은 색으로 채워집니다.
+각 계열이 전체의 일부라면 `stacked`를 설정합니다. 각 층을 앞선 층 위에 쌓으므로 맨 위 경계가 합계를 나타냅니다. 각 층은 그라데이션 없이 고유한 색조로 채웁니다.
 
 <ComponentPreview name="stacked-area" height={434} title="누적 영역" bodyClass="p-lg" behaviors html={`<div class="card max-w(560) mx-auto">
   <div class="card-header">
@@ -56,11 +56,41 @@ addEventListener('DOMContentLoaded', function () {
 })
 </script>`} />
 
-## 계열이 하나일 때 \{#one\}
+## 스트림 \{#stream\}
 
-계열이 하나인 차트는 잉크색으로 그려지며, 계열에 `category`를 지정할 때만 색이 입혀집니다.
+`stacked: 'stream'`은 누적 영역을 기준선 위로 쌓는 대신 중앙선을 중심으로 배치합니다. 아래층에 밀려 위층의 위치가 한쪽으로 치우치지 않아 각 지점에서 층의 두께를 읽기 쉽고, 전체가 두꺼워졌다 얇아지는 흐름도 볼 수 있습니다. 스트림에는 척도가 없으며 값 표시에는 각 층의 값이 나옵니다.
 
-<ComponentPreview name="one" height={396} title="계열이 하나일 때" bodyClass="p-lg" behaviors html={`<div class="card max-w(560) mx-auto">
+<ComponentPreview name="stream" height={434} title="스트림" bodyClass="p-lg" behaviors html={`<div class="card max-w(560) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Listening</h3>
+    <p class="card-description">Hours a month by genre</p>
+  </div>
+  <figure class="chart" id="genres"></figure>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.chart(document.getElementById('genres'), {
+    type: 'area',
+    stacked: 'stream',
+    label: 'Listening hours a month by genre',
+    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+    series: [
+      { name: 'Rock', values: [20, 24, 30, 28, 22, 18, 16, 20, 26, 30, 34, 30] },
+      { name: 'Jazz', values: [10, 12, 11, 16, 22, 26, 24, 20, 16, 12, 10, 12] },
+      { name: 'Pop', values: [14, 12, 16, 20, 24, 30, 36, 32, 26, 20, 16, 18] },
+      { name: 'Folk', values: [6, 8, 7, 6, 8, 10, 12, 14, 12, 9, 7, 6] }
+    ]
+  })
+})
+</script>`} />
+
+`stacked: 'percent'`는 각 지점의 합계를 100%로 맞춥니다. 여러 층이 0%부터 100%까지 플롯을 채우므로 합계 대신 각 층의 비중을 읽을 수 있습니다.
+
+## 단일 계열 \{#one\}
+
+계열이 하나인 차트에는 기본 전경색을 쓰며, 계열에 `category`를 지정한 경우에만 해당 색상을 적용합니다.
+
+<ComponentPreview name="one" height={396} title="단일 계열" bodyClass="p-lg" behaviors html={`<div class="card max-w(560) mx-auto">
   <div class="card-header">
     <h3 class="card-title">Revenue</h3>
     <p class="card-description">Dollars per month, this year</p>
@@ -83,18 +113,18 @@ addEventListener('DOMContentLoaded', function () {
 
 | 옵션 | 기본값 | |
 | --- | --- | --- |
-| `label` | 없음 | 차트가 무엇을 어떤 단위로 보여 주는지 알려 주는, 그래프 영역의 접근 가능한 이름 |
-| `labels` | `[]` | 눈금을 따라 놓이는 이름 또는 레이더 둘레에 놓이는 이름 |
-| `series` | `[]` | 각 계열에는 `name`과 `values`를 지정합니다. 조각이나 링에는 `value`를, 산점도에는 `points`를 지정합니다. 선택적으로 `category`, `type`, 링의 `max`를 지정할 수 있습니다 |
-| `stacked` | `false` | 막대 또는 영역이 서로 위에 쌓입니다 |
+| `label` | 없음 | 차트가 보여 주는 내용과 단위를 설명하는 플롯의 접근성 이름 |
+| `labels` | `[]` | 눈금을 따라, 레이더 차트 둘레에, 또는 히트맵의 각 열 위에 표시할 이름 |
+| `series` | `[]` | 각 계열에는 `name`과 차트 유형에 맞는 `values`, `value`, `points`, `ranges` 또는 `children`을 지정합니다. 선택적으로 `category`, `type`, `low`와 `high`, 링의 `max`를 지정할 수 있습니다. |
+| `stacked` | `false` | 막대나 영역을 쌓습니다. `'percent'`는 각 누적 합계를 100%로 맞추고, `'stream'`은 누적 영역을 중앙선 중심으로 배치합니다. |
 | `curve` | `'smooth'` | `smooth`, `linear` 또는 `step` |
-| `min`, `max`, `ticks` | 데이터에 맞춤, `4` | 눈금의 양 끝과 눈금을 표시하는 대략적인 단계 수. 산점도의 가로 눈금에는 `xMin`, `xMax`, `xTicks`를 사용합니다 |
-| `format`, `tickFormat` | 로캘의 형식 | 값과 눈금 숫자를 적는 방식. 산점도의 가로 눈금에는 `xFormat`을 사용합니다 |
-| `legend`, `toggle` | 계열이 둘이면 작성, `true` | 범례를 작성할지 여부와 범례 항목을 체크박스로 만들지 여부 |
+| `min`, `max`, `ticks` | 데이터에 맞춤, `4` | 축 범위의 양 끝과 대략적인 눈금 개수입니다. 산점도의 가로축에는 `xMin`, `xMax`, `xTicks`를 사용합니다. |
+| `format`, `tickFormat` | 로캘에 따름 | 값과 눈금의 표시 형식입니다. 산점도의 가로축에는 `xFormat`을 사용합니다. |
+| `legend`, `toggle` | 계열이 2개일 때 표시, `true` | 범례를 표시할지, 범례 항목을 체크박스로 표시할지 지정합니다. |
 
-값 표시창, 키 조작, 범례, 색, 눈금은 모든 형식에서 같습니다. [차트](/components/chart) 페이지에 모든 옵션, 클래스, 사용자 정의 속성과 함께 정리되어 있습니다.
+모든 차트 유형은 값 표시, 키보드 조작, 범례, 색상, 척도 동작을 공유합니다. [차트](/components/chart)에서 모든 옵션, 클래스, 사용자 지정 속성을 확인할 수 있습니다.
 
-## 관련 항목 \{#related\}
+## 관련 문서 \{#related\}
 
 <ComponentLinks kind="charts" slugs={['line', 'bar']} />
 

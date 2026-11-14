@@ -10,7 +10,7 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
 日程表沿著垂直時間軸排列一天的時段，每個事件的高度對應其持續時間。可用於行事曆的單日檢視、研討會各會議室的議程，或診所的預約。事件以有序清單呈現，每項都用文字標示標題和時間。樣式表依小時刻度配置事件，每個整點都有一條細線和一個標籤。時間重疊的事件會並排顯示。整個版面配置不使用腳本，也不量測任何尺寸。
 
-持續一整天的事件會放在時段上方的橫帶中。月檢視將每天的事件排成多列，議程則依日期列出事件。[日程檢視](#schedule-view)是讀者實際操作的日程表，可依日、週、月或議程切換，由 `schedule` 行為驅動。
+持續一整天或連續多個整天的事件會放在時段上方的橫帶中。月檢視將每天的事件排成多列，議程則依日期列出事件。[日程檢視](#schedule-view)是讀者實際操作的日程表，可依日、週、月或議程切換，由 `schedule` 行為驅動。
 
 <ComponentPreview name="default" height={400} title="日程表" bodyClass="p-lg" html={`<div class="card max-w(480) mx-auto">
   <div class="schedule schedule-now" style="--schedule-from: 9; --schedule-to: 15; --now: 12.45">
@@ -124,7 +124,7 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
 ## 分類色 \{#category\}
 
-`schedule-event-category` 會依事件本身或其外層所設定的[分類色](/components/category)為事件上色：面板使用分類的底面色，色條使用分類的標記色，文字使用分類的文字色。包含多個團隊或專案的行事曆可藉此區分它們；事件的內容仍由標題說明。
+`schedule-event-category` 會依事件本身或其外層所設定的[分類色](/components/category)為事件上色：事件區塊使用分類的背景色，色條使用分類的標記色，文字使用分類的文字色。包含多個團隊或專案的行事曆可藉此區分它們；事件的內容仍由標題說明。
 
 <ComponentPreview name="category" height={240} title="分類色" bodyClass="p-lg" html={`<div class="card max-w(480) mx-auto">
   <div class="card-body">
@@ -141,7 +141,7 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
 ## 月檢視 \{#month\}
 
-`schedule-month` 將一個月呈現為數週、每週七天。每個 `schedule-week` 依序寫出某一天、從那天開始的事件，以及那天的「更多」按鈕，因此螢幕閱讀器會依日期順序讀到它們；樣式表則將它們放到各自的欄與列。日期數字 `schedule-date-number` 是一個可開啟該日的圓形按鈕，今天會填上墨色。每天顯示 `--lanes` 個事件（預設三個），其餘事件收進 `schedule-more` 按鈕，按下後會開啟列出這些事件的[彈出面板](/components/popover)。月檢視中的短事件使用不帶面板的簡潔樣式 `schedule-event-plain`：只有圓點、時間和標題。
+`schedule-month` 將一個月呈現為數週、每週七天。每個 `schedule-week` 都按日期逐天輸出，每天依序放入日期、當天開始的事件，以及當天的「更多」按鈕，因此螢幕閱讀器會依日期順序讀到它們；樣式表則將它們放到各自的欄與列。日期數字 `schedule-date-number` 是可開啟該日的圓形按鈕，今天的按鈕會以深色填滿。每天顯示 `--lanes` 個事件（預設三個），其餘事件收進 `schedule-more` 按鈕，按下後會開啟列出這些事件的[彈出面板](/components/popover)。月檢視中的短事件使用不帶面板的簡潔樣式 `schedule-event-plain`：只有圓點、時間和標題。
 
 可用空間窄於 36rem 時，事件列會退讓：每天只在日期數字下方為每個事件顯示一個圓點（最多三個），點按日期數字即可開啟當天。不會把文字硬塞進七個狹窄的欄位中。
 
@@ -190,7 +190,7 @@ addEventListener('DOMContentLoaded', function () {
 
 ### 事件 \{#the-events\}
 
-每個事件都有固定不變的 `id`、`title`、`start` 和 `end`。全天事件設定 `allDay: true`，起訖以日期表示（`YYYY-MM-DD`）；其他事件則使用當地時間（`YYYY-MM-DDTHH:mm`）。`end` 不包含在內：只在 13 日的全天事件結束於 14 日，在午夜結束的事件則算在前一天。`category` 指定一組色盤，例如 `blue` 對應 `category-blue`；`href` 會讓事件成為連結，若沒有 `href`，事件會是一個 `value` 為其 id 的按鈕，由頁面監聽。
+每個事件都有一個固定不變的 `id`，以及 `title`、`start` 和 `end`。全天事件設定 `allDay: true`，起訖以日期表示（`YYYY-MM-DD`）；其他事件則使用當地時間（`YYYY-MM-DDTHH:mm`）。`end` 不包含在內：只在 13 日的全天事件結束於 14 日，在午夜結束的事件則算在前一天。`category` 指定一組色盤，例如 `blue` 對應 `category-blue`；`href` 會讓事件成為連結，若沒有 `href`，事件會是一個 `value` 為其 id 的按鈕，由頁面監聽。
 
 時間應已換算成日程表顯示時所在的時區，重複事件則應以各次發生的事件傳入：時區和重複規則由應用程式負責處理。日期依曆法計算並固定在正午，因此日光節約時間的切換不會讓全天事件移到前一天。檢視不會編輯、移動或儲存事件；它只負責顯示事件，並告知哪一個事件被按下。
 
@@ -217,7 +217,7 @@ team.value // { date: '2026-11-13', view: 'month' }
 
 讀者的操作會從根元素觸發 `input` 和 `change`；行為傳回的函式帶有可讀寫的 `value`，以程式設定它則不會觸發任何事件。`scheduleLayout(value, options)` 會以資料形式傳回檢視要顯示的內容：各週及每個事件所在的列、各時段及每個事件的位置、橫帶，以及議程的各天。因此伺服器、框架與行為能以相同方式排列相同的事件。
 
-## 日程表、甘特圖或行事曆 \{#schedule-gantt-or-calendar\}
+## 日程表、甘特圖或月曆 \{#schedule-gantt-or-calendar\}
 
 日程表用來呈現依時間排列的事件：由上往下查看一天中的各個時段，或查看一個月中的各天。[甘特圖](/components/gantt)用同一條時間刻度呈現計畫中各項工作的起訖時間，每項工作各占一列。[月曆](/components/calendar)用來從整月檢視中選取一個日期或一段日期範圍，[時間軸](/components/timeline)則按發生順序呈現各個時間點。
 
@@ -228,7 +228,7 @@ team.value // { date: '2026-11-13', view: 'month' }
 - 目前事件與今天都以 `aria-current` 標記，螢幕閱讀器會讀出這些狀態。目前時間線由樣式表繪製，請在需要提供目前時間的地方用文字標示。
 - 在強制色彩模式下，每個事件都有外框，目前事件會填入醒目提示色，整點細線與目前時間線則沿用系統色彩。
 - 月檢視不是日期格線：其中的日期是可開啟該日的數字，事件則是連結或按鈕，各自以標題和時間命名。「更多」按鈕會說明它列出幾個事件，以及是哪一天的事件。分類色從來不是區分事件的唯一方式。
-- 以檢視的控制項切換期間時，焦點會留在控制項上；日期數字會隨月份一起被換掉，因此會將焦點交給它所開啟那一天的名稱。
+- 操作檢視的控制項時，焦點會留在使用中的控制項上；日期數字會隨月份一起被換掉，因此會將焦點交給它所開啟那一天的名稱。
 
 ## React、Svelte 和 Vue \{#frameworks\}
 

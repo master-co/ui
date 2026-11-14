@@ -1,14 +1,14 @@
 ---
-title: "선 차트"
-description: "이어지는 값을 점과 점을 잇는 선으로 나타냅니다."
+title: "꺾은선 차트"
+description: "연속된 값을 점에서 점으로 이어 선으로 표시합니다."
 ---
 
 import ComponentPreview from '~/site/components/ComponentPreview.astro'
 import ComponentLinks from '~/site/components/ComponentLinks.astro'
 
-선은 월별 지연 시간이나 일별 가격처럼 하나에서 다음으로 이어지는 값을 따라갑니다. 차트에 막대가 없으면 선은 그래프 영역의 한쪽 가장자리에서 반대쪽 가장자리까지 이어집니다. 포인터 아래에서는 가는 선이 해당 단계를 표시하고, 점이 그 단계에서 각 계열의 값을 표시합니다.
+월별 지연 시간이나 일별 가격처럼 순서대로 이어지는 값을 선으로 나타냅니다. 차트에 막대가 없으면 선은 플롯의 한쪽 끝에서 다른 쪽 끝까지 이어집니다. 포인터를 올리면 가는 기준선이 해당 위치를 표시하고, 그 위에 각 계열의 값이 점으로 표시됩니다.
 
-<ComponentPreview name="line" height={434} title="선" bodyClass="p-lg" behaviors html={`<div class="card max-w(560) mx-auto">
+<ComponentPreview name="line" height={434} title="꺾은선" bodyClass="p-lg" behaviors html={`<div class="card max-w(560) mx-auto">
   <div class="card-header">
     <h3 class="card-title">Latency</h3>
     <p class="card-description">Median by region, in milliseconds</p>
@@ -30,9 +30,9 @@ addEventListener('DOMContentLoaded', function () {
 })
 </script>`} />
 
-## 곡선 \{#curve\}
+## 선의 형태 \{#curve\}
 
-`curve`는 선이 지점에서 지점으로 어떻게 이어지는지 정합니다. 기본값인 `smooth`는 값을 넘어서지 않는 곡선입니다. 데이터에 없는 봉우리 위로 올라가거나 데이터에 없는 골짜기 아래로 내려가지 않습니다. `linear`는 직선 구간으로 그립니다. `step`은 다음 값이 나올 때까지 각 값을 유지하며, 요금제의 좌석 수나 가격처럼 한 번에 바뀌는 수량에 사용합니다.
+`curve`는 점과 점을 잇는 방식을 지정합니다. 기본값인 `smooth`는 데이터에 없는 봉우리나 골이 생기지 않도록 값을 넘지 않는 부드러운 곡선을 그립니다. `linear`는 점을 직선으로 잇고, `step`은 다음 값이 나오기 전까지 현재 값을 유지하므로 요금제의 좌석 수나 가격처럼 한 번에 바뀌는 값에 적합합니다.
 
 <ComponentPreview name="step" height={348} title="계단형" bodyClass="p-lg" behaviors html={`<div class="card max-w(560) mx-auto">
   <div class="card-header">
@@ -56,9 +56,9 @@ addEventListener('DOMContentLoaded', function () {
 
 ## 빈 구간과 점 \{#gaps\}
 
-값이 `null`이면 선에 빈 구간이 생기고, 해당 지점은 값이 있는 계열만 알려 줍니다. `dots: true`는 포인터 아래의 지점뿐 아니라 선의 모든 지점을 점으로 표시합니다. 지점이 몇 개뿐인 선에만 사용하세요.
+값이 `null`이면 해당 구간의 선이 끊기고, 해당 위치의 값 표시에는 값이 있는 계열만 나옵니다. `dots: true`를 설정하면 포인터 아래의 점을 포함해 선의 모든 점을 표시합니다. 점이 몇 개 없는 선에 사용합니다.
 
-<ComponentPreview name="gaps" height={348} title="빈 구간과 점 표시" bodyClass="p-lg" behaviors html={`<div class="card max-w(560) mx-auto">
+<ComponentPreview name="gaps" height={348} title="빈 구간과 점" bodyClass="p-lg" behaviors html={`<div class="card max-w(560) mx-auto">
   <div class="card-header">
     <h3 class="card-title">Uptime</h3>
     <p class="card-description">Percent per month; no reading in May</p>
@@ -81,24 +81,51 @@ addEventListener('DOMContentLoaded', function () {
 })
 </script>`} />
 
-## 막대 위의 선 \{#over-bars\}
+## 값의 범위 \{#band\}
 
-[막대 차트](/charts/bar#many)에서 `type: 'line'`을 지정한 계열은 같은 눈금 위에서 막대 위의 선으로 그려집니다. 목표값이나 이동 평균에 사용합니다.
+계열에 레이블마다 `low`와 `high`를 하나씩 지정하면 예측값이 가질 수 있는 범위나 두 번의 실행 결과 사이의 폭을 나타낼 수 있습니다. 선 뒤에 선과 같은 색의 옅은 띠로 그리며, 값 표시에는 수치 뒤에 범위를 함께 표시합니다.
+
+<ComponentPreview name="band" height={396} title="범위 띠" bodyClass="p-lg" behaviors html={`<div class="card max-w(560) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Sessions</h3>
+    <p class="card-description">Thousands per month, with the range the forecast allows</p>
+  </div>
+  <figure class="chart" id="forecast"></figure>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.chart(document.getElementById('forecast'), {
+    type: 'line',
+    label: 'Sessions per month with the range of the forecast, in thousands',
+    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+    series: [{
+      name: 'Sessions',
+      values: [320, 360, 340, 410, 460, 440, 520, 560, 540, 610, 680, 720],
+      low: [300, 335, 310, 370, 410, 385, 450, 470, 440, 490, 540, 560],
+      high: [340, 385, 372, 452, 512, 498, 592, 650, 640, 730, 820, 880]
+    }]
+  })
+})
+</script>`} />
+
+## 막대 위에 선 표시 \{#over-bars\}
+
+[막대 차트](/charts/bar#many)에서 계열에 `type: 'line'`을 지정하면 막대와 같은 척도를 사용해 막대 위에 선을 그립니다. 목표값이나 이동 평균을 표시할 때 사용합니다.
 
 ## 옵션 \{#options\}
 
 | 옵션 | 기본값 | |
 | --- | --- | --- |
-| `label` | 없음 | 차트가 무엇을 어떤 단위로 보여 주는지 알려 주는, 그래프 영역의 접근 가능한 이름 |
-| `labels` | `[]` | 눈금을 따라 놓이는 이름 또는 레이더 둘레에 놓이는 이름 |
-| `series` | `[]` | 각 계열에는 `name`과 `values`를 지정합니다. 조각이나 링에는 `value`를, 산점도에는 `points`를 지정합니다. 선택적으로 `category`, `type`, 링의 `max`를 지정할 수 있습니다 |
+| `label` | 없음 | 차트가 보여 주는 내용과 단위를 설명하는 플롯의 접근성 이름 |
+| `labels` | `[]` | 축을 따라, 레이더 차트 둘레에, 또는 히트맵의 열 위에 표시하는 이름 |
+| `series` | `[]` | 각 계열의 `name`과 차트 유형에 따라 사용하는 `values`, `value`, `points`, `ranges` 또는 `children`입니다. `category`, `type`, `low`와 `high`, 링의 `max`도 지정할 수 있습니다. |
 | `curve` | `'smooth'` | `smooth`, `linear` 또는 `step` |
-| `min`, `max`, `ticks` | 데이터에 맞춤, `4` | 눈금의 양 끝과 눈금을 표시하는 대략적인 단계 수. 산점도의 가로 눈금에는 `xMin`, `xMax`, `xTicks`를 사용합니다 |
-| `format`, `tickFormat` | 로캘의 형식 | 값과 눈금 숫자를 적는 방식. 산점도의 가로 눈금에는 `xFormat`을 사용합니다 |
-| `dots`, `values` | `false` | 선의 모든 지점을 점으로 표시합니다. 모든 막대의 값을 적습니다 |
-| `legend`, `toggle` | 계열이 둘이면 작성, `true` | 범례를 작성할지 여부와 범례 항목을 체크박스로 만들지 여부 |
+| `min`, `max`, `ticks` | 데이터에 맞춤, `4` | 축의 양 끝값과 대략적인 눈금 수입니다. 산점도의 가로축에는 `xMin`, `xMax`, `xTicks`를 사용합니다. |
+| `format`, `tickFormat` | 로캘에 따름 | 값과 눈금 레이블의 표시 형식입니다. 산점도의 가로축에는 `xFormat`을 사용합니다. |
+| `dots`, `values` | `false` | 선의 모든 점을 표시하고 각 막대에 값을 표시할지 지정합니다. |
+| `legend`, `toggle` | 계열이 두 개일 때 표시, `true` | 범례를 표시할지, 범례 항목을 체크박스로 표시할지 지정합니다. |
 
-값 표시창, 키 조작, 범례, 색, 눈금은 모든 형식에서 같습니다. [차트](/components/chart) 페이지에 모든 옵션, 클래스, 사용자 정의 속성과 함께 정리되어 있습니다.
+값 표시, 키보드 조작, 범례, 색상, 척도는 모든 차트 유형에 공통으로 적용됩니다. [차트](/components/chart)에서 공통 동작과 모든 옵션, 클래스, 사용자 지정 속성을 확인할 수 있습니다.
 
 ## 관련 항목 \{#related\}
 

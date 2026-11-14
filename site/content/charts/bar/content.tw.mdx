@@ -1,12 +1,12 @@
 ---
 title: "長條圖"
-description: "以立在基線上的長條比較數量，可並排、堆疊或橫向排列。"
+description: "以基準線上的長條比較數量，可並排、堆疊或橫向呈現。"
 ---
 
 import ComponentPreview from '~/site/components/ComponentPreview.astro'
 import ComponentLinks from '~/site/components/ComponentLinks.astro'
 
-長條用來比較數量，例如一週的每一天、一年的各季。每根長條都立在基線上、位於所屬那一格的正中央，遠離基線的一端為圓角。指標移到某一格時，其他長條會立即退為淡色，而且指標的感應範圍是整格，因此矮的長條和高的長條一樣容易讀取。
+長條圖用來比較數量，例如一週中每天或一年中各季的數量。每根長條從基準線起始，置於所屬區帶的中央，遠離基準線的一端採圓角。將指標移到某個區帶時，其他長條會立即淡化。整個區帶都能感應指標，因此長條再短也一樣容易查看。
 
 <ComponentPreview name="bar" height={348} title="長條圖" bodyClass="p-lg" behaviors html={`<div class="card max-w(440) mx-auto">
   <div class="card-header">
@@ -26,9 +26,9 @@ addEventListener('DOMContentLoaded', function () {
 })
 </script>`} />
 
-小於零的數值會從基線向下垂掛，此時基線位於零的位置。數值為零時，基線上仍會留下一道短線，因此沒有數值的那一天仍然占有一天的位置。
+有負值時，基準線會位於零，負值從基準線向下延伸。零值會在基準線上留下一道短線，即使當天數量為零，圖上仍看得到那一天。
 
-<ComponentPreview name="below" height={348} title="零值上下" bodyClass="p-lg" behaviors html={`<div class="card max-w(440) mx-auto">
+<ComponentPreview name="below" height={348} title="高於與低於零" bodyClass="p-lg" behaviors html={`<div class="card max-w(440) mx-auto">
   <div class="card-header">
     <h3 class="card-title">Net change</h3>
     <p class="card-description">Accounts gained and lost per month</p>
@@ -46,11 +46,11 @@ addEventListener('DOMContentLoaded', function () {
 })
 </script>`} />
 
-## 凸顯單一長條 \{#quiet\}
+## 凸顯一根長條 \{#quiet\}
 
-在圖表上加上 `chart-quiet`，長條會改為淡色，墨色只留給標有 `aria-current` 的資料點，例如一週中的今天，或讀者目前使用的方案。請用 `current` 提供它的索引。`values: true` 會在每根長條的末端寫出數值，適用於長條不多且重點是精確數字的情況，或沒有懸停操作的觸控螢幕。
+在圖表上加上 `chart-quiet`，即可淡化其他長條，並用墨色凸顯以 `aria-current` 標記的資料點，例如一週中的今天，或讀者目前使用的方案。透過 `current` 指定該資料點的索引。`values: true` 會在每根長條的末端顯示數值，適合長條不多且需要查看精確數值的圖表，也適用於無法以指標停駐查看數值的觸控螢幕。
 
-<ComponentPreview name="quiet" height={348} title="低調樣式並標示數值" bodyClass="p-lg" behaviors html={`<div class="card max-w(440) mx-auto">
+<ComponentPreview name="quiet" height={348} title="淡化其他長條並顯示數值" bodyClass="p-lg" behaviors html={`<div class="card max-w(440) mx-auto">
   <div class="card-header">
     <h3 class="card-title">Build minutes</h3>
     <p class="card-description">Thursday so far</p>
@@ -72,7 +72,7 @@ addEventListener('DOMContentLoaded', function () {
 
 ## 並排或堆疊 \{#stacked\}
 
-多組序列會在每一格中並排，方便彼此比較。設定 `stacked` 後，它們會彼此堆疊，用來比較總和並呈現各總和的組成：一疊長條中只有最外側的那根有圓角，長條之間以一道表面色的間隙分開。數值提示會依畫面所見，從堆疊的頂端往下列出。
+多個資料序列會在各區帶內並排，方便彼此比較。設定 `stacked` 後，長條會堆疊起來，方便比較總量並看出各組的組成。每組只有最外端的長條採圓角，各長條之間留有一道露出底色的間隙。數值提示依圖上的順序，由上往下列出各層。
 
 <ComponentPreview name="grouped" height={386} title="並排" bodyClass="p-lg" behaviors html={`<div class="card max-w(440) mx-auto">
   <div class="card-header">
@@ -95,7 +95,7 @@ addEventListener('DOMContentLoaded', function () {
 })
 </script>`} />
 
-<ComponentPreview name="stacked" height={386} title="堆疊長條圖" bodyClass="p-lg" behaviors html={`<div class="card max-w(440) mx-auto">
+<ComponentPreview name="stacked" height={386} title="堆疊長條" bodyClass="p-lg" behaviors html={`<div class="card max-w(440) mx-auto">
   <div class="card-header">
     <h3 class="card-title">Tickets</h3>
     <p class="card-description">Opened per day, by priority</p>
@@ -118,9 +118,63 @@ addEventListener('DOMContentLoaded', function () {
 })
 </script>`} />
 
-## 橫向 \{#across\}
+### 顯示各部分占比 \{#percent\}
 
-`horizontal` 讓長條改為橫向，每個名稱占一列，適用於名稱比直欄寬度還長的排名。名稱位於各列旁，刻度位於下方；超過十八個字元的名稱會被截斷，數值提示則會顯示完整名稱。
+`stacked: 'percent'` 將每組堆疊的總量視為 100%。每根長條的高度取決於它在組內的占比，因此各組等高，組成比例則隨資料而異。數值提示會列出各部分的數值與占比。
+
+<ComponentPreview name="percent" height={386} title="各部分占比" bodyClass="p-lg" behaviors html={`<div class="card max-w(440) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Accounts</h3>
+    <p class="card-description">Share by plan, each quarter</p>
+  </div>
+  <figure class="chart" id="plans" style="--chart-height: 11rem"></figure>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.chart(document.getElementById('plans'), {
+    type: 'bar',
+    stacked: 'percent',
+    label: 'Share of accounts by plan, each quarter',
+    labels: ['Q1', 'Q2', 'Q3', 'Q4'],
+    series: [
+      { name: 'Free', values: [620, 640, 610, 580] },
+      { name: 'Pro', values: [240, 300, 360, 420] },
+      { name: 'Team', values: [60, 90, 130, 190] }
+    ]
+  })
+})
+</script>`} />
+
+### 向零值兩側延伸 \{#diverging\}
+
+負值從基準線向下堆疊，正值則向上堆疊，因此正負號相反的兩個資料序列會從中間的基準線向兩側延伸，例如同意與不同意、收入與支出。請自行指定各資料序列的分類，讓它們無論位於哪一側都能保有各自的顏色。
+
+<ComponentPreview name="diverging" height={386} title="向零值兩側延伸" bodyClass="p-lg" behaviors html={`<div class="card max-w(520) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Survey</h3>
+    <p class="card-description">Share who disagree and who agree</p>
+  </div>
+  <figure class="chart" id="survey" style="--chart-height: 11rem"></figure>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.chart(document.getElementById('survey'), {
+    type: 'bar',
+    stacked: true,
+    horizontal: true,
+    label: 'Share of answers that disagree and agree, by statement, in percent',
+    labels: ['Easy to set up', 'Fast', 'Well documented', 'Good value'],
+    series: [
+      { name: 'Disagree', category: 'orange', values: [-12, -24, -18, -30] },
+      { name: 'Agree', category: 'blue', values: [72, 58, 64, 46] }
+    ]
+  })
+})
+</script>`} />
+
+## 橫向長條 \{#across\}
+
+`horizontal` 讓長條橫向排列，每個名稱占一列，適合名稱超出欄寬的排名圖。名稱顯示在各列旁，刻度位於下方。超過 18 個字元的名稱會截短，數值提示會顯示完整名稱。
 
 <ComponentPreview name="across" height={348} title="橫向" bodyClass="p-lg" behaviors html={`<div class="card max-w(520) mx-auto">
   <div class="card-header">
@@ -142,9 +196,54 @@ addEventListener('DOMContentLoaded', function () {
 })
 </script>`} />
 
-## 長條較多時，以及疊在上方的折線 \{#many\}
+## 棒棒糖圖與鬚線 \{#lollipop\}
 
-各格平分寬度，因此原本放一週的位置也放得下一個月，繪圖區下方最多顯示十二個名稱；繪圖區窄於 24rem 時，名稱會每隔一個省略一個。帶有 `type: 'line'` 的序列會以折線畫在長條上方，並使用同一刻度，例如目標值或移動平均。兩個刻度不同的量值應分成兩個圖表，絕不要在同一個圖表的兩側各放一個刻度。
+`mark: 'lollipop'` 會把每根長條畫成一條細線，末端加上一個圓點。這種畫法以更少的筆墨呈現相同數值，適合長條很多或很長、實心長條容易連成一大片的情況。
+
+<ComponentPreview name="lollipop" height={348} title="棒棒糖圖" bodyClass="p-lg" behaviors html={`<div class="card max-w(520) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Response time</h3>
+    <p class="card-description">Median by endpoint, in milliseconds</p>
+  </div>
+  <figure class="chart" id="endpoints" style="--chart-height: 11rem"></figure>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.chart(document.getElementById('endpoints'), {
+    type: 'bar',
+    mark: 'lollipop',
+    horizontal: true,
+    values: true,
+    label: 'Median response time by endpoint, in milliseconds',
+    labels: ['/search', '/checkout', '/feed', '/profile', '/login'],
+    series: [{ name: 'Median', values: [412, 318, 240, 132, 96] }]
+  })
+})
+</script>`} />
+
+在資料序列中為每個標籤各提供一個 `low` 和 `high`，即可呈現數值的可能範圍，例如平均值周圍的區間，或多次測量結果的範圍。圖表會讓鬚線穿過長條末端，數值提示則會在數值後列出這個範圍。
+
+<ComponentPreview name="whiskers" height={348} title="鬚線" bodyClass="p-lg" behaviors html={`<div class="card max-w(440) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Trial</h3>
+    <p class="card-description">Mean score by group, with its interval</p>
+  </div>
+  <figure class="chart" id="trial" style="--chart-height: 11rem"></figure>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.chart(document.getElementById('trial'), {
+    type: 'bar',
+    label: 'Mean score by group with its 95% interval',
+    labels: ['Control', 'A', 'B', 'C'],
+    series: [{ name: 'Score', values: [52, 61, 58, 70], low: [46, 55, 49, 64], high: [58, 67, 67, 76] }]
+  })
+})
+</script>`} />
+
+## 大量長條與上方的折線 \{#many\}
+
+各區帶共用繪圖寬度，因此一個月的資料也能放進原先一週的空間。繪圖區下方最多顯示 12 個名稱，寬度小於 24rem 時則每隔一個才顯示。設定 `type: 'line'` 的資料序列會以折線疊在長條上方，並共用同一組刻度，例如目標值或移動平均。兩項指標若需要不同刻度，請各用一張圖表，不要在同一張圖的兩側各設一組刻度。
 
 <ComponentPreview name="many" height={434} narrowHeight={454} title="三十天" bodyClass="p-lg" responsive behaviors html={`<div class="card max-w(600) mx-auto">
   <div class="card-header">
@@ -175,23 +274,24 @@ addEventListener('DOMContentLoaded', function () {
 
 ## 選項 \{#options\}
 
-| 選項 | 預設值 | |
+| 選項 | 預設 | |
 | --- | --- | --- |
-| `label` | 無 | 圖表呈現的內容及單位，也就是繪圖區的無障礙名稱 |
-| `labels` | `[]` | 沿著刻度排列的名稱，或環繞雷達圖的名稱 |
-| `series` | `[]` | 每組序列都有 `name` 和 `values`；扇形或圓環改用 `value`，散佈圖改用 `points`；另可選擇性提供 `category`、`type`，以及圓環的 `max` |
-| `stacked` | `false` | 長條或面積彼此堆疊 |
-| `horizontal` | `false` | 長條橫向延伸 |
-| `min`, `max`, `ticks` | 自動配合、`4` | 刻度的兩端，以及大約用幾格標示；散佈圖的橫向刻度使用 `xMin`、`xMax` 和 `xTicks` |
-| `axis` | `true` | 是否寫出刻度數字；`false` 只保留細線，適用於資訊小卡中的小型圖表 |
-| `format`, `tickFormat` | 依語系 | 數值和刻度標記的寫法；散佈圖的橫向刻度使用 `xFormat` |
-| `dots`, `values` | `false` | 標出折線上的每個點；寫出每根長條的數值 |
-| `current` | 無 | 標有 `aria-current` 的資料點的索引 |
-| `legend`, `toggle` | 有兩組序列時寫出、`true` | 是否寫出圖例，以及圖例項目是否為核取方塊 |
+| `label` | 無 | 說明圖表呈現的內容與單位，作為繪圖區的無障礙名稱 |
+| `labels` | `[]` | 沿刻度排列、環繞雷達圖或位於熱圖各欄上方的名稱 |
+| `series` | `[]` | 每個資料序列都有 `name`，並依圖表形式提供 `values`、單一 `value`、`points`、`ranges` 或 `children`。也可指定 `category`、`type`、`low` 和 `high`，以及圓環的 `max` |
+| `stacked` | `false` | 將長條或面積堆疊。`'percent'` 將每組堆疊的總量視為 100%，`'stream'` 則讓堆疊面積沿中線置中 |
+| `horizontal` | `false` | 讓長條、區間、啞鈴和盒鬚圖以橫向呈現 |
+| `mark` | `'bar'` | `'lollipop'` 將長條畫成末端帶有圓點的細線 |
+| `min`, `max`, `ticks` | 依資料調整, `4` | 刻度的上下限與大致的刻度數量。散佈圖的水平刻度使用 `xMin`、`xMax` 和 `xTicks` |
+| `axis` | `true` | 是否顯示刻度數字。`false` 只保留細線，適合資訊磚中的小圖表 |
+| `format`, `tickFormat` | 依語系 | 數值與刻度標籤的顯示格式。散佈圖的水平刻度使用 `xFormat` |
+| `dots`, `values` | `false` | 標記折線上的每個資料點，或顯示每根長條的數值 |
+| `current` | 無 | 以 `aria-current` 標記的資料點索引 |
+| `legend`, `toggle` | 有兩個資料序列時顯示, `true` | 是否顯示圖例，以及圖例項目是否為核取方塊 |
 
-數值提示、鍵盤操作、圖例、顏色與刻度在每種圖表類型中都相同：[圖表](/components/chart)頁面有完整說明，並列出所有選項、類別與自訂屬性。
+各種圖表共用數值提示、鍵盤操作、圖例、色彩與刻度。[圖表](/components/chart) 說明這些功能，並列出所有選項、CSS 類別與自訂屬性。
 
-## 相關元件 \{#related\}
+## 相關內容 \{#related\}
 
 <ComponentLinks kind="charts" slugs={['line', 'area', 'radar']} />
 

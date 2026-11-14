@@ -41,7 +41,7 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
 ## 行 \{#rows\}
 
-- `tree-item` は行を表します。リンク、ボタン、または枝の `<summary>` に使います。行は高さ 28px で、コンパクトで控えめな表示です。ポインターが重なっている行と現在の行には、チップと同じ色調が付きます。
+- `tree-item` は行を表します。リンク、ボタン、または枝の `<summary>` に使います。行は高さ 28px で、コンパクトで控えめな表示です。ポインターが重なっている行にはチップと同じ色調が付き、現在の行は濃い文字色の小さな浮き上がった面で示します。
 - 枝の行に `tree-toggle` を付けると、先頭の列にシェブロンが表示され、展開中は下を向きます。どの行にもこの列の幅を確保するため、末端の項目も同じ階層の枝と揃います。
 - `tree-sub` は枝の子の行を1段下げてまとめます。シェブロンから下に伸びる細い線に沿って、子の行が並びます。
 
@@ -119,17 +119,17 @@ root.addEventListener('change', () => console.log(files.value))
 - **Tab キーで止まる行は1つ。** ビヘイビアは `tabindex` を使って、Tab 順序に1行だけを含めます。マークアップで `tabindex="0"` が指定された行を優先し、該当する行がなければ選択中または現在の行、いずれもなければ先頭行を使います。フォーカスを受けた行が、Tab 順序に含まれる唯一の行になります。ビヘイビアを解除すると、各行の `tabindex` が元に戻ります。
 - **移動。** 矢印キーで移動すると、閉じた枝の中の行、`hidden` の行、無効な行はスキップされます。
 - **アクティブ化。** summary、リンク、ボタンには、ブラウザー標準の操作が適用されます。標準の操作を持たない行（`div` に `role="treeitem"` を指定した行）は、<kbd>Enter</kbd>、<kbd>Space</kbd>、クリックで操作できます。枝の行を操作すると枝が開閉し、末端の行を操作するとその行が選択されます。`aria-selected="true"` は、それまで選択されていた行から新たに選択された行に移ります。
-- **値。** `tree` が返す関数は `value` を持ちます。選択中の行が表す値で、その行の `data-value` またはテキストです。選択中の行がなければ null です。[複数選択できるツリー](#several)と[チェックボックスツリー](#checkbox)ではリストになります。値を設定すると、外部から行を選択またはチェックできます。このときイベントは発火しません。
-- **イベント。** いずれもルート要素からバブリングし、`detail.item` に対象の行が入ります。選択またはチェックすると `change` が発火します。枝を開くと `expand` が発火し、`detail.value` にその行が表す値が入ります。名前を変更すると `rename` が発火し、`detail.value` と、新しいラベルを入れた `detail.label` が渡されます。
+- **値。** `tree` が返す関数は `value` を持ちます。選択中の行が表す値で、その行の `data-value` またはテキストです。選択中の行がなければ null です。[複数選択できるツリー](#several)と[チェックボックスツリー](#checkbox)ではリストになります。値を設定すると、外部から行を選択またはチェックできます。このときイベントは発行されません。
+- **イベント。** いずれもルート要素からバブリングし、`detail.item` に対象の行が入ります。選択またはチェックすると `input`、`change` の順に発行されます。枝を開くと `expand` が発行され、`detail.value` にその行が表す値が入ります。名前を変更すると `rename` が発行され、`detail.value` と、新しいラベルを入れた `detail.label` が渡されます。
 - **無効な行。** `disabled` または `aria-disabled="true"` が指定された行は操作を受け付けません。リンク先への移動も、枝の開閉も行わず、選択、チェック、名前の変更もできません。
 
 このビヘイビアは、最初の2つのプレビューで使っている `<details>` のツリーにも適用できます。これらのプレビューはビヘイビアなしで動作します。適用すると、`open` を介して `tree-group` を開閉し、Tab キーで止まる行が1つになります。ツリー内は同じキーで移動できます。`attach()` はすべてのツリーにビヘイビアを適用します。`<details>` のツリーでブラウザー標準の操作を維持するには、必要なビヘイビアを名前でインポートします。
 
-## 複数の行 \{#several\}
+## 複数選択 \{#several\}
 
 ツリーに `aria-multiselectable="true"` を指定すると、ファイルの一覧と同じように、任意の数の末端の行を選択できます。選択できるすべての行は、`aria-selected` に `true` または `false` を持ちます。枝の行は選択されず、開閉します。値は選択中の行のリストで、ツリー内の順序に並びます。
 
-<ComponentPreview name="several" height={252} title="複数の行" background="plain" bodyClass="content-start p-lg" behaviors html={`<ul class="tree max-w(260) mx-auto" role="tree" aria-label="Files" aria-multiselectable="true">
+<ComponentPreview name="several" height={252} title="複数選択" background="plain" bodyClass="content-start p-lg" behaviors html={`<ul class="tree max-w(260) mx-auto" role="tree" aria-label="Files" aria-multiselectable="true">
   <li role="none">
     <div class="tree-item tree-toggle" role="treeitem" aria-expanded="true">components</div>
     <ul class="tree-sub" role="group">
@@ -150,7 +150,7 @@ root.addEventListener('change', () => console.log(files.value))
 
 - **クリック**すると、その行だけが選択されます。<kbd>Control</kbd> または <kbd>Command</kbd> を押しながらクリックすると、ほかの行の選択を保ったまま 1 行の選択を切り替えます。<kbd>Enter</kbd> はクリックと同じ動作です。
 - **<kbd>Space</kbd>** は、フォーカスのある行の選択を切り替えます。矢印キーは移動だけを行います。
-- **範囲選択。** 最後に選んだ行が起点になります。<kbd>Shift</kbd> を押しながらクリック、<kbd>Space</kbd>、<kbd>ArrowDown</kbd>、<kbd>ArrowUp</kbd> を使うと、起点からその行までの表示されているすべての行を選択します。<kbd>Control</kbd> または <kbd>Command</kbd> と <kbd>Shift</kbd> を押しながら <kbd>Home</kbd> または <kbd>End</kbd> を押すと、先頭または末尾の行まで選択します。閉じた枝の中の行と無効な行はスキップされます。
+- **範囲選択。** 最後に選んだ行が起点になります。<kbd>Shift</kbd> を押したままクリックするか、<kbd>Space</kbd>、<kbd>ArrowDown</kbd>、<kbd>ArrowUp</kbd> のいずれかを押すと、起点から対象の行までの表示中の行をすべて選択します。<kbd>Control</kbd> または <kbd>Command</kbd> と <kbd>Shift</kbd> を押しながら <kbd>Home</kbd> または <kbd>End</kbd> を押すと、先頭または末尾の行まで選択します。閉じた枝の中の行と無効な行はスキップされます。
 - **すべて。** <kbd>Control</kbd> または <kbd>Command</kbd> を押しながら <kbd>A</kbd> を押すと、表示されているすべての行を選択します。すべてが選択済みの場合は、選択を解除します。
 
 ## チェックボックスツリー \{#checkbox\}
@@ -179,13 +179,13 @@ root.addEventListener('change', () => console.log(files.value))
 - **<kbd>Space</kbd>** は、フォーカスのある行のチェックを切り替えます。枝の場合は配下のすべての行も切り替えます。mixed の枝はチェックされます。ただし、配下の変更できる行がすべてチェック済みの場合は、チェックが外れます。
 - **クリック**すると、末端の行はチェックされます。枝の行では、チェックをクリックするとチェックされ、行のそれ以外の部分をクリックすると開閉します。<kbd>Enter</kbd> は行のクリックと同じ動作です。
 - **無効な行**は、枝がチェックされてもチェックの状態を保ちます。そのため、枝が mixed のまま残ることがあります。
-- **値**は、チェックされた末端の行のリストで、ツリー内の順序に並びます。**枝は値に含まれません。** 枝のチェックは配下の行の状態を示すだけなので、値はフォルダーではなく各ファイルを示します。行がまだ読み込まれていない枝も含まれません。チェックされた枝の下に行が読み込まれると、それらの行はチェックされ、ツリーは `change` を発火します。
+- **値**は、チェックされた末端の行のリストで、ツリー内の順序に並びます。**枝は値に含まれません。** 枝のチェックは配下の行の状態を示すだけなので、値はフォルダーではなく各ファイルを示します。行がまだ読み込まれていない枝も含まれません。チェックされた枝の下に行が読み込まれると、それらの行はチェックされ、ツリーは `input`、`change` の順にイベントを発行します。
 
 ツリーにも `aria-multiselectable="true"` を指定してください。チェックボックスツリーは任意の数の行を選ぶツリーであり、そのように読み上げられます。
 
 ## 行の遅延読み込み \{#loading\}
 
-サーバーから行を取得する枝は、`aria-expanded="false"` と空の `tree-sub` を持つ行です。配下に行がない状態で開かれると、ビヘイビアはその行に `aria-busy="true"` を付け、`expand` を発火します。行の先頭に[スピナー](/components/spinner)を置いてください。通常時は描画されず、行が処理中の間はシェブロンの位置に表示されるため、何も動きません。
+サーバーから行を取得する枝は、`aria-expanded="false"` と空の `tree-sub` を持つ行です。配下に行がない状態で開かれると、ビヘイビアはその行に `aria-busy="true"` を付け、`expand` を発行します。行の先頭に[スピナー](/components/spinner)を置いてください。通常時は表示されません。読み込み中はシェブロンと同じ位置に表示されるため、行内の要素の位置はずれません。
 
 <ComponentPreview name="loading" height={200} title="行の遅延読み込み" background="plain" bodyClass="content-start p-lg" behaviors html={`<ul class="tree max-w(260) mx-auto" role="tree" aria-label="Repositories" id="repositories">
   <li role="none">
@@ -210,9 +210,9 @@ addEventListener('DOMContentLoaded', function () {
     }, 1200)
   })
 })
-</script>`} caption="リポジトリを開くと、行が届くまでスピナーが回り、その後は矢印キーで行の中に移動できます。" />
+</script>`} caption="リポジトリを開くと、行が届くまでスピナーが回り、その後は矢印キーで追加された子の行に移動できます。" />
 
-ページは `expand` を監視し、コントラクトのクラスとロールを使って、枝の `tree-sub` に行を書き込みます。ビヘイビアは行の追加を検知し、`aria-busy` を外して、すぐにキー操作の対象にします。追加された行は Tab 順序に含まれず、矢印キーで移動できます。`expand` はビヘイビアが開くすべての枝で発火するため、行が必要かどうかは `aria-busy` で判断します。枝に行がないとわかった場合は、`aria-busy` と `aria-expanded` を削除します。その行は末端の行になります。
+ページは `expand` を監視し、コントラクトのクラスとロールを使って、枝の `tree-sub` に行を書き込みます。ビヘイビアは行の追加を検知し、`aria-busy` を外して、すぐにキー操作の対象にします。追加された行は Tab 順序に含まれず、矢印キーで移動できます。`expand` はビヘイビアが開くすべての枝で発行されるため、行が必要かどうかは `aria-busy` で判断します。枝に行がないとわかった場合は、`aria-busy` と `aria-expanded` を削除します。その行は末端の行になります。
 
 ```js name=app.js
 root.addEventListener('expand', async (event) => {
@@ -245,7 +245,7 @@ addEventListener('DOMContentLoaded', function () {
 
 `attach()` はオプションを渡さないため、このプレビューでは `attach()` の実行後に `tree` を明示的に呼び出します。同じルートに対して2回呼び出すと、2回目が1回目を置き換えます。
 
-ビヘイビアは新しいラベルを `tree-label` に書き込み、ルート要素から `rename` を発火します。`detail.value` にはその行が表していた値、`detail.label` には新しいラベルが入ります。入力欄自体の `input` と `change` は、入力欄の外には伝わりません。ラベルの保存はページ側が行います。サーバーが変更を拒否した場合は、古いラベルを書き戻してください。各行には名前に合わせて変わらない `data-value` を指定し、名前を変更しても行が表す値が保たれるようにします。
+ビヘイビアは新しいラベルを `tree-label` に書き込み、ルート要素から `rename` を発行します。`detail.value` にはその行が表していた値、`detail.label` には新しいラベルが入ります。入力欄自体の `input` と `change` は、入力欄の外には伝わりません。ラベルの保存はページ側が行います。サーバーが変更を拒否した場合は、古いラベルを書き戻してください。各行には名前に合わせて変わらない `data-value` を指定し、名前を変更しても行が表す値が保たれるようにします。
 
 タッチスクリーンなど <kbd>F2</kbd> を使えない読者には、別の手段が必要です。`tree` が返す関数の `edit(row)` は、オプションの有無にかかわらず <kbd>F2</kbd> と同じ動作をします。[コンテキストメニュー](/components/menu)の「名前の変更」項目やボタンから使えます。
 
@@ -283,7 +283,7 @@ renameItem.addEventListener('click', () => pages.edit(selectedRow))
 
 `tree` コンポーネントはデータから行を描画し、ビヘイビアを適用します。選択中の行を外部から指定でき、選択結果も外部に渡します。`npx master-ui add tree` でプロジェクトにコピーできます。コンポーネントの仕組みと使い方は [React、Svelte、Vue](/guide/frameworks) を参照してください。
 
-- `multiple` を指定すると任意の数の行を選択でき、`checkable` を指定するとすべての行にチェックが付きます。どちらの場合も、値はリストになります。最初の値は、枝の mixed のチェックも含めて、最初のレンダリングに反映されます。
+- `multiple` を指定すると任意の数の行を選択でき、`checkable` を指定するとすべての行にチェックが付きます。どちらの場合も、値はリストになります。初期値は初回のレンダリングに反映され、枝のチェックが mixed 状態なら、その時点で表示されます。
 - `children: []` を持つノードは、行が後から届く枝です。スピナーを持ち、開かれると `onExpand`（Vue では `@expand`）がその値で呼び出されます。子要素は `nodes` で渡します。
 - `onRename`（Vue では `@rename`）を指定すると名前の変更が有効になり、行の値と新しいラベルで呼び出されます。ラベルは `nodes` 内で保持します。
 

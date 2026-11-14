@@ -23,7 +23,7 @@ from `@master/internal-site/common/locales.js`.
   Markdown. The published JSON keeps the original contract and its API
   identifiers. Labels in guide diagrams live in `i18n/figures.<locale>.json`.
   The introductory rules for `llms.txt` live in `i18n/llms/<locale>.md`.
-- **Sections.** The home page, guide, components, blocks and pages have localized
+- **Sections.** The home page, guide, components, charts, blocks and pages have localized
   routes. Search and Markdown use the same article editions.
 
 ## How to translate
@@ -50,6 +50,14 @@ counts, and a pill describes a shape.
 | Pagination | 分頁導覽 | 分页 | ページネーション | 페이지네이션 |
 | Listbox | 清單方塊 | 列表框 | リストボックス | 목록 상자 |
 | Tree | 樹狀檢視 | 树形视图 | ツリー | 트리 |
+| Histogram | 直方圖 | 直方图 | ヒストグラム | 히스토그램 |
+| Box plot | 盒鬚圖 | 箱线图 | 箱ひげ図 | 상자 수염 그림 |
+| Scatter plot | 散佈圖 | 散点图 | 散布図 | 산점도 |
+| Treemap | 樹狀矩形圖 | 矩形树图 | ツリーマップ | 트리맵 |
+
+A histogram groups observations into numeric intervals. A bar chart compares
+categories. Keep the chart name used by the corresponding reference page in
+the guide and in cross-references.
 
 Keep as written: code fences and inline code, code comments, imports, component
 and prop names, class names, tokens, commands, URLs, the markup in `html={…}`

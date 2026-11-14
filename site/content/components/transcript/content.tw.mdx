@@ -9,7 +9,7 @@ import ComponentLinks from '~/site/components/ComponentLinks.astro'
 import ContractTable from '~/site/components/ContractTable.astro'
 import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
-逐字稿以字幕片段（cue）清單呈現錄音的內容，每個片段都標有開始時間。播放錄音時，逐字稿會跟著進度移動：正在說的片段以強調文字顯示在凸起的表面上，已經聽過的片段轉為淡色，尚未播到的片段則維持內文墨色。選擇某個片段，錄音就會從該處開始播放。`transcript` [行為](/guide/behaviors)會將它連接到[媒體播放器](/components/player)或一般的 `<audio>`、`<video>`，連接對象由 `aria-controls` 中的 id 指定。
+逐字稿以字幕片段（cue）清單呈現錄音的內容，每個片段都標有開始時間。播放錄音時，逐字稿會跟著進度移動：目前播放的片段以醒目的文字和有層次感的底色突顯，已播放的片段會淡化，尚未播放的片段則維持一般內文色。選擇某個片段，錄音就會從該處開始播放。`transcript` [行為](/guide/behaviors)會將它連接到[媒體播放器](/components/player)或一般的 `<audio>`、`<video>`，連接對象由 `aria-controls` 中的 id 指定。
 
 <ComponentPreview name="default" height={296} narrowHeight={312} title="逐字稿" background="plain" bodyClass="content-start p-lg" behaviors html={`<div class="grid gap-sm max-w(480) mx-auto">
   <div class="player" id="talk" role="group" aria-label="A short recording">
@@ -39,9 +39,9 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
 ## 跟隨與捲離 \{#following\}
 
-錄音播放時，行為會以 `aria-current="true"` 標示目前的片段：也就是 `data-start` 已經過去的最後一個片段，因此在兩個片段之間的停頓期間，位置仍會保留。在它之前的每個片段都會以已播放的樣式繪製，這完全由樣式表負責。
+錄音播放時，行為會以 `aria-current="true"` 標示目前的片段：也就是播放進度已到達其 `data-start` 的片段中，最後一個片段，因此在兩個片段之間的停頓期間，位置仍會保留。在它之前的每個片段都會以已播放的樣式繪製，這完全由樣式表負責。
 
-清單會讓目前的片段保持在中央。它只捲動自己，不會捲動周圍的任何內容，因此放有逐字稿的頁面絕不會在讀者眼前移動；捲動時會滑順移動，讀者要求減少動態效果時則直接跳到定點。當讀者用滾輪、手指、按鍵或捲軸捲動清單，使目前的片段離開視野時，清單會停止跟隨，並在下緣顯示一顆小型膠囊按鈕 `transcript-return`，可將清單帶回目前位置。選擇某個片段，或將目前的片段捲回視野內，都會恢復跟隨。
+清單會讓目前的片段保持在中央。自動跟隨時，只有逐字稿清單會捲動，頁面會維持原位。清單會平滑捲動，使用者啟用減少動態效果時則直接跳到定位。當讀者用滾輪、手指、按鍵或捲軸捲動清單，使目前的片段離開視野時，清單會停止跟隨，並在下緣顯示一顆小型膠囊按鈕 `transcript-return`，可將清單帶回目前位置。選擇某個片段，或將目前的片段捲回視野內，都會恢復跟隨。
 
 清單在 `--transcript-height` 的高度內捲動，未設定時為 20rem。為清單加上 [`scroll-area`](/components/scroll-area)，即可使用纖細的捲軸，並在內容延續的邊緣顯示淡出效果。
 
@@ -76,8 +76,8 @@ const detach = transcript(document.querySelector('.transcript'))
 | 選項 | 預設值 | |
 | --- | --- | --- |
 | `media` | 取自 `aria-controls` | 要跟隨的媒體元素 |
-| `track` | 第一條 captions 或 subtitles 軌道 | 用來寫入空清單的軌道 |
-| `draw` | `true` | 是否從軌道寫入空清單 |
+| `track` | 第一條 captions 或 subtitles 軌道 | 清單為空時，用來產生字幕片段的來源軌道 |
+| `draw` | `true` | 清單為空時，是否從軌道讀取並填入字幕片段 |
 
 未掛上行為時，字幕片段就是供讀者閱讀的清單；不會標示任何片段，不會跟隨，選擇片段也不會跳轉。
 
@@ -90,8 +90,8 @@ const detach = transcript(document.querySelector('.transcript'))
 ## 無障礙 \{#accessibility\}
 
 - 請以 `aria-label`，或以 `aria-labelledby` 指向的標題為逐字稿命名，並在 `aria-controls` 中指定它的媒體。
-- 目前的片段設有 `aria-current="true"`；樣式表以墨色和深度、而不是色相來繪製它，強制色彩模式下則使用系統外框線。
-- 錄音播放時，逐字稿絕不會自行取得焦點。只有讀者移動焦點時焦點才會移動，選擇返回方式時則會回到目前的片段。
+- 目前的片段設有 `aria-current="true"`；樣式表透過文字明暗和視覺層次突顯目前片段，無須依賴色相。強制色彩模式下則使用系統外框線。
+- 錄音播放時，逐字稿絕不會自行取得焦點。只有讀者移動焦點時焦點才會移動，啟用返回按鈕時，焦點會回到目前的片段。
 - 沒有畫面的錄音需要逐字稿，才能在沒有聲音的情況下被理解。若頁面必須能在沒有腳本的情況下閱讀，請將逐字稿寫在頁面中。
 
 ## React、Svelte 和 Vue \{#frameworks\}

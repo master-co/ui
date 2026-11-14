@@ -9,7 +9,7 @@ import ComponentLinks from '~/site/components/ComponentLinks.astro'
 import ContractTable from '~/site/components/ContractTable.astro'
 import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
-媒体播放器在原生 `<audio>` 或 `<video>` 上叠加页面自己的控件。负责播放的仍然是媒体元素本身：它保留自己的语义、在浏览器媒体控制中的位置，以及作为后备方案的 `controls` 属性。`player` [行为脚本](/guide/behaviors)在绑定时移除这个属性，此后把媒体的状态同步到控件栏：播放时播放按钮呈按下状态；进度轨道就是[滑块](/components/slider)本身的范围输入控件，已加载的部分绘制在已播放部分的下方；时间以小号等宽数字显示，宽度保持不变。
+媒体播放器在原生 `<audio>` 或 `<video>` 上叠加页面自己的控件。负责播放的仍然是媒体元素本身：它保留自己的语义、在浏览器媒体控制中的位置，以及作为回退方案的 `controls` 属性。`player` [行为脚本](/guide/behaviors)在绑定时移除这个属性，此后把媒体的状态同步到控件栏：播放时播放按钮呈按下状态；进度轨道就是[滑块](/components/slider)本身的范围输入控件，已加载的部分绘制在已播放部分的下方；时间以小号等宽数字显示，宽度保持不变。
 
 <ComponentPreview name="default" height={296} title="媒体播放器" bodyClass="flex flex-col justify-end items-center p-lg" behaviors html={`<div class="player w-full max-w(480)" role="group" aria-label="A short recording">
   <audio class="player-media" src="/demo/recording.m4a" controls preload="metadata"></audio>
@@ -39,7 +39,7 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
 ## 视频 \{#video\}
 
-`player-video` 让播放器成为视频的外框。画面填满一块带有表面圆角的深色区域，同样的控件栏覆盖在画面底边上，下方衬着一层从底边向上渐隐的阴影。无论在哪种主题下，控件栏都以深色配色绘制，就像屏幕本身是暗的一样。视频会多出三个控件，每个都只在能起作用时显示：视频带有 captions 或 subtitles 轨道时显示字幕按钮，浏览器支持时显示画中画按钮，浏览器允许时显示全屏按钮。单击画面可播放和暂停，双击则进入全屏。
+`player-video` 让播放器成为视频的外框。画面填满一块带有表面圆角的深色区域，同样的控件栏覆盖在画面底边上，下方衬着一层从底边向上渐隐的阴影。无论在哪种主题下，控件栏都以深色配色绘制，就像屏幕本身是暗的一样。视频会多出三个控件，每个都只在能起作用时显示：视频带有无障碍字幕或普通字幕轨道时显示字幕按钮，浏览器支持时显示画中画按钮，浏览器允许时显示全屏按钮。单击画面可播放和暂停，双击则进入全屏。
 
 视频播放期间，如果指针静止了两秒半，或已离开外框，控件栏会从画面上淡出，指针也一并隐藏。任何移动都会让它们重新出现。当某个控件拥有键盘焦点或速度菜单处于打开状态时，控件栏绝不会淡出；对于要求减少动态效果的读者也绝不会淡出。在触摸屏上，如果画面的控件已经淡出，轻触画面只会让控件重新出现。
 
@@ -76,7 +76,7 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
 ## 没有脚本时 \{#without-the-script\}
 
-在行为脚本绑定之前，媒体保留其 `controls` 属性，样式表隐藏播放器的控件栏，因此录音以浏览器自带的控件播放。下面是与第一个示例相同的标记，但没有脚本。
+在行为脚本绑定之前，媒体保留其 `controls` 属性，样式表隐藏播放器的控件栏，因此仍可使用浏览器自带的控件播放媒体。下面是与第一个示例相同的标记，但没有脚本。
 
 <ComponentPreview name="native" height={120} title="没有脚本时" bodyClass="flex items-center justify-center p-lg" html={`<div class="player w-full max-w(480)" role="group" aria-label="A short recording">
   <audio class="player-media" src="/demo/recording.m4a" controls preload="metadata"></audio>
@@ -101,10 +101,10 @@ import { player } from '@master/ui/behaviors/player.js'
 const detach = player(document.querySelector('.player'))
 ```
 
-媒体元素是唯一的事实来源。行为脚本监听它，把它报告的状态同步到样式表读取的属性上；每个控件都是请求媒体元素改变，而不是自行改变，因此从其他地方（系统的媒体键、其他脚本）播放的录音也会以同样的方式绘制。
+媒体元素是唯一的事实来源。行为脚本监听它，把它报告的状态同步到样式表读取的属性上；每个控件都是请求媒体元素改变，而不是自行改变，因此即使通过其他方式（如系统媒体键或其他脚本）播放媒体，控件栏也会照常反映播放状态。
 
-- **切换按钮。** 媒体播放时，播放按钮为 `aria-pressed="true"`；静音时，静音按钮为该状态；第一条 captions 或 subtitles 轨道正在显示时，字幕按钮为该状态；视频处于画中画或全屏时，相应按钮为该状态。切换按钮保持同一个名称，如 Play 或 Mute，由 `aria-pressed` 表明状态。如果按钮带有 `player-off` 和 `player-on` 两种外观，它会显示与状态对应的那一种；只有一种外观时，开启状态下按钮会呈凹陷状。
-- **时间。** 进度轨道的 `max` 是时长，`value` 是当前时间，并带有文字形式的 `aria-valuetext`。已播放时间和时长写入各自的部件，录音长达一小时后会显示小时。读者拖动轨道时，媒体不会移动手指下方的滑钮。
+- **切换按钮。** 媒体播放时，播放按钮为 `aria-pressed="true"`；静音时，静音按钮为该状态；第一条无障碍字幕或普通字幕轨道正在显示时，字幕按钮为该状态；视频处于画中画或全屏时，相应按钮为该状态。切换按钮保持同一个名称，如 Play 或 Mute，由 `aria-pressed` 表明状态。如果按钮带有 `player-off` 和 `player-on` 两种外观，它会显示与状态对应的那一种；只有一种外观时，开启状态下按钮会呈凹陷状。
+- **时间。** 进度轨道的 `max` 是时长，`value` 是当前时间，并带有文字形式的 `aria-valuetext`。已播放时间和时长写入各自的部件，媒体总时长达到一小时就会显示小时。读者拖动轨道时，媒体不会移动手指下方的滑钮。
 - **已加载部分。** 当前时间附近已加载的部分以根元素上的 `--player-buffered` 表示，取值 0 到 1，绘制在轨道上已播放部分的下方。
 - **音量和速度。** 音量滑块保存音量，媒体静音时滑块仍保留该音量，只是显示得淡一些；在音量只能由设备自身按键设置的设备上，音量滑块会被隐藏。速度按钮打开其 `popovertarget` 指定的菜单；菜单中每个 `menu-input` 单选按钮代表一种播放速率，行为脚本把速率写在按钮上，并勾选对应的单选按钮。
 - **字幕。** 关闭时，轨道设为 `hidden` 而不是 `disabled`，因此读取同一轨道的[文字稿](/components/transcript)仍能保留其字幕片段。
@@ -128,11 +128,11 @@ const detach = player(document.querySelector('.player'))
 
 ## 无障碍 \{#accessibility\}
 
-- 给根元素设置 `role="group"` 和说明录音名称的 `aria-label`，这样控件会被理解为这段录音的控件。
+- 给根元素设置 `role="group"`，并用 `aria-label` 提供媒体名称，这样辅助技术就能说明这组控件对应哪段媒体。
 - 用页面的语言按功能为每个按钮命名，状态变化时保持名称不变：状态由 `aria-pressed` 表示。
-- 含有语音的视频需要字幕：添加 `<track kind="captions">`。没有画面的录音需要[文字稿](/components/transcript)。
-- 绝不要自动开始播放有声音的录音。播放器只在读者要求时播放。
-- 按钮在任何指针下都为 32px；在触摸屏上，每个按钮的触控区域向上下扩展至 44px 高。时间在数字变化时保持宽度不变，因此播放过程中轨道不会移动。
+- 含有语音的视频需要无障碍字幕：添加 `<track kind="captions">`。没有画面的录音需要[文字稿](/components/transcript)。
+- 绝不要自动播放有声媒体。播放器只在读者要求时播放。
+- 无论使用哪种指针输入，按钮尺寸均为 32px。在触摸屏上，每个按钮的触控区域向上、向下扩展，总高度为 44px。时间在数字变化时保持宽度不变，因此播放过程中轨道不会移动。
 
 ## React、Svelte 和 Vue \{#frameworks\}
 

@@ -1,12 +1,12 @@
 ---
 title: "산점도"
-description: "두 지표를 서로 대비시키고, 대상마다 점 하나를 찍습니다."
+description: "항목 하나를 점 하나로 표시해 두 측정값의 관계를 보여 줍니다."
 ---
 
 import ComponentPreview from '~/site/components/ComponentPreview.astro'
 import ComponentLinks from '~/site/components/ComponentLinks.astro'
 
-산점도는 두 측정값을 서로 맞대어 보여 줍니다. 각 점은 대상 하나이며 `x`와 `y`에 따라 배치됩니다. 두 눈금은 모두 딱 떨어지는 수 사이에서 점들에 맞춰지며, 0 가까이에 점이 없으면 0에서 시작하지 않습니다. 눈금을 고정하려면 `xMin`, `xMax`, `min`, `max`를 설정하세요. 포인터는 점뿐 아니라 점 주변의 공간에도 닿으며, 점 자체의 `label`이 값 표시창의 제목이 됩니다.
+산점도는 두 측정값의 관계를 보여 줍니다. 각 점은 하나의 항목을 나타내며, `x`와 `y`에 따라 위치가 정해집니다. 두 축의 범위는 모든 점을 포함하도록 깔끔한 숫자에서 시작하고 끝납니다. 0에 가까운 점이 있을 때만 0에서 시작합니다. 범위를 고정하려면 `xMin`, `xMax`, `min`, `max`를 설정합니다. 포인터를 점 주변에 올려도 해당 점이 반응합니다. 값 표시의 제목에는 해당 점의 `label` 값을 사용합니다.
 
 <ComponentPreview name="scatter" height={434} narrowHeight={454} title="산점도" bodyClass="p-lg" behaviors html={`<div class="card max-w(560) mx-auto">
   <div class="card-header">
@@ -29,17 +29,50 @@ addEventListener('DOMContentLoaded', function () {
 })
 </script>`} />
 
+## 버블 \{#bubble\}
+
+`size`가 있는 점은 버블이 되며, 세 번째 측정값을 점의 면적으로 나타냅니다. 반지름 대신 면적이 크기 값에 비례하므로, 크기 값이 4배이면 면적도 4배입니다. 버블은 같은 색의 테두리와 반투명 채우기로 표시되어 겹친 부분이 비쳐 보입니다. 큰 버블부터 그리므로 큰 버블 위에 겹친 작은 버블에도 포인터를 올릴 수 있습니다.
+
+<ComponentPreview name="bubble" height={396} title="버블" bodyClass="p-lg" behaviors html={`<div class="card max-w(560) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Markets</h3>
+    <p class="card-description">Growth against share; a bubble is as large as its revenue</p>
+  </div>
+  <figure class="chart" id="markets"></figure>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.chart(document.getElementById('markets'), {
+    type: 'scatter',
+    label: 'Markets: growth in percent against share in percent, sized by revenue in millions',
+    series: [{
+      name: 'Markets',
+      points: [
+        { x: 4, y: 12, size: 40, label: 'Japan' },
+        { x: 9, y: 20, size: 120, label: 'Germany' },
+        { x: 14, y: 8, size: 20, label: 'Brazil' },
+        { x: 18, y: 26, size: 260, label: 'United States' },
+        { x: 6, y: 30, size: 64, label: 'India' },
+        { x: 12, y: 16, size: 90, label: 'France' }
+      ]
+    }]
+  })
+})
+</script>`} />
+
+면적은 위치보다 정확히 비교하기 어렵습니다. 가장 중요한 측정값은 축에 배치하고, 크고 작음만 구분하면 되는 측정값은 버블 크기로 표시합니다.
+
 ## 옵션 \{#options\}
 
 | 옵션 | 기본값 | |
 | --- | --- | --- |
-| `label` | 없음 | 차트가 무엇을 어떤 단위로 보여 주는지 알려 주는, 그래프 영역의 접근 가능한 이름 |
-| `series` | `[]` | 각 계열에는 `name`과 `values`를 지정합니다. 조각이나 링에는 `value`를, 산점도에는 `points`를 지정합니다. 선택적으로 `category`, `type`, 링의 `max`를 지정할 수 있습니다 |
-| `min`, `max`, `ticks` | 데이터에 맞춤, `4` | 눈금의 양 끝과 눈금을 표시하는 대략적인 단계 수. 산점도의 가로 눈금에는 `xMin`, `xMax`, `xTicks`를 사용합니다 |
-| `format`, `tickFormat` | 로캘의 형식 | 값과 눈금 숫자를 적는 방식. 산점도의 가로 눈금에는 `xFormat`을 사용합니다 |
-| `legend`, `toggle` | 계열이 둘이면 작성, `true` | 범례를 작성할지 여부와 범례 항목을 체크박스로 만들지 여부 |
+| `label` | 없음 | 차트가 표시하는 내용과 단위를 설명하는 플롯 영역의 접근성 이름 |
+| `series` | `[]` | 각 계열에 `name`을 지정하고, 차트 형태에 따라 `values`, 조각이나 링의 `value`, 산점도의 `points` 중 해당하는 항목을 사용합니다. `category`와 `type`, 링의 `max`는 선택 사항입니다. |
+| `min`, `max`, `ticks` | 자동 맞춤, `4` | 축의 양 끝값과 대략적인 눈금 수를 지정합니다. 산점도의 가로축에는 `xMin`, `xMax`, `xTicks`를 사용합니다. |
+| `format`, `tickFormat` | 로캘 기준 | 값과 눈금의 표시 형식을 지정합니다. 산점도의 가로축에는 `xFormat`을 사용합니다. |
+| `legend`, `toggle` | 계열이 두 개일 때, `true` | 범례를 표시할지, 범례 항목을 체크박스로 표시할지 지정합니다. |
 
-값 표시창, 키 조작, 범례, 색, 눈금은 모든 형식에서 같습니다. [차트](/components/chart) 페이지에 모든 옵션, 클래스, 사용자 정의 속성과 함께 정리되어 있습니다.
+값 표시, 키보드 조작, 범례, 색상, 척도는 모든 차트 유형에 공통으로 적용됩니다. [차트](/components/chart)에서 이 항목들과 모든 옵션, 클래스, 사용자 지정 속성을 확인할 수 있습니다.
 
 ## 관련 항목 \{#related\}
 

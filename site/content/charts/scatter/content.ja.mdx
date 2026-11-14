@@ -1,12 +1,12 @@
 ---
 title: "散布図"
-description: "2つの指標を対比させ、対象ごとに1つの点を置きます。"
+description: "1つの対象を1つの点で表し、2つの指標の関係を示します。"
 ---
 
 import ComponentPreview from '~/site/components/ComponentPreview.astro'
 import ComponentLinks from '~/site/components/ComponentLinks.astro'
 
-散布図は、2つの指標を互いに対比させます。各ドットは1つの対象を表し、その`x`と`y`で配置されます。どちらのスケールも、切りのよい数値の間でドットに合わせて決まり、ドットがゼロの近くになければゼロからは始まりません。スケールを固定するには、`xMin`、`xMax`、`min`、`max`を指定します。ポインターはドットそのものだけでなく、ドットの周囲の領域にも反応します。ドット自身の`label`が値表示のタイトルになります。
+散布図は2つの指標の関係を示します。各点は1つの対象を表し、`x`と`y`で位置が決まります。両軸の範囲は、すべての点が収まるように切りのよい数値で区切られ、0の近くに点がある場合に限り0から始まります。範囲を固定するには、`xMin`、`xMax`、`min`、`max`を指定します。ポインターは点の周囲でも反応し、その点の`label`が値の表示の見出しになります。
 
 <ComponentPreview name="scatter" height={434} narrowHeight={454} title="散布図" bodyClass="p-lg" behaviors html={`<div class="card max-w(560) mx-auto">
   <div class="card-header">
@@ -29,17 +29,50 @@ addEventListener('DOMContentLoaded', function () {
 })
 </script>`} />
 
+## バブル \{#bubble\}
+
+`size`を持つ点はバブルになり、3つ目の指標を点の面積で表します。サイズに比例するのは面積なので、値が4倍なら面積も4倍になります。バブルは同じ色の輪郭と半透明の塗りで描画されるため、重なった部分も透けて見えます。大きいものから順に描画されるため、大きなバブルに重なった小さなバブルにもポインターを合わせられます。
+
+<ComponentPreview name="bubble" height={396} title="バブル" bodyClass="p-lg" behaviors html={`<div class="card max-w(560) mx-auto">
+  <div class="card-header">
+    <h3 class="card-title">Markets</h3>
+    <p class="card-description">Growth against share; a bubble is as large as its revenue</p>
+  </div>
+  <figure class="chart" id="markets"></figure>
+</div>
+<script>
+addEventListener('DOMContentLoaded', function () {
+  MasterUI.chart(document.getElementById('markets'), {
+    type: 'scatter',
+    label: 'Markets: growth in percent against share in percent, sized by revenue in millions',
+    series: [{
+      name: 'Markets',
+      points: [
+        { x: 4, y: 12, size: 40, label: 'Japan' },
+        { x: 9, y: 20, size: 120, label: 'Germany' },
+        { x: 14, y: 8, size: 20, label: 'Brazil' },
+        { x: 18, y: 26, size: 260, label: 'United States' },
+        { x: 6, y: 30, size: 64, label: 'India' },
+        { x: 12, y: 16, size: 90, label: 'France' }
+      ]
+    }]
+  })
+})
+</script>`} />
+
+面積の差は位置の差ほど正確に読み取れません。最も重要な指標は軸に割り当て、大小が伝わればよい指標をバブルのサイズに割り当てます。
+
 ## オプション \{#options\}
 
 | オプション | 既定値 | |
 | --- | --- | --- |
-| `label` | なし | チャートが何をどの単位で示すか。プロットのアクセシブルな名前になります |
-| `series` | `[]` | それぞれが`name`と`values`を持ちます。スライスやリングでは`value`、散布図では`points`を指定します。任意で`category`、`type`、リングの`max`を指定できます |
-| `min`、`max`、`ticks` | 自動調整、`4` | スケールの両端と、目盛りのおおよその段階数。散布図の横方向のスケールには`xMin`、`xMax`、`xTicks`を使います |
-| `format`、`tickFormat` | ロケールの書式 | 値と目盛りの書式。散布図の横方向のスケールには`xFormat`を使います |
-| `legend`、`toggle` | 系列が2つ以上あれば表示、`true` | 凡例を書き出すかどうかと、その項目をチェックボックスにするかどうか |
+| `label` | なし | グラフが示す内容とその単位を記述する、プロット領域のアクセシブルな名前 |
+| `series` | `[]` | 各系列に `name` を指定し、グラフ形式に応じて `values`、円グラフの扇形1つまたはリング1本に対応する `value`、散布図の `points` のいずれかを指定します。`category`、`type`、リングの`max`は任意です。 |
+| `min`, `max`, `ticks` | データに合わせる、`4` | 軸の上下限と目盛りのおおよその分割数。散布図の横軸には`xMin`、`xMax`、`xTicks`を使います。 |
+| `format`, `tickFormat` | ロケールに準拠 | 値と目盛りの表記形式。散布図の横軸には`xFormat`を使います。 |
+| `legend`, `toggle` | 系列が2つの場合に表示、`true` | 凡例を表示するかどうか、および凡例の各項目をチェックボックスにするかどうか |
 
-値表示、キー操作、凡例、色、目盛りはどの種類でも共通です。[チャート](/components/chart)のページに、すべてのオプション、クラス、カスタムプロパティとあわせてまとめています。
+値の表示、キー、凡例、色、軸のスケールは、どのグラフ形式でも共通です。[チャート](/components/chart)にすべてのオプション、クラス、カスタムプロパティをまとめています。
 
 ## 関連項目 \{#related\}
 

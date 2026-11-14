@@ -1,6 +1,6 @@
 ---
 title: "文字稿"
-description: "录音所说的内容，以随播放进度跟进的字幕片段呈现。"
+description: "以随播放进度同步的字幕片段呈现音视频中的话语。"
 ---
 
 import ComponentPreview from '~/site/components/ComponentPreview.astro'
@@ -9,7 +9,7 @@ import ComponentLinks from '~/site/components/ComponentLinks.astro'
 import ContractTable from '~/site/components/ContractTable.astro'
 import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
-文字稿是录音所说的内容，以字幕片段列表呈现，每个片段都带有开始时间。它随录音播放跟进：正在播放的片段以醒目的文字显示在凸起的面板上，已经听过的片段变淡，尚未播放的片段保持正文墨色。选择某个片段，录音就会从该处播放。`transcript` [行为脚本](/guide/behaviors)把它与[媒体播放器](/components/player)或普通的 `<audio>`、`<video>` 关联起来，媒体元素通过其 id 在 `aria-controls` 中指定。
+文字稿以字幕片段列表呈现音视频中的话语，每个片段都带有开始时间。它随媒体播放进度同步：正在播放的片段以醒目的文字显示在凸起的面板上，已经听过的片段变淡，尚未播放的片段保持正文墨色。选择某个片段，媒体就会从该处播放。`transcript` [行为脚本](/guide/behaviors)把它与[媒体播放器](/components/player)或普通的 `<audio>`、`<video>` 关联起来，媒体元素通过其 id 在 `aria-controls` 中指定。
 
 <ComponentPreview name="default" height={296} narrowHeight={312} title="文字稿" background="plain" bodyClass="content-start p-lg" behaviors html={`<div class="grid gap-sm max-w(480) mx-auto">
   <div class="player" id="talk" role="group" aria-label="A short recording">
@@ -39,7 +39,7 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
 ## 跟进与滚离 \{#following\}
 
-录音播放时，行为脚本用 `aria-current="true"` 标记当前片段：即 `data-start` 已经过去的最后一个片段，因此在两个片段之间的停顿期间，位置仍会保留。它之前的每个片段都由样式表单独绘制为已播放状态。
+媒体播放时，行为脚本用 `aria-current="true"` 标记当前片段：即 `data-start` 已经过去的最后一个片段，因此在两个片段之间的停顿期间，位置仍会保留。它之前的每个片段都由样式表单独绘制为已播放状态。
 
 列表让当前片段保持在其中央。它只滚动自身，不滚动周围的任何内容，因此含有文字稿的页面绝不会在读者眼前移动；滚动是平滑的，对要求减少动态效果的读者则直接跳转。当读者用滚轮、手指、按键或滚动条滚动列表，使当前片段离开视野时，列表会停止跟进，位于列表底部边缘的小胶囊形按钮 `transcript-return` 可以让它回到当前位置。选择某个片段，或把当前片段滚回视野中，都会恢复跟进。
 
@@ -47,7 +47,7 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
 ## 来自 WebVTT 轨道 \{#from-a-track\}
 
-列表为空时，行为脚本会通过 TextTrack API 读取媒体的第一条 captions 或 subtitles 轨道，并据此写入字幕片段：时间、去掉标签的文字，以及语音标签所指定的说话人（`<v Ana>`）。轨道只有在未被禁用时才会加载其字幕片段，因此行为脚本会把被禁用的轨道设为 `hidden`，这样画面上不会显示任何内容。这里的文字稿跟进的是一个使用浏览器自带控件的普通 `<audio>`。
+列表为空时，行为脚本会通过 TextTrack API 读取媒体的第一条 captions 或 subtitles 轨道，并据此写入字幕片段：时间、去掉标签的文字，以及语音标签所指定的说话人（`<v Ana>`）。轨道只有在未被禁用时才会加载其字幕片段，因此行为脚本会把被禁用的轨道设为 `hidden`，这样该轨道的字幕就不会叠加在画面上。这里的文字稿跟进的是一个使用浏览器自带控件的普通 `<audio>`。
 
 <ComponentPreview name="track" height={360} title="来自轨道" background="plain" bodyClass="content-start p-lg" behaviors html={`<div class="grid gap-sm max-w(480) mx-auto">
   <audio id="talk-audio" class="w-full" src="/demo/recording.m4a" controls preload="metadata">
@@ -91,8 +91,8 @@ const detach = transcript(document.querySelector('.transcript'))
 
 - 用 `aria-label`，或用 `aria-labelledby` 指向一个标题，为文字稿命名，并在 `aria-controls` 中指定其媒体。
 - 当前片段带有 `aria-current="true"`；样式表用墨色深浅和层次而不是色相来绘制它，在强制颜色模式下则使用系统轮廓线。
-- 录音播放时，文字稿绝不会自行获取焦点。焦点只在读者移动它时移动；选择返回方式时，焦点回到当前片段。
-- 没有画面的录音需要文字稿，才能在没有声音的情况下被理解。如果页面必须在没有脚本的情况下阅读，请把文字稿写在页面中。
+- 媒体播放时，文字稿不会自行获取焦点。焦点只随读者的操作移动，使用返回按钮时会回到当前片段。
+- 纯音频内容需要提供文字稿，以便读者无需收听就能了解内容。如果页面必须在没有脚本的情况下阅读，请把文字稿写在页面中。
 
 ## React、Svelte 和 Vue \{#frameworks\}
 
