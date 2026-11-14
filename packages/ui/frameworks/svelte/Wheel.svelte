@@ -23,10 +23,13 @@
   import { behavior } from './behavior.svelte.js'
 
   let { columns, value = $bindable(), onValueChange, class: className, ...root }: WheelProps = $props()
-  const first = untrack(() => value ?? [])
+  // The first value is drawn into the first render; after that the behavior marks what is selected. An option
+  // written later, from new columns, is drawn with the value as it is then, which is not read as state.
+  const chosen = { values: untrack(() => value ?? []) }
   const attach = behavior(wheel, undefined, {
     value: () => value,
-    change: (next) => { value = next; onValueChange?.(next) },
+    change: (next) => { chosen.values = next; value = next; onValueChange?.(next) },
+    settled: (held) => { chosen.values = held },
   })
   const plain = (option: WheelColumn['options'][number]) => typeof option === 'string' ? { value: option, label: option, disabled: false } : option
 </script>
@@ -39,7 +42,7 @@
   {#each columns as column, at (column.label)}
     <div class="wheel-column" role="listbox" aria-label={column.label} tabindex={0}>
       {#each column.options.map(plain) as option (option.value)}
-        <div class="wheel-option" role="option" data-value={option.value} aria-selected={option.value === first[at]} aria-disabled={option.disabled || undefined}>{option.label}</div>
+        <div class="wheel-option" role="option" data-value={option.value} aria-selected={option.value === chosen.values[at]} aria-disabled={option.disabled || undefined}>{option.label}</div>
       {/each}
     </div>
     {#if column.separator !== undefined}<span class="wheel-separator" aria-hidden="true">{column.separator}</span>{/if}

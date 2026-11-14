@@ -1,19 +1,30 @@
-import { nextTick, onBeforeUnmount, onMounted, onUpdated, watch, type Ref, type ShallowRef } from 'vue'
+import { nextTick, onBeforeUnmount, onBeforeUpdate, onMounted, onUpdated, watch, type Ref, type ShallowRef } from 'vue'
 
 /** What a Master UI behavior returns: the function that detaches it, with a `value` where the pattern has one. */
 type Handle<V> = (() => void) & { value?: V }
 
 const same = (a: unknown, b: unknown) => a === b || JSON.stringify(a) === JSON.stringify(b)
-/** What decides whether a behavior is attached again: its options, a function counted by its presence. */
-const signature = (options?: object) => Object.entries(options ?? {}).map(([name, value]) => `${name}:${typeof value === 'function' ? 'function' : String(value)}`).join()
+/** An option as it counts toward attaching again: a function by its presence, a list or an object by what it holds. */
+const written = (value: unknown) => {
+  if (typeof value === 'function') return 'function'
+  if (value === null || typeof value !== 'object') return String(value)
+  try {
+    return JSON.stringify(value, (_, inner: unknown) => (typeof inner === 'function' ? 'function' : inner))
+  } catch {
+    return String(value)
+  }
+}
+/** What decides whether a behavior is attached again: its options. */
+const signature = (options?: object) => Object.entries(options ?? {}).map(([name, value]) => `${name}:${written(value)}`).join()
 
 /**
  * Attach a Master UI behavior to the element of a template ref, and keep a model in step with it.
  *
  * The behavior is the one place the keys, the focus and the state attributes are decided; this composable
  * only gives it a root and a lifetime. `options` is a function, read again whenever what it reads changes:
- * the behavior is attached again when an option does. `model` is written to the behavior's `value`
- * whenever the two differ, and takes every `input` and `change` that leaves the behavior with another value.
+ * the behavior is attached again when an option does. `model` is written to the behavior's `value` when it
+ * changes, when the owner did not take a change, and when a render wrote rows again over it; it takes every
+ * `input` and `change` that leaves the behavior with another value.
  * `on` holds listeners for events of the root, such as the `change` a behavior dispatches when a code is
  * complete. They hear an event after the model has, so what they say is said of the value the model holds.
  *
@@ -81,8 +92,12 @@ export function useBehavior<E extends HTMLElement, O extends object, V = never>(
   watch(() => signature(options?.()), attach, { flush: 'post' })
   // After the render, so that a value set together with new rows finds its row.
   if (model) watch(model, write, { flush: 'post', deep: true })
-  // Rows written again from data carry the first value's attributes; the model goes over them.
-  onUpdated(write)
+  // Rows written again from data carry the first value's attributes; the model goes over them. A render that
+  // leaves the behavior's value as it was leaves what the reader is in the middle of, such as the first end of
+  // a range in a month that turns.
+  let before: V | undefined
+  onBeforeUpdate(() => { before = handle?.value })
+  onUpdated(() => { if (handle && !same(handle.value, before)) write() })
 
   return Object.assign(() => handle?.value, { handle: () => handle })
 }

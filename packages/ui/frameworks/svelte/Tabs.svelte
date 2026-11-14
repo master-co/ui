@@ -30,14 +30,18 @@
 
   let { tabs: list, value = $bindable(), onValueChange, panel, panelClass, class: className, ...root }: TabsProps = $props()
   const id = $props.id()
-  const first = untrack(() => value ?? list.find(tab => !tab.disabled)?.value)
+  // The first value is drawn into the first render; after that the behavior marks the selected tab. A tab
+  // written later, from new tabs, is drawn with the value as it is then, which is not read as state.
+  const selected = { value: untrack(() => value ?? list.find(tab => !tab.disabled)?.value) }
   const attach = behavior(tabs, undefined, {
     value: () => value,
     change: (next) => {
       if (next === null) return
+      selected.value = next
       value = next
       onValueChange?.(next)
     },
+    settled: (held) => { if (held !== null) selected.value = held },
   })
 </script>
 
@@ -47,11 +51,11 @@
 -->
 <div class={['tabs', className]} role="tablist" {@attach attach} {...root}>
   {#each list as tab, index (tab.value)}
-    <button type="button" class="tabs-item" role="tab" id="{id}tab{index}" data-value={tab.value} aria-selected={tab.value === first} aria-controls="{id}panel{index}" tabindex={tab.value === first ? 0 : -1} disabled={tab.disabled}>{tab.label}</button>
+    <button type="button" class="tabs-item" role="tab" id="{id}tab{index}" data-value={tab.value} aria-selected={tab.value === selected.value} aria-controls="{id}panel{index}" tabindex={tab.value === selected.value ? 0 : -1} disabled={tab.disabled}>{tab.label}</button>
   {/each}
 </div>
 {#each list as tab, index (tab.value)}
-  <div class={panelClass} role="tabpanel" id="{id}panel{index}" aria-labelledby="{id}tab{index}" hidden={tab.value !== first}>
+  <div class={panelClass} role="tabpanel" id="{id}panel{index}" aria-labelledby="{id}tab{index}" hidden={tab.value !== selected.value}>
     {#if panel}{@render panel(tab)}{:else}{tab.content}{/if}
   </div>
 {/each}

@@ -21,8 +21,18 @@ export interface Control<V> {
 }
 
 const same = (a: unknown, b: unknown) => a === b || JSON.stringify(a) === JSON.stringify(b)
-/** What decides whether a behavior is attached again: its options, a function counted by its presence. */
-const signature = (options?: object) => Object.entries(options ?? {}).map(([name, value]) => `${name}:${typeof value === 'function' ? 'function' : String(value)}`).join()
+/** An option as it counts toward attaching again: a function by its presence, a list or an object by what it holds. */
+const written = (value: unknown) => {
+  if (typeof value === 'function') return 'function'
+  if (value === null || typeof value !== 'object') return String(value)
+  try {
+    return JSON.stringify(value, (_, inner: unknown) => (typeof inner === 'function' ? 'function' : inner))
+  } catch {
+    return String(value)
+  }
+}
+/** What decides whether a behavior is attached again: its options. */
+const signature = (options?: object) => Object.entries(options ?? {}).map(([name, value]) => `${name}:${written(value)}`).join()
 
 /**
  * An attachment that gives a Master UI behavior its root, and keeps a value in step with it.

@@ -64,14 +64,15 @@
 </script>
 
 {#snippet option(item: CommandItem)}
+  <!-- A command that is disabled goes nowhere and runs nothing, whatever presses it. -->
   <!-- The behavior writes `aria-selected` on the option the keys are on. -->
   <!-- svelte-ignore a11y_role_has_required_aria_props -->
   {#if item.href}
-    <a class="listbox-option" role="option" href={item.href} aria-disabled={item.disabled || undefined}>{item.label}{#if item.hint !== undefined}<span class="listbox-end">{item.hint}</span>{/if}</a>
+    <a class="listbox-option" role="option" href={item.disabled ? undefined : item.href} aria-disabled={item.disabled || undefined}>{item.label}{#if item.hint !== undefined}<span class="listbox-end">{item.hint}</span>{/if}</a>
   {:else}
     <!-- Focus stays in the field, and Enter there clicks the option. -->
     <!-- svelte-ignore a11y_click_events_have_key_events, a11y_interactive_supports_focus -->
-    <div class="listbox-option" role="option" onclick={item.onSelect} aria-disabled={item.disabled || undefined}>{item.label}{#if item.hint !== undefined}<span class="listbox-end">{item.hint}</span>{/if}</div>
+    <div class="listbox-option" role="option" onclick={item.disabled ? undefined : item.onSelect} aria-disabled={item.disabled || undefined}>{item.label}{#if item.hint !== undefined}<span class="listbox-end">{item.hint}</span>{/if}</div>
   {/if}
 {/snippet}
 

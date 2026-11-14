@@ -34,10 +34,11 @@ export function Menu({ items, trigger, context, className, id, ...root }: MenuPr
     <>
       {trigger?.({ popoverTarget: name, 'aria-haspopup': 'menu' })}
       <div id={name} popover="auto" className={['menu', context && 'menu-context', className].filter(Boolean).join(' ')} role="menu" ref={element} {...root}>
+        {/* A link that is disabled goes nowhere: it keeps its place and its words, without the address. */}
         {items.map((item, index) => 'separator' in item
           ? <hr className="menu-separator" key={index} />
           : item.href
-            ? <a className={item.danger ? 'menu-item menu-item-danger' : 'menu-item'} role="menuitem" key={index} href={item.href} aria-disabled={item.disabled || undefined}>{item.label}{item.shortcut !== undefined && <span className="menu-shortcut">{item.shortcut}</span>}</a>
+            ? <a className={item.danger ? 'menu-item menu-item-danger' : 'menu-item'} role="menuitem" key={index} href={item.disabled ? undefined : item.href} aria-disabled={item.disabled || undefined}>{item.label}{item.shortcut !== undefined && <span className="menu-shortcut">{item.shortcut}</span>}</a>
             : <button type="button" className={item.danger ? 'menu-item menu-item-danger' : 'menu-item'} role="menuitem" key={index} popoverTarget={name} popoverTargetAction="hide" onClick={item.onSelect} disabled={item.disabled}>{item.label}{item.shortcut !== undefined && <span className="menu-shortcut">{item.shortcut}</span>}</button>)}
       </div>
     </>

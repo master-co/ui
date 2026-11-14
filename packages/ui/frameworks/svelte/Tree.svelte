@@ -47,10 +47,10 @@
   import { behavior } from './behavior.svelte.js'
 
   let { nodes, multiple, checkable, value = $bindable(), onValueChange, onExpand, onRename, renameLabel, class: className, ...root }: TreeProps = $props()
-  // The first value's rows are selected or checked in the first render; after that the behavior writes them.
-  const first = untrack(() => value)
-  const chosen = [first ?? []].flat() as string[]
-  const has = (node: TreeNode) => node.value !== undefined && chosen.includes(node.value)
+  // The first value's rows are selected or checked in the first render; after that the behavior writes them. A
+  // row written later, from new nodes, is drawn with the value as it is then, which is not read as state.
+  const chosen = { values: [untrack(() => value) ?? []].flat() as string[] }
+  const has = (node: TreeNode) => node.value !== undefined && chosen.values.includes(node.value)
   /** A branch says what the rows under it say: all checked, none, or mixed. */
   const checked = (node: TreeNode): 'true' | 'false' | 'mixed' => {
     if (!node.children?.length) return has(node) ? 'true' : 'false'
@@ -59,7 +59,8 @@
   }
   const attach = behavior(tree, () => ({ rename: Boolean(onRename), renameLabel }), {
     value: () => value,
-    change: (next) => { value = next; onValueChange?.(next) },
+    change: (next) => { chosen.values = [next ?? []].flat(); value = next; onValueChange?.(next) },
+    settled: (held) => { chosen.values = [held ?? []].flat() },
     on: {
       expand: (event) => onExpand?.((event as CustomEvent<{ value: string }>).detail.value),
       rename: (event) => {
@@ -86,7 +87,7 @@
       {:else if node.href}
         <a class="tree-item" role="treeitem" href={node.href} aria-current={node.current ? 'page' : undefined} aria-checked={checkable ? checked(node) : undefined} aria-disabled={node.disabled || undefined}>{@render inside(node)}</a>
       {:else}
-        <div class="tree-item" role="treeitem" data-value={node.value} aria-selected={checkable ? undefined : multiple ? has(node) : (node.value !== undefined && node.value === first) || undefined} aria-checked={checkable ? checked(node) : undefined} aria-disabled={node.disabled || undefined}>{@render inside(node)}</div>
+        <div class="tree-item" role="treeitem" data-value={node.value} aria-selected={checkable ? undefined : multiple ? has(node) : has(node) || undefined} aria-checked={checkable ? checked(node) : undefined} aria-disabled={node.disabled || undefined}>{@render inside(node)}</div>
       {/if}
     </li>
   {/each}

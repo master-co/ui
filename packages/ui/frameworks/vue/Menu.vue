@@ -44,9 +44,10 @@ watchEffect((onCleanup) => {
 <template>
   <slot name="trigger" v-bind="{ 'popovertarget': name, 'aria-haspopup': 'menu' as const }" />
   <div :id="name" popover="auto" class="menu" :class="{ 'menu-context': context !== undefined }" role="menu" ref="root" v-bind="$attrs">
+    <!-- A link that is disabled goes nowhere: it keeps its place and its words, without the address. -->
     <template v-for="(item, index) in items" :key="index">
       <hr v-if="'separator' in item" class="menu-separator">
-      <a v-else-if="item.href" class="menu-item" :class="{ 'menu-item-danger': item.danger }" role="menuitem" :href="item.href" :aria-disabled="item.disabled || undefined">{{ item.label }}<span v-if="item.shortcut !== undefined" class="menu-shortcut">{{ item.shortcut }}</span></a>
+      <a v-else-if="item.href" class="menu-item" :class="{ 'menu-item-danger': item.danger }" role="menuitem" :href="item.disabled ? undefined : item.href" :aria-disabled="item.disabled || undefined">{{ item.label }}<span v-if="item.shortcut !== undefined" class="menu-shortcut">{{ item.shortcut }}</span></a>
       <button v-else type="button" class="menu-item" :class="{ 'menu-item-danger': item.danger }" role="menuitem" :popovertarget="name" popovertargetaction="hide" :disabled="item.disabled" @click="item.onSelect?.()">{{ item.label }}<span v-if="item.shortcut !== undefined" class="menu-shortcut">{{ item.shortcut }}</span></button>
     </template>
   </div>

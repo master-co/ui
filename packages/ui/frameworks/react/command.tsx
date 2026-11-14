@@ -69,9 +69,10 @@ export function Command({ items, open, onOpenChange, shortcut = 'k', filter = tr
   }, [])
 
   const groups = [...new Set(items.map(item => item.group))]
+  // A command that is disabled goes nowhere and runs nothing, whatever presses it.
   const option = (item: CommandItem, at: number) => item.href
-    ? <a className="listbox-option" role="option" key={at} href={item.href} aria-disabled={item.disabled || undefined}>{item.label}{item.hint !== undefined && <span className="listbox-end">{item.hint}</span>}</a>
-    : <div className="listbox-option" role="option" key={at} onClick={item.onSelect} aria-disabled={item.disabled || undefined}>{item.label}{item.hint !== undefined && <span className="listbox-end">{item.hint}</span>}</div>
+    ? <a className="listbox-option" role="option" key={at} href={item.disabled ? undefined : item.href} aria-disabled={item.disabled || undefined}>{item.label}{item.hint !== undefined && <span className="listbox-end">{item.hint}</span>}</a>
+    : <div className="listbox-option" role="option" key={at} onClick={item.disabled ? undefined : item.onSelect} aria-disabled={item.disabled || undefined}>{item.label}{item.hint !== undefined && <span className="listbox-end">{item.hint}</span>}</div>
 
   return (
     <dialog

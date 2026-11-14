@@ -42,10 +42,13 @@
   // spread from a constant, so the template's own updates never draw it over the state the behavior gave.
   const atStart = { disabled: untrack(() => items.findIndex(item => item.value === first) <= 0) }
   const atEnd = { disabled: untrack(() => items.findIndex(item => item.value === first) >= items.length - 1) }
+  // A dot written later, from new items, is drawn with the slide current then, which is not read as state.
+  const current = { value: first }
   const attach = behavior(carousel, () => ({ value: first }), {
     value: () => value,
     // The behavior's value is null only for a carousel with no slides, which never reports a change.
-    change: (next) => { if (next === null) return; value = next; onValueChange?.(next) },
+    change: (next) => { if (next === null) return; current.value = next; value = next; onValueChange?.(next) },
+    settled: (held) => { if (held !== null) current.value = held },
   })
 </script>
 
@@ -71,7 +74,7 @@
   </button>
   <div class="carousel-dots">
     {#each items as item, index (item.value)}
-      <button type="button" class="carousel-dot" aria-controls="{id}{item.value}" aria-label={dotLabel(index, items.length)} aria-current={item.value === first ? 'true' : undefined}></button>
+      <button type="button" class="carousel-dot" aria-controls="{id}{item.value}" aria-label={dotLabel(index, items.length)} aria-current={item.value === current.value ? 'true' : undefined}></button>
     {/each}
   </div>
 </div>

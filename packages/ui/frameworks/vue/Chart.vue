@@ -80,7 +80,8 @@ const model = defineModel<string[]>()
  * readout of the point under the pointer or the keys, and says which series the legend hides.
  *
  * The points are written in one of two places: in the canvas where the layout is `radial`, on the plot otherwise. The
- * first is the stop in the tab order of the first render; the behavior moves it from there.
+ * first written, whatever its index, is the stop in the tab order of the first render; the behavior moves it from
+ * there.
  */
 const first = model.value ?? []
 const hidden = shallowRef<string[]>(first)
@@ -109,7 +110,7 @@ const place = (at: [number, number] | null) => (at ? { style: `--chart-x: ${at[0
         <svg class="chart-canvas" :viewBox="layout.viewBox" :preserveAspectRatio="layout.stretch ? 'none' : undefined" :role="layout.radial ? 'presentation' : undefined" :aria-hidden="layout.radial ? undefined : 'true'">
           <path v-for="(path, index) in layout.paths" :key="index" :class="classes(path)" :d="path.d" v-bind="known(path)" />
           <template v-if="layout.radial">
-            <g v-for="point in layout.points" :key="point.index" class="chart-point" role="listitem" :aria-label="point.text" :aria-current="point.current ? 'true' : undefined" :data-label="point.label" :tabindex="point.index ? -1 : 0" :style="`--chart-x: ${point.x}; --chart-y: ${point.y}; --chart-reach: ${point.reach}; --chart-index: ${point.index}`">
+            <g v-for="(point, position) in layout.points" :key="point.index" class="chart-point" role="listitem" :aria-label="point.text" :aria-current="point.current ? 'true' : undefined" :data-label="point.label" :tabindex="position ? -1 : 0" :style="`--chart-x: ${point.x}; --chart-y: ${point.y}; --chart-reach: ${point.reach}; --chart-index: ${point.index}`">
               <path v-if="point.hit && 'd' in point.hit" class="chart-hit" :d="point.hit.d" />
               <circle v-else-if="point.hit && 'r' in point.hit" class="chart-hit" :cx="point.hit.cx" :cy="point.hit.cy" :r="point.hit.r" />
               <rect v-else-if="point.hit" class="chart-hit" :x="point.hit.x" :y="point.hit.y" :width="point.hit.width" :height="point.hit.height" />
@@ -124,7 +125,7 @@ const place = (at: [number, number] | null) => (at ? { style: `--chart-x: ${at[0
           </template>
         </svg>
         <template v-if="!layout.radial">
-          <g v-for="point in layout.points" :key="point.index" class="chart-point" role="listitem" :aria-label="point.text" :aria-current="point.current ? 'true' : undefined" :data-label="point.label" :tabindex="point.index ? -1 : 0" :style="`--chart-x: ${point.x}; --chart-y: ${point.y}; --chart-reach: ${point.reach}; --chart-index: ${point.index}`">
+          <g v-for="(point, position) in layout.points" :key="point.index" class="chart-point" role="listitem" :aria-label="point.text" :aria-current="point.current ? 'true' : undefined" :data-label="point.label" :tabindex="position ? -1 : 0" :style="`--chart-x: ${point.x}; --chart-y: ${point.y}; --chart-reach: ${point.reach}; --chart-index: ${point.index}`">
             <path v-if="point.hit && 'd' in point.hit" class="chart-hit" :d="point.hit.d" />
             <circle v-else-if="point.hit && 'r' in point.hit" class="chart-hit" :cx="point.hit.cx" :cy="point.hit.cy" :r="point.hit.r" />
             <rect v-else-if="point.hit" class="chart-hit" :x="point.hit.x" :y="point.hit.y" :width="point.hit.width" :height="point.hit.height" />

@@ -47,7 +47,8 @@
     {#if 'separator' in item}
       <hr class="menu-separator" />
     {:else if item.href}
-      <a class={item.danger ? 'menu-item menu-item-danger' : 'menu-item'} role="menuitem" href={item.href} aria-disabled={item.disabled || undefined}>{item.label}{#if item.shortcut !== undefined}<span class="menu-shortcut">{item.shortcut}</span>{/if}</a>
+      <!-- A link that is disabled goes nowhere: it keeps its place and its words, without the address. -->
+      <a class={item.danger ? 'menu-item menu-item-danger' : 'menu-item'} role="menuitem" href={item.disabled ? undefined : item.href} aria-disabled={item.disabled || undefined}>{item.label}{#if item.shortcut !== undefined}<span class="menu-shortcut">{item.shortcut}</span>{/if}</a>
     {:else}
       <button type="button" class={item.danger ? 'menu-item menu-item-danger' : 'menu-item'} role="menuitem" popovertarget={name} popovertargetaction="hide" onclick={item.onSelect} disabled={item.disabled}>{item.label}{#if item.shortcut !== undefined}<span class="menu-shortcut">{item.shortcut}</span>{/if}</button>
     {/if}

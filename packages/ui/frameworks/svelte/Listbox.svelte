@@ -28,18 +28,21 @@
 
   let { options, value = $bindable(), onValueChange, multiple, class: className, ...root }: ListboxProps = $props()
   const id = $props.id()
-  const first = untrack(() => [value ?? []].flat())
+  // The first value is drawn into the first render; after that the behavior marks what is chosen. A row written
+  // later, from new options, is drawn with the value as it is then, which is not read as state.
+  const chosen = { values: untrack(() => [value ?? []].flat()) }
   const groups = $derived([...new Set(options.map(option => option.group))])
   const attach = behavior(listbox, undefined, {
     value: () => value,
-    change: (next) => { value = next; onValueChange?.(next) },
+    change: (next) => { chosen.values = [next ?? []].flat(); value = next; onValueChange?.(next) },
+    settled: (held) => { chosen.values = [held ?? []].flat() },
   })
 </script>
 
 {#snippet row(option: ListboxOption)}
   <!-- The behavior writes `aria-selected` on the option the keys are on. -->
   <!-- svelte-ignore a11y_role_has_required_aria_props -->
-  <div class="listbox-option" role="option" data-value={option.value} aria-checked={first.includes(option.value)} aria-disabled={option.disabled || undefined}>
+  <div class="listbox-option" role="option" data-value={option.value} aria-checked={chosen.values.includes(option.value)} aria-disabled={option.disabled || undefined}>
     {#if option.description}
       <span class="listbox-body"><span>{option.label}</span><span class="listbox-description">{option.description}</span></span>
     {:else}

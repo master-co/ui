@@ -48,6 +48,8 @@ const first = gradientValue(model.value)
 const shown = shallowRef<GradientValue>(first)
 const words = computed(() => ({ add: 'Add a stop', remove: 'Remove', reverse: 'Reverse', color: 'Color of the stop', position: 'Position', type: 'Type', linear: 'Linear', radial: 'Radial', conic: 'Conic', angle: 'Angle', center: 'Centre', centerX: 'Centre across, in percent', centerY: 'Centre down, in percent', css: 'The gradient as CSS', ...labels }))
 const css = gradientCss(first)
+// Vue writes a style again each time it renders, so it writes the gradient the behavior holds, not the first one.
+const painted = computed(() => gradientCss(shown.value))
 const color = colorPickerState(first.stops[0]!.color)!
 const types = ['linear', 'radial', 'conic'] as const
 const root = useTemplateRef<HTMLDivElement>('root')
@@ -55,7 +57,7 @@ useBehavior(root, gradient, () => ({ value: first, draw: (next: GradientValue) =
 </script>
 
 <template>
-  <div class="gradient" ref="root" :aria-readonly="readOnly || undefined" :aria-disabled="disabled || undefined" :style="{ '--gradient': css.css, '--gradient-fallback': css.fallback }" v-bind="$attrs">
+  <div class="gradient" ref="root" :aria-readonly="readOnly || undefined" :aria-disabled="disabled || undefined" :style="{ '--gradient': painted.css, '--gradient-fallback': painted.fallback }" v-bind="$attrs">
     <div class="gradient-preview" aria-hidden="true"></div>
     <div class="gradient-bar">
       <span v-for="(stop, index) in gradientStops(shown.stops)" :key="stop.id" class="gradient-stop" role="slider" :data-id="stop.id" :aria-label="`Stop ${index + 1} of ${shown.stops.length}`" :aria-valuemin="0" :aria-valuemax="100" :aria-valuenow="stop.offset" :style="{ '--gradient-offset': stop.offset, '--gradient-color': stop.color }"></span>
@@ -73,23 +75,23 @@ useBehavior(root, gradient, () => ({ value: first, draw: (next: GradientValue) =
             <div class="color-picker-thumb" role="slider" tabindex="0" aria-label="Lightness and chroma" :aria-valuemin="0" :aria-valuemax="100" :aria-valuenow="color.valueNow" :aria-valuetext="color.valueText"></div>
           </div>
           <span class="swatch swatch-lg color-picker-swatch"></span>
-          <input type="range" class="slider color-picker-hue" min="0" max="360" :value="color.hue" aria-label="Hue" />
-          <input type="range" class="slider color-picker-alpha" min="0" max="100" :value="color.alpha * 100" aria-label="Opacity" />
+          <input type="range" class="slider color-picker-hue" min="0" max="360" :value.attr="color.hue" aria-label="Hue" />
+          <input type="range" class="slider color-picker-alpha" min="0" max="100" :value.attr="color.alpha * 100" aria-label="Opacity" />
           <div class="color-picker-fields">
             <select class="select select-sm color-picker-format" aria-label="Format">
               <option value="hex" selected>Hex</option>
               <option value="rgb">RGB</option>
               <option value="oklch">OKLCH</option>
             </select>
-            <input class="input input-sm color-picker-text" :value="color.value" :aria-label="words.color" spellcheck="false" autocomplete="off" />
+            <input class="input input-sm color-picker-text" :value.attr="color.value" :aria-label="words.color" spellcheck="false" autocomplete="off" />
           </div>
         </div>
       </fieldset>
       <div class="flex flex-col gap-md min-w(0)">
         <fieldset class="gradient-offset">
           <legend class="mb(6) text-xs font-medium fg-text-muted">{{ words.position }}</legend>
-          <input type="range" class="slider" min="0" max="100" step="1" :value="first.stops[0]!.offset" :aria-label="words.position" />
-          <input type="number" class="input input-sm w(72)" min="0" max="100" step="0.1" :value="first.stops[0]!.offset" :aria-label="`${words.position}, %`" />
+          <input type="range" class="slider" min="0" max="100" step="1" :value.attr="first.stops[0]!.offset" :aria-label="words.position" />
+          <input type="number" class="input input-sm w(72)" min="0" max="100" step="0.1" :value.attr="first.stops[0]!.offset" :aria-label="`${words.position}, %`" />
         </fieldset>
         <fieldset class="gradient-type">
           <legend class="mb(6) text-xs font-medium fg-text-muted">{{ words.type }}</legend>
@@ -100,15 +102,15 @@ useBehavior(root, gradient, () => ({ value: first, draw: (next: GradientValue) =
         <div class="flex flex-wrap items-start gap-lg">
           <fieldset class="gradient-angle">
             <legend class="mb(6) text-xs font-medium fg-text-muted">{{ words.angle }}</legend>
-            <div class="dial dial-sm dial-full" role="slider" tabindex="0" :aria-label="words.angle" :aria-valuenow="first.angle" :aria-valuemin="0" :aria-valuemax="360" :aria-valuetext="`${first.angle}°`" :style="{ '--dial-value': first.angle }">
+            <div class="dial dial-sm dial-full" role="slider" tabindex="0" :aria-label="words.angle" :aria-valuenow="first.angle" :aria-valuemin="0" :aria-valuemax="360" :aria-valuetext="`${first.angle}°`" :style="{ '--dial-value': shown.angle }">
               <span class="dial-value">{{ first.angle }}°</span>
               <span class="dial-thumb"></span>
             </div>
           </fieldset>
           <fieldset class="gradient-center">
             <legend class="mb(6) text-xs font-medium fg-text-muted">{{ words.center }}</legend>
-            <input type="number" class="input input-sm w(72)" min="0" max="100" :value="first.center[0]" :aria-label="words.centerX" />
-            <input type="number" class="input input-sm w(72)" min="0" max="100" :value="first.center[1]" :aria-label="words.centerY" />
+            <input type="number" class="input input-sm w(72)" min="0" max="100" :value.attr="first.center[0]" :aria-label="words.centerX" />
+            <input type="number" class="input input-sm w(72)" min="0" max="100" :value.attr="first.center[1]" :aria-label="words.centerY" />
           </fieldset>
         </div>
       </div>

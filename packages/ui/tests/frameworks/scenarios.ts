@@ -295,6 +295,11 @@ export const scenarios: Record<string, Scenario> = {
     await driver.act(() => mounted.set({ value: 'next' }))
     assert.deepEqual(checked(), ['next'])
     assert.deepEqual(heard, ['next', 'astro'])
+
+    // Options written again from data are marked from the value the listbox holds, not from the first one.
+    await driver.act(() => mounted.set({ options: options.slice(2) }))
+    await driver.act(() => mounted.set({ options }))
+    assert.deepEqual(checked(), ['next'], 'options written again carry the value it holds')
     await driver.act(() => mounted.unmount())
 
     const several = await owned(driver, 'listbox', { options, value: ['astro'], multiple: true, 'aria-label': 'Frameworks' })
@@ -350,6 +355,15 @@ export const scenarios: Record<string, Scenario> = {
     assert.deepEqual(range.heard, [['2026-11-28', '2026-12-03']], 'a range comes out once both ends are chosen')
     assert.equal(page.all('.calendar-day-range-start, .calendar-day-range, .calendar-day-range-end').length > 2, true)
     await driver.act(() => range.mounted.unmount())
+
+    // The first end of a range stays while the month turns to the second, though nothing has come out yet.
+    const across = await owned(driver, 'calendar', { value: null, range: true, month: '2026-11', locale: 'en-GB', weekStart: 1 })
+    const inside = (value: string) => page.one<HTMLButtonElement>(`.calendar-day[value="${value}"]:not(.calendar-day-outside)`)
+    await driver.act(() => page.click(inside('2026-11-24')))
+    await driver.act(() => page.click(page.one<HTMLButtonElement>('.calendar-header .btn[aria-label="Next month"]')))
+    await driver.act(() => page.click(inside('2026-12-15')))
+    assert.deepEqual(across.heard, [['2026-11-24', '2026-12-15']], 'a range across a turned month')
+    await driver.act(() => across.mounted.unmount())
 
     // The title jumps to the months and the years; the framework writes them when the behavior asks.
     const jumping = await owned(driver, 'calendar', { value: '2026-11-13', locale: 'en-GB', weekStart: 1 })
@@ -424,6 +438,8 @@ export const scenarios: Record<string, Scenario> = {
       { label: 'New project', group: 'Suggestions', onSelect: () => ran.push('new') },
       { label: 'Deploy to production', group: 'Suggestions', onSelect: () => ran.push('deploy') },
       { label: 'Settings', group: 'Go to', href: '#settings' },
+      { label: 'Billing', group: 'Go to', href: '#billing', disabled: true },
+      { label: 'Delete project', group: 'Go to', disabled: true, onSelect: () => ran.push('delete') },
     ]
     const { mounted, heard } = await owned(driver, 'command', { items, open: false, shortcut: 'k', searchLabel: 'Search commands', listLabel: 'Commands', empty: 'No commands match.', 'aria-label': 'Command palette', onSearch: (text: string) => searched.push(text) }, 'open', 'onOpenChange')
     conforms(page)
@@ -435,9 +451,15 @@ export const scenarios: Record<string, Scenario> = {
     await driver.act(() => mounted.set({ open: true }))
     assert.equal(dialog.open, true, 'open opens the dialog')
 
+    // A command that is disabled goes nowhere and runs nothing, even under the pointer.
+    const [billing, removal] = page.all<HTMLElement>('[role="option"][aria-disabled="true"]')
+    assert.equal(billing.hasAttribute('href'), false, 'a disabled link has no address')
+    await driver.act(() => page.click(removal))
+    assert.deepEqual(ran, [], 'a disabled command does not run')
+
     await driver.act(() => page.type(field, 'depl'))
     assert.deepEqual(searched, ['depl'])
-    assert.deepEqual(page.all('[role="option"]').map(option => option.hidden), [true, false, true])
+    assert.deepEqual(page.all('[role="option"]').map(option => option.hidden), [true, false, true, true, true])
     await driver.act(() => page.key(field, 'Enter'))
     assert.deepEqual(ran, ['deploy'], 'Enter runs the active command')
     assert.equal(dialog.open, false, 'and the palette closes')
@@ -723,6 +745,10 @@ export const scenarios: Record<string, Scenario> = {
     ]
     const mounted = await driver.mount('menu', { items, 'aria-label': 'Project' })
     conforms(page)
+    const away = await driver.mount('menu', { items: [{ label: 'Billing', href: '#billing', disabled: true }], 'aria-label': 'Account' })
+    const billing = page.all<HTMLAnchorElement>('.menu-item[aria-disabled="true"]').at(-1)!
+    assert.equal(billing.hasAttribute('href'), false, 'a disabled link goes nowhere')
+    await driver.act(() => away.unmount())
     const menu = page.one<HTMLElement>('.menu')
     const trigger = page.one<HTMLButtonElement>('button.btn')
     assert.equal(trigger.getAttribute('popovertarget'), menu.id, 'the trigger names the menu')
@@ -1513,6 +1539,13 @@ export const scenarios: Record<string, Scenario> = {
     await driver.act(() => page.click(page.one('.gradient-add')))
     assert.equal(stops().length, 3, 'the framework writes the new handle')
     assert.deepEqual((heard.at(-1) as typeof sunrise).stops.map(stop => stop.offset), [0, 100, 10], 'the new value comes out')
+
+    // A stop moved with the keys: the framework renders again, and leaves the fields and the paint to the behavior.
+    const hand = page.one<HTMLElement>('.gradient-stop[aria-current="true"]')
+    await driver.act(() => { hand.focus(); page.key(hand, 'ArrowRight'); page.key(hand, 'ArrowRight') })
+    assert.deepEqual((heard.at(-1) as typeof sunrise).stops.map(stop => stop.offset), [0, 100, 12])
+    assert.deepEqual(page.all<HTMLInputElement>('.gradient-offset input').map(input => input.value), ['12', '12'], 'the position fields say the stop in hand')
+    assert.match(page.one<HTMLElement>('.gradient').style.getPropertyValue('--gradient'), / 12%/, 'the paint is the gradient as it is')
 
     await driver.act(() => mounted.set({ value: { ...sunrise, type: 'conic' } }))
     assert.deepEqual(stops(), ['dawn', 'dusk'], 'a value set by the owner is written')

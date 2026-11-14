@@ -36,10 +36,11 @@
   readout of the point under the pointer or the keys, and says which series the legend hides.
 -->
 {#snippet points()}
-  {#each layout.points as point (point.index)}
-    <!-- The first point is the stop in the tab order of the first render; the behavior moves it from there. -->
+  {#each layout.points as point, at (point.index)}
+    <!-- The first point is the stop in the tab order of the first render; the behavior moves it from there. A form
+         may pass over a series, so the first point is the first written, whatever its index. -->
     <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-    <g class="chart-point" role="listitem" aria-label={point.text} aria-current={point.current ? 'true' : undefined} data-label={point.label} tabindex={point.index ? -1 : 0} style="--chart-x: {point.x}; --chart-y: {point.y}; --chart-reach: {point.reach}; --chart-index: {point.index}">
+    <g class="chart-point" role="listitem" aria-label={point.text} aria-current={point.current ? 'true' : undefined} data-label={point.label} tabindex={at ? -1 : 0} style="--chart-x: {point.x}; --chart-y: {point.y}; --chart-reach: {point.reach}; --chart-index: {point.index}">
       {#if point.hit && 'd' in point.hit}
         <path class="chart-hit" d={point.hit.d} />
       {:else if point.hit && 'r' in point.hit}

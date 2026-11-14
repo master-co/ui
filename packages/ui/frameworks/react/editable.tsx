@@ -29,7 +29,7 @@ export function Editable({ value, defaultValue, onValueChange, label, multiline,
   // The first value is drawn into the first render; after that the behavior writes the preview and the field.
   const [first] = useState(() => value ?? defaultValue ?? '')
   const ref = useBehavior(editable, { blur }, { value, defaultValue, onValueChange })
-  const shared = { className: 'editable-field', id: `${id}field`, 'aria-label': label, disabled, hidden: true }
+  const shared = { className: 'editable-field', 'aria-label': label, disabled, hidden: true }
   return (
     <div className={className ? `editable ${className}` : 'editable'} ref={ref} aria-busy={busy || undefined}>
       <button type="button" className="editable-preview" id={`${id}preview`} aria-labelledby={`${id}name ${id}preview`} disabled={disabled}>

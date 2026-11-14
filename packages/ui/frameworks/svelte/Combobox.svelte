@@ -54,6 +54,8 @@
   const first = untrack(() => value)
   const several = untrack(() => multiple)
   const firsts = [first ?? []].flat() as string[]
+  // An option written later, from new options, is drawn with the value as it is then, which is not read as state.
+  const chosen = { values: firsts }
   const text = (several ? undefined : untrack(() => options.find(option => option.value === first)?.label)) ?? untrack(() => query)
   // With several values the behavior asks for the chips it wants; Svelte writes them from this list.
   let chips = $state(several ? firsts : [])
@@ -64,7 +66,8 @@
   let known: string | undefined
   const attach = behavior(combobox, () => (multiple ? { filter, removeLabel, draw: (values: string[]) => { chips = values } } : { filter }), {
     value: () => value,
-    change: (next) => { value = next; onValueChange?.(next) },
+    change: (next) => { chosen.values = [next ?? []].flat(); value = next; onValueChange?.(next) },
+    settled: (held) => { chosen.values = [held ?? []].flat() },
     attached: (attached) => { handle = attached as ReturnType<typeof combobox> | null },
     on: {
       input: () => {
@@ -86,7 +89,7 @@
 {#snippet row(option: ComboboxOption)}
   <!-- The behavior writes `aria-selected` on the option the keys are on. -->
   <!-- svelte-ignore a11y_role_has_required_aria_props -->
-  <div class="listbox-option" role="option" data-value={option.value} aria-checked={several ? firsts.includes(option.value) : option.value === first} aria-disabled={option.disabled || undefined}>
+  <div class="listbox-option" role="option" data-value={option.value} aria-checked={chosen.values.includes(option.value)} aria-disabled={option.disabled || undefined}>
     {#if option.description}
       <span class="listbox-body"><span>{option.label}</span><span class="listbox-description">{option.description}</span></span>
     {:else}

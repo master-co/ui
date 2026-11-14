@@ -43,7 +43,9 @@ export function Carousel<T extends CarouselItem>({ items, value, defaultValue, o
   const id = useId()
   // The first value is drawn into the first render; after that the behavior marks what is current.
   const [first] = useState(() => value ?? defaultValue ?? items[0]?.value)
-  const at = items.findIndex(item => item.value === first)
+  // Drawn into the first render only; after that the behavior marks the buttons, and a render with other items
+  // does not draw the first state over the one it gave.
+  const [at] = useState(() => items.findIndex(item => item.value === first))
   // The behavior's value is null only for a carousel with no slides, which never reports a change.
   const ref = useBehavior<HTMLDivElement, CarouselOptions, string | null>(carousel, { value: first }, { value, defaultValue, onValueChange: onValueChange as ((value: string | null) => void) | undefined })
   const track = ['carousel', vertical && 'carousel-vertical', trackClassName].filter(Boolean).join(' ')

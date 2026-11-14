@@ -66,9 +66,10 @@ watch(open, sync, { flush: 'post' })
 const groups = computed(() => [...new Set(items.map(item => item.group))])
 const Row: FunctionalComponent<{ item: CommandItem }> = ({ item }) => {
   const content = [item.label, item.hint !== undefined ? h('span', { class: 'listbox-end' }, item.hint) : undefined]
+  // A command that is disabled goes nowhere and runs nothing, whatever presses it.
   return item.href
-    ? h('a', { 'class': 'listbox-option', 'role': 'option', 'href': item.href, 'aria-disabled': item.disabled || undefined }, content)
-    : h('div', { 'class': 'listbox-option', 'role': 'option', 'onClick': () => item.onSelect?.(), 'aria-disabled': item.disabled || undefined }, content)
+    ? h('a', { 'class': 'listbox-option', 'role': 'option', 'href': item.disabled ? undefined : item.href, 'aria-disabled': item.disabled || undefined }, content)
+    : h('div', { 'class': 'listbox-option', 'role': 'option', 'onClick': () => { if (!item.disabled) item.onSelect?.() }, 'aria-disabled': item.disabled || undefined }, content)
 }
 Row.props = ['item']
 </script>
