@@ -106,6 +106,22 @@ test('player: Space and K play and pause; Space on a button is the button\'s', (
   assert.equal(pressed('play'), 'true')
 })
 
+test('player: a toggle key held down toggles once; a seek key held down goes on seeking', () => {
+  const { root, key, part, pressed, media } = setup('audio', { duration: 60 })
+  player(root)
+  key(part('seek'), 'k')
+  assert.equal(pressed('play'), 'true')
+  assert.equal(key(part('seek'), 'k', { repeat: true }), true, 'the repeat is taken')
+  assert.equal(key(part('seek'), ' ', { repeat: true }), true)
+  assert.equal(pressed('play'), 'true', 'and plays on')
+  key(part('seek'), 'm')
+  key(part('seek'), 'm', { repeat: true })
+  assert.equal(pressed('mute'), 'true')
+  key(part('seek'), 'l')
+  key(part('seek'), 'l', { repeat: true })
+  assert.equal(media.currentTime, 20)
+})
+
 test('player: the arrows seek 5 seconds, and J and L 10, within the recording', () => {
   const { root, key, part, media } = setup('audio', { duration: 60, currentTime: 30 })
   player(root)
@@ -222,6 +238,17 @@ test('player: dragging the seek track seeks, and the media does not move the thu
   seek.dispatchEvent(new (seek.ownerDocument.defaultView as any).Event('change', { bubbles: true }))
   control.advance(22)
   assert.equal(seek.value, '22')
+})
+
+test('player: a drag of the seek track that the browser cancels lets the media move the thumb again', () => {
+  const { root, part, control, pointer, type } = setup('audio', { duration: 60 })
+  player(root)
+  const seek = part<HTMLInputElement>('seek')
+  pointer(seek, 'pointerdown')
+  type(seek, '42')
+  pointer(seek, 'pointercancel')
+  control.advance(43)
+  assert.equal(seek.value, '43')
 })
 
 test('player: a video with a captions track shows the captions button, and C and the button turn them on and off', () => {

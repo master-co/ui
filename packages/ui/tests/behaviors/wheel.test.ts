@@ -117,6 +117,14 @@ test('wheel: the value in the change is data-value, or the option\'s text', () =
   assert.deepEqual(changes.map(change => change.value), ['P1D', 'Week'])
 })
 
+test('wheel: an option written over two lines stands for its text on one line, read and set', () => {
+  const { root, selected } = setup([option('Hour', 'aria-selected="true"'), option('Every\n    week')].join('\n'))
+  const handle = wheel(root)
+  handle.value = ['Every week']
+  assert.deepEqual(selected(), ['Every\n    week'])
+  assert.deepEqual(handle.value, ['Every week'])
+})
+
 test('wheel: ArrowDown and ArrowUp bring the option after and before under the mark', () => {
   const { root, column, key, sent, changes, selected } = setup()
   wheel(root)

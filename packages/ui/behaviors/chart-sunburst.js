@@ -31,10 +31,10 @@ function form({ config, layout, shown, format, legend, sector, numbers, real }) 
     const text = format(part.value)
     const middle = angle + sweep / 2
     layout.points.push({
-      index: index++,
+      index,
       label: '',
       text: `${part.series.name}: ${text} (${share.format(part.value / total)})`,
-      current: false,
+      current: config.current === index++,
       x: 0.5 + (28 * Math.cos(middle)) / 100,
       y: 0.5 + (28 * Math.sin(middle)) / 100,
       reach: 0,
@@ -50,10 +50,10 @@ function form({ config, layout, shown, format, legend, sector, numbers, real }) 
       const value = format(child.value)
       const half = from + turn / 2
       layout.points.push({
-        index: index++,
+        index,
         label: '',
         text: `${part.series.name}, ${child.name}: ${value} (${share.format(child.value / total)})`,
-        current: false,
+        current: config.current === index++,
         x: 0.5 + (43 * Math.cos(half)) / 100,
         y: 0.5 + (43 * Math.sin(half)) / 100,
         reach: 0,

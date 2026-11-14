@@ -4,9 +4,9 @@
  * The root is an input group with `input-group-wrap` and the `tags` class. It holds the chips, then one text
  * field, the element with `input-group-field`. Enter, and a delimiter (a comma by default), turn what the
  * field holds into a value: a chip is written before the field and the field is emptied. Pasted text with
- * delimiters, line breaks or tabs in it becomes as many values. A value that is empty, already there, past
- * `max` or refused by `validate` is not added: the field keeps the text and says `aria-invalid="true"` until
- * it changes.
+ * delimiters, line breaks or tabs in it becomes as many values, joined with the text at the caret. A value
+ * that is empty, already there, past `max` or refused by `validate` is not added: the field keeps the text
+ * and says `aria-invalid="true"` until it changes.
  *
  * The field is the one tab stop. Backspace in an empty field, and the arrow key that points back, move focus
  * to the last chip's remove button; on a chip the arrows walk the chips, Backspace and Delete remove the
@@ -69,10 +69,18 @@ export function tags(root, { delimiters = [','], max = Infinity, validate, name,
     }
     const kept = new Map(chipsOf(root).map((chip) => [chipValue(chip), chip]))
     for (const [value, chip] of kept) if (!next.includes(value)) chip.remove()
-    for (const value of next) {
+    if (!field) {
+      for (const value of next) root.append(kept.get(value) ?? writeChip(document, { value, name: named, removeLabel }))
+      return
+    }
+    // From the field back, a chip moves only when it is not where it belongs already: a chip that stays is
+    // not taken out and put back, which would cost it focus and make a renderer's observer hear it leave.
+    /** @type {Element} */
+    let after = field
+    for (const value of [...next].reverse()) {
       const chip = kept.get(value) ?? writeChip(document, { value, name: named, removeLabel })
-      if (field) field.before(chip)
-      else root.append(chip)
+      if (chip.nextElementSibling !== after || !chip.isConnected) after.before(chip)
+      after = chip
     }
   }
 
@@ -135,7 +143,9 @@ export function tags(root, { delimiters = [','], max = Infinity, validate, name,
 
   const walk = chipKeys(field, remove)
   root.addEventListener('keydown', (event) => {
-    if (event.target === field && !event.isComposing && !event.ctrlKey && !event.metaKey && !event.altKey) {
+    // Safari sends the Enter that ends a composition after it has ended, with isComposing false and keyCode 229.
+    const composing = event.isComposing || event.keyCode === 229
+    if (event.target === field && !composing && !event.ctrlKey && !event.metaKey && !event.altKey) {
       if (event.key === 'Enter' || delimiters.includes(event.key)) {
         // Enter in an empty field is left alone, so it still submits the form.
         if (event.key === 'Enter' && !field.value.trim()) return
@@ -154,10 +164,15 @@ export function tags(root, { delimiters = [','], max = Infinity, validate, name,
     const splitter = new RegExp(`[\\n\\r\\t${delimiters.map((each) => each.replace(/[\\\]^-]/g, '\\$&')).join('')}]`)
     if (!splitter.test(text) || field.readOnly) return
     event.preventDefault()
-    const parts = text.split(splitter)
+    // The paste lands at the caret, in place of what is selected, and joins the text on either side of it,
+    // as it would in any field: "dev" and a pasted "ops, infra" are "devops" and "infra".
+    const start = field.selectionStart ?? field.value.length
+    const end = field.selectionEnd ?? start
+    const joined = field.value.slice(0, start) + text + field.value.slice(end)
+    const parts = joined.split(splitter)
     // What follows the last delimiter is still being typed: it stays in the field.
-    const rest = /[\n\r\t]$/.test(text) || delimiters.some((each) => text.endsWith(each)) ? '' : (parts.pop() ?? '').trimStart()
-    const whole = add([field.value, ...parts].filter((each) => each.trim()))
+    const rest = /[\n\r\t]$/.test(joined) || delimiters.some((each) => joined.endsWith(each)) ? '' : (parts.pop() ?? '').trimStart()
+    const whole = add(parts.filter((each) => each.trim()))
     write(field, rest)
     if (!whole) refuse()
   }, { signal })

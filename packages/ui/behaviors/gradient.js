@@ -144,27 +144,41 @@ export function gradient(root, options = {}) {
     }
   }
 
+  /**
+   * Write an attribute, or remove it with null, only when it changes: a drag paints at every move, and the
+   * handles it does not move should not be touched.
+   * @param {Element} element @param {string} name @param {string | null} text
+   */
+  const mark = (element, name, text) => {
+    if (text === null) element.removeAttribute(name)
+    else if (element.getAttribute(name) !== text) element.setAttribute(name, text)
+  }
+  /** @param {HTMLElement} element @param {string} name @param {string} text */
+  const property = (element, name, text) => {
+    if (element.style.getPropertyValue(name) !== text) element.style.setProperty(name, text)
+  }
+
   /** Mark everything from the value: the handles, the paint and the controls, except the control giving it. */
   function paint(/** @type {Element | null} */ from = null) {
     if (!stopOf(hand)) hand = value.stops[0].id
+    // Read before anything is written, so the direction does not make the browser work out the styles again.
+    const backward = rtl()
     const css = gradientCss(value)
-    root.style.setProperty('--gradient', css.css)
-    root.style.setProperty('--gradient-fallback', css.fallback)
-    root.style.setProperty('--gradient-bar', gradientCss({ ...value, type: 'linear', angle: rtl() ? 270 : 90 }).fallback)
+    property(root, '--gradient', css.css)
+    property(root, '--gradient-fallback', css.fallback)
+    property(root, '--gradient-bar', gradientCss({ ...value, type: 'linear', angle: backward ? 270 : 90 }).fallback)
     const ordered = gradientStops(value.stops)
     for (const handle of handles()) {
       const stop = stopOf(handle.dataset.id ?? '')
       if (!stop) continue
-      handle.style.setProperty('--gradient-offset', String(stop.offset))
-      handle.style.setProperty('--gradient-color', stop.color)
-      handle.setAttribute('aria-valuenow', String(stop.offset))
-      handle.setAttribute('aria-valuetext', stopText(stop))
-      handle.setAttribute('aria-label', stopLabel(stop, ordered.indexOf(stop), ordered.length))
-      handle.setAttribute('tabindex', stop.id === hand ? '0' : '-1')
-      if (stop.id === hand) handle.setAttribute('aria-current', 'true')
-      else handle.removeAttribute('aria-current')
-      if (locked()) handle.setAttribute('aria-disabled', 'true')
-      else handle.removeAttribute('aria-disabled')
+      property(handle, '--gradient-offset', String(stop.offset))
+      property(handle, '--gradient-color', stop.color)
+      mark(handle, 'aria-valuenow', String(stop.offset))
+      mark(handle, 'aria-valuetext', stopText(stop))
+      mark(handle, 'aria-label', stopLabel(stop, ordered.indexOf(stop), ordered.length))
+      mark(handle, 'tabindex', stop.id === hand ? '0' : '-1')
+      mark(handle, 'aria-current', stop.id === hand ? 'true' : null)
+      mark(handle, 'aria-disabled', locked() ? 'true' : null)
     }
     const stop = /** @type {GradientStop} */ (stopOf(hand))
     for (const input of /** @type {HTMLInputElement[]} */ ([...root.querySelectorAll('.gradient-offset input')])) {
@@ -205,19 +219,20 @@ export function gradient(root, options = {}) {
   }
 
   /**
-   * The reader changed the value.
+   * The reader changed the value. Says whether it did.
    * @param {(next: GradientValue) => void} change @param {'input' | 'change'} type @param {Element | null} [from]
    */
   function edit(change, type, from = null) {
-    if (locked()) return
+    if (locked()) return false
     const next = structuredClone(value)
     change(next)
     const settled = gradientValue(next)
-    if (same(settled, value)) return
+    if (same(settled, value)) return false
     value = settled
     show(from)
     say('input')
     if (type === 'change') say('change')
+    return true
   }
 
   /** @param {string} id */
@@ -237,6 +252,8 @@ export function gradient(root, options = {}) {
 
   /* A handle: take it in hand, drag it, move it with the keys. */
   let held = /** @type {number | null} */ (null)
+  /** Whether the stop in hand has moved since the press: a press that moves nothing changes nothing. */
+  let dragged = false
   /** The offset under the pointer, along the bar in its writing direction. @param {PointerEvent} event */
   const offsetAt = (event) => {
     const box = /** @type {HTMLElement} */ (bar).getBoundingClientRect()
@@ -250,6 +267,7 @@ export function gradient(root, options = {}) {
     event.preventDefault()
     hand = handle.dataset.id ?? hand
     held = event.pointerId
+    dragged = false
     handle.setPointerCapture?.(event.pointerId)
     paint()
     handle.focus()
@@ -257,12 +275,13 @@ export function gradient(root, options = {}) {
   bar?.addEventListener('pointermove', (event) => {
     if (held !== event.pointerId) return
     const offset = offsetAt(event)
-    edit((next) => { /** @type {GradientStop} */ (next.stops.find((stop) => stop.id === hand)).offset = offset }, 'input')
+    if (edit((next) => { /** @type {GradientStop} */ (next.stops.find((stop) => stop.id === hand)).offset = offset }, 'input')) dragged = true
   }, { signal })
   const release = (/** @type {PointerEvent} */ event) => {
     if (held !== event.pointerId) return
     held = null
-    say('change')
+    if (dragged) say('change')
+    dragged = false
   }
   bar?.addEventListener('pointerup', release, { signal })
   bar?.addEventListener('pointercancel', release, { signal })
@@ -305,11 +324,15 @@ export function gradient(root, options = {}) {
     const target = /** @type {Element} */ (event.target)
     if (target.closest('.gradient-add')) {
       const stop = /** @type {GradientStop} */ (stopOf(hand))
-      const id = `stop-${++serial}`
-      edit((next) => { next.stops.push({ id, offset: Math.min(100, stop.offset + 10), color: stop.color }) }, 'change')
+      const id = `stop-${serial + 1}`
+      // The new stop is in hand before the gradient says it changed, so a listener finds it there; a gradient
+      // that is locked adds none, and the stop in hand stays where it was.
+      const before = hand
       hand = id
-      paint()
-      focus(id)
+      if (edit((next) => { next.stops.push({ id, offset: Math.min(100, stop.offset + 10), color: stop.color }) }, 'change')) {
+        serial += 1
+        focus(id)
+      } else hand = before
     } else if (target.closest('.gradient-remove')) {
       remove()
     } else if (target.closest('.gradient-reverse')) {

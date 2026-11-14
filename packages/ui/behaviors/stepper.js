@@ -98,8 +98,10 @@ export function stepper(root, { format, locale, pixels = 4 } = {}) {
     const value = field.value === '' ? NaN : Number(field.value)
     const text = Number.isFinite(value) ? formatter(value) : ''
     if (display && display.textContent !== text) display.textContent = text
-    if (text && text !== field.value) field.setAttribute('aria-valuetext', text)
-    else field.removeAttribute('aria-valuetext')
+    // Said at every step of a scrub and every key typed: an attribute is written only when it changes.
+    if (text && text !== field.value) {
+      if (field.getAttribute('aria-valuetext') !== text) field.setAttribute('aria-valuetext', text)
+    } else if (field.hasAttribute('aria-valuetext')) field.removeAttribute('aria-valuetext')
   }
 
   /** Disable the button whose limit the value has reached. An empty field has reached neither. */
@@ -115,7 +117,8 @@ export function stepper(root, { format, locale, pixels = 4 } = {}) {
         repeated = false
       }
       // A field that is disabled or read-only steps nothing, so its buttons stay as their author left them.
-      button.disabled = field.disabled || field.readOnly ? before[buttons.indexOf(button)] : reached
+      const next = field.disabled || field.readOnly ? before[buttons.indexOf(button)] : reached
+      if (button.disabled !== next) button.disabled = next
     }
   }
 
@@ -189,8 +192,11 @@ export function stepper(root, { format, locale, pixels = 4 } = {}) {
     drag?.abort()
     const gesture = new AbortController()
     drag = gesture
-    // Detaching ends a drag under way: it aborts this one too.
+    // Detaching ends a drag under way: it aborts this one too, and a pointer it locked is let go however it ends.
     const options = { signal: gesture.signal }
+    gesture.signal.addEventListener('abort', () => {
+      if (locked && page.pointerLockElement === handle) page.exitPointerLock()
+    })
     const start = event.clientX
     const sign = getComputedStyle(root).direction === 'rtl' ? -1 : 1
     let last = start
@@ -208,7 +214,10 @@ export function stepper(root, { format, locale, pixels = 4 } = {}) {
         // A mouse is held still while the drag goes on; a pen or a finger is captured by the handle.
         if (event.pointerType === 'mouse' && 'requestPointerLock' in handle) {
           locked = true
-          Promise.resolve(/** @type {any} */ (handle).requestPointerLock()).catch(() => { locked = false })
+          // The lock arrives later than it is asked for: a drag that ended before it came lets it go at once.
+          Promise.resolve(/** @type {any} */ (handle).requestPointerLock()).then(() => {
+            if (gesture.signal.aborted && page.pointerLockElement === handle) page.exitPointerLock()
+          }, () => { locked = false })
         } else {
           try { /** @type {HTMLElement} */ (handle).setPointerCapture(event.pointerId) } catch {}
         }
@@ -241,7 +250,6 @@ export function stepper(root, { format, locale, pixels = 4 } = {}) {
       if (up.pointerId !== event.pointerId) return
       gesture.abort()
       if (drag === gesture) drag = null
-      if (locked && page.pointerLockElement === handle) page.exitPointerLock()
       if (!dragging) return
       // The click that ends a drag on a label would focus the field; the drag was the press.
       swallow = true

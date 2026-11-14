@@ -174,7 +174,12 @@ export function drawer(root) {
 
   /** What a press began on, so that a drag let go of over the scrim is not a press on it. @type {EventTarget | null} */
   let pressed = null
-  /** @type {{ id: number, x: number, y: number, last: number, at: number, speed: number, moved: boolean, grip: Element | null } | null} */
+  /**
+   * A mouse drag under way. `way` is the way the panel leaves, read once as it begins: each move scrolls the
+   * track and the scrim is written on the dialog as it scrolls, so asking the dialog's direction again on the
+   * next move would make the browser work its style out again on every move.
+   * @type {{ id: number, x: number, y: number, last: number, at: number, speed: number, moved: boolean, grip: Element | null, way: { x: number, y: number } } | null}
+   */
   let drag = null
   /** A handle that was dragged is not pressed when the drag ends. */
   let dragged = false
@@ -190,12 +195,12 @@ export function drawer(root) {
     // No text is selected and no focus moves; the panel is still :active, which stops the snapping.
     event.preventDefault()
     own.setPointerCapture?.(event.pointerId)
-    drag = { id: event.pointerId, x: event.clientX, y: event.clientY, last: 0, at: event.timeStamp, speed: 0, moved: false, grip }
+    drag = { id: event.pointerId, x: event.clientX, y: event.clientY, last: 0, at: event.timeStamp, speed: 0, moved: false, grip, way: away() }
   }, { signal })
 
   root.addEventListener('pointermove', (event) => {
     if (!drag || event.pointerId !== drag.id) return
-    const { x, y } = away()
+    const { x, y } = drag.way
     // How far the pointer has carried the panel away from where it took hold.
     const along = x * (event.clientX - drag.x) + y * (event.clientY - drag.y)
     if (!drag.moved && Math.abs(along) < slop) return
@@ -222,10 +227,13 @@ export function drawer(root) {
     const aim = found.now + thrown
     const rest = found.rests.reduce((best, each) => Math.abs(each - aim) < Math.abs(best - aim) ? each : best)
     // After the frame the panel is let go of in, when the track snaps again, so this scroll is the last word.
-    requestAnimationFrame(() => go(rest))
+    requestAnimationFrame(() => { if (!signal.aborted) go(rest) })
   }
   root.addEventListener('pointerup', release, { signal })
   root.addEventListener('pointercancel', release, { signal })
+  // Capture lost without a release, as when the dialog closes under the drag, ends the drag too: a mouse that
+  // came back with its button up must not carry the panel.
+  root.addEventListener('lostpointercapture', release, { signal })
 
   root.addEventListener('click', (event) => {
     if (!swiping()) return
@@ -244,7 +252,7 @@ export function drawer(root) {
 
   root.addEventListener('keydown', (event) => {
     const grip = handle()
-    if (!grip || event.target !== grip || !swiping()) return
+    if (!grip || event.target !== grip || !swiping() || event.altKey || event.ctrlKey || event.metaKey) return
     if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return
     event.preventDefault()
     const full = event.key === 'ArrowUp'
@@ -253,12 +261,14 @@ export function drawer(root) {
     if (found && found.rests.length > 2) go(full ? 0 : found.rests[1])
   }, { signal })
 
-  if (root.open && swiping()) watch()
-
-  return () => {
-    controller.abort()
+  // Heard however the behavior ends: by its detach, or by attaching again, which aborts this one.
+  signal.addEventListener('abort', () => {
     clearTimeout(timer)
     watching?.disconnect()
     if (attached.get(root) === controller) attached.delete(root)
-  }
+  })
+
+  if (root.open && swiping()) watch()
+
+  return () => controller.abort()
 }

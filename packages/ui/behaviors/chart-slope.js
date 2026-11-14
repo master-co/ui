@@ -20,10 +20,20 @@ function form({ config, layout, shown, format, nameAxis, scale, round, percent, 
   nameAxis(Array.from({ length: count }, (_, index) => labels[index] ?? ''), middle, { edges: true })
   for (let index = 0; index < count; index++) layout.grid.push({ x1: percent(middle(index)), y1: '0', x2: percent(middle(index)), y2: '100%', base: false })
 
-  /** Labels down one side, each as near its line's end as the ones above it allow. @param {{ y: number, text: string }[]} ends */
+  /**
+   * Labels down one side, each as near its line's end as the ones above it allow. Labels pushed past the lowest
+   * end a line can have go back up, as far as the ones below them need, so none is pushed off the plot.
+   * @param {{ y: number, text: string }[]} ends
+   */
   const spread = (ends) => {
     const sorted = [...ends].sort((a, b) => a.y - b.y)
-    for (let index = 1; index < sorted.length; index++) sorted[index].y = Math.max(sorted[index].y, sorted[index - 1].y + 0.075)
+    const apart = 0.075
+    for (let index = 1; index < sorted.length; index++) sorted[index].y = Math.max(sorted[index].y, sorted[index - 1].y + apart)
+    const foot = at(axis.start)
+    if (sorted.length && sorted[sorted.length - 1].y > foot) {
+      sorted[sorted.length - 1].y = foot
+      for (let index = sorted.length - 2; index >= 0; index--) sorted[index].y = Math.min(sorted[index].y, sorted[index + 1].y - apart)
+    }
     return sorted
   }
   /** @type {{ y: number, text: string }[]} */

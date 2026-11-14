@@ -248,6 +248,11 @@ test('chartLayout: a slope is a line to a series, named at its last end, and its
   assert.deepEqual(last.map(value => value.text), ['60  Chrome', '11  Edge', '10  Opera'])
   const ys = last.map(value => parseFloat(value.y))
   assert.ok(ys[2] - ys[1] >= 7.4, 'two ends that would meet are nudged apart')
+  assert.ok(ys[2] <= 94, 'and the lowest is not pushed past the foot of the lines, off the plot')
+  const crowded = chartLayout({ type: 'slope', labels: ['2019', '2024'], series: [50, 3, 2, 1, 0].map((value, at) => ({ name: `S${at}`, values: [value, value] })) })
+  const feet = crowded.values.filter(value => value.classes.includes('chart-value-across')).map(value => parseFloat(value.y))
+  assert.ok(Math.max(...feet) <= 94, `every label stays on the plot: ${feet}`)
+  assert.ok(feet.every((y, at) => at === 0 || y - feet[at - 1] >= 7.4), `and they stay apart: ${feet}`)
   assert.equal(layout.gutter, 2)
   assert.equal(layout.tail, 9)
 })
@@ -294,6 +299,9 @@ test('chartLayout: a heatmap\'s cell is as dark as its value in the range', () =
   assert.deepEqual(layout.points.map(point => [point.text, point.marks[0].tone]), [['Mon, 09: 0', 8], ['Mon, 12: 10', 100], ['Tue, 09: 5', 54]], 'a cell with no value is not drawn')
   assert.deepEqual([layout.points[2].marks[0].x, layout.points[2].marks[0].y, layout.points[2].marks[0].width, layout.points[2].marks[0].height], ['0%', '50%', '50%', '50%'])
   assert.deepEqual(layout.ticks.map(tick => [tick.text, tick.classes]), [['09', 'chart-tick chart-tick-x'], ['12', 'chart-tick chart-tick-x'], ['Mon', 'chart-tick chart-tick-y'], ['Tue', 'chart-tick chart-tick-y']])
+  assert.deepEqual(layout.points.map(point => point.current), [false, false, false])
+  const marked = chartLayout({ type: 'heatmap', labels: ['09', '12'], series: [{ name: 'Mon', values: [0, 10] }, { name: 'Tue', values: [5, null] }], current: 1 })
+  assert.deepEqual(marked.points.map(point => [point.index, point.current]), [[0, false], [1, true], [2, false]], 'current marks a cell, as it marks a point in every form')
 })
 
 test('chartLayout: a funnel\'s stage narrows to the stage after it', () => {
@@ -304,6 +312,9 @@ test('chartLayout: a funnel\'s stage narrows to the stage after it', () => {
   assert.deepEqual(layout.points.map(point => point.marks[0].tone), [100, 38])
   assert.equal(layout.radial, true)
   assert.equal(layout.tail, 11)
+  const growing = chartLayout({ type: 'funnel', series: [{ name: 'Visits', value: 800 }, { name: 'Returns', value: 1000 }, { name: 'Paid', value: 200 }] })
+  assert.deepEqual(growing.points.map(point => point.text), ['Visits: 800 (100%)', 'Returns: 1,000 (125%)', 'Paid: 200 (25%)'], 'what is left is counted against the first stage')
+  assert.equal(growing.points[1].marks[0].d.slice(0, 9), 'M0 34.03H', 'the widest stage still fills the plot')
 })
 
 test('chartLayout: a waffle fills a hundred cells exactly', () => {
@@ -331,6 +342,8 @@ test('chartLayout: a sunburst\'s children share their part\'s sweep', () => {
   assert.deepEqual(layout.points.map(point => [point.marks[0].category, point.marks[0].tone]), [['blue', undefined], ['blue', 78], ['blue', 34], ['orange', undefined]])
   assert.deepEqual(layout.center, { value: '' })
   assert.deepEqual(layout.legend.map(key => [key.name, key.value]), [['Mobile', '50%'], ['Desktop', '50%']])
+  const marked = chartLayout({ type: 'sunburst', series: [{ name: 'Mobile', children: [{ name: 'iOS', value: 30 }, { name: 'Android', value: 20 }] }, { name: 'Desktop', value: 50 }], current: 2 })
+  assert.deepEqual(marked.points.map(point => [point.index, point.current]), [[0, false], [1, false], [2, true], [3, false]], 'current marks a slice, a part or a child')
 })
 
 test('chartLayout: nothing to draw is still a layout, in every form', () => {

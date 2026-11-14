@@ -219,6 +219,16 @@ test('listbox: focus that a press brings does not move the active option: the cl
   assert.equal(active(), 'fw-solid', 'focus without a press starts from the chosen option')
 })
 
+test('listbox: a press dragged off the list and let go outside does not keep the next focus from the keys', () => {
+  const html = markup().replace(' aria-activedescendant="fw-astro"', '').replace(' aria-selected="true" aria-checked="true"', ' aria-checked="true"')
+  const { root, one, pointer, active, document } = setup(html)
+  listbox(root)
+  pointer(one('#fw-solid'), 'pointerdown')
+  pointer(document.body, 'pointerup')
+  root.focus()
+  assert.equal(active(), 'fw-astro', 'focus from the keyboard starts from the chosen option')
+})
+
 test('listbox: with no active option, ArrowDown starts at the first and ArrowUp at the last', () => {
   const html = markup().replace(' aria-activedescendant="fw-astro"', '').replace(' aria-selected="true"', '')
   const down = setup(html)

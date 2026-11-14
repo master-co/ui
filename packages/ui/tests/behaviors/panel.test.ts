@@ -253,6 +253,19 @@ test('panel: a panel opened from a control takes focus on its handle, and Escape
   assert.equal(document.activeElement, one('.opener'), 'focus goes back to the control that opened it')
 })
 
+test('panel: focus goes back to the control without scrolling the page to it, as the browser gives it back', () => {
+  const page = setup()
+  const { root, key, one } = page
+  panel(root)
+  open(page)
+  const opener = one<HTMLElement>('.opener')
+  const asked: unknown[] = []
+  const focus = opener.focus.bind(opener)
+  opener.focus = (options?: FocusOptions) => { asked.push(options); focus(options) }
+  key(one('.inside'), 'Escape')
+  assert.deepEqual(asked, [{ preventScroll: true }])
+})
+
 test('panel: a panel opened by the page, not from a control, leaves focus where it is', () => {
   const page = setup()
   const { root, document } = page

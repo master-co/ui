@@ -93,6 +93,30 @@ test('tour: the command event of invoker commands starts it, from the button tha
   assert.equal(focused(), 'start', 'focus goes back to the button that started it')
 })
 
+test('tour: Escape in a popover inside the step, or one a control inside has handled, is not the tour\'s', () => {
+  const html = markup.replace('<button type="button" class="btn btn-sm" value="next" id="next-1" autofocus>Next</button>', '<button type="button" class="btn btn-sm" value="next" id="next-1" autofocus>Next</button><div popover class="menu" id="more"><button type="button" class="menu-item" id="more-item">More</button></div>')
+  const { root, one, command, key, open } = setup(html)
+  tour(root)
+  command(root, '--start', one('#start'))
+  assert.equal(key(one('#more-item'), 'Escape'), false)
+  assert.deepEqual(open(), ['step-search'], 'the tour goes on')
+  one('#next-1').addEventListener('keydown', (event: KeyboardEvent) => event.preventDefault())
+  key(one('#next-1'), 'Escape')
+  assert.deepEqual(open(), ['step-search'])
+})
+
+test('tour: focus goes back to where the tour started without scrolling the page there', () => {
+  const { root, one, command, key } = setup()
+  tour(root)
+  const start = one<HTMLElement>('#start')
+  const asked: unknown[] = []
+  const focus = start.focus.bind(start)
+  start.focus = (options?: FocusOptions) => { asked.push(options); focus(options) }
+  command(root, '--start', start)
+  key(one('#next-1'), 'Escape')
+  assert.deepEqual(asked, [{ preventScroll: true }])
+})
+
 test('tour: Next, Back and Done move through the steps, each a change, and Done ends it complete', () => {
   const { root, one, click, heard, focused, open, sources, spotlight } = setup()
   const handle = tour(root)

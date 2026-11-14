@@ -90,6 +90,29 @@ test('gradient: keys move a stop past another, which keeps its id and its focus,
   assert.deepEqual(heard, ['input', 'change', 'input', 'change'])
 })
 
+test('gradient: a press on a handle takes it in hand and says change only when a drag moved it', () => {
+  const { stop, pointer, heard, handle } = setup()
+  pointer(stop('b'), 'pointerdown', { button: 0, pointerId: 1 })
+  pointer(stop('b'), 'pointerup', { button: 0, pointerId: 1 })
+  assert.equal(stop('b').getAttribute('aria-current'), 'true')
+  assert.deepEqual(heard, [], 'a press that moves nothing changes nothing')
+  pointer(stop('b'), 'pointerdown', { button: 0, pointerId: 2 })
+  pointer(stop('b'), 'pointermove', { pointerId: 2, clientX: 0 })
+  pointer(stop('b'), 'pointerup', { pointerId: 2 })
+  assert.equal(handle.value.stops[1].offset, 0)
+  assert.deepEqual(heard, ['input', 'change'])
+})
+
+test('gradient: painting again leaves the attributes of a handle that did not change alone', () => {
+  const { stop, key, window } = setup()
+  const observer = new window.MutationObserver(() => {})
+  observer.observe(stop('b'), { attributes: true })
+  stop('a').focus()
+  key(stop('a'), 'ArrowRight')
+  assert.deepEqual(observer.takeRecords().map((record: any) => record.attributeName), [], 'the stop that stood still is not written')
+  observer.disconnect()
+})
+
 test('gradient: add takes the color of the stop in hand ten points on; remove hands focus to a neighbor', () => {
   const { handle, click, one, stops, document } = setup()
   click(one('.gradient-add'))
@@ -100,6 +123,19 @@ test('gradient: add takes the color of the stop in hand ten points on; remove ha
   click(one('.gradient-remove'))
   assert.equal(stops().length, 2)
   assert.equal(document.activeElement?.getAttribute('data-id'), 'b', 'the next stop on the bar')
+})
+
+test('gradient: the stop add writes is in hand when the gradient says it changed; a locked gradient adds none', () => {
+  const { click, one, stop, document } = setup()
+  const root = one<HTMLElement>('.gradient')
+  const inHand: (string | null)[] = []
+  root.addEventListener('change', () => inHand.push(document.querySelector('.gradient-stop[aria-current="true"]')!.getAttribute('data-id')))
+  click(one('.gradient-add'))
+  assert.deepEqual(inHand, ['stop-3'])
+  root.setAttribute('aria-readonly', 'true')
+  click(one('.gradient-add'))
+  assert.equal(stop('stop-3').getAttribute('aria-current'), 'true', 'the stop in hand stays in hand')
+  assert.equal(document.querySelectorAll('.gradient-stop').length, 3)
 })
 
 test('gradient: Delete removes a stop only while there are more than two', () => {

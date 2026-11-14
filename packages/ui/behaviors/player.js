@@ -149,7 +149,9 @@ export function player(root, options = {}) {
     const total = length()
     const now = media.currentTime || 0
     const hours = total >= 3600
-    if (elapsed) elapsed.textContent = clock(now, hours)
+    // Said four times a second: written only when the figure changes, so the row is not laid out again for nothing.
+    const text = clock(now, hours)
+    if (elapsed && elapsed.textContent !== text) elapsed.textContent = text
     if (seek && !dragging) {
       seek.max = String(Number.isFinite(total) ? total : 0)
       seek.value = String(now)
@@ -290,7 +292,8 @@ export function player(root, options = {}) {
     seek.setAttribute('aria-valuetext', valueText(Number(seek.value), length()))
   }, listen)
   seek?.addEventListener('change', () => { dragging = false; drawTime() }, listen)
-  document.addEventListener('pointerup', () => { dragging = false }, listen)
+  // A drag the browser takes back, for a scroll or a gesture, ends too: the thumb follows the media again.
+  for (const type of ['pointerup', 'pointercancel']) document.addEventListener(type, () => { dragging = false }, listen)
   volume?.addEventListener('input', () => setVolume(Number(volume.value)), listen)
   rates()?.addEventListener('change', (event) => {
     const radio = /** @type {HTMLInputElement} */ (event.target)
@@ -326,14 +329,17 @@ export function player(root, options = {}) {
     const onSeek = target === seek
     const onButton = Boolean(target.closest('button, a[href], summary'))
     const back = getComputedStyle(root).direction === 'rtl' ? 1 : -1
+    // A key held down repeats. Seeking and the volume go on with it; a toggle would turn on and off again and
+    // again, and full screen flicker in and out, so the repeat of a toggle is taken and does nothing.
+    const once = !event.repeat
     switch (event.key) {
       case ' ':
         if (onButton) return
-        toggle()
+        if (once) toggle()
         break
       case 'k':
       case 'K':
-        toggle()
+        if (once) toggle()
         break
       case 'ArrowLeft':
       case 'ArrowRight':
@@ -356,17 +362,17 @@ export function player(root, options = {}) {
         break
       case 'm':
       case 'M':
-        toggleMute()
+        if (once) toggleMute()
         break
       case 'c':
       case 'C':
         if (!video || !track()) return
-        toggleCaptions()
+        if (once) toggleCaptions()
         break
       case 'f':
       case 'F':
         if (!canFull()) return
-        toggleFullscreen()
+        if (once) toggleFullscreen()
         break
       case 'Home':
         if (onVolume) return

@@ -14,8 +14,8 @@ const attached = new WeakMap()
 
 /**
  * @param {HTMLElement} root The element with the `compare` class.
- * @returns {(() => void) & { value: number }} Removes everything the behavior added. Its `value` is the
- *   range input's number.
+ * @returns {(() => void) & { value: number }} Removes the listener; the `--compare-position` it wrote stays, so
+ *   the line does not jump back. Its `value` is the range input's number.
  */
 export function compare(root) {
   attached.get(root)?.abort()

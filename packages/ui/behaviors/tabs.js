@@ -80,16 +80,20 @@ export function tabs(root) {
 
   root.addEventListener('keydown', (event) => {
     const current = /** @type {HTMLElement} */ (event.target)
-    const list = all().filter(enabled)
-    if (!all().includes(current) || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return
+    const every = all()
+    const list = every.filter(enabled)
+    if (!every.includes(current) || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return
     const vertical = root.getAttribute('aria-orientation') === 'vertical'
     const rtl = getComputedStyle(root).direction === 'rtl'
     const before = vertical ? 'ArrowUp' : rtl ? 'ArrowRight' : 'ArrowLeft'
     const after = vertical ? 'ArrowDown' : rtl ? 'ArrowLeft' : 'ArrowRight'
-    const at = list.indexOf(current)
+    // Counted from where the focused tab stands among all of them: a disabled tab may hold focus too, the
+    // selected one that was disabled later, and its neighbours are the tabs beside it, not the ends.
+    const at = every.indexOf(current)
+    const later = [...every.slice(at + 1), ...every.slice(0, at)].filter(enabled)
     let to
-    if (event.key === before) to = list[(at - 1 + list.length) % list.length] ?? list.at(-1)
-    else if (event.key === after) to = list[(at + 1) % list.length]
+    if (event.key === before) to = later.at(-1)
+    else if (event.key === after) to = later[0]
     else if (event.key === 'Home') to = list[0]
     else if (event.key === 'End') to = list.at(-1)
     else return

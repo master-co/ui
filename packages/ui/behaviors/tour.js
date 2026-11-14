@@ -219,7 +219,8 @@ export function tour(root, { target, wait = 3000 } = {}) {
     const inside = !active || active === document.body || Boolean(active.closest('.coachmark-tour') === root && active.closest('.coachmark'))
     current = null
     close()
-    if (inside && origin?.isConnected) origin.focus()
+    // Given back as the browser gives it back from a popover, without scrolling the page away from the last step.
+    if (inside && origin?.isConnected) origin.focus({ preventScroll: true })
     origin = null
     if (quiet) return
     changed()
@@ -236,7 +237,10 @@ export function tour(root, { target, wait = 3000 } = {}) {
   }, { signal })
 
   root.addEventListener('keydown', (event) => {
-    if (event.key !== 'Escape' || !shown?.contains(/** @type {Node} */ (event.target))) return
+    if (event.key !== 'Escape' || event.defaultPrevented || event.isComposing || !shown?.contains(/** @type {Node} */ (event.target))) return
+    // A popover inside the step, such as a menu, closes first: Escape is its own.
+    const inner = event.target instanceof Element ? event.target.closest('[popover]') : null
+    if (inner && inner !== shown) return
     event.preventDefault()
     end(false)
   }, { signal })

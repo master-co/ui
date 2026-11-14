@@ -30,10 +30,10 @@ function form({ config, layout, shown, format, nameAxis, percent, clamp, real })
       const text = format(number)
       const label = [series.name, labels[column]].filter(Boolean).join(', ')
       layout.points.push({
-        index: index++,
+        index,
         label: labels[column] ?? '',
         text: `${label}: ${text}`,
-        current: false,
+        current: config.current === index++,
         x: (column + 0.5) * wide,
         y: row * tall,
         reach: wide / 2,

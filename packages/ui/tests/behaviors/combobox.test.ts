@@ -190,6 +190,7 @@ test('combobox: a key it does not handle is left alone', () => {
   assert.equal(key(field, 'ArrowLeft'), false)
   assert.equal(key(field, 'ArrowDown', { altKey: true }), false)
   assert.equal(key(field, 'ArrowDown', { isComposing: true }), false, 'while an input method composes, the keys are its own')
+  assert.equal(key(field, 'Enter', { keyCode: 229 }), false, 'and so is the Enter that commits a composition Safari has ended')
   assert.equal(expanded(), false)
 })
 

@@ -136,8 +136,8 @@ const sayCrop = (crop) => `${crop.width} by ${crop.height} pixels, ${crop.x} fro
  *   null. `step`: how far an arrow moves the crop, in the picture's pixels; a hundredth of its longer side by
  *   default. `min`: the least width and height, in the picture's pixels. `maxZoom`: how far a panned
  *   cropper zooms without a range input, 4 by default. `describe`: what the status says of a crop.
- * @returns {(() => void) & { value: Crop | null }} Removes everything the behavior added. Its `value` is the
- *   crop in the picture's pixels, with `zoom` on a panned cropper.
+ * @returns {(() => void) & { value: Crop | null }} Removes the listeners; the crop it wrote on the root stays.
+ *   Its `value` is the crop in the picture's pixels, with `zoom` on a panned cropper.
  */
 export function cropper(root, { ratio, step, min, maxZoom = 4, describe = sayCrop } = {}) {
   attached.get(root)?.abort()
@@ -225,7 +225,8 @@ export function cropper(root, { ratio, step, min, maxZoom = 4, describe = sayCro
       root.style.setProperty(name, written)
       changed = true
     }
-    const input = slider()
+    // Only a panned crop has a zoom: the document is searched for its range input then, not on every move of a box.
+    const input = finite(crop.zoom) ? slider() : undefined
     if (input && finite(crop.zoom)) {
       const zoom = String(Math.round(crop.zoom * 1000) / 1000)
       if (input.value !== zoom) write(input, zoom)
@@ -313,6 +314,8 @@ export function cropper(root, { ratio, step, min, maxZoom = 4, describe = sayCro
     return { x: start.x + focus.x * (start.width - width), y: start.y + focus.y * (start.height - height), width, height }
   }
 
+  /** A key held down has changed the crop and has not been let go: its change is said when it is. */
+  let repeating = false
   // The keys: the arrows move the crop, Shift by ten steps; with Alt they size it, and + and - zoom.
   box.addEventListener('keydown', (event) => {
     if (disabled() || event.ctrlKey || event.metaKey) return
@@ -335,7 +338,15 @@ export function cropper(root, { ratio, step, min, maxZoom = 4, describe = sayCro
       next = zoomed(start, (start.zoom ?? 1) * (['+', '='].includes(event.key) ? 1.25 : .8))
     } else return
     event.preventDefault()
-    if (place(fitted(next))) settled()
+    if (!place(fitted(next))) return
+    // A key that repeats has not ended: its change, and what the status says of it, wait for the key to be let go.
+    if (event.repeat) repeating = true
+    else settled()
+  }, { signal })
+  box.addEventListener('keyup', () => {
+    if (!repeating) return
+    repeating = false
+    settled()
   }, { signal })
 
   /** The pointers on the cropper, where each is now. */
@@ -454,17 +465,28 @@ export function cropper(root, { ratio, step, min, maxZoom = 4, describe = sayCro
 
   // The wheel zooms a panned picture with Control or Command held, about the pointer, and says change once it rests.
   let resting = /** @type {ReturnType<typeof setTimeout> | undefined} */ (undefined)
+  /**
+   * A turn of the wheel under way: the box, read at its first event, and whether it has changed the crop. A
+   * trackpad's pinch sends many events to a frame, each of which writes the crop, so the box is not read again.
+   * @type {{ frame: DOMRect, moved: boolean } | null}
+   */
+  let turning = null
   signal.addEventListener('abort', () => clearTimeout(resting))
   root.addEventListener('wheel', (event) => {
     if (!panned() || disabled() || !(event.ctrlKey || event.metaKey)) return
     event.preventDefault()
-    const frame = box.getBoundingClientRect()
+    turning ??= { frame: box.getBoundingClientRect(), moved: false }
+    const { frame } = turning
     const start = current()
     const pixels = event.deltaY * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? 400 : 1)
     const focus = { x: (event.clientX - frame.left) / (frame.width || 1), y: (event.clientY - frame.top) / (frame.height || 1) }
-    if (!place(fitted(zoomed(start, (start.zoom ?? 1) * 2 ** (-pixels / 250), focus)))) return
+    if (place(fitted(zoomed(start, (start.zoom ?? 1) * 2 ** (-pixels / 250), focus)))) turning.moved = true
     clearTimeout(resting)
-    resting = setTimeout(settled, 250)
+    resting = setTimeout(() => {
+      const moved = turning?.moved
+      turning = null
+      if (moved) settled()
+    }, 250)
   }, { signal, passive: false })
 
   // The range input that zooms: its moves zoom about the middle, and its change is the cropper's.

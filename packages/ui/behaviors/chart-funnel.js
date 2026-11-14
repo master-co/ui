@@ -1,7 +1,8 @@
 /**
- * Chart form: a funnel. Each series is a stage of one flow, in order: as wide as its value against the first
- * stage's, and narrowing to the width of the stage after it, so where the flow thins is where the shape steps
- * in. Its name stands beside it, and its value and what is left of the first stage after it.
+ * Chart form: a funnel. Each series is a stage of one flow, in order: as wide as its value against the widest
+ * stage's, which is the first in a flow that only thins, and narrowing to the width of the stage after it, so
+ * where the flow thins is where the shape steps in. Its name stands beside it, and its value and what is left of
+ * the first stage after it.
  */
 
 /** @typedef {import('./chart-core.js').ChartKit} ChartKit */
@@ -10,7 +11,9 @@
 function form({ config, layout, shown, format, nameAxis, round, percent, real, width, numbers }) {
   const stages = shown.filter((series) => real(series.value) && series.value >= 0)
   const count = stages.length
-  const first = Math.max(...stages.map((series) => /** @type {number} */ (series.value)), 0) || 1
+  // The widest stage fills the plot; what is left is counted against the first stage, where the flow begins.
+  const widest = Math.max(...stages.map((series) => /** @type {number} */ (series.value)), 0) || 1
+  const first = /** @type {number} */ (stages[0]?.value) || widest
   const share = numbers(config.locale, { style: 'percent', maximumFractionDigits: 0 })
   const tall = 1 / Math.max(1, count)
   // A sliver of the plot parts each stage from the next.
@@ -19,9 +22,9 @@ function form({ config, layout, shown, format, nameAxis, round, percent, real, w
 
   stages.forEach((series, index) => {
     const value = /** @type {number} */ (series.value)
-    const top = value / first
+    const top = value / widest
     const next = stages[index + 1]
-    const foot = next ? /** @type {number} */ (next.value) / first : top
+    const foot = next ? /** @type {number} */ (next.value) / widest : top
     const from = index * tall + gap / 2
     const to = (index + 1) * tall - gap / 2
     const x = (/** @type {number} */ part, /** @type {1 | -1} */ side) => round(50 + side * part * 50)

@@ -67,6 +67,17 @@ test('tabs: ArrowRight and ArrowLeft move focus and select, skip a disabled tab 
   assert.deepEqual(heard, ['billing', 'Keys', 'Profile', 'Keys'], 'the value is data-value, or the text')
 })
 
+test('tabs: from a disabled tab that holds focus the arrows go to the tabs beside it, not to the ends', () => {
+  const { root, one, key, selected } = setup(markup().replace('aria-controls="panel-team" disabled', 'aria-controls="panel-team" aria-disabled="true"'))
+  tabs(root)
+  one<HTMLElement>('#tab-team').focus()
+  assert.equal(key(one('#tab-team'), 'ArrowRight'), true)
+  assert.deepEqual(selected(), ['tab-keys'])
+  one<HTMLElement>('#tab-team').focus()
+  key(one('#tab-team'), 'ArrowLeft')
+  assert.deepEqual(selected(), ['tab-billing'])
+})
+
 test('tabs: Home and End select the first and the last tab', () => {
   const { root, one, key, selected } = setup()
   tabs(root)

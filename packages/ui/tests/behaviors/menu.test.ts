@@ -182,6 +182,30 @@ test('menu: the arrow that points into a submenu opens it and focus moves to its
   assert.equal(isOpen(root), true, 'the parent menu stays open')
 })
 
+test('menu: the arrow into a submenu that is open already moves focus into it', () => {
+  const { root, sub, one, focused, press, isOpen } = setup()
+  menu(root)
+  menu(sub)
+  root.showPopover()
+  sub.showPopover()
+  one('#recent').focus()
+  assert.equal(press('ArrowRight'), true)
+  assert.equal(isOpen(sub), true)
+  assert.equal(focused(), 'atlas')
+})
+
+test('menu: from an item with aria-disabled that a press focused, the arrows go to the items beside it', () => {
+  const { root, one, focused, press } = setup(markup().replace('<a class="menu-item" id="settings" href="/settings">Settings</a>', '<button type="button" class="menu-item" id="settings" aria-disabled="true">Settings</button>'))
+  menu(root)
+  root.showPopover()
+  one('#settings').focus()
+  assert.equal(press('ArrowDown'), true)
+  assert.equal(focused(), 'archived-input')
+  one('#settings').focus()
+  press('ArrowUp')
+  assert.equal(focused(), 'duplicate')
+})
+
 test('menu: in a right-to-left menu the arrows of a submenu change places', () => {
   const { root, sub, one, focused, press, isOpen } = setup(markup('style="direction: rtl"'))
   menu(root)
@@ -328,6 +352,26 @@ test('contextMenu: the ContextMenu key and Shift+F10 open the menu at the middle
   assert.equal(key(target, 'F10'), false, 'F10 by itself is left alone')
   assert.equal(key(target, 'Enter'), false)
   assert.equal(isOpen(root), false)
+})
+
+test('contextMenu: a menu written inside its target is not moved by a right click or the keys inside it', () => {
+  const page = dom(`<div class="well" id="canvas" tabindex="0">Canvas
+  <div id="canvas-menu" popover class="menu menu-context">
+    <button type="button" class="menu-item" id="copy">Copy</button>
+  </div>
+</div>`)
+  page.window.addEventListener('error', (event: any) => thrown.push(event.error ?? event.message))
+  const target = page.one('#canvas')
+  const root = page.one('#canvas-menu')
+  contextMenu(target, root)
+  const right = (on: any, clientX: number) => on.dispatchEvent(new page.window.MouseEvent('contextmenu', { bubbles: true, cancelable: true, button: 2, clientX, clientY: 50 }))
+  right(target, 240)
+  const toggles: boolean[] = []
+  root.addEventListener('toggle', () => toggles.push(page.isOpen(root)))
+  assert.equal(right(page.one('#copy'), 300), false, 'the browser\'s menu stays away')
+  assert.equal(page.key(page.one('#copy'), 'F10', { shiftKey: true }), true)
+  assert.equal(root.style.getPropertyValue('--menu-x'), '240px', 'the menu stays where it opened')
+  assert.deepEqual(toggles, [], 'and is not shown again')
 })
 
 test('contextMenu: with the menu behavior, focus moves into the menu however it opens', () => {

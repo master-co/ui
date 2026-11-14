@@ -174,6 +174,16 @@ test('command: Command+K and Control+K open the palette from anywhere, and close
   assert.equal(root.open, false)
 })
 
+test('command: a shortcut held down opens the palette once, and its repeats change nothing', () => {
+  const { root, document, key } = setup()
+  command(root)
+  key(document.body, 'k', { metaKey: true })
+  assert.equal(key(document.body, 'k', { metaKey: true, repeat: true }), true, 'a repeat is still the shortcut, so it is prevented')
+  key(document.body, 'k', { metaKey: true, repeat: true })
+  key(document.body, 'k', { metaKey: true, repeat: true })
+  assert.equal(root.open, true)
+})
+
 test('command: the shortcut is only that key with Command or Control', () => {
   const { root, document, key } = setup()
   command(root)
@@ -207,6 +217,7 @@ test('command: Escape, and any key it does not handle, is left to the dialog and
   assert.equal(key(field, 'ArrowLeft'), false)
   assert.equal(key(field, 'ArrowDown', { altKey: true }), false)
   assert.equal(key(field, 'Enter', { isComposing: true }), false, 'while an input method composes, the keys are its own')
+  assert.equal(key(field, 'Enter', { keyCode: 229 }), false, 'and so is the Enter that commits a composition Safari has ended')
   assert.equal(root.open, true)
   assert.equal(active(), 'cmd-new')
 })

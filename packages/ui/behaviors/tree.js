@@ -508,10 +508,11 @@ export function tree(root, { rename = false, renameLabel = (label) => `Rename ${
     else choose(item, !(/** @type {MouseEvent} */ (event).ctrlKey || /** @type {MouseEvent} */ (event).metaKey))
   }, { signal })
 
-  // A row that takes focus some other way, under a pointer or a screen reader, becomes the tab stop.
+  // A row that takes focus some other way, under a pointer or a screen reader, becomes the tab stop. A disabled
+  // one a press focused does not: the stop stays on a row the keys can land on, as mend keeps it.
   root.addEventListener('focusin', (event) => {
     const item = rowOf(event.target)
-    if (item && item === event.target) rove(item)
+    if (item && item === event.target && enabled(item)) rove(item)
   }, { signal })
 
   // toggle does not bubble: capture hears every details of the tree, whoever opened or closed it.

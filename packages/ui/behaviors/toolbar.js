@@ -13,7 +13,8 @@
  * and Space chooses the focused radio. A select, a text field and a menu's list keep their own arrows.
  *
  * A button with `aria-pressed` presses on a click: `aria-pressed` turns from false to true and back. A button
- * with `aria-disabled="true"` does neither, and its click is stopped.
+ * with `aria-disabled="true"` does neither, and its click is stopped. Detaching gives every control back the
+ * `tabindex` it had.
  */
 
 /** @type {WeakMap<Element, AbortController>} */
@@ -69,6 +70,21 @@ export function toolbar(root) {
     return found
   }
 
+  /** @type {Map<HTMLElement, string | null>} Each control's `tabindex` before the script wrote one. */
+  const original = new Map()
+  /** @param {HTMLElement} control @param {boolean} on */
+  const index = (control, on) => {
+    if (!original.has(control)) original.set(control, control.getAttribute('tabindex'))
+    const wanted = on ? '0' : '-1'
+    if (control.getAttribute('tabindex') !== wanted) control.setAttribute('tabindex', wanted)
+  }
+  signal.addEventListener('abort', () => {
+    for (const [control, value] of original) {
+      if (value === null) control.removeAttribute('tabindex')
+      else control.setAttribute('tabindex', value)
+    }
+  })
+
   /** Make one control the toolbar's tab stop. Radios of a group keep the platform's own tab stop. */
   const rove = (/** @type {HTMLElement | undefined} */ to) => {
     const list = items()
@@ -77,9 +93,9 @@ export function toolbar(root) {
       if (item.matches('input[type="radio"]')) {
         const name = /** @type {HTMLInputElement} */ (item).name
         for (const radio of /** @type {NodeListOf<HTMLInputElement>} */ (root.querySelectorAll('input[type="radio"]'))) {
-          if (radio.name === name) radio.tabIndex = item === stop ? 0 : -1
+          if (radio.name === name) index(radio, item === stop)
         }
-      } else item.tabIndex = item === stop ? 0 : -1
+      } else index(item, item === stop)
     }
   }
 

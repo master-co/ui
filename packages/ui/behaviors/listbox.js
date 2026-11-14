@@ -109,9 +109,12 @@ export function listbox(root) {
 
   // A press gives the list focus before it becomes a click. An option made active then is scrolled into view,
   // which may move the page under the pointer, and the click lands somewhere else: the press waits for it.
+  // A press may end outside the list, dragged off it; the document hears where it ends, or the next focus
+  // from the keyboard would be taken for one a press brought.
   let pressed = false
   root.addEventListener('pointerdown', () => { pressed = true }, { signal })
-  for (const type of ['pointerup', 'pointercancel', 'click']) root.addEventListener(type, () => { pressed = false }, { signal })
+  root.addEventListener('click', () => { pressed = false }, { signal })
+  for (const type of ['pointerup', 'pointercancel']) root.ownerDocument.addEventListener(type, () => { pressed = false }, { signal })
 
   // Focus arrives on a list with no active option: the keys start from what is chosen, or from the first option.
   root.addEventListener('focus', () => {

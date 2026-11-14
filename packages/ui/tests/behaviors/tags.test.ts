@@ -95,6 +95,26 @@ test('tags: pasted text with delimiters becomes as many values, and what follows
   assert.equal(field.value, 'half')
 })
 
+test('tags: pasted text joins the text at the caret, as it would in any field', () => {
+  const { root, field, window, chips, type, caret } = setup()
+  tags(root)
+  const paste = (text: string) => {
+    const event = new window.Event('paste', { bubbles: true, cancelable: true }) as any
+    event.clipboardData = { getData: () => text }
+    field.dispatchEvent(event)
+  }
+  type(field, 'dev')
+  caret(3)
+  paste('ops, infra')
+  assert.deepEqual(chips(), ['design', 'research', 'devops'])
+  assert.equal(field.value, 'infra')
+  type(field, 'ab')
+  caret(1)
+  paste('x,y')
+  assert.deepEqual(chips(), ['design', 'research', 'devops', 'ax'])
+  assert.equal(field.value, 'yb', 'what stood after the caret follows the paste')
+})
+
 test('tags: Backspace in an empty field reaches the last value; Backspace there removes it and moves to the one before', () => {
   const { root, field, key, chips, focused, removeOf, heard } = setup()
   tags(root)
@@ -236,6 +256,21 @@ test('tags: while an input method composes, Enter is its own', () => {
   type(field, 'かな')
   assert.equal(key(field, 'Enter', { isComposing: true }), false)
   assert.deepEqual(chips(), ['design', 'research'])
+  assert.equal(key(field, 'Enter', { keyCode: 229 }), false, 'nor is the Enter Safari sends as a composition ends')
+  assert.deepEqual(chips(), ['design', 'research'])
+})
+
+test('tags: a chip that stays is not taken out and put back', () => {
+  const { root, field, type, key, window } = setup()
+  const handle = tags(root)
+  const observer = new window.MutationObserver(() => {})
+  observer.observe(root, { childList: true })
+  type(field, 'writing')
+  key(field, 'Enter')
+  handle.value = ['research', 'writing', 'ops']
+  const removed = observer.takeRecords().flatMap(record => [...record.removedNodes]).map((node: any) => node.getAttribute?.('data-value'))
+  assert.deepEqual(removed, ['design'], 'only the value that left')
+  observer.disconnect()
 })
 
 test('tags: detach removes the listeners', () => {

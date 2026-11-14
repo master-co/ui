@@ -175,6 +175,35 @@ test('color picker: a press on the field moves the thumb under the pointer, a dr
   assert.equal(channels().l, 0, 'a pointer let go moves nothing')
 })
 
+test('color picker: a drag reads the field\'s box once, as it begins, not on every move', () => {
+  const { root, area, pointer, channels } = setup()
+  colorPicker(root)
+  const read = area.getBoundingClientRect
+  let reads = 0
+  area.getBoundingClientRect = () => { reads++; return read() }
+  pointer(area, 'pointerdown', { pointerId: 4, clientX: 100 + 185, clientY: 50 + 40 })
+  for (let move = 1; move <= 5; move++) pointer(area, 'pointermove', { pointerId: 4, clientX: 100 + 185 + move * 10, clientY: 50 + 40 })
+  assert.equal(reads, 1)
+  assert.equal(channels().c, 0.235, 'the moves still follow the pointer')
+  pointer(area, 'pointerup', { pointerId: 4 })
+  pointer(area, 'pointerdown', { pointerId: 5, clientX: 100 + 185, clientY: 50 + 40 })
+  assert.equal(reads, 2, 'the next press reads it again')
+})
+
+test('color picker: a second finger while one holds the field takes nothing from it', () => {
+  const { root, area, pointer, channels, heard } = setup()
+  colorPicker(root)
+  pointer(area, 'pointerdown', { pointerId: 1, isPrimary: true, clientX: 100 + 185, clientY: 50 + 40 })
+  pointer(area, 'pointerdown', { pointerId: 2, isPrimary: false, clientX: 100, clientY: 250 })
+  assert.deepEqual(channels(), { l: 0.8, c: 0.185, h: 260, a: 1 }, 'the second finger does not move the color')
+  pointer(area, 'pointermove', { pointerId: 2, clientX: 110, clientY: 240 })
+  pointer(area, 'pointermove', { pointerId: 1, clientX: 100 + 370, clientY: 50 + 40 })
+  assert.equal(channels().c, 0.37, 'the first finger still moves it')
+  pointer(area, 'pointerup', { pointerId: 2 })
+  pointer(area, 'pointerup', { pointerId: 1 })
+  assert.deepEqual(heard, ['input:color-picker-thumb', 'input:color-picker-thumb', 'change:color-picker-thumb'])
+})
+
 test('color picker: right to left, chroma grows from the right edge of the field', () => {
   const { root, area, pointer, channels } = setup({ root: 'direction: rtl' })
   colorPicker(root)

@@ -100,6 +100,9 @@ test('drawer: ArrowUp grows the sheet to full height, ArrowDown shrinks it to ha
   assert.equal(layout.pushed, 352)
   assert.equal(root.open, true)
   assert.equal(key(handle, 'ArrowLeft'), false, 'other keys are left alone')
+  assert.equal(key(handle, 'ArrowUp', { altKey: true }), false, 'and so are the arrows held with a modifier')
+  assert.equal(key(handle, 'ArrowUp', { metaKey: true }), false)
+  assert.equal(layout.pushed, 352)
 })
 
 test('drawer: Enter, Space or a press on the handle moves the sheet to the other rest', () => {
@@ -275,6 +278,26 @@ for (const [label, classes, direction, outward] of [
   })
 }
 
+test('drawer: a drawer\'s drag asks the dialog its direction once, as it begins, not on every move', () => {
+  const { root, layout, open, pointer, one } = setup({ classes: 'dialog-drawer dialog-swipe', handle: '', size: 384 })
+  drawer(root)
+  open()
+  const style = globalThis.getComputedStyle
+  let asked = 0
+  globalThis.getComputedStyle = ((element: any, pseudo?: string) => { if (element === root) asked++; return style(element, pseudo) }) as any
+  try {
+    const title = one('.dialog-title')
+    pointer(title, 'pointerdown', { pointerType: 'mouse', button: 0, pointerId: 1, clientX: 200, clientY: 100, timeStamp: 0 })
+    const atPress = asked
+    for (let move = 1; move <= 5; move++) pointer(title, 'pointermove', { pointerType: 'mouse', pointerId: 1, clientX: 200 + move * 20, clientY: 100, timeStamp: move * 16 })
+    assert.equal(layout.pushed, 100, 'the panel still follows the pointer')
+    // The scrim is thinned as the track scrolls, which measures; the moves themselves ask nothing more.
+    assert.equal(asked - atPress, 5, 'once for each scroll the moves made, none for the moves')
+  } finally {
+    globalThis.getComputedStyle = style
+  }
+})
+
 test('drawer: a dialog without dialog-swipe is left alone', () => {
   const { root, layout, open, click, pointer, one, observers } = setup({ classes: 'dialog-sheet' })
   drawer(root)
@@ -285,6 +308,45 @@ test('drawer: a dialog without dialog-swipe is left alone', () => {
   assert.equal(root.open, true)
   assert.equal(pointer(one('.dialog-title'), 'pointerdown', { pointerType: 'mouse', button: 0, pointerId: 1, clientX: 0, clientY: 0 }), true)
   assert.equal(layout.pushed, 0)
+})
+
+test('drawer: a drag whose capture is lost without a release ends, and a mouse that comes back carries nothing', async () => {
+  const { root, layout, open, pointer, one, frame } = setup()
+  drawer(root)
+  open()
+  const title = one('.dialog-title')
+  pointer(title, 'pointerdown', { pointerType: 'mouse', button: 0, pointerId: 1, clientX: 200, clientY: 460, timeStamp: 0 })
+  pointer(title, 'pointermove', { pointerType: 'mouse', pointerId: 1, clientX: 200, clientY: 520, timeStamp: 100 })
+  assert.equal(layout.pushed, 412)
+  pointer(title, 'lostpointercapture', { pointerType: 'mouse', pointerId: 1, timeStamp: 400 })
+  await frame()
+  assert.equal(layout.pushed, 352, 'it settles at the nearest rest')
+  pointer(title, 'pointermove', { pointerType: 'mouse', pointerId: 1, clientX: 200, clientY: 700, timeStamp: 900 })
+  assert.equal(layout.pushed, 352, 'the panel does not follow a pointer that holds nothing')
+})
+
+test('drawer: a drag let go just before detaching does not move the panel afterwards', async () => {
+  const { root, layout, open, pointer, one, frame } = setup()
+  const detach = drawer(root)
+  open()
+  const title = one('.dialog-title')
+  pointer(title, 'pointerdown', { pointerType: 'mouse', button: 0, pointerId: 1, clientX: 200, clientY: 460, timeStamp: 0 })
+  pointer(title, 'pointermove', { pointerType: 'mouse', pointerId: 1, clientX: 200, clientY: 520, timeStamp: 100 })
+  pointer(title, 'pointerup', { pointerType: 'mouse', pointerId: 1, clientX: 200, clientY: 520, timeStamp: 600 })
+  detach()
+  await frame()
+  assert.equal(layout.pushed, 412, 'the frame it waited for finds it detached')
+})
+
+test('drawer: attaching again to an open dialog leaves one observer', () => {
+  const { root, open, observers } = setup()
+  drawer(root)
+  open()
+  assert.equal(observers.length, 1)
+  const detach = drawer(root)
+  assert.equal(observers.length, 1, 'the first attachment\'s observer is gone with it')
+  detach()
+  assert.equal(observers.length, 0)
 })
 
 test('drawer: attaching twice is safe, and detaching removes what it added', () => {

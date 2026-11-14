@@ -15,7 +15,7 @@
  * `contextMenu(target, menu)` opens a `menu-context` for a target: at the pointer on a right click or a
  * long press, and at the target from the keyboard.
  */
-import { enabled, isOpen, step, typeahead } from './internal.js'
+import { enabled, isOpen, typeahead } from './internal.js'
 
 /** @type {WeakMap<Element, AbortController>} */
 const attached = new WeakMap()
@@ -38,8 +38,23 @@ export function menu(root) {
    * @param {Element} item
    */
   const control = (item) => /** @type {HTMLElement} */ (item.querySelector('.menu-input') ?? item)
-  /** The items of this menu the keys may land on. The items of a submenu are that submenu's. */
-  const items = () => [...root.querySelectorAll('.menu-item')].filter((item) => item.closest('.menu') === root && enabled(item) && enabled(control(item)))
+  /** The items of this menu, the items of a submenu being that submenu's. */
+  const own = () => [...root.querySelectorAll('.menu-item')].filter((item) => item.closest('.menu') === root)
+  /** The items of this menu the keys may land on. */
+  const items = () => own().filter((item) => enabled(item) && enabled(control(item)))
+  /**
+   * The item the keys land on a step from another, wrapping at the ends. Counted from where that one stands
+   * among all of them, so an item a press focused that the keys pass over, one with aria-disabled, goes to
+   * its neighbours and not to an end.
+   * @param {Element} from @param {1 | -1} by
+   */
+  const beside = (from, by) => {
+    const all = own()
+    const at = all.indexOf(from)
+    const list = items()
+    const ring = [...all.slice(at + 1), ...all.slice(0, at)].filter((item) => list.includes(item))
+    return by > 0 ? ring[0] : ring.at(-1)
+  }
 
   root.addEventListener('toggle', (event) => {
     if (event.target !== root || !isOpen(root)) return
@@ -65,8 +80,13 @@ export function menu(root) {
     const sub = current.nextElementSibling
     if (event.key === into && current.getAttribute('aria-haspopup') === 'menu' && sub?.matches('.menu-sub') && enabled(current)) {
       event.preventDefault()
-      // The submenu's own behavior moves focus to its first item as it opens.
+      // The submenu's own behavior moves focus to its first item as it opens. One already open, from a press
+      // or a hover, opens no more: focus is moved into it here.
       if (!isOpen(sub)) /** @type {HTMLElement} */ (sub).showPopover()
+      else {
+        const first = [...sub.querySelectorAll('.menu-item')].find((item) => item.closest('.menu') === sub && enabled(item) && enabled(control(item)))
+        if (first) control(first).focus()
+      }
       return
     }
     const opener = root.previousElementSibling
@@ -80,8 +100,8 @@ export function menu(root) {
     const list = items()
     let to
     switch (event.key) {
-      case 'ArrowDown': to = step(list, current, 1); break
-      case 'ArrowUp': to = step(list, current, -1); break
+      case 'ArrowDown': to = beside(current, 1); break
+      case 'ArrowUp': to = beside(current, -1); break
       case 'Home': to = list[0]; break
       case 'End': to = list.at(-1); break
       default:
@@ -144,8 +164,12 @@ export function contextMenu(target, menu) {
     pending = undefined
   }, { signal })
 
+  // A menu the page writes inside its target hears the target's events too: what happens in the menu is the menu's.
+  const inside = (/** @type {Event} */ event) => event.target instanceof Node && menu.contains(event.target)
+
   target.addEventListener('contextmenu', (event) => {
     event.preventDefault()
+    if (inside(event)) return
     // A browser that sends the event for a key may give it no position.
     const show = () => {
       if (event.clientX || event.clientY) open(event.clientX, event.clientY)
@@ -159,6 +183,7 @@ export function contextMenu(target, menu) {
   target.addEventListener('keydown', (event) => {
     if (event.key !== 'ContextMenu' && !(event.shiftKey && event.key === 'F10')) return
     event.preventDefault()
+    if (inside(event)) return
     atTarget()
   }, { signal })
 

@@ -257,11 +257,36 @@ test('dial: the middle of the dial and a dial that is not laid out take no angle
   assert.equal(now(), '40', 'a press on the figure in the middle does not move the value')
   pointer(root, 'pointermove', { pointerId: 1, ...toward(0) })
   assert.equal(now(), '50', 'a drag out of the middle does')
-  root.getBoundingClientRect = () => ({ left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0 }) as DOMRect
-  pointer(root, 'pointermove', { pointerId: 1, ...toward(90) })
-  assert.equal(now(), '50')
   pointer(root, 'pointerup', { pointerId: 1 })
   assert.deepEqual(heard, ['input', 'change'])
+  root.getBoundingClientRect = () => ({ left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0 }) as DOMRect
+  pointer(root, 'pointerdown', { pointerId: 2, ...toward(90) })
+  pointer(root, 'pointermove', { pointerId: 2, ...toward(180) })
+  pointer(root, 'pointerup', { pointerId: 2 })
+  assert.equal(now(), '50')
+  assert.deepEqual(heard, ['input', 'change'])
+})
+
+test('dial: a drag reads the dial\'s box and its angles once, as it begins, not on every move', () => {
+  const { root, pointer, toward, now, window } = setup()
+  dial(root)
+  const box = root.getBoundingClientRect
+  let boxes = 0
+  root.getBoundingClientRect = () => { boxes++; return box() }
+  const style = window.getComputedStyle
+  let styles = 0
+  ;(globalThis as any).getComputedStyle = (element: Element, pseudo?: string) => { if (element === root) styles++; return style.call(window, element, pseudo) }
+  try {
+    pointer(root, 'pointerdown', { pointerId: 5, ...toward(0) })
+    const [atPress, stylesAtPress] = [boxes, styles]
+    for (const degrees of [10, 20, 30, 40, 50]) pointer(root, 'pointermove', { pointerId: 5, ...toward(degrees) })
+    assert.equal(boxes, atPress)
+    assert.equal(styles, stylesAtPress)
+    assert.equal(now(), '69', 'the moves still follow the pointer')
+    pointer(root, 'pointerup', { pointerId: 5 })
+  } finally {
+    ;(globalThis as any).getComputedStyle = style
+  }
 })
 
 test('dial: only the pointer that holds the dial turns it, and a press and release without a change says nothing', () => {
@@ -281,6 +306,22 @@ test('dial: only the pointer that holds the dial turns it, and a press and relea
   pointer(root, 'pointermove', { pointerId: 1, ...toward(90) })
   pointer(root, 'pointercancel', { pointerId: 1 })
   assert.deepEqual(heard, ['input', 'change'], 'a cancelled drag ends')
+})
+
+test('dial: a second finger while one turns the dial takes nothing from it', () => {
+  const { root, pointer, toward, heard, now } = setup('aria-valuenow="50"')
+  dial(root)
+  pointer(root, 'pointerdown', { pointerId: 1, isPrimary: true, ...toward(0) })
+  pointer(root, 'pointermove', { pointerId: 1, ...toward(45) })
+  assert.equal(now(), '67')
+  pointer(root, 'pointerdown', { pointerId: 2, isPrimary: false, ...toward(270) })
+  assert.equal(now(), '67', 'the second finger does not move the value')
+  pointer(root, 'pointermove', { pointerId: 2, ...toward(300) })
+  pointer(root, 'pointermove', { pointerId: 1, ...toward(90) })
+  assert.equal(now(), '83', 'the first finger still turns it')
+  pointer(root, 'pointerup', { pointerId: 2 })
+  pointer(root, 'pointerup', { pointerId: 1 })
+  assert.deepEqual(heard, ['input', 'input', 'change'])
 })
 
 test('dial: a drag works when the pointer cannot be captured', () => {

@@ -252,8 +252,8 @@ function properties(color) {
 /**
  * @param {HTMLElement} root The element with the `color-picker` class.
  * @param {ColorPickerOptions} [options]
- * @returns {(() => void) & { value: string }} Removes everything the behavior added. Its `value` is the color
- *   as text, in the format chosen.
+ * @returns {(() => void) & { value: string }} Removes the listeners; the color it wrote on the root and the
+ *   controls stays. Its `value` is the color as text, in the format chosen.
  */
 export function colorPicker(root, { valueText = describe } = {}) {
   attached.get(root)?.abort()
@@ -341,11 +341,16 @@ export function colorPicker(root, { valueText = describe } = {}) {
   /** The pointer that holds the field, and whether it has moved the color. */
   let held = /** @type {number | null} */ (null)
   let moved = false
+  /**
+   * The field's box and direction, read once as a press begins. Each move writes the color on the root, so
+   * reading the layout again on the next one would make the browser lay the page out again on every move.
+   */
+  let frame = /** @type {{ box: DOMRect, mirrored: boolean } | null} */ (null)
 
   /** @param {PointerEvent} event @param {HTMLElement} area */
   const follow = (event, area) => {
-    const box = area.getBoundingClientRect()
-    const across = (rtl() ? box.right - event.clientX : event.clientX - box.left) / box.width
+    const { box, mirrored } = frame ?? { box: area.getBoundingClientRect(), mirrored: rtl() }
+    const across = (mirrored ? box.right - event.clientX : event.clientX - box.left) / box.width
     const down = (event.clientY - box.top) / box.height
     if (!Number.isFinite(across) || !Number.isFinite(down)) return
     if (!take({ ...color, l: fixed(1 - clamp(down), 3), c: fixed(clamp(across) * reach, 3) })) return
@@ -358,9 +363,13 @@ export function colorPicker(root, { valueText = describe } = {}) {
   root.addEventListener('pointerdown', (event) => {
     const area = /** @type {HTMLElement | null} */ (/** @type {Element} */ (event.target).closest?.('.color-picker-area'))
     if (!area || !root.contains(area) || event.button !== 0 || disabled()) return
+    // A second finger while one holds the field takes nothing from it; a primary pointer always starts afresh,
+    // even if the release of the one before was never heard.
+    if (held !== null && held !== event.pointerId && !event.isPrimary) return
     event.preventDefault()
     held = event.pointerId
     moved = false
+    frame = { box: area.getBoundingClientRect(), mirrored: rtl() }
     // Capture keeps the moves coming when the pointer leaves the field. A scripted event has no pointer to capture.
     try { area.setPointerCapture(event.pointerId) } catch {}
     thumb()?.focus({ preventScroll: true })
@@ -377,6 +386,7 @@ export function colorPicker(root, { valueText = describe } = {}) {
   const release = (event) => {
     if (event.pointerId !== held) return
     held = null
+    frame = null
     const handle = thumb()
     if (moved && handle) say(handle, 'change')
     moved = false

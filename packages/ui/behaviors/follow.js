@@ -70,7 +70,9 @@ export function follow(root) {
     let found = null
     for (let depth = 0; depth < 6; depth++) {
       // What the stylesheet keeps out of scroll anchoring (the button, a line rows are inserted under) is never held.
-      const child = [...parent.children].find((each) => getComputedStyle(each).overflowAnchor !== 'none' && each.getBoundingClientRect().bottom > view.top)
+      // The box is asked first: it is cheap while the layout is clean, and the style is asked only of the row in view,
+      // not of every row above it on every scroll.
+      const child = [...parent.children].find((each) => each.getBoundingClientRect().bottom > view.top && getComputedStyle(each).overflowAnchor !== 'none')
       if (!child) break
       const box = child.getBoundingClientRect()
       found = { element: child, offset: box.top - view.top }
@@ -82,7 +84,8 @@ export function follow(root) {
 
   /** @param {boolean} next @param {boolean} [silent] */
   function set(next, silent = false) {
-    for (const button of buttons()) button.hidden = next
+    // Heard on every scroll: a button that already says it is left untouched.
+    for (const button of buttons()) if (button.hidden !== next) button.hidden = next
     if (next === following) return
     following = next
     if (!silent) root.dispatchEvent(new Event('change', { bubbles: true }))
@@ -114,7 +117,9 @@ export function follow(root) {
 
   // Heard before the page's own listeners, which may load older rows as the reader nears the start: the place
   // is taken before they arrive.
-  root.addEventListener('scroll', () => {
+  root.addEventListener('scroll', (event) => {
+    // Listening in the capture phase hears every scroller inside too, such as a code block that scrolls across.
+    if (event.target !== root) return
     const shrank = root.scrollHeight < height
     // Toward the start is the reader leaving the end; content that shrank pulls the region back by itself.
     if (root.scrollTop < top - 1 && !shrank) set(false)
@@ -122,10 +127,22 @@ export function follow(root) {
     remember()
   }, { signal, passive: true, capture: true })
 
-  // A wheel turned toward the start says so before the region has moved, while content may still arrive.
+  // A wheel turned toward the start says so before the region has moved, while content may still arrive. With
+  // Control held it zooms the page, as a trackpad's pinch does, and scrolls nothing.
   root.addEventListener('wheel', (event) => {
-    if (event.deltaY < 0 && root.scrollHeight > root.clientHeight) set(false)
+    if (event.deltaY < 0 && !event.ctrlKey && root.scrollHeight > root.clientHeight) set(false)
   }, { signal, passive: true })
+
+  // So does a key that scrolls toward the start: a smooth scroll that has not yet moved would be pulled back to the
+  // end by the next content to arrive. A key in a field moves its caret instead, and a key a control inside has
+  // taken for itself scrolls nothing.
+  root.addEventListener('keydown', (event) => {
+    if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || root.scrollHeight <= root.clientHeight) return
+    if (event.key !== 'ArrowUp' && event.key !== 'PageUp' && event.key !== 'Home') return
+    const target = /** @type {Element} */ (event.target)
+    if (target.closest?.('input, textarea, select, [contenteditable]:not([contenteditable="false"])')) return
+    set(false)
+  }, { signal })
 
   // A finger that drags the content down scrolls toward the start.
   let finger = 0
@@ -140,7 +157,7 @@ export function follow(root) {
     const button = /** @type {Element} */ (event.target).closest?.('.scroll-area-latest')
     if (!button || button.closest('.scroll-area') !== root) return
     // The button hides as it is pressed; the region keeps the focus it had.
-    if (button.contains(document.activeElement) && root.tabIndex >= 0) root.focus({ preventScroll: true })
+    if (button.contains(root.ownerDocument.activeElement) && root.tabIndex >= 0) root.focus({ preventScroll: true })
     set(true)
     end(reduced() ? 'instant' : 'smooth')
   }, { signal })

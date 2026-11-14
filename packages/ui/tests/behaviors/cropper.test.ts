@@ -76,6 +76,24 @@ test('cropper: the arrows move the crop by a step, and each move says input and 
   assert.deepEqual(crop.value, { x: 100, y: 100, width: 400, height: 200 })
 })
 
+test('cropper: a key held down says input as it repeats, and change and the status once it is let go', () => {
+  const { root, box, key, heard, status, window } = setup()
+  const crop = cropper(root)
+  key(box, 'ArrowRight')
+  assert.deepEqual(heard, ['input', 'change'])
+  const said = status()
+  key(box, 'ArrowRight', { repeat: true })
+  key(box, 'ArrowRight', { repeat: true })
+  assert.deepEqual(crop.value, { x: 130, y: 100, width: 400, height: 200 })
+  assert.deepEqual(heard, ['input', 'change', 'input', 'input'], 'a repeat has not ended')
+  assert.equal(status(), said, 'the status waits too, so it is not read at every repeat')
+  box.dispatchEvent(new window.KeyboardEvent('keyup', { key: 'ArrowRight', bubbles: true }))
+  assert.deepEqual(heard, ['input', 'change', 'input', 'input', 'change'])
+  assert.notEqual(status(), said)
+  box.dispatchEvent(new window.KeyboardEvent('keyup', { key: 'ArrowRight', bubbles: true }))
+  assert.equal(heard.length, 5, 'a key let go after nothing repeated says nothing more')
+})
+
 test('cropper: Shift moves the crop by ten steps, and the step is an option', () => {
   const { root, box, key } = setup()
   const crop = cropper(root)
@@ -366,6 +384,20 @@ test('cropper: panned, the wheel zooms with Control or Command held, and says ch
   assert.deepEqual(heard, ['input', 'input'])
   await new Promise(resolve => setTimeout(resolve, 300))
   assert.deepEqual(heard, ['input', 'input', 'change'])
+})
+
+test('cropper: panned, a turn of the wheel reads the box once, at its first event', async () => {
+  const { root, box, wheel, heard } = setup({ root: '', modifiers: 'cropper-pan' })
+  cropper(root)
+  const read = box.getBoundingClientRect
+  let reads = 0
+  box.getBoundingClientRect = () => { reads++; return read() }
+  for (let turn = 0; turn < 4; turn++) wheel({ deltaY: -40, clientX: 200, clientY: 200, ctrlKey: true })
+  assert.equal(reads, 1)
+  await new Promise(resolve => setTimeout(resolve, 300))
+  assert.deepEqual(heard, ['input', 'input', 'input', 'input', 'change'])
+  wheel({ deltaY: -40, clientX: 200, clientY: 200, ctrlKey: true })
+  assert.equal(reads, 2, 'the next turn reads it again')
 })
 
 test('cropper: panned, a range input whose aria-controls names the root zooms between its min and its max', () => {

@@ -155,9 +155,11 @@ export function transcript(root, options = {}) {
   const rove = () => {
     const inside = list.contains(document.activeElement) ? document.activeElement?.closest('.transcript-cue') : null
     const stop = time(inside ?? current ?? cues()[0])
+    // Asked at every timeupdate: a time is written only when its place in the tab order changes.
     for (const cue of cues()) {
       const button = time(cue)
-      if (button) button.tabIndex = button === stop ? 0 : -1
+      const wanted = button === stop ? '0' : '-1'
+      if (button && button.getAttribute('tabindex') !== wanted) button.setAttribute('tabindex', wanted)
     }
   }
 

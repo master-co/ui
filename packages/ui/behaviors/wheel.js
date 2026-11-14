@@ -13,6 +13,8 @@
  * order of the columns. Set it to turn the columns from outside; that dispatches nothing.
  */
 
+import { label } from './internal.js'
+
 /** @type {WeakMap<Element, AbortController>} */
 const attached = new WeakMap()
 
@@ -54,11 +56,23 @@ export function wheel(root) {
   const rest = (column, option) => option.offsetTop - (options(column)[0]?.offsetTop ?? 0)
 
   /**
-   * The option nearest the mark.
+   * The option nearest the mark. The first option and the scroll are read once, not again for each option.
    * @param {Element} column @param {HTMLElement[]} among @returns {HTMLElement | undefined}
    */
-  const nearest = (column, among) => among.reduce((found, option) =>
-    Math.abs(rest(column, option) - column.scrollTop) < Math.abs(rest(column, found) - column.scrollTop) ? option : found, among[0])
+  const nearest = (column, among) => {
+    const first = options(column)[0]?.offsetTop ?? 0
+    const top = column.scrollTop
+    let found = among[0]
+    let least = Infinity
+    for (const option of among) {
+      const distance = Math.abs(option.offsetTop - first - top)
+      if (distance < least) {
+        least = distance
+        found = option
+      }
+    }
+    return found
+  }
 
   /**
    * Scroll a column until an option rests under the mark.
@@ -148,8 +162,11 @@ export function wheel(root) {
     if (option) turn(column, option, motion())
   }, { signal })
 
-  /** @param {HTMLElement} option */
-  const valueOf = (option) => option.dataset.value ?? option.textContent?.trim() ?? ''
+  /**
+   * What an option stands for: its `data-value`, or its text on one line, as a tab's and a listbox option's.
+   * @param {HTMLElement} option
+   */
+  const valueOf = (option) => option.dataset.value ?? label(option)
   const detach = /** @type {(() => void) & { value: string[] }} */ (Object.defineProperty(() => controller.abort(), 'value', {
     enumerable: true,
     get: () => [...root.querySelectorAll('.wheel-column')].map((column) => {

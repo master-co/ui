@@ -114,3 +114,13 @@ test('toolbar: detach removes the listeners', () => {
   click(one('#italic'))
   assert.equal(one('#italic').getAttribute('aria-pressed'), 'false')
 })
+
+test('toolbar: detach gives every control back the tabindex it had', () => {
+  const { root, all } = setup(markup.replace('id="italic"', 'id="italic" tabindex="0"'))
+  const detach = toolbar(root)
+  assert.equal(all('.toolbar [tabindex="-1"]').length > 0, true)
+  detach()
+  assert.equal(all('.toolbar [tabindex="-1"]').length, 0, 'no control is left out of the tab order')
+  assert.equal(root.querySelector('#italic').getAttribute('tabindex'), '0', 'a tabindex the page wrote stays')
+  assert.equal(root.querySelector('#bold').hasAttribute('tabindex'), false)
+})

@@ -33,7 +33,7 @@
  * The rows may be written by something else, such as a framework that renders them from its own data. Give
  * `text: false` and the script leaves each bar's text to it; it still writes `aria-valuetext`.
  */
-import { enabled, label, step as next, valued } from './internal.js'
+import { enabled, label, valued } from './internal.js'
 
 /** @type {WeakMap<Element, AbortController>} */
 const attached = new WeakMap()
@@ -189,9 +189,24 @@ export function gantt(root, { step = 1, format = (start, end) => (start === end 
   }
   signal.addEventListener('abort', () => clearTimeout(timer))
 
+  /** @type {Map<HTMLElement, string | null>} Each bar's `tabindex` before the script wrote one, given back on detach. */
+  const original = new Map()
+  /** @param {HTMLElement} bar @param {boolean} on */
+  const index = (bar, on) => {
+    if (!original.has(bar)) original.set(bar, bar.getAttribute('tabindex'))
+    const wanted = on ? '0' : '-1'
+    if (bar.getAttribute('tabindex') !== wanted) bar.setAttribute('tabindex', wanted)
+  }
+  signal.addEventListener('abort', () => {
+    for (const [bar, value] of original) {
+      if (value === null) bar.removeAttribute('tabindex')
+      else bar.setAttribute('tabindex', value)
+    }
+  })
+
   /** One bar in the tab order: this one. */
   const rove = (/** @type {HTMLElement} */ bar) => {
-    for (const each of sliders()) each.tabIndex = each === bar ? 0 : -1
+    for (const each of sliders()) index(each, each === bar)
   }
 
   /** Write what a slider needs and the page left out, and leave the chart one stop in the tab order. */
@@ -219,10 +234,7 @@ export function gantt(root, { step = 1, format = (start, end) => (start === end 
       }
     }
     const stop = bars.find((bar) => bar.getAttribute('tabindex') === '0' && enabled(bar)) ?? reachable()[0]
-    for (const bar of bars) {
-      const wanted = bar === stop ? '0' : '-1'
-      if (bar.getAttribute('tabindex') !== wanted) bar.setAttribute('tabindex', wanted)
-    }
+    for (const bar of bars) index(bar, bar === stop)
   }
   prepare()
 
@@ -256,7 +268,8 @@ export function gantt(root, { step = 1, format = (start, end) => (start === end 
 
   root.addEventListener('focusin', (event) => {
     const bar = /** @type {HTMLElement} */ (event.target)
-    if (sliding(bar) && bar.tabIndex !== 0) rove(bar)
+    // A press may focus a disabled bar; the tab stop stays on a bar the keys can land on.
+    if (sliding(bar) && enabled(bar) && bar.tabIndex !== 0) rove(bar)
   }, { signal })
 
   /* The keys. */
@@ -266,7 +279,10 @@ export function gantt(root, { step = 1, format = (start, end) => (start === end 
     if (!sliding(bar) || event.ctrlKey || event.metaKey || drag?.dragging) return
     if ((event.key === 'ArrowUp' || event.key === 'ArrowDown') && !event.shiftKey && !event.altKey) {
       event.preventDefault()
-      const to = next(reachable(), bar, event.key === 'ArrowDown' ? 1 : -1, false)
+      // From the bar's own place, so a disabled bar that holds focus goes to its neighbours, not to the ends.
+      const all = sliders()
+      const at = all.indexOf(bar)
+      const to = event.key === 'ArrowDown' ? all.slice(at + 1).find(enabled) : all.slice(0, at).findLast(enabled)
       if (to && to !== bar) {
         rove(to)
         to.focus()

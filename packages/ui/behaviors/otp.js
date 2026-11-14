@@ -5,7 +5,7 @@
  * Backspace, walks the slots with the arrow keys, Home and End, refuses a character a slot does not allow,
  * and spreads a pasted or autofilled code over the slots: from the first when it is a whole code, from the
  * slot it landed in when it is part of one. A slot that takes focus has its character selected, so typing
- * replaces it.
+ * replaces it. A `readonly` slot is walked like the others; neither a key nor a paste writes to it.
  *
  * While attached the slots lose `maxlength`, which would cut an autofilled code (`autocomplete="one-time-code"`
  * on the first slot) to one character before the script saw it; the script keeps each slot to one character
@@ -146,7 +146,7 @@ export function otp(root, options = {}) {
 
   root.addEventListener('paste', (event) => {
     const slot = /** @type {HTMLInputElement} */ (event.target)
-    if (!slots().includes(slot)) return
+    if (!slots().includes(slot) || slot.readOnly) return
     event.preventDefault()
     const characters = accept(event.clipboardData?.getData('text') ?? '')
     if (characters.length) fill(slot, characters)
@@ -157,6 +157,8 @@ export function otp(root, options = {}) {
     const index = list.indexOf(/** @type {HTMLInputElement} */ (event.target))
     if (index < 0 || event.isComposing || event.ctrlKey || event.metaKey || event.altKey) return
     const slot = list[index]
+    // A read-only slot is read, not edited: the script clears nothing in it, as the browser would not.
+    if ((event.key === 'Backspace' || event.key === 'Delete') && slot.readOnly) return
     const forward = getComputedStyle(root).direction === 'rtl' ? -1 : 1
     if (event.key === 'Backspace') {
       if (slot.value) write(slot, '')

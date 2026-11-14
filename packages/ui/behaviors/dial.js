@@ -81,8 +81,15 @@ export function dial(root, { step = 1, page, text, wheel = false } = {}) {
   const disabled = () => root.getAttribute('aria-disabled') === 'true'
   /** @param {number} value */
   const places = (value) => (String(value).split('.')[1] ?? '').length
+  /**
+   * What a drag reads of the layout: the dial's box and its angles, read once as the press begins. Each move
+   * writes the value on the root, so reading them again on the next move would lay the page out on every move.
+   * @type {{ box: DOMRect, angles: { start: number, sweep: number } } | null}
+   */
+  let frame = null
   /** Where the least value stands and how far the track runs, in degrees clockwise from the top, as the stylesheet draws them. */
-  const geometry = () => {
+  const geometry = () => frame?.angles ?? angles()
+  const angles = () => {
     const style = getComputedStyle(root)
     const full = root.classList.contains('dial-full')
     /** @param {string} name @param {number} fallback */
@@ -148,7 +155,7 @@ export function dial(root, { step = 1, page, text, wheel = false } = {}) {
    * @param {PointerEvent} event
    */
   const pointed = (event) => {
-    const box = root.getBoundingClientRect()
+    const box = frame?.box ?? root.getBoundingClientRect()
     if (!box.width || !box.height) return null
     const x = event.clientX - (box.left + box.width / 2)
     const y = event.clientY - (box.top + box.height / 2)
@@ -184,9 +191,13 @@ export function dial(root, { step = 1, page, text, wheel = false } = {}) {
 
   root.addEventListener('pointerdown', (event) => {
     if (event.button !== 0 || disabled()) return
+    // A second finger while one turns the dial takes nothing from it; a primary pointer always starts afresh,
+    // even if the release of the one before was never heard.
+    if (held !== null && held !== event.pointerId && !event.isPrimary) return
     held = event.pointerId
     offset = 0
     before = now()
+    frame = { box: root.getBoundingClientRect(), angles: angles() }
     // Capture keeps the moves coming when the pointer leaves the dial. A scripted event has no pointer to capture.
     try { root.setPointerCapture(event.pointerId) } catch {}
     const degrees = pointed(event)
@@ -211,6 +222,7 @@ export function dial(root, { step = 1, page, text, wheel = false } = {}) {
   const release = (event) => {
     if (event.pointerId !== held) return
     held = null
+    frame = null
     if (now() !== before) changed()
   }
   root.addEventListener('pointerup', release, { signal })

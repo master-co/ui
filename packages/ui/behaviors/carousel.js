@@ -2,9 +2,9 @@
  * Carousel: the slide in view, and the page's own controls that move the track.
  *
  * The track (`carousel`) is still a scroll container that snaps; this script never moves a slide or sets a
- * position. It watches which slide is most in view with an IntersectionObserver (the first in the DOM order
- * when two are equally in view), and once a scroll has come to rest (`scrollend`, or a pause in `scroll`
- * where the browser has no `scrollend`) that slide is the current one. The current slide's dot
+ * position. It watches which slide is most in view with an IntersectionObserver (among slides equally in
+ * view, the current one, or else the first in the DOM order), and once a scroll has come to rest (`scrollend`,
+ * or a pause in `scroll` where the browser has no `scrollend`) that slide is the current one. The current slide's dot
  * (`carousel-dot`) is marked `aria-current="true"`; previous and next (`carousel-previous`,
  * `carousel-next`) are disabled at the first and the last slide, where there is nowhere to go.
  *
@@ -69,7 +69,11 @@ export function carousel(root, options = {}) {
   /** @type {Map<Element, number>} */
   const seen = new Map()
 
-  /** The slide most in view; the first in the DOM order among equals. */
+  /**
+   * The slide most in view. Among equals the current one stays, so a slide chosen while several are in view,
+   * such as the last of a track that ends with three in view, is still current once the track comes to rest;
+   * otherwise the first in the DOM order.
+   */
   function primary() {
     let best = /** @type {HTMLElement | null} */ (null)
     let most = 0
@@ -80,7 +84,8 @@ export function carousel(root, options = {}) {
         most = ratio
       }
     }
-    return best
+    const held = current === null ? null : find(current)
+    return best && held && (seen.get(held) ?? 0) >= most - .001 ? held : best
   }
 
   /** Mark the dots and the buttons for the current slide. */

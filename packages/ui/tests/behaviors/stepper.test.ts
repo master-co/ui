@@ -83,6 +83,17 @@ test('stepper: a button is disabled while the value stands at its limit', () => 
   assert.equal(heard.length, 6)
 })
 
+test('stepper: a value that changes neither limit nor figure writes no attribute', () => {
+  const { field, type, window, root, more } = setup(markup('min="1" max="12" value="12"'))
+  assert.equal(more.disabled, true)
+  const observer = new window.MutationObserver(() => {})
+  observer.observe(root, { attributes: true, subtree: true })
+  type(field, '12')
+  type(field, '12')
+  assert.deepEqual(observer.takeRecords().map((record: any) => record.attributeName), [])
+  observer.disconnect()
+})
+
 test('stepper: the buttons are disabled at the limit the markup starts on', () => {
   assert.deepEqual(setup(markup('min="1" max="12" value="1"')).all('.stepper button').map((button) => button.disabled), [true, false])
   assert.deepEqual(setup(markup('min="1" max="12" value="12"')).all('.stepper button').map((button) => button.disabled), [false, true])
@@ -414,6 +425,37 @@ test('stepper: with a mouse, a scrub locks the pointer and reads how far it move
   assert.equal(field.value, '1750', 'under the lock the pointer stays put, and its movement counts')
   at(label, 'pointerup', 104, mouse)
   assert.equal(locked, null, 'the lift lets the pointer go')
+})
+
+test('stepper: a lock that arrives after a quick scrub has ended is let go', async () => {
+  const { one, at, document } = scrubbing()
+  const label = one('.stepper-scrub')
+  let locked: Element | null = null
+  let grant = () => {}
+  label.requestPointerLock = () => new Promise<void>((resolve) => { grant = () => { locked = label; resolve() } })
+  Object.defineProperty(document, 'pointerLockElement', { get: () => locked, configurable: true })
+  document.exitPointerLock = () => { locked = null }
+  at(label, 'pointerdown', 100, { pointerType: 'mouse' })
+  at(label, 'pointermove', 104, { pointerType: 'mouse' })
+  at(label, 'pointerup', 104, { pointerType: 'mouse' })
+  grant()
+  await Promise.resolve()
+  await Promise.resolve()
+  assert.equal(locked, null, 'the pointer is not left locked after the drag')
+})
+
+test('stepper: detaching in the middle of a scrub lets a locked pointer go', () => {
+  const { one, at, document, detach } = scrubbing()
+  const label = one('.stepper-scrub')
+  let locked: Element | null = null
+  label.requestPointerLock = () => { locked = label; return Promise.resolve() }
+  Object.defineProperty(document, 'pointerLockElement', { get: () => locked, configurable: true })
+  document.exitPointerLock = () => { locked = null }
+  at(label, 'pointerdown', 100, { pointerType: 'mouse' })
+  at(label, 'pointermove', 104, { pointerType: 'mouse' })
+  assert.equal(locked, label)
+  detach()
+  assert.equal(locked, null, 'the pointer is not left locked and hidden')
 })
 
 test('stepper: a scrub does nothing to a disabled field, from another stepper\'s label, or once detached', () => {

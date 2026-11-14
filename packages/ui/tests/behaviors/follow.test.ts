@@ -138,6 +138,26 @@ test('follow: ArrowUp, PageUp and Home are the browser\'s; the scroll they make 
   }
 })
 
+test('follow: ArrowUp, PageUp and Home stop following as they are pressed, before content can pull the region back', async () => {
+  for (const name of ['ArrowUp', 'PageUp', 'Home']) {
+    const { root, key, append, top, max, latest } = setup()
+    const handle = follow(root)
+    assert.equal(key(root, name), false, `${name} is still the browser's`)
+    assert.equal(handle.value, false, name)
+    assert.equal(latest().hidden, false, name)
+    append()
+    await settle()
+    assert.notEqual(top(), max(), `${name}: what arrives before the scroll moves does not pull the reader back`)
+  }
+  const { root, key, one } = setup(markup('<input class="search" aria-label="Find">'))
+  const handle = follow(root)
+  assert.equal(key(one('.search'), 'Home'), false)
+  assert.equal(handle.value, true, 'a key in a field moves its caret, not the region')
+  key(root, 'ArrowDown')
+  key(root, 'ArrowUp', { metaKey: true })
+  assert.equal(handle.value, true, 'other keys, and keys with a modifier, leave it following')
+})
+
 test('follow: End is the browser\'s; back at the end the region follows again', async () => {
   const { root, key, scroll, append, latest, top, max, heard } = setup()
   const handle = follow(root)
@@ -150,6 +170,21 @@ test('follow: End is the browser\'s; back at the end the region follows again', 
   append()
   await settle()
   assert.equal(top(), max())
+})
+
+test('follow: a scroller inside the region, such as a code block, scrolling on its own is not the region\'s scroll', () => {
+  const { root, list, scroll, window, latest } = setup()
+  const handle = follow(root)
+  scroll(500)
+  assert.equal(handle.value, false)
+  const reads: string[] = []
+  const box = list.getBoundingClientRect
+  list.getBoundingClientRect = () => { reads.push('list'); return box() }
+  const inner = list.firstElementChild!
+  inner.dispatchEvent(new window.Event('scroll'))
+  assert.deepEqual(reads, [], 'nothing is measured for it')
+  assert.equal(handle.value, false)
+  assert.equal(latest().hidden, false)
 })
 
 test('follow: a few pixels short of the end is still the end', () => {
@@ -170,6 +205,15 @@ test('follow: a wheel turned toward the start stops following before the region 
   append()
   await settle()
   assert.equal(top(), 800, 'what arrives meanwhile does not pull the reader back')
+})
+
+test('follow: a wheel held with Control zooms the page, as a pinch does, and leaves the region following', () => {
+  const { root, window } = setup()
+  const handle = follow(root)
+  const pinch = new window.WheelEvent('wheel', { deltaY: -40 })
+  Object.defineProperty(pinch, 'ctrlKey', { value: true })
+  root.dispatchEvent(pinch)
+  assert.equal(handle.value, true)
 })
 
 test('follow: a finger dragging the content down stops following', () => {

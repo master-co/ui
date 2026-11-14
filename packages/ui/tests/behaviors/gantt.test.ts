@@ -93,6 +93,19 @@ test('gantt: ArrowUp and ArrowDown go to the bar above and below, past a disable
   assert.equal(document.activeElement, bar('build'))
 })
 
+test('gantt: a disabled bar a press focused does not take the tab stop, and the arrows go on from its place', () => {
+  const { root, bar, key, document } = setup()
+  gantt(root)
+  bar('review').focus()
+  assert.equal(bar('review').tabIndex, -1, 'the stop stays on a bar the keys can land on')
+  assert.equal(bar('research').tabIndex, 0)
+  key(bar('review'), 'ArrowDown')
+  assert.equal(document.activeElement, bar('launch'))
+  bar('review').focus()
+  key(bar('review'), 'ArrowUp')
+  assert.equal(document.activeElement, bar('build'))
+})
+
 test('gantt: ArrowLeft and ArrowRight move a bar a step, and its value, text and events follow', () => {
   const { root, bar, key, range, heard } = setup()
   const handle = gantt(root)
@@ -319,4 +332,12 @@ test('gantt: detach removes the listeners, and attaching twice listens once', ()
   detach()
   assert.equal(key(bar('design'), 'ArrowRight'), false)
   assert.deepEqual(range('design'), [3, 7])
+})
+
+test('gantt: detach gives every bar back the tabindex it had, so none is left out of the tab order', () => {
+  const { root, all } = setup()
+  const detach = gantt(root)
+  assert.ok(all('.gantt-bar[tabindex="-1"]').length > 0)
+  detach()
+  assert.deepEqual(all('.gantt-bar[tabindex]'), [])
 })

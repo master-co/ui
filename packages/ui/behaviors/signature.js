@@ -152,9 +152,11 @@ export function signature(root, { drawn = 'Signature drawn', cleared = 'Signatur
    */
   const draw = (last = false) => {
     const svg = ink()
+    // The weight is read once, before a path is written: read after, it would have the browser work out the
+    // styles again at every move of the pen, and twice.
+    const size = weight()
     if (svg) {
       const paths = [...svg.querySelectorAll('.signature-stroke')]
-      const size = weight()
       strokes.forEach((stroke, index) => {
         if (last && index < strokes.length - 1 && paths[index]) return
         let path = paths[index]
@@ -175,7 +177,7 @@ export function signature(root, { drawn = 'Signature drawn', cleared = 'Signatur
     }
     const carrier = field()
     if (carrier) {
-      const value = signatureSvg(strokes, { viewBox: viewBox(), weight: weight() })
+      const value = signatureSvg(strokes, { viewBox: viewBox(), weight: size })
       if (carrier.value !== value) write(carrier, value)
     }
     const typed = named()

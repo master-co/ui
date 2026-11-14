@@ -222,8 +222,9 @@ export function combobox(root, { filter: filtering = true, name, removeLabel = (
   }
 
   field.addEventListener('keydown', (event) => {
-    // While an input method composes, Enter and the arrows belong to it.
-    if (event.isComposing || event.ctrlKey || event.metaKey || event.altKey) return
+    // While an input method composes, Enter and the arrows belong to it. Safari ends the composition before the
+    // Enter that commits it, which then says only keyCode 229.
+    if (event.isComposing || event.keyCode === 229 || event.ctrlKey || event.metaKey || event.altKey) return
     const expanded = isOpen(list)
     const current = active()
     switch (event.key) {

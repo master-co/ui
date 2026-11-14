@@ -80,3 +80,31 @@ test('carousel: detach removes the listeners, and attaching twice is safe', () =
   assert.equal(page.handle.value, 'atlas')
   assert.deepEqual(page.errors, [])
 })
+
+test('carousel: a slide chosen while several are equally in view stays current when the track comes to rest', async () => {
+  // Three slides in view at once, as in carousel-3 at the end of its track: the observer sees each whole.
+  let notify: (entries: { target: Element, intersectionRatio: number }[]) => void = () => {}
+  const watched: Element[] = []
+  ;(globalThis as any).IntersectionObserver = class {
+    constructor(callback: typeof notify) { notify = callback }
+    observe(target: Element) { watched.push(target) }
+    disconnect() { watched.length = 0 }
+    takeRecords() { return [] }
+  }
+  try {
+    const { handle, click, all, heard, next, one, window } = setup()
+    notify(watched.map(target => ({ target, intersectionRatio: 1 })))
+    assert.equal(handle.value, 'atlas')
+    click(all('.carousel-dot')[2])
+    assert.equal(handle.value, 'cirrus')
+    assert.deepEqual(heard, ['input', 'change'])
+    // The scroll comes to rest: a pause in scroll, then the observer's frame.
+    one('.carousel').dispatchEvent(new window.Event('scroll'))
+    await new Promise(resolve => setTimeout(resolve, 250))
+    assert.equal(handle.value, 'cirrus', 'the chosen slide is still current, not the first in view')
+    assert.equal(next.disabled, true)
+    assert.deepEqual(heard, ['input', 'change'], 'nothing changed, so nothing is said again')
+  } finally {
+    delete (globalThis as any).IntersectionObserver
+  }
+})

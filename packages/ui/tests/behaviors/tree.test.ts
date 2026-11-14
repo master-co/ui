@@ -254,6 +254,15 @@ test('tree: * opens every closed branch at the level of the row in focus', () =>
   assert.equal(focus(), 'ui')
 })
 
+test('tree: a disabled row that a press focuses does not become the tab stop', () => {
+  const { row, stops } = setup(folders().replace('href="#input">', 'href="#input" aria-disabled="true">'))
+  const before = stops()
+  row('input.css').focus()
+  assert.deepEqual(stops(), before)
+  row('button.css').focus()
+  assert.deepEqual(stops(), ['button.css'], 'a row that is not disabled does')
+})
+
 test('tree: the keys pass over disabled and hidden rows, and a disabled row does nothing', () => {
   const html = folders()
     .replace('href="#input">', 'href="#input" aria-disabled="true">')

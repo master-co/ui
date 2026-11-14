@@ -156,8 +156,9 @@ export function panel(root, { step = 16 } = {}) {
       opener = /** @type {HTMLElement | null} */ (source)
     } else if (root.contains(document.activeElement)) {
       // Closing with focus inside: focus goes back before the panel leaves, so it is never lost to the page.
+      // As the browser gives it back from a popover: without scrolling the page to the control.
       const back = opener?.isConnected ? opener : invoker()
-      back?.focus()
+      back?.focus({ preventScroll: true })
     }
   }, { signal })
   root.addEventListener('toggle', () => {

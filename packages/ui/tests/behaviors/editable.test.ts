@@ -161,6 +161,7 @@ test('editable: while an input method composes, Enter and Escape are its own', (
   click(preview)
   assert.equal(key(field, 'Enter', { isComposing: true }), false)
   assert.equal(key(field, 'Escape', { isComposing: true }), false)
+  assert.equal(key(field, 'Enter', { keyCode: 229 }), false, 'nor the Enter that commits a composition Safari has ended')
   assert.equal(editing(), true)
 })
 

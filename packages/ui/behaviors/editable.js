@@ -117,7 +117,9 @@ export function editable(root, { blur = 'save' } = {}) {
 
   field.addEventListener('keydown', (/** @type {Event} */ pressed) => {
     const event = /** @type {KeyboardEvent} */ (pressed)
-    if (event.isComposing) return
+    // While an input method composes, Enter and Escape belong to it. Safari ends the composition before the
+    // Enter that commits it, which then says only keyCode 229.
+    if (event.isComposing || event.keyCode === 229) return
     const multiline = field.localName === 'textarea'
     if (event.key === 'Escape') {
       event.preventDefault()

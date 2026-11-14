@@ -59,8 +59,9 @@ export function command(root, { shortcut = 'k', filter: filtering = true } = {})
   }
 
   field.addEventListener('keydown', (event) => {
-    // While an input method composes, Enter and the arrows belong to it.
-    if (event.isComposing || event.ctrlKey || event.metaKey || event.altKey) return
+    // While an input method composes, Enter and the arrows belong to it. Safari ends the composition before the
+    // Enter that commits it, which then says only keyCode 229.
+    if (event.isComposing || event.keyCode === 229 || event.ctrlKey || event.metaKey || event.altKey) return
     const items = options(list)
     const current = active()
     let to
@@ -92,6 +93,8 @@ export function command(root, { shortcut = 'k', filter: filtering = true } = {})
       if (!(event.metaKey || event.ctrlKey) || event.altKey || event.shiftKey) return
       if (event.key?.toLowerCase() !== shortcut.toLowerCase()) return
       event.preventDefault()
+      // A shortcut held down repeats: it opened the palette once, and must not close and open it again and again.
+      if (event.repeat) return
       if (root.open) root.close()
       else root.showModal()
     }, { signal })

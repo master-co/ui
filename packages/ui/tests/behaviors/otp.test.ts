@@ -137,6 +137,18 @@ test('otp: Delete clears the slot and keeps focus', () => {
   assert.equal(focus(), 2)
 })
 
+test('otp: Backspace, Delete and a paste write nothing to a read-only slot', () => {
+  const { slots, key, values, paste, given, inputs } = setup(undefined, markup('', 'inputmode="numeric" pattern="[0-9]" maxlength="1" readonly'))
+  given('420913')
+  slots[2].focus()
+  assert.equal(key(slots[2], 'Backspace'), false)
+  assert.equal(key(slots[2], 'Delete'), false)
+  assert.equal(paste(slots[2], '111111'), false)
+  assert.equal(values(), '420913')
+  assert.deepEqual(inputs, [])
+  assert.equal(key(slots[2], 'ArrowRight'), true, 'the slots are still walked')
+})
+
 test('otp: ArrowLeft and ArrowRight move focus to the slot before and after', () => {
   const { slots, key, focus } = setup()
   slots[2].focus()
