@@ -106,6 +106,8 @@
       @apply --surface-sheet;
       box-shadow: var(--shadow-raised);
       -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
       appearance: none;
       cursor: pointer;
       transition-property: box-shadow, translate;
@@ -189,6 +191,11 @@
         background: var(--color-surface-tray);
         box-shadow: 0 0 0 .5px var(--color-line-strong), -1px 1px 2px -.5px var(--color-shade-1);
       }
+
+      /* Right to left the fold is at the top left, and the flap casts its shadow toward the right. */
+      &:dir(rtl)::after {
+        box-shadow: 0 0 0 .5px var(--color-line-strong), 1px 1px 2px -.5px var(--color-shade-1);
+      }
     }
 
     @media (forced-colors: active) {
@@ -263,9 +270,14 @@
     box-shadow: none;
     pointer-events: none;
 
+    /* The fill ends in a hairline where the upload has come to: on its right, or on its left right to left. */
     &::-webkit-progress-value {
       border-radius: 0;
       box-shadow: .5px 0 0 var(--color-line-contour);
+    }
+
+    &:dir(rtl)::-webkit-progress-value {
+      box-shadow: -.5px 0 0 var(--color-line-contour);
     }
 
     &::-moz-progress-bar {
@@ -274,6 +286,13 @@
 
     &:indeterminate {
       background: linear-gradient(90deg, transparent, var(--progress-color) 30%, var(--progress-color) 70%, transparent) 0 0 / 40% 100% no-repeat;
+    }
+
+    /* Without travel the band would stand still at the start and read as an amount: an even tint says unknown. */
+    @media (prefers-reduced-motion: reduce) {
+      &:indeterminate {
+        background: color-mix(in oklab, var(--progress-color) 50%, transparent);
+      }
     }
   }
 

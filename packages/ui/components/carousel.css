@@ -96,8 +96,9 @@
         display: flex;
         justify-content: center;
 
+        /* A finger's dots are padded to 24px: the row moves up by the extra padding, so each dot stays where it was. */
         @media (pointer: coarse) {
-          top: calc(anchor(bottom) + .25rem);
+          top: calc(anchor(bottom) + .1875rem);
         }
       }
 
@@ -178,6 +179,18 @@
         &:dir(rtl)::scroll-marker-group {
           left: auto;
           right: calc(anchor(left) + .5625rem);
+        }
+
+        /* A finger's dots are padded to 24px: the column moves in by the extra padding, so each dot stays where it was. */
+        @media (pointer: coarse) {
+          &::scroll-marker-group {
+            left: calc(anchor(right) + .1875rem);
+          }
+
+          &:dir(rtl)::scroll-marker-group {
+            left: auto;
+            right: calc(anchor(left) + .1875rem);
+          }
         }
 
         &::scroll-button(block-start), &::scroll-button(block-end) {
@@ -270,6 +283,8 @@
    */
   .carousel-view {
     position: relative;
+    /* Its buttons stand over the track inside the view, not over a sticky header that scrolls past it. */
+    isolation: isolate;
     display: grid;
     grid-template: 'track' minmax(0, auto) 'dots' auto / minmax(0, 1fr);
     min-width: 0;
@@ -321,6 +336,10 @@
       flex-direction: column;
       padding: 0;
       padding-inline-start: .375rem;
+
+      @media (pointer: coarse) {
+        padding-inline-start: 0;
+      }
     }
   }
 
@@ -331,6 +350,11 @@
     justify-content: center;
     align-items: center;
     padding-block-start: .375rem;
+
+    /* A finger's dots carry .375rem more padding: the row gives it back, so the dots stay where they were. */
+    @media (pointer: coarse) {
+      padding-block-start: 0;
+    }
   }
 
   .carousel-dot {
@@ -346,11 +370,13 @@
     background: var(--color-line-mark) content-box;
     appearance: none;
     cursor: pointer;
+    touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
     transition: width var(--duration-base) var(--easing-glide), height var(--duration-base) var(--easing-glide), background-color var(--duration-quick) var(--easing-glide);
 
+    /* Packed edge to edge, a dot is its own target: on touch it is padded to 24px, the floor, and the dot stays 6px. */
     @media (pointer: coarse) {
-      padding: .5rem;
+      padding: .5625rem;
     }
 
     @media (hover: hover) {
@@ -413,9 +439,9 @@
         -webkit-tap-highlight-color: transparent;
         transition: width var(--duration-base) var(--easing-glide), height var(--duration-base) var(--easing-glide), background-color var(--duration-quick) var(--easing-glide);
 
-        /* On a touch screen the target grows; the dot does not. */
+        /* On a touch screen the target grows to 24px, the floor for a target that cannot reach past itself; the dot does not. */
         @media (pointer: coarse) {
-          padding: .5rem;
+          padding: .5625rem;
         }
 
         @media (prefers-reduced-motion: reduce) {
