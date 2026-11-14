@@ -21,6 +21,8 @@ export const geometryMarkup = `
   </div>
   <div style="display:flex;align-items:center;gap:12px"><button class="btn" data-control type="button">Deploy</button><input class="input" data-control aria-label="Project" value="Atlas" style="width:140px"><select class="select" data-control aria-label="Region"><option class="select-option">Tokyo</option><option class="select-option">Frankfurt</option></select></div>
   <div class="input-group"><input class="input-group-field" aria-label="Domain" value="atlas.dev"><button class="btn" type="button">Copy</button></div>
+  <div class="input-group" data-trailing-popover><input class="input-group-field" aria-label="Starts" value="2026-11-04" readonly><button class="btn btn-quiet btn-square" type="button" popovertarget="geometry-picker" aria-label="Choose a date">D</button><div id="geometry-picker" class="popover" popover>Calendar</div></div>
+  <div class="btn-group" data-split><button class="btn" type="button">Save</button><button class="btn btn-square" type="button" popovertarget="geometry-split" aria-label="More save options">V</button><div id="geometry-split" class="menu" popover><button type="button" class="menu-item">Save as</button></div></div>
   <div class="segmented"><button type="button" class="segmented-item" aria-pressed="true">Preview</button><button type="button" class="segmented-item" aria-pressed="false">Code</button><button type="button" class="segmented-item" disabled>Unavailable</button></div>
   <div class="tabs"><button type="button" class="tabs-item" role="tab" aria-selected="true">Overview</button><button type="button" class="tabs-item" role="tab" aria-selected="false">Usage</button><button type="button" class="tabs-item" role="tab" disabled>Unavailable</button></div>
   <button type="button" class="btn" popovertarget="geometry-menu">Actions</button>
@@ -79,6 +81,19 @@ export async function verifyComponentGeometry(browser: Browser, { theme, scheme,
           return { selector, height: box.height, taken: above === element || element.contains(above) }
         }),
         groupRadiusGap: read.radius('.input-group') - read.radius('.input-group .btn'),
+        // A button at the end of a group is 4px in on every side, though a popover it opens follows it in the markup.
+        trailingInsets: (() => {
+          const group = document.querySelector('[data-trailing-popover]')!.getBoundingClientRect()
+          const button = document.querySelector('[data-trailing-popover] .btn')!.getBoundingClientRect()
+          const rtl = getComputedStyle(document.documentElement).direction === 'rtl'
+          return { end: rtl ? button.left - group.left : group.right - button.right, top: button.top - group.top, bottom: group.bottom - button.bottom }
+        })(),
+        // A split button's last button keeps its outer corners round, though its menu follows it in the markup.
+        splitEnd: (() => {
+          const last = getComputedStyle(document.querySelectorAll('[data-split] .btn')[1]!)
+          const rtl = getComputedStyle(document.documentElement).direction === 'rtl'
+          return { outer: parseFloat(rtl ? last.borderTopLeftRadius : last.borderTopRightRadius), inner: parseFloat(rtl ? last.borderTopRightRadius : last.borderTopLeftRadius) }
+        })(),
         segmentRadiusGap: read.radius('.segmented') - read.radius('.segmented-item'),
         segmentInset: parseFloat(read.style('.segmented').paddingLeft),
         tabWeights: [...document.querySelectorAll('.tabs-item')].map(element => getComputedStyle(element).fontWeight),
@@ -103,6 +118,9 @@ export async function verifyComponentGeometry(browser: Browser, { theme, scheme,
     for (const height of values.controlHeights) assert.ok(Math.abs(height - 38) < .5, `native control height: ${height}`)
     for (const reach of values.reach) assert.equal(reach.taken, touch, `${reach.selector} (${reach.height}px) takes a touch past its edge only on a coarse pointer`)
     assert.ok(Math.abs(values.groupRadiusGap - 4) < .02, 'input group inset is subtracted after scaling')
+    for (const [side, inset] of Object.entries(values.trailingInsets)) assert.ok(Math.abs(inset - 4) < .1, `a group's end button stays 4px in at its ${side} with a popover after it: ${inset}`)
+    assert.ok(values.splitEnd.outer > 0, 'a split button keeps its outer corners with its menu after it')
+    assert.equal(values.splitEnd.inner, 0, 'a split button squares the corners where its buttons meet')
     assert.ok(Math.abs(values.segmentRadiusGap - values.segmentInset) < .02, 'segmented inset is added after scaling')
     assert.equal(new Set(values.tabWeights).size, 1, 'tab state never changes label weight')
     const code = page.locator('.code-panel .code-block')
