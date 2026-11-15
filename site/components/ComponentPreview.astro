@@ -1,9 +1,11 @@
 ---
-import Code from '@master/internal-site/components/Code.astro'
 import Demo from '@master/internal-site/demo/Demo.svelte'
 import PreviewViewport from '~/site/components/PreviewViewport.svelte'
 import PreviewGuard from '~/site/components/PreviewGuard.astro'
 import DocumentPreviewSwitch from '@master/internal-site/components/DocumentPreviewSwitch.astro'
+import CodeLanguageSelect from '~/site/components/CodeLanguageSelect.astro'
+import MarkupSource from '~/site/components/MarkupSource.astro'
+import { markupLanguages, markupSources, printMarkup } from '~/site/utils/framework-markup'
 import { previewDocument, specimenHead as head } from '~/site/utils/preview'
 import { behaviorsScript, uiSource } from '~/site/utils/ui-source'
 
@@ -35,7 +37,8 @@ interface Props {
   stylesheet?: string
   /**
    * Attach the package's behaviors to the preview, for a pattern that needs a script. The preview runs the
-   * published scripts, and the Code view ends with the two lines a reader writes to do the same.
+   * published scripts, and the Code view ends with the two lines a reader writes to do the same. Its Code view is HTML
+   * only: in a framework, a pattern with a script is that framework's component.
    */
   behaviors?: boolean
 }
@@ -49,6 +52,8 @@ const { name, title, html, caption = '', bodyClass = 'flex flex-wrap items-cente
 const views = [['preview', 'Preview'], ['code', 'Source code tab']] as const
 const running = behaviors ? `${html}\n<script>${behaviorsScript()};MasterUI.attach()</script>` : html
 const source = behaviors ? `${html}\n<script type="module">\n  import { attach } from '@master/ui/behaviors'\n\n  attach()\n</script>` : html
+// Markup is the same in every framework, so the Code view offers it in each; a pattern with a script stays HTML.
+const sources = behaviors ? [{ ...markupLanguages[0], code: printMarkup(source, 'html') }] : markupSources(source)
 const section = { page: 'components', id: name, title, html: [running], css: uiSource(stylesheet), classes: [], classLists: [], highlighted: [] }
 const document = previewDocument(section as Parameters<typeof previewDocument>[0], { html: running, caption: '', bodyClass, head } as Parameters<typeof previewDocument>[1])
 ---
@@ -56,13 +61,9 @@ const document = previewDocument(section as Parameters<typeof previewDocument>[0
 <PreviewGuard />
 <Demo title={title} caption={caption} frame="none" sourceMode="replace" data-component-preview={name} data-preview-background={background}>
   <Fragment slot="controls">
+    <CodeLanguageSelect sources={sources} />
     <DocumentPreviewSwitch name={`preview-view-${name}`} label="View" kind="view" options={views} value="preview" />
   </Fragment>
-  <Fragment slot="source">
-    {/* Preserve literal example emails through Cloudflare without disabling HTML compression. */}
-    <Fragment set:html="<!--email_off-->" />
-    <Code lang="html" beautify code={source} />
-    <Fragment set:html="<!--/email_off-->" />
-  </Fragment>
+  <Fragment slot="source"><MarkupSource sources={sources} /></Fragment>
   <PreviewViewport client:idle={{ timeout: 500 }} title={title} document={document} theme={theme} responsive={responsive} height={height} mediumHeight={mediumHeight} narrowHeight={narrowHeight} background={background} />
 </Demo>

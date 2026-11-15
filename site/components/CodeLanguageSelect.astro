@@ -1,0 +1,69 @@
+---
+import '@master/ui/components/select.css'
+import { siteOf } from '@master/internal-site/astro/site-context'
+import type { markupSources } from '~/site/utils/framework-markup'
+
+interface Props {
+  /** The languages the tray's Code view holds, from `markupSources()`. */
+  sources: ReturnType<typeof markupSources>
+}
+
+/**
+ * The language of a tray's Code view: HTML, React, Svelte or Vue. It shows beside the view switch while Code is on,
+ * and only where there is more than one language to choose. The choice is the select's own state, which the stylesheet
+ * reads, so a tray works without a script; the script carries a reader's choice to every tray and to the next page.
+ */
+const { sources } = Astro.props
+const { t } = siteOf(Astro)
+---
+
+{sources.length > 1 && (
+  <select class="select select-sm" data-code-languages aria-label={t('Code language')} autocomplete="off">
+    {sources.map(source => <option class="select-option" value={source.language}>{source.title}</option>)}
+  </select>
+)}
+
+<script>
+  const key = 'master-ui:code-language'
+  const selects = () => document.querySelectorAll<HTMLSelectElement>('select[data-code-languages]')
+
+  /** Every tray that has the language shows it; one that does not keeps what it shows. */
+  function choose(language: string) {
+    for (const select of selects()) {
+      if ([...select.options].some(option => option.value === language)) select.value = language
+    }
+  }
+
+  try {
+    const stored = localStorage.getItem(key)
+    if (stored) choose(stored)
+  } catch { /* Storage may be unavailable. */ }
+
+  document.addEventListener('change', event => {
+    const select = event.target
+    if (!(select instanceof HTMLSelectElement) || !select.matches('[data-code-languages]')) return
+    choose(select.value)
+    try { localStorage.setItem(key, select.value) } catch { /* Storage may be unavailable. */ }
+  })
+</script>
+
+<style is:global>
+  @layer components {
+    /* The select belongs to the Code view: hidden while the tray shows its preview. */
+    .ui-tray:not(:has([data-view="code"]:checked)) [data-code-languages] {
+      display: none;
+    }
+
+    /* HTML until a reader picks another language; the select's chosen option says which. */
+    .ui-tray [data-code-language]:not([data-code-language="html"]),
+    .ui-tray:has([data-code-languages] option:checked:not([value="html"])) [data-code-language="html"] {
+      display: none;
+    }
+
+    .ui-tray:has([data-code-languages] option[value="react"]:checked) [data-code-language="react"],
+    .ui-tray:has([data-code-languages] option[value="svelte"]:checked) [data-code-language="svelte"],
+    .ui-tray:has([data-code-languages] option[value="vue"]:checked) [data-code-language="vue"] {
+      display: block;
+    }
+  }
+</style>

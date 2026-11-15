@@ -1,0 +1,22 @@
+---
+import Code from '@master/internal-site/components/Code.astro'
+import type { markupSources } from '~/site/utils/framework-markup'
+
+interface Props {
+  /** The preview's markup in each language it can be written in, from `markupSources()`, HTML first. */
+  sources: ReturnType<typeof markupSources>
+}
+
+/**
+ * A preview's Code view: its markup once for each language, HTML first. Every one is in the server HTML, for search,
+ * copying and readers without JavaScript; `CodeLanguageSelect` in the tray's head picks the one that shows.
+ */
+const { sources } = Astro.props
+---
+
+{/* Preserve literal example emails through Cloudflare without disabling HTML compression. */}
+<Fragment set:html="<!--email_off-->" />
+{sources.length > 1
+  ? sources.map(source => <div data-code-language={source.language}><Code lang={source.lang} code={source.code} /></div>)
+  : sources.map(source => <Code lang={source.lang} code={source.code} />)}
+<Fragment set:html="<!--/email_off-->" />

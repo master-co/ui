@@ -1,9 +1,12 @@
 ---
-import Code from '@master/internal-site/components/Code.astro'
+import CodeTabs from '@master/internal-site/components/CodeTabs.astro'
 import Demo from '@master/internal-site/demo/Demo.svelte'
 import PreviewViewport from '~/site/components/PreviewViewport.svelte'
 import PreviewGuard from '~/site/components/PreviewGuard.astro'
 import DocumentPreviewSwitch from '@master/internal-site/components/DocumentPreviewSwitch.astro'
+import CodeLanguageSelect from '~/site/components/CodeLanguageSelect.astro'
+import MarkupSource from '~/site/components/MarkupSource.astro'
+import { markupLanguages, markupSources, printMarkup } from '~/site/utils/framework-markup'
 import { previewDocument, previewHead as head } from '~/site/utils/preview'
 import { behaviorsScript, uiSource } from '~/site/utils/ui-source'
 import { example as exampleOf, exampleFiles, exampleHtml, exampleScriptUrl } from '~/site/utils/examples'
@@ -16,7 +19,7 @@ interface Props {
   html?: string
   /**
    * A working example in `site/examples`, by its id in the manifest: its markup runs here with its module,
-   * served from the site's own origin, and the Code view shows every file it is made of.
+   * served from the site's own origin, and the Code view shows every file it is made of, one tab to a file.
    */
   example?: string
   caption?: string
@@ -56,6 +59,9 @@ const files = Astro.props.example ? exampleFiles(Astro.props.example) : []
 const module = Astro.props.example && given?.script ? `\n<script type="module" src="${exampleScriptUrl(Astro.props.example)}"></script>` : ''
 const running = behaviors ? `${html}\n<script>${behaviorsScript()};MasterUI.attach()</script>` : `${html}${module}`
 const source = behaviors ? `${html}\n<script type="module">\n  import { attach } from '@master/ui/behaviors'\n\n  attach()\n</script>` : html
+// Markup is the same in every framework, so the Code view offers it in each. A pattern with a script and a working
+// example, whose module drives the markup, stay as they are written.
+const sources = Astro.props.example ? [] : behaviors ? [{ ...markupLanguages[0], code: printMarkup(source, 'html') }] : markupSources(source)
 const section = { page: 'library', id: name, title, html: [running], css: uiSource(), classes: [], classLists: [], highlighted: [] }
 const document = previewDocument(section as Parameters<typeof previewDocument>[0], { html: running, caption: '', bodyClass, head } as Parameters<typeof previewDocument>[1])
 const views = [['preview', 'Preview'], ['code', 'Source code tab']] as const
@@ -68,15 +74,13 @@ const sizes = [['desktop', 'Desktop'], ['tablet', 'Tablet'], ['phone', 'Phone']]
 <Demo title={title} caption={caption} frame="none" sourceMode="replace" data-component-preview={name} data-page-preview data-preview-background="stripes">
   <Fragment slot="controls">
     <DocumentPreviewSwitch name={`preview-size-${name}`} label="Viewport" kind="size" options={sizes} value={size} />
+    <CodeLanguageSelect sources={sources} />
     <DocumentPreviewSwitch name={`preview-view-${name}`} label="View" kind="view" options={views} value="preview" />
   </Fragment>
   <Fragment slot="source">
-    {/* Preserve literal example emails through Cloudflare without disabling HTML compression. */}
-    <Fragment set:html="<!--email_off-->" />
     {files.length
-      ? files.map(file => <Code lang={file.lang} name={file.name} beautify={file.lang === 'html'} code={file.content} />)
-      : <Code lang="html" beautify code={source} />}
-    <Fragment set:html="<!--/email_off-->" />
+      ? <Fragment><Fragment set:html="<!--email_off-->" /><CodeTabs tabs={files.map(file => ({ name: file.name, lang: file.lang, beautify: file.lang === 'html', code: file.content }))} /><Fragment set:html="<!--/email_off-->" /></Fragment>
+      : <MarkupSource sources={sources} />}
   </Fragment>
   <PreviewViewport client:idle={{ timeout: 500 }} title={title} document={document} height={height} framed background="stripes" />
 </Demo>
