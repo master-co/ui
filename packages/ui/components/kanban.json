@@ -1,0 +1,68 @@
+{
+  "$schema": "../contract.schema.json",
+  "name": "kanban",
+  "title": "Kanban",
+  "tier": "component",
+  "category": "Structure",
+  "description": "A board of columns whose items are moved within a column or into another, by dragging, with the keys or by choosing a place.",
+  "use": "Work that passes through a few stages: tasks, candidates, orders, requests. Each column is a named section with a list; each item has a handle and a button that opens the mover, both named with what they move. What an item shows is a card, a badge or an avatar of the page's own.",
+  "instead": [
+    { "when": "One list is put in order and nothing changes column", "use": "sortable" },
+    { "when": "The stages are only read, and nothing is moved", "use": "list" },
+    { "when": "The work is laid out against time", "use": "gantt" }
+  ],
+  "composes": ["card", "popover", "select", "input", "button"],
+  "script": "required",
+  "behavior": "kanban",
+  "keyboard": [
+    { "keys": "Enter, Space", "action": "On a handle, pick the item up; again, drop it in the place chosen" },
+    { "keys": "ArrowUp, ArrowDown", "action": "Choose the place before or after, in the column the item would land in" },
+    { "keys": "ArrowLeft, ArrowRight", "action": "Choose the column beside it, as it is seen: the other way around from right to left. The place stays, or is the column's last when it has fewer" },
+    { "keys": "Home, End", "action": "Choose the first or the last place of that column" },
+    { "keys": "Escape", "action": "Leave the item where it was and keep focus on its handle; during a drag, end the drag" },
+    { "keys": "Tab", "action": "Drop the item in the place chosen, then leave the handle as Tab does" }
+  ],
+  "platform": [
+    { "feature": "The popover API, for the carried item's name in the top layer", "fallback": "Nothing follows the pointer: the item fades in its place and the line marks where it would land" },
+    { "feature": "Element.moveBefore()", "fallback": "The item is inserted again, and what had focus in it is focused again" },
+    { "feature": ":has(), for the carried item and the empty column", "fallback": "The carried item does not fade and an empty column shows no well; the line still marks the place" }
+  ],
+  "classes": [
+    { "name": "kanban", "kind": "root", "description": "The board: a row of columns that scrolls across. Give it a height and its columns stop there, each list scrolling by itself. While an item is carried the cursor is a closed hand" },
+    { "name": "kanban-column", "kind": "part", "of": "kanban", "elements": ["section"], "label": true, "description": "A column, a tray named by its title. It stands for its data-value. With hidden it takes no item and is passed over" },
+    { "name": "kanban-header", "kind": "part", "of": "kanban", "description": "The head of a column: its title and whatever stands beside it, such as a count. It stays while the list scrolls" },
+    { "name": "kanban-title", "kind": "part", "of": "kanban", "description": "The column's name, on the line the items' words start on" },
+    { "name": "kanban-items", "kind": "part", "of": "kanban", "elements": ["ol", "ul"], "description": "The list of a column, in the order of the document. It is the part that scrolls" },
+    { "name": "kanban-items-target", "kind": "modifier", "of": "kanban-items", "description": "Set by the behavior on the list whose end is the place the carried item would land in: a line after its last item, or a ring around the well of an empty column" },
+    { "name": "kanban-item", "kind": "part", "of": "kanban", "elements": ["li"], "description": "An item. It stands for its data-value, which no other item of the board has. Carried, it keeps its place and fades" },
+    { "name": "kanban-item-target", "kind": "modifier", "of": "kanban-item", "description": "Set by the behavior on the item the carried one would land before: a line in the gap over it" },
+    { "name": "kanban-handle", "kind": "part", "of": "kanban", "elements": ["button"], "label": true, "attributes": { "type": "button", "aria-pressed": ["true", "false"] }, "description": "The grip that carries the item: name it with what it moves. A 24px target, 44px on touch screens" },
+    { "name": "kanban-controls", "kind": "part", "of": "kanban", "description": "What holds an item's move button and its handle as a pair at the end of its first line: they stand close, hang into the item's padding so the grip's glyph meets the edge the words under it end on, and center on a line of --kanban-line" },
+    { "name": "kanban-move", "kind": "part", "of": "kanban", "elements": ["button"], "label": true, "attributes": { "type": "button" }, "description": "The button that opens the mover for its item, drawn as the grip's pair: two arrows that pass, in a 24px target, 44px on touch screens. Give it the popovertarget of the mover's popover and name it with what it moves" },
+    { "name": "kanban-empty", "kind": "part", "of": "kanban", "description": "A few words in a shallow well, shown in place of the list while the column holds no item" },
+    { "name": "kanban-preview", "kind": "part", "of": "kanban", "attributes": { "popover": "manual", "aria-hidden": "true" }, "description": "An empty element the behavior shows in the top layer during a drag, with the carried item's name, at the pointer" },
+    { "name": "kanban-preview-landing", "kind": "modifier", "of": "kanban-preview", "description": "Set by the behavior after the release, while the sheet glides to the place the item took" },
+    { "name": "kanban-mover", "kind": "part", "of": "kanban", "elements": ["form"], "description": "The form of a popover in the board, with a select named column and a select named position, which the behavior fills. A button in an item whose popovertarget is that popover, kanban-move or one of the page's own, opens it for the item; submitting it moves the item" },
+    { "name": "kanban-mover-actions", "kind": "part", "of": "kanban", "description": "The mover's buttons, at its end: the one that closes it, then the one that moves" },
+    { "name": "kanban-status", "kind": "part", "of": "kanban", "anywhere": true, "attributes": { "role": "status" }, "description": "A region that says each pick, place, drop and cancel, inside the board or right after it. It takes no room" }
+  ],
+  "states": [
+    { "on": "kanban-handle", "name": "carried", "mark": "aria-pressed=\"true\"", "description": "The item is picked up, by the pointer or the keys: the grip sits in a well and the item fades in its place" },
+    { "on": "kanban-handle", "name": "disabled", "mark": ":disabled", "description": "The item stays where it is" },
+    { "on": "kanban-column", "name": "hidden", "mark": "hidden", "description": "The column is not shown and takes no item" }
+  ],
+  "properties": [
+    { "name": "--kanban-column-width", "default": "17.5rem", "description": "The width of a column, which is never wider than the board less 2rem" },
+    { "name": "--kanban-gap", "default": ".75rem", "description": "The room between two columns" },
+    { "name": "--kanban-inset", "default": ".375rem", "description": "The room between a column's edge and its items; the column's corner is the items' corner plus it" },
+    { "name": "--kanban-item-gap", "default": ".375rem", "description": "The room between two items, where the line of a place stands" },
+    { "name": "--kanban-padding", "default": ".75rem", "description": "The padding of a card the board holds; a column's title starts on the same line" },
+    { "name": "--kanban-radius", "default": "var(--radius-control-lg)", "description": "The corner of a card the board holds, of an empty column's well and of the carried sheet" },
+    { "name": "--kanban-marker", "default": "var(--color-focus)", "description": "The ink of the line, and of the ring around an empty column, that marks a place" },
+    { "name": "--kanban-line", "on": "kanban-controls", "default": "calc(.9375rem * 1.4)", "description": "The height of the line the pair of controls centers on: a card title's by default" },
+    { "name": "--kanban-x", "on": "kanban-preview", "description": "Where the carried sheet's start edge is, from the viewport's left; the script writes it" },
+    { "name": "--kanban-y", "on": "kanban-preview", "description": "Where the carried sheet's top is, from the viewport's top; the script writes it" },
+    { "name": "--kanban-width", "on": "kanban-preview", "description": "The width of the carried sheet, the carried item's own; the script writes it" }
+  ],
+  "example": "<div class=\"kanban\" role=\"group\" aria-label=\"Launch\">\n  <section class=\"kanban-column\" data-value=\"todo\" aria-labelledby=\"launch-todo\">\n    <header class=\"kanban-header\"><h3 class=\"kanban-title\" id=\"launch-todo\">To do</h3></header>\n    <ol class=\"kanban-items\">\n      <li class=\"kanban-item\" data-value=\"brief\">\n        <div class=\"card\">\n          <div class=\"card-header\">\n            <p class=\"card-title\">Write the brief</p>\n            <span class=\"card-action kanban-controls\">\n              <button type=\"button\" class=\"kanban-move\" popovertarget=\"launch-mover\" aria-label=\"Move Write the brief\"></button>\n              <button type=\"button\" class=\"kanban-handle\" aria-pressed=\"false\" aria-label=\"Drag Write the brief\"></button>\n            </span>\n          </div>\n        </div>\n      </li>\n    </ol>\n    <p class=\"kanban-empty\">Nothing to do</p>\n  </section>\n  <section class=\"kanban-column\" data-value=\"done\" aria-labelledby=\"launch-done\">\n    <header class=\"kanban-header\"><h3 class=\"kanban-title\" id=\"launch-done\">Done</h3></header>\n    <ol class=\"kanban-items\"></ol>\n    <p class=\"kanban-empty\">Nothing done yet</p>\n  </section>\n  <div class=\"popover popover-end\" popover id=\"launch-mover\">\n    <form class=\"kanban-mover\">\n      <label class=\"field\">Column<select class=\"select\" name=\"column\"></select></label>\n      <label class=\"field\">Position<select class=\"select\" name=\"position\"></select></label>\n      <button type=\"submit\" class=\"btn btn-primary\">Move</button>\n    </form>\n  </div>\n  <div class=\"kanban-preview\" popover=\"manual\" aria-hidden=\"true\"></div>\n  <p class=\"kanban-status\" role=\"status\"></p>\n</div>"
+}

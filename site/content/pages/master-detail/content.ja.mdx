@@ -91,10 +91,10 @@ import PagePreview from '~/site/components/PagePreview.astro'
 
 ## 構成 \{#how-it-is-built\}
 
-- **外枠に`container-inline`** を指定して、サイズコンテナーにします。内側のすべての`@container(…)`ユーティリティは、外枠の幅を基準にします。
+- **外枠に`container-inline`** を指定して、サイズコンテナーにします。内側のすべての`@container(…)`ユーティリティは、画面ではなく外枠の幅を基準にします。
 - **高さを固定した行。** `flex h(440)`で両ペインの高さを揃え、一覧と詳細にそれぞれ`overflow-y-auto`を指定して独立してスクロールできるようにします。`min-h(0)`によって一覧はヘッダーの下で縮むことができ、ヘッダーは動きません。ビューポートの高さ全体を使うアプリでは、数値で指定する代わりに[固定シェル](/pages/app-shell#fixed)の高さを使います。
 - **一覧は固定幅、詳細は可変幅です。** 外枠の幅が48remに達するまでは一覧に`w-full`を使い、48rem以上では`shrink(0)`を指定した`w(300)@container(--3xl)`を使います。詳細には`grow(1) basis(0) min-w(0)`を使い、一覧の幅を圧迫せずに残りの幅を使います。
-- **48rem未満では1ペインになります。** 詳細ペインは`hidden`で非表示になり、`flex@container(--3xl)`で再表示されます。幅が狭いときは一覧が表示され、行を選ぶと独立した詳細ページに移動します。この画面遷移はルーターで処理します。
+- **48rem未満では1ペインになります。** 詳細ペインは`hidden`で非表示になり、`flex@container(--3xl)`で再表示されます。幅が狭いときは一覧が表示され、行を選ぶと独立した詳細ページに移動します。これは画面遷移なので、レイアウトではなくルーターで処理します。
 - **行はペインの内側に置きます。** 一覧に`p-sm`を指定するので、現在の行のシートはペインの端にもヘッダー下の線にも接しません。ヘッダーのタイトルには行自体のインセット（`--list-inset`）と同じ`pxs(10)`を指定し、行のテキストと同じ位置から始めます。
 - **ペイン間の区切り線**には`bxe(1)@container(--3xl) bxe-solid@container(--3xl)`を使います。区切り線は両方のペインが表示されているときだけ現れます。
 
@@ -183,13 +183,159 @@ import PagePreview from '~/site/components/PagePreview.astro'
   </article>
 </section>`} />
 
+## 独立した詳細ページ \{#standalone\}
+
+詳細が独立したページになるのは、2つのペインを並べる幅がないとき、ほかの場所のリンクから1つの項目に直接移動するとき、そして図、履歴、情報のカラムなど、ペインに収まらない内容を持つときです。これは、最初のプレビューの各行が、狭い画面でリンクする先のページです。同じProductionキーを[ページ](/pages/page)のフレームに収め、リンク1つで一覧に戻れます。
+
+<PagePreview name="standalone" title="独立した詳細ページ" height={920} tabletHeight={1232} phoneHeight={1468} caption="「タブレット」と「スマートフォン」を選ぶと、情報が2つ目のカラムを離れ、キーとそのアクティビティの間に入ります。どの幅でも、隠れるものはありません。" html={`<div class="page bg-surface-base fg-text-body text-sm">
+  <a class="skip" href="#key-main">Skip to content</a>
+  <header class="navbar" style="--navbar-padding-x: max(1.5rem, calc(50% - 31rem))">
+    <a class="navbar-brand" href="#"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18a9 9 0 0 0 0-18M12 3a9 9 0 0 0 0 18"/></svg>Atlas</a>
+    <nav class="navbar-nav" aria-label="Main">
+      <a class="navbar-link" href="#">Overview</a>
+      <a class="navbar-link" href="#">Deployments</a>
+      <a class="navbar-link" href="#">Analytics</a>
+      <a class="navbar-link" href="#" aria-current="page">Settings</a>
+    </nav>
+    <div class="navbar-end">
+      <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Account"><span class="avatar avatar-sm" aria-hidden="true"><img class="avatar-image" src="/demo/people/yiching-lin.webp" alt="" width="24" height="24"><span class="avatar-fallback">YL</span></span></button>
+      <button type="button" class="btn btn-quiet btn-square btn-sm navbar-toggle" popovertarget="key-menu" aria-label="Open the menu"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h16M4 16h16"/></svg></button>
+      <div class="menu menu-end" id="key-menu" popover>
+        <a class="menu-item" href="#">Overview</a>
+        <a class="menu-item" href="#">Deployments</a>
+        <a class="menu-item" href="#">Analytics</a>
+        <a class="menu-item" href="#" aria-current="page">Settings</a>
+      </div>
+    </div>
+  </header>
+  <main class="grow(1) w-full max-w(1040) mx-auto px-lg py-xl container-inline" id="key-main" tabindex="-1">
+    <header class="flex flex-col gap-sm">
+      <a class="link link-quiet fg-text-muted self-start" href="#"><span aria-hidden="true">← </span>API keys</a>
+      <div class="flex flex-wrap items-end justify-between gap-md">
+        <div class="flex flex-col gap-3xs grow(1) basis(320) min-w(0)">
+          <div class="flex flex-wrap items-center gap-xs">
+            <h1 class="heading heading-xl">Production</h1>
+            <span class="badge badge-success badge-dot">Active</span>
+          </div>
+          <p class="m(0) fg-text-muted">Used by the deploy workflow on the main branch.</p>
+        </div>
+        <div class="flex flex-wrap gap-xs">
+          <button type="button" class="btn">Rotate key</button>
+          <button type="button" class="btn btn-danger">Revoke</button>
+        </div>
+      </div>
+    </header>
+    <div class="grid grid-cols(1) grid-cols(3)@container(--3xl) items-start gap-xl mt-xl pt-xl bt(1) bt-solid b-line-hair">
+      <section class="flex flex-col gap-md min-w(0) grid-col-span(2)@container(--3xl)" aria-labelledby="key-secret">
+        <h2 class="heading heading-sm" id="key-secret">Key</h2>
+        <pre class="code-block" tabindex="0" aria-label="The key"><code>atl_live_<span aria-hidden="true">••••••••</span><span class="sr-only">, hidden, ending in </span>4f2a</code></pre>
+        <p class="m(0) leading-md max-w(560)">Send it with every request as a bearer token, in the <code class="code">Authorization</code> header. The secret was shown once, when the key was created: rotate the key to get a new one.</p>
+        <div class="grid grid-cols(1) grid-cols(2)@container(--md) items-start gap-lg mt-xs">
+          <div class="flex flex-col gap-sm min-w(0)">
+            <h3 class="heading heading-xs" id="key-scopes">Scopes</h3>
+            <ul class="bullets bullets-check" aria-labelledby="key-scopes">
+              <li class="bullets-item">Deploy: create and promote deployments</li>
+              <li class="bullets-item">Read logs: build and runtime logs</li>
+            </ul>
+          </div>
+          <div class="stat min-w(0)">
+            <p class="stat-label">Requests, last 7 days</p>
+            <div class="stat-row">
+              <p class="stat-value">12,480</p>
+              <span class="sparkline" style="--sparkline-width: 5rem; --sparkline-height: 1.5rem" role="img" aria-label="Requests a day rose from 1,640 to 2,040 over the week"><svg class="sparkline-plot" viewBox="0 0 100 100" preserveAspectRatio="none"><path class="sparkline-line" d="M0 87 L16.7 69.6 L33.3 100 L50 28.3 L66.7 45.7 L83.3 60.9 L100 0" /></svg><span class="sparkline-dot" style="--x: 100; --y: 0"></span></span>
+            </div>
+            <p class="stat-description">About 1,780 a day, none refused</p>
+          </div>
+        </div>
+      </section>
+      <section class="flex flex-col gap-sm min-w(0) grid-row-span(2)@container(--3xl)" aria-labelledby="key-details">
+        <h2 class="heading heading-sm" id="key-details">Details</h2>
+        <dl class="data-list">
+          <div class="data-list-item">
+            <dt class="data-list-term">Created by</dt>
+            <dd class="data-list-value">Yi-ching Lin</dd>
+          </div>
+          <div class="data-list-item">
+            <dt class="data-list-term">Created</dt>
+            <dd class="data-list-value"><time datetime="2026-03-02">2 March 2026</time></dd>
+          </div>
+          <div class="data-list-item">
+            <dt class="data-list-term">Last used</dt>
+            <dd class="data-list-value"><time datetime="2026-11-16T09:41+08:00">Today at 09:41</time>, from Tokyo</dd>
+          </div>
+          <div class="data-list-item">
+            <dt class="data-list-term">Expires</dt>
+            <dd class="data-list-value"><time datetime="2027-03-02">2 March 2027</time></dd>
+          </div>
+          <div class="data-list-item">
+            <dt class="data-list-term">Environment</dt>
+            <dd class="data-list-value">Production</dd>
+          </div>
+          <div class="data-list-item">
+            <dt class="data-list-term">IP allow-list</dt>
+            <dd class="data-list-value">203.0.113.0/24</dd>
+          </div>
+        </dl>
+      </section>
+      <section class="flex flex-col gap-md min-w(0) grid-col-span(2)@container(--3xl)" aria-labelledby="key-activity">
+        <h2 class="heading heading-sm" id="key-activity">Activity</h2>
+        <ol class="timeline">
+          <li class="timeline-item" aria-current="true">
+            <span class="timeline-marker"></span>
+            <div class="timeline-body">
+              <p class="timeline-title">Used by the deploy workflow</p>
+              <p class="timeline-description">From Tokyo, 203.0.113.24, to deploy the main branch.</p>
+              <time class="timeline-time" datetime="2026-11-16T09:41+08:00">Today at 09:41</time>
+            </div>
+          </li>
+          <li class="timeline-item">
+            <span class="timeline-marker"></span>
+            <div class="timeline-body">
+              <p class="timeline-title">Rotated by Po-han Chen</p>
+              <p class="timeline-description">The earlier secret stopped working a day later.</p>
+              <time class="timeline-time" datetime="2026-09-14T15:20+08:00">14 September at 15:20</time>
+            </div>
+          </li>
+          <li class="timeline-item">
+            <span class="timeline-marker"></span>
+            <div class="timeline-body">
+              <p class="timeline-title">Scope added by Yi-ching Lin</p>
+              <p class="timeline-description">Read logs, for the workflow's build report.</p>
+              <time class="timeline-time" datetime="2026-04-09T11:05+08:00">9 April at 11:05</time>
+            </div>
+          </li>
+          <li class="timeline-item">
+            <span class="timeline-marker"></span>
+            <div class="timeline-body">
+              <p class="timeline-title">Created by Yi-ching Lin</p>
+              <p class="timeline-description">With the Deploy scope, for the production environment.</p>
+              <time class="timeline-time" datetime="2026-03-02T10:12+08:00">2 March at 10:12</time>
+            </div>
+          </li>
+        </ol>
+      </section>
+    </div>
+  </main>
+</div>`} />
+
+- **戻る手段を、ページの最初に置きます。** タイトルの上に、行き先を名前にした[リンク](/components/link)「API keys」を1つ置きます。ペインはページになったときに一覧を失っており、このリンクがそれを補います。そのため、利用者が最初に目を向け、キーボードではヘッダーの次に最初に届く位置に置きます。
+- **ヘッダーは[ページヘッダー](/blocks/page-header)です。** 名前はページの`<h1>`で、その横にステータスを置きます。2つのアクションは、折り返す左右分割の`flex flex-wrap items-end justify-between`です。名前のカラムは`grow(1) basis(320) min-w(0)`です。長い名前は、320pxを確保できる間はアクションの横で折り返し、それ未満ではアクションが順序を保ったまま名前の下に移ります。
+- **コンテナーの中の3等分のグリッド。** メイン領域は`container-inline`です。グリッドは、領域の幅が48remに達するまでは`grid-cols(1)`で、48rem以上では`grid-cols(3)@container(--3xl)`になります。キーとアクティビティは`grid-col-span(2)@container(--3xl)`でそのうち2列を使い、詳細情報は残りの1列を使います。最大幅のときで約19remです。この狭さのカラムでは、[データリスト](/components/data-list)が自動的に各項目名を値の上に配置します。
+- **3つのセクションを、読む順序で。** ソースの順序は、キー、その詳細情報、そのアクティビティです。2カラムでは、詳細情報は`grid-row-span(2)@container(--3xl)`でほかの2つの横に並び、`items-start`によって各セクションがそれぞれの高さを保ちます。1カラムでは、書かれた順序のまま並びます。キーが何で、何ができるか、それについての情報、そして最も長く、緊急性が最も低い記録の順です。
+- **幅は1つ、左右の余白も1つ。** メイン領域は`max-w(1040) mx-auto px-lg`です。ナビゲーションバーは全幅に広がるため、そのパディングをコンテンツの幅に合わせます。`--navbar-padding-x: max(1.5rem, calc(50% - 31rem))`は、狭い画面では1.5rem、広い画面ではコンテンツの幅の端になります。ブランド、戻るリンク、タイトル、各セクションの最初の語が、どの幅でも同じ線から始まります。
+
+リンクの行き先と、「Rotate key」や「Revoke」の動作は、アプリケーション側で決めます。ここでは置き場所を示しているだけで、動作はありません。
+
 ## 3つの実装方法 \{#three-ways\}
 
-| 用途 | 使うもの |
-| --- | --- |
-| ページの一部にペインを置く | 上記のユーティリティとコンテナー |
-| 利用者がペインの幅を調整する | [スプリッター](/components/splitter) |
-| ペインでアプリ全体を構成する | 一覧をサイドバーにした[固定シェル](/pages/app-shell#fixed) |
+| 用途 | 使うもの | 利用者が得るもの |
+| --- | --- | --- |
+| ページの一部にペインを置く | [上記](#how-it-is-built)のユーティリティとコンテナー | 幅が48rem以上あれば、一覧と1つの項目を同時に表示 |
+| 利用者がペインの幅を調整する | [スプリッター](/components/splitter) | 同じ表示を、利用者が選んだ配分で |
+| ペインでアプリ全体を構成する | 一覧をサイドバーにした[固定シェル](/pages/app-shell#fixed) | 同じ表示を、ビューポートと同じ高さで |
+| 2つのペインを並べる幅がない、または項目にほかの場所からリンクする | 独自のルートに置いた[独立した詳細ページ](#standalone) | 1つの項目を、どの幅でも、固有のアドレスで |
+
+2つのペインを同時に読める構成では、一覧の位置が保たれます。利用者は、ページを離れずに行を順にたどり、ある項目を次の項目と比べられます。ただし、両方のペインを並べる幅が必要です。また、選択は、ページが保持する選択状態か、1つのアドレスの一部かのどちらかになります。詳細のルートは、固有のアドレス、履歴の中の位置、固有のタイトルを持ち、どの幅でも機能します。一方で一覧を失うため、戻る手段を用意し、一覧は利用者が離れた行に戻るようにします。多くのアプリケーションには両方が必要です。幅があるときは2つのペインを使い、ないときは同じ詳細をページとして表示します。両者を1つのアドレスに置けば、リンクは収まるほうを開きます。
 
 ## アクセシビリティ \{#accessibility\}
 
@@ -197,9 +343,16 @@ import PagePreview from '~/site/components/PagePreview.astro'
 - フレームにラベルを付け、詳細ペインには選択した項目の名前を見出しとして表示します。詳細ペインに直接移動した場合でも、何の詳細を見ているかが分かります。
 - スクロール可能なペイン内にフォーカスできる要素がない場合は、キーボードでスクロールできるように `tabindex="0"` を指定します。
 - 狭い画面で詳細ペインを非表示にすると、`display: none` によってアクセシビリティツリーから除外されます。そのペインを参照する操作要素も残さないでください。
+- 独立した詳細ページには、[ページ](/pages/page)のランドマークがあります。スキップリンク、ナビゲーションを収めた1つの`<header>`、1つの`<main>`です。3つのセクションはそれぞれ見出しを名前とするため、領域として直接移動できます。
+- 戻る手段は、一覧の名前「API keys」を名前とするリンクです。その前の矢印は`aria-hidden`です。これに`history.back()`を使わないでください。リンクから直接来た利用者には、戻る先の一覧がありません。
+- 項目の名前はページでただ1つの`<h1>`で、各セクションは`<h2>`、スコープは`<h3>`です。ペインでは、同じ名前が一覧の`<h2>`の下の`<h3>`になります。見出しのレベルは詳細の置き場所によって決まるため、詳細を移すときに設定し直します。
+- `aria-current="true"`は一覧の行に付けるもので、このページに一覧はありません。`aria-current="page"`を持つのは、ヘッダーにある、現在のセクションへのリンクだけです。タイムラインでは、`aria-current="true"`が最新のイベントを示します。
+- ルートが変わったら、フォーカスをメイン領域または`<h1>`に移し、ドキュメントのタイトルを更新して、新しいページが読み上げられるようにします。
 
 ## 関連項目 \{#related\}
 
-<ComponentLinks slugs={['list', 'data-list', 'splitter', 'surface', 'badge']} />
+<ComponentLinks slugs={['list', 'data-list', 'splitter', 'surface', 'badge', 'navbar', 'skip', 'heading', 'link', 'button', 'code', 'bullets', 'stat', 'sparkline', 'timeline']} />
 
-<ComponentLinks kind="pages" slugs={['app-shell']} />
+<ComponentLinks kind="blocks" slugs={['page-header', 'activity-feed']} />
+
+<ComponentLinks kind="pages" slugs={['app-shell', 'page', 'settings']} />

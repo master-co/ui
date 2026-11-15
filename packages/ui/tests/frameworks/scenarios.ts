@@ -1336,6 +1336,93 @@ export const scenarios: Record<string, Scenario> = {
     assert.equal(page.all('.sortable').length, 0)
   },
 
+  async kanban(driver, page) {
+    const { mounted, heard } = await owned(driver, 'kanban', {})
+    conforms(page)
+    const board = () => page.all('.kanban-column').map(column => [column.getAttribute('data-value'), ...[...column.querySelectorAll('.kanban-item')].map(item => item.getAttribute('data-value'))])
+    const handle = (value: string) => page.one<HTMLButtonElement>(`.kanban-item[data-value="${value}"] .kanban-handle`)
+    const counts = () => page.all('.kanban-header .badge').map(badge => badge.textContent?.trim())
+    const pressed = () => page.all('.kanban-handle[aria-pressed="true"]').length
+    /** A move asks the framework to arrange the board and waits for its render. */
+    const settled = () => new Promise(resolve => setTimeout(resolve, 0))
+    assert.deepEqual(board(), [['todo', 'brief', 'copy'], ['doing', 'site'], ['review'], ['done', 'name']], 'each item in the column it names')
+    assert.deepEqual(counts(), ['2', '1', '0', '1'], 'what stands beside a title is given the column\'s items')
+    const section = page.one('.kanban-column[data-value="doing"]')
+    assert.equal(page.document.getElementById(section.getAttribute('aria-labelledby')!)?.textContent, 'In progress', 'a column is named by its title')
+    assert.equal(handle('copy').getAttribute('aria-label'), 'Drag Copy')
+    const opener = page.one<HTMLButtonElement>('.kanban-item[data-value="site"] .kanban-move')
+    assert.equal(opener.getAttribute('aria-label'), 'Move Site')
+    assert.equal(page.one('.kanban-mover').closest('[popover]')?.id, opener.getAttribute('popovertarget'), 'the move button opens the mover\'s popover')
+    assert.ok(page.one('.kanban .kanban-preview[popover="manual"]'), 'the sheet a drag shows is in the board')
+    assert.ok(page.one('.kanban .kanban-status[role="status"]'), 'and so is the status region')
+
+    // The keys: a place is chosen without anything moving, then committed once.
+    await driver.act(async () => {
+      handle('copy').focus()
+      page.click(handle('copy'), { detail: 0 })
+    })
+    assert.equal(handle('copy').getAttribute('aria-pressed'), 'true', 'Enter picks the item up')
+    await driver.act(() => page.key(handle('copy'), 'ArrowRight'))
+    assert.deepEqual(board()[0], ['todo', 'brief', 'copy'], 'choosing a place moves nothing')
+    assert.ok(page.one('.kanban-column[data-value="doing"] .kanban-items-target'), 'the place is marked')
+    assert.equal(heard.length, 0)
+    await driver.act(async () => {
+      page.click(handle('copy'), { detail: 0 })
+      await settled()
+    })
+    assert.deepEqual(board(), [['todo', 'brief'], ['doing', 'site', 'copy'], ['review'], ['done', 'name']], 'the framework arranged the board')
+    assert.deepEqual(heard, [[{ value: 'todo', items: ['brief'] }, { value: 'doing', items: ['site', 'copy'] }, { value: 'review', items: [] }, { value: 'done', items: ['name'] }]], 'the arrangement comes out, once')
+    assert.deepEqual(counts(), ['1', '2', '0', '1'])
+    assert.equal(page.document.activeElement, handle('copy'), 'the handle of the item written again has focus')
+    assert.equal(pressed(), 0)
+
+    // Escape leaves everything as it was.
+    await driver.act(() => page.click(handle('site'), { detail: 0 }))
+    await driver.act(() => page.key(handle('site'), 'End'))
+    await driver.act(() => page.key(handle('site'), 'Escape'))
+    assert.equal(pressed(), 0)
+    assert.equal(page.all('.kanban-item-target, .kanban-items-target').length, 0)
+    assert.equal(heard.length, 1, 'a cancelled move says nothing')
+
+    // Within a column the item is the same node, so what it holds keeps its state.
+    const note = page.one<HTMLInputElement>('.kanban-item[data-value="site"] .input')
+    note.value = 'Check the footer'
+    await driver.act(() => page.click(handle('site'), { detail: 0 }))
+    await driver.act(() => page.key(handle('site'), 'ArrowDown'))
+    await driver.act(async () => {
+      page.click(handle('site'), { detail: 0 })
+      await settled()
+    })
+    assert.deepEqual(board()[1], ['doing', 'copy', 'site'])
+    assert.equal(page.one('.kanban-item[data-value="site"] .input'), note, 'the node moved, and was not written again')
+    assert.equal(note.value, 'Check the footer')
+    assert.equal(heard.length, 2)
+
+    // The mover: a column and a position, for a hand that does not drag.
+    await driver.act(() => page.click(page.one('.kanban-item[data-value="name"] .kanban-move'), { detail: 1 }))
+    const column = page.one<HTMLSelectElement>('.kanban-mover [name="column"]')
+    assert.deepEqual([...column.options].map(option => option.textContent), ['To do', 'In progress', 'In review', 'Done'], 'the mover lists the columns by name')
+    assert.equal(column.value, 'done')
+    await driver.act(() => {
+      column.value = 'review'
+      column.dispatchEvent(new page.window.Event('change', { bubbles: true }) as never)
+    })
+    await driver.act(async () => {
+      page.one('.kanban-mover').dispatchEvent(new page.window.Event('submit', { bubbles: true, cancelable: true }) as never)
+      await settled()
+    })
+    assert.deepEqual(board(), [['todo', 'brief'], ['doing', 'copy', 'site'], ['review', 'name'], ['done']], 'into the empty column')
+    assert.equal(heard.length, 3)
+    assert.equal(page.document.activeElement, handle('name'))
+
+    await driver.act(() => mounted.set({ value: [{ value: 'todo', items: ['name', 'site'] }, { value: 'doing', items: [] }, { value: 'review', items: ['copy'] }, { value: 'done', items: ['brief'] }] }))
+    assert.deepEqual(board(), [['todo', 'name', 'site'], ['doing'], ['review', 'copy'], ['done', 'brief']], 'an arrangement set by the owner is written')
+    assert.equal(heard.length, 3, 'and says nothing')
+    conforms(page)
+    await driver.act(() => mounted.unmount())
+    assert.equal(page.all('.kanban').length, 0)
+  },
+
   async toolbar(driver, page) {
     const mounted = await driver.mount('toolbar', {})
     conforms(page)

@@ -108,6 +108,32 @@ test('react: an owner that does not take a change gets its value put back', asyn
   })
 })
 
+test('react: a board whose owner does not take a move stays as the owner has it, says nothing and still answers', async () => {
+  const value = [{ value: 'todo', items: ['brief', 'copy'] }, { value: 'doing', items: ['site'] }, { value: 'review', items: [] }, { value: 'done', items: ['name'] }]
+  const asked: unknown[] = []
+  await rendered(createElement(fixtures.kanban, { value, onValueChange: (next: unknown) => asked.push(next) }), async (page) => {
+    const handle = (item: string) => page.one<HTMLButtonElement>(`.kanban-item[data-value="${item}"] .kanban-handle`)
+    const board = () => page.all('.kanban-column').map(column => [...column.querySelectorAll('.kanban-item')].map(item => item.getAttribute('data-value')))
+    const heard: string[] = []
+    page.one('.kanban').addEventListener('change', () => heard.push('change'))
+    const commit = async () => act(async () => {
+      page.click(handle('copy'), { detail: 0 })
+      await new Promise(resolve => setTimeout(resolve, 0))
+    })
+    await act(async () => { handle('copy').focus(); page.click(handle('copy'), { detail: 0 }) })
+    await act(async () => { page.key(handle('copy'), 'ArrowRight') })
+    await commit()
+    assert.equal(asked.length, 1, 'the owner was asked')
+    assert.deepEqual(board(), [['brief', 'copy'], ['site'], [], ['name']], 'and what it holds is what is shown')
+    assert.deepEqual(heard, [], 'nothing changed, so nothing is dispatched')
+    assert.equal(page.all('.kanban-handle[aria-pressed="true"]').length, 0, 'the move is over')
+    assert.equal(page.document.activeElement, handle('copy'))
+    await act(async () => { page.click(handle('copy'), { detail: 0 }) })
+    assert.equal(handle('copy').getAttribute('aria-pressed'), 'true', 'the board still answers')
+    await act(async () => { page.key(handle('copy'), 'Escape') })
+  })
+})
+
 test('react: a dialog whose owner keeps it open opens again when the browser closes it', async () => {
   await rendered(createElement(fixtures.dialog, { open: true }), async (page) => {
     const dialog = page.one<HTMLDialogElement>('dialog.dialog')
@@ -131,6 +157,7 @@ test('react: the first HTML, rendered on a server, holds the state, and hydrates
     ['gantt', { rows: [{ id: 'research', label: 'Research', start: 0, end: 3 }, { id: 'design', label: 'Design', start: 2, end: 6 }], from: 0, to: 10, value: { design: [3, 7] }, 'aria-label': 'Plan' }, /data-value="design"[^>]*--from:3;--to:7[\s\S]*aria-valuenow="3" aria-valuetext="3 to 7"[^>]*>3 to 7</],
     ['tree', { nodes: [{ label: 'a.css', value: 'a' }, { label: 'b.css', value: 'b' }], value: 'b', 'aria-label': 'Files' }, /data-value="b" aria-selected="true"/],
     ['tree', { nodes: [{ label: 'themes', value: 'themes', children: [{ label: 'paper.css', value: 'paper' }, { label: 'dark.css', value: 'dark' }] }], checkable: true, value: ['paper'], 'aria-label': 'Files' }, /data-value="themes"[^>]*aria-checked="mixed"[\s\S]*data-value="paper"[^>]*aria-checked="true"/],
+    ['kanban', { value: [{ value: 'todo', items: ['copy'] }, { value: 'doing', items: [] }, { value: 'review', items: ['site', 'brief'] }, { value: 'done', items: ['name'] }] }, /data-value="todo"[\s\S]*data-value="copy"[\s\S]*data-value="doing"[\s\S]*data-value="review"[\s\S]*data-value="site"[\s\S]*data-value="brief"[\s\S]*data-value="done"[\s\S]*data-value="name"/],
     ['cropper', { value: { x: 64, y: 48, width: 320, height: 240 }, label: 'Crop the photo' }, /--cropper-x:0\.1;--cropper-y:0\.1;--cropper-width:0\.5;--cropper-height:0\.5[\s\S]*role="application"/],
   ]
   for (const [name, props, expected] of examples) {

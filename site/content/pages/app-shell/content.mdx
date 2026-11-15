@@ -491,12 +491,30 @@ npm error While resolving: drift@2.4.0</code></pre>
   </dialog>
 </div>`} />
 
+## Workspace \{#workspace\}
+
+A workspace is the fixed shell with a third region: an editor between the navigation that led to it and the properties of what is being edited. Use it when the reader works on one thing for a long time and its settings should stay beside it: an article, a release note, a record. With nothing to set beside the work, the fixed shell above is enough.
+
+The properties stand in `shell-aside`, which `--shell-aside` makes 18rem wide here. The main region is a header over an [editor](/components/editor), whose engine is TipTap, as in the [rich text guide](/guide/rich-text).
+
+<PagePreview name="workspace" title="Workspace" example="workspace" caption="Write, and scroll the document: the toolbar stays. Choose Tablet: the properties leave and a button opens them as a drawer. Choose Phone: the navigation does the same. Change a property, choose another width, and find it kept." />
+
+- **One region scrolls: the document.** The main region is `flex flex-col`. Its header is `shrink(0)`; the editor and the box around it are `grow(1) min-h(0)`, so the editor's frame is exactly as tall as the room that is left. `--editor-max-rows: infinity` lifts the document's own limit of eighteen lines, so its height comes from the frame, and `editor-document` scrolls inside it. Nothing else in the main region is taller than its box, so no second scrollbar appears beside the document's.
+- **The toolbar stays because it never scrolls.** It is the band at the top of the editor's frame, over the document, not a sticky bar inside what scrolls. On a narrow frame it wraps onto a second line.
+- **Below 64rem of shell the aside leaves.** A Properties button, `hidden@container(--5xl)`, exists only then, and opens a [drawer](/components/dialog#drawer), `dialog dialog-drawer`, which rests on the end edge. Below 24rem the button keeps only its glyph, and the badge steps aside for the title. Below 48rem the sidebar leaves as well, and the `shell-toggle` opens the navigation in a `dialog-drawer-start`, as in every shell on this page.
+- **The properties exist once.** A `ResizeObserver` on the shell asks whether the aside is displayed and moves the one set of fields: into the aside while it is, into the drawer while it is not. Two sets bound to one state would need two ids for every field and a copy on every change; one set keeps each label, each id and each value where it is. The move uses `moveBefore()` where the browser has it, so the field with focus keeps it, and `append()` elsewhere, after which the script gives the focus back. When the fields leave for a closed drawer, the focus goes to the Properties button.
+- **The editor is never moved and never copied.** It stays in the main region at every width, so the document, its selection and its history are in one place.
+- **The navigation is repeated, not moved.** Links hold no state, so the drawer has the same list under a label of its own.
+
+The header reads the same fields: its title is the Title field's value, and its badge the Status.
+
 ## Accessibility \{#accessibility\}
 
 - Use landmarks: `<aside>` or `<nav>` for the sidebar, `<main>` for the main region, `<header>` for a header. Label each `<nav>`; with the drawer there are two, so their labels must differ.
 - The drawer holds the same links as the sidebar, in the same order. While the sidebar is shown, the toggle is `display: none` and out of the tab order.
 - A region that scrolls by itself and holds nothing focusable needs `tabindex="0"` and a label, so the keyboard can scroll it.
 - In the fixed shell the column is an `<aside>` named by its heading with `aria-labelledby`, and each time is a `<time>` with a `datetime` a program can read.
+- In the workspace both `<aside>` elements have a name: the sidebar an `aria-label`, the properties their heading. The document is a `textbox` named by the page's title, the toolbar is one stop in the tab order before it, and the properties follow it in the source, as they are read. Their button says "Properties" in its `aria-label`, since its words leave on the narrowest shells.
 - Heights use `dvh`, so a phone's toolbars never cover the foot of the sidebar; the sidebar also pads its foot by the home indicator's inset.
 
 ## Classes \{#classes\}
@@ -510,6 +528,8 @@ npm error While resolving: drift@2.4.0</code></pre>
 ## Related \{#related\}
 
 <ComponentLinks slugs={['navbar', 'nav', 'dialog', 'skip', 'surface', 'card', 'list', 'auto-grid']} />
+
+<ComponentLinks slugs={['editor', 'toolbar', 'form', 'input', 'select', 'switch', 'badge']} />
 
 <ComponentLinks kind="pages" slugs={['dashboard', 'docs', 'holy-grail', 'master-detail']} />
 

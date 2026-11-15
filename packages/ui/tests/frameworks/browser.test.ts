@@ -480,6 +480,115 @@ for (const framework of ['react', 'svelte', 'vue']) {
       assert.equal(await page.evaluate(() => (window as any).undone), 1, 'the action ran once')
     })
 
+    await t.test('a kanban card is dragged across columns, moved with the keys and with the mover, and a drag near an end scrolls the board', async () => {
+      const root = example('kanban').locator('.kanban')
+      const sheet = root.locator('.kanban-preview')
+      const item = (value: string) => root.locator(`.kanban-item[data-value="${value}"]`)
+      const handle = (value: string) => item(value).locator('.kanban-handle')
+      const board = () => root.locator('.kanban-column').evaluateAll(columns => columns.map(column => [...column.querySelectorAll('.kanban-item')].map(each => each.getAttribute('data-value')).join(',')))
+      const marks = () => root.locator('.kanban-item-target, .kanban-items-target').count()
+      const pressed = () => root.locator('.kanban-handle[aria-pressed="true"]').count()
+      const active = () => page.evaluate(() => document.activeElement?.getAttribute('aria-label'))
+      const middle = async (locator: Locator) => {
+        const at = await box(locator)
+        return { x: at.x + at.width / 2, y: at.y + at.height / 2 }
+      }
+      await root.scrollIntoViewIfNeeded()
+      assert.deepEqual(await board(), ['brief,copy', 'site', '', 'name'])
+      assert.equal(await root.evaluate(element => element.scrollWidth > element.clientWidth), true, 'four columns are wider than the board, which scrolls across')
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), true, 'and the page does not')
+      assert.equal(await root.locator('.kanban-column[data-value="review"] .kanban-empty').isVisible(), true, 'an empty column says so')
+
+      // The pointer: nothing moves until the release; the sheet follows in the top layer.
+      const from = await middle(handle('brief'))
+      const site = await box(item('site'))
+      await page.mouse.move(from.x, from.y)
+      await page.mouse.down()
+      await page.mouse.move(from.x + 2, from.y + 1)
+      assert.equal(await pressed(), 0, 'a few pixels is still a press')
+      await page.mouse.move(site.x + 40, site.y + site.height + 12, { steps: 8 })
+      assert.equal(await pressed(), 1)
+      await until(() => open(sheet), Boolean, 'the carried sheet is shown')
+      assert.equal(await sheet.innerText(), 'Brief')
+      const carried = await box(sheet)
+      assert.ok(Math.abs(carried.width - site.width) < 1, 'the sheet is as wide as the item')
+      assert.ok(carried.x < site.x + 40 && carried.x + carried.width > site.x + 40, 'and stands under the pointer')
+      assert.equal(await root.locator('.kanban-column[data-value="doing"] .kanban-items-target').count(), 1, 'the end of the column under the pointer is marked')
+      assert.deepEqual(await board(), ['brief,copy', 'site', '', 'name'], 'and no node has moved')
+      const dimmed = await item('brief').evaluate(element => getComputedStyle(element).opacity)
+      assert.ok(Number(dimmed) < 1, 'the carried item fades in its place')
+      await page.mouse.up()
+      await until(board, value => value[1] === 'site,brief', 'the release moves it')
+      assert.deepEqual(await board(), ['copy', 'site,brief', '', 'name'])
+      await until(() => example('kanban').locator('output').innerText(), value => value.startsWith('onValueChange: [{"value":"todo","items":["copy"]},{"value":"doing","items":["site","brief"]}'), 'the arrangement comes out')
+      await until(() => open(sheet), value => !value, 'the sheet lands and leaves')
+      await until(pressed, value => value === 0, 'and the handle lets go')
+      assert.equal(await marks(), 0)
+      assert.equal(await active(), 'Drag Brief', 'focus is on the handle of the item that moved')
+
+      // Escape during a drag leaves the board as it was.
+      const again = await middle(handle('brief'))
+      await page.mouse.move(again.x, again.y)
+      await page.mouse.down()
+      await page.mouse.move(again.x - 300, again.y + 10, { steps: 6 })
+      assert.ok(await marks() > 0)
+      await page.keyboard.press('Escape')
+      await page.mouse.up()
+      await until(pressed, value => value === 0, 'Escape ends the drag')
+      assert.deepEqual(await board(), ['copy', 'site,brief', '', 'name'])
+      assert.equal(await marks(), 0)
+
+      // The keys: a place is chosen, then committed; Tab commits and goes on.
+      await handle('brief').focus()
+      await page.keyboard.press('Enter')
+      assert.equal(await pressed(), 1)
+      await page.keyboard.press('ArrowLeft')
+      await page.keyboard.press('Home')
+      assert.deepEqual(await board(), ['copy', 'site,brief', '', 'name'], 'choosing a place moves nothing')
+      await page.keyboard.press('Space')
+      await until(board, value => value[0] === 'brief,copy', 'Space commits the place')
+      await until(active, value => value === 'Drag Brief', 'and the handle has focus again')
+      await page.keyboard.press('Enter')
+      await page.keyboard.press('End')
+      await page.keyboard.press('Tab')
+      await until(board, value => value[0] === 'copy,brief', 'Tab commits too')
+      await until(pressed, value => value === 0)
+      assert.notEqual(await active(), 'Drag Brief', 'and leaves the handle as Tab does')
+
+      // The mover, opened and closed by the browser.
+      const mover = root.locator('.kanban-mover')
+      const popover = root.locator('.popover')
+      await item('name').getByRole('button', { name: 'Move Name' }).click()
+      await until(() => open(popover), Boolean, 'the move button opens the popover')
+      assert.equal(await mover.locator('[name="column"]').inputValue(), 'done')
+      await mover.locator('[name="column"]').selectOption('review')
+      assert.deepEqual(await mover.locator('[name="position"] option').allInnerTexts(), ['1'])
+      await mover.getByRole('button', { name: 'Move', exact: true }).click()
+      await until(board, value => value[2] === 'name', 'submitting it moves the item into the empty column')
+      await until(() => open(popover), value => !value, 'and closes the popover')
+      await until(active, value => value === 'Drag Name', 'focus goes to the handle')
+      assert.equal(await root.locator('.kanban-column[data-value="done"] .kanban-empty').isVisible(), true, 'the column it left is empty now')
+
+      // Near the end of the board the drag scrolls it, and the place under the still pointer follows.
+      // The popover's button may have scrolled the page: bring the whole board back into the window first.
+      await root.evaluate((element) => { element.scrollLeft = 0; element.scrollIntoView({ block: 'center', behavior: 'instant' }) })
+      // Its list may have scrolled to show the item the keys moved under it.
+      await handle('copy').evaluate(element => element.closest('.kanban-items')!.scrollTo(0, 0))
+      const grip = await middle(handle('copy'))
+      const edge = await box(root)
+      await page.mouse.move(grip.x, grip.y)
+      await page.mouse.down()
+      await page.mouse.move(edge.x + edge.width - 8, grip.y + 30, { steps: 10 })
+      await until(() => root.evaluate(element => element.scrollLeft), value => value > 60, 'the board scrolls across under the held pointer')
+      await until(() => root.locator('.kanban-column[data-value="done"] .kanban-items-target').count(), value => value === 1, 'until the last column is the place')
+      await page.mouse.up()
+      await until(board, value => value[3] === 'copy', 'and the release lands there')
+      await until(pressed, value => value === 0)
+      const scrolled = await root.evaluate(element => element.scrollLeft)
+      await page.waitForTimeout(120)
+      assert.equal(await root.evaluate(element => element.scrollLeft), scrolled, 'nothing scrolls once the drag is over')
+    })
+
     await t.test('the application invoker fallback opens and closes the native dialog', async () => {
       await page.goto(`${origin}?only=${framework}&invokers=fallback`)
       const dialog = example('dialog').locator('dialog')
@@ -496,6 +605,107 @@ for (const framework of ['react', 'svelte', 'vue']) {
   })
 }
 
+
+test(`${engine}: a kanban card is dragged by touch from its handle, the only part that refuses to scroll`, async (t) => {
+  if (engine !== 'chromium') return t.skip('touch is sent through the Chromium protocol')
+  const context = await browser.newContext({ viewport: { width: 390, height: 760 }, hasTouch: true })
+  const page = await context.newPage()
+  const problems: string[] = []
+  page.on('console', (message) => { if (['error', 'warning'].includes(message.type())) problems.push(`${message.type()}: ${message.text()}`) })
+  page.on('pageerror', error => problems.push(`thrown: ${error.message}`))
+  try {
+    await page.goto(`${origin}?only=react`)
+    const root = page.locator('[data-example="kanban"] .kanban')
+    await root.waitFor()
+    // The playground is a desktop page: give the board the room a phone would.
+    await root.evaluate((element: HTMLElement) => { element.style.width = '340px' })
+    await root.evaluate(element => element.scrollIntoView({ block: 'center', inline: 'start', behavior: 'instant' }))
+    const session = await context.newCDPSession(page)
+    const touch = (type: 'touchStart' | 'touchMove' | 'touchEnd', points: { x: number, y: number, id?: number }[]) => session.send('Input.dispatchTouchEvent', { type, touchPoints: points.map(point => ({ x: Math.round(point.x), y: Math.round(point.y), id: point.id ?? 1 })) })
+    const board = () => root.locator('.kanban-column').evaluateAll(columns => columns.map(column => [...column.querySelectorAll('.kanban-item')].map(each => each.getAttribute('data-value')).join(',')))
+    const pressed = () => root.locator('.kanban-handle[aria-pressed="true"]').count()
+    const column = await box(root.locator('.kanban-column').first())
+    assert.ok(column.width >= 240 && column.width <= 340 - 32, `a column keeps a working width on a phone and leaves a peek of the next: ${column.width}px`)
+    assert.equal(await root.evaluate(element => element.scrollWidth > element.clientWidth), true, 'the board scrolls across inside the room it is given')
+    const handle = root.locator('.kanban-item[data-value="brief"] .kanban-handle')
+    const target = await handle.evaluate((element) => {
+      const reach = getComputedStyle(element, '::after')
+      return parseFloat(reach.width)
+    })
+    assert.ok(target >= 44, `the grip's target reaches 44px on a touch screen: ${target}px`)
+    assert.equal(await handle.evaluate(element => getComputedStyle(element).touchAction), 'none')
+    assert.notEqual(await root.locator('.kanban-item[data-value="brief"]').evaluate(element => getComputedStyle(element).touchAction), 'none', 'only the grip refuses to scroll')
+
+    // A touch that starts on the grip carries the item; a second finger changes nothing.
+    const grip = await box(handle)
+    const from = { x: grip.x + grip.width / 2, y: grip.y + grip.height / 2 }
+    // The column is taller than the board: held near its foot, the finger scrolls the list until its end is the place.
+    const list = root.locator('.kanban-column[data-value="todo"] .kanban-items')
+    const foot = (await box(root)).y + (await box(root)).height - 12
+    await touch('touchStart', [from])
+    for (let step = 1; step <= 6; step++) await touch('touchMove', [{ x: from.x + step * 2, y: from.y + step * (foot - from.y) / 6 }])
+    await until(pressed, value => value === 1, 'the grip picks the item up')
+    assert.equal(await root.evaluate(element => element.scrollLeft), 0, 'and the board does not scroll under it')
+    await until(() => list.evaluate(element => element.scrollTop), value => value > 0, 'near the foot of the list, it scrolls')
+    await until(() => root.locator('.kanban-column[data-value="todo"] .kanban-items-target').count(), value => value === 1, 'until the end of the column is the place')
+    const held = { x: from.x + 12, y: foot }
+    await touch('touchStart', [held, { x: 300, y: 500, id: 2 }])
+    await touch('touchMove', [held, { x: 320, y: 420, id: 2 }])
+    assert.equal(await pressed(), 1, 'a second finger does not end the drag')
+    assert.equal(await root.locator('.kanban-column[data-value="todo"] .kanban-items-target').count(), 1, 'or move the place')
+    await touch('touchEnd', [])
+    await until(board, value => value[0] === 'copy,brief', 'lifting the finger moves it')
+    await until(pressed, value => value === 0)
+
+    // The button beside the grip does the same without a drag.
+    await root.locator('.kanban-item[data-value="brief"]').getByRole('button', { name: 'Move Brief' }).tap()
+    const mover = root.locator('.kanban-mover')
+    await until(() => root.locator('.popover').evaluate(element => element.matches(':popover-open')), Boolean, 'a tap opens the mover')
+    await mover.locator('[name="column"]').selectOption('review')
+    await mover.getByRole('button', { name: 'Move', exact: true }).tap()
+    await until(board, value => value[2] === 'brief', 'and the item is moved without a drag')
+    assert.deepEqual(problems, [], 'the page complained')
+  } finally { await context.close() }
+})
+
+test(`${engine}: a kanban keeps its marks in forced colors and holds still with reduced motion`, async () => {
+  const context = await browser.newContext({ viewport: { width: 900, height: 700 }, forcedColors: 'active', reducedMotion: 'reduce' })
+  const page = await context.newPage()
+  try {
+    await page.goto(`${origin}?only=vue`)
+    const root = page.locator('[data-example="kanban"] .kanban')
+    await root.waitFor()
+    await root.scrollIntoViewIfNeeded()
+    const pressed = () => root.locator('.kanban-handle[aria-pressed="true"]').count()
+    const outline = (locator: Locator) => locator.evaluate(element => getComputedStyle(element).outlineStyle)
+    assert.equal(await outline(root.locator('.kanban-column').first()), 'solid', 'a column is outlined where its tone is gone')
+    const handle = root.locator('.kanban-item[data-value="brief"] .kanban-handle')
+    await handle.focus()
+    await page.keyboard.press('Enter')
+    await page.keyboard.press('ArrowRight')
+    await page.keyboard.press('ArrowRight')
+    const well = root.locator('.kanban-column[data-value="review"] .kanban-empty')
+    assert.equal(await outline(well), 'solid', 'the empty column that is the place is outlined')
+    await page.keyboard.press('ArrowLeft')
+    const line = await root.locator('.kanban-item-target').evaluate(element => [element.getAttribute('data-value'), getComputedStyle(element, '::before').height])
+    assert.deepEqual(line, ['site', '2px'], 'the line of a place is drawn over the item it is before')
+    await page.keyboard.press('Escape')
+    assert.equal(await pressed(), 0)
+
+    // With reduced motion the sheet does not glide to its place: the release ends everything at once.
+    const at = await box(handle)
+    const site = await box(root.locator('.kanban-item[data-value="site"]'))
+    await page.mouse.move(at.x + at.width / 2, at.y + at.height / 2)
+    await page.mouse.down()
+    await page.mouse.move(site.x + 30, site.y + site.height + 10, { steps: 6 })
+    assert.equal(await root.locator('.kanban-preview').evaluate(element => element.matches(':popover-open')), true)
+    assert.equal(await outline(root.locator('.kanban-preview')), 'solid', 'the carried sheet is outlined')
+    await page.mouse.up()
+    await until(() => root.locator('.kanban-column[data-value="doing"] .kanban-item').count(), value => value === 2, 'the item is moved')
+    assert.equal(await root.locator('.kanban-preview').evaluate(element => element.classList.contains('kanban-preview-landing')), false)
+    await until(pressed, value => value === 0, 'and the handle lets go at once')
+  } finally { await context.close() }
+})
 
 test(`${engine}: segmented selection honors a changed reduced-motion preference`, async () => {
   const page = await browser.newPage({ reducedMotion: 'no-preference' })

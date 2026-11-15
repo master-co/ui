@@ -28,6 +28,7 @@ import ContextMenuExample from './ContextMenuExample.svelte'
 import DialogExample from './DialogExample.svelte'
 import DialogSheetExample from './DialogSheetExample.svelte'
 import FieldExample from './FieldExample.svelte'
+import KanbanExample from './KanbanExample.svelte'
 import LogExample from './LogExample.svelte'
 import MenuExample from './MenuExample.svelte'
 import PanelExample from './PanelExample.svelte'
@@ -72,6 +73,7 @@ export const fixtures = {
   'popover': PopoverExample,
   'signature': Signature,
   'sortable': SortableExample,
+  'kanban': KanbanExample,
   'splitter': SplitterExample,
   'stepper': Stepper,
   'tabs': Tabs,

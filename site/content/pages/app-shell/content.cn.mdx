@@ -496,12 +496,30 @@ npm error While resolving: drift@2.4.0</code></pre>
   </dialog>
 </div>`} />
 
+## 工作区 \{#workspace\}
+
+工作区是带有第三个区域的固定布局：编辑器位于通向它的导航和所编辑内容的属性之间。读者长时间处理同一项内容，而其设置应始终留在旁边时使用它，例如一篇文章、一份发布说明或一条记录。如果工作内容旁边没有需要设置的东西，上文的固定布局就够了。
+
+属性位于 `shell-aside` 中，这里通过 `--shell-aside` 将其设为 18rem 宽。主区域是位于[编辑器](/components/editor)上方的页眉，编辑器的引擎是 TipTap，与[富文本指南](/guide/rich-text)中相同。
+
+<PagePreview name="workspace" title="工作区" example="workspace" caption="输入内容并滚动文档：工具栏留在原位。选择平板：属性栏退出布局，可通过按钮将其作为抽屉打开。选择手机：导航也是如此。更改一项属性，再选择另一种宽度，更改仍然保留。" />
+
+- **只有一个区域滚动：文档。** 主区域为 `flex flex-col`。其页眉为 `shrink(0)`；编辑器及其外层的容器为 `grow(1) min-h(0)`，因此编辑器的外框正好与剩余空间等高。`--editor-max-rows: infinity` 取消了文档自身十八行的上限，使其高度由外框决定，`editor-document` 在外框内滚动。主区域中没有其他内容高于自己的盒子，因此文档的滚动条旁边不会出现第二个滚动条。
+- **工具栏留在原位，是因为它从不滚动。** 它是编辑器外框顶部的一条横栏，位于文档上方，而不是滚动内容中的粘性栏。外框较窄时，它会换到第二行。
+- **应用框架低于 64rem 时，补充区域退出布局。** 此时才出现一个 Properties 按钮 `hidden@container(--5xl)`，用来打开[抽屉](/components/dialog#drawer) `dialog dialog-drawer`，抽屉停靠在末端边缘。低于 24rem 时，按钮只保留图形，徽标也为标题让出位置。低于 48rem 时，侧边栏同样退出布局，`shell-toggle` 在 `dialog-drawer-start` 中打开导航，与本页的其他应用框架一样。
+- **属性只存在一份。** 应用框架上的 `ResizeObserver` 检查补充区域是否显示，并移动这唯一的一组字段：显示时移入补充区域，不显示时移入抽屉。绑定到同一状态的两组字段，需要为每个字段准备两个 id，并在每次更改时复制一次；只用一组字段，则每个标签、每个 id 和每个值都留在原处。浏览器支持 `moveBefore()` 时用它移动，因此持有焦点的字段不会失去焦点；不支持时使用 `append()`，随后由脚本恢复焦点。字段移入已关闭的抽屉时，焦点移到 Properties 按钮。
+- **编辑器从不移动，也从不复制。** 在任何宽度下它都留在主区域中，因此文档、选区和历史记录都只在一处。
+- **导航是重复的，而不是移动的。** 链接不持有状态，因此抽屉中有同样的列表，并使用自己的标签。
+
+页眉读取同一组字段：它的标题是 Title 字段的值，徽标是 Status。
+
 ## 无障碍 \{#accessibility\}
 
 - 使用页面地标标记各区域。侧边栏用 `<aside>` 或 `<nav>`，主区域用 `<main>`，页眉用 `<header>`。为每个 `<nav>` 提供无障碍名称。使用抽屉时会有两个，两者的名称必须不同。
 - 抽屉与侧边栏包含相同的链接，顺序一致。侧边栏显示时，切换控件处于 `display: none` 状态，并退出 Tab 键的焦点顺序。
 - 如果可独立滚动的区域内没有可聚焦的元素，为该区域设置 `tabindex="0"` 并提供无障碍名称，使用户可以用键盘滚动。
 - 在固定布局中，这一栏是通过 `aria-labelledby` 以标题命名的 `<aside>`，每个时间都是带有程序可读 `datetime` 的 `<time>`。
+- 在工作区中，两个 `<aside>` 元素都有名称：侧边栏使用 `aria-label`，属性栏以其标题命名。文档是以页面标题命名的 `textbox`，工具栏是它之前 Tab 键顺序中的一个停靠点，属性在源码中位于它之后，与阅读顺序一致。属性按钮在 `aria-label` 中写明“Properties”，因为在最窄的应用框架中它的文字会隐藏。
 - 高度使用 `dvh`，确保侧边栏底部始终不会被手机浏览器的工具栏遮挡。侧边栏还会根据主屏幕指示条的安全区设置底部内边距。
 
 ## 类名 \{#classes\}
@@ -515,6 +533,8 @@ npm error While resolving: drift@2.4.0</code></pre>
 ## 相关内容 \{#related\}
 
 <ComponentLinks slugs={['navbar', 'nav', 'dialog', 'skip', 'surface', 'card', 'list', 'auto-grid']} />
+
+<ComponentLinks slugs={['editor', 'toolbar', 'form', 'input', 'select', 'switch', 'badge']} />
 
 <ComponentLinks kind="pages" slugs={['dashboard', 'docs', 'holy-grail', 'master-detail']} />
 

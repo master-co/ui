@@ -13,6 +13,7 @@ import { Cropper, type CropperProps } from '../../../frameworks/react/cropper.ts
 import { Dialog } from '../../../frameworks/react/dialog.tsx'
 import { Field } from '../../../frameworks/react/field.tsx'
 import { Gantt } from '../../../frameworks/react/gantt.tsx'
+import { Kanban, type KanbanProps } from '../../../frameworks/react/kanban.tsx'
 import { Listbox } from '../../../frameworks/react/listbox.tsx'
 import { Log, type LogProps } from '../../../frameworks/react/log.tsx'
 import { Menu, type MenuProps } from '../../../frameworks/react/menu.tsx'
@@ -59,6 +60,38 @@ function SortableExample(props: Omit<SortableProps<typeof tasks[number]>, 'items
         </>
       )}
     </Sortable>
+  )
+}
+
+const stages = [
+  { value: 'todo', label: 'To do' },
+  { value: 'doing', label: 'In progress' },
+  { value: 'review', label: 'In review' },
+  { value: 'done', label: 'Done' },
+]
+const cards = [
+  { value: 'brief', label: 'Brief', column: 'todo' },
+  { value: 'copy', label: 'Copy', column: 'todo' },
+  { value: 'site', label: 'Site', column: 'doing' },
+  { value: 'name', label: 'Name', column: 'done' },
+]
+
+function KanbanExample(props: Omit<KanbanProps<typeof stages[number], typeof cards[number]>, 'columns' | 'items' | 'children'>) {
+  return (
+    <Kanban aria-label="Launch" columns={stages} items={cards} header={(_, held) => <span className="badge">{held.length}</span>} empty={() => 'Nothing here'} {...props}>
+      {(card, { handle, move }) => (
+        <div className="card">
+          <div className="card-header">
+            <p className="card-title">{card.label}</p>
+            <span className="card-action kanban-controls">
+              <button {...move} />
+              <button {...handle} />
+            </span>
+          </div>
+          <input className="input input-sm" aria-label={`Note on ${card.label}`} />
+        </div>
+      )}
+    </Kanban>
   )
 }
 
@@ -257,6 +290,7 @@ export const fixtures = {
   'popover': PopoverExample,
   'signature': Signature,
   'sortable': SortableExample,
+  'kanban': KanbanExample,
   'splitter': SplitterExample,
   'stepper': Stepper,
   'tabs': Tabs,

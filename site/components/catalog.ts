@@ -29,6 +29,7 @@ export const components = [
   { slug: 'splitter', name: 'Splitter', category: 'Structure', description: 'Two panes and the handle between them that sets how they share the space.' },
   { slug: 'swipe', name: 'Swipe', category: 'Structure', description: 'A row that slides aside to show what can be done to it.' },
   { slug: 'sortable', name: 'Sortable', category: 'Structure', description: 'A list whose items are put in order by dragging a handle or with the keys.' },
+  { slug: 'kanban', name: 'Kanban', category: 'Structure', description: 'A board of columns whose items are moved within a column or into another, by dragging, with the keys or by choosing a place.' },
   { slug: 'reveal', name: 'Reveal', category: 'Structure', description: 'Content that arrives as it scrolls into view.' },
   { slug: 'accordion', name: 'Accordion', category: 'Structure', description: 'Native details rows that open to their own height.' },
   { slug: 'expand', name: 'Expand', category: 'Structure', description: 'A long text that shows its first lines and opens on request.' },
@@ -176,11 +177,14 @@ export const pages = [
   { slug: 'page', name: 'Page', category: 'Site pages', description: 'A header, the main region and a footer in a frame as tall as the viewport.' },
   { slug: 'docs', name: 'Documentation', category: 'Site pages', description: 'Navigation, an article at a reading measure, and the contents of the page.' },
   { slug: 'holy-grail', name: 'Holy grail', category: 'Site pages', description: 'A header, three columns and a footer, with the middle one first in the source.' },
-  { slug: 'centered', name: 'Centered', category: 'Site pages', description: 'One task in the middle of the viewport, alone or beside a panel.' },
+  { slug: 'centered', name: 'Centered', category: 'Site pages', description: 'One task in the middle of the viewport, such as signing in or an error page, alone or beside a panel.' },
+  { slug: 'results', name: 'Results', category: 'Site pages', description: 'A search, the conditions beside it and the results in cards or a list, with pages.' },
   { slug: 'app-shell', name: 'App shell', category: 'Application pages', description: 'A sidebar that stays while the main region scrolls, and a drawer when it is narrow.' },
   { slug: 'master-detail', name: 'Master-detail', category: 'Application pages', description: 'A list beside what is chosen in it, each scrolling by itself.' },
   { slug: 'dashboard', name: 'Dashboard', category: 'Application pages', description: 'Figures across the top and panels in a grid that reflows without queries.' },
   { slug: 'settings', name: 'Settings', category: 'Application pages', description: 'A short navigation beside the sections of a long form.' },
+  { slug: 'multi-step', name: 'Multi-step task', category: 'Application pages', description: 'A task in a few steps: where you are, the step in hand and the way on and back.' },
+  { slug: 'board', name: 'Board', category: 'Application pages', description: 'A kanban across the viewport: the columns scroll across, each list scrolls by itself.' },
 ] as const
 
 export const blocks = [

@@ -33,7 +33,7 @@ Where a pattern has a value that no single native control holds, the function th
 
 ## What it never does
 
-- Set a style, a class for state, a size or a position. Never measure to place something.
+- Set a style, a class for state, a size or a position. Never measure to place something. The one exception is `kanban`, recorded in the root `AGENTS.md`: it measures where the pointer is among columns that scroll, scrolls them near their ends and writes the three geometry properties its contract lists. It is not a precedent for another behavior.
 - Reimplement what the platform does: opening and closing a popover or a dialog, light dismiss, focus trapping, <kbd>Esc</kbd> on a modal.
 - Read anything but the contract: it finds parts by the contract's classes and roles, skips `hidden` items and those with `disabled` or `aria-disabled="true"`, and reads direction from `getComputedStyle(root).direction` for the horizontal arrow keys.
 

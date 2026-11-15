@@ -28,6 +28,7 @@ import ContextMenuExample from './ContextMenuExample.vue'
 import DialogExample from './DialogExample.vue'
 import DialogSheetExample from './DialogSheetExample.vue'
 import FieldExample from './FieldExample.vue'
+import KanbanExample from './KanbanExample.vue'
 import LogExample from './LogExample.vue'
 import MenuExample from './MenuExample.vue'
 import PanelExample from './PanelExample.vue'
@@ -72,6 +73,7 @@ export const fixtures: Record<string, Component> = {
   'popover': PopoverExample,
   'signature': Signature,
   'sortable': SortableExample,
+  'kanban': KanbanExample,
   'splitter': SplitterExample,
   'stepper': Stepper,
   'tabs': Tabs,

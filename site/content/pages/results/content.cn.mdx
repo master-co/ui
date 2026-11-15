@@ -1,0 +1,71 @@
+---
+title: "搜索结果页"
+description: "搜索框、旁边的筛选条件，以及以卡片或列表呈现并分页的结果。"
+---
+
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import PagePreview from '~/site/components/PagePreview.astro'
+
+搜索结果页回应一次搜索：输入关键词的搜索框、缩小结果范围的筛选条件、结果数量、排序方式，以及分页显示的结果。它建立在[页面框架](/pages/page)之上，由页眉、主区域和页脚组成，文档整体滚动。空间足够时，筛选条件位于结果旁边；空间不足时，收进抽屉。
+
+<PagePreview name="default" title="搜索结果页" example="results" caption="搜索“build”，然后清除。按名称排序，前往第二页，再切换到 List：排序和页码保持不变。选择平板或手机，打开 Filters 并勾选一个类型；再选择桌面，侧边栏中的同一项已被勾选。搜索一个不存在的内容，可以看到空状态。" />
+
+十二项资源是示例自身文件中的数据行，示例的脚本根据它们给出结果。实际的页面会向服务器请求；[对接服务器](#server)一节说明了接入的位置。
+
+## 实现方式 \{#how-it-is-built\}
+
+- **在框架上使用 `page`，内部共用一个内容宽度。** 主区域为 `grow(1) max-w(1120) mx-auto px-lg`，页脚中的内容采用同样的宽度。[导航栏](/components/navbar)横跨整个宽度，其 `--navbar-padding-x` 为 `max(1.5rem, calc(50% - 33.5rem))`，也就是内容自身的起始位置，因此在任何宽度下，品牌、标题、搜索框和页脚的第一个字都从同一条线开始。
+- **搜索是一个独立的表单。** `<form method="get" role="search">` 包含名为 `q` 的搜索框和一个提交按钮。搜索框是一个 `input-group`，可伸展到表单的 `max-w(560)`；如果搜索框的宽度将小于 200px，按钮就换到它的下方。
+- **其他字段通过 `form` 属性关联这个表单。** 类型复选框、排序和 Cards / List 切换控件位于 `<form>` 之外，并带有 `form="rs-form"`。无论它们位于何处，都会随表单一起提交，复选框因此可以移入抽屉。
+- **从 56rem 起分为两列。** 主区域是尺寸容器 `container-inline`。主体为 `flex flex-col`，主区域达到 56rem 时为 `flex-row@container(--4xl)`：筛选条件占 `w(240)` 的一列，即 15rem；结果占弹性宽度的一列，`grow(1) basis(0) min-w(0)`。
+- **数量、排序和视图在同一行。** 数量是带有 `role="status"` 的段落，占据剩余空间，排序和切换控件因此位于行末。这一行可以换行：在手机上，排序和切换控件占第二行，各居一端。
+- **两种视图下，结果都是列表。** 卡片视图是一个 `<ul class="auto-grid">`，其中是[卡片](/components/card)，并设置 `--auto-grid-min: 15rem`：桌面宽度下每行三张，平板两张，手机一张，列数由网格自行计算。列表视图是一个 `<ul class="list list-interactive">`，每一行都是链接；`mx(-10)` 让各行的文字与列的边缘对齐。每页六项，下方是当前范围和由链接组成的[分页](/components/pagination)。
+- **没有结果时显示[空状态](/components/empty)。** 它说明没有找到结果，并提示可以尝试什么；其中的按钮会清除搜索词和类型。
+
+## 筛选条件的位置 \{#conditions\}
+
+复选框只有一组。它写在侧边栏中，位置变化时是移动，而不是复制。
+
+- **主区域达到 56rem 时**，筛选条件是结果旁边 15rem 宽的一列，Filters 按钮为 `hidden@container(--4xl)`。
+- **低于 56rem 时**，这一列为空并隐藏，Filters 按钮显示出来，用 `command="show-modal"` 和 `commandfor` 打开一个[抽屉](/components/dialog#drawer)，即 `--dialog-width: 20rem` 的 `dialog dialog-drawer`。脚本把 `<fieldset>` 放入抽屉的主体。按钮上的徽标显示已勾选的类型数量。
+- **阈值由样式表决定。** 脚本中没有任何数值：主区域尺寸变化时，它检查 Filters 按钮是否显示，并据此把 fieldset 放入侧边栏或抽屉。修改标记中的 `--4xl`，脚本会随之调整。
+- **切换宽度时不会丢失任何状态**，因为没有任何内容是重复的：在抽屉中勾选的复选框，就是侧边栏中的那个复选框。没有第二个 id，也没有需要复制的状态。如果抽屉打开时页面变宽，抽屉会关闭，焦点留在原来的复选框上。
+- **在抽屉中，选择立即生效。** 结果在抽屉后方更新，确认按钮会显示结果数量（“Show 4 results”），按下后关闭抽屉。Clear 取消勾选所有类型，但保留搜索词。
+
+没有脚本时，fieldset 留在标记中所写的位置：低于 56rem 时位于结果上方，达到 56rem 后位于结果旁边；Filters 按钮只会打开一个空抽屉，因此保持 `hidden`。
+
+## 对接服务器 \{#server\}
+
+标记就是服务器为第一页发送的内容：六条结果、数量和分页链接。读者可以设置的每一项都是同一个 GET 表单中带名称的字段，因此 URL 就是状态。
+
+- **查询。** 提交时发送 `?q=build&type=guide&type=video&sort=name&view=list`。`type` 会重复出现，每个勾选的复选框对应一次；`sort` 为 `updated` 或 `name`；`view` 为 `cards` 或 `list`。表单没有 `action`，因此提交到页面自身的地址。
+- **分页。** 每个分页链接都是同一个查询加上 `page`，例如 `?sort=name&view=list&page=2`。当前页的链接带有 `aria-current="page"`；第一页上的“Previous”和最后一页上的“Next”没有 `href`，并带有 `aria-disabled="true"`。
+- **服务器渲染的内容。** 带有所读取值的字段（搜索框上的 `value`，复选框和视图上的 `checked`，排序上的 `selected`）、该页的结果、数量，以及没有匹配项时服务器自己的空状态。条件改变后是一个不带 `page` 的新查询，也就是第一页。
+- **脚本增加的内容。** 读者输入或勾选时，它无需往返服务器即可给出结果；它还保存页码，把筛选条件移入抽屉，并显示只有它才能让其生效的控件：Filters 按钮和“Clear all”。它每次都通过 `new FormData(form)` 从表单读取条件，不保留副本；页码是它唯一持有的状态。保留这个脚本的项目，可以让它的 `draw()` 改为按该查询发出请求，并用 `history.replaceState` 把同一个查询写入地址，这样重新加载或分享链接时会显示相同的结果。
+
+示例从[筛选栏](/blocks/filter-bar)的 `query.js` 导入 `search`、`sort` 和 `paginate`，用它们代替这个请求。它们属于演示，不属于 `@master/ui`：这个库不发布查询引擎。
+
+## 何时使用 \{#when\}
+
+- **使用搜索结果页**：找到的内容需要逐项阅读，并且每一项都有自己的页面，例如文章、指南、模板、分类信息和人员。
+- **使用[表格视图](/blocks/table-view)**：需要跨列比较各行、选中多行并批量操作。它是应用页面中的一个区块，自带搜索、排序和分页。
+- **使用[筛选栏](/blocks/filter-bar)**：每个条件由字段、比较方式和值组成，并且多个条件组合使用。复选框侧边栏适合少数几组固定且始终值得显示的条件。
+- **使用[数据看板](/pages/dashboard)**：页面用于汇总，先呈现数据和图表，列表只作为入口。
+
+## 无障碍 \{#accessibility\}
+
+- 页面地标包括：带有 `Main` 导航的页眉、主区域、名为 `Resources` 的搜索表单、`Pagination` 导航，以及带有自身导航的页脚。第一个链接是指向主区域的[跳过链接](/components/skip)，主区域带有 `tabindex="-1"`。
+- 在任何宽度下，源码顺序都是阅读顺序：标题、搜索、筛选条件、数量和排序、结果、分页。抽屉写在主区域的最后，打开之前不会妨碍任何人。
+- 类型是带有 `<legend>` 的 `<fieldset>`；每个数量都在其复选框的标签中。Cards / List 切换控件是由原生单选按钮组成的 `radiogroup`，排序是带标签的原生 `<select>`。
+- 数量带有 `role="status"`，因此条件变化时无需移动焦点即可播报：“4 of 12 resources”或“No resources match”。按下分页链接后，另一个视觉上隐藏的状态区域会播报页码和范围，焦点留在当前页的链接上。
+- 结果位于视觉上隐藏的 `<h2>`“Results”之下，每个标题是一个 `<h3>`，因此读者可以跳到结果，并在各条结果之间跳转。卡片的标题就是它的链接 `card-link`，整张卡片都是其点击目标。
+- 抽屉是以标题命名的原生模态 `<dialog>`。打开时，焦点移到第一个复选框；按 <kbd>Esc</kbd>、在外部按下（`closedby="any"`）、按关闭按钮或“Show results”都会关闭它，焦点随后回到 Filters 按钮。按钮的名称会说明已应用的筛选条件数量。
+- “Clear all”和空状态的按钮按下后会移除自身，因此焦点移到搜索框。
+
+## 相关内容 \{#related\}
+
+<ComponentLinks slugs={['navbar', 'skip', 'heading', 'input', 'button', 'checkbox', 'select', 'segmented', 'badge', 'auto-grid', 'card', 'list', 'pagination', 'empty', 'icon-frame', 'dialog', 'menu', 'link']} />
+
+<ComponentLinks kind="blocks" slugs={['header', 'filter-bar', 'table-view', 'article-list', 'empty-state', 'footer']} />
+
+<ComponentLinks kind="pages" slugs={['page', 'dashboard', 'master-detail']} />

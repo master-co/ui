@@ -45,6 +45,7 @@ import { gradient, gradientCss } from './gradient.js'
 import { dial } from './dial.js'
 import { follow } from './follow.js'
 import { gantt } from './gantt.js'
+import { kanban } from './kanban.js'
 import { drawer } from './drawer.js'
 import { cropper, cropperFit } from './cropper.js'
 import { listbox } from './listbox.js'
@@ -66,7 +67,7 @@ import { transcript } from './transcript.js'
 import { tree } from './tree.js'
 import { wheel } from './wheel.js'
 
-export { avatar, calendar, calendarMonth, calendarPeriods, carousel, chart, chartCore, chartForms, chartLayout, chartMarkup, chartCartesian, chartScatter, chartPie, chartRings, chartRadar, chartWaterfall, chartRange, chartSlope, chartBump, chartMarimekko, chartHistogram, chartBox, chartHeatmap, chartFunnel, chartWaffle, chartTreemap, chartSunburst, colorPicker, colorPickerFormat, colorPickerState, combobox, command, compare, contextMenu, cropper, cropperFit, dial, drawer, editable, follow, gradient, gradientCss, gantt, listbox, menu, otp, panel, player, range, schedule, scheduleLayout, signature, signaturePath, signatureSvg, sortable, splitter, stepper, tabs, tags, toolbar, tour, transcript, tree, wheel }
+export { avatar, calendar, calendarMonth, calendarPeriods, carousel, chart, chartCore, chartForms, chartLayout, chartMarkup, chartCartesian, chartScatter, chartPie, chartRings, chartRadar, chartWaterfall, chartRange, chartSlope, chartBump, chartMarimekko, chartHistogram, chartBox, chartHeatmap, chartFunnel, chartWaffle, chartTreemap, chartSunburst, colorPicker, colorPickerFormat, colorPickerState, combobox, command, compare, contextMenu, cropper, cropperFit, dial, drawer, editable, follow, gradient, gradientCss, gantt, kanban, listbox, menu, otp, panel, player, range, schedule, scheduleLayout, signature, signaturePath, signatureSvg, sortable, splitter, stepper, tabs, tags, toolbar, tour, transcript, tree, wheel }
 
 /**
  * Each pattern's root class and the behavior that drives it.
@@ -92,6 +93,7 @@ const patterns = [
   ['.tags', tags],
   ['.editable', editable],
   ['.sortable', sortable],
+  ['.kanban', kanban],
   ['.gantt', gantt],
   ['.chart', chart],
   ['.toolbar[role="toolbar"]', toolbar],

@@ -1,0 +1,434 @@
+/*
+ * Kanban: a board of columns, each a named section that holds a list of items, where an item is moved to
+ * another place in its column or into another column: by dragging its handle, with the keys, or by choosing a
+ * column and a position in the mover.
+ * The board is a row that scrolls across; a column is a tray as wide as --kanban-column-width, never wider than
+ * the board less a peek of the next, and its list scrolls by itself once the column is as tall as the board.
+ * A column's corner is the corner of what it holds plus its inset, and its title starts on the line the
+ * items' words start on. What an item holds is the page's: a card, a badge, an avatar.
+ * Nothing moves while an item is carried. The item stays in its place and fades, a line stands in the gap it
+ * would land in, kanban-item-target before an item or kanban-items-target at the end of a list, and a small
+ * sheet with the item's name follows the pointer in the top layer, clear of every column's clipping, placed
+ * by --kanban-x and --kanban-y at the width --kanban-width. Those three are the only things the behavior
+ * measures and writes. On the release the sheet glides into the place the item took and leaves.
+ * Without the popover API there is no sheet: the faded item and the line still say what is carried and where.
+ */
+@layer components {
+  .kanban {
+    --kanban-column-width: 17.5rem;
+    --kanban-gap: .75rem;
+    --kanban-inset: .375rem;
+    --kanban-item-gap: .375rem;
+    --kanban-padding: .75rem;
+    --kanban-radius: var(--radius-control-lg);
+    --kanban-marker: var(--color-focus);
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: var(--kanban-gap);
+    min-width: 0;
+    min-height: 0;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-line-strong) transparent;
+
+    /* While an item is carried the cursor is a closed hand wherever the pointer goes, and no text is selected. */
+    &:has(.kanban-handle[aria-pressed="true"]) {
+      cursor: grabbing;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    /* A card the board holds takes the board's corner and padding, so the column's corner and title follow it. */
+    .card {
+      --card-radius: var(--kanban-radius);
+      --card-padding: var(--kanban-padding);
+    }
+
+    @media (forced-colors: active) {
+      scrollbar-color: auto;
+    }
+  }
+
+  /* A column: a tray that holds its header and its list, as tall as what it holds and never taller than the board. */
+  .kanban-column {
+    --surface-color: var(--color-surface-tray);
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    width: min(var(--kanban-column-width), 100% - 2rem);
+    min-width: 0;
+    max-height: 100%;
+    border-radius: calc(var(--kanban-radius) * var(--corner-scale) + var(--kanban-inset));
+    corner-shape: var(--corner-shape);
+    background: var(--color-surface-tray);
+    color: var(--color-text-body);
+    box-shadow: inset 0 0 0 .5px var(--color-line-hair), inset 0 1px 2px -1px var(--color-shade-2);
+
+    &[hidden] {
+      display: none;
+    }
+
+    @media (forced-colors: active) {
+      outline: 1px solid CanvasText;
+      outline-offset: -1px;
+    }
+  }
+
+  /* The head of a column stays while its list scrolls. Its words start where the items' words start. */
+  .kanban-header {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: .5rem;
+    min-height: 2.5rem;
+    padding: .375rem calc(var(--kanban-inset) + var(--kanban-padding)) .125rem;
+  }
+
+  .kanban-title {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    color: var(--color-text-strong);
+    font-size: .8125rem;
+    font-weight: var(--font-weight-control);
+    line-height: 1.4;
+    overflow-wrap: break-word;
+  }
+
+  /* The list. It is the one part of a column that scrolls, and it keeps room for the line of a place at its ends. */
+  .kanban-items {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: var(--kanban-item-gap);
+    min-height: 0;
+    margin: 0;
+    padding: var(--kanban-item-gap) var(--kanban-inset) var(--kanban-inset);
+    overflow-y: auto;
+    /* Its end does not move the page under it; a swipe or a wheel across still reaches the board, which scrolls that way. */
+    overscroll-behavior-y: contain;
+    list-style: none;
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-line-strong) transparent;
+
+    /*
+     * The place at the end of the list: a line after the last item, in the middle of the gap the item would
+     * leave under it. Its margins take back the gap and its own height, so the list keeps its size.
+     */
+    &.kanban-items-target::after {
+      content: '';
+      flex: none;
+      height: 2px;
+      margin-block: calc(var(--kanban-item-gap) / -2 - 1px);
+      border-radius: 1px;
+      background: var(--kanban-marker);
+    }
+
+    @media (forced-colors: active) {
+      scrollbar-color: auto;
+
+      &.kanban-items-target::after {
+        background: Highlight;
+      }
+    }
+  }
+
+  .kanban-item {
+    position: relative;
+    flex: none;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    scroll-margin: var(--kanban-inset);
+    transition-property: opacity;
+    transition-duration: var(--duration-quick);
+    transition-timing-function: var(--easing-glide);
+
+    /* Carried: it keeps its place and fades, so the reader sees where it came from. */
+    &:has(.kanban-handle[aria-pressed="true"]) {
+      opacity: .45;
+    }
+
+    /* Held by the keys, its handle has focus: it fades less, so the ring around the grip stays plain. */
+    &:has(.kanban-handle[aria-pressed="true"]:focus) {
+      opacity: .7;
+    }
+
+    /* The place before this item: a line in the middle of the gap over it. */
+    &.kanban-item-target::before {
+      content: '';
+      position: absolute;
+      inset-inline: 0;
+      top: calc(var(--kanban-item-gap) / -2 - 1px);
+      height: 2px;
+      border-radius: 1px;
+      background: var(--kanban-marker);
+      pointer-events: none;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      transition-property: none;
+    }
+
+    @media (forced-colors: active) {
+      &.kanban-item-target::before {
+        background: Highlight;
+      }
+    }
+  }
+
+  /*
+   * What an empty column shows: a shallow well with a few words, in place of its list. A column that is the
+   * place an item would land in has no gap to draw a line in, so the well takes the marker's ink as a ring.
+   */
+  .kanban-empty {
+    display: none;
+    place-items: center;
+    min-height: 3.5rem;
+    margin: var(--kanban-item-gap) var(--kanban-inset) var(--kanban-inset);
+    padding: .5rem var(--kanban-padding);
+    border-radius: calc(var(--kanban-radius) * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    background: var(--color-surface-inset);
+    color: var(--color-text-muted);
+    box-shadow: inset 0 0 0 .5px var(--color-line-hair);
+    font-size: .8125rem;
+    line-height: 1.4;
+    text-align: center;
+  }
+
+  .kanban-column:not(:has(.kanban-item)) {
+    .kanban-items {
+      display: none;
+    }
+
+    .kanban-empty {
+      display: grid;
+    }
+
+    &:has(.kanban-items-target) .kanban-empty {
+      color: var(--color-text-strong);
+      box-shadow: inset 0 0 0 1.5px var(--kanban-marker);
+
+      @media (forced-colors: active) {
+        outline: 2px solid Highlight;
+        outline-offset: -2px;
+      }
+    }
+  }
+
+  /*
+   * An item's two controls, a quiet pair of the same size: the handle, a grip of six points that carries the
+   * item, and the button that opens the mover, two arrows that pass. Each is 24px and draws only its glyph
+   * until the pointer or the keys reach it, and its target reaches 44px on touch without moving the glyph.
+   */
+  .kanban-handle,
+  .kanban-move {
+    position: relative;
+    display: inline-grid;
+    flex: none;
+    place-items: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: calc(var(--radius-chip) * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    background: transparent;
+    color: var(--color-text-muted);
+    appearance: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    transition-property: background-color, color;
+    transition-duration: var(--duration-quick);
+    transition-timing-function: var(--easing-glide);
+
+    &::before {
+      content: '';
+      width: .875rem;
+      height: .875rem;
+      background: currentColor;
+    }
+
+    &::after {
+      content: '';
+      position: absolute;
+      inset: -.25rem;
+
+      @media (pointer: coarse) {
+        inset: min(-.25rem, calc((100% - 2.75rem) / 2));
+      }
+    }
+
+    @media (hover: hover) {
+      &:hover:not(:disabled) {
+        background: var(--color-surface-chip);
+        color: var(--color-text-strong);
+      }
+    }
+
+    &:focus-visible {
+      @apply --focus-ring;
+      outline-offset: 0;
+      color: var(--color-text-strong);
+    }
+
+    &:disabled {
+      color: var(--color-text-disabled);
+      cursor: not-allowed;
+    }
+
+    @media (forced-colors: active) {
+      &::before {
+        background: ButtonText;
+      }
+
+      /* The glyph is a fill, so the system's disabled ink is given to it here, as the color is given above. */
+      &:disabled::before {
+        background: GrayText;
+      }
+    }
+  }
+
+  /*
+   * The pair at the end of an item's first line. The two stand close; the pair reaches into the item's padding
+   * by .5rem, as far as the grip's points stand in from its box, so the points meet the edge the words under
+   * them end on and only a hover chip shows past it; and it centers on a line of --kanban-line, a card title's
+   * by default, so it stands beside the first line and does not deepen it.
+   */
+  .kanban-controls {
+    --kanban-line: calc(.9375rem * 1.4);
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: .125rem;
+    margin-block: calc((var(--kanban-line) - 1.5rem) / 2);
+    margin-inline-end: -.5rem;
+  }
+
+  .kanban-handle {
+    cursor: grab;
+    /* A drag that starts on the grip never scrolls; the rest of the item still does. */
+    touch-action: none;
+
+    &::before {
+      mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cg fill='black'%3E%3Ccircle cx='5.75' cy='3.5' r='1.25'/%3E%3Ccircle cx='10.25' cy='3.5' r='1.25'/%3E%3Ccircle cx='5.75' cy='8' r='1.25'/%3E%3Ccircle cx='10.25' cy='8' r='1.25'/%3E%3Ccircle cx='5.75' cy='12.5' r='1.25'/%3E%3Ccircle cx='10.25' cy='12.5' r='1.25'/%3E%3C/g%3E%3C/svg%3E") center / contain no-repeat;
+    }
+
+    /* Carried: the grip sits in a well, as a pressed button does. */
+    &[aria-pressed="true"] {
+      background: var(--color-surface-inset);
+      color: var(--color-text-strong);
+      box-shadow: var(--shadow-pressed);
+      cursor: grabbing;
+    }
+  }
+
+  .kanban-move {
+    cursor: pointer;
+    touch-action: manipulation;
+
+    &::before {
+      mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.75 5.25h10.5M10.5 2.5l2.75 2.75L10.5 8M13.25 10.75H2.75M5.5 8l-2.75 2.75L5.5 13.5'/%3E%3C/svg%3E") center / contain no-repeat;
+    }
+  }
+
+  /*
+   * The carried item's name on a small raised sheet, in the top layer, where no column clips it. It is a manual
+   * popover the behavior shows; it stands at the viewport's corner and --kanban-x and --kanban-y carry it to the
+   * pointer, with no easing between the two. Landing, it glides to the place the item took, then leaves.
+   */
+  .kanban-preview {
+    display: none;
+    position: fixed;
+    inset: 0 auto auto 0;
+    box-sizing: border-box;
+    width: var(--kanban-width, 16rem);
+    max-width: calc(100vw - 1rem);
+    margin: 0;
+    padding: .625rem var(--kanban-padding, .75rem);
+    border: 0;
+    border-radius: calc(var(--kanban-radius, var(--radius-control-lg)) * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    overflow: hidden;
+    @apply --surface-sheet;
+    color: var(--color-text-strong);
+    box-shadow: var(--shadow-floating);
+    font-size: .875rem;
+    font-weight: var(--font-weight-control);
+    line-height: 1.4;
+    translate: var(--kanban-x, 0px) var(--kanban-y, 0px);
+    pointer-events: none;
+    user-select: none;
+    -webkit-user-select: none;
+    will-change: translate;
+
+    @supports selector(:popover-open) {
+      opacity: 0;
+      transition-property: opacity, overlay, display;
+      transition-duration: var(--duration-quick);
+      transition-timing-function: var(--easing-glide);
+      transition-behavior: allow-discrete;
+
+      &:popover-open {
+        display: -webkit-box;
+        opacity: 1;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+
+        @starting-style {
+          opacity: 0;
+        }
+      }
+    }
+
+    &.kanban-preview-landing {
+      transition-property: translate, opacity, overlay, display;
+      transition-duration: var(--duration-base), var(--duration-quick), var(--duration-quick), var(--duration-quick);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      &.kanban-preview-landing {
+        transition-property: opacity, overlay, display;
+      }
+    }
+
+    @media (forced-colors: active) {
+      outline: 2px solid Highlight;
+      outline-offset: -2px;
+    }
+  }
+
+  /* The mover: the form of a popover where a column and a position are chosen, for a hand that does not drag. */
+  .kanban-mover {
+    display: grid;
+    gap: .75rem;
+    width: 15rem;
+    max-width: 100%;
+    margin: 0;
+  }
+
+  /* The mover's buttons stand at its end, the one that moves last. */
+  .kanban-mover-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: .5rem;
+  }
+
+  /* What the status region says is for assistive technology: it takes no room. */
+  .kanban-status {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}

@@ -95,7 +95,7 @@ import PagePreview from '~/site/components/PagePreview.astro'
 - **给布局容器加上 `container-inline`**，使其成为尺寸容器。内部的所有 `@container(…)` 工具类均以该容器的宽度为准。
 - **整行窗格的高度固定。** `flex h(440)` 让两个窗格等高，列表和详情分别应用 `overflow-y-auto`，各自独立滚动；`min-h(0)` 让列表可以在标题栏下方收缩，标题栏则保持不动。应用占满视口高度时，使用[固定式应用框架](/pages/app-shell#fixed)提供的高度，无需写死数值。
 - **列表宽度固定，详情宽度自适应。** 布局容器宽度小于 48rem 时，列表使用 `w-full`。宽度达到或超过 48rem 时，列表改用 `w(300)@container(--3xl)`，并应用 `shrink(0)`。详情使用 `grow(1) basis(0) min-w(0)`，占据剩余宽度，始终为列表保留原有空间。
-- **布局容器宽度小于 48rem 时只显示一个窗格。** 详情窗格通过 `hidden` 隐藏，再通过 `flex@container(--3xl)` 恢复显示。只显示列表时，选择一行即可进入独立详情页。这一导航由应用的路由器负责。
+- **布局容器宽度小于 48rem 时只显示一个窗格。** 详情窗格通过 `hidden` 隐藏，再通过 `flex@container(--3xl)` 恢复显示。只显示列表时，选择一行即可进入独立详情页。这属于导航，由应用的路由器负责，而不是由布局负责。
 - **各行位于窗格内侧。** 列表使用 `p-sm`，当前行的凸起面板与窗格边缘、标题栏下方的分隔线都保持距离。标题栏的标题使用与行自身内缩 `--list-inset` 相同的 `pxs(10)`，因此与各行文字从同一位置开始。
 - **两个窗格之间的分隔线**由 `bxe(1)@container(--3xl) bxe-solid@container(--3xl)` 绘制，仅在两个窗格同时显示时可见。
 
@@ -103,7 +103,7 @@ import PagePreview from '~/site/components/PagePreview.astro'
 
 ## 可调整宽度 \{#resizable\}
 
-要让读者自行分配两个窗格的宽度，可使用[分隔条](/components/splitter)，在原有的两个窗格之间加一个手柄。手柄有自己的状态和键盘交互契约，因此分隔条是一个组件。`splitter` [行为](/guide/behaviors)负责移动手柄，支持的按键见分隔条文档。
+要让读者自行分配两个窗格的宽度，可使用[分隔条](/components/splitter)，在原有的两个窗格之间加一个手柄。手柄有自己的状态和键盘交互契约，因此分隔条是一个组件。`splitter` [行为脚本](/guide/behaviors)负责移动手柄，支持的按键见分隔条文档。
 
 <PagePreview name="resizable" title="可调整宽度" height={488} bodyClass="p-lg" behaviors caption="拖动两个窗格之间的分隔线，或将焦点移到分隔线上，再按方向键、Home 或 End。" html={`<section class="splitter sheet overflow-hidden h(440) text-sm fg-text-body" style="--splitter-size: 36%" aria-labelledby="keys-split-title">
   <div class="splitter-pane flex flex-col">
@@ -184,13 +184,159 @@ import PagePreview from '~/site/components/PagePreview.astro'
   </article>
 </section>`} />
 
+## 独立详情页 \{#standalone\}
+
+在以下情况下，详情是一个独立的页面：空间容不下两个窗格；来自别处的链接直接指向某个条目；详情的内容超出一个窗格所能容纳的范围，例如一项统计数据、一段历史记录、一列详细信息。第一个预览中的各行在窄屏上链接到的正是这个页面：同一个 Production 密钥，放在[页面框架](/pages/page)中，只需一个链接即可回到列表。
+
+<PagePreview name="standalone" title="独立详情页" height={920} tabletHeight={1232} phoneHeight={1468} caption="选择平板和手机：详细信息离开第二列，排在密钥和活动记录之间。在任何宽度下都没有内容被隐藏。" html={`<div class="page bg-surface-base fg-text-body text-sm">
+  <a class="skip" href="#key-main">Skip to content</a>
+  <header class="navbar" style="--navbar-padding-x: max(1.5rem, calc(50% - 31rem))">
+    <a class="navbar-brand" href="#"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18a9 9 0 0 0 0-18M12 3a9 9 0 0 0 0 18"/></svg>Atlas</a>
+    <nav class="navbar-nav" aria-label="Main">
+      <a class="navbar-link" href="#">Overview</a>
+      <a class="navbar-link" href="#">Deployments</a>
+      <a class="navbar-link" href="#">Analytics</a>
+      <a class="navbar-link" href="#" aria-current="page">Settings</a>
+    </nav>
+    <div class="navbar-end">
+      <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Account"><span class="avatar avatar-sm" aria-hidden="true"><img class="avatar-image" src="/demo/people/yiching-lin.webp" alt="" width="24" height="24"><span class="avatar-fallback">YL</span></span></button>
+      <button type="button" class="btn btn-quiet btn-square btn-sm navbar-toggle" popovertarget="key-menu" aria-label="Open the menu"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h16M4 16h16"/></svg></button>
+      <div class="menu menu-end" id="key-menu" popover>
+        <a class="menu-item" href="#">Overview</a>
+        <a class="menu-item" href="#">Deployments</a>
+        <a class="menu-item" href="#">Analytics</a>
+        <a class="menu-item" href="#" aria-current="page">Settings</a>
+      </div>
+    </div>
+  </header>
+  <main class="grow(1) w-full max-w(1040) mx-auto px-lg py-xl container-inline" id="key-main" tabindex="-1">
+    <header class="flex flex-col gap-sm">
+      <a class="link link-quiet fg-text-muted self-start" href="#"><span aria-hidden="true">← </span>API keys</a>
+      <div class="flex flex-wrap items-end justify-between gap-md">
+        <div class="flex flex-col gap-3xs grow(1) basis(320) min-w(0)">
+          <div class="flex flex-wrap items-center gap-xs">
+            <h1 class="heading heading-xl">Production</h1>
+            <span class="badge badge-success badge-dot">Active</span>
+          </div>
+          <p class="m(0) fg-text-muted">Used by the deploy workflow on the main branch.</p>
+        </div>
+        <div class="flex flex-wrap gap-xs">
+          <button type="button" class="btn">Rotate key</button>
+          <button type="button" class="btn btn-danger">Revoke</button>
+        </div>
+      </div>
+    </header>
+    <div class="grid grid-cols(1) grid-cols(3)@container(--3xl) items-start gap-xl mt-xl pt-xl bt(1) bt-solid b-line-hair">
+      <section class="flex flex-col gap-md min-w(0) grid-col-span(2)@container(--3xl)" aria-labelledby="key-secret">
+        <h2 class="heading heading-sm" id="key-secret">Key</h2>
+        <pre class="code-block" tabindex="0" aria-label="The key"><code>atl_live_<span aria-hidden="true">••••••••</span><span class="sr-only">, hidden, ending in </span>4f2a</code></pre>
+        <p class="m(0) leading-md max-w(560)">Send it with every request as a bearer token, in the <code class="code">Authorization</code> header. The secret was shown once, when the key was created: rotate the key to get a new one.</p>
+        <div class="grid grid-cols(1) grid-cols(2)@container(--md) items-start gap-lg mt-xs">
+          <div class="flex flex-col gap-sm min-w(0)">
+            <h3 class="heading heading-xs" id="key-scopes">Scopes</h3>
+            <ul class="bullets bullets-check" aria-labelledby="key-scopes">
+              <li class="bullets-item">Deploy: create and promote deployments</li>
+              <li class="bullets-item">Read logs: build and runtime logs</li>
+            </ul>
+          </div>
+          <div class="stat min-w(0)">
+            <p class="stat-label">Requests, last 7 days</p>
+            <div class="stat-row">
+              <p class="stat-value">12,480</p>
+              <span class="sparkline" style="--sparkline-width: 5rem; --sparkline-height: 1.5rem" role="img" aria-label="Requests a day rose from 1,640 to 2,040 over the week"><svg class="sparkline-plot" viewBox="0 0 100 100" preserveAspectRatio="none"><path class="sparkline-line" d="M0 87 L16.7 69.6 L33.3 100 L50 28.3 L66.7 45.7 L83.3 60.9 L100 0" /></svg><span class="sparkline-dot" style="--x: 100; --y: 0"></span></span>
+            </div>
+            <p class="stat-description">About 1,780 a day, none refused</p>
+          </div>
+        </div>
+      </section>
+      <section class="flex flex-col gap-sm min-w(0) grid-row-span(2)@container(--3xl)" aria-labelledby="key-details">
+        <h2 class="heading heading-sm" id="key-details">Details</h2>
+        <dl class="data-list">
+          <div class="data-list-item">
+            <dt class="data-list-term">Created by</dt>
+            <dd class="data-list-value">Yi-ching Lin</dd>
+          </div>
+          <div class="data-list-item">
+            <dt class="data-list-term">Created</dt>
+            <dd class="data-list-value"><time datetime="2026-03-02">2 March 2026</time></dd>
+          </div>
+          <div class="data-list-item">
+            <dt class="data-list-term">Last used</dt>
+            <dd class="data-list-value"><time datetime="2026-11-16T09:41+08:00">Today at 09:41</time>, from Tokyo</dd>
+          </div>
+          <div class="data-list-item">
+            <dt class="data-list-term">Expires</dt>
+            <dd class="data-list-value"><time datetime="2027-03-02">2 March 2027</time></dd>
+          </div>
+          <div class="data-list-item">
+            <dt class="data-list-term">Environment</dt>
+            <dd class="data-list-value">Production</dd>
+          </div>
+          <div class="data-list-item">
+            <dt class="data-list-term">IP allow-list</dt>
+            <dd class="data-list-value">203.0.113.0/24</dd>
+          </div>
+        </dl>
+      </section>
+      <section class="flex flex-col gap-md min-w(0) grid-col-span(2)@container(--3xl)" aria-labelledby="key-activity">
+        <h2 class="heading heading-sm" id="key-activity">Activity</h2>
+        <ol class="timeline">
+          <li class="timeline-item" aria-current="true">
+            <span class="timeline-marker"></span>
+            <div class="timeline-body">
+              <p class="timeline-title">Used by the deploy workflow</p>
+              <p class="timeline-description">From Tokyo, 203.0.113.24, to deploy the main branch.</p>
+              <time class="timeline-time" datetime="2026-11-16T09:41+08:00">Today at 09:41</time>
+            </div>
+          </li>
+          <li class="timeline-item">
+            <span class="timeline-marker"></span>
+            <div class="timeline-body">
+              <p class="timeline-title">Rotated by Po-han Chen</p>
+              <p class="timeline-description">The earlier secret stopped working a day later.</p>
+              <time class="timeline-time" datetime="2026-09-14T15:20+08:00">14 September at 15:20</time>
+            </div>
+          </li>
+          <li class="timeline-item">
+            <span class="timeline-marker"></span>
+            <div class="timeline-body">
+              <p class="timeline-title">Scope added by Yi-ching Lin</p>
+              <p class="timeline-description">Read logs, for the workflow's build report.</p>
+              <time class="timeline-time" datetime="2026-04-09T11:05+08:00">9 April at 11:05</time>
+            </div>
+          </li>
+          <li class="timeline-item">
+            <span class="timeline-marker"></span>
+            <div class="timeline-body">
+              <p class="timeline-title">Created by Yi-ching Lin</p>
+              <p class="timeline-description">With the Deploy scope, for the production environment.</p>
+              <time class="timeline-time" datetime="2026-03-02T10:12+08:00">2 March at 10:12</time>
+            </div>
+          </li>
+        </ol>
+      </section>
+    </div>
+  </main>
+</div>`} />
+
+- **返回入口是页面中的第一项内容。** 标题上方的一个[链接](/components/link)，以其目的地命名：API keys。窗格变成页面后失去了列表，这个链接把列表还给读者，因此它位于读者最先看到的位置，也是键盘在页眉之后最先到达的位置。
+- **页眉是一个[页面标题区](/blocks/page-header)。** 名称是页面的 `<h1>`，旁边是状态；两个操作采用可以换行的两端分布 `flex flex-wrap items-end justify-between`。名称所在的列为 `grow(1) basis(320) min-w(0)`：只要还有 320px，较长的名称就在操作旁边换行；不足 320px 时，操作落到名称下方，顺序不变。
+- **容器内的三等分网格。** 主区域是 `container-inline`。主区域提供的宽度达到 48rem 之前，网格为 `grid-cols(1)`，之后为 `grid-cols(3)@container(--3xl)`：密钥和活动记录通过 `grid-col-span(2)@container(--3xl)` 各占其中两列，详细信息占第三列，在完整内容宽度下约为 19rem。在这样窄的列中，[数据列表](/components/data-list)会自行把每个术语排在其值的上方。
+- **三个区段，按阅读顺序排列。** 源码顺序是密钥、详细信息、活动记录。两列时，详细信息通过 `grid-row-span(2)@container(--3xl)` 排在另外两个区段旁边，`items-start` 让每个区段保持自身的高度。单列时，按书写的顺序排列：密钥是什么、可以做什么，关于它的各项信息，然后是记录，它最长，也最不紧迫。
+- **一个内容宽度，一个页边留白。** 主区域为 `max-w(1040) mx-auto px-lg`。导航栏横跨整个宽度，因此其内边距跟随内容宽度：`--navbar-padding-x: max(1.5rem, calc(50% - 31rem))` 在窄屏上为 1.5rem，在宽屏上则是内容宽度自身的边缘。在任何宽度下，品牌、返回入口、标题和每个区段的开头文字都从同一条线开始。
+
+链接指向何处，以及 Rotate key 和 Revoke 执行什么操作，都由你的应用决定：这里它们只是占位，没有行为。
+
 ## 三种实现方式 \{#three-ways\}
 
-| 适用场景 | 实现方式 |
-| --- | --- |
-| 窗格位于页面的一个区域内 | 使用上文所示的工具类和容器 |
-| 读者可调整窗格宽度 | 使用[分隔条](/components/splitter) |
-| 窗格占据整个应用界面 | 使用[固定式应用框架](/pages/app-shell#fixed)，将列表放在侧边栏 |
+| 适用场景 | 实现方式 | 读者得到 |
+| --- | --- | --- |
+| 窗格位于页面的一个区域内 | 使用[上文所示](#how-it-is-built)的工具类和容器 | 空间达到 48rem 时，同时看到列表和一个条目 |
+| 读者可调整窗格宽度 | 使用[分隔条](/components/splitter) | 同上，宽度由读者自行分配 |
+| 窗格占据整个应用界面 | 使用[固定式应用框架](/pages/app-shell#fixed)，将列表放在侧边栏 | 同上，高度与视口相同 |
+| 空间容不下两个窗格，或条目有来自别处的链接 | 使用位于独立路由上的[独立详情页](#standalone) | 在任何宽度下查看一个条目，并有自己的地址 |
+
+同时显示的两个窗格能保留列表中的位置：读者沿各行向下浏览，无需离开即可比较相邻的条目。它们需要容得下两者的宽度，而所选条目要么是页面持有的选中状态，要么是同一个地址的一部分。详情路由有自己的地址、历史记录中的位置和标题，在任何宽度下都能使用；它失去了列表，因此要提供返回入口，并且列表应回到读者离开时的那一行。大多数应用两者都需要：空间足够时使用两个窗格，空间不足时把同一份详情作为页面，并使用同一个地址，让链接打开合适的那一种。
 
 ## 无障碍 \{#accessibility\}
 
@@ -198,9 +344,16 @@ import PagePreview from '~/site/components/PagePreview.astro'
 - 为布局容器提供无障碍名称，并为详情窗格添加能指明所选条目的标题，让读者进入窗格时知道自己所在的位置。
 - 如果窗格可滚动，但内部没有可聚焦的元素，就为窗格设置 `tabindex="0"`，以便用键盘滚动。
 - 布局容器较窄时，详情窗格通过 `display: none` 隐藏，并从无障碍树中移除。此时应移除指向该窗格的控件。
+- 独立详情页具有[页面框架](/pages/page)的页面地标：一个跳过链接、一个带导航的 `<header>` 和一个 `<main>`。三个区段各自以标题命名，因此可以作为区域到达。
+- 返回入口是一个链接，名称就是列表的名称“API keys”；它前面的箭头带有 `aria-hidden`。不要用 `history.back()` 实现它：通过链接到达的读者，身后并没有列表。
+- 条目的名称是页面唯一的 `<h1>`，各区段是 `<h2>`，权限范围是 `<h3>`。在窗格中，同一个名称是列表的 `<h2>` 之下的 `<h3>`：标题级别取决于详情所在的位置，因此详情换位置时要相应调整。
+- `aria-current="true"` 属于列表中的行，而本页没有列表：只有页眉中指向所在栏目的链接带有 `aria-current="page"`。在时间线中，`aria-current="true"` 标记最新的事件。
+- 路由变化后，把焦点移到主区域或 `<h1>`，并更新文档标题，以便播报新页面。
 
 ## 相关内容 \{#related\}
 
-<ComponentLinks slugs={['list', 'data-list', 'splitter', 'surface', 'badge']} />
+<ComponentLinks slugs={['list', 'data-list', 'splitter', 'surface', 'badge', 'navbar', 'skip', 'heading', 'link', 'button', 'code', 'bullets', 'stat', 'sparkline', 'timeline']} />
 
-<ComponentLinks kind="pages" slugs={['app-shell']} />
+<ComponentLinks kind="blocks" slugs={['page-header', 'activity-feed']} />
+
+<ComponentLinks kind="pages" slugs={['app-shell', 'page', 'settings']} />

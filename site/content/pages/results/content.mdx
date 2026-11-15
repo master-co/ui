@@ -1,0 +1,66 @@
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import PagePreview from '~/site/components/PagePreview.astro'
+
+A results page answers a search: a field for the words, conditions that narrow what was found, a count, a sort, and the results in pages. It stands on the [page](/pages/page) frame, a header, the main region and a footer, and the document scrolls as a whole. The conditions stand beside the results where there is room and wait in a drawer where there is not.
+
+<PagePreview name="default" title="Results" example="results" caption="Search for “build”, then clear it. Sort by name, go to the second page and switch to List: the sort and the page stay. Choose Tablet or Phone, open Filters and tick a type; choose Desktop, and it is ticked in the sidebar. Search for something that is not there to see the empty state." />
+
+The twelve resources are rows in the example's own file, and its script answers from them. A real page asks its server; [wiring it to a server](#server) says where.
+
+## How it is built \{#how-it-is-built\}
+
+- **`page` on the frame, one measure inside it.** The main region is `grow(1) max-w(1120) mx-auto px-lg`, and what the footer holds has the same measure. The [navbar](/components/navbar) runs the full width, and its `--navbar-padding-x` is `max(1.5rem, calc(50% - 33.5rem))`: the content's own start, so the brand, the title, the search field and the footer's first word stand on one line at every width.
+- **The search is a form of its own.** `<form method="get" role="search">` holds the field, named `q`, and a submit button. The field is an `input-group` that grows to the form's `max-w(560)`; where the field would be narrower than 200px the button goes below it.
+- **The other fields name the form.** The type checkboxes, the sort and the Cards / List switch stand outside the `<form>` and carry `form="rs-form"`. They are submitted with it wherever they stand, which is what lets the checkboxes move into a drawer.
+- **Two columns from 56rem.** The main region is a size container, `container-inline`. The body is `flex flex-col`, and from 56rem of main region `flex-row@container(--4xl)`: a `w(240)` column for the conditions, 15rem, and a fluid one for the results, `grow(1) basis(0) min-w(0)`.
+- **A count, a sort and a view on one line.** The count is a paragraph with `role="status"` that takes the room left, so the sort and the switch stand at the end. The line wraps: on a phone the sort and the switch take a second row, one at each end.
+- **The results are a list either way.** As cards, a `<ul class="auto-grid">` of [cards](/components/card) with `--auto-grid-min: 15rem`: three across at Desktop, two at Tablet, one at Phone, counted by the grid. As a list, a `<ul class="list list-interactive">` whose rows are links; `mx(-10)` sets the rows' words on the column's edge. Six to a page, with the range and a [pagination](/components/pagination) of links under them.
+- **Nothing found is an [empty](/components/empty) state.** It says so, says what to try, and its button clears the search and the types.
+
+## Where the conditions go \{#conditions\}
+
+There is one set of checkboxes. It is written in the sidebar, and it is moved, not copied.
+
+- **From 56rem of main region** the conditions are the 15rem column beside the results, and the Filters button is `hidden@container(--4xl)`.
+- **Below 56rem** the column is empty and hidden, the Filters button shows, and it opens a [drawer](/components/dialog#drawer), `dialog dialog-drawer` at `--dialog-width: 20rem`, with `command="show-modal"` and `commandfor`. The script puts the `<fieldset>` in the drawer's body. A badge on the button counts the types that are ticked.
+- **The stylesheet owns the threshold.** The script holds no number: when the main region changes size it asks whether the Filters button is displayed and puts the fieldset where that says, in the sidebar or the drawer. Change `--4xl` in the markup and the script follows.
+- **Nothing can be lost between widths**, because nothing is duplicated: the checkbox ticked in the drawer is the checkbox in the sidebar. There is no second id and no state to copy. If the page grows wide while the drawer is open, the drawer closes and focus stays on the checkbox it was on.
+- **In the drawer a choice applies at once.** The results change behind it, the confirming button says how many there are, "Show 4 results", and closes it. Clear unticks the types and leaves the search alone.
+
+Without the script the fieldset stays where it is written, above the results below 56rem and beside them from there, and the Filters button, which would open an empty drawer, stays `hidden`.
+
+## Wiring it to a server \{#server\}
+
+The markup is what a server would send for the first page: six results, the count, and pagination links. Everything a reader can set is a named field of one GET form, so the URL is the state.
+
+- **The query.** Submitting sends `?q=build&type=guide&type=video&sort=name&view=list`. `type` repeats, once for each ticked box; `sort` is `updated` or `name`; `view` is `cards` or `list`. The form has no `action`, so it submits to the page's own address.
+- **The pages.** Each pagination link is the same query with `page` added, `?sort=name&view=list&page=2`. The link of the current page has `aria-current="page"`; "Previous" on the first page and "Next" on the last have no `href` and `aria-disabled="true"`.
+- **What the server renders.** The fields with the values it read (`value` on the search, `checked` on the boxes and the view, `selected` on the sort), the results of that page, the count, and its own empty state when nothing matches. A changed condition is a new query without `page`, which is the first page.
+- **What the script adds.** It answers as the reader types or ticks, without a round trip, keeps the page number, moves the conditions into the drawer, and reveals what only it can work: the Filters button and "Clear all". It reads the conditions from the form each time, `new FormData(form)`, and keeps no copy of them; the page number is the one thing it holds. A project that keeps the script points its `draw()` at a request for that query and writes the same query to the address with `history.replaceState`, so a reload or a shared link shows the same results.
+
+The example imports `search`, `sort` and `paginate` from the [filter bar](/blocks/filter-bar)'s `query.js`, which stand in for that request. They are part of the demonstration, not of `@master/ui`: the library publishes no query engine.
+
+## When to use it \{#when\}
+
+- **Use a results page** when the things found are read one at a time and each has a page of its own: articles, guides, templates, listings, people.
+- **Use a [table view](/blocks/table-view)** when the rows are compared across columns, selected and acted on in bulk. It is a block inside an application's page, with its own search, sort and pages.
+- **Use a [filter bar](/blocks/filter-bar)** when a condition is a field, a comparison and a value, and several are combined. A sidebar of checkboxes suits a few fixed groups that are always worth showing.
+- **Use a [dashboard](/pages/dashboard)** when the page summarizes: figures and charts first, and a list only as the way in.
+
+## Accessibility \{#accessibility\}
+
+- The landmarks are the header with its `Main` navigation, the main region, the search form, named `Resources`, the `Pagination` navigation, and the footer with its own. The first link is a [skip link](/components/skip) to the main region, which has `tabindex="-1"`.
+- Source order is reading order at every width: title, search, conditions, count and sort, results, pages. The drawer is written last in the main region and is in nobody's way until it opens.
+- The types are a `<fieldset>` with a `<legend>`; each count is in its checkbox's label. The Cards / List switch is a `radiogroup` of native radios, and the sort a native `<select>` with a label.
+- The count has `role="status"`, so a change of conditions is announced without moving focus: "4 of 12 resources", or "No resources match". A second, visually hidden status says the page and the range after a pagination link is pressed, and focus stays on the current page's link.
+- The results are under a visually hidden `<h2>`, "Results", and each title is an `<h3>`, so a reader can jump to the results and from one to the next. A card's title is its link, `card-link`, and the whole card is its target.
+- The drawer is a native modal `<dialog>` named by its title. Focus goes to the first checkbox when it opens; <kbd>Esc</kbd>, a press outside (`closedby="any"`), the close button and "Show results" close it, and focus returns to the Filters button. The button's name says how many filters are applied.
+- "Clear all" and the empty state's button remove themselves when pressed, so focus goes to the search field.
+
+## Related \{#related\}
+
+<ComponentLinks slugs={['navbar', 'skip', 'heading', 'input', 'button', 'checkbox', 'select', 'segmented', 'badge', 'auto-grid', 'card', 'list', 'pagination', 'empty', 'icon-frame', 'dialog', 'menu', 'link']} />
+
+<ComponentLinks kind="blocks" slugs={['header', 'filter-bar', 'table-view', 'article-list', 'empty-state', 'footer']} />
+
+<ComponentLinks kind="pages" slugs={['page', 'dashboard', 'master-detail']} />

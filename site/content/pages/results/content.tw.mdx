@@ -1,0 +1,71 @@
+---
+title: "搜尋結果"
+description: "搜尋欄位、一旁的篩選條件，以及以卡片或清單呈現並分頁的結果。"
+---
+
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import PagePreview from '~/site/components/PagePreview.astro'
+
+搜尋結果頁面回應一次搜尋：輸入關鍵字的欄位、縮小結果範圍的篩選條件、筆數、排序方式，以及分頁呈現的結果。它建立在[頁面](/pages/page)外框上，包含頁首、主要區域和頁尾，並由整份文件一起捲動。空間足夠時，篩選條件位於結果旁邊；空間不足時，則收在抽屜裡。
+
+<PagePreview name="default" title="搜尋結果" example="results" caption="搜尋「build」，然後清除。依名稱排序，前往第二頁，再切換到「List」：排序方式和頁碼都會保留。選擇「平板」或「手機」，開啟「Filters」並勾選一種類型；再選擇「桌面」，側邊欄中的同一項也已勾選。搜尋不存在的內容，即可看到空狀態。" />
+
+這十二筆資源是範例自身檔案中的資料列，範例的腳本就依這些資料回應。實際的頁面會向伺服器查詢；[接上伺服器](#server)說明了該在哪裡處理。
+
+## 建構方式 \{#how-it-is-built\}
+
+- **外框套用 `page`，內部共用同一個寬度。** 主要區域是 `grow(1) max-w(1120) mx-auto px-lg`，頁尾的內容也採用相同的寬度。[導覽列](/components/navbar)占滿整個寬度，其 `--navbar-padding-x` 為 `max(1.5rem, calc(50% - 33.5rem))`，也就是內容本身的起點，因此在任何寬度下，品牌、標題、搜尋欄位和頁尾的第一個字都從同一條線開始。
+- **搜尋是獨立的表單。** `<form method="get" role="search">` 包含名為 `q` 的欄位和送出按鈕。欄位是 `input-group`，會延展到表單的 `max-w(560)`；當欄位會窄於 200px 時，按鈕就換到欄位下方。
+- **其他欄位指名所屬的表單。** 類型核取方塊、排序選單和 Cards / List 切換器都位於 `<form>` 之外，並帶有 `form="rs-form"`。無論放在哪裡，它們都會隨表單一起送出，核取方塊因此才能移進抽屜。
+- **從 56rem 起分成兩欄。** 主要區域是尺寸容器 `container-inline`。主體是 `flex flex-col`，主要區域達到 56rem 時改為 `flex-row@container(--4xl)`：篩選條件使用 `w(240)` 的欄，也就是 15rem；結果則使用彈性寬度的欄 `grow(1) basis(0) min-w(0)`。
+- **筆數、排序和檢視方式排在同一行。** 筆數是帶有 `role="status"` 的段落，占用剩餘的空間，因此排序選單和切換器位於行尾。這一行可以換行：在手機上，排序選單和切換器會換到第二列，分居兩端。
+- **無論哪種檢視方式，結果都是清單。** 以卡片呈現時，是內含[卡片](/components/card)的 `<ul class="auto-grid">`，並設定 `--auto-grid-min: 15rem`：在「桌面」每列三張、「平板」兩張、「手機」一張，由網格自行計算。以清單呈現時，是 `<ul class="list list-interactive">`，每一列都是連結；`mx(-10)` 讓各列的文字貼齊欄的邊緣。每頁六筆，下方是目前的範圍和以連結組成的[分頁導覽](/components/pagination)。
+- **找不到結果時顯示[空狀態](/components/empty)。** 它會說明沒有結果、建議可以嘗試的做法，並提供清除搜尋和類型的按鈕。
+
+## 篩選條件的位置 \{#conditions\}
+
+核取方塊只有一組。它寫在側邊欄裡，切換時是搬移，不是複製。
+
+- **主要區域達到 56rem 時**，篩選條件是結果旁邊 15rem 的欄，「Filters」按鈕則為 `hidden@container(--4xl)`。
+- **小於 56rem 時**，這一欄是空的並且隱藏，「Filters」按鈕會顯示，並透過 `command="show-modal"` 和 `commandfor` 開啟[抽屜](/components/dialog#drawer)，也就是設定 `--dialog-width: 20rem` 的 `dialog dialog-drawer`。腳本會把 `<fieldset>` 放進抽屜的主體。按鈕上的徽章會顯示已勾選的類型數量。
+- **門檻由樣式表決定。** 腳本不保存任何數字：主要區域的尺寸改變時，它會檢查「Filters」按鈕是否顯示，再依此把 fieldset 放進側邊欄或抽屜。修改標記中的 `--4xl`，腳本就會跟著調整。
+- **切換寬度時不會遺失任何東西**，因為沒有任何東西重複：在抽屜中勾選的核取方塊，就是側邊欄中的那個核取方塊。沒有第二個 id，也沒有需要複製的狀態。如果抽屜開啟時頁面變寬，抽屜會關閉，焦點則留在原本所在的核取方塊上。
+- **在抽屜中，選擇會立即套用。** 結果會在抽屜後方更新，確認按鈕會說明結果的筆數（例如「Show 4 results」）並關閉抽屜。「Clear」會取消勾選所有類型，但不會動到搜尋內容。
+
+沒有腳本時，fieldset 會留在標記所寫的位置：小於 56rem 時在結果上方，達到 56rem 後在結果旁邊；「Filters」按鈕因為只會開啟空的抽屜，所以維持 `hidden`。
+
+## 接上伺服器 \{#server\}
+
+標記就是伺服器為第一頁送出的內容：六筆結果、筆數和分頁連結。讀者能設定的每一項，都是同一個 GET 表單中具名的欄位，因此 URL 就是狀態。
+
+- **查詢。** 送出表單會傳送 `?q=build&type=guide&type=video&sort=name&view=list`。`type` 會重複，每個勾選的核取方塊各出現一次；`sort` 為 `updated` 或 `name`；`view` 為 `cards` 或 `list`。表單沒有 `action`，因此會送到頁面本身的網址。
+- **分頁。** 每個分頁連結都是同一個查詢再加上 `page`，例如 `?sort=name&view=list&page=2`。目前頁面的連結帶有 `aria-current="page"`；第一頁的「Previous」和最後一頁的「Next」沒有 `href`，並帶有 `aria-disabled="true"`。
+- **伺服器渲染的內容。** 帶有所讀取值的欄位（搜尋欄位的 `value`、核取方塊和檢視方式的 `checked`、排序選單的 `selected`）、該頁的結果、筆數，以及沒有符合項目時由伺服器自己輸出的空狀態。條件一旦變更，就是不含 `page` 的新查詢，也就是第一頁。
+- **腳本增加的功能。** 它會在讀者輸入或勾選時直接回應，不必往返伺服器；它會記住頁碼，把篩選條件移進抽屜，並顯示只有它才能運作的控制項：「Filters」按鈕和「Clear all」。它每次都透過 `new FormData(form)` 從表單讀取條件，不保留任何複本；頁碼是它唯一保存的東西。保留這份腳本的專案，請讓它的 `draw()` 改為針對該查詢發出請求，並用 `history.replaceState` 把同一個查詢寫入網址，這樣重新載入或分享連結時，都會顯示相同的結果。
+
+範例從[篩選列](/blocks/filter-bar)的 `query.js` 匯入 `search`、`sort` 和 `paginate`，用來代替上述請求。它們屬於示範的一部分，不屬於 `@master/ui`：程式庫並未發布任何查詢引擎。
+
+## 使用時機 \{#when\}
+
+- **使用搜尋結果頁面**：找到的項目要逐一閱讀，而且各有自己的頁面時，例如文章、指南、範本、刊登項目或人員。
+- **使用[表格檢視](/blocks/table-view)**：需要跨欄比較資料列、選取並批次操作時。它是應用程式頁面中的一個區塊，自帶搜尋、排序和分頁。
+- **使用[篩選列](/blocks/filter-bar)**：每個條件由欄位、比較方式和值組成，而且要組合多個條件時。側邊欄的核取方塊則適合少數幾組固定、且隨時值得顯示的選項。
+- **使用[儀表板](/pages/dashboard)**：頁面的用途是摘要時，先呈現數據和圖表，清單只作為進一步檢視的入口。
+
+## 無障礙 \{#accessibility\}
+
+- 地標包括帶有 `Main` 導覽的頁首、主要區域、名為 `Resources` 的搜尋表單、`Pagination` 導覽，以及帶有自己導覽的頁尾。第一個連結是通往主要區域的[略過連結](/components/skip)，主要區域設有 `tabindex="-1"`。
+- 在任何寬度下，原始碼順序都是閱讀順序：標題、搜尋、篩選條件、筆數與排序、結果、分頁。抽屜寫在主要區域的最後，開啟之前不會妨礙任何人。
+- 類型是帶有 `<legend>` 的 `<fieldset>`；每個類型的筆數都寫在其核取方塊的標籤中。Cards / List 切換器是由原生單選按鈕組成的 `radiogroup`，排序則是帶有標籤的原生 `<select>`。
+- 筆數帶有 `role="status"`，因此條件變更時不必移動焦點就會朗讀，例如「4 of 12 resources」或「No resources match」。另一個在視覺上隱藏的狀態區域，會在按下分頁連結後說出頁碼和範圍，焦點則留在目前頁面的連結上。
+- 結果位於視覺上隱藏的 `<h2>`「Results」之下，每個標題都是 `<h3>`，讀者因此可以直接跳到結果，並從一筆結果跳到下一筆。卡片的標題就是它的連結 `card-link`，整張卡片都是點按範圍。
+- 抽屜是以其標題命名的原生模態 `<dialog>`。開啟時焦點會移到第一個核取方塊；<kbd>Esc</kbd>、在外部按下（`closedby="any"`）、關閉按鈕和「Show results」都會關閉它，焦點則回到「Filters」按鈕。按鈕的名稱會說明已套用幾個篩選條件。
+- 「Clear all」和空狀態的按鈕按下後會自行移除，因此焦點會移到搜尋欄位。
+
+## 相關項目 \{#related\}
+
+<ComponentLinks slugs={['navbar', 'skip', 'heading', 'input', 'button', 'checkbox', 'select', 'segmented', 'badge', 'auto-grid', 'card', 'list', 'pagination', 'empty', 'icon-frame', 'dialog', 'menu', 'link']} />
+
+<ComponentLinks kind="blocks" slugs={['header', 'filter-bar', 'table-view', 'article-list', 'empty-state', 'footer']} />
+
+<ComponentLinks kind="pages" slugs={['page', 'dashboard', 'master-detail']} />

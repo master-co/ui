@@ -47,6 +47,7 @@ import GuideFigure from '../../../components/GuideFigure.astro'
 | [行内编辑](/components/editable) | `editable` | 在预览的位置显示输入框，按 Enter 或离开输入框时保存，按 Esc 时恢复已保存的值 | 必需 |
 | [甘特图](/components/gantt) | `gantt` | 用指针和键盘移动作为滑块的条形并调整其长度，并在采用新范围前先询问页面 | 可选 |
 | [渐变](/components/gradient) | `gradient` | 为每个色标生成手柄，支持用指针和键盘移动色标，让颜色选择器、旋钮和当前色标的数值保持同步，并以 CSS 形式输出渐变 | 必需 |
+| [看板](/components/kanban) | `kanban` | 用指针或键盘在列内或跨列移动项目，标出落点，移动提交时只移动一次项目，填充移动面板，并在状态区域中播报每一步 | 必需 |
 | [列表框](/components/listbox) | `listbox` | 使用方向键或输入字母切换当前活动项，并勾选选中的选项。列表支持多选时可勾选多个选项，按住 Shift 可勾选一段连续的选项 | 必需 |
 | [菜单](/components/menu) | `menu`, `contextMenu` | 使用方向键或输入字母在菜单项之间移动焦点，按朝向子菜单的方向键打开子菜单。`contextMenu` 在指针位置打开菜单 | 可选 |
 | [浮动面板](/components/panel) | `panel` | 用指针和键盘移动浮动面板并调整其大小，将其最小化或置于最前 | 必需 |
@@ -102,7 +103,7 @@ import { attach } from '@master/ui/behaviors'
 const detach = attach()
 ```
 
-决定采用批量绑定前，先了解以下四点：
+决定采用批量绑定前，先了解以下三点：
 
 - 它也会绑定可选行为。每个 `menu` 都会支持方向键操作，每个 `tree` 和每个带有 `role="toolbar"` 的 `toolbar` 都会成为一个 Tab 键停靠点，每个设置了 `role="tablist"` 的 `tabs` 都会切换面板。要保留某个模式的平台原生行为，请按名称导入所需的行为。
 - 批量绑定时不传入选项。需要选择日期范围或设置可选日期的起止边界时，请按名称导入日历行为并绑定。
@@ -212,6 +213,7 @@ onUnmounted(() => detach?.())
 | `chart` | 图例的复选框显示或隐藏某个数据系列时，先派发 `input`，再派发 `change` | 该复选框 | 读取返回函数的 `value` |
 | `schedule` | 读者切换到另一个时段或视图时，先派发 `input`，再派发 `change` | 视图 | 读取返回函数的 `value` |
 | `gradient` | 色标或控件移动过程中派发 `input`，移动结束时派发 `change` | 根元素 | 读取返回函数的 `value` |
+| `kanban` | 每次改变了看板的移动，先派发 `input`，再派发 `change`，各一次 | 根元素 | 读取返回函数的 `value` |
 
 一次性验证码字段、日历、滚轮选择器、树和标签页列表的 `change` 都是 `CustomEvent`，因为它们的值无法由单个原生控件承载。一次性验证码字段中的每个输入格都是原生输入控件，因此输入格自身的 `change` 也会冒泡经过根元素，但不带 `detail`。命令面板、菜单和对比组件本身不派发事件。命令由其对应选项的 `click` 触发，按 Enter 也会触发该事件。菜单项使用原生按钮、链接和输入控件。
 
@@ -244,6 +246,7 @@ root.addEventListener('change', (event) => {
 | `carousel` | 当前幻灯片代表的值，即其 `data-value` 或 `id`。设置该值会将对应幻灯片滚动到视图中 |
 | `chart` | 隐藏的数据系列的名称。设置该值会隐藏这些系列，并显示其余系列 |
 | `gradient` | `{ type, angle, center, stops }`：各色标及其 id、位置和颜色。设置该值会显示对应的渐变 |
+| `kanban` | 排列：每列对应一个 `{ value, items }`，按列的顺序排列。设置该值会排列看板；如果值中提到了看板没有的内容，或同一内容出现两次，则会被拒绝 |
 | `schedule` | `{ date, view }`：视图所针对的日期，格式为 `YYYY-MM-DD`，以及 `day`、`week`、`month` 或 `agenda`。设置该值会显示对应的时段 |
 
 选项、标签页和行均以各自的 `data-value` 为值，未设置该属性时以自身文本为值。如果应用存储的值与显示文本不同，请指定 `data-value`，例如为显示 Tokyo 的选项设置 `data-value="hnd"`。

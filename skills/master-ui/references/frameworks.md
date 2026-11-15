@@ -36,6 +36,7 @@ These hold a value, render rows from data, join parts by id or have a lifetime, 
 | `field` | input (`field`) | The ids that join the label, the control, the hint and the error |
 | `gantt` | gantt | The ranges, the rows |
 | `gradient` | gradient | The gradient: its type, its angle or centre, and its stops |
+| `kanban` | kanban | The arrangement: which items each column holds and in what order; the columns, the items, the ids that join a column to its title and a move button to the mover |
 | `listbox` | listbox | The value, the options |
 | `log` | scroll-area | Whether it follows the end, the lifetime of its behavior |
 | `menu` | menu | The items, the id its trigger names, the target of a context menu |

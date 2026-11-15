@@ -111,6 +111,8 @@ Read the row that matches the job, then the contract of the component it names.
 | A list of sentences with markers hung beside them: points, what a plan includes | `bullets` |
 | Points on a picture, explained one by one | `hotspot` |
 | A row with one or two actions behind it, on touch | `swipe` |
+| One list the reader puts in order | `sortable` |
+| Items that move between named columns as well as within one: stages of work, a pipeline | `kanban`; the whole screen around it is the board page, `/pages/board.md` |
 | A block that arrives as it scrolls into view | `reveal` |
 
 ## Surfaces

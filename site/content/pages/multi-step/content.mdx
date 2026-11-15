@@ -1,0 +1,68 @@
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import PagePreview from '~/site/components/PagePreview.astro'
+
+A multi-step task asks for a few things in order: the progress says where the reader is, one step is in hand, and its actions lead on and back. The frame is a [page](/pages/page), so the document scrolls as a whole and the actions sit at the end of the form, in its flow. The example sets up a workspace in three steps and keeps what is typed in the page's own memory.
+
+<PagePreview name="default" title="Multi-step task" example="multi-step" caption="Press Next with a field empty, then fill the step and go on. Go Back: what you typed is still there. On the second step choose Phone. At Tablet and Phone the progress is one row over the form." />
+
+## How it is built \{#how-it-is-built\}
+
+- **A [page](/pages/page) with a task header.** The [navbar](/components/navbar) holds the brand and one way out, a quiet "Save and exit" pushed to the far end with `ml-auto`. A task has no main navigation: every other link is a way to lose the work.
+- **One measure for the task.** The main region is `max-w(880) mx-auto px-lg` and a size container, `container-inline`. That leaves 832px: a progress column of `w(224)`, a `gap-2xl` of 48px and a form of `max-w(560)`, which is as wide as one column of fields reads well.
+- **[Steps](/components/steps) for the progress.** Only the current item carries `aria-current="step"`; the stylesheet draws the steps before it complete and the ones after it waiting. The name of a step that can be opened is a quiet [link](/components/link), and the others are plain words.
+- **One [form](/components/form) for the whole task.** Each step is a `<section>` named by its heading, with its fields in `form-fields`, so they keep the form's distance of 1.25rem. The options of the second step are the [choice cards](/blocks/choice-cards) block: a `<fieldset>` whose legend is the question, and an [auto grid](/components/auto-grid) of [choices](/components/choice) that stand three across in the form's column and one under another on a phone.
+- **`form-actions` at the end of the form.** Back comes first in the source and the confirming button last. Below 24rem of form they stack at full width with the confirming one first, which is where a phone lands. Nothing is fixed to the foot of the viewport: a bar there covers the fields above it once a keyboard is open.
+- **The review is a [data list](/components/data-list) for each step**, under the step's name and an Edit button that opens it. The button is quiet and takes `btn-hang-end`, so its word ends on the edge the values run to.
+
+## The progress at each width \{#progress\}
+
+The page holds the progress twice, and shows one.
+
+- **From 48rem of main region** it is a `steps steps-vertical` list beside the form: each step has its name and a line on what it asks for. The list is `sticky top(72)`, 16px under the 56px navbar, so it stays in view while a long step scrolls.
+- **Below 48rem** it is one row of `steps` over the form. The row shows the name of the current step only; the names of the other two are `sr-only`, so the markers and the lines carry the position and every name is still read out.
+
+`hidden@container(--3xl)` is on the row and `hidden block@container(--3xl)` on the column. The one that is away is `display: none`, so assistive technology and the keyboard meet a single progress.
+
+A row of steps with all three names does not fit a phone: the component cuts a name that has no room with an ellipsis. With one name the row is whole at 390px. Each item of the row is `basis-auto`, so the current step takes the room its name needs and the other two share the rest. On a phone at twice the text size even that one name is cut; the heading under the row says it in full.
+
+## What the script decides \{#script\}
+
+The markup is the whole form in order: both steps of fields, then one button that sends it. The example's module is what divides it into steps, and it is short because the browser and the stylesheet do most of the work.
+
+- **The browser holds the rules.** `required`, `type="email"` and `pattern` say what a valid value is, and the module only reads `validity.valid`. Each field has its message in a `field-error`, which the [input](/components/input) stylesheet shows while the field is invalid and hides again when it is not.
+- **`:user-invalid` shows an error once the reader has edited a field.** That needs no script. A field never touched is another matter: Next sets `aria-invalid="true"` on every field of the step that fails, which draws the same state, and takes it off as each value becomes valid.
+- **Next is a button, not a submit.** A submit attempt marks every field of a form as tried, the fields of steps not reached yet among them, and they would open already in error. So the module checks the step in hand itself, and gives <kbd class="kbd">Enter</kbd> in a field the same meaning as Next.
+- **Focus follows the reader.** When a step fails, focus goes to its first invalid field. When the step changes, focus goes to the new step's heading, which names the step and its place: "Step 2 of 3: Preferences".
+- **Going back checks nothing.** Back, a step's name in the progress and Edit in the review all leave the current step as it is, even half written, and every field keeps its value because it never leaves the document. Going on checks each step on the way and stops at the first that fails. A step not reached yet is not a link, so it cannot be jumped to.
+- **A field that depends on an answer.** The phone number is shown, and required, only while alerts go to a phone. While it is away it is `disabled`, so it is neither checked nor sent.
+
+In a product, most of this belongs to the router and the server:
+
+- **A route for each step**, such as `/setup/details` and `/setup/preferences`. Each step is then a form of its own, Next is its submit button, and the browser's Back and a reload do what the reader expects. The progress links are real links to those routes.
+- **The server validates every step again** and answers with the errors it found. Show them the same way: `aria-invalid="true"` on the field and the message in its `field-error`.
+- **The server keeps the draft.** Each Next saves what the step holds, "Save and exit" saves and leaves, and the review reads the draft back instead of the fields. The furthest step reached is part of the draft, and the server refuses a route beyond it.
+
+## When to use it \{#when-to-use\}
+
+Use steps when the order matters: a later step depends on an earlier answer, or the whole would be too much to take in at once. Three to five steps is the range; with more, ask whether some can wait until after the task.
+
+- Use a [settings](/pages/settings) page when the groups are independent and a reader comes back to change one of them. Its navigation lets them open any group in any order.
+- Use a single [form](/components/form) when everything fits one screen. Steps cost a reader the overview and a press for each part.
+- Use a [centered](/pages/centered) page for one short task with nothing before or after it, such as signing in.
+
+## Accessibility \{#accessibility\}
+
+- The landmarks are the header, the main region and one navigation named "Progress". The step in hand is a `<section>` named by its heading.
+- The progress is an `<ol>`, so the list says how many steps there are, and the current one carries `aria-current="step"`. In the short row the names that are not shown are still in the list.
+- After a step changes, focus is on its heading, which has `tabindex="-1"` and `scroll-mt(72)` so it is not left under the sticky navbar. A screen reader reads the step's place and name from there, and <kbd class="kbd">Tab</kbd> goes to its first field.
+- When a step fails, focus is on the first invalid field. The field's `field-error` is added to its `aria-describedby` while it shows, so the message is read with the label.
+- At the end, focus goes to the heading of the result, and "Start over" clears the fields and returns to the first step's heading.
+- Without the script the page is one long form: both steps of fields are in the markup and none is `hidden`, the phone number explains when it is needed, and the button sends everything at once. Only Back, the review and the result, which hold no field, start hidden.
+
+## Related \{#related\}
+
+<ComponentLinks slugs={['steps', 'form', 'input', 'choice', 'radio', 'select', 'auto-grid', 'data-list', 'navbar', 'button', 'link', 'heading', 'icon-frame']} />
+
+<ComponentLinks kind="blocks" slugs={['choice-cards']} />
+
+<ComponentLinks kind="pages" slugs={['page', 'settings', 'centered']} />

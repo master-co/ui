@@ -153,6 +153,7 @@ Or import only the theme and the components you use:
 | Table | `table`, `table-row`, `table-heading`, `table-cell`, `table-sort`, `table-title`, `table-primary`, `table-numeric`, `table-compact`, `table-interactive`, `table-sticky` |
 | List | `list`, `list-row`, `list-media`, `list-body`, `list-title`, `list-description`, `list-end`, `list-interactive` |
 | Sortable | `sortable`, `sortable-row`, `sortable-item`, `sortable-item-back`, `sortable-item-forward`, `sortable-handle`, `sortable-status` |
+| Kanban | `kanban`, `kanban-column`, `kanban-header`, `kanban-title`, `kanban-items`, `kanban-items-target`, `kanban-item`, `kanban-item-target`, `kanban-handle`, `kanban-controls`, `kanban-move`, `kanban-empty`, `kanban-preview`, `kanban-preview-landing`, `kanban-mover`, `kanban-mover-actions`, `kanban-status` |
 | Swipe | `swipe`, `swipe-content`, `swipe-actions`, `swipe-action`, `swipe-action-danger` |
 | Data list | `data-list`, `data-list-item`, `data-list-term`, `data-list-value` |
 | File | `file`, `file-failed`, `file-sm`, `file-interactive`, `file-page`, `file-thumb`, `file-body`, `file-name`, `file-meta`, `file-end`, `file-progress` |
@@ -239,7 +240,7 @@ stop.value = 'hnd'                                          // where a pattern h
 
 ## React, Svelte and Vue
 
-A component is a class on a native element, so in a framework most of the library is the same markup in that framework's syntax; there is no `Button` to import. Thirty-six patterns hold state, render rows from data, join parts by id or have a lifetime, and each has a component: avatar, calendar, carousel, chart, color-picker, combobox, command, compare, cropper, dial, dialog, editable, field, gantt, gradient, listbox, log, menu, otp, panel, player, popover, schedule, signature, sortable, splitter, stepper, tabs, tags, toast, toolbar, tooltip, tour, transcript, tree and wheel.
+A component is a class on a native element, so in a framework most of the library is the same markup in that framework's syntax; there is no `Button` to import. Thirty-seven patterns hold state, render rows from data, join parts by id or have a lifetime, and each has a component: avatar, calendar, carousel, chart, color-picker, combobox, command, compare, cropper, dial, dialog, editable, field, gantt, gradient, kanban, listbox, log, menu, otp, panel, player, popover, schedule, signature, sortable, splitter, stepper, tabs, tags, toast, toolbar, tooltip, tour, transcript, tree and wheel.
 
 ```sh
 npx master-ui add combobox --framework=react   # ui/combobox.tsx and ui/use-behavior.ts

@@ -116,7 +116,7 @@ import ContractTable from '~/site/components/ContractTable.astro'
 | --- | --- | --- |
 | 外框 | `shell` | 至少與檢視區等高的網格，同時是名為 `shell` 的尺寸查詢容器 |
 | 側邊欄 | `shell-sidebar` | 黏附於頁首下方，高度等於檢視區的剩餘空間，並可獨立捲動 |
-| 主區域 | `shell-main` | 佔用剩餘欄位，寬度不會超出該欄 |
+| 主區域 | `shell-main` | 占用剩餘的那一欄，寬度不會超出該欄 |
 | 切換控制項 | `shell-toggle` | 讓控制項只在側邊欄收起時顯示 |
 
 預設由**整份文件捲動**。採用黏附定位的 [navbar](/components/navbar) 仍可正常運作，連到標題的連結會跳到正確位置，瀏覽器也會在返回時還原捲動位置。
@@ -496,12 +496,30 @@ npm error While resolving: drift@2.4.0</code></pre>
   </dialog>
 </div>`} />
 
+## 工作區 \{#workspace\}
+
+工作區是多了第三個區域的固定式框架：編輯器位於通往它的導覽，以及編輯對象的屬性之間。讀者會長時間處理同一件事，而且它的設定應該留在一旁時，例如文章、版本說明或一筆紀錄，就適合使用這種配置。如果工作旁邊沒有需要設定的東西，上方的固定式框架就夠用了。
+
+屬性放在 `shell-aside` 中，這裡用 `--shell-aside` 將它設為 18rem 寬。主區域由標頭和下方的[編輯器](/components/editor)組成，編輯器的引擎是 TipTap，與[富文字指南](/guide/rich-text)相同。
+
+<PagePreview name="workspace" title="工作區" example="workspace" caption="撰寫內容並捲動文件：工具列會留在原位。選擇「平板」：屬性會收起，並出現可在抽屜中開啟屬性的按鈕。選擇「手機」：導覽也會如此。變更一項屬性，再選擇其他寬度，會發現它仍然保留。" />
+
+- **只有一個區域會捲動：文件。** 主區域是 `flex flex-col`。它的標頭是 `shrink(0)`；編輯器及其外層的方框是 `grow(1) min-h(0)`，因此編輯器外框的高度恰好等於剩餘的空間。`--editor-max-rows: infinity` 解除文件本身十八行的上限，高度因此取決於外框，`editor-document` 則在其中捲動。主區域中沒有其他內容高過自己的方框，因此文件的捲軸旁不會出現第二條捲軸。
+- **工具列留在原位，是因為它從不捲動。** 它是編輯器外框頂端、位於文件上方的橫條，而不是捲動內容中的黏附列。外框較窄時，它會換到第二行。
+- **框架小於 64rem 時，輔助欄會收起。** 此時才會出現帶有 `hidden@container(--5xl)` 的「Properties」按鈕，用來開啟靠在結尾側邊緣的[抽屜](/components/dialog#drawer) `dialog dialog-drawer`。小於 24rem 時，按鈕只保留圖示，徽章則讓位給標題。小於 48rem 時，側邊欄也會收起，`shell-toggle` 會在 `dialog-drawer-start` 中開啟導覽，與本頁的每個框架相同。
+- **屬性只存在一份。** 框架上的 `ResizeObserver` 會檢查輔助欄是否顯示，並搬移這唯一的一組欄位：顯示時移入輔助欄，未顯示時移入抽屜。若用兩組欄位繫結同一份狀態，每個欄位就需要兩個 id，每次變更也都要複製一次；只用一組，每個標籤、id 和值都留在原處。瀏覽器支援時，搬移會使用 `moveBefore()`，因此取得焦點的欄位會保有焦點；其他情況則使用 `append()`，再由腳本交還焦點。欄位移入已關閉的抽屜時，焦點會移到「Properties」按鈕。
+- **編輯器從不搬移，也從不複製。** 它在任何寬度下都留在主區域，因此文件、選取範圍和歷史紀錄都在同一個地方。
+- **導覽是重複的，不是搬移的。** 連結不保存狀態，因此抽屜中有同一份清單，並使用自己的標籤。
+
+標頭讀取的是同一組欄位：它的標題是 Title 欄位的值，徽章則是 Status。
+
 ## 無障礙 \{#accessibility\}
 
 - 使用地標元素。側邊欄用 `<aside>` 或 `<nav>`，主區域用 `<main>`，頁首用 `<header>`。為每個 `<nav>` 加上標籤。加入抽屜後會有兩個導覽區，請使用不同的標籤。
 - 抽屜中的連結及其順序應與側邊欄相同。側邊欄顯示時，切換控制項會設為 `display: none`，並從 Tab 鍵的焦點順序中移除。
 - 可獨立捲動的區域若沒有任何可取得焦點的內容，請為該區域加上 `tabindex="0"` 和標籤，讓使用者能以鍵盤捲動。
-- 在固定框架中，這一欄是以 `aria-labelledby` 由標題命名的 `<aside>`，每個時間都是帶有程式可讀 `datetime` 的 `<time>`。
+- 在固定式框架中，這一欄是以 `aria-labelledby` 由標題命名的 `<aside>`，每個時間都是帶有程式可讀 `datetime` 的 `<time>`。
+- 在工作區中，兩個 `<aside>` 元素都有名稱：側邊欄使用 `aria-label`，屬性則以其標題命名。文件是以頁面標題命名的 `textbox`，工具列是 Tab 順序中位於它之前的一個停駐點，屬性在原始碼中排在它之後，與閱讀順序相同。屬性的按鈕在 `aria-label` 中寫明「Properties」，因為在最窄的框架上，按鈕的文字會消失。
 - 高度使用 `dvh`，因此手機的瀏覽器工具列不會蓋住側邊欄底部。側邊欄也會依主畫面指示器的安全區域預留底部內距。
 
 ## 類別 \{#classes\}
@@ -515,6 +533,8 @@ npm error While resolving: drift@2.4.0</code></pre>
 ## 相關項目 \{#related\}
 
 <ComponentLinks slugs={['navbar', 'nav', 'dialog', 'skip', 'surface', 'card', 'list', 'auto-grid']} />
+
+<ComponentLinks slugs={['editor', 'toolbar', 'form', 'input', 'select', 'switch', 'badge']} />
 
 <ComponentLinks kind="pages" slugs={['dashboard', 'docs', 'holy-grail', 'master-detail']} />
 

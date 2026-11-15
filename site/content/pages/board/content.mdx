@@ -1,0 +1,77 @@
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import PagePreview from '~/site/components/PagePreview.astro'
+
+A board is a whole screen given to a [kanban](/components/kanban): work that passes through a few stages, seen all at once and moved by hand. The frame is a [fixed app shell](/pages/app-shell#fixed), a `shell shell-fixed` that is exactly the viewport. The navigation and the board's title stay where they are, the board takes the room that is left, and the page itself never scrolls.
+
+<PagePreview name="default" title="Board" example="board" caption="Drag a card by its grip into another column, and hold it near the right edge: the board scrolls under it. Scroll the Backlog, which is longer than the screen. The button beside a grip moves its card without a drag, and Reset puts all twelve back. Choose Phone and scroll across: the columns keep their width." />
+
+The [kanban](/components/kanban) page has the contract: the classes, the keys, the mover and the behavior. This page is about the screen around it: which regions there are, which of them scroll, and what each does when the screen narrows.
+
+## How it is built \{#how-it-is-built\}
+
+- **The frame is `shell shell-fixed`.** The shell is `100dvh` tall and clips what leaves it, so nothing the board does can move the page. Its sidebar is `14rem` wide here, through `--shell-sidebar`, to leave the board more of a tablet.
+- **The main region is a column.** `shell-main` takes `flex flex-col`: the tool region first, then the board. In a fixed shell the main region already has `min-height: 0` and a height that is the viewport's, which is what gives the column under it something definite to share out.
+- **The tool region keeps its height.** A `<header>` with `shrink(0)` holds the title, one line of context and Reset, as a [page header](/blocks/page-header) does: a split that wraps, so at a large text size Reset drops under the title instead of squeezing it.
+- **The board takes the rest.** The `kanban` root has `grow(1) min-h(0)`: it grows into the room under the tool region and is allowed to be shorter than what it holds. That pair is what stops the board at the foot of the screen. Without it the board is as tall as its longest column and the main region scrolls instead.
+- **The columns stop where the board does.** A column is as tall as what it holds and never taller than the board, so a short column ends early and only a long one reaches the foot, where its list starts to scroll.
+- **The gutter is inside the scroller.** The main region's gutter is `1.5rem`. The tool region takes it as `px-lg`, and the board takes it as its own padding, `px-lg pb-lg`, not as a margin: the columns slide under the region's edges and leave at the sidebar's hairline, the first column starts on the line the title starts on, and the same `1.5rem` is there after the last column when the board is scrolled to its end.
+
+## What scrolls \{#scrolling\}
+
+Three things scroll, and each holds one kind of thing.
+
+| Scrolls | Which way | Because |
+| --- | --- | --- |
+| The board, `kanban` | Across | Four columns of `17.5rem` and their gaps need 75.25rem with the gutters; no screen here has that |
+| A column's list, `kanban-items` | Along | The Backlog holds seven cards and the board is shorter than they are. Its header stays over it |
+| The sidebar, `shell-sidebar` | Along | Only when the navigation is longer than the screen; here it is not |
+
+The page does not scroll because it has nothing of its own to show: the title is already in view and the board has no end a reader scrolls to. If the document moved as well, a drag near the foot would have two things to scroll, and a phone's swipe along a column would sometimes move the page. Each scroller also contains its overscroll, so reaching the end of a list does not start moving the board or the browser's own navigation.
+
+While a card is carried, the behavior scrolls for the hand that is busy: the board when the pointer is near its start or end, and the list of the column under the pointer near its head or foot. That only works when those two are the scrollers, which is the reason to give the board a height and not let the document take over.
+
+## Tablet and Phone \{#responsive\}
+
+Nothing in the board reflows. The columns keep their width at every size, and the screen decides how many of them show.
+
+- **Desktop**, 1280 wide: three columns and a part of the fourth. The part is the hint that the board goes on.
+- **Tablet**, 768 wide: the shell is exactly 48rem, so the sidebar still stands. The board has 34rem: one column and most of the next.
+- **Phone**, 390 wide: below 48rem of shell the sidebar leaves, and a row over the title holds the button that opens the same navigation in a [drawer](/components/dialog#drawer). The board shows one column and the edge of the second. A column is `min(17.5rem, 100% - 2rem)` wide, so even on a narrower phone the next column shows at the edge and four columns are never squeezed into four slivers.
+
+The button stands in a row of its own, a `shell-toggle` that leaves with the drawer, so the title starts on the first column's line at every width. It hangs into the gutter with `btn-hang-start`, which puts its glyph on that line too.
+
+On a touch screen a swipe that starts on a card scrolls: across moves the board, along moves the list. Only the grip takes the touch for a drag, and both of a card's controls reach 44px.
+
+## The data \{#data\}
+
+The example writes nothing while a card moves. The behavior commits a move and dispatches `change` from the board; the example then reads the arrangement, `value`, and writes each column's count from the length of its items, so a count cannot disagree with the cards under it. Reset sets `value` to the arrangement the markup started with. Setting it dispatches nothing, so the counts are written right after.
+
+That listener is also where an application saves. The example keeps nothing: the arrangement lives in the page and is gone on reload. [The behavior](/components/kanban#behavior) says what `value`, `move()` and the two events promise.
+
+This board has no search, no filter, no way to add or delete a card and no limit to a column. Each of those changes what a place means: a filtered column shows the third card as the first, and a column that is full has to refuse a drop. Add them with the rule for that case decided.
+
+## When to use it \{#when-to-use\}
+
+Use a board when the stage a thing is in is the main fact about it, and moving it is the main act. Two to six stages read well; more than that is a table with a status column.
+
+- Figures and panels that are read, with nothing to move: a [dashboard](/pages/dashboard).
+- One list put in order, where nothing changes list: a [sortable](/components/sortable) in an ordinary page.
+- Many rows compared by their columns, sorted, filtered and selected: a [table view](/blocks/table-view).
+
+## Accessibility \{#accessibility\}
+
+- **Landmarks.** The sidebar is an `<aside>` that holds the brand, a `<nav aria-label="Workspace">` and the account; the board and its tool region are the one `<main>`. The `<header>` of the tool region is inside `<main>`, so it is not a banner. A `skip` link comes first and lands on the main region.
+- **The outline.** The page's `<h1>` is the board's name and each column's title is an `<h2>`. The board is a `role="group"` named like the page.
+- **The columns are regions.** Each is a `<section>` named by its title, and its cards are a native list, which says how many it holds. The count beside the title says the same number to the eye, and "cards" after it to a screen reader.
+- **The drawer** is a native modal `<dialog>`: it keeps focus inside while it is open, closes with <kbd class="kbd">Esc</kbd>, a press outside or its close button, and returns focus to the button that opened it. Its navigation has a label of its own, "Workspace, in the drawer".
+- **Every scroller is reached by the keys.** The board and the lists hold buttons, so <kbd class="kbd">Tab</kbd> walks the cards in order, column by column, and the browser brings each into view, across and along. After a move the card is brought into view in its new place and focus stays on its grip.
+- **The mover** is one form for every card. The example names it with the card it was opened for, "Move Draft the launch post", and the status region says each pick, place and drop, and that the board was reset.
+- A whole-screen frame cannot grow with its text. At twice the text size the tool region wraps and the board is shorter, and everything is still reached by scrolling the same two ways.
+
+## Related \{#related\}
+
+<ComponentLinks slugs={['kanban', 'sortable', 'card', 'badge', 'avatar', 'popover', 'select', 'button', 'heading', 'nav', 'dialog', 'skip']} />
+
+<ComponentLinks kind="blocks" slugs={['page-header', 'sidebar', 'table-view']} />
+
+<ComponentLinks kind="pages" slugs={['app-shell', 'dashboard', 'master-detail']} />
