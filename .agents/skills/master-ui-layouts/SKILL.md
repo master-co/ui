@@ -79,6 +79,21 @@ A layout is right when each region scrolls where the page says it does and nowhe
 - **A sticky region sticks to the nearest scroller.** Put it in the region that scrolls, and give it the room above it (`top(…)`) when a header is already stuck there.
 - **Contain the scroll of a region** that is not the page: `overscroll-behavior: contain` is in the shell's columns, so a list's end does not move the page under it.
 
+## Gutters
+
+A gutter is the line a region's words start on, measured from the region's edge. Each region has one, and everything in it starts on that line: a navbar, a heading, the first word of a list row. There is no single gutter for a whole page: the sidebar and the main region hold different things at different densities, so each keeps its own and stays consistent with itself. A token for one shared gutter would misalign either the sidebar or the main region.
+
+| Region | Gutter | How it is reached |
+| --- | --- | --- |
+| Sidebar | `1.25rem` | the column's `p-sm` plus a nav item's `.5rem` |
+| Header across the top | `1.25rem` | `--navbar-padding-x: 1.25rem`, so the brand stands over the sidebar's icons |
+| Main region | `1.5rem` | `p-lg` on the content; a navbar in it takes `--navbar-padding-x: 1.5rem` |
+| A list column (`shell-fixed`, master-detail) | `px-sm` + `--list-inset` | the list stands `px-sm` inside the column, its heading is `pxs(10)`, the rows' own inset |
+
+- **A navbar in a region takes that region's gutter**, written on the navbar (`style="--navbar-padding-x: …"`): the navbar declares its own default (`1rem`), so a value set on an ancestor does not reach it.
+- **Check the line, not the padding.** Measure where the brand, the heading and the first word start (`getBoundingClientRect().left`); padding on different elements adds up differently.
+- A selected or current row is a sheet that keeps clear of the region's edges: the list stands inside the column (`px-sm`, `p-sm`) and the row's inset carries its words to the gutter.
+
 ## Landmarks and order
 
 A layout is the first thing a screen reader's landmark list shows. Write it so the list reads like the page.
