@@ -11,7 +11,6 @@ export function mount(root) {
   const { signal } = controller
   const element = root.querySelector('.kanban')
   const board = kanban(element)
-  const mover = element.querySelector('.kanban-mover')
   const status = element.querySelector('.kanban-status')
   /** The arrangement the markup holds before anything moves. */
   const first = board.value
@@ -34,12 +33,6 @@ export function mount(root) {
     board.value = first
     count()
     status.textContent = 'The board is back in its first arrangement.'
-  }, { signal })
-
-  // The mover is one form for every card: name it with the card it was opened for.
-  element.addEventListener('click', (event) => {
-    const move = event.target.closest('.kanban-move')
-    if (move) mover.setAttribute('aria-label', move.getAttribute('aria-label'))
   }, { signal })
 
   count()

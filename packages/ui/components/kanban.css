@@ -113,25 +113,8 @@
     scrollbar-width: thin;
     scrollbar-color: var(--color-line-strong) transparent;
 
-    /*
-     * The place at the end of the list: a line after the last item, in the middle of the gap the item would
-     * leave under it. Its margins take back the gap and its own height, so the list keeps its size.
-     */
-    &.kanban-items-target::after {
-      content: '';
-      flex: none;
-      height: 2px;
-      margin-block: calc(var(--kanban-item-gap) / -2 - 1px);
-      border-radius: 1px;
-      background: var(--kanban-marker);
-    }
-
     @media (forced-colors: active) {
       scrollbar-color: auto;
-
-      &.kanban-items-target::after {
-        background: Highlight;
-      }
     }
   }
 
@@ -179,6 +162,85 @@
     }
   }
 
+  /* An empty list with no well to show keeps its room, and the line of a place is drawn across the middle of it. */
+  .kanban-items-target:not(:has(.kanban-item)) {
+    background: linear-gradient(var(--kanban-marker), var(--kanban-marker)) center / calc(100% - var(--kanban-inset) * 2) 2px no-repeat;
+
+    @media (forced-colors: active) {
+      background-image: linear-gradient(Highlight, Highlight);
+    }
+  }
+
+  /*
+   * An item is carried by any part of it with a mouse, and says so with the hand where a pointer hovers; a
+   * link, a button or a field in it keeps its own cursor and its own press.
+   */
+  @media (hover: hover) and (pointer: fine) {
+    .kanban-item:has(.kanban-handle:enabled) {
+      cursor: grab;
+    }
+  }
+
+  /*
+   * A move is drawn by the platform where it can be: the behavior starts a view transition scoped to the board,
+   * each item is named by its own node, and every item glides from where it stood to where it stands. A list is
+   * named too and holds its items' pictures, clipped as the list clips them: an item past the foot of a long
+   * column, or scrolled under its head, stays out of sight on the way. An item that changes column is drawn by
+   * the list it arrives in, so it comes in from that list's edge while the carried sheet crosses the gap. The
+   * names stay inside the board, so a page's own transitions take the board as one picture.
+   */
+  @supports (view-transition-scope: all) {
+    .kanban {
+      view-transition-scope: all;
+    }
+
+    .kanban-items {
+      view-transition-name: match-element;
+      view-transition-class: kanban-items;
+      view-transition-group: contain;
+    }
+
+    .kanban-item {
+      view-transition-name: match-element;
+      view-transition-class: kanban-item;
+    }
+
+    /*
+     * The board takes no press while the pictures glide, so the glide is quick, the board's own picture with
+     * it: a reader who drops one card and reaches for the next finds it answering.
+     */
+    .kanban::view-transition-group(*),
+    .kanban::view-transition-old(*),
+    .kanban::view-transition-new(*) {
+      animation-duration: var(--duration-quick);
+      animation-timing-function: var(--easing-glide);
+    }
+
+    .kanban::view-transition-group-children(.kanban-items) {
+      overflow: clip;
+    }
+  }
+
+  /*
+   * The place at the end of a list: a line under its last item, in the middle of the gap the item would leave
+   * there. It is drawn by that item, out of flow as the line over an item is, so marking a place never changes
+   * how far the list scrolls: a line that was an item of the list made it 2px longer and moved every item.
+   */
+  .kanban-items-target .kanban-item:nth-last-child(1 of .kanban-item)::after {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    bottom: calc(var(--kanban-item-gap) / -2 - 1px);
+    height: 2px;
+    border-radius: 1px;
+    background: var(--kanban-marker);
+    pointer-events: none;
+
+    @media (forced-colors: active) {
+      background: Highlight;
+    }
+  }
+
   /*
    * What an empty column shows: a shallow well with a few words, in place of its list. A column that is the
    * place an item would land in has no gap to draw a line in, so the well takes the marker's ink as a ring.
@@ -199,7 +261,7 @@
     text-align: center;
   }
 
-  .kanban-column:not(:has(.kanban-item)) {
+  .kanban-column:not(:has(.kanban-item)):has(.kanban-empty) {
     .kanban-items {
       display: none;
     }
@@ -222,7 +284,7 @@
   /*
    * An item's two controls, a quiet pair of the same size: the handle, a grip of six points that carries the
    * item, and the button that opens the mover, two arrows that pass. Each is 24px and draws only its glyph
-   * until the pointer or the keys reach it, and its target reaches 44px on touch without moving the glyph.
+   * until the pointer or the keys reach it, and its target is 44px tall on touch without moving the glyph.
    */
   .kanban-handle,
   .kanban-move {
@@ -310,6 +372,25 @@
     margin-inline-end: -.5rem;
   }
 
+  /*
+   * The two stand .125rem apart, so on the side where they meet each target stops halfway: a target that reached
+   * its full depth there lay over the other button, and a press on the edge of one answered as the other.
+   */
+  .kanban-controls:has(.kanban-handle) .kanban-move::after {
+    inset-inline-end: -.0625rem;
+  }
+
+  .kanban-controls:has(.kanban-move) .kanban-handle::after {
+    inset-inline-start: -.0625rem;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .kanban-item:hover .kanban-move,
+    .kanban-item:focus-within .kanban-move {
+      opacity: 1;
+    }
+  }
+
   .kanban-handle {
     cursor: grab;
     /* A drag that starts on the grip never scrolls; the rest of the item still does. */
@@ -332,6 +413,20 @@
     cursor: pointer;
     touch-action: manipulation;
 
+    /*
+     * Where a pointer hovers, the way to move without a drag waits out of sight until the pointer or the keys
+     * are on its item: a board of cards then shows one grip to a card, not a pair. A finger has no hover, so on
+     * a touch screen it is always drawn.
+     */
+    @media (hover: hover) and (pointer: fine) {
+      opacity: 0;
+      transition-property: background-color, color, opacity;
+
+      @media (prefers-reduced-motion: reduce) {
+        transition-property: background-color, color;
+      }
+    }
+
     &::before {
       mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.75 5.25h10.5M10.5 2.5l2.75 2.75L10.5 8M13.25 10.75H2.75M5.5 8l-2.75 2.75L5.5 13.5'/%3E%3C/svg%3E") center / contain no-repeat;
     }
@@ -350,8 +445,13 @@
     width: var(--kanban-width, 16rem);
     max-width: calc(100vw - 1rem);
     margin: 0;
-    padding: .625rem var(--kanban-padding, .75rem);
+    /*
+     * The room under the words is a clear border, not padding: the clamp cuts at the padding's edge, and an
+     * engine that still paints the line after the last showed the top of it in padding there.
+     */
+    padding: .625rem var(--kanban-padding, .75rem) 0;
     border: 0;
+    border-block-end: .625rem solid transparent;
     border-radius: calc(var(--kanban-radius, var(--radius-control-lg)) * var(--corner-scale));
     corner-shape: var(--corner-shape);
     overflow: hidden;

@@ -809,3 +809,77 @@ test('kanban: detach removes the listeners and ends a move in progress, and atta
   kanban(root)
   assert.deepEqual(board.value, start)
 })
+
+/* What a move leaves behind when something goes wrong, or goes another way. */
+
+test('kanban: the mover takes the name of the button that opened it', () => {
+  const { root, one, click } = setup()
+  kanban(root)
+  click(one('.kanban-item[data-value="copy"] [popovertarget]'), { detail: 1 })
+  assert.equal(one('.kanban-mover').getAttribute('aria-label'), 'Move Copy')
+  click(one('.kanban-item[data-value="site"] [popovertarget]'), { detail: 1 })
+  assert.equal(one('.kanban-mover').getAttribute('aria-label'), 'Move Site', 'one form serves every item')
+})
+
+test('kanban: a press whose release never came is not a drag once no button is down', () => {
+  const { root, down, pressed, isOpen, preview, document, window } = setup()
+  const board = kanban(root)
+  down('brief', 1, 20, 60)
+  // The release went to a menu that opened over the press; the pointer comes back with no button held.
+  document.dispatchEvent(new window.PointerEvent('pointermove', { bubbles: true, pointerId: 1, pointerType: 'mouse', buttons: 0, clientX: 60, clientY: 160 }) as any)
+  assert.deepEqual(pressed(), [], 'nothing is picked up')
+  assert.equal(isOpen(preview), false)
+  // The next press is heard: the one before it is over.
+  down('copy', 2, 20, 110)
+  document.dispatchEvent(new window.PointerEvent('pointermove', { bubbles: true, pointerId: 2, pointerType: 'mouse', buttons: 1, clientX: 30, clientY: 150 }) as any)
+  assert.deepEqual(pressed(), ['copy'])
+  // The drag is still under way: detaching ends it, and the frame it waits for.
+  board()
+})
+
+test('kanban: an owner that throws leaves the board as it was and able to move again', async () => {
+  const { root, handle, press, pressed } = setup()
+  let fail = true
+  const board = kanban(root, { arrange: () => { if (fail) throw new Error('refused') } })
+  assert.throws(() => board.move('copy', 'doing', 0), /refused/, 'the owner\'s error reaches the caller')
+  assert.deepEqual(board.value, start, 'the board is as it was')
+  fail = false
+  handle('copy').focus()
+  await press('copy')
+  assert.deepEqual(pressed(), ['copy'], 'and an item can still be picked up')
+  board()
+})
+
+/* The whole item, a hidden column and a handle that is disabled. */
+
+test('kanban: a mouse carries an item by its words, a finger does not, and a press on a field is the field\'s', () => {
+  const { root, one, pointer, move, up, pressed, isOpen, preview, document, window } = setup()
+  const board = kanban(root)
+  const title = one('.kanban-item[data-value="brief"] .card-title')
+  const drag = (target: Element, pointerType: string, id: number) => {
+    pointer(target, 'pointerdown', { button: 0, isPrimary: true, pointerId: id, pointerType, buttons: 1, clientX: 20, clientY: 60 })
+    document.dispatchEvent(new window.PointerEvent('pointermove', { bubbles: true, pointerId: id, pointerType, buttons: 1, clientX: 30, clientY: 130 }) as any)
+  }
+  drag(title, 'touch', 1)
+  assert.deepEqual(pressed(), [], 'a finger on the words is a scroll, not a carry')
+  drag(one('.kanban-item[data-value="brief"] .input'), 'mouse', 2)
+  assert.deepEqual(pressed(), [], 'a press on a field is the field\'s')
+  drag(title, 'mouse', 3)
+  assert.deepEqual(pressed(), ['brief'], 'a mouse on the words carries the item')
+  assert.equal(isOpen(preview), true)
+  board()
+})
+
+test('kanban: an item whose handle is disabled is not moved by the mover, and move() takes no hidden column', async () => {
+  const { root, one, click, heard } = setup(markup
+    .replace('aria-label="Drag Copy"', 'aria-label="Drag Copy" disabled')
+    .replace('data-value="done" aria-labelledby="done-title"', 'data-value="done" aria-labelledby="done-title" hidden'))
+  const board = kanban(root)
+  const opened = new Event('click', { bubbles: true, cancelable: true })
+  one('.kanban-item[data-value="copy"] [popovertarget]').dispatchEvent(opened)
+  assert.equal(opened.defaultPrevented, true, 'the mover does not open for it')
+  assert.equal(board.move('brief', 'done', 0), false, 'a hidden column takes no item')
+  assert.deepEqual(board.value[3].items, ['name'])
+  assert.deepEqual(heard, [])
+  board()
+})

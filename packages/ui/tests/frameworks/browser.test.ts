@@ -574,6 +574,8 @@ for (const framework of ['react', 'svelte', 'vue']) {
       await root.evaluate((element) => { element.scrollLeft = 0; element.scrollIntoView({ block: 'center', behavior: 'instant' }) })
       // Its list may have scrolled to show the item the keys moved under it.
       await handle('copy').evaluate(element => element.closest('.kanban-items')!.scrollTo(0, 0))
+      // The board takes no press while the items of the last move glide to their places: the glide is quick, and over first.
+      await page.waitForFunction(() => !document.getAnimations().some(animation => (animation.effect as KeyframeEffect | null)?.pseudoElement?.startsWith('::view-transition')))
       const grip = await middle(handle('copy'))
       const edge = await box(root)
       await page.mouse.move(grip.x, grip.y)
@@ -618,7 +620,9 @@ test(`${engine}: a kanban card is dragged by touch from its handle, the only par
     const root = page.locator('[data-example="kanban"] .kanban')
     await root.waitFor()
     // The playground is a desktop page: give the board the room a phone would.
-    await root.evaluate((element: HTMLElement) => { element.style.width = '340px' })
+    // And less height than its first column needs, so that column's list has somewhere to scroll: the list once
+    // scrolled here only because the line of a place made it 2px longer.
+    await root.evaluate((element: HTMLElement) => { element.style.width = '340px'; element.style.height = '8rem' })
     await root.evaluate(element => element.scrollIntoView({ block: 'center', inline: 'start', behavior: 'instant' }))
     const session = await context.newCDPSession(page)
     const touch = (type: 'touchStart' | 'touchMove' | 'touchEnd', points: { x: number, y: number, id?: number }[]) => session.send('Input.dispatchTouchEvent', { type, touchPoints: points.map(point => ({ x: Math.round(point.x), y: Math.round(point.y), id: point.id ?? 1 })) })
@@ -630,9 +634,13 @@ test(`${engine}: a kanban card is dragged by touch from its handle, the only par
     const handle = root.locator('.kanban-item[data-value="brief"] .kanban-handle')
     const target = await handle.evaluate((element) => {
       const reach = getComputedStyle(element, '::after')
-      return parseFloat(reach.width)
+      const move = element.parentElement!.querySelector('.kanban-move')
+      const gap = move ? element.getBoundingClientRect().left - move.getBoundingClientRect().right : 0
+      return { height: parseFloat(reach.height), width: parseFloat(reach.width), overlap: move ? -parseFloat(reach.left) - parseFloat(getComputedStyle(move, '::after').right) - gap : 0 }
     })
-    assert.ok(target >= 44, `the grip's target reaches 44px on a touch screen: ${target}px`)
+    assert.ok(target.height >= 44, `the grip's target is 44px tall on a touch screen: ${target.height}px`)
+    assert.ok(target.width >= 34, `and reaches past the grip on its free side: ${target.width}px`)
+    assert.ok(target.overlap <= 0, `the grip's target and the move button's do not lie over each other: ${target.overlap}px`)
     assert.equal(await handle.evaluate(element => getComputedStyle(element).touchAction), 'none')
     assert.notEqual(await root.locator('.kanban-item[data-value="brief"]').evaluate(element => getComputedStyle(element).touchAction), 'none', 'only the grip refuses to scroll')
 
@@ -641,6 +649,7 @@ test(`${engine}: a kanban card is dragged by touch from its handle, the only par
     const from = { x: grip.x + grip.width / 2, y: grip.y + grip.height / 2 }
     // The column is taller than the board: held near its foot, the finger scrolls the list until its end is the place.
     const list = root.locator('.kanban-column[data-value="todo"] .kanban-items')
+    assert.ok(await list.evaluate(element => element.scrollHeight > element.clientHeight), 'the list has somewhere to scroll before anything is carried')
     const foot = (await box(root)).y + (await box(root)).height - 12
     await touch('touchStart', [from])
     for (let step = 1; step <= 6; step++) await touch('touchMove', [{ x: from.x + step * 2, y: from.y + step * (foot - from.y) / 6 }])

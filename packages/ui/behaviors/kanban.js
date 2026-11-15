@@ -11,7 +11,9 @@
  * item stays in its place, and the place it would land in is marked: `kanban-item-target` on the item it would
  * land before, or `kanban-items-target` on a list it would end. The stylesheet draws the line.
  *
- * With the pointer: a press on a handle that moves more than a few pixels picks the item up. Its name is
+ * With the pointer: a press on a handle that moves more than a few pixels picks the item up, and for a mouse so
+ * does a press anywhere on the item that is not on a link, a button or a field. A finger carries by the handle
+ * alone, since a press elsewhere on an item is how a list is scrolled. The item's name is
  * written into `kanban-preview`, a manual popover in the root, which is shown in the top layer and follows the
  * pointer through `--kanban-x` and `--kanban-y` at the item's width, `--kanban-width`. The column under the
  * pointer, or the nearest across, is where it would land, before the first item whose middle is under the
@@ -34,7 +36,13 @@
  * Every commit takes one path, `move(item, column, index)` on the function this returns, where `index` is the
  * place among the column's other items. A commit that changes the arrangement moves the item node itself, with
  * `moveBefore()` where the browser has it so what it holds keeps its state, brings it into view, and then the
- * root dispatches `input` and `change`, once each. A commit that changes nothing dispatches nothing.
+ * root dispatches `input` and `change`, once each. A commit that changes nothing dispatches nothing. Where the
+ * browser has view transitions scoped to an element, the board starts one around the change, so every item
+ * glides to the place it now has; the stylesheet names the items for it. Then a commit is finished a frame
+ * later, and `move` answers with a promise. The board takes no press while the items glide, which is why the
+ * stylesheet keeps the glide quick. Under reduced motion the change is drawn at once.
+ * `move` itself is for the page: it does not bring the item into view, does not move into a hidden column, and
+ * is refused while an earlier move is still being drawn.
  *
  * The function it returns has a `value`, the arrangement: one `{ value, items }` to a column, in the order of
  * the columns. Set it to arrange the board; that dispatches nothing. A value that names a column or an item
@@ -81,6 +89,9 @@ const english = {
   drop: (name, column, position, count) => `${name}, dropped in ${column}, position ${position} of ${count}.`,
   cancel: (name, column, position, count) => `${name}, move cancelled. Still in ${column}, position ${position} of ${count}.`,
 }
+
+/** What a press on an item is for already: on these a mouse does not carry the item. */
+const busy = 'a[href], button, input, select, textarea, summary, label, [contenteditable]:not([contenteditable="false"]), [tabindex]:not([tabindex="-1"]), [role="button"], [role="link"]'
 
 /** How far a press moves before it is a drag, in pixels. */
 const threshold = 4
@@ -232,6 +243,16 @@ export function kanban(root, { messages = {}, arrange } = {}) {
 
   const motion = () => !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 
+  /**
+   * The platform's own way of drawing a change of arrangement, a view transition scoped to the board, where the
+   * browser has one and motion is wanted.
+   * @returns {((this: Element, update: () => unknown) => any) | null}
+   */
+  const glides = () => {
+    const start = /** @type {any} */ (root).startViewTransition
+    return typeof start === 'function' && motion() ? start : null
+  }
+
   /** Where an item stands now. */
   const placeOf = (/** @type {HTMLElement} */ item) => {
     const column = /** @type {HTMLElement} */ (columnOf(item))
@@ -315,10 +336,13 @@ export function kanban(root, { messages = {}, arrange } = {}) {
    * The one path of a commit: put an item in a place, bring it into view, give focus back and dispatch.
    * @param {HTMLElement} item
    * @param {Place} to
-   * @param {boolean} focus Whether its handle takes focus afterward. Focus the move itself took away is always given back.
-   * @returns {boolean | Promise<boolean>} Whether the arrangement changed: at once, or once `arrange` is done.
+   * @param {boolean | 'pointer'} focus Whether its handle takes focus afterward: `'pointer'` after a drag, which
+   *   asks for no focus ring, since a ring is for the keys and the first press on a page would otherwise draw one.
+   *   Focus the move itself took away is always given back.
+   * @param {boolean} [seen] Whether the item is brought into view: not for a move the page makes by itself.
+   * @returns {boolean | Promise<boolean>} Whether the arrangement changed: at once, or once it has been drawn.
    */
-  const shift = (item, to, focus) => {
+  const shift = (item, to, focus, seen = true) => {
     const from = placeOf(item)
     const index = Math.max(0, Math.min(others(to, item).length, to.index))
     const list = listOf(to.column)
@@ -330,8 +354,11 @@ export function kanban(root, { messages = {}, arrange } = {}) {
     const after = () => {
       moving = false
       const moved = find(value) ?? item
-      moved.scrollIntoView?.({ block: 'nearest', inline: 'nearest' })
-      if (focus) handleOf(moved)?.focus({ preventScroll: true })
+      // A reader's own move is brought into view; one the page makes, with `move`, leaves the view where it is.
+      if (seen) moved.scrollIntoView?.({ block: 'nearest', inline: 'nearest' })
+      // Another item picked up while this one was drawn is held on the board as it now is.
+      if (carry) carry.written = written()
+      if (focus) handleOf(moved)?.focus(/** @type {FocusOptions} */ ({ preventScroll: true, ...(focus === 'pointer' ? { focusVisible: false } : {}) }))
       // A node inserted again loses focus; what had it gets it back without scrolling again.
       else if (active?.isConnected && document.activeElement !== active && !root.contains(document.activeElement)) active.focus({ preventScroll: true })
       const now = written() !== before
@@ -339,16 +366,46 @@ export function kanban(root, { messages = {}, arrange } = {}) {
       return now
     }
 
-    moving = true
-    if (arrange) {
+    // An owner that throws, at once or later, leaves the board as it was and able to move again.
+    const failed = (/** @type {unknown} */ error) => {
+      moving = false
+      throw error
+    }
+    /** Draw the arrangement: the owner's own drawing, or the node put in its place. */
+    const draw = () => {
+      if (!arrange) return put(list, item, index)
       const next = read().map((entry) => ({ value: entry.value, items: entry.items.filter((each) => each !== value) }))
       next.find((entry) => entry.value === valueOf(to.column))?.items.splice(index, 0, value)
-      return Promise.resolve(arrange(next)).then(after, (error) => {
-        moving = false
-        throw error
-      })
+      return arrange(next)
     }
-    put(list, item, index)
+
+    moving = true
+    const glide = glides()
+    if (glide) {
+      // The platform draws the way from the old arrangement to the new: every item glides to where it now stands.
+      let transition = null
+      try {
+        transition = glide.call(root, () => draw())
+      } catch {
+        // A browser that would not start one draws the arrangement at once, below.
+      }
+      if (transition) {
+        // A transition another one cuts short still drew the arrangement: only its animation is given up.
+        transition.ready?.catch(() => {})
+        transition.finished?.catch(() => {})
+        return transition.updateCallbackDone.then(after, failed)
+      }
+    }
+    if (arrange) {
+      let drawn
+      try {
+        drawn = draw()
+      } catch (error) {
+        return failed(error)
+      }
+      return Promise.resolve(drawn).then(after, failed)
+    }
+    draw()
     return after()
   }
 
@@ -434,18 +491,24 @@ export function kanban(root, { messages = {}, arrange } = {}) {
   /**
    * Commit the move the keys chose.
    * @param {boolean} focus Whether the handle keeps focus: not when focus is what left it.
+   * @param {boolean} [told] Whether the drop is said: not when another item is picked up in the same breath,
+   *   whose own words would be cut off by these.
    */
-  const commit = async (focus) => {
+  const commit = async (focus, told = true) => {
     const held = release()
     if (!held) return
     const to = held.target ?? held.origin
     const moves = !same(to, held.origin)
-    if (moves) await shift(held.item, to, focus)
+    try {
+      if (moves) await shift(held.item, to, focus)
+    } finally {
+      // Whatever became of the move, the item is no longer held: a handle left pressed would fade it for good.
+      held.handle.setAttribute('aria-pressed', 'false')
+    }
     const item = find(valueOf(held.item)) ?? held.item
     handleOf(item)?.setAttribute('aria-pressed', 'false')
-    if (item !== held.item) held.handle.setAttribute('aria-pressed', 'false')
     // A drop in the same place is said too: the reader hears that the item is no longer held.
-    if (item.isConnected) announce(say.drop(...spoken(item, placeOf(item))))
+    if (told && item.isConnected) announce(say.drop(...spoken(item, placeOf(item))))
   }
 
   root.addEventListener('click', (event) => {
@@ -463,7 +526,9 @@ export function kanban(root, { messages = {}, arrange } = {}) {
       commit(true)
       return
     }
-    if (carry) commit(false)
+    if (carry) commit(false, false)
+    // A landing still under way lets go of this handle when it ends: it ends now, before the item is held again.
+    settle()
     pick(item, handle)
     // The handle takes focus, so the arrows and Escape work from here and a press elsewhere drops the item.
     if (document.activeElement !== handle) handle.focus({ preventScroll: true })
@@ -516,7 +581,7 @@ export function kanban(root, { messages = {}, arrange } = {}) {
   /**
    * A press on a handle, and the drag it becomes. `dx` and `dy` are where the pointer took hold of the item,
    * from its corner.
-   * @type {{ item: HTMLElement, handle: HTMLButtonElement, id: number, startX: number, startY: number, x: number, y: number, dx: number, dy: number, dragging: boolean, frame: number } | null}
+   * @type {{ item: HTMLElement, handle: HTMLButtonElement, whole: boolean, id: number, startX: number, startY: number, x: number, y: number, dx: number, dy: number, dragging: boolean, frame: number } | null}
    */
   let drag = null
 
@@ -576,7 +641,8 @@ export function kanban(root, { messages = {}, arrange } = {}) {
     if (!drag?.dragging) return
     const elapsed = Math.min(64, time - before)
     let moved = false
-    if (root.scrollWidth > root.clientWidth) {
+    // Off the board a release cancels, so the board holds still there: it scrolls only toward a place.
+    if (carry?.target && root.scrollWidth > root.clientWidth) {
       const box = root.getBoundingClientRect()
       const by = speed(drag.x, box.left, box.right) * elapsed
       if (by) {
@@ -616,6 +682,7 @@ export function kanban(root, { messages = {}, arrange } = {}) {
       // A pointer the browser no longer knows holds no capture.
     }
     if (!dragging) return
+    // The release of a drag clicks the handle that held the pointer; that click is not a press.
     released = true
     const held = release()
     const to = keep && held?.target && !same(held.target, held.origin) ? held.target : null
@@ -625,7 +692,7 @@ export function kanban(root, { messages = {}, arrange } = {}) {
       land(item, handle)
       return
     }
-    Promise.resolve(shift(item, to, true)).then((now) => {
+    Promise.resolve(shift(item, to, 'pointer')).then((now) => {
       const moved = find(valueOf(item)) ?? item
       if (moved !== item) handle.setAttribute('aria-pressed', 'false')
       const grip = handleOf(moved) ?? handle
@@ -638,35 +705,59 @@ export function kanban(root, { messages = {}, arrange } = {}) {
     })
   }
 
+  /** Take the pointer for the handle, so the drag goes on wherever the pointer does. */
+  const capture = (/** @type {HTMLElement} */ handle, /** @type {number} */ id) => {
+    try {
+      handle.setPointerCapture?.(id)
+    } catch {
+      // A pointer the browser no longer knows cannot be captured; the document still hears it.
+    }
+  }
+
   root.addEventListener('pointerdown', (event) => {
-    const handle = /** @type {HTMLButtonElement | null} */ (/** @type {Element} */ (event.target).closest('.kanban-handle'))
-    const item = /** @type {HTMLElement | null} */ (handle?.closest('.kanban-item') ?? null)
+    const target = /** @type {Element} */ (event.target)
+    const grip = /** @type {HTMLButtonElement | null} */ (target.closest('.kanban-handle'))
+    // A mouse carries an item by any part of it that does nothing else. A finger does not: there a press on the
+    // item is the start of a scroll, and only the handle refuses to scroll.
+    const whole = !grip && event.pointerType === 'mouse' && !target.closest(busy)
+    const item = /** @type {HTMLElement | null} */ ((grip ?? (whole ? target : null))?.closest('.kanban-item') ?? null)
+    const handle = grip ?? (whole ? handleOf(item) : null)
     if (!handle || !item || !within(item) || event.button !== 0 || !event.isPrimary || drag || moving) return
     if (handle.disabled) return
     released = false
     settle()
-    // No text is selected and nothing scrolls under the press; focus stays where it was, so a ring the keys
-    // would show does not appear for the pointer, and an item the keys hold is not dropped before the click.
-    event.preventDefault()
-    // A press on the handle of the item the keys hold is the press that drops it.
-    if (carry?.item === item) return
-    try {
-      handle.setPointerCapture?.(event.pointerId)
-    } catch {
-      // A pointer the browser no longer knows cannot be captured; the document still hears it.
+    if (grip) {
+      // No text is selected and nothing scrolls under the press; focus stays where it was, so a ring the keys
+      // would show does not appear for the pointer, and an item the keys hold is not dropped before the click.
+      event.preventDefault()
+      // A press on the handle of the item the keys hold is the press that drops it.
+      if (carry?.item === item) return
+      capture(handle, event.pointerId)
     }
-    drag = { item, handle, id: event.pointerId, startX: event.clientX, startY: event.clientY, x: event.clientX, y: event.clientY, dx: 0, dy: 0, dragging: false, frame: 0 }
+    // A press on the item itself is still a click on whatever it is over until it moves: nothing is taken yet.
+    drag = { item, handle, whole, id: event.pointerId, startX: event.clientX, startY: event.clientY, x: event.clientX, y: event.clientY, dx: 0, dy: 0, dragging: false, frame: 0 }
   }, { signal })
 
   document.addEventListener('pointermove', (event) => {
     if (!drag || event.pointerId !== drag.id) return
+    // A press whose release never arrived, as when a menu opened over it, is not a drag once no button is down.
+    if (!drag.dragging && event.pointerType === 'mouse' && event.buttons === 0) {
+      end(false)
+      return
+    }
     drag.x = event.clientX
     drag.y = event.clientY
     if (!drag.dragging) {
       if (Math.hypot(drag.x - drag.startX, drag.y - drag.startY) < threshold) return
       // An item the keys hold is dropped where they chose before another is carried.
-      if (carry) commit(false)
+      if (carry) commit(false, false)
       drag.dragging = true
+      if (drag.whole) {
+        // The press began on the item's words: what it selected on the way here is let go, and the handle takes
+        // the pointer from now on.
+        document.getSelection?.()?.removeAllRanges()
+        capture(drag.handle, drag.id)
+      }
       const box = drag.item.getBoundingClientRect()
       drag.dx = drag.startX - box.left
       drag.dy = drag.startY - box.top
@@ -690,6 +781,10 @@ export function kanban(root, { messages = {}, arrange } = {}) {
   root.addEventListener('lostpointercapture', (event) => {
     if (drag?.dragging && event.pointerId === drag.id && event.target === drag.handle) end(false)
   }, { signal })
+  // A wheel or a key may scroll a list, the board or the page under a pointer that holds still: the place is found again.
+  document.addEventListener('scroll', () => {
+    if (drag?.dragging) aim()
+  }, { signal, capture: true, passive: true })
   document.addEventListener('keydown', (event) => {
     if (drag?.dragging && event.key === 'Escape') {
       event.preventDefault()
@@ -732,8 +827,16 @@ export function kanban(root, { messages = {}, arrange } = {}) {
     const item = /** @type {HTMLElement | null} */ (trigger?.closest('.kanban-item') ?? null)
     const sheet = form?.closest('[popover]')
     if (!form || !trigger || !item || !within(item) || !sheet?.id) return
+    // An item whose handle is disabled stays where it is, by any way: the mover is not opened for it.
+    if (handleOf(item)?.disabled) {
+      event.preventDefault()
+      return
+    }
     if ((trigger.getAttribute('popovertarget') ?? trigger.getAttribute('commandfor')) !== sheet.id) return
     chosen = valueOf(item)
+    // One form serves every item: it takes the name of the button that opened it, "Move Draft the launch post".
+    const named = trigger.getAttribute('aria-label')
+    if (named) form.setAttribute('aria-label', named)
     const column = /** @type {HTMLSelectElement | null} */ (form.elements.namedItem('column'))
     const own = columnOf(item)
     if (column && own) fill(column, open().map((each) => [valueOf(each), titleOf(each)]), valueOf(own))
@@ -757,7 +860,7 @@ export function kanban(root, { messages = {}, arrange } = {}) {
     } catch {
       // A popover that is not open has nothing to hide.
     }
-    if (!item || !column || !Number.isInteger(index)) return
+    if (!item || !column || !Number.isInteger(index) || moving || handleOf(item)?.disabled) return
     stop(false)
     const now = await shift(item, { column, index }, true)
     const moved = find(chosen) ?? item
@@ -799,10 +902,11 @@ export function kanban(root, { messages = {}, arrange } = {}) {
      */
     move: (item, column, index) => {
       const node = find(String(item))
-      const to = columns().find((each) => valueOf(each) === String(column))
-      if (!node || !to || !Number.isInteger(index) || index < 0) return false
+      // A column that is hidden takes no item, and a move still being drawn is finished before the next.
+      const to = open().find((each) => valueOf(each) === String(column))
+      if (!node || !to || !Number.isInteger(index) || index < 0 || moving) return false
       stop(false)
-      return shift(node, { column: to, index }, false)
+      return shift(node, { column: to, index }, false, false)
     },
   })
 }
