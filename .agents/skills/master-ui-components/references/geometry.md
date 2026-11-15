@@ -33,7 +33,7 @@ A pointer changes where a finger may land, never the drawing. On a touch screen 
 - A native range input reaches 44px across its track through padding with a matching negative margin (`slider`), so its footprint is unchanged.
 - Full-width rows of a list (menu item, option, list row, nav item, checklist and trace rows) grow to 44px, since rows have no shape to keep and stand too close for a target to reach past them. Rows that draw a structure (a tree, a calendar's days, a wheel, a gantt's bars) keep theirs.
 - Two exceptions grow on purpose and say so in their stylesheet: a range's thumbs (24px), each its own only target, and a rating's choosable stars, which part to 44px instead of reaching over one another; the star keeps its size.
-- Fields keep their height and take at least 16px text, so iOS does not zoom the page on focus.
+- Fields keep their height and their type at every pointer, 14px for most. Never raise a field's text to 16px on a coarse pointer to stop iOS zooming onto it on focus: that is the page's viewport (`/guide/installation#set-the-viewport`), capped on iOS alone, where a reader can still pinch to zoom. `tests/master.test.ts` fails a stylesheet that changes the type under `(pointer: coarse)`.
 
 Check it by measurement, not by eye: in a coarse-pointer context the control's box is the size it has with a mouse, and `document.elementFromPoint` a few pixels past its edge returns the control.
 

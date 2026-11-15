@@ -27,7 +27,7 @@ Before editing, ask me these and wait for the answers. Do not choose them yourse
 Then adopt Master UI conservatively:
 1. Run every command from the app root, where its package.json lives, with the project's package manager.
 2. Install the package at an exact version: npm install @master/ui --save-exact (bun add @master/ui --exact, pnpm add @master/ui --save-exact). Master UI is experimental and any 0.x release may break what it published, so keep the version pinned.
-3. Load the stylesheet in the stylesheet the app already loads. Source route: add @import '@master/ui'; on the line after @import '@master/css';, or, with npx master-ui init, @import './ui/index.css'; in its place (adjust the path to where ui/ is). Precompiled route: @import '@master/ui/base.css'; then @import '@master/ui/standalone.css';, and omit base.css if the project already has an equivalent reset. Installing the package alone does not load anything.
+3. Load the stylesheet in the stylesheet the app already loads. Source route: add @import '@master/ui'; on the line after @import '@master/css';, or, with npx master-ui init, @import './ui/index.css'; in its place (adjust the path to where ui/ is). Precompiled route: @import '@master/ui/base.css'; then @import '@master/ui/standalone.css';, and omit base.css if the project already has an equivalent reset. Installing the package alone does not load anything. Then set the page's viewport as https://ui.master.co/guide/installation#set-the-viewport shows: the viewport tag and the short script after it that stops iOS zooming onto a focused field.
 4. Add no behavior script and no framework component yet. When a pattern that needs one is used later, follow https://ui.master.co/guide/behaviors, or https://ui.master.co/guide/frameworks with npx master-ui add <name> in React, Svelte or Vue.
 5. If I chose the full agent setup: install the skill with npx skills add master-co/ui --skill master-ui, append the Master UI block from https://ui.master.co/guide/ai.md#agents-md to AGENTS.md with the project's actual validation commands below it, and add "check:ui": "master-ui check --strict" to the package.json scripts.
 6. If I chose to replace named components, rewrite each one's markup from its contract (npx master-ui contract <name>), keep its behavior and accessible names, and remove the old dependency only after nothing uses it.
@@ -58,6 +58,22 @@ Import Master UI after the Master CSS preset in your app stylesheet:
 ```
 
 The preset declares the layer order `theme, base, defaults, components, utilities`. Master UI adds its rules to `components`, so utilities in your markup still win.
+
+## Set the viewport \{#set-the-viewport\}
+
+A field keeps its type at every pointer: most are 14px, the size of the rest of the interface. iOS zooms the page onto a field whose text is under 16px when it takes focus, and leaves the page zoomed. Capping the viewport's scale stops that zoom, and iOS still lets a reader pinch to zoom whatever the viewport says. Android's browsers obey the cap and would stop pinching too, so the page sets it on iOS alone, where `-webkit-touch-callout` is supported:
+
+```html
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+  if (CSS.supports('-webkit-touch-callout', 'none')) {
+    const viewport = document.querySelector('meta[name="viewport"]')
+    if (viewport) viewport.content += ', maximum-scale=1'
+  }
+</script>
+```
+
+Keep the viewport tag your framework already writes and put the script after it, at the end of the `<head>` or the start of the `<body>`: it only has to run before a reader can focus a field. Without it everything still works; iOS only zooms onto a field as it takes focus. Do not raise a field's type to 16px on touch screens instead: it would no longer match the buttons and selects in its row.
 
 ## Verify the installation \{#verify-the-installation\}
 

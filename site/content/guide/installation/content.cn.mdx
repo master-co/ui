@@ -32,7 +32,7 @@ Before editing, ask me these and wait for the answers. Do not choose them yourse
 Then adopt Master UI conservatively:
 1. Run every command from the app root, where its package.json lives, with the project's package manager.
 2. Install the package at an exact version: npm install @master/ui --save-exact (bun add @master/ui --exact, pnpm add @master/ui --save-exact). Master UI is experimental and any 0.x release may break what it published, so keep the version pinned.
-3. Load the stylesheet in the stylesheet the app already loads. Source route: add @import '@master/ui'; on the line after @import '@master/css';, or, with npx master-ui init, @import './ui/index.css'; in its place (adjust the path to where ui/ is). Precompiled route: @import '@master/ui/base.css'; then @import '@master/ui/standalone.css';, and omit base.css if the project already has an equivalent reset. Installing the package alone does not load anything.
+3. Load the stylesheet in the stylesheet the app already loads. Source route: add @import '@master/ui'; on the line after @import '@master/css';, or, with npx master-ui init, @import './ui/index.css'; in its place (adjust the path to where ui/ is). Precompiled route: @import '@master/ui/base.css'; then @import '@master/ui/standalone.css';, and omit base.css if the project already has an equivalent reset. Installing the package alone does not load anything. Then set the page's viewport as https://ui.master.co/guide/installation#set-the-viewport shows: the viewport tag and the short script after it that stops iOS zooming onto a focused field.
 4. Add no behavior script and no framework component yet. When a pattern that needs one is used later, follow https://ui.master.co/guide/behaviors, or https://ui.master.co/guide/frameworks with npx master-ui add <name> in React, Svelte or Vue.
 5. If I chose the full agent setup: install the skill with npx skills add master-co/ui --skill master-ui, append the Master UI block from https://ui.master.co/guide/ai.md#agents-md to AGENTS.md with the project's actual validation commands below it, and add "check:ui": "master-ui check --strict" to the package.json scripts.
 6. If I chose to replace named components, rewrite each one's markup from its contract (npx master-ui contract <name>), keep its behavior and accessible names, and remove the old dependency only after nothing uses it.
@@ -63,6 +63,22 @@ npm install @master/ui --save-exact
 ```
 
 预设声明了层叠层顺序 `theme, base, defaults, components, utilities`。Master UI 将规则放入 `components`，因此标记中的工具类仍然优先。
+
+## 设置视口 \{#set-the-viewport\}
+
+输入框在任何指针设备上都保持相同的字号：大多是 14px，与界面其余部分一致。在 iOS 上，字号小于 16px 的输入框获得焦点时，页面会放大到该输入框，之后也不会缩回。限制视口的最大缩放比例可以阻止这种放大，而且无论视口如何设置，iOS 仍允许读者双指缩放。Android 的浏览器会遵守这个限制，连双指缩放也一并禁用，因此页面只在支持 `-webkit-touch-callout` 的 iOS 上设置它：
+
+```html
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+  if (CSS.supports('-webkit-touch-callout', 'none')) {
+    const viewport = document.querySelector('meta[name="viewport"]')
+    if (viewport) viewport.content += ', maximum-scale=1'
+  }
+</script>
+```
+
+保留框架已经写入的 viewport 标签，把脚本放在它之后，例如 `<head>` 的末尾或 `<body>` 的开头：只要在读者能够聚焦输入框之前运行即可。没有这段脚本一切照常工作，只是 iOS 会在输入框获得焦点时放大页面。不要改为在触摸屏上把输入框字号提高到 16px：那样它就会与同一行的按钮和下拉选择框不一致。
 
 ## 验证安装 \{#verify-the-installation\}
 

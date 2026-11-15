@@ -74,6 +74,7 @@ export async function verifyComponentGeometry(browser: Browser, { theme, scheme,
         inputRadius: read.radius('.input'),
         childCode: { radius: read.radius('.code-panel .code-block'), shadow: read.style('.code-panel .code-block').boxShadow, background: read.style('.code-panel .code-block').backgroundColor },
         controlHeights: [...document.querySelectorAll('[data-control]')].map(element => element.getBoundingClientRect().height),
+        fieldFonts: [...document.querySelectorAll('input[data-control], select[data-control], .input-group')].map(element => getComputedStyle(element).fontSize),
         // Where a finger lands: the point 3px past the top edge of a button and a segment, and what takes it there.
         reach: ['.btn[data-control]', '.segmented-item'].map(selector => {
           const element = document.querySelector(selector)!, box = element.getBoundingClientRect()
@@ -116,6 +117,8 @@ export async function verifyComponentGeometry(browser: Browser, { theme, scheme,
     assert.equal(values.forcedColors, forcedColors)
     // A control keeps its size at every pointer; on touch only its target grows, past the edge of what is drawn.
     for (const height of values.controlHeights) assert.ok(Math.abs(height - 38) < .5, `native control height: ${height}`)
+    // Its type too: the page's viewport, not a larger font, keeps iOS from zooming onto a focused field.
+    for (const size of values.fieldFonts) assert.equal(size, '14px', 'a field keeps its type at every pointer')
     for (const reach of values.reach) assert.equal(reach.taken, touch, `${reach.selector} (${reach.height}px) takes a touch past its edge only on a coarse pointer`)
     assert.ok(Math.abs(values.groupRadiusGap - 4) < .02, 'input group inset is subtracted after scaling')
     for (const [side, inset] of Object.entries(values.trailingInsets)) assert.ok(Math.abs(inset - 4) < .1, `a group's end button stays 4px in at its ${side} with a popover after it: ${inset}`)

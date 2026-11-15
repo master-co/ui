@@ -96,6 +96,28 @@ for (const file of [...components, ...layouts]) {
   })
 }
 
+/**
+ * A control is drawn the same at every pointer: on touch only its target grows. Its type is part of the drawing, so no
+ * stylesheet raises it on a coarse pointer, not even to the 16px below which iOS zooms the page onto a focused field:
+ * the page stops that zoom with its viewport (`/guide/installation#set-the-viewport`), once for every field.
+ */
+for (const file of [...components, ...layouts]) {
+  test(`${file} keeps its type at every pointer`, () => {
+    const source = code(file)
+    for (const match of source.matchAll(/@media[^{]*pointer:\s*coarse[^{]*\{/g)) {
+      const start = match.index + match[0].length
+      let depth = 1
+      let at = start
+      for (; depth && at < source.length; at++) {
+        if (source[at] === '{') depth++
+        else if (source[at] === '}') depth--
+      }
+      const body = source.slice(start, at - 1)
+      assert.ok(!/(^|[\s;{])font(-size)?\s*:/.test(body), `${file}:${source.slice(0, match.index).split('\n').length}: a coarse pointer changes the type`)
+    }
+  })
+}
+
 test('the README lists the classes the contracts list', async () => {
   const { contracts } = await import('./support.ts')
   const readme = read('README.md')
