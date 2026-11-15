@@ -4,7 +4,7 @@ import PagePreview from '~/site/components/PagePreview.astro'
 The holy grail is the oldest page layout with a name: a header, three columns and a footer, where the middle column takes what the side columns leave, all three are as tall as the tallest, and the main content comes first in the source. It was hard for fifteen years. It is the [app shell](/pages/app-shell) with every optional region in use.
 
 <PagePreview name="default" title="Holy grail" caption="The footer comes into view after the columns. At Tablet the end column leaves; at Phone the start column moves into a drawer." html={`<div class="shell bg-surface-base fg-text-body text-sm" style="--shell-sidebar: 13rem; --shell-aside: 15rem">
-  <header class="navbar shell-header bb(1) bb-solid b-line-hair">
+  <header class="navbar shell-header bb(1) bb-solid b-line-hair" style="--navbar-padding-x: 1.25rem">
     <button type="button" class="btn btn-quiet btn-square btn-sm shell-toggle" commandfor="hg-nav" command="show-modal" aria-label="Open navigation"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h16M4 16h16"/></svg></button>
     <a class="navbar-brand" href="#"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18a9 9 0 0 0 0-18M12 3a9 9 0 0 0 0 18"/></svg>Atlas</a>
     <div class="navbar-end">
@@ -12,7 +12,7 @@ The holy grail is the oldest page layout with a name: a header, three columns an
     </div>
   </header>
   <main class="shell-main">
-    <article class="flex flex-col gap-md max-w(640) mx-auto px-lg py-xl">
+    <article class="flex flex-col gap-md max-w(640) mx-auto px(20) py-xl">
       <p class="eyebrow">Engineering</p>
       <h1 class="heading heading-2xl">How we cut cold builds by forty seconds</h1>
       <p class="lead">Most of a cold build was spent fetching what the last build had already fetched. We stopped throwing it away.</p>
@@ -22,7 +22,7 @@ The holy grail is the oldest page layout with a name: a header, three columns an
       <p class="m(0) leading-md">We measured for a month before turning it on for everyone. Median cold build time went from 96 seconds to 55, and the slowest tenth improved the most, because they had the most to download.</p>
     </article>
   </main>
-  <aside class="shell-sidebar p-sm bxe(1) bxe-solid b-line-hair">
+  <div class="shell-sidebar p-sm bxe(1) bxe-solid b-line-hair">
     <nav class="nav" aria-label="Sections">
       <a class="nav-item" href="#">Latest</a>
       <a class="nav-item" href="#" aria-current="page">Engineering</a>
@@ -30,15 +30,17 @@ The holy grail is the oldest page layout with a name: a header, three columns an
       <a class="nav-item" href="#">Company</a>
       <a class="nav-item" href="#">Customers</a>
     </nav>
-  </aside>
-  <aside class="shell-aside gap-md p-lg bxs(1) bxs-solid b-line-hair" aria-label="Related">
-    <p class="eyebrow">More from engineering</p>
-    <a class="link link-quiet fg-text-strong" href="#">Preview comments, pinned to elements</a>
-    <a class="link link-quiet fg-text-strong" href="#">A dashboard you can drive from the keyboard</a>
-    <a class="link link-quiet fg-text-strong" href="#">Why a deployment is immutable</a>
+  </div>
+  <aside class="shell-aside gap-md px-lg py-xl bxs(1) bxs-solid b-line-hair" aria-labelledby="hg-related">
+    <h2 class="eyebrow" id="hg-related">More from engineering</h2>
+    <ul class="flex flex-col gap-md m(0) p(0)">
+      <li class="flex"><a class="link link-quiet fg-text-strong" href="#">Preview comments, pinned to elements</a></li>
+      <li class="flex"><a class="link link-quiet fg-text-strong" href="#">A dashboard you can drive from the keyboard</a></li>
+      <li class="flex"><a class="link link-quiet fg-text-strong" href="#">Why a deployment is immutable</a></li>
+    </ul>
   </aside>
   <footer class="shell-footer bt(1) bt-solid b-line-hair">
-    <div class="flex flex-wrap items-center justify-between gap-sm px-lg py-lg text-xs fg-text-muted">
+    <div class="flex flex-wrap items-center justify-between gap-sm px(20) py-lg text-xs fg-text-muted">
       <span>© 2026 Atlas Labs</span>
       <nav class="flex flex-wrap gap-lg" aria-label="Footer">
         <a class="link link-quiet" href="#">Privacy</a>
@@ -67,6 +69,7 @@ The holy grail is the oldest page layout with a name: a header, three columns an
 - **The source order is yours.** Each region is placed by its class, not by its position in the markup. Here `<main>` comes right after the header, before both side columns, so it is first for a screen reader, for a search engine and for the tab order.
 - **The side columns are fixed and the middle is fluid.** Set the widths with `--shell-sidebar` and `--shell-aside`; the main region takes the rest and never grows past it.
 - **The row of columns is at least as tall as the viewport**, so the side columns can stay in view for the whole read, and the footer starts below the fold.
+- **One edge for the frame.** The header sets `--navbar-padding-x` to 1.25rem, the sidebar's padding plus a nav item's, and the footer is `px(20)`, so the brand, the sections and the footer's words start on one line.
 - **The hairlines are utilities.** `bxe(1) bxe-solid b-line-hair` draws a line at the end of the start column, and `bxs(…)` at the start of the end column; both follow the writing direction.
 
 ## When to use \{#when-to-use\}
@@ -75,7 +78,7 @@ Use three columns when the two side columns do different jobs for the same conte
 
 ## Accessibility \{#accessibility\}
 
-- The start column is an `<aside>` around a labelled `<nav>` ("Sections") and needs no label of its own; the end column has no navigation in it, so the `<aside>` carries the label ("Related").
+- The start column is a plain element around a labelled `<nav>` ("Sections"), so it is one landmark, not two. The end column has no navigation in it: it is an `<aside>` named by its heading, and its links are a list.
 - With the main region first in the source, the tab order goes header, main, then the side columns. That is the point: check that it matches what your readers expect, and move `<main>` after the navigation if it does not.
 
 ## Related \{#related\}
