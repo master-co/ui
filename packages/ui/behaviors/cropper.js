@@ -405,7 +405,8 @@ export function cropper(root, { ratio, step, min, maxZoom = 4, describe = sayCro
     pointers.set(event.pointerId, { x: event.clientX, y: event.clientY })
     // Capture keeps the moves coming when the pointer leaves the frame. A scripted event has no pointer to capture.
     try { root.setPointerCapture(event.pointerId) } catch {}
-    if (root.ownerDocument.activeElement !== box) box.focus({ preventScroll: true })
+    // Focus given under a pointer asks for no ring: the first press on a page would otherwise draw the keys' one.
+    if (root.ownerDocument.activeElement !== box) box.focus(/** @type {FocusOptions} */ ({ preventScroll: true, focusVisible: false }))
     event.preventDefault()
     begin(event.target, gesture?.moved)
   }, { signal })

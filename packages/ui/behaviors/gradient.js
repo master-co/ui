@@ -295,8 +295,9 @@ export function gradient(root, options = {}) {
     // A scripted event has no pointer to capture.
     try { handle.setPointerCapture?.(event.pointerId) } catch {}
     paint()
-    // The press is on the handle, so the page has no reason to scroll to it under the pointer.
-    handle.focus({ preventScroll: true })
+    // The press is on the handle, so the page has no reason to scroll to it under the pointer, and focus given
+    // under a pointer asks for no ring.
+    handle.focus(/** @type {FocusOptions} */ ({ preventScroll: true, focusVisible: false }))
   }, { signal })
   bar?.addEventListener('pointermove', (event) => {
     if (held !== event.pointerId) return

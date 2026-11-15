@@ -234,8 +234,12 @@ export function sortable(root, { messages = {}, move } = {}) {
     const from = grabbed?.from ?? items().indexOf(item)
     grabbed = null
     moving = true
-    await shift(item, from)
-    moving = false
+    // A `move` that throws or rejects leaves the list as it was and still able to move.
+    try {
+      await shift(item, from)
+    } finally {
+      moving = false
+    }
     const current = items()[from] ?? item
     handleOf(current)?.setAttribute('aria-pressed', 'false')
     announce(say.cancel(nameOf(current), ...position(current)))
@@ -275,8 +279,12 @@ export function sortable(root, { messages = {}, move } = {}) {
     // A press on another item's handle: the item picked up takes that place, and is dropped there.
     const to = items().indexOf(item)
     moving = true
-    await shift(grabbed.item, to)
-    moving = false
+    // A `move` that throws or rejects leaves the list as it was and still able to move.
+    try {
+      await shift(grabbed.item, to)
+    } finally {
+      moving = false
+    }
     const current = move ? items()[to] : grabbed?.item
     if (grabbed && current) {
       grabbed.item = current
@@ -305,8 +313,12 @@ export function sortable(root, { messages = {}, move } = {}) {
     const to = event.key === 'Home' ? 0 : event.key === 'End' ? list.length - 1 : Math.min(list.length - 1, Math.max(0, from + steps[event.key]))
     if (to === from || moving) return
     moving = true
-    await shift(item, to)
-    moving = false
+    // A `move` that throws or rejects leaves the list as it was and still able to move.
+    try {
+      await shift(item, to)
+    } finally {
+      moving = false
+    }
     const current = move ? items()[to] : item
     if (grabbed && current) {
       grabbed.item = current

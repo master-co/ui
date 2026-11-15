@@ -28,6 +28,9 @@ export const geometryMarkup = `
   <button type="button" class="btn" popovertarget="geometry-menu">Actions</button>
   <div id="geometry-menu" class="menu" popover><button type="button" class="menu-item">Rename</button><button type="button" class="menu-item" disabled>Unavailable</button><button type="button" class="menu-item" aria-disabled="true">Unavailable action</button><label class="menu-item menu-item-danger"><input class="menu-input" type="checkbox" disabled>Unavailable choice</label></div>
   <div class="listbox" role="listbox" aria-label="Results"><div class="listbox-option" role="option" aria-selected="true" aria-checked="true"><div class="listbox-body">Project<span class="listbox-description">Selected description</span></div><span class="listbox-end">Hint</span></div><div class="listbox-option" role="option" aria-disabled="true">Unavailable result</div></div>
+  <ul class="list" data-meta-list><li class="list-row"><span class="avatar list-media">AL</span><div class="list-body"><p class="list-title">Ada Lovelace left a comment</p><p class="list-description">The hero reads much better.</p></div><p class="list-meta"><time datetime="2026-11-12">Yesterday</time><span class="badge badge-sm">Unread</span></p><span class="list-end"><button class="btn btn-quiet btn-square btn-sm" type="button" aria-label="Mark as read">R</button></span></li><li class="list-row"><div class="list-body"><p class="list-title">A row with no media and no end</p></div><p class="list-meta">Today</p></li></ul>
+  <header style="display:flex;align-items:center;justify-content:space-between"><span>A header with no contour</span><span style="display:flex"><button class="btn btn-quiet btn-square btn-hang-end" data-hang type="button" aria-label="Open the menu">M</button></span></header>
+  <div class="kanban"><section class="kanban-column" aria-label="To do"><ol class="kanban-items kanban-items-target" data-marked-list><li class="kanban-item">Brief</li><li class="kanban-item">Copy</li></ol></section></div>
   <dialog class="dialog"><div class="dialog-header"><h2 class="dialog-title">Publish deployment</h2></div><div class="dialog-body">The browser owns this modal.</div><div class="dialog-footer"><button class="btn" type="button">Cancel</button></div></dialog>
   <dialog class="dialog command" aria-label="Search commands"><label class="command-search"><input class="command-input" type="search" role="combobox" aria-label="Search commands" aria-expanded="true" aria-controls="geometry-results"></label><div class="listbox command-list" id="geometry-results" role="listbox" aria-label="Commands"><div class="listbox-empty">No commands match.</div></div></dialog>
 </main>`
@@ -83,6 +86,28 @@ export async function verifyComponentGeometry(browser: Browser, { theme, scheme,
         }),
         groupRadiusGap: read.radius('.input-group') - read.radius('.input-group .btn'),
         // A button at the end of a group is 4px in on every side, though a popover it opens follows it in the markup.
+        // No named helper in here: the compiler would wrap one in a function the page does not have.
+        metaRows: [...document.querySelectorAll('[data-meta-list] .list-row')].map(row => ({
+          rects: ['.list-media', '.list-body', '.list-meta', '.list-end'].map(selector => row.querySelector(selector)?.getBoundingClientRect() ?? null),
+          row: row.getBoundingClientRect(),
+          rtl: getComputedStyle(row).direction === 'rtl',
+        })).map(({ rects: [media, body, meta, end], row, rtl }) => ({
+          hasMedia: !!media,
+          media: media ? media.top + media.height / 2 : null,
+          end: end ? end.top + end.height / 2 : null,
+          body: body!.top + body!.height / 2,
+          under: meta!.top - body!.bottom,
+          metaStart: rtl ? body!.right - meta!.right : meta!.left - body!.left,
+          bodyStart: rtl ? row.right - body!.right : body!.left - row.left,
+        })),
+        hang: (() => {
+          const button = document.querySelector('[data-hang]')!.getBoundingClientRect()
+          return { width: button.width, height: button.height }
+        })(),
+        markedList: (() => {
+          const list = document.querySelector('[data-marked-list]')!
+          return { scroll: list.scrollHeight, client: list.clientHeight, line: getComputedStyle(list.lastElementChild!, '::after').height }
+        })(),
         trailingInsets: (() => {
           const group = document.querySelector('[data-trailing-popover]')!.getBoundingClientRect()
           const button = document.querySelector('[data-trailing-popover] .btn')!.getBoundingClientRect()
@@ -121,6 +146,16 @@ export async function verifyComponentGeometry(browser: Browser, { theme, scheme,
     for (const size of values.fieldFonts) assert.equal(size, '14px', 'a field keeps its type at every pointer')
     for (const reach of values.reach) assert.equal(reach.taken, touch, `${reach.selector} (${reach.height}px) takes a touch past its edge only on a coarse pointer`)
     assert.ok(Math.abs(values.groupRadiusGap - 4) < .02, 'input group inset is subtracted after scaling')
+    for (const row of values.metaRows) {
+      if (row.hasMedia) {
+        assert.ok(Math.abs(row.media! - row.body!) < .6, `a list row's media centers on its title and description, not on a third line: ${row.media} vs ${row.body}`)
+        assert.ok(Math.abs(row.end! - row.body!) < .6, `and so does its end: ${row.end} vs ${row.body}`)
+      } else assert.ok(Math.abs(row.bodyStart) < .1, `a row with no media keeps its words on the row's edge: ${row.bodyStart}`)
+      assert.ok(row.under > 0 && Math.abs(row.metaStart) < .1, `list-meta stands under the words, on their edge: ${row.under}, ${row.metaStart}`)
+    }
+    assert.equal(values.hang.width, values.hang.height, 'a hanging square button alone in a holder that fits it keeps its width')
+    assert.equal(values.markedList.scroll, values.markedList.client, 'the line at the end of a kanban list does not lengthen the list')
+    assert.equal(values.markedList.line, '2px', 'and it is drawn by the last item')
     for (const [side, inset] of Object.entries(values.trailingInsets)) assert.ok(Math.abs(inset - 4) < .1, `a group's end button stays 4px in at its ${side} with a popover after it: ${inset}`)
     assert.ok(values.splitEnd.outer > 0, 'a split button keeps its outer corners with its menu after it')
     assert.equal(values.splitEnd.inner, 0, 'a split button squares the corners where its buttons meet')

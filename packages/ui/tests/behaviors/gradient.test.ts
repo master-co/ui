@@ -231,7 +231,7 @@ test('gradient: a drag reads the bar once as it begins, holds off a second finge
   const original = stop('b').focus.bind(stop('b'))
   stop('b').focus = (options?: FocusOptions) => { focused.push(options); original(options) }
   pointer(stop('b'), 'pointerdown', { button: 0, pointerId: 1, isPrimary: true })
-  assert.deepEqual(focused, [{ preventScroll: true }])
+  assert.deepEqual(focused, [{ preventScroll: true, focusVisible: false }], 'without scrolling, and with no ring under a pointer')
   pointer(stop('b'), 'pointermove', { pointerId: 1, clientX: 100 })
   pointer(stop('b'), 'pointermove', { pointerId: 1, clientX: 120 })
   assert.equal(reads, 1, 'the box is read once, not at every move')

@@ -232,7 +232,8 @@ export function tree(root, { rename = false, renameLabel = (label) => `Rename ${
       return multiple() ? selected : selected[0] ?? null
     },
     set: (/** @type {string | string[] | null} */ next) => {
-      const values = next === null || next === undefined ? [] : [next].flat()
+      // A row stands for a string: a number given for it is the same value.
+      const values = next === null || next === undefined ? [] : [next].flat().map(String)
       if (checkable()) {
         for (const item of all()) {
           if (isBranch(item) || !item.hasAttribute('aria-checked')) continue

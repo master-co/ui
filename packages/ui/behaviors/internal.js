@@ -285,7 +285,8 @@ export function chipKeys(field, remove) {
       }
       default:
         // A letter typed on a chip is meant for the field: focus moves before the key is read.
-        if (event.key.length === 1) field.focus()
+        // Space is not one: on the remove button it presses the button, as Enter does.
+        if (event.key.length === 1 && event.key !== ' ') field.focus()
     }
   }
 }

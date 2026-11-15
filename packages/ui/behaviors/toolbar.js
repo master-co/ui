@@ -121,7 +121,8 @@ export function toolbar(root) {
   const itemOf = (/** @type {Element} */ element) => {
     const list = items()
     const radio = /** @type {HTMLInputElement} */ (element)
-    if (radio.matches?.('input[type="radio"]')) return list.find((item) => /** @type {HTMLInputElement} */ (item).name === radio.name)
+    // A radio with no name is a group of one: an empty name would match the first button, whose name is empty too.
+    if (radio.matches?.('input[type="radio"]') && radio.name) return list.find((item) => /** @type {HTMLInputElement} */ (item).name === radio.name)
     return list.find((item) => item === element)
   }
 

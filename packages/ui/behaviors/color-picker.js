@@ -420,7 +420,8 @@ export function colorPicker(root, { valueText = describe } = {}) {
     frame = { box: area.getBoundingClientRect(), mirrored: rtl() }
     // Capture keeps the moves coming when the pointer leaves the field. A scripted event has no pointer to capture.
     try { area.setPointerCapture(event.pointerId) } catch {}
-    thumb()?.focus({ preventScroll: true })
+    // Focus given under a pointer asks for no ring: the first press on a page would otherwise draw the keys' one.
+    thumb()?.focus(/** @type {FocusOptions} */ ({ preventScroll: true, focusVisible: false }))
     follow(event, area)
   }, { signal })
 

@@ -151,7 +151,7 @@ Or import only the theme and the components you use:
 | Accordion | `accordion`, `accordion-item`, `accordion-trigger`, `accordion-content` |
 | Expand | `expand`, `expand-toggle`, `expand-more`, `expand-less` |
 | Table | `table`, `table-row`, `table-heading`, `table-cell`, `table-sort`, `table-title`, `table-primary`, `table-numeric`, `table-compact`, `table-interactive`, `table-sticky` |
-| List | `list`, `list-row`, `list-media`, `list-body`, `list-title`, `list-description`, `list-end`, `list-interactive` |
+| List | `list`, `list-row`, `list-media`, `list-body`, `list-title`, `list-description`, `list-meta`, `list-end`, `list-interactive` |
 | Sortable | `sortable`, `sortable-row`, `sortable-item`, `sortable-item-back`, `sortable-item-forward`, `sortable-handle`, `sortable-status` |
 | Kanban | `kanban`, `kanban-column`, `kanban-header`, `kanban-title`, `kanban-items`, `kanban-items-target`, `kanban-item`, `kanban-item-target`, `kanban-handle`, `kanban-controls`, `kanban-move`, `kanban-empty`, `kanban-preview`, `kanban-preview-landing`, `kanban-mover`, `kanban-mover-actions`, `kanban-status` |
 | Swipe | `swipe`, `swipe-content`, `swipe-actions`, `swipe-action`, `swipe-action-danger` |

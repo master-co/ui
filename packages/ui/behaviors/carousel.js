@@ -47,6 +47,8 @@ export function carousel(root, options = {}) {
     enumerable: true,
     get: () => current,
     set: (/** @type {string | null} */ next) => {
+      // A root with no track returned before the slides could be read: there is nothing to go to.
+      if (!track) return
       const slide = next === null ? null : find(next)
       if (!slide || key(slide) === current) return
       go(slide)
