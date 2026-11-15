@@ -451,7 +451,8 @@ for (const framework of ['react', 'svelte', 'vue']) {
       await page.waitForTimeout(800)
       assert.equal(await toasts.count(), 1, 'still there after its first time ran out')
       assert.equal(await toasts.first().evaluate(element => (element as any).marked), true, 'the same element')
-      assert.equal(await toasts.first().innerText(), 'Uploaded.')
+      // What the toast says is its body: the dismiss button beside it is an icon, which WebKit's innerText counts as a block of line breaks.
+      assert.equal(await toasts.first().locator('.toast-body').innerText(), 'Uploaded.')
       await until(() => toasts.count(), count => count === 0, 'it leaves when the new time is up')
 
       // A promise: pending with a turning spinner and no clock, then the same toast says how it ended.
@@ -463,7 +464,7 @@ for (const framework of ['react', 'svelte', 'vue']) {
       await page.waitForTimeout(700)
       await page.evaluate(() => (window as any).finish('atlas.dev'))
       await until(() => pending.getAttribute('aria-busy'), value => value === null, 'it settles')
-      assert.equal(await pending.innerText(), 'atlas.dev is live.')
+      assert.equal(await pending.locator('.toast-body').innerText(), 'atlas.dev is live.')
       assert.match((await pending.getAttribute('class'))!, /toast-success/)
       await until(() => toasts.count(), count => count === 0, 'and leaves when its time is up')
 
