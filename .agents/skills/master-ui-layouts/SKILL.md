@@ -91,6 +91,7 @@ A gutter is the line a region's words start on, measured from the region's edge.
 | A list column (`shell-fixed`, master-detail) | `px-sm` + `--list-inset` | the list stands `px-sm` inside the column, its heading is `pxs(10)`, the rows' own inset |
 
 - **A navbar in a region takes that region's gutter**, written on the navbar (`style="--navbar-padding-x: …"`): the navbar declares its own default (`1rem`), so a value set on an ancestor does not reach it.
+- **When the sidebar leaves, the header stands over the main region.** A header across the top that keeps the sidebar's `1.25rem` gives the content under it the same gutter (`px(20)` on the article, as docs and holy grail do), or the two start 4px apart on a phone. A quiet toggle or button at either end of the header hangs into its padding (`navbar` does this by itself; elsewhere `btn-hang-start` / `btn-hang-end`), so its glyph is on the line too.
 - **Check the line, not the padding.** Measure where the brand, the heading and the first word start (`getBoundingClientRect().left`); padding on different elements adds up differently.
 - A selected or current row is a sheet that keeps clear of the region's edges: the list stands inside the column (`px-sm`, `p-sm`) and the row's inset carries its words to the gutter.
 
