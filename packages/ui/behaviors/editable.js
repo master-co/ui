@@ -94,10 +94,22 @@ export function editable(root, { blur = 'save' } = {}) {
     if (value === saved) return true
     saved = value
     show(value)
+    saying = true
     field.dispatchEvent(new Event('input', { bubbles: true }))
     field.dispatchEvent(new Event('change', { bubbles: true }))
+    saying = false
     return true
   }
+
+  /**
+   * The browser says `change` by itself when a field that was typed in loses focus, before this script has
+   * saved or cancelled: a page would hear text that is then thrown away, or hear one save twice. The only
+   * `change` a page hears is the one a save says.
+   */
+  let saying = false
+  field?.addEventListener('change', (event) => {
+    if (!saying) event.stopImmediatePropagation()
+  }, { signal, capture: true })
 
   const detach = /** @type {(() => void) & { value: string, edit: () => void }} */ (valued(
     () => controller.abort(),

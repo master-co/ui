@@ -116,6 +116,23 @@ async function treeChecks(driver: Driver, page: Page) {
 }
 
 /** A branch whose rows come later, and a row renamed in place: the owner hears both and writes the rows. */
+/** A row written above a branch the reader opened leaves it open: a row is the node it stands for, not its place. */
+async function treeInserted(driver: Driver, page: Page) {
+  const nodes = [
+    { label: 'components', value: 'components', children: [{ label: 'button.css', value: 'components/button.css' }] },
+    { label: 'themes', value: 'themes', children: [{ label: 'paper.css', value: 'themes/paper.css' }] },
+    { label: 'README.md', value: 'README.md' },
+  ]
+  const mounted = await driver.mount('tree', { nodes, 'aria-label': 'Files' })
+  const row = (value: string) => page.one<HTMLElement>(`.tree-item[data-value="${value}"]`)
+  await driver.act(() => { row('themes').focus(); page.key(row('themes'), 'ArrowRight') })
+  assert.equal(row('themes').getAttribute('aria-expanded'), 'true')
+  await driver.act(() => mounted.set({ nodes: [{ label: 'LICENSE', value: 'LICENSE' }, ...nodes] }))
+  assert.equal(row('themes').getAttribute('aria-expanded'), 'true', 'the branch that was open is still open under a new row')
+  assert.equal(row('components').getAttribute('aria-expanded'), 'false', 'and the one that was closed is still closed')
+  await driver.act(() => mounted.unmount())
+}
+
 async function treeLater(driver: Driver, page: Page) {
   const expanded: string[] = []
   const renamed: [string, string][] = []
@@ -273,6 +290,12 @@ export const scenarios: Record<string, Scenario> = {
     await driver.act(() => asked.mounted.unmount())
 
     await comboboxSeveral(driver, page)
+
+    // A value and an empty query from the start: the first render drew the chosen option's name, and it stays.
+    const both = await driver.mount('combobox', { options: regions, value: 'sin', query: '', listLabel: 'Regions', toggleLabel: 'Show regions', empty: 'No regions match.', 'aria-label': 'Region' })
+    await driver.act()
+    assert.equal(page.all<HTMLInputElement>('[role="combobox"]').at(-1)!.value, 'Singapore', 'the chosen option is still named once the component has mounted')
+    await driver.act(() => both.unmount())
   },
 
   async listbox(driver, page) {
@@ -516,6 +539,14 @@ export const scenarios: Record<string, Scenario> = {
     await driver.act(() => mounted.set({ value: '90' }))
     assert.deepEqual(slots().map(slot => slot.value), ['9', '0', '', ''])
     await driver.act(() => mounted.unmount())
+
+    // What a slot takes may change, and so may how many there are: the behavior reads both again.
+    const letters = await owned(driver, 'otp', { length: 4, value: '', 'aria-label': 'Invite code' })
+    await driver.act(() => letters.mounted.set({ pattern: '[A-Z0-9]', inputMode: 'text', length: 6 }))
+    assert.equal(slots().length, 6)
+    await driver.act(() => { slots()[0].focus(); page.type(slots()[0], 'AB12CD') })
+    assert.equal(letters.heard.at(-1), 'AB12CD', 'letters are taken once the pattern allows them, across the slots that were added')
+    await driver.act(() => letters.mounted.unmount())
   },
 
   async splitter(driver, page) {
@@ -571,6 +602,12 @@ export const scenarios: Record<string, Scenario> = {
     assert.deepEqual(heard, [41, 100], 'it stops at max')
     assert.deepEqual(known, [41, 100], 'a value is committed after it has come out')
 
+    // Another way of writing the value is written for the value the dial holds, not for the one it started with.
+    await driver.act(() => mounted.set({ text: (value: number) => `${value} of 100` }))
+    assert.equal(shown(), '100 of 100')
+    assert.equal(root.getAttribute('aria-valuetext'), '100 of 100')
+    await driver.act(() => mounted.set({ text: (value: number) => `${value}%` }))
+
     await driver.act(() => mounted.set({ value: 25 }))
     assert.equal(root.getAttribute('aria-valuenow'), '25')
     assert.equal(root.style.getPropertyValue('--dial-value'), '25')
@@ -604,6 +641,13 @@ export const scenarios: Record<string, Scenario> = {
     conforms(page)
     assert.deepEqual(page.all<HTMLInputElement | HTMLButtonElement>('.stepper button, .stepper-field').map(control => control.disabled), [true, true, true])
     await driver.act(() => off.unmount())
+
+    // Disabled after it was mounted, then given another value: the buttons stay off.
+    const later = await driver.mount('stepper', { value: 4, min: 1, max: 6, decrementLabel: 'Fewer seats', incrementLabel: 'More seats', 'aria-label': 'Seats' })
+    await driver.act(() => later.set({ disabled: true }))
+    await driver.act(() => later.set({ value: 3 }))
+    assert.deepEqual(page.all<HTMLInputElement | HTMLButtonElement>('.stepper button, .stepper-field').map(control => control.disabled), [true, true, true], 'a value set on a disabled stepper leaves its buttons disabled')
+    await driver.act(() => later.unmount())
 
     // A formatted figure: written into the first render, kept by the behavior after that, and the value stays a number.
     const budget = await owned(driver, 'stepper', { value: 1250, min: 0, step: 250, format: { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }, locale: 'en-US', decrementLabel: 'Lower the budget', incrementLabel: 'Raise the budget', 'aria-label': 'Monthly budget' })
@@ -840,6 +884,7 @@ export const scenarios: Record<string, Scenario> = {
     await treeSeveral(driver, page)
     await treeChecks(driver, page)
     await treeLater(driver, page)
+    await treeInserted(driver, page)
   },
 
   async wheel(driver, page) {
@@ -1230,6 +1275,18 @@ export const scenarios: Record<string, Scenario> = {
     conforms(page)
     assert.equal(page.one('.editable-placeholder').textContent, 'Add a description', 'an empty value shows the placeholder')
     assert.equal(page.one('.editable-field').localName, 'textarea')
+    await driver.act(() => page.all('.editable').forEach(each => each.remove()))
+
+    // One line becomes several: the field is another element, and the behavior answers on it.
+    const lines = await owned(driver, 'editable', { value: 'One line', label: 'Note' })
+    await driver.act(() => lines.mounted.set({ multiline: true }))
+    const area = page.all<HTMLTextAreaElement>('.editable-field').at(-1)!
+    assert.equal(area.localName, 'textarea')
+    await driver.act(() => page.click(page.all<HTMLButtonElement>('.editable-preview').at(-1)!))
+    assert.equal(area.hidden, false, 'the preview opens the new field')
+    await driver.act(() => { page.type(area, 'Two lines'); page.key(area, 'Enter', { ctrlKey: true }) })
+    assert.deepEqual(lines.heard, ['Two lines'], 'and it saves')
+    await driver.act(() => lines.mounted.unmount())
   },
 
   async gantt(driver, page) {

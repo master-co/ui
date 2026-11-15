@@ -79,7 +79,8 @@
 
 {#snippet rows(list: TreeNode[])}
   <!-- svelte-ignore a11y_role_has_required_aria_props -->
-  {#each list as node}
+  <!-- A row is the node it stands for, not its place: a branch the reader opened stays open when a row is written above it. -->
+  {#each list as node, index (node.value ?? index)}
     <li role="none">
       {#if node.children}
         <div class="tree-item tree-toggle" role="treeitem" data-value={node.value} aria-expanded={node.open ?? false} aria-checked={checkable ? checked(node) : undefined} aria-disabled={node.disabled || undefined}>{@render inside(node)}</div>

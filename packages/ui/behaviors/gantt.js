@@ -388,6 +388,11 @@ export function gantt(root, { step = 1, format = (start, end) => (start === end 
 
   document.addEventListener('pointermove', (event) => {
     if (!drag || event.pointerId !== drag.pointer) return
+    // A press whose release never arrived, as when a menu opened over it, is over once no button is down.
+    if (event.pointerType === 'mouse' && event.buttons === 0) {
+      end(false)
+      return
+    }
     const rtl = getComputedStyle(root).direction === 'rtl'
     const moved = (event.clientX - drag.x) * (rtl ? -1 : 1)
     if (!drag.dragging) {

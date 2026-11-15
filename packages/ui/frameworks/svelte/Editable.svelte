@@ -25,7 +25,9 @@
   const id = $props.id()
   // The first value is drawn into the first render; after that the behavior writes the preview and the field.
   const first = untrack(() => value) ?? ''
-  const attach = behavior(editable, () => ({ blur }), {
+  // The behavior finds its field as it attaches. One line and several are two elements, so it attaches again when `multiline` changes.
+  const fielded = (root: HTMLElement, options?: { blur?: 'save' | 'cancel', multiline?: boolean }) => editable(root, { blur: options?.blur })
+  const attach = behavior(fielded, () => ({ blur, multiline }), {
     value: () => value,
     change: (next) => { value = next; onValueChange?.(next) },
   })

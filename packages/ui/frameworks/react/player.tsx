@@ -36,19 +36,26 @@ export interface PlayerProps extends Omit<ComponentProps<'div'>, 'children' | 'r
   rates?: number[]
   /** The names of the controls, in the page's language. */
   labels?: Partial<typeof names>
+  /** What the seek track says for a time, in the page's language: its `aria-valuetext`. */
+  valueText?: (time: number, duration: number) => string
+  /** What the speed button says for a rate. */
+  rateText?: (rate: number) => string
 }
+
+/** The behavior finds its media as it attaches. Audio and video are two elements, so it attaches again when `video` changes. */
+const seen = (root: HTMLElement, options?: { video?: boolean, valueText?: (time: number, duration: number) => string, rateText?: (rate: number) => string }) => player(root, { ...(options?.valueText && { valueText: options.valueText }), ...(options?.rateText && { rateText: options.rateText }) })
 
 const names = { play: 'Play', seek: 'Seek', mute: 'Mute', volume: 'Volume', speed: 'Playback speed', captions: 'Captions', pip: 'Picture in picture', fullscreen: 'Full screen' }
 const stroke = { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.5, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true } as const
 const solid = { viewBox: '0 0 24 24', fill: 'currentColor', 'aria-hidden': true } as const
 
 /** A recording with the page's own controls over the native element, which keeps its controls until the behavior attaches. */
-export function Player({ src, video, poster, tracks = [], label, time, defaultTime = 0, onTimeChange, playing, onPlayingChange, rates = [0.5, 0.75, 1, 1.25, 1.5, 2], labels, className, ...root }: PlayerProps) {
+export function Player({ src, video, poster, tracks = [], label, time, defaultTime = 0, onTimeChange, playing, onPlayingChange, rates = [0.5, 0.75, 1, 1.25, 1.5, 2], labels, valueText, rateText, className, ...root }: PlayerProps) {
   const name = { ...names, ...labels }
   const speeds = `${useId()}-speeds`
   const [first] = useState(time ?? defaultTime)
   const media = useRef<HTMLVideoElement & HTMLAudioElement>(null)
-  const ref = useBehavior(player)
+  const ref = useBehavior(seen, { video, valueText, rateText })
   const live = useRef({ onTimeChange, onPlayingChange })
   live.current = { onTimeChange, onPlayingChange }
   /** What the owner and this component last agreed on: what was said, either way, is not said again. */
@@ -75,7 +82,8 @@ export function Player({ src, video, poster, tracks = [], label, time, defaultTi
     for (const type of ['play', 'pause', 'ended']) element.addEventListener(type, told, { signal: controller.signal })
     if (first && element.currentTime !== first) element.currentTime = first
     return () => controller.abort()
-  }, [first])
+  // The media is another element once `video` changes: its events are heard on the one that is there.
+  }, [first, video])
 
   // What the owner sets goes in: a time a quarter second or more from the media's seeks, and playing plays.
   useEffect(() => {

@@ -94,8 +94,9 @@ export function Tree({ nodes, value, defaultValue, onValueChange, multiple, chec
       <span className="tree-label">{node.label}</span>
     </>
   )
+  // A row is the node it stands for, not its place: a branch the reader opened stays open when a row is written above it.
   const rows = (list: TreeNode[]): ReactNode => list.map((node, index) => (
-    <li role="none" key={index}>
+    <li role="none" key={node.value ?? index}>
       {node.children
         ? (
             <>

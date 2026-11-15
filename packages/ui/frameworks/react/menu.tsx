@@ -20,15 +20,21 @@ export function Menu({ items, trigger, context, className, id, ...root }: MenuPr
   const name = id ?? generated
   const element = useRef<HTMLDivElement>(null)
 
+  useEffect(() => menu(element.current!), [])
+
+  // The target of a context menu is whatever the ref holds once a render is done: one mounted after the menu, or
+  // mounted again, is another element, and the menu opens from it. A ref never changes, so every render looks.
+  const opens = useRef<{ target: HTMLElement, forget: () => void } | null>(null)
   useEffect(() => {
-    const detach = menu(element.current!)
-    const target = context?.current
-    const forget = target ? contextMenu(target, element.current!) : undefined
-    return () => {
-      detach()
-      forget?.()
-    }
-  }, [context])
+    const target = context?.current ?? null
+    if (target === (opens.current?.target ?? null)) return
+    opens.current?.forget()
+    opens.current = target ? { target, forget: contextMenu(target, element.current!) } : null
+  })
+  useEffect(() => () => {
+    opens.current?.forget()
+    opens.current = null
+  }, [])
 
   return (
     <>

@@ -339,6 +339,8 @@ export function colorPicker(root, { valueText = describe } = {}) {
     (next) => {
       const read = parse(String(next ?? ''))
       if (!read) return
+      // What it prints is what it holds: a color out of gamut would otherwise come back clipped, and move the thumb.
+      if (String(next) === print(color, format)) return
       const moved = take(read.color)
       if (!moved && read.format === format) return
       format = read.format

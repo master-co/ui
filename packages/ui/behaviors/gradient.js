@@ -250,7 +250,14 @@ export function gradient(root, options = {}) {
   }
 
   /** @param {string} id */
-  const focus = (id) => handleOf(id)?.focus()
+  const focus = (id) => {
+    const handle = handleOf(id)
+    // A renderer may not have written the handle yet: it takes focus when it arrives.
+    wanted = handle ? null : id
+    handle?.focus()
+  }
+  /** @type {string | null} The stop whose handle is to take focus once a renderer has written it. */
+  let wanted = null
 
   /** Remove the stop in hand, handing focus to its neighbor on the bar. */
   function remove() {
@@ -404,7 +411,10 @@ export function gradient(root, options = {}) {
 
   // A renderer that writes the handles may write them again at any time.
   if (options.draw && bar && typeof MutationObserver === 'function') {
-    const observer = new MutationObserver(() => paint())
+    const observer = new MutationObserver(() => {
+      paint()
+      if (wanted && handleOf(wanted)) focus(wanted)
+    })
     observer.observe(bar, { childList: true })
     signal.addEventListener('abort', () => observer.disconnect())
   }

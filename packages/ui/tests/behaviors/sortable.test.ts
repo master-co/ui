@@ -349,3 +349,36 @@ test('sortable: detach removes the listeners', async () => {
   assert.deepEqual(pressed(), [])
   void handle
 })
+
+/* What a move leaves behind when it fails, never ends or is cut short. */
+
+test('sortable: a press whose release never came is over once the mouse moves with no button down', () => {
+  const { root, pointer, document, window, handle, pressed } = setup()
+  const detach = sortable(root)
+  pointer(handle('billing'), 'pointerdown', { button: 0, isPrimary: true, pointerId: 1, pointerType: 'mouse', clientY: 60 })
+  document.dispatchEvent(new window.PointerEvent('pointermove', { bubbles: true, pointerId: 1, pointerType: 'mouse', buttons: 0, clientY: 120 }) as any)
+  assert.deepEqual(pressed(), [], 'nothing is carried')
+  // The next press is heard, and with the button held it carries.
+  pointer(handle('search'), 'pointerdown', { button: 0, isPrimary: true, pointerId: 2, pointerType: 'mouse', clientY: 110 })
+  document.dispatchEvent(new window.PointerEvent('pointermove', { bubbles: true, pointerId: 2, pointerType: 'mouse', buttons: 1, clientY: 150 }) as any)
+  assert.deepEqual(pressed(), ['search'])
+  // The drag is still under way: detaching ends it, and the frame it waits for.
+  detach()
+})
+
+test('sortable: detaching lets go of an item that is picked up or carried', async () => {
+  const { root, pointer, document, window, handle, press, pressed } = setup()
+  let detach = sortable(root)
+  handle('billing').focus()
+  await press('billing')
+  assert.deepEqual(pressed(), ['billing'])
+  detach()
+  assert.deepEqual(pressed(), [], 'the handle the keys held lets go')
+  detach = sortable(root)
+  pointer(handle('search'), 'pointerdown', { button: 0, isPrimary: true, pointerId: 3, clientY: 110 })
+  document.dispatchEvent(new window.PointerEvent('pointermove', { bubbles: true, pointerId: 3, clientY: 150 }) as any)
+  assert.deepEqual(pressed(), ['search'])
+  detach()
+  assert.deepEqual(pressed(), [], 'and so does the one a pointer carried')
+  assert.equal((root as HTMLElement).style.getPropertyValue('--sortable-size'), '', 'with the room it had measured')
+})

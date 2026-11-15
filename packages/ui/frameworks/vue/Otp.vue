@@ -25,7 +25,9 @@ const emit = defineEmits<{
 /* A one-time code. Name the group with `aria-label` or `aria-labelledby`; `disabled` disables every slot. */
 const first = model.value ?? ''
 const root = useTemplateRef<HTMLFieldSetElement>('root')
-useBehavior(root, otp, undefined, model, {
+// The behavior reads the slots and what a slot takes as it attaches, so it attaches again when either changes.
+const slotted = (element: HTMLElement, _read?: { length: number, pattern: string }) => otp(element)
+useBehavior(root, slotted, () => ({ length, pattern }), model, {
   // The root's own change is the behavior's: every slot is filled. A slot's change bubbles through it too.
   change: (event) => { if (event.target === event.currentTarget) emit('complete', (event as CustomEvent<{ value: string }>).detail.value) },
 })

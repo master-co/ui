@@ -62,8 +62,8 @@
   const labelOf = (each: string) => options.find(option => option.value === each)?.label ?? each
   const groups = $derived([...new Set(options.map(option => option.group))])
   let handle = $state.raw<ReturnType<typeof combobox> | null>(null)
-  /** The last query the owner gave or was told. */
-  let known: string | undefined
+  /** The last query the owner gave or was told. The first render drew the field, so the first query is known. */
+  let known: string | undefined = untrack(() => (!several && options.some(option => option.value === first) ? query : undefined))
   const attach = behavior(combobox, () => (multiple ? { filter, removeLabel, draw: (values: string[]) => { chips = values } } : { filter }), {
     value: () => value,
     change: (next) => { chosen.values = [next ?? []].flat(); value = next; onValueChange?.(next) },

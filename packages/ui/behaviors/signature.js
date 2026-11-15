@@ -318,6 +318,13 @@ export function signature(root, { drawn = 'Signature drawn', cleared = 'Signatur
     say(strokes.length ? undone : cleared)
   }, { signal })
 
+  // A form's reset takes the drawing with it, as it empties the typed name beside it.
+  field()?.form?.addEventListener('reset', () => {
+    if (!strokes.length) return
+    strokes = []
+    draw()
+  }, { signal })
+
   // Strokes a server drew from the first value stay as they are, for the value that follows to find.
   if (!root.querySelector('.signature-stroke')) draw()
   signal.addEventListener('abort', give)

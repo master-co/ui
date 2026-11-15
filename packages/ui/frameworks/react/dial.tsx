@@ -45,6 +45,7 @@ export interface DialProps extends Omit<ComponentProps<'div'>, 'defaultValue' | 
 export function Dial({ value, defaultValue, onValueChange, onValueCommit, min = 0, max, step = 1, page, full, label, text, name, ticks, marks, wheel = false, disabled, className, style, ...root }: DialProps) {
   const greatest = max ?? (full ? 360 : 100)
   const [first] = useState(value ?? defaultValue ?? min)
+  /** The value the dial holds: what `text` is written for, since a `text` given later is not for the first value. */
   const held = useRef(first)
   const ref = useBehavior(dial, { step, page, text, wheel }, {
     value,
@@ -54,10 +55,10 @@ export function Dial({ value, defaultValue, onValueChange, onValueCommit, min = 
     on: { change: (event) => { if (event.target === event.currentTarget) onValueCommit?.(Number((event.currentTarget as Element).getAttribute('aria-valuenow'))) } },
   })
   return (
-    <div className={['dial', full && 'dial-full', className].filter(Boolean).join(' ')} role="slider" tabIndex={disabled ? -1 : 0} aria-label={label} aria-valuenow={first} aria-valuemin={min} aria-valuemax={greatest} aria-valuetext={text?.(first)} aria-disabled={disabled || undefined} style={{ '--dial-value': first, '--dial-min': min, '--dial-max': greatest, ...style } as CSSProperties} ref={ref} {...root}>
+    <div className={['dial', full && 'dial-full', className].filter(Boolean).join(' ')} role="slider" tabIndex={disabled ? -1 : 0} aria-label={label} aria-valuenow={first} aria-valuemin={min} aria-valuemax={greatest} aria-valuetext={text?.(value ?? held.current)} aria-disabled={disabled || undefined} style={{ '--dial-value': first, '--dial-min': min, '--dial-max': greatest, ...style } as CSSProperties} ref={ref} {...root}>
       {ticks !== undefined && <span className="dial-ticks" style={{ '--dial-ticks': ticks } as CSSProperties} />}
       {marks?.map(mark => <span className="dial-mark" key={mark.value} style={{ '--dial-at': mark.value } as CSSProperties}>{mark.label ?? String(mark.value)}</span>)}
-      <span className="dial-value">{text ? text(first) : String(first)}</span>
+      <span className="dial-value">{text ? text(value ?? held.current) : String(value ?? held.current)}</span>
       <span className="dial-thumb" />
       {/* React writes a field's value with every render, so it writes the value the dial holds. */}
       {name !== undefined && <input type="hidden" name={name} value={value ?? held.current} disabled={disabled} />}

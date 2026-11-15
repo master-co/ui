@@ -49,7 +49,16 @@
   const first = untrack(() => value ?? min)
   // Svelte writes a style again whenever its owner changes it, so it writes the value the behavior holds.
   let held = $state(first)
-  const attach = behavior(dial, () => ({ step, page, text, wheel }), {
+  // The behavior writes the words over the ones Svelte rendered, so words given another way are written by it:
+  // it attaches again, from the value it holds, each time `text` is another function.
+  let written = 0
+  const words = $derived.by(() => {
+    // Reading `text` is what makes this run again when it is another function.
+    void text
+    return ++written
+  })
+  const told = (root: HTMLElement, options?: { step?: number, page?: number, text?: (value: number) => string, wheel?: boolean, words?: number }) => dial(root, { step: options?.step, page: options?.page, text: options?.text, wheel: options?.wheel })
+  const attach = behavior(told, () => ({ step, page, text, wheel, words }), {
     value: () => value,
     change: (next) => { value = held = next; onValueChange?.(next) },
     settled: (next) => { held = next },
@@ -62,12 +71,12 @@
   @component
   A value set by turning a thumb around a circle.
 -->
-<div class={['dial', full && 'dial-full', className]} role="slider" tabindex={disabled ? -1 : 0} aria-label={label} aria-valuenow={first} aria-valuemin={min} aria-valuemax={greatest} aria-valuetext={text?.(first)} aria-disabled={disabled || undefined} style:--dial-value={held} style:--dial-min={min} style:--dial-max={greatest} {@attach attach} {...root}>
+<div class={['dial', full && 'dial-full', className]} role="slider" tabindex={disabled ? -1 : 0} aria-label={label} aria-valuenow={first} aria-valuemin={min} aria-valuemax={greatest} aria-valuetext={text?.(held)} aria-disabled={disabled || undefined} style:--dial-value={held} style:--dial-min={min} style:--dial-max={greatest} {@attach attach} {...root}>
   {#if ticks !== undefined}<span class="dial-ticks" style:--dial-ticks={ticks}></span>{/if}
   {#each marks ?? [] as mark (mark.value)}
     <span class="dial-mark" style:--dial-at={mark.value}>{mark.label ?? String(mark.value)}</span>
   {/each}
-  <span class="dial-value">{text ? text(first) : String(first)}</span>
+  <span class="dial-value">{text ? text(held) : String(held)}</span>
   <span class="dial-thumb"></span>
   {#if name !== undefined}<input type="hidden" {name} value={first} {disabled} />{/if}
 </div>

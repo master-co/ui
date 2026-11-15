@@ -21,8 +21,11 @@ export interface OtpProps extends Omit<ComponentProps<'fieldset'>, 'defaultValue
 }
 
 /** A one-time code. Name the group with `aria-label` or `aria-labelledby`; `disabled` disables every slot. */
+/** The behavior reads the slots and what a slot takes as it attaches, so it attaches again when either changes. */
+const slotted = (root: HTMLElement, _read?: { length: number, pattern: string }) => otp(root)
+
 export function Otp({ length = 6, value, defaultValue, onValueChange, onComplete, pattern = '[0-9]', inputMode = 'numeric', slotLabel = index => `Digit ${index + 1}`, invalid, className, ...root }: OtpProps) {
-  const ref = useBehavior(otp, undefined, {
+  const ref = useBehavior(slotted, { length, pattern }, {
     value,
     defaultValue,
     onValueChange,

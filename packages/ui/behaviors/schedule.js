@@ -493,14 +493,15 @@ export function schedule(root, options = {}) {
   const settings = { ...options, locale }
   delete settings.draw
   delete settings.value
-  const today = scheduleLayout(undefined, settings).today
-  let value = settle(options.value, today)
+  // Today is read when it is asked for: a page left open past midnight goes to the day it now is.
+  const today = () => scheduleLayout(undefined, settings).today
+  let value = settle(options.value, today())
 
   const detach = /** @type {(() => void) & { value: ScheduleValue }} */ (Object.defineProperty(() => controller.abort(), 'value', {
     enumerable: true,
     get: () => ({ ...value }),
     set: (/** @type {ScheduleValue} */ next) => {
-      const settled = settle(next, today)
+      const settled = settle(next, today())
       if (settled.date === value.date && settled.view === value.view) return
       value = settled
       show()
@@ -623,7 +624,7 @@ export function schedule(root, options = {}) {
     const target = /** @type {Element} */ (click.target)
     if (target.closest('.schedule-view-previous')) return move({ ...value, date: turn(value, -1) })
     if (target.closest('.schedule-view-next')) return move({ ...value, date: turn(value, 1) })
-    if (target.closest('.schedule-view-today')) return move({ ...value, date: today })
+    if (target.closest('.schedule-view-today')) return move({ ...value, date: today() })
     const number = /** @type {HTMLButtonElement | null} */ (target.closest('.schedule-date-number'))
     if (number && day(number.value)) {
       move({ date: number.value, view: 'day' })

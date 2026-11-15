@@ -24,11 +24,14 @@ export interface EditableProps extends Omit<Field, 'children'> {
  * An editable value. Every prop of a field goes to the field, so `required`, `maxLength` and `placeholder`
  * are its constraints and what the preview says while the value is empty.
  */
+/** The behavior finds its field as it attaches. One line and several are two elements, so it attaches again when `multiline` changes. */
+const fielded = (root: HTMLElement, options?: { blur?: 'save' | 'cancel', multiline?: boolean }) => editable(root, { blur: options?.blur })
+
 export function Editable({ value, defaultValue, onValueChange, label, multiline, busy, blur, disabled, className, ...field }: EditableProps) {
   const id = useId()
   // The first value is drawn into the first render; after that the behavior writes the preview and the field.
   const [first] = useState(() => value ?? defaultValue ?? '')
-  const ref = useBehavior(editable, { blur }, { value, defaultValue, onValueChange })
+  const ref = useBehavior(fielded, { blur, multiline }, { value, defaultValue, onValueChange })
   const shared = { className: 'editable-field', 'aria-label': label, disabled, hidden: true }
   return (
     <div className={className ? `editable ${className}` : 'editable'} ref={ref} aria-busy={busy || undefined}>

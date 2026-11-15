@@ -296,7 +296,9 @@ export function player(root, options = {}) {
   captions?.addEventListener('click', toggleCaptions, listen)
   fullscreen?.addEventListener('click', toggleFullscreen, listen)
   pip?.addEventListener('click', togglePip, listen)
-  seek?.addEventListener('pointerdown', () => { dragging = true }, listen)
+  // Only the main button drags the thumb; the release of another may go to a menu and never be heard.
+  seek?.addEventListener('pointerdown', (event) => { dragging = event.button === 0 }, listen)
+  seek?.addEventListener('contextmenu', () => { dragging = false }, listen)
   seek?.addEventListener('input', () => {
     media.currentTime = Number(seek.value)
     const text = clock(Number(seek.value), length() >= 3600)

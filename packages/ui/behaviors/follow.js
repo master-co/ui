@@ -127,11 +127,22 @@ export function follow(root) {
     remember()
   }, { signal, passive: true, capture: true })
 
+  /**
+   * Whether a scroller inside the region will take a move toward the start itself: one that scrolls along and
+   * is not at its own start. The region then stays where it is, and goes on following.
+   */
+  const taken = (/** @type {EventTarget | null} */ from) => {
+    for (let each = from instanceof Element ? from : null; each && each !== root; each = each.parentElement) {
+      if (each.scrollTop > 0 && /auto|scroll/.test(getComputedStyle(each).overflowY)) return true
+    }
+    return false
+  }
+
   // A wheel turned toward the start says so before the region has moved, while content may still arrive. With
   // Control held it zooms the page, as a trackpad's pinch does, and with Shift it scrolls across: neither moves
   // the region toward its start.
   root.addEventListener('wheel', (event) => {
-    if (event.deltaY < 0 && !event.ctrlKey && !event.shiftKey && root.scrollHeight > root.clientHeight) set(false)
+    if (event.deltaY < 0 && !event.ctrlKey && !event.shiftKey && root.scrollHeight > root.clientHeight && !taken(event.target)) set(false)
   }, { signal, passive: true })
 
   // So does a key that scrolls toward the start: a smooth scroll that has not yet moved would be pulled back to the
@@ -147,18 +158,31 @@ export function follow(root) {
 
   // A finger that drags the content down scrolls toward the start.
   let finger = 0
-  root.addEventListener('touchstart', (event) => { finger = event.touches[0]?.clientY ?? 0 }, { signal, passive: true })
+  let across = 0
+  root.addEventListener('touchstart', (event) => {
+    finger = event.touches[0]?.clientY ?? 0
+    across = event.touches[0]?.clientX ?? 0
+  }, { signal, passive: true })
   root.addEventListener('touchmove', (event) => {
     const y = event.touches[0]?.clientY ?? finger
-    if (y > finger + 1 && root.scrollHeight > root.clientHeight) set(false)
+    const x = event.touches[0]?.clientX ?? across
+    // A swipe across something wide drifts a little down too: it is a move toward the start only when it goes
+    // further down than across, and when nothing inside takes it.
+    if (y > finger + 1 && y - finger > Math.abs(x - across) && root.scrollHeight > root.clientHeight && !taken(event.target)) set(false)
     finger = y
+    across = x
   }, { signal, passive: true })
 
   root.addEventListener('click', (event) => {
     const button = /** @type {Element} */ (event.target).closest?.('.scroll-area-latest')
     if (!button || button.closest('.scroll-area') !== root) return
     // The button hides as it is pressed; the region keeps the focus it had.
-    if (button.contains(root.ownerDocument.activeElement) && root.tabIndex >= 0) root.focus({ preventScroll: true })
+    // A region that holds what takes focus has no tabindex of its own: it is given one out of the tab order, so
+    // the focus the hidden button had does not fall to the page.
+    if (button.contains(root.ownerDocument.activeElement)) {
+      if (!root.hasAttribute('tabindex')) root.setAttribute('tabindex', '-1')
+      root.focus({ preventScroll: true })
+    }
     set(true)
     end(reduced() ? 'instant' : 'smooth')
   }, { signal })

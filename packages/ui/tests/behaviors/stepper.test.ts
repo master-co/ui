@@ -417,7 +417,7 @@ test('stepper: with a mouse, a scrub locks the pointer and reads how far it move
   label.requestPointerLock = () => { locked = label; return Promise.resolve() }
   Object.defineProperty(document, 'pointerLockElement', { get: () => locked, configurable: true })
   document.exitPointerLock = () => { locked = null }
-  const mouse = { pointerType: 'mouse' }
+  const mouse = { pointerType: 'mouse', buttons: 1 }
   at(label, 'pointerdown', 100, mouse)
   at(label, 'pointermove', 104, mouse)
   assert.equal(locked, label)
@@ -436,7 +436,7 @@ test('stepper: a lock that arrives after a quick scrub has ended is let go', asy
   Object.defineProperty(document, 'pointerLockElement', { get: () => locked, configurable: true })
   document.exitPointerLock = () => { locked = null }
   at(label, 'pointerdown', 100, { pointerType: 'mouse' })
-  at(label, 'pointermove', 104, { pointerType: 'mouse' })
+  at(label, 'pointermove', 104, { pointerType: 'mouse', buttons: 1 })
   at(label, 'pointerup', 104, { pointerType: 'mouse' })
   grant()
   await Promise.resolve()
@@ -452,7 +452,7 @@ test('stepper: detaching in the middle of a scrub lets a locked pointer go', () 
   Object.defineProperty(document, 'pointerLockElement', { get: () => locked, configurable: true })
   document.exitPointerLock = () => { locked = null }
   at(label, 'pointerdown', 100, { pointerType: 'mouse' })
-  at(label, 'pointermove', 104, { pointerType: 'mouse' })
+  at(label, 'pointermove', 104, { pointerType: 'mouse', buttons: 1 })
   assert.equal(locked, label)
   detach()
   assert.equal(locked, null, 'the pointer is not left locked and hidden')

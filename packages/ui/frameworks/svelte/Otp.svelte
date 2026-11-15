@@ -25,7 +25,9 @@
 
   let { length = 6, value = $bindable(), onValueChange, onComplete, pattern = '[0-9]', inputmode = 'numeric', slotLabel = index => `Digit ${index + 1}`, invalid, class: className, ...root }: OtpProps = $props()
   const first = untrack(() => value) ?? ''
-  const attach = behavior(otp, undefined, {
+  // The behavior reads the slots and what a slot takes as it attaches, so it attaches again when either changes.
+  const slotted = (root: HTMLElement, _read?: { length: number, pattern: string }) => otp(root)
+  const attach = behavior(slotted, () => ({ length, pattern }), {
     value: () => value,
     change: (next) => { value = next; onValueChange?.(next) },
     // The root's own change is the behavior's: every slot is filled. A slot's change bubbles through it too.

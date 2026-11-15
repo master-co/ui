@@ -72,6 +72,15 @@ export function stepper(root, { format, locale, pixels = 4 } = {}) {
   const buttons = /** @type {HTMLButtonElement[]} */ ([...root.querySelectorAll('button')])
   const before = buttons.map((button) => button.disabled)
 
+  /** Whether focus is on a button by the keys: where the browser cannot say, it is taken to be. */
+  const keyed = (/** @type {Element} */ button) => {
+    try {
+      return button.matches(':focus-visible')
+    } catch {
+      return true
+    }
+  }
+
   /** @param {HTMLButtonElement} button */
   const down = (button) => (button.value ? Number(button.value) < 0 : Boolean(button.compareDocumentPosition(field) & Node.DOCUMENT_POSITION_FOLLOWING))
 
@@ -118,11 +127,14 @@ export function stepper(root, { format, locale, pixels = 4 } = {}) {
         repeated = false
       }
       // A field that is disabled or read-only steps nothing, so its buttons stay as their author left them.
-      const next = field.disabled || field.readOnly ? before[buttons.indexOf(button)] : reached
+      // A field that cannot be stepped leaves its buttons as they are: whoever disabled the field decides them.
+      if (field.disabled || field.readOnly) continue
+      const next = reached
       if (button.disabled === next) continue
       // A button pressed with the keys up to its limit would take focus with it as it is disabled: the field,
       // the control it steps, has it instead.
-      if (next && root.ownerDocument.activeElement === button) field.focus({ preventScroll: true })
+      // Only then: a button tapped up to its limit would otherwise open the keyboard of a touch screen on the field.
+      if (next && root.ownerDocument.activeElement === button && keyed(button)) field.focus({ preventScroll: true })
       button.disabled = next
     }
   }
@@ -212,8 +224,16 @@ export function stepper(root, { format, locale, pixels = 4 } = {}) {
     let changed = false
     let locked = false
 
+    /** Ends the gesture; set below, once the listeners that end it are there. */
+    let finish = (/** @type {PointerEvent} */ _up) => {}
+
     page.addEventListener('pointermove', (move) => {
       if (move.pointerId !== event.pointerId) return
+      // A release that never arrived, as when the window lost the pointer, is over once no button is down.
+      if (event.pointerType === 'mouse' && move.buttons === 0) {
+        finish(move)
+        return
+      }
       if (!dragging) {
         if (Math.abs(move.clientX - start) < SLOP) return
         dragging = true
@@ -263,6 +283,7 @@ export function stepper(root, { format, locale, pixels = 4 } = {}) {
       setTimeout(() => { swallow = false })
       if (changed) field.dispatchEvent(new Event('change', { bubbles: true }))
     }
+    finish = end
     page.addEventListener('pointerup', end, options)
     page.addEventListener('pointercancel', end, options)
   }, { signal })

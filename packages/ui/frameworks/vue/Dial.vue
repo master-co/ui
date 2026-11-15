@@ -57,10 +57,10 @@ const held = () => current() ?? first
 </script>
 
 <template>
-  <div class="dial" :class="{ 'dial-full': full }" role="slider" ref="root" :tabindex="disabled ? -1 : 0" :aria-label="label" :aria-valuenow="first" :aria-valuemin="min" :aria-valuemax="greatest" :aria-valuetext="text?.(first)" :aria-disabled="disabled || undefined" :style="{ '--dial-value': held(), '--dial-min': min, '--dial-max': greatest }" v-bind="$attrs">
+  <div class="dial" :class="{ 'dial-full': full }" role="slider" ref="root" :tabindex="disabled ? -1 : 0" :aria-label="label" :aria-valuenow="first" :aria-valuemin="min" :aria-valuemax="greatest" :aria-valuetext="text?.(held())" :aria-disabled="disabled || undefined" :style="{ '--dial-value': held(), '--dial-min': min, '--dial-max': greatest }" v-bind="$attrs">
     <span v-if="ticks !== undefined" class="dial-ticks" :style="{ '--dial-ticks': ticks }" />
     <span v-for="mark in marks" :key="mark.value" class="dial-mark" :style="{ '--dial-at': mark.value }">{{ mark.label ?? String(mark.value) }}</span>
-    <span class="dial-value">{{ text ? text(first) : String(first) }}</span>
+    <span class="dial-value">{{ text ? text(held()) : String(held()) }}</span>
     <span class="dial-thumb" />
     <!-- Vue writes a field's value with every render, so it too is the value the behavior holds. -->
     <input v-if="name !== undefined" type="hidden" :name="name" :value="held()" :disabled="disabled">

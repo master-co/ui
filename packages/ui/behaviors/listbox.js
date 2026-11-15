@@ -119,8 +119,10 @@ export function listbox(root) {
   // A press may end outside the list, dragged off it; the document hears where it ends, or the next focus
   // from the keyboard would be taken for one a press brought.
   let pressed = false
-  root.addEventListener('pointerdown', () => { pressed = true }, { signal })
+  // Only the main button's press becomes a click; the release of another may go to a menu and never be heard.
+  root.addEventListener('pointerdown', (event) => { pressed = event.button === 0 }, { signal })
   root.addEventListener('click', () => { pressed = false }, { signal })
+  root.addEventListener('contextmenu', () => { pressed = false }, { signal })
   for (const type of ['pointerup', 'pointercancel']) root.ownerDocument.addEventListener(type, () => { pressed = false }, { signal })
 
   // Focus arrives on a list with no active option: the keys start from what is chosen, or from the first option.
@@ -169,6 +171,8 @@ export function listbox(root) {
       case 'End': to = items.at(-1); break
       case 'Enter':
       case ' ':
+        // Space on a list never scrolls the page, whether or not there is an option to choose.
+        if (event.key === ' ') event.preventDefault()
         if (!current || !enabled(current)) return
         event.preventDefault()
         // A key held down chooses once: in a multiselectable list its repeats would check and uncheck by turns.

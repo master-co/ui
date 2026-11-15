@@ -5,7 +5,7 @@ import { useBehavior } from './use-behavior'
 
 defineOptions({ inheritAttrs: false })
 
-const { blur } = defineProps<{
+const { blur, multiline } = defineProps<{
   /** What the value is, read with it by assistive technology: the field's name. */
   label: string
   /** A textarea, for a value of several lines. */
@@ -33,7 +33,9 @@ const field = () => {
 const first = model.value ?? ''
 const placeholder = attrs.placeholder as string | undefined
 const root = useTemplateRef<HTMLDivElement>('root')
-useBehavior(root, editable, () => ({ blur }), model)
+// The behavior finds its field as it attaches. One line and several are two elements, so it attaches again when `multiline` changes.
+const fielded = (element: HTMLElement, options?: { blur?: 'save' | 'cancel', multiline?: boolean }) => editable(element, { blur: options?.blur })
+useBehavior(root, fielded, () => ({ blur, multiline }), model)
 </script>
 
 <template>

@@ -153,7 +153,8 @@ export function sortable(root, { messages = {}, move } = {}) {
    * Run a change inside a view transition where there is one: scoped to the list where the browser can,
    * otherwise of the document. Resolves once the change is made.
    * @param {() => unknown} update
-   * @returns {Promise<unknown>} When the transition, or the change without one, is over.
+   * @returns {Promise<unknown> & { made: Promise<unknown> }} When the transition, or the change without one, is
+   *   over; its `made` is when the change itself has been made, before the items have finished gliding.
    */
   const transition = (update) => {
     // While the items change places, the list is busy: the stylesheet lets nothing glide but the transition.
@@ -167,9 +168,15 @@ export function sortable(root, { messages = {}, move } = {}) {
     const scoped = /** @type {any} */ (root).startViewTransition
     const whole = /** @type {any} */ (document).startViewTransition
     const named = typeof CSS !== 'undefined' && CSS.supports?.('view-transition-name', 'match-element')
-    if (!named || !motion() || (!scoped && !whole)) return Promise.resolve(change()).finally(done)
+    if (!named || !motion() || (!scoped && !whole)) {
+      const made = Promise.resolve(change())
+      return Object.assign(made.finally(done), { made })
+    }
     const running = scoped ? scoped.call(root, change) : whole.call(document, change)
-    return running.finished.catch(() => {}).finally(done)
+    const made = /** @type {Promise<unknown>} */ (running.updateCallbackDone)
+    // Whoever waits for the change hears of its failure; nobody has to.
+    made.catch(() => {})
+    return Object.assign(running.finished.catch(() => {}).finally(done), { made })
   }
 
   /**
@@ -313,9 +320,10 @@ export function sortable(root, { messages = {}, move } = {}) {
     const to = event.key === 'Home' ? 0 : event.key === 'End' ? list.length - 1 : Math.min(list.length - 1, Math.max(0, from + steps[event.key]))
     if (to === from || moving) return
     moving = true
-    // A `move` that throws or rejects leaves the list as it was and still able to move.
+    // A `move` that throws or rejects leaves the list as it was and still able to move. The next key waits for
+    // the item to be in its place, not for the glide to end: three presses of an arrow are three places.
     try {
-      await shift(item, to)
+      await shift(item, to).made
     } finally {
       moving = false
     }
@@ -477,16 +485,27 @@ export function sortable(root, { messages = {}, move } = {}) {
     }
     // The items that made room already stand where they land: the move takes the room away and puts the node
     // there in one change, so only the carried item travels.
+    const settle = () => {
+      const current = move ? items()[to] : item
+      handleOf(current ?? item)?.setAttribute('aria-pressed', 'false')
+      handle.setAttribute('aria-pressed', 'false')
+      root.style.removeProperty('--sortable-size')
+      return current
+    }
     shift(item, to, () => {
       unmark()
       item.style.removeProperty('--sortable-offset')
+      // The item is in its place: the page hears of the order it can now read.
+      changed()
     }).then(() => {
-      const current = move ? items()[to] : item
-      handleOf(current ?? item)?.setAttribute('aria-pressed', 'false')
-      root.style.removeProperty('--sortable-size')
+      const current = settle()
       if (current) announce(say.drop(nameOf(current), ...position(current)))
+    }, () => {
+      // The owner did not move it: the items that made room and the carried one go back, and the handle lets go.
+      unmark()
+      item.style.removeProperty('--sortable-offset')
+      settle()
     })
-    changed()
   }
 
   root.addEventListener('pointerdown', (event) => {
@@ -515,6 +534,11 @@ export function sortable(root, { messages = {}, move } = {}) {
 
   document.addEventListener('pointermove', (event) => {
     if (!drag || event.pointerId !== drag.id) return
+    // A press whose release never arrived, as when a menu opened over it, is over once no button is down.
+    if (event.pointerType === 'mouse' && event.buttons === 0) {
+      end(false)
+      return
+    }
     drag.last = axis(event)
     if (!drag.dragging) {
       if (Math.abs(drag.last - drag.start) < threshold) return
@@ -542,9 +566,25 @@ export function sortable(root, { messages = {}, move } = {}) {
     }
   }, { signal })
 
+  // A capture taken away during a drag, by the browser or by another script, ends it where it started.
+  root.addEventListener('lostpointercapture', (event) => {
+    if (drag?.dragging && event.pointerId === drag.id && event.target === drag.handle) end(false)
+  }, { signal })
+
+  // Detached while an item is carried or held: everything the drag and the pick wrote is taken back, without a word.
   signal.addEventListener('abort', () => {
-    if (drag) cancelAnimationFrame(drag.frame)
+    if (drag) {
+      cancelAnimationFrame(drag.frame)
+      if (drag.dragging) {
+        unmark()
+        drag.item.style.removeProperty('--sortable-offset')
+        drag.handle.setAttribute('aria-pressed', 'false')
+        root.style.removeProperty('--sortable-size')
+      }
+    }
     drag = null
+    if (grabbed) handleOf(grabbed.item)?.setAttribute('aria-pressed', 'false')
+    grabbed = null
   })
 
   return detach

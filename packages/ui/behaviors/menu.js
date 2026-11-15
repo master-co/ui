@@ -154,7 +154,8 @@ export function contextMenu(target, menu) {
   /** @type {(() => void) | undefined} */
   let pending
   target.addEventListener('pointerdown', (event) => {
-    secondaryPointer = event.button === 2
+    // Control with the main button is the secondary press of a Mac's mouse.
+    secondaryPointer = event.button === 2 || (event.button === 0 && event.ctrlKey && event.pointerType === 'mouse')
   }, { signal })
   target.ownerDocument.addEventListener('pointerup', () => {
     secondaryPointer = false

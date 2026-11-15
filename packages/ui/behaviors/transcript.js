@@ -205,10 +205,23 @@ export function transcript(root, options = {}) {
 
   // The reader scrolls: a scroll that follows their own input and leaves the current cue out of view stops the following.
   const reader = () => { intent = Date.now() }
-  for (const type of ['wheel', 'touchmove', 'keydown']) list.addEventListener(type, reader, { signal, passive: true })
-  list.addEventListener('pointerdown', (event) => { if (event.target === list) reader() }, { signal })
+  for (const type of ['wheel', 'touchmove', 'touchend', 'keydown']) list.addEventListener(type, reader, { signal, passive: true })
+  // A press on the list itself is a press on its scrollbar. It may be held and dragged for longer than any
+  // pause: while it is down every scroll is the reader's, and the pause is counted from its release.
+  let holding = false
+  list.addEventListener('pointerdown', (event) => {
+    if (event.target !== list) return
+    holding = true
+    reader()
+  }, { signal })
+  for (const type of ['pointerup', 'pointercancel']) {
+    document.addEventListener(type, () => {
+      if (holding) reader()
+      holding = false
+    }, { signal })
+  }
   list.addEventListener('scroll', () => {
-    if (Date.now() - intent > 1000) return
+    if (!holding && Date.now() - intent > 1000) return
     setAway(!visible(current))
   }, { signal, passive: true })
 

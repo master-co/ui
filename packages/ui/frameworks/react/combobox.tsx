@@ -86,7 +86,16 @@ export function Combobox(props: ComboboxProps) {
       },
     },
   } as never)
+  /** Where the first render drew a chosen option's name, that is what the field says: only a query given later is written over it. */
+  const drawn = useRef(false)
   useEffect(() => {
+    if (!drawn.current) {
+      drawn.current = true
+      if (!multiple && options.some(option => option.value === first)) {
+        known.current = query
+        return
+      }
+    }
     if (query === undefined || query === known.current || !handle.current) return
     handle.current.query = known.current = query
   }, [query])

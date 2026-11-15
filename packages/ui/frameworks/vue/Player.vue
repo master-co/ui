@@ -14,7 +14,7 @@ export interface PlayerTrack {
   default?: boolean
 }
 
-const { tracks = [], rates = [0.5, 0.75, 1, 1.25, 1.5, 2], labels } = defineProps<{
+const { video, tracks = [], rates = [0.5, 0.75, 1, 1.25, 1.5, 2], labels, valueText, rateText } = defineProps<{
   /** The recording. */
   src: string
   /** A video: the frame, with the controls over its lower edge. Without it, an audio player. */
@@ -29,6 +29,10 @@ const { tracks = [], rates = [0.5, 0.75, 1, 1.25, 1.5, 2], labels } = defineProp
   rates?: number[]
   /** The names of the controls, in the page's language. */
   labels?: Partial<Record<'play' | 'seek' | 'mute' | 'volume' | 'speed' | 'captions' | 'pip' | 'fullscreen', string>>
+  /** What the seek track says for a time, in the page's language: its `aria-valuetext`. */
+  valueText?: (time: number, duration: number) => string
+  /** What the speed button says for a rate. */
+  rateText?: (rate: number) => string
 }>()
 /** The current time in seconds: `v-model:time`. It moves as the media plays; setting it seeks. */
 const time = defineModel<number>('time')
@@ -42,7 +46,9 @@ const first = time.value ?? 0
 const rate = computed(() => (rates.includes(1) ? 1 : rates[0]))
 const root = useTemplateRef<HTMLDivElement>('root')
 const media = useTemplateRef<HTMLMediaElement>('media')
-useBehavior(root, player)
+// The behavior finds its media as it attaches. Audio and video are two elements, so it attaches again when `video` changes.
+const seen = (element: HTMLElement, options?: { video?: boolean, valueText?: (time: number, duration: number) => string, rateText?: (rate: number) => string }) => player(element, { ...(options?.valueText && { valueText: options.valueText }), ...(options?.rateText && { rateText: options.rateText }) })
+useBehavior(root, seen, () => ({ video, valueText, rateText }))
 
 // What the owner sets goes in: a time a quarter second or more from the media's seeks, and playing plays.
 /** What the owner and this component last agreed on: what was said, either way, is not said again. */

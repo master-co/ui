@@ -66,7 +66,11 @@ export function Signature({ label, value, defaultValue, onValueChange, name, vie
         {typedLabel}
         <input className="input signature-name" name={typedName} autoComplete="name" required={required} readOnly={readOnly} aria-invalid={invalid || undefined} {...field} onChange={(event: ChangeEvent<HTMLInputElement>) => onTypedChange?.(event.target.value)} />
       </label>
-      {/* A hidden field's value is its attribute, which React would write back on every render: the behavior fills it. */}
+      {/*
+        A hidden field's value is its attribute, which React writes back on every render, a default as well as a
+        value: the behavior fills it. So the first render carries no drawing here, where Svelte's and Vue's do,
+        and a form sent before the page has hydrated sends none.
+      */}
       <input type="hidden" className="signature-value" name={name} />
       <span className="signature-status" role="status" />
     </fieldset>

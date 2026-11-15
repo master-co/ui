@@ -76,7 +76,8 @@ const inside = (node: TreeNode): VNode[] => [
 /** The rows of one level, and under each branch the rows of the next. */
 const Rows: FunctionalComponent<{ nodes: TreeNode[] }> = ({ nodes }) => nodes.map((node, index) => {
   const state = { 'aria-checked': checkable ? checked(node) : undefined, 'aria-disabled': node.disabled || undefined }
-  return h('li', { role: 'none', key: index }, node.children
+  // A row is the node it stands for, not its place: a branch the reader opened stays open when a row is written above it.
+  return h('li', { role: 'none', key: node.value ?? index }, node.children
     ? [
         h('div', { 'class': 'tree-item tree-toggle', 'role': 'treeitem', 'data-value': node.value, 'aria-expanded': node.open ?? false, ...state }, inside(node)),
         h('ul', { class: 'tree-sub', role: 'group' }, h(Rows, { nodes: node.children })),

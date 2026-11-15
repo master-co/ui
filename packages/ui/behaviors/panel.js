@@ -220,7 +220,8 @@ export function panel(root, { step = 16 } = {}) {
     if (!held || event.pointerId !== held.id) return
     const { moved, resize } = held
     held = null
-    if (!moved) return
+    // A panel closed under the pointer has no box to keep: its place and size stay as they were last drawn.
+    if (!moved || !open()) return
     settle({ place: !resize || rtl(), width: resize, height: resize })
     said('change')
   }

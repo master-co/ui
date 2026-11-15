@@ -42,6 +42,10 @@
     rates?: number[]
     /** The names of the controls, in the page's language. */
     labels?: Partial<PlayerLabels>
+    /** What the seek track says for a time, in the page's language: its `aria-valuetext`. */
+    valueText?: (time: number, duration: number) => string
+    /** What the speed button says for a rate. */
+    rateText?: (rate: number) => string
   }
 </script>
 
@@ -50,14 +54,16 @@
   import { clock, player } from '@master/ui/behaviors/player.js'
   import { behavior } from './behavior.svelte.js'
 
-  let { src, video, poster, tracks = [], label, time = $bindable(), onTimeChange, playing = $bindable(), onPlayingChange, rates = [0.5, 0.75, 1, 1.25, 1.5, 2], labels, class: className, ...root }: PlayerProps = $props()
+  let { src, video, poster, tracks = [], label, time = $bindable(), onTimeChange, playing = $bindable(), onPlayingChange, rates = [0.5, 0.75, 1, 1.25, 1.5, 2], labels, valueText, rateText, class: className, ...root }: PlayerProps = $props()
   const name = $derived({ play: 'Play', seek: 'Seek', mute: 'Mute', volume: 'Volume', speed: 'Playback speed', captions: 'Captions', pip: 'Picture in picture', fullscreen: 'Full screen', ...labels })
   const id = $props.id()
   const speeds = `${id}-speeds`
   const first = untrack(() => time) ?? 0
   const rate = $derived(rates.includes(1) ? 1 : rates[0])
   let media = $state<HTMLMediaElement>()
-  const attach = behavior(player)
+  // The behavior finds its media as it attaches. Audio and video are two elements, so it attaches again when `video` changes.
+  const seen = (element: HTMLElement, options?: { video?: boolean, valueText?: (time: number, duration: number) => string, rateText?: (rate: number) => string }) => player(element, { ...(options?.valueText && { valueText: options.valueText }), ...(options?.rateText && { rateText: options.rateText }) })
+  const attach = behavior(seen, () => ({ video, valueText, rateText }))
 
   // What the owner sets goes in: a time a quarter second or more from the media's seeks, and playing plays.
   $effect(() => {

@@ -68,7 +68,8 @@ const labelOf = (each: string) => options.find(option => option.value === each)?
 const checked = (option: ComboboxOption) => (several ? firsts.includes(option.value) : option.value === first)
 const root = useTemplateRef<HTMLDivElement>('root')
 /** The last query the owner gave or was told. */
-let known: string | undefined
+// The first render drew the field, the chosen option's name before the query: the first query is known.
+let known: string | undefined = !several && options.some(option => option.value === first) ? query.value : undefined
 const behavior = useBehavior(root, combobox, () => (multiple ? { filter, removeLabel, draw: (values: string[]) => { chips.value = values } } : { filter }), model, {
   input: () => {
     const next = handle()?.query
