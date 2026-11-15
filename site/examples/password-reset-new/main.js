@@ -29,9 +29,12 @@ export function mount(root) {
   }
   const reported = (control) => !control.validity.valid && control.matches(':user-invalid')
 
+  /** What the browser's own bubble says is what the line under the field says: one error has one wording. */
+  const mismatch = root.querySelector(`#${confirm.dataset.error}`).textContent.trim()
+
   /** The second field is valid only while it repeats the first. An empty one is left to `required`. */
   const compare = () => {
-    confirm.setCustomValidity(confirm.value && confirm.value !== password.value ? 'The two passwords are not the same.' : '')
+    confirm.setCustomValidity(confirm.value && confirm.value !== password.value ? mismatch : '')
     describe(confirm, reported(confirm))
   }
 

@@ -113,12 +113,15 @@ export function mount(root) {
     const wide = getComputedStyle(part('open')).display === 'none'
     const home = wide ? part('sidebar') : part('drawer')
     if (conditions.parentElement === home) return
-    const held = conditions.contains(root.ownerDocument.activeElement) ? root.ownerDocument.activeElement : null
+    const active = root.ownerDocument.activeElement
+    const held = conditions.contains(active) ? active : null
+    // Focus on the drawer's own buttons would go back to the Filters button, which is no longer displayed.
+    const stranded = wide && drawer.open && drawer.contains(active) && !held
     if (home.moveBefore) home.moveBefore(conditions, null)
     else home.append(conditions)
     part('sidebar').hidden = !wide
     if (wide && drawer.open) drawer.close()
-    held?.focus()
+    ;(held ?? (stranded ? conditions.querySelector('input') : null))?.focus()
   }
   part('open').hidden = false
   place()
@@ -155,8 +158,10 @@ export function mount(root) {
     if (!link.hasAttribute('href')) return
     page = Number(new URLSearchParams(link.search).get('page'))
     const result = draw()
-    // The link pressed may have lost its address: focus stays on the current page's.
-    $('#rs-pages [aria-current="page"]').focus()
+    // The link pressed may have lost its address: focus stays on the current page's, without pulling the view back
+    // down to it, and the new page is shown from its first result.
+    $('#rs-pages [aria-current="page"]').focus({ preventScroll: true })
+    $('#rs-results-title').parentElement.scrollIntoView({ block: 'start' })
     say(`Page ${result.page} of ${result.pages}, resources ${result.from} to ${result.to}`)
   }, { signal })
 

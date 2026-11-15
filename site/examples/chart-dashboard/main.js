@@ -16,7 +16,9 @@ export function mount(root) {
     for (const figure of ['visitors', 'signups', 'bounce']) {
       const [value, change, up] = period[figure]
       part(figure).textContent = value
-      part(`${figure}-change`).textContent = change
+      // The direction is a word as well as a color and an arrow: "Up 12.4%".
+      const way = Object.assign(root.ownerDocument.createElement('span'), { className: 'sr-only', textContent: up ? 'Up ' : 'Down ' })
+      part(`${figure}-change`).replaceChildren(way, change)
       part(`${figure}-change`).className = `stat-delta ${up ? 'stat-delta-up' : 'stat-delta-down'}`
     }
     for (const stop of detach) stop()

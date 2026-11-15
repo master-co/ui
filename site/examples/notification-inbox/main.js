@@ -70,18 +70,21 @@ export function mount(root) {
     say('All notifications marked as read.')
   }, { signal })
 
-  root.addEventListener('change', (event) => {
-    if (event.target.name !== 'inbox-filter') return
-    filter = event.target.value
+  /** Every way of changing the filter draws and says the same thing. */
+  function show(value) {
+    filter = value
     render()
     const total = shown().length
     say(filter === 'unread' ? left() : `${total} ${total === 1 ? 'notification' : 'notifications'}. ${left()}`)
+  }
+
+  root.addEventListener('change', (event) => {
+    if (event.target.name === 'inbox-filter') show(event.target.value)
   }, { signal })
 
   root.querySelector('[data-inbox-show-all]').addEventListener('click', () => {
     filters[0].checked = true
-    filter = 'all'
-    render()
+    show('all')
     filters[0].focus()
   }, { signal })
 

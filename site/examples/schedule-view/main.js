@@ -23,8 +23,12 @@ export function mount(root) {
     field('when').textContent = button.getAttribute('aria-label').slice(event.title.length + 2)
     field('where').textContent = event.where
     field('who').textContent = event.who
-    // A day's list is a popover in the top layer; the drawer goes over it, and the list closes behind it.
-    button.closest('[popover]')?.hidePopover()
+    // A day's list is a popover in the top layer; the drawer goes over it, and the list closes behind it. The
+    // event's own button is then hidden, so when the drawer closes focus goes to the button that opened the list.
+    const list = button.closest('[popover]')
+    const opener = list ? view.querySelector(`[popovertarget="${list.id}"]`) : null
+    list?.hidePopover()
+    if (opener) dialog.addEventListener('close', () => opener.focus(), { once: true, signal: controller.signal })
     dialog.showModal()
   }, { signal: controller.signal })
 

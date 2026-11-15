@@ -185,9 +185,11 @@ export function mount(root) {
     const button = event.target.closest('button')
     if (!button || button.disabled) return
     state.page = Number(button.value)
+    const pressed = button.getAttribute('aria-label')
     draw()
-    // The button pressed may be gone or disabled: focus stays on the current page's.
-    $(`#tv-pages [aria-current="page"]`)?.focus()
+    // Focus stays on what was pressed, drawn again; at an end, where Previous or Next is disabled, on the current page.
+    const again = [...$('#tv-pages').querySelectorAll('button:not(:disabled)')].find(each => each.getAttribute('aria-label') === pressed)
+    ;(again ?? $(`#tv-pages [aria-current="page"]`))?.focus()
     say(`Page ${state.page} of ${Math.max(1, Math.ceil(matching().length / size))}`)
   }, { signal })
 

@@ -89,6 +89,8 @@ export function mount(root) {
     field.disabled = !wanted
     field.required = wanted
     if (!wanted) field.removeAttribute('aria-invalid')
+    // An error that no longer shows is no longer read with the field when it comes back.
+    describe(field)
   }
 
   const values = () => {
@@ -113,7 +115,9 @@ export function mount(root) {
         const open = !state.done && !current && index <= state.reached
         if (current) item.setAttribute('aria-current', 'step')
         else item.removeAttribute('aria-current')
-        const title = name(item, index, open)
+        // In the short row the other steps' names are not drawn, and a link nobody can see is not one to tab to or
+        // to tap: there a step already reached is words, and Back is the way to it.
+        const title = name(item, index, open && !short)
         // The short row shows the current step's name; the others keep theirs for assistive technology.
         if (short) title.classList.toggle('sr-only', !current)
       })

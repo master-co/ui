@@ -159,6 +159,8 @@ export function filters(root, options) {
     if (!control || Number.isNaN(index)) return
     if (control.dataset.part === 'field') {
       draft[index] = condition(fieldOf(control.value))
+      // What was said about the condition this row held is no longer true of it.
+      say(null)
       drawDraft({ index, part: 'field' })
     } else if (control.dataset.part === 'operator') {
       draft[index].operator = control.value

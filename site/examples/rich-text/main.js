@@ -58,7 +58,11 @@ export function mount(root) {
     role: 'textbox',
     'aria-multiline': 'true',
     'aria-labelledby': 'rich-text-label',
-    'aria-describedby': 'rich-text-hint rich-text-error',
+    // A referenced node is read even while it is hidden: the error is named only while it shows.
+    'aria-describedby': invalid ? 'rich-text-hint rich-text-error' : 'rich-text-hint',
+    // A document that cannot be edited is still read and scrolled with the keys; one that is disabled says so.
+    ...(states.readonly ? { tabindex: '0' } : {}),
+    ...(states.disabled ? { 'aria-disabled': 'true' } : {}),
     ...(states.readonly ? { 'aria-readonly': 'true' } : {}),
     ...(invalid ? { 'aria-invalid': 'true' } : {}),
   })
@@ -98,7 +102,10 @@ export function mount(root) {
         continue
       }
       if (command.active) button.setAttribute('aria-pressed', String(editor.isActive(command.active)))
-      button.disabled = !editable || !command.run(editor.can().chain()).run()
+      // While the document can be edited, a tool that cannot run now says so and stays in the arrows' way; while it
+      // cannot, the whole bar is disabled.
+      button.disabled = !editable
+      button.setAttribute('aria-disabled', String(editable && !command.run(editor.can().chain()).run()))
     }
     style.disabled = !editable
     style.value = editor.isActive('heading', { level: 2 }) ? 'heading' : editor.isActive('heading', { level: 3 }) ? 'subheading' : 'paragraph'

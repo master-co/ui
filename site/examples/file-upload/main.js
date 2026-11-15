@@ -79,14 +79,17 @@ export function mount(root) {
     } else item.bar.remove()
     const buttons = ACTIONS[item.state].map(action => item.buttons[action])
     if (buttons.length !== item.end.children.length || buttons.some((button, index) => button !== item.end.children[index])) item.end.replaceChildren(...buttons)
-    if (held && !item.element.contains(doc.activeElement)) buttons[0].focus()
+    // The button that had focus is gone. Focus stays in the row, on the file's name when what takes the button's
+    // place would remove a file that has just been uploaded: Enter pressed a moment late must not delete it.
+    if (held && !item.element.contains(doc.activeElement)) (item.state === 'done' ? item.label : buttons[0]).focus()
   }
 
   /** Everything that is counted: whether there is a list, what it adds up to, and whether the clock runs. */
   function overview() {
     queue.hidden = !items.length
     start.disabled = !count('queued')
-    summary.textContent = `${count('done')} of ${files(items.length)} uploaded`
+    // A file that was refused can never be uploaded, so it is not one of the files the count is out of.
+    summary.textContent = `${count('done')} of ${files(items.length - count('refused'))} uploaded`
     refused.hidden = !count('refused')
     refusedTitle.textContent = `${files(count('refused'))} cannot be uploaded`
     if (count('uploading') && !timer) timer = setInterval(tick, 100)
@@ -99,6 +102,7 @@ export function mount(root) {
       name, bytes, state, reason, progress: 0, element,
       bar: element.querySelector('.file-progress'),
       meta: element.querySelector('.file-meta'),
+      label: element.querySelector('.file-name'),
       end: element.querySelector('.file-end'),
       buttons: Object.fromEntries([...element.querySelectorAll('[data-action]')].map(button => [button.dataset.action, button])),
     }
@@ -120,14 +124,17 @@ export function mount(root) {
 
   /** One step of every upload under way. Each step is the same size, so every run ends at the same moment. */
   function tick() {
+    const finished = []
     for (const item of items.filter(item => item.state === 'uploading')) {
       item.progress += 5
       if (item.progress >= 100) {
         item.state = 'done'
-        say(`${item.name} uploaded.`)
+        finished.push(item.name)
       }
       paint(item)
     }
+    // Uploads that started together end together: one message names them all, so none replaces another.
+    if (finished.length) say(finished.length === 1 ? `${finished[0]} uploaded.` : `${files(finished.length)} uploaded: ${finished.join(', ')}.`)
     overview()
   }
 

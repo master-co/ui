@@ -96,7 +96,9 @@ export function mount(root) {
     for (const button of bar.querySelectorAll('button[data-command]')) {
       const command = commands[button.dataset.command]
       if (command.active) button.setAttribute('aria-pressed', String(editor.isActive(command.active)))
-      button.disabled = !command.run(editor.can().chain()).run()
+      // A tool that cannot run now says so and stays in the arrows' way: a disabled one is skipped by them, so
+      // nobody using the keys would find Undo until there was something to undo.
+      button.setAttribute('aria-disabled', String(!command.run(editor.can().chain()).run()))
     }
     style.value = editor.isActive('heading', { level: 2 }) ? 'heading' : editor.isActive('heading', { level: 3 }) ? 'subheading' : 'paragraph'
   }

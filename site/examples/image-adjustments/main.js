@@ -69,19 +69,30 @@ export function mount(root) {
     }, null, 2)
   }
 
+  /** Counts the pictures asked for, so one that finishes loading late does not replace a later choice. */
+  let latest = 0
+
   /** Show another picture: the cropper starts over on it, and the old object URL is released. */
   async function show(src, alt, chosen) {
+    const turn = ++latest
     const probe = new Image()
     probe.src = src
+    // An alert that is already shown says nothing when it is shown again: it leaves first, so each failure is heard.
+    error.hidden = true
     try {
       await probe.decode()
     } catch {
       if (chosen) URL.revokeObjectURL(src)
+      if (turn !== latest) return
       error.hidden = false
       input.value = ''
       return
     }
-    error.hidden = true
+    // A picture chosen since this one began to load is the one to show: this one is let go.
+    if (turn !== latest) {
+      if (chosen) URL.revokeObjectURL(src)
+      return
+    }
     if (url && url !== src) URL.revokeObjectURL(url)
     url = chosen ? src : null
     file = chosen
@@ -146,6 +157,8 @@ export function mount(root) {
   paint()
   return () => {
     controller.abort()
+    // A picture still loading is not shown on an example that has been taken away.
+    latest += 1
     crop()
     if (url) URL.revokeObjectURL(url)
   }

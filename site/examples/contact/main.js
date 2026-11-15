@@ -31,6 +31,11 @@ export function mount(root) {
     }
   }
 
+  /** `required` is satisfied by a space: a name or a message of spaces alone is refused in the browser's own words. */
+  for (const control of [form.elements.name, form.elements.message]) {
+    control.addEventListener('input', () => control.setCustomValidity(control.value && !control.value.trim() ? 'Fill in this field.' : ''), { signal })
+  }
+
   const show = (sent) => {
     ask.hidden = sent
     result.hidden = !sent

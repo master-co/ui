@@ -9,19 +9,20 @@ const PAUSE = 'M6.5 6.25C6.5 5.56 7.06 5 7.75 5H9c.69 0 1.25.56 1.25 1.25v11.5c0
 
 const clock = (seconds) => `${Math.floor(seconds / 60)}:${String(Math.floor(seconds) % 60).padStart(2, '0')}`
 const size = (bytes) => bytes < 1024 ? `${bytes} B` : bytes < 1048576 ? `${Math.round(bytes / 1024)} KB` : `${(bytes / 1048576).toFixed(1)} MB`
-/**
- * The conversation's own clock: a sent message is a minute after the one before it, so the times read in order
- * with the demo's morning instead of the reader's.
- */
-let minutes = 9 * 60 + 31
-const now = () => {
-  minutes += 1
-  return `${String(Math.floor(minutes / 60) % 24).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`
-}
 
 export function mount(root) {
   const controller = new AbortController()
   const { signal } = controller
+  /**
+   * The conversation's own clock: a sent message is a minute after the one before it, so the times read in order
+   * with the demo's morning instead of the reader's. It belongs to this mount, so a thread shown again starts
+   * after 09:31 again.
+   */
+  let minutes = 9 * 60 + 31
+  const now = () => {
+    minutes += 1
+    return `${String(Math.floor(minutes / 60) % 24).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`
+  }
   const doc = root.ownerDocument
   const thread = root.querySelector('[data-messages]')
   const scroller = thread.closest('.scroll-area')
@@ -58,7 +59,7 @@ export function mount(root) {
   /** A turn of the reader's, at the end of the thread. */
   function turn(content, label) {
     const time = now()
-    const item = make('li', { class: 'message message-sent' }, content, make('span', { class: 'message-meta' }, 'Sent · ', make('time', {}, time)))
+    const item = make('li', { class: 'message message-sent' }, content, make('span', { class: 'message-meta' }, 'Sent · ', make('time', { datetime: `2026-11-13T${time}` }, time)))
     content.prepend(make('span', { class: 'sr-only' }, `You, ${time}${label}`))
     thread.append(item)
     // The newest turn is shown at once, as the thread's end, wherever the reader had scrolled to.
@@ -94,6 +95,8 @@ export function mount(root) {
   form.querySelector('[data-attach]').addEventListener('click', () => picker.click(), { signal })
   picker.addEventListener('change', () => {
     files = [...files, ...picker.files]
+    // The field is emptied, so a file that was removed can be chosen again: the same choice sends no `change`.
+    picker.value = ''
     chips()
     field.focus()
   }, { signal })
