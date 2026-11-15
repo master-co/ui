@@ -38,10 +38,11 @@ Read [tiers](../master-ui-components/references/tiers.md) first. A block is righ
 3. **It answers to its own width.** Reflow is written with container variants on the block (`grid-cols(3)@container(--4xl)`), with `flex flex-wrap`, or with `auto-grid`. Never a viewport variant: a block does not know how wide the column it is dropped in will be.
 4. **It takes the page's ink and size.** A block sets no text color or font size on its root. The previews set `fg-text-body text-sm` on the body, and the page says so. A footer is the one exception: it is quieter than the page on purpose, sets `fg-text-muted` on its `<footer>`, and its page says why.
 5. **A component does the job when one exists.** Before writing a row of utilities, look for the contract: a price is `price`, what a plan includes is `bullets bullets-check`, a figure is `stat`, a quotation is `quote`, a person is `avatar`, a status is `badge`, facts are a `data-list`, questions are an `accordion`. An inline SVG repeated in every row is the sign a component was missed. See [anatomy](references/anatomy.md) for the table.
-6. **The content is real.** One product, Atlas, a deployment platform; names, numbers and sentences a product could ship; figures that add up. No lorem ipsum and no "Feature one".
-7. **One hue at most.** `btn-brand` is the system's one hued control. A block that uses it uses it once, and nothing else on the same screen is hued except a status, or a category of the data it shows. Category colors (`category-<name>` on a row, an event, a card) mark data, never chrome, and always come with the category's name; a block may show several, as a calendar shows several teams.
-8. **What leaves keeps a way in.** A block that hides part of itself in a narrow room (a header's links, a sidebar) shows a toggle that opens the same links in a `dialog dialog-drawer`, and the drawer has a `dialog-close` button. A block that only disappears strands a phone.
-9. **The example agrees with itself.** The rows are in the order the sort names, the filters that are on match the rows that show, the count in the title is the count in the footer, the picture is what its `alt` says.
+6. **It fills a part with what the part is for.** A part's contract says what it holds (`list-body`: a title and one description; `card-action`: a control or a status beside the title). A block that puts more into it with utilities, a third line in a body, a row of text in an action, breaks the geometry the component measured for that content: an avatar centered on three lines belongs to none of them. Use the part the component has for it (`list-meta`), put the content in another part, or add the part to the component first.
+7. **The content is real.** One product, Atlas, a deployment platform; names, numbers and sentences a product could ship; figures that add up. No lorem ipsum and no "Feature one".
+8. **One hue at most.** `btn-brand` is the system's one hued control. A block that uses it uses it once, and nothing else on the same screen is hued except a status, or a category of the data it shows. Category colors (`category-<name>` on a row, an event, a card) mark data, never chrome, and always come with the category's name; a block may show several, as a calendar shows several teams.
+9. **What leaves keeps a way in.** A block that hides part of itself in a narrow room (a header's links, a sidebar) shows a toggle that opens the same links in a `dialog dialog-drawer`, and the drawer has a `dialog-close` button. A block that only disappears strands a phone.
+10. **The example agrees with itself.** The rows are in the order the sort names, the filters that are on match the rows that show, the count in the title is the count in the footer, the picture is what its `alt` says. Add the numbers up: the series of a chart sum to the figure over it, the rows of a table to its total, and a count leaves out what can never be counted (a file that was refused is not one of the files "3 of 4 uploaded" is out of). A weekday is checked against its date. In a script, what happens together is said once: several results written to one status region in one turn leave only the last to be heard.
 
 ## Write a block
 
@@ -84,12 +85,14 @@ Read [preview sizing](../master-ui-components/references/previews.md). For a blo
 3. Serve the build (`site-out` in `.claude/launch.json`) and open `/blocks/<slug>.html`. At each of the three widths the frame's height equals the document's and there is no horizontal overflow.
 4. Look at it in light and in dark at 1:1, then at the overview `/blocks` between its neighbors.
 5. Operate what can be operated: a menu, a drawer, an accordion, a form's validation. An overlay must fit inside the frame.
-6. Report what was measured and what was judged, and name what was not checked.
+6. Measure the rows, do not only look at them: in each repeated row the media's middle, the end's middle and the middle of the title and its description agree within a pixel (`getBoundingClientRect()`), the starts of a header and of the rows under it are one number, and a square button is as wide as it is tall. A row looks plausible at a glance with its avatar 12px low.
+7. Report what was measured and what was judged, and name what was not checked.
 
 ## Review checklist
 
 - Does every surface come from a component, with no ring, shadow or corner written in utilities?
 - Is there a component for anything written by hand: prices, lists with checks, figures, quotations, people, statuses?
+- Does every part hold only what its contract says, with no extra line or control added to it by utilities?
 - Does the block start at its own element, as a size container, with a name?
 - Is every reflow a container variant, a wrap or an `auto-grid`, and none a viewport variant?
 - Is there one `<h1>` at most on the page the block implies, and do the headings step down without a gap?

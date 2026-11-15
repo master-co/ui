@@ -18,6 +18,8 @@ const detach = combobox(document.querySelector('.combobox'))
 ## What a behavior may do
 
 - Set and remove ARIA and native attributes: `aria-selected`, `aria-checked`, `aria-expanded`, `aria-activedescendant`, `aria-valuenow`, `hidden`, `tabindex`, `open`, a field's `value`. Give an element an `id` when another must point at it.
+- Give focus after a pointer finishes a gesture without asking for a ring: `focus({ preventScroll: true, focusVisible: false })`. A press whose default was prevented never told the browser the pointer is in use, so a plain `focus()` after the first drag on a page draws the ring the keys would. Focus given after a key keeps the plain call.
+- Hand a change of arrangement to the platform to draw. Where `Element.prototype.startViewTransition` exists and motion is wanted, the behavior starts a transition scoped to its root around the one call that moves the nodes, and the stylesheet names the parts (`view-transition-name: match-element`, kept inside with `view-transition-scope: all`); elsewhere the same call runs at once. The behavior still writes no geometry. A part that clips its children (a list that scrolls) is named too, with `view-transition-group: contain` and `overflow: clip` on its `::view-transition-group-children`, or children past its edge are drawn outside it for the length of the move. The commit then finishes a frame later: whatever returned a value at once returns a promise, and every caller already has to take both.
 - Move focus, and call the platform: `showPopover()`, `hidePopover()`, `showModal()`, `close()`, `stepUp()`, `scrollIntoView({ block: 'nearest' })`.
 - Pass what only an event knows as a custom property the contract publishes (`--menu-x`, `--splitter-size`); the stylesheet does the placing and the limits.
 - Create the rows a pattern repeats when they are data, not design: the weeks of a month in a calendar. Use the contract's classes and nothing else. Such a behavior also steps aside for a renderer that writes the rows itself: it exports the rows as data (`calendarMonth()`), takes an option that hands the writing over (`draw`), and finds the rows it did not write by a native attribute (a day's `value`).
@@ -32,6 +34,8 @@ Where a pattern has a value that no single native control holds, the function th
 - A behavior that filters takes `filter: false` for a page that writes the matches itself, and gives an active option to options that arrive later.
 
 ## What it never does
+
+- Trust that a gesture ends. A press may never get its release (a menu opened over it, the window lost the pointer), an owner's callback may throw, and a landing may be interrupted by the next press. Every flag a gesture sets (`moving`, a pressed handle, a frame it waits for) has one place that clears it on each of those ways out, and a test for each. A test that starts a drag ends it or detaches, or its frame keeps the runner alive.
 
 - Set a style, a class for state, a size or a position. Never measure to place something. The one exception is `kanban`, recorded in the root `AGENTS.md`: it measures where the pointer is among columns that scroll, scrolls them near their ends and writes the three geometry properties its contract lists. It is not a precedent for another behavior.
 - Reimplement what the platform does: opening and closing a popover or a dialog, light dismiss, focus trapping, <kbd>Esc</kbd> on a modal.

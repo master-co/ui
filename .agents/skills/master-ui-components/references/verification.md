@@ -8,7 +8,9 @@
 6. For an overlay, open it with a real click and check: placement against its invoker, the flip at a viewport edge, <kbd>Esc</kbd> and light dismiss, focus return, and both the entrance and the exit. A hidden or background tab produces no frames, so a transition read from script stays at its first frame there: take a screenshot before measuring.
 7. For a platform enhancement, check both branches: the upgraded one in a browser that has the feature, and the baseline by reading the rules that remain outside `@supports`.
 8. After a change to `theme.css` that should not change a pixel, run `node --import tsx scripts/resolved.ts` in `packages/ui` before and after and compare: it prints every declaration with its tokens resolved, so only a real difference shows. After a change to a material, look at the Paper preview on `/guide/theming`.
-9. Report what was measured, what was derived and what was judged, and name anything left unverified (for example forced colors, a real touch device, a 1x display or an engine you could not run).
+9. A test asserts what it stands on. The kanban's touch test said in a comment that its column was taller than the board; it was not, and the list scrolled only because the line of a place made it 2px longer, so the test passed on the bug and failed on the fix. State a premise as an assertion (`scrollHeight > clientHeight` before the gesture), and when a fix turns a test red, read what the test measured before reverting the fix.
+10. Try the first gesture on a fresh page as well as the tenth: focus rings, hover and pointer state the browser derives from earlier input differ on the first press, which is the one a visitor makes.
+11. Report what was measured, what was derived and what was judged, and name anything left unverified (for example forced colors, a real touch device, a 1x display or an engine you could not run).
 
 ## Preview changes
 
