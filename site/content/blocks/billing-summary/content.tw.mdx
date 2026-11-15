@@ -1,0 +1,153 @@
+---
+title: "帳務摘要"
+description: "方案、席位與用量、續約日期，以及最近的發票。"
+---
+
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import PagePreview from '~/site/components/PagePreview.astro'
+
+帳務摘要回答帳戶擁有者前來確認的事：工作區使用哪個方案、費用多少、已經用了多少、何時續約，並附上變更其中任何一項的入口。金額是[價格](/components/price)，用量是[量表](/components/meter)，其餘則是[資料清單](/components/data-list)，全都放在一個[面板](/components/surface#sheet)上。
+
+<PagePreview name="default" title="帳務摘要" bodyClass="p-lg bg-surface-base fg-text-body text-sm" height={496} phoneHeight={672} html={`<section class="sheet container-inline flex flex-col gap-lg p-lg max-w(720) mx-auto" aria-labelledby="billing-title">
+  <header class="flex flex-wrap items-start justify-between gap-md">
+    <div class="flex flex-col gap-xs">
+      <div class="flex items-center gap-xs">
+        <h2 class="heading heading-sm" id="billing-title">Pro plan</h2>
+        <span class="badge badge-success badge-dot">Active</span>
+      </div>
+      <p class="price"><span class="price-currency">$</span><span class="price-amount">100</span><span class="price-period">per month, before tax</span></p>
+      <p class="m(0) fg-text-muted">5 seats at $20 each, billed monthly in US dollars.</p>
+    </div>
+    <div class="flex flex-wrap gap-xs">
+      <a class="btn btn-sm" href="#billing-title">Change plan</a>
+      <a class="btn btn-sm" href="#billing-title">Manage seats</a>
+    </div>
+  </header>
+  <div class="field pt-lg bt(1) bt-solid b-line-hair">
+    <div class="flex flex-wrap items-baseline justify-between gap-sm">
+      <label for="billing-minutes">Build minutes</label>
+      <span class="font-regular fg-text-muted">1,240 of 2,000 used</span>
+    </div>
+    <meter class="meter" id="billing-minutes" min="0" max="2000" low="1500" high="1800" optimum="0" value="1240">1,240 of 2,000 minutes</meter>
+    <span class="field-hint">760 minutes are left until 1 December. Every seat adds 400 a month.</span>
+  </div>
+  <dl class="data-list">
+    <div class="data-list-item">
+      <dt class="data-list-term">Seats</dt>
+      <dd class="data-list-value">5 of 5 in use</dd>
+    </div>
+    <div class="data-list-item">
+      <dt class="data-list-term">Billing period</dt>
+      <dd class="data-list-value">1 to 30 November 2026</dd>
+    </div>
+    <div class="data-list-item">
+      <dt class="data-list-term">Renews</dt>
+      <dd class="data-list-value">1 December 2026, for $100 before tax</dd>
+    </div>
+    <div class="data-list-item">
+      <dt class="data-list-term">Invoices go to</dt>
+      <dd class="data-list-value">billing@atlaslabs.dev</dd>
+    </div>
+  </dl>
+</section>`} />
+
+區塊提供可直接複製的標記，沿用頁面的文字顏色和字級。預覽在 body 上設定 `fg-text-body text-sm`。每個區塊都是尺寸容器，無論放在寬大的頁面、側邊欄大小的空間，還是對話框裡，都會依自身寬度重新排列。
+
+## 組成 \{#anatomy\}
+
+- **方案及其狀態，以文字表達。** 方案名稱是區塊的標題，旁邊的[徽章](/components/badge)寫著「Active」（使用中）。這裡的色調代表狀態，文字說的也是同一件事。
+- **金額是一個 `price`**：數字、縮小並靠齊數字上緣的貨幣符號，以及以較淡的文字色放在同一基線上的計費週期。「before tax」（未稅）是計費週期的一部分，因為不含稅的數字必須在讀到它的地方說明這一點。
+- **金額如何算出來**寫在顏色較淡的一行：五個席位，每個二十美元。讀者應該能自己算出總和。
+- **變更的兩個入口**位於標頭的結尾側，是呈現為小型按鈕的連結。兩者都不是主要按鈕：摘要上沒有哪一件事是唯一該做的。區塊較窄時，它們會換行到價格下方。
+- **用量是原生的 `<meter>`。** 它的 `low`、`high` 和 `optimum` 指出讀數從哪裡開始不再寬裕，也就是 2,000 分鐘中的 1,500 和 1,800，因此填滿的部分不需要 class 就會轉為警告色，再轉為危險色。量表本身不印出數字：讀數寫在標籤旁，提示則說明還剩多少以及何時重設。
+- **日期和其餘資訊是一個 `data-list`**，每列一個欄位名稱和一個值。清單寬度不足 20rem 時，每個欄位名稱會移到值的上方。
+- **數字彼此相符。** 五個席位、每個 $20，是 $100；五個席位、每個 400 分鐘，是 2,000；用掉 1,240，還剩 760。
+
+這裡不顯示也不詢問卡號、到期日或地址。產品若要顯示付款方式，顯示的是付款服務供應商回傳的卡片品牌和末四碼，絕不是區塊中的欄位。
+
+## 搭配發票 \{#invoices\}
+
+在帳務頁面上，摘要縮成一列三項資訊，後面接著最近的發票，以[表格](/components/table)呈現：每張發票依相同的四項屬性比較。「All invoices」（所有發票）通往其餘的發票。
+
+<PagePreview name="invoices" title="搭配發票" bodyClass="p-lg bg-surface-base fg-text-body text-sm" height={504} phoneHeight={736} html={`<section class="container-inline flex flex-col gap-lg max-w(880) mx-auto" aria-labelledby="billing-invoices-title">
+  <header class="flex flex-wrap items-end justify-between gap-md">
+    <div class="flex flex-col gap-2xs">
+      <h2 class="heading heading-lg" id="billing-invoices-title">Billing</h2>
+      <p class="m(0) fg-text-muted">Atlas Labs is on Pro, billed monthly in US dollars.</p>
+    </div>
+    <a class="btn" href="#billing-invoices-title">Manage billing</a>
+  </header>
+  <div class="sheet overflow-hidden">
+    <dl class="grid gap-lg m(0) p-lg grid-cols(3)@container(--xl)">
+      <div class="flex flex-col gap-2xs">
+        <dt class="fg-text-muted">Next invoice</dt>
+        <dd class="m(0)"><p class="price price-sm"><span class="price-currency">$</span><span class="price-amount">100</span><span class="price-period">on 1 December</span></p></dd>
+      </div>
+      <div class="flex flex-col gap-2xs">
+        <dt class="fg-text-muted">Seats</dt>
+        <dd class="m(0) fg-text-strong font-medium">5 at $20 a month</dd>
+      </div>
+      <div class="flex flex-col gap-2xs">
+        <dt class="fg-text-muted">Build minutes</dt>
+        <dd class="m(0) fg-text-strong font-medium">1,240 of 2,000 used</dd>
+      </div>
+    </dl>
+    <div class="scroll-area scroll-area-inline bt(1) bt-solid b-line-hair" tabindex="0" role="region" aria-label="Recent invoices">
+      <table class="table whitespace-nowrap">
+        <caption class="table-title">Recent invoices</caption>
+        <thead>
+          <tr class="table-row">
+            <th class="table-heading" scope="col">Invoice</th>
+            <th class="table-heading" scope="col">Issued</th>
+            <th class="table-heading" scope="col">Status</th>
+            <th class="table-heading table-numeric" scope="col">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="table-row">
+            <th class="table-cell table-primary" scope="row"><a class="link link-quiet" href="#billing-invoices-title">INV-2026-011</a></th>
+            <td class="table-cell"><time datetime="2026-11-01">1 Nov 2026</time></td>
+            <td class="table-cell"><span class="badge badge-success badge-dot">Paid</span></td>
+            <td class="table-cell table-numeric">$100.00</td>
+          </tr>
+          <tr class="table-row">
+            <th class="table-cell table-primary" scope="row"><a class="link link-quiet" href="#billing-invoices-title">INV-2026-010</a></th>
+            <td class="table-cell"><time datetime="2026-10-01">1 Oct 2026</time></td>
+            <td class="table-cell"><span class="badge badge-success badge-dot">Paid</span></td>
+            <td class="table-cell table-numeric">$100.00</td>
+          </tr>
+          <tr class="table-row">
+            <th class="table-cell table-primary" scope="row"><a class="link link-quiet" href="#billing-invoices-title">INV-2026-009</a></th>
+            <td class="table-cell"><time datetime="2026-09-01">1 Sep 2026</time></td>
+            <td class="table-cell"><span class="badge badge-success badge-dot">Paid</span></td>
+            <td class="table-cell table-numeric">$80.00</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <p class="flex flex-wrap items-baseline justify-between gap-sm m(0) fg-text-muted">
+    <span>Amounts are in US dollars and exclude tax.</span>
+    <a class="link" href="#billing-invoices-title">All invoices</a>
+  </p>
+</section>`} />
+
+- **一列三項資訊**是以 utility 排版的 `<dl>`，每個欄位名稱在值的上方，區塊寬度達 36rem 後排成三欄。下一張發票是 `price price-sm`；另外兩項是文字。
+- **發票依最新到最舊排列**，金額以 `table-numeric` 對齊小數點。九月的是 $80：當時工作區有四個席位。
+- **發票編號就是它的連結。** 它是列標題，因此每個儲存格都會連同所屬的發票一起讀出。
+- **表格的空間比欄位窄時，會在[捲動區域](/components/scroll-area)中橫向捲動**，捲動區域位於面板內，由面板裁切圓角。
+
+## 無障礙 \{#accessibility\}
+
+- 摘要是一個 `<section>`，以其標題命名。在第二個範例中，`<h2>` 為區塊命名，表格則有 `<caption>`，因此表格會以名稱讀出。
+- 量表有 `<label>`，讀數是旁邊的文字。量表的顏色由 `low`、`high` 和 `optimum` 決定；顏色一旦改變，文字必須說出與顏色相同的事。
+- 狀態是帶有圓點的文字，「Active」和「Paid」（已付款）。色相只是重複它，從不單獨承載它。
+- 日期的月份以文字寫出，在表格中每個日期都是 `<time>`。
+- 「Change plan」（變更方案）和「Manage seats」（管理席位）會前往其他頁面，因此是呈現為按鈕的連結。
+- 用文字把幣別寫出一次。單獨一個「$」可能是好幾種貨幣。
+
+## 相關內容 \{#related\}
+
+<ComponentLinks slugs={['price', 'meter', 'data-list', 'table', 'badge', 'surface', 'scroll-area', 'button', 'link']} />
+
+<ComponentLinks kind="blocks" slugs={['pricing', 'page-header', 'table-view']} />

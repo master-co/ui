@@ -1,0 +1,60 @@
+---
+title: "重置密码"
+description: "申请重置链接和设置新密码，两步各有自己的结果。"
+---
+
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import PagePreview from '~/site/components/PagePreview.astro'
+
+重置密码由两个页面组成：一个用来申请链接，另一个从该链接进入，用来设置新密码。每个页面都是一张只做一件事的卡片，完成后由结果取代它的位置。与[登录](/blocks/sign-in)一样，这张卡片是一块[面板](/components/surface#sheet)，其中的字段由[表单](/components/form)负责排布。
+
+<PagePreview name="default" title="申请链接" example="password-reset-request" caption="提交一个地址，有效或无效都可以，分别查看错误提示和结果。不会发送任何邮件，也不会查找任何账户。" />
+
+区块提供可直接复制的标记，沿用页面的文字颜色和字号。预览在 body 上设置 `fg-text-body text-sm`。每个区块都是尺寸容器，无论放在宽页面、只有侧边栏那么宽的区域，还是对话框中，都会按自身宽度重排。使用[居中布局](/pages/centered)将卡片放在页面中央。
+
+## 区块组成 \{#anatomy\}
+
+- **`sheet w-full max-w(380) p-xl`。** 卡片在手机上占满可用宽度，最大宽度为 380px，与通向它的登录卡片同宽。
+- **一个字段。** 邮箱地址，设置 `autocomplete="username"`，这样浏览器会提供用户登录时使用的那个地址。
+- **在申请之前就说明链接的有效期。** “30 minutes”（30 分钟）写在标题下的那句话里，在结果中再出现一次。
+- **结果不透露任何账户信息。** “If an Atlas account uses this address”（如果有 Atlas 账户使用这个地址）对每个地址都成立。显示“没有这个账户”的页面，等于告诉陌生人谁有账户。
+- **结果中用墨色重复显示地址**，这样输入错误在还能改正时就会被发现；“Use another email”（换一个邮箱）会让表单回来，并选中其中的地址。
+- **什么都没收到时该怎么办**用一个中性[行内提示](/components/alert)说明：先查看垃圾邮件文件夹，再重新申请链接。
+- **返回登录的入口**在两种状态下都有，位于最后一行。
+
+## 新密码 \{#new-password\}
+
+链接打开的是第二张卡片。因为字段会隐藏输入的内容，它要求输入两次新密码，并说明这是谁的账户。密码规则是至少 12 个字符，与[注册卡片](/blocks/sign-in#sign-up)给出的规则相同，用 `field-hint` 在用户输错之前就显示出来。
+
+<PagePreview name="new-password" title="新密码" example="password-reset-new" caption="先试一个过短的密码，或两个不一致的密码，再输入两个一致的密码。不会更改任何账户，结果出现时密码会被清除。" />
+
+- **两个字段都设置 `autocomplete="new-password"`**，密码管理器正是凭借它才能提供并保存一个新密码。另有一个只读的地址字段，设置 `autocomplete="username"`，不显示在页面上，也不在 Tab 顺序中，用来告诉密码管理器这个密码属于哪个账户。
+- **两次输入一致与其他规则一样，也是一条约束。** 第二个字段与第一个不同时，会被设置自定义有效性，因此浏览器报告不一致的方式与报告缺少值完全相同，显示的也是同一个 `field-error`。
+- **结果说明还有什么发生了变化**：其他设备已退出登录。然后是一个按钮，即登录入口。
+
+## 哪些操作需要脚本 \{#script\}
+
+验证规则由浏览器负责：`required`、`type="email"` 和 `minlength="12"`。样式表根据 `:user-invalid` 把字段绘制为无效状态，它只在用户编辑过该字段或尝试提交之后才会匹配，因此页面加载时不会出现任何红色，值一旦有效，错误提示也随即消失。
+
+每张卡片都有自己的模块，各自做同样的几件事。它启用按钮：按钮在标记中是 `disabled` 的，因此背后没有服务器的表单不会被提交到它所在的页面。错误提示显示时，它把该字段的错误信息加入 `aria-describedby`，提示消失后再移除。提交通过验证后，它显示结果，并把焦点移到结果的标题上。
+
+第二个模块还会在两个字段中任意一个触发 `input` 时，用 `setCustomValidity` 比较两个密码，因此改正第一个字段会立即清除第二个字段上的错误。结果出现时，它会重置表单：两个密码都从页面上消失，而且绝不会被写入 URL、控制台或存储。
+
+两个模块都不发送任何内容。在实际应用中，由 `submit` 处理函数以 POST 提交表单，服务器响应后显示结果；第二张卡片还必须处理链接已过期的情况，显示 `alert alert-danger`，并提供重新申请链接的入口。没有脚本时，字段、标签和提示都在，按钮保持禁用，另有一行 `<noscript>` 文字给出可以写信的地址。
+
+## 无障碍 \{#accessibility\}
+
+- 卡片标题就是页面的 `<h1>`。结果有自己的 `<h1>`，带有 `tabindex="-1"`，焦点会移到它上面，因此页面的切换会被播报，键盘操作也从结果处继续。
+- 每个字段都有可见标签。提示从一开始就在字段的 `aria-describedby` 中；错误信息只在显示期间才加入。
+- 提交失败时保留浏览器自身的行为：焦点移到第一个有误的字段，并由浏览器说明原因。
+- 每条错误信息都说明该怎么做：“Use at least 12 characters.”（请至少使用 12 个字符。）“Enter the same password again.”（请再次输入相同的密码。）
+- 按钮只在脚本就绪之前处于禁用状态，绝不因为表单尚未填完而禁用。
+- 不要添加关于大写字母或符号的规则。让密码难以猜中的是长度，而用户看不到的规则只能靠反复试错来满足。
+
+## 相关内容 \{#related\}
+
+<ComponentLinks slugs={['surface', 'form', 'input', 'button', 'alert', 'icon-frame', 'heading', 'link']} />
+
+<ComponentLinks kind="blocks" slugs={['sign-in']} />
+
+<ComponentLinks kind="pages" slugs={['centered']} />

@@ -1,0 +1,48 @@
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import PagePreview from '~/site/components/PagePreview.astro'
+
+A notification inbox is the page of what happened while the reader was away: who did it or what it was, when, and whether it has been read. It filters to what is unread and marks one or all as read. The notifications are a [list](/components/list) on a [sheet](/components/surface#sheet), under a [segmented control](/components/segmented).
+
+<PagePreview name="default" title="Notification inbox" example="notification-inbox" caption="Switch to Unread, mark one notification as read with its check, then mark the rest. What is read is kept for this preview only." />
+
+Blocks are markup to copy. They take the page's own text color and size; the previews set `fg-text-body text-sm` on the body. Each block is a size container, so it reflows by its own width: in a wide page, a sidebar's worth of room or a dialog.
+
+## What is in it \{#anatomy\}
+
+- **One sheet at a reading width**, `max-w(640)`: a header with the title, the count and the controls, then the list. In a narrow block the controls wrap under the title.
+- **The count is words under the title**: "4 unread". It is the same number the rows show, since both are drawn from one state.
+- **All or Unread is a `segmented` of two native radios.** A filter is one choice among a few, which is what a radio group is; the browser keeps its arrow keys and its checked state, and nothing is announced as "selected" that is not.
+- **Each notification is a `list-row`**: who or what as `list-media`, a title that is a link to the thing itself, one line of detail, and under them when it arrived. A person is an [avatar](/components/avatar); the system is an [icon frame](/components/icon-frame), so a deployment that failed does not borrow a face.
+- **Unread is a word.** A neutral [badge](/components/badge) with a dot reads "Unread" beside the time. It is not `aria-current` and not `aria-selected`: neither means "not yet read", and a row is not chosen by being new.
+- **One quiet button at the end of an unread row** marks it read. Its name carries the row's title: "Mark “Deployment failed on atlas.dev” as read". A row that has been read has no button and no badge.
+- **"Mark all as read" stands with the filter**, not with the rows, and is disabled while nothing is unread.
+- **Nothing unread is not nothing at all.** When the Unread filter is left with no rows, an [empty](/components/empty) says "You have read everything" and offers the way back to all of them. An inbox that has never had a notification is a different state with different words.
+
+The title and the detail each keep one line and end in an ellipsis: a notification is a pointer to the thing, and the thing holds the rest.
+
+## What needs a script \{#script\}
+
+The rows are in the markup, so the inbox reads in full without the script; its controls are `disabled` there and the script turns them on. `main.js` then keeps one list: every notification and whether it is unread, read once from the rows. Everything is drawn from it.
+
+- **The filter** shows every row or the unread ones. The count, the rows and the empty result cannot disagree, because none of them is kept separately.
+- **Marking one read** takes the badge and the button out of its row. Under Unread the row leaves the list as well.
+- **Focus follows.** After a row is marked read, focus goes to the next unread row's button, then to the one before, and when none is left, to the filter. "Mark all as read" hands focus to the filter before it is disabled.
+- **One polite status line**, not drawn, says the result and what is left: "“Kenta Nakamura mentioned you” marked as read. 3 unread."
+
+What is read is kept for the visit only. In an application the same function sends the change to the server, and puts the row back as unread if that fails; new notifications are added to the list and counted the same way. The block stays in the page: it is not the popover under a bell, and it sends no push notification.
+
+## Accessibility \{#accessibility\}
+
+- The block is a `<section>` named by its `<h2>`, and the list is a `<ul>` named "Notifications".
+- The filter is a `radiogroup` named "Show". Tab reaches the checked option and the arrow keys move the choice.
+- Each row has two targets, and each says what it does: the title goes to the thing, the button marks the row read. The check in the button is decoration; the name is in `aria-label`.
+- A portrait beside a name has an empty `alt`, and an icon frame is `aria-hidden`: the title already says who or what.
+- The time is a `<time>` with a `datetime`. "Today, 09:31" is for the reader; the attribute is for everything else.
+- The status line is `role="status"`, so a result is announced without moving focus, and focus never falls back to the top of the page when a row leaves.
+- On a touch screen the 32px buttons keep their size and their target grows to 44px.
+
+## Related \{#related\}
+
+<ComponentLinks slugs={['surface', 'segmented', 'list', 'avatar', 'icon-frame', 'badge', 'empty', 'button', 'link', 'heading']} />
+
+<ComponentLinks kind="blocks" slugs={['activity-feed', 'empty-state', 'messaging']} />

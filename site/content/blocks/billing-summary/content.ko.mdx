@@ -1,0 +1,153 @@
+---
+title: "결제 요약"
+description: "요금제, 좌석 수와 사용량, 갱신일, 최근 청구서를 보여 줍니다."
+---
+
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import PagePreview from '~/site/components/PagePreview.astro'
+
+결제 요약은 계정 소유자가 확인하러 오는 것에 답합니다. 워크스페이스가 어떤 요금제를 쓰는지, 비용이 얼마인지, 얼마나 사용했는지, 언제 갱신되는지를 보여 주고, 그중 무엇이든 바꾸는 방법을 함께 제공합니다. 금액은 [가격](/components/price), 사용량은 [미터](/components/meter), 나머지는 [데이터 목록](/components/data-list)이며, 모두 하나의 [시트](/components/surface#sheet) 위에 놓입니다.
+
+<PagePreview name="default" title="결제 요약" bodyClass="p-lg bg-surface-base fg-text-body text-sm" height={496} phoneHeight={672} html={`<section class="sheet container-inline flex flex-col gap-lg p-lg max-w(720) mx-auto" aria-labelledby="billing-title">
+  <header class="flex flex-wrap items-start justify-between gap-md">
+    <div class="flex flex-col gap-xs">
+      <div class="flex items-center gap-xs">
+        <h2 class="heading heading-sm" id="billing-title">Pro plan</h2>
+        <span class="badge badge-success badge-dot">Active</span>
+      </div>
+      <p class="price"><span class="price-currency">$</span><span class="price-amount">100</span><span class="price-period">per month, before tax</span></p>
+      <p class="m(0) fg-text-muted">5 seats at $20 each, billed monthly in US dollars.</p>
+    </div>
+    <div class="flex flex-wrap gap-xs">
+      <a class="btn btn-sm" href="#billing-title">Change plan</a>
+      <a class="btn btn-sm" href="#billing-title">Manage seats</a>
+    </div>
+  </header>
+  <div class="field pt-lg bt(1) bt-solid b-line-hair">
+    <div class="flex flex-wrap items-baseline justify-between gap-sm">
+      <label for="billing-minutes">Build minutes</label>
+      <span class="font-regular fg-text-muted">1,240 of 2,000 used</span>
+    </div>
+    <meter class="meter" id="billing-minutes" min="0" max="2000" low="1500" high="1800" optimum="0" value="1240">1,240 of 2,000 minutes</meter>
+    <span class="field-hint">760 minutes are left until 1 December. Every seat adds 400 a month.</span>
+  </div>
+  <dl class="data-list">
+    <div class="data-list-item">
+      <dt class="data-list-term">Seats</dt>
+      <dd class="data-list-value">5 of 5 in use</dd>
+    </div>
+    <div class="data-list-item">
+      <dt class="data-list-term">Billing period</dt>
+      <dd class="data-list-value">1 to 30 November 2026</dd>
+    </div>
+    <div class="data-list-item">
+      <dt class="data-list-term">Renews</dt>
+      <dd class="data-list-value">1 December 2026, for $100 before tax</dd>
+    </div>
+    <div class="data-list-item">
+      <dt class="data-list-term">Invoices go to</dt>
+      <dd class="data-list-value">billing@atlaslabs.dev</dd>
+    </div>
+  </dl>
+</section>`} />
+
+블록은 복사해 사용하는 마크업입니다. 페이지의 텍스트 색상과 크기를 따르며, 미리보기에서는 body에 `fg-text-body text-sm` 클래스를 설정합니다. 각 블록은 크기 컨테이너이므로 넓은 페이지, 사이드바 너비의 공간, 대화 상자 어디서든 자체 너비에 맞춰 배치가 바뀝니다.
+
+## 구성 요소 \{#anatomy\}
+
+- **요금제와 그 상태를 글로.** 요금제 이름이 블록의 제목이고, 옆의 [배지](/components/badge)가 “Active”(활성)라고 알려 줍니다. 여기서 톤은 상태를 나타내며, 단어도 같은 내용을 말합니다.
+- **금액은 `price`입니다.** 숫자, 숫자 상단에 맞춰 작게 표시한 통화 기호, 숫자의 기준선에 맞춘 옅은 글자색의 결제 주기로 구성됩니다. “before tax”(세전)는 결제 주기의 일부입니다. 세금을 뺀 숫자는 그 숫자를 읽는 자리에서 그 사실을 밝혀야 하기 때문입니다.
+- **금액이 어떻게 나왔는지**를 옅은 글자색의 한 줄로 알립니다. 20달러짜리 좌석 다섯 개입니다. 독자가 직접 계산해 볼 수 있어야 합니다.
+- **금액을 바꾸는 두 가지 방법**은 헤더 끝에 작은 버튼 모양의 링크로 둡니다. 어느 쪽도 기본 버튼이 아닙니다. 요약에는 반드시 해야 할 한 가지 일이 없기 때문입니다. 블록이 좁으면 가격 아래로 줄바꿈됩니다.
+- **사용량은 네이티브 `<meter>`입니다.** `low`, `high`, `optimum`이 측정값이 여유롭지 않게 되는 지점, 곧 2,000분 가운데 1,500분과 1,800분을 알려 주므로, 클래스 없이도 채움이 경고 색으로, 이어서 위험 색으로 바뀝니다. 미터는 숫자를 표시하지 않습니다. 측정값은 레이블 옆에 놓이고, 힌트가 얼마나 남았는지와 언제 초기화되는지 알려 줍니다.
+- **날짜와 나머지는 `data-list`이며**, 한 행에 용어 하나와 값 하나가 놓입니다. 목록 너비가 20rem 미만이면 각 용어가 값 위로 올라갑니다.
+- **숫자가 서로 맞습니다.** 20달러짜리 좌석 다섯 개는 100달러이고, 400분씩인 좌석 다섯 개는 2,000분이며, 1,240분을 쓰면 760분이 남습니다.
+
+여기에서는 카드 번호, 만료일, 주소를 보여 주지도 묻지도 않습니다. 제품이 결제 수단을 보여 주는 경우, 결제 서비스 제공업체가 돌려주는 브랜드와 마지막 네 자리를 표시할 뿐이며 블록의 필드로 두는 일은 없습니다.
+
+## 청구서 포함 \{#invoices\}
+
+결제 페이지에서는 요약이 정보 세 가지를 담은 한 행으로 줄어들고, 그 뒤에 최근 청구서가 [표](/components/table)로 이어집니다. 각 청구서를 같은 네 가지 속성으로 비교합니다. “All invoices”(모든 청구서)는 나머지 청구서로 이어집니다.
+
+<PagePreview name="invoices" title="청구서 포함" bodyClass="p-lg bg-surface-base fg-text-body text-sm" height={504} phoneHeight={736} html={`<section class="container-inline flex flex-col gap-lg max-w(880) mx-auto" aria-labelledby="billing-invoices-title">
+  <header class="flex flex-wrap items-end justify-between gap-md">
+    <div class="flex flex-col gap-2xs">
+      <h2 class="heading heading-lg" id="billing-invoices-title">Billing</h2>
+      <p class="m(0) fg-text-muted">Atlas Labs is on Pro, billed monthly in US dollars.</p>
+    </div>
+    <a class="btn" href="#billing-invoices-title">Manage billing</a>
+  </header>
+  <div class="sheet overflow-hidden">
+    <dl class="grid gap-lg m(0) p-lg grid-cols(3)@container(--xl)">
+      <div class="flex flex-col gap-2xs">
+        <dt class="fg-text-muted">Next invoice</dt>
+        <dd class="m(0)"><p class="price price-sm"><span class="price-currency">$</span><span class="price-amount">100</span><span class="price-period">on 1 December</span></p></dd>
+      </div>
+      <div class="flex flex-col gap-2xs">
+        <dt class="fg-text-muted">Seats</dt>
+        <dd class="m(0) fg-text-strong font-medium">5 at $20 a month</dd>
+      </div>
+      <div class="flex flex-col gap-2xs">
+        <dt class="fg-text-muted">Build minutes</dt>
+        <dd class="m(0) fg-text-strong font-medium">1,240 of 2,000 used</dd>
+      </div>
+    </dl>
+    <div class="scroll-area scroll-area-inline bt(1) bt-solid b-line-hair" tabindex="0" role="region" aria-label="Recent invoices">
+      <table class="table whitespace-nowrap">
+        <caption class="table-title">Recent invoices</caption>
+        <thead>
+          <tr class="table-row">
+            <th class="table-heading" scope="col">Invoice</th>
+            <th class="table-heading" scope="col">Issued</th>
+            <th class="table-heading" scope="col">Status</th>
+            <th class="table-heading table-numeric" scope="col">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="table-row">
+            <th class="table-cell table-primary" scope="row"><a class="link link-quiet" href="#billing-invoices-title">INV-2026-011</a></th>
+            <td class="table-cell"><time datetime="2026-11-01">1 Nov 2026</time></td>
+            <td class="table-cell"><span class="badge badge-success badge-dot">Paid</span></td>
+            <td class="table-cell table-numeric">$100.00</td>
+          </tr>
+          <tr class="table-row">
+            <th class="table-cell table-primary" scope="row"><a class="link link-quiet" href="#billing-invoices-title">INV-2026-010</a></th>
+            <td class="table-cell"><time datetime="2026-10-01">1 Oct 2026</time></td>
+            <td class="table-cell"><span class="badge badge-success badge-dot">Paid</span></td>
+            <td class="table-cell table-numeric">$100.00</td>
+          </tr>
+          <tr class="table-row">
+            <th class="table-cell table-primary" scope="row"><a class="link link-quiet" href="#billing-invoices-title">INV-2026-009</a></th>
+            <td class="table-cell"><time datetime="2026-09-01">1 Sep 2026</time></td>
+            <td class="table-cell"><span class="badge badge-success badge-dot">Paid</span></td>
+            <td class="table-cell table-numeric">$80.00</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <p class="flex flex-wrap items-baseline justify-between gap-sm m(0) fg-text-muted">
+    <span>Amounts are in US dollars and exclude tax.</span>
+    <a class="link" href="#billing-invoices-title">All invoices</a>
+  </p>
+</section>`} />
+
+- **한 행에 놓인 정보 세 가지**는 유틸리티로 배치한 `<dl>`입니다. 각 용어가 값 위에 놓이고, 블록 너비 36rem부터 세 열이 됩니다. 다음 청구 금액은 `price price-sm`이고, 나머지 둘은 글입니다.
+- **청구서는 최신순이며**, 금액은 `table-numeric`으로 소수점에 맞춰 정렬됩니다. 9월 청구서는 80달러입니다. 그때 워크스페이스의 좌석이 네 개였기 때문입니다.
+- **청구서 번호가 곧 링크입니다.** 번호가 행 머리글이므로, 각 셀은 그것이 속한 청구서와 함께 안내됩니다.
+- **표는** 표가 놓인 공간이 열보다 좁으면 **[스크롤 영역](/components/scroll-area) 안에서 가로로 스크롤됩니다.** 스크롤 영역은 시트 안에 있고, 시트가 모서리를 잘라 냅니다.
+
+## 접근성 \{#accessibility\}
+
+- 요약은 제목으로 이름을 지정한 `<section>`입니다. 두 번째 예제에서는 `<h2>`가 블록의 이름을 지정하고 표에 `<caption>`이 있으므로, 표가 이름과 함께 안내됩니다.
+- 미터에는 `<label>`이 있고, 측정값은 그 옆의 텍스트입니다. 미터의 색상은 `low`, `high`, `optimum`에 따라 그려집니다. 색상이 바뀌면 글도 색상과 같은 내용을 말해야 합니다.
+- 상태는 점이 붙은 단어인 “Active”와 “Paid”(결제 완료)입니다. 색조는 그것을 반복할 뿐, 혼자서 전달하지 않습니다.
+- 날짜는 월을 단어로 적으며, 표에서는 각 날짜가 `<time>`입니다.
+- “Change plan”(요금제 변경)과 “Manage seats”(좌석 관리)는 다른 페이지로 이동하므로 버튼 모양의 링크입니다.
+- 통화는 한 번은 글로 적으세요. “$”만으로는 여러 통화를 뜻할 수 있습니다.
+
+## 관련 항목 \{#related\}
+
+<ComponentLinks slugs={['price', 'meter', 'data-list', 'table', 'badge', 'surface', 'scroll-area', 'button', 'link']} />
+
+<ComponentLinks kind="blocks" slugs={['pricing', 'page-header', 'table-view']} />

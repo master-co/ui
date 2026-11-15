@@ -1,0 +1,47 @@
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import PagePreview from '~/site/components/PagePreview.astro'
+
+A file upload block is where files are chosen and what happens to each one afterwards: it waits, it uploads, it arrives, or it does not and says why. The place to choose is a [dropzone](/components/dropzone); every file after that is a [file](/components/file) with its own facts and its own controls.
+
+<PagePreview name="default" title="File upload" example="file-upload" caption="Press Start upload, cancel one and retry it, remove a file, or choose files of your own. Nothing is uploaded: the progress is a timer, and a file's content is never read." />
+
+Blocks are markup to copy. They take the page's own text color and size; the previews set `fg-text-body text-sm` on the body. Each block is a size container, so it reflows by its own width: in a wide page, a sidebar's worth of room or a dialog.
+
+## What is in it \{#anatomy\}
+
+- **One [sheet](/components/surface#sheet) at a reading width**, `max-w(640)`: a title that says what the files are for, the dropzone, then the list. A file's name and its controls stay within one glance of each other.
+- **The dropzone says the limits before a file is chosen.** "PNG, JPEG or PDF, up to 10 MB each" is its `dropzone-description`, and the input's `accept` narrows the picker to the same types. A limit that is only reported afterwards has already cost a try.
+- **Every file is a `file` on a list item**: the small page with its extension, the name, and one line of facts in `file-meta`. That line is the size and the state in words, "184 KB · Ready", and both keep one line, so each state is said briefly.
+- **An upload under way is the sheet being tinted.** A native `<progress class="progress file-progress">` lies under the words and fills from the start edge; the percentage is in the facts as well, since the tint is a drawing of it.
+- **A failure is `file-failed`**: the contour and the facts take the danger ink, and the facts say what went wrong. A failure that can be tried again offers Retry; a file that breaks the limits offers only Remove, because trying again cannot help.
+- **The controls are the file's own**, in `file-end`: a quiet square button for each, named with the file, "Remove atlas-logo.png". They change with the state: Remove while it waits, Cancel while it uploads, Retry and Remove once it has stopped.
+- **What cannot be uploaded is said once, above the list**, in an [alert](/components/alert) that counts the files and says what to do; each of them says its own reason in its row.
+- **The count and the one primary button close the block**: "1 of 3 files uploaded" at the start of the row, "Start upload" at its end. The button is disabled while nothing waits.
+
+## What needs a script \{#script\}
+
+The dropzone needs none: a click opens the picker and a file dropped on the zone lands in its input. `main.js` is everything after that.
+
+- **It lists what was chosen.** Each file of the input's `files` becomes a row, cloned from the `<template>` in the markup, with its name set as text. Then the input is emptied, so choosing the same file again is still a change. Two files of one name are two rows, each with its own state.
+- **It checks type and size**, by the file's MIME type, or by its extension where the browser reports no type. A file that fails is kept in the list, marked, with its reason. This is feedback for the reader; the server checks again.
+- **It keeps one state per file** and draws the row from it: the facts, the bar and the buttons. The count, the alert and whether "Start upload" can be pressed are all derived from the same list.
+- **It moves focus when a control leaves.** After Remove, focus goes to the file that takes its place, then to the one before, then to the dropzone. When Cancel turns into Retry, focus stays in the row.
+- **It says what happened** in one `role="status"` line that is not drawn: "atlas-logo.png uploaded.", "2 files added, 1 cannot be uploaded."
+
+The upload itself is a timer in the example: every file takes the same two seconds, and none fails by chance, so the block reads the same each time. In an application, replace `upload()` and `tick()` with the request, write its progress into `item.progress`, and set `failed` with the server's reason. The function `mount` returns stops the timer and empties the list.
+
+## Accessibility \{#accessibility\}
+
+- The file input is the control: it takes focus, Enter and Space open the picker, and the zone draws its ring. Its title and description are its label.
+- The list is a `<ul>` named "Files". Each button's name ends with its file's name, so "Remove" is never one of five.
+- Cancel and Remove share a cross, since both take the file out of the way; their names say which one it is.
+- A progress bar has a name, "Upload of launch-hero.jpg", and its value; the same number is in the text.
+- A failure is not said by color alone: the facts name it, and the alert counts what needs attention.
+- The status line is polite. It reports that a file arrived, not every percent on the way.
+- Under reduced motion the bar still fills: it is the amount, not a decoration.
+
+## Related \{#related\}
+
+<ComponentLinks slugs={['dropzone', 'file', 'progress', 'button', 'alert', 'surface', 'heading']} />
+
+<ComponentLinks kind="blocks" slugs={['empty-state', 'messaging', 'page-header']} />

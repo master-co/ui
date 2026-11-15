@@ -1,0 +1,53 @@
+---
+title: "通知收件箱"
+description: "页面中的通知：查看全部或未读，可逐条标为已读，也可一次全部标为已读。"
+---
+
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import PagePreview from '~/site/components/PagePreview.astro'
+
+通知收件箱是一个页面，列出用户不在时发生的事：是谁做的或者是什么事、何时发生，以及是否已读。它可以筛选出未读的通知，也可以把一条或全部通知标为已读。通知是[面板](/components/surface#sheet)上的一个[列表](/components/list)，位于一个[分段控件](/components/segmented)之下。
+
+<PagePreview name="default" title="通知收件箱" example="notification-inbox" caption="切换到“Unread”（未读），用对勾把一条通知标为已读，再把其余的全部标为已读。已读状态只在本次预览中保留。" />
+
+区块提供可直接复制的标记，沿用页面的文字颜色和字号。预览在 body 上设置 `fg-text-body text-sm`。每个区块都是尺寸容器，会根据自身宽度重排，无论放在宽页面、侧边栏大小的空间还是对话框中。
+
+## 区块组成 \{#anatomy\}
+
+- **一块保持阅读宽度的面板**，`max-w(640)`：标题区包含标题、数量和控件，然后是列表。区块较窄时，控件换行到标题下方。
+- **数量是标题下的文字**：“4 unread”（4 条未读）。它与各行显示的是同一个数字，因为两者都由同一份状态绘制。
+- **“All”（全部）或“Unread”是由两个原生单选按钮组成的 `segmented`。** 筛选是在少数几项中选一项，这正是单选按钮组的含义；浏览器保留它的方向键操作和选中状态，也不会把未选中的项播报为“已选中”。
+- **每条通知是一个 `list-row`**：是谁或是什么，作为 `list-media`；一个标题，它是通往事物本身的链接；一行详情；它们下方是通知到达的时间。人用[头像](/components/avatar)表示；系统用[图标框](/components/icon-frame)表示，这样失败的部署就不必借用一张面孔。
+- **未读用文字表示。** 时间旁有一个带圆点的中性[徽标](/components/badge)，写着“Unread”。它不是 `aria-current`，也不是 `aria-selected`：两者都不表示“尚未阅读”，一行也不会因为是新的就成为被选中的行。
+- **未读行的末尾有一个低调的按钮**，用来把它标为已读。按钮的名称带有该行的标题：“Mark “Deployment failed on atlas.dev” as read”（将“Deployment failed on atlas.dev”标为已读）。已读的行没有按钮，也没有徽标。
+- **“Mark all as read”（全部标为已读）与筛选控件放在一起**，不与各行放在一起，没有未读通知时处于禁用状态。
+- **没有未读不等于什么都没有。** “Unread”筛选下没有任何行时，用一个[空状态](/components/empty)写明“You have read everything”（你已读完全部通知），并提供回到全部通知的入口。从未收到过通知的收件箱是另一种状态，需要另一套文案。
+
+标题和详情各占一行，超出部分以省略号结尾：通知只是指向事物的指针，其余内容在事物本身那里。
+
+## 哪些操作需要脚本 \{#script\}
+
+各行都在标记中，因此没有脚本也能完整阅读收件箱；它的控件在标记中是 `disabled` 的，由脚本启用。此后 `main.js` 维护一份列表：每条通知以及它是否未读，从各行中读取一次。一切都由这份列表绘制。
+
+- **筛选控件**显示所有行或未读的行。数量、各行和空结果不可能彼此不一致，因为它们都没有被单独保存。
+- **把一条标为已读**会从该行中移除徽标和按钮。在“Unread”筛选下，这一行也会离开列表。
+- **焦点随之移动。** 一行被标为已读后，焦点移到下一个未读行的按钮；没有则移到前一个未读行的按钮；一个都不剩时，移到筛选控件。“Mark all as read”在被禁用之前，会先把焦点交给筛选控件。
+- **一行以 polite 方式播报的状态文字**，不绘制出来，说明结果和剩余数量：““Kenta Nakamura mentioned you” marked as read. 3 unread.”（“Kenta Nakamura mentioned you”已标为已读。还剩 3 条未读。）
+
+已读状态只在本次访问期间保留。在实际应用中，同一个函数把更改发送到服务器，如果发送失败，就把该行恢复为未读；新通知以同样的方式加入列表并计入数量。区块留在页面之中：它不是铃铛下方的弹出层，也不发送推送通知。
+
+## 无障碍 \{#accessibility\}
+
+- 区块是一个以其 `<h2>` 命名的 `<section>`，列表是一个名为“Notifications”（通知）的 `<ul>`。
+- 筛选控件是一个名为“Show”（显示）的 `radiogroup`。按 Tab 键到达已选中的选项，方向键移动选择。
+- 每行有两个目标，各自说明自己的作用：标题通往事物本身，按钮把该行标为已读。按钮中的对勾只是装饰；名称写在 `aria-label` 中。
+- 姓名旁的人像 `alt` 留空，图标框设置 `aria-hidden`：标题已经说明了是谁或是什么。
+- 时间是带有 `datetime` 的 `<time>`。“Today, 09:31”（今天 09:31）是给用户看的；这个属性则供其他一切使用。
+- 状态行设置 `role="status"`，因此结果会被播报而不移动焦点；某一行离开时，焦点也绝不会落回页面顶部。
+- 在触摸屏上，32px 的按钮保持原有尺寸，点击目标则扩大到 44px。
+
+## 相关内容 \{#related\}
+
+<ComponentLinks slugs={['surface', 'segmented', 'list', 'avatar', 'icon-frame', 'badge', 'empty', 'button', 'link', 'heading']} />
+
+<ComponentLinks kind="blocks" slugs={['activity-feed', 'empty-state', 'messaging']} />

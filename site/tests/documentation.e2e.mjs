@@ -539,6 +539,356 @@ test(`${engine}: scaled page viewport and native size controls work without Java
 })
 
 
+/**
+ * The working blocks. Each test operates one preview as a reader would and holds it to what its page says: errors
+ * only after a try, focus that follows what changed, one state behind every count, and nothing sent, stored or
+ * left running. Everything is done with the keys: a preview is drawn scaled, and the keyboard reaches a control
+ * the same way at every scale.
+ */
+async function workingBlock(route, name = 'default') {
+  const page = await browser.newPage({ viewport: { width: 1280, height: 1000 } })
+  const requests = [], errors = [], logs = []
+  page.on('pageerror', error => errors.push(error.message))
+  page.on('console', message => logs.push(message.text()))
+  await visit(page, route)
+  const tray = page.locator(`[data-page-preview][data-component-preview="${name}"]`)
+  await tray.scrollIntoViewIfNeeded()
+  await page.waitForFunction(name => document.querySelector(`[data-component-preview="${name}"] iframe`)?.getAttribute('data-ready') === 'true', name)
+  const frame = await (await tray.locator('iframe').elementHandle()).contentFrame()
+  await frame.waitForLoadState('load')
+  // Its module has mounted once the control it turns on can be pressed.
+  await frame.waitForFunction(() => { const control = document.querySelector('[data-example] :is(.btn-primary, [name="inbox-filter"])'); return control && !control.disabled })
+  // From here on the page is only being used: a request would be the block sending something.
+  page.on('request', request => requests.push(request.url()))
+  const focused = () => frame.evaluate(() => { const element = document.activeElement; return element.getAttribute('aria-label') ?? element.id ?? element.tagName })
+  return { page, frame, requests, errors, logs, focused }
+}
+const shownErrors = form => form.locator('.field-error').evaluateAll(errors => errors.filter(error => error.getClientRects().length).map(error => error.textContent))
+
+/** A second instance of an example, mounted on a copy of its markup beside the first, from the source a reader copies. */
+async function mountAgain(frame, id) {
+  const [html, script] = await Promise.all(['index.html', 'main.js'].map(file => readFile(resolve(root, 'site/examples', id, file), 'utf8')))
+  await frame.evaluate(async ({ html, script }) => {
+    const holder = document.createElement('div')
+    // The copy's ids are its own, so the two instances are told apart as two blocks on one page would be.
+    holder.innerHTML = html.replace(/\b(id|for|aria-labelledby|aria-describedby|data-error)="/g, '$1="again-').replaceAll('href="#', 'href="#again-')
+    document.body.append(holder)
+    const module = await import(URL.createObjectURL(new Blob([script], { type: 'text/javascript' })))
+    const again = { root: holder.firstElementChild, mount: module.mount }
+    again.unmount = again.mount(again.root)
+    window.again = again
+  }, { html, script })
+  return frame.locator('[data-example]').nth(1)
+}
+
+test(`${engine}: the contact block reports errors after a try, shows what was written and gives the form back`, { timeout: 60000 }, async () => {
+  const { page, frame, requests, errors, focused } = await workingBlock('/blocks/contact')
+  try {
+    const form = frame.locator('[data-contact-ask] form'), result = frame.locator('[data-contact-result]')
+    const name = form.getByLabel('Name'), email = form.getByLabel('Email'), message = form.getByLabel('Message')
+    const send = form.getByRole('button', { name: 'Send message' })
+    assert.deepEqual(await shownErrors(form), [], 'Nothing is marked before the reader has tried')
+    assert.equal(await message.getAttribute('aria-describedby'), 'contact-message-hint')
+
+    await send.press('Enter')
+    assert.equal(await result.isHidden(), true, 'An empty form is not sent')
+    assert.equal(await focused(), 'contact-name', 'The browser focuses the first field that is wrong')
+    assert.deepEqual(await shownErrors(form), ['Enter your name.', 'Enter an email address, such as you@company.com.', 'Write a message, even a short one.'])
+    assert.equal(await name.getAttribute('aria-describedby'), 'contact-name-error')
+    assert.equal(await message.getAttribute('aria-describedby'), 'contact-message-hint contact-message-error', 'An error is read after the hint')
+
+    await name.pressSequentially('Yi-ching <b>Lin</b>')
+    assert.equal(await name.getAttribute('aria-describedby'), null, 'A corrected field drops its error at once')
+    await email.pressSequentially('yiching@')
+    await email.press('Tab')
+    assert.deepEqual(await shownErrors(form), ['Enter an email address, such as you@company.com.', 'Write a message, even a short one.'])
+    assert.equal(await email.getAttribute('aria-describedby'), 'contact-email-error')
+    await email.focus()
+    await email.press('End')
+    await email.pressSequentially('example.com')
+    assert.equal(await email.getAttribute('aria-describedby'), null)
+    await form.getByLabel('Topic').selectOption('Sales')
+    await message.pressSequentially('Moving forty services this quarter.')
+    assert.deepEqual(await shownErrors(form), [])
+
+    await send.press('Enter')
+    assert.equal(await result.isVisible(), true)
+    assert.equal(await form.isHidden(), true)
+    assert.equal(await frame.evaluate(() => document.activeElement.hasAttribute('data-contact-result-title')), true, 'Focus moves to the result title')
+    assert.deepEqual(await result.locator('[data-contact-value]').allTextContents(), ['Yi-ching <b>Lin</b>', 'yiching@example.com', 'Sales', 'Moving forty services this quarter.'])
+    assert.equal(await result.locator('[data-contact-value] b').count(), 0, 'What was typed is text, never markup')
+
+    await result.getByRole('button', { name: 'Edit message' }).press('Enter')
+    assert.equal(await form.isVisible(), true)
+    assert.equal(await result.isHidden(), true)
+    assert.equal(await focused(), 'contact-message')
+    assert.deepEqual([await name.inputValue(), await email.inputValue(), await message.inputValue()], ['Yi-ching <b>Lin</b>', 'yiching@example.com', 'Moving forty services this quarter.'], 'The form comes back as it was left')
+    assert.deepEqual(requests, [], 'Nothing leaves the page')
+    assert.deepEqual(errors, [])
+  } finally { await page.close() }
+})
+
+test(`${engine}: the password reset blocks hold two passwords to each other and keep neither`, { timeout: 60000 }, async () => {
+  const asked = await workingBlock('/blocks/password-reset')
+  try {
+    const { frame, focused } = asked
+    const form = frame.locator('[data-reset-ask] form'), result = frame.locator('[data-reset-result]'), email = form.getByLabel('Email')
+    assert.deepEqual(await shownErrors(form), [])
+    await email.pressSequentially('nobody')
+    await form.getByRole('button', { name: 'Send reset link' }).press('Enter')
+    assert.equal(await result.isHidden(), true)
+    assert.deepEqual(await shownErrors(form), ['Enter an email address, such as you@example.com.'])
+    assert.equal(await email.getAttribute('aria-describedby'), 'reset-email-error')
+    await email.pressSequentially('@example.com')
+    assert.equal(await email.getAttribute('aria-describedby'), null)
+    await email.press('Enter')
+    assert.equal(await result.isVisible(), true)
+    assert.equal(await frame.evaluate(() => document.activeElement.hasAttribute('data-reset-result-title')), true)
+    assert.match(await result.locator('header p').textContent(), /^If an Atlas account uses nobody@example\.com, /, 'The result says the same for an address with no account')
+    await result.getByRole('button', { name: 'Use another email' }).press('Enter')
+    assert.equal(await form.isVisible(), true)
+    assert.equal(await focused(), 'reset-email')
+    assert.deepEqual(asked.requests, [], 'No email is asked for')
+    assert.deepEqual(asked.errors, [])
+  } finally { await asked.page.close() }
+
+  const chosen = await workingBlock('/blocks/password-reset', 'new-password')
+  try {
+    const { page, frame } = chosen
+    const secret = 'correct horse battery staple'
+    const form = frame.locator('[data-reset-ask] form'), result = frame.locator('[data-reset-result]')
+    const password = form.getByLabel('New password'), confirm = form.getByLabel('Confirm password')
+    assert.deepEqual(await shownErrors(form), [])
+    assert.equal(await password.getAttribute('aria-describedby'), 'reset-password-hint')
+
+    await password.pressSequentially('too short')
+    await password.press('Tab')
+    assert.deepEqual(await shownErrors(form), ['Use at least 12 characters.'], 'A short password is reported once the field is left')
+    assert.equal(await password.getAttribute('aria-describedby'), 'reset-password-hint reset-password-error')
+    await password.fill('')
+    await password.pressSequentially(secret)
+    assert.deepEqual(await shownErrors(form), [])
+    assert.equal(await password.getAttribute('aria-describedby'), 'reset-password-hint')
+
+    await confirm.pressSequentially('correct horse battery')
+    await confirm.press('Tab')
+    assert.deepEqual(await shownErrors(form), ['Enter the same password again.'], 'A mismatch is the second field\'s error')
+    assert.equal(await confirm.getAttribute('aria-describedby'), 'reset-confirm-error')
+    assert.equal(await confirm.evaluate(input => input.validationMessage), 'The two passwords are not the same.')
+    await form.getByRole('button', { name: 'Update password' }).press('Enter')
+    assert.equal(await result.isHidden(), true, 'Two passwords that differ are not sent')
+
+    // The first field can end the mismatch too: an error that no longer holds leaves at once.
+    await password.fill('')
+    await password.pressSequentially('correct horse battery')
+    assert.deepEqual(await shownErrors(form), [])
+    assert.equal(await confirm.getAttribute('aria-describedby'), null)
+    await password.press('End')
+    await password.pressSequentially(' staple')
+    assert.deepEqual([await password.inputValue(), await confirm.inputValue()], [secret, 'correct horse battery'])
+    assert.deepEqual(await shownErrors(form), ['Enter the same password again.'])
+    await confirm.press('End')
+    await confirm.pressSequentially(' staple')
+    assert.deepEqual(await shownErrors(form), [])
+
+    await form.getByRole('button', { name: 'Update password' }).press('Enter')
+    assert.equal(await result.isVisible(), true)
+    assert.equal(await frame.evaluate(() => document.activeElement.hasAttribute('data-reset-result-title')), true, 'Focus moves to the result title')
+    assert.deepEqual([await password.inputValue(), await confirm.inputValue()], ['', ''], 'Both passwords are cleared')
+    const kept = await frame.evaluate(() => JSON.stringify([location.href, document.cookie, { ...localStorage }, { ...sessionStorage }, document.documentElement.outerHTML]))
+    assert.ok(!kept.includes(secret) && !(await page.evaluate(() => location.href + JSON.stringify([{ ...localStorage }, { ...sessionStorage }]))).includes(secret), 'The password is in no URL, cookie, storage or markup')
+    assert.ok(!chosen.logs.join('\n').includes(secret), 'The password is not logged')
+    assert.deepEqual(chosen.requests, [], 'No account is changed')
+    assert.deepEqual(chosen.errors, [])
+  } finally { await chosen.page.close() }
+})
+
+test(`${engine}: the file upload block follows each file through a timed upload and stops with its page`, { timeout: 90000 }, async () => {
+  const { page, frame, requests, errors, focused } = await workingBlock('/blocks/file-upload')
+  try {
+    const block = frame.locator('[data-example="file-upload"]').first()
+    const files = () => block.locator('.file').evaluateAll(rows => rows.map(row => [row.querySelector('.file-name').textContent, row.querySelector('.file-meta').textContent, [...row.querySelectorAll('.btn')].map(button => button.getAttribute('aria-label')).join(', ')].join(' | ')))
+    const start = block.getByRole('button', { name: 'Start upload' }), input = block.locator('.dropzone-input'), status = block.locator('[role="status"]')
+    // Every timer the block starts, so that none is left running.
+    await frame.evaluate(() => {
+      const running = new Set(), set = window.setInterval, clear = window.clearInterval
+      window.setInterval = (...given) => { const id = set(...given); running.add(id); return id }
+      window.clearInterval = (id) => { running.delete(id); clear(id) }
+      window.running = running
+    })
+    const running = () => frame.evaluate(() => window.running.size)
+    assert.deepEqual(await files(), [
+      'atlas-logo.png | 184 KB · Ready | Remove atlas-logo.png',
+      'brand-guidelines.pdf | 2.4 MB · Uploaded | Remove brand-guidelines.pdf',
+      'launch-hero.jpg | 6.8 MB · Connection lost | Retry launch-hero.jpg, Remove launch-hero.jpg',
+    ])
+    assert.equal(await block.locator('[data-upload-summary]').textContent(), '1 of 3 files uploaded')
+
+    await start.press('Enter')
+    assert.match((await files())[0], /^atlas-logo\.png \| 184 KB · Uploading \d+% \| Cancel upload of atlas-logo\.png$/)
+    assert.equal(await block.locator('.file').first().locator('progress').getAttribute('aria-label'), 'Upload of atlas-logo.png')
+    assert.equal(await start.isDisabled(), true, 'Nothing waits, so nothing can be started')
+    assert.equal(await focused(), 'Cancel upload of atlas-logo.png', 'Focus leaves the disabled button for the upload it started')
+    assert.equal(await running(), 1)
+    await page.keyboard.press('Enter')
+    assert.equal((await files())[0], 'atlas-logo.png | 184 KB · Canceled | Retry atlas-logo.png, Remove atlas-logo.png')
+    assert.equal(await focused(), 'Retry atlas-logo.png', 'Focus stays in the row whose button changed')
+    assert.equal(await status.textContent(), 'Upload of atlas-logo.png canceled.')
+    assert.equal(await running(), 0, 'The clock stops when nothing uploads')
+
+    // A failure that can be tried again completes: the example never fails by chance.
+    await block.getByRole('button', { name: 'Retry launch-hero.jpg' }).press('Enter')
+    await frame.waitForFunction(() => document.querySelectorAll('.file-meta')[2].textContent === '6.8 MB · Uploaded', null, { timeout: 5000 })
+    assert.equal(await status.textContent(), 'launch-hero.jpg uploaded.')
+    assert.equal(await block.locator('[data-upload-summary]').textContent(), '2 of 3 files uploaded')
+    assert.equal(await block.locator('.file-failed').count(), 0)
+    assert.equal(await running(), 0)
+
+    await input.setInputFiles([
+      { name: 'notes.txt', mimeType: 'text/plain', buffer: Buffer.from('x') },
+      { name: 'report.pdf', mimeType: 'application/pdf', buffer: Buffer.from('1') },
+      { name: 'report.pdf', mimeType: 'application/pdf', buffer: Buffer.from('22') },
+      { name: 'poster.png', mimeType: 'image/png', buffer: Buffer.alloc(11 * 1024 * 1024) },
+    ])
+    assert.deepEqual((await files()).slice(3), [
+      'notes.txt | Not a PNG, JPEG or PDF | Remove notes.txt',
+      'report.pdf | 1 B · Ready | Remove report.pdf',
+      'report.pdf | 2 B · Ready | Remove report.pdf',
+      'poster.png | 11.0 MB · Over 10 MB | Remove poster.png',
+    ], 'A file that breaks the limits stays in the list with its reason, and can only be removed')
+    assert.equal(await block.locator('.file-failed').count(), 2)
+    assert.equal(await block.locator('[data-upload-refused]').isVisible(), true)
+    assert.equal(await block.locator('[data-upload-refused-title]').textContent(), '2 files cannot be uploaded')
+    assert.equal(await status.textContent(), '4 files added, 2 cannot be uploaded.')
+    assert.equal(await input.evaluate(element => element.files.length), 0, 'The input is emptied, so the same file can be chosen again')
+
+    // Two files of one name are two rows: removing the first leaves the second.
+    await block.getByRole('button', { name: 'Remove report.pdf' }).first().press('Enter')
+    assert.deepEqual((await files()).filter(row => row.startsWith('report.pdf')), ['report.pdf | 2 B · Ready | Remove report.pdf'])
+    assert.equal(await focused(), 'Remove report.pdf', 'Focus goes to the file that takes the removed one\'s place')
+
+    // Emptying the list from its end: focus steps back a file at a time, then to where files are chosen.
+    while (await block.locator('.file').count() > 1) {
+      await block.locator('.file').last().locator('[data-action="remove"]').press('Enter')
+      assert.equal(await block.locator('.file').last().evaluate(row => row.contains(document.activeElement)), true)
+    }
+    assert.equal(await block.locator('[data-upload-refused]').isHidden(), true, 'The notice leaves with the files it counted')
+    await block.locator('.file [data-action="remove"]').press('Enter')
+    assert.equal(await block.locator('[data-upload-queue]').isHidden(), true, 'An empty list is the choosing state again')
+    assert.equal(await frame.evaluate(() => document.activeElement.classList.contains('dropzone-input')), true)
+
+    // A second instance keeps its own list, and mounting again does not answer an event twice.
+    const again = await mountAgain(frame, 'file-upload')
+    assert.equal(await again.locator('.file').count(), 3)
+    assert.equal(await block.locator('.file').count(), 0, 'The first instance is not touched by the second')
+    await frame.evaluate(() => { window.again.unmount(); window.again.unmount = window.again.mount(window.again.root) })
+    await again.locator('.dropzone-input').setInputFiles([{ name: 'icon.png', mimeType: 'image/png', buffer: Buffer.from('x') }])
+    assert.equal(await again.locator('.file').count(), 4, 'One change adds one row after a second mount')
+    assert.equal(await block.locator('.file').count(), 0)
+
+    // An upload under way ends with the page: the timer is cleared and the list emptied.
+    await input.setInputFiles([{ name: 'icon.png', mimeType: 'image/png', buffer: Buffer.from('x') }])
+    await start.press('Enter')
+    assert.equal(await running(), 1)
+    await frame.evaluate(() => { window.again.unmount(); window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: false })) })
+    assert.equal(await running(), 0, 'No timer outlives the block')
+    assert.equal(await block.locator('.file').count(), 0)
+    assert.deepEqual(requests.filter(url => !url.startsWith('blob:')), [], 'Nothing is uploaded')
+    assert.deepEqual(errors, [])
+  } finally { await page.close() }
+})
+
+test(`${engine}: the notification inbox draws its rows, its count and its empty result from one state`, { timeout: 60000 }, async () => {
+  const { page, frame, requests, errors, focused } = await workingBlock('/blocks/notification-inbox')
+  try {
+    const block = frame.locator('[data-example="notification-inbox"]').first()
+    const rows = block.locator('.list-row'), count = block.locator('[data-inbox-count]'), status = block.locator('[role="status"]')
+    const readAll = block.getByRole('button', { name: 'Mark all as read' }), empty = block.locator('[data-inbox-empty]')
+    const state = async () => ({ rows: await rows.count(), unread: await block.locator('[data-inbox-unread]').count(), buttons: await block.locator('[data-inbox-read]').count(), count: await count.textContent() })
+    assert.deepEqual(await state(), { rows: 6, unread: 4, buttons: 4, count: '4 unread' })
+    assert.equal(await empty.isHidden(), true)
+    assert.equal(await block.locator('[aria-selected], [aria-current]').count(), 0, 'Unread is a word, not a borrowed state')
+
+    // The filter is a native radio group: the arrow keys move the choice.
+    await block.getByRole('radio', { name: 'All' }).focus()
+    await page.keyboard.press('ArrowRight')
+    assert.equal(await block.getByRole('radio', { name: 'Unread' }).isChecked(), true)
+    assert.deepEqual(await state(), { rows: 4, unread: 4, buttons: 4, count: '4 unread' })
+    assert.equal(await status.textContent(), '4 unread.')
+
+    await block.getByRole('button', { name: 'Mark “Deployment failed on atlas.dev” as read' }).press('Enter')
+    assert.deepEqual(await state(), { rows: 3, unread: 3, buttons: 3, count: '3 unread' })
+    assert.equal(await status.textContent(), '“Deployment failed on atlas.dev” marked as read. 3 unread.')
+    assert.equal(await focused(), 'Mark “Misaki Sato left a comment” as read', 'Focus goes to the next unread notification')
+    await block.getByRole('button', { name: 'Mark “Build minutes are at 62%” as read' }).press('Enter')
+    assert.equal(await focused(), 'Mark “Misaki Sato left a comment” as read', 'After the last row, focus goes to the one before')
+    assert.deepEqual(await state(), { rows: 2, unread: 2, buttons: 2, count: '2 unread' })
+
+    await readAll.press('Enter')
+    assert.deepEqual(await state(), { rows: 0, unread: 0, buttons: 0, count: 'All read' })
+    assert.equal(await empty.isVisible(), true)
+    assert.equal(await empty.locator('.empty-title').textContent(), 'You have read everything')
+    assert.equal(await readAll.isDisabled(), true)
+    assert.equal(await frame.evaluate(() => document.activeElement.value), 'unread', 'Focus goes to the filter when no row is left')
+    assert.equal(await status.textContent(), 'All notifications marked as read.')
+
+    await empty.getByRole('button', { name: 'Show all notifications' }).press('Enter')
+    assert.deepEqual(await state(), { rows: 6, unread: 0, buttons: 0, count: 'All read' })
+    assert.equal(await empty.isHidden(), true)
+    assert.equal(await block.getByRole('radio', { name: 'All' }).isChecked(), true)
+
+    // A second instance has its own state; unmounting puts its rows back, and a second mount answers once.
+    const again = await mountAgain(frame, 'notification-inbox')
+    assert.equal(await again.locator('[data-inbox-unread]').count(), 4, 'A second instance starts from its own markup')
+    await again.getByRole('button', { name: 'Mark all as read' }).press('Enter')
+    assert.equal(await again.locator('[data-inbox-unread]').count(), 0)
+    await frame.evaluate(() => window.again.unmount())
+    assert.equal(await again.locator('[data-inbox-unread]').count(), 4, 'Unmounting gives the rows back as they arrived')
+    assert.equal(await again.locator('[data-inbox-read]:disabled').count(), 4)
+    await frame.evaluate(() => {
+      window.again.said = 0
+      new MutationObserver(records => { window.again.said += records.length }).observe(window.again.root.querySelector('[role="status"]'), { childList: true })
+      window.again.unmount = window.again.mount(window.again.root)
+    })
+    await again.locator('[data-inbox-read]').first().press('Enter')
+    assert.equal(await again.locator('[data-inbox-unread]').count(), 3)
+    assert.equal(await frame.evaluate(() => window.again.said), 1, 'One press is answered once after a second mount')
+    assert.deepEqual(await state(), { rows: 6, unread: 0, buttons: 0, count: 'All read' }, 'The first instance kept its own state')
+    assert.deepEqual(requests.filter(url => !url.startsWith('blob:')), [], 'What is read stays on the page')
+    assert.deepEqual(errors, [])
+  } finally { await page.close() }
+})
+
+
+test(`${engine}: a working form cannot be sent before its script runs, and says where to write instead`, { timeout: 60000 }, async () => {
+  const page = await browser.newPage({ javaScriptEnabled: false, viewport: { width: 1280, height: 1000 } })
+  noScripts.add(page)
+  try {
+    for (const [route, name] of [['/blocks/contact', 'default'], ['/blocks/password-reset', 'default'], ['/blocks/password-reset', 'new-password']]) {
+      await visit(page, route)
+      const tray = page.locator(`[data-page-preview][data-component-preview="${name}"]`)
+      await tray.scrollIntoViewIfNeeded()
+      const form = tray.frameLocator('iframe').locator('form')
+      await form.waitFor()
+      const state = await form.evaluate(form => ({
+        send: [...form.querySelectorAll('button:not([type="button"])')].map(button => button.disabled),
+        unlabelled: [...form.querySelectorAll('input:not([aria-hidden="true"]), select, textarea')].filter(control => !control.labels.length).map(control => control.name),
+        hints: [...form.querySelectorAll('.field-hint')].filter(hint => hint.getClientRects().length).length === form.querySelectorAll('.field-hint').length,
+        errors: [...form.querySelectorAll('.field-error')].filter(error => error.getClientRects().length).length,
+        note: form.querySelector('noscript')?.textContent ?? '',
+        result: [...document.querySelectorAll('[data-contact-result], [data-reset-result]')].every(result => result.hidden),
+      }))
+      assert.deepEqual(state.send, [true], `${route} ${name}: the one button that sends is disabled in the markup`)
+      assert.deepEqual(state.unlabelled, [], 'Every field keeps its label')
+      assert.equal(state.hints, true, 'Every hint is there to read')
+      assert.equal(state.errors, 0)
+      assert.match(state.note, /needs JavaScript to send\. Write to \S+@atlas\.dev instead\./)
+      assert.equal(state.result, true)
+    }
+  } finally { await page.close() }
+})
+
+
 // The previous registry published these ten layout items. A moved item must resolve to real JSON;
 // the contractless arrangements page was removed from the registry in the 0.x taxonomy change.
 test('retired registry names redirect only to generated registry items', async () => {
@@ -597,4 +947,35 @@ test('localized catalogs, articles and portable exports agree', async () => {
       assert.equal(await page.locator('[data-switch="view"] label span').first().textContent(), preview)
     }
   } finally { await page.close() }
+})
+
+test('every block is published in five editions, in search, as Markdown and as a registry item that carries what it runs on', async () => {
+  const registry = JSON.parse(await readFile(resolve(output, 'r/registry.json'), 'utf8'))
+  const blocks = registry.items.filter(item => item.meta?.tier === 'block')
+  assert.ok(blocks.length >= 30, `The registry lists the blocks: ${blocks.length}`)
+  const search = Object.fromEntries(await Promise.all(['en', 'tw', 'ja', 'ko', 'cn'].map(async locale => [locale, new Set(JSON.parse(await readFile(resolve(output, `search/${locale}.json`), 'utf8')).map(entry => entry.url))])))
+  for (const { name } of blocks) {
+    const slug = name.slice('block-'.length)
+    for (const locale of ['en', 'tw', 'ja', 'ko', 'cn']) {
+      const prefix = locale === 'en' ? '' : `/${locale}`
+      assert.ok(existsSync(resolve(output, `.${prefix}/blocks/${slug}.html`)), `${prefix}/blocks/${slug} is a page`)
+      assert.ok(existsSync(resolve(output, `.${prefix}/blocks/${slug}.md`)), `${prefix}/blocks/${slug}.md is exported`)
+      assert.ok(search[locale].has(`${prefix}/blocks/${slug}`), `${prefix}/blocks/${slug} is in the ${locale} search index`)
+    }
+    const item = JSON.parse(await readFile(resolve(output, `r/${name}.json`), 'utf8'))
+    const paths = new Set(item.files.map(file => file.path))
+    assert.ok(paths.has(`ui/blocks/${slug}.html`), `${name} carries its markup`)
+    // Every preview that works is exported as its files, and every module one of them imports comes with it.
+    const source = await readFile(resolve(root, 'site/content/blocks', slug, 'content.mdx'), 'utf8')
+    const working = [...source.matchAll(/<PagePreview\b[^>]*?\bexample="([^"]+)"/g)].map(match => match[1])
+    const markdown = await readFile(resolve(output, `blocks/${slug}.md`), 'utf8')
+    assert.equal([...markdown.matchAll(/^```js name=main\.js$/gm)].length, working.length, `${slug}.md holds the module of each working preview`)
+    assert.equal(item.meta.script === 'required', /^<PagePreview\b[^>]*?\bexample="/m.test(source.slice(source.indexOf('<PagePreview'))), `${name} says whether its first preview needs its script`)
+    for (const file of item.files.filter(file => file.path.endsWith('.js'))) {
+      for (const [, imported] of file.content.matchAll(/\bfrom\s+'(\.{1,2}\/[^']+)'/g)) {
+        const target = new URL(imported, `file:///${file.path}`).pathname.slice(1)
+        assert.ok(paths.has(target), `${name}: ${file.path} imports ${imported}, which is copied with it`)
+      }
+    }
+  }
 })

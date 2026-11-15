@@ -1,0 +1,60 @@
+---
+title: "重設密碼"
+description: "索取重設連結並設定新密碼，兩個步驟各有自己的結果。"
+---
+
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import PagePreview from '~/site/components/PagePreview.astro'
+
+重設密碼有兩個畫面：一個用來索取連結，另一個由該連結進入，用來輸入新密碼。兩者都是只做一件事的卡片，完成後由結果取代原本的內容。和[登入](/blocks/sign-in)一樣，卡片是一個[面板](/components/surface#sheet)，欄位由[表單](/components/form)排版。
+
+<PagePreview name="default" title="索取連結" example="password-reset-request" caption="送出一個地址，無論有效與否，就能分別看到錯誤訊息和結果。不會寄出任何電子郵件，也不會查詢任何帳戶。" />
+
+區塊提供可直接複製的標記，並沿用所在頁面的文字顏色和大小。預覽在 body 上套用 `fg-text-body text-sm`。每個區塊都是尺寸容器，無論放在寬頁面、只有側邊欄寬的區域，或對話框中，都會依自身寬度重新排列。用[置中](/pages/centered)版面配置將卡片放在頁面中央。
+
+## 組成 \{#anatomy\}
+
+- **`sheet w-full max-w(380) p-xl`。** 卡片在手機上填滿可用寬度，最寬為 380px，與通往這裡的登入卡片同寬。
+- **一個欄位。** 電子郵件地址，設有 `autocomplete="username"`，讓瀏覽器提供讀者用來登入的那一個。
+- **在索取之前，先說明連結的有效時間。** 「30 minutes」（30 分鐘）寫在標題下方的句子裡，結果中再出現一次。
+- **結果不透露任何帳戶資訊。** 「If an Atlas account uses this address」（如果有 Atlas 帳戶使用這個地址）對每個地址都成立。顯示「沒有這個帳戶」的畫面，等於告訴陌生人誰有帳戶。
+- **結果中以高對比文字色重複顯示地址**，讓打錯的字在還能修正時就被看見；「Use another email」（改用其他電子郵件）會把表單帶回來，並選取地址。
+- **沒收到信時該怎麼做**是一則中性[提示訊息](/components/alert)：先看垃圾郵件匣，再重新索取連結。
+- **回到登入的入口**在兩種狀態下都有，位於最後一行。
+
+## 新密碼 \{#new-password\}
+
+連結會開啟第二張卡片。由於欄位會隱藏輸入的內容，它要求輸入新密碼兩次，並說明這是誰的帳戶。規則是至少 12 個字元，與[註冊卡片](/blocks/sign-in#sign-up)給的相同，寫在 `field-hint` 中，讓讀者在出錯前就能看見。
+
+<PagePreview name="new-password" title="新密碼" example="password-reset-new" caption="試試太短的密碼，或兩個不一致的密碼，再輸入兩個一致的密碼。不會變更任何帳戶，結果出現時密碼也會被清除。" />
+
+- **兩個欄位都是 `autocomplete="new-password"`**，密碼管理工具才能據此建議密碼並儲存。另有一個唯讀的地址欄位，設有 `autocomplete="username"`，既看不見也不在 Tab 順序中，用來告訴密碼管理工具這組密碼屬於哪個帳戶。
+- **兩次輸入一致，是和其他規則一樣的限制條件。** 第二個欄位與第一個不同時，會帶有自訂的有效性訊息，因此瀏覽器回報不一致的方式與回報缺少值完全相同，顯示的也是同一個 `field-error`。
+- **結果說明還有什麼跟著改變**：其他裝置已登出。接著是一個按鈕，通往登入。
+
+## 哪些功能需要腳本 \{#script\}
+
+驗證規則由瀏覽器負責：`required`、`type="email"` 和 `minlength="12"`。樣式表依 `:user-invalid` 將欄位畫成無效狀態，而它只在讀者編輯過欄位或嘗試送出之後才會符合，因此頁面載入時不會有任何欄位變紅，值一旦有效，錯誤訊息也隨即消失。
+
+每張卡片各有自己的模組，做的都是同樣幾件事。它啟用按鈕：按鈕在標記中是 `disabled`，因此背後沒有伺服器的表單不會被送到它所在的頁面。錯誤訊息顯示時，它把該欄位的錯誤訊息加入 `aria-describedby`，之後再移除。表單有效並送出時，它顯示結果，並將焦點移到結果的標題。
+
+第二個模組還會在任一欄位每次觸發 `input` 時，以 `setCustomValidity` 比對兩組密碼，因此修正第一個欄位會立刻清除第二個欄位的錯誤。結果出現時它會重設表單：兩組密碼都從頁面上消失，而且從不會寫入 URL、主控台或儲存空間。
+
+兩個模組都不會送出任何內容。在應用程式中，`submit` 處理常式會提交表單，並在伺服器回應時顯示結果；第二張卡片還必須處理已過期的連結，顯示 `alert alert-danger` 並提供重新索取的方式。沒有腳本時，欄位、標籤和提示都還在，按鈕維持停用，並由一行 `<noscript>` 提供可寫信的地址。
+
+## 無障礙 \{#accessibility\}
+
+- 卡片標題是頁面的 `<h1>`。結果有自己的 `<h1>`，帶有 `tabindex="-1"`，焦點會移到它上面，因此畫面的切換會被讀出，鍵盤操作也從答覆處接續。
+- 每個欄位都有可見的標籤。提示從一開始就在欄位的 `aria-describedby` 中；錯誤訊息只在顯示期間加入。
+- 送出失敗時保留瀏覽器本身的行為：焦點移到第一個有誤的欄位，瀏覽器也會說明原因。
+- 每則錯誤訊息都說明該怎麼做：「Use at least 12 characters.」（請使用至少 12 個字元。）、「Enter the same password again.」（請再輸入一次相同的密碼。）
+- 按鈕只在腳本就緒之前停用，絕不因為表單尚未填完而停用。
+- 不要加上大寫字母或符號的規則。讓密碼難以猜中的是長度，而讀者看不見的規則只能靠反覆嘗試來滿足。
+
+## 相關內容 \{#related\}
+
+<ComponentLinks slugs={['surface', 'form', 'input', 'button', 'alert', 'icon-frame', 'heading', 'link']} />
+
+<ComponentLinks kind="blocks" slugs={['sign-in']} />
+
+<ComponentLinks kind="pages" slugs={['centered']} />

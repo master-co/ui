@@ -1,0 +1,52 @@
+---
+title: "文件上传"
+description: "选择文件，然后在列表中逐个显示进度、失败原因和后续操作。"
+---
+
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import PagePreview from '~/site/components/PagePreview.astro'
+
+文件上传区块是选择文件的地方，也呈现每个文件此后的经历：等待、上传、送达，或者没有送达并说明原因。选择文件的位置是一个[文件拖放区](/components/dropzone)；此后每个文件都是一个[文件](/components/file)，带有自己的信息和自己的控件。
+
+<PagePreview name="default" title="文件上传" example="file-upload" caption="按“Start upload”（开始上传），取消其中一个再重试，移除一个文件，或者选择你自己的文件。不会上传任何内容：进度由计时器模拟，文件内容也从不会被读取。" />
+
+区块提供可直接复制的标记，沿用页面的文字颜色和字号。预览在 body 上设置 `fg-text-body text-sm`。每个区块都是尺寸容器，会根据自身宽度重排，无论放在宽页面、侧边栏大小的空间还是对话框中。
+
+## 区块组成 \{#anatomy\}
+
+- **一块保持阅读宽度的[面板](/components/surface#sheet)**，`max-w(640)`：一个说明这些文件用途的标题、文件拖放区，然后是列表。文件名和它的控件始终在一眼可及的范围内。
+- **文件拖放区在选择文件之前就说明限制。** “PNG, JPEG or PDF, up to 10 MB each”（PNG、JPEG 或 PDF，每个不超过 10 MB）是它的 `dropzone-description`，输入框的 `accept` 也把文件选择器限定为同样的类型。事后才告知的限制，已经让用户白试了一次。
+- **每个文件是列表项上的一个 `file`**：带扩展名的小页面图标、文件名，以及放在 `file-meta` 中的一行信息。这一行用文字写出大小和状态，例如“184 KB · Ready”（就绪），两者都只占一行，因此每种状态都要说得简短。
+- **正在上传的文件，其面板会逐渐着色。** 一个原生的 `<progress class="progress file-progress">` 铺在文字下方，从起始侧边缘开始填充；百分比同时写在信息行中，因为着色只是对它的图示。
+- **失败状态是 `file-failed`**：轮廓和信息行使用危险墨色，信息行说明哪里出了问题。可以重试的失败提供“Retry”（重试）；超出限制的文件只提供“Remove”（移除），因为再试一次也无济于事。
+- **控件属于文件自身**，放在 `file-end` 中：每个操作一个低调的方形按钮，名称中带有文件名，例如“Remove atlas-logo.png”。控件随状态变化：等待时是“Remove”，上传时是“Cancel”（取消），停止后是“Retry”和“Remove”。
+- **无法上传的情况在列表上方统一说明一次**，使用一个[行内提示](/components/alert)，写明文件数量和处理办法；每个这样的文件再在各自的行中说明自己的原因。
+- **数量和唯一的主按钮为区块收尾**：行的起始侧是“1 of 3 files uploaded”（已上传 1 个，共 3 个文件），末尾侧是“Start upload”。没有文件等待上传时，按钮处于禁用状态。
+
+## 哪些操作需要脚本 \{#script\}
+
+文件拖放区不需要脚本：点击会打开文件选择器，拖到区域上的文件会进入它的输入框。此后的一切都由 `main.js` 负责。
+
+- **它列出所选的文件。** 输入框 `files` 中的每个文件都成为一行，从标记中的 `<template>` 克隆而来，文件名作为文本写入。随后清空输入框，这样再次选择同一个文件仍然会触发 change 事件。两个同名文件是两行，各有各的状态。
+- **它检查类型和大小**，依据文件的 MIME 类型；浏览器没有报告类型时，依据扩展名。未通过检查的文件保留在列表中，加上标记并注明原因。这是给用户的反馈；服务器还会再检查一次。
+- **它为每个文件保存一个状态**，并据此绘制该行：信息行、进度条和按钮。数量、行内提示以及“Start upload”能否按下，都由同一份列表推导得出。
+- **控件消失时，它会移动焦点。** “Remove”之后，焦点移到顶替其位置的文件；没有则移到前一个文件，再没有则移到文件拖放区。“Cancel”变成“Retry”时，焦点留在该行内。
+- **它说明发生了什么**，通过一行不绘制出来的 `role="status"` 文字：“atlas-logo.png uploaded.”（atlas-logo.png 已上传。）“2 files added, 1 cannot be uploaded.”（已添加 2 个文件，1 个无法上传。）
+
+示例中的上传本身是一个计时器：每个文件都用同样的两秒，也不会随机失败，因此区块每次呈现的过程都相同。在实际应用中，把 `upload()` 和 `tick()` 替换为请求，把请求进度写入 `item.progress`，并用服务器给出的原因设置 `failed`。`mount` 返回的函数会停止计时器并清空列表。
+
+## 无障碍 \{#accessibility\}
+
+- 文件输入框就是控件：它接收焦点，按 Enter 和空格键打开文件选择器，焦点环由拖放区绘制。拖放区的标题和描述是它的标签。
+- 列表是一个名为“Files”（文件）的 `<ul>`。每个按钮的名称都以所属文件的文件名结尾，因此不会出现五个一模一样的“Remove”。
+- “Cancel”和“Remove”共用一个叉号，因为两者都是把文件拿开；它们的名称说明是哪一个操作。
+- 进度条有名称，例如“Upload of launch-hero.jpg”（launch-hero.jpg 的上传进度），也有数值；同一个数字也写在文字中。
+- 失败不只靠颜色表达：信息行指明了失败，行内提示统计了需要处理的文件数量。
+- 状态行以 polite 方式播报。它报告文件已送达，不会报告途中的每一个百分比。
+- 在减少动态效果的设置下，进度条仍会填充：它表示的是进度量，不是装饰。
+
+## 相关内容 \{#related\}
+
+<ComponentLinks slugs={['dropzone', 'file', 'progress', 'button', 'alert', 'surface', 'heading']} />
+
+<ComponentLinks kind="blocks" slugs={['empty-state', 'messaging', 'page-header']} />

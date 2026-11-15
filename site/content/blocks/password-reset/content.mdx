@@ -1,0 +1,55 @@
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import PagePreview from '~/site/components/PagePreview.astro'
+
+A password reset is two screens: one that asks for a link, and one, reached from that link, that takes the new password. Each is a card with one job and a result that takes its place. Like [sign in](/blocks/sign-in), the card is a [sheet](/components/surface#sheet) whose fields are laid out by [form](/components/form).
+
+<PagePreview name="default" title="Ask for a link" example="password-reset-request" caption="Send an address, valid or not, to see both the error and the result. No email is sent, and no account is looked up." />
+
+Blocks are markup to copy. They take the page's own text color and size; the previews set `fg-text-body text-sm` on the body. Each block is a size container, so it reflows by its own width: in a wide page, a sidebar's worth of room or a dialog. Center the card on its page with the [centered](/pages/centered) layout.
+
+## What is in it \{#anatomy\}
+
+- **`sheet w-full max-w(380) p-xl`.** The card fills a phone and stops at 380px, the width of the sign-in card it is reached from.
+- **One field.** The address, with `autocomplete="username"`, so the browser offers the one the reader signs in with.
+- **How long the link lasts, before it is asked for.** "30 minutes" is in the sentence under the title and again in the result.
+- **A result that tells nothing about accounts.** "If an Atlas account uses this address" is true for every address. A screen that says "no such account" tells a stranger who has one.
+- **The address is repeated in ink** in the result, so a typing mistake is seen while it can still be fixed, and "Use another email" brings the form back with the address selected.
+- **What to do when nothing arrives** is a neutral [alert](/components/alert): the spam folder first, then the link again.
+- **A way back to sign in** in both states, as the last line.
+
+## A new password \{#new-password\}
+
+The link opens the second card. It asks for the new password twice, since the field hides what is typed, and says whose account it is. The rule, at least 12 characters, is the same one the [sign-up card](/blocks/sign-in#sign-up) gives, as a `field-hint` shown before the reader makes the mistake.
+
+<PagePreview name="new-password" title="A new password" example="password-reset-new" caption="Try a short password, or two that differ, then two that agree. No account is changed, and the passwords are cleared when the result appears." />
+
+- **Both fields are `autocomplete="new-password"`**, which is what lets a password manager offer one and save it. A read-only address field with `autocomplete="username"`, kept out of sight and out of the tab order, tells the manager which account the password belongs to.
+- **The match is a constraint like the others.** The second field takes a custom validity while it differs from the first, so the browser reports a mismatch exactly as it reports a missing value, and the same `field-error` shows.
+- **The result says what else changed**: the other devices are signed out. Then one button, the way to sign in.
+
+## What needs a script \{#script\}
+
+The rules are the browser's: `required`, `type="email"` and `minlength="12"`. The stylesheet draws a field as invalid from `:user-invalid`, which matches only after the reader has edited the field or tried to submit, so nothing is red when the page loads and an error leaves as soon as the value is valid.
+
+Each card has a module of its own, and each does the same few things. It turns the button on: the button is `disabled` in the markup, so a form with no server behind it cannot be sent to the page it stands on. It adds a field's error to `aria-describedby` while the error shows and takes it out afterwards. On a valid submit it shows the result and moves focus to its title.
+
+The second module also compares the two passwords on every `input` of either field, with `setCustomValidity`, so correcting the first field clears an error on the second at once. When the result appears it resets the form: both passwords are gone from the page, and they are never written to a URL, to the console or to storage.
+
+Neither sends anything. In an application the `submit` handler posts the form and shows the result when the server answers; the second card also has to handle a link that has expired, with an `alert alert-danger` and a way to ask for another. Without the script the fields, labels and hints are there, the button stays disabled, and a `<noscript>` line gives an address to write to.
+
+## Accessibility \{#accessibility\}
+
+- The card's title is the page's `<h1>`. The result has an `<h1>` of its own with `tabindex="-1"`, and focus moves to it, so the change of screen is announced and the keyboard continues from the answer.
+- Every field has a visible label. The hint is in the field's `aria-describedby` from the start; the error joins it only while it shows.
+- A failed submit keeps the browser's own behavior: focus goes to the first field that is wrong, and the browser says why.
+- Each error says what to do: "Use at least 12 characters.", "Enter the same password again."
+- The button is disabled only until the script is ready, never while the form is merely incomplete.
+- Add no rule about capitals or symbols. Length is what makes a password hard to guess, and a rule a reader cannot see is met by trial and error.
+
+## Related \{#related\}
+
+<ComponentLinks slugs={['surface', 'form', 'input', 'button', 'alert', 'icon-frame', 'heading', 'link']} />
+
+<ComponentLinks kind="blocks" slugs={['sign-in']} />
+
+<ComponentLinks kind="pages" slugs={['centered']} />

@@ -1,0 +1,85 @@
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import PagePreview from '~/site/components/PagePreview.astro'
+
+A contact block is where a visitor writes to the company: a few fields on a [sheet](/components/surface#sheet), laid out by [form](/components/form), beside the ways to reach the team without it. What it promises is as much a part of it as the fields: who reads the message, and by when they answer.
+
+<PagePreview name="default" title="Contact" example="contact" caption="Leave a field empty and press Send message to see the errors, then fill the form in. Nothing is sent: the result is drawn from what you typed." />
+
+Blocks are markup to copy. They take the page's own text color and size; the previews set `fg-text-body text-sm` on the body. Each block is a size container, so it reflows by its own width.
+
+## What is in it \{#anatomy\}
+
+- **Two columns from 56rem of block.** `grid-cols(2)@container(--4xl)` sets the words beside the form, and `items-start` keeps each column as tall as what it holds. Below that the words come first, since they say what the form is for.
+- **A promise in the lead.** "Within one business day" is the sentence a visitor is looking for. Write the one your team keeps.
+- **The other ways in are a [data list](/components/data-list)**: an address, the hours and where outages are reported. A visitor who would rather write an email than fill a form has not left.
+- **Four fields.** A name, an email, a topic and the message. The name and the email are one `form-row`, so they share a line from 28rem of form and stack below it. The topic is a [select](/components/select) with a first option that fits most messages, so it never has to be chosen.
+- **Each field is a `field` that holds a `<label for>` and its control**, with the hint and the error after them. The hint is tied to the field with `aria-describedby`; a `field-error` shows only while its field is invalid.
+- **One button, at the end**, in `form-actions`. It is `disabled` in the markup and the script turns it on, so a form with no server behind it cannot be sent to the page it stands on.
+- **The result takes the form's place**: an [alert](/components/alert) that says what happens next, what was written as a second data list, and a button that goes back to change it.
+
+## What needs a script \{#script\}
+
+The rules are the browser's: `required` on three fields and `type="email"` on one. The stylesheet draws a field as invalid from `:user-invalid`, which matches only after the reader has edited the field or tried to submit, so nothing is red when the page loads and an error leaves as soon as the value is valid.
+
+`main.js` does four things. It turns the button on. It adds a field's error to `aria-describedby` while the error shows and takes it out afterwards, so the message is read with the field and not before. On a valid submit it writes the values into the result as text, shows it and moves focus to its title. "Edit message" brings the form back as it was left, with focus in the message.
+
+It sends nothing. In an application the `submit` handler posts the form and shows the result when the server answers, or an `alert alert-danger` with `role="alert"` when it does not. Without the script the fields, labels and hints are all there, the button stays disabled, and a `<noscript>` line gives the address to write to.
+
+## Channels \{#channels\}
+
+When a form is more than the page needs, list the addresses. Each row of the [data list](/components/data-list) is a team: its address, what to write to it about and how soon it answers. A neutral alert under the list points an outage at the status page, which is faster than any inbox.
+
+<PagePreview name="channels" title="Channels" bodyClass="p(0) bg-surface-base fg-text-body text-sm" height={760} phoneHeight={1048} html={`<section class="container-inline px-lg py-4xl" aria-labelledby="contact-channels-title">
+  <div class="flex flex-col gap-xl max-w(720) mx-auto">
+    <header class="flex flex-col gap-sm">
+      <p class="eyebrow">Contact</p>
+      <h2 class="heading heading-2xl" id="contact-channels-title">Write to the team that can help.</h2>
+      <p class="lead max-w(560)">Every address is read by the people who do that work, Monday to Friday, 09:00 to 18:00 (UTC+8).</p>
+    </header>
+    <div class="sheet px-lg py-xs">
+      <dl class="data-list">
+        <div class="data-list-item">
+          <dt class="data-list-term">Sales</dt>
+          <dd class="data-list-value"><a class="link" href="mailto:sales@atlas.dev">sales@atlas.dev</a><span class="block font-regular fg-text-muted">Plans, seats and invoices. Answered within one business day.</span></dd>
+        </div>
+        <div class="data-list-item">
+          <dt class="data-list-term">Support</dt>
+          <dd class="data-list-value"><a class="link" href="mailto:support@atlas.dev">support@atlas.dev</a><span class="block font-regular fg-text-muted">A build, a domain or a deployment that misbehaves. Pro workspaces hear back by the next day.</span></dd>
+        </div>
+        <div class="data-list-item">
+          <dt class="data-list-term">Security</dt>
+          <dd class="data-list-value"><a class="link" href="mailto:security@atlas.dev">security@atlas.dev</a><span class="block font-regular fg-text-muted">Report a vulnerability. Acknowledged within 24 hours, every day of the week.</span></dd>
+        </div>
+        <div class="data-list-item">
+          <dt class="data-list-term">Press</dt>
+          <dd class="data-list-value"><a class="link" href="mailto:press@atlas.dev">press@atlas.dev</a><span class="block font-regular fg-text-muted">Interviews, logos and facts about the company.</span></dd>
+        </div>
+      </dl>
+    </div>
+    <div class="alert">
+      <svg class="icon alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0-18 0M12 8v4.5M12 16h.01"/></svg>
+      <div class="alert-body">
+        <p class="alert-title">Is something down?</p>
+        <p class="alert-description">Incidents are posted on the status page within minutes, before anyone reads an inbox.</p>
+      </div>
+      <a class="btn btn-sm" href="#contact-channels-title">Open status</a>
+    </div>
+  </div>
+</section>`} />
+
+The list keeps the measure of one column of reading, `max-w(720)`. Under 20rem of list each team's name moves above its address, which is the data list's own doing.
+
+## Accessibility \{#accessibility\}
+
+- The block is a `<section>` named by its `<h2>`. The result's title is an `<h3>` with `tabindex="-1"`: focus moves to it when the result appears, so a screen reader starts at the answer and the keyboard continues from there.
+- Every field has a visible label and an `autocomplete` value: `name` and `email` are what let the browser fill them in.
+- An error is words beside its field, in the field's `aria-describedby` while it shows. Each one says what to do: "Enter an email address, such as you@company.com."
+- A failed submit keeps the browser's own behavior: focus goes to the first field that is wrong.
+- The button is disabled only until the script is ready, never while the form is merely incomplete. A disabled button cannot say what is missing; a submitted form can.
+- An address is a `mailto:` link whose text is the address, so it can be read, copied and followed.
+
+## Related \{#related\}
+
+<ComponentLinks slugs={['form', 'input', 'select', 'button', 'alert', 'data-list', 'surface', 'heading', 'link']} />
+
+<ComponentLinks kind="blocks" slugs={['faq', 'cta', 'footer']} />

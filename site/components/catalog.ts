@@ -194,6 +194,12 @@ export const blocks = [
   { slug: 'faq', name: 'FAQ', category: 'Marketing blocks', description: 'The questions people ask before they decide, answered in place.' },
   { slug: 'cta', name: 'Call to action', category: 'Marketing blocks', description: 'The last ask of a page, on a surface of its own.' },
   { slug: 'footer', name: 'Footer', category: 'Marketing blocks', description: 'Where a site ends: columns of quiet links and the small print.' },
+  { slug: 'contact', name: 'Contact', category: 'Marketing blocks', description: 'An inquiry form beside the ways to reach the team, and when to expect an answer.' },
+  { slug: 'article-list', name: 'Article list', category: 'Marketing blocks', description: 'Articles, resources or case studies: a picture, a summary, who wrote it and the way in.' },
+  { slug: 'team', name: 'Team', category: 'Marketing blocks', description: 'The people behind the product, with a name, what they do and a few words each.' },
+  { slug: 'careers', name: 'Careers', category: 'Marketing blocks', description: 'Open roles with their team, place and terms, and the way to apply.' },
+  { slug: 'integrations', name: 'Integrations', category: 'Marketing blocks', description: 'The services a product works with, to explore or as a list of connections and their state.' },
+  { slug: 'changelog', name: 'Changelog', category: 'Marketing blocks', description: 'What shipped and when, newest first, as a timeline or one release.' },
   { slug: 'page-header', name: 'Page header', category: 'Application blocks', description: 'The top of an app page: where you are, what it is and what you can do.' },
   { slug: 'sidebar', name: 'Sidebar', category: 'Application blocks', description: 'An app sidebar: the workspace, the navigation and the account.' },
   { slug: 'sign-in', name: 'Sign in', category: 'Application blocks', description: 'Sign in and sign up cards with providers, fields and a way back.' },
@@ -204,6 +210,10 @@ export const blocks = [
   { slug: 'messaging', name: 'Messaging', category: 'Application blocks', description: 'A conversation: grouped messages, attachments, delivery and a composer.' },
   { slug: 'schedule-view', name: 'Schedule view', category: 'Application blocks', description: 'A team calendar by the day, the week, the month or as an agenda.' },
   { slug: 'choice-cards', name: 'Choice cards', category: 'Application blocks', description: 'Plans, people and payment methods to choose, as cards around native inputs.' },
+  { slug: 'file-upload', name: 'File upload', category: 'Application blocks', description: 'Choosing files, then each one in a list with its progress, its failure and what to do next.' },
+  { slug: 'password-reset', name: 'Password reset', category: 'Application blocks', description: 'Asking for a reset link and choosing a new password, each with its result.' },
+  { slug: 'billing-summary', name: 'Billing summary', category: 'Application blocks', description: 'The plan, its seats and usage, the renewal date and the latest invoices.' },
+  { slug: 'notification-inbox', name: 'Notification inbox', category: 'Application blocks', description: 'Notifications in a page: all or unread, read one by one or all at once.' },
 ] as const
 
 /** The sections by the first segment of their URL. */

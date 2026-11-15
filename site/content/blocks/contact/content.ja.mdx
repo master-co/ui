@@ -1,0 +1,89 @@
+---
+title: "お問い合わせ"
+description: "問い合わせフォームの横に、チームへの連絡手段と返信までの目安を示します。"
+---
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import PagePreview from '~/site/components/PagePreview.astro'
+
+お問い合わせブロックは、訪問者が会社に宛ててメッセージを書く場所です。[シート](/components/surface#sheet)の上に[フォーム](/components/form)で数個の入力欄を配置し、その横に、フォームを使わずにチームへ連絡する手段を並べます。誰がメッセージを読み、いつまでに返信するのかという約束も、入力欄と同じくこのブロックの一部です。
+
+<PagePreview name="default" title="お問い合わせ" example="contact" caption="入力欄を空のままにして「Send message」（メッセージを送信）を押すとエラーが表示されます。その後、フォームに入力してみてください。実際には何も送信されず、結果は入力した内容から表示されます。" />
+
+ブロックはコピーして使えるマークアップです。文字色と文字サイズはページから引き継ぎます。プレビューでは body に `fg-text-body text-sm` を設定しています。各ブロックはサイズコンテナーで、自身の幅に応じて配置が変わります。
+
+## 構成 \{#anatomy\}
+
+- **ブロック幅が 56rem 以上で 2 列。** `grid-cols(2)@container(--4xl)` で説明文をフォームの横に置き、`items-start` で各列の高さをそれぞれの内容に合わせます。56rem 未満では、フォームの目的を伝える説明文が先に来ます。
+- **リード文で約束を伝えます。** 「within one business day」（1 営業日以内）は、訪問者が探している一文です。自分のチームが守れる約束を書きます。
+- **ほかの連絡手段は[データリスト](/components/data-list)です。** メールアドレス、対応時間、障害の報告先を示します。フォームに入力するよりメールを書きたい訪問者も、これで離脱せずに済みます。
+- **入力欄は 4 つ。** 名前、メールアドレス、用件、メッセージです。名前とメールアドレスは 1 つの `form-row` にまとめるため、フォームの幅が 28rem 以上では同じ行に並び、それ未満では縦に積まれます。用件は[セレクト](/components/select)で、最初の選択肢をほとんどのメッセージに当てはまるものにしておくため、選ばなくても済みます。
+- **各入力欄は、`<label for>` とそのコントロールを収めた `field` です。** ヒントとエラーはその後に置きます。ヒントは `aria-describedby` で入力欄に関連付けます。`field-error` は、その入力欄が無効な間だけ表示されます。
+- **ボタンは 1 つで、最後に置きます。** `form-actions` に入れます。マークアップでは `disabled` にしておき、スクリプトが有効にします。こうすると、背後にサーバーのないフォームが、そのフォームを置いたページ自身へ送信されることはありません。
+- **結果はフォームと入れ替わります。** 次に何が起きるかを伝える[アラート](/components/alert)、書いた内容を示す 2 つ目のデータリスト、内容を修正するために戻るボタンで構成します。
+
+## スクリプトが必要な処理 \{#script\}
+
+検証のルールはブラウザーのものです。3 つの入力欄に `required`、1 つに `type="email"` を指定します。スタイルシートは `:user-invalid` に基づいて入力欄を無効な状態として描画します。`:user-invalid` は読み手が入力欄を編集するか送信を試みた後にだけ一致するため、ページの読み込み時には何も赤くならず、値が有効になるとエラーはすぐに消えます。
+
+`main.js` は 4 つのことを行います。ボタンを有効にします。エラーが表示されている間はその入力欄のエラーを `aria-describedby` に追加し、消えたら取り除きます。これにより、メッセージは入力欄とともに読み上げられ、それより前に読み上げられることはありません。有効な送信では、入力値をテキストとして結果に書き込み、結果を表示して、そのタイトルにフォーカスを移します。「Edit message」（メッセージを編集）は、フォームを離れたときの状態のまま戻し、フォーカスをメッセージ欄に置きます。
+
+このスクリプトは何も送信しません。アプリケーションでは、`submit` ハンドラーがフォームを送信し、サーバーが応答したら結果を表示します。応答がなければ、`role="alert"` を付けた `alert alert-danger` を表示します。スクリプトがない場合も、入力欄、ラベル、ヒントはすべてそろっています。ボタンは無効のままで、`<noscript>` の 1 行が連絡先のアドレスを示します。
+
+## 連絡先の一覧 \{#channels\}
+
+ページにとってフォームが大げさな場合は、アドレスを一覧にします。[データリスト](/components/data-list)の各行が 1 つのチームで、そのアドレス、どんな用件で連絡すればよいか、どのくらいで返信があるかを示します。リストの下のニュートラルなアラートは、障害についてはステータスページを案内します。どの受信トレイよりも早く状況が分かるからです。
+
+<PagePreview name="channels" title="連絡先の一覧" bodyClass="p(0) bg-surface-base fg-text-body text-sm" height={760} phoneHeight={1048} html={`<section class="container-inline px-lg py-4xl" aria-labelledby="contact-channels-title">
+  <div class="flex flex-col gap-xl max-w(720) mx-auto">
+    <header class="flex flex-col gap-sm">
+      <p class="eyebrow">Contact</p>
+      <h2 class="heading heading-2xl" id="contact-channels-title">Write to the team that can help.</h2>
+      <p class="lead max-w(560)">Every address is read by the people who do that work, Monday to Friday, 09:00 to 18:00 (UTC+8).</p>
+    </header>
+    <div class="sheet px-lg py-xs">
+      <dl class="data-list">
+        <div class="data-list-item">
+          <dt class="data-list-term">Sales</dt>
+          <dd class="data-list-value"><a class="link" href="mailto:sales@atlas.dev">sales@atlas.dev</a><span class="block font-regular fg-text-muted">Plans, seats and invoices. Answered within one business day.</span></dd>
+        </div>
+        <div class="data-list-item">
+          <dt class="data-list-term">Support</dt>
+          <dd class="data-list-value"><a class="link" href="mailto:support@atlas.dev">support@atlas.dev</a><span class="block font-regular fg-text-muted">A build, a domain or a deployment that misbehaves. Pro workspaces hear back by the next day.</span></dd>
+        </div>
+        <div class="data-list-item">
+          <dt class="data-list-term">Security</dt>
+          <dd class="data-list-value"><a class="link" href="mailto:security@atlas.dev">security@atlas.dev</a><span class="block font-regular fg-text-muted">Report a vulnerability. Acknowledged within 24 hours, every day of the week.</span></dd>
+        </div>
+        <div class="data-list-item">
+          <dt class="data-list-term">Press</dt>
+          <dd class="data-list-value"><a class="link" href="mailto:press@atlas.dev">press@atlas.dev</a><span class="block font-regular fg-text-muted">Interviews, logos and facts about the company.</span></dd>
+        </div>
+      </dl>
+    </div>
+    <div class="alert">
+      <svg class="icon alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0-18 0M12 8v4.5M12 16h.01"/></svg>
+      <div class="alert-body">
+        <p class="alert-title">Is something down?</p>
+        <p class="alert-description">Incidents are posted on the status page within minutes, before anyone reads an inbox.</p>
+      </div>
+      <a class="btn btn-sm" href="#contact-channels-title">Open status</a>
+    </div>
+  </div>
+</section>`} />
+
+リストは、読み物 1 列分の幅 `max-w(720)` を保ちます。リストの幅が 20rem 未満になると、各チームの名前はアドレスの上に移ります。これはデータリスト自体の動作です。
+
+## アクセシビリティ \{#accessibility\}
+
+- ブロックは `<h2>` を名前とする `<section>` です。結果のタイトルは `tabindex="-1"` を付けた `<h3>` です。結果が表示されるとフォーカスがそこへ移るため、スクリーンリーダーは回答から読み始め、キーボード操作もそこから続けられます。
+- すべての入力欄に、画面に表示されるラベルと `autocomplete` の値を付けます。`name` と `email` を指定すると、ブラウザーが自動入力できます。
+- エラーは入力欄のそばに文言で示し、表示されている間はその入力欄の `aria-describedby` に含めます。どのエラーも、何をすればよいかを伝えます。たとえば「Enter an email address, such as you@company.com.」（you@company.com のようなメールアドレスを入力してください）です。
+- 送信に失敗したときは、ブラウザー本来の動作を保ちます。フォーカスは、誤りのある最初の入力欄に移ります。
+- ボタンを無効にするのはスクリプトの準備ができるまでだけで、フォームが未完成というだけでは決して無効にしません。無効なボタンは何が足りないかを伝えられませんが、送信されたフォームなら伝えられます。
+- アドレスは、アドレスそのものをテキストにした `mailto:` リンクです。読むことも、コピーすることも、リンクとして開くこともできます。
+
+## 関連項目 \{#related\}
+
+<ComponentLinks slugs={['form', 'input', 'select', 'button', 'alert', 'data-list', 'surface', 'heading', 'link']} />
+
+<ComponentLinks kind="blocks" slugs={['faq', 'cta', 'footer']} />

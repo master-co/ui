@@ -1,0 +1,90 @@
+---
+title: "联系我们"
+description: "咨询表单，旁边列出联系团队的其他方式，以及预计多久能得到答复。"
+---
+
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import PagePreview from '~/site/components/PagePreview.astro'
+
+联系区块是访客给公司留言的地方：[面板](/components/surface#sheet)上放几个字段，由[表单](/components/form)负责排布，旁边列出不填表单也能联系团队的方式。区块做出的承诺和字段同样是它的一部分：谁会阅读这条消息，最晚何时答复。
+
+<PagePreview name="default" title="联系我们" example="contact" caption="留空一个字段后按“Send message”（发送消息）查看错误提示，再把表单填完整。不会发送任何内容：结果由你输入的内容生成。" />
+
+区块提供可直接复制的标记，沿用页面自身的文字颜色和字号。预览在 body 上设置 `fg-text-body text-sm`。每个区块都是尺寸容器，会按自身宽度重排。
+
+## 区块组成 \{#anatomy\}
+
+- **区块宽度达到 56rem 时分为两栏。** `grid-cols(2)@container(--4xl)` 把说明文字放在表单旁边，`items-start` 让每一栏的高度随自身内容而定。宽度不足时说明文字排在前面，因为它说明了表单的用途。
+- **导语中写明承诺。** “within one business day”（一个工作日内）正是访客要找的那句话。请写下你的团队能够兑现的承诺。
+- **其他联系方式用[数据列表](/components/data-list)列出**：一个邮箱地址、服务时间，以及服务中断在哪里通报。宁愿写邮件也不想填表单的访客，不会因此离开。
+- **四个字段。** 姓名、邮箱、主题和消息内容。姓名和邮箱放在同一个 `form-row` 中，表单宽度达到 28rem 时排在同一行，不足时上下堆叠。主题是一个[下拉选择框](/components/select)，第一个选项适用于大多数消息，因此用户完全可以不做选择。
+- **每个字段都是一个 `field`，包含 `<label for>` 及其控件**，提示和错误信息排在它们之后。提示通过 `aria-describedby` 关联到字段；`field-error` 只在对应字段无效时显示。
+- **只有一个按钮，放在最后**，位于 `form-actions` 中。它在标记中是 `disabled` 的，由脚本启用，因此背后没有服务器的表单不会被提交到它所在的页面。
+- **结果取代表单的位置**：一个说明后续流程的[行内提示](/components/alert)，用第二个数据列表列出用户填写的内容，再加一个返回修改的按钮。
+
+## 哪些操作需要脚本 \{#script\}
+
+验证规则由浏览器负责：三个字段设置 `required`，一个字段设置 `type="email"`。样式表根据 `:user-invalid` 把字段绘制为无效状态，它只在用户编辑过该字段或尝试提交之后才会匹配，因此页面加载时不会出现任何红色，值一旦有效，错误提示也随即消失。
+
+`main.js` 做四件事。它启用按钮。错误提示显示时，它把该字段的错误信息加入 `aria-describedby`，提示消失后再移除，这样错误信息会随字段一起朗读，不会提前读出。提交通过验证后，它把各字段的值作为文本写入结果，显示结果，并把焦点移到结果的标题上。“Edit message”（修改消息）会让表单恢复到离开时的样子，焦点落在消息内容字段中。
+
+它不发送任何内容。在实际应用中，由 `submit` 处理函数以 POST 提交表单，服务器响应后显示结果；服务器没有响应时，显示带有 `role="alert"` 的 `alert alert-danger`。没有脚本时，字段、标签和提示都在，按钮保持禁用，另有一行 `<noscript>` 文字给出可以写信的地址。
+
+## 联系渠道 \{#channels\}
+
+如果页面用不上表单，就把邮箱地址列出来。[数据列表](/components/data-list)的每一行是一个团队：它的邮箱地址、哪些事情可以写给它，以及多久答复。列表下方的中性行内提示把服务中断的问题引向状态页，那里比任何收件箱都快。
+
+<PagePreview name="channels" title="联系渠道" bodyClass="p(0) bg-surface-base fg-text-body text-sm" height={760} phoneHeight={1048} html={`<section class="container-inline px-lg py-4xl" aria-labelledby="contact-channels-title">
+  <div class="flex flex-col gap-xl max-w(720) mx-auto">
+    <header class="flex flex-col gap-sm">
+      <p class="eyebrow">Contact</p>
+      <h2 class="heading heading-2xl" id="contact-channels-title">Write to the team that can help.</h2>
+      <p class="lead max-w(560)">Every address is read by the people who do that work, Monday to Friday, 09:00 to 18:00 (UTC+8).</p>
+    </header>
+    <div class="sheet px-lg py-xs">
+      <dl class="data-list">
+        <div class="data-list-item">
+          <dt class="data-list-term">Sales</dt>
+          <dd class="data-list-value"><a class="link" href="mailto:sales@atlas.dev">sales@atlas.dev</a><span class="block font-regular fg-text-muted">Plans, seats and invoices. Answered within one business day.</span></dd>
+        </div>
+        <div class="data-list-item">
+          <dt class="data-list-term">Support</dt>
+          <dd class="data-list-value"><a class="link" href="mailto:support@atlas.dev">support@atlas.dev</a><span class="block font-regular fg-text-muted">A build, a domain or a deployment that misbehaves. Pro workspaces hear back by the next day.</span></dd>
+        </div>
+        <div class="data-list-item">
+          <dt class="data-list-term">Security</dt>
+          <dd class="data-list-value"><a class="link" href="mailto:security@atlas.dev">security@atlas.dev</a><span class="block font-regular fg-text-muted">Report a vulnerability. Acknowledged within 24 hours, every day of the week.</span></dd>
+        </div>
+        <div class="data-list-item">
+          <dt class="data-list-term">Press</dt>
+          <dd class="data-list-value"><a class="link" href="mailto:press@atlas.dev">press@atlas.dev</a><span class="block font-regular fg-text-muted">Interviews, logos and facts about the company.</span></dd>
+        </div>
+      </dl>
+    </div>
+    <div class="alert">
+      <svg class="icon alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0-18 0M12 8v4.5M12 16h.01"/></svg>
+      <div class="alert-body">
+        <p class="alert-title">Is something down?</p>
+        <p class="alert-description">Incidents are posted on the status page within minutes, before anyone reads an inbox.</p>
+      </div>
+      <a class="btn btn-sm" href="#contact-channels-title">Open status</a>
+    </div>
+  </div>
+</section>`} />
+
+列表保持单栏阅读宽度 `max-w(720)`。列表宽度小于 20rem 时，每个团队的名称会移到其邮箱地址上方，这是数据列表自身的行为。
+
+## 无障碍 \{#accessibility\}
+
+- 区块是一个以其 `<h2>` 命名的 `<section>`。结果的标题是带有 `tabindex="-1"` 的 `<h3>`：结果出现时焦点移到它上面，因此屏幕阅读器从结果处开始朗读，键盘操作也从那里继续。
+- 每个字段都有可见标签和 `autocomplete` 值：浏览器正是凭借 `name` 和 `email` 才能自动填充。
+- 错误信息是字段旁的文字，显示期间包含在该字段的 `aria-describedby` 中。每条错误信息都说明该怎么做：“Enter an email address, such as you@company.com.”（请输入邮箱地址，后附一个示例地址。）
+- 提交失败时保留浏览器自身的行为：焦点移到第一个有误的字段。
+- 按钮只在脚本就绪之前处于禁用状态，绝不因为表单尚未填完而禁用。禁用的按钮无法说明缺少什么，提交后的表单可以。
+- 邮箱地址是一个 `mailto:` 链接，链接文字就是地址本身，因此可以阅读、复制和打开。
+
+## 相关内容 \{#related\}
+
+<ComponentLinks slugs={['form', 'input', 'select', 'button', 'alert', 'data-list', 'surface', 'heading', 'link']} />
+
+<ComponentLinks kind="blocks" slugs={['faq', 'cta', 'footer']} />

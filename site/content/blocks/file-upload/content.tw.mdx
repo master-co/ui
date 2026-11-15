@@ -1,0 +1,52 @@
+---
+title: "檔案上傳"
+description: "選擇檔案後，在清單中列出每個檔案的進度、失敗原因和下一步操作。"
+---
+
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import PagePreview from '~/site/components/PagePreview.astro'
+
+檔案上傳區塊是選擇檔案的地方，也呈現每個檔案之後的遭遇：等待、上傳中、送達，或者沒有送達並說明原因。選擇檔案的地方是[檔案拖放區](/components/dropzone)；之後的每個檔案都是一個[檔案](/components/file)，帶有自己的資訊和自己的控制項。
+
+<PagePreview name="default" title="檔案上傳" example="file-upload" caption="按下「Start upload」（開始上傳）、取消其中一個再重試、移除一個檔案，或選擇你自己的檔案。不會真的上傳任何內容：進度是一個計時器，檔案的內容也從不會被讀取。" />
+
+區塊提供可直接複製的標記，沿用頁面的文字顏色和字級。預覽在 body 上設定 `fg-text-body text-sm`。每個區塊都是尺寸容器，無論放在寬大的頁面、側邊欄大小的空間，還是對話框裡，都會依自身寬度重新排列。
+
+## 組成 \{#anatomy\}
+
+- **一個維持閱讀寬度的[面板](/components/surface#sheet)**，`max-w(640)`：說明檔案用途的標題、檔案拖放區，然後是清單。檔案的名稱和它的控制項保持在一眼可及的範圍內。
+- **檔案拖放區在選擇檔案之前就說明限制。** 「PNG, JPEG or PDF, up to 10 MB each」（PNG、JPEG 或 PDF，每個檔案上限 10 MB）是它的 `dropzone-description`，輸入欄位的 `accept` 也把選擇器限縮到同樣的類型。事後才告知的限制，已經讓人白試了一次。
+- **每個檔案都是放在清單項目上的 `file`**：標有副檔名的小頁面圖示、檔名，以及 `file-meta` 中的一行資訊。這一行以文字寫出大小和狀態，例如「184 KB · Ready」（就緒）；檔名和這行資訊都只占一行，因此每種狀態都要說得簡短。
+- **上傳中的檔案，是檔案的面板逐漸染上色調。** 原生的 `<progress class="progress file-progress">` 鋪在文字下方，從開頭側填滿；百分比也寫在資訊行中，因為色調只是把它畫出來。
+- **失敗是 `file-failed`**：輪廓和資訊行改用危險色，資訊行說明哪裡出了錯。可以再試一次的失敗提供「Retry」（重試）；違反限制的檔案只提供「Remove」（移除），因為再試也沒有用。
+- **控制項屬於檔案自己**，位於 `file-end`：每個操作各有一個低調的方形按鈕，名稱帶有檔名，例如「Remove atlas-logo.png」。它們隨狀態改變：等待時是「Remove」，上傳中是「Cancel」（取消），停止之後是「Retry」和「Remove」。
+- **無法上傳的檔案只在清單上方說一次**，放在[提示訊息](/components/alert)中，計算檔案數量並說明該怎麼做；每個檔案則在自己的列中說明各自的原因。
+- **計數和唯一的主要按鈕為區塊收尾**：「1 of 3 files uploaded」（3 個檔案中已上傳 1 個）位於列的開頭側，「Start upload」位於結尾側。沒有檔案在等待時，按鈕會停用。
+
+## 哪些功能需要腳本 \{#script\}
+
+檔案拖放區不需要腳本：點一下會開啟選擇器，拖放到區域上的檔案會進入它的輸入欄位。之後的一切都由 `main.js` 負責。
+
+- **它列出所選的檔案。** 輸入欄位 `files` 中的每個檔案都會成為一列，由標記中的 `<template>` 複製而來，檔名以純文字設定。接著清空輸入欄位，因此再次選擇同一個檔案仍然算是一次變更。兩個同名的檔案是兩列，各有自己的狀態。
+- **它檢查類型和大小**，依據檔案的 MIME 類型；瀏覽器未回報類型時則依據副檔名。未通過的檔案會留在清單中，加上標記並附上原因。這是給讀者的回饋；伺服器會再檢查一次。
+- **它為每個檔案保存一個狀態**，並據此繪製該列：資訊行、進度條和按鈕。計數、提示訊息，以及「Start upload」能否按下，全都由同一份清單推導而來。
+- **控制項消失時，它會移動焦點。** 「Remove」之後，焦點移到遞補上來的檔案，沒有的話移到前一個檔案，再沒有就移到檔案拖放區。「Cancel」變成「Retry」時，焦點留在該列。
+- **它說明發生了什麼事**，寫在一行不繪製出來的 `role="status"` 中：「atlas-logo.png uploaded.」（atlas-logo.png 已上傳。）、「2 files added, 1 cannot be uploaded.」（已加入 2 個檔案，1 個無法上傳。）
+
+範例中的上傳本身是一個計時器：每個檔案都花同樣的兩秒，也不會隨機失敗，因此區塊每次的表現都一樣。在應用程式中，把 `upload()` 和 `tick()` 換成實際的請求，將進度寫入 `item.progress`，並以伺服器回傳的原因設定 `failed`。`mount` 回傳的函式會停止計時器並清空清單。
+
+## 無障礙 \{#accessibility\}
+
+- 檔案輸入欄位就是控制項：它取得焦點，Enter 和空白鍵開啟選擇器，焦點環則畫在拖放區上。拖放區的標題和說明就是它的標籤。
+- 清單是名為「Files」（檔案）的 `<ul>`。每個按鈕的名稱都以所屬檔案的檔名結尾，因此「Remove」絕不會是五個一模一樣的名稱之一。
+- 「Cancel」和「Remove」共用一個叉號，因為兩者都是把檔案移開；它們的名稱說明是哪一個。
+- 進度條有名稱「Upload of launch-hero.jpg」（launch-hero.jpg 的上傳），也有它的值；同一個數字也寫在文字中。
+- 失敗不只靠顏色表達：資訊行指出失敗，提示訊息則計算有多少檔案需要處理。
+- 狀態行以 polite 方式播報。它回報檔案已送達，而不是途中的每一個百分比。
+- 在減少動態效果的設定下，進度條仍然會填滿：它呈現的是進度的多寡，不是裝飾。
+
+## 相關內容 \{#related\}
+
+<ComponentLinks slugs={['dropzone', 'file', 'progress', 'button', 'alert', 'surface', 'heading']} />
+
+<ComponentLinks kind="blocks" slugs={['empty-state', 'messaging', 'page-header']} />

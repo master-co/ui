@@ -1,0 +1,153 @@
+---
+title: "计费摘要"
+description: "方案、席位与用量、续订日期，以及最近的账单。"
+---
+
+import ComponentLinks from '~/site/components/ComponentLinks.astro'
+import PagePreview from '~/site/components/PagePreview.astro'
+
+计费摘要回答账户所有者前来查看的问题：工作区使用哪个方案、费用是多少、已经用了多少、何时续订，并提供修改其中任何一项的入口。金额使用[价格](/components/price)，用量使用[计量条](/components/meter)，其余内容使用[数据列表](/components/data-list)，全部放在一块[面板](/components/surface#sheet)上。
+
+<PagePreview name="default" title="计费摘要" bodyClass="p-lg bg-surface-base fg-text-body text-sm" height={496} phoneHeight={672} html={`<section class="sheet container-inline flex flex-col gap-lg p-lg max-w(720) mx-auto" aria-labelledby="billing-title">
+  <header class="flex flex-wrap items-start justify-between gap-md">
+    <div class="flex flex-col gap-xs">
+      <div class="flex items-center gap-xs">
+        <h2 class="heading heading-sm" id="billing-title">Pro plan</h2>
+        <span class="badge badge-success badge-dot">Active</span>
+      </div>
+      <p class="price"><span class="price-currency">$</span><span class="price-amount">100</span><span class="price-period">per month, before tax</span></p>
+      <p class="m(0) fg-text-muted">5 seats at $20 each, billed monthly in US dollars.</p>
+    </div>
+    <div class="flex flex-wrap gap-xs">
+      <a class="btn btn-sm" href="#billing-title">Change plan</a>
+      <a class="btn btn-sm" href="#billing-title">Manage seats</a>
+    </div>
+  </header>
+  <div class="field pt-lg bt(1) bt-solid b-line-hair">
+    <div class="flex flex-wrap items-baseline justify-between gap-sm">
+      <label for="billing-minutes">Build minutes</label>
+      <span class="font-regular fg-text-muted">1,240 of 2,000 used</span>
+    </div>
+    <meter class="meter" id="billing-minutes" min="0" max="2000" low="1500" high="1800" optimum="0" value="1240">1,240 of 2,000 minutes</meter>
+    <span class="field-hint">760 minutes are left until 1 December. Every seat adds 400 a month.</span>
+  </div>
+  <dl class="data-list">
+    <div class="data-list-item">
+      <dt class="data-list-term">Seats</dt>
+      <dd class="data-list-value">5 of 5 in use</dd>
+    </div>
+    <div class="data-list-item">
+      <dt class="data-list-term">Billing period</dt>
+      <dd class="data-list-value">1 to 30 November 2026</dd>
+    </div>
+    <div class="data-list-item">
+      <dt class="data-list-term">Renews</dt>
+      <dd class="data-list-value">1 December 2026, for $100 before tax</dd>
+    </div>
+    <div class="data-list-item">
+      <dt class="data-list-term">Invoices go to</dt>
+      <dd class="data-list-value">billing@atlaslabs.dev</dd>
+    </div>
+  </dl>
+</section>`} />
+
+区块提供可直接复制的标记，沿用页面的文字颜色和字号。预览在 body 上设置 `fg-text-body text-sm`。每个区块都是尺寸容器，会根据自身宽度重排，无论放在宽页面、侧边栏大小的空间还是对话框中。
+
+## 区块组成 \{#anatomy\}
+
+- **用文字写明方案及其状态。** 方案名称是区块的标题，旁边的[徽标](/components/badge)写着“Active”（生效中）。这里的色调表示一种状态，文字说的是同一件事。
+- **金额是一个 `price`**：数字、以小号悬挂在数字顶部的货币符号，以及以柔和墨色显示在数字基线上的计费周期。“before tax”（税前）是计费周期的一部分，因为不含税的数字必须在读到它的地方说明这一点。
+- **金额的构成**写在一行弱化的文字中：五个席位，每个二十美元。读者应该能自己算出总数。
+- **修改它的两个入口**位于头部末尾，是呈现为小号按钮样式的链接。两者都不是主按钮：摘要中没有哪件事是唯一该做的。区块较窄时，它们换行到价格下方。
+- **用量是一个原生 `<meter>`。** 它的 `low`、`high` 和 `optimum` 说明读数从哪里开始不再宽裕，即 2,000 分钟中的 1,500 和 1,800 分钟，因此填充色无需添加类就会先变为警告墨色，再变为危险墨色。计量条本身不显示数字：读数写在它的标签旁，提示说明还剩多少以及何时重置。
+- **日期和其余内容是一个 `data-list`**，每行一个名称和一个值。列表宽度小于 20rem 时，每个名称移到其值的上方。
+- **各项数字相互吻合。** 五个席位每个 $20，共 $100；五个席位每个 400 分钟，共 2,000 分钟；已用 1,240 分钟，剩余 760 分钟。
+
+这里不显示也不要求填写任何卡号、有效期或地址。如果产品要显示付款方式，显示的是支付服务商返回的卡品牌和末四位数字，绝不是区块中的一个字段。
+
+## 附带账单 \{#invoices\}
+
+在计费页面上，摘要缩减为一行三项信息，其后是最近的账单，以[表格](/components/table)呈现：每张账单按同样的四个属性进行比较。“All invoices”（全部账单）通往其余的账单。
+
+<PagePreview name="invoices" title="附带账单" bodyClass="p-lg bg-surface-base fg-text-body text-sm" height={504} phoneHeight={736} html={`<section class="container-inline flex flex-col gap-lg max-w(880) mx-auto" aria-labelledby="billing-invoices-title">
+  <header class="flex flex-wrap items-end justify-between gap-md">
+    <div class="flex flex-col gap-2xs">
+      <h2 class="heading heading-lg" id="billing-invoices-title">Billing</h2>
+      <p class="m(0) fg-text-muted">Atlas Labs is on Pro, billed monthly in US dollars.</p>
+    </div>
+    <a class="btn" href="#billing-invoices-title">Manage billing</a>
+  </header>
+  <div class="sheet overflow-hidden">
+    <dl class="grid gap-lg m(0) p-lg grid-cols(3)@container(--xl)">
+      <div class="flex flex-col gap-2xs">
+        <dt class="fg-text-muted">Next invoice</dt>
+        <dd class="m(0)"><p class="price price-sm"><span class="price-currency">$</span><span class="price-amount">100</span><span class="price-period">on 1 December</span></p></dd>
+      </div>
+      <div class="flex flex-col gap-2xs">
+        <dt class="fg-text-muted">Seats</dt>
+        <dd class="m(0) fg-text-strong font-medium">5 at $20 a month</dd>
+      </div>
+      <div class="flex flex-col gap-2xs">
+        <dt class="fg-text-muted">Build minutes</dt>
+        <dd class="m(0) fg-text-strong font-medium">1,240 of 2,000 used</dd>
+      </div>
+    </dl>
+    <div class="scroll-area scroll-area-inline bt(1) bt-solid b-line-hair" tabindex="0" role="region" aria-label="Recent invoices">
+      <table class="table whitespace-nowrap">
+        <caption class="table-title">Recent invoices</caption>
+        <thead>
+          <tr class="table-row">
+            <th class="table-heading" scope="col">Invoice</th>
+            <th class="table-heading" scope="col">Issued</th>
+            <th class="table-heading" scope="col">Status</th>
+            <th class="table-heading table-numeric" scope="col">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="table-row">
+            <th class="table-cell table-primary" scope="row"><a class="link link-quiet" href="#billing-invoices-title">INV-2026-011</a></th>
+            <td class="table-cell"><time datetime="2026-11-01">1 Nov 2026</time></td>
+            <td class="table-cell"><span class="badge badge-success badge-dot">Paid</span></td>
+            <td class="table-cell table-numeric">$100.00</td>
+          </tr>
+          <tr class="table-row">
+            <th class="table-cell table-primary" scope="row"><a class="link link-quiet" href="#billing-invoices-title">INV-2026-010</a></th>
+            <td class="table-cell"><time datetime="2026-10-01">1 Oct 2026</time></td>
+            <td class="table-cell"><span class="badge badge-success badge-dot">Paid</span></td>
+            <td class="table-cell table-numeric">$100.00</td>
+          </tr>
+          <tr class="table-row">
+            <th class="table-cell table-primary" scope="row"><a class="link link-quiet" href="#billing-invoices-title">INV-2026-009</a></th>
+            <td class="table-cell"><time datetime="2026-09-01">1 Sep 2026</time></td>
+            <td class="table-cell"><span class="badge badge-success badge-dot">Paid</span></td>
+            <td class="table-cell table-numeric">$80.00</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <p class="flex flex-wrap items-baseline justify-between gap-sm m(0) fg-text-muted">
+    <span>Amounts are in US dollars and exclude tax.</span>
+    <a class="link" href="#billing-invoices-title">All invoices</a>
+  </p>
+</section>`} />
+
+- **一行中的三项信息**是一个用工具类布局的 `<dl>`，每个名称在其值的上方，区块宽度达到 36rem 时分为三列。下一期账单是一个 `price price-sm`；另外两项是文字。
+- **账单按从新到旧排列**，金额通过 `table-numeric` 按小数点对齐。九月的账单是 $80：当时工作区有四个席位。
+- **账单编号就是它的链接。** 它是行标题，因此朗读每个单元格时都会带上它所属的账单。
+- **表格在[滚动区域](/components/scroll-area)中横向滚动**，前提是可用空间比各列的总宽度窄；滚动区域位于面板内部，由面板裁切圆角。
+
+## 无障碍 \{#accessibility\}
+
+- 摘要是一个以其标题命名的 `<section>`。在第二个示例中，`<h2>` 为区块命名，表格带有 `<caption>`，因此表格会连同名称一起播报。
+- 计量条有 `<label>`，读数是它旁边的文本。计量条的颜色根据 `low`、`high` 和 `optimum` 绘制；颜色一旦变化，文字必须表达与颜色相同的含义。
+- 状态是带圆点的文字，例如“Active”和“Paid”（已支付）。色相只是重复这一信息，绝不单独承载它。
+- 日期中的月份用文字写出，在表格中每个日期都是一个 `<time>`。
+- “Change plan”（更改方案）和“Manage seats”（管理席位）会前往其他页面，因此是呈现为按钮样式的链接。
+- 用文字把币种写明一次。单独一个“$”可以是好几种货币。
+
+## 相关内容 \{#related\}
+
+<ComponentLinks slugs={['price', 'meter', 'data-list', 'table', 'badge', 'surface', 'scroll-area', 'button', 'link']} />
+
+<ComponentLinks kind="blocks" slugs={['pricing', 'page-header', 'table-view']} />
