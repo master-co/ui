@@ -27,8 +27,13 @@
     box-shadow: inset 0 0 0 1px var(--home-hairline);
   }
 
+  /* The examples on the start, the framework they are written in on the end; on a phone the choice wraps under. */
   .ui-forge-bar {
     display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem 1rem;
     padding: 0 0.25rem var(--home-gap);
 
     /*
@@ -102,9 +107,8 @@
   .ui-forge-code {
     container-type: inline-size;
     display: grid;
-    /* One column as wide as the slab, as the Frameworks slabs' file bar has: the bar wraps, the code scrolls. */
+    /* One cell as wide as the slab, where every framework's source stands. */
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto minmax(0, 1fr);
     min-width: 0;
     border-radius: var(--home-radius-sheet);
     color-scheme: dark;
@@ -115,8 +119,26 @@
      * The code scrolls inside a mask that fades the edge where a line runs on, which would also fade a ring drawn
      * on the code itself; so the slab draws the ring, in the focus ink of its own dark scheme.
      */
-    &:has(> .ui-forge-pre:focus-visible) {
+    &:has(.ui-forge-pre:focus-visible) {
       box-shadow: inset 0 0 0 2px var(--color-focus), 0 0 0 1px oklch(12% 0 none / 0.6), var(--home-elevation-1);
+    }
+  }
+
+  /*
+   * An example in one framework: its file bar over its code, the bar wrapping and the code scrolling. Every source
+   * stands in the same cell, so the slab is as tall as the longest and choosing another framework moves nothing;
+   * a hidden one keeps its room but leaves the screen, the tab order and the accessibility tree.
+   */
+  .ui-forge-source {
+    grid-area: 1 / 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    min-width: 0;
+
+    &[hidden] {
+      display: grid;
+      visibility: hidden;
     }
   }
 
@@ -152,7 +174,7 @@
 
   /*
    * A quiet square in the bar's corner that takes no height from it: the bar stays one line of type tall. Under a
-   * finger the button keeps its drawn size and its target reaches past it, as the frameworks' slabs have it.
+   * finger the button keeps its drawn size and its target reaches past it.
    */
   .ui-forge-copy {
     margin-block: -0.5rem;
@@ -189,9 +211,12 @@
       font-size: 0.75rem;
     }
 
+    & .k { color: var(--ui-code-keyword); }
     & .t { color: var(--ui-code-function); }
     & .a { color: var(--ui-code-property); }
     & .s { color: var(--ui-code-string); }
+    & .n { color: var(--ui-code-number); }
+    & .c { color: var(--ui-code-comment); }
     & .p { color: var(--ui-code-punctuation); }
 
     /* The slab draws the focus ring; scroll-area's own outline would sit outside the mask and be cut away. */
@@ -214,7 +239,7 @@
       width: 2ch;
       margin-inline-end: 1.5ch;
       text-align: end;
-      /* The gutter's ink of every slab on the page: the Frameworks slabs and the contracts terminal number theirs alike. */
+      /* The gutter's ink of every slab on the page: the contracts terminal numbers its lines alike. */
       color: oklch(48.6% .003 265);
       content: counter(line);
       /* Empty alternative text: a screen reader reads the markup, not a number before every line. */
@@ -717,7 +742,7 @@
     }
 
     /* The slab's focus ring is a shadow, which forced colors drop: an outline in the highlight color stands in. */
-    .ui-forge-code:has(> .ui-forge-pre:focus-visible) {
+    .ui-forge-code:has(.ui-forge-pre:focus-visible) {
       outline: 2px solid Highlight;
       outline-offset: -2px;
     }
@@ -725,7 +750,7 @@
 
   /*
    * Paper drops backgrounds unless told otherwise, which would leave the slab's light code on white: the slab keeps
-   * its obsidian face in print, as the Frameworks slabs and the contracts terminal do.
+   * its obsidian face in print, as the contracts terminal does.
    */
   @media print {
     .ui-forge-code {

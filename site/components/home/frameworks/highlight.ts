@@ -1,11 +1,11 @@
-import type { Language } from './examples'
+export type Language = 'tsx' | 'svelte' | 'vue'
 
 /**
- * A small highlighter for the homepage's framework examples: TSX, Svelte and Vue single-file components. It
- * reads tags with their attributes, `{…}` expressions inside markup and plain TypeScript in `<script>` and in
- * a TSX file, which is all those examples hold. Each line comes out as one `.ui-frameworks-line` span, with
- * `.k` keywords, `.s` strings, `.n` numbers, `.c` comments, `.t` tag names, `.a` attribute names and `.p` the
- * punctuation of a tag.
+ * A small highlighter for the Markup section's examples written as framework files: TSX, Svelte and Vue
+ * single-file components. It reads tags with their attributes, `{…}` expressions inside markup and plain
+ * TypeScript in `<script>` and in a TSX file, which is all those files hold. Each line comes out as one
+ * `.ui-forge-line` span, as the HTML highlighter writes it, with `.k` keywords, `.s` strings, `.n` numbers,
+ * `.c` comments, `.t` tag names, `.a` attribute names and `.p` the punctuation of a tag.
  */
 type Kind = 'k' | 's' | 'n' | 'c' | 't' | 'a' | 'p' | ''
 
@@ -132,5 +132,5 @@ export function highlightSource(source: string, language: Language) {
       if (part) lines[lines.length - 1] += kind ? `<span class="${kind}">${escape(part)}</span>` : escape(part)
     })
   }
-  return lines.map(line => `<span class="ui-frameworks-line">${line || ' '}</span>`).join('\n')
+  return lines.map(line => `<span class="ui-forge-line">${line || ' '}</span>`).join('\n')
 }

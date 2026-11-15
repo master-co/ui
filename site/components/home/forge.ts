@@ -7,6 +7,8 @@ export interface ForgeExample {
   id: string
   label: string
   file: string
+  /** The name the example takes as a component file in React, Svelte and Vue. */
+  component: string
   html: string
 }
 
@@ -15,6 +17,7 @@ export const forgeExamples: ForgeExample[] = [
     id: 'card',
     label: 'Card',
     file: 'deployments.html',
+    component: 'PreviewDeployments',
     html: `<section class="card">
   <header class="card-header">
     <h3 class="card-title">Preview deployments</h3>
@@ -38,6 +41,7 @@ export const forgeExamples: ForgeExample[] = [
     id: 'toast',
     label: 'Toast',
     file: 'deployed.html',
+    component: 'DeployedToast',
     html: `<div class="toast-region" role="region"
   aria-label="Notifications" aria-live="polite">
   <dialog open class="toast toast-success" aria-labelledby="forge-toast">
@@ -65,6 +69,7 @@ export const forgeExamples: ForgeExample[] = [
     id: 'segmented',
     label: 'Segmented',
     file: 'view.html',
+    component: 'ViewSwitch',
     html: `<div class="segmented" role="radiogroup" aria-label="View">
   <label class="segmented-item">
     <input type="radio" class="segmented-input"
@@ -84,6 +89,57 @@ export const forgeExamples: ForgeExample[] = [
 </div>`,
   },
 ]
+
+/** The frameworks the slab writes each example in. The specimen beside it is the same markup, drawn once. */
+export const forgeFrameworks = [
+  { id: 'html', title: 'HTML' },
+  { id: 'react', title: 'React', language: 'tsx' },
+  { id: 'svelte', title: 'Svelte', language: 'svelte' },
+  { id: 'vue', title: 'Vue', language: 'vue' },
+] as const
+
+export type ForgeFramework = typeof forgeFrameworks[number]
+
+const voidElements = new Set(['input', 'img', 'br', 'hr', 'meta', 'link', 'source', 'col'])
+const indent = (code: string, by: number) => code.split('\n').map(line => ' '.repeat(by) + line).join('\n')
+
+/**
+ * The markup as JSX: `className` and `htmlFor`, other hyphenated attributes in camel case (ARIA and data attributes
+ * stay as written), a field's initial `checked` and `value` as `defaultChecked` and `defaultValue` so it stays
+ * uncontrolled, and every void element closed. Whitespace between attributes is kept, so line breaks stay where
+ * the markup has them.
+ */
+function toJsx(html: string) {
+  return html.replace(/<([a-z][\w-]*)([^<>]*?)(\/?)>/g, (_, name: string, rest: string, closed: string) => {
+    const type = /\stype="([^"]*)"/.exec(rest)?.[1]
+    const attributes = rest.replace(/(\s+)([\w-]+)(?:=("[^"]*"))?/g, (__, space: string, attribute: string, value?: string) => {
+      let renamed = attribute
+      if (attribute === 'class') renamed = 'className'
+      else if (attribute === 'for') renamed = 'htmlFor'
+      else if (attribute === 'tabindex') renamed = 'tabIndex'
+      else if (attribute.includes('-') && !/^(aria|data)-/.test(attribute)) renamed = attribute.replace(/-(\w)/g, (___, letter: string) => letter.toUpperCase())
+      if (name === 'input' && attribute === 'checked' && !value) renamed = 'defaultChecked'
+      if (name === 'input' && attribute === 'value' && type !== 'radio' && type !== 'checkbox') renamed = 'defaultValue'
+      return space + renamed + (value ? `=${value}` : '')
+    })
+    const end = closed || !voidElements.has(name) ? `${closed}>` : ' />'
+    return `<${name}${attributes}${end}`
+  })
+}
+
+/** An example as the file a project keeps it in: the markup itself, or the component of a framework that renders it. */
+export function forgeSource(example: ForgeExample, framework: ForgeFramework['id']) {
+  switch (framework) {
+    case 'react':
+      return { file: `${example.component}.tsx`, code: `export function ${example.component}() {\n  return (\n${indent(toJsx(example.html), 4)}\n  )\n}` }
+    case 'svelte':
+      return { file: `${example.component}.svelte`, code: example.html }
+    case 'vue':
+      return { file: `${example.component}.vue`, code: `<template>\n${indent(example.html, 2)}\n</template>` }
+    default:
+      return { file: example.file, code: example.html }
+  }
+}
 
 const escape = (value: string) => value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
 

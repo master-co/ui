@@ -1,4 +1,5 @@
 ---
+import '@master/ui/components/accordion.css'
 import '@master/ui/components/button.css'
 import '@master/ui/components/card.css'
 import '@master/ui/components/checkbox.css'
@@ -12,17 +13,43 @@ import '@master/ui/components/switch.css'
 import '@master/ui/components/tabs.css'
 import '@master/ui/components/texture.css'
 import '@master/ui/components/toast.css'
+import '../../styles/home-frameworks.css'
+import IconArrowRight from '@tabler/icons-svelte-runes/icons/arrow-right'
 import IconCheck from '@tabler/icons-svelte-runes/icons/check'
 import IconCopy from '@tabler/icons-svelte-runes/icons/copy'
+import Link from '@master/internal-site/components/Link.svelte'
 import { siteOf } from '@master/internal-site/astro/site-context'
-import { forgeExamples, highlight } from './forge'
+import { forgeExamples, forgeFrameworks, forgeSource, highlight, type ForgeFramework } from './forge'
+import { frameworkComponents, stylesheets } from './frameworks/data'
+import { highlightSource } from './frameworks/highlight'
 
 const { t } = siteOf(Astro)
-const lines = (html: string) => html.split('\n').length
+const lines = (code: string) => code.split('\n').length
+
+/** An example in one framework: its file, its line count and its code highlighted, line by line. */
+const source = (example: typeof forgeExamples[number], framework: ForgeFramework) => {
+  const { file, code } = forgeSource(example, framework.id)
+  return { file, lines: lines(code), html: 'language' in framework ? highlightSource(code, framework.language) : highlight(code) }
+}
+
+/** Each stylesheet a framework component renders, with that component's name. */
+const owners = new Map(frameworkComponents.map(component => [component.contract, component.name]))
+const cells = stylesheets.map(name => ({ name, owner: owners.get(name) }))
+let order = 0
+const ownedCount = cells.filter(cell => cell.owner).length
+const markupCount = stylesheets.length - ownedCount
+
+/** What a framework component may own, in the words of the frameworks guide. */
+const owns = ['A value the application reads or sets', 'Rows rendered from data', 'Ids that join parts', 'A lifetime']
+
+const count = (text: string, value: number) => t(text).replace('{count}', String(value))
 ---
 
 {/*
-  Markup in, material out: each example is written out as code, then drawn by the library on the same page.
+  Markup in, material out, in any framework: each example is written out as code, then drawn by the library on the
+  same page. The slab writes it as plain HTML or as a React, Svelte or Vue file, and the specimen beside it stays
+  as it is, because every one of them is the same classes on the same elements. Under them, the proportion of
+  stylesheets that are markup in every framework, and the few a framework component is copied for.
   The code is real text and the specimen is real markup; the decode and the reveal only stage their arrival.
 */}
 <section id="markup" class="home-section ui-markup" aria-labelledby="markup-title">
@@ -30,7 +57,8 @@ const lines = (html: string) => html.split('\n').length
     <header class="home-section-header">
       <p class="home-eyebrow"><span class="home-eyebrow-index" aria-hidden="true">03</span><span>{t('HTML first')}</span></p>
       <h2 id="markup-title" class="home-lit home-section-heading home-stone-type"><span>{t('Markup in,')}</span>{' '}<span>{t('material out.')}</span></h2>
-      <p class="home-section-body">{t('A component is a class on a native element. There is no runtime to install and nothing to hydrate: the browser draws the material from one stylesheet, and every state from the element’s own attributes.')}</p>
+      <p class="home-section-body">{t('A component is a class on a native element, so the same markup works in plain HTML, React, Svelte and Vue. There is no runtime to install and nothing to hydrate: the browser draws the material from one stylesheet, and every state from the element’s own attributes.')}</p>
+      <Link class="home-section-link" href="/guide/frameworks">{t('Framework components')}<IconArrowRight aria-hidden="true" stroke={1.75} /></Link>
     </header>
     <figure class="ui-forge" data-forge>
       <div class="ui-forge-bar">
@@ -39,19 +67,35 @@ const lines = (html: string) => html.split('\n').length
             <button type="button" class="tabs-item" role="tab" id={`forge-tab-${example.id}`} aria-selected={index === 0 ? 'true' : 'false'} aria-controls={`forge-panel-${example.id}`} tabindex={index === 0 ? undefined : '-1'} data-value={example.id}>{t(example.label)}</button>
           ))}
         </div>
+        {/* One choice for every example: the slab rewrites its code, the specimen stays. */}
+        <div class="segmented segmented-sm ui-forge-frameworks" role="radiogroup" aria-label={t('Framework')} data-forge-frameworks>
+          {forgeFrameworks.map((framework, index) => (
+            <label class="segmented-item">
+              <input type="radio" class="segmented-input" name="forge-framework" value={framework.id} checked={index === 0} />
+              {framework.title}
+            </label>
+          ))}
+        </div>
       </div>
       {forgeExamples.map((example, index) => (
         <div class="ui-forge-panel" role="tabpanel" id={`forge-panel-${example.id}`} aria-labelledby={`forge-tab-${example.id}`} hidden={index !== 0} data-forge-panel>
           <div class="ui-forge-code">
-            <div class="ui-forge-file home-annotation">
-              <span class="ui-forge-file-name" translate="no">{example.file}</span>
-              <span class="ui-forge-lines">{lines(example.html)} {t('lines')}</span>
-              <button type="button" class="btn btn-quiet btn-square btn-sm ui-forge-copy" aria-label={t('Copy {file}').replace('{file}', example.file)} data-forge-copy>
-                <IconCopy class="icon ui-forge-copy-idle" aria-hidden="true" size={16} stroke={1.75} />
-                <IconCheck class="icon ui-forge-copy-done" aria-hidden="true" size={16} stroke={1.75} />
-              </button>
-            </div>
-            <pre class="ui-forge-pre scroll-area scroll-area-inline" tabindex="0" translate="no"><code set:html={highlight(example.html)} /></pre>
+            {forgeFrameworks.map((framework, place) => {
+              const { file, lines, html } = source(example, framework)
+              return (
+                <div class="ui-forge-source" hidden={place !== 0} data-forge-source={framework.id}>
+                  <div class="ui-forge-file home-annotation">
+                    <span class="ui-forge-file-name" translate="no">{file}</span>
+                    <span class="ui-forge-lines">{lines} {t('lines')}</span>
+                    <button type="button" class="btn btn-quiet btn-square btn-sm ui-forge-copy" aria-label={t('Copy {file}').replace('{file}', file)} data-forge-copy>
+                      <IconCopy class="icon ui-forge-copy-idle" aria-hidden="true" size={16} stroke={1.75} />
+                      <IconCheck class="icon ui-forge-copy-done" aria-hidden="true" size={16} stroke={1.75} />
+                    </button>
+                  </div>
+                  <pre class="ui-forge-pre scroll-area scroll-area-inline" tabindex="0" translate="no" aria-label={file}><code set:html={html} /></pre>
+                </div>
+              )
+            })}
           </div>
           <div class="ui-forge-stage texture" data-forge-stage>
             <p class="ui-forge-status home-annotation"><span class="ui-forge-status-dot" aria-hidden="true"></span>{t('Drawn by the stylesheet alone')}</p>
@@ -60,6 +104,46 @@ const lines = (html: string) => html.split('\n').length
           </div>
         </div>
       ))}
+
+      {/* One accordion row: closed, the figures and the bar still say the proportion; open, every stylesheet. */}
+      <div id="frameworks" class="accordion ui-frameworks-ledger">
+        <details class="accordion-item">
+          <summary class="accordion-trigger ui-frameworks-summary">
+            <span class="ui-frameworks-hidden">{count('Of {count} component stylesheets,', stylesheets.length)} {count('{count} are markup in every framework', markupCount)} {count('and {count} have a framework component.', ownedCount)}</span>
+            <span class="ui-frameworks-figure" aria-hidden="true">
+              <span class="ui-frameworks-count">{markupCount}</span>
+              <span class="ui-frameworks-label home-annotation"><span class="ui-frameworks-key"></span>{t('Markup in any framework')}</span>
+            </span>
+            <span class="ui-frameworks-figure ui-frameworks-figure-owned" aria-hidden="true">
+              <span class="ui-frameworks-count">{ownedCount}</span>
+              <span class="ui-frameworks-label home-annotation"><span class="ui-frameworks-key ui-frameworks-key-owned"></span>{t('Framework components')}</span>
+            </span>
+            <span class="ui-frameworks-split" style={`--markup: ${markupCount}; --owned: ${ownedCount}`} aria-hidden="true"><span></span><span></span></span>
+            <span class="ui-frameworks-total home-annotation" aria-hidden="true">{count('{count} stylesheets', stylesheets.length)} <span>@master/<wbr />ui/<wbr />components</span></span>
+            <span class="ui-frameworks-toggle home-annotation" aria-hidden="true"><span class="ui-frameworks-more">{t('Show all')}</span><span class="ui-frameworks-less">{t('Hide')}</span></span>
+          </summary>
+          <div class="accordion-content ui-frameworks-content">
+            <ol class="ui-frameworks-cells" aria-label={t('Every component stylesheet')}>
+              {cells.map(cell => cell.owner ? (
+                <li class="ui-frameworks-cell" data-owned style={`--order: ${order++}`}>
+                  <span class="ui-frameworks-name">{cell.name}{cell.owner !== cell.name && <span class="ui-frameworks-alias"> · {cell.owner}</span>}<span class="ui-frameworks-hidden">{t(', a framework component')}</span></span>
+                </li>
+              ) : (
+                <li class="ui-frameworks-cell"><span class="ui-frameworks-name">{cell.name}</span></li>
+              ))}
+            </ol>
+            <p class="ui-frameworks-owned home-annotation" aria-hidden="true">
+              {frameworkComponents.map(component => <span>{component.name}</span>)}
+            </p>
+            <div class="ui-frameworks-test">
+              <p class="home-annotation">{t('A framework component exists when the framework owns one of these')}</p>
+              <ul class="ui-frameworks-owns">
+                {owns.map((thing, index) => <li><span class="ui-frameworks-index" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span><span>{t(thing)}</span></li>)}
+              </ul>
+            </div>
+          </div>
+        </details>
+      </div>
       <span class="sr-only" aria-live="polite" data-forge-copy-status data-copied={t('Copied')} data-failed={t('Copy failed')}></span>
     </figure>
   </div>
@@ -92,11 +176,18 @@ const lines = (html: string) => html.split('\n').length
     return nodes
   }
 
-  /** Clears a panel to its whitespace and hides its specimen, so neither shows and then vanishes when the decode starts. */
-  function blank(panel: HTMLElement) {
-    const code = panel.querySelector<HTMLElement>('code')
+  /** The code a panel shows: the source in the framework chosen, the others hidden beside it. */
+  const shownCode = (panel: HTMLElement) => panel.querySelector<HTMLElement>('[data-forge-source]:not([hidden]) code')
+
+  /**
+   * Clears a panel's code to its whitespace and, unless the specimen is already there, hides the specimen too, so
+   * neither shows and then vanishes when the decode starts.
+   */
+  function blank(panel: HTMLElement, reveal = true) {
+    const code = shownCode(panel)
     const stage = panel.querySelector<HTMLElement>('[data-forge-stage]')
     if (code) textNodes(code).forEach(node => { node.data = originals.get(node)!.replace(/\S/g, ' ') })
+    if (!reveal) return
     stage?.style.setProperty('--reveal', '0')
     stage?.setAttribute('data-revealing', '')
   }
@@ -104,10 +195,11 @@ const lines = (html: string) => html.split('\n').length
   /**
    * Writes a panel's code out: line by line, each character flickers through a few glyphs before it settles, and
    * the specimen beside it is uncovered from the left as the last lines land. Only the text changes, and every
-   * glyph is as wide as the character it stands for, so nothing reflows.
+   * glyph is as wide as the character it stands for, so nothing reflows. Written again in another framework, the
+   * code decodes and the specimen stays: it is the same material whichever framework writes it.
    */
-  function play(panel: HTMLElement) {
-    const code = panel.querySelector<HTMLElement>('code')
+  function play(panel: HTMLElement, reveal = true) {
+    const code = shownCode(panel)
     const stage = panel.querySelector<HTMLElement>('[data-forge-stage]')
     if (!code || !stage) return
     finish?.()
@@ -130,9 +222,9 @@ const lines = (html: string) => html.split('\n').length
     const typed = line * 48 + 380
     const revealFrom = typed * 0.4
     const revealFor = 1000
-    const end = Math.max(typed, revealFrom + revealFor)
+    const end = reveal ? Math.max(typed, revealFrom + revealFor) : typed
     const start = performance.now()
-    blank(panel)
+    blank(panel, reveal)
     code.setAttribute('aria-busy', 'true')
     finish = () => {
       cancelAnimationFrame(running)
@@ -157,8 +249,10 @@ const lines = (html: string) => html.split('\n').length
         }
         if (node.data !== out) node.data = out
       }
-      const reveal = Math.min(Math.max((elapsed - revealFrom) / revealFor, 0), 1)
-      stage.style.setProperty('--reveal', (1 - Math.pow(1 - reveal, 3)).toFixed(4))
+      if (reveal) {
+        const progress = Math.min(Math.max((elapsed - revealFrom) / revealFor, 0), 1)
+        stage.style.setProperty('--reveal', (1 - Math.pow(1 - progress, 3)).toFixed(4))
+      }
       if (elapsed < end) running = requestAnimationFrame(tick)
       else finish?.()
     }
@@ -172,7 +266,7 @@ const lines = (html: string) => html.split('\n').length
     figure.addEventListener('click', async event => {
       const button = (event.target as Element).closest<HTMLButtonElement>('[data-forge-copy]')
       const panel = button?.closest<HTMLElement>('[data-forge-panel]')
-      const code = panel?.querySelector('code')
+      const code = button?.closest('[data-forge-source]')?.querySelector('code')
       if (!button || !panel || !code) return
       // A slab still blank, waiting to come into view, is settled at once: played and finished before any paint.
       if (!written.has(panel)) play(panel)
@@ -207,6 +301,22 @@ const lines = (html: string) => html.split('\n').length
     const list = figure.querySelector<HTMLElement>('[data-forge-tabs]')
     if (list) tabs(list)
     const current = () => figure.querySelector<HTMLElement>('[data-forge-panel]:not([hidden])')
+
+    // One framework for every example: each slab shows its source in it, and the panel in view writes it out.
+    figure.querySelector('[data-forge-frameworks]')?.addEventListener('change', event => {
+      const framework = (event.target as HTMLInputElement).value
+      const panel = current()
+      // A decode in flight settles before its code is hidden, and code still blank is put back, so the source
+      // comes back whole.
+      finish?.()
+      const before = panel && shownCode(panel)
+      if (before) textNodes(before).forEach(node => { node.data = originals.get(node)! })
+      figure.querySelectorAll<HTMLElement>('[data-forge-source]').forEach(source => { source.hidden = source.dataset.forgeSource !== framework })
+      if (!panel || motion.matches) return
+      // Before the figure has come into view, the new code waits blank for its first decode, as the first one did.
+      if (written.has(panel)) play(panel, false)
+      else blank(panel)
+    })
     list?.addEventListener('change', () => {
       const panel = current()
       if (!panel) return

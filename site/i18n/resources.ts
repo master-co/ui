@@ -31,7 +31,6 @@ const dataModules: Record<string, string[]> = {
   'components/catalog.ts': ['description', 'category'],
   'components/home/customize.ts': ['name', 'summary', 'alt'],
   'components/home/platform.ts': ['title', 'summary'],
-  'components/home/frameworks/examples.ts': ['note'],
   'components/home/HomeThemes.astro': ['name', 'detail', 'reach', 'upstream'],
   'components/home/HomeLibrary.astro': ['name', 'link'],
   'components/home/HomeMarkup.astro': ['label'],
