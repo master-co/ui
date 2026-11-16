@@ -1,6 +1,6 @@
 # The layout classes
 
-Eight stylesheets in `packages/ui/layouts/` hold what utilities cannot say: two frames, `page` and `shell`, documented with the pages, and six that arrange a room, documented in the components' `Layouts` category. Each has a contract beside it, compiles in `@layer components` after every component, and declares no material: `packages/ui/tests/master.test.ts` fails a layout stylesheet that declares `background`, `background-color`, `background-image`, `box-shadow`, `border-radius`, `corner-shape`, `backdrop-filter` or `filter`.
+Eight stylesheets in `packages/ui/layouts/` hold what utilities cannot say: two frames, `page` and `shell`, documented with the pages, and six that arrange a room, documented in the components' `Layouts` category. Each has a contract beside it, compiles in `@layer components.ui` after every component, and declares no material: `packages/ui/tests/master.test.ts` fails a layout stylesheet that declares `background`, `background-color`, `background-image`, `box-shadow`, `border-radius`, `corner-shape`, `backdrop-filter` or `filter`.
 
 Read the stylesheet before writing about a class. The numbers below are the ones a page most often gets wrong.
 

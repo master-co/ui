@@ -37,7 +37,7 @@ import GuideFigure from '../../../components/GuideFigure.astro'
 
 ## 1. 工具类 \{#utility\}
 
-组件类位于 `components` 层，工具类位于顺序靠后的 `utilities` 层。因此，直接添加到元素上的工具类优先，无需 `!important`，也无需在项目的样式表中添加规则。
+组件类位于 `components` 层内的 `components.ui` 层，工具类位于顺序靠后的 `utilities` 层。因此，直接添加到元素上的工具类优先，无需 `!important`，也无需在项目的样式表中添加规则。
 
 ```html
 <button type="button" class="btn btn-primary w-full">Save changes</button>
@@ -96,6 +96,27 @@ import GuideFigure from '../../../components/GuideFigure.astro'
 
 为项目自有类命名时，避开库的命名范围。如果类名以组件的根类名加连字符开头，例如 `btn-compact`，[检查器](/guide/contracts#diagnostics) 会将它报告为 `unknown-class`。
 
+### 你的规则所处的位置 \{#rule-layer\}
+
+库的所有规则都位于 `components.ui`，即 `components` 层内的一个层。你写在 `@layer components` 中的规则处于这个内层之外，因此无论双方选择器的优先级高低，也无论打包工具把两个样式表放在何处，你的规则都优先于组件。它不需要重复类名、加长选择器或使用 `!important`，而工具类仍然优先于它。写在任何层之外的规则同样优先，并且也优先于工具类。
+
+```css name=app.css
+@layer components {
+  .compact-control {
+    --btn-height: 2rem;
+    --btn-padding-x: .75rem;
+  }
+}
+```
+
+这个层会带来三个结果：
+
+- **组件的状态样式也会输给你的规则。** 选择器优先级只在同一个层内比较。因此，你的规则声明某个属性后，组件在 `:hover`、`:focus-visible`、`:disabled`、`[aria-pressed="true"]` 这类属性选择器以及修饰类下对同一属性的声明，也都会被覆盖。请查看组件样式表中设置同一属性的规则，并自行补上仍然需要的部分。
+- **`!important` 的方向相反。** 在标记为 important 的声明之间，内层优先于层外的规则，因此你写的 `!important` 无法覆盖 `components.ui` 中的 `!important`。库没有使用它，你的规则也不需要。
+- **组件之间仍按顺序决定。** 库的两个样式表在选择器优先级相同时，顺序靠后的优先。完整导入会固定这个顺序；使用模块导入时，请不要依赖它。
+
+你[自行维护](#own-a-component)的组件，其副本仍保留 `@layer components.ui`，因此与其他组件处于同一层。
+
 ## 4. 主题 \{#theme\}
 
 要更改材质，例如改用平坦的面层、线条勾勒的边缘或带色调的中性色，就使用主题。主题是一个在库之后导入的令牌文件。Paper 是软件包附带的第二套主题，不修改任何组件的实现。
@@ -151,7 +172,7 @@ npx master-ui own menu  # copies ui/menu.css, ui/menu.json and its behavior; rep
 CLI 读取项目配置时，会用复制到项目中的契约 `ui/menu.json` 替代库中的契约。智能体也应读取这份本地契约。在 `ui/menu.css` 中添加、重命名或删除类名时，同步更新 `ui/menu.json`。下面先展示如何在样式表中添加一个部件，再给出要追加到契约的 `classes` 数组中的条目：
 
 ```css name=ui/menu.css
-@layer components {
+@layer components.ui {
   /* A quiet line under the last group: the account that is signed in. */
   .menu-note {
     padding: .4375rem .5rem;
@@ -218,7 +239,7 @@ menu  upstream changed: menu.css (master-ui diff menu); edited here: menu.css
 - **用规则选中库的类，并重新声明其表面、边缘或阴影样式。** 请使用主题令牌或属性，或自行维护该组件。
 - **使用未在文档中列出的组件属性。** 请使用组件契约列出的属性，或另有文档说明的主题令牌。组件的内部属性可能随时变更，且不另行通知。
 - **通过外部新增的类改写库组件的样式**，例如在 `.my-btn.btn` 中声明材质样式。项目自定义的类可以设置公开属性和布局。需要新材质时，可以创建新组件，或自行维护现有组件。
-- **强行覆盖组件样式。** 切勿通过提高选择器优先级或使用 `!important` 来覆盖组件。工具类所在的层本就优先于组件层。如果仍需用更强的手段覆盖，就应自行维护该组件。
+- **强行覆盖组件样式。** 切勿通过提高选择器优先级或使用 `!important` 来覆盖组件。工具类所在的层本就优先于组件层，你写在 `@layer components` 中的规则也是如此。如果仍需用更强的手段覆盖，就应自行维护该组件。
 
 ```css name=app.css
 /* Not a customization: it redraws what button.css draws, and will not follow it. */

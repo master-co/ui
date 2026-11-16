@@ -192,7 +192,7 @@ Three details:
 
 ## Diagnostics \{#diagnostics\}
 
-`master-ui check` prints one line per finding: the file, line and column, the severity, a code and a message. Every code is an error, except `unknown-class`, which is a warning unless `--strict` is passed.
+`master-ui check` prints one line per finding: the file, line and column, the severity, a code and a message. Every code is an error, except `unknown-class`, which is a warning unless `--strict` is passed, and `repeated-import`, which is always a warning. The last three codes are about how the project [loads the library's stylesheets](/guide/installation#one-route), not about markup.
 
 | Code | What it means | How to fix it |
 | --- | --- | --- |
@@ -203,5 +203,8 @@ Three details:
 | `element` | A class is on an element its contract does not allow | Use the element the message names: `dialog` goes on a dialog element |
 | `attribute` | The element lacks an attribute the class requires, or has another value | Add the attribute the message names, such as `role="switch"` |
 | `label` | A control has no accessible name | Give it text of its own, `aria-label`, `aria-labelledby`, or a label that wraps it or points at it |
+| `stylesheet-import` | A stylesheet or a `<style>` block imports one component's stylesheet with a CSS `@import`, which includes it again wherever it is written | Import it from the module that renders the component: `import '@master/ui/components/button.css'` |
+| `mixed-imports` | A module imports one stylesheet while the project also imports the full library, so that stylesheet is delivered twice | Keep one route: the full import, or one module import per stylesheet |
+| `repeated-import` | The full library is imported in more than one place | Import it from one stylesheet. Two imports that never reach the same page, such as two apps in one repository, can stay |
 
 The checker reads source rather than rendering a page. It can inspect literal classes inside expressions, but cannot resolve computed class names, prove where a framework component renders its children or inspect a root in another file. It leaves uncertain cases alone. A clean result does not verify focus order, contrast, browser support or whether the chosen component fits the task.

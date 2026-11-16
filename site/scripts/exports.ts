@@ -130,7 +130,7 @@ function contractMarkdown(source: any, locale = 'en') {
     `${heading('Frameworks')}\n\n${frameworkInstructions}${frameworks.length && !frameworks.includes(contract.name) ? ` ${tr('Write the other classes in this contract as markup.')}` : ''}`,
     contract.platform?.length && `${heading('Platform')}\n\n${table(columns(['Feature', 'Fallback']), contract.platform.map((item: any) => [item.feature, item.fallback]))}`,
     contract.composes?.length && `${heading('Used with')}\n\n${contract.composes.map((name: string) => `- [${name}](${markdownLink(name)})`).join('\n')}`,
-    `${heading('Install')}\n\n\`\`\`css\n@import '@master/ui/theme.css';\n${[...(contract.composes ?? []), contract.name].map((name: string) => `@import '@master/ui/${contractOf.get(name)?.tier === 'layout' ? 'layouts' : 'components'}/${name}.css';`).join('\n')}\n\`\`\`\n\n${tr('Theme tokens: {tokens}', { tokens: contract.tokens.length ? contract.tokens.map(code).join(', ') : tr('none') })}\n\n${tr('Web page: {url}', { url: contractPathname })}`
+    `${heading('Install')}\n\n\`\`\`css\n/* All of the library, from one stylesheet. */\n@import '@master/ui';\n\`\`\`\n\n\`\`\`js\n// Or, never both: one module import per stylesheet, with the theme in the app stylesheet.\n${[...(contract.composes ?? []), contract.name].map((name: string) => `import '@master/ui/${contractOf.get(name)?.tier === 'layout' ? 'layouts' : 'components'}/${name}.css'`).join('\n')}\n\`\`\`\n\n${tr('Theme tokens: {tokens}', { tokens: contract.tokens.length ? contract.tokens.map(code).join(', ') : tr('none') })}\n\n${tr('Web page: {url}', { url: contractPathname })}`
   ].filter(Boolean).join('\n\n') + '\n'
 }
 

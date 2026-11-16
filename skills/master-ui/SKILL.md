@@ -14,12 +14,25 @@ Master UI is a contract and a default implementation of it. The contract of a co
 
 ## Establish the project
 
-- How the library arrives: `@import '@master/ui'` after `@import '@master/css'`, one import per stylesheet in `ui/index.css` (written by `master-ui init`), or the compiled `standalone.css` in a project without Master CSS. With the compiled file there are no utilities: lay out with the project's own CSS.
+- How the library arrives, which is one route and never two (see [Load the stylesheets one way](#load-the-stylesheets-one-way)): all of it from one stylesheet, `@import '@master/ui'` after `@import '@master/css'` or the project's own entry `ui/index.css` (written by `master-ui init`) in its place; one module import per stylesheet, `import '@master/ui/components/<name>.css'`; or the compiled `standalone.css` in a project without Master CSS. With the compiled file there are no utilities: lay out with the project's own CSS.
 - What the project owns: `master-ui.json` lists the owned components (`owned`) and the framework components it added (`components`); their source and contracts are in its `directory` (`ui/` by default), and `contracts` may name more of the project's own contracts. An owned contract replaces the library's. Read it before using that component.
 - The theme: a file imported after the library, or `@theme` overrides in the app stylesheet. Read it before choosing a token.
 - The viewport: fields keep their 14px type on touch screens, so the page caps its scale on iOS, where a reader can still pinch to zoom, to stop iOS zooming onto a focused field. If the head lacks the short script of `https://ui.master.co/guide/installation#set-the-viewport`, add it after the viewport tag. Do not raise a field's type to 16px instead.
 - The project's own instructions and nearby components come first. Match what is already there.
 - The version: Master UI is experimental, and any 0.x release may rename or remove a class, a token or an export. Read contracts from the installed package (`npx master-ui contract` does), not from memory. After an upgrade run `npx master-ui check` and `npx master-ui status`, and fix what they report.
+
+## Load the stylesheets one way
+
+A CSS `@import` is an include, not a module: a stylesheet that two files import, or that arrives with the whole library and again on its own, is written into the output twice, and which copy comes last changes from page to page. A bundler loads a module import once, however many modules name it. So a project takes one route and keeps to it.
+
+- **An application: the whole library, once.** One line, `@import '@master/ui';`, in one stylesheet, and nothing else in the project imports a stylesheet of the library. A project that ran `master-ui init` has `ui/index.css` in place of that line; it is then the one source, and the only stylesheet that imports the others.
+- **An application that loads on demand: one module import per stylesheet.** `import '@master/ui/components/<name>.css'` (or `layouts/<name>.css`) in the module that renders the component, for every class its markup uses. The theme, `@import '@master/ui/theme.css'`, stays in the app stylesheet after the preset.
+- **Never both.** Do not add a module import of one stylesheet to a project that imports the whole library, or the whole library to a project that imports stylesheets one by one.
+- **Never a CSS `@import` of one component.** No stylesheet of the project writes `@import '@master/ui/components/<name>.css'`, in a `.css` file or in a `<style>` block. Only the entry does: the package's own, or `ui/index.css`.
+- **A library built on Master UI imports per stylesheet, from its modules.** An application that uses such a library is therefore on that route too: it imports each stylesheet it uses from its own modules and does not write `@import '@master/ui'`. Before adding either import, look at what the project's dependencies already import.
+- **A rule of the project does not depend on the order of the bundle.** A build does not promise that the order of module imports is the order of the CSS, and it does not have to: every rule of the library is in `components.ui`, a layer inside `components`, so a project rule in `@layer components` wins over a component wherever its stylesheet lands and whatever the two specificities are. Never double a class or lengthen a selector to win. [Customizing](references/customizing.md) says what such a rule may declare and what follows from the layer.
+
+`npx master-ui check` reports the three ways this goes wrong: `stylesheet-import`, `mixed-imports` and `repeated-import`.
 
 ## Read the contract before writing markup
 
@@ -67,7 +80,7 @@ Read [customizing](references/customizing.md) before overriding anything. In sho
 
 Color has four jobs, and chrome is neutral by default. A status (done, failing) is a tone such as `badge-success`, always with words. A category of data (a project, a calendar, a label) is a `category-<name>` class on the row, card or event, read only by `badge-category`, `chip-category`, `schedule-event-category`, `icon-frame-category` and the marks of a `chart`, and always beside the category's name. A color that is the data itself goes in a `swatch`. The brand color stays on `btn-brand`, once per view. Never tint a button, a field or a dialog with a category, and never use `category-red` for a danger.
 
-A project rule may select a library class only to set its public custom properties. Never write one that redeclares or undoes what the stylesheet declares, never raise specificity or use `!important` to win, and never restyle a component by its private custom properties.
+A project rule may select a library class only to set its public custom properties. Never write one that redeclares or undoes what the stylesheet declares, never raise specificity or use `!important` to win (a rule in `@layer components` already wins over the library's `components.ui`, and an `!important` there loses to one in the inner layer), and never restyle a component by its private custom properties.
 
 ## Add what the library does not have
 
@@ -77,7 +90,7 @@ Use the `master-design` skill, when it is installed, for design judgment. [Maste
 
 ## Verify
 
-- `npx master-ui check` reports markup that breaks a contract: a modifier without its base, a part outside its root, two classes of one group on an element (two sizes), a class on the wrong element, a missing attribute or name, a class that looks like one of the library's but is in no contract. Fix every error; read each warning.
+- `npx master-ui check` reports markup that breaks a contract: a modifier without its base, a part outside its root, two classes of one group on an element (two sizes), a class on the wrong element, a missing attribute or name, a class that looks like one of the library's but is in no contract. It also reads the project's stylesheets and modules for how they load the library: a CSS `@import` of one component (`stylesheet-import`), the whole library beside a module import of one stylesheet (`mixed-imports`), and the whole library imported in two places (`repeated-import`, a warning: two imports that never reach the same page are fine). Fix every error; read each warning.
 - Run the project's Master CSS lint for utilities.
 - In a browser, check each state the change touches (rest, hover, focus-visible, pressed, disabled, invalid, open), in light and dark, at a narrow width, and with the keyboard alone for anything interactive.
 - Report what was checked and what was not.

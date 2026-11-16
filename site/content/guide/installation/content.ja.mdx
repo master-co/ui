@@ -24,14 +24,14 @@ First inspect the project before editing: package manager, framework and build t
 
 Before editing, ask me these and wait for the answers. Do not choose them yourself:
 - Stylesheet route: source (the default; @import '@master/ui' compiled by Master CSS 2.1 or later, with utilities for layout) or precompiled (@master/ui/standalone.css, no Master CSS and no utilities). If the project has no Master CSS and I choose source, set it up first by following https://css.master.co/guide/installation.
-- Import scope: the full library in one import (the default), or npx master-ui init, which writes ui/index.css with one @import per stylesheet and master-ui.json for components the project may later own. See https://ui.master.co/guide/installation#one-import-per-stylesheet.
+- Import scope: the full library in one import (the default); npx master-ui init, which writes ui/index.css with one @import per stylesheet and master-ui.json for components the project may later own; or, for an app that loads styles on demand, one module import per stylesheet (import '@master/ui/components/<name>.css' in the module that renders the component). A project takes exactly one of these: never combine them, and never @import a single component stylesheet from CSS. If a dependency built on Master UI already imports its stylesheets from modules, the app must use module imports too. See https://ui.master.co/guide/installation#one-route.
 - Agent setup: the full setup (the master-ui skill, Master UI guidance in AGENTS.md and a check:ui script) or minimal (package and stylesheet only).
 - Existing components: if the project already uses another component library, whether to leave it in place (the default) and use Master UI only for new interface, or replace the components I name. Never replace components I have not named.
 
 Then adopt Master UI conservatively:
 1. Run every command from the app root, where its package.json lives, with the project's package manager.
 2. Install the package at an exact version: npm install @master/ui --save-exact (bun add @master/ui --exact, pnpm add @master/ui --save-exact). Master UI is experimental and any 0.x release may break what it published, so keep the version pinned.
-3. Load the stylesheet in the stylesheet the app already loads. Source route: add @import '@master/ui'; on the line after @import '@master/css';, or, with npx master-ui init, @import './ui/index.css'; in its place (adjust the path to where ui/ is). Precompiled route: @import '@master/ui/base.css'; then @import '@master/ui/standalone.css';, and omit base.css if the project already has an equivalent reset. Installing the package alone does not load anything. Then set the page's viewport as https://ui.master.co/guide/installation#set-the-viewport shows: the viewport tag and the short script after it that stops iOS zooming onto a focused field.
+3. Load the stylesheet in the stylesheet the app already loads. Source route: add @import '@master/ui'; on the line after @import '@master/css';, or, with npx master-ui init, @import './ui/index.css'; in its place (adjust the path to where ui/ is), or, with module imports, @import '@master/ui/theme.css'; in its place and import '@master/ui/components/<name>.css' in each module that renders that component. Precompiled route: @import '@master/ui/base.css'; then @import '@master/ui/standalone.css';, and omit base.css if the project already has an equivalent reset. Installing the package alone does not load anything. Then set the page's viewport as https://ui.master.co/guide/installation#set-the-viewport shows: the viewport tag and the short script after it that stops iOS zooming onto a focused field.
 4. Add no behavior script and no framework component yet. When a pattern that needs one is used later, follow https://ui.master.co/guide/behaviors, or https://ui.master.co/guide/frameworks with npx master-ui add <name> in React, Svelte or Vue.
 5. If I chose the full agent setup: install the skill with npx skills add master-co/ui --skill master-ui, append the Master UI block from https://ui.master.co/guide/ai.md#agents-md to AGENTS.md with the project's actual validation commands below it, and add "check:ui": "master-ui check --strict" to the package.json scripts.
 6. If I chose to replace named components, rewrite each one's markup from its contract (npx master-ui contract <name>), keep its behavior and accessible names, and remove the old dependency only after nothing uses it.
@@ -61,7 +61,7 @@ npm install @master/ui --save-exact
 @import '@master/ui';
 ```
 
-プリセットはレイヤーの順序を `theme, base, defaults, components, utilities` と宣言します。Master UI のルールは `components` に入るため、マークアップに付けたユーティリティが優先されます。
+プリセットはレイヤーの順序を `theme, base, defaults, components, utilities` と宣言します。Master UI のルールは `components` レイヤー内の `components.ui` レイヤーに入るため、マークアップに付けたユーティリティが優先されます。`@layer components` に書いた独自のルールも同様に優先されます。
 
 ## ビューポートを設定する \{#set-the-viewport\}
 
@@ -93,16 +93,21 @@ npm install @master/ui --save-exact
 
 ## 必要なスタイルだけをインポートする \{#import-only-what-you-use\}
 
-コンポーネントのスタイルシートは個別にもインポートできます。共通のテーマを先に読み込み、続けてアプリに必要なコンポーネントを指定します。
+スタイルシートは個別にもインポートできます。これは、スタイルを必要とするモジュールと一緒に読み込むアプリのための方法です。共通のテーマはアプリのスタイルシートに置き、各コンポーネントはそれを描画するモジュールからインポートします。
 
 ```css name=app.css
 @import '@master/css';
 @import '@master/ui/theme.css';
-@import '@master/ui/components/button.css';
-@import '@master/ui/components/switch.css';
 ```
 
-マークアップに含まれるクラスすべてに対応するスタイルシートを読み込みます。たとえばボタンの中に `icon` や `spinner` を置く場合は、それぞれのスタイルシートも必要です。一括インポートを使えば、一覧を個別に管理する手間を省けます。
+```js name=save-button.js
+import '@master/ui/components/button.css'
+import '@master/ui/components/spinner.css'
+```
+
+バンドラーは、いくつのモジュールからインポートされてもモジュールを 1 回だけ読み込みます。そのため、2 つのモジュールがどちらも `button.css` をインポートしても、出力されるのは 1 回です。マークアップに含まれるクラスすべてに対応するスタイルシートを読み込みます。たとえばボタンの中に `icon` や `spinner` を置く場合は、それぞれのスタイルシートも必要です。一括インポートを使えば、一覧を個別に管理する手間を省けます。
+
+これらは必ずモジュールのインポートとして書き、CSS の `@import` ルールにはしないでください。また、ライブラリ全体を一括インポートしているプロジェクトには追加しないでください。理由は[読み込み方を 1 つに決める](#one-route)で説明します。
 
 ## スタイルシートを 1 行ずつインポートする \{#one-import-per-stylesheet\}
 
@@ -117,7 +122,24 @@ npx master-ui init
 @import './ui/index.css';
 ```
 
-このエントリーファイルは、`@master/ui` の一括インポートの代わりに使えます。インポート一覧を管理したい場合や、[一部のコンポーネントのソースをプロジェクトで管理する](/guide/registry)場合に選びます。マークアップで該当クラスを使わなくなったときだけ、その行を削除してください。
+このエントリーファイルは、`@master/ui` の一括インポートの代わりに使えます。その場合、このファイルがプロジェクトにおけるライブラリの唯一の読み込み元になり、ライブラリのほかのスタイルシートをインポートする唯一のスタイルシートになります。この方法は任意です。インポート一覧を管理したい場合や、[一部のコンポーネントのソースをプロジェクトで管理する](/guide/registry)場合に選びます。マークアップで該当クラスを使わなくなったときだけ、その行を削除してください。
+
+## 読み込み方を 1 つに決める \{#one-route\}
+
+CSS の `@import` はファイルの内容を取り込むもので、モジュールを読み込むものではありません。同じスタイルシートを 2 つのファイルがインポートした場合や、ライブラリ全体と一緒に読み込んだうえで個別にもインポートした場合、そのスタイルシートは出力に 2 回書き込まれます。バイトが重複し、どちらが後に来るかはページによって変わります。モジュールとしてインポートしたスタイルシートは 1 回だけ読み込まれます。そのため、プロジェクトでは読み込み方を 1 つに決め、それを守ります。
+
+| プロジェクト | 読み込み方 |
+| --- | --- |
+| アプリケーション | 1 つのスタイルシートに `@import '@master/ui';` を書くか、その代わりに `ui/index.css` を使います。プロジェクト内のほかの場所では、ライブラリのスタイルシートをインポートしません |
+| スタイルを必要に応じて読み込むアプリケーション | スタイルシートごとにモジュールのインポートを 1 つ書きます：`import '@master/ui/components/<name>.css'` |
+| Master UI を基にしたライブラリ | スタイルシートごとにモジュールのインポートを 1 つ、ライブラリ自身のモジュールに書きます |
+| そのようなライブラリを使うアプリケーション | 同じく、スタイルシートごとにモジュールのインポートを 1 つ書きます。ライブラリのインポートはすでにバンドルに含まれているため、一括インポートを使うとそれらのスタイルシートがもう一度出力されます |
+
+- **1 つのプロジェクトで 2 つの読み込み方を併用しないでください。** 一括インポートと、個別のスタイルシートのモジュールインポートが併存すると、そのスタイルシートは 2 回出力されます。
+- **個別のコンポーネントを CSS の `@import` でインポートしないでください。** プロジェクトのスタイルシートでも `<style>` ブロックでも、`@master/ui/components/<name>.css` をインポートしません。これを行うのはエントリーファイルだけです。つまり、パッケージ自身のエントリーか、`init` が生成する `ui/index.css` です。
+- **独自のルールはバンドルの順序に左右されません。** ビルドは、CSS の順序がモジュールのインポート順と一致することを保証しませんが、その必要もありません。ライブラリのルールは `components.ui` にあるため、`@layer components` に書いた独自のルールは、コンポーネントのスタイルシートがどこに置かれても、セレクターを長くすることなくコンポーネントより優先されます。このレイヤーから導かれることは[カスタマイズ](/guide/customization#rule-layer)で説明しています。
+
+プロジェクトが決めた読み込み方から外れると、`npx master-ui check` は `stylesheet-import`、`mixed-imports`、`repeated-import` のいずれかを報告します。各コードは[コントラクト](/guide/contracts#diagnostics)で説明しています。
 
 ## ビヘイビア \{#behaviors\}
 

@@ -4,7 +4,7 @@ Native HTML and CSS interface components crafted with [Master CSS](https://css.m
 
 - **A contract for each component.** `button.json` beside `button.css` lists its classes, the element each goes on, its states, its public custom properties and one correct example. People and coding agents write to it, and `master-ui check` reports markup that breaks it.
 - **Native elements first.** Components style `<button>`, `<select>` and `<input role="switch">`, keeping their keyboard, form and accessibility behavior. The few patterns with no native element ship a reference script that only moves attributes.
-- **One stylesheet per component.** Rules live in `@layer components` and read Master CSS theme tokens, so utilities in markup always win.
+- **One stylesheet per component.** Rules live in `@layer components.ui`, inside the `components` layer, and read Master CSS theme tokens, so utilities in markup always win, and so does a rule of your own in `@layer components`.
 - **The theme is only a theme.** A component never writes a color of its own; `themes/paper.css` is a second material built from tokens alone.
 - **Yours when you need it.** Retune with tokens, replace the material with a theme, or `master-ui own <name>` to take a component's source, with upstream changes still visible.
 

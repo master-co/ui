@@ -37,7 +37,7 @@ import GuideFigure from '../../../components/GuideFigure.astro'
 
 ## 1. Utility \{#utility\}
 
-元件類別位於 `components` 層，utility 則位於順序較後的 `utilities` 層。因此，加在元素上的 utility 會優先套用，無須使用 `!important`，也無須在自己的樣式表中加規則。
+元件類別位於 `components` 層內的 `components.ui` 層，utility 則位於順序較後的 `utilities` 層。因此，加在元素上的 utility 會優先套用，無須使用 `!important`，也無須在自己的樣式表中加規則。
 
 ```html
 <button type="button" class="btn btn-primary w-full">Save changes</button>
@@ -96,6 +96,27 @@ import GuideFigure from '../../../components/GuideFigure.astro'
 
 替專案自訂類別命名時，請避開函式庫的命名範圍。類別名稱若以元件的根類別名稱加上連字號開頭，例如 `btn-compact`，[檢查工具](/guide/contracts#diagnostics)會回報 `unknown-class`。
 
+### 你的規則所在的位置 \{#rule-layer\}
+
+函式庫的所有規則都位於 `components.ui`，也就是 `components` 層內的一個層。你寫在 `@layer components` 的規則位於這個內層之外，因此不論雙方選擇器的權重高低，也不論打包工具把兩份樣式表放在何處，你的規則都會優先於元件。它不需要重複類別、加長選擇器或使用 `!important`，而 utility 仍然優先於它。寫在任何層之外的規則同樣會優先，而且也優先於 utility。
+
+```css name=app.css
+@layer components {
+  .compact-control {
+    --btn-height: 2rem;
+    --btn-padding-x: .75rem;
+  }
+}
+```
+
+這個層會帶來三個結果：
+
+- **元件的狀態樣式也會輸給你的規則。** 選擇器權重只在同一個層內比較。因此，你的規則宣告了某個屬性後，元件在 `:hover`、`:focus-visible`、`:disabled`、`[aria-pressed="true"]` 這類屬性選擇器以及修飾類別下對同一屬性的宣告，也都會被蓋過。請查看元件的樣式表中設定同一屬性的規則，並自行補上仍然需要的部分。
+- **`!important` 的方向相反。** 在標示為 important 的宣告之間，內層優先於層外的規則，因此你寫的 `!important` 無法蓋過 `components.ui` 中的 `!important`。函式庫沒有使用它，你的規則也不需要。
+- **元件之間仍依順序決定。** 函式庫的兩份樣式表在權重相同時，順序較後者優先。完整匯入會固定這個順序；使用模組匯入時，請不要依賴它。
+
+你[接管](#own-a-component)的元件，其副本仍保留 `@layer components.ui`，因此與其他元件位於同一層。
+
 ## 4. 主題 \{#theme\}
 
 若要變更材質，例如採用平面外觀、細線邊框或略帶色彩的中性色，請建立主題，也就是在函式庫之後匯入的 token 檔案。Paper 是套件隨附的第二套主題，所有元件都沿用原有實作。
@@ -151,7 +172,7 @@ npx master-ui own menu  # copies ui/menu.css, ui/menu.json and its behavior; rep
 CLI 讀取專案設定時，會採用複製到本機的契約 `ui/menu.json`，取代函式庫的契約。代理也應讀取這份本機契約。在 `ui/menu.css` 中新增、重新命名或移除類別時，請同步修改 `ui/menu.json`。下方先示範在樣式表中新增部件，再列出要附加到契約 `classes` 陣列的項目：
 
 ```css name=ui/menu.css
-@layer components {
+@layer components.ui {
   /* A quiet line under the last group: the account that is signed in. */
   .menu-note {
     padding: .4375rem .5rem;
@@ -218,7 +239,7 @@ menu  upstream changed: menu.css (master-ui diff menu); edited here: menu.css
 - **以規則選取函式庫類別，重新宣告其表面、邊緣或陰影樣式。** 請使用 token、公開屬性，或接管元件。
 - **使用文件未記載的元件屬性。** 請使用元件契約列出的屬性，或另有文件說明的主題 token。元件內部屬性可能在未事先通知的情況下變更。
 - **從外部新增類別來重設函式庫元件的樣式**，例如在 `.my-btn.btn` 中加入材質宣告。專案自訂類別可設定公開屬性及版面配置。要使用新材質，請建立新元件或接管既有元件。
-- **強行提高套用優先順序。** 請勿提高選擇器權重或使用 `!important` 來壓過元件樣式。Utility 所在的層本來就有較高優先順序。如果覆寫仍需要更高的優先順序，就該接管元件。
+- **強行提高套用優先順序。** 請勿提高選擇器權重或使用 `!important` 來壓過元件樣式。Utility 所在的層本來就有較高優先順序，你寫在 `@layer components` 的規則也是如此。如果覆寫仍需要更高的優先順序，就該接管元件。
 
 ```css name=app.css
 /* Not a customization: it redraws what button.css draws, and will not follow it. */

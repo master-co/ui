@@ -37,7 +37,7 @@ import GuideFigure from '../../../components/GuideFigure.astro'
 
 ## 1. 유틸리티 \{#utility\}
 
-컴포넌트 클래스는 `components` 레이어에 있고, 유틸리티는 그보다 뒤에 오는 `utilities` 레이어에 있습니다. 따라서 `!important`를 쓰거나 프로젝트 스타일시트에 규칙을 추가하지 않아도 요소에 지정한 유틸리티가 우선합니다.
+컴포넌트 클래스는 `components` 레이어 안의 `components.ui` 레이어에 있고, 유틸리티는 그보다 뒤에 오는 `utilities` 레이어에 있습니다. 따라서 `!important`를 쓰거나 프로젝트 스타일시트에 규칙을 추가하지 않아도 요소에 지정한 유틸리티가 우선합니다.
 
 ```html
 <button type="button" class="btn btn-primary w-full">Save changes</button>
@@ -96,6 +96,27 @@ import GuideFigure from '../../../components/GuideFigure.astro'
 
 프로젝트에서 정의하는 클래스에는 라이브러리의 명명 규칙과 겹치지 않는 이름을 붙이세요. [검사기](/guide/contracts#diagnostics)는 `btn-compact`처럼 컴포넌트의 루트 클래스 이름 뒤에 하이픈이 붙는 형태로 시작하는 클래스를 `unknown-class`로 보고합니다.
 
+### 프로젝트 규칙이 놓이는 위치 \{#rule-layer\}
+
+라이브러리의 모든 규칙은 `components` 레이어 안에 있는 `components.ui` 레이어에 들어 있습니다. `@layer components`에 작성한 프로젝트 규칙은 이 안쪽 레이어의 바깥에 놓이므로, 두 선택자의 명시도가 어떻든, 번들러가 두 스타일시트를 어디에 두든 컴포넌트보다 우선합니다. 클래스를 중복해 쓰거나 선택자를 길게 만들거나 `!important`를 사용할 필요가 없으며, 유틸리티는 여전히 이 규칙보다 우선합니다. 어떤 레이어에도 넣지 않은 규칙도 마찬가지로 우선하며, 이 경우에는 유틸리티보다도 우선합니다.
+
+```css name=app.css
+@layer components {
+  .compact-control {
+    --btn-height: 2rem;
+    --btn-padding-x: .75rem;
+  }
+}
+```
+
+이 레이어에서 세 가지 결과가 따라옵니다.
+
+- **컴포넌트의 상태 스타일도 프로젝트 규칙에 밀립니다.** 명시도는 같은 레이어 안에서만 비교됩니다. 따라서 프로젝트 규칙이 어떤 속성을 선언하면, 컴포넌트가 `:hover`, `:focus-visible`, `:disabled`, `[aria-pressed="true"]` 같은 속성 선택자와 수정자에서 같은 속성에 대해 선언한 값보다도 우선합니다. 컴포넌트의 스타일시트에서 같은 속성을 설정하는 규칙을 확인하고, 계속 필요한 것은 프로젝트 규칙에 직접 다시 작성하세요.
+- **`!important`는 반대 방향으로 작동합니다.** important 선언끼리는 안쪽 레이어가 그 바깥의 규칙보다 우선합니다. 따라서 프로젝트의 `!important`는 `components.ui` 안의 `!important`보다 우선하지 않습니다. 라이브러리는 `!important`를 사용하지 않으며, 프로젝트 규칙에도 필요하지 않습니다.
+- **컴포넌트끼리는 여전히 순서로 결정됩니다.** 라이브러리의 두 스타일시트는 명시도가 같으면 뒤에 오는 쪽이 우선합니다. 전체 가져오기는 이 순서를 고정합니다. 모듈 가져오기를 사용할 때는 이 순서에 의존하지 마세요.
+
+[직접 관리](#own-a-component)하는 컴포넌트의 사본은 `@layer components.ui`를 그대로 유지하므로 다른 컴포넌트와 같은 레이어에 놓입니다.
+
 ## 4. 테마 \{#theme\}
 
 평평한 표면, 선을 두른 가장자리, 색조를 입힌 중립색처럼 재질 자체를 바꿀 때는 테마를 사용하세요. 테마는 라이브러리 뒤에 가져오는 토큰 파일입니다. Paper는 패키지에서 제공하는 두 번째 테마로, 컴포넌트 자체는 수정하지 않습니다.
@@ -151,7 +172,7 @@ npx master-ui own menu  # copies ui/menu.css, ui/menu.json and its behavior; rep
 CLI가 이 프로젝트의 설정을 읽을 때는 복사한 계약인 `ui/menu.json`을 라이브러리 계약 대신 사용합니다. 에이전트도 이 로컬 계약을 읽어야 합니다. `ui/menu.css`에서 클래스를 추가하거나 이름을 바꾸거나 삭제할 때는 `ui/menu.json`도 함께 수정하세요. 아래에서는 스타일시트에 구성 요소를 추가한 뒤 계약의 `classes` 배열 끝에 넣을 항목을 보여 줍니다.
 
 ```css name=ui/menu.css
-@layer components {
+@layer components.ui {
   /* A quiet line under the last group: the account that is signed in. */
   .menu-note {
     padding: .4375rem .5rem;
@@ -218,7 +239,7 @@ menu  upstream changed: menu.css (master-ui diff menu); edited here: menu.css
 - **라이브러리 클래스를 선택해 표면, 가장자리, 그림자 중 하나를 다시 선언하는 규칙.** 디자인 토큰이나 속성을 사용하거나 컴포넌트를 직접 관리하세요.
 - **문서에 없는 컴포넌트 속성.** 해당 계약에 명시된 속성이나 별도로 문서화된 테마의 디자인 토큰을 사용하세요. 컴포넌트 내부 속성은 예고 없이 바뀔 수 있습니다.
 - **라이브러리 컴포넌트의 스타일을 외부에서 바꾸는 새 클래스**. 예를 들어 재질을 정의하는 선언을 넣은 `.my-btn.btn`이 이에 해당합니다. 프로젝트 클래스에서는 공개 속성과 레이아웃을 설정할 수 있습니다. 새 재질이 필요하면 새 컴포넌트를 만들거나 기존 컴포넌트를 직접 관리하세요.
-- **우선순위 강제.** 컴포넌트 스타일을 덮어쓰기 위해 명시도를 높이거나 `!important`를 사용하지 마세요. 유틸리티는 캐스케이드 레이어의 순서에 따라 이미 우선합니다. 그 이상의 재정의가 필요하다면 컴포넌트를 직접 관리하세요.
+- **우선순위 강제.** 컴포넌트 스타일을 덮어쓰기 위해 명시도를 높이거나 `!important`를 사용하지 마세요. 유틸리티는 캐스케이드 레이어의 순서에 따라 이미 우선하며, `@layer components`에 작성한 프로젝트 규칙도 마찬가지입니다. 그 이상의 재정의가 필요하다면 컴포넌트를 직접 관리하세요.
 
 ```css name=app.css
 /* Not a customization: it redraws what button.css draws, and will not follow it. */

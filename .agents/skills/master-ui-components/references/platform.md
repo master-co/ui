@@ -42,7 +42,7 @@ Do not add a dependency or a script for placement, focus trapping, dismissal, au
 
 ## Overlays
 
-- **Never set `display` on a closed overlay.** The browser hides a closed `<dialog>` and popover with `display: none`; a `display` in `@layer components` would beat it and show the element. Set layout properties (`flex-direction`, `gap`) on the base rule and `display` only under `&[open]` or `&:popover-open`.
+- **Never set `display` on a closed overlay.** The browser hides a closed `<dialog>` and popover with `display: none`; a `display` in `@layer components.ui` would beat it and show the element. Set layout properties (`flex-direction`, `gap`) on the base rule and `display` only under `&[open]` or `&:popover-open`.
 - **The base rule is where it leaves to.** Write the closed state (`opacity: 0`, a smaller `scale`) on the base rule with the exit duration, the open state under `[open]` / `:popover-open` with the entrance duration, and the first frame in `@starting-style` inside the open rule. List `overlay` and `display` in `transition-property` and set `transition-behavior: allow-discrete`. Popovers get all of this from `@apply --pop`.
 - **An exit is shorter than its entrance** and travels less. With reduced motion remove `scale` and `translate` in every state, including inside `@starting-style`, and keep the fade.
 - **`::backdrop` takes its own transition.** Write its starting style as a nested rule with a selector, `@starting-style { &[open]::backdrop { … } }`, not as bare declarations inside a rule whose selector ends in a pseudo-element.
@@ -81,7 +81,7 @@ Do not add a dependency or a script for placement, focus trapping, dismissal, au
 
 - A rule that contains `@apply` is flattened by the compiler; a rule without it passes through as native nesting. In native nesting `&` cannot stand for a pseudo-element, so states of a pseudo-element are written from the element: `&:open::picker(select)`, `&[open]::details-content`.
 - The compiler folds `animation-timeline` into the `animation` shorthand and writes a value no browser reads. For a scroll-driven animation use longhands only: `animation-name`, `animation-timing-function`, `animation-fill-mode`, `animation-timeline`, `animation-range`.
-- `@property` and `@keyframes` go outside `@layer components`, at the top level of the file.
+- `@property`, `@keyframes`, `@position-try` and `@counter-style` go outside `@layer components.ui`, at the top level of the file. Nothing else does.
 - The compiler unwraps a single-argument `:is()`, so `:not(:is(:open))` is written out as `:not(:open)` and loses its forgiveness. Do not exclude a newer pseudo-class from a baseline rule; let a later rule of equal weight, with the pseudo-class inside a multi-argument `:is()`, override it (see the hover and open states in `select.css`).
 - Diagnostics for new properties are reported as `information` ("Unverified CSS value"). The tests fail on warnings and errors only.
 

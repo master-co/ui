@@ -32,7 +32,7 @@ So ask what the change is to: one instance, a value every component reads, a val
 
 ## 1. A utility \{#utility\}
 
-Component classes are in the `components` layer and utilities in the later `utilities` layer, so a utility on the element wins without `!important` and without a rule in your stylesheet.
+Component classes are in `components.ui`, a layer inside `components`, and utilities in the later `utilities` layer, so a utility on the element wins without `!important` and without a rule in your stylesheet.
 
 ```html
 <button type="button" class="btn btn-primary w-full">Save changes</button>
@@ -91,6 +91,27 @@ A component declares these properties on its own class, so a value set only on a
 
 Name a project class outside the library's names. The [checker](/guide/contracts#diagnostics) reports a class that starts with a component's root and a dash, such as `btn-compact`, as `unknown-class`.
 
+### Where your rule stands \{#rule-layer\}
+
+Every rule of the library is in `components.ui`, a layer inside `components`. A rule of your own in `@layer components` stands outside that inner layer, so it wins over the component whatever the two selectors' specificity is and wherever a bundle puts the two stylesheets. It never needs a doubled class, a longer selector or `!important`, and utilities still win over it. A rule outside any layer wins as well, over utilities too.
+
+```css name=app.css
+@layer components {
+  .compact-control {
+    --btn-height: 2rem;
+    --btn-padding-x: .75rem;
+  }
+}
+```
+
+Three things follow from the layer:
+
+- **A component's states lose to your rule too.** Specificity is compared only inside one layer. A property your rule declares therefore also beats what the component declares for that property under `:hover`, `:focus-visible`, `:disabled` or an attribute such as `[aria-pressed="true"]`, and under its modifiers. Read the component's stylesheet for the rules that set the same property, and restate the ones you still want.
+- **`!important` runs the other way.** Among important declarations an inner layer wins over the rules outside it, so an `!important` of yours does not beat one in `components.ui`. The library writes none, and your rules need none.
+- **Components still follow one another in order.** Between two stylesheets of the library the later one wins at equal specificity. The full import fixes that order; with module imports, do not rely on it.
+
+A component you [own](#own-a-component) keeps `@layer components.ui` in its copy, so it stands with the others.
+
 ## 4. A theme \{#theme\}
 
 When the change is to the material, such as flat faces, ruled edges or a tinted neutral, it is a theme: a file of tokens imported after the library. Paper is a second theme published in the package, and it changes no component.
@@ -146,7 +167,7 @@ The copy still reads the theme's tokens and applies its mixins, so it follows th
 The copied contract, `ui/menu.json`, replaces the library's when the CLI reads this project's configuration. An agent should read that local contract too. When a class is added, renamed or removed in `ui/menu.css`, change `ui/menu.json` with it. Here a part is added to the stylesheet, followed by the entry to append to the contract's `classes` array:
 
 ```css name=ui/menu.css
-@layer components {
+@layer components.ui {
   /* A quiet line under the last group: the account that is signed in. */
   .menu-note {
     padding: .4375rem .5rem;
@@ -213,7 +234,7 @@ These overrides can change the result, but they bypass the supported customizati
 - **A rule that selects a library class and redeclares its face, edge or shadow.** Use a token, a property, or own the component.
 - **An undocumented component property.** Use the properties listed in its contract or the separately documented theme tokens. Internal component properties can change without notice.
 - **A new class that restyles a library component from outside**, such as `.my-btn.btn` with material declarations. A project class may set public properties and layout. A new material is a new component or an owned one.
-- **Winning by force.** Never raise specificity or use `!important` to beat a component. A utility already wins by its layer, and an override that needs more than that is a reason to own the component.
+- **Winning by force.** Never raise specificity or use `!important` to beat a component. A utility already wins by its layer, and so does a rule of yours in `@layer components`; an override that needs more than that is a reason to own the component.
 
 ```css name=app.css
 /* Not a customization: it redraws what button.css draws, and will not follow it. */

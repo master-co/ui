@@ -12,6 +12,23 @@ A change belongs on the lowest step that can express it. Each step up costs more
 
 A property the contract gives a default is declared on the component's own class, so a value set on an ancestor does not reach it. Set it on the element itself, as in step 3.
 
+## Where a project rule stands
+
+Every rule of the library is in `components.ui`, a layer inside `components`. Write a project rule in `@layer components`: it stands outside that inner layer, so it wins over the component whatever the two selectors' specificity is and wherever a bundle puts the two stylesheets, and utilities still win over it. A rule outside any layer wins too, over utilities as well. Never double a class, lengthen a selector or add `!important` to win.
+
+```css
+@layer components {
+  .compact-control { --btn-height: 2rem; --btn-padding-x: .75rem; }
+}
+```
+
+What follows from the layer:
+
+- A component's states lose to the project rule too. Specificity is compared only inside one layer, so a property the rule declares also beats what the component declares for it under `:hover`, `:focus-visible`, `:disabled` or an attribute such as `[aria-pressed="true"]`. Read the stylesheet for the states that set the same property, and restate the ones the project still wants. A project in an older version of the library, where a state used to win by specificity, must check this after upgrading.
+- `!important` runs the other way: among important declarations the inner layer wins, so a project's `!important` does not beat one in `components.ui`. The library writes none; the project needs none.
+- Components still order among themselves by the order of their stylesheets. The whole library fixes it; with module imports do not rely on it.
+- A component the project owns keeps `@layer components.ui` in its copy, and so stands with the others. A component the project writes itself goes in `@layer components`.
+
 Keep project class names outside the library's class families: `btn-compact` would be reported as an unknown component class. Upstream changes arrive when the installed package is upgraded; overrides keep replacing their chosen values.
 
 ## When to own a component
@@ -32,6 +49,7 @@ npx master-ui init      # once: writes ui/index.css with one @import per stylesh
 npx master-ui own menu  # copies ui/menu.css, ui/menu.json and its behavior; repoints the import
 ```
 
+- `ui/index.css` takes the place of `@import '@master/ui'` and is then the project's one source of the library: no other stylesheet imports one of its stylesheets, and no module does. Owning this way is for a project that loads the whole library; a project that imports per stylesheet from its modules points those module imports at its copy instead.
 - Keep the contract true. If a class is added, renamed or removed, change `ui/<name>.json` too: the checker and every agent read it. Keeping the class names and state attributes means blocks, behaviors and the documentation still fit.
 - The copy still reads the theme's tokens and applies its mixins, so it follows the theme.
 - `npx master-ui status` says which owned components changed upstream since they were taken; `npx master-ui diff <name>` shows the change against the copy that was taken, kept in `ui/.base/`; after merging what is wanted, `npx master-ui accept <name>` records the new base.

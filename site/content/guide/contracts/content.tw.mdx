@@ -197,7 +197,7 @@ cart.html:3:1 warning unknown-class "price-tag-large" is not a class of price-ta
 
 ## 診斷 \{#diagnostics\}
 
-`master-ui check` 會為每筆結果輸出一行，列出檔案、行號、欄號、嚴重程度、診斷代碼和訊息。除 `unknown-class` 預設為警告外，其餘代碼都是錯誤。加上 `--strict` 後，該警告也會視為錯誤。
+`master-ui check` 會為每筆結果輸出一行，列出檔案、行號、欄號、嚴重程度、診斷代碼和訊息。除 `unknown-class` 預設為警告、`repeated-import` 一律為警告外，其餘代碼都是錯誤。加上 `--strict` 後，`unknown-class` 也會視為錯誤。最後三個代碼檢查的是專案[載入函式庫樣式表的方式](/guide/installation#one-route)，而不是標記。
 
 | 代碼 | 含義 | 修正方式 |
 | --- | --- | --- |
@@ -208,5 +208,8 @@ cart.html:3:1 warning unknown-class "price-tag-large" is not a class of price-ta
 | `element` | 類別用在契約未允許的元素上 | 改用訊息指定的元素，例如 `dialog` 應用在對話框元素上 |
 | `attribute` | 元素缺少該類別要求的屬性，或屬性值不符 | 加上訊息指定的屬性，例如 `role="switch"` |
 | `label` | 控制項沒有無障礙名稱 | 為控制項提供本身的文字、`aria-label`、`aria-labelledby`，或使用包住它或指向它的標籤 |
+| `stylesheet-import` | 樣式表或 `<style>` 區塊以 CSS `@import` 匯入單一元件的樣式表；每個這樣寫的地方都會再包含它一次 | 改由算繪該元件的模組匯入：`import '@master/ui/components/button.css'` |
+| `mixed-imports` | 專案已完整匯入函式庫，卻又有模組匯入單一樣式表，使該樣式表輸出兩次 | 只保留一種方式：完整匯入，或每份樣式表各用一個模組匯入 |
+| `repeated-import` | 完整函式庫在不只一處被匯入 | 只從一份樣式表匯入。若兩處匯入永遠不會出現在同一頁，例如同一個儲存庫中的兩個應用程式，則可保留 |
 
 檢查器直接讀取原始碼，無須算繪頁面。它可以檢查運算式中的字面類別名稱，但無法解析動態計算的類別名稱、確認框架元件會在哪裡算繪子元素，或檢查其他檔案中的根元素。遇到無法確定的情況時，檢查器會略過。即使沒有診斷訊息，也無法據此確認焦點順序、對比度、瀏覽器支援情況，或選用的元件是否適合該用途。

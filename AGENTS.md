@@ -79,7 +79,7 @@ Master Design owns general design principles and guidance at `https://design.mas
 - Soft edges: a contour is a half-pixel `box-shadow` ring, never a 1px border; shadows fade out instead of ending in a line; radii come from role tokens (`--radius-chip`, `--radius-control*`, `--radius-surface`) and a holder's corner is what it holds plus the inset.
 - Continuous corners: every radius is `calc(<radius> * var(--corner-scale))` with `corner-shape: var(--corner-shape)`, a squircle where supported and a circle elsewhere. Pills, dots, avatars and thumbs set `corner-shape: round`.
 - Gate hover with `(hover: hover)`; on `(pointer: coarse)` grow the target to 44px with `--touch-target` and never what is drawn (a control keeps its size, radius and proportions at every pointer); remove travel under reduced motion; draw system-color outlines in forced colors.
-- Never `!important`; the `utilities` layer must keep winning.
+- Never `!important`; the `utilities` layer must keep winning. Every component and layout rule is in `@layer components.ui`, inside `components`, so a project's rule in `@layer components` wins over a component whatever its specificity and wherever a bundle puts it; a test fails a rule outside that layer.
 - The registry is generated from the package; do not hand-write an item.
 
 ## Framework Components
