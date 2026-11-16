@@ -178,7 +178,7 @@ async function pollGeometry(page, { state = true, forcedColors = false, reducedM
   await page.keyboard.press('ArrowRight')
   assert.equal(await tray.locator('[data-view="code"]').isChecked(), true)
   const code = await box(source)
-  const copy = noScripts.has(page) ? undefined : await copyGeometry(source.locator('.code-panel'))
+  const copy = noScripts.has(page) ? undefined : await copyGeometry(source.locator('.code-panel:visible'))
   const currentHeader = await box(header)
   near(code.y, currentHeader.y + currentHeader.height, 'Code starts at the same header edge')
   assert.equal(await preview.evaluate(element => getComputedStyle(element).visibility), 'hidden')
@@ -336,7 +336,7 @@ test(`${engine}: matched original artifact evidence`, { skip: !process.env.MASTE
         const header = await box(tray.locator(':scope > .ui-tray-head'))
         const viewport = await box(tray.locator('.preview-window'))
         await tray.locator('[data-view="preview"]').focus(); await page.keyboard.press('ArrowRight')
-        const code = await box(tray.locator('.code-panel'))
+        const code = await box(tray.locator('.code-panel:visible'))
         const codeHeader = await box(tray.locator(':scope > .ui-tray-head'))
         await page.keyboard.press('ArrowLeft')
         await capture(tray, `before-${name}-poll`)
@@ -367,7 +367,7 @@ test(`${engine}: focused source code scrolls horizontally with the keyboard`, as
     const tray = page.locator('[data-component-preview="several"]')
     await tray.locator('[data-view="preview"]').focus()
     await page.keyboard.press('ArrowRight')
-    const pre = tray.locator('.ui-code pre')
+    const pre = tray.locator('.ui-code:visible pre')
     assert.equal(await pre.getAttribute('tabindex'), '0')
     const dimensions = await pre.evaluate(element => ({ client: element.clientWidth, content: element.scrollWidth }))
     assert.ok(dimensions.content > dimensions.client, 'The real source listing needs horizontal scrolling')
@@ -389,7 +389,7 @@ test(`${engine}: code copy background preserves the contour at rest and keyboard
       await visit(page, '/components/poll#several-answers')
       const tray = page.locator('[data-component-preview="several"]')
       await tray.locator('[data-view="preview"]').focus(); await page.keyboard.press('ArrowRight')
-      const panel = tray.locator('.code-panel')
+      const panel = tray.locator('.code-panel:visible')
       const geometry = await copyGeometry(panel)
       const crop = async state => {
         await panel.scrollIntoViewIfNeeded()
@@ -674,7 +674,7 @@ test(`${engine}: the password reset blocks hold two passwords to each other and 
     await confirm.press('Tab')
     assert.deepEqual(await shownErrors(form), ['Enter the same password again.'], 'A mismatch is the second field\'s error')
     assert.equal(await confirm.getAttribute('aria-describedby'), 'reset-confirm-error')
-    assert.equal(await confirm.evaluate(input => input.validationMessage), 'The two passwords are not the same.')
+    assert.equal(await confirm.evaluate(input => input.validationMessage), 'Enter the same password again.')
     await form.getByRole('button', { name: 'Update password' }).press('Enter')
     assert.equal(await result.isHidden(), true, 'Two passwords that differ are not sent')
 
@@ -708,7 +708,7 @@ test(`${engine}: the file upload block follows each file through a timed upload 
   try {
     const block = frame.locator('[data-example="file-upload"]').first()
     const files = () => block.locator('.file').evaluateAll(rows => rows.map(row => [row.querySelector('.file-name').textContent, row.querySelector('.file-meta').textContent, [...row.querySelectorAll('.btn')].map(button => button.getAttribute('aria-label')).join(', ')].join(' | ')))
-    const start = block.getByRole('button', { name: 'Start upload' }), input = block.locator('.dropzone-input'), status = block.locator('[role="status"]')
+    const start = block.getByRole('button', { name: 'Start upload' }), input = block.locator('.dropzone-input'), status = block.locator('[data-upload-status]')
     // Every timer the block starts, so that none is left running.
     await frame.evaluate(() => {
       const running = new Set(), set = window.setInterval, clear = window.clearInterval
