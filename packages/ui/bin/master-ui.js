@@ -5,8 +5,9 @@
  *   master-ui list [--json]             every contract, one line each
  *   master-ui contract <name…>          one contract as JSON: classes, states, properties, example; a class
  *                                       name finds the contract it belongs to
- *   master-ui check [paths…]            report markup that breaks a contract; a path is a file, a directory or a
- *                                       glob (--strict: a class that only looks like one is an error, --json)
+ *   master-ui check [paths…]            report markup that breaks a contract, and a stylesheet of the library that
+ *                                       is loaded twice; a path is a file, a directory or a glob (--strict: a
+ *                                       class that only looks like one is an error, --json)
  *   master-ui init                      write ui/index.css, one @import per stylesheet (--directory=src/ui for
  *                                       another place than ui/, --force to write it again)
  *   master-ui own <name…>               copy a component's stylesheet, contract and behavior into the project
@@ -26,7 +27,7 @@ import { createHash } from 'node:crypto'
 import { existsSync, globSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
 import { dirname, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { check, createIndex, format } from '../check/index.js'
+import { check, checkImports, createIndex, format, imports as importsOf } from '../check/index.js'
 
 const pkgRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const pkg = JSON.parse(readFileSync(join(pkgRoot, 'package.json'), 'utf8'))
@@ -201,19 +202,29 @@ const commands = {
   },
 
   async check() {
-    const patterns = names.length ? names : ['**/*.{html,htm,astro,svelte,vue,jsx,tsx,mdx,erb,php,njk,liquid,hbs}']
-    const files = [...new Set(patterns.flatMap(pattern => existsSync(join(cwd, pattern)) && statSync(join(cwd, pattern)).isFile()
+    // Markup is checked against the contracts; stylesheets and modules are read for how they import the library.
+    const markup = 'html,htm,astro,svelte,vue,jsx,tsx,mdx,erb,php,njk,liquid,hbs'
+    const sources = `${markup},css,scss,sass,less,pcss,postcss,js,mjs,cjs,ts,mts,cts`
+    const isMarkup = (/** @type {string} */ file) => !/\.(?:css|scss|sass|less|pcss|postcss|[cm]?[jt]s)$/.test(file)
+    const patterns = names.length ? names : [`**/*.{${sources}}`]
+    const found = [...new Set(patterns.flatMap(pattern => existsSync(join(cwd, pattern)) && statSync(join(cwd, pattern)).isFile()
       ? [pattern]
-      : globSync(existsSync(join(cwd, pattern)) ? `${pattern}/**/*.{html,htm,astro,svelte,vue,jsx,tsx,mdx,erb,php,njk,liquid,hbs}` : pattern, { cwd, exclude: path => /(^|\/)(node_modules|dist|out|build|\.git|\.astro|\.next|\.svelte-kit)(\/|$)/.test(path) })))]
+      : globSync(existsSync(join(cwd, pattern)) ? `${pattern}/**/*.{${sources}}` : pattern, { cwd, exclude: path => /(^|\/)(node_modules|dist|out|build|\.git|\.astro|\.next|\.svelte-kit)(\/|$)/.test(path) })))]
+      .map(file => file.replaceAll('\\', '/'))
+    const files = found.filter(isMarkup)
     const index = createIndex(contracts())
     const knows = await utilities()
-    const results = files.map(file => ({ file, diagnostics: check(read(join(cwd, file)), index, { knows, strict: flags.has('--strict') }) })).filter(result => result.diagnostics.length)
+    /** @type {Map<string, import('../check/index.js').Diagnostic[]>} */
+    const byFile = new Map(files.map(file => [file, check(read(join(cwd, file)), index, { knows, strict: flags.has('--strict') })]))
+    const loaded = found.map(file => ({ file, imports: importsOf(read(join(cwd, file)), file) })).filter(item => item.imports.length)
+    for (const { file, diagnostics } of checkImports(loaded, { entry: config().entry })) byFile.set(file, [...byFile.get(file) ?? [], ...diagnostics])
+    const results = [...byFile].map(([file, diagnostics]) => ({ file, diagnostics })).filter(result => result.diagnostics.length)
     const all = results.flatMap(result => result.diagnostics)
-    if (flags.has('--json')) console.log(JSON.stringify({ files: files.length, results }, null, 2))
+    if (flags.has('--json')) console.log(JSON.stringify({ files: found.length, results }, null, 2))
     else {
       for (const { file, diagnostics } of results) console.log(format(diagnostics, file))
       const errors = all.filter(diagnostic => diagnostic.severity === 'error').length
-      console.log(`${results.length ? '\n' : ''}${files.length} files checked: ${errors} errors, ${all.length - errors} warnings.`)
+      console.log(`${results.length ? '\n' : ''}${found.length} files checked: ${errors} errors, ${all.length - errors} warnings.`)
     }
     if (all.some(diagnostic => diagnostic.severity === 'error')) process.exitCode = 1
   },
@@ -231,6 +242,8 @@ const commands = {
       '/*',
       ' * Master UI, one import per stylesheet. Import this file after `@import \'@master/css\'`.',
       ' * Delete a line to leave a component out. `master-ui own <name>` points a line at your own copy.',
+      ' * This file stands in place of `@import \'@master/ui\'` and is the one source of the library: no other',
+      ' * stylesheet and no module imports one of these stylesheets again.',
       ' */',
       ...imports.map(file => `@import '@master/ui/${file}';`),
       '',
@@ -261,7 +274,7 @@ const commands = {
         writeFileSync(entry, read(entry).replace(line, own))
         console.log(`Own ${name}: ${Object.keys(files).map(file => `${settings.directory}/${file}`).join(', ')}; ${settings.entry} now imports your copy.`)
       } else {
-        console.log(`Own ${name}: ${Object.keys(files).map(file => `${settings.directory}/${file}`).join(', ')}.\n  Replace the library's import of it with your copy:\n    - ${line}\n    + ${own}\n  If you import all of '@master/ui', run "master-ui init" first to get one import per stylesheet.`)
+        console.log(`Own ${name}: ${Object.keys(files).map(file => `${settings.directory}/${file}`).join(', ')}.\n  Replace the library's import of it with your copy:\n    - ${line}\n    + ${own}\n  If you import all of '@master/ui', run "master-ui init" first to get one import per stylesheet.\n  If modules import it (import '@master/ui/${stylesheet}'), point those imports at your copy instead.`)
       }
       save(settings)
     }

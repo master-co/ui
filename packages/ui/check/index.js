@@ -14,6 +14,10 @@
  * @typedef {{ knows?: (className: string) => boolean, strict?: boolean }} CheckOptions
  *   knows: whether a class that is in no contract is something else the project defines, such as a utility.
  *   strict: report a class that only looks like a Master UI class as an error; use it when `knows` is complete.
+ * @typedef {{ specifier: string, scope: 'library' | 'stylesheet', from: 'css' | 'script', line: number, column: number }} LibraryImport
+ *   scope: `library` is all of Master UI (`@master/ui`, `@master/ui/master.css`); `stylesheet` is one component
+ *   or layout stylesheet. from: a CSS `@import`, which includes the file again wherever it is written, or a
+ *   module import, which a bundler loads once.
  */
 
 const voidElements = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr'])
@@ -347,4 +351,92 @@ export function check(source, contracts, options = {}) {
  */
 export function format(diagnostics, file = '') {
   return diagnostics.map(({ line, column, severity, code, message }) => `${file}${file ? ':' : ''}${line}:${column} ${severity} ${code} ${message}`).join('\n')
+}
+
+const stylesheetFile = /\.(?:css|scss|sass|less|pcss|postcss)$/i
+const scriptFile = /\.(?:[cm]?[jt]sx?|astro|svelte|vue)$/i
+const styleBlockFile = /\.(?:html?|astro|svelte|vue)$/i
+/** Comments become spaces, so a line and a column stay where they were. */
+const blank = (/** @type {string} */ text) => text.replace(/[^\n]/g, ' ')
+const cssImport = /@(?:import|use|forward)\s+(?:url\(\s*)?(['"]?)(@master\/ui(?:\/[\w./-]+)?)\1/g
+const scriptImport = /^[ \t]*(?:import|export)\s+(?:[^'"\n;]*?\bfrom\s*)?(['"])(@master\/ui(?:\/[\w./-]+)?)\1|\b(?:import|require)\s*\(\s*(['"])(@master\/ui(?:\/[\w./-]+)?)\3\s*\)/gm
+
+/**
+ * Read where a stylesheet or a module imports Master UI's styles: all of the library, or one stylesheet of it.
+ * A comment is not an import, `@import '…' layer(…)` is one, and a specifier with a query (`?raw`, `?inline`)
+ * is left alone because it delivers no stylesheet to the page. Markdown is not read: its imports are examples.
+ * @param {string} source
+ * @param {string} file Its name: the extension says whether it is a stylesheet, a module, or markup with both.
+ * @returns {LibraryImport[]}
+ */
+export function imports(source, file) {
+  /** @type {LibraryImport[]} */
+  const found = []
+  const add = (/** @type {string} */ specifier, /** @type {'css' | 'script'} */ from, /** @type {number} */ at) => {
+    const scope = /^@master\/ui(?:\/master\.css)?$/.test(specifier) ? 'library' : /^@master\/ui\/(?:components|layouts)\/[\w-]+\.css$/.test(specifier) ? 'stylesheet' : null
+    if (!scope) return
+    const lineStart = source.lastIndexOf('\n', at - 1) + 1
+    found.push({ specifier, scope, from, line: source.slice(0, at).split('\n').length, column: at - lineStart + 1 })
+  }
+  const css = (/** @type {string} */ text) => {
+    for (const match of text.replace(/\/\*[\s\S]*?\*\//g, blank).replace(/(^|\s)\/\/.*$/gm, blank).matchAll(cssImport)) {
+      // What follows the specifier decides whether it is one: `?raw` or a longer path is something else.
+      if (/[\w?./-]/.test(text[match.index + match[0].length] ?? '') && !match[1]) continue
+      add(match[2], 'css', match.index)
+    }
+  }
+  if (stylesheetFile.test(file)) css(source)
+  else if (styleBlockFile.test(file)) {
+    // Only the text of a <style> element is CSS; everything else keeps its place and is not read as one.
+    css(source.replace(/(<style\b[^>]*>)([\s\S]*?)(<\/style>)|[^\n]/gi, (whole, open, body) => body === undefined ? ' ' : `${blank(open)}${body}${blank('</style>')}`))
+  }
+  if (scriptFile.test(file)) {
+    const script = source.replace(/\/\*[\s\S]*?\*\//g, blank).replace(/(^|\s)\/\/.*$/gm, blank)
+    for (const match of script.matchAll(scriptImport)) add(match[2] ?? match[4], 'script', match.index + match[0].search(/\S/))
+  }
+  return found.sort((a, b) => a.line - b.line || a.column - b.column)
+}
+
+/**
+ * Check how a project loads the library's stylesheets. There are two routes and a project takes one: all of
+ * `@master/ui` from one stylesheet, or one module import per stylesheet. A CSS `@import` is an include, so a
+ * stylesheet imported by two files, or by the whole library and again on its own, is delivered twice, and which
+ * copy comes last differs from page to page. A bundler loads a module import once.
+ * @param {{ file: string, imports: LibraryImport[] }[]} files Every file of the project that imports the library.
+ * @param {{ entry?: string }} [options]
+ *   entry: the project's own entry, written by `master-ui init`. It stands for the whole library and is the one
+ *   stylesheet that imports the others.
+ * @returns {{ file: string, diagnostics: Diagnostic[] }[]}
+ */
+export function checkImports(files, options = {}) {
+  /** @type {Map<string, Diagnostic[]>} */
+  const reported = new Map()
+  const report = (/** @type {string} */ file, /** @type {LibraryImport} */ { line, column }, /** @type {Omit<Diagnostic, 'line' | 'column'>} */ diagnostic) => {
+    reported.set(file, [...reported.get(file) ?? [], { ...diagnostic, line, column }])
+  }
+  const isEntry = (/** @type {string} */ file) => options.entry !== undefined && file.replaceAll('\\', '/') === options.entry.replaceAll('\\', '/').replace(/^\.\//, '')
+  // The project's entry is the whole library when it imports the library's stylesheets.
+  const whole = files.flatMap(({ file, imports: found }) => isEntry(file)
+    ? found.filter(item => item.scope === 'stylesheet' && item.from === 'css').slice(0, 1).map(item => ({ file, item }))
+    : found.filter(item => item.scope === 'library').map(item => ({ file, item })))
+
+  for (const { file, imports: found } of files) {
+    if (isEntry(file)) continue
+    const single = found.filter(item => item.scope === 'stylesheet')
+    for (const item of single.filter(item => item.from === 'css')) {
+      report(file, item, { code: 'stylesheet-import', severity: 'error', message: `"${item.specifier}" is imported with a CSS @import in ${file}. A CSS @import includes the file again in every stylesheet that names it. Import it from the module that renders the component: import '${item.specifier}'.` })
+    }
+    const modules = single.filter(item => item.from === 'script')
+    if (whole.length && modules.length) {
+      const more = modules.length > 1 ? ` (and ${modules.length - 1} more in this file)` : ''
+      report(file, modules[0], { code: 'mixed-imports', severity: 'error', message: `"${modules[0].specifier}" is imported on its own${more}, and ${whole[0].file} imports all of Master UI, so the stylesheet is delivered twice. Take one route: all of '@master/ui' from one stylesheet, or one module import per stylesheet.` })
+    }
+  }
+  if (whole.length > 1) {
+    for (const { file, item } of whole) {
+      const others = [...new Set(whole.filter(other => other.item !== item).map(other => other.file))]
+      report(file, item, { code: 'repeated-import', severity: 'warning', message: `All of Master UI is imported here and in ${others.join(', ')}. Two imports that reach the same page deliver it twice: import it from one stylesheet.` })
+    }
+  }
+  return [...reported].map(([file, diagnostics]) => ({ file, diagnostics: diagnostics.sort((a, b) => a.line - b.line || a.column - b.column) }))
 }

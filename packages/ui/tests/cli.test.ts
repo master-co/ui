@@ -41,6 +41,43 @@ test('check reports what breaks a contract and fails the command', () => {
   } finally { remove() }
 })
 
+test('check reports a stylesheet of the library that is loaded twice', () => {
+  const { run, write, remove } = project()
+  try {
+    // One route: the whole library, with the example in a comment and the theme beside it left alone.
+    write('app.css', '/* @import \'@master/ui/components/button.css\'; */\n@import \'@master/css\';\n@import \'@master/ui\' layer(components);\n@import \'@master/ui/themes/paper.css\';')
+    write('page.html', '<button type="button" class="btn">Save</button>')
+    assert.equal(run('check').status, 0)
+
+    // The other route beside it: a module imports one stylesheet.
+    write('field.ts', 'import \'@master/ui/components/input.css\'\n')
+    const mixed = run('check', '--json')
+    assert.equal(mixed.status, 1)
+    assert.deepEqual(JSON.parse(mixed.out).results.map((result: { file: string, diagnostics: { code: string }[] }) => [result.file, ...result.diagnostics.map(diagnostic => diagnostic.code)]), [['field.ts', 'mixed-imports']])
+
+    // A CSS @import of one stylesheet is reported with its file, and the module import to write instead.
+    write('app.css', '@import \'@master/css\';\n@import \'@master/ui/theme.css\';\n@import \'@master/ui/components/button.css\';')
+    const included = run('check')
+    assert.equal(included.status, 1)
+    assert.match(included.out, /^app\.css:3:1 error stylesheet-import .*import '@master\/ui\/components\/button\.css'\./m)
+    assert.doesNotMatch(included.out, /mixed-imports/, 'with the whole library gone, the module import is the one route')
+    assert.equal(run('check', 'page.html').status, 0, 'a path names what is read')
+  } finally { remove() }
+})
+
+test('check leaves alone the entry init writes, and reports a module import beside it', () => {
+  const { run, write, remove } = project()
+  try {
+    assert.equal(run('init').status, 0)
+    write('app.css', '@import \'@master/css\';\n@import \'./ui/index.css\';')
+    assert.equal(run('own', 'menu').status, 0)
+    const clean = run('check')
+    assert.equal(clean.status, 0, clean.out)
+    write('field.ts', 'import \'@master/ui/components/input.css\'\n')
+    assert.match(run('check').out, /^field\.ts:1:1 error mixed-imports .*ui\/index\.css imports all of Master UI/m)
+  } finally { remove() }
+})
+
 test('a project contract is read, and one with a library name replaces it', () => {
   const { run, write, remove } = project()
   try {

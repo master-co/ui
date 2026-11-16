@@ -37,14 +37,21 @@ Import Master UI after the Master CSS preset in your app stylesheet:
 @import '@master/ui';
 ```
 
-Or import only the theme and the components you use:
+Or, in an app that loads styles on demand, keep the theme in the stylesheet and import each stylesheet from the module that renders it:
 
 ```css
 @import '@master/css';
 @import '@master/ui/theme.css';
-@import '@master/ui/components/button.css';
-@import '@master/ui/layouts/shell.css';
 ```
+
+```js
+import '@master/ui/components/button.css'
+import '@master/ui/layouts/shell.css'
+```
+
+Take one route, never both. A CSS `@import` includes a file again wherever it is written, so the full import beside a single stylesheet, or a CSS `@import` of one component, delivers that stylesheet twice; a bundler loads a module import once. A library built on Master UI imports per stylesheet from its modules, and so does an app that uses it. See [Keep to one route](https://ui.master.co/guide/installation#one-route).
+
+Every rule of the library is in `@layer components.ui`, a layer inside `components`. Utilities in your markup win over it, and so does a rule of your own in `@layer components`, whatever its specificity and wherever a bundle puts it. A property your rule declares then also beats what the component declares for it in a state such as `:hover` or `:disabled`. See [Where your rule stands](https://ui.master.co/guide/customization#rule-layer).
 
 ## Use
 
@@ -216,7 +223,7 @@ npx master-ui diff menu           # what changed upstream since it was taken
 npx master-ui accept menu         # record that the change has been merged
 ```
 
-`check` reads HTML and templates that look like it (JSX, Svelte, Vue, Astro). It reports a modifier without its base, a part outside its root, two exclusive modifiers together, a class on the wrong element, a missing attribute or accessible name, and a class that looks like one of the library's but is in no contract, which is a warning unless `--strict` makes it an error; `--json` prints the diagnostics for a program. A project's own contracts are read too, from `ui/*.json` and the globs `contracts` lists in `master-ui.json`, and one with the name of a library contract replaces it.
+`check` reads HTML and templates that look like it (JSX, Svelte, Vue, Astro). It reports a modifier without its base, a part outside its root, two exclusive modifiers together, a class on the wrong element, a missing attribute or accessible name, and a class that looks like one of the library's but is in no contract, which is a warning unless `--strict` makes it an error. It also reads stylesheets and modules for how they load the library: a CSS `@import` of one component (`stylesheet-import`), the full library beside a module import of one stylesheet (`mixed-imports`), and the full library imported in more than one place (`repeated-import`, a warning). `--json` prints the diagnostics for a program. A project's own contracts are read too, from `ui/*.json` and the globs `contracts` lists in `master-ui.json`, and one with the name of a library contract replaces it.
 
 ```js
 import { check, createIndex } from '@master/ui/check'

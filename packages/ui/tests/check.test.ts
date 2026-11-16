@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { check, createIndex, parse } from '../check/index.js'
+import { check, checkImports, createIndex, imports, parse } from '../check/index.js'
 import { contracts } from './support.ts'
 
 /** The checker's own rules, each with markup that breaks it and markup that must be left alone. */
@@ -118,4 +118,69 @@ test('the parser keeps the tree', () => {
   assert.equal(list.tag, 'ul')
   assert.equal(item.parent, list)
   assert.equal(list.text, true)
+})
+
+/** How a project loads the library: what `imports` reads from one file, and what `checkImports` says of them together. */
+const read = (source: string, file: string) => imports(source, file).map(item => `${item.from} ${item.scope} ${item.specifier}`)
+const importCodes = (files: Record<string, string>, options = {}) => checkImports(Object.entries(files).map(([file, source]) => ({ file, imports: imports(source, file) })), options)
+  .flatMap(result => result.diagnostics.map(diagnostic => `${result.file} ${diagnostic.code}`)).sort()
+
+test('imports reads a stylesheet for the library and for one stylesheet of it', () => {
+  assert.deepEqual(read('@import \'@master/css\';\n@import "@master/ui";', 'app.css'), ['css library @master/ui'])
+  assert.deepEqual(read('@import \'@master/ui/master.css\' layer(components);', 'app.css'), ['css library @master/ui/master.css'])
+  assert.deepEqual(read('@import url("@master/ui/components/button.css") layer(ui) screen;\n@import url(@master/ui/layouts/shell.css);', 'app.css'), ['css stylesheet @master/ui/components/button.css', 'css stylesheet @master/ui/layouts/shell.css'])
+  assert.deepEqual(read('@use \'@master/ui/components/menu.css\';', 'app.scss'), ['css stylesheet @master/ui/components/menu.css'])
+  assert.deepEqual(imports('\n  @import \'@master/ui\';', 'app.css').map(item => [item.line, item.column]), [[2, 3]])
+})
+
+test('imports leaves alone a comment, the theme, a relative path and anything that is not a stylesheet of the library', () => {
+  assert.deepEqual(read('/*\n * Import after the preset:\n *   @import \'@master/ui\';\n */\n@import \'./theme.css\';\n@import \'./components/button.css\';', 'master.css'), [], 'the library\'s own entry')
+  assert.deepEqual(read('/* @import \'@master/ui\'; @import \'@master/ui/themes/paper.css\'; */\n@theme { --color-brand: red }', 'paper.css'), [])
+  assert.deepEqual(read('@import \'@master/ui/theme.css\';\n@import \'@master/ui/themes/paper.css\';\n@import \'@master/ui/standalone.css\';\n@reference \'@master/ui\';\n@import \'@master/ui-kit\';\n@import \'@master/ui/components/button.css.map\';', 'app.css'), [])
+  assert.deepEqual(read('// import \'@master/ui/components/button.css\'\n/* import \'@master/ui\' */\nimport source from \'@master/ui/theme.css?raw\'\nimport raw from \'@master/ui/components/button.css?raw\'\nimport { attach } from \'@master/ui/behaviors\'\nimport contract from \'@master/ui/components/button.json\'\nconst entry = import.meta.resolve(\'@master/ui/master.css\')\nconst css = `@import \'@master/ui/components/button.css\';`', 'app.ts'), [])
+  assert.deepEqual(read('```css\n@import \'@master/ui\';\n@import \'@master/ui/components/button.css\';\n```', 'content.mdx'), [], 'an example in Markdown')
+})
+
+test('imports reads a module, and the script and the style of a template', () => {
+  assert.deepEqual(read('import \'@master/ui/components/input.css\'\nimport styles from "@master/ui/components/menu.css"\nawait import(\'@master/ui/layouts/shell.css\')\nrequire(\'@master/ui\')', 'main.ts'), ['script stylesheet @master/ui/components/input.css', 'script stylesheet @master/ui/components/menu.css', 'script stylesheet @master/ui/layouts/shell.css', 'script library @master/ui'])
+  assert.deepEqual(read('---\nimport \'@master/ui/components/pager.css\'\n---\n<p>@import \'@master/ui\';</p>\n<style>\n  @import \'@master/ui/components/button.css\';\n</style>', 'Pager.astro'), ['script stylesheet @master/ui/components/pager.css', 'css stylesheet @master/ui/components/button.css'])
+  assert.deepEqual(read('<script>\n  import \'@master/ui/components/slider.css\'\n</script>\n<input type="range" class="slider" aria-label="Zoom">', 'Zoom.svelte'), ['script stylesheet @master/ui/components/slider.css'])
+  assert.deepEqual(read('<style>@import "@master/ui";</style><pre>@import \'@master/ui/components/button.css\';</pre>', 'index.html'), ['css library @master/ui'])
+})
+
+test('one route alone is left alone: the whole library once, or one module import per stylesheet', () => {
+  assert.deepEqual(importCodes({ 'app.css': '@import \'@master/css\';\n@import \'@master/ui\';\n@import \'@master/ui/themes/paper.css\';' }), [])
+  assert.deepEqual(importCodes({ 'app.css': '@import \'@master/css\';\n@import \'@master/ui/theme.css\';', 'Field.tsx': 'import \'@master/ui/components/input.css\'', 'Save.tsx': 'import \'@master/ui/components/button.css\'\nimport \'@master/ui/components/input.css\'' }), [])
+})
+
+test('a stylesheet of the library imported with a CSS @import is reported, with the module import to write', () => {
+  const [result] = checkImports([{ file: 'src/app.css', imports: imports('@import \'@master/css\';\n@import \'@master/ui/theme.css\';\n@import \'@master/ui/components/button.css\' layer(components);', 'src/app.css') }])
+  assert.equal(result.file, 'src/app.css')
+  assert.deepEqual(result.diagnostics.map(({ code, severity, line, column }) => ({ code, severity, line, column })), [{ code: 'stylesheet-import', severity: 'error', line: 3, column: 1 }])
+  assert.match(result.diagnostics[0].message, /src\/app\.css/)
+  assert.match(result.diagnostics[0].message, /import '@master\/ui\/components\/button\.css'\./)
+  assert.deepEqual(importCodes({ 'Card.vue': '<style>\n@import \'@master/ui/components/card.css\';\n</style>' }), ['Card.vue stylesheet-import'])
+})
+
+test('the whole library and a stylesheet on its own are two routes, reported where the stylesheet is imported', () => {
+  const files = { 'app.css': '@import \'@master/css\';\n@import \'@master/ui\';', 'Field.tsx': 'import \'@master/ui/components/input.css\'\nimport \'@master/ui/components/select.css\'', 'Page.tsx': 'import \'./app.css\'' }
+  assert.deepEqual(importCodes(files), ['Field.tsx mixed-imports'])
+  const [{ diagnostics }] = checkImports(Object.entries(files).map(([file, source]) => ({ file, imports: imports(source, file) })))
+  assert.equal(diagnostics.length, 1, 'once for a file, however many it imports')
+  assert.match(diagnostics[0].message, /input\.css.*and 1 more in this file.*app\.css imports all of Master UI/)
+  assert.deepEqual(importCodes({ 'main.ts': 'import \'@master/ui\'', 'Field.tsx': 'import \'@master/ui/components/input.css\'' }), ['Field.tsx mixed-imports'], 'the whole library as a module import')
+  assert.deepEqual(importCodes({ 'app.css': '@import \'@master/ui\';', 'docs.css': '@import \'@master/ui/components/input.css\';' }), ['docs.css stylesheet-import'], 'a CSS @import of one stylesheet is already an error of its own')
+})
+
+test('the project\'s entry stands for the whole library and may import each stylesheet', () => {
+  const entry = '/* Master UI, one import per stylesheet. */\n@import \'@master/ui/theme.css\';\n@import \'@master/ui/components/button.css\';\n@import \'./menu.css\';'
+  assert.deepEqual(importCodes({ 'ui/index.css': entry, 'app.css': '@import \'./ui/index.css\';' }, { entry: 'ui/index.css' }), [])
+  assert.deepEqual(importCodes({ 'ui/index.css': entry }), ['ui/index.css stylesheet-import'], 'only the entry master-ui.json names')
+  assert.deepEqual(importCodes({ 'ui/index.css': entry, 'Field.tsx': 'import \'@master/ui/components/input.css\'' }, { entry: 'ui/index.css' }), ['Field.tsx mixed-imports'])
+})
+
+test('the whole library imported in two places is a warning', () => {
+  const results = checkImports([{ file: 'app.css', imports: imports('@import \'@master/ui\';', 'app.css') }, { file: 'admin.css', imports: imports('@import \'@master/ui\';', 'admin.css') }])
+  assert.deepEqual(results.flatMap(result => result.diagnostics.map(diagnostic => `${result.file} ${diagnostic.code} ${diagnostic.severity}`)).sort(), ['admin.css repeated-import warning', 'app.css repeated-import warning'])
+  assert.match(results[0].diagnostics[0].message, /admin\.css/)
 })
