@@ -237,14 +237,14 @@ const kinds: string[][] = [
   <footer class="card-footer"><button type="button" class="btn">Choose Starter</button></footer>`),
   ],
   [
-    `<div class="card ui-mx-pad ui-mx-stack">
+    `<div class="card">
   <div class="ui-mx-between"><p class="ui-mx-label">web-01 · fra1</p><span class="badge badge-success badge-dot">Healthy</span></div>
   <div class="ui-mx-gauges">
   <div class="gauge" role="meter" aria-label="CPU" aria-valuenow="38" style="--gauge-value: 38"><span class="gauge-value">38%</span><span class="gauge-label">CPU</span></div>
   <div class="gauge" role="meter" aria-label="Memory" aria-valuenow="72" style="--gauge-value: 72"><span class="gauge-value">72%</span><span class="gauge-label">Memory</span></div>
   </div>
 </div>`,
-    `<div class="card ui-mx-pad ui-mx-stack">
+    `<div class="card">
   <div class="ui-mx-between"><p class="ui-mx-label">db-02 · hnd1</p><span class="badge badge-warning badge-dot">Disk high</span></div>
   <div class="ui-mx-gauges">
   <div class="gauge" role="meter" aria-label="Disk" aria-valuenow="91" style="--gauge-value: 91"><span class="gauge-value">91%</span><span class="gauge-label">Disk</span></div>
