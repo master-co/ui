@@ -26,6 +26,36 @@ test('the complete library compiles against the Master CSS preset', () => {
 })
 
 /**
+ * Every rule of the library is in `components.ui`, a layer inside `components`. A rule a project writes in
+ * `@layer components` is outside that inner layer, so it wins over a component whatever its specificity and
+ * wherever a bundle puts it. One rule left in `components` itself would beat the project's rules of equal
+ * specificity only when it happened to come later, and every other component always.
+ */
+test('every component and layout rule is in the components.ui layer', () => {
+  for (const file of [...components, ...layouts]) {
+    const source = code(file)
+    const outside: string[] = []
+    let depth = 0
+    let start = 0
+    for (let at = 0; at < source.length; at++) {
+      if (source[at] === '{' && depth++ === 0) outside.push(source.slice(start, at).trim().replace(/\s+/g, ' '))
+      else if (source[at] === '}' && --depth === 0) start = at + 1
+      else if (source[at] === ';' && depth === 0) { outside.push(source.slice(start, at + 1).trim()); start = at + 1 }
+    }
+    assert.ok(outside.includes('@layer components.ui'), `${file} has no @layer components.ui block`)
+    // Beside the layer a stylesheet may only define names: they draw nothing until a rule in the layer uses them.
+    for (const prelude of outside) assert.match(prelude, /^@layer components\.ui$|^@(?:keyframes|property|position-try|counter-style) [\w-]+$/, `${file}: "${prelude}" is outside @layer components.ui`)
+    assert.doesNotMatch(source.replace(/@layer components\.ui \{/g, ''), /@layer\b/, `${file} names another layer`)
+  }
+})
+
+test('the compiled library keeps its rules in components.ui and puts none in components itself', () => {
+  const { css } = compile(imports)
+  assert.match(css, /@layer components\.ui\s*\{/)
+  assert.doesNotMatch(css, /@layer components\s*\{/)
+})
+
+/**
  * A component class that is also a preset utility is painted twice, and the utility wins. `list-item` would
  * turn a flex row into `display: list-item`. The table parts are the exception on purpose: their utilities
  * set the display those parts have, so the same classes lay out a table built from roles.
