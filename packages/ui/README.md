@@ -81,7 +81,7 @@ Or import only the theme and the components you use:
 | Toolbar | `toolbar`, `toolbar-floating`, `toolbar-separator` |
 | Link | `link`, `link-quiet` |
 | Skip link | `skip` |
-| Input | `input`, `input-sm`, `input-lg`, `input-auto`, `input-group`, `input-group-sm`, `input-group-lg`, `input-group-wrap`, `input-group-field`, `input-group-addon`, `field`, `field-hint`, `field-error`, `fieldset`, `fieldset-legend` |
+| Input | `input`, `input-sm`, `input-lg`, `input-auto`, `input-group`, `input-group-sm`, `input-group-lg`, `input-group-wrap`, `input-group-field`, `input-group-addon`, `field`, `field-hint`, `field-error`, `field-help`, `fieldset`, `fieldset-legend` |
 | Editor | `editor`, `editor-toolbar`, `editor-document`, `editor-paragraph`, `editor-heading`, `editor-subheading`, `editor-list`, `editor-list-numbered`, `editor-item`, `editor-quote`, `editor-link`, `editor-rule` |
 | Select | `select`, `select-option`, `select-raised`, `select-sm`, `select-lg` |
 | Checkbox | `check`, `checkbox` |
