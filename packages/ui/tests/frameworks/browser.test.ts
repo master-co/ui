@@ -662,6 +662,12 @@ test(`${engine}: a kanban card is dragged by touch from its handle, the only par
     await touch('touchMove', [held, { x: 320, y: 420, id: 2 }])
     assert.equal(await pressed(), 1, 'a second finger does not end the drag')
     assert.equal(await root.locator('.kanban-column[data-value="todo"] .kanban-items-target').count(), 1, 'or move the place')
+    // The second finger rests before it lifts, as a hand's does. Lifted while moving, it leaves a fling, and on
+    // Linux the next tap only stops the fling and makes no click.
+    await page.waitForTimeout(250)
+    await touch('touchMove', [held, { x: 320, y: 420, id: 2 }])
+    await touch('touchMove', [held])
+    assert.equal(await pressed(), 1, 'nor does lifting it')
     await touch('touchEnd', [])
     await until(board, value => value[0] === 'copy,brief', 'lifting the finger moves it')
     await until(pressed, value => value === 0)
