@@ -6,7 +6,7 @@ import '../styles/home-accents.css'
 import DocHeader from '@master/internal-site/components/DocHeader.svelte'
 import HomeLamp from '@master/internal-site/home/HomeLamp.svelte'
 import HomeFooter from '@master/internal-site/home/HomeFooter.svelte'
-import { createTranslation } from '@master/internal-site/utils/i18n'
+import { createPageMetadata } from '@master/internal-site/factories/create-page'
 import dictionaries from '~/site/dictionaries'
 import { footerNavGroups } from '~/site/navigation'
 import HomeHero from '~/site/components/home/HomeHero.astro'
@@ -23,13 +23,20 @@ export const documentStyles = false
 export const metadata = {
   title: { absolute: 'Master UI - Native HTML and CSS components for Master CSS' },
   description: 'Interface components written as native HTML and CSS on Master CSS tokens, with a contract for each that people and coding agents write to. Copy the markup, keep your stack, and own the source when you need to.',
+  openGraph: { title: 'Master UI' }
 }
-/** A translated home page has its title and description in its own language, from the interface dictionary. */
-export async function generateMetadata({ params }: { params: { locale: string } }) {
-  const $ = await createTranslation(params.locale, dictionaries)
-  return { title: { absolute: $(metadata.title.absolute) }, description: $(metadata.description) }
+/** A translated home page has its title and description in its own language, from the interface dictionary; the social card names the product. */
+export const generateMetadata = createPageMetadata(metadata, dictionaries)
+
+const website = Astro.props.params.locale === 'en' && {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: 'Master UI',
+  url: new URL('/', Astro.site).href
 }
 ---
+
+{website && <script is:inline type="application/ld+json" set:html={JSON.stringify(website).replace(/</g, '\\u003c')} />}
 
 <DocHeader client:load class="home-header" stickable />
 <main class="overflow-clip home-page">
