@@ -1,5 +1,5 @@
 /**
- * The document as TipTap stores it: JSON, the data an application saves and loads. Nothing here is HTML, so
+ * The document as Tiptap stores it: JSON, the data an application saves and loads. Nothing here is HTML, so
  * nothing a reader wrote is ever put into the page as markup.
  */
 const text = (value, ...marks) => ({ type: 'text', text: value, ...(marks.length ? { marks: marks.map((type) => ({ type })) } : {}) })

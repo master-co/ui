@@ -1,6 +1,6 @@
 import PagePreview from '~/site/components/PagePreview.astro'
 
-Master UI has no editor of its own. Editing formatted text, the document model, the selection, the history, pasting and an input method's composition, is a large engine's work, and good ones exist. What Master UI gives such an engine is a frame: the [`editor`](/components/editor) contract draws the well, the toolbar band, the states and what the document holds, so a rich text field looks and behaves like every other field on the page. This guide puts [TipTap](https://tiptap.dev/docs/editor/getting-started/install/vanilla-javascript) in it, from plain JavaScript.
+Master UI has no editor of its own. Editing formatted text, the document model, the selection, the history, pasting and an input method's composition, is a large engine's work, and good ones exist. What Master UI gives such an engine is a frame: the [`editor`](/components/editor) contract draws the well, the toolbar band, the states and what the document holds, so a rich text field looks and behaves like every other field on the page. This guide puts [Tiptap](https://tiptap.dev/docs/editor/getting-started/install/vanilla-javascript) in it, from plain JavaScript.
 
 <PagePreview name="default" title="Rich text" example="rich-text" caption="Write, format with the toolbar or the shortcuts, add a link, switch the states and open the value." />
 
@@ -8,16 +8,16 @@ Master UI has no editor of its own. Editing formatted text, the document model, 
 
 | | Owns |
 | --- | --- |
-| TipTap | The document and its schema, the selection, undo and redo, the keys and shortcuts, pasting, input methods, and the element it makes editable |
+| Tiptap | The document and its schema, the selection, undo and redo, the keys and shortcuts, pasting, input methods, and the element it makes editable |
 | `editor` | The frame and its states, the toolbar band, the size of the document, and the look of its paragraphs, headings, lists, quotations, links and rules |
 | [`toolbar`](/components/toolbar) and its behavior | One tab stop for the controls, the arrow keys between them, and pressed buttons |
 | Your page | Connecting the two: which command a button runs, what its state is, and where the value goes |
 
-`@master/ui` depends on no editor, and no React, Svelte or Vue component wraps one. The example is the site's own, with TipTap as the site's dependency: copy it, or follow it with ProseMirror, Lexical or another engine. The contract does not change.
+`@master/ui` depends on no editor, and no React, Svelte or Vue component wraps one. The example is the site's own, with Tiptap as the site's dependency: copy it, or follow it with ProseMirror, Lexical or another engine. The contract does not change.
 
 ## Put the engine in the frame \{#frame\}
 
-TipTap makes an element editable and writes the document into it. Tell it to put `editor-document` on that element, with the role, the name and the description a field's control has, and to write the editor's classes on the nodes it renders: the `editor` stylesheet never selects an element, so a heading is styled because it carries `editor-heading`, not because it is an `h2`. Inline code and a block of code use the library's own [code](/components/code) classes.
+Tiptap makes an element editable and writes the document into it. Tell it to put `editor-document` on that element, with the role, the name and the description a field's control has, and to write the editor's classes on the nodes it renders: the `editor` stylesheet never selects an element, so a heading is styled because it carries `editor-heading`, not because it is an `h2`. Inline code and a block of code use the library's own [code](/components/code) classes.
 
 ```js name=main.js
 const editor = new Editor({
@@ -50,12 +50,12 @@ A heading renders no attribute for its level, so a small extension, `headingClas
 
 The toolbar is a [toolbar](/components/toolbar) with `editor-toolbar`, laid flat in the top of the well. Its behavior makes it one tab stop that the arrow keys move through, and presses a button with `aria-pressed`; the page decides what each button does and what it says.
 
-- **A press runs a command and hands focus back.** `editor.chain().focus().toggleBold().run()`: the reader returns to the document, where they were writing, with the selection TipTap kept.
+- **A press runs a command and hands focus back.** `editor.chain().focus().toggleBold().run()`: the reader returns to the document, where they were writing, with the selection Tiptap kept.
 - **The selection decides what is pressed.** On every transaction, each button's `aria-pressed` is `editor.isActive(...)`, so Bold reads as pressed wherever the caret stands in bold text, and the text style select shows the block under the caret.
 - **What cannot run is disabled.** `editor.can()` dry-runs a command: Undo is disabled when there is nothing to undo, and every control when the editor is read only or disabled.
-- **A link is a small form, not a prompt.** The link button opens a [popover](/components/popover) with a URL field. The field's own validation checks the address; Apply puts it on the selection, or inserts it as text where nothing is selected, and Remove takes the link away. TipTap refuses addresses such as `javascript:`, and the links take `rel="noopener noreferrer nofollow"`.
+- **A link is a small form, not a prompt.** The link button opens a [popover](/components/popover) with a URL field. The field's own validation checks the address; Apply puts it on the selection, or inserts it as text where nothing is selected, and Remove takes the link away. Tiptap refuses addresses such as `javascript:`, and the links take `rel="noopener noreferrer nofollow"`.
 
-Name each icon button and give it `aria-keyshortcuts` with the shortcut TipTap already handles, so a screen reader can say both.
+Name each icon button and give it `aria-keyshortcuts` with the shortcut Tiptap already handles, so a screen reader can say both.
 
 ## States \{#states\}
 
@@ -66,13 +66,13 @@ Name each icon button and give it `aria-keyshortcuts` with the shortcut TipTap a
 | Read only | `aria-readonly="true"` on `editor-document` | `editor.setEditable(false)` and the attribute; the words can be read and copied |
 | Disabled | `aria-disabled="true"` on `editor` | `editor.setEditable(false)`, the attribute and every control disabled |
 
-The states are attributes TipTap keeps on its element: set them with `editor.setOptions({ editorProps: { attributes } })`, never on the element directly, or the next render takes them away.
+The states are attributes Tiptap keeps on its element: set them with `editor.setOptions({ editorProps: { attributes } })`, never on the element directly, or the next render takes them away.
 
 ## The value \{#value\}
 
-TipTap's document is data. `editor.getJSON()` is what an application saves, and `editor.commands.setContent(json)` loads a saved one, as **Load other notes** and **Reset** do. The example writes the JSON with `textContent`: nothing the reader typed is put into the page as markup. Where the content must be shown as HTML outside the editor, render it from the JSON on the server, through a sanitizer.
+Tiptap's document is data. `editor.getJSON()` is what an application saves, and `editor.commands.setContent(json)` loads a saved one, as **Load other notes** and **Reset** do. The example writes the JSON with `textContent`: nothing the reader typed is put into the page as markup. Where the content must be shown as HTML outside the editor, render it from the JSON on the server, through a sanitizer.
 
-Listen for `update` to save or to validate, and for `transaction` to draw the toolbar; neither changes the document. The page adds no key handler of its own to the document: an input method composing Japanese, Chinese or Korean uses Enter and the arrows, and TipTap knows when a composition is under way. Validate on `blur`, not on a key.
+Listen for `update` to save or to validate, and for `transaction` to draw the toolbar; neither changes the document. The page adds no key handler of its own to the document: an input method composing Japanese, Chinese or Korean uses Enter and the arrows, and Tiptap knows when a composition is under way. Validate on `blur`, not on a key.
 
 ## Destroy it \{#destroy\}
 
@@ -80,6 +80,6 @@ An editor holds listeners, a view and its history. `mount()` returns a function 
 
 ## What this leaves out \{#leaves-out\}
 
-- **A toolbar that follows the selection.** A floating toolbar over the selected words needs to track where the selection is drawn, which is TipTap's `BubbleMenu` extension and its positioning; this guide keeps the toolbar fixed.
-- **Mentions, tables, images and collaboration.** Each is a TipTap extension and its own interface.
+- **A toolbar that follows the selection.** A floating toolbar over the selected words needs to track where the selection is drawn, which is Tiptap's `BubbleMenu` extension and its positioning; this guide keeps the toolbar fixed.
+- **Mentions, tables, images and collaboration.** Each is a Tiptap extension and its own interface.
 - **Markdown in and out.** Convert the JSON on the server.

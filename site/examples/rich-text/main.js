@@ -36,7 +36,7 @@ const commands = {
 }
 
 /**
- * TipTap in the editor frame. TipTap owns the document, the selection, the history and the keys, an input
+ * Tiptap in the editor frame. Tiptap owns the document, the selection, the history and the keys, an input
  * method's composition among them; this module only connects the toolbar and the states to it, and returns
  * the function that destroys it.
  */

@@ -40,7 +40,7 @@ const tones = { draft: '', review: 'badge-info', published: 'badge-success' }
 
 /**
  * A workspace: one document in the main region, and one set of properties that stands in the aside while the
- * shell shows it and in a drawer while it does not. TipTap owns the document; the controls own their values.
+ * shell shows it and in a drawer while it does not. Tiptap owns the document; the controls own their values.
  * This module connects the toolbar, moves the properties when the shell crosses its threshold, and returns the
  * function that releases all of it.
  */

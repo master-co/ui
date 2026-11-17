@@ -1,5 +1,5 @@
 /**
- * Documents as TipTap stores them: JSON, the data an application saves and loads. Nothing here is HTML, so
+ * Documents as Tiptap stores them: JSON, the data an application saves and loads. Nothing here is HTML, so
  * nothing a reader wrote is ever put into the page as markup.
  */
 export const notes = {
