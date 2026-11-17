@@ -27,8 +27,8 @@ A thing is a class only when there is knowledge to put behind it. A footer is li
 npm install @master/css @master/ui --save-exact
 ```
 
-> [!WARNING]
-> Master UI is experimental. Until 1.0 any release may rename or remove a class, a token, a contract field, an export or a command, without a deprecation or a migration guide. Pin the exact version, as above, and upgrade on purpose: after an upgrade, `npx master-ui check` reports markup that no longer matches a contract and `npx master-ui status` lists what moved under the components you own. See [Stability](https://ui.master.co/guide/stability#experimental).
+> [!NOTE]
+> Master UI follows semantic versioning: only a major release removes or renames a class, a token, a contract field, an export or a command, and an earlier release marks it deprecated first. A minor or patch release can still retune how a component looks, so pin the exact version, as above, and upgrade on purpose: after an upgrade, `npx master-ui check` reports markup that no longer matches a contract and `npx master-ui status` lists what moved under the components you own. See [Stability](https://ui.master.co/guide/stability#upgrades).
 
 Import Master UI after the Master CSS preset in your app stylesheet:
 

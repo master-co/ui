@@ -19,7 +19,7 @@ Master UI is a contract and a default implementation of it. The contract of a co
 - The theme: a file imported after the library, or `@theme` overrides in the app stylesheet. Read it before choosing a token.
 - The viewport: fields keep their 14px type on touch screens, so the page caps its scale on iOS, where a reader can still pinch to zoom, to stop iOS zooming onto a focused field. If the head lacks the short script of `https://ui.master.co/guide/installation#set-the-viewport`, add it after the viewport tag. Do not raise a field's type to 16px instead.
 - The project's own instructions and nearby components come first. Match what is already there.
-- The version: Master UI is experimental, and any 0.x release may rename or remove a class, a token or an export. Read contracts from the installed package (`npx master-ui contract` does), not from memory. After an upgrade run `npx master-ui check` and `npx master-ui status`, and fix what they report.
+- The version: Master UI follows semantic versioning, so only a major release renames or removes a class, a token or an export, and a minor or patch release can still retune how a component looks. Read contracts from the installed package (`npx master-ui contract` does), not from memory. After an upgrade run `npx master-ui check` and `npx master-ui status`, and fix what they report.
 
 ## Load the stylesheets one way
 

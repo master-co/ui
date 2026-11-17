@@ -19,8 +19,8 @@ Native HTML and CSS interface components crafted with [Master CSS](https://css.m
 
 Read the documentation at [ui.master.co](https://ui.master.co).
 
-> [!WARNING]
-> Master UI is experimental. Until 1.0 any release may break what it published, without a migration guide; see [Stability](https://ui.master.co/guide/stability#experimental).
+> [!NOTE]
+> Master UI follows semantic versioning: only a major release removes or renames a public name. A minor or patch release can still change how a component looks, so pin the version and review each upgrade; see [Stability](https://ui.master.co/guide/stability#upgrades).
 
 ## Ownership
 
