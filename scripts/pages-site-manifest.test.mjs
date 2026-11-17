@@ -100,6 +100,7 @@ test('logical channel, actual version and delivery ref are deliberately distinct
   assert.throws(() => releaseMetadata({ ...metadata, channel: 'next' }), /Only main/)
   assert.throws(() => releaseMetadata({ ...metadata, version: '0.1.0-rc.1', tag: 'v0.1.0-rc.1' }), /released version/)
   assert.throws(() => releaseMetadata({ ...metadata, version: '0.0.0', tag: 'v0.0.0' }), /baseline/)
+  assert.throws(() => releaseMetadata({ ...metadata, version: '1.2.0', tag: 'v1.2.0' }), /baseline/)
   assert.throws(() => releaseMetadata({ ...metadata, tag: 'v0.0.8' }), /tag/)
   assert.throws(() => releaseMetadata({ ...metadata, deliveryBranch: 'main' }))
   assert.throws(() => releaseMetadata({ ...metadata, origin: 'https://fixture.pages.dev' }))

@@ -51,6 +51,8 @@ test('every push delivers the site, with its own release or the newest one, unle
   assert.equal(newestTag(tags, 'main'), 'v0.0.10')
   assert.throws(() => newestTag(tags, 'next'), /Only main/)
   assert.equal(newestTag(['v0.0.0'], 'main'), undefined, 'The unpublished baseline is never a release')
+  assert.equal(newestTag(['v0.0.11', 'v1.2.0'], 'main'), 'v0.0.11', 'Neither is the baseline 2.0.0 is counted from')
+  assert.equal(newestTag(['v0.0.11', 'v1.2.0', 'v2.0.0'], 'main'), 'v2.0.0')
   assert.deepEqual(plan({ released: true, version: '0.0.11' }), { deliver: true, kind: 'release', version: '0.0.11' })
   assert.throws(() => plan({ released: true, version: '' }))
   assert.throws(() => plan({ released: true, version: '0.0.11-rc.1' }))

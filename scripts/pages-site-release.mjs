@@ -25,9 +25,10 @@ const remote = `https://github.com/${repository}.git`
 const manifestFile = 'release-artifacts/site.manifest.json'
 
 const tagPatterns = { main: /^v(\d+)\.(\d+)\.(\d+)$/ }
-// v0.0.0 is the baseline the first version is counted from; it was never published.
-const baseline = 'v0.0.0'
-const isReleaseTag = (tag, channel) => Boolean(tagPatterns[channel]?.test(tag)) && tag !== baseline
+// The baselines versions are counted from, never published: v0.0.0 began the 0.x versions, and v1.2.0 began 2.0.0,
+// since npm keeps 1.0.0 to 1.2.0 for the 2021 package of the same name and never lets them be published again.
+export const baselines = new Set(['v0.0.0', 'v1.2.0'])
+const isReleaseTag = (tag, channel) => Boolean(tagPatterns[channel]?.test(tag)) && !baselines.has(tag)
 
 function tagTargets(refs) {
   const tags = new Map()

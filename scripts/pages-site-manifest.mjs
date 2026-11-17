@@ -24,7 +24,7 @@ export function releaseMetadata(input) {
   assert.match(result.releaseRevision ?? '', /^[a-f0-9]{40}$/, 'The exact source revision of the documented release is required')
   assert.ok(Object.hasOwn(channels, result.channel), 'Only main can deliver the site')
   assert.match(result.version ?? '', /^\d+\.\d+\.\d+$/, 'The site documents a released version')
-  assert.notEqual(result.version, '0.0.0', 'v0.0.0 is the unpublished baseline, not a release')
+  assert.ok(!['0.0.0', '1.2.0'].includes(result.version), `v${result.version} is an unpublished baseline, not a release`)
   assert.equal(result.tag, `v${result.version}`, 'The exact published version tag is required')
   assert.equal(result.deliveryBranch, channels[result.channel].deliveryBranch)
   assert.equal(result.origin, channels[result.channel].origin)
