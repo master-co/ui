@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { readFile, readdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { languageOf, locales } from '@master/internal-site/common/locales.js'
@@ -32,9 +33,9 @@ export function pageOf(html, origin) {
 /**
  * Completes a page's Open Graph and X (Twitter) card from its canonical URL: the shared shell writes the title, the
  * description and the image, but not where the page lives, what it is, its language, or the size and the text
- * alternative of a card drawn into `/og/`. Attribute values already in the head are copied as they are written.
+ * alternative of a PNG card the site serves. Attribute values already in the head are copied as they are written.
  */
-export function completeGraph(html, page) {
+export function completeGraph(html, page, sizeOf = () => undefined) {
   const has = (key, name) => page.metadata.includes(`${key}="${name}"`)
   const content = name => new RegExp(`<meta (?:property|name)="${name}" content="([^"]*)"`).exec(page.metadata)?.[1]
   const tags = [
@@ -42,16 +43,24 @@ export function completeGraph(html, page) {
     ['property', 'og:type', page.identity.startsWith('/guide/') ? 'article' : 'website'],
     ['property', 'og:locale', graphLocales[page.locale]]
   ]
-  // A card drawn by the build is a 1200×630 PNG showing the page's title, so its title is its text alternative.
-  if (/\/og\/[0-9a-f]+\.png$/.test(content('og:image') ?? '')) {
-    const title = content('og:title')
-    tags.push(['property', 'og:image:type', 'image/png'], ['property', 'og:image:width', '1200'], ['property', 'og:image:height', '630'],
-      ['property', 'og:image:alt', title], ['name', 'twitter:image:alt', title])
+  // A PNG card the site serves gets its size; one without a text alternative shows the page's title, so that is it.
+  const image = content('og:image')
+  const size = image && sizeOf(image.replaceAll('&amp;', '&'))
+  if (size) {
+    tags.push(['property', 'og:image:type', 'image/png'], ['property', 'og:image:width', String(size.width)], ['property', 'og:image:height', String(size.height)])
+    const alt = content('og:image:alt') ?? content('og:title')
+    tags.push(['property', 'og:image:alt', alt], ['name', 'twitter:image:alt', alt])
   }
   const missing = tags.filter(([key, name, value]) => value && !has(key, name))
   if (!missing.length) return html
   const written = missing.map(([key, name, value]) => `<meta ${key}="${name}" content="${value}">`).join('')
   return html.slice(0, page.end) + written + html.slice(page.end)
+}
+
+/** Width and height from a PNG's IHDR chunk. */
+export function pngSize(bytes) {
+  if (bytes.toString('latin1', 1, 4) !== 'PNG' || bytes.toString('latin1', 12, 16) !== 'IHDR') throw new Error('Not a PNG')
+  return { width: bytes.readUInt32BE(16), height: bytes.readUInt32BE(20) }
 }
 
 /** One `<url>` per edition, each listing every edition of the page; the order never depends on the file walk. */
@@ -75,6 +84,14 @@ ${entries.join('\n')}
 /** Completes every built page's Open Graph tags, then writes `sitemap.xml` and the `robots.txt` that names it. */
 export async function writeSeoIn(directory, origin) {
   origin = new URL(origin).origin
+  const sizes = new Map()
+  /** The pixel size of a PNG this site serves, read from its header. */
+  const sizeOf = url => {
+    const { origin: from, pathname } = new URL(url, origin)
+    if (from !== origin || !pathname.endsWith('.png')) return
+    if (!sizes.has(pathname)) sizes.set(pathname, pngSize(readFileSync(join(directory, decodeURIComponent(pathname)))))
+    return sizes.get(pathname)
+  }
   const groups = new Map()
   const files = (await readdir(directory, { recursive: true })).filter(file => file.endsWith('.html')).sort()
   for (const file of files) {
@@ -84,7 +101,7 @@ export async function writeSeoIn(directory, origin) {
     if (!page) continue
     if (!groups.has(page.identity)) groups.set(page.identity, new Map())
     groups.get(page.identity).set(page.locale, page.url)
-    const completed = completeGraph(html, page)
+    const completed = completeGraph(html, page, sizeOf)
     if (completed !== html) await writeFile(path, completed)
   }
   if (!groups.size) throw new Error('No indexable page declares a canonical URL on ' + origin)

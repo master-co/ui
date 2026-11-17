@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { completeGraph, editionOf, pageOf, renderSitemap } from '../scripts/seo.mjs'
+import { completeGraph, editionOf, pageOf, pngSize, renderSitemap } from '../scripts/seo.mjs'
 
 const origin = 'https://ui.master.co'
 const page = (head, body = '') => `<!doctype html><html><head>${head}</head><body>${body}</body></html>`
@@ -32,14 +32,28 @@ test('the Open Graph identity is completed once, from the canonical URL', () => 
   assert.match(completeGraph(component, pageOf(component, origin)), /og:type" content="website"/)
 })
 
-test('a card drawn by the build gets its size and its text alternative', () => {
+test('a PNG card the site serves gets its size and its text alternative', () => {
+  const sizeOf = url => url.startsWith('https://ui.master.co/') && url.endsWith('.png') ? { width: 1200, height: 630 } : undefined
   const html = page('<link rel="canonical" href="https://ui.master.co/components/button"><meta property="og:title" content="Button &amp; more">'
     + '<meta property="og:image" content="https://ui.master.co/og/0123abcd.png"><meta name="twitter:image" content="https://ui.master.co/og/0123abcd.png">')
-  const completed = completeGraph(html, pageOf(html, origin))
+  const completed = completeGraph(html, pageOf(html, origin), sizeOf)
   for (const tag of ['<meta property="og:image:width" content="1200">', '<meta property="og:image:height" content="630">', '<meta property="og:image:type" content="image/png">',
     '<meta property="og:image:alt" content="Button &amp; more">', '<meta name="twitter:image:alt" content="Button &amp; more">']) assert.ok(completed.includes(tag), tag)
-  const cover = page('<link rel="canonical" href="https://ui.master.co/"><meta property="og:image" content="https://ui.master.co/brand/cover.png">')
-  assert.doesNotMatch(completeGraph(cover, pageOf(cover, origin)), /og:image:width/)
+  // A cover keeps the text alternative it was given.
+  const cover = page('<link rel="canonical" href="https://ui.master.co/"><meta property="og:title" content="Master UI">'
+    + '<meta property="og:image" content="https://ui.master.co/brand/cover.png"><meta property="og:image:alt" content="The hero">')
+  const covered = completeGraph(cover, pageOf(cover, origin), sizeOf)
+  assert.ok(covered.includes('<meta name="twitter:image:alt" content="The hero">'))
+  assert.equal(covered.match(/og:image:alt/g).length, 1)
+  const elsewhere = page('<link rel="canonical" href="https://ui.master.co/"><meta property="og:image" content="https://cdn.example/card.png">')
+  assert.doesNotMatch(completeGraph(elsewhere, pageOf(elsewhere, origin), sizeOf), /og:image:width/)
+})
+
+test('a PNG is measured from its header', () => {
+  const header = Buffer.alloc(24)
+  header.write('\x89PNG\r\n\x1a\n', 0, 'latin1'); header.write('IHDR', 12, 'latin1'); header.writeUInt32BE(2400, 16); header.writeUInt32BE(1260, 20)
+  assert.deepEqual(pngSize(header), { width: 2400, height: 1260 })
+  assert.throws(() => pngSize(Buffer.alloc(24)), /PNG/)
 })
 
 test('sitemap bytes do not depend on the order in which pages and locales were found', () => {
