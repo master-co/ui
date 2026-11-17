@@ -1,7 +1,7 @@
 import define from '@master/internal-site/utils/metadata'
 
 export default define({
-  title: 'Heatmap',
+  title: 'Heatmap chart',
   description: 'A pattern across two scales: cells as dark as their values.',
   category: 'Distribution',
   order: 3,
