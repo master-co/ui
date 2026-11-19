@@ -6,7 +6,7 @@
  *   master-ui contract <name…>          one contract as JSON: classes, states, properties, example; a class
  *                                       name finds the contract it belongs to
  *   master-ui check [paths…]            report markup that breaks a contract, and a stylesheet of the library that
- *                                       is loaded twice; a path is a file, a directory or a glob (--strict: a
+ *                                       is loaded twice; accepts files, directories and globs (--strict: a
  *                                       class that only looks like one is an error, --json)
  *   master-ui init                      write ui/index.css, one @import per stylesheet (--directory=src/ui for
  *                                       another place than ui/, --force to write it again)
@@ -24,8 +24,8 @@
  * contracts are (`contracts`, globs beside ui/*.json) are read from master-ui.json.
  */
 import { createHash } from 'node:crypto'
-import { existsSync, globSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
-import { dirname, join, relative, resolve } from 'node:path'
+import { existsSync, globSync, mkdirSync, readFileSync, readdirSync, realpathSync, statSync, writeFileSync } from 'node:fs'
+import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { check, checkImports, createIndex, format, imports as importsOf } from '../check/index.js'
 
@@ -207,16 +207,28 @@ const commands = {
     const sources = `${markup},css,scss,sass,less,pcss,postcss,js,mjs,cjs,ts,mts,cts`
     const isMarkup = (/** @type {string} */ file) => !/\.(?:css|scss|sass|less|pcss|postcss|[cm]?[jt]s)$/.test(file)
     const patterns = names.length ? names : [`**/*.{${sources}}`]
-    const found = [...new Set(patterns.flatMap(pattern => existsSync(join(cwd, pattern)) && statSync(join(cwd, pattern)).isFile()
-      ? [pattern]
-      : globSync(existsSync(join(cwd, pattern)) ? `${pattern}/**/*.{${sources}}` : pattern, { cwd, exclude: path => /(^|\/)(node_modules|dist|out|build|\.git|\.astro|\.next|\.svelte-kit)(\/|$)/.test(path) })))]
-      .map(file => file.replaceAll('\\', '/'))
+    const found = [...new Set(patterns.flatMap(pattern => {
+      const path = resolve(cwd, pattern)
+      const kind = statSync(path, { throwIfNoEntry: false })
+      if (kind?.isFile()) return [path]
+      const directory = kind?.isDirectory() ? path : cwd
+      const glob = kind?.isDirectory() ? `**/*.{${sources}}` : pattern
+      return globSync(glob, { cwd: directory, exclude: file => /(^|\/)(node_modules|dist|out|build|\.git|\.astro|\.next|\.svelte-kit)(\/|$)/.test(file) }).map(file => resolve(directory, file))
+    }).map(file => {
+      const path = relative(cwd, file)
+      // macOS can spell the working directory as /var or /private/var. Keep one spelling for both.
+      if (path.startsWith(`..${sep}`) || isAbsolute(path)) {
+        const physical = relative(cwd, realpathSync(file))
+        if (!physical.startsWith(`..${sep}`) && !isAbsolute(physical)) return physical.replaceAll('\\', '/')
+      }
+      return path.replaceAll('\\', '/')
+    }))]
     const files = found.filter(isMarkup)
     const index = createIndex(contracts())
     const knows = await utilities()
     /** @type {Map<string, import('../check/index.js').Diagnostic[]>} */
-    const byFile = new Map(files.map(file => [file, check(read(join(cwd, file)), index, { knows, strict: flags.has('--strict') })]))
-    const loaded = found.map(file => ({ file, imports: importsOf(read(join(cwd, file)), file) })).filter(item => item.imports.length)
+    const byFile = new Map(files.map(file => [file, check(read(resolve(cwd, file)), index, { knows, strict: flags.has('--strict') })]))
+    const loaded = found.map(file => ({ file, imports: importsOf(read(resolve(cwd, file)), file) })).filter(item => item.imports.length)
     for (const { file, diagnostics } of checkImports(loaded, { entry: config().entry })) byFile.set(file, [...byFile.get(file) ?? [], ...diagnostics])
     const results = [...byFile].map(([file, diagnostics]) => ({ file, diagnostics })).filter(result => result.diagnostics.length)
     const all = results.flatMap(result => result.diagnostics)

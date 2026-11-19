@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -38,6 +38,20 @@ test('check reports what breaks a contract and fails the command', () => {
     const bad = run('check', 'bad.html', '--json')
     assert.equal(bad.status, 1)
     assert.deepEqual(JSON.parse(bad.out).results[0].diagnostics.map((diagnostic: { code: string }) => diagnostic.code).sort(), ['element', 'label', 'missing-base'])
+  } finally { remove() }
+})
+
+test('check accepts absolute files and directories and reads each match once', () => {
+  const { cwd, run, write, remove } = project()
+  try {
+    mkdirSync(join(cwd, 'views'))
+    write('views/page.html', '<button class="btn-primary">Save</button>')
+    const file = join(cwd, 'views', 'page.html')
+    const absolute = run('check', file, join(cwd, 'views'), 'views/*.html', '--json')
+    const relative = run('check', 'views/page.html', '--json')
+    assert.equal(absolute.status, 1, absolute.err)
+    assert.equal(absolute.out, relative.out)
+    assert.equal(JSON.parse(absolute.out).files, 1)
   } finally { remove() }
 })
 
