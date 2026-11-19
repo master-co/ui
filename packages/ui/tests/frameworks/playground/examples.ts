@@ -30,7 +30,7 @@ export const examples: Record<string, Record<string, unknown>> = {
   'context-menu': { items: menu, 'aria-label': 'Project' },
   'tree': { nodes: [{ label: 'components', open: true, children: [{ label: 'button.css', value: 'components/button.css' }, { label: 'input.css', value: 'components/input.css' }] }, { label: 'themes', children: [{ label: 'paper.css', value: 'themes/paper.css' }] }, { label: 'README.md', value: 'README.md' }], value: 'components/input.css', 'aria-label': 'Files' },
   'wheel': { columns: [{ label: 'Hour', options: ['08', '09', '10', '11', '12'], separator: ':' }, { label: 'Minute', options: ['00', '15', '30', '45'] }, { label: 'Period', options: [{ value: 'am', label: 'AM' }, { value: 'pm', label: 'PM' }] }], value: ['10', '30', 'pm'], 'aria-label': 'Time' },
-  'tabs': { tabs: [{ value: 'profile', label: 'Profile', content: 'Profile settings' }, { value: 'billing', label: 'Billing', content: 'Billing settings' }, { value: 'team', label: 'Team', content: 'Team settings', disabled: true }], value: 'profile', 'aria-label': 'Account' },
+  'tabs': { tabs: [{ value: 'profile', label: 'Profile', content: 'Profile settings' }, { value: 'billing', label: 'Billing', content: 'Billing settings' }, { value: 'team', label: 'Team', content: 'Team settings', disabled: true }], value: 'profile', searchable: true, 'aria-label': 'Account' },
   'dialog': {},
   'popover': {},
   'tooltip': {},

@@ -16,6 +16,8 @@
     /** The value of the selected tab. Bind it, or leave it out: the first tab is selected. */
     value?: string
     onValueChange?: (value: string) => void
+    /** Let Find in Page and fragment links reveal inactive panels where supported. */
+    searchable?: boolean
     /** Writes the panel of a tab, when it is more than text. */
     panel?: Snippet<[Tab]>
     /** Classes for each panel, such as its padding. */
@@ -28,12 +30,12 @@
   import { tabs } from '@master/ui/behaviors/tabs.js'
   import { behavior } from './behavior.svelte.js'
 
-  let { tabs: list, value = $bindable(), onValueChange, panel, panelClass, class: className, ...root }: TabsProps = $props()
+  let { tabs: list, value = $bindable(), onValueChange, searchable, panel, panelClass, class: className, ...root }: TabsProps = $props()
   const id = $props.id()
   // The first value is drawn into the first render; after that the behavior marks the selected tab. A tab
   // written later, from new tabs, is drawn with the value as it is then, which is not read as state.
   const selected = { value: untrack(() => value ?? list.find(tab => !tab.disabled)?.value) }
-  const attach = behavior(tabs, undefined, {
+  const attach = behavior(tabs, () => ({ searchable }), {
     value: () => value,
     change: (next) => {
       if (next === null) return

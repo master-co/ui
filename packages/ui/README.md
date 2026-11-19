@@ -240,6 +240,8 @@ const diagnostics = check(html, createIndex(contracts.contracts))
 
 ## Behaviors
 
+Opt in to searchable [tab panels](https://ui.master.co/components/tabs#searchable-panels) with `tabs(tablist, { searchable: true })` or the framework component’s `searchable` prop. Browsers with `beforematch` can select a panel through Find in Page or a fragment link. [Wheel](https://ui.master.co/components/wheel) uses `scroll-initial-target` to center the initial selection where supported. The wheel behavior still aligns and tracks the selection in other browsers.
+
 A few patterns have no native element. Their stylesheets draw every state from ARIA; a behavior is the reference script that moves those attributes and nothing else.
 
 ```js

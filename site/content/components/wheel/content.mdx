@@ -45,6 +45,7 @@ A wheel picks a value by turning a column until the value rests under a mark: an
 ## What the platform does \{#what-the-platform-does\}
 
 - **Turning** is scrolling. A wheel, a finger and a trackpad work as they do in any scroll container.
+- **The initial selection** rests under the mark on the first render with `scroll-initial-target`. Other browsers bring it there as soon as the behavior attaches.
 - **Coming to rest** is scroll snapping: `scroll-snap-type: y mandatory` on the column and `scroll-snap-align: center` on each option. A column never stops between two values. Space at both ends lets the first and last options reach the mark.
 - **The look of a wheel** is a scroll-driven animation. Each option is its own view timeline over the column: it is full ink at the middle of its pass, and quieter and turned slightly away the further it has gone. No script reads a scroll position to draw this.
 
@@ -52,7 +53,7 @@ Where the browser has no view timelines, all options are drawn flat and the one 
 
 ## The behavior \{#behavior\}
 
-The stylesheet cannot tell your form which value is under the mark. The `wheel` [behavior](/guide/behaviors) reads it from how far the column has scrolled. It takes the root, the element with the `wheel` class, has no options, and returns the function that detaches it.
+The stylesheet cannot tell your form which value is under the mark. The `wheel` [behavior](/guide/behaviors) reads it once the column settles. It takes the root, the element with the `wheel` class, has no options, and returns the function that detaches it.
 
 ```js name=app.js
 import { wheel } from '@master/ui/behaviors/wheel.js'
@@ -66,14 +67,14 @@ root.addEventListener('change', (event) => {
 })
 ```
 
-- **Coming to rest.** When a column has settled, the behavior moves `aria-selected="true"` to the option under the mark.
+- **Coming to rest.** When a column has settled, the behavior moves `aria-selected="true"` to the option under the mark. It takes the snapped option from `scrollsnapchange` when available and reads the scroll position otherwise.
 - **The events.** The column then dispatches a bubbling `input`, then `change`, when the option is a new one. In each, `detail.value` is the option's `data-value`, or its text, and `detail.option` is the option.
 - **Starting.** When it attaches, and when a column is laid out again, as in a popover that opens, it brings each column's chosen option under the mark.
 - **A click** on an option brings that option under the mark.
 - **The keys.** A focused column has the keys of a listbox, one option at a time.
 - **Disabled options.** A column that came to rest on an option with `aria-disabled="true"` turns on to the nearest one that is not.
 
-To submit the value with a form, copy `detail.value` into a hidden input in the `change` listener. Without the behavior a column still scrolls and snaps, but it starts at its first option and `aria-selected` stays where the markup put it.
+To submit the value with a form, copy `detail.value` into a hidden input in the `change` listener. Without the behavior a column still scrolls and snaps. It starts at the selected option when `scroll-initial-target` is supported and at the first option elsewhere. `aria-selected` stays where the markup put it.
 
 ## One column \{#one-column\}
 

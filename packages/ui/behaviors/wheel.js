@@ -41,6 +41,8 @@ export function wheel(root) {
 
   /** The option each column is turning to, so keys pressed while it turns add up. @type {Map<Element, HTMLElement>} */
   const heading = new Map()
+  /** The browser's target for the scroll that is about to end. @type {WeakMap<Element, HTMLElement>} */
+  const snapped = new WeakMap()
   /** @type {Map<Element, ReturnType<typeof setTimeout>>} */
   const timers = new Map()
 
@@ -105,7 +107,9 @@ export function wheel(root) {
   function settle(column) {
     heading.delete(column)
     const all = options(column)
-    const option = nearest(column, all)
+    const target = snapped.get(column)
+    snapped.delete(column)
+    const option = target && all.includes(target) ? target : nearest(column, all)
     if (!option) return
     if (disabled(option)) {
       const enabled = nearest(column, all.filter((each) => !disabled(each)))
@@ -128,6 +132,12 @@ export function wheel(root) {
   }
 
   // Scrolling does not bubble, so the root listens on the way down and hears every column, whenever it was added.
+  root.addEventListener('scrollsnapchange', (event) => {
+    const column = columnOf(event.target)
+    const { snapTargetBlock } = /** @type {Event & { snapTargetBlock?: Element | null }} */ (event)
+    if (column && column === event.target && snapTargetBlock instanceof HTMLElement) snapped.set(column, snapTargetBlock)
+  }, { capture: true, signal })
+
   if ('onscrollend' in window) {
     root.addEventListener('scrollend', (event) => {
       const column = columnOf(event.target)

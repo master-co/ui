@@ -50,6 +50,7 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
 ## 平台提供的功能 \{#what-the-platform-does\}
 
 - **轉動**就是捲動。滑鼠滾輪、手指和觸控板的操作方式與其他捲動容器相同。
+- **初始選取項目**在支援 `scroll-initial-target` 時，第一次繪製就會對齊標記。其他瀏覽器會在行為掛載時對齊。
 - **停靠**由捲動貼齊實現。在欄位上設定 `scroll-snap-type: y mandatory`，並在每個選項上設定 `scroll-snap-align: center`。欄位不會停在兩個值之間。欄位兩端都留有空間，讓第一個和最後一個選項也能移到標記下方。
 - **滾輪的外觀**由捲動驅動的動畫呈現。每個選項都有自己的檢視時間軸，以它在欄位中的位置為準。選項經過中央時顏色最深，離中央越遠就越淡，並略微向外轉。這個效果不需要透過腳本讀取捲動位置。
 
@@ -57,7 +58,7 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
 ## 行為 \{#behavior\}
 
-樣式表無法告訴表單哪個值位於標記下方。`wheel` [行為](/guide/behaviors)會根據欄位捲動的距離讀取這個值。它只接受帶有 `wheel` 類別的根元素，沒有設定選項，並傳回用來解除此行為的函式。
+樣式表無法告訴表單哪個值位於標記下方。`wheel` [行為](/guide/behaviors)會在欄位停止捲動時讀取這個值。它只接受帶有 `wheel` 類別的根元素，沒有設定選項，並傳回用來解除此行為的函式。
 
 ```js name=app.js
 import { wheel } from '@master/ui/behaviors/wheel.js'
@@ -71,14 +72,14 @@ root.addEventListener('change', (event) => {
 })
 ```
 
-- **停靠。** 欄位停止捲動後，行為會將 `aria-selected="true"` 移到標記下方的選項。
+- **停靠。** 欄位停止捲動後，行為會將 `aria-selected="true"` 移到標記下方的選項。 支援 `scrollsnapchange` 時，它採用瀏覽器回報的貼齊選項，其他情況則讀取捲動位置。
 - **事件。** 如果選項已變更，欄位就會依序派送可冒泡的 `input` 和 `change` 事件。兩者的 `detail.value` 都取自選項的 `data-value`，未設定時則取其文字；`detail.option` 是選項元素本身。
 - **初始化。** 行為掛載時，以及欄位重新進行版面配置時（例如彈出面板開啟時），都會將各欄位目前選取的選項移到標記下方。
 - **點選**選項會將該選項移到標記下方。
 - **按鍵。** 欄位取得焦點後，按鍵操作方式與清單方塊相同，每次移動一個選項。
 - **停用的選項。** 若欄位停在帶有 `aria-disabled="true"` 的選項上，就會繼續轉到最近的可用選項。
 
-若要隨表單送出選取值，請在 `change` 事件監聽器中將 `detail.value` 複製到隱藏的輸入欄位。未掛載行為時，欄位仍可捲動和貼齊，但會從第一個選項開始，`aria-selected` 也會留在 HTML 標記原先指定的選項上。
+若要隨表單送出選取值，請在 `change` 事件監聽器中將 `detail.value` 複製到隱藏的輸入欄位。 沒有行為時，欄位仍會捲動與貼齊。支援 `scroll-initial-target` 時從選取的項目開始，其他瀏覽器從第一個項目開始。`aria-selected` 維持標記原本的設定。
 
 ## 單欄 \{#one-column\}
 

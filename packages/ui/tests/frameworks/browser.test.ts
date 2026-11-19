@@ -104,6 +104,103 @@ test(`${engine}: a linked card owns its hover and focus inside a linked card`, a
   } finally { await page.close() }
 })
 
+test(`${engine}: Composer sends with Enter and leaves the IME and Shift+Enter to the textarea`, async () => {
+  const source = await readFile(new URL('../../../../site/content/components/composer/content.mdx', import.meta.url), 'utf8')
+  const listener = source.match(/```js\n([\s\S]*?)\n```/)?.[1]
+  assert.ok(listener)
+  const page = await browser.newPage()
+  try {
+    await page.setContent('<form><textarea name="message"></textarea><output>0</output></form>')
+    await page.addScriptTag({ content: `const field = document.querySelector('textarea');
+      ${listener}
+      field.form.addEventListener('submit', event => {
+        event.preventDefault();
+        const output = field.form.querySelector('output');
+        output.value = Number(output.value) + 1;
+      });` })
+    const field = page.locator('textarea')
+    assert.deepEqual(await field.evaluate(element => [
+      { key: 'Enter', isComposing: true }, { key: 'Enter', keyCode: 229 },
+    ].map(given => {
+      const event = new KeyboardEvent('keydown', { ...given, bubbles: true, cancelable: true })
+      element.dispatchEvent(event)
+      if (given.keyCode === 229 && event.keyCode !== 229) throw new Error('The fixture did not produce keyCode 229')
+      return event.defaultPrevented
+    })), [false, false])
+    assert.equal(await page.locator('output').textContent(), '0')
+    await field.press('Shift+Enter')
+    assert.equal(await field.inputValue(), '\n')
+    await field.press('Enter')
+    assert.equal(await page.locator('output').textContent(), '1')
+  } finally { await page.close() }
+})
+
+test(`${engine}: the rich Select example mirrors its text and submits the native value`, async () => {
+  const source = await readFile(new URL('../../../../site/content/components/select/content.mdx', import.meta.url), 'utf8')
+  const markup = source.match(/name="icons"[^\n]*html=\{`([\s\S]*?)`\}/)?.[1]
+  assert.ok(markup)
+  const css = await readFile(new URL('../../dist/standalone.css', import.meta.url), 'utf8')
+  for (const custom of [true, false]) {
+    const page = await browser.newPage()
+    try {
+      await page.setContent(markup)
+      await page.addStyleTag({ content: css + (custom ? '' : '\n.select, .select::picker(select) { appearance: auto; }') })
+      const select = page.locator('select')
+      assert.deepEqual(await select.evaluate((element: HTMLSelectElement) => [...element.options].map(option => option.label)), ['Email', 'Text message'])
+      await select.selectOption({ label: 'Text message' })
+      if (custom && await page.evaluate(() => CSS.supports('appearance', 'base-select'))) {
+        assert.equal((await select.locator('selectedcontent').textContent())?.trim(), 'Text message')
+        assert.equal(await select.locator('selectedcontent svg[aria-hidden="true"]').count(), 1)
+      }
+      await page.getByRole('button', { name: 'Save' }).click()
+      assert.equal(await page.locator('output').textContent(), 'sms')
+    } finally { await page.close() }
+  }
+})
+
+test(`${engine}: searchable tabs honor an initial fragment after the behavior attaches`, async () => {
+  const markup = `<div class="tabs" role="tablist" aria-label="Account">
+    <button type="button" role="tab" aria-controls="profile" aria-selected="true">Profile</button>
+    <button type="button" role="tab" aria-controls="billing" aria-selected="false">Billing</button>
+  </div>
+  <section id="profile" role="tabpanel">Profile settings</section>
+  <section id="billing" role="tabpanel" hidden><p id="invoice">Invoice details</p></section>`
+  const page = await browser.newPage()
+  try {
+    const url = new URL('searchable-tabs-test', origin).href
+    await page.route(url, route => route.fulfill({ body: markup, contentType: 'text/html' }))
+    await page.goto(`${url}#invoice`)
+    const supported = await page.evaluate(() => 'onbeforematch' in document.documentElement)
+    const source = await readFile(new URL('../../behaviors/tabs.js', import.meta.url), 'utf8')
+    await page.addScriptTag({ content: `${source.replace('export function tabs', 'function tabs')}
+      tabs(document.querySelector('.tabs'), { searchable: true });` })
+    assert.equal(await page.getByRole('tab', { name: 'Billing' }).getAttribute('aria-selected'), String(supported))
+    assert.equal(await page.locator('#invoice').isVisible(), supported)
+    assert.equal(await page.getByRole('tabpanel').count(), 1)
+  } finally { await page.close() }
+})
+
+test(`${engine}: a Wheel starts on the authored selection before the behavior attaches`, async () => {
+  const page = await browser.newPage()
+  try {
+    await page.setContent(`<div class="wheel"><div class="wheel-column" role="listbox" tabindex="0">
+      <div class="wheel-option" role="option">First</div><div class="wheel-option" role="option">Second</div>
+      <div class="wheel-option" role="option" aria-selected="true">Third</div>
+      <div class="wheel-option" role="option">Fourth</div><div class="wheel-option" role="option">Fifth</div>
+    </div></div>`)
+    await page.addStyleTag({ content: await readFile(new URL('../../dist/standalone.css', import.meta.url), 'utf8') })
+    const column = page.locator('.wheel-column')
+    if (await page.evaluate(() => CSS.supports('scroll-initial-target', 'nearest'))) {
+      await until(() => column.evaluate(element => {
+        const chosen = element.querySelector('[aria-selected="true"]')!.getBoundingClientRect()
+        return chosen.top + chosen.height / 2 - element.getBoundingClientRect().top - element.clientHeight / 2
+      }), distance => Math.abs(distance) < 1, 'the initial scroll centers the selected option')
+    } else {
+      assert.equal(await column.evaluate(element => element.scrollTop), 0)
+    }
+  } finally { await page.close() }
+})
+
 for (const framework of ['react', 'svelte', 'vue']) {
   test(`${engine}/${framework}: every component, in a browser`, async (t) => {
     const page = await browser.newPage({ viewport: { width: 900, height: 800 } })
@@ -117,6 +214,27 @@ for (const framework of ['react', 'svelte', 'vue']) {
 
     const example = (name: string) => page.locator(`[data-framework="${framework}"] [data-example="${name}"]`)
     const said = (name: string, text: string) => until(() => example(name).locator('output').innerText(), value => value === text, `${name} said`)
+
+    await t.test('a fragment link selects a searchable tab and keeps its panel and application value in step', async () => {
+      const view = example('tabs')
+      const billing = view.getByRole('tab', { name: 'Billing' })
+      const id = (await billing.getAttribute('aria-controls'))!
+      const panel = view.locator('[role="tabpanel"]').filter({ hasText: 'Billing settings' })
+      const supported = await page.evaluate(() => 'onbeforematch' in document.documentElement)
+      assert.equal(await panel.getAttribute('hidden'), supported ? 'until-found' : '')
+      if (supported) {
+        await page.evaluate(id => {
+          const link = document.createElement('a')
+          link.href = `#${encodeURIComponent(id)}`
+          link.click()
+        }, id)
+      } else await billing.click()
+      await said('tabs', 'onValueChange: "billing"')
+      assert.equal(await billing.getAttribute('aria-selected'), 'true')
+      assert.equal(await billing.getAttribute('tabindex'), '0')
+      assert.equal(await panel.getAttribute('hidden'), null)
+      assert.equal(await view.getByRole('tabpanel').count(), 1)
+    })
 
     await t.test('a dialog is opened by the browser from its trigger, and says so', async () => {
       const dialog = example('dialog').locator('dialog')

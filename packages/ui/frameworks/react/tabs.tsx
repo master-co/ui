@@ -18,14 +18,16 @@ export interface TabsProps extends Omit<ComponentProps<'div'>, 'defaultValue' | 
   value?: string
   defaultValue?: string
   onValueChange?: (value: string) => void
+  /** Let Find in Page and fragment links reveal inactive panels where supported. */
+  searchable?: boolean
   /** Classes for each panel, such as its padding. */
   panelClassName?: string
 }
 
 /** Tabs that switch panels in place. Name the tablist with `aria-label` or `aria-labelledby`. */
-export function Tabs({ tabs: list, value, defaultValue, onValueChange, panelClassName, className, ...root }: TabsProps) {
+export function Tabs({ tabs: list, value, defaultValue, onValueChange, searchable, panelClassName, className, ...root }: TabsProps) {
   const id = useId()
-  const ref = useBehavior(tabs, undefined, { value, defaultValue, onValueChange: onValueChange as ((value: string | null) => void) | undefined })
+  const ref = useBehavior(tabs, { searchable }, { value, defaultValue, onValueChange: onValueChange as ((value: string | null) => void) | undefined })
   const [first] = useState(value ?? defaultValue ?? list.find(tab => !tab.disabled)?.value)
   return (
     <>

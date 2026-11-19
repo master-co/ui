@@ -50,6 +50,7 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
 ## 浏览器原生行为 \{#what-the-platform-does\}
 
 - **转动就是滚动。** 每一列都可以像其他滚动容器一样，用鼠标滚轮、手指或触控板滚动。
+- **初始选项**在支持 `scroll-initial-target` 时会在首次绘制时对齐标记。其他浏览器会在行为挂载时对齐。
 - **滚动吸附。** 在列上设置 `scroll-snap-type: y mandatory`，在各选项上设置 `scroll-snap-align: center`，滚动结束时一定会对齐某个选项。两端留有足够空间，让第一个和最后一个选项也能到达标记处。
 - **滚轮的外观。** 通过滚动驱动动画实现。每个选项都有一条相对于该列的视图时间轴。选项经过中央时文字颜色最深，离中央越远，文字越淡，偏转也越明显。渲染这些效果无需用脚本读取滚动位置。
 
@@ -57,7 +58,7 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
 ## 行为脚本 \{#behavior\}
 
-样式表无法把标记下的值传给表单。`wheel` [行为脚本](/guide/behaviors)根据列的滚动距离读取该值。它接收带有 `wheel` 类的根元素，不接受配置选项，并返回用于解除绑定的函数。
+样式表无法把标记下的值传给表单。`wheel` [行为脚本](/guide/behaviors)在列停止滚动时读取该值。它接收带有 `wheel` 类的根元素，不接受配置选项，并返回用于解除绑定的函数。
 
 ```js name=app.js
 import { wheel } from '@master/ui/behaviors/wheel.js'
@@ -71,14 +72,14 @@ root.addEventListener('change', (event) => {
 })
 ```
 
-- **滚动结束。** 一列停稳后，行为脚本将 `aria-selected="true"` 移到标记下方的选项。
+- **滚动结束。** 一列停稳后，行为脚本将 `aria-selected="true"` 移到标记下方的选项。 支持 `scrollsnapchange` 时，它使用浏览器报告的吸附选项，其他情况下则读取滚动位置。
 - **事件。** 选中的选项变更时，该列随即依次派发 `input` 和 `change`，两个事件都会冒泡。两者的 `detail.value` 都是选项的 `data-value` 或选项文本，`detail.option` 则是选项本身。
 - **初始化。** 绑定脚本时，以及弹出层打开等导致列重新布局的情况下，脚本将每一列当前选中的选项移到标记下方。
 - **点击选项。** 点击后，该选项滚动到标记下方。
 - **键盘操作。** 聚焦某一列后，可以像操作列表框一样用键盘逐项移动。
 - **禁用选项。** 如果某列停在带有 `aria-disabled="true"` 的选项上，就会继续滚动到最近的可选项。
 
-要随表单提交该值，请在 `change` 监听器中将 `detail.value` 写入隐藏的输入框。未绑定脚本时，列仍可滚动和吸附，但会从第一个选项开始，`aria-selected` 仍保留在 HTML 标记中指定的选项上。
+要随表单提交该值，请在 `change` 监听器中将 `detail.value` 写入隐藏的输入框。 没有行为时，列仍可滚动和吸附。支持 `scroll-initial-target` 时从选中的选项开始，其他浏览器从第一项开始。`aria-selected` 保持标记中的原有设置。
 
 ## 单列 \{#one-column\}
 

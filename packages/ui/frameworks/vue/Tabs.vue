@@ -18,6 +18,8 @@ defineOptions({ inheritAttrs: false })
 
 const props = defineProps<{
   tabs: Tab[]
+  /** Let Find in Page and fragment links reveal inactive panels where supported. */
+  searchable?: boolean
   /** Classes for each panel, such as its padding. */
   panelClass?: string
 }>()
@@ -32,7 +34,7 @@ defineSlots<{
 const id = useId()
 const first = model.value ?? props.tabs.find(tab => !tab.disabled)?.value
 const root = useTemplateRef<HTMLDivElement>('root')
-useBehavior(root, tablist, undefined, model)
+useBehavior(root, tablist, () => ({ searchable: props.searchable }), model)
 </script>
 
 <template>

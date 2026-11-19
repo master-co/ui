@@ -942,6 +942,20 @@ export const scenarios: Record<string, Scenario> = {
     await driver.act(() => mounted.set({ value: 'profile' }))
     assert.deepEqual(shown(), ['Profile settings'])
     assert.deepEqual(heard, ['billing', 'profile', 'billing'])
+
+    Object.defineProperty(page.document.documentElement, 'onbeforematch', { configurable: true, value: null })
+    await driver.act(() => mounted.set({ searchable: true }))
+    const billing = page.document.getElementById(list[1].getAttribute('aria-controls')!)!
+    assert.equal(billing.getAttribute('hidden'), 'until-found')
+    const team = page.document.getElementById(list[2].getAttribute('aria-controls')!)!
+    assert.equal(team.getAttribute('hidden'), '', 'a disabled tab cannot be revealed by a search')
+    await driver.act(() => {
+      billing.dispatchEvent(new page.window.Event('beforematch', { bubbles: true }) as unknown as Event)
+      // The browser removes hidden after its event, so it can reveal any enclosing panels too.
+      billing.removeAttribute('hidden')
+    })
+    assert.deepEqual(shown(), ['Billing settings'])
+    assert.deepEqual(heard, ['billing', 'profile', 'billing', 'billing'])
     await driver.act(() => mounted.unmount())
   },
 

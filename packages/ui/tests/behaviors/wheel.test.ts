@@ -123,6 +123,19 @@ test('wheel: nothing is selected while a column is still scrolling', () => {
   assert.deepEqual(selected(), ['Year'])
 })
 
+test('wheel: a native snap target is read when the scroll settles, then cleared', () => {
+  const { root, window, column, all, changes, selected, scroll } = setup()
+  wheel(root)
+  const event = new window.Event('scrollsnapchange')
+  Object.defineProperty(event, 'snapTargetBlock', { value: all('.wheel-option')[3] })
+  column.dispatchEvent(event)
+  assert.deepEqual(selected(), ['Week'], 'the target does not emit an early change')
+  scroll(4 * row)
+  assert.deepEqual(selected(), ['Month'], 'the browser target wins over the geometry fallback')
+  scroll(4 * row)
+  assert.deepEqual(changes.map(change => change.value), ['Month', 'Year'], 'a later scroll without a native target uses geometry')
+})
+
 test('wheel: the value in the change is data-value, or the option\'s text', () => {
   const { root, changes, scroll } = setup([option('Hour', 'aria-selected="true" data-value="PT1H"'), option('Day', 'aria-selected="false" data-value="P1D"'), option('  Week\n', 'aria-selected="false"')].join('\n'))
   wheel(root)

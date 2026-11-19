@@ -1,11 +1,33 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
+import { execFileSync } from 'node:child_process'
 import { dom } from './dom.ts'
 import { schedule, scheduleLayout } from '../../behaviors/schedule.js'
 
 const base = { locale: 'en-US', weekStart: 1, today: '2026-11-13' }
 /** Intl puts thin and narrow spaces around a range's dash and before AM and PM; compare words, not spaces. */
 const words = (text: string | null | undefined) => text?.replace(/\s/g, ' ')
+
+test('scheduleLayout: floating clock times keep their labels through a host daylight-saving gap', () => {
+  const script = `
+    import { scheduleLayout } from ${JSON.stringify(new URL('../../behaviors/schedule.js', import.meta.url).href)}
+    const date = '2026-03-08'
+    const layout = scheduleLayout({ date, view: 'day' }, {
+      locale: 'en-US', today: date,
+      events: [{ id: 'talk', title: 'Talk', start: date + 'T02:30', end: date + 'T03:30' }],
+    })
+    const { time, label, start, end } = layout.days[0].items[0]
+    console.log(JSON.stringify({ time, label, start, end, rail: layout.rail }))
+  `
+  const inZone = (TZ: string) => JSON.parse(execFileSync(process.execPath, ['--input-type=module', '-e', script], {
+    encoding: 'utf8', env: { ...process.env, TZ },
+  }))
+  const utc = inZone('UTC')
+  assert.equal(words(utc.time), '2:30 AM – 3:30 AM')
+  assert.match(words(utc.label)!, /2:30 AM – 3:30 AM/)
+  assert.deepEqual([utc.start, utc.end], [2.5, 3.5])
+  assert.deepEqual(inZone('America/New_York'), utc)
+})
 
 test('scheduleLayout: a month is the weeks that hold its days, from the chosen first day of the week', () => {
   const monday = scheduleLayout({ date: '2026-11-13', view: 'month' }, base)

@@ -239,8 +239,8 @@ export function scheduleLayout(given, options = {}) {
   const full = format({ weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
   const weekdayShort = format({ weekday: 'short' })
   const agendaDate = format({ weekday: 'short', day: 'numeric', month: 'short' })
-  const clock = format({ hour: 'numeric', minute: '2-digit' })
-  const hour = format({ hour: 'numeric' })
+  const clock = format({ hour: 'numeric', minute: '2-digit', timeZone: 'UTC' })
+  const hour = format({ hour: 'numeric', timeZone: 'UTC' })
   const number = new Intl.NumberFormat(locale, { useGrouping: false })
   const words = {
     allDay: options.messages?.allDay ?? 'All day',
@@ -255,8 +255,10 @@ export function scheduleLayout(given, options = {}) {
   const lanes = Math.max(1, Math.floor(options.lanes ?? 3))
 
   const spans = /** @type {NonNullable<ReturnType<typeof span>>[]} */ ((options.events ?? []).map(span).filter(Boolean))
-  /** @param {Date} date @param {number} minutes */
-  const at = (date, minutes) => clock.format(new Date(date.getFullYear(), date.getMonth(), date.getDate(), Math.floor(minutes / 60), minutes % 60))
+  /** Anchor floating clock minutes in UTC so a host DST gap cannot move them. @param {number} minutes */
+  const clockTime = (minutes) => new Date(Date.UTC(2000, 0, 1, 0, minutes))
+  /** @param {number} minutes */
+  const at = (minutes) => clock.format(clockTime(minutes))
   /** When an event is, in words. @param {NonNullable<ReturnType<typeof span>>} item */
   function when(item) {
     if (!item.timed) {
@@ -264,8 +266,8 @@ export function scheduleLayout(given, options = {}) {
     }
     const start = /** @type {Date} */ (item.fromDate)
     const end = /** @type {Date} */ (item.toDate)
-    if (iso(start) === iso(end)) return `${full.format(start)}, ${at(start, item.from)} – ${at(end, item.to)}`
-    return `${full.format(start)} ${at(start, item.from)} – ${full.format(end)} ${at(end, item.to)}`
+    if (iso(start) === iso(end)) return `${full.format(start)}, ${at(item.from)} – ${at(item.to)}`
+    return `${full.format(start)} ${at(item.from)} – ${full.format(end)} ${at(item.to)}`
   }
   /** The order events are listed in: all day first, longer first, earlier first. @param {NonNullable<ReturnType<typeof span>>} a @param {NonNullable<ReturnType<typeof span>>} b */
   const order = (a, b) => (a.first.getTime() - b.first.getTime()) || (Number(b.long) - Number(a.long)) || (between(b.first, b.last) - between(a.first, a.last)) || (a.from - b.from) || a.event.title.localeCompare(b.event.title) || a.event.id.localeCompare(b.event.id)
@@ -303,7 +305,7 @@ export function scheduleLayout(given, options = {}) {
   const listed = (date) => spans.filter((item) => item.first <= date && item.last >= date).sort(order).map((item) => piece(item, {
     column: 1,
     plain: item.timed && !item.long,
-    time: !item.timed ? words.allDay : iso(item.first) === iso(date) ? at(date, item.from) : '',
+    time: !item.timed ? words.allDay : iso(item.first) === iso(date) ? at(item.from) : '',
     continued: item.first < date,
     continues: item.last > date
   }))
@@ -362,7 +364,7 @@ export function scheduleLayout(given, options = {}) {
           span: length,
           lane,
           plain: short,
-          time: item.timed && item.first >= head ? at(item.first, item.from) : '',
+          time: item.timed && item.first >= head ? at(item.from) : '',
           continued: !short && item.first < head,
           continues: !short && item.last > tail
         })
@@ -417,7 +419,7 @@ export function scheduleLayout(given, options = {}) {
       column,
       span: length,
       lane,
-      time: item.timed && item.first >= head ? at(item.first, item.from) : '',
+      time: item.timed && item.first >= head ? at(item.from) : '',
       continued: item.first < head,
       continues: item.last > tail
     }))
@@ -451,7 +453,7 @@ export function scheduleLayout(given, options = {}) {
           end: each.end,
           lane,
           lanes: ends.length,
-          time: `${at(date, Math.round(each.start * 60))} – ${at(date, Math.round(each.end * 60) % 1440)}`,
+          time: `${at(Math.round(each.start * 60))} – ${at(Math.round(each.end * 60) % 1440)}`,
           continued: each.continued,
           continues: each.continues
         }))
@@ -473,7 +475,7 @@ export function scheduleLayout(given, options = {}) {
   }
   layout.from = from
   layout.to = to
-  layout.rail = Array.from({ length: to - from + 1 }, (_, index) => hour.format(new Date(2000, 0, 1, (from + index) % 24)))
+  layout.rail = Array.from({ length: to - from + 1 }, (_, index) => hour.format(clockTime((from + index) * 60)))
   return layout
 }
 
