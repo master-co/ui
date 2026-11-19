@@ -49,6 +49,12 @@ import '@master/ui/components/button.css'
 import '@master/ui/layouts/shell.css'
 ```
 
+For module imports, declare the layer order in the document's head before any stylesheet. This preserves the cascade when route styles arrive before the preset:
+
+```html
+<style>@layer theme, base, defaults, components, utilities;</style>
+```
+
 Take one route, never both. A CSS `@import` includes a file again wherever it is written, so the full import beside a single stylesheet, or a CSS `@import` of one component, delivers that stylesheet twice; a bundler loads a module import once. A library built on Master UI imports per stylesheet from its modules, and so does an app that uses it. See [Keep to one route](https://ui.master.co/guide/installation#one-route).
 
 Every rule of the library is in `@layer components.ui`, a layer inside `components`. Utilities in your markup win over it, and so does a rule of your own in `@layer components`, whatever its specificity and wherever a bundle puts it. A property your rule declares then also beats what the component declares for it in a state such as `:hover` or `:disabled`. See [Where your rule stands](https://ui.master.co/guide/customization#rule-layer).

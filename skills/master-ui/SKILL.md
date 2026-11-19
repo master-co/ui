@@ -27,6 +27,7 @@ A CSS `@import` is an include, not a module: a stylesheet that two files import,
 
 - **An application: the whole library, once.** One line, `@import '@master/ui';`, in one stylesheet, and nothing else in the project imports a stylesheet of the library. A project that ran `master-ui init` has `ui/index.css` in place of that line; it is then the one source, and the only stylesheet that imports the others.
 - **An application that loads on demand: one module import per stylesheet.** `import '@master/ui/components/<name>.css'` (or `layouts/<name>.css`) in the module that renders the component, for every class its markup uses. The theme, `@import '@master/ui/theme.css'`, stays in the app stylesheet after the preset.
+- **Declare the layers in the document for module imports.** Put `<style>@layer theme, base, defaults, components, utilities;</style>` in the page's head before any stylesheet. That sets the order even if a route's component styles arrive before the preset.
 - **Never both.** Do not add a module import of one stylesheet to a project that imports the whole library, or the whole library to a project that imports stylesheets one by one.
 - **Never a CSS `@import` of one component.** No stylesheet of the project writes `@import '@master/ui/components/<name>.css'`, in a `.css` file or in a `<style>` block. Only the entry does: the package's own, or `ui/index.css`.
 - **A library built on Master UI imports per stylesheet, from its modules.** An application that uses such a library is therefore on that route too: it imports each stylesheet it uses from its own modules and does not write `@import '@master/ui'`. Before adding either import, look at what the project's dependencies already import.
@@ -48,6 +49,7 @@ Then:
 - A modifier goes with its base on the same element; a part goes inside its root.
 - Mark a state with the attribute the contract lists (`disabled`, `aria-pressed="true"`, `aria-selected="true"`, `open`). Never add a class for a state.
 - Give every control an accessible name. An icon-only button needs `aria-label`.
+- For artwork with its own SVG stroke width, apply `icon` to a holder and keep the original width on the SVG. See [Icon stroke](https://ui.master.co/components/icon#stroke).
 - Lay out with Master CSS utilities in the markup. Utilities win over component classes, so one instance needs no override.
 - Overlays use the platform: `<dialog>` opened with `command="show-modal"` and `commandfor`, a `popover` opened with `popovertarget`, a tooltip with `popover="hint"` and `interestfor`. Add no positioning, dismissal or focus-trapping script.
 - When the contract says `"script": "required"` or names a `behavior`, attach the reference script: `import { combobox } from '@master/ui/behaviors/combobox.js'`, then `combobox(element)`. `attach()` from `@master/ui/behaviors` attaches every pattern in a document. In React, Svelte or Vue, use the framework component instead, as below.

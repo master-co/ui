@@ -33,6 +33,7 @@ Then adopt Master UI conservatively:
 1. Run every command from the app root, where its package.json lives, with the project's package manager.
 2. Install the package at an exact version: npm install @master/ui --save-exact (bun add @master/ui --exact, pnpm add @master/ui --save-exact). A minor or patch release keeps every public name but can change how a component looks, so keep the version pinned and review each upgrade.
 3. Load the stylesheet in the stylesheet the app already loads. Source route: add @import '@master/ui'; on the line after @import '@master/css';, or, with npx master-ui init, @import './ui/index.css'; in its place (adjust the path to where ui/ is), or, with module imports, @import '@master/ui/theme.css'; in its place and import '@master/ui/components/<name>.css' in each module that renders that component. Precompiled route: @import '@master/ui/base.css'; then @import '@master/ui/standalone.css';, and omit base.css if the project already has an equivalent reset. Installing the package alone does not load anything. Then set the page's viewport as https://ui.master.co/guide/installation#set-the-viewport shows: the viewport tag and the short script after it that stops iOS zooming onto a focused field.
+   For module imports, put <style>@layer theme, base, defaults, components, utilities;</style> in the document head before any stylesheet.
 4. Add no behavior script and no framework component yet. When a pattern that needs one is used later, follow https://ui.master.co/guide/behaviors, or https://ui.master.co/guide/frameworks with npx master-ui add <name> in React, Svelte or Vue.
 5. If I chose the full agent setup: install the skill with npx skills add master-co/ui --skill master-ui, append the Master UI block from https://ui.master.co/guide/ai.md#agents-md to AGENTS.md with the project's actual validation commands below it, and add "check:ui": "master-ui check --strict" to the package.json scripts.
 6. If I chose to replace named components, rewrite each one's markup from its contract (npx master-ui contract <name>), keep its behavior and accessible names, and remove the old dependency only after nothing uses it.
@@ -104,6 +105,12 @@ npm install @master/ui --save-exact
 ```js name=save-button.js
 import '@master/ui/components/button.css'
 import '@master/ui/components/spinner.css'
+```
+
+문서의 `<head>`에서 모든 스타일시트보다 먼저 캐스케이드 레이어 순서를 선언하세요. 라우트의 컴포넌트 CSS가 `app.css`보다 먼저 로드될 수 있습니다. `components`가 먼저 선언되면 프리셋의 `base`가 뒤에 놓여 리셋이 컴포넌트 스타일을 덮을 수 있습니다.
+
+```html name=app.html
+<style>@layer theme, base, defaults, components, utilities;</style>
 ```
 
 번들러는 한 모듈을 여러 모듈이 가져오더라도 한 번만 불러옵니다. 따라서 두 모듈이 모두 `button.css`를 가져와도 한 번만 출력됩니다. 마크업에서 사용하는 모든 클래스의 스타일시트를 포함하세요. 예를 들어 버튼 안에 `icon` 또는 `spinner`가 들어 있다면 해당 컴포넌트의 스타일시트도 필요합니다. 전체 스타일시트를 한 번에 가져오면 이 목록을 직접 관리할 필요가 없습니다.
