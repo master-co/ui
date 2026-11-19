@@ -24,6 +24,7 @@
 
 <script lang="ts">
   import type { Attachment } from 'svelte/attachments'
+  import { showFromPopoverTrigger } from '@master/ui/behaviors/internal.js'
 
   let { open = $bindable(), onOpenChange, trigger, mode = 'auto', class: className, id, children, ...root }: PopoverProps = $props()
   const generated = $props.id()
@@ -43,7 +44,7 @@
       if (open === undefined) return
       const shown = popover.matches(':popover-open')
       known = open
-      if (open && !shown) popover.showPopover()
+      if (open && !shown) showFromPopoverTrigger(popover)
       else if (!open && shown) popover.hidePopover()
     })
     return () => popover.removeEventListener('toggle', report)

@@ -164,7 +164,8 @@ function shell(/** @type {string} */ name, /** @type {string} */ framework, /** 
   while (pending.length) {
     const file = /** @type {string} */ (pending.pop())
     if (files[file] !== undefined) continue
-    files[file] = read(join(from, file)).replace(/(['"])@master\/ui\/behaviors\/([\w-]+\.js)\1/g, (whole, quote, behavior) => existsSync(join(directory, behavior)) ? `${quote}./${behavior}${quote}` : whole)
+    // Owning a behavior may copy internal.js as its support file. Other components still use the package's copy.
+    files[file] = read(join(from, file)).replace(/(['"])@master\/ui\/behaviors\/([\w-]+\.js)\1/g, (whole, quote, behavior) => behavior !== 'internal.js' && existsSync(join(directory, behavior)) ? `${quote}./${behavior}${quote}` : whole)
     for (const match of files[file].matchAll(/from\s+['"]\.\/([\w.-]+)['"]/g)) {
       // An import may name the file as it is, without its extension, or as the `.js` its `.ts` compiles to.
       const found = [match[1], `${match[1]}.ts`, `${match[1]}.tsx`, match[1].replace(/\.js$/, '.ts')].find(candidate => existsSync(join(from, candidate)))

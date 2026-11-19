@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useId, useReducer, useRef, type ComponentProps, type ReactNode } from 'react'
+import { showFromPopoverTrigger } from '@master/ui/behaviors/internal.js'
 
 export interface PopoverProps extends Omit<ComponentProps<'div'>, 'popover' | 'ref'> {
   /** Whether the popover is open, when this component is told. Leave it out and the trigger opens it. */
@@ -39,7 +40,7 @@ export function Popover({ open, onOpenChange, trigger, mode = 'auto', className,
     if (!popover || open === undefined) return
     const shown = popover.matches(':popover-open')
     known.current = open
-    if (open && !shown) popover.showPopover()
+    if (open && !shown) showFromPopoverTrigger(popover)
     else if (!open && shown) popover.hidePopover()
   }, [open, tick])
 

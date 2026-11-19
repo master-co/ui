@@ -303,3 +303,22 @@ export function clock(seconds, hours = false) {
   const s = String(whole % 60).padStart(2, '0')
   return h || hours ? `${h}:${String(m).padStart(2, '0')}:${s}` : `${m}:${s}`
 }
+
+/**
+ * Open a controlled popover from its unique declarative invoker. A popover can
+ * have several invokers or stand alone, so only use a source when it is clear.
+ * @param {HTMLElement} popover
+ */
+export function showFromPopoverTrigger(popover) {
+  const root = /** @type {Document | ShadowRoot} */ (popover.getRootNode())
+  const attribute = popover.getAttribute('popover') === 'hint' ? 'interestfor' : 'popovertarget'
+  const HTMLElement = popover.ownerDocument.defaultView?.HTMLElement
+  const invokers = popover.id && HTMLElement
+    ? [...root.querySelectorAll(`[${attribute}]`)].filter(element =>
+      element instanceof HTMLElement
+      && element.getAttribute(attribute) === popover.id
+      && element.getAttribute('popovertargetaction') !== 'hide')
+    : []
+  const source = invokers.length === 1 ? invokers[0] : undefined
+  popover.showPopover(HTMLElement && source instanceof HTMLElement ? { source } : undefined)
+}

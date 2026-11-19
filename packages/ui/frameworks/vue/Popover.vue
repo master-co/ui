@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, useId, useTemplateRef, watch } from 'vue'
+import { showFromPopoverTrigger } from '@master/ui/behaviors/internal.js'
 
 defineOptions({ inheritAttrs: false })
 
@@ -38,7 +39,7 @@ const sync = () => {
   if (!popover || open.value === undefined) return
   const shown = popover.matches(':popover-open')
   known = open.value
-  if (open.value && !shown) popover.showPopover()
+  if (open.value && !shown) showFromPopoverTrigger(popover)
   else if (!open.value && shown) popover.hidePopover()
 }
 const report = () => {

@@ -7,6 +7,7 @@
  * A card that is one destination and also holds other controls marks its title's link card-link: the link's
  * target is stretched over the card, under the description, the body, the action and the footer, so the words
  * stay selectable and every other control stays its own target.
+ * In a browser without :has(), the links keep their targets and focus rings while the cards stay at rest.
  */
 @layer components.ui {
   .card {
@@ -107,46 +108,34 @@
       }
     }
 
+    /* A pointer on a nested card's link changes that card's depth only. */
     @media (hover: hover) {
-      &:has(.card-link:hover) {
+      &:has(.card-link:hover):not(:has(.card .card-link:hover)) {
         translate: 0 var(--card-lift);
         box-shadow: var(--shadow-floating);
       }
     }
 
-    &:has(.card-link:active) {
+    &:has(.card-link:active):not(:has(.card .card-link:active)) {
       translate: 0 0;
       box-shadow: var(--shadow-raised);
       transition-duration: var(--duration-press);
     }
 
-    &:has(.card-link:focus-visible) {
-      @apply --focus-ring;
-    }
-
     @media (forced-colors: active) {
       outline: 1px solid CanvasText;
       outline-offset: -1px;
-
-      &:has(.card-link:focus-visible) {
-        outline: 2px solid Highlight;
-        outline-offset: 2px;
-      }
     }
   }
 
   /*
    * The main link, on the <a> in the title. Its target is a box stretched over the whole card, so a press on the
-   * media, the padding or the title follows it; its own ring gives way to the card's where :has() can draw that.
+   * media, the padding or the title follows it. Its ring belongs to that box and stays on the nearest card.
    */
   .card-link {
     color: inherit;
     text-decoration: none;
     -webkit-tap-highlight-color: transparent;
-
-    @supports selector(:has(.card-link)) {
-      outline: none;
-    }
 
     &::after {
       content: '';
@@ -154,6 +143,18 @@
       inset: 0;
       border-radius: calc(var(--card-radius) * var(--corner-scale));
       corner-shape: var(--corner-shape);
+    }
+
+    &:focus-visible {
+      outline: none;
+
+      &::after {
+        @apply --focus-ring;
+
+        @media (forced-colors: active) {
+          outline-color: Highlight;
+        }
+      }
     }
   }
 

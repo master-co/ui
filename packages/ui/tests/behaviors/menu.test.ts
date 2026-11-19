@@ -166,13 +166,15 @@ test('menu: Enter, Space, Escape and any key it does not handle are left to the 
   assert.equal(isOpen(root), true)
 })
 
-test('menu: the arrow that points into a submenu opens it and focus moves to its first item; the other arrow closes it', () => {
+test('menu: the arrow into a submenu opens it from its invoker and focuses the first item; the other arrow closes it', (t) => {
   const { root, sub, one, focused, press, isOpen } = setup()
+  const show = t.mock.method(sub, 'showPopover')
   menu(root)
   menu(sub)
   root.showPopover()
   one('#recent').focus()
   assert.equal(press('ArrowRight'), true)
+  assert.deepEqual(show.mock.calls[0].arguments, [{ source: one('#recent') }])
   assert.equal(isOpen(sub), true)
   assert.equal(focused(), 'atlas')
   assert.equal(press('ArrowRight'), false, 'inside the submenu there is nothing further to open')

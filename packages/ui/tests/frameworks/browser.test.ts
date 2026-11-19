@@ -72,6 +72,38 @@ test(`${engine}: native defaults and composed surface geometry`, async (t) => {
   })
 })
 
+test(`${engine}: a linked card owns its hover and focus inside a linked card`, async () => {
+  const page = await browser.newPage()
+  try {
+    await page.setContent(`<article class="card" id="outer">
+      <h2 class="card-title"><a class="card-link" id="outer-link" href="#outer">Outer</a></h2>
+      <div class="card-body">
+        <article class="card" id="inner">
+          <h3 class="card-title"><a class="card-link" id="inner-link" href="#inner">Inner</a></h3>
+        </article>
+      </div>
+    </article>`)
+    await page.addStyleTag({ content: await readFile(new URL('../../dist/standalone.css', import.meta.url), 'utf8') + '\n.card { transition: none; }' })
+    const outline = (link: string) => page.locator(link).evaluate(element => getComputedStyle(element, '::after').outlineStyle)
+    const shadow = (card: string) => page.locator(card).evaluate(element => getComputedStyle(element).boxShadow)
+    const [outer, inner] = await Promise.all([shadow('#outer'), shadow('#inner')])
+
+    await page.locator('#outer-link').focus()
+    assert.equal(await outline('#outer-link'), 'solid')
+    assert.equal(await outline('#inner-link'), 'none')
+    await page.locator('#inner-link').focus()
+    assert.equal(await outline('#outer-link'), 'none')
+    assert.equal(await outline('#inner-link'), 'solid')
+
+    await page.locator('#inner-link').hover()
+    await until(() => shadow('#inner'), value => value !== inner, 'the inner card lifts')
+    assert.equal(await shadow('#outer'), outer, 'the inner link leaves the enclosing card at rest')
+    await page.locator('#outer-link').hover()
+    await until(() => shadow('#inner'), value => value === inner, 'the inner card returns to rest')
+    await until(() => shadow('#outer'), value => value !== outer, 'the outer card lifts for its own link')
+  } finally { await page.close() }
+})
+
 for (const framework of ['react', 'svelte', 'vue']) {
   test(`${engine}/${framework}: every component, in a browser`, async (t) => {
     const page = await browser.newPage({ viewport: { width: 900, height: 800 } })
@@ -117,6 +149,32 @@ for (const framework of ['react', 'svelte', 'vue']) {
       await page.mouse.click(880, 10)
       await until(() => open(popover), value => !value, 'a press outside dismisses it')
       await said('popover', 'onOpenChange: false')
+    })
+
+    await t.test('a controlled popover opens from its declarative trigger', async () => {
+      const controlled = await browser.newPage({ viewport: { width: 900, height: 800 } })
+      try {
+        await controlled.goto(`${origin}?only=${framework}&open-popover`)
+        const popover = controlled.locator('[data-example="popover"] .popover')
+        const trigger = controlled.locator('[data-example="popover"] button[popovertarget]')
+        await until(() => open(popover), Boolean, 'the owner opens the popover')
+        const hasSource = await controlled.evaluate(() => {
+          const node = document.createElement('div')
+          node.popover = 'manual'
+          document.body.append(node)
+          let read = false
+          node.showPopover({ get source() { read = true; return undefined } })
+          node.remove()
+          return read
+        })
+        if (anchored && hasSource) {
+          await until(async () => {
+            const anchor = await box(trigger)
+            const panel = await box(popover)
+            return panel.y - anchor.y - anchor.height
+          }, gap => gap > 2 && gap < 10, 'it sits under its source')
+        }
+      } finally { await controlled.close() }
     })
 
     await t.test('a tooltip shows for the control that names it', async (t) => {

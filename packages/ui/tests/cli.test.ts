@@ -181,6 +181,9 @@ test('add reads the framework from package.json, and imports a behavior the proj
     assert.equal(run('add', 'combobox').status, 0)
     assert.match(read('ui/combobox.tsx'), /from '\.\/combobox\.js'/)
     assert.doesNotMatch(read('ui/combobox.tsx'), /@master\/ui\/behaviors/)
+    write('ui/internal.js', '// Support code from an older owned component.')
+    assert.equal(run('add', 'popover').status, 0)
+    assert.match(read('ui/popover.tsx'), /@master\/ui\/behaviors\/internal\.js/)
     assert.equal(run('add', 'combobox', '--framework=solid').status, 1)
   } finally { remove() }
 })

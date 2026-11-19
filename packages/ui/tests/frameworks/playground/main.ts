@@ -39,6 +39,7 @@ for (const [framework, load] of Object.entries(frameworks)) {
   document.querySelector('main')!.append(section)
   const { mount, toast } = await load()
   for (const [name, props] of Object.entries(examples)) {
+    if (query.has('open-popover') && name !== 'popover') continue
     const example = document.createElement('div')
     example.dataset.example = name
     example.innerHTML = '<h3></h3><div></div><output></output>'
@@ -46,7 +47,8 @@ for (const [framework, load] of Object.entries(frameworks)) {
     section.append(example)
     const output = example.querySelector('output')!
     const heard = Object.fromEntries((outputs[name] ?? []).map(output_ => [output_, (value: unknown) => { output.textContent = `${output_}: ${JSON.stringify(value)}` }]))
-    mount(name, example.querySelector('div')!, { ...props, ...heard })
+    const controlled = name === 'popover' && query.has('open-popover') ? { open: true } : {}
+    mount(name, example.querySelector('div')!, { ...props, ...heard, ...controlled })
     if (name === 'toast') {
       const button = document.createElement('button')
       button.type = 'button'

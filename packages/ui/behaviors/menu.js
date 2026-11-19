@@ -85,7 +85,7 @@ export function menu(root) {
       event.preventDefault()
       // The submenu's own behavior moves focus to its first item as it opens. One already open, from a press
       // or a hover, opens no more: focus is moved into it here.
-      if (!isOpen(sub)) /** @type {HTMLElement} */ (sub).showPopover()
+      if (!isOpen(sub)) /** @type {HTMLElement} */ (sub).showPopover({ source: control(current) })
       else {
         const first = [...sub.querySelectorAll('.menu-item')].find((item) => item.closest('.menu') === sub && enabled(item) && enabled(control(item)))
         if (first) control(first).focus()
