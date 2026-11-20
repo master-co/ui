@@ -8,8 +8,8 @@
   import '@master/ui/components/icon.css'
   import '@master/ui/components/slider.css'
   import '../styles/preview-viewport.css'
-  import IconMoon from '@tabler/icons-svelte-runes/icons/moon'
-  import IconSun from '@tabler/icons-svelte-runes/icons/sun'
+  import IconMoon from '@master/icons-svelte/native/16/soft/moon'
+  import IconSun from '@master/icons-svelte/native/16/soft/sun'
 
   const { t } = getSite()
   let { title, document: source, height, mediumHeight = height, narrowHeight = height, responsive = false, theme = false, framed = false, background = 'plain' }: {

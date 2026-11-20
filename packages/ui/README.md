@@ -69,6 +69,22 @@ Every rule of the library is in `@layer components.ui`, a layer inside `componen
 <dialog id="confirm" class="dialog" aria-labelledby="confirm-title" closedby="any">…</dialog>
 ```
 
+## Icons
+
+The icons in the components, the framework components and every example are [Master Icons](https://icons.master.co): one drawing each for 16, 20 and 24px, at a sixteenth of its grid. `icon` takes any SVG, image or icon component, so another set works too.
+
+```sh
+npm install @master/icons-react --save-exact   # or -vue, -svelte, -preact, -astro; @master/icons for SVG files
+```
+
+```tsx
+import SearchIcon from '@master/icons-react/native/16/soft/search'
+
+<button type="button" className="btn btn-square" aria-label="Search"><SearchIcon className="icon" /></button>
+```
+
+Pick the drawing by the size the component gives the icon: 16 up to 17px, 20 for 18 to 22px, 24 above. An icon keeps the stroke its drawing carries; `--icon-stroke` replaces it for a set of plain line icons. See [Icon](https://ui.master.co/components/icon).
+
 ## Contracts
 
 `components/<name>.json` and `layouts/<name>.json` follow `contract.schema.json`; `@master/ui/contracts.json` collects them. The table is written from them by `bun run build`.

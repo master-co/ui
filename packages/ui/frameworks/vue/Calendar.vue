@@ -77,11 +77,11 @@ useBehavior(root, calendar, () => ({
       <div v-for="(data, index) in grids" :key="index" class="calendar-month">
         <div class="calendar-header">
           <button v-if="index === 0" type="button" class="btn btn-quiet btn-square btn-sm" :aria-label="previousLabel">
-            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6" /></svg>
+            <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5L10.3586 7.8586A0.2 0.2 0 0 1 10.3586 8.1414L6 12.5" transform="rotate(180 8 8)" /></svg>
           </button>
           <h3 :id="`${id}-title-${index}`" class="calendar-title" aria-live="polite">{{ data.title }}</h3>
           <button v-if="index === count - 1" type="button" class="btn btn-quiet btn-square btn-sm" :aria-label="nextLabel">
-            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
+            <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5L10.3586 7.8586A0.2 0.2 0 0 1 10.3586 8.1414L6 12.5" /></svg>
           </button>
         </div>
         <div class="calendar-grid" role="grid" :aria-labelledby="`${id}-title-${index}`" :aria-multiselectable="several">
@@ -97,11 +97,11 @@ useBehavior(root, calendar, () => ({
     <template v-else>
       <div class="calendar-header">
         <button type="button" class="btn btn-quiet btn-square btn-sm" :aria-label="previousLabel">
-          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6" /></svg>
+          <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5L10.3586 7.8586A0.2 0.2 0 0 1 10.3586 8.1414L6 12.5" transform="rotate(180 8 8)" /></svg>
         </button>
         <h3 :id="`${id}-title`" class="calendar-title" aria-live="polite"><button type="button" class="calendar-title-button" :aria-description="jumpLabel">{{ periods?.title ?? grids[0]!.title }}</button></h3>
         <button type="button" class="btn btn-quiet btn-square btn-sm" :aria-label="nextLabel">
-          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
+          <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5L10.3586 7.8586A0.2 0.2 0 0 1 10.3586 8.1414L6 12.5" /></svg>
         </button>
       </div>
       <div class="calendar-grid" role="grid" :aria-labelledby="`${id}-title`" :aria-multiselectable="several">

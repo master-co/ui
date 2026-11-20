@@ -45,10 +45,11 @@ export const forgeExamples: ForgeExample[] = [
     html: `<div class="toast-region" role="region"
   aria-label="Notifications" aria-live="polite">
   <dialog open class="toast toast-success" aria-labelledby="forge-toast">
-    <svg class="icon toast-icon" viewBox="0 0 24 24" aria-hidden="true"
+    <svg class="icon toast-icon" viewBox="0 0 16 16" aria-hidden="true"
       fill="none" stroke="currentColor" stroke-linecap="round">
-      <circle cx="12" cy="12" r="9"/>
-      <path d="m8.5 12.5 2.5 2.5 4.5-5.5"/>
+      <circle cx="8" cy="8" r="6"/>
+      <path d="M5 8L7.1041 9.8703A0.2 0.2 0 0 0 7.3832
+        9.8573L10.75 6.25"/>
     </svg>
     <div class="toast-body">
       <p class="toast-title" id="forge-toast">Deployed to production</p>
@@ -56,9 +57,10 @@ export const forgeExamples: ForgeExample[] = [
     </div>
     <form method="dialog" class="toast-close">
       <button class="btn btn-quiet btn-square btn-sm" aria-label="Dismiss">
-        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"
+        <svg class="icon" viewBox="0 0 16 16" aria-hidden="true"
           fill="none" stroke="currentColor" stroke-linecap="round">
-          <path d="M6 6l12 12M18 6 6 18"/>
+          <path d="M4 4L12 12"/>
+          <path d="M4 12L12 4"/>
         </svg>
       </button>
     </form>

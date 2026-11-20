@@ -24,7 +24,7 @@ export function Log({ following, defaultFollowing = true, onFollowingChange, lat
     <div className={className ? `scroll-area ${className}` : 'scroll-area'} role="log" tabIndex={0} ref={ref} {...root}>
       {children}
       <button type="button" className="btn btn-sm btn-pill scroll-area-latest" hidden={first}>
-        <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6" /></svg>
+        <svg className="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M13.6362 7.5189A0.4947 0.4947 0 0 0 13.5 7.5L2.4755 7.5006A0.5 0.5 0 0 0 2.4266 8.4946L2.5 8.5H13.5A0.4947 0.4947 0 0 0 13.6362 8.4811A0.7009 0.7009 0 0 0 13.6362 7.5189Z" fill="currentColor" stroke="none" fillRule="evenodd" transform="rotate(90 8 8)" /><path d="M8 4.5L13.2348 7.8313A0.2 0.2 0 0 1 13.2348 8.1687L8 11.5" transform="rotate(90 8 8)" /></svg>
         {latestLabel}
       </button>
     </div>

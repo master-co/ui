@@ -51,6 +51,9 @@ test('JSX: className is read, an expression is not guessed at, and a generic is 
   assert.deepEqual(codes('<button className={clsx("btn-primary", props.className)}>Save</button>'), [])
   assert.deepEqual(codes('<Button className="btn-square" />'), [], 'a component may add the base itself')
   assert.deepEqual(codes('<button {...props} className="btn btn-square" />'), [])
+  const classes = (markup: string) => parse(markup).flatMap(element => element.classes)
+  assert.deepEqual(classes('<a className="btn">Talk to sales<ArrowRightIcon className="icon" /></a>'), ['btn', 'icon'], 'a component a word runs into is a tag')
+  assert.deepEqual(classes('<p className="text">{rows.map<Row>(row => row.name)}{new Map<string, number>().size}</p>'), ['text'], 'a generic inside an element is still none')
 })
 
 test('JSX: attribute names are read as HTML reads them', () => {

@@ -41,7 +41,7 @@
 -->
 <div class={['input-group', 'stepper', className]} {@attach attach}>
   <button type="button" class="btn btn-square" value="-1" tabindex={-1} aria-label={decrementLabel} {disabled}>
-    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14" /></svg>
+    <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8L13 8" /></svg>
   </button>
   {#if format}
     <span class="stepper-value">
@@ -52,6 +52,6 @@
     <input class="input-group-field stepper-field" type="number" value={first ?? undefined} {disabled} {...field} />
   {/if}
   <button type="button" class="btn btn-square" value="1" tabindex={-1} aria-label={incrementLabel} {disabled}>
-    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+    <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8L13 8" /><path d="M8 3L8 13" /></svg>
   </button>
 </div>

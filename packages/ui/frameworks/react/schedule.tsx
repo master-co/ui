@@ -41,8 +41,8 @@ export interface ScheduleProps extends Omit<ComponentProps<'section'>, 'defaultV
   labels?: ScheduleLabels
 }
 
-const icon = (path: string) => (
-  <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={path} /></svg>
+const chevron = (turn?: number) => (
+  <svg className="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 3.5L10.3586 7.8586A0.2 0.2 0 0 1 10.3586 8.1414L6 12.5" transform={turn ? `rotate(${turn} 8 8)` : undefined} /></svg>
 )
 
 const style = (properties: Record<string, string | number>) => properties as CSSProperties
@@ -123,8 +123,8 @@ export function Schedule({ events, value, defaultValue, onValueChange, onEventCl
     <section className={className ? `schedule-view ${className}` : 'schedule-view'} aria-labelledby={`${id}title`} ref={ref} {...root}>
       <div className="schedule-view-header">
         <button type="button" className="btn btn-sm schedule-view-today">{words.today}</button>
-        <button type="button" className="btn btn-sm btn-square btn-quiet schedule-view-previous" aria-label={words.previous}>{icon('m15 6-6 6 6 6')}</button>
-        <button type="button" className="btn btn-sm btn-square btn-quiet schedule-view-next" aria-label={words.next}>{icon('m9 6 6 6-6 6')}</button>
+        <button type="button" className="btn btn-sm btn-square btn-quiet schedule-view-previous" aria-label={words.previous}>{chevron(180)}</button>
+        <button type="button" className="btn btn-sm btn-square btn-quiet schedule-view-next" aria-label={words.next}>{chevron()}</button>
         <h2 className="schedule-view-title" id={`${id}title`} aria-live="polite">{layout.title}</h2>
         <div className="segmented segmented-sm schedule-view-switch" role="radiogroup" aria-label={words.view}>
           {(['day', 'week', 'month', 'agenda'] as const).map(name => (

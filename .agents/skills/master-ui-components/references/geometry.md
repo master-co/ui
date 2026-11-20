@@ -68,7 +68,7 @@ Joined controls overlap their rings instead of doubling them: buttons in a `btn-
 
 ## Icons
 
-Icons are drawn on a 24px grid with a 1.5 stroke (about 1px at 16px). They carry roughly 3px of internal air, so controls pull them 1–2px toward the edge with `--icon-offset`. Center a square icon button by geometry, not by nudging the icon.
+Icons are Master Icons, drawn on a 16, 20 or 24px grid at a sixteenth of it (1, 1.25 and 1.5: 1px at 16px), and picked by the size the component sets: 16 up to 17px, 20 for 18 to 22px, 24 above. `icon` leaves the drawing its stroke; a glyph a stylesheet draws as a mask comes from the same set. They carry roughly 3px of internal air, so controls pull them 1–2px toward the edge with `--icon-offset`. Center a square icon button by geometry, not by nudging the icon.
 
 ## Type
 

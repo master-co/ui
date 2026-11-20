@@ -91,15 +91,15 @@ const told = () => {
     <audio v-else class="player-media" ref="media" :src="src" controls preload="metadata" @timeupdate="tell" @seeked="tell" @play="told" @pause="told" @ended="told" />
     <div class="player-controls">
       <button type="button" class="player-button player-play" :aria-label="name.play" aria-pressed="false">
-        <svg class="icon player-off" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.8v14.4a1 1 0 0 0 1.5.86l11.5-7.2a1 1 0 0 0 0-1.72L8.5 3.94A1 1 0 0 0 7 4.8" /></svg>
-        <svg class="icon player-on" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4" width="4" height="16" rx="1" /><rect x="14" y="4" width="4" height="16" rx="1" /></svg>
+        <svg class="icon player-off" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.1664 3.8652L11.8319 7.1338A1 1 0 0 1 11.8319 8.8662L6.1664 12.1348A1 1 0 0 1 4.6667 11.2686L4.6667 4.7314A1 1 0 0 1 6.1664 3.8652Z" /></svg>
+        <svg class="icon player-on" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="2.6667" height="10" rx="0.8" /><rect x="9.3333" y="3" width="2.6667" height="10" rx="0.8" /></svg>
       </button>
       <span class="player-elapsed">{{ clock(first) }}</span>
       <input type="range" class="slider player-seek" min="0" max="0" step="any" :value.attr="first" :aria-label="name.seek">
       <span class="player-duration">{{ clock(0) }}</span>
       <button type="button" class="player-button player-mute" :aria-label="name.mute" aria-pressed="false">
-        <svg class="icon player-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z" /><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13" /></svg>
-        <svg class="icon player-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z" /><path d="m16 9 6 6M22 9l-6 6" /></svg>
+        <svg class="icon player-off" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.6 6L4.4365 6A0.6 0.6 0 0 0 4.8378 5.846L6.9986 3.9013A0.6 0.6 0 0 1 8 4.3472L8 11.6528A0.6 0.6 0 0 1 6.9986 12.0987L4.8378 10.154A0.6 0.6 0 0 0 4.4365 10L2.6 10A0.6 0.6 0 0 1 2 9.4L2 6.6A0.6 0.6 0 0 1 2.6 6Z" /><path d="M10.3333 6C11.3333 7 11.3333 9 10.3333 10" /><path d="M12.3333 3.6667C14.6667 6 14.6667 10 12.3333 12.3333" /></svg>
+        <svg class="icon player-on" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.6 6L4.4365 6A0.6 0.6 0 0 0 4.8378 5.846L6.9986 3.9013A0.6 0.6 0 0 1 8 4.3472L8 11.6528A0.6 0.6 0 0 1 6.9986 12.0987L4.8378 10.154A0.6 0.6 0 0 0 4.4365 10L2.6 10A0.6 0.6 0 0 1 2 9.4L2 6.6A0.6 0.6 0 0 1 2.6 6Z" /><path d="M11 6.3333L14.3333 9.6667" /><path d="M14.3333 6.3333L11 9.6667" /></svg>
       </button>
       <input type="range" class="slider player-volume" min="0" max="1" step="0.05" value="1" :aria-label="name.volume">
       <button type="button" class="player-button player-speed" :popovertarget="speeds" :aria-label="name.speed">{{ rate }}×</button>
@@ -110,15 +110,15 @@ const told = () => {
         </label>
       </div>
       <button v-if="video && tracks.length" type="button" class="player-button player-captions" :aria-label="name.captions" aria-pressed="false">
-        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M7 15h4M15 15h2M7 11h2M13 11h4" /></svg>
+        <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="12" height="10" rx="1" /><path d="M4.6667 6.6667L6 6.6667" /><path d="M8.6667 6.6667L11.3333 6.6667" /><path d="M4.6667 9.6667L7.3333 9.6667" /><path d="M10 9.6667L11.3333 9.6667" /></svg>
       </button>
       <template v-if="video">
         <button type="button" class="player-button player-pip" :aria-label="name.pip" aria-pressed="false">
-          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4" /><rect x="13" y="14" width="9" height="6" rx="1.5" /></svg>
+          <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 12L2.3333 12A1 1 0 0 1 1.3333 11L1.3333 3.6667A1 1 0 0 1 2.3333 2.6667L13 2.6667A1 1 0 0 1 14 3.6667L14 6.1667" /><rect x="8" y="8.6667" width="6.6667" height="4.6667" rx="1" /></svg>
         </button>
         <button type="button" class="player-button player-fullscreen" :aria-label="name.fullscreen" aria-pressed="false">
-          <svg class="icon player-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3" /></svg>
-          <svg class="icon player-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3v3a2 2 0 0 1-2 2H3M21 8h-3a2 2 0 0 1-2-2V3M3 16h3a2 2 0 0 1 2 2v3M16 21v-3a2 2 0 0 1 2-2h3" /></svg>
+          <svg class="icon player-off" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.6667 6L2.6667 3.6667A1 1 0 0 1 3.6667 2.6667L6 2.6667" /><path d="M10 2.6667L12.3333 2.6667A1 1 0 0 1 13.3333 3.6667L13.3333 6" /><path d="M13.3333 10L13.3333 12.3333A1 1 0 0 1 12.3333 13.3333L10 13.3333" /><path d="M6 13.3333L3.6667 13.3333A1 1 0 0 1 2.6667 12.3333L2.6667 10" /></svg>
+          <svg class="icon player-on" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.6667 6L5 6A1 1 0 0 0 6 5L6 2.6667" /><path d="M10 2.6667L10 5A1 1 0 0 0 11 6L13.3333 6" /><path d="M13.3333 10L11 10A1 1 0 0 0 10 11L10 13.3333" /><path d="M6 13.3333L6 11A1 1 0 0 0 5 10L2.6667 10" /></svg>
         </button>
       </template>
     </div>

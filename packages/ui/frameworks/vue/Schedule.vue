@@ -70,10 +70,10 @@ const hours = (item: ScheduleItem) => `--start: ${item.start}; --end: ${item.end
     <div class="schedule-view-header">
       <button type="button" class="btn btn-sm schedule-view-today">{{ words.today }}</button>
       <button type="button" class="btn btn-sm btn-square btn-quiet schedule-view-previous" :aria-label="words.previous">
-        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6" /></svg>
+        <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5L10.3586 7.8586A0.2 0.2 0 0 1 10.3586 8.1414L6 12.5" transform="rotate(180 8 8)" /></svg>
       </button>
       <button type="button" class="btn btn-sm btn-square btn-quiet schedule-view-next" :aria-label="words.next">
-        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
+        <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5L10.3586 7.8586A0.2 0.2 0 0 1 10.3586 8.1414L6 12.5" /></svg>
       </button>
       <h2 class="schedule-view-title" :id="`${id}-title`" aria-live="polite">{{ layout.title }}</h2>
       <div class="segmented segmented-sm schedule-view-switch" role="radiogroup" :aria-label="words.view">

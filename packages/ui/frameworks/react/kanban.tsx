@@ -49,7 +49,7 @@ export interface KanbanProps<C extends KanbanColumn, T extends KanbanItem> exten
   value?: KanbanValue
   defaultValue?: KanbanValue
   onValueChange?: (value: KanbanValue) => void
-  /** What an item shows, with the attributes of its handle and of its move button to spread. */
+  /** What an item shows, with the attributes of its handle and of its move button to spread. Each button holds its icon. */
   children: (item: T, controls: KanbanControls) => ReactNode
   /** What stands beside a column's title, such as the number of items it holds. */
   header?: (column: C, items: T[]) => ReactNode

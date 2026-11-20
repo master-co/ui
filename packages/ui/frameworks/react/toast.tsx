@@ -129,7 +129,7 @@ function Toast({ toast: { id, version, leaving, title, description, status, icon
       )}
       <form method="dialog" className="toast-close">
         <button className="btn btn-quiet btn-square btn-sm" aria-label={dismissLabel}>
-          <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+          <svg className="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 4L12 12" /><path d="M4 12L12 4" /></svg>
         </button>
       </form>
     </dialog>

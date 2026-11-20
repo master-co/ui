@@ -25,6 +25,8 @@ const rawText = new Set(['script', 'style'])
 /** Elements a word may run straight into, as in `Save<kbd>`. Any other `word<name` is read as a generic or a comparison. */
 const inlineElements = new Set(['a', 'abbr', 'b', 'bdi', 'bdo', 'br', 'button', 'cite', 'code', 'data', 'del', 'dfn', 'em', 'i', 'img', 'input', 'ins', 'kbd', 'label', 'mark', 'q', 's', 'samp', 'small', 'span', 'strong', 'sub', 'sup', 'svg', 'time', 'u', 'var', 'wbr', 'div', 'p', 'ul', 'ol', 'li', 'select', 'textarea'])
 /** Attributes whose value is a list of tokens, so a required value is one of them. */
+/** What follows the name of a component that a word runs straight into: an attribute with a value, or the end of an empty tag. */
+const componentAfter = /\s+[A-Za-z_:@][\w:.-]*=["'{]|\s*\/>/y
 const tokenLists = new Set(['rel'])
 const tagName = /[A-Za-z][\w.:-]*/y
 const attributeName = /[^\s=/>{}"']+/y
@@ -140,8 +142,11 @@ export function parse(source) {
     tagName.lastIndex = index + 1
     const tag = tagName.exec(source)?.[0]
     // A `<` that opens no tag: a comparison or an arrow. A generic such as `Map<string, number>` is told apart
-    // by the word character right before it and a name that is no inline element.
-    if (!tag || (/[\w)\]]/.test(source[index - 1] ?? '') && !inlineElements.has(tag))) {
+    // by the word character right before it and a name that is no inline element. Inside an element, a name that
+    // goes on as a tag does (an attribute with a value, or `/>`) is one: a component a word runs into, as in
+    // `Next<ArrowRightIcon className="icon" />`.
+    componentAfter.lastIndex = index + 1 + (tag?.length ?? 0)
+    if (!tag || (/[\w)\]]/.test(source[index - 1] ?? '') && !inlineElements.has(tag) && !(stack.length && componentAfter.test(source)))) {
       advance(index + 1)
       continue
     }

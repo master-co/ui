@@ -63,9 +63,9 @@ useBehavior(root, gradient, () => ({ value: first, draw: (next: GradientValue) =
       <span v-for="(stop, index) in gradientStops(shown.stops)" :key="stop.id" class="gradient-stop" role="slider" :data-id="stop.id" :aria-label="`Stop ${index + 1} of ${shown.stops.length}`" :aria-valuemin="0" :aria-valuemax="100" :aria-valuenow="stop.offset" :style="{ '--gradient-offset': stop.offset, '--gradient-color': stop.color }"></span>
     </div>
     <div class="flex flex-wrap items-center gap-xs">
-      <button type="button" class="btn btn-sm gradient-add"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>{{ words.add }}</button>
-      <button type="button" class="btn btn-sm gradient-remove"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14" /></svg>{{ words.remove }}</button>
-      <button type="button" class="btn btn-sm btn-quiet gradient-reverse"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 3 4 4-4 4M20 7H4M8 21l-4-4 4-4M4 17h16" /></svg>{{ words.reverse }}</button>
+      <button type="button" class="btn btn-sm gradient-add"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8L13 8" /><path d="M8 3L8 13" /></svg>{{ words.add }}</button>
+      <button type="button" class="btn btn-sm gradient-remove"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8L13 8" /></svg>{{ words.remove }}</button>
+      <button type="button" class="btn btn-sm btn-quiet gradient-reverse"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 1.6667L8 14.3333" /><path d="M5.6667 6.3298L5.6667 11.45A0.55 0.55 0 0 1 5.1167 12L2.5566 12A0.55 0.55 0 0 1 2.0647 11.204L4.6248 6.0839A0.55 0.55 0 0 1 5.6667 6.3298Z" /><path d="M10.3333 6.3298L10.3333 11.45A0.55 0.55 0 0 0 10.8833 12L13.4434 12A0.55 0.55 0 0 0 13.9353 11.204L11.3752 6.0839A0.55 0.55 0 0 0 10.3333 6.3298Z" /></svg>{{ words.reverse }}</button>
     </div>
     <div class="gradient-fields">
       <fieldset class="gradient-color">

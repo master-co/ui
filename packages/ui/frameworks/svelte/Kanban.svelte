@@ -48,7 +48,7 @@
     /** The arrangement: each column's value and the values of its items, in order. Bind it, or leave it out. */
     value?: KanbanValue
     onValueChange?: (value: KanbanValue) => void
-    /** What an item shows, with the attributes of its handle and of its move button to spread. */
+    /** What an item shows, with the attributes of its handle and of its move button to spread. Each button holds its icon. */
     children: Snippet<[T, KanbanControls]>
     /** What stands beside a column's title, such as the number of items it holds. */
     header?: Snippet<[C, T[]]>

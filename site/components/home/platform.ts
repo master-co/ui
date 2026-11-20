@@ -5,6 +5,18 @@
  * other sections render live markup too.
  */
 import { chartMarkup } from './chart'
+import { icon } from './icon'
+import { master as moreHorizontal } from '@master/icons/data/native/16/soft/more-horizontal'
+import { master as pencil } from '@master/icons/data/native/16/soft/pencil'
+import { master as copy } from '@master/icons/data/native/16/soft/copy'
+import { master as share } from '@master/icons/data/native/16/soft/share'
+import { master as trash } from '@master/icons/data/native/16/soft/trash'
+import { master as bold } from '@master/icons/data/native/16/soft/bold'
+import { master as italic } from '@master/icons/data/native/16/soft/italic'
+import { master as link } from '@master/icons/data/native/16/soft/link'
+import { master as code } from '@master/icons/data/native/16/soft/code'
+import { master as plus } from '@master/icons/data/native/16/soft/plus'
+import { master as arrowUp } from '@master/icons/data/native/16/soft/arrow-up'
 
 export interface PlatformFeature {
   id: string
@@ -17,7 +29,6 @@ export interface PlatformFeature {
   html: string
 }
 
-const icon = (path: string) => `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${path}</svg>`
 
 const slides = [
   ['pearl', 'A pearl on a stone plinth, in soft morning light'],
@@ -83,13 +94,13 @@ ${slides.map(([file, alt]) => `  <figure class="carousel-slide figure">
     <p class="ui-scene-title">brand-guidelines.pdf</p>
     <p class="ui-scene-meta">4.2 MB · edited 2h ago</p>
   </div>
-  <button type="button" class="btn btn-quiet btn-square btn-sm" popovertarget="platform-menu" aria-label="File actions">${icon('<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>')}</button>
+  <button type="button" class="btn btn-quiet btn-square btn-sm" popovertarget="platform-menu" aria-label="File actions">${icon(moreHorizontal)}</button>
   <div id="platform-menu" popover class="menu menu-end">
-    <button type="button" class="menu-item" popovertarget="platform-menu" popovertargetaction="hide">${icon('<path d="M4 20h4L19 9l-4-4L4 16v4Z"/>')}Rename<span class="menu-shortcut">⌘R</span></button>
-    <button type="button" class="menu-item" popovertarget="platform-menu" popovertargetaction="hide">${icon('<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>')}Duplicate<span class="menu-shortcut">⌘D</span></button>
-    <button type="button" class="menu-item" popovertarget="platform-menu" popovertargetaction="hide">${icon('<path d="M12 4v11M8 8l4-4 4 4M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/>')}Share</button>
+    <button type="button" class="menu-item" popovertarget="platform-menu" popovertargetaction="hide">${icon(pencil)}Rename<span class="menu-shortcut">⌘R</span></button>
+    <button type="button" class="menu-item" popovertarget="platform-menu" popovertargetaction="hide">${icon(copy)}Duplicate<span class="menu-shortcut">⌘D</span></button>
+    <button type="button" class="menu-item" popovertarget="platform-menu" popovertargetaction="hide">${icon(share)}Share</button>
     <hr class="menu-separator">
-    <button type="button" class="menu-item menu-item-danger" popovertarget="platform-menu" popovertargetaction="hide">${icon('<path d="M5 7h14M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>')}Delete</button>
+    <button type="button" class="menu-item menu-item-danger" popovertarget="platform-menu" popovertargetaction="hide">${icon(trash)}Delete</button>
   </div>
 </div>`,
   },
@@ -100,11 +111,11 @@ ${slides.map(([file, alt]) => `  <figure class="carousel-slide figure">
     title: 'Tooltips on hover and focus',
     summary: 'Each tool names itself and its key on hover or keyboard focus, and stays out of the way of the click.',
     html: `<div class="toolbar" role="toolbar" aria-label="Formatting">
-  <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Bold" aria-pressed="true" interestfor="platform-tip-bold">${icon('<path d="M7 5h6a3.5 3.5 0 0 1 0 7H7zM7 12h7a3.5 3.5 0 0 1 0 7H7z"/>')}</button>
-  <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Italic" aria-pressed="false" interestfor="platform-tip-italic">${icon('<path d="M11 5h6M7 19h6M14 5l-4 14"/>')}</button>
+  <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Bold" aria-pressed="true" interestfor="platform-tip-bold">${icon(bold)}</button>
+  <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Italic" aria-pressed="false" interestfor="platform-tip-italic">${icon(italic)}</button>
   <span class="toolbar-separator" role="separator" aria-orientation="vertical"></span>
-  <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Link" interestfor="platform-tip-link">${icon('<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>')}</button>
-  <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Code" interestfor="platform-tip-code">${icon('<path d="m8 8-4 4 4 4M16 8l4 4-4 4"/>')}</button>
+  <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Link" interestfor="platform-tip-link">${icon(link)}</button>
+  <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Code" interestfor="platform-tip-code">${icon(code)}</button>
 </div>
 <div id="platform-tip-bold" popover="hint" class="tooltip">Bold <kbd class="kbd">⌘B</kbd></div>
 <div id="platform-tip-italic" popover="hint" class="tooltip">Italic <kbd class="kbd">⌘I</kbd></div>
@@ -179,10 +190,10 @@ ${slides.map(([file, alt]) => `  <figure class="carousel-slide figure">
   <form class="composer">
     <textarea class="composer-field" name="message" aria-label="Reply" placeholder="Reply to the thread"></textarea>
     <div class="composer-toolbar">
-      <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Attach a file">${icon('<path d="M12 5v14M5 12h14"/>')}</button>
+      <button type="button" class="btn btn-quiet btn-square btn-sm" aria-label="Attach a file">${icon(plus)}</button>
       <div class="composer-end">
         <span class="composer-hint">Enter to send</span>
-        <button type="button" class="btn btn-primary btn-square btn-sm" aria-label="Send">${icon('<path d="M12 19V5M6 11l6-6 6 6"/>')}</button>
+        <button type="button" class="btn btn-primary btn-square btn-sm" aria-label="Send">${icon(arrowUp)}</button>
       </div>
     </div>
   </form>

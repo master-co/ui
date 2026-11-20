@@ -54,10 +54,10 @@ useBehavior(root, carousel, () => ({ value: first }), model)
       <div v-for="item in items" :key="item.value" class="carousel-slide" :class="slideClass" :id="`${id}-${item.value}`" :data-value="item.value"><slot :item="item" /></div>
     </div>
     <button type="button" class="btn btn-square btn-sm btn-pill carousel-previous" :aria-label="previousLabel" :disabled="at <= 0">
-      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path :d="vertical ? 'm6 15 6-6 6 6' : 'm15 6-6 6 6 6'" /></svg>
+      <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5L10.3586 7.8586A0.2 0.2 0 0 1 10.3586 8.1414L6 12.5" :transform="vertical ? 'rotate(-90 8 8)' : 'rotate(180 8 8)'" /></svg>
     </button>
     <button type="button" class="btn btn-square btn-sm btn-pill carousel-next" :aria-label="nextLabel" :disabled="at >= items.length - 1">
-      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path :d="vertical ? 'm6 9 6 6 6-6' : 'm9 6 6 6-6 6'" /></svg>
+      <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5L10.3586 7.8586A0.2 0.2 0 0 1 10.3586 8.1414L6 12.5" :transform="vertical ? 'rotate(90 8 8)' : undefined" /></svg>
     </button>
     <div class="carousel-dots">
       <button v-for="(item, index) in items" :key="item.value" type="button" class="carousel-dot" :aria-controls="`${id}-${item.value}`" :aria-label="dotLabel(index, items.length)" :aria-current="item.value === first ? 'true' : undefined"></button>

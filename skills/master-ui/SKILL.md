@@ -49,7 +49,8 @@ Then:
 - A modifier goes with its base on the same element; a part goes inside its root.
 - Mark a state with the attribute the contract lists (`disabled`, `aria-pressed="true"`, `aria-selected="true"`, `open`). Never add a class for a state.
 - Give every control an accessible name. An icon-only button needs `aria-label`.
-- For artwork with its own SVG stroke width, apply `icon` to a holder and keep the original width on the SVG. See [Icon stroke](https://ui.master.co/components/icon#stroke).
+- Icons are [Master Icons](https://ui.master.co/components/icon#master-icons) unless the project names another set. Never invent a name: look it up with `node node_modules/@master/icons/skills/master-icons/scripts/search.mjs "<words>"`. Pick the drawing by the size the component gives the icon (16 up to 17px, 20 for 18 to 22px, 24 above), import that native drawing (`@master/icons-react/native/16/soft/search`, or the SVG in HTML) and put `icon` on it.
+- An icon keeps the stroke its drawing carries; never set `stroke-width` in CSS. `--icon-stroke` replaces it for a set of plain line icons. See [Icon stroke](https://ui.master.co/components/icon#stroke).
 - Lay out with Master CSS utilities in the markup. Utilities win over component classes, so one instance needs no override.
 - Overlays use the platform: `<dialog>` opened with `command="show-modal"` and `commandfor`, a `popover` opened with `popovertarget`, a tooltip with `popover="hint"` and `interestfor`. Add no positioning, dismissal or focus-trapping script.
 - When the contract says `"script": "required"` or names a `behavior`, attach the reference script: `import { combobox } from '@master/ui/behaviors/combobox.js'`, then `combobox(element)`. `attach()` from `@master/ui/behaviors` attaches every pattern in a document. In React, Svelte or Vue, use the framework component instead, as below.

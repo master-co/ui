@@ -97,10 +97,10 @@ export function Panel({ title, handleLabel, open, onOpenChange, value, defaultVa
           <div className="panel-actions">
             {actions}
             <button type="button" className="btn btn-quiet btn-sm btn-square panel-minimize" aria-pressed={first?.minimized ?? false} aria-label={minimizeLabel}>
-              <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" aria-hidden="true"><path d="M6 12h12" /></svg>
+              <svg className="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 8L13 8" /></svg>
             </button>
             <button type="button" className="btn btn-quiet btn-sm btn-square" {...{ commandfor: name, command: 'hide-popover' }} aria-label={closeLabel}>
-              <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+              <svg className="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 4L12 12" /><path d="M4 12L12 4" /></svg>
             </button>
           </div>
         </div>

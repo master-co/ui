@@ -30,8 +30,8 @@ export interface CarouselProps<T extends CarouselItem> extends Omit<ComponentPro
   dotLabel?: (index: number, count: number) => string
 }
 
-const chevron = (path: string) => (
-  <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={path} /></svg>
+const chevron = (turn?: number) => (
+  <svg className="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 3.5L10.3586 7.8586A0.2 0.2 0 0 1 10.3586 8.1414L6 12.5" transform={turn ? `rotate(${turn} 8 8)` : undefined} /></svg>
 )
 
 /**
@@ -56,8 +56,8 @@ export function Carousel<T extends CarouselItem>({ items, value, defaultValue, o
           <div className={slideClassName ? `carousel-slide ${slideClassName}` : 'carousel-slide'} id={`${id}${item.value}`} data-value={item.value} key={item.value}>{children(item)}</div>
         ))}
       </div>
-      <button type="button" className="btn btn-square btn-sm btn-pill carousel-previous" aria-label={previousLabel} disabled={at <= 0}>{chevron(vertical ? 'm6 15 6-6 6 6' : 'm15 6-6 6 6 6')}</button>
-      <button type="button" className="btn btn-square btn-sm btn-pill carousel-next" aria-label={nextLabel} disabled={at >= items.length - 1}>{chevron(vertical ? 'm6 9 6 6 6-6' : 'm9 6 6 6-6 6')}</button>
+      <button type="button" className="btn btn-square btn-sm btn-pill carousel-previous" aria-label={previousLabel} disabled={at <= 0}>{chevron(vertical ? -90 : 180)}</button>
+      <button type="button" className="btn btn-square btn-sm btn-pill carousel-next" aria-label={nextLabel} disabled={at >= items.length - 1}>{chevron(vertical ? 90 : 0)}</button>
       <div className="carousel-dots">
         {items.map((item, index) => (
           <button type="button" className="carousel-dot" aria-controls={`${id}${item.value}`} aria-label={dotLabel(index, items.length)} aria-current={item.value === first ? 'true' : undefined} key={item.value} />

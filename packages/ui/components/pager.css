@@ -2,8 +2,9 @@
  * Pager: the page before and the page after, at the foot of an article.
  * Two links side by side, each a flat face with a quiet word over the title of the page it leads to. The
  * links say which is which with rel="prev" and rel="next", and the stylesheet reads that: the next page
- * stands at the end with its words set to the end, and an arrow points the way each one goes. A pager with
- * only a next page keeps it at the end.
+ * stands at the end with its words set to the end, and an arrow points the way each one goes. The arrow is an
+ * icon in the markup, beside the word: the stylesheet sizes it, moves it and turns it in a right-to-left page.
+ * A pager with only a next page keeps it at the end.
  * Under the pointer a link rises a step and its arrow moves 2px the way it points. In a narrow container the
  * two stack.
  * Geometry: a large control's corner, 14px by 16px of padding, 12px between the two.
@@ -82,8 +83,12 @@
     }
   }
 
-  /* The quiet word: Previous, Next. Its arrow points the way the link goes. */
+  /*
+   * The quiet word: Previous, Next. The icon beside it is its arrow, 14px, which the label holds before the word
+   * of the page before and after the word of the next.
+   */
   .pager-label {
+    --icon-size: .875rem;
     display: inline-flex;
     align-items: center;
     gap: .25rem;
@@ -92,34 +97,27 @@
     font-size: .78125rem;
     line-height: 1.25rem;
 
-    &::before, &::after {
-      flex: none;
-      width: .875rem;
-      height: .875rem;
-      background: currentColor;
-      mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.5 8h9m0 0L9 4.5M12.5 8 9 11.5'/%3E%3C/svg%3E") center / contain no-repeat;
+    .icon {
       transition: translate var(--duration-quick) var(--easing-glide);
     }
   }
 
-  /* The arrow of the page before leads the word and points back. */
-  .pager-link:not([rel~="next"]) .pager-label::before {
-    content: '';
-    scale: -1 1;
+  /* Under the pointer an arrow moves the way it points: back for the page before, on for the next. */
+  .pager-link:not([rel~="next"]) .pager-label .icon {
     translate: calc(-1 * var(--pager-travel)) 0;
   }
 
-  .pager-link[rel~="next"] .pager-label::after {
-    content: '';
+  .pager-link[rel~="next"] .pager-label .icon {
     translate: var(--pager-travel) 0;
   }
 
-  .pager-link:not([rel~="next"]) .pager-label:dir(rtl)::before {
-    scale: none;
+  /* In a right-to-left page the same two drawings are turned round, and so is the way each moves. */
+  .pager-link:not([rel~="next"]) .pager-label:dir(rtl) .icon {
+    scale: -1 1;
     translate: var(--pager-travel) 0;
   }
 
-  .pager-link[rel~="next"] .pager-label:dir(rtl)::after {
+  .pager-link[rel~="next"] .pager-label:dir(rtl) .icon {
     scale: -1 1;
     translate: calc(-1 * var(--pager-travel)) 0;
   }
@@ -134,11 +132,5 @@
     line-height: 1.35;
     text-wrap: balance;
     overflow-wrap: anywhere;
-  }
-
-  @media (forced-colors: active) {
-    .pager-label::before, .pager-label::after {
-      background: LinkText;
-    }
   }
 }

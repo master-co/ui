@@ -7,7 +7,13 @@
  *
  * The four are printed from one tree by one printer, so they are laid out alike, and whitespace keeps its meaning in
  * each: where HTML had none between two pieces, no line break adds one, and a space that is read stays on its line.
+ *
+ * One thing is written otherwise. HTML has no components, so its icons are drawn inline; a framework has Master Icons
+ * as a package, so there the same drawing is its component, imported at the master the markup's viewBox names. The
+ * class stays on it, and an inline SVG that is not a Master Icons drawing stays inline.
  */
+import * as release from '@master/icons'
+import type { IconDefinition } from '@master/icons'
 
 export type MarkupLanguage = 'html' | 'react' | 'svelte' | 'vue'
 
@@ -279,6 +285,78 @@ const react: Dialect = {
 
 const dialects: Record<MarkupLanguage, Dialect> = { html, react, svelte, vue }
 
+/* Icons ---------------------------------------------------------------------------------------------------------- */
+
+export interface IconImport { name: string, from: string }
+
+const iconPackages: Record<Exclude<MarkupLanguage, 'html'>, string> = { react: '@master/icons-react', svelte: '@master/icons-svelte', vue: '@master/icons-vue' }
+const masters = [16, 20, 24] as const
+/** What an inline drawing states that its component already carries. */
+const drawn = new Set(['viewBox', 'fill', 'stroke', 'stroke-width', 'stroke-linecap', 'stroke-linejoin', 'xmlns'])
+
+let catalog: Map<string, string> | undefined
+/** Every soft drawing of the release at its own stroke, by master and geometry. */
+function drawings() {
+  if (!catalog) {
+    catalog = new Map()
+    for (const definition of Object.values(release) as unknown[]) {
+      if (typeof definition !== 'object' || definition === null || !('variants' in definition)) continue
+      const { name, variants } = definition as IconDefinition
+      for (const size of masters) {
+        const key = `${size}:${release.serializeNodes(variants[size].soft.nodes)}`
+        if (!catalog.has(key)) catalog.set(key, name)
+      }
+    }
+  }
+  return catalog
+}
+
+/** A drawing's children as the release serializes them, to be found in it. */
+const geometry = (nodes: Node[]): string => nodes.map(node => {
+  if (node.type !== 'element') return ''
+  const inner = geometry(node.children)
+  return `<${node.tag}${node.attributes.map(({ name, value }) => ` ${name}="${value ?? ''}"`).join('')}${inner ? `>${inner}</${node.tag}>` : '/>'}`
+}).join('')
+
+const pascal = (name: string) => name.replace(/(^|-)([a-z0-9])/g, (_, _dash: string, letter: string) => letter.toUpperCase())
+
+/**
+ * Replace each Master Icons drawing by its component and return what to import. An icon that is labelled keeps its
+ * `aria-label`, which the component reads as its label; `aria-hidden` and `role="img"` are what it sets by itself.
+ */
+function components(nodes: Node[], language: Exclude<MarkupLanguage, 'html'>): { nodes: Node[], imports: IconImport[] } {
+  const found: { element: Element, name: string, size: number }[] = []
+  const visit = (node: Node): Node => {
+    if (node.type !== 'element') return node
+    if (node.tag === 'svg' && node.attributes.some(({ name, value }) => name === 'class' && value?.split(/\s+/).includes('icon'))) {
+      const size = Number(/^0 0 (\d+) \1$/.exec(node.attributes.find(({ name }) => name === 'viewBox')?.value ?? '')?.[1])
+      const name = drawings().get(`${size}:${geometry(node.children)}`)
+      if (name) {
+        const labelled = node.attributes.some(attribute => attribute.name === 'aria-label' || attribute.name === 'aria-labelledby')
+        const element: Element = {
+          type: 'element', tag: name, selfClosing: true, children: [],
+          attributes: node.attributes.filter(attribute => !drawn.has(attribute.name) && attribute.name !== 'aria-hidden' && !(labelled && attribute.name === 'role')),
+        }
+        found.push({ element, name, size })
+        return element
+      }
+    }
+    return { ...node, children: node.children.map(visit) }
+  }
+  const result = nodes.map(visit)
+  // One icon at two sizes in a preview is two components, so each says its master.
+  const sizes = new Map<string, Set<number>>()
+  for (const { name, size } of found) sizes.set(name, (sizes.get(name) ?? new Set()).add(size))
+  const imports = new Map<string, IconImport>()
+  for (const { element, name, size } of found) {
+    element.tag = `${pascal(name)}Icon${sizes.get(name)!.size > 1 ? size : ''}`
+    imports.set(element.tag, { name: element.tag, from: `${iconPackages[language]}/native/${size}/soft/${name}` })
+  }
+  return { nodes: result, imports: [...imports.values()] }
+}
+
+const importLine = ({ name, from }: IconImport) => `import ${name} from '${from}'`
+
 /* -------------------------------------------------------------------------------------------------------------- */
 /* Printing                                                                                                        */
 /* -------------------------------------------------------------------------------------------------------------- */
@@ -378,9 +456,13 @@ function block(children: Node[], dialect: Dialect, indent: string, svg: boolean)
   return lines(children).map(line => indent + line.nodes.map((node, index) => line.separators[index] + print(node, dialect, indent, svg)).join('')).join('\n')
 }
 
-/** The markup of a preview in one language. Throws `UnsupportedMarkup` when that language cannot hold it as markup. */
-export function printMarkup(source: string, language: MarkupLanguage): string {
-  const nodes = parse(source.trim())
+/**
+ * The markup of a preview in one language and the icons it imports. Throws `UnsupportedMarkup` when that language
+ * cannot hold it as markup. React's markup is one expression, Vue's a template; the imports stand apart from both.
+ */
+export function printSource(source: string, language: MarkupLanguage): { markup: string, imports: IconImport[] } {
+  let nodes = parse(source.trim())
+  let imports: IconImport[] = []
   const dialect = dialects[language]
   if (language !== 'html') {
     const visit = (node: Node) => {
@@ -390,14 +472,25 @@ export function printMarkup(source: string, language: MarkupLanguage): string {
       node.children.forEach(visit)
     }
     nodes.forEach(visit)
+    ;({ nodes, imports } = components(nodes, language))
   }
   if (language === 'react') {
     const roots = lines(nodes)
-    if (roots.length === 1 && roots[0].nodes.length === 1 && roots[0].nodes[0].type === 'element') return print(roots[0].nodes[0], dialect, '', false)
-    return `<>\n${block(nodes, dialect, '  ', false)}\n</>`
+    if (roots.length === 1 && roots[0].nodes.length === 1 && roots[0].nodes[0].type === 'element') return { markup: print(roots[0].nodes[0], dialect, '', false), imports }
+    return { markup: `<>\n${block(nodes, dialect, '  ', false)}\n</>`, imports }
   }
-  if (language === 'vue') return `<template>\n${block(nodes, dialect, '  ', false)}\n</template>`
-  return block(nodes, dialect, '', false)
+  if (language === 'vue') return { markup: `<template>\n${block(nodes, dialect, '  ', false)}\n</template>`, imports }
+  return { markup: block(nodes, dialect, '', false), imports }
+}
+
+/** A preview as a reader copies it: the markup, under the imports of its icons where the language has components. */
+export function printMarkup(source: string, language: MarkupLanguage): string {
+  const { markup, imports } = printSource(source, language)
+  if (!imports.length) return markup
+  const lines = imports.map(importLine)
+  if (language === 'svelte') return `<script>\n${lines.map(line => `  ${line}`).join('\n')}\n</script>\n\n${markup}`
+  if (language === 'vue') return `<script setup>\n${lines.join('\n')}\n</script>\n\n${markup}`
+  return `${lines.join('\n')}\n\n${markup}`
 }
 
 /** Every language a preview's markup can be written in, HTML first; a framework that cannot hold it is left out. */

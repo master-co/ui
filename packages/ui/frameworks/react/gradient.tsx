@@ -34,7 +34,7 @@ export interface GradientProps extends Omit<ComponentProps<'div'>, 'defaultValue
   labels?: GradientLabels
 }
 
-const icon = (path: string) => <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={path} /></svg>
+const icon = (...paths: string[]) => <svg className="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths.map(d => <path key={d} d={d} />)}</svg>
 
 /**
  * A gradient editor. React writes the controls and a handle for each stop from the value, so the first HTML
@@ -57,9 +57,9 @@ export function Gradient({ value, defaultValue, onValueChange, readOnly, disable
         ))}
       </div>
       <div className="flex flex-wrap items-center gap-xs">
-        <button type="button" className="btn btn-sm gradient-add">{icon('M12 5v14M5 12h14')}{words.add}</button>
-        <button type="button" className="btn btn-sm gradient-remove">{icon('M5 12h14')}{words.remove}</button>
-        <button type="button" className="btn btn-sm btn-quiet gradient-reverse">{icon('m16 3 4 4-4 4M20 7H4M8 21l-4-4 4-4M4 17h16')}{words.reverse}</button>
+        <button type="button" className="btn btn-sm gradient-add">{icon('M3 8L13 8', 'M8 3L8 13')}{words.add}</button>
+        <button type="button" className="btn btn-sm gradient-remove">{icon('M3 8L13 8')}{words.remove}</button>
+        <button type="button" className="btn btn-sm btn-quiet gradient-reverse">{icon('M8 1.6667L8 14.3333', 'M5.6667 6.3298L5.6667 11.45A0.55 0.55 0 0 1 5.1167 12L2.5566 12A0.55 0.55 0 0 1 2.0647 11.204L4.6248 6.0839A0.55 0.55 0 0 1 5.6667 6.3298Z', 'M10.3333 6.3298L10.3333 11.45A0.55 0.55 0 0 0 10.8833 12L13.4434 12A0.55 0.55 0 0 0 13.9353 11.204L11.3752 6.0839A0.55 0.55 0 0 0 10.3333 6.3298Z')}{words.reverse}</button>
       </div>
       <div className="gradient-fields">
         <fieldset className="gradient-color">

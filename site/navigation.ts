@@ -1,12 +1,12 @@
 import type { AppNavItem } from '@master/internal-site/config'
-import IconBrandGithub from '@tabler/icons-svelte-runes/icons/brand-github'
-import IconBrandX from '@tabler/icons-svelte-runes/icons/brand-x'
-import IconCompass from '@tabler/icons-svelte-runes/icons/compass'
-import IconChartLine from '@tabler/icons-svelte-runes/icons/chart-line'
-import IconComponents from '@tabler/icons-svelte-runes/icons/components'
-import IconLayoutSidebar from '@tabler/icons-svelte-runes/icons/layout-sidebar'
-import IconStack2 from '@tabler/icons-svelte-runes/icons/stack-2'
-import IconMessages from '@tabler/icons-svelte-runes/icons/messages'
+import IconBrandGithub from '@master/icons-svelte/native/20/soft/brand-github'
+import IconBrandX from '@master/icons-svelte/native/20/soft/brand-x'
+import IconCompass from '@master/icons-svelte/native/20/soft/compass'
+import IconChartLine from '@master/icons-svelte/native/20/soft/chart-line'
+import IconComponent from '@master/icons-svelte/native/20/soft/component'
+import IconPanelLeft from '@master/icons-svelte/native/20/soft/panel-left'
+import IconLayers from '@master/icons-svelte/native/20/soft/layers'
+import IconMessages from '@master/icons-svelte/native/20/soft/messages'
 
 export interface FooterNavGroup {
   name: string
@@ -17,10 +17,10 @@ const repositoryURL = 'https://github.com/master-co/ui'
 
 export const primaryNavs = [
   { name: 'Guide', href: '/guide/introduction', Icon: IconCompass },
-  { name: 'Components', href: '/components', Icon: IconComponents },
+  { name: 'Components', href: '/components', Icon: IconComponent },
   { name: 'Charts', href: '/charts', Icon: IconChartLine },
-  { name: 'Blocks', href: '/blocks', Icon: IconStack2 },
-  { name: 'Pages', href: '/pages', Icon: IconLayoutSidebar },
+  { name: 'Blocks', href: '/blocks', Icon: IconLayers },
+  { name: 'Pages', href: '/pages', Icon: IconPanelLeft },
 ] satisfies AppNavItem[]
 
 export const communityNavs = [

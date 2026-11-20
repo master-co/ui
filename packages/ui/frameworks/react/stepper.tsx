@@ -34,7 +34,7 @@ export function Stepper({ value, defaultValue, onValueChange, decrementLabel, in
   return (
     <div className={className ? `input-group stepper ${className}` : 'input-group stepper'} ref={ref}>
       <button type="button" className="btn btn-square" value="-1" tabIndex={-1} aria-label={decrementLabel} disabled={disabled}>
-        <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14" /></svg>
+        <svg className="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 8L13 8" /></svg>
       </button>
       {format
         ? (
@@ -45,7 +45,7 @@ export function Stepper({ value, defaultValue, onValueChange, decrementLabel, in
           )
         : input}
       <button type="button" className="btn btn-square" value="1" tabIndex={-1} aria-label={incrementLabel} disabled={disabled}>
-        <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+        <svg className="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 8L13 8" /><path d="M8 3L8 13" /></svg>
       </button>
     </div>
   )

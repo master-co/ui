@@ -7,7 +7,7 @@ import { transformSync } from 'esbuild'
 import { compile as compileSvelte } from 'svelte/compiler'
 import { compileTemplate } from 'vue/compiler-sfc'
 import { check, createIndex, format, parse } from '../check/index.js'
-import { printMarkup, UnsupportedMarkup, type MarkupLanguage } from '../../../site/utils/framework-markup.ts'
+import { printMarkup, printSource, UnsupportedMarkup, type IconImport, type MarkupLanguage } from '../../../site/utils/framework-markup.ts'
 import { contracts, utilities } from './support.ts'
 
 /**
@@ -15,6 +15,9 @@ import { contracts, utilities } from './support.ts'
  * `site/utils/framework-markup.ts`. Every preview on the site is held to what that promises: each language is the same
  * markup, so the checker reads the same classes in it and finds nothing wrong, and each is a file its framework
  * compiles. React's is type-checked against React's own types, since a reader pastes it into TypeScript.
+ *
+ * In a framework a Master Icons drawing is its component, so those three also import: the markup is checked with the
+ * component standing where the drawing was, and every import has to be an entry the pinned release publishes.
  */
 const content = new URL('../../../site/content/', import.meta.url)
 const index = createIndex(contracts())
@@ -36,14 +39,14 @@ function previews(source: string) {
   }))
 }
 
-interface Printed { where: string, language: MarkupLanguage, code: string, html: string }
+interface Printed { where: string, language: MarkupLanguage, code: string, markup: string, imports: IconImport[], html: string }
 const printed: Printed[] = []
 for (const page of pages(content)) {
   const name = fileURLToPath(page).slice(fileURLToPath(content).length)
   for (const { html, line } of previews(readFileSync(page, 'utf8'))) {
     for (const language of languages) {
       try {
-        printed.push({ where: `${name}:${line}`, language, code: printMarkup(html, language), html })
+        printed.push({ where: `${name}:${line}`, language, code: printMarkup(html, language), ...printSource(html, language), html })
       } catch (error) {
         if (!(error instanceof UnsupportedMarkup)) throw new Error(`${name}:${line} (${language}): ${(error as Error).message}`)
       }
@@ -74,12 +77,14 @@ test('the frameworks are offered for most previews', () => {
 
 test('React: every preview is JSX that type-checks against React\'s types', () => {
   const react = printed.filter(entry => entry.language === 'react')
-  for (const { where, code } of react) {
-    assert.doesNotThrow(() => transformSync(code, { loader: 'tsx', jsx: 'automatic' }), where)
+  const file = ({ markup, imports }: Printed, number: number) =>
+    `${imports.map(({ name, from }) => `import ${name} from '${from}'\n`).join('')}export function Preview${number}() {\n  return (\n${markup}\n  )\n}\n`
+  for (const [number, entry] of react.entries()) {
+    assert.doesNotThrow(() => transformSync(file(entry, number), { loader: 'tsx', jsx: 'automatic' }), entry.where)
   }
   // The files are imagined beside the tests, so React's types resolve from the package's own dependencies.
   const directory = fileURLToPath(new URL('./previews/', import.meta.url))
-  const files = new Map(react.map(({ code }, number) => [`${directory}preview-${number}.tsx`, `export function Preview${number}() {\n  return (\n${code}\n  )\n}\n`]))
+  const files = new Map(react.map((entry, number) => [`${directory}preview-${number}.tsx`, file(entry, number)]))
   const options: ts.CompilerOptions = { jsx: ts.JsxEmit.ReactJSX, strict: true, noEmit: true, skipLibCheck: true, target: ts.ScriptTarget.ES2023, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler, types: [], lib: ['lib.es2023.d.ts', 'lib.dom.d.ts'] }
   const host = ts.createCompilerHost(options)
   const read = host.readFile.bind(host)
@@ -109,11 +114,37 @@ test('Svelte: every preview compiles', () => {
 
 test('Vue: every preview compiles', () => {
   const problems = printed.filter(entry => entry.language === 'vue').flatMap(({ where, code }) => {
-    const template = code.replace(/^<template>\n/, '').replace(/\n<\/template>$/, '')
+    const template = /<template>\n([\s\S]*)\n<\/template>$/.exec(code)![1]
     const result = compileTemplate({ source: template, filename: 'Preview.vue', id: 'preview' })
     return result.errors.map(error => `${where}: ${typeof error === 'string' ? error : error.message}`)
   })
   assert.deepEqual(problems, [])
+})
+
+test('a framework imports each Master Icons drawing as its component, and HTML keeps the drawing', () => {
+  const data = new URL('../../../node_modules/@master/icons/dist/data/native/', import.meta.url)
+  const packages = { react: '@master/icons-react', svelte: '@master/icons-svelte', vue: '@master/icons-vue' }
+  let icons = 0
+  for (const { where, language, code, markup, imports } of printed) {
+    if (language === 'html') {
+      assert.deepEqual(imports, [], where)
+      continue
+    }
+    for (const { name, from } of imports) {
+      const [, entry] = new RegExp(`^${packages[language]}/native/((?:16|20|24)/soft/[a-z0-9-]+)$`).exec(from) ?? []
+      assert.ok(entry && existsSync(new URL(`${entry}.js`, data)), `${where} (${language}): ${from} is not an entry of the release`)
+      assert.ok(markup.includes(`<${name} `), `${where} (${language}): ${name} is imported and not used`)
+      assert.ok(code.includes(`import ${name} from '${from}'`), where)
+      icons++
+    }
+    assert.doesNotMatch(markup, /<svg class(?:Name)?="icon[ "]/, `${where} (${language}): an icon is still drawn inline`)
+  }
+  assert.ok(icons > 500, 'the previews import their icons')
+  const own = printMarkup('<button type="button" class="btn btn-square" aria-label="Search"><svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/></svg></button>', 'react')
+  assert.match(own, /<svg className="icon" viewBox="0 0 16 16"/, 'a drawing the release does not hold stays inline')
+  assert.doesNotMatch(own, /import/)
+  const labelled = printMarkup('<svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Add"><path d="M3 8L13 8"/><path d="M8 3L8 13"/></svg>', 'vue')
+  assert.match(labelled, /<PlusIcon class="icon" aria-label="Add" \/>/, 'a labelled icon keeps its label, which the component reads')
 })
 
 test('the printer keeps what each framework would change', () => {

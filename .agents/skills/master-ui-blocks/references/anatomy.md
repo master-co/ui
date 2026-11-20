@@ -94,7 +94,7 @@ A recommended plan, a featured quotation, the main action: mark it with depth, o
 
 ## Icons
 
-An icon in a block is an inline `<svg class="icon">` on the 24px grid at a 1.5 stroke, with `aria-hidden="true"` when words beside it say the same. Its size comes from the component that holds it. If the same SVG is pasted before every item of a list, the list wants `bullets`.
+An icon in a block is a Master Icons drawing written as an inline `<svg class="icon">` that keeps its own viewBox and stroke (16 for an icon up to 17px, 20 for 18 to 22px, 24 above), with `aria-hidden="true"` when words beside it say the same. Its size comes from the component that holds it. If the same SVG is pasted before every item of a list, the list wants `bullets`.
 
 ## Links and buttons
 

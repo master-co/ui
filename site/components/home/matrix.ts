@@ -5,19 +5,20 @@
  * decoration, inert and hidden from assistive technology.
  */
 import { chartMarkup } from './chart'
+import { icon, type Drawing } from './icon'
+import { master as check } from '@master/icons/data/native/16/soft/check-circle'
+import { master as info } from '@master/icons/data/native/16/soft/info-circle'
+import { master as warn } from '@master/icons/data/native/16/soft/alert-triangle'
+import { master as cross } from '@master/icons/data/native/16/soft/x-circle'
+import { master as search } from '@master/icons/data/native/16/soft/search'
+import { master as close } from '@master/icons/data/native/16/soft/x'
+import { master as prev } from '@master/icons/data/native/16/soft/chevron-left'
+import { master as next } from '@master/icons/data/native/16/soft/chevron-right'
+import { master as searchFrame } from '@master/icons/data/native/20/soft/search'
+import { master as uploadFrame } from '@master/icons/data/native/20/soft/upload'
 
-const icon = (path: string) => `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${path}</svg>`
-const glyph = {
-  check: '<circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 4.5-5.5"/>',
-  info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.01"/>',
-  warn: '<path d="M12 4 3 19h18L12 4ZM12 10v4M12 17v.01"/>',
-  cross: '<circle cx="12" cy="12" r="9"/><path d="m9 9 6 6M15 9l-6 6"/>',
-  search: '<circle cx="11" cy="11" r="6"/><path d="m20 20-4.35-4.35"/>',
-  close: '<path d="M6 6l12 12M18 6 6 18"/>',
-  upload: '<path d="M12 16V4M7 9l5-5 5 5M5 20h14"/>',
-  prev: '<path d="m15 6-6 6 6 6"/>',
-  next: '<path d="m9 6 6 6-6 6"/>',
-}
+/** The drawings the panels use. An icon frame holds its icon at 20px, so it takes the 20 master. */
+const glyph = { check, info, warn, cross, search, close, prev, next, searchFrame, uploadFrame }
 
 /** A seeded sequence, so generated rows are the same on every build. */
 const seeded = (seed: number) => () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646
@@ -49,8 +50,8 @@ const card = (title: string, description: string, body: string, action = '') => 
   ${body}
 </section>`
 
-const alert = (tone: string, symbol: string, title: string, description: string) => `<div class="alert alert-${tone}" role="status">
-  ${icon(symbol).replace('class="icon"', 'class="icon alert-icon"')}
+const alert = (tone: string, symbol: Drawing, title: string, description: string) => `<div class="alert alert-${tone}" role="status">
+  ${icon(symbol, 'icon alert-icon')}
   <div class="alert-body"><p class="alert-title">${title}</p><p class="alert-description">${description}</p></div>
 </div>`
 
@@ -379,7 +380,7 @@ ${[1, 2, 3, 4, 5].map(score => `    <input type="radio" class="rating-input" nam
   [
     `<div class="well">
   <div class="empty">
-    <div class="icon-frame empty-media" aria-hidden="true">${icon(glyph.upload)}</div>
+    <div class="icon-frame empty-media" aria-hidden="true">${icon(glyph.uploadFrame)}</div>
     <h3 class="empty-title">No deployments yet</h3>
     <p class="empty-description">Push to main and it appears here.</p>
     <div class="empty-actions"><button type="button" class="btn btn-sm btn-primary">Deploy now</button></div>
@@ -387,7 +388,7 @@ ${[1, 2, 3, 4, 5].map(score => `    <input type="radio" class="rating-input" nam
 </div>`,
     `<div class="well">
   <div class="empty">
-    <div class="icon-frame empty-media" aria-hidden="true">${icon(glyph.search)}</div>
+    <div class="icon-frame empty-media" aria-hidden="true">${icon(glyph.searchFrame)}</div>
     <h3 class="empty-title">No results for “cirus”</h3>
     <p class="empty-description">Check the spelling, or try another name.</p>
   </div>

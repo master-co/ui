@@ -8,7 +8,7 @@ afterEach(() => assert.deepEqual(thrown.splice(0), [], 'a listener threw'))
 
 const item = (value: string, name: string, extra = '') => `<li class="kanban-item" data-value="${value}">
         <div class="card">
-          <button type="button" class="kanban-handle" aria-pressed="false" aria-label="Drag ${name}"${extra}></button>
+          <button type="button" class="kanban-handle" aria-pressed="false" aria-label="Drag ${name}"${extra}><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="4" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="4" r="1" fill="currentColor" stroke="none"/><circle cx="6" cy="8" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="8" r="1" fill="currentColor" stroke="none"/><circle cx="6" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="12" r="1" fill="currentColor" stroke="none"/></svg></button>
           <p class="card-title">${name}</p>
           <input class="input" aria-label="Note on ${name}">
           <button type="button" class="btn btn-sm" popovertarget="mover" aria-label="Move ${name}">Move</button>

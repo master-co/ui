@@ -43,7 +43,7 @@ useBehavior(root, stepper, () => ({ format: props.format, locale: props.locale }
 <template>
   <div class="input-group stepper" :class="$attrs.class" ref="root">
     <button type="button" class="btn btn-square" value="-1" tabindex="-1" :aria-label="decrementLabel" :disabled="disabled">
-      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14" /></svg>
+      <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8L13 8" /></svg>
     </button>
     <span v-if="format" class="stepper-value">
       <input class="input-group-field stepper-field" type="number" :value.attr="first ?? undefined" :aria-valuetext="written" :disabled="disabled" v-bind="field()">
@@ -51,7 +51,7 @@ useBehavior(root, stepper, () => ({ format: props.format, locale: props.locale }
     </span>
     <input v-else class="input-group-field stepper-field" type="number" :value.attr="first ?? undefined" :disabled="disabled" v-bind="field()">
     <button type="button" class="btn btn-square" value="1" tabindex="-1" :aria-label="incrementLabel" :disabled="disabled">
-      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+      <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8L13 8" /><path d="M8 3L8 13" /></svg>
     </button>
   </div>
 </template>
