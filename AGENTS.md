@@ -23,12 +23,16 @@ Repository skills live in `.agents/skills/` (linked as `.claude/skills/`).
 - `master-ui-charts` (owned here): the chart's own decisions: which form does which job, the geometry that measures nothing, the marks, the order of categories, the point, the readout and the keys, how a type is added and what to verify. Use it for any change to `chart.css`, `chart.json` or `behaviors/chart.js`, and when a chart is written into a page, a block or an example.
 - `master-ui-covers` (owned here): the cover drawings in `site/components/cover`: the stage, the drawing rules, the vocabulary and verification. Use it when a component, a layout, a block or a page needs a cover or a cover is redrawn or placed on a page.
 - `master-design` (managed by `@master/internal-skills`; run `bun run skills:sync`, never edit it here): craft judgment for surfaces, geometry, type, states and motion.
+- `master-site` (managed by the same package and sync command): the shared Astro site framework, content conventions and Svelte islands behind `site/`. Use it for site integration and documentation layouts.
 - `master-writing` (managed by the same package and sync command): shared technical writing, evidence and editing guidance.
 - `master-ui-writing` (owned here): reader tasks, Guide organization, technical sources and the documentation/export workflow. Use for writing, restructuring or reviewing guides and library documentation.
 - `master-ui-doc-illustrations` (owned here): technical explanation figures, their composition, text equivalents and verification. Use when a relationship benefits from a drawing; a working preview or a concise explanation may already be sufficient.
+- `master-css` (upstream snapshot): the unmodified public skill from `master-co/css` `skills/master-css` at commit `5d3d3a567cdc0273ccfff3afac9126826799544e`, for authoring, delivery and troubleshooting of the Master CSS the components are written in. It is independent of `@master/internal-skills` and its lock; update it by exporting that folder from a pushed commit byte for byte and changing the commit here in the same change.
 - `modern-web-guidance` (upstream snapshot): web platform capabilities, browser compatibility and implementation pitfalls. Its use in this repository follows the policy below.
 
 Select managed skills in `.agents/master-skills.json`, then run `bun run skills:sync` and commit the generated managed files and lock. Keep product-specific extensions in the repository-owned skills rather than editing synchronized copies.
+
+`.mcp.json` connects the Master CSS server (`@master/css-mcp`, pinned to the installed Master CSS version, rooted at `site`), the Svelte documentation server and the Astro documentation server. Ask the Master CSS server to inspect or suggest classes before writing them, and use the Svelte autofixer for changed Svelte components. Upgrade the `@master/css-mcp` pin together with the `@master/css` packages.
 
 ### Modern Web Guidance
 
