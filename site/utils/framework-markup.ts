@@ -16,6 +16,8 @@
  * framework the file is a component that attaches them to its root for as long as it is mounted. For a value the
  * application holds, the framework component of the pattern is the better start, and its page says so. A chart is the
  * one pattern a page's script feeds with data, so there the file uses that component: `<Chart>` with the same data.
+ * A script that only calls behaviors with their options is made with them when the component is mounted. Any other
+ * script is the page's application: its preview stays HTML.
  */
 import * as release from '@master/icons'
 import type { IconDefinition } from '@master/icons'
@@ -232,6 +234,7 @@ const textOf = (node: Node): string => node.type === 'text' ? node.text : node.t
 const react: Dialect = {
   element(element, svg) {
     if (element.tag === 'template') throw new UnsupportedMarkup('React renders into a template\'s children, not its content')
+    if (element.tag === 'selectedcontent') throw new UnsupportedMarkup('React\'s types do not know <selectedcontent> yet')
     if (element.tag === 'script' || element.tag === 'style') throw new UnsupportedMarkup(`A <${element.tag}> is not markup`)
     let attributes = element.attributes
     let children = element.children
@@ -543,6 +546,71 @@ function charts(nodes: Node[], language: Exclude<MarkupLanguage, 'html'>): { nod
   return { nodes: kept, imports: [chartFiles[language]] }
 }
 
+/* The page's script ----------------------------------------------------------------------------------------------- */
+
+/**
+ * What a page's script does when all it does is call behaviors with their options: the calls, and the data it
+ * prepares for them first. `late` says it waited for the document, so the behaviors were attached before it.
+ */
+export interface PageScript { data: string[], calls: string[], late: boolean, behaviors: string[] }
+
+const loaded = /^\s*addEventListener\('DOMContentLoaded', function \(\) \{\n([\s\S]*)\n\}\)\s*$/
+/** A statement that is one call of a behavior, whatever its arguments. */
+const behaviorCall = /^MasterUI\.(\w+)\([\s\S]*\)$/
+/** What a statement may not touch and still be data: the page, a timer, the network. */
+const pageBound = /\b(?:document|window|addEventListener|setTimeout|setInterval|requestAnimationFrame|fetch|navigator|MasterUI)\b/
+
+/**
+ * The scripts a preview writes at its root, when they only attach behaviors with options: a calendar that takes a
+ * range, a dial with a step, a context menu on its target. Such a script is the library's own call, and a framework
+ * makes it when the markup is mounted and undoes it with what the behavior returns. A script that does anything
+ * else is the page's application, a timer or a handler or rows from a server: no framework is given it, since a
+ * project writes that with its own state, and printing it as a component would pass a demonstration off as a pattern.
+ */
+function pageScript(nodes: Node[]): { nodes: Node[], script?: PageScript } {
+  const plain = (node: Node): node is Element => node.type === 'element' && node.tag === 'script' && !node.attributes.length
+  const scripts = nodes.filter(plain)
+  if (!scripts.length) return { nodes }
+  const script: PageScript = { data: [], calls: [], late: false, behaviors: [] }
+  for (const element of scripts) {
+    let text = (element.raw ?? '').replace(/^\n+|\s+$/g, '')
+    const waited = loaded.exec(text)
+    if (waited) {
+      script.late = true
+      text = waited[1]
+    }
+    const lines = text.split('\n')
+    const margin = Math.min(...lines.filter(line => line.trim()).map(line => line.length - line.trimStart().length))
+    // A statement starts at the margin; the lines set in from it, and the line that closes it, belong to it.
+    const statements: string[] = []
+    for (const line of lines.map(line => line.slice(Math.min(margin, line.length - line.trimStart().length)))) {
+      if (!line.trim()) continue
+      if (statements.length && /^[\s)\]}]/.test(line)) statements[statements.length - 1] += `\n${line}`
+      else statements.push(line)
+    }
+    for (const statement of statements) {
+      const name = behaviorCall.exec(statement)?.[1]
+      if (name) {
+        script.calls.push(statement.replace(/^MasterUI\./, ''))
+        if (!script.behaviors.includes(name)) script.behaviors.push(name)
+      } else if (/^(?:var|let|const|function)\s/.test(statement) && !pageBound.test(statement) && !script.calls.length) script.data.push(statement)
+      else throw new UnsupportedMarkup('A script of the page\'s own is its application, not markup')
+    }
+  }
+  if (!script.calls.length || script.calls.some(call => /\bMasterUI\b/.test(call))) throw new UnsupportedMarkup('A script of the page\'s own is its application, not markup')
+  const kept = nodes.filter(node => !plain(node))
+  while (kept.at(-1)?.type === 'text' && !(kept.at(-1) as Text).text.trim()) kept.pop()
+  return { nodes: kept, script }
+}
+
+/** A name for something the file adds around the script, which the script itself does not declare. */
+const fresh = (name: string, script: PageScript) => {
+  const body = [...script.data, ...script.calls].join('\n')
+  let chosen = name
+  while (new RegExp(`\\b(?:var|let|const|function|class)\\s+${chosen}\\b|[(,]\\s*${chosen}\\s*[,)=]`).test(body)) chosen += '_'
+  return chosen
+}
+
 export interface PrintOptions {
   /**
    * The preview is a pattern with a script. HTML ends with the module that attaches the behaviors; a framework
@@ -566,14 +634,16 @@ const attachModule = '\n<script type="module">\n  import { attach } from \'@mast
  * cannot hold it as markup. React's markup is one expression, Vue's a template; the imports stand apart from both.
  * With behaviors, `root` is the tag that takes them: the markup's one root, or a `div` put around several.
  */
-export function printSource(source: string, language: MarkupLanguage, { behaviors = false }: PrintOptions = {}): { markup: string, imports: IconImport[], root?: string } {
+export function printSource(source: string, language: MarkupLanguage, { behaviors = false }: PrintOptions = {}): { markup: string, imports: IconImport[], root?: string, script?: PageScript } {
   let nodes = parse((behaviors && language === 'html' ? source + attachModule : source).trim())
   let imports: IconImport[] = []
   let root: string | undefined
+  let script: PageScript | undefined
   const dialect = dialects[language]
   if (language !== 'html') {
     const chart = charts(nodes, language)
     nodes = chart.nodes
+    ;({ nodes, script } = pageScript(nodes))
     const visit = (node: Node) => {
       if (node.type !== 'element') return
       if (node.tag === 'script' || node.tag === 'style') throw new UnsupportedMarkup(`A <${node.tag}> is not markup`)
@@ -585,7 +655,8 @@ export function printSource(source: string, language: MarkupLanguage, { behavior
     imports = [...chart.imports, ...imports]
     // The chart component attaches its own behavior, so a preview it draws needs nothing attached around it.
     if (behaviors && !chart.imports.length) {
-      const mark: Attribute = { name: 'ref', value: null, raw: rootAttribute[language] }
+      // With calls of the page's own, Svelte's attachment is the function that makes them beside the behaviors.
+      const mark: Attribute = { name: 'ref', value: null, raw: script && language === 'svelte' ? `{@attach ${fresh('mounted', script)}}` : script && language !== 'svelte' ? rootAttribute[language].replace('root', fresh('root', script)) : rootAttribute[language] }
       const roots = nodes.filter(node => node.type !== 'text' || node.text.trim())
       const only = roots.length === 1 && roots[0].type === 'element' && /^[a-z]/.test(roots[0].tag) ? roots[0] : undefined
       // React and Vue name the root first; an attachment reads best after what the element is.
@@ -596,11 +667,11 @@ export function printSource(source: string, language: MarkupLanguage, { behavior
   }
   if (language === 'react') {
     const roots = lines(nodes)
-    if (roots.length === 1 && roots[0].nodes.length === 1 && roots[0].nodes[0].type === 'element') return { markup: print(roots[0].nodes[0], dialect, '', false), imports, root }
-    return { markup: `<>\n${block(nodes, dialect, '  ', false)}\n</>`, imports, root }
+    if (roots.length === 1 && roots[0].nodes.length === 1 && roots[0].nodes[0].type === 'element') return { markup: print(roots[0].nodes[0], dialect, '', false), imports, root, script }
+    return { markup: `<>\n${block(nodes, dialect, '  ', false)}\n</>`, imports, root, script }
   }
-  if (language === 'vue') return { markup: `<template>\n${block(nodes, dialect, '  ', false)}\n</template>`, imports, root }
-  return { markup: block(nodes, dialect, '', false), imports, root }
+  if (language === 'vue') return { markup: `<template>\n${block(nodes, dialect, '  ', false)}\n</template>`, imports, root, script }
+  return { markup: block(nodes, dialect, '', false), imports, root, script }
 }
 
 const indented = (text: string, by: string) => text.split('\n').map(line => line && by + line).join('\n')
@@ -610,8 +681,9 @@ const indented = (text: string, by: string) => text.split('\n').map(line => line
  * A pattern with a script is a whole file in a framework: a component that attaches the behaviors to its root.
  */
 export function printMarkup(source: string, language: MarkupLanguage, options: PrintOptions = {}): string {
-  const { markup, imports, root } = printSource(source, language, options)
+  const { markup, imports, root, script } = printSource(source, language, options)
   const icons = imports.map(importLine)
+  if (script && language !== 'html') return scripted(language, markup, icons, script, root)
   if (root && language === 'react') {
     return [
       'import { useEffect, useRef } from \'react\'', 'import { attach } from \'@master/ui/behaviors\'', ...icons, '',
@@ -632,6 +704,54 @@ export function printMarkup(source: string, language: MarkupLanguage, options: P
   if (language === 'svelte') return `<script>\n${icons.map(line => `  ${line}`).join('\n')}\n</script>\n\n${markup}`
   if (language === 'vue') return `<script setup>\n${icons.join('\n')}\n</script>\n\n${markup}`
   return `${icons.join('\n')}\n\n${markup}`
+}
+
+/**
+ * A preview whose script calls behaviors with their options, as a component: the same markup, the calls made when it
+ * is mounted, after the behaviors found in the markup where the script waited for the document and before them where
+ * it did not, as on the page, and everything they returned called when it goes. The data the script prepared stands
+ * above the component.
+ */
+function scripted(language: Exclude<MarkupLanguage, 'html'>, markup: string, icons: string[], script: PageScript, root?: string) {
+  const names = [...(root ? ['attach'] : []), ...script.behaviors.filter(name => name !== 'attach')]
+  const behaviors = [`import { ${names.join(', ')} } from '@master/ui/behaviors'`]
+  const element = fresh('root', script)
+  const detach = fresh('detach', script)
+  // TypeScript is told the element is there: the markup below writes it.
+  const found = (call: string) => language === 'react' ? call.replace(/\bdocument\.getElementById\(('[^']*'|"[^"]*")\)(?!!)/g, 'document.getElementById($1)!') : call
+  const made = (attached: string | undefined, indent: string) => {
+    const calls = script.calls.map(found)
+    const all = attached ? script.late ? [attached, ...calls] : [...calls, attached] : calls
+    return all.map(call => call.split('\n').map(line => indent + line).join('\n') + ',')
+  }
+  if (language === 'react') {
+    return [
+      'import { useEffect' + (root ? ', useRef' : '') + ' } from \'react\'', ...behaviors, ...icons, '',
+      ...script.data.flatMap(statement => [statement, '']),
+      'export function Example() {',
+      ...(root ? [`  const ${element} = useRef<${interfaces[root] ?? 'HTMLElement'}>(null)`] : []),
+      '  useEffect(() => {',
+      `    const ${detach} = [`, ...made(root ? `attach(${element}.current!)` : undefined, '      '), '    ]',
+      `    return () => ${detach}.forEach(stop => stop())`,
+      '  }, [])', '',
+      '  return (', indented(markup, '    '), '  )', '}',
+    ].join('\n')
+  }
+  if (language === 'svelte') {
+    const mounted = fresh('mounted', script)
+    const data = script.data.flatMap(statement => [...statement.split('\n'), ''])
+    const lines = root
+      ? [...behaviors, ...icons, '', ...data, `function ${mounted}(${element}) {`, `  const ${detach} = [`, ...made(`attach(${element})`, '    '), '  ]', `  return () => ${detach}.forEach(stop => stop())`, '}']
+      : ['import { onMount } from \'svelte\'', ...behaviors, ...icons, '', ...data, 'onMount(() => {', `  const ${detach} = [`, ...made(undefined, '    '), '  ]', `  return () => ${detach}.forEach(stop => stop())`, '})']
+    return `<script>\n${lines.join('\n').split('\n').map(line => line && `  ${line}`).join('\n')}\n</script>\n\n${markup}`
+  }
+  return [
+    '<script setup>', `import { onMounted, onUnmounted${root ? ', ref' : ''} } from 'vue'`, ...behaviors, ...icons, '',
+    ...script.data.flatMap(statement => [statement, '']),
+    ...(root ? [`const ${element} = ref(null)`] : []), `let ${detach} = []`, '',
+    'onMounted(() => {', `  ${detach} = [`, ...made(root ? `attach(${element}.value)` : undefined, '    '), '  ]', '})',
+    `onUnmounted(() => ${detach}.forEach(stop => stop()))`, '</script>', '', markup,
+  ].join('\n')
 }
 
 /** Every language a preview's markup can be written in, HTML first; a framework that cannot hold it is left out. */

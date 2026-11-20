@@ -5,9 +5,9 @@ import { fileURLToPath } from 'node:url'
 import ts from 'typescript'
 import { transformSync } from 'esbuild'
 import { compile as compileSvelte } from 'svelte/compiler'
-import { compileTemplate } from 'vue/compiler-sfc'
+import { compileScript, compileTemplate, parse as parseVue } from 'vue/compiler-sfc'
 import { check, createIndex, format, parse } from '../check/index.js'
-import { printMarkup, printSource, UnsupportedMarkup, type IconImport, type MarkupLanguage } from '../../../site/utils/framework-markup.ts'
+import { printMarkup, printSource, UnsupportedMarkup, type IconImport, type MarkupLanguage, type PageScript } from '../../../site/utils/framework-markup.ts'
 import { contracts, utilities } from './support.ts'
 
 /**
@@ -41,8 +41,10 @@ function previews(source: string) {
   }))
 }
 
-interface Printed { where: string, language: MarkupLanguage, code: string, markup: string, imports: IconImport[], root?: string, html: string }
+interface Printed { where: string, language: MarkupLanguage, code: string, markup: string, imports: IconImport[], root?: string, script?: PageScript, html: string }
 const printed: Printed[] = []
+/** What a framework was not given, and why. */
+const withheld: { where: string, language: MarkupLanguage, reason: string }[] = []
 for (const page of pages(content)) {
   const name = fileURLToPath(page).slice(fileURLToPath(content).length)
   for (const { html, line, behaviors } of previews(readFileSync(page, 'utf8'))) {
@@ -51,6 +53,7 @@ for (const page of pages(content)) {
         printed.push({ where: `${name}:${line}`, language, code: printMarkup(html, language, { behaviors }), ...printSource(html, language, { behaviors }), html })
       } catch (error) {
         if (!(error instanceof UnsupportedMarkup)) throw new Error(`${name}:${line} (${language}): ${(error as Error).message}`)
+        withheld.push({ where: `${name}:${line}`, language, reason: error.message })
       }
     }
   }
@@ -81,7 +84,7 @@ test('the frameworks are offered for most previews', () => {
 test('React: every preview is JSX that type-checks against React\'s types', () => {
   const react = printed.filter(entry => entry.language === 'react')
   // A pattern with a script is printed as a whole component; any other preview is an expression to return.
-  const file = ({ code, markup, imports, root }: Printed, number: number) => root ? code :
+  const file = ({ code, markup, imports, root, script }: Printed, number: number) => root || script ? code :
     `${imports.map(({ name, from, named }) => `import ${named ? `{ ${name} }` : name} from '${from}'\n`).join('')}export function Preview${number}() {\n  return (\n${markup}\n  )\n}\n`
   for (const [number, entry] of react.entries()) {
     assert.doesNotThrow(() => transformSync(file(entry, number), { loader: 'tsx', jsx: 'automatic' }), entry.where)
@@ -124,7 +127,14 @@ test('Vue: every preview compiles', () => {
   const problems = printed.filter(entry => entry.language === 'vue').flatMap(({ where, code }) => {
     const template = /<template>\n([\s\S]*)\n<\/template>$/.exec(code)![1]
     const result = compileTemplate({ source: template, filename: 'Preview.vue', id: 'preview' })
-    return result.errors.map(error => `${where}: ${typeof error === 'string' ? error : error.message}`)
+    const errors = result.errors.map(error => `${where}: ${typeof error === 'string' ? error : error.message}`)
+    // A file with a setup script is compiled whole, so an import or a script of the page's that is not JavaScript is found.
+    if (code.startsWith('<script setup>')) {
+      const { descriptor, errors: broken } = parseVue(code, { filename: 'Preview.vue' })
+      errors.push(...broken.map(error => `${where}: ${error.message}`))
+      try { compileScript(descriptor, { id: 'preview' }) } catch (error) { errors.push(`${where}: ${(error as Error).message}`) }
+    }
+    return errors
   })
   assert.deepEqual(problems, [])
 })
@@ -159,17 +169,38 @@ test('a pattern with a script attaches its behaviors in every language', () => {
   const scripted = printed.filter(entry => entry.language === 'html' && entry.code.includes('import { attach } from \'@master/ui/behaviors\''))
   assert.ok(scripted.length > 100, `only ${scripted.length} previews run the behaviors`)
   for (const language of ['react', 'svelte', 'vue'] as const) {
-    const attached = printed.filter(entry => entry.language === language && entry.root)
+    const attached = printed.filter(entry => entry.language === language && entry.root && !entry.script)
     const charts = printed.filter(entry => entry.language === language && entry.imports.some(({ from }) => /^\.\/ui\/[Cc]hart/.test(from)))
     assert.ok(charts.length > 30, `${language} draws ${charts.length} previews with the chart component`)
     for (const { where, code } of charts) assert.doesNotMatch(code, /MasterUI|DOMContentLoaded|attach\(/, `${where} (${language})`)
     assert.ok(attached.length + charts.length > scripted.length * .75, `${language} attaches the behaviors in ${attached.length} and draws ${charts.length} of ${scripted.length} previews`)
+    for (const { where, code } of printed.filter(entry => entry.language === language && entry.root && entry.script)) assert.match(code, /\battach_*\(/, `${where} (${language})`)
     for (const { where, code } of attached) {
       assert.match(code, /import \{ attach \} from '@master\/ui\/behaviors'/, where)
       assert.match(code, { react: /useEffect\(\(\) => attach\(root\.current!\), \[\]\)[\s\S]* ref=\{root\}/, svelte: / \{@attach attach\}/, vue: /onUnmounted\(\(\) => detach\?\.\(\)\)[\s\S]* ref="root"/ }[language], where)
     }
   }
   assert.doesNotMatch(printMarkup('<p class="text">Plain</p>', 'react'), /attach/)
+})
+
+test('a script that only calls behaviors with options is made with the component, and any other script stays HTML', () => {
+  const scripted = printed.filter(entry => entry.script)
+  assert.ok(scripted.length >= 24, `${scripted.length} files make the calls of a page's script`)
+  for (const { where, language, code, script, root } of scripted) {
+    const at = `${where} (${language})`
+    assert.doesNotMatch(code, /MasterUI|DOMContentLoaded|addEventListener|setTimeout|setInterval/, `${at}: only the behaviors are called`)
+    for (const name of script!.behaviors) assert.match(code, new RegExp(`import \\{[^}]*\\b${name}\\b[^}]*\\} from '@master/ui/behaviors'`), at)
+    assert.match(code, /detach_*\.forEach\(stop => stop\(\)\)/, `${at}: what the behaviors return is called when the component goes`)
+    if (root) assert.match(code, /\battach\(/, `${at}: the behaviors in the markup are attached beside the calls`)
+  }
+  // The page's application is no framework's: its preview is withheld for that reason, by name.
+  const application = withheld.filter(({ reason }) => /application/.test(reason))
+  assert.ok(application.length > 0 && application.length % 3 === 0, 'React, Svelte and Vue withhold the same previews')
+  for (const page of ['countdown', 'odometer', 'busy', 'keypad', 'snippet']) assert.ok(application.some(({ where }) => where.startsWith(`components/${page}/`)), `${page} keeps its script in HTML`)
+  const late = printMarkup('<div class="calendar" id="stay"></div>\n<script>\naddEventListener(\'DOMContentLoaded\', function () {\n  MasterUI.calendar(document.getElementById(\'stay\'), { range: true })\n})\n</script>', 'react', { behaviors: true })
+  assert.match(late, /const detach = \[\n {6}attach\(root\.current!\),\n {6}calendar\(document\.getElementById\('stay'\)!, \{ range: true \}\),\n {4}\]\n {4}return \(\) => detach\.forEach\(stop => stop\(\)\)/, 'a script that waited for the document is called after the behaviors, and every one is undone')
+  assert.throws(() => printMarkup('<button class="btn" id="save">Save</button>\n<script>\n  document.getElementById(\'save\').addEventListener(\'click\', function () {})\n</script>', 'svelte'), UnsupportedMarkup)
+  assert.throws(() => printMarkup('<div class="calendar" id="stay"></div>\n<script>\n  var picker = MasterUI.calendar(document.getElementById(\'stay\'))\n  picker.value = \'2026-11-04\'\n</script>', 'vue', { behaviors: true }), UnsupportedMarkup, 'a call whose result the page goes on to use is the page\'s')
 })
 
 test('the printer keeps what each framework would change', () => {
