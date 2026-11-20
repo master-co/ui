@@ -138,7 +138,7 @@ Every rule of the library is in `@layer components.ui`, a layer inside `componen
 | Gradient | `gradient`, `gradient-preview`, `gradient-bar`, `gradient-stop`, `gradient-fields`, `gradient-color`, `gradient-offset`, `gradient-type`, `gradient-angle`, `gradient-center`, `gradient-add`, `gradient-remove`, `gradient-reverse`, `gradient-css` |
 | Panel | `panel`, `panel-header`, `panel-handle`, `panel-title`, `panel-actions`, `panel-minimize`, `panel-body`, `panel-resize` |
 | Menu | `menu`, `menu-end`, `menu-top`, `menu-sub`, `menu-context`, `menu-item`, `menu-item-danger`, `menu-input`, `menu-shortcut`, `menu-label`, `menu-separator` |
-| Listbox | `listbox`, `listbox-option`, `listbox-body`, `listbox-description`, `listbox-end`, `listbox-group`, `listbox-label`, `listbox-separator`, `listbox-empty` |
+| Listbox | `listbox`, `listbox-option`, `listbox-body`, `listbox-description`, `listbox-path`, `listbox-crumb`, `listbox-excerpt`, `listbox-end`, `listbox-group`, `listbox-label`, `listbox-separator`, `listbox-empty` |
 | Combobox | `combobox`, `combobox-toggle` |
 | Command palette | `command`, `command-search`, `command-input`, `command-list`, `command-footer`, `command-hint` |
 | Tooltip | `tooltip`, `tooltip-bottom` |

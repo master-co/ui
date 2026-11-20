@@ -4,6 +4,10 @@
  * aria-selected marks the active option, the one the arrow keys are on; aria-checked marks a chosen value
  * with a check. In the flow of the page it is a plain list; with the popover attribute it is a floating
  * sheet placed against its anchor, whose corner is a row's corner plus its 4px inset.
+ * An option follows one alignment: its icon, its words and its end center on one another, which holds while the
+ * words are a title and one line under it, a description or a path. With an excerpt, a passage of up to two
+ * lines, the option turns to its first line: the icon and the end stand beside the title and the rest runs
+ * under it. A match in an option is a mark, in the title's ink and weight so it is found in a muted line too.
  */
 @layer components.ui {
   .listbox {
@@ -196,6 +200,104 @@
     text-wrap: pretty;
   }
 
+  /*
+   * Where an option is: the steps of a path on one line under the title, a chevron between them. They are not
+   * links (an option is one target), so this is not a breadcrumb. The line never wraps: its steps give way
+   * together and end in an ellipsis.
+   */
+  .listbox-path {
+    display: flex;
+    min-width: 0;
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: .71875rem;
+    line-height: 1.4;
+    white-space: nowrap;
+  }
+
+  .listbox-crumb {
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    &:not(:first-child)::before {
+      content: '';
+      display: inline-block;
+      width: .75rem;
+      height: .75rem;
+      margin-inline: .125rem;
+      background: var(--color-text-disabled);
+      vertical-align: -.125rem;
+      mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6.5 4.5 3.5 3.5-3.5 3.5'/%3E%3C/svg%3E") center / contain no-repeat;
+    }
+
+    &:dir(rtl)::before {
+      scale: -1 1;
+    }
+  }
+
+  /*
+   * A passage under an option's words, where a search shows what it matched: two lines at most, then an ellipsis.
+   * Without line-clamp the passage runs to its end.
+   */
+  .listbox-excerpt {
+    display: -webkit-box;
+    margin: .125rem 0 0;
+    overflow: hidden;
+    color: var(--color-text-muted);
+    font-size: .75rem;
+    line-height: 1.45;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+
+  /*
+   * Centering reads as one row for a title and a line under it. An excerpt makes the words taller than that, so
+   * the option turns to its first line: the icon, the end and the check stand beside the title, each in a box
+   * as tall as the title's line with the body's own padding, and the row keeps a little more room around it.
+   */
+  .listbox-option:has(.listbox-excerpt) {
+    /* The title's line and the body's padding, in rem: the end reads it at its own smaller size. */
+    --listbox-line: calc(.84375rem * 1.2 + .25rem);
+    align-items: start;
+    padding-block: .375rem;
+
+    .icon {
+      margin-block: calc((var(--listbox-line) - var(--icon-size)) / 2);
+    }
+
+    .listbox-end {
+      min-height: var(--listbox-line);
+    }
+
+    &[aria-checked]::after {
+      margin-block: calc((var(--listbox-line) - 14px) / 2);
+    }
+  }
+
+  /*
+   * A result's title leads smaller lines, so it takes a control's weight and they do not. A list of results
+   * keeps one weight whether or not a result has a passage to show.
+   */
+  .listbox-option:has(.listbox-path, .listbox-excerpt) {
+    font-weight: var(--font-weight-control);
+
+    :is(.listbox-description, .listbox-path, .listbox-excerpt, .listbox-end) {
+      font-weight: 400;
+    }
+  }
+
+  /* A match: the title's ink and a control's weight over the wash, so it is found at a glance in a muted line. */
+  .listbox-option .mark {
+    --mark-weight: var(--font-weight-control);
+  }
+
+  .listbox-option:not([aria-disabled="true"]) .mark {
+    --mark-ink: var(--color-text-strong);
+  }
+
   /* A shortcut or a hint at the end of an option. */
   .listbox-end {
     display: inline-flex;
@@ -211,8 +313,14 @@
 
   /* Secondary ink must follow the system-selected foreground, including on highlighted options. */
   @media (forced-colors: active) {
-    :is(.listbox-description, .listbox-end) {
+    :is(.listbox-description, .listbox-path, .listbox-excerpt, .listbox-end) {
       color: inherit;
+    }
+
+    /* The chevron is a fill cut by a mask: it takes the row's system ink, as the check does. */
+    .listbox-crumb:not(:first-child)::before {
+      forced-color-adjust: none;
+      background: currentColor;
     }
   }
 

@@ -27,7 +27,7 @@ export const geometryMarkup = `
   <div class="tabs"><button type="button" class="tabs-item" role="tab" aria-selected="true">Overview</button><button type="button" class="tabs-item" role="tab" aria-selected="false">Usage</button><button type="button" class="tabs-item" role="tab" disabled>Unavailable</button></div>
   <button type="button" class="btn" popovertarget="geometry-menu">Actions</button>
   <div id="geometry-menu" class="menu" popover><button type="button" class="menu-item">Rename</button><button type="button" class="menu-item" disabled>Unavailable</button><button type="button" class="menu-item" aria-disabled="true">Unavailable action</button><label class="menu-item menu-item-danger"><input class="menu-input" type="checkbox" disabled>Unavailable choice</label></div>
-  <div class="listbox" role="listbox" aria-label="Results"><div class="listbox-option" role="option" aria-selected="true" aria-checked="true"><div class="listbox-body">Project<span class="listbox-description">Selected description</span></div><span class="listbox-end">Hint</span></div><div class="listbox-option" role="option" aria-disabled="true">Unavailable result</div></div>
+  <div class="listbox" role="listbox" aria-label="Results"><div class="listbox-option" role="option" aria-selected="true" aria-checked="true"><div class="listbox-body">Project<span class="listbox-description">Selected description</span></div><span class="listbox-end">Hint</span></div><div class="listbox-option" role="option" aria-disabled="true">Unavailable result</div><div class="listbox-option" role="option" id="geometry-result" style="max-width: 16rem"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9h14M5 15h14"/></svg><div class="listbox-body"><span id="geometry-result-title">Retune <mark class="mark">token</mark>s</span><span class="listbox-path"><span class="listbox-crumb">Guide</span><span class="listbox-crumb">Customizing with a long name</span><span class="listbox-crumb">Theming with a long name</span></span><span class="listbox-excerpt">Override a <mark class="mark">token</mark> after the import. Every component that reads it follows, and so does every theme, block and page built from them, whatever their order in the bundle.</span></div><span class="listbox-end">Hint</span></div></div>
   <ul class="list" data-meta-list><li class="list-row"><span class="avatar list-media">AL</span><div class="list-body"><p class="list-title">Ada Lovelace left a comment</p><p class="list-description">The hero reads much better.</p></div><p class="list-meta"><time datetime="2026-11-12">Yesterday</time><span class="badge badge-sm">Unread</span></p><span class="list-end"><button class="btn btn-quiet btn-square btn-sm" type="button" aria-label="Mark as read">R</button></span></li><li class="list-row"><div class="list-body"><p class="list-title">A row with no media and no end</p></div><p class="list-meta">Today</p></li></ul>
   <header style="display:flex;align-items:center;justify-content:space-between"><span>A header with no contour</span><span style="display:flex"><button class="btn btn-quiet btn-square btn-hang-end" data-hang type="button" aria-label="Open the menu">M</button></span></header>
   <div class="kanban"><section class="kanban-column" aria-label="To do"><ol class="kanban-items kanban-items-target" data-marked-list><li class="kanban-item">Brief</li><li class="kanban-item">Copy</li></ol></section></div>
@@ -189,6 +189,30 @@ export async function verifyComponentGeometry(browser: Browser, { theme, scheme,
       const rest = await unavailable.evaluate(element => ({ color: getComputedStyle(element).color, background: getComputedStyle(element).backgroundColor }))
       await unavailable.hover()
       assert.deepEqual(await unavailable.evaluate(element => ({ color: getComputedStyle(element).color, background: getComputedStyle(element).backgroundColor })), rest, 'disabled listbox options retain their resting treatment')
+    }
+    // No helper is declared inside: the transform names an inner function with a helper the page does not have.
+    const result = await page.locator('#geometry-result').evaluate((element) => {
+      const [icon, title, end, path, body, excerpt] = ['.icon', '#geometry-result-title', '.listbox-end', '.listbox-path', '.listbox-body', '.listbox-excerpt'].map(selector => element.querySelector(selector)!)
+      const [iconBox, titleBox, endBox, pathBox, bodyBox, excerptBox] = [icon, title, end, path, body, excerpt].map(target => target.getBoundingClientRect())
+      return {
+        icon: iconBox.top + iconBox.height / 2 - titleBox.top - titleBox.height / 2,
+        end: endBox.top + endBox.height / 2 - titleBox.top - titleBox.height / 2,
+        path: pathBox.height / parseFloat(getComputedStyle(path).lineHeight),
+        pathFits: pathBox.right <= bodyBox.right + .5,
+        excerpt: excerptBox.height / parseFloat(getComputedStyle(excerpt).lineHeight),
+        clipped: excerpt.scrollHeight > excerpt.clientHeight,
+        mark: getComputedStyle(excerpt.querySelector('.mark')!).color,
+        title: getComputedStyle(title).color,
+        muted: getComputedStyle(excerpt).color,
+      }
+    })
+    assert.ok(Math.abs(result.icon) < 1, 'with an excerpt the icon stands on the title\'s line')
+    assert.ok(Math.abs(result.end) < 1, 'with an excerpt the end stands on the title\'s line')
+    assert.ok(Math.abs(result.path - 1) < .1 && result.pathFits, 'a path keeps one line and gives way inside the option')
+    assert.ok(result.clipped && Math.abs(result.excerpt - 2) < .1, 'an excerpt longer than two lines is cut at two')
+    if (!forcedColors) {
+      assert.equal(result.mark, result.title, 'a match in an excerpt takes the title\'s ink')
+      assert.notEqual(result.mark, result.muted)
     }
     if (forcedColors) {
       const ink = await page.locator('.listbox-option[aria-selected="true"]').evaluate(element => ({
