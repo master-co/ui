@@ -7,6 +7,7 @@ import IconComponent from '@master/icons-svelte/native/20/soft/component'
 import IconPanelLeft from '@master/icons-svelte/native/20/soft/panel-left'
 import IconLayers from '@master/icons-svelte/native/20/soft/layers'
 import IconMessages from '@master/icons-svelte/native/20/soft/messages'
+import IconVectorSquare from '@master/icons-svelte/native/20/soft/vector-square'
 
 export interface FooterNavGroup {
   name: string
@@ -21,6 +22,7 @@ export const primaryNavs = [
   { name: 'Charts', href: '/charts', Icon: IconChartLine },
   { name: 'Blocks', href: '/blocks', Icon: IconLayers },
   { name: 'Pages', href: '/pages', Icon: IconPanelLeft },
+  { name: 'Icons', href: 'https://icons.master.co', Icon: IconVectorSquare },
 ] satisfies AppNavItem[]
 
 export const communityNavs = [
