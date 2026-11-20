@@ -25,6 +25,7 @@ A toast is a brief message over the page about something that just happened (sav
 - A toast with the `open` attribute is shown when the page loads, which suits a message rendered by the server after a form post.
 - From script, append a new `<dialog open class="toast">` to the region, or set `open` on a toast that is there. `@starting-style` gives the toast the frame it arrives from in both cases. Do not call `show()`: it moves focus into the toast, away from what the reader was doing.
 - A `<form method="dialog">` around a button dismisses the toast, as does a button with `commandfor` and `command="close"`. `display` transitions with `allow-discrete`, so the exit plays before the toast stops taking space.
+- A toast that has left stays in the document. Where a page appends a toast for each message, the `toast` [behavior](/guide/behaviors) removes each one once it has run out, or been dismissed and left: `toast(region)`. `attach()` leaves it out, since a page that opens the same toast again keeps it.
 
 ## Timed \{#timed\}
 
@@ -80,7 +81,7 @@ A toast leaves by itself and a reader may never see it, so an action in it is a 
 
 A toast can report work as it runs and then say how it ended, in the same place. While the work runs, the toast carries `aria-busy="true"` and holds a [spinner](/components/spinner) with `toast-icon` where its icon goes; its clock does not run, however long the work takes. When the work ends, change the same toast: its words, its status, its icon, and remove `aria-busy`. The toast does not enter again and keeps its place in the stack; only the new icon grows into place.
 
-<ComponentPreview name="pending" height={280} title="Pending" bodyClass="content-start p-lg min-h(280)" html={`<button class="btn" type="button" id="deploy-run">Deploy</button>
+<ComponentPreview name="pending" behaviors height={280} title="Pending" bodyClass="content-start p-lg min-h(280)" html={`<button class="btn" type="button" id="deploy-run">Deploy</button>
 <div class="toast-region" id="deploy-region" role="region" aria-label="Notifications" aria-live="polite"></div>
 <template id="deploy-pending">
   <dialog open class="toast" aria-labelledby="deploy-title" aria-busy="true" aria-atomic="true">
@@ -118,12 +119,7 @@ A toast can report work as it runs and then say how it ended, in the same place.
     }, 2400)
   })
   // A toast that has run out, or was dismissed and has left, is removed.
-  region.addEventListener('animationend', function (event) {
-    if (event.animationName === 'toast-expire') event.target.remove()
-  })
-  region.addEventListener('close', function (event) {
-    setTimeout(function () { event.target.remove() }, 300)
-  }, true)
+  MasterUI.toast(region)
 </script>`} caption="Press Deploy: the toast is busy for two seconds, then says the deploy is done in the same place and leaves six seconds later." />
 
 The same toast can change again, from one count to the next while files upload, or from a failure to a retry. Each change starts its clock again, so a reader gets the whole time for the new words. A busy toast is not the place to follow a long task that matters: [progress](/components/progress) beside the work stays where it is.

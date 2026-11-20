@@ -29,6 +29,7 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
 - `open` 属性が付いたトーストはページの読み込み時に表示されます。フォーム送信後にサーバーが描画するメッセージに適しています。
 - スクリプトから表示するには、表示領域に新しい `<dialog open class="toast">` を追加するか、表示領域内のトーストに `open` を設定します。どちらの場合も、`@starting-style` が表示アニメーションの開始状態を指定します。`show()` は呼び出さないでください。フォーカスがトースト内に移り、読者が行っていた作業から離れてしまいます。
 - ボタンを `<form method="dialog">` で囲むか、ボタンに `commandfor` と `command="close"` を指定すると、トーストを閉じられます。`display` は `allow-discrete` で遷移するため、終了アニメーションが完了してからトーストの占有スペースがなくなります。
+- 消えたトーストはドキュメントに残ります。メッセージごとにトーストを追加するページでは、`toast` の[ビヘイビア](/guide/behaviors)が、時間切れになったトーストと、閉じられて退場し終えたトーストを取り除きます（`toast(region)`）。同じトーストを開き直すページではトーストを残す必要があるため、`attach()` はこのビヘイビアを適用しません。
 
 ## 自動で閉じる \{#timed\}
 
@@ -84,7 +85,7 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
 トーストは、進行中の作業を知らせ、その結果を同じ場所で伝えることができます。作業の実行中、トーストは `aria-busy="true"` を持ち、アイコンの位置に `toast-icon` を付けた[スピナー](/components/spinner)を表示します。作業にどれだけ時間がかかっても、時間は計測されません。作業が終わったら、同じトーストのテキスト、ステータス、アイコンを変更し、`aria-busy` を削除します。トーストは再び表示アニメーションを行わず、スタック内の位置も保ちます。新しいアイコンだけが拡大しながら表示されます。
 
-<ComponentPreview name="pending" height={280} title="処理中" bodyClass="content-start p-lg min-h(280)" html={`<button class="btn" type="button" id="deploy-run">Deploy</button>
+<ComponentPreview name="pending" behaviors height={280} title="処理中" bodyClass="content-start p-lg min-h(280)" html={`<button class="btn" type="button" id="deploy-run">Deploy</button>
 <div class="toast-region" id="deploy-region" role="region" aria-label="Notifications" aria-live="polite"></div>
 <template id="deploy-pending">
   <dialog open class="toast" aria-labelledby="deploy-title" aria-busy="true" aria-atomic="true">
@@ -122,12 +123,7 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
     }, 2400)
   })
   // A toast that has run out, or was dismissed and has left, is removed.
-  region.addEventListener('animationend', function (event) {
-    if (event.animationName === 'toast-expire') event.target.remove()
-  })
-  region.addEventListener('close', function (event) {
-    setTimeout(function () { event.target.remove() }, 300)
-  }, true)
+  MasterUI.toast(region)
 </script>`} caption="「Deploy」を押すと、トーストは 2 秒間処理中になり、同じ場所でデプロイの完了を伝え、その 6 秒後に閉じます。" />
 
 同じトーストは、ファイルのアップロード中に件数を更新したり、失敗から再試行に切り替えたりと、さらに変更できます。変更のたびに時間の計測がやり直されるため、読者は新しいテキストを読む時間を十分に得られます。重要な長い作業を追うのに、処理中のトーストは適していません。作業のそばに置いた[進捗](/components/progress)なら、その場に残ります。

@@ -30,6 +30,7 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
 - 帶有 `open` 屬性的通知會在頁面載入時顯示，適合在表單以 POST 送出後，由伺服器直接算繪訊息。
 - 在腳本中，在區域內附加新的 `<dialog open class="toast">`，或為區域內現有的通知設定 `open`。兩種做法都會透過 `@starting-style` 設定通知進場時的起始樣式。請勿呼叫 `show()`：它會把焦點移入通知，讓使用者離開正在進行的操作。
 - 將按鈕放在 `<form method="dialog">` 裡，或在按鈕上設定 `commandfor` 和 `command="close"`，都能關閉通知。`display` 透過 `allow-discrete` 進行轉場，讓退場動畫播完後，通知才停止占用空間。
+- 離開後的通知仍留在文件中。若頁面為每則訊息附加一個新通知，`toast` [行為](/guide/behaviors)會在通知到期，或被關閉並退場後將它移除：`toast(region)`。`attach()` 不會掛載它，因為重複開啟同一個通知的頁面需要把它留著。
 
 ## 限時 \{#timed\}
 
@@ -85,7 +86,7 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
 通知可以在工作進行時回報狀態，並在同一個位置說明結果。工作進行期間，通知帶有 `aria-busy="true"`，並在圖示的位置放一個帶有 `toast-icon` 的[旋轉指示器](/components/spinner)；無論工作進行多久，計時都不會開始。工作結束時，請直接修改同一則通知：更換文字、狀態和圖示，並移除 `aria-busy`。通知不會再次進場，在堆疊中的位置也不變；只有新的圖示會放大出現。
 
-<ComponentPreview name="pending" height={280} title="進行中" bodyClass="content-start p-lg min-h(280)" html={`<button class="btn" type="button" id="deploy-run">Deploy</button>
+<ComponentPreview name="pending" behaviors height={280} title="進行中" bodyClass="content-start p-lg min-h(280)" html={`<button class="btn" type="button" id="deploy-run">Deploy</button>
 <div class="toast-region" id="deploy-region" role="region" aria-label="Notifications" aria-live="polite"></div>
 <template id="deploy-pending">
   <dialog open class="toast" aria-labelledby="deploy-title" aria-busy="true" aria-atomic="true">
@@ -123,12 +124,7 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
     }, 2400)
   })
   // A toast that has run out, or was dismissed and has left, is removed.
-  region.addEventListener('animationend', function (event) {
-    if (event.animationName === 'toast-expire') event.target.remove()
-  })
-  region.addEventListener('close', function (event) {
-    setTimeout(function () { event.target.remove() }, 300)
-  }, true)
+  MasterUI.toast(region)
 </script>`} caption="按下 Deploy：通知會顯示部署進行中兩秒，接著在同一個位置顯示部署已完成，並在六秒後消失。" />
 
 同一則通知可以再次變更，例如在上傳檔案時從一個數量更新到下一個，或從失敗變成重試。每次變更都會重新開始計時，讓使用者有完整的時間閱讀新文字。忙碌中的通知不適合用來追蹤重要的長時間工作：放在工作旁邊的[進度](/components/progress)會持續留在原處。

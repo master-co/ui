@@ -6,6 +6,8 @@
  * document, or under an element, and attach its behavior.
  *
  * A context menu belongs to a target that only the page knows: attach it with `contextMenu(target, menu)`.
+ * A toast region is left out too: `toast(region)` removes the toasts that have left, which a page that opens the
+ * same toast again does not want.
  * A gantt is found too, and only its bars marked `role="slider"` move. A chart is found and worked as the page
  * wrote it; call `chart(root, { series })` to have it written from data.
  * `chart` has every form of the chart; `chartCore`, `chartForms` and a form such as `chartCartesian` are for a page
@@ -61,13 +63,15 @@ import { splitter } from './splitter.js'
 import { stepper } from './stepper.js'
 import { tabs } from './tabs.js'
 import { tags } from './tags.js'
+import { toast } from './toast.js'
 import { toolbar } from './toolbar.js'
 import { tour } from './tour.js'
 import { transcript } from './transcript.js'
 import { tree } from './tree.js'
+import { vote } from './vote.js'
 import { wheel } from './wheel.js'
 
-export { avatar, calendar, calendarMonth, calendarPeriods, carousel, chart, chartCore, chartForms, chartLayout, chartMarkup, chartCartesian, chartScatter, chartPie, chartRings, chartRadar, chartWaterfall, chartRange, chartSlope, chartBump, chartMarimekko, chartHistogram, chartBox, chartHeatmap, chartFunnel, chartWaffle, chartTreemap, chartSunburst, colorPicker, colorPickerFormat, colorPickerState, combobox, command, compare, contextMenu, cropper, cropperFit, dial, drawer, editable, follow, gradient, gradientCss, gantt, kanban, listbox, menu, otp, panel, player, range, schedule, scheduleLayout, signature, signaturePath, signatureSvg, sortable, splitter, stepper, tabs, tags, toolbar, tour, transcript, tree, wheel }
+export { avatar, calendar, calendarMonth, calendarPeriods, carousel, chart, chartCore, chartForms, chartLayout, chartMarkup, chartCartesian, chartScatter, chartPie, chartRings, chartRadar, chartWaterfall, chartRange, chartSlope, chartBump, chartMarimekko, chartHistogram, chartBox, chartHeatmap, chartFunnel, chartWaffle, chartTreemap, chartSunburst, colorPicker, colorPickerFormat, colorPickerState, combobox, command, compare, contextMenu, cropper, cropperFit, dial, drawer, editable, follow, gradient, gradientCss, gantt, kanban, listbox, menu, otp, panel, player, range, schedule, scheduleLayout, signature, signaturePath, signatureSvg, sortable, splitter, stepper, tabs, tags, toast, toolbar, tour, transcript, tree, vote, wheel }
 
 /**
  * Each pattern's root class and the behavior that drives it.
@@ -108,6 +112,7 @@ const patterns = [
   ['.schedule-view', schedule],
   ['.gradient', gradient],
   ['.range', range],
+  ['.vote', vote],
 ]
 
 /**
