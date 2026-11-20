@@ -57,7 +57,7 @@ export function Sortable<T extends SortableItem>({ items, value, defaultValue, o
       <ol className={className ? `sortable ${className}` : 'sortable'} ref={ref} {...root}>
         {shown.map(item => (
           <li className={itemClassName ? `sortable-item ${itemClassName}` : 'sortable-item'} data-value={item.value} key={item.value}>
-            <button type="button" className="sortable-handle" aria-pressed="false" aria-label={handleLabel(item)} />
+            <button type="button" className="sortable-handle" aria-pressed="false" aria-label={handleLabel(item)}><svg className="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="6" cy="4" r="1" fill="currentColor" stroke="none" /><circle cx="10" cy="4" r="1" fill="currentColor" stroke="none" /><circle cx="6" cy="8" r="1" fill="currentColor" stroke="none" /><circle cx="10" cy="8" r="1" fill="currentColor" stroke="none" /><circle cx="6" cy="12" r="1" fill="currentColor" stroke="none" /><circle cx="10" cy="12" r="1" fill="currentColor" stroke="none" /></svg></button>
             {children(item)}
           </li>
         ))}

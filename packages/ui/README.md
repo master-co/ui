@@ -122,7 +122,7 @@ Pick the drawing by the size the component gives the icon: 16 up to 17px, 20 for
 | Segmented control | `segmented`, `segmented-item`, `segmented-input`, `segmented-sm`, `segmented-lg` |
 | Chip | `chip`, `chip-sm`, `chip-lg`, `chip-category`, `chip-input`, `chip-remove`, `chip-label`, `chip-media`, `chip-dot`, `chip-count` |
 | Tags | `tags` |
-| Editable | `editable`, `editable-preview`, `editable-field`, `editable-placeholder` |
+| Editable | `editable`, `editable-preview`, `editable-pencil`, `editable-field`, `editable-placeholder` |
 | Swatch | `swatch`, `swatch-input`, `swatch-sm`, `swatch-lg`, `swatch-square` |
 | Rating | `rating`, `rating-input`, `rating-sm`, `rating-lg`, `rating-half`, `rating-display` |
 | Vote | `vote`, `vote-horizontal`, `vote-up`, `vote-score`, `vote-down` |
@@ -142,7 +142,7 @@ Pick the drawing by the size the component gives the icon: 16 up to 17px, 20 for
 | Tab bar | `tabbar`, `tabbar-floating`, `tabbar-item`, `tabbar-label` |
 | Dock | `dock`, `dock-item`, `dock-image`, `dock-label`, `dock-divider` |
 | Table of contents | `toc`, `toc-title`, `toc-list`, `toc-link` |
-| Nav | `nav`, `nav-item`, `nav-end`, `nav-label`, `nav-group`, `nav-toggle`, `nav-sub` |
+| Nav | `nav`, `nav-item`, `nav-end`, `nav-label`, `nav-group`, `nav-toggle`, `nav-chevron`, `nav-sub` |
 | Breadcrumb | `breadcrumb`, `breadcrumb-item`, `breadcrumb-link` |
 | Pagination | `pagination`, `pagination-gap` |
 | Pager | `pager`, `pager-link`, `pager-label`, `pager-title` |
@@ -153,7 +153,7 @@ Pick the drawing by the size the component gives the icon: 16 up to 17px, 20 for
 | Color picker | `color-picker`, `color-picker-area`, `color-picker-thumb`, `color-picker-hue`, `color-picker-alpha`, `color-picker-swatch`, `color-picker-fields`, `color-picker-format`, `color-picker-text`, `color-picker-popover` |
 | Gradient | `gradient`, `gradient-preview`, `gradient-bar`, `gradient-stop`, `gradient-fields`, `gradient-color`, `gradient-offset`, `gradient-type`, `gradient-angle`, `gradient-center`, `gradient-add`, `gradient-remove`, `gradient-reverse`, `gradient-css` |
 | Panel | `panel`, `panel-header`, `panel-handle`, `panel-title`, `panel-actions`, `panel-minimize`, `panel-body`, `panel-resize` |
-| Menu | `menu`, `menu-end`, `menu-top`, `menu-sub`, `menu-context`, `menu-item`, `menu-item-danger`, `menu-input`, `menu-shortcut`, `menu-label`, `menu-separator` |
+| Menu | `menu`, `menu-end`, `menu-top`, `menu-sub`, `menu-context`, `menu-item`, `menu-chevron`, `menu-item-danger`, `menu-input`, `menu-shortcut`, `menu-label`, `menu-separator` |
 | Listbox | `listbox`, `listbox-option`, `listbox-body`, `listbox-description`, `listbox-path`, `listbox-crumb`, `listbox-excerpt`, `listbox-end`, `listbox-group`, `listbox-label`, `listbox-separator`, `listbox-empty` |
 | Combobox | `combobox`, `combobox-toggle` |
 | Command palette | `command`, `command-search`, `command-input`, `command-list`, `command-footer`, `command-hint` |
@@ -177,8 +177,8 @@ Pick the drawing by the size the component gives the icon: 16 up to 17px, 20 for
 | Presence | `presence`, `presence-name`, `presence-message`, `presence-caret`, `presence-selection`, `presence-1`, `presence-2`, `presence-3`, `presence-4`, `presence-5`, `presence-6`, `presence-7`, `presence-8` |
 | Flash | `flash` |
 | Empty | `empty`, `empty-media`, `empty-title`, `empty-description`, `empty-actions` |
-| Accordion | `accordion`, `accordion-item`, `accordion-trigger`, `accordion-content` |
-| Expand | `expand`, `expand-toggle`, `expand-more`, `expand-less` |
+| Accordion | `accordion`, `accordion-item`, `accordion-trigger`, `accordion-chevron`, `accordion-content` |
+| Expand | `expand`, `expand-toggle`, `expand-chevron`, `expand-more`, `expand-less` |
 | Table | `table`, `table-row`, `table-heading`, `table-cell`, `table-sort`, `table-title`, `table-primary`, `table-numeric`, `table-compact`, `table-interactive`, `table-sticky` |
 | List | `list`, `list-row`, `list-media`, `list-body`, `list-title`, `list-description`, `list-meta`, `list-end`, `list-interactive` |
 | Sortable | `sortable`, `sortable-row`, `sortable-item`, `sortable-item-back`, `sortable-item-forward`, `sortable-handle`, `sortable-status` |
@@ -194,9 +194,9 @@ Pick the drawing by the size the component gives the icon: 16 up to 17px, 20 for
 | Breakdown | `breakdown`, `breakdown-rows`, `breakdown-item`, `breakdown-rest`, `breakdown-label`, `breakdown-value` |
 | Heatmap | `heatmap`, `heatmap-lg`, `heatmap-cell` |
 | Timeline | `timeline`, `timeline-item`, `timeline-marker`, `timeline-body`, `timeline-title`, `timeline-description`, `timeline-time` |
-| Trace | `trace`, `trace-step`, `trace-failed`, `trace-summary`, `trace-marker`, `trace-meta`, `trace-detail` |
+| Trace | `trace`, `trace-step`, `trace-failed`, `trace-summary`, `trace-chevron`, `trace-marker`, `trace-meta`, `trace-detail` |
 | Calendar | `calendar`, `calendar-month`, `calendar-header`, `calendar-title`, `calendar-title-button`, `calendar-grid`, `calendar-week`, `calendar-weekday`, `calendar-day`, `calendar-day-outside`, `calendar-day-range-start`, `calendar-day-range`, `calendar-day-range-end`, `calendar-period`, `calendar-period-outside` |
-| Tree | `tree`, `tree-item`, `tree-label`, `tree-check`, `tree-toggle`, `tree-group`, `tree-sub` |
+| Tree | `tree`, `tree-item`, `tree-label`, `tree-check`, `tree-toggle`, `tree-chevron`, `tree-group`, `tree-sub` |
 | Carousel | `carousel`, `carousel-slide`, `carousel-2`, `carousel-3`, `carousel-center`, `carousel-vertical`, `carousel-view`, `carousel-previous`, `carousel-next`, `carousel-dots`, `carousel-dot` |
 | Marquee | `marquee`, `marquee-reverse`, `marquee-track` |
 | Waveform | `waveform`, `waveform-sm`, `waveform-lg`, `waveform-bar`, `waveform-seek`, `waveform-time` |

@@ -25,7 +25,7 @@ const markup = (attributes = '') => `<button type="button" class="btn" id="proje
   <div class="menu-label">Show</div>
   <label class="menu-item" id="archived"><input type="checkbox" class="menu-input" id="archived-input" checked>Archived projects</label>
   <label class="menu-item" id="previews"><input type="checkbox" class="menu-input" id="previews-input" disabled>Preview deployments</label>
-  <button type="button" class="menu-item" id="recent" popovertarget="recent-menu" aria-haspopup="menu">Open recent</button>
+  <button type="button" class="menu-item" id="recent" popovertarget="recent-menu" aria-haspopup="menu">Open recent<svg class="icon menu-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5L10.3586 7.8586A0.2 0.2 0 0 1 10.3586 8.1414L6 12.5"/></svg></button>
   <div id="recent-menu" popover class="menu menu-sub">
     <button type="button" class="menu-item" id="atlas">atlas</button>
     <button type="button" class="menu-item" id="borealis">borealis</button>

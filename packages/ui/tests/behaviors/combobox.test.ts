@@ -15,7 +15,7 @@ afterEach(() => assert.deepEqual(thrown.splice(0), [], 'a listener threw'))
 const markup = `<div class="combobox">
   <div class="input-group">
     <input class="input-group-field" id="region" role="combobox" aria-expanded="false" aria-controls="region-list" aria-autocomplete="list" autocomplete="off" aria-label="Region">
-    <button type="button" class="combobox-toggle" tabindex="-1" aria-label="Show regions"></button>
+    <button type="button" class="combobox-toggle" tabindex="-1" aria-label="Show regions"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5L10.3586 7.8586A0.2 0.2 0 0 1 10.3586 8.1414L6 12.5" transform="rotate(90 8 8)"/></svg></button>
   </div>
   <div id="region-list" popover="manual" class="listbox" role="listbox" aria-label="Regions">
     <div class="listbox-option" role="option" id="region-hnd" aria-checked="false">Tokyo</div>
@@ -325,9 +325,9 @@ test('combobox: detach removes the listeners, and attaching twice leaves one beh
 /** The combobox with a multiselectable list: chips before the field in an input group that wraps. */
 const several = `<form><div class="combobox">
   <div class="input-group input-group-wrap">
-    <span class="chip" data-value="region-hnd">Tokyo<input type="hidden" name="regions" value="region-hnd"><button type="button" class="chip-remove" tabindex="-1" aria-label="Remove Tokyo"></button></span>
+    <span class="chip" data-value="region-hnd">Tokyo<input type="hidden" name="regions" value="region-hnd"><button type="button" class="chip-remove" tabindex="-1" aria-label="Remove Tokyo"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4L12 12"/><path d="M4 12L12 4"/></svg></button></span>
     <input class="input-group-field" id="region" role="combobox" aria-expanded="false" aria-controls="region-list" aria-autocomplete="list" autocomplete="off" aria-label="Regions">
-    <button type="button" class="combobox-toggle" tabindex="-1" aria-label="Show regions"></button>
+    <button type="button" class="combobox-toggle" tabindex="-1" aria-label="Show regions"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5L10.3586 7.8586A0.2 0.2 0 0 1 10.3586 8.1414L6 12.5" transform="rotate(90 8 8)"/></svg></button>
   </div>
   <div id="region-list" popover="manual" class="listbox" role="listbox" aria-label="Regions" aria-multiselectable="true">
     <div class="listbox-option" role="option" id="region-hnd" data-value="region-hnd" aria-checked="true">Tokyo</div>

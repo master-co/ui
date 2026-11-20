@@ -100,7 +100,7 @@ export function Tree({ nodes, value, defaultValue, onValueChange, multiple, chec
       {node.children
         ? (
             <>
-              <div className="tree-item tree-toggle" role="treeitem" data-value={node.value} aria-expanded={node.open ?? false} aria-checked={checkable ? checked(node) : undefined} aria-disabled={node.disabled || undefined}>{inside(node)}</div>
+              <div className="tree-item tree-toggle" role="treeitem" data-value={node.value} aria-expanded={node.open ?? false} aria-checked={checkable ? checked(node) : undefined} aria-disabled={node.disabled || undefined}><svg className="icon tree-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 3.5L10.3586 7.8586A0.2 0.2 0 0 1 10.3586 8.1414L6 12.5" /></svg>{inside(node)}</div>
               <ul className="tree-sub" role="group">{rows(node.children)}</ul>
             </>
           )

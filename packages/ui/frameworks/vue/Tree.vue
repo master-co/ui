@@ -67,6 +67,8 @@ const checked = (node: TreeNode): 'true' | 'false' | 'mixed' => {
   return states.every(state => state === 'true') ? 'true' : states.every(state => state === 'false') ? 'false' : 'mixed'
 }
 
+/** The chevron a branch's row holds in its column: Master Icons' chevron-right at 16, turned by the stylesheet when the branch is open. */
+const chevron = () => h('svg', { 'class': 'icon tree-chevron', 'viewBox': '0 0 16 16', 'fill': 'none', 'stroke': 'currentColor', 'stroke-width': '1', 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'aria-hidden': 'true' }, [h('path', { d: 'M6 3.5L10.3586 7.8586A0.2 0.2 0 0 1 10.3586 8.1414L6 12.5' })])
 /** What a row holds: a spinner while its rows are on their way, its check, and its label. */
 const inside = (node: TreeNode): VNode[] => [
   ...(node.children?.length === 0 ? [h('span', { 'class': 'spinner', 'aria-hidden': 'true' })] : []),
@@ -79,7 +81,7 @@ const Rows: FunctionalComponent<{ nodes: TreeNode[] }> = ({ nodes }) => nodes.ma
   // A row is the node it stands for, not its place: a branch the reader opened stays open when a row is written above it.
   return h('li', { role: 'none', key: node.value ?? index }, node.children
     ? [
-        h('div', { 'class': 'tree-item tree-toggle', 'role': 'treeitem', 'data-value': node.value, 'aria-expanded': node.open ?? false, ...state }, inside(node)),
+        h('div', { 'class': 'tree-item tree-toggle', 'role': 'treeitem', 'data-value': node.value, 'aria-expanded': node.open ?? false, ...state }, [chevron(), ...inside(node)]),
         h('ul', { class: 'tree-sub', role: 'group' }, h(Rows, { nodes: node.children })),
       ]
     : node.href

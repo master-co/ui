@@ -17,6 +17,7 @@ import { master as link } from '@master/icons/data/native/16/soft/link'
 import { master as code } from '@master/icons/data/native/16/soft/code'
 import { master as plus } from '@master/icons/data/native/16/soft/plus'
 import { master as arrowUp } from '@master/icons/data/native/16/soft/arrow-up'
+import { master as chevronDown } from '@master/icons/data/native/16/soft/chevron-down'
 
 export interface PlatformFeature {
   id: string
@@ -207,15 +208,15 @@ ${slides.map(([file, alt]) => `  <figure class="carousel-slide figure">
     summary: 'Rows sharing a name close each other, and each panel eases to its height with interpolate-size.',
     html: `<div class="accordion">
   <details class="accordion-item" name="platform-faq" open>
-    <summary class="accordion-trigger">Does it need JavaScript?</summary>
+    <summary class="accordion-trigger">Does it need JavaScript?${icon(chevronDown, 'icon accordion-chevron')}</summary>
     <div class="accordion-content">No. Each component is a native element with one stylesheet; the browser keeps its behavior.</div>
   </details>
   <details class="accordion-item" name="platform-faq">
-    <summary class="accordion-trigger">Can I change the corners?</summary>
+    <summary class="accordion-trigger">Can I change the corners?${icon(chevronDown, 'icon accordion-chevron')}</summary>
     <div class="accordion-content">Set --corner-scale and --corner-shape once, and every component follows.</div>
   </details>
   <details class="accordion-item" name="platform-faq">
-    <summary class="accordion-trigger">Is dark mode a second stylesheet?</summary>
+    <summary class="accordion-trigger">Is dark mode a second stylesheet?${icon(chevronDown, 'icon accordion-chevron')}</summary>
     <div class="accordion-content">No. Every color token resolves with light-dark() and follows the page's color scheme.</div>
   </details>
 </div>`,

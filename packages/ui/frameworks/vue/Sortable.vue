@@ -50,7 +50,7 @@ useBehavior(root, sortable, () => ({ messages, move }))
 <template>
   <ol class="sortable" ref="root" v-bind="$attrs">
     <li v-for="item in shown" :key="item.value" class="sortable-item" :class="itemClass" :data-value="item.value">
-      <button type="button" class="sortable-handle" aria-pressed="false" :aria-label="handleLabel(item)" />
+      <button type="button" class="sortable-handle" aria-pressed="false" :aria-label="handleLabel(item)"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="4" r="1" fill="currentColor" stroke="none" /><circle cx="10" cy="4" r="1" fill="currentColor" stroke="none" /><circle cx="6" cy="8" r="1" fill="currentColor" stroke="none" /><circle cx="10" cy="8" r="1" fill="currentColor" stroke="none" /><circle cx="6" cy="12" r="1" fill="currentColor" stroke="none" /><circle cx="10" cy="12" r="1" fill="currentColor" stroke="none" /></svg></button>
       <slot :item="item" />
     </li>
   </ol>

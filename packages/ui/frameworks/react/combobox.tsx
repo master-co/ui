@@ -109,11 +109,11 @@ export function Combobox(props: ComboboxProps) {
           <span className="chip" data-value={each} key={each}>
             {labelOf(each)}
             {name && <input type="hidden" name={name} value={each} />}
-            <button type="button" className="chip-remove" tabIndex={-1} aria-label={removeLabel(labelOf(each))} />
+            <button type="button" className="chip-remove" tabIndex={-1} aria-label={removeLabel(labelOf(each))}><svg className="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 4L12 12" /><path d="M4 12L12 4" /></svg></button>
           </span>
         ))}
         <input className="input-group-field" role="combobox" aria-expanded="false" aria-controls={`${id}list`} aria-autocomplete="list" autoComplete="off" defaultValue={(multiple ? undefined : options.find(option => option.value === first)?.label) ?? firstQuery} {...field} />
-        <button type="button" className="combobox-toggle" tabIndex={-1} aria-label={toggleLabel} />
+        <button type="button" className="combobox-toggle" tabIndex={-1} aria-label={toggleLabel}><svg className="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 3.5L10.3586 7.8586A0.2 0.2 0 0 1 10.3586 8.1414L6 12.5" transform="rotate(90 8 8)" /></svg></button>
       </div>
       <div id={`${id}list`} popover="manual" className="listbox" role="listbox" aria-label={listLabel} aria-multiselectable={multiple || undefined}>
         {groups.map((group, index) => {

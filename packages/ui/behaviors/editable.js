@@ -40,22 +40,23 @@ export function editable(root, { blur = 'save' } = {}) {
   const field = /** @type {HTMLInputElement | HTMLTextAreaElement | null} */ (root.querySelector('.editable-field'))
   let saved = field?.defaultValue ?? field?.value ?? preview?.textContent ?? ''
 
-  /** Write a value into the preview, or the field's placeholder when it is empty. */
+  /** Write a value into the preview, or the field's placeholder when it is empty. The pencil the preview holds stays after it. */
   const show = (/** @type {string} */ value) => {
     if (!preview) return
+    const pencil = [...preview.querySelectorAll('.editable-pencil')]
     if (value) {
-      preview.textContent = value
+      preview.replaceChildren(value, ...pencil)
       return
     }
     const placeholder = field?.getAttribute('placeholder')
     if (!placeholder) {
-      preview.textContent = ''
+      preview.replaceChildren(...pencil)
       return
     }
     const part = root.ownerDocument.createElement('span')
     part.className = 'editable-placeholder'
     part.textContent = placeholder
-    preview.replaceChildren(part)
+    preview.replaceChildren(part, ...pencil)
   }
 
   const editing = () => !!field && !field.hidden

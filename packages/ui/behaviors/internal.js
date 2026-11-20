@@ -196,6 +196,15 @@ export function writeChip(document, { value, text = value, name, removeLabel }) 
   remove.className = 'chip-remove'
   remove.tabIndex = -1
   remove.setAttribute('aria-label', removeLabel(text))
+  // The ✕ the button holds: Master Icons' x at 16, as the contract's markup writes it.
+  const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+  for (const [attribute, value] of Object.entries({ 'class': 'icon', 'viewBox': '0 0 16 16', 'fill': 'none', 'stroke': 'currentColor', 'stroke-width': '1', 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'aria-hidden': 'true' })) icon.setAttribute(attribute, value)
+  for (const d of ['M4 4L12 12', 'M4 12L12 4']) {
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path')
+    path.setAttribute('d', d)
+    icon.append(path)
+  }
+  remove.append(icon)
   chip.append(remove)
   return chip
 }

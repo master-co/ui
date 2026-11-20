@@ -36,17 +36,19 @@ function previews(source: string) {
   return [...source.matchAll(/(?:html=\{|export const \w+ = )`([\s\S]*?)`/g)].map(match => ({
     html: match[1].replace(/\\([`\\$])/g, '$1'),
     line: source.slice(0, match.index).split('\n').length,
+    // A preview that runs the behaviors says so on its tag, before the markup or after it.
+    behaviors: /\sbehaviors[\s/>]/.test(source.slice(source.lastIndexOf('<', match.index), match.index) + (/^[^<]*>/.exec(source.slice(match.index + match[0].length)) ?? [''])[0]),
   }))
 }
 
-interface Printed { where: string, language: MarkupLanguage, code: string, markup: string, imports: IconImport[], html: string }
+interface Printed { where: string, language: MarkupLanguage, code: string, markup: string, imports: IconImport[], root?: string, html: string }
 const printed: Printed[] = []
 for (const page of pages(content)) {
   const name = fileURLToPath(page).slice(fileURLToPath(content).length)
-  for (const { html, line } of previews(readFileSync(page, 'utf8'))) {
+  for (const { html, line, behaviors } of previews(readFileSync(page, 'utf8'))) {
     for (const language of languages) {
       try {
-        printed.push({ where: `${name}:${line}`, language, code: printMarkup(html, language), ...printSource(html, language), html })
+        printed.push({ where: `${name}:${line}`, language, code: printMarkup(html, language, { behaviors }), ...printSource(html, language, { behaviors }), html })
       } catch (error) {
         if (!(error instanceof UnsupportedMarkup)) throw new Error(`${name}:${line} (${language}): ${(error as Error).message}`)
       }
@@ -62,7 +64,8 @@ test('every language of every preview is the same markup to the checker', () => 
     const known = (className: string) => index.classes.has(className) || preset.has(className)
     const problems = printed.flatMap(({ where, language, code, html }) => [
       ...check(code, index, { knows: known, strict: true }).map(diagnostic => `${language} ${format([diagnostic], where)}`),
-      ...(classes(code).join(' ') === classes(html).join(' ') ? [] : [`${where} (${language}): the classes differ from the HTML's`]),
+      // A chart component writes the `chart` class itself, so the file that uses it has one fewer for each.
+      ...([...classes(code), ...(code.match(/<Chart\s/g) ?? []).map(() => 'chart')].sort().join(' ') === classes(html).join(' ') ? [] : [`${where} (${language}): the classes differ from the HTML's`]),
     ])
     assert.deepEqual(problems, [])
   } finally { preset.dispose() }
@@ -77,14 +80,17 @@ test('the frameworks are offered for most previews', () => {
 
 test('React: every preview is JSX that type-checks against React\'s types', () => {
   const react = printed.filter(entry => entry.language === 'react')
-  const file = ({ markup, imports }: Printed, number: number) =>
-    `${imports.map(({ name, from }) => `import ${name} from '${from}'\n`).join('')}export function Preview${number}() {\n  return (\n${markup}\n  )\n}\n`
+  // A pattern with a script is printed as a whole component; any other preview is an expression to return.
+  const file = ({ code, markup, imports, root }: Printed, number: number) => root ? code :
+    `${imports.map(({ name, from, named }) => `import ${named ? `{ ${name} }` : name} from '${from}'\n`).join('')}export function Preview${number}() {\n  return (\n${markup}\n  )\n}\n`
   for (const [number, entry] of react.entries()) {
     assert.doesNotThrow(() => transformSync(file(entry, number), { loader: 'tsx', jsx: 'automatic' }), entry.where)
   }
   // The files are imagined beside the tests, so React's types resolve from the package's own dependencies.
   const directory = fileURLToPath(new URL('./previews/', import.meta.url))
   const files = new Map(react.map((entry, number) => [`${directory}preview-${number}.tsx`, file(entry, number)]))
+  // A chart preview imports the copy `npx master-ui add chart` makes; here that is the package's own component.
+  files.set(`${directory}ui/chart.ts`, 'export { Chart } from \'../../../frameworks/react/chart\'\n')
   const options: ts.CompilerOptions = { jsx: ts.JsxEmit.ReactJSX, strict: true, noEmit: true, skipLibCheck: true, target: ts.ScriptTarget.ES2023, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler, types: [], lib: ['lib.es2023.d.ts', 'lib.dom.d.ts'] }
   const host = ts.createCompilerHost(options)
   const read = host.readFile.bind(host)
@@ -93,6 +99,8 @@ test('React: every preview is JSX that type-checks against React\'s types', () =
   host.readFile = file => files.get(file) ?? read(file)
   host.fileExists = file => files.has(file) || exists(file)
   host.getSourceFile = (file, version, ...rest) => files.has(file) ? ts.createSourceFile(file, files.get(file)!, version) : source(file, version, ...rest)
+  const directories = host.directoryExists?.bind(host)
+  host.directoryExists = path => path.replace(/\/$/, '') === `${directory}ui` || path.replace(/\/$/, '') === directory.replace(/\/$/, '') || (directories?.(path) ?? true)
   host.getCurrentDirectory = () => fileURLToPath(new URL('../', import.meta.url))
   const program = ts.createProgram([...files.keys()], options, host)
   const problems = ts.getPreEmitDiagnostics(program).map(diagnostic => {
@@ -130,7 +138,7 @@ test('a framework imports each Master Icons drawing as its component, and HTML k
       assert.deepEqual(imports, [], where)
       continue
     }
-    for (const { name, from } of imports) {
+    for (const { name, from } of imports.filter(entry => !entry.from.startsWith('./ui/'))) {
       const [, entry] = new RegExp(`^${packages[language]}/native/((?:16|20|24)/soft/[a-z0-9-]+)$`).exec(from) ?? []
       assert.ok(entry && existsSync(new URL(`${entry}.js`, data)), `${where} (${language}): ${from} is not an entry of the release`)
       assert.ok(markup.includes(`<${name} `), `${where} (${language}): ${name} is imported and not used`)
@@ -145,6 +153,23 @@ test('a framework imports each Master Icons drawing as its component, and HTML k
   assert.doesNotMatch(own, /import/)
   const labelled = printMarkup('<svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Add"><path d="M3 8L13 8"/><path d="M8 3L8 13"/></svg>', 'vue')
   assert.match(labelled, /<PlusIcon class="icon" aria-label="Add" \/>/, 'a labelled icon keeps its label, which the component reads')
+})
+
+test('a pattern with a script attaches its behaviors in every language', () => {
+  const scripted = printed.filter(entry => entry.language === 'html' && entry.code.includes('import { attach } from \'@master/ui/behaviors\''))
+  assert.ok(scripted.length > 100, `only ${scripted.length} previews run the behaviors`)
+  for (const language of ['react', 'svelte', 'vue'] as const) {
+    const attached = printed.filter(entry => entry.language === language && entry.root)
+    const charts = printed.filter(entry => entry.language === language && entry.imports.some(({ from }) => /^\.\/ui\/[Cc]hart/.test(from)))
+    assert.ok(charts.length > 30, `${language} draws ${charts.length} previews with the chart component`)
+    for (const { where, code } of charts) assert.doesNotMatch(code, /MasterUI|DOMContentLoaded|attach\(/, `${where} (${language})`)
+    assert.ok(attached.length + charts.length > scripted.length * .75, `${language} attaches the behaviors in ${attached.length} and draws ${charts.length} of ${scripted.length} previews`)
+    for (const { where, code } of attached) {
+      assert.match(code, /import \{ attach \} from '@master\/ui\/behaviors'/, where)
+      assert.match(code, { react: /useEffect\(\(\) => attach\(root\.current!\), \[\]\)[\s\S]* ref=\{root\}/, svelte: / \{@attach attach\}/, vue: /onUnmounted\(\(\) => detach\?\.\(\)\)[\s\S]* ref="root"/ }[language], where)
+    }
+  }
+  assert.doesNotMatch(printMarkup('<p class="text">Plain</p>', 'react'), /attach/)
 })
 
 test('the printer keeps what each framework would change', () => {

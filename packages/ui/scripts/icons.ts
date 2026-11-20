@@ -12,7 +12,8 @@
  * Three forms are read:
  *   - an <svg class="icon" viewBox="0 0 N N"> in markup, in a contract's JSON and in JSX, at the master's own stroke;
  *   - a mask in a stylesheet, a data URI at the stroke its header gives;
- *   - a path a framework component passes to a helper or turns with an expression, checked path by path.
+ *   - a path a framework component passes to a helper or turns with an expression, and a path a behavior writes
+ *     into an element it makes, checked path by path.
  */
 import { createHash } from 'node:crypto'
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
@@ -34,6 +35,7 @@ const sources: { directory: string, extensions: string[], deep?: boolean }[] = [
   { directory: 'packages/ui/components', extensions: ['.css', '.json'] },
   { directory: 'packages/ui/layouts', extensions: ['.css', '.json'] },
   { directory: 'packages/ui/frameworks', extensions: ['.tsx', '.svelte', '.vue'], deep: true },
+  { directory: 'packages/ui/behaviors', extensions: ['.js'] },
   { directory: 'packages/ui', extensions: ['.md'] },
   { directory: 'skills', extensions: ['.md'], deep: true },
   { directory: 'site/content', extensions: ['.mdx'], deep: true },
@@ -197,7 +199,7 @@ export function sync({ write = false, lock = readLock() }: { write?: boolean, lo
       })
     }
 
-    if (/frameworks/.test(file)) {
+    if (/frameworks|behaviors/.test(file)) {
       const paths = new Set<string>()
       for (const definition of definitions)
         for (const [, attributes] of definition.variants[16].soft.nodes) if (typeof attributes.d === 'string') paths.add(attributes.d)

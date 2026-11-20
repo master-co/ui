@@ -11,6 +11,11 @@
  * One thing is written otherwise. HTML has no components, so its icons are drawn inline; a framework has Master Icons
  * as a package, so there the same drawing is its component, imported at the master the markup's viewBox names. The
  * class stays on it, and an inline SVG that is not a Master Icons drawing stays inline.
+ *
+ * A pattern with a script is the same markup too. Its HTML ends with the module that attaches the behaviors; in a
+ * framework the file is a component that attaches them to its root for as long as it is mounted. For a value the
+ * application holds, the framework component of the pattern is the better start, and its page says so. A chart is the
+ * one pattern a page's script feeds with data, so there the file uses that component: `<Chart>` with the same data.
  */
 import * as release from '@master/icons'
 import type { IconDefinition } from '@master/icons'
@@ -28,8 +33,10 @@ export const markupLanguages = [
 /** Markup a framework cannot be given as it stands: a script, an inline handler, React's `<template>`. */
 export class UnsupportedMarkup extends Error {}
 
-interface Attribute { name: string, value: string | null }
-interface Element { type: 'element', tag: string, attributes: Attribute[], children: Node[], selfClosing: boolean, raw?: string }
+/** `raw` is an attribute a framework writes its own way, printed as it stands: `ref={root}`, `{@attach attach}`. */
+interface Attribute { name: string, value: string | null, raw?: string }
+/** `wide` is a component whose attributes are all `raw` and go one to a line when they do not fit on one. */
+interface Element { type: 'element', tag: string, attributes: Attribute[], children: Node[], selfClosing: boolean, raw?: string, wide?: boolean }
 interface Text { type: 'text', text: string }
 interface Comment { type: 'comment', text: string }
 type Node = Element | Text | Comment
@@ -137,7 +144,7 @@ interface Dialect {
 
 /** An element with no end tag: a void element, or one written closed, as SVG's are. */
 const isVoid = (element: Element) => element.selfClosing || voidElements.has(element.tag.toLowerCase())
-const htmlAttribute = ({ name, value }: Attribute) => value === null || value === '' ? name : `${name}="${value.replaceAll('"', '&quot;')}"`
+const htmlAttribute = ({ name, value, raw }: Attribute) => raw ?? (value === null || value === '' ? name : `${name}="${value.replaceAll('"', '&quot;')}"`)
 const plainOpen = (element: Element, print = htmlAttribute) => `<${element.tag}${element.attributes.map(attribute => ` ${print(attribute)}`).join('')}${element.selfClosing ? ' />' : '>'}`
 const braces = (text: string, open: string, close: string) => text.replace(/[{}]/g, brace => brace === '{' ? open : close)
 
@@ -205,6 +212,7 @@ function reactStyle(css: string) {
 }
 
 function reactAttribute(attribute: Attribute, svg: boolean): string {
+  if (attribute.raw) return attribute.raw
   const { value } = attribute
   let name = reactNames[attribute.name.toLowerCase()] ?? attribute.name
   if (/^on/i.test(name)) throw new UnsupportedMarkup(`An inline handler (${name}) is a string of script`)
@@ -287,7 +295,8 @@ const dialects: Record<MarkupLanguage, Dialect> = { html, react, svelte, vue }
 
 /* Icons ---------------------------------------------------------------------------------------------------------- */
 
-export interface IconImport { name: string, from: string }
+/** What a file imports: an icon by default, or a framework component of the library by its name. */
+export interface IconImport { name: string, from: string, named?: boolean }
 
 const iconPackages: Record<Exclude<MarkupLanguage, 'html'>, string> = { react: '@master/icons-react', svelte: '@master/icons-svelte', vue: '@master/icons-vue' }
 const masters = [16, 20, 24] as const
@@ -355,7 +364,7 @@ function components(nodes: Node[], language: Exclude<MarkupLanguage, 'html'>): {
   return { nodes: result, imports: [...imports.values()] }
 }
 
-const importLine = ({ name, from }: IconImport) => `import ${name} from '${from}'`
+const importLine = ({ name, from, named }: IconImport) => `import ${named ? `{ ${name} }` : name} from '${from}'`
 
 /* -------------------------------------------------------------------------------------------------------------- */
 /* Printing                                                                                                        */
@@ -418,6 +427,10 @@ function lines(children: Node[]) {
 function flat(node: Node, dialect: Dialect, svg: boolean): string | null {
   if (node.type === 'text') return dialect.text(node.text)
   if (node.type === 'comment') return null
+  if (node.wide) {
+    const open = `<${node.tag}${node.attributes.map(({ raw }) => ` ${raw}`).join('')} />`
+    return open.includes('\n') ? null : open
+  }
   const inSvg = svg || node.tag === 'svg'
   const { open, children, empty } = dialect.element(node, inSvg)
   if (empty) return open
@@ -443,6 +456,7 @@ function print(node: Node, dialect: Dialect, indent: string, svg: boolean): stri
   if (one !== null && indent.length + one.length <= width) return one
   if (node.type === 'text') return dialect.text(node.text)
   if (node.type === 'comment') return dialect.comment(node.text)
+  if (node.wide) return `<${node.tag}\n${node.attributes.map(({ raw }) => raw!.split('\n').map(line => `${indent}  ${line}`).join('\n')).join('\n')}\n${indent}/>`
   const inSvg = svg || node.tag === 'svg'
   const { open, children, empty } = dialect.element(node, inSvg)
   if (empty) return open
@@ -456,15 +470,110 @@ function block(children: Node[], dialect: Dialect, indent: string, svg: boolean)
   return lines(children).map(line => indent + line.nodes.map((node, index) => line.separators[index] + print(node, dialect, indent, svg)).join('')).join('\n')
 }
 
+/* Charts ---------------------------------------------------------------------------------------------------------- */
+
+const chartFiles: Record<Exclude<MarkupLanguage, 'html'>, IconImport> = {
+  react: { name: 'Chart', from: './ui/chart', named: true },
+  svelte: { name: 'Chart', from: './ui/Chart.svelte' },
+  vue: { name: 'Chart', from: './ui/Chart.vue' },
+}
+/** A page's script that draws one chart from data: the form every chart preview writes. */
+const chartScript = /^\s*addEventListener\('DOMContentLoaded', function \(\) \{\s*MasterUI\.chart\(document\.getElementById\('([\w-]+)'\), \{([\s\S]*)\}\)\s*\}\)\s*$/
+
+/** The entries of an object literal's body, each as its key and the text of its value. */
+function entries(body: string): [string, string][] {
+  const parts: string[] = []
+  let depth = 0
+  let from = 0
+  for (let at = 0; at < body.length; at++) {
+    const char = body[at]
+    if (char === '\'' || char === '"' || char === '`') {
+      for (at++; at < body.length && body[at] !== char; at++) if (body[at] === '\\') at++
+    } else if ('([{'.includes(char)) depth++
+    else if (')]}'.includes(char)) depth--
+    else if (char === ',' && depth === 0) {
+      parts.push(body.slice(from, at))
+      from = at + 1
+    }
+  }
+  parts.push(body.slice(from))
+  return parts.filter(part => part.trim()).map(part => {
+    const [, lead, key, value] = /^(\s*)([\w$]+)\s*:\s*([\s\S]*?)\s*$/.exec(part.replace(/^\n+/, '')) ?? []
+    if (!key) throw new UnsupportedMarkup('A chart option that is not a plain entry')
+    // Lines after the first keep how far they stood in from their key.
+    return [key, value.split('\n').map((line, index) => index ? line.slice(Math.min(lead.length, line.length - line.trimStart().length)) : line).join('\n')]
+  })
+}
+
+/**
+ * A chart a page's script draws from data is, in a framework, the chart component given the same data: the figure
+ * becomes `<Chart>`, the script's options its props, and the script goes. The component comes from
+ * `npx master-ui add chart`, which copies it into the project's `ui/` directory.
+ */
+function charts(nodes: Node[], language: Exclude<MarkupLanguage, 'html'>): { nodes: Node[], imports: IconImport[] } {
+  const drawn = new Map<string, [string, string][]>()
+  for (const node of nodes) {
+    const [, id, body] = node.type === 'element' && node.tag === 'script' && !node.attributes.length ? chartScript.exec(node.raw ?? '') ?? [] : []
+    if (id) drawn.set(id, entries(body))
+  }
+  if (!drawn.size) return { nodes, imports: [] }
+  let found = 0
+  const visit = (node: Node): Node => {
+    if (node.type !== 'element') return node
+    const options = node.tag === 'figure' && drawn.get(node.attributes.find(({ name }) => name === 'id')?.value ?? '')
+    if (!options) return { ...node, children: node.children.map(visit) }
+    found++
+    const own = node.attributes.flatMap(attribute => {
+      // The component writes `chart` itself; a variant beside it stays.
+      const value = attribute.name === 'class' ? (attribute.value ?? '').split(/\s+/).filter(name => name !== 'chart').join(' ') : attribute.value
+      return attribute.name === 'class' && !value ? [] : [{ ...attribute, value }]
+    })
+    const props = options.map(([key, value]) => {
+      const text = /^'([^'"\\{}]*)'$/.exec(value)?.[1]
+      if (language === 'vue' && value.includes('"')) throw new UnsupportedMarkup('A chart option with a double quote cannot be a Vue attribute')
+      return text !== undefined ? `${key}="${text}"` : value === 'true' ? key : language === 'vue' ? `:${key}="${value}"` : `${key}={${value}}`
+    })
+    const raws = [...own.map(attribute => language === 'react' ? reactAttribute(attribute, false) : htmlAttribute(attribute)), ...props]
+    return { type: 'element', tag: 'Chart', selfClosing: true, wide: true, children: [], attributes: raws.map(raw => ({ name: raw, value: null, raw })) }
+  }
+  const kept = nodes.filter(node => !(node.type === 'element' && node.tag === 'script' && chartScript.test(node.raw ?? ''))).map(visit)
+  if (found !== drawn.size) throw new UnsupportedMarkup('A chart script whose figure is not in the markup')
+  // The script was the last thing in the markup: the line break before it goes with it.
+  while (kept.at(-1)?.type === 'text' && !(kept.at(-1) as Text).text.trim()) kept.pop()
+  return { nodes: kept, imports: [chartFiles[language]] }
+}
+
+export interface PrintOptions {
+  /**
+   * The preview is a pattern with a script. HTML ends with the module that attaches the behaviors; a framework
+   * attaches them to the markup's root when it mounts and detaches them when it goes, as /guide/behaviors shows.
+   */
+  behaviors?: boolean
+}
+
+/** The type of the element a React ref holds, for the roots a preview has. Any other is an HTMLElement. */
+const interfaces: Record<string, string> = {
+  a: 'HTMLAnchorElement', button: 'HTMLButtonElement', details: 'HTMLDetailsElement', dialog: 'HTMLDialogElement', div: 'HTMLDivElement',
+  fieldset: 'HTMLFieldSetElement', form: 'HTMLFormElement', input: 'HTMLInputElement', label: 'HTMLLabelElement', li: 'HTMLLIElement',
+  ol: 'HTMLOListElement', p: 'HTMLParagraphElement', span: 'HTMLSpanElement', table: 'HTMLTableElement', ul: 'HTMLUListElement',
+  video: 'HTMLVideoElement', audio: 'HTMLAudioElement', svg: 'SVGSVGElement',
+}
+const rootAttribute: Record<Exclude<MarkupLanguage, 'html'>, string> = { react: 'ref={root}', svelte: '{@attach attach}', vue: 'ref="root"' }
+const attachModule = '\n<script type="module">\n  import { attach } from \'@master/ui/behaviors\'\n\n  attach()\n</script>'
+
 /**
  * The markup of a preview in one language and the icons it imports. Throws `UnsupportedMarkup` when that language
  * cannot hold it as markup. React's markup is one expression, Vue's a template; the imports stand apart from both.
+ * With behaviors, `root` is the tag that takes them: the markup's one root, or a `div` put around several.
  */
-export function printSource(source: string, language: MarkupLanguage): { markup: string, imports: IconImport[] } {
-  let nodes = parse(source.trim())
+export function printSource(source: string, language: MarkupLanguage, { behaviors = false }: PrintOptions = {}): { markup: string, imports: IconImport[], root?: string } {
+  let nodes = parse((behaviors && language === 'html' ? source + attachModule : source).trim())
   let imports: IconImport[] = []
+  let root: string | undefined
   const dialect = dialects[language]
   if (language !== 'html') {
+    const chart = charts(nodes, language)
+    nodes = chart.nodes
     const visit = (node: Node) => {
       if (node.type !== 'element') return
       if (node.tag === 'script' || node.tag === 'style') throw new UnsupportedMarkup(`A <${node.tag}> is not markup`)
@@ -473,31 +582,63 @@ export function printSource(source: string, language: MarkupLanguage): { markup:
     }
     nodes.forEach(visit)
     ;({ nodes, imports } = components(nodes, language))
+    imports = [...chart.imports, ...imports]
+    // The chart component attaches its own behavior, so a preview it draws needs nothing attached around it.
+    if (behaviors && !chart.imports.length) {
+      const mark: Attribute = { name: 'ref', value: null, raw: rootAttribute[language] }
+      const roots = nodes.filter(node => node.type !== 'text' || node.text.trim())
+      const only = roots.length === 1 && roots[0].type === 'element' && /^[a-z]/.test(roots[0].tag) ? roots[0] : undefined
+      // React and Vue name the root first; an attachment reads best after what the element is.
+      if (only) nodes = nodes.map(node => node !== only ? node : { ...only, attributes: language === 'svelte' ? [...only.attributes, mark] : [mark, ...only.attributes] })
+      else nodes = [{ type: 'element', tag: 'div', attributes: [mark], children: [{ type: 'text', text: '\n' }, ...nodes, { type: 'text', text: '\n' }], selfClosing: false }]
+      root = only?.tag ?? 'div'
+    }
   }
   if (language === 'react') {
     const roots = lines(nodes)
-    if (roots.length === 1 && roots[0].nodes.length === 1 && roots[0].nodes[0].type === 'element') return { markup: print(roots[0].nodes[0], dialect, '', false), imports }
-    return { markup: `<>\n${block(nodes, dialect, '  ', false)}\n</>`, imports }
+    if (roots.length === 1 && roots[0].nodes.length === 1 && roots[0].nodes[0].type === 'element') return { markup: print(roots[0].nodes[0], dialect, '', false), imports, root }
+    return { markup: `<>\n${block(nodes, dialect, '  ', false)}\n</>`, imports, root }
   }
-  if (language === 'vue') return { markup: `<template>\n${block(nodes, dialect, '  ', false)}\n</template>`, imports }
-  return { markup: block(nodes, dialect, '', false), imports }
+  if (language === 'vue') return { markup: `<template>\n${block(nodes, dialect, '  ', false)}\n</template>`, imports, root }
+  return { markup: block(nodes, dialect, '', false), imports, root }
 }
 
-/** A preview as a reader copies it: the markup, under the imports of its icons where the language has components. */
-export function printMarkup(source: string, language: MarkupLanguage): string {
-  const { markup, imports } = printSource(source, language)
-  if (!imports.length) return markup
-  const lines = imports.map(importLine)
-  if (language === 'svelte') return `<script>\n${lines.map(line => `  ${line}`).join('\n')}\n</script>\n\n${markup}`
-  if (language === 'vue') return `<script setup>\n${lines.join('\n')}\n</script>\n\n${markup}`
-  return `${lines.join('\n')}\n\n${markup}`
+const indented = (text: string, by: string) => text.split('\n').map(line => line && by + line).join('\n')
+
+/**
+ * A preview as a reader copies it: the markup, under the imports of its icons where the language has components.
+ * A pattern with a script is a whole file in a framework: a component that attaches the behaviors to its root.
+ */
+export function printMarkup(source: string, language: MarkupLanguage, options: PrintOptions = {}): string {
+  const { markup, imports, root } = printSource(source, language, options)
+  const icons = imports.map(importLine)
+  if (root && language === 'react') {
+    return [
+      'import { useEffect, useRef } from \'react\'', 'import { attach } from \'@master/ui/behaviors\'', ...icons, '',
+      'export function Example() {', `  const root = useRef<${interfaces[root] ?? 'HTMLElement'}>(null)`, '  useEffect(() => attach(root.current!), [])', '',
+      '  return (', indented(markup, '    '), '  )', '}',
+    ].join('\n')
+  }
+  if (root && language === 'svelte') {
+    return `<script>\n${['import { attach } from \'@master/ui/behaviors\'', ...icons].map(line => `  ${line}`).join('\n')}\n</script>\n\n${markup}`
+  }
+  if (root && language === 'vue') {
+    return [
+      '<script setup>', 'import { onMounted, onUnmounted, ref } from \'vue\'', 'import { attach } from \'@master/ui/behaviors\'', ...icons, '',
+      'const root = ref(null)', 'let detach', '', 'onMounted(() => { detach = attach(root.value) })', 'onUnmounted(() => detach?.())', '</script>', '', markup,
+    ].join('\n')
+  }
+  if (!icons.length) return markup
+  if (language === 'svelte') return `<script>\n${icons.map(line => `  ${line}`).join('\n')}\n</script>\n\n${markup}`
+  if (language === 'vue') return `<script setup>\n${icons.join('\n')}\n</script>\n\n${markup}`
+  return `${icons.join('\n')}\n\n${markup}`
 }
 
 /** Every language a preview's markup can be written in, HTML first; a framework that cannot hold it is left out. */
-export function markupSources(source: string) {
+export function markupSources(source: string, options: PrintOptions = {}) {
   return markupLanguages.flatMap(entry => {
     try {
-      return [{ ...entry, code: printMarkup(source, entry.language) }]
+      return [{ ...entry, code: printMarkup(source, entry.language, options) }]
     } catch (error) {
       if (error instanceof UnsupportedMarkup) return []
       throw error

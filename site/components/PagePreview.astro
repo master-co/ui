@@ -6,7 +6,7 @@ import PreviewGuard from '~/site/components/PreviewGuard.astro'
 import DocumentPreviewSwitch from '@master/internal-site/components/DocumentPreviewSwitch.astro'
 import CodeLanguageSelect from '~/site/components/CodeLanguageSelect.astro'
 import MarkupSource from '~/site/components/MarkupSource.astro'
-import { markupLanguages, markupSources, printMarkup } from '~/site/utils/framework-markup'
+import { markupSources } from '~/site/utils/framework-markup'
 import { previewDocument, previewHead as head } from '~/site/utils/preview'
 import { behaviorsScript, uiSource } from '~/site/utils/ui-source'
 import { example as exampleOf, exampleFiles, exampleHtml, exampleScriptUrl } from '~/site/utils/examples'
@@ -58,10 +58,9 @@ const html = Astro.props.example ? exampleHtml(Astro.props.example) : Astro.prop
 const files = Astro.props.example ? exampleFiles(Astro.props.example) : []
 const module = Astro.props.example && given?.script ? `\n<script type="module" src="${exampleScriptUrl(Astro.props.example)}"></script>` : ''
 const running = behaviors ? `${html}\n<script>${behaviorsScript()};MasterUI.attach()</script>` : `${html}${module}`
-const source = behaviors ? `${html}\n<script type="module">\n  import { attach } from '@master/ui/behaviors'\n\n  attach()\n</script>` : html
-// Markup is the same in every framework, so the Code view offers it in each. A pattern with a script and a working
-// example, whose module drives the markup, stay as they are written.
-const sources = Astro.props.example ? [] : behaviors ? [{ ...markupLanguages[0], code: printMarkup(source, 'html') }] : markupSources(source)
+// Markup is the same in every framework, so the Code view offers it in each, and a pattern with a script attaches
+// its behaviors there too. A working example, whose module drives the markup, stays as it is written.
+const sources = Astro.props.example ? [] : markupSources(html, { behaviors })
 const section = { page: 'library', id: name, title, html: [running], css: uiSource(), classes: [], classLists: [], highlighted: [] }
 const document = previewDocument(section as Parameters<typeof previewDocument>[0], { html: running, caption: '', bodyClass, head } as Parameters<typeof previewDocument>[1])
 const views = [['preview', 'Preview'], ['code', 'Source code tab']] as const

@@ -7,7 +7,7 @@ const thrown: unknown[] = []
 afterEach(() => assert.deepEqual(thrown.splice(0), [], 'a listener threw'))
 
 const item = (value: string, name: string, extra = '') => `<li class="list-row sortable-item" data-value="${value}">
-    <button type="button" class="sortable-handle" aria-pressed="false" aria-label="Move ${name}"${extra}></button>
+    <button type="button" class="sortable-handle" aria-pressed="false" aria-label="Move ${name}"${extra}><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="4" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="4" r="1" fill="currentColor" stroke="none"/><circle cx="6" cy="8" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="8" r="1" fill="currentColor" stroke="none"/><circle cx="6" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="12" r="1" fill="currentColor" stroke="none"/></svg></button>
     <span class="list-body"><span class="list-title">${name}</span></span>
   </li>`
 

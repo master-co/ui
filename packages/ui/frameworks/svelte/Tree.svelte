@@ -83,7 +83,7 @@
   {#each list as node, index (node.value ?? index)}
     <li role="none">
       {#if node.children}
-        <div class="tree-item tree-toggle" role="treeitem" data-value={node.value} aria-expanded={node.open ?? false} aria-checked={checkable ? checked(node) : undefined} aria-disabled={node.disabled || undefined}>{@render inside(node)}</div>
+        <div class="tree-item tree-toggle" role="treeitem" data-value={node.value} aria-expanded={node.open ?? false} aria-checked={checkable ? checked(node) : undefined} aria-disabled={node.disabled || undefined}><svg class="icon tree-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5L10.3586 7.8586A0.2 0.2 0 0 1 10.3586 8.1414L6 12.5" /></svg>{@render inside(node)}</div>
         <ul class="tree-sub" role="group">{@render rows(node.children)}</ul>
       {:else if node.href}
         <a class="tree-item" role="treeitem" href={node.href} aria-current={node.current ? 'page' : undefined} aria-checked={checkable ? checked(node) : undefined} aria-disabled={node.disabled || undefined}>{@render inside(node)}</a>

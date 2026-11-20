@@ -107,10 +107,10 @@ Row.props = ['option']
       <span v-for="each in chips" :key="each" class="chip" :data-value="each">
         {{ labelOf(each) }}
         <input v-if="name" type="hidden" :name="name" :value="each">
-        <button type="button" class="chip-remove" tabindex="-1" :aria-label="removeLabel(labelOf(each))" />
+        <button type="button" class="chip-remove" tabindex="-1" :aria-label="removeLabel(labelOf(each))"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4L12 12" /><path d="M4 12L12 4" /></svg></button>
       </span>
       <input class="input-group-field" role="combobox" aria-expanded="false" :aria-controls="`${id}-list`" aria-autocomplete="list" autocomplete="off" :value.attr="firstLabel" v-bind="field()">
-      <button type="button" class="combobox-toggle" tabindex="-1" :aria-label="toggleLabel" />
+      <button type="button" class="combobox-toggle" tabindex="-1" :aria-label="toggleLabel"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5L10.3586 7.8586A0.2 0.2 0 0 1 10.3586 8.1414L6 12.5" transform="rotate(90 8 8)" /></svg></button>
     </div>
     <div :id="`${id}-list`" popover="manual" class="listbox" role="listbox" :aria-label="listLabel" :aria-multiselectable="several || undefined">
       <template v-for="(group, index) in groups" :key="group ?? ''">
