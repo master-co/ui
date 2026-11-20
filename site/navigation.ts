@@ -1,5 +1,5 @@
 import type { AppNavItem } from '@master/internal-site/config'
-import IconBrandGithub from '@master/icons-svelte/native/20/soft/brand-github'
+import IconBrandGithub from '@master/icons-svelte/native/20/soft/brand-github-outline'
 import IconBrandX from '@master/icons-svelte/native/20/soft/brand-x'
 import IconCompass from '@master/icons-svelte/native/20/soft/compass'
 import IconChartLine from '@master/icons-svelte/native/20/soft/chart-line'
