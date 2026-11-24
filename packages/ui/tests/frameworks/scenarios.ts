@@ -1176,7 +1176,7 @@ export const scenarios: Record<string, Scenario> = {
   },
 
   async tags(driver, page) {
-    const { mounted, heard } = await owned(driver, 'tags', { value: ['design'], name: 'labels', 'aria-label': 'Labels' })
+    const { mounted, heard } = await owned(driver, 'tags', { value: ['design'], name: 'labels', form: 'external-labels', 'aria-label': 'Labels' })
     conforms(page)
     const field = page.one<HTMLInputElement>('.input-group-field')
     const chips = () => page.all('.chip').map(chip => chip.getAttribute('data-value'))
@@ -1185,6 +1185,7 @@ export const scenarios: Record<string, Scenario> = {
     await driver.act(() => { page.type(field, 'research'); page.key(field, 'Enter') })
     assert.deepEqual(heard, [['design', 'research']], 'a typed value comes out')
     assert.deepEqual(chips(), ['design', 'research'], 'the framework writes its chip')
+    assert.deepEqual(page.all<HTMLInputElement>('.chip input').map(input => input.getAttribute('form')), ['external-labels', 'external-labels'], 'each submitted value has the external form owner')
     assert.deepEqual(page.all<HTMLInputElement>('.chip input[type="hidden"]').map(input => `${input.name}=${input.value}`), ['labels=design', 'labels=research'])
     assert.equal(field.value, '')
 

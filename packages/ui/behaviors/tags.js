@@ -23,7 +23,7 @@
  * `draw`, and the script writes no chip: it calls `draw` with the values to show, and its `value` is the
  * values it last drew, whether or not they are written yet.
  */
-import { chipKeys, chipName, chipValue, chipsOf, valued, write, writeChip } from './internal.js'
+import { afterReset, chipKeys, chipName, chipValue, chipsOf, valued, write, writeChip } from './internal.js'
 
 /** @type {WeakMap<Element, AbortController>} */
 const attached = new WeakMap()
@@ -78,7 +78,7 @@ export function tags(root, { delimiters = [','], max = Infinity, validate, name,
     /** @type {Element} */
     let after = field
     for (const value of [...next].reverse()) {
-      const chip = kept.get(value) ?? writeChip(document, { value, name: named, removeLabel })
+      const chip = kept.get(value) ?? writeChip(document, { value, name: named, form: field.getAttribute('form'), removeLabel })
       if (chip.nextElementSibling !== after || !chip.isConnected) after.before(chip)
       after = chip
     }
@@ -198,10 +198,10 @@ export function tags(root, { delimiters = [','], max = Infinity, validate, name,
     field.focus()
   }, { signal })
 
-  field.form?.addEventListener('reset', () => {
+  afterReset(field.form, signal, () => {
     show(initial)
     field.removeAttribute('aria-invalid')
-  }, { signal })
+  })
 
   return detach
 }

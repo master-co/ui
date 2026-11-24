@@ -260,6 +260,8 @@ Opt in to searchable [tab panels](https://ui.master.co/components/tabs#searchabl
 
 A nested [toolbar](https://ui.master.co/components/toolbar#keys) owns its toggles and keyboard stops. Its arrow-key fallback follows native radio groups and skips inert and disabled controls.
 
+Place tags outside a form by associating their text field and initial hidden inputs with the form ID. New chips follow that form. Tags, signatures and color pickers retain their values when a reset is canceled.
+
 An [editable field](https://ui.master.co/components/editable) submits its named input or textarea with its form. Resetting the form restores the preview, and a collapsed invalid field opens for the browser's validation message.
 
 A few patterns have no native element. Their stylesheets draw every state from ARIA; a behavior is the reference script that moves those attributes and nothing else.

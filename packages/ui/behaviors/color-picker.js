@@ -30,7 +30,7 @@
  * until the color is within a just noticeable difference of one the format can write. An oklch() value is
  * written as it is held.
  */
-import { valued, write } from './internal.js'
+import { afterReset, valued, write } from './internal.js'
 
 /** @typedef {'hex' | 'rgb' | 'oklch'} ColorFormat */
 /** @typedef {{ l: number, c: number, h: number, a: number }} Oklch */
@@ -273,7 +273,15 @@ export function colorPicker(root, { valueText = describe } = {}) {
   const select = () => /** @type {HTMLSelectElement | null} */ (part('format'))
   const range = (/** @type {string} */ name) => /** @type {HTMLInputElement | null} */ (part(name))
   const opaque = () => !range('alpha')
-  const disabled = () => thumb()?.getAttribute('aria-disabled') === 'true'
+  // A fieldset disables its descendants except those in its first legend. The
+  // two-dimensional field has no native control, so it follows the same rule.
+  function disabledByFieldset() {
+    for (let group = root.closest('fieldset[disabled]'); group; group = group.parentElement?.closest('fieldset[disabled]') ?? null) {
+      if (!group.querySelector(':scope > legend')?.contains(root)) return true
+    }
+    return false
+  }
+  const disabled = () => thumb()?.getAttribute('aria-disabled') === 'true' || disabledByFieldset()
   const rtl = () => getComputedStyle(root).direction === 'rtl'
 
   /** What the markup was written with: the text, or else the numbers on the root. */
@@ -356,7 +364,16 @@ export function colorPicker(root, { valueText = describe } = {}) {
    */
   /** @type {Map<HTMLElement, string | null>} Each thumb's tabindex as the page wrote it. */
   const given = new Map()
+  /** @type {Set<HTMLElement>} Areas made inert by this behavior. */
+  const inactive = new Set()
   const reachable = () => {
+    const area = part('area')
+    if (area && disabledByFieldset()) {
+      if (!area.inert) {
+        area.inert = true
+        inactive.add(area)
+      }
+    } else if (area && inactive.delete(area)) area.inert = false
     const handle = thumb()
     if (!handle) return
     if (!given.has(handle)) given.set(handle, handle.getAttribute('tabindex'))
@@ -367,9 +384,13 @@ export function colorPicker(root, { valueText = describe } = {}) {
   if (typeof MutationObserver === 'function') {
     const observer = new MutationObserver(reachable)
     observer.observe(root, { attributes: true, attributeFilter: ['aria-disabled'], childList: true, subtree: true })
+    for (let group = root.closest('fieldset'); group; group = group.parentElement?.closest('fieldset') ?? null) {
+      observer.observe(group, { attributes: true, attributeFilter: ['disabled'], childList: true })
+    }
     signal.addEventListener('abort', () => observer.disconnect())
   }
   signal.addEventListener('abort', () => {
+    for (const area of inactive) area.inert = false
     for (const [handle, index] of given) {
       if (index === null) handle.removeAttribute('tabindex')
       else handle.setAttribute('tabindex', index)
@@ -379,12 +400,12 @@ export function colorPicker(root, { valueText = describe } = {}) {
   // A form's reset puts the controls back as the markup wrote them, without an event, and the thumb and the
   // root would keep the color they had: the color the picker started with is taken again once the reset is done.
   const first = { color: { ...color }, format }
-  root.closest('form')?.addEventListener('reset', () => setTimeout(() => {
-    if (signal.aborted) return
+  const control = text() ?? range('hue') ?? range('alpha') ?? select()
+  afterReset(control ? control.form : root.closest('form'), signal, () => {
     color = { ...first.color }
     format = first.format
     paint()
-  }), { signal })
+  })
 
   /* The field: a press puts the thumb under the pointer, a drag keeps it there. */
 
@@ -428,7 +449,7 @@ export function colorPicker(root, { valueText = describe } = {}) {
   }, { signal })
 
   root.addEventListener('pointermove', (event) => {
-    if (event.pointerId !== held) return
+    if (event.pointerId !== held || disabled()) return
     const area = part('area')
     if (area) follow(event, area)
   }, { signal })

@@ -233,12 +233,18 @@ test('tags: value can be set from outside, keeping the chips that stay and dispa
   assert.deepEqual(heard, [])
 })
 
-test('tags: a reset puts back the values the field started with', () => {
+test('tags: only a completed reset puts back the values the field started with', async () => {
   const { root, field, type, key, chips, one, window } = setup()
   tags(root)
   type(field, 'extra')
   key(field, 'Enter')
-  one('form').dispatchEvent(new window.Event('reset'))
+  const form = one('form')
+  form.addEventListener('reset', (event: Event) => event.preventDefault(), { once: true })
+  form.dispatchEvent(new window.Event('reset', { cancelable: true }))
+  await new Promise(resolve => setTimeout(resolve))
+  assert.deepEqual(chips(), ['design', 'research', 'extra'])
+  form.dispatchEvent(new window.Event('reset', { cancelable: true }))
+  await new Promise(resolve => setTimeout(resolve))
   assert.deepEqual(chips(), ['design', 'research'])
 })
 

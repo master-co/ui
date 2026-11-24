@@ -41,7 +41,7 @@
   {#each shown as each (each)}
     <span class="chip" data-value={each}>
       {each}
-      {#if name}<input type="hidden" {name} value={each} />{/if}
+      {#if name}<input type="hidden" {name} form={field.form} value={each} />{/if}
       <button type="button" class="chip-remove" tabindex={-1} aria-label={removeLabel(each)}><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4L12 12" /><path d="M4 12L12 4" /></svg></button>
     </span>
   {/each}

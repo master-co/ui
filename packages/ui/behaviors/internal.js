@@ -52,6 +52,21 @@ export function write(field, value) {
 }
 
 /**
+ * Synchronize the extra state of a control after the browser has reset its form.
+ * The reset event precedes the default action, and even the last listener may cancel it.
+ * @param {HTMLFormElement | null | undefined} form
+ * @param {AbortSignal} signal
+ * @param {() => void} sync
+ */
+export function afterReset(form, signal, sync) {
+  form?.addEventListener('reset', event => {
+    setTimeout(() => {
+      if (!signal.aborted && !event.defaultPrevented) sync()
+    })
+  }, { signal })
+}
+
+/**
  * Give the function a behavior returns its `value`: what is chosen now, and a way to choose from outside.
  * Setting it marks the pattern and dispatches nothing, as setting the `value` of a native control does.
  * @template V
@@ -177,9 +192,9 @@ export function chipValue(chip) {
  * A chip for a value, written with the contract's classes: the text, a hidden input that carries the value
  * into a form when there is a `name`, and a remove button out of the tab order, named with the value.
  * @param {Document} document
- * @param {{ value: string, text?: string, name?: string | null, removeLabel: (text: string) => string }} chip
+ * @param {{ value: string, text?: string, name?: string | null, form?: string | null, removeLabel: (text: string) => string }} chip
  */
-export function writeChip(document, { value, text = value, name, removeLabel }) {
+export function writeChip(document, { value, text = value, name, form, removeLabel }) {
   const chip = document.createElement('span')
   chip.className = 'chip'
   chip.setAttribute('data-value', value)
@@ -189,6 +204,7 @@ export function writeChip(document, { value, text = value, name, removeLabel }) 
     hidden.type = 'hidden'
     hidden.name = name
     hidden.value = value
+    if (form != null) hidden.setAttribute('form', form)
     chip.append(hidden)
   }
   const remove = document.createElement('button')

@@ -19,7 +19,7 @@
  * The function it returns has a `value`, the saved value, and `edit()`, which opens the field. Setting the
  * value writes the preview and the field and dispatches nothing.
  */
-import { valued, write } from './internal.js'
+import { afterReset, valued, write } from './internal.js'
 
 /** @type {WeakMap<Element, AbortController>} */
 const attached = new WeakMap()
@@ -129,16 +129,12 @@ export function editable(root, { blur = 'save' } = {}) {
   // Autofill or a restored draft can already have changed the value before attachment.
   if (saved !== field.defaultValue) show(saved)
 
-  field.form?.addEventListener('reset', (event) => {
-    // A later listener can cancel the reset. Read the field after its native default action.
-    setTimeout(() => {
-      if (signal.aborted || event.defaultPrevented) return
-      saved = field.value
-      show(saved)
-      field.removeAttribute('aria-invalid')
-      if (editing()) close()
-    })
-  }, { signal })
+  afterReset(field.form, signal, () => {
+    saved = field.value
+    show(saved)
+    field.removeAttribute('aria-invalid')
+    if (editing()) close()
+  })
 
   // An invalid field must be visible when the browser chooses the first control to focus.
   // Several fields can be invalid together, so let the browser make that choice.

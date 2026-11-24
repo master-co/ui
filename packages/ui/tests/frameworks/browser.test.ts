@@ -250,6 +250,78 @@ test(`${engine}: toolbar arrows respect a disabled fieldset and its first legend
   } finally { await page.close() }
 })
 
+test(`${engine}: external form submission and cancelable resets preserve tags, signatures and colors`, async () => {
+  const page = await browser.newPage()
+  try {
+    const examples = await Promise.all(['tags', 'signature', 'color-picker'].map(async name =>
+      JSON.parse(await readFile(new URL(`../../components/${name}.json`, import.meta.url), 'utf8')).example))
+    const url = new URL('form-control-test', origin).href
+    await page.route(url, route => route.fulfill({ contentType: 'text/html', body: `<form id="owner"></form>${examples.join('')}` }))
+    await page.goto(url)
+    await page.addStyleTag({ content: await readFile(new URL('../../dist/standalone.css', import.meta.url), 'utf8') })
+    const baseline = await page.evaluate(async path => {
+      const { tags, signature, colorPicker } = await import(path)
+      const form = document.querySelector('form')!
+      for (const part of document.querySelectorAll('input, select')) part.setAttribute('form', form.id)
+      form.addEventListener('reset', event => event.preventDefault(), { once: true })
+      const labels = tags(document.querySelector('.tags'), { name: 'recipients' })
+      const drawing = signature(document.querySelector('.signature'))
+      const picker = colorPicker(document.querySelector('.color-picker'))
+      const initial = picker.value
+      picker.value = '#00ff00'
+      drawing.value = [[[10, 20], [30, 40]]]
+      labels.value = ['Ada', 'Alan']
+      const resets = []
+      for (let attempt = 0; attempt < 3; attempt++) {
+        if (attempt === 1) form.addEventListener('reset', event => event.preventDefault(), { once: true })
+        form.reset()
+        await new Promise(resolve => setTimeout(resolve))
+        resets.push([new FormData(form).getAll('recipients'), drawing.value.length, picker.value])
+      }
+      const [beforeAttachment, afterAttachment, restored] = resets
+      return { initial, beforeAttachment, afterAttachment, restored, field: document.querySelector<HTMLInputElement>('.color-picker-text')!.value }
+    }, `/@fs${fileURLToPath(new URL('../../behaviors/index.js', import.meta.url))}`)
+    for (const canceled of [baseline.beforeAttachment, baseline.afterAttachment]) {
+      assert.deepEqual(canceled, [['Ada', 'Alan'], 1, '#00ff00'])
+    }
+    assert.deepEqual(baseline.restored, [['design', 'research'], 0, baseline.initial])
+    assert.equal(baseline.field, baseline.initial)
+  } finally { await page.close() }
+})
+
+test(`${engine}: a color field follows the disabled fieldset and first legend`, async () => {
+  const page = await browser.newPage()
+  try {
+    const contract = JSON.parse(await readFile(new URL('../../components/color-picker.json', import.meta.url), 'utf8'))
+    const url = new URL('disabled-color-test', origin).href
+    await page.route(url, route => route.fulfill({
+      contentType: 'text/html',
+      body: `<fieldset disabled><legend>Enabled settings ${contract.example}</legend>${contract.example}</fieldset>`,
+    }))
+    await page.goto(url)
+    await page.addStyleTag({ content: await readFile(new URL('../../dist/standalone.css', import.meta.url), 'utf8') })
+    await page.evaluate(async path => {
+      const { colorPicker } = await import(path)
+      document.querySelectorAll('.color-picker').forEach(root => colorPicker(root))
+    }, `/@fs${fileURLToPath(new URL('../../behaviors/color-picker.js', import.meta.url))}`)
+    const handles = page.locator('.color-picker-thumb')
+    const enabled = handles.first(), disabled = handles.last()
+    await enabled.focus()
+    await page.keyboard.press('ArrowUp')
+    assert.equal(await enabled.getAttribute('aria-valuenow'), '63')
+    await disabled.focus()
+    assert.equal(await disabled.evaluate(el => el === document.activeElement), false)
+    assert.equal(await disabled.getAttribute('tabindex'), '-1')
+    await page.locator('.color-picker-area').last().click({ force: true })
+    assert.equal(await disabled.getAttribute('aria-valuenow'), '62')
+    await page.locator('fieldset').evaluate(el => { el.disabled = false })
+    await until(() => disabled.getAttribute('tabindex'), value => value === '0', 'the enabled field returns to the tab order')
+    await disabled.focus()
+    await page.keyboard.press('ArrowUp')
+    assert.equal(await disabled.getAttribute('aria-valuenow'), '63')
+  } finally { await page.close() }
+})
+
 test(`${engine}: a Wheel starts on the authored selection before the behavior attaches`, async () => {
   const page = await browser.newPage()
   try {

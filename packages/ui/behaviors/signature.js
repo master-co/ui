@@ -25,7 +25,7 @@
  * @typedef {[x: number, y: number, pressure: number][]} SignatureStroke
  */
 
-import { write } from './internal.js'
+import { afterReset, write } from './internal.js'
 
 const NS = 'http://www.w3.org/2000/svg'
 
@@ -319,11 +319,11 @@ export function signature(root, { drawn = 'Signature drawn', cleared = 'Signatur
   }, { signal })
 
   // A form's reset takes the drawing with it, as it empties the typed name beside it.
-  field()?.form?.addEventListener('reset', () => {
+  afterReset(field()?.form, signal, () => {
     if (!strokes.length) return
     strokes = []
     draw()
-  }, { signal })
+  })
 
   // Strokes a server drew from the first value stay as they are, for the value that follows to find.
   if (!root.querySelector('.signature-stroke')) draw()

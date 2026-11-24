@@ -36,7 +36,7 @@ export function Tags({ value, defaultValue, onValueChange, name, max, delimiters
       {values.map(each => (
         <span className="chip" data-value={each} key={each}>
           {each}
-          {name && <input type="hidden" name={name} value={each} />}
+          {name && <input type="hidden" name={name} form={field.form} value={each} />}
           <button type="button" className="chip-remove" tabIndex={-1} aria-label={removeLabel(each)}><svg className="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 4L12 12" /><path d="M4 12L12 4" /></svg></button>
         </span>
       ))}
