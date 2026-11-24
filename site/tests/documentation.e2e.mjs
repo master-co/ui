@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { after, before, test } from 'node:test'
 import { createServer } from 'node:http'
 import { createRequire } from 'node:module'
-import { readFile, stat, mkdir, writeFile } from 'node:fs/promises'
+import { readFile, readdir, stat, mkdir, writeFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, extname, resolve, sep } from 'node:path'
@@ -15,6 +15,7 @@ const output = resolve(process.env.MASTER_UI_SITE_OUTPUT ?? resolve(root, 'site/
 const evidence = resolve(process.env.MASTER_UI_SITE_EVIDENCE ?? resolve(root, 'site/.cache/documentation-tests', engine))
 const measurements = []
 const noScripts = new WeakSet()
+const endOfField = process.platform === 'darwin' ? 'Meta+ArrowRight' : 'End'
 let browser, server, origin
 
 async function serve(directory) {
@@ -558,8 +559,12 @@ async function workingBlock(route, name = 'default') {
   await frame.waitForLoadState('load')
   // Its module has mounted once the control it turns on can be pressed.
   await frame.waitForFunction(() => { const control = document.querySelector('[data-example] :is(.btn-primary, [name="inbox-filter"])'); return control && !control.disabled })
-  // From here on the page is only being used: a request would be the block sending something.
-  page.on('request', request => requests.push(request.url()))
+  // Scrolling a sibling preview into view can load its built styles even after this form is ready.
+  const styles = new Set((await readdir(resolve(output, 'preview-styles'))).map(file => origin + '/preview-styles/' + file))
+  page.on('request', request => {
+    if (request.method() === 'GET' && request.resourceType() === 'stylesheet' && styles.has(request.url()) && request.frame() !== frame) return
+    requests.push(request.url())
+  })
   const focused = () => frame.evaluate(() => { const element = document.activeElement; return element.getAttribute('aria-label') ?? element.id ?? element.tagName })
   return { page, frame, requests, errors, logs, focused }
 }
@@ -604,7 +609,7 @@ test(`${engine}: the contact block reports errors after a try, shows what was wr
     assert.deepEqual(await shownErrors(form), ['Enter an email address, such as you@company.com.', 'Write a message, even a short one.'])
     assert.equal(await email.getAttribute('aria-describedby'), 'contact-email-error')
     await email.focus()
-    await email.press('End')
+    await email.press(endOfField)
     await email.pressSequentially('example.com')
     assert.equal(await email.getAttribute('aria-describedby'), null)
     await form.getByLabel('Topic').selectOption('Sales')
@@ -683,11 +688,11 @@ test(`${engine}: the password reset blocks hold two passwords to each other and 
     await password.pressSequentially('correct horse battery')
     assert.deepEqual(await shownErrors(form), [])
     assert.equal(await confirm.getAttribute('aria-describedby'), null)
-    await password.press('End')
+    await password.press(endOfField)
     await password.pressSequentially(' staple')
     assert.deepEqual([await password.inputValue(), await confirm.inputValue()], [secret, 'correct horse battery'])
     assert.deepEqual(await shownErrors(form), ['Enter the same password again.'])
-    await confirm.press('End')
+    await confirm.press(endOfField)
     await confirm.pressSequentially(' staple')
     assert.deepEqual(await shownErrors(form), [])
 
@@ -951,6 +956,7 @@ test('localized catalogs, articles and portable exports agree', async () => {
 
 test('every block is published in five editions, in search, as Markdown and as a registry item that carries what it runs on', async () => {
   const registry = JSON.parse(await readFile(resolve(output, 'r/registry.json'), 'utf8'))
+  const { examples } = JSON.parse(await readFile(resolve(root, 'site/examples/manifest.json'), 'utf8'))
   const blocks = registry.items.filter(item => item.meta?.tier === 'block')
   assert.ok(blocks.length >= 30, `The registry lists the blocks: ${blocks.length}`)
   const search = Object.fromEntries(await Promise.all(['en', 'tw', 'ja', 'ko', 'cn'].map(async locale => [locale, new Set(JSON.parse(await readFile(resolve(output, `search/${locale}.json`), 'utf8')).map(entry => entry.url))])))
@@ -967,15 +973,65 @@ test('every block is published in five editions, in search, as Markdown and as a
     assert.ok(paths.has(`ui/blocks/${slug}.html`), `${name} carries its markup`)
     // Every preview that works is exported as its files, and every module one of them imports comes with it.
     const source = await readFile(resolve(root, 'site/content/blocks', slug, 'content.mdx'), 'utf8')
-    const working = [...source.matchAll(/<PagePreview\b[^>]*?\bexample="([^"]+)"/g)].map(match => match[1])
+    const previews = [...source.matchAll(/<PagePreview\b([^>]*)>/g)]
+    const exampleIds = previews.map(([, props]) => /\bexample="([^"]+)"/.exec(props)?.[1])
     const markdown = await readFile(resolve(output, `blocks/${slug}.md`), 'utf8')
-    assert.equal([...markdown.matchAll(/^```js name=main\.js$/gm)].length, working.length, `${slug}.md holds the module of each working preview`)
-    assert.equal(item.meta.script === 'required', /^<PagePreview\b[^>]*?\bexample="/m.test(source.slice(source.indexOf('<PagePreview'))), `${name} says whether its first preview needs its script`)
+    for (const id of exampleIds.filter(Boolean)) {
+      const example = examples[id]
+      assert.ok(example, `Unknown example ${id} in ${slug}`)
+      for (const path of [example.html, example.script, ...(example.files ?? [])].filter(Boolean)) {
+        const content = await readFile(resolve(root, 'site/examples', path), 'utf8')
+        assert.ok(markdown.includes(content.trimEnd()), `${slug}.md includes ${path}`)
+      }
+    }
+    assert.equal([...markdown.matchAll(/^```js name=start\.js$/gm)].length, exampleIds.filter(id => examples[id]?.script).length, `${slug}.md starts exactly the previews with a module`)
+    const script = examples[exampleIds[0]]?.script
+    assert.equal(item.meta.script === 'required', Boolean(script), `${name} says whether its first preview needs its script`)
+    if (script) assert.ok(paths.has(`ui/blocks/${slug}/${script.slice(exampleIds[0].length + 1)}`), `${name} includes its entry module`)
     for (const file of item.files.filter(file => file.path.endsWith('.js'))) {
       for (const [, imported] of file.content.matchAll(/\bfrom\s+'(\.{1,2}\/[^']+)'/g)) {
         const target = new URL(imported, `file:///${file.path}`).pathname.slice(1)
         assert.ok(paths.has(target), `${name}: ${file.path} imports ${imported}, which is copied with it`)
       }
+    }
+  }
+})
+
+test(`${engine}: compact highlighted examples keep their palette and copy all four sources`, async () => {
+  for (const [colorScheme, javaScriptEnabled] of [['light', true], ['dark', true], ['light', false]]) {
+    const page = await browser.newPage({ colorScheme, javaScriptEnabled })
+    try {
+      if (!javaScriptEnabled) noScripts.add(page)
+      await page.addInitScript(() => Object.defineProperty(navigator, 'clipboard', { value: {
+        writeText: async text => { window.lastCopiedSource = text }
+      } }))
+      await visit(page, '/components/button')
+      const tray = page.locator('[data-component-preview]:has([data-code-languages])').first()
+      await tray.locator('[data-view="preview"]').focus()
+      await page.keyboard.press('ArrowRight')
+      for (const language of ['html', 'react', 'svelte', 'vue']) {
+        await tray.locator('[data-code-languages]').selectOption(language)
+        const panel = tray.locator(`[data-code-language="${language}"]`)
+        assert.ok(await panel.isVisible(), language)
+        const token = panel.locator('.hp').first()
+        assert.ok(await token.evaluate(element => {
+          const reference = document.createElement('span')
+          reference.style.color = 'var(--ui-code-punctuation)'
+          element.after(reference)
+          const matches = getComputedStyle(element).color === getComputedStyle(reference).color
+          reference.remove()
+          return matches
+        }), language + ' punctuation color in ' + colorScheme)
+        const source = await panel.locator('pre .line').allTextContents()
+        const expected = source.map(line => line.trimEnd()).join('\n')
+        assert.ok(expected.includes('<button'), language)
+        if (javaScriptEnabled) {
+          await panel.locator('[data-code-copy]').click()
+          await page.waitForFunction(text => window.lastCopiedSource === text, expected)
+        }
+      }
+    } finally {
+      await page.close()
     }
   }
 })

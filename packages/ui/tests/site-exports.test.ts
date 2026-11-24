@@ -5,6 +5,7 @@ import { previewMarkdown } from '../../../site/utils/preview-markdown.ts'
 import { anchorMarkdown } from '../../../site/utils/anchor-markdown.ts'
 import { figureMarkdown } from '../../../site/utils/figure-markdown.ts'
 import { promptMarkdown } from '../../../site/utils/prompt-markdown.ts'
+import { markdownReferences, preserveFences, relatedMarkdown } from '../../../site/utils/portable-links.ts'
 
 const page = (slug: string) => readFileSync(new URL(`../../../site/content/${slug}/content.mdx`, import.meta.url), 'utf8')
 
@@ -74,6 +75,12 @@ test('heading examples inside fenced code are preserved literally', () => {
   }
 })
 
+test('demo links stay reachable in downloaded guides while fenced examples keep their local URLs', () => {
+  const link = '[Read](/demo/navigation/field-notes.html#wind-screen)'
+  const fenced = ['~~~~md', link, '~~~~'].join('\n')
+  assert.equal(anchorMarkdown(link + '\n' + fenced, 'https://ui.master.co'), '[Read](https://ui.master.co/demo/navigation/field-notes.html#wind-screen)\n' + fenced)
+})
+
 // These identifiers are public links from the retired Design /master-ui chapter.
 test('the UI design guide preserves the transferred chapter links in portable output', () => {
   const markdown = anchorMarkdown(page('guide/design'))
@@ -102,4 +109,20 @@ test('a working example is exported as the files it is made of, by the page that
   const markdown = previewMarkdown(source, { example: id => `files of ${id}` })
   assert.equal(markdown, 'Before\n\n**Schedule view**\n\nfiles of schedule-view\n\nOpen a day.\n\nAfter')
   assert.throws(() => previewMarkdown(source), /need its files/)
+})
+
+test('portable related lists accept either attribute order while literal examples survive', () => {
+  const first = '<ComponentLinks kind="blocks" slugs={[\'pricing\', \'cta\']} />'
+  const second = '<ComponentLinks slugs={["pricing", "cta"]} kind="blocks" />'
+  const example = ['~~~~mdx', first, '```', second, '~~~~'].join('\n')
+  const links = '- [料金](/ja/blocks/pricing.md)\n- [行動](/ja/blocks/cta.md)'
+  const transform = (source: string) => relatedMarkdown(source, (kind, slug) => `[${slug === 'pricing' ? '料金' : '行動'}](/ja/${kind}/${slug}.md)`)
+  assert.equal(preserveFences([first, example, second].join('\n\n'), transform), [links, example, links].join('\n\n'))
+})
+
+test('portable fragment resolution reads headings and real links outside examples', () => {
+  const source = '<a id="stable"></a>\n\n## Read this\n\n[read](/guide/ai#setup) and `[sample](/ignored)`\n\n```md\n## Hidden\n[other](/hidden)\n```'
+  const { anchors, links } = markdownReferences(source)
+  assert.deepEqual([...anchors], ['stable', 'read-this'])
+  assert.deepEqual(links.map(({ start, end }) => source.slice(start, end)), ['/guide/ai#setup'])
 })
