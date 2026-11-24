@@ -258,6 +258,8 @@ const diagnostics = check(html, createIndex(contracts.contracts))
 
 Use the ordinary `hidden` attribute to remove a conditional control from layout and keyboard navigation. A display utility has precedence over a component rule. Put an explicit display utility on the surrounding layout when the control itself needs to hide.
 
+Numbered bullet lists use the native list ordinal, including `start`, `reversed` and an item’s `value`. Each nested list sets its own marker.
+
 Horizontal steps align the marker and connector with the title’s first line. A description on the final step shares the available width with the preceding steps.
 
 Sliders include focus-ring space inside their width. An eleven-point scale at 20rem wraps into rows of six and five. On a horizontal ticket, long booking references wrap within the stub so the destination stays readable.

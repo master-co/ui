@@ -428,6 +428,35 @@ test(`${engine}: hidden parts leave the layout and focus order`, async () => {
   } finally { await page.close() }
 })
 
+test(`${engine}: lists paint native ordinals and keep each nested list's markers`, async () => {
+  const page = await browser.newPage()
+  try {
+    await page.setContent(`<ol class="bullets bullets-numbered" start="5">
+      <li class="bullets-item" id="fifth">Prepare<ul class="bullets"><li class="bullets-item" id="plain">Read the brief</li></ul></li>
+      <li class="bullets-item" id="ninth" value="9">Deliver</li></ol>
+      <ul class="bullets bullets-check"><li class="bullets-item" id="checked">Included
+        <ol class="bullets bullets-numbered" reversed><li class="bullets-item" id="second">Draft</li>
+        <li class="bullets-item" id="first">Final</li></ol></li></ul>`)
+    await page.addStyleTag({ content: await readFile(new URL('../../dist/standalone.css', import.meta.url), 'utf8') })
+    const mark = (id: string) => page.locator(id).evaluate(el => {
+      const style = getComputedStyle(el, '::before')
+      return { text: style.content, mask: style.maskImage }
+    })
+    assert.deepEqual(await mark('#plain'), { text: '""', mask: 'none' })
+    assert.notEqual((await mark('#checked')).mask, 'none')
+    assert.equal((await mark('#second')).mask, 'none')
+    // Capture the list, including its outside markers, before making any change that might
+    // recalculate counters. Compare its first paint with the literal expected ordinals.
+    const lists = page.locator('body')
+    const painted = await lists.screenshot()
+    await page.addStyleTag({ content: `
+      #fifth::marker { content: "5. " } #ninth::marker { content: "9. " }
+      #second::marker { content: "2. " } #first::marker { content: "1. " }
+    ` })
+    assert.ok(painted.equals(await lists.screenshot()), 'the painted ordinals are 5, 9 and 2, 1')
+  } finally { await page.close() }
+})
+
 test(`${engine}: step markers and connectors stay centered on the title above wrapped notes`, async () => {
   const page = await browser.newPage({ viewport: { width: 800, height: 640 } })
   try {
