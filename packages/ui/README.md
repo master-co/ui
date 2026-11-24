@@ -179,7 +179,7 @@ Pick the drawing by the size the component gives the icon: 16 up to 17px, 20 for
 | Empty | `empty`, `empty-media`, `empty-title`, `empty-description`, `empty-actions` |
 | Accordion | `accordion`, `accordion-item`, `accordion-trigger`, `accordion-chevron`, `accordion-content` |
 | Expand | `expand`, `expand-toggle`, `expand-chevron`, `expand-more`, `expand-less` |
-| Table | `table`, `table-row`, `table-heading`, `table-cell`, `table-sort`, `table-title`, `table-primary`, `table-numeric`, `table-compact`, `table-interactive`, `table-sticky` |
+| Table | `table`, `table-row`, `table-heading`, `table-heading-sortable`, `table-cell`, `table-sort`, `table-title`, `table-primary`, `table-numeric`, `table-compact`, `table-interactive`, `table-sticky` |
 | List | `list`, `list-row`, `list-media`, `list-body`, `list-title`, `list-description`, `list-meta`, `list-end`, `list-interactive` |
 | Sortable | `sortable`, `sortable-row`, `sortable-item`, `sortable-item-back`, `sortable-item-forward`, `sortable-handle`, `sortable-status` |
 | Kanban | `kanban`, `kanban-column`, `kanban-header`, `kanban-title`, `kanban-items`, `kanban-items-target`, `kanban-item`, `kanban-item-target`, `kanban-handle`, `kanban-controls`, `kanban-move`, `kanban-empty`, `kanban-preview`, `kanban-preview-landing`, `kanban-mover`, `kanban-mover-actions`, `kanban-status` |
@@ -288,6 +288,10 @@ stop.value = 'hnd'                                          // where a pattern h
 ```
 
 ## React, Svelte and Vue
+
+Use `table-heading-sortable` on headings sorted by an external control to reserve space for the direction indicator. Keep `aria-sort` on the column that determines the current order.
+
+An alert keeps wrapped actions aligned with the message text in both reading directions, with or without an icon.
 
 Splitter handles declare their orientation in the first render. Side-by-side panes use `aria-orientation="vertical"` and stacked panes use `horizontal`. The behavior supplies the vertical orientation for older side-by-side markup. The [pane width example](https://ui.master.co/components/splitter#remember-width) restores the last saved width after an interrupted drag.
 

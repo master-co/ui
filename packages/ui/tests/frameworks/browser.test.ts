@@ -1280,3 +1280,47 @@ test(`${engine}: segmented selection honors a changed reduced-motion preference`
     assert.equal(await page.getByRole('radio', { name: 'Preview' }).isChecked(), true, 'Native selection remains usable in the fallback too')
   } finally { await page.close() }
 })
+
+test('external sort indicators keep the same column boundaries on both reading directions', async () => {
+  const page = await browser.newPage()
+  try {
+    await page.setContent('<table class="table" style="width:420px"><thead><tr><th class="table-heading table-heading-sortable">Microphone placement</th><th class="table-heading table-heading-sortable table-numeric">Duration</th><th class="table-heading">Notes</th></tr></thead><tbody><tr><td class="table-cell">Pier</td><td class="table-cell table-numeric">8</td><td class="table-cell">Clear</td></tr></tbody></table>')
+    await page.addStyleTag({ content: await readFile(new URL('../../dist/standalone.css', import.meta.url), 'utf8') })
+    for (const direction of ['ltr', 'rtl']) {
+      await page.locator('table').evaluate((table, dir) => { table.setAttribute('dir', dir) }, direction)
+      const headings = page.locator('th')
+      const positions = () => headings.evaluateAll(cells => cells.map(cell => cell.getBoundingClientRect().x))
+      const initial = await positions()
+      for (const [index, order] of [[0, 'ascending'], [1, 'descending']] as const) {
+        await headings.evaluateAll(cells => cells.forEach(cell => cell.removeAttribute('aria-sort')))
+        await headings.nth(index).evaluate((cell, value) => cell.setAttribute('aria-sort', value), order)
+        assert.deepEqual(await positions(), initial)
+        assert.equal(await page.locator('[aria-sort]').count(), 1)
+      }
+    }
+  } finally { await page.close() }
+})
+
+test('wrapped alert actions start at the message text with or without a leading icon', async () => {
+  const page = await browser.newPage()
+  try {
+    const contract = JSON.parse(await readFile(new URL('../../components/alert.json', import.meta.url), 'utf8'))
+    await page.setContent(contract.example)
+    await page.addStyleTag({ content: await readFile(new URL('../../dist/standalone.css', import.meta.url), 'utf8') })
+    for (const dir of ['ltr', 'rtl']) for (const icon of [true, false]) for (const width of [220, 260, 680]) {
+      await page.locator('.alert').evaluate((root, html) => { root.outerHTML = html }, contract.example)
+      const geometry = await page.locator('.alert').evaluate((root, setup) => {
+        root.setAttribute('dir', setup.dir)
+        root.style.inlineSize = setup.width + 'px'
+        root.style.boxSizing = 'border-box'
+        if (!setup.icon) root.querySelector('.alert-icon')!.remove()
+        const body = root.querySelector('.alert-body')!.getBoundingClientRect()
+        const action = root.querySelector('button')!.getBoundingClientRect()
+        const edge = setup.dir === 'rtl' ? 'right' : 'left'
+        return { offset: action[edge] - body[edge], wrapped: action.top > body.top + 10 }
+      }, { dir, icon, width })
+      assert.equal(geometry.wrapped, width < 680)
+      if (geometry.wrapped) assert.ok(Math.abs(geometry.offset) < 1, JSON.stringify({ dir, icon, width, geometry }))
+    }
+  } finally { await page.close() }
+})
