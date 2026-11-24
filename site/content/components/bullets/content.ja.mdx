@@ -16,7 +16,7 @@ import ContractTable from '~/site/components/ContractTable.astro'
 
 ## マーカー \{#markers\}
 
-既定のマーカーは小さな点です。リストに次のいずれかのクラスを指定すると、マーカーを変更できます。
+既定のマーカーは小さな点です。リストに指定する次の 2 つのクラスで、マーカーを変更できます。
 
 - `bullets-check` は、プランに含まれる機能やリリースで追加された項目などに、本文と同じ色のチェックマークを表示します。
 - `bullets-numbered` は、各項目の番号を等幅数字で表示し、マーカー列の末尾にそろえます。9 から 10 に桁が増えても、番号の末尾はそろいます。順序に意味がある `<ol>` に使います。
@@ -34,7 +34,7 @@ import ContractTable from '~/site/components/ContractTable.astro'
 
 ## 対象外の項目 \{#not-included\}
 
-プランの内容を示す一覧では、何が含まれないかも判断材料になります。項目に `bullets-off` を指定すると、マーカーが短いダッシュになり、文字色も一段控えめになります。ダッシュや文字色が見えない読者にも同じ情報が伝わるように、例のように `sr-only` ユーティリティで視覚的に非表示にした span を項目の先頭に置き、「対象外」などの文言を入れます。
+プランの内容を示す一覧では、何が含まれないかも判断材料になります。項目に `bullets-off` を指定すると、マーカーが短いダッシュになり、文字色も一段控えめになります。ダッシュと文字色は目で見るための手がかりです。どちらも見えない読者にも同じ内容が伝わるように、例のように `sr-only` ユーティリティで視覚的に非表示にした span を項目の先頭に置き、「対象外」などの文言を入れます。
 
 <ComponentPreview name="off" height={264} title="対象外" bodyClass="flex items-center justify-center p-lg" html={`<div class="card w-full max-w(300)">
   <div class="card-header">
@@ -51,20 +51,29 @@ import ContractTable from '~/site/components/ContractTable.astro'
 
 ## 入れ子と余白 \{#nesting\}
 
-項目内の `bullets` リストは、親項目の本文の開始位置にそろえてインデントし、その本文から 8px 下に配置します。項目間の間隔は `--bullets-gap` で指定し、既定では 8px です。`--bullets-marker` はマーカー列の幅です。リストは周囲のテキストの文字サイズ、行の高さ、文字色を引き継ぎ、マーカーは各項目の先頭行に揃います。同じリストを 14px のカードでも 17px の記事でも使え、インク色の面ではマーカーの色も文字色に合わせて切り替わります。
+項目内の `bullets` リストは、親項目の本文の開始位置にそろえてインデントし、その本文から 8px 下に配置します。項目間の間隔は `--bullets-gap` で指定し、既定では 8px です。`--bullets-marker` はマーカー列の幅です。リストは周囲のテキストの文字サイズ、行の高さ、文字色を引き継ぎ、マーカーは各項目の 1 行目にそろいます。同じリストを 14px のカードでも 17px の記事でも使え、インク色の面ではマーカーの色も文字色に合わせて切り替わります。
 
-`start` で番号を再開し、項目の `value` で番号を飛ばし、`reversed` で逆順に数えます。入れ子の各リストでマーカーを選べます。
+番号はブラウザー自身が振るため、リストの属性がそのまま使えます。`<ol>` の `start` で番号を途中から再開し、項目の `value` で番号を先へ飛ばし、`reversed` で逆順に数えます。項目内のリストはそれぞれ自分のマーカーを選ぶため、番号付きのステップの中に通常の箇条書きを入れられます。
 
-<ComponentPreview name="ordinals" height={182} narrowHeight={206} title="途中からの番号と入れ子の注釈" background="plain" bodyClass="p-md" html={`<ol class="bullets bullets-numbered" role="list" start="5">
-  <li class="bullets-item">Prepare the room
-    <ul class="bullets" role="list"><li class="bullets-item">Check the microphone.</li></ul>
-  </li>
-  <li class="bullets-item" value="9">Deliver the recording.</li>
+<ComponentPreview name="ordinals" height={184} narrowHeight={456} title="番号の開始位置" background="plain" bodyClass="flex flex-wrap items-start justify-center gap-xl p-lg" html={`<ol class="bullets bullets-numbered w(200)" start="4">
+  <li class="bullets-item">Point the domain at Atlas.</li>
+  <li class="bullets-item">Wait for the certificate.</li>
+  <li class="bullets-item" value="9">Remove the old host.</li>
 </ol>
-<ol class="bullets bullets-numbered mt(16)" role="list" reversed>
-  <li class="bullets-item">Final mix</li>
-  <li class="bullets-item">First take</li>
-</ol>`} />
+<ol class="bullets bullets-numbered w(200)" reversed>
+  <li class="bullets-item">Comments on previews</li>
+  <li class="bullets-item">Faster cold builds</li>
+  <li class="bullets-item">Fourteen regions</li>
+</ol>
+<ol class="bullets bullets-numbered w(200)">
+  <li class="bullets-item">Connect a repository.
+    <ul class="bullets">
+      <li class="bullets-item">Any Git host</li>
+      <li class="bullets-item">Public or private</li>
+    </ul>
+  </li>
+  <li class="bullets-item">Push.</li>
+</ol>`} caption="4 から再開して 9 に飛ぶ番号、逆順の番号、ステップの中に入れた箇条書きです。" />
 
 ## 箇条書き、リスト、チェックリスト \{#bullets-list-or-checklist\}
 
@@ -72,8 +81,8 @@ import ContractTable from '~/site/components/ContractTable.astro'
 
 ## アクセシビリティ \{#accessibility\}
 
-- 各項目には `<li>` を使い、順序に意味がある場合は `<ol>`、それ以外は `<ul>` に入れます。番号は標準の順序付きリストが表示し、丸印とチェックは視覚的な手がかりになります。
-- Safari で VoiceOver を使う場合、マーカーを取り除いたリストは `role="list"` を指定したときにリストとして読み上げられます。項目数が内容の理解に必要な場合は、この属性を追加します。
+- 各項目には `<li>` を使い、順序に意味がある場合は `<ol>`、それ以外は `<ul>` に入れます。番号は標準の順序付きリストが表示します。点とチェックマークは視覚的な手がかりです。
+- Safari で VoiceOver を使う場合、マーカーを取り除いたリストは `role="list"` を指定しない限りリストとして読み上げられません。項目数が内容の理解に必要な場合は、この属性を追加します。
 - チェックマークの「含まれる」とダッシュの「含まれない」は、見た目でしか伝わりません。含まれない項目には、その旨をテキストで明記します。
 
 ## クラス \{#classes\}

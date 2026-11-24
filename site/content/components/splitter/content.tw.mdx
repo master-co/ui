@@ -3,17 +3,16 @@ title: "分隔調整桿"
 description: "兩個窗格與中間的拖曳把手，可用來調整窗格各自占用的空間。"
 ---
 
-import PagePreview from '~/site/components/PagePreview.astro'
 import ComponentPreview from '~/site/components/ComponentPreview.astro'
 import ComponentSource from '~/site/components/ComponentSource.astro'
 import ContractTable from '~/site/components/ContractTable.astro'
 import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
-分隔調整桿由兩個窗格和中間的把手組成，可調整兩個窗格各自占用的空間，例如編輯器旁的檔案清單，或編輯器下方的終端機。窗格以一道細線相隔。指標移到線上或分隔線取得焦點時，分隔線會套用前景色，並顯示一小段握柄。
+分隔調整桿由兩個窗格和中間的把手組成，可調整兩個窗格各自占用的空間，例如編輯器旁的檔案清單，或編輯器下方的終端機。窗格以一道細線相隔。指標移到線上或分隔線取得焦點時，分隔線會變成墨色，並顯示一小段握柄。
 
-分隔調整桿本身是元件，版面配置可以使用它。它的把手有自己的外觀、狀態與鍵盤操作契約。若兩個窗格無須調整大小，請參閱[主從版面配置](/pages/master-detail)。
+分隔調整桿是元件，不是版面配置，雖然版面配置會用到它：它的把手有自己的材質、狀態與鍵盤操作契約。若兩個窗格無須調整大小，請參閱[清單與詳細內容](/pages/master-detail)。
 
-樣式表負責配置窗格。調整大小時，`splitter` [行為程式](/guide/behaviors) 會把第一個窗格所占的百分比寫入 `--splitter-size`，再把四捨五入後的整數百分比寫入把手的 `aria-valuenow`。掛載到舊有的左右並排標記時，也會補上把手的垂直方向。
+樣式表負責繪製分隔調整桿並配置版面，`splitter` [行為](/guide/behaviors)則負責移動它。行為會把第一個窗格的大小以百分比寫入容器的 `--splitter-size`，再把同一個數字四捨五入後寫入把手的 `aria-valuenow`。兩者之間只交接這些資訊。左右並排的窗格之間，把手若未指明方向，行為掛載時會為它加上 `aria-orientation="vertical"`。
 
 <ComponentPreview name="default" height={288} title="分隔調整桿" bodyClass="p-lg" behaviors html={`<div class="splitter sheet overflow-hidden h(240)" style="--splitter-size: 36%">
   <div class="splitter-pane p-md text-sm fg-text-body">
@@ -38,6 +37,10 @@ import { splitter } from '@master/ui/behaviors/splitter.js'
 
 const root = document.querySelector('.splitter')
 splitter(root, { step: 10 })
+
+root.addEventListener('change', (event) => {
+  localStorage.setItem('files-width', event.target.getAttribute('aria-valuenow'))
+})
 ```
 
 - **拖曳。** 收到 `pointerdown` 時，會在把手上擷取指標。指標移動時，會將它在容器內的相對位置寫成百分比。
@@ -52,15 +55,9 @@ splitter(root, { step: 10 })
 
 無論指定的大小是多少，樣式表都會讓第一個窗格的邊界與兩端各至少相距 `--splitter-min`，在按住把手時防止選取文字，並依把手的方向切換版面配置。若未掛載行為，兩個窗格會維持 `--splitter-size` 指定的比例，把手也無法移動。
 
-## 記住窗格寬度 \{#remember-width\}
-
-調整檔案清單的寬度後重新載入。按方向鍵或拖曳後放開，都會儲存寬度。如果放開前指標操作取消或失去指標擷取，清單就會回到上次儲存的寬度。按下還原預設寬度的按鈕會清除偏好設定。無法使用儲存空間時，這次開啟頁面仍可調整。
-
-<PagePreview name="pane-preference" title="記住窗格寬度" example="pane-preference" />
-
 ## 上下堆疊的窗格 \{#stacked\}
 
-在 ARIA 中，分隔線的隱含方向是水平。左右並排時，請在把手上寫 `aria-orientation="vertical"`，使輔助技術在指令碼執行前就能取得正確方向。上下堆疊時用 `aria-orientation="horizontal"`。樣式表和方向鍵都依這個屬性運作。
+`aria-orientation` 說明分隔線的走向，而且必須明確寫出：無論版面實際如何排列，未指明方向的分隔線對輔助科技而言都是水平的。左右並排的窗格之間，把手是 `aria-orientation="vertical"`，並且直接寫在標記中，因此在任何腳本執行之前就已正確。設為 `aria-orientation="horizontal"` 時，窗格會上下堆疊，把手則變成一條水平線。容器和方向鍵都讀取這個屬性，因此沒有需要另外保持同步的修飾類別。
 
 <ComponentPreview name="stacked" height={328} title="上下堆疊的窗格" bodyClass="p-lg" behaviors html={`<div class="splitter sheet overflow-hidden h(280) max-w(420) mx-auto" style="--splitter-size: 60%">
   <div class="splitter-pane p-md text-sm fg-text-body">
