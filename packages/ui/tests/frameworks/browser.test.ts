@@ -6,6 +6,9 @@ import { chromium, firefox, webkit, type Browser, type Locator, type Page } from
 import { createServer, type ViteDevServer } from 'vite'
 import { verifyComponentGeometry } from '../components/geometry.ts'
 import { compile, contracts } from '../support.ts'
+import { demoDocument } from '@master/internal-site/demo/reference/document.ts'
+import { exampleHtml, exampleBundle } from '../../../../site/utils/examples.ts'
+import { uiSource } from '../../../../site/utils/ui-source.ts'
 
 /**
  * The framework components in a real browser. The scenarios run in happy-dom, which has no layout, no top
@@ -744,18 +747,21 @@ for (const framework of ['react', 'svelte', 'vue']) {
       const calendar = example('calendar')
       const title = () => calendar.locator('.calendar-title').innerText()
       const focused = () => page.evaluate(() => (document.activeElement as HTMLButtonElement)?.value)
-      await calendar.locator('.calendar-title-button').click()
+      await calendar.locator('.calendar-title-button').press('Enter')
       await until(title, value => value === '2026', 'the title shows the months of the year')
       await page.keyboard.press('Tab')
-      await page.keyboard.press('Tab')
-      await until(focused, value => value === '2026-12', 'Tab, past the next button, enters the months at the month shown')
+      // macOS can skip ordinary buttons in its tab order. The active grid cell
+      // has an explicit tabindex in either configuration.
+      const next = calendar.locator('.calendar-header button').last()
+      if (await next.evaluate(button => button === document.activeElement)) await page.keyboard.press('Tab')
+      await until(focused, value => value === '2026-12', 'Tab enters the months at the month shown')
       await page.keyboard.press('ArrowDown')
       await until(focused, value => value === '2027-03', 'ArrowDown goes three months on, into the next year')
       await page.keyboard.press('Enter')
       await until(title, value => value === 'March 2027', 'Enter on a month shows its days')
       await until(focused, value => value === '2027-03-21', 'with focus on the same day')
-      await calendar.locator('.calendar-title-button').click()
-      await calendar.locator('.calendar-title-button').click()
+      await calendar.locator('.calendar-title-button').press('Enter')
+      await calendar.locator('.calendar-title-button').press('Enter')
       await until(focused, value => value === '2027', 'in the years focus leaves the title for the grid')
       await page.keyboard.press('Escape')
       await until(title, value => value === 'March 2027', 'Escape goes back to the days')
@@ -1321,6 +1327,30 @@ test('wrapped alert actions start at the message text with or without a leading 
       }, { dir, icon, width })
       assert.equal(geometry.wrapped, width < 680)
       if (geometry.wrapped) assert.ok(Math.abs(geometry.offset) < 1, JSON.stringify({ dir, icon, width, geometry }))
+    }
+  } finally { await page.close() }
+})
+
+test(`${engine}: record views keep one accessible selection as the column narrows and widens`, async () => {
+  const page = await browser.newPage({ viewport: { width: 1280, height: 720 } })
+  try {
+    const id = 'record-views'
+    const html = exampleHtml(id)
+    const section = { id, page: 'blocks', title: 'Studio bookings', html: [html], css: uiSource(), classes: [], classLists: [], highlighted: [] }
+    await page.setContent(demoDocument(section, { html, caption: '' }))
+    await page.addScriptTag({ type: 'module', content: await exampleBundle(id) })
+    const root = page.locator('[data-example="record-views"]')
+    const selected = root.getByRole('checkbox', { name: 'Select Ferry arrival' })
+    await selected.check()
+    // Change only the space available to the block, as a sidebar does. WebKit used
+    // to crash when a container query rebuilt the named anchors in a hidden list.
+    for (const width of [320, 920, 320, 920]) {
+      await root.evaluate((element, width) => { element.style.width = width + 'px' }, width)
+      const visible = width === 320 ? root.getByRole('list') : root.getByRole('table')
+      await visible.waitFor()
+      assert.equal(await visible.getByRole('checkbox').count(), 3)
+      assert.equal(await root.getByRole('checkbox').count(), 3)
+      assert.ok(await selected.isChecked())
     }
   } finally { await page.close() }
 })
