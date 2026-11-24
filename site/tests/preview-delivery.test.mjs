@@ -42,6 +42,8 @@ test('previews link the shared stylesheet and their own, and load large scripts 
         const island = document => `<astro-island uid="x" props="${props(JSON.stringify({ title: [0, 'Title'], document: [0, document] }))}"><iframe title="Title" srcdoc="${srcdoc(document)}"></iframe></astro-island>`
         const page = `<!doctype html><html><head></head><body>${island(documentOf(css.a, true))}${island(documentOf(css.b, false))}</body></html>`
         await writeFile(path.join(out, 'components/demo.html'), page)
+        await mkdir(path.join(out, 'demo'))
+        await writeFile(path.join(out, 'demo/search.html'), documentOf(css.a, true))
 
         await sharePreviewAssetsIn(out)
 
@@ -50,6 +52,8 @@ test('previews link the shared stylesheet and their own, and load large scripts 
         const documents = [...html.matchAll(/\ssrcdoc="([^"]*)"/g)].map(([, value]) => decode(value))
         const hydrated = [...html.matchAll(/\sprops="([^"]*)"/g)].map(([, value]) => JSON.parse(decode(value)).document[1])
         assert.deepEqual(hydrated, documents, 'the island hydrates the document its iframe was written with')
+        assert.equal(await readFile(path.join(out, 'demo/search.html'), 'utf8'), documents[0],
+            'the standalone preview loads the same styles and scripts as its embedded edition')
 
         const shared = sha256(library)
         for (const [index, value] of Object.values(css).entries()) {

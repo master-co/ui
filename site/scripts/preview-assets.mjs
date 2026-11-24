@@ -161,8 +161,10 @@ export async function sharePreviewAssetsIn(directory) {
   for (const page of pages) {
     const path = join(directory, page)
     const html = await readFile(path, 'utf8')
-    if (!html.includes('srcdoc=')) continue
-    const rewritten = html
+    // A standalone demo can serve the same preview document directly, without an iframe.
+    const document = page.startsWith('demo/') ? transform(html) : html
+    if (document === html && !html.includes('srcdoc=')) continue
+    const rewritten = document
       .replace(srcdocAttribute, (attribute, open, value, close) => {
         const document = decode(value)
         if (encodeSrcdoc(document) !== value) throw new Error(`${page}: a preview's srcdoc is not escaped as expected`)
