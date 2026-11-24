@@ -1,0 +1,185 @@
+---
+title: "읽기 쉬운 텍스트 구성"
+description: "제목, 주석, 명령, 인용을 줄바꿈하거나 다른 언어로 표시하거나 복사해도 의미가 유지되도록 구성합니다."
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+
+독자가 가져갈 텍스트부터 작성합니다. 동작은 글 옆에, 주석은 해당 단어 곁에 둡니다. 복사하거나 링크할 내용은 범위가 분명해야 합니다.
+
+## 제목 옆의 동작 \{#title-action\}
+
+제목이 줄어들고 줄바꿈될 수 있게 합니다. [버튼](/components/button)은 레이블 너비를 유지하고 첫 줄에 맞춥니다. 좁은 화면에서 편집기를 열어 누를 수 있는 영역을 확인합니다.
+
+<ComponentPreview name="title-action" title="제목 옆의 동작" height={220} narrowHeight={260} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<div class="flex items-start justify-between gap(12) max-w(360)">
+  <h2 class="heading min-w(0)" id="exhibit-name">Field recordings from the eastern coast</h2>
+  <button class="btn btn-sm shrink(0)" type="button" commandfor="rename-exhibit" command="show-modal">Edit</button>
+</div>
+<dialog class="dialog" id="rename-exhibit" aria-labelledby="rename-title">
+  <form method="dialog" class="dialog-body">
+    <h2 class="heading" id="rename-title">Edit exhibit title</h2>
+    <label class="field">Title <input class="input" name="title" required value="Field recordings from the eastern coast"></label>
+    <div class="flex justify-end gap(8)">
+      <button class="btn" value="cancel" formnovalidate>Cancel</button>
+      <button class="btn btn-primary" value="save">Save</button>
+    </div>
+  </form>
+</dialog>
+<script>
+const dialog = document.getElementById('rename-exhibit')
+const title = document.getElementById('exhibit-name')
+const field = dialog.querySelector('input')
+dialog.addEventListener('close', () => {
+  if (dialog.returnValue === 'save') title.textContent = field.value
+  field.value = title.textContent
+  dialog.returnValue = ''
+})
+</script>`} />
+
+## 첫 줄에 맞춘 아이콘 \{#first-line-icon\}
+
+아이콘 상자의 높이를 한 줄로 맞춥니다. 문단이 길어져도 아이콘은 첫 줄 중앙에 놓입니다. 안내 내용은 본문만 읽어도 알 수 있습니다.
+
+<ComponentPreview name="first-line-icon" title="첫 줄에 맞춘 아이콘" height={130} narrowHeight={165} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<p class="flex items-start gap(8) max-w(270)">
+  <span class="inline-flex items-center justify-center shrink(0)" style="block-size:1lh" aria-hidden="true">
+    <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor"><circle cx="8" cy="8" r="6"/><path d="M8 7v4M8 5v1"/></svg>
+  </span>
+  <span>Bring headphones to hear the quietest recordings in this collection.</span>
+</p>`} />
+
+## 제목 끝에 붙는 배지 \{#trailing-badge\}
+
+[배지](/components/badge)를 제목 안에 넣고 앞에 공백을 둡니다. 남은 너비가 부족하면 배지 전체가 다음 줄로 이동합니다.
+
+<ComponentPreview name="trailing-badge" title="제목 끝에 붙는 배지" height={100} narrowHeight={150} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<h2 class="heading max-w(250)">Coastal archive <span lang="zh-Hant">聲音地圖</span> <span class="badge">Beta</span></h2>`} />
+
+## 생략 가능한 작성자 정보 \{#optional-byline\}
+
+비어 있는 값을 먼저 제외한 뒤 구분자를 넣습니다. 날짜가 없으면 작성자와 위치 사이에 구분자 하나만 남습니다. 사용자가 제공한 값은 텍스트 노드로 넣습니다.
+
+```html
+<p id="byline" class="fg-text-muted"></p>
+<script>
+const author = 'Min Chen'
+const date = null
+const place = 'Hualien'
+document.getElementById('byline').textContent = [author, date, place]
+  .filter(value => value?.trim())
+  .join(' · ')
+</script>
+```
+
+## 카드의 위치에 따른 제목 단계 \{#heading-rank\}
+
+문서의 개요에 맞춰 제목 요소를 정합니다. 두 카드 모두 [제목](/components/heading)으로 같은 크기를 사용할 수 있습니다.
+
+```html
+<main>
+  <h1 class="heading heading-lg">Field archive</h1>
+  <article class="card"><h2 class="heading">Latest recording</h2></article>
+  <section>
+    <h2 class="heading heading-lg">From the coast</h2>
+    <article class="card"><h3 class="heading">Rain at the harbor</h3></article>
+  </section>
+</main>
+```
+
+## 원제와 번역 제목 \{#translated-name\}
+
+각 이름에 `lang`을 지정합니다. 원제는 줄바꿈할 수 있는 제목으로 두고 그 아래에 번역 제목을 놓습니다.
+
+```html
+<header class="max-w(240)">
+  <h2 class="heading" lang="ja">海辺の町で聞いた夜明けの音</h2>
+  <p class="fg-text-muted" lang="en">Coastal dawn</p>
+</header>
+```
+
+## 두 줄에 걸친 읽기 표기 \{#ruby-readings\}
+
+각 읽기를 해당 글자의 `rt`에 넣습니다. 주석이 붙은 두 줄을 함께 보며 행간을 확인합니다. 원문만 복사하려면 복제한 노드에서 `rt`를 제거한 뒤 텍스트를 읽습니다.
+
+<ComponentPreview name="ruby-readings" title="두 줄에 걸친 읽기 표기" height={132} narrowHeight={160} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<p lang="ja" style="line-height:2.3">
+  <ruby>潮騒<rt>しおさい</rt></ruby>を聞く。<br>
+  <ruby>波音<rt>なみおと</rt></ruby>を録る。
+</p>`} />
+
+## 약어가 처음 나오는 곳 \{#first-abbreviation\}
+
+약어가 처음 나올 때 앞에 전체 이름을 적습니다. 터치 화면에서도 문장을 읽으며 뜻을 익히고 이후 약어를 알아볼 수 있습니다.
+
+```html
+<p>Record at a sound pressure level (<abbr>SPL</abbr>) below the clipping limit.</p>
+<p>Log the peak SPL with each recording.</p>
+```
+
+## 원문 그대로 복사되는 경로 \{#breakable-path\}
+
+실제 구분자 뒤에 `wbr`를 둡니다. 경로를 선택해도 원래 문자열이 그대로 남습니다. 긴 파일 확장자 앞에도 같은 방식으로 줄바꿈 기회를 줄 수 있습니다.
+
+<ComponentPreview name="breakable-path" title="원문 그대로 복사되는 경로" height={96} narrowHeight={128} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<p class="max-w(165)"><code>@atlas/<wbr>field-notes/<wbr>east-coast/<wbr>dawn-session<wbr>.flac</code></p>`} />
+
+## 코드 줄에 연결하는 링크 \{#line-links\}
+
+줄 번호 링크는 코드와 같은 행의 별도 열에 둡니다. 해당 줄의 프래그먼트를 공유할 수 있고 `code` 안에는 소스만 들어갑니다.
+
+<ComponentPreview name="line-links" title="코드 줄에 연결하는 링크" height={146} narrowHeight={160} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<pre class="code-block" style="display:grid;grid-template-columns:max-content 1fr;gap:0 1em">
+  <a class="link select-none" href="#gain-line-1" aria-label="Line 1">1</a>
+  <code id="gain-line-1">const gain = 0.5</code>
+  <a class="link select-none" href="#gain-line-2" aria-label="Line 2">2</a>
+  <code id="gain-line-2">track.volume = gain</code>
+</pre>`} />
+
+## 동시 입력과 순차 입력 \{#shortcut-order\}
+
+누르는 방식을 문장으로 설명하고 각 키는 개별 [키캡](/components/kbd)으로 표시합니다.
+
+```html
+<p>Hold <kbd class="kbd">Ctrl</kbd> and press <kbd class="kbd">K</kbd> to search.</p>
+<p>Press <kbd class="kbd">G</kbd>, then <kbd class="kbd">I</kbd>, to open the inbox.</p>
+```
+
+## 프롬프트를 뺀 명령 복사 \{#copy-command\}
+
+프롬프트와 명령을 형제 요소로 둡니다. 실행 시 명령만 읽습니다. 클립보드를 사용할 수 없으면 명령을 선택할 수 있게 하고 수동 복사 방법을 안내합니다.
+
+<ComponentPreview name="copy-command" title="프롬프트를 뺀 명령 복사" height={108} narrowHeight={155} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<div class="snippet">
+  <span class="snippet-prompt" aria-hidden="true">$</span>
+  <code class="snippet-command" tabindex="0">npm view @master/ui version</code>
+  <button class="btn btn-sm" type="button">Copy</button>
+</div>
+<output id="copy-result" aria-live="polite"></output>
+<script>
+const snippet = document.querySelector('.snippet')
+snippet.querySelector('button').addEventListener('click', async () => {
+  const result = document.getElementById('copy-result')
+  try {
+    await navigator.clipboard.writeText(snippet.querySelector('code').textContent)
+    result.textContent = 'Copied'
+  } catch {
+    result.textContent = 'Select the command and use Copy.'
+  }
+})
+</script>`} />
+
+## 한 출처를 두 번 인용하기 \{#return-to-citation\}
+
+각 [인용 표시](/components/citation)에 고유한 복귀 지점을 둡니다. 출처에는 어느 구절로 돌아가는지 이름으로 구분되는 링크를 각각 제공합니다.
+
+<ComponentPreview name="return-to-citation" title="한 출처를 두 번 인용하기" height={200} narrowHeight={260} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<p>Recordings start at dawn.<a class="citation" id="dawn-note" href="#logbook" aria-label="Source 1 for recording time">1</a></p>
+<p>The microphone faced east.<a class="citation" id="mic-note" href="#logbook" aria-label="Source 1 for microphone direction">1</a></p>
+<ol><li id="logbook"><cite>Harbor logbook</cite>, entry 18.
+  Return to <a class="link" href="#dawn-note">recording time</a>
+  or <a class="link" href="#mic-note">microphone direction</a>.
+</li></ol>`} />
+
+## 화자와 작품명 \{#quotation-credit\}
+
+인용한 말은 `blockquote`에 넣습니다. 캡션에 화자와 작품 제목을 함께 두고 작품 제목을 `cite`로 감쌉니다.
+
+```html
+<figure class="max-w(320)">
+  <blockquote><p>We heard the harbor before we could see it.</p></blockquote>
+  <figcaption>Min Chen, <cite>Harbor logbook</cite></figcaption>
+</figure>
+```

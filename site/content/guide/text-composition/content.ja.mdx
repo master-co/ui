@@ -1,0 +1,185 @@
+---
+title: "読みやすいテキストの組み立て"
+description: "折り返し、言語の切り替え、コピーに対応した見出し、注釈、コマンド、引用を組み立てます。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+
+まず読み手が必要とする本文を書きます。操作はその隣に、注釈は対象の語のそばに置きます。コピーしたりリンクしたりする箇所は、範囲を明確にします。
+
+## 見出しの横の操作 \{#title-action\}
+
+見出しに折り返せる幅を与えます。[ボタン](/components/button) はラベルの幅を保ち、先頭行に揃えます。狭い幅で編集画面を開き、押せる範囲を確認します。
+
+<ComponentPreview name="title-action" title="見出しの横の操作" height={220} narrowHeight={260} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<div class="flex items-start justify-between gap(12) max-w(360)">
+  <h2 class="heading min-w(0)" id="exhibit-name">Field recordings from the eastern coast</h2>
+  <button class="btn btn-sm shrink(0)" type="button" commandfor="rename-exhibit" command="show-modal">Edit</button>
+</div>
+<dialog class="dialog" id="rename-exhibit" aria-labelledby="rename-title">
+  <form method="dialog" class="dialog-body">
+    <h2 class="heading" id="rename-title">Edit exhibit title</h2>
+    <label class="field">Title <input class="input" name="title" required value="Field recordings from the eastern coast"></label>
+    <div class="flex justify-end gap(8)">
+      <button class="btn" value="cancel" formnovalidate>Cancel</button>
+      <button class="btn btn-primary" value="save">Save</button>
+    </div>
+  </form>
+</dialog>
+<script>
+const dialog = document.getElementById('rename-exhibit')
+const title = document.getElementById('exhibit-name')
+const field = dialog.querySelector('input')
+dialog.addEventListener('close', () => {
+  if (dialog.returnValue === 'save') title.textContent = field.value
+  field.value = title.textContent
+  dialog.returnValue = ''
+})
+</script>`} />
+
+## 先頭行に揃うアイコン \{#first-line-icon\}
+
+アイコンの枠を 1 行分の高さにします。段落が長くなっても先頭行の中央に留まり、指示は本文だけで読み取れます。
+
+<ComponentPreview name="first-line-icon" title="先頭行に揃うアイコン" height={130} narrowHeight={165} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<p class="flex items-start gap(8) max-w(270)">
+  <span class="inline-flex items-center justify-center shrink(0)" style="block-size:1lh" aria-hidden="true">
+    <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor"><circle cx="8" cy="8" r="6"/><path d="M8 7v4M8 5v1"/></svg>
+  </span>
+  <span>Bring headphones to hear the quietest recordings in this collection.</span>
+</p>`} />
+
+## 見出し末尾のバッジ \{#trailing-badge\}
+
+[バッジ](/components/badge) は見出しの中に置き、直前に空白を入れます。幅が足りない位置ではバッジ全体が次の行に移ります。
+
+<ComponentPreview name="trailing-badge" title="見出し末尾のバッジ" height={100} narrowHeight={150} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<h2 class="heading max-w(250)">Coastal archive <span lang="zh-Hant">聲音地圖</span> <span class="badge">Beta</span></h2>`} />
+
+## 省略できる署名の情報 \{#optional-byline\}
+
+欠けている値を除いてから区切りを挿入します。日付がなければ著者と場所の間の区切りは 1 つです。読者が入力した値はテキストノードで追加します。
+
+```html
+<p id="byline" class="fg-text-muted"></p>
+<script>
+const author = 'Min Chen'
+const date = null
+const place = 'Hualien'
+document.getElementById('byline').textContent = [author, date, place]
+  .filter(value => value?.trim())
+  .join(' · ')
+</script>
+```
+
+## カードを置く階層に合わせた見出し \{#heading-rank\}
+
+周囲の章立てに合わせて要素を選びます。どちらのカードでも [見出し](/components/heading) で同じ大きさにできます。
+
+```html
+<main>
+  <h1 class="heading heading-lg">Field archive</h1>
+  <article class="card"><h2 class="heading">Latest recording</h2></article>
+  <section>
+    <h2 class="heading heading-lg">From the coast</h2>
+    <article class="card"><h3 class="heading">Rain at the harbor</h3></article>
+  </section>
+</main>
+```
+
+## 原題と訳題 \{#translated-name\}
+
+各名称に `lang` を指定します。原題を折り返せる見出しにし、その下に訳題を置きます。
+
+```html
+<header class="max-w(240)">
+  <h2 class="heading" lang="ja">海辺の町で聞いた夜明けの音</h2>
+  <p class="fg-text-muted" lang="en">Coastal dawn</p>
+</header>
+```
+
+## 2 行にわたるふりがな \{#ruby-readings\}
+
+読みは対応する文字と組にして `rt` に入れます。ふりがなのある行を 2 行並べて行間を確認します。本文だけをコピーする場合は、複製したノードから `rt` を除いて文字を読み取ります。
+
+<ComponentPreview name="ruby-readings" title="2 行にわたるふりがな" height={132} narrowHeight={160} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<p lang="ja" style="line-height:2.3">
+  <ruby>潮騒<rt>しおさい</rt></ruby>を聞く。<br>
+  <ruby>波音<rt>なみおと</rt></ruby>を録る。
+</p>`} />
+
+## 略語の初出 \{#first-abbreviation\}
+
+初出では略語の前に正式名称を書きます。タッチ画面でも文中で意味が伝わり、その後は略語で読み進められます。
+
+```html
+<p>Record at a sound pressure level (<abbr>SPL</abbr>) below the clipping limit.</p>
+<p>Log the peak SPL with each recording.</p>
+```
+
+## そのままコピーできるパス \{#breakable-path\}
+
+実際の区切り文字の直後に `wbr` を置きます。パスを選択しても元の文字列のままです。長い拡張子の手前にも同じ方法で改行位置を作れます。
+
+<ComponentPreview name="breakable-path" title="そのままコピーできるパス" height={96} narrowHeight={128} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<p class="max-w(165)"><code>@atlas/<wbr>field-notes/<wbr>east-coast/<wbr>dawn-session<wbr>.flac</code></p>`} />
+
+## コードの行へのリンク \{#line-links\}
+
+行番号リンクをコードと同じ行の別の列に置きます。行のフラグメントで共有でき、`code` 内の文字にはソースだけが含まれます。
+
+<ComponentPreview name="line-links" title="コードの行へのリンク" height={146} narrowHeight={160} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<pre class="code-block" style="display:grid;grid-template-columns:max-content 1fr;gap:0 1em">
+  <a class="link select-none" href="#gain-line-1" aria-label="Line 1">1</a>
+  <code id="gain-line-1">const gain = 0.5</code>
+  <a class="link select-none" href="#gain-line-2" aria-label="Line 2">2</a>
+  <code id="gain-line-2">track.volume = gain</code>
+</pre>`} />
+
+## 同時押しと順番に押すキー \{#shortcut-order\}
+
+押し方は言葉で説明し、どちらの操作でも個々の[キーキャップ](/components/kbd)でキーを示します。
+
+```html
+<p>Hold <kbd class="kbd">Ctrl</kbd> and press <kbd class="kbd">K</kbd> to search.</p>
+<p>Press <kbd class="kbd">G</kbd>, then <kbd class="kbd">I</kbd>, to open the inbox.</p>
+```
+
+## プロンプトを除いてコピー \{#copy-command\}
+
+プロンプトとコマンドは隣り合う要素にします。ボタンを押したらコマンドだけを読み取ります。クリップボードが使えない場合は文字を選択できるようにし、手動のコピー方法を示します。
+
+<ComponentPreview name="copy-command" title="プロンプトを除いてコピー" height={108} narrowHeight={155} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<div class="snippet">
+  <span class="snippet-prompt" aria-hidden="true">$</span>
+  <code class="snippet-command" tabindex="0">npm view @master/ui version</code>
+  <button class="btn btn-sm" type="button">Copy</button>
+</div>
+<output id="copy-result" aria-live="polite"></output>
+<script>
+const snippet = document.querySelector('.snippet')
+snippet.querySelector('button').addEventListener('click', async () => {
+  const result = document.getElementById('copy-result')
+  try {
+    await navigator.clipboard.writeText(snippet.querySelector('code').textContent)
+    result.textContent = 'Copied'
+  } catch {
+    result.textContent = 'Select the command and use Copy.'
+  }
+})
+</script>`} />
+
+## 同じ出典への 2 つの参照 \{#return-to-citation\}
+
+各[出典参照](/components/citation)に個別の戻り先を設けます。出典には、どの箇所に戻るかが名前で分かるリンクをそれぞれ置きます。
+
+<ComponentPreview name="return-to-citation" title="同じ出典への 2 つの参照" height={200} narrowHeight={260} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<p>Recordings start at dawn.<a class="citation" id="dawn-note" href="#logbook" aria-label="Source 1 for recording time">1</a></p>
+<p>The microphone faced east.<a class="citation" id="mic-note" href="#logbook" aria-label="Source 1 for microphone direction">1</a></p>
+<ol><li id="logbook"><cite>Harbor logbook</cite>, entry 18.
+  Return to <a class="link" href="#dawn-note">recording time</a>
+  or <a class="link" href="#mic-note">microphone direction</a>.
+</li></ol>`} />
+
+## 話者と作品名 \{#quotation-credit\}
+
+引用文は `blockquote` に入れます。話者と作品名はキャプションにまとめ、作品を `cite` で囲みます。
+
+```html
+<figure class="max-w(320)">
+  <blockquote><p>We heard the harbor before we could see it.</p></blockquote>
+  <figcaption>Min Chen, <cite>Harbor logbook</cite></figcaption>
+</figure>
+```

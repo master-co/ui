@@ -1,0 +1,185 @@
+---
+title: "组合易读的文本"
+description: "让标题、注释、命令和引用在换行、切换语言或复制后仍可正确阅读。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+
+先写下读者需要带走的文字。操作放在文字旁，注释跟随对应的词。可复制或可链接的内容应有清晰的范围。
+
+## 标题旁的操作 \{#title-action\}
+
+让标题可以收窄和换行。[按钮](/components/button) 与首行对齐，保留标签所需宽度。在窄栏中打开编辑器可检查点击区域。
+
+<ComponentPreview name="title-action" title="标题旁的操作" height={220} narrowHeight={260} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<div class="flex items-start justify-between gap(12) max-w(360)">
+  <h2 class="heading min-w(0)" id="exhibit-name">Field recordings from the eastern coast</h2>
+  <button class="btn btn-sm shrink(0)" type="button" commandfor="rename-exhibit" command="show-modal">Edit</button>
+</div>
+<dialog class="dialog" id="rename-exhibit" aria-labelledby="rename-title">
+  <form method="dialog" class="dialog-body">
+    <h2 class="heading" id="rename-title">Edit exhibit title</h2>
+    <label class="field">Title <input class="input" name="title" required value="Field recordings from the eastern coast"></label>
+    <div class="flex justify-end gap(8)">
+      <button class="btn" value="cancel" formnovalidate>Cancel</button>
+      <button class="btn btn-primary" value="save">Save</button>
+    </div>
+  </form>
+</dialog>
+<script>
+const dialog = document.getElementById('rename-exhibit')
+const title = document.getElementById('exhibit-name')
+const field = dialog.querySelector('input')
+dialog.addEventListener('close', () => {
+  if (dialog.returnValue === 'save') title.textContent = field.value
+  field.value = title.textContent
+  dialog.returnValue = ''
+})
+</script>`} />
+
+## 图标对齐首行 \{#first-line-icon\}
+
+图标的外框高一行。说明文字换成多行后，图标仍位于首行中央，完整指示保留在文字中。
+
+<ComponentPreview name="first-line-icon" title="图标对齐首行" height={130} narrowHeight={165} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<p class="flex items-start gap(8) max-w(270)">
+  <span class="inline-flex items-center justify-center shrink(0)" style="block-size:1lh" aria-hidden="true">
+    <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor"><circle cx="8" cy="8" r="6"/><path d="M8 7v4M8 5v1"/></svg>
+  </span>
+  <span>Bring headphones to hear the quietest recordings in this collection.</span>
+</p>`} />
+
+## 标题末尾的徽标 \{#trailing-badge\}
+
+在标题内的[徽标](/components/badge)前留一个空格。剩余宽度不足时，整个徽标会移至下一行。
+
+<ComponentPreview name="trailing-badge" title="标题末尾的徽标" height={100} narrowHeight={150} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<h2 class="heading max-w(250)">Coastal archive <span lang="zh-Hant">聲音地圖</span> <span class="badge">Beta</span></h2>`} />
+
+## 可省略的署名信息 \{#optional-byline\}
+
+先滤去缺少的值，再插入分隔符。没有日期时，作者与地点之间只留一个分隔符。用户提供的值应作为文本节点插入。
+
+```html
+<p id="byline" class="fg-text-muted"></p>
+<script>
+const author = 'Min Chen'
+const date = null
+const place = 'Hualien'
+document.getElementById('byline').textContent = [author, date, place]
+  .filter(value => value?.trim())
+  .join(' · ')
+</script>
+```
+
+## 同一卡片的两种标题层级 \{#heading-rank\}
+
+按照所在章节选择标题元素。两张卡片均可用 [标题](/components/heading) 呈现相同字号。
+
+```html
+<main>
+  <h1 class="heading heading-lg">Field archive</h1>
+  <article class="card"><h2 class="heading">Latest recording</h2></article>
+  <section>
+    <h2 class="heading heading-lg">From the coast</h2>
+    <article class="card"><h3 class="heading">Rain at the harbor</h3></article>
+  </section>
+</main>
+```
+
+## 原名与译名 \{#translated-name\}
+
+两种名称分别设置 `lang`。原名放在可换行的标题中，译名另起一行。
+
+```html
+<header class="max-w(240)">
+  <h2 class="heading" lang="ja">海辺の町で聞いた夜明けの音</h2>
+  <p class="fg-text-muted" lang="en">Coastal dawn</p>
+</header>
+```
+
+## 两行文本的读音 \{#ruby-readings\}
+
+将每段读音放入与原文配对的 `rt`。用连续两行注音检查行距。只需复制原文时，克隆节点，移除其中的 `rt`，再读取文本。
+
+<ComponentPreview name="ruby-readings" title="两行文本的读音" height={132} narrowHeight={160} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<p lang="ja" style="line-height:2.3">
+  <ruby>潮騒<rt>しおさい</rt></ruby>を聞く。<br>
+  <ruby>波音<rt>なみおと</rt></ruby>を録る。
+</p>`} />
+
+## 缩写首次出现 \{#first-abbreviation\}
+
+首次使用时在缩写前写出全称。触摸屏上的读者也能直接从句中理解，之后即可使用简称。
+
+```html
+<p>Record at a sound pressure level (<abbr>SPL</abbr>) below the clipping limit.</p>
+<p>Log the peak SPL with each recording.</p>
+```
+
+## 可完整复制的路径 \{#breakable-path\}
+
+在原有分隔符后放置 `wbr`。选中路径得到的仍是原字符串，也可用同样的方法在较长的扩展名前提供换行点。
+
+<ComponentPreview name="breakable-path" title="可完整复制的路径" height={96} narrowHeight={128} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<p class="max-w(165)"><code>@atlas/<wbr>field-notes/<wbr>east-coast/<wbr>dawn-session<wbr>.flac</code></p>`} />
+
+## 链接到特定代码行 \{#line-links\}
+
+行号链接放在独立的一列，与代码同行排列。分享该行的片段地址，复制 `code` 内容时只会取得源码。
+
+<ComponentPreview name="line-links" title="链接到特定代码行" height={146} narrowHeight={160} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<pre class="code-block" style="display:grid;grid-template-columns:max-content 1fr;gap:0 1em">
+  <a class="link select-none" href="#gain-line-1" aria-label="Line 1">1</a>
+  <code id="gain-line-1">const gain = 0.5</code>
+  <a class="link select-none" href="#gain-line-2" aria-label="Line 2">2</a>
+  <code id="gain-line-2">track.volume = gain</code>
+</pre>`} />
+
+## 同时按键与依次按键 \{#shortcut-order\}
+
+用文字说明按键顺序或组合，再用独立[键帽](/components/kbd)标出每个按键。
+
+```html
+<p>Hold <kbd class="kbd">Ctrl</kbd> and press <kbd class="kbd">K</kbd> to search.</p>
+<p>Press <kbd class="kbd">G</kbd>, then <kbd class="kbd">I</kbd>, to open the inbox.</p>
+```
+
+## 复制不含提示符的命令 \{#copy-command\}
+
+提示符与命令为相邻元素。按下按钮时只读取命令。无法访问剪贴板时，保留可选中的文本并说明手动复制方法。
+
+<ComponentPreview name="copy-command" title="复制不含提示符的命令" height={108} narrowHeight={155} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<div class="snippet">
+  <span class="snippet-prompt" aria-hidden="true">$</span>
+  <code class="snippet-command" tabindex="0">npm view @master/ui version</code>
+  <button class="btn btn-sm" type="button">Copy</button>
+</div>
+<output id="copy-result" aria-live="polite"></output>
+<script>
+const snippet = document.querySelector('.snippet')
+snippet.querySelector('button').addEventListener('click', async () => {
+  const result = document.getElementById('copy-result')
+  try {
+    await navigator.clipboard.writeText(snippet.querySelector('code').textContent)
+    result.textContent = 'Copied'
+  } catch {
+    result.textContent = 'Select the command and use Copy.'
+  }
+})
+</script>`} />
+
+## 同一来源的两处引用 \{#return-to-citation\}
+
+每处[引用标记](/components/citation)都有自己的返回目标。在来源条目提供两个返回链接，名称分别标明所在段落。
+
+<ComponentPreview name="return-to-citation" title="同一来源的两处引用" height={200} narrowHeight={260} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<p>Recordings start at dawn.<a class="citation" id="dawn-note" href="#logbook" aria-label="Source 1 for recording time">1</a></p>
+<p>The microphone faced east.<a class="citation" id="mic-note" href="#logbook" aria-label="Source 1 for microphone direction">1</a></p>
+<ol><li id="logbook"><cite>Harbor logbook</cite>, entry 18.
+  Return to <a class="link" href="#dawn-note">recording time</a>
+  or <a class="link" href="#mic-note">microphone direction</a>.
+</li></ol>`} />
+
+## 发言人与作品名称 \{#quotation-credit\}
+
+引文放在 `blockquote` 中。说明中并列发言人与作品名称，用 `cite` 标出作品。
+
+```html
+<figure class="max-w(320)">
+  <blockquote><p>We heard the harbor before we could see it.</p></blockquote>
+  <figcaption>Min Chen, <cite>Harbor logbook</cite></figcaption>
+</figure>
+```
