@@ -233,10 +233,11 @@ export function combobox(root, { filter: filtering = true, name, removeLabel = (
   // open with no active option, or with one that has left: the first of them becomes it.
   if (typeof MutationObserver === 'function') {
     const observer = new MutationObserver(() => {
+      if (filtering && seeking) filter(list, field.value)
       const current = active()
       if (seeking && isOpen(list) && !(current && enabled(current))) activate(field, list, options(list)[0])
     })
-    observer.observe(list, { childList: true, subtree: true })
+    observer.observe(list, { childList: true, characterData: true, subtree: true })
     signal.addEventListener('abort', () => observer.disconnect())
   }
 

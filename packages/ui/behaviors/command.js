@@ -51,10 +51,11 @@ export function command(root, { shortcut = 'k', filter: filtering = true } = {})
   // with one that has left: the first of them becomes it.
   if (typeof MutationObserver === 'function') {
     const observer = new MutationObserver(() => {
+      if (filtering) filter(list, field.value)
       const current = active()
       if (!current || !options(list).includes(current)) activate(field, list, options(list)[0])
     })
-    observer.observe(list, { childList: true, subtree: true })
+    observer.observe(list, { childList: true, characterData: true, subtree: true })
     signal.addEventListener('abort', () => observer.disconnect())
   }
 
@@ -89,8 +90,9 @@ export function command(root, { shortcut = 'k', filter: filtering = true } = {})
   }, { signal })
 
   if (shortcut) {
-    root.ownerDocument.addEventListener('keydown', (event) => {
-      if (!(event.metaKey || event.ctrlKey) || event.altKey || event.shiftKey) return
+    /** @param {KeyboardEvent} event */
+    const toggle = (event) => {
+      if (event.defaultPrevented || event.isComposing || !(event.metaKey || event.ctrlKey) || event.altKey || event.shiftKey) return
       // A layout that writes another script, Cyrillic or Greek, names the key in it: the key that stands where
       // the letter does is the shortcut there.
       const key = event.key?.toLowerCase() ?? ''
@@ -101,10 +103,15 @@ export function command(root, { shortcut = 'k', filter: filtering = true } = {})
       if (event.repeat) return
       if (root.open) root.close()
       else root.showModal()
-    }, { signal })
+    }
+    // An open palette gets the shortcut from its field before it reaches other
+    // palettes listening on the document. The one that handles it consumes it.
+    root.addEventListener('keydown', toggle, { signal })
+    root.ownerDocument.addEventListener('keydown', toggle, { signal })
   }
 
   // The palette opens with an active option, so Enter has something to run.
+  if (filtering && field.value) filter(list, field.value)
   const marked = active()
   if (!marked || !options(list).includes(marked)) activate(field, list, options(list)[0])
   return detach

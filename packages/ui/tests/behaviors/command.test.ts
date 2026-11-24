@@ -53,6 +53,39 @@ function setup(html = markup) {
   return { ...page, root, field, active, shown, ran }
 }
 
+test('command: only one palette handles a shortcut and an inner editor may consume it', () => {
+  const other = markup.replace(/palette|cmd-/g, name => name === 'palette' ? 'other-palette' : 'other-cmd-')
+  const { all, document, key } = setup(markup + other)
+  const [first, second] = all<HTMLDialogElement>('dialog')
+  command(first)
+  command(second)
+  key(document.body, 'k', { ctrlKey: true })
+  assert.equal(first.open, true)
+  assert.equal(second.open, false)
+  first.close()
+  second.showModal()
+  const input = second.querySelector('input')!
+  input.addEventListener('keydown', event => event.preventDefault(), { once: true })
+  key(input, 'k', { ctrlKey: true })
+  assert.equal(second.open, true)
+  key(input, 'k', { ctrlKey: true })
+  assert.deepEqual([first.open, second.open], [false, false])
+})
+
+test('command: options added during local search must match before they can become active', async () => {
+  const { root, field, type, active, one } = setup()
+  command(root)
+  type(field, 'archive')
+  const list = one('.command-list')
+  list.insertAdjacentHTML('beforeend', '<div role="option" id="other">Edit</div><div role="option" id="matching">Archive</div>')
+  await new Promise(resolve => setTimeout(resolve))
+  assert.equal(one('#other').hidden, true)
+  assert.equal(one('#matching').hidden, false)
+  assert.equal(active(), 'matching')
+  type(field, '')
+  assert.equal(one('#other').hidden, false)
+})
+
 test('command: typing hides the options that do not match and makes the first match the active one', () => {
   const { root, field, all, type, active, shown } = setup()
   command(root)

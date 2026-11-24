@@ -125,6 +125,9 @@ export function activate(owner, list, option) {
   option.scrollIntoView({ block: 'nearest' })
 }
 
+/** @type {WeakSet<HTMLElement>} Only options hidden by the local search may be revealed by it. */
+const filteredOut = new WeakSet()
+
 /**
  * Filter a listbox: set `hidden` on the options whose text does not hold the query, whatever its case. The
  * stylesheet then shows the empty state and hides a group with nothing left in it.
@@ -134,7 +137,12 @@ export function activate(owner, list, option) {
 export function filter(list, query) {
   const text = query.trim().toLowerCase()
   for (const option of /** @type {NodeListOf<HTMLElement>} */ (list.querySelectorAll('[role="option"]'))) {
-    option.hidden = !label(option).toLowerCase().includes(text)
+    if (label(option).toLowerCase().includes(text)) {
+      if (filteredOut.delete(option)) option.hidden = false
+    } else if (!option.hidden) {
+      option.hidden = true
+      filteredOut.add(option)
+    }
   }
 }
 

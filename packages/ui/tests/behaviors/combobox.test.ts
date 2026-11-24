@@ -59,6 +59,18 @@ function setup(html = markup) {
   return { ...page, root, field, list, toggle, heard, expanded, active, shown, checked, event }
 }
 
+test('combobox: a local search only reveals options the search itself hid', () => {
+  const { root, field, one, type, active, shown } = setup()
+  one('#region-sin').hidden = true
+  combobox(root)
+  type(field, 'Singapore')
+  assert.deepEqual(shown(), [])
+  assert.equal(active(), null)
+  type(field, '')
+  assert.ok(shown().includes('region-hnd'))
+  assert.ok(!shown().includes('region-sin'))
+})
+
 test('combobox: typing hides the options that do not match, opens the list and makes the first match active', () => {
   const { root, field, type, expanded, active, shown } = setup()
   combobox(root)

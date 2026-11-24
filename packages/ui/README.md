@@ -260,6 +260,8 @@ Use `aria-orientation="vertical"` to arrange a tablist beside its panels. Tabs r
 
 Opt in to searchable [tab panels](https://ui.master.co/components/tabs#searchable-panels) with `tabs(tablist, { searchable: true })` or the framework component’s `searchable` prop. Browsers with `beforematch` can select a panel through Find in Page or a fragment link. [Wheel](https://ui.master.co/components/wheel) uses `scroll-initial-target` to center the initial selection where supported. The wheel behavior still aligns and tracks the selection in other browsers.
 
+Local command and combobox searches keep author-hidden options out of the results. A command added during a search must match before the palette can activate it.
+
 A nested [toolbar](https://ui.master.co/components/toolbar#keys) owns its toggles and keyboard stops. Its arrow-key fallback follows native radio groups and skips inert and disabled controls.
 
 Place tags outside a form by associating their text field and initial hidden inputs with the form ID. New chips follow that form. Tags, signatures and color pickers retain their values when a reset is canceled.
