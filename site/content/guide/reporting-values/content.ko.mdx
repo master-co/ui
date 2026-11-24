@@ -1,0 +1,232 @@
+---
+title: "보고서 수치 표시"
+description: "측정값, 시각, 비교 수치에 해석과 재사용에 필요한 정보를 함께 표시합니다."
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+
+관측값과 단위, 비교 기준을 함께 표시합니다. 원래 값으로 계산하고 정렬한 뒤 읽기 좋게 표시합니다.
+
+## 반올림하면 0인 변화량 \{#rounding-zero\}
+
+반올림 결과가 음의 0이면 먼저 0으로 바꾼 뒤 부호와 방향을 정합니다. 이후 계산에는 원래 측정값을 사용합니다.
+
+```js
+const observed = -0.032
+const rounded = Number(observed.toFixed(1)) || 0
+const direction = rounded < 0 ? 'Down' : rounded > 0 ? 'Up' : 'No change at this precision'
+const label = [rounded.toFixed(1), direction].join(' · ')
+```
+
+## 퍼센트포인트와 상대 변화율 \{#percentage-points\}
+
+40%에서 45%가 되면 차이는 5퍼센트포인트입니다. 그 차이를 원래의 40%로 나누면 상대 증가율은 12.5%입니다. [지표](/components/stat) 옆에 기준을 표시합니다.
+
+<ComponentPreview name="percentage-points" title="퍼센트포인트와 상대 변화율" height={120} narrowHeight={150} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<div class="stat">
+  <p class="stat-label">Survey completion</p>
+  <p class="stat-value">45%</p>
+  <p>Up 5 percentage points from 40% last month.</p>
+</div>`} />
+
+## 하락이 개선인 경우 \{#falling-error-rate\}
+
+방향과 영향을 함께 적습니다. 중립적인 변화 표시는 흑백으로 인쇄해도 의미가 전달됩니다.
+
+```html
+<div class="stat">
+  <p class="stat-label">Failed uploads</p>
+  <p class="stat-value">1.2%</p>
+  <p class="stat-delta">Improved, down from 1.8%</p>
+</div>
+```
+
+## 추정값과 실측값 \{#measurement-status\}
+
+단위가 같아도 각각의 값에 추정인지 실측인지 표시합니다. 하나만 복사해도 성격을 알 수 있습니다.
+
+```html
+<dl>
+  <dt>East transect</dt><dd>About 18 km</dd>
+  <dt>West transect</dt><dd>17.8 km measured</dd>
+</dl>
+```
+
+## 검출 한계 미만의 측정값 \{#detection-limit\}
+
+비교 조건, 기준값, 단위를 함께 기록합니다. 셀을 내보낼 때도 세 정보를 유지합니다.
+
+```js
+const result = { qualifier: 'below', limit: 0.1, unit: 'mg/L' }
+const cell = result.qualifier === 'below'
+  ? 'Below ' + result.limit + ' ' + result.unit
+  : result.value + ' ' + result.unit
+// Use cell for both the table text and its export.
+```
+
+## 같은 순간의 서로 다른 현지 날짜 \{#two-time-zones\}
+
+기계가 읽는 시점은 동일하게 유지하고 각 지역의 날짜, 시간, 시간대를 표시합니다. 연도가 바뀌는 경우 양쪽에 연도를 씁니다.
+
+```html
+<dl>
+  <dt>Taipei</dt><dd><time datetime="2026-12-31T16:30:00Z">1 Jan 2027, 00:30 UTC+08</time></dd>
+  <dt>London</dt><dd><time datetime="2026-12-31T16:30:00Z">31 Dec 2026, 16:30 UTC+00</time></dd>
+</dl>
+```
+
+## 보고서 생성 시각과 데이터 마감 시각 \{#report-cutoff\}
+
+보고서에 두 시각을 모두 저장합니다. 화면을 다시 그릴 때도 원래 시각을 사용합니다.
+
+```html
+<dl>
+  <dt>Data through</dt><dd><time datetime="2026-11-17T23:59:00Z">17 Nov, 23:59 UTC</time></dd>
+  <dt>Report generated</dt><dd><time datetime="2026-11-18T08:00:00Z">18 Nov, 08:00 UTC</time></dd>
+</dl>
+```
+
+## 중앙 추정값과 구간 \{#estimate-interval\}
+
+통계량, 구간의 의미, 단위를 적으면 양 끝 값을 텍스트로 확인할 수 있습니다.
+
+```html
+<div class="stat">
+  <p class="stat-label">Median processing time</p><p class="stat-value">38 ms</p>
+  <p>Middle 50% of observations: 31–46 ms.</p>
+</div>
+```
+
+## 표 안의 소계 \{#subtotals\}
+
+각 그룹의 데이터와 소계는 한 `tbody`에 둡니다. 총계는 `tfoot`에 두면 그룹을 추가해도 구분됩니다.
+
+<ComponentPreview name="subtotals" title="표 안의 소계" height={292} narrowHeight={330} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<table class="table table-compact">
+  <caption class="table-title">Samples received</caption>
+  <thead><tr class="table-row"><th class="table-heading" scope="col">Station</th><th class="table-heading" scope="col">Run</th><th class="table-heading" scope="col">Samples</th></tr></thead>
+  <tbody>
+    <tr class="table-row"><th class="table-cell table-primary" scope="rowgroup" rowspan="3">East</th><th class="table-cell table-primary" scope="row">Dawn</th><td class="table-cell table-numeric">12</td></tr>
+    <tr class="table-row"><th class="table-cell table-primary" scope="row">Dusk</th><td class="table-cell table-numeric">8</td></tr>
+    <tr class="table-row"><th class="table-cell table-primary" scope="row">East subtotal</th><td class="table-cell table-numeric">20</td></tr>
+  </tbody>
+  <tbody><tr class="table-row"><th class="table-cell table-primary" scope="rowgroup">West</th><th class="table-cell table-primary" scope="row">Dawn</th><td class="table-cell table-numeric">7</td></tr></tbody>
+  <tfoot><tr class="table-row"><th class="table-cell table-primary" scope="row" colspan="2">All stations</th><td class="table-cell table-numeric">27</td></tr></tfoot>
+</table>`} />
+
+## 연도 및 분기 머리글 \{#period-headers\}
+
+분기명은 반복되므로 각 값에 관측소, 연도, 분기의 머리글 ID 세 개를 연결합니다.
+
+```html
+<table class="table">
+  <caption class="table-title">Samples per quarter</caption>
+  <colgroup span="1"></colgroup><colgroup span="2"></colgroup><colgroup span="2"></colgroup>
+  <thead>
+    <tr class="table-row"><th class="table-heading" rowspan="2" scope="col">Station</th><th class="table-heading" id="y25" colspan="2" scope="colgroup">2025</th><th class="table-heading" id="y26" colspan="2" scope="colgroup">2026</th></tr>
+    <tr class="table-row"><th class="table-heading" id="a1" scope="col">Q1</th><th class="table-heading" id="a2" scope="col">Q2</th><th class="table-heading" id="b1" scope="col">Q1</th><th class="table-heading" id="b2" scope="col">Q2</th></tr>
+  </thead>
+  <tbody><tr class="table-row"><th class="table-cell table-primary" id="east" scope="row">East</th><td class="table-cell table-numeric" headers="east y25 a1">12</td><td class="table-cell table-numeric" headers="east y25 a2">15</td><td class="table-cell table-numeric" headers="east y26 b1">18</td><td class="table-cell table-numeric" headers="east y26 b2">20</td></tr></tbody>
+</table>
+```
+
+## 예측이 시작되는 지점 \{#forecast-boundary\}
+
+행 그룹 머리글로 실측과 예측의 경계를 표시합니다. 두 그룹의 공통 단위는 열 머리글에 둡니다.
+
+```html
+<table class="table">
+  <caption class="table-title">Monthly demand</caption>
+  <thead><tr class="table-row"><th class="table-heading" scope="col">Period</th><th class="table-heading" scope="col">Water (L)</th></tr></thead>
+  <tbody><tr class="table-row"><th class="table-cell table-primary" scope="rowgroup" colspan="2">Recorded</th></tr><tr class="table-row"><th class="table-cell table-primary" scope="row">May</th><td class="table-cell table-numeric">320</td></tr></tbody>
+  <tbody><tr class="table-row"><th class="table-cell table-primary" scope="rowgroup" colspan="2">Forecast</th></tr><tr class="table-row"><th class="table-cell table-primary" scope="row">June</th><td class="table-cell table-numeric">350</td></tr></tbody>
+</table>
+```
+
+## 혼합 단위 정렬 \{#sort-units\}
+
+시간을 하나의 기준 단위로 저장합니다. 표시 형식을 적용하기 전에 수치로 정렬하면 900 µs가 2 ms 앞에 옵니다.
+
+```js
+const measurements = [{ name: 'Decode', us: 2000 }, { name: 'Read', us: 900 }]
+const rows = measurements.toSorted((a, b) => a.us - b.us).map(sample => ({
+  name: sample.name,
+  duration: sample.us < 1000 ? sample.us + ' µs' : sample.us / 1000 + ' ms'
+}))
+```
+
+## 식별자로 버전 맞추기 \{#align-versions\}
+
+두 버전의 식별자를 합친 뒤 각 행에 해당하는 두 값을 조회합니다. 누락은 문구로 표시하고 실측값 0은 유지합니다.
+
+```js
+const previous = new Map([['Upload', 14], ['Queue', 0]])
+const current = new Map([['Queue', 2], ['Export', 5]])
+const ids = new Set([...previous.keys(), ...current.keys()])
+const rows = Array.from(ids, id => [
+  id, previous.get(id) ?? 'Unavailable in this version',
+  current.get(id) ?? 'Unavailable in this version'
+])
+```
+
+## 반올림한 비율과 기타 항목 \{#rounded-shares\}
+
+[구성 내역](/components/breakdown)에는 원래 건수를 전달합니다. 같은 비율 세 개를 소수점 한 자리로 표시하면 합은 99.9%입니다. 기타도 건수가 있는 실제 범주입니다.
+
+<ComponentPreview name="rounded-shares" title="반올림한 비율과 기타 항목" height={170} narrowHeight={205} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<figure>
+  <ul class="breakdown">
+    <li class="breakdown-item" style="--value:12"><span class="breakdown-label">Coast <span class="breakdown-value">33.3%</span></span></li>
+    <li class="breakdown-item" style="--value:12"><span class="breakdown-label">Forest <span class="breakdown-value">33.3%</span></span></li>
+    <li class="breakdown-item" style="--value:12"><span class="breakdown-label">Other <span class="breakdown-value">33.3%</span></span></li>
+  </ul>
+  <figcaption>36 samples. Shares are rounded to one decimal place.</figcaption>
+</figure>`} />
+
+## 통화와 큰 금액의 기준선 \{#currency-in-prose\}
+
+명세 행에서는 작은 통화 코드와 큰 금액의 기준선을 맞춥니다. 행이 줄바꿈되어도 둘은 함께 이동합니다.
+
+<ComponentPreview name="currency-in-prose" title="통화와 큰 금액의 기준선" height={94} narrowHeight={112} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<p>Field kit reimbursement
+  <span class="inline-flex items-baseline gap(4)"><span class="text-xs">USD</span> <strong class="heading">128.50</strong></span>
+</p>`} />
+
+## 비교 가능한 소수 값 \{#decimal-precision\}
+
+열 전체에 측정 근거가 있는 정밀도를 사용하고 숫자 셀을 끝에 맞춥니다. 측정값 뒤에 0을 더하면 정밀도가 더 높은 것처럼 보입니다.
+
+```html
+<table class="table">
+  <caption class="table-title">Mass measured to 0.1 g</caption>
+  <thead><tr class="table-row"><th class="table-heading" scope="col">Sample</th><th class="table-heading table-numeric" scope="col">Mass (g)</th></tr></thead>
+  <tbody><tr class="table-row"><th class="table-cell table-primary" scope="row">A</th><td class="table-cell table-numeric">9.8</td></tr>
+    <tr class="table-row"><th class="table-cell table-primary" scope="row">B</th><td class="table-cell table-numeric">12.0</td></tr></tbody>
+</table>
+```
+
+## 결측값과 0 \{#missing-observation\}
+
+두 상태에 같은 지표 레이아웃을 사용하고 대시에는 설명을 표시합니다. 관측값이 0이면 숫자와 관측 기간을 표시합니다.
+
+<ComponentPreview name="missing-observation" title="결측값과 0" height={150} narrowHeight={225} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<div class="flex flex-wrap gap(24)">
+  <div class="stat"><p class="stat-label">East station alerts</p>
+    <p class="stat-value">0</p><p class="stat-description">Last 24 hours</p></div>
+  <div class="stat"><p class="stat-label">West station alerts</p>
+    <p class="stat-value">—</p><p class="stat-description">No samples received</p></div>
+</div>`} />
+
+## 순위 막대의 분모 \{#meter-denominator\}
+
+가장 큰 그룹을 기준으로 삼으면 레이블에 그룹명과 건수를 표시합니다. 12건은 1위의 20건 중 60%입니다.
+
+<ComponentPreview name="meter-denominator" title="순위 막대의 분모" height={108} narrowHeight={136} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<label class="field">Forest: 12 samples, 60% of Coast’s 20
+  <meter class="meter" min="0" max="20" value="12">12 of 20</meter>
+</label>`} />
+
+## 해를 넘기는 날짜 범위 \{#cross-year-range\}
+
+시작일과 종료일에 각각 `time`을 사용합니다. 두 줄로 나뉘어도 양쪽 연도를 표시합니다.
+
+```html
+<p>Survey period
+  <time datetime="2026-12-30">30 Dec 2026</time> to
+  <time datetime="2027-01-02">2 Jan 2027</time>
+</p>
+```

@@ -1,0 +1,232 @@
+---
+title: "呈现报表数值"
+description: "为测量值、时间和比较结果保留必要信息，便于读者解读与复用。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+
+同时呈现观测值、单位与比较基准。先用原始值计算和排序，再格式化显示。
+
+## 舍入为零的变化量 \{#rounding-zero\}
+
+若舍入后得到负零，先转为零，再决定正负号和方向。后续计算仍使用原始读数。
+
+```js
+const observed = -0.032
+const rounded = Number(observed.toFixed(1)) || 0
+const direction = rounded < 0 ? 'Down' : rounded > 0 ? 'Up' : 'No change at this precision'
+const label = [rounded.toFixed(1), direction].join(' · ')
+```
+
+## 百分点与相对变化 \{#percentage-points\}
+
+从 40% 升至 45%，相差 5 个百分点。以原来的 40% 为分母，相对增长为 12.5%。在[统计指标](/components/stat)旁写明比较基准。
+
+<ComponentPreview name="percentage-points" title="百分点与相对变化" height={120} narrowHeight={150} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<div class="stat">
+  <p class="stat-label">Survey completion</p>
+  <p class="stat-value">45%</p>
+  <p>Up 5 percentage points from 40% last month.</p>
+</div>`} />
+
+## 下降表示改善 \{#falling-error-rate\}
+
+同时写出变化方向和影响。即使黑白打印，中性的变化标记仍然可读。
+
+```html
+<div class="stat">
+  <p class="stat-label">Failed uploads</p>
+  <p class="stat-value">1.2%</p>
+  <p class="stat-delta">Improved, down from 1.8%</p>
+</div>
+```
+
+## 估算值与实测值 \{#measurement-status\}
+
+即使单位相同，也要在每个数值旁注明估算或实测。单独复制一个值也能看出其性质。
+
+```html
+<dl>
+  <dt>East transect</dt><dd>About 18 km</dd>
+  <dt>West transect</dt><dd>17.8 km measured</dd>
+</dl>
+```
+
+## 低于检出限的读数 \{#detection-limit\}
+
+同时记录比较关系、阈值和单位。导出单元格时也要保留三者。
+
+```js
+const result = { qualifier: 'below', limit: 0.1, unit: 'mg/L' }
+const cell = result.qualifier === 'below'
+  ? 'Below ' + result.limit + ' ' + result.unit
+  : result.value + ' ' + result.unit
+// Use cell for both the table text and its export.
+```
+
+## 同一时刻的两个当地日期 \{#two-time-zones\}
+
+两地使用同一个机器可读时间点，各自显示当地日期、时间与时区。跨年时两边都写明年份。
+
+```html
+<dl>
+  <dt>Taipei</dt><dd><time datetime="2026-12-31T16:30:00Z">1 Jan 2027, 00:30 UTC+08</time></dd>
+  <dt>London</dt><dd><time datetime="2026-12-31T16:30:00Z">31 Dec 2026, 16:30 UTC+00</time></dd>
+</dl>
+```
+
+## 报表生成时间与数据截止时间 \{#report-cutoff\}
+
+报表保留两个时间戳。重新渲染时仍显示原有时间。
+
+```html
+<dl>
+  <dt>Data through</dt><dd><time datetime="2026-11-17T23:59:00Z">17 Nov, 23:59 UTC</time></dd>
+  <dt>Report generated</dt><dd><time datetime="2026-11-18T08:00:00Z">18 Nov, 08:00 UTC</time></dd>
+</dl>
+```
+
+## 中心估计值与区间 \{#estimate-interval\}
+
+写出统计量、区间类型与单位，读者即可从文字获知两个端点。
+
+```html
+<div class="stat">
+  <p class="stat-label">Median processing time</p><p class="stat-value">38 ms</p>
+  <p>Middle 50% of observations: 31–46 ms.</p>
+</div>
+```
+
+## 表格内的分组小计 \{#subtotals\}
+
+每组数据和小计放在同一个 `tbody`。总计放入 `tfoot`，插入新组时仍能分清。
+
+<ComponentPreview name="subtotals" title="表格内的分组小计" height={292} narrowHeight={330} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<table class="table table-compact">
+  <caption class="table-title">Samples received</caption>
+  <thead><tr class="table-row"><th class="table-heading" scope="col">Station</th><th class="table-heading" scope="col">Run</th><th class="table-heading" scope="col">Samples</th></tr></thead>
+  <tbody>
+    <tr class="table-row"><th class="table-cell table-primary" scope="rowgroup" rowspan="3">East</th><th class="table-cell table-primary" scope="row">Dawn</th><td class="table-cell table-numeric">12</td></tr>
+    <tr class="table-row"><th class="table-cell table-primary" scope="row">Dusk</th><td class="table-cell table-numeric">8</td></tr>
+    <tr class="table-row"><th class="table-cell table-primary" scope="row">East subtotal</th><td class="table-cell table-numeric">20</td></tr>
+  </tbody>
+  <tbody><tr class="table-row"><th class="table-cell table-primary" scope="rowgroup">West</th><th class="table-cell table-primary" scope="row">Dawn</th><td class="table-cell table-numeric">7</td></tr></tbody>
+  <tfoot><tr class="table-row"><th class="table-cell table-primary" scope="row" colspan="2">All stations</th><td class="table-cell table-numeric">27</td></tr></tfoot>
+</table>`} />
+
+## 年度与季度表头 \{#period-headers\}
+
+季度名称会重复。每个值通过三个表头 ID 关联测站、年份和季度。
+
+```html
+<table class="table">
+  <caption class="table-title">Samples per quarter</caption>
+  <colgroup span="1"></colgroup><colgroup span="2"></colgroup><colgroup span="2"></colgroup>
+  <thead>
+    <tr class="table-row"><th class="table-heading" rowspan="2" scope="col">Station</th><th class="table-heading" id="y25" colspan="2" scope="colgroup">2025</th><th class="table-heading" id="y26" colspan="2" scope="colgroup">2026</th></tr>
+    <tr class="table-row"><th class="table-heading" id="a1" scope="col">Q1</th><th class="table-heading" id="a2" scope="col">Q2</th><th class="table-heading" id="b1" scope="col">Q1</th><th class="table-heading" id="b2" scope="col">Q2</th></tr>
+  </thead>
+  <tbody><tr class="table-row"><th class="table-cell table-primary" id="east" scope="row">East</th><td class="table-cell table-numeric" headers="east y25 a1">12</td><td class="table-cell table-numeric" headers="east y25 a2">15</td><td class="table-cell table-numeric" headers="east y26 b1">18</td><td class="table-cell table-numeric" headers="east y26 b2">20</td></tr></tbody>
+</table>
+```
+
+## 预测从哪里开始 \{#forecast-boundary\}
+
+用行组表头标出实绩与预测的分界，两组共用列表头上的单位。
+
+```html
+<table class="table">
+  <caption class="table-title">Monthly demand</caption>
+  <thead><tr class="table-row"><th class="table-heading" scope="col">Period</th><th class="table-heading" scope="col">Water (L)</th></tr></thead>
+  <tbody><tr class="table-row"><th class="table-cell table-primary" scope="rowgroup" colspan="2">Recorded</th></tr><tr class="table-row"><th class="table-cell table-primary" scope="row">May</th><td class="table-cell table-numeric">320</td></tr></tbody>
+  <tbody><tr class="table-row"><th class="table-cell table-primary" scope="rowgroup" colspan="2">Forecast</th></tr><tr class="table-row"><th class="table-cell table-primary" scope="row">June</th><td class="table-cell table-numeric">350</td></tr></tbody>
+</table>
+```
+
+## 混合单位排序 \{#sort-units\}
+
+用统一的基准单位存储时长，先按数值排序，再格式化每行。这样 900 µs 会排在 2 ms 前。
+
+```js
+const measurements = [{ name: 'Decode', us: 2000 }, { name: 'Read', us: 900 }]
+const rows = measurements.toSorted((a, b) => a.us - b.us).map(sample => ({
+  name: sample.name,
+  duration: sample.us < 1000 ? sample.us + ' µs' : sample.us / 1000 + ' ms'
+}))
+```
+
+## 用标识符对齐版本 \{#align-versions\}
+
+合并两个版本的标识符，逐行查找各自的值。缺项用文字说明，实测为零则保留 0。
+
+```js
+const previous = new Map([['Upload', 14], ['Queue', 0]])
+const current = new Map([['Queue', 2], ['Export', 5]])
+const ids = new Set([...previous.keys(), ...current.keys()])
+const rows = Array.from(ids, id => [
+  id, previous.get(id) ?? 'Unavailable in this version',
+  current.get(id) ?? 'Unavailable in this version'
+])
+```
+
+## 舍入后的占比与“其他” \{#rounded-shares\}
+
+向[占比分布](/components/breakdown)提供原始计数。三个相等的占比保留一位小数，显示总和为 99.9%。“其他”是有实际计数的分类。
+
+<ComponentPreview name="rounded-shares" title="舍入后的占比与“其他”" height={170} narrowHeight={205} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<figure>
+  <ul class="breakdown">
+    <li class="breakdown-item" style="--value:12"><span class="breakdown-label">Coast <span class="breakdown-value">33.3%</span></span></li>
+    <li class="breakdown-item" style="--value:12"><span class="breakdown-label">Forest <span class="breakdown-value">33.3%</span></span></li>
+    <li class="breakdown-item" style="--value:12"><span class="breakdown-label">Other <span class="breakdown-value">33.3%</span></span></li>
+  </ul>
+  <figcaption>36 samples. Shares are rounded to one decimal place.</figcaption>
+</figure>`} />
+
+## 币种与大号金额的基线 \{#currency-in-prose\}
+
+明细行中较小的币种代码与金额沿文字基线对齐。行内容换行时，两者一起移动。
+
+<ComponentPreview name="currency-in-prose" title="币种与大号金额的基线" height={94} narrowHeight={112} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<p>Field kit reimbursement
+  <span class="inline-flex items-baseline gap(4)"><span class="text-xs">USD</span> <strong class="heading">128.50</strong></span>
+</p>`} />
+
+## 可比较的小数值 \{#decimal-precision\}
+
+同列使用测量依据支持的精度，数值单元格靠末端对齐。给测量值补零会让人误以为精度更高。
+
+```html
+<table class="table">
+  <caption class="table-title">Mass measured to 0.1 g</caption>
+  <thead><tr class="table-row"><th class="table-heading" scope="col">Sample</th><th class="table-heading table-numeric" scope="col">Mass (g)</th></tr></thead>
+  <tbody><tr class="table-row"><th class="table-cell table-primary" scope="row">A</th><td class="table-cell table-numeric">9.8</td></tr>
+    <tr class="table-row"><th class="table-cell table-primary" scope="row">B</th><td class="table-cell table-numeric">12.0</td></tr></tbody>
+</table>
+```
+
+## 缺少观测值与零值 \{#missing-observation\}
+
+两种状态沿用同一统计布局，破折号附上可见说明。实测为零时显示数字和观测时段。
+
+<ComponentPreview name="missing-observation" title="缺少观测值与零值" height={150} narrowHeight={225} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<div class="flex flex-wrap gap(24)">
+  <div class="stat"><p class="stat-label">East station alerts</p>
+    <p class="stat-value">0</p><p class="stat-description">Last 24 hours</p></div>
+  <div class="stat"><p class="stat-label">West station alerts</p>
+    <p class="stat-value">—</p><p class="stat-description">No samples received</p></div>
+</div>`} />
+
+## 排名条的分母 \{#meter-denominator\}
+
+以第一名为基准时，在说明中标明组名和计数。12 条相当于第一名 20 条的 60%。
+
+<ComponentPreview name="meter-denominator" title="排名条的分母" height={108} narrowHeight={136} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<label class="field">Forest: 12 samples, 60% of Coast’s 20
+  <meter class="meter" min="0" max="20" value="12">12 of 20</meter>
+</label>`} />
+
+## 跨年的日期范围 \{#cross-year-range\}
+
+开始日期和结束日期各用一个 `time`。即使换成两行，也能看到两边的年份。
+
+```html
+<p>Survey period
+  <time datetime="2026-12-30">30 Dec 2026</time> to
+  <time datetime="2027-01-02">2 Jan 2027</time>
+</p>
+```

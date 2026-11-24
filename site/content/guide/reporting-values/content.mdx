@@ -1,0 +1,227 @@
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+
+Keep the observation, unit and comparison basis together. Use the original observation for calculations and order, then format it for the reader.
+
+## A change rounded to zero \{#rounding-zero\}
+
+If rounding produces negative zero, normalize it to zero before choosing the sign or direction. Preserve the original reading for subsequent calculations.
+
+```js
+const observed = -0.032
+const rounded = Number(observed.toFixed(1)) || 0
+const direction = rounded < 0 ? 'Down' : rounded > 0 ? 'Up' : 'No change at this precision'
+const label = [rounded.toFixed(1), direction].join(' · ')
+```
+
+## Percentage points and relative change \{#percentage-points\}
+
+From 40% to 45% the difference is 5 percentage points. Dividing that difference by the original 40% gives 12.5% relative growth. Name the basis next to the [statistic](/components/stat).
+
+<ComponentPreview name="percentage-points" title="Percentage points and relative change" height={120} narrowHeight={150} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<div class="stat">
+  <p class="stat-label">Survey completion</p>
+  <p class="stat-value">45%</p>
+  <p>Up 5 percentage points from 40% last month.</p>
+</div>`} />
+
+## A lower rate is an improvement \{#falling-error-rate\}
+
+Write both direction and impact. A neutral delta remains intelligible on a monochrome printout.
+
+```html
+<div class="stat">
+  <p class="stat-label">Failed uploads</p>
+  <p class="stat-value">1.2%</p>
+  <p class="stat-delta">Improved, down from 1.8%</p>
+</div>
+```
+
+## An estimate beside a measurement \{#measurement-status\}
+
+Keep the qualifier with each number even when the values share a unit. A copied value should carry its status.
+
+```html
+<dl>
+  <dt>East transect</dt><dd>About 18 km</dd>
+  <dt>West transect</dt><dd>17.8 km measured</dd>
+</dl>
+```
+
+## A reading below the detection limit \{#detection-limit\}
+
+Record the comparator, threshold and unit together. Preserve them in the exported cell as well.
+
+```js
+const result = { qualifier: 'below', limit: 0.1, unit: 'mg/L' }
+const cell = result.qualifier === 'below'
+  ? 'Below ' + result.limit + ' ' + result.unit
+  : result.value + ' ' + result.unit
+// Use cell for both the table text and its export.
+```
+
+## One instant on two local dates \{#two-time-zones\}
+
+Repeat the machine-readable instant and show the date, time and zone in each place. Include the year on both sides of a New Year crossing.
+
+```html
+<dl>
+  <dt>Taipei</dt><dd><time datetime="2026-12-31T16:30:00Z">1 Jan 2027, 00:30 UTC+08</time></dd>
+  <dt>London</dt><dd><time datetime="2026-12-31T16:30:00Z">31 Dec 2026, 16:30 UTC+00</time></dd>
+</dl>
+```
+
+## Report time and data cutoff \{#report-cutoff\}
+
+Keep both timestamps with the report. Rebuilding the view changes neither source timestamp.
+
+```html
+<dl>
+  <dt>Data through</dt><dd><time datetime="2026-11-17T23:59:00Z">17 Nov, 23:59 UTC</time></dd>
+  <dt>Report generated</dt><dd><time datetime="2026-11-18T08:00:00Z">18 Nov, 08:00 UTC</time></dd>
+</dl>
+```
+
+## A central estimate and its interval \{#estimate-interval\}
+
+Name the statistic, the interval and the unit. Readers can then recover both endpoints from text.
+
+```html
+<div class="stat">
+  <p class="stat-label">Median processing time</p><p class="stat-value">38 ms</p>
+  <p>Middle 50% of observations: 31–46 ms.</p>
+</div>
+```
+
+## Subtotals within a table \{#subtotals\}
+
+Keep each group and its subtotal in a `tbody`. Put the grand total in `tfoot` so it stays distinct when another group is inserted.
+
+<ComponentPreview name="subtotals" title="Subtotals within a table" height={292} narrowHeight={330} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<table class="table table-compact">
+  <caption class="table-title">Samples received</caption>
+  <thead><tr class="table-row"><th class="table-heading" scope="col">Station</th><th class="table-heading" scope="col">Run</th><th class="table-heading" scope="col">Samples</th></tr></thead>
+  <tbody>
+    <tr class="table-row"><th class="table-cell table-primary" scope="rowgroup" rowspan="3">East</th><th class="table-cell table-primary" scope="row">Dawn</th><td class="table-cell table-numeric">12</td></tr>
+    <tr class="table-row"><th class="table-cell table-primary" scope="row">Dusk</th><td class="table-cell table-numeric">8</td></tr>
+    <tr class="table-row"><th class="table-cell table-primary" scope="row">East subtotal</th><td class="table-cell table-numeric">20</td></tr>
+  </tbody>
+  <tbody><tr class="table-row"><th class="table-cell table-primary" scope="rowgroup">West</th><th class="table-cell table-primary" scope="row">Dawn</th><td class="table-cell table-numeric">7</td></tr></tbody>
+  <tfoot><tr class="table-row"><th class="table-cell table-primary" scope="row" colspan="2">All stations</th><td class="table-cell table-numeric">27</td></tr></tfoot>
+</table>`} />
+
+## Year and quarter headers \{#period-headers\}
+
+Quarter names repeat. Associate each value with its station, year and quarter using three header IDs.
+
+```html
+<table class="table">
+  <caption class="table-title">Samples per quarter</caption>
+  <colgroup span="1"></colgroup><colgroup span="2"></colgroup><colgroup span="2"></colgroup>
+  <thead>
+    <tr class="table-row"><th class="table-heading" rowspan="2" scope="col">Station</th><th class="table-heading" id="y25" colspan="2" scope="colgroup">2025</th><th class="table-heading" id="y26" colspan="2" scope="colgroup">2026</th></tr>
+    <tr class="table-row"><th class="table-heading" id="a1" scope="col">Q1</th><th class="table-heading" id="a2" scope="col">Q2</th><th class="table-heading" id="b1" scope="col">Q1</th><th class="table-heading" id="b2" scope="col">Q2</th></tr>
+  </thead>
+  <tbody><tr class="table-row"><th class="table-cell table-primary" id="east" scope="row">East</th><td class="table-cell table-numeric" headers="east y25 a1">12</td><td class="table-cell table-numeric" headers="east y25 a2">15</td><td class="table-cell table-numeric" headers="east y26 b1">18</td><td class="table-cell table-numeric" headers="east y26 b2">20</td></tr></tbody>
+</table>
+```
+
+## Where forecasts begin \{#forecast-boundary\}
+
+Use row headers to mark the change from recorded to forecast. Keep the unit in the column header for both groups.
+
+```html
+<table class="table">
+  <caption class="table-title">Monthly demand</caption>
+  <thead><tr class="table-row"><th class="table-heading" scope="col">Period</th><th class="table-heading" scope="col">Water (L)</th></tr></thead>
+  <tbody><tr class="table-row"><th class="table-cell table-primary" scope="rowgroup" colspan="2">Recorded</th></tr><tr class="table-row"><th class="table-cell table-primary" scope="row">May</th><td class="table-cell table-numeric">320</td></tr></tbody>
+  <tbody><tr class="table-row"><th class="table-cell table-primary" scope="rowgroup" colspan="2">Forecast</th></tr><tr class="table-row"><th class="table-cell table-primary" scope="row">June</th><td class="table-cell table-numeric">350</td></tr></tbody>
+</table>
+```
+
+## Sort mixed units \{#sort-units\}
+
+Store durations in one base unit. Sort on that number before formatting the row, so 900 µs precedes 2 ms.
+
+```js
+const measurements = [{ name: 'Decode', us: 2000 }, { name: 'Read', us: 900 }]
+const rows = measurements.toSorted((a, b) => a.us - b.us).map(sample => ({
+  name: sample.name,
+  duration: sample.us < 1000 ? sample.us + ' µs' : sample.us / 1000 + ' ms'
+}))
+```
+
+## Align versions by identifier \{#align-versions\}
+
+Take the union of the identifiers and look up both values for each row. A missing entry has its own text, and a measured zero retains its value.
+
+```js
+const previous = new Map([['Upload', 14], ['Queue', 0]])
+const current = new Map([['Queue', 2], ['Export', 5]])
+const ids = new Set([...previous.keys(), ...current.keys()])
+const rows = Array.from(ids, id => [
+  id, previous.get(id) ?? 'Unavailable in this version',
+  current.get(id) ?? 'Unavailable in this version'
+])
+```
+
+## Rounded shares and Other \{#rounded-shares\}
+
+Give the [breakdown](/components/breakdown) the original counts. Three equal counts display as 99.9% in total at one decimal place. Other is a recorded category with its own count.
+
+<ComponentPreview name="rounded-shares" title="Rounded shares and Other" height={170} narrowHeight={205} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<figure>
+  <ul class="breakdown">
+    <li class="breakdown-item" style="--value:12"><span class="breakdown-label">Coast <span class="breakdown-value">33.3%</span></span></li>
+    <li class="breakdown-item" style="--value:12"><span class="breakdown-label">Forest <span class="breakdown-value">33.3%</span></span></li>
+    <li class="breakdown-item" style="--value:12"><span class="breakdown-label">Other <span class="breakdown-value">33.3%</span></span></li>
+  </ul>
+  <figcaption>36 samples. Shares are rounded to one decimal place.</figcaption>
+</figure>`} />
+
+## A currency beside a larger amount \{#currency-in-prose\}
+
+In a ledger entry, align the smaller currency code with the amount on their text baseline. Keep the pair together when the entry wraps.
+
+<ComponentPreview name="currency-in-prose" title="A currency beside a larger amount" height={94} narrowHeight={112} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<p>Field kit reimbursement
+  <span class="inline-flex items-baseline gap(4)"><span class="text-xs">USD</span> <strong class="heading">128.50</strong></span>
+</p>`} />
+
+## Comparable decimal values \{#decimal-precision\}
+
+Use one justified precision for the column and align its numeric cells at the end. Padding a published measurement with zeros implies extra precision.
+
+```html
+<table class="table">
+  <caption class="table-title">Mass measured to 0.1 g</caption>
+  <thead><tr class="table-row"><th class="table-heading" scope="col">Sample</th><th class="table-heading table-numeric" scope="col">Mass (g)</th></tr></thead>
+  <tbody><tr class="table-row"><th class="table-cell table-primary" scope="row">A</th><td class="table-cell table-numeric">9.8</td></tr>
+    <tr class="table-row"><th class="table-cell table-primary" scope="row">B</th><td class="table-cell table-numeric">12.0</td></tr></tbody>
+</table>
+```
+
+## A missing observation and a zero \{#missing-observation\}
+
+Keep the same statistic layout in both states. Give the dash a visible explanation. A real zero remains a number with its observation period.
+
+<ComponentPreview name="missing-observation" title="A missing observation and a zero" height={150} narrowHeight={225} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<div class="flex flex-wrap gap(24)">
+  <div class="stat"><p class="stat-label">East station alerts</p>
+    <p class="stat-value">0</p><p class="stat-description">Last 24 hours</p></div>
+  <div class="stat"><p class="stat-label">West station alerts</p>
+    <p class="stat-value">—</p><p class="stat-description">No samples received</p></div>
+</div>`} />
+
+## The denominator of a ranking \{#meter-denominator\}
+
+When the largest group sets the scale, name that group and its count in the label. A group of 12 reaches 60% of the leader’s 20.
+
+<ComponentPreview name="meter-denominator" title="The denominator of a ranking" height={108} narrowHeight={136} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<label class="field">Forest: 12 samples, 60% of Coast’s 20
+  <meter class="meter" min="0" max="20" value="12">12 of 20</meter>
+</label>`} />
+
+## A date range across New Year \{#cross-year-range\}
+
+Give the start and end separate `time` elements. Keep each year visible even when the range wraps onto two lines.
+
+```html
+<p>Survey period
+  <time datetime="2026-12-30">30 Dec 2026</time> to
+  <time datetime="2027-01-02">2 Jan 2027</time>
+</p>
+```
