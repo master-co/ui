@@ -1,0 +1,273 @@
+---
+title: "狭い領域で詳細を読む"
+description: "ページよりも狭いパネルの中で、金額、選択肢、画像、記録の詳細を読み取れるようにします。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+
+パネルの幅と、その中で読むもの、入力するもの、比較するものから考えます。同じコントロールでも、サイドバー、記事、幅いっぱいのフォームに置かれることがあります。
+
+## 更新条件付きの価格 \{#billing-terms\}
+
+金額には短い期間表示を添えます。更新日と解約期限は別の段落に置き、240px の幅で折り返せるようにします。
+
+<ComponentPreview name="billing-terms" title="更新条件付きの価格" height={170} narrowHeight={190} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<div class="max-w(240)">
+  <p class="price"><span class="price-currency">$</span><span class="price-amount">29</span><span class="price-period">/ month</span></p>
+  <p>Renews on 1 February. Cancel by 31 January to avoid the next charge.</p>
+</div>`} />
+
+## サイドバーで 6 桁を入力する \{#single-code\}
+
+テキスト欄一つで、先頭のゼロを含む 6 桁のコードを貼り付けられます。220px のサイドバー幅に収め、ワンタイムコードの自動入力ヒントを保ちます。
+
+<ComponentPreview name="single-code" title="サイドバーで 6 桁を入力する" height={118} narrowHeight={135} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<div class="field max-w(220)">
+  <label for="side-code">Verification code</label>
+  <input class="input" id="side-code" type="text" name="code" autocomplete="one-time-code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" aria-describedby="code-length" required>
+  <span class="field-hint" id="code-length">Enter all six digits.</span>
+</div>`} />
+
+## 絞り込み欄で 1 日を選ぶ \{#single-date\}
+
+日付を一つだけ指定する場合は、ラベル付きの日付入力欄を使います。狭い列の中で値を編集でき、ブラウザーの日付選択画面も利用できます。
+
+<ComponentPreview name="single-date" title="絞り込み欄で 1 日を選ぶ" height={122} narrowHeight={140} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<label class="field max-w(220)">Recording date
+  <input class="input" type="date" name="date" value="2026-05-14">
+</label>`} />
+
+## カード幅に端末模型を収める \{#device-at-card-width\}
+
+表示領域をインラインサイズのコンテナーにします。その幅から両側の縁の分を計 4px 引き、端末の幅トークンに指定します。ベゼル、画面、角が同じ寸法に従います。
+
+<ComponentPreview name="device-at-card-width" title="カード幅に端末模型を収める" height={390} narrowHeight={390} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<div style="container-type:inline-size; inline-size:100%; max-inline-size:10rem">
+  <div class="device" style="--device-width:min(10rem, calc(100cqi - 4px))">
+    <img class="device-screen" src="/demo/media/armchair-portrait.webp" alt="Armchair study in the phone’s photo viewer">
+  </div>
+</div>`} />
+
+## メーターの概数と正確な値 \{#precise-gauge\}
+
+メーター中央に丸めた百分率を表示します。隣に正確な測定値と単位の場所を設け、支援技術向けの値にも同じ内容を含めます。
+
+<ComponentPreview name="precise-gauge" title="メーターの概数と正確な値" height={162} narrowHeight={190} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<div class="flex flex-wrap items-center gap-md">
+  <div class="gauge gauge-sm" role="meter" aria-label="Storage used" aria-valuemin="0" aria-valuemax="100000" aria-valuenow="72456.78" aria-valuetext="72,456.78 of 100,000 MB" style="--gauge-value:72.45678">
+    <span class="gauge-value">72%</span>
+  </div>
+  <p>Storage used<br><strong>72,456.78 MB</strong> of 100,000 MB</p>
+</div>`} />
+
+## 初回と翌月の支払額 \{#fees-by-frequency\}
+
+各料金に請求頻度を添えます。通貨を先に明記し、返金可能な保証金と一回限りの手数料を含む初回の合計を示します。
+
+```html
+<h3 id="rental-cost">Recorder rental (USD)</h3>
+<dl aria-labelledby="rental-cost">
+  <dt>Monthly rental</dt><dd>$29 each month</dd>
+  <dt>Refundable deposit</dt><dd>$50 at pickup</dd>
+  <dt>Setup fee</dt><dd>$10 once</dd>
+</dl>
+<p>First payment: $89. Next month: $29.</p>
+```
+
+## 1 日に二つの営業時間がある場合 \{#split-hours\}
+
+同じ曜日の下に二つの時間帯を置きます。休業日には文字で値を示すので、午後の時間帯が折り返しても翌日のものと混同しません。
+
+```html
+<dl aria-label="Studio opening hours">
+  <div><dt>Monday</dt><dd>Closed</dd></div>
+  <div><dt>Tuesday</dt><dd>09:00–12:00</dd><dd>14:00–18:00</dd></div>
+  <div><dt>Wednesday</dt><dd>09:00–12:00</dd><dd>14:00–18:00</dd></div>
+  <div><dt>Thursday</dt><dd>09:00–12:00</dd><dd>14:00–18:00</dd></div>
+  <div><dt>Friday</dt><dd>09:00–12:00</dd><dd>14:00–18:00</dd></div>
+  <div><dt>Saturday</dt><dd>10:00–14:00</dd></div>
+  <div><dt>Sunday</dt><dd>Closed</dd></div>
+</dl>
+```
+
+## 郵送先と来訪者入口 \{#mail-and-entrance\}
+
+二つの住所に名前を付け、用途に合った操作を用意します。コピーボタンは郵送先だけを読み取り、訪問経路は入口の住所の横で開きます。
+
+<ComponentPreview name="mail-and-entrance" title="郵送先と来訪者入口" height={270} narrowHeight={325} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<dl class="data-list">
+  <div class="data-list-item"><dt class="data-list-term">Mailing address</dt>
+    <dd class="data-list-value"><span id="mailing">PO Box 18, Harbor Studio</span>
+      <button class="btn btn-sm" type="button" id="mail-copy">Copy mailing address</button></dd></div>
+  <div class="data-list-item"><dt class="data-list-term">Visitor entrance</dt>
+    <dd class="data-list-value">Pier 4, east gate
+      <details><summary>Directions to the entrance</summary><p>Follow the quay to Pier 4. Enter at the east gate beside the ramp.</p></details></dd></div>
+</dl>
+<p role="status" id="mail-status"></p>
+<script>
+document.getElementById('mail-copy').addEventListener('click', async () => {
+  const status = document.getElementById('mail-status')
+  try {
+    await navigator.clipboard.writeText(document.getElementById('mailing').textContent)
+    status.textContent = 'Mailing address copied.'
+  } catch {
+    status.textContent = 'Select the mailing address above and copy it.'
+  }
+})
+</script>`} />
+
+## 提供あり・なし・未確認 \{#specification-states\}
+
+仕様名の隣に状態を文字で示します。テキスト表示で装飾記号が消えても、三つの答えを区別できます。
+
+```html
+<dl>
+  <dt>Step-free entrance</dt><dd><span aria-hidden="true">✓</span> Available</dd>
+  <dt>Overnight parking</dt><dd><span aria-hidden="true">−</span> Unavailable</dd>
+  <dt>Hearing loop</dt><dd><span aria-hidden="true">?</span> Awaiting confirmation</dd>
+</dl>
+```
+
+## 三つの光学サイズを実寸で比べる \{#optical-sizes\}
+
+検索アイコンの三つの原図をそれぞれの寸法で表示します。寸法の説明は SVG の外に置き、レンズ、線、余白を等倍で比較できるようにします。
+
+<ComponentPreview name="optical-sizes" title="三つの光学サイズを実寸で比べる" height={118} narrowHeight={140} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<div class="flex items-end gap-md" role="group" aria-label="Search icon optical sizes">
+  <figure class="m(0)"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" color="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="3" focusable="false" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="M10.182 10.182L14 14"/></svg>
+    <figcaption>16px</figcaption></figure>
+  <figure class="m(0)"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" color="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="3" focusable="false" aria-hidden="true"><circle cx="8.75" cy="8.75" r="5.75"/><path d="M12.8159 12.8159L17.5 17.5"/></svg>
+    <figcaption>20px</figcaption></figure>
+  <figure class="m(0)"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" color="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="3" focusable="false" aria-hidden="true"><circle cx="10.5" cy="10.5" r="7"/><path d="M15.4497 15.4497L21 21"/></svg>
+    <figcaption>24px</figcaption></figure>
+</div>`} />
+
+## このページと全検索結果の選択 \{#selection-scope\}
+
+チェックボックスは現在のページの 25 件を対象にします。別のボタンで該当する 800 件すべてを選択します。ページの一覧を展開して 1 件の選択を解除し、総数を確認できます。
+
+<ComponentPreview name="selection-scope" title="このページと全検索結果の選択" height={230} narrowHeight={280} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<section aria-label="Recording selection">
+  <label class="check"><input class="checkbox" type="checkbox" id="page-select">Select all 25 on this page</label>
+  <button class="btn btn-sm" type="button" id="all-results">Select all 800 matches</button>
+  <details><summary>Recordings on this page</summary><div id="visible" style="max-block-size:4rem; overflow:auto"></div></details>
+  <p role="status" id="selection-count">0 of 800 selected</p>
+</section>
+<script>
+const matches = Array.from({length: 800}, (_, i) => i + 1)
+const page = matches.slice(0, 25)
+const selected = new Set()
+const allPage = document.getElementById('page-select')
+const rows = document.getElementById('visible')
+for (const id of page) {
+  const label = document.createElement('label')
+  label.className = 'check'
+  const input = document.createElement('input')
+  input.className = 'checkbox'
+  input.type = 'checkbox'
+  input.value = id
+  label.append(input, 'Recording ' + id)
+  rows.append(label)
+}
+function draw() {
+  const count = page.filter(id => selected.has(id)).length
+  allPage.checked = count === page.length
+  allPage.indeterminate = count > 0 && count < page.length
+  for (const input of rows.querySelectorAll('input')) input.checked = selected.has(Number(input.value))
+  document.getElementById('selection-count').textContent = selected.size + ' of ' + matches.length + ' selected'
+}
+function change(ids, checked) {
+  for (const id of ids) {
+    if (checked) selected.add(id)
+    else selected.delete(id)
+  }
+  draw()
+}
+allPage.addEventListener('change', () => change(page, allPage.checked))
+rows.addEventListener('change', event => change([Number(event.target.value)], event.target.checked))
+document.getElementById('all-results').addEventListener('click', () => change(matches, true))
+</script>`} />
+
+## 同じ切り抜きで画像を比べる \{#aligned-comparison\}
+
+両方の画像で元の構図、縦横比、表示位置を揃えます。稜線を横切るようにハンドルを動かすと、輪郭はその場に残り、色調だけが変わります。この例をコピーするときは[画像比較のビヘイビア](/components/compare)を適用します。視差効果を減らす設定でタイムラインが止まるときも、ハンドルに合わせて切り抜き線が移動します。
+
+<ComponentPreview name="aligned-comparison" title="同じ切り抜きで画像を比べる" height={240} narrowHeight={220} behaviors background="plain" bodyClass="flex flex-col justify-center p-md" html={`<figure class="compare (animation-name:none)@motion-reduce max-w(320)">
+  <img class="compare-before" src="/demo/moonstone.svg" width="640" height="360" alt="Grey ridge before grading" style="object-fit:cover;object-position:50% 50%;filter:grayscale(1)">
+  <img class="compare-after" src="/demo/moonstone.svg" width="640" height="360" alt="The same ridge after grading" style="object-fit:cover;object-position:50% 50%">
+  <input class="compare-range" type="range" min="0" max="100" value="50" aria-label="Reveal graded image">
+</figure>`} />
+
+## 選択できない理由を示す \{#disabled-choice\}
+
+選択肢の横に理由を書き、対応する入力欄を無効にします。利用できない時間帯を確認しながら、別の時間帯を選べます。
+
+<ComponentPreview name="disabled-choice" title="選択できない理由を示す" height={215} narrowHeight={270} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<fieldset class="fieldset">
+  <legend class="fieldset-legend">Studio session</legend>
+  <label class="choice"><input class="radio" type="radio" name="session" value="morning" disabled>
+    <span class="choice-body"><span class="choice-title">Morning</span><span class="choice-description">Fully booked</span></span></label>
+  <label class="choice"><input class="radio" type="radio" name="session" value="afternoon">
+    <span class="choice-body"><span class="choice-title">Afternoon</span><span class="choice-description">14:00–16:00</span></span></label>
+</fieldset>`} />
+
+## 連続する発言を送信者ごとにまとめる \{#message-groups\}
+
+送信者または日付が変わったら新しいグループを始めます。同じ人の 2 件目にも、個別の時刻と固定リンクを残します。
+
+```html
+<section aria-labelledby="mira-mon"><h3 id="mira-mon">Mira · 18 May</h3>
+  <ol><li id="m-18a" class="message"><span class="message-bubble">Recorder is ready.</span>
+    <a class="message-meta" href="#m-18a"><time datetime="2026-05-18T23:55:00Z">23:55 UTC</time></a></li>
+    <li id="m-18b" class="message"><span class="message-bubble">Spare battery is packed.</span>
+    <a class="message-meta" href="#m-18b"><time datetime="2026-05-18T23:58:00Z">23:58 UTC</time></a></li></ol>
+</section>
+<section aria-labelledby="mira-tue"><h3 id="mira-tue">Mira · 19 May</h3>
+  <p id="m-19a" class="message"><span class="message-bubble">At the pier.</span>
+    <a class="message-meta" href="#m-19a"><time datetime="2026-05-19T00:08:00Z">00:08 UTC</time></a></p>
+</section>
+<section aria-labelledby="kai-tue"><h3 id="kai-tue">Kai · 19 May</h3>
+  <p id="m-19b" class="message"><span class="message-bubble">I can see you.</span>
+    <a class="message-meta" href="#m-19b"><time datetime="2026-05-19T00:09:00Z">00:09 UTC</time></a></p>
+</section>
+```
+
+## 周囲の文から名前の書字方向を分離する \{#mixed-direction\}
+
+書字方向が分からない値だけを bdi で囲みます。引用符、括弧、文末の句読点は周囲の文に残します。
+
+<ComponentPreview name="mixed-direction" title="周囲の文から名前の書字方向を分離する" height={168} narrowHeight={210} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<dl class="data-list" lang="zh-Hant" dir="ltr">
+  <div class="data-list-item"><dt class="data-list-term">收件人</dt>
+    <dd class="data-list-value">「<bdi>ليلى</bdi>」（<bdi>layla@example.org</bdi>）。</dd></div>
+  <div class="data-list-item"><dt class="data-list-term">識別碼</dt>
+    <dd class="data-list-value">錄音（<bdi>أ-17</bdi>）。</dd></div>
+</dl>`} />
+
+## 選択可能な記録番号をコピーする \{#copy-record\}
+
+番号は選択できるテキストのままにし、隣に名前付きのボタンを置きます。書き込みに失敗したら手動コピーの方法を案内し、成功は書き込みが完了してから通知します。
+
+<ComponentPreview name="copy-record" title="選択可能な記録番号をコピーする" height={172} narrowHeight={220} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<dl class="data-list">
+  <div class="data-list-item"><dt class="data-list-term">Booking number</dt>
+    <dd class="data-list-value"><code id="booking">HB-00417</code>
+      <button class="btn btn-sm" type="button" id="copy-booking" aria-label="Copy booking number HB-00417">Copy</button></dd></div>
+</dl>
+<p role="status" id="booking-status"></p>
+<script>
+document.getElementById('copy-booking').addEventListener('click', async () => {
+  const number = document.getElementById('booking').textContent
+  const status = document.getElementById('booking-status')
+  try {
+    await navigator.clipboard.writeText(number)
+    status.textContent = 'Copied ' + number
+  } catch {
+    status.textContent = 'Select the booking number and copy it manually.'
+  }
+})
+</script>`} />
+
+## 埋め込み表と節見出しの端を揃える \{#table-edges\}
+
+独立したシートの表では両端の余白を保ちます。記事の見出しに既に余白がある場合、先頭セルの論理開始側と末尾セルの論理終了側だけを詰め、列間の余白を残します。
+
+<ComponentPreview name="table-edges" title="埋め込み表と節見出しの端を揃える" height={245} narrowHeight={265} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<div class="sheet"><table class="table table-compact" aria-label="Recording in a sheet">
+  <thead><tr><th class="table-heading" scope="col">Site</th><th class="table-heading table-numeric" scope="col">Takes</th></tr></thead>
+  <tbody><tr><th class="table-cell" scope="row">Pier</th><td class="table-cell table-numeric">4</td></tr></tbody>
+</table></div>
+<section><h3 class="heading">Recording totals</h3>
+  <table class="table table-compact" aria-label="Recording totals">
+    <thead><tr><th class="table-heading (padding-inline-start:0)" scope="col">Site</th><th class="table-heading table-numeric (padding-inline-end:0)" scope="col">Takes</th></tr></thead>
+    <tbody><tr><th class="table-cell (padding-inline-start:0)" scope="row">Pier</th><td class="table-cell table-numeric (padding-inline-end:0)">4</td></tr></tbody>
+  </table>
+</section>`} />
