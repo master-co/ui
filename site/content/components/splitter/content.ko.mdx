@@ -3,6 +3,7 @@ title: "분할 조절기"
 description: "두 패널과 그 사이에서 공간 배분을 조절하는 손잡이입니다."
 ---
 
+import PagePreview from '~/site/components/PagePreview.astro'
 import ComponentPreview from '~/site/components/ComponentPreview.astro'
 import ComponentSource from '~/site/components/ComponentSource.astro'
 import ContractTable from '~/site/components/ContractTable.astro'
@@ -12,7 +13,7 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
 분할 조절기는 레이아웃 자체가 아니라 레이아웃에 쓰이는 컴포넌트입니다. 손잡이에는 고유한 재질과 상태, 키보드 조작 계약이 있습니다. 크기를 조절할 필요가 없는 두 패널에는 [마스터-디테일](/pages/master-detail)을 참고하세요.
 
-스타일시트는 분할 조절기의 모양과 배치를 정하고, `splitter` [동작](/guide/behaviors)은 손잡이를 움직입니다. 이 동작이 갱신하는 값은 컨테이너의 `--splitter-size`와 손잡이의 `aria-valuenow`뿐이며, 두 곳에 첫 번째 패널의 크기를 같은 숫자로 기록합니다.
+스타일시트가 패널을 배치합니다. 크기를 조정할 때 `splitter` [동작](/guide/behaviors)은 첫 번째 패널의 백분율을 `--splitter-size`에 쓰고 정수로 반올림한 백분율을 손잡이의 `aria-valuenow`에 씁니다. 이전 방식으로 좌우 배치한 마크업에 연결할 때는 손잡이의 세로 방향도 지정합니다.
 
 <ComponentPreview name="default" height={288} title="분할 조절기" bodyClass="p-lg" behaviors html={`<div class="splitter sheet overflow-hidden h(240)" style="--splitter-size: 36%">
   <div class="splitter-pane p-md text-sm fg-text-body">
@@ -21,7 +22,7 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
     <p class="m(0)">master.css</p>
     <p class="m(0)">components/</p>
   </div>
-  <div class="splitter-handle" role="separator" tabindex="0" aria-label="Resize the file list" aria-valuenow="36" aria-valuemin="15" aria-valuemax="85"></div>
+  <div class="splitter-handle" role="separator" aria-orientation="vertical" tabindex="0" aria-label="Resize the file list" aria-valuenow="36" aria-valuemin="15" aria-valuemax="85"></div>
   <div class="splitter-pane p-md text-sm fg-text-body">
     <p class="m(0) fg-text-strong">Editor</p>
     <p class="mt-sm m(0)">Drag the line between the panes, or focus it and press the arrow keys.</p>
@@ -37,10 +38,6 @@ import { splitter } from '@master/ui/behaviors/splitter.js'
 
 const root = document.querySelector('.splitter')
 splitter(root, { step: 10 })
-
-root.addEventListener('change', (event) => {
-  localStorage.setItem('files-width', event.target.getAttribute('aria-valuenow'))
-})
 ```
 
 - **드래그.** `pointerdown` 이벤트가 발생하면 손잡이에서 포인터를 캡처하고, 포인터가 움직이는 동안 컨테이너 안에서의 위치를 백분율로 기록합니다.
@@ -55,9 +52,15 @@ root.addEventListener('change', (event) => {
 
 스타일시트는 어떤 크기를 지정하든 첫 번째 패널의 경계가 컨테이너 양 끝에서 최소 `--splitter-min` 떨어지도록 합니다. 손잡이를 잡고 있는 동안에는 텍스트 선택을 막고, 손잡이 방향에 맞춰 레이아웃을 전환합니다. 동작을 연결하지 않으면 패널은 `--splitter-size`에서 정한 비율을 유지하며 손잡이는 움직이지 않습니다.
 
+## 패널 너비 기억하기 \{#remember-width\}
+
+파일 목록의 너비를 조정한 다음 페이지를 새로 고칩니다. 방향키로 조정하거나 드래그를 마치고 놓으면 너비를 저장합니다. 놓기 전에 포인터 동작이 취소되거나 캡처를 잃으면 마지막으로 저장한 너비로 돌아갑니다. 기본 너비 복원 버튼은 저장한 설정을 지웁니다. 저장소를 사용할 수 없어도 현재 페이지에서는 너비를 조정할 수 있습니다.
+
+<PagePreview name="pane-preference" title="패널 너비 기억하기" example="pane-preference" />
+
 ## 위아래로 배치한 패널 \{#stacked\}
 
-`aria-orientation` 속성은 경계선의 방향을 지정합니다. 기본값은 수직이며 두 패널은 좌우로 나란히 배치됩니다. `aria-orientation="horizontal"`로 지정하면 패널이 위아래로 배치되고 손잡이는 수평선이 됩니다. 컨테이너가 속성을 직접 읽으므로 별도의 수정자 클래스를 맞춰 줄 필요가 없습니다.
+ARIA에서 구분선의 암시적 방향은 가로입니다. 패널을 좌우로 배치하면 스크립트 실행 전부터 방향을 알 수 있도록 손잡이에 `aria-orientation="vertical"`을 지정합니다. 위아래로 배치할 때는 `aria-orientation="horizontal"`을 사용합니다. 스타일시트와 방향키 모두 이 속성을 따릅니다.
 
 <ComponentPreview name="stacked" height={328} title="위아래로 배치한 패널" bodyClass="p-lg" behaviors html={`<div class="splitter sheet overflow-hidden h(280) max-w(420) mx-auto" style="--splitter-size: 60%">
   <div class="splitter-pane p-md text-sm fg-text-body">

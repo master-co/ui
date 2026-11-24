@@ -39,6 +39,8 @@ export function splitter(root, { step = 5 } = {}) {
     set: (/** @type {number} */ value) => { if (Number.isFinite(value)) take(value) }
   }))
   if (!handle) return detach
+  // Older markup omitted the direction of a side-by-side splitter. A separator's ARIA default is horizontal.
+  if (!handle.hasAttribute('aria-orientation')) handle.setAttribute('aria-orientation', 'vertical')
 
   const disabled = () => handle.getAttribute('aria-disabled') === 'true'
   const stacked = () => handle.getAttribute('aria-orientation') === 'horizontal'

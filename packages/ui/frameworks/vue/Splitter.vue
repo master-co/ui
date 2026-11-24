@@ -47,7 +47,7 @@ const size = () => {
 <template>
   <div class="splitter" :style="{ '--splitter-size': `${size()}%` }" ref="root" v-bind="$attrs">
     <div class="splitter-pane"><slot name="start" /></div>
-    <div class="splitter-handle" role="separator" ref="handle" :tabindex="disabled ? -1 : 0" :aria-label="label" :aria-valuenow="Math.round(first)" :aria-valuemin="min" :aria-valuemax="max" :aria-orientation="stacked ? 'horizontal' : undefined" :aria-disabled="disabled || undefined" />
+    <div class="splitter-handle" role="separator" ref="handle" :tabindex="disabled ? -1 : 0" :aria-label="label" :aria-valuenow="Math.round(first)" :aria-valuemin="min" :aria-valuemax="max" :aria-orientation="stacked ? 'horizontal' : 'vertical'" :aria-disabled="disabled || undefined" />
     <div class="splitter-pane"><slot name="end" /></div>
   </div>
 </template>

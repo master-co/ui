@@ -2,6 +2,7 @@
 title: "スプリッター"
 description: "2つのペインと、その領域配分を調整するハンドル。"
 ---
+import PagePreview from '~/site/components/PagePreview.astro'
 import ComponentPreview from '~/site/components/ComponentPreview.astro'
 import ComponentSource from '~/site/components/ComponentSource.astro'
 import ContractTable from '~/site/components/ContractTable.astro'
@@ -11,7 +12,7 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
 スプリッターはレイアウト内で使うコンポーネントです。ハンドルには質感や状態があり、キーボード操作のコントラクトも定められています。サイズ変更が不要な2ペイン構成には、[マスター・ディテール](/pages/master-detail)を参照してください。
 
-スタイルシートがスプリッターの見た目と配置を定め、`splitter`の[ビヘイビア](/guide/behaviors)がハンドルを動かします。ビヘイビアが更新するのは、先頭ペインのサイズを保持するコンテナーの`--splitter-size`と、同じ数値を保持するハンドルの`aria-valuenow`の2か所です。
+ペインの配置はスタイルシートが決めます。幅や高さを調整すると、`splitter` [ビヘイビア](/guide/behaviors) は最初のペインの割合を `--splitter-size` に書き込み、整数に丸めた百分率をハンドルの `aria-valuenow` に書き込みます。従来の左右に並ぶマークアップに適用した場合は、ハンドルの垂直方向も補います。
 
 <ComponentPreview name="default" height={288} title="スプリッター" bodyClass="p-lg" behaviors html={`<div class="splitter sheet overflow-hidden h(240)" style="--splitter-size: 36%">
   <div class="splitter-pane p-md text-sm fg-text-body">
@@ -20,7 +21,7 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
     <p class="m(0)">master.css</p>
     <p class="m(0)">components/</p>
   </div>
-  <div class="splitter-handle" role="separator" tabindex="0" aria-label="Resize the file list" aria-valuenow="36" aria-valuemin="15" aria-valuemax="85"></div>
+  <div class="splitter-handle" role="separator" aria-orientation="vertical" tabindex="0" aria-label="Resize the file list" aria-valuenow="36" aria-valuemin="15" aria-valuemax="85"></div>
   <div class="splitter-pane p-md text-sm fg-text-body">
     <p class="m(0) fg-text-strong">Editor</p>
     <p class="mt-sm m(0)">Drag the line between the panes, or focus it and press the arrow keys.</p>
@@ -36,10 +37,6 @@ import { splitter } from '@master/ui/behaviors/splitter.js'
 
 const root = document.querySelector('.splitter')
 splitter(root, { step: 10 })
-
-root.addEventListener('change', (event) => {
-  localStorage.setItem('files-width', event.target.getAttribute('aria-valuenow'))
-})
 ```
 
 - **ドラッグ。** `pointerdown`でハンドルがポインターをキャプチャし、ポインターが移動する間、コンテナー内での位置をパーセントで書き込みます。
@@ -54,9 +51,15 @@ root.addEventListener('change', (event) => {
 
 スタイルシートは、指定されたサイズにかかわらず、ペインの境界がコンテナーの両端からそれぞれ`--splitter-min`以上離れるようにします。また、ハンドルを押している間はテキストの選択を抑止し、ハンドルの向きに応じてレイアウトを切り替えます。ビヘイビアがない場合、ペインの配分は`--splitter-size`の指定で固定され、ハンドルは動きません。
 
+## ペインの幅を記憶する \{#remember-width\}
+
+ファイル一覧の幅を変えてから、ページを再読み込みします。矢印キーで変更するか、ドラッグして離すと幅が保存されます。離す前にポインター操作がキャンセルされるかキャプチャが失われると、最後に保存した幅に戻ります。既定の幅に戻すボタンは設定を削除します。ストレージを利用できない場合も、ページを開いている間は幅を調整できます。
+
+<PagePreview name="pane-preference" title="ペインの幅を記憶する" example="pane-preference" />
+
 ## ペインの縦並び \{#stacked\}
 
-`aria-orientation`で区切り線の向きを指定します。既定ではペインが横に並び、区切り線は縦向きです。`aria-orientation="horizontal"`を指定するとペインが縦に並び、ハンドルは横向きになります。コンテナーはこの属性に応じて配置を変えるため、修飾クラスを同期させる必要はありません。
+ARIA では区切り線の暗黙の向きは水平です。左右に並べる場合は、スクリプトの実行前から向きが伝わるように、ハンドルに `aria-orientation="vertical"` を指定します。上下に並べる場合は `aria-orientation="horizontal"` を使います。スタイルシートも矢印キーもこの属性に従います。
 
 <ComponentPreview name="stacked" height={328} title="ペインの縦並び" bodyClass="p-lg" behaviors html={`<div class="splitter sheet overflow-hidden h(280) max-w(420) mx-auto" style="--splitter-size: 60%">
   <div class="splitter-pane p-md text-sm fg-text-body">

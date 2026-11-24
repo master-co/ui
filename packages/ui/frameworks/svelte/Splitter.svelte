@@ -51,6 +51,6 @@
   <div class="splitter-pane">{@render start()}</div>
   <!-- A separator that takes focus is a control: the keys move it. -->
   <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-  <div class="splitter-handle" role="separator" tabindex={disabled ? -1 : 0} aria-label={label} aria-valuenow={Math.round(first)} aria-valuemin={min} aria-valuemax={max} aria-orientation={stacked ? 'horizontal' : undefined} aria-disabled={disabled || undefined}></div>
+  <div class="splitter-handle" role="separator" tabindex={disabled ? -1 : 0} aria-label={label} aria-valuenow={Math.round(first)} aria-valuemin={min} aria-valuemax={max} aria-orientation={stacked ? 'horizontal' : 'vertical'} aria-disabled={disabled || undefined}></div>
   <div class="splitter-pane">{@render end()}</div>
 </div>

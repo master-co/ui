@@ -289,6 +289,8 @@ stop.value = 'hnd'                                          // where a pattern h
 
 ## React, Svelte and Vue
 
+Splitter handles declare their orientation in the first render. Side-by-side panes use `aria-orientation="vertical"` and stacked panes use `horizontal`. The behavior supplies the vertical orientation for older side-by-side markup. The [pane width example](https://ui.master.co/components/splitter#remember-width) restores the last saved width after an interrupted drag.
+
 A component is a class on a native element, so in a framework most of the library is the same markup in that framework's syntax; there is no `Button` to import. Thirty-seven patterns hold state, render rows from data, join parts by id or have a lifetime, and each has a component: avatar, calendar, carousel, chart, color-picker, combobox, command, compare, cropper, dial, dialog, editable, field, gantt, gradient, kanban, listbox, log, menu, otp, panel, player, popover, schedule, signature, sortable, splitter, stepper, tabs, tags, toast, toolbar, tooltip, tour, transcript, tree and wheel.
 
 ```sh

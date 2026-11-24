@@ -1,3 +1,4 @@
+import PagePreview from '~/site/components/PagePreview.astro'
 import ComponentPreview from '~/site/components/ComponentPreview.astro'
 import ComponentSource from '~/site/components/ComponentSource.astro'
 import ContractTable from '~/site/components/ContractTable.astro'
@@ -7,7 +8,7 @@ A splitter is two panes and the handle between them that sets how they share the
 
 A splitter is a component, not a layout, though layouts use it: its handle has a material, states and a keyboard contract. For two panes that need no resizing, see [master-detail](/pages/master-detail).
 
-The stylesheet draws the splitter and lays it out; the `splitter` [behavior](/guide/behaviors) moves it. The behavior writes the first pane's size to `--splitter-size` on the container and the same number to the handle's `aria-valuenow`. Nothing else changes hands.
+The stylesheet lays out the panes. During a resize the `splitter` [behavior](/guide/behaviors) writes the first pane’s percentage to `--splitter-size` and the rounded whole percentage to the handle’s `aria-valuenow`. When it attaches to older side-by-side markup it also supplies the handle’s vertical orientation.
 
 <ComponentPreview name="default" height={288} title="Splitter" bodyClass="p-lg" behaviors html={`<div class="splitter sheet overflow-hidden h(240)" style="--splitter-size: 36%">
   <div class="splitter-pane p-md text-sm fg-text-body">
@@ -16,7 +17,7 @@ The stylesheet draws the splitter and lays it out; the `splitter` [behavior](/gu
     <p class="m(0)">master.css</p>
     <p class="m(0)">components/</p>
   </div>
-  <div class="splitter-handle" role="separator" tabindex="0" aria-label="Resize the file list" aria-valuenow="36" aria-valuemin="15" aria-valuemax="85"></div>
+  <div class="splitter-handle" role="separator" aria-orientation="vertical" tabindex="0" aria-label="Resize the file list" aria-valuenow="36" aria-valuemin="15" aria-valuemax="85"></div>
   <div class="splitter-pane p-md text-sm fg-text-body">
     <p class="m(0) fg-text-strong">Editor</p>
     <p class="mt-sm m(0)">Drag the line between the panes, or focus it and press the arrow keys.</p>
@@ -32,10 +33,6 @@ import { splitter } from '@master/ui/behaviors/splitter.js'
 
 const root = document.querySelector('.splitter')
 splitter(root, { step: 10 })
-
-root.addEventListener('change', (event) => {
-  localStorage.setItem('files-width', event.target.getAttribute('aria-valuenow'))
-})
 ```
 
 - **Dragging.** On `pointerdown` it captures the pointer on the handle and, while the pointer moves, writes its place inside the container as a percentage.
@@ -50,9 +47,15 @@ root.addEventListener('change', (event) => {
 
 The stylesheet keeps the first pane `--splitter-min` away from both ends whatever size is asked for, stops text selection while the handle is held, and switches the layout by the handle's orientation. Without the behavior the panes keep the share `--splitter-size` gives them and the handle does not move.
 
+## Remember the pane width \{#remember-width\}
+
+Resize the file list, then reload. An arrow key or a completed drag saves its width. If the pointer is canceled or loses capture before release, the example restores the last saved width. Restore default width removes the preference. When storage is unavailable, the control still works for this visit.
+
+<PagePreview name="pane-preference" title="Remember the pane width" example="pane-preference" />
+
 ## Stacked panes \{#stacked\}
 
-`aria-orientation` says which way the line runs. A separator is vertical by default, between panes side by side. With `aria-orientation="horizontal"` the panes stack, and the handle becomes a horizontal line; the container reads the attribute, so there is no modifier class to keep in step.
+A separator’s implicit ARIA orientation is horizontal. For side-by-side panes, put `aria-orientation="vertical"` on the handle so its direction is available before any script runs. For stacked panes, use `aria-orientation="horizontal"`. The stylesheet and the arrow keys both follow this attribute.
 
 <ComponentPreview name="stacked" height={328} title="Stacked panes" bodyClass="p-lg" behaviors html={`<div class="splitter sheet overflow-hidden h(280) max-w(420) mx-auto" style="--splitter-size: 60%">
   <div class="splitter-pane p-md text-sm fg-text-body">

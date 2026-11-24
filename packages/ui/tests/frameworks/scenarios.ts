@@ -556,6 +556,7 @@ export const scenarios: Record<string, Scenario> = {
     conforms(page)
     const root = page.one<HTMLElement>('.splitter')
     const handle = page.one<HTMLElement>('.splitter-handle')
+    assert.equal(handle.getAttribute('aria-orientation'), 'vertical')
     assert.equal(root.style.getPropertyValue('--splitter-size'), '40%', 'the size is in the first render')
     assert.equal(handle.getAttribute('aria-valuenow'), '40')
     assert.equal(page.all('.splitter-pane').length, 2)
@@ -573,6 +574,10 @@ export const scenarios: Record<string, Scenario> = {
     assert.equal(root.style.getPropertyValue('--splitter-size'), '30%')
     assert.equal(handle.getAttribute('aria-valuenow'), '30')
     assert.deepEqual(heard, [45, 80])
+    await driver.act(() => mounted.set({ stacked: true }))
+    assert.equal(handle.getAttribute('aria-orientation'), 'horizontal')
+    await driver.act(() => page.key(handle, 'ArrowDown'))
+    assert.equal(handle.getAttribute('aria-valuenow'), '35')
     await driver.act(() => mounted.unmount())
   },
 

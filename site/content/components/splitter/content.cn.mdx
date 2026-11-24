@@ -3,6 +3,7 @@ title: "分隔条"
 description: "两个窗格和中间的手柄，手柄用于调节两个窗格各自占用的空间。"
 ---
 
+import PagePreview from '~/site/components/PagePreview.astro'
 import ComponentPreview from '~/site/components/ComponentPreview.astro'
 import ComponentSource from '~/site/components/ComponentSource.astro'
 import ContractTable from '~/site/components/ContractTable.astro'
@@ -12,7 +13,7 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
 分隔条是用在布局中的组件，本身并不构成一种布局。它的手柄有自己的材质、状态和键盘交互契约。如果两个窗格的尺寸无需调整，请参阅[主从布局](/pages/master-detail)。
 
-样式表绘制分隔条并安排其布局，`splitter` [行为](/guide/behaviors)负责移动手柄。该行为只写入两处：将第一个窗格的尺寸写入容器的 `--splitter-size`，并将同一数值写入手柄的 `aria-valuenow`。
+样式表负责排列窗格。调整大小时，`splitter` [行为脚本](/guide/behaviors) 会把第一个窗格占用的百分比写入 `--splitter-size`，并把四舍五入后的整数百分比写入手柄的 `aria-valuenow`。挂载到旧版左右并排标记时，脚本还会补上手柄的垂直方向。
 
 <ComponentPreview name="default" height={288} title="分隔条" bodyClass="p-lg" behaviors html={`<div class="splitter sheet overflow-hidden h(240)" style="--splitter-size: 36%">
   <div class="splitter-pane p-md text-sm fg-text-body">
@@ -21,7 +22,7 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
     <p class="m(0)">master.css</p>
     <p class="m(0)">components/</p>
   </div>
-  <div class="splitter-handle" role="separator" tabindex="0" aria-label="Resize the file list" aria-valuenow="36" aria-valuemin="15" aria-valuemax="85"></div>
+  <div class="splitter-handle" role="separator" aria-orientation="vertical" tabindex="0" aria-label="Resize the file list" aria-valuenow="36" aria-valuemin="15" aria-valuemax="85"></div>
   <div class="splitter-pane p-md text-sm fg-text-body">
     <p class="m(0) fg-text-strong">Editor</p>
     <p class="mt-sm m(0)">Drag the line between the panes, or focus it and press the arrow keys.</p>
@@ -37,10 +38,6 @@ import { splitter } from '@master/ui/behaviors/splitter.js'
 
 const root = document.querySelector('.splitter')
 splitter(root, { step: 10 })
-
-root.addEventListener('change', (event) => {
-  localStorage.setItem('files-width', event.target.getAttribute('aria-valuenow'))
-})
 ```
 
 - **拖动。** 发生 `pointerdown` 时，手柄捕获指针。指针移动期间，该行为将指针在容器内的位置写为百分比。
@@ -55,9 +52,15 @@ root.addEventListener('change', (event) => {
 
 无论指定什么尺寸，样式表都会将第一个窗格的尺寸限制在一定范围内，使分隔线与容器两端各相距至少 `--splitter-min`。按住手柄时，样式表会阻止文本选中，并根据手柄的方向切换布局。未绑定该行为时，两个窗格保持 `--splitter-size` 指定的比例，手柄固定不动。
 
+## 记住窗格宽度 \{#remember-width\}
+
+调整文件列表的宽度，再重新加载页面。按方向键或拖动后松开都会保存宽度。如果在松开前指针操作被取消或失去捕获，列表将恢复到上次保存的宽度。恢复默认宽度按钮会清除偏好设置。即使存储不可用，本次打开页面时仍可调整宽度。
+
+<PagePreview name="pane-preference" title="记住窗格宽度" example="pane-preference" />
+
 ## 上下排列的窗格 \{#stacked\}
 
-`aria-orientation` 指定分隔线的方向。默认情况下，分隔线竖直，两个窗格左右并排。设置 `aria-orientation="horizontal"` 后，窗格上下排列，手柄变为水平线。容器直接读取该属性，无需同步修改器类。
+在 ARIA 中，分隔线的隐含方向为水平。左右并排时，在手柄上设置 `aria-orientation="vertical"`，使辅助技术在脚本运行前就能获得正确方向。上下排列时使用 `aria-orientation="horizontal"`。样式表和方向键均依据此属性工作。
 
 <ComponentPreview name="stacked" height={328} title="上下排列的窗格" bodyClass="p-lg" behaviors html={`<div class="splitter sheet overflow-hidden h(280) max-w(420) mx-auto" style="--splitter-size: 60%">
   <div class="splitter-pane p-md text-sm fg-text-body">
