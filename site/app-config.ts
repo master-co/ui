@@ -11,6 +11,7 @@ export default {
   navs: primaryNavs,
   communityNavs,
   header: { communityNavs: communityNavs.filter(({ name }) => name === 'GitHub') },
+  search: { examples: ['button', 'dialog', 'theme'], hint: 'Try a property name, a token name or a different keyword.' },
   versions: [],
   Logotype
 } satisfies SiteApp
