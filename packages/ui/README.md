@@ -256,6 +256,8 @@ const diagnostics = check(html, createIndex(contracts.contracts))
 
 ## Behaviors
 
+Sliders include focus-ring space inside their width. An eleven-point scale at 20rem wraps into rows of six and five. On a horizontal ticket, long booking references wrap within the stub so the destination stays readable.
+
 Use `aria-orientation="vertical"` to arrange a tablist beside its panels. Tabs resolve their panels inside the same document or shadow root and select a neighboring tab when the current one is removed.
 
 Opt in to searchable [tab panels](https://ui.master.co/components/tabs#searchable-panels) with `tabs(tablist, { searchable: true })` or the framework component’s `searchable` prop. Browsers with `beforematch` can select a panel through Find in Page or a fragment link. [Wheel](https://ui.master.co/components/wheel) uses `scroll-initial-target` to center the initial selection where supported. The wheel behavior still aligns and tracks the selection in other browsers.

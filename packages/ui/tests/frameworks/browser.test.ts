@@ -384,6 +384,46 @@ test(`${engine}: a Wheel starts on the authored selection before the behavior at
   } finally { await page.close() }
 })
 
+test(`${engine}: scales, ticket stubs and slider endpoints fit their container`, async () => {
+  const css = await readFile(new URL('../../dist/standalone.css', import.meta.url), 'utf8')
+  const ranges = await Promise.all(['slider', 'range', 'color-picker'].map(async name =>
+    JSON.parse(await readFile(new URL(`../../components/${name}.json`, import.meta.url), 'utf8')).example))
+  for (const direction of ['ltr', 'rtl']) {
+    const page = await browser.newPage()
+    try {
+      await page.setContent(`<main dir="${direction}" style="width:320px">
+        <div class="scale" role="radiogroup" aria-label="Likelihood">
+          ${Array.from({ length: 11 }, (_, i) => `<label class="scale-option"><input class="scale-input" name="answer" type="radio">${i}</label>`).join('')}
+          <p class="scale-ends"><span>0 · Never</span><span>10 · Always</span></p>
+        </div><article class="ticket ticket-row"><div class="ticket-body">Taipei to Tokyo</div>
+        <div class="ticket-stub">BK20261124QXZ9345ASDF04267</div></article>
+        ${ranges.map(example => `<div class="scroller" style="overflow:auto">${example}</div>`).join('')}</main>`)
+      await page.addStyleTag({ content: css })
+      for (const width of [220, 240, 320, 347, 348, 349, 480]) {
+        await page.locator('main').evaluate((el, width) => { el.style.width = `${width}px` }, width)
+        const cells = await page.locator('.scale-option').evaluateAll(cells => cells.map(el => {
+          const { width, top } = el.getBoundingClientRect()
+          return { width, top }
+        }))
+        assert.equal(cells.filter(cell => cell.top === cells[0].top).length, width < 348 ? 6 : 11)
+        assert.ok(cells.every(cell => Math.abs(cell.width - cells[0].width) < 1))
+        const stub = await box(page.locator('.ticket-stub'))
+        assert.ok(stub.width <= width * .58 + 1, `ticket stub occupies ${stub.width}px at ${width}px ${direction}`)
+        assert.equal(await page.locator('main').evaluate(el => el.scrollWidth), width)
+        for (const scroller of await page.locator('.scroller').all()) {
+          assert.equal(await scroller.evaluate(el => el.scrollWidth === el.clientWidth && el.scrollHeight === el.clientHeight), true)
+        }
+      }
+      const slider = page.locator('input.slider').first()
+      await slider.focus()
+      await page.keyboard.press('Home')
+      assert.equal(await slider.inputValue(), '0')
+      await page.keyboard.press('End')
+      assert.equal(await slider.inputValue(), '100')
+    } finally { await page.close() }
+  }
+})
+
 for (const framework of ['react', 'svelte', 'vue']) {
   test(`${engine}/${framework}: every component, in a browser`, async (t) => {
     const page = await browser.newPage({ viewport: { width: 900, height: 800 } })
