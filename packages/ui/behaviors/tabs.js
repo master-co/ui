@@ -32,8 +32,14 @@ export function tabs(root, { searchable = false } = {}) {
   const { signal } = controller
   attached.set(root, controller)
   const document = root.ownerDocument
-  const tree = root.getRootNode()
-  const scope = /** @type {Document | ShadowRoot} */ ('getElementById' in tree ? tree : document)
+  /**
+   * The document or the shadow root the tablist stands in now. It is asked each time: a tablist attached inside
+   * a fragment has the fragment as its root until it is inserted, and a fragment is left empty by the insertion.
+   */
+  const scope = () => {
+    const tree = root.getRootNode()
+    return /** @type {Document | ShadowRoot} */ (tree.nodeType === 9 || 'host' in tree ? tree : document)
+  }
   const findable = searchable && 'onbeforematch' in document.documentElement
 
   /** The tabs of this tablist, not those of a tablist inside one of its panels. */
@@ -48,7 +54,7 @@ export function tabs(root, { searchable = false } = {}) {
   /** @param {Element} tab */
   const panel = (tab) => {
     const id = tab.getAttribute('aria-controls')
-    return id ? scope.getElementById(id) : null
+    return id ? scope().getElementById(id) : null
   }
 
   /** @type {Map<HTMLElement, string | null>} Each tab's `tabindex` before the script wrote one. */
@@ -164,7 +170,7 @@ export function tabs(root, { searchable = false } = {}) {
     const tab = focused
     if (event.relatedTarget) focused = undefined
     else queueMicrotask(() => {
-      if (focused === tab && tab?.isConnected && scope.activeElement !== tab) focused = undefined
+      if (focused === tab && tab?.isConnected && scope().activeElement !== tab) focused = undefined
     })
   }, { signal })
 
@@ -174,11 +180,13 @@ export function tabs(root, { searchable = false } = {}) {
       if (list.length === order.length && list.every((tab, index) => tab === order[index])) return
       const removed = current && !list.includes(current)
       const previousValue = current ? valueOf(current) : null
-      const restore = removed && focused === current && (!scope.activeElement || scope.activeElement === document.body)
+      const restore = removed && focused === current && (!scope().activeElement || scope().activeElement === document.body)
       const index = current ? order.indexOf(current) : -1
       const neighbours = [...order.slice(index + 1), ...order.slice(0, index).reverse()]
-      const next = current && !removed ? current : selected() ?? list.find(tab => valueOf(tab) === previousValue && enabled(tab))
-        ?? neighbours.find(tab => list.includes(tab) && enabled(tab)) ?? list.find(enabled)
+      // What the markup says is selected comes first: an application may have moved aria-selected itself
+      // before it added or removed a tab, and the tab remembered here would take the selection back.
+      const next = selected() ?? (current && !removed ? current : list.find(tab => valueOf(tab) === previousValue && enabled(tab))
+        ?? neighbours.find(tab => list.includes(tab) && enabled(tab)) ?? list.find(enabled))
       for (const tab of order) {
         if (list.includes(tab)) continue
         const originalIndex = original.get(tab)
@@ -201,7 +209,7 @@ export function tabs(root, { searchable = false } = {}) {
 
   if (findable) {
     // The panels usually follow the tablist as siblings, so hear their native reveals on the document.
-    scope.addEventListener('beforematch', (event) => {
+    scope().addEventListener('beforematch', (event) => {
       const target = /** @type {HTMLElement} */ (event.target)
       const tab = all().find((each) => panel(each) === target)
       if (!tab) return
@@ -221,7 +229,7 @@ export function tabs(root, { searchable = false } = {}) {
       let id = document.defaultView?.location.hash.slice(1)
       if (!id) return
       try { id = decodeURIComponent(id) } catch { /* Try the literal fragment when it is malformed. */ }
-      const target = scope.getElementById(id)
+      const target = scope().getElementById(id)
       if (!target) return
       const tab = all().find((each) => available(each) && panel(each)?.contains(target))
       if (tab && tab !== selected()) {

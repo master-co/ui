@@ -164,3 +164,33 @@ test('tabs: detach removes the listeners and gives every tab its tabindex back; 
   assert.equal(key(one('#tab-billing'), 'ArrowRight'), false)
   assert.deepEqual(selected(), ['tab-billing'])
 })
+
+test('tabs: a tab added after the application moved aria-selected itself leaves that selection alone', async () => {
+  const { root, one, document, selected, shown } = setup()
+  tabs(root)
+  one('#tab-profile').setAttribute('aria-selected', 'false')
+  one('#tab-keys').setAttribute('aria-selected', 'true')
+  const added = document.createElement('button')
+  added.setAttribute('role', 'tab')
+  added.setAttribute('aria-selected', 'false')
+  added.id = 'tab-usage'
+  added.textContent = 'Usage'
+  root.appendChild(added)
+  await Promise.resolve()
+  assert.deepEqual(selected(), ['tab-keys'])
+  assert.deepEqual(shown(), ['panel-keys'])
+})
+
+test('tabs: a tablist attached inside a fragment finds its panels once it is in the document', () => {
+  const { document, key } = dom('<main></main>')
+  const fragment = document.createDocumentFragment()
+  const holder = document.createElement('div')
+  holder.innerHTML = markup()
+  while (holder.firstChild) fragment.appendChild(holder.firstChild)
+  const root = fragment.querySelector('.tabs') as HTMLElement
+  tabs(root)
+  document.body.appendChild(fragment)
+  key(document.getElementById('tab-profile')!, 'ArrowRight')
+  assert.equal(document.getElementById('panel-billing')!.hidden, false)
+  assert.equal(document.getElementById('panel-profile')!.hidden, true)
+})
