@@ -22,16 +22,19 @@ import { previewMarkdown } from '../utils/preview-markdown.ts'
 import { anchorMarkdown } from '../utils/anchor-markdown.ts'
 import { figureMarkdown } from '../utils/figure-markdown.ts'
 import { promptMarkdown } from '../utils/prompt-markdown.ts'
-import { locales } from '@master/internal-site/common/locales.js'
+import { locales, nameOfLocale } from '@master/internal-site/common/locales.js'
 import { readLocalizedDocument } from '@master/internal-site/build/localization.ts'
 import translations from '../i18n/translations.ts'
 import { localizedContract } from '../i18n/contract-copy.ts'
+import { editionOf } from './seo.mjs'
+import siteConfig from '../site.config.ts'
+import { markdownReferences, preserveFences, relatedMarkdown } from '../utils/portable-links.ts'
 import { documentSections } from '../i18n/sections.ts'
 
 const site = fileURLToPath(new URL('../', import.meta.url))
 const ui = join(site, '../packages/ui')
 const out = join(site, 'public')
-const origin = 'https://ui.master.co'
+const origin = new URL(siteConfig.origin).origin
 const read = (file: string) => readFileSync(file, 'utf8')
 const write = (file: string, content: string) => {
   mkdirSync(dirname(join(out, file)), { recursive: true })
@@ -90,17 +93,30 @@ const prefixOf = (locale: string) => locale === 'en' ? '' : `/${locale}`
 const t = (locale: string, key: string) => translations[locale]?.[key] ?? key
 const fills = (text: string, values: Record<string, string>) => text.replace(/\{(\w+)\}/g, (match, name: string) => values[name] ?? match)
 
+/** The search builder already resolves drafts, missing translations and each document's localized metadata. */
+type DocumentEntry = { url: string, title: string, description: string }
+const editions = new Map<string, DocumentEntry>()
+for (const locale of locales) {
+  const entries: DocumentEntry[] = JSON.parse(read(join(out, 'search', locale + '.json')))
+  for (const entry of entries) {
+    const [section, slug] = entry.url.slice(prefixOf(locale).length + 1).split('/')
+    if (slug && documentSections.includes(section)) editions.set(entry.url, entry)
+  }
+}
+
+function edition(pathname: string, locale: string) {
+  const entry = editions.get(prefixOf(locale) + pathname) ?? editions.get(pathname)
+  if (!entry) throw new Error('No published document for ' + pathname)
+  return entry
+}
+
 /** A contract as a page: everything an agent needs to write the markup, in the order it needs it. */
 function contractMarkdown(source: any, locale = 'en') {
   const contract = localizedContract(source, locale)
   const tr = (text: string, values: Record<string, string> = {}) => fills(t(locale, text), values)
   const heading = (title: string) => `## ${tr(title)}`
   const list = (items: string[]) => items.join(` ${tr('or')} `)
-  const markdownLink = (name: string) => {
-    const pathname = pageOfContract(name)
-    const hasEdition = existsSync(join(site, 'content', pathname, `content.${locale}.mdx`))
-    return `${origin}${hasEdition ? prefixOf(locale) : ''}/${pathname}.md`
-  }
+  const markdownLink = (name: string) => origin + edition('/' + pageOfContract(name), locale).url + '.md'
   const contractPathname = `${origin}${prefixOf(locale)}/${pageOfContract(contract.name)}`
   const constraints = (entry: any) => [
     entry.kind === 'root' ? tr('Root class') : tr(entry.kind === 'part' ? 'Part of {classes}' : 'Modifier of {classes}', { classes: list(owners(entry).map(code)) }),
@@ -112,7 +128,7 @@ function contractMarkdown(source: any, locale = 'en') {
   const columns = (labels: string[]) => labels.map(label => tr(label))
   const behavior = contract.behavior && `@master/ui/behaviors/${contract.behavior}.js`
   const frameworks = componentsOf(contract.name)
-  const frameworkGuide = `${origin}${prefixOf(locale)}/guide/frameworks.md`
+  const frameworkGuide = origin + edition('/guide/frameworks', locale).url + '.md'
   const frameworkInstructions = frameworks.length
     ? tr('Copy these framework components into the project: {commands}. Each renders the same markup, attaches the behavior where needed, and passes the value in and out. Check the project’s `ui/` directory first for a local copy. See {guide}.', { commands: frameworks.map(name => code(`npx master-ui add ${name}`)).join(', '), guide: frameworkGuide })
     : tr('Write the markup in the framework’s syntax (`className` and `htmlFor` in JSX). Use the published classes directly.')
@@ -138,11 +154,13 @@ function contractMarkdown(source: any, locale = 'en') {
  * A working example as Markdown: every file it is made of, what it installs and how a page starts it, so it runs
  * outside this site with nothing but the packages it names.
  */
-function exampleMarkdown(id: string) {
+function exampleMarkdown(id: string, locale: string) {
   const { dependencies = {}, contracts: used } = exampleOf(id)
   const setup = exampleSetup(id)
+  const installation = edition('/guide/installation', locale)
   return [
-    `It uses ${used.map(name => `\`${name}\``).join(', ')}${Object.keys(dependencies).length ? `, and ${Object.keys(dependencies).map(name => `\`${name}\``).join(', ')}` : ''}. Install the packages, import Master UI as the installation guide shows (${origin}/guide/installation.md), then start the example on its root:`,
+    `**${t(locale, 'Used with')}** ${[...used, ...Object.keys(dependencies)].map(code).join(', ')}`,
+    `[${installation.title}](${origin}${installation.url}.md)`,
     `\`\`\`sh\n${setup.install}\n\`\`\``,
     ...(setup.start ? [`\`\`\`js name=start.js\n${setup.start}\n\`\`\``] : []),
     ...exampleFiles(id).map(file => `\`\`\`${file.lang} name=${file.name}\n${file.content}\n\`\`\``),
@@ -153,124 +171,71 @@ function exampleMarkdown(id: string) {
  * An MDX page as Markdown: previews become fenced markup, components that only draw are dropped.
  */
 function mdxMarkdown(source: string, title: string, description: string, locale = 'en') {
-  const link = (section: string, slug: string, hash = '') => {
-    const translated = locale !== 'en' && existsSync(join(site, 'content', section, slug, `content.${locale}.mdx`))
-    return `${origin}${translated ? prefixOf(locale) : ''}/${section}/${slug}.md${hash}`
+  const prose = preserveFences(source.trimStart(), body => {
+    const related = relatedMarkdown(body, (kind, slug) => {
+      const target = edition('/' + kind + '/' + slug, locale)
+      return `[${target.title}](${origin}${target.url}.md)`
+    })
+    const embedded = related.replace(/^(?:import .*\n)+/, '')
+      .replace(/^<FrameworkPreview name="([^"]+)"[\s\S]*?\/>/gm, (_, name) => `\`\`\`svelte\n${exampleSource(name)}\n\`\`\``)
+      .replace(/^<ComponentSource name="([^"]+)"(?: directory="([^"]+)")? \/>/gm, (_, name, directory = 'components') => `\`\`\`css\n${read(join(ui, directory, name + '.css')).trim()}\n\`\`\``)
+      .replace(/^<Contract\w* [^>]*\/>/gm, '')
+    return figureMarkdown(promptMarkdown(previewMarkdown(embedded, { example: id => exampleMarkdown(id, locale) })))
+  })
+  return `# ${title}\n\n${description}\n\n${anchorMarkdown(prose.trim(), origin)}\n`
+}
+
+// Render first, then resolve fragments against the actual Markdown each edition emits.
+const documents = new Map<string, { text: string } & ReturnType<typeof markdownReferences>>()
+for (const entry of editions.values()) {
+  const { locale, identity } = editionOf(entry.url)
+  const [, section, slug] = identity.split('/')
+  const sourceFile = join(site, 'content', section, slug, 'content.mdx')
+  const { content } = await readLocalizedDocument({ sourceFile, locale })
+  const contract = section === 'components' || section === 'pages' ? contractOf.get(slug === 'app-shell' ? 'shell' : slug) : undefined
+  const reference = contract && contractMarkdown(contract, locale)
+  const text = contract?.tier === 'component' ? reference : mdxMarkdown(content, entry.title, entry.description, locale) + (reference ? '\n---\n\n' + reference : '')
+  documents.set(entry.url, { text, ...markdownReferences(text) })
+}
+for (const [pathname, document] of documents) {
+  const { locale } = editionOf(pathname)
+  let text = document.text
+  for (const { url, start, end } of document.links.toReversed()) {
+    const target = new URL(url, origin + pathname)
+    if (target.origin !== origin) continue
+    let path = target.pathname.replace(/\.md$/, '')
+    if (!documents.has(path)) continue
+    if (url.startsWith('/') && !url.startsWith('//')) path = edition(path, locale).url
+    const fragment = decodeURIComponent(target.hash.slice(1))
+    const suffix = fragment && !documents.get(path)!.anchors.has(fragment) ? '' : '.md'
+    const href = origin + path + suffix + target.search + target.hash
+    text = text.slice(0, start) + href + text.slice(end)
   }
-  const body = figureMarkdown(promptMarkdown(previewMarkdown(source.trimStart(), { example: exampleMarkdown })))
-    // The imports of the page itself, at its top. An import inside a code sample is part of the sample.
-    .replace(/^(?:import .*\n)+/, '')
-    .replace(/<FrameworkPreview name="([^"]+)"[\s\S]*?\/>/g, (_, name) => `\`\`\`svelte\n${exampleSource(name)}\n\`\`\``)
-    .replace(/<ComponentSource name="([^"]+)"(?: directory="([^"]+)")? \/>/g, (_, name, directory = 'components') => `\`\`\`css\n${read(join(ui, directory, `${name}.css`)).trim()}\n\`\`\``)
-    .replace(/<ComponentLinks slugs=\{\[([^\]]*)\]\}(?: kind="(\w+)")? \/>/g, (_, slugs, kind = 'components') => slugs.split(',').map((slug: string) => slug.trim().replace(/['"]/g, '')).filter(Boolean).map((slug: string) => `- [${slug}](${link(kind, slug)})`).join('\n'))
-    .replace(/<Contract\w* [^>]*\/>/g, '')
-    .replace(/\]\(\/(guide|components|charts|blocks|pages)\/([\w-]+)(#[\w-]+)?\)/g, (_, section, slug, hash = '') => `](${link(section, slug, hash)})`)
-    .replace(/\n{3,}/g, '\n\n')
-    .trim()
-  return `# ${title}\n\n${description}\n\n${anchorMarkdown(body, origin)}\n`
+  write(pathname.slice(1) + '.md', text)
 }
 
-const metadataOf = (file: string) => {
-  const source = read(file)
-  const title = /subject: '([^']+)'/.exec(source)?.[1] ?? /title: (?:\{ absolute: )?'([^']+)'/.exec(source)?.[1] ?? ''
-  return { title, description: /description: '((?:[^'\\]|\\.)*)'/.exec(source)?.[1].replace(/\\'/g, '\'') ?? '', order: Number(/order: (\d+)/.exec(source)?.[1] ?? 99), category: /category: '([^']+)'/.exec(source)?.[1] ?? '' }
-}
-
-const pages: Record<string, { slug: string, title: string, description: string }[]> = { guide: [], components: [], charts: [], blocks: [], pages: [] }
-
-for (const slug of readdirSync(join(site, 'content/guide'))) {
-  const directory = join(site, 'content/guide', slug)
-  if (!existsSync(join(directory, 'content.mdx'))) continue
-  const metadata = metadataOf(join(directory, 'metadata.ts'))
-  pages.guide.push({ slug, ...metadata })
-  write(`guide/${slug}.md`, mdxMarkdown(read(join(directory, 'content.mdx')), metadata.title, metadata.description))
-}
-const categoryRank = ['Getting started', 'Customizing', 'Building', 'Reference']
-pages.guide.sort((a: any, b: any) => categoryRank.indexOf(a.category) - categoryRank.indexOf(b.category) || a.order - b.order)
-
-/*
- * A component's page is its contract. A layout among the components is read for its page first, the way it is built
- * and when to use it, with its contract after; the arrangements have no contract and are their page alone. A block or
- * a page is its page, and a page that is a frame (`page`, the app shell) ends with that frame's contract.
- */
-for (const item of components) {
-  const contract = contractOf.get(item.slug)
-  pages.components.push({ slug: item.slug, title: item.name, description: item.description })
-  write(`components/${item.slug}.md`, contract?.tier === 'component'
-    ? contractMarkdown(contract)
-    : mdxMarkdown(read(join(site, 'content/components', item.slug, 'content.mdx')), item.name, item.description) + (contract ? `\n---\n\n${contractMarkdown(contract)}` : ''))
-}
-for (const [kind, list] of [['charts', charts], ['blocks', blocks], ['pages', pageLayouts]] as const) {
-  for (const item of list) {
-    const source = read(join(site, 'content', kind, item.slug, 'content.mdx'))
-    const contract = kind === 'pages' ? contractOf.get(item.slug === 'app-shell' ? 'shell' : item.slug) : undefined
-    pages[kind].push({ slug: item.slug, title: item.name, description: item.description })
-    write(`${kind}/${item.slug}.md`, mdxMarkdown(source, item.name, item.description) + (contract ? `\n---\n\n${contractMarkdown(contract)}` : ''))
-  }
-}
-
-/** The translated prose comes from MDX and the translated contract from the same data as the rendered tables. */
-const translatedPages: Record<string, typeof pages> = {}
-for (const locale of translatedLocales) {
-  translatedPages[locale] = Object.fromEntries(await Promise.all(Object.entries(pages).map(async ([section, entries]) => {
-    const localized = await Promise.all(entries.map(async ({ slug }) => {
-      const directory = join(site, 'content', section, slug)
-      if (!existsSync(join(directory, `content.${locale}.mdx`))) return []
-      const { content, frontmatter } = await readLocalizedDocument({ sourceFile: join(directory, 'content.mdx'), locale })
-      if (frontmatter.draft) return []
-      const { title, description } = frontmatter as { title: string, description: string }
-      const contract = section === 'components' || section === 'pages' ? contractOf.get(slug === 'app-shell' ? 'shell' : slug) : undefined
-      const authored = mdxMarkdown(content, title, description, locale)
-      const reference = contract && contractMarkdown(contract, locale)
-      write(`${locale}/${section}/${slug}.md`, contract?.tier === 'component' ? reference : authored + (reference ? `\n---\n\n${reference}` : ''))
-      return [{ slug, title, description }]
-    }))
-    return [section, localized.flat()]
-  })))
-}
-
-/** The index for one language: the rules, then links to the published Markdown editions. */
-const englishIndex = read(join(site, 'i18n/llms/en.md')).trim()
-const localizedIndex = Object.fromEntries(translatedLocales.flatMap(locale => {
-  const filename = join(site, 'i18n/llms', `${locale}.md`)
-  return existsSync(filename) ? [[locale, read(filename).trim()]] : []
-}))
-
-const llms = (locale: string) => {
+// Keep the guide's reading order and the catalog's grouping in every portable index.
+const guideCategories: { pages: { pathname: string }[] }[] = JSON.parse(read(join(site, '.categories/guide.json')))
+const ordered = new Map([
+  ...guideCategories.flatMap(category => category.pages.map(page => page.pathname)),
+  ...Object.entries({ components, charts, blocks, pages: pageLayouts }).flatMap(([kind, items]) => items.map(item => '/' + kind + '/' + item.slug))
+].map((path, index) => [path, index]))
+for (const locale of locales) {
   const prefix = prefixOf(locale)
-  const list = (section: string, items: typeof pages.guide, at = '') => items.map(page => `- [${page.title}](${origin}${at}/${section}/${page.slug}.md): ${page.description}`).join('\n')
-  const links = (section: string) => {
-    const editions = translatedPages[locale]?.[section]
-    return editions?.length ? list(section, editions, prefix) : list(section, pages[section])
+  const introduction = read(join(site, 'i18n/llms', locale + '.md')).trim()
+    .replaceAll('{origin}', origin).replace('{frameworkComponents}', Object.keys(manifest.components).join(', '))
+  const sections = ['# Master UI', introduction]
+  if (locale === 'en') {
+    sections.push('## Languages', translatedLocales.map(lang => `- [${nameOfLocale[lang]}](${origin}/${lang}/llms.txt)`).join('\n'))
   }
-  const introduction = locale === 'en' ? englishIndex : localizedIndex[locale] ?? englishIndex
-  return `# Master UI
-
-${introduction.replaceAll('{origin}', origin).replace('{frameworkComponents}', Object.keys(manifest.components).join(', '))}
-
-## ${t(locale, 'Guide')}
-
-${links('guide')}
-
-## ${t(locale, 'Components')}
-
-${links('components')}
-
-## ${t(locale, 'Charts')}
-
-${links('charts')}
-
-## ${t(locale, 'Blocks')}
-
-${links('blocks')}
-
-## ${t(locale, 'Pages')}
-
-${links('pages')}
-`
+  for (const section of documentSections) {
+    const title = section[0].toUpperCase() + section.slice(1)
+    const entries = [...editions.values()].filter(entry => entry.url.startsWith(prefix + '/' + section + '/'))
+      .sort((a, b) => (ordered.get(a.url.slice(prefix.length)) ?? Infinity) - (ordered.get(b.url.slice(prefix.length)) ?? Infinity))
+    if (entries.length) sections.push('## ' + t(locale, title), entries.map(page => `- [${page.title}](${origin}${page.url}.md): ${page.description}`).join('\n'))
+  }
+  write((prefix + '/llms.txt').slice(1), sections.join('\n\n') + '\n')
 }
-write('llms.txt', llms('en'))
-for (const locale of translatedLocales) if (translatedPages[locale].guide.length) write(`${locale}/llms.txt`, llms(locale))
 
 /* ---------------------------------------------------------------- Registry */
 
@@ -343,6 +308,8 @@ for (const [kind, list] of [['blocks', blocks], ['pages', pageLayouts]] as const
     // The first preview: a working example of the shared source, or markup written on the page.
     const first = /<PagePreview\b[\s\S]*?(?:example="([^"]+)"|html=\{`([\s\S]*?)`\})/.exec(source)
     const working = first?.[1]
+    const example = working ? exampleOf(working) : undefined
+    const script = working && example?.script ? posix.relative(working, example.script) : undefined
     const markup = working ? exampleFiles(working)[0]!.content : first?.[2]
     if (!markup) continue
     const used = [...new Set([...markup.matchAll(/class="([^"]*)"/g)].flatMap(match => match[1].split(/\s+/)))]
@@ -350,17 +317,17 @@ for (const [kind, list] of [['blocks', blocks], ['pages', pageLayouts]] as const
     const name = kind === 'blocks' ? `block-${entry.slug}` : `page-${entry.slug}`
     items.push({
       $schema: schema, name, type: 'registry:item', title: entry.name, description: entry.description,
-      dependencies: ['@master/css', ...(working ? ['@master/ui', ...Object.entries(exampleOf(working).dependencies ?? {}).map(([dependency, version]) => `${dependency}@${version}`)] : [])],
+      dependencies: ['@master/css', ...(example ? ['@master/ui', ...Object.entries(example.dependencies ?? {}).map(([dependency, version]) => `${dependency}@${version}`)] : [])],
       registryDependencies: needs.map(item),
       // A block that works carries its script and its data, so what a project copies still works.
       files: working
         ? exampleFiles(working).map(part => file(part.name === 'index.html' ? `ui/${kind}/${entry.slug}.html` : posix.normalize(`ui/${kind}/${entry.slug}/${part.name}`), `${part.content}\n`))
         : [file(`ui/${kind}/${entry.slug}.html`, `${markup}\n`)],
       categories: [entry.category],
-      docs: working
-        ? `A working block: paste ${entry.slug}.html into a page and start it with mount() from ${entry.slug}/main.js. It uses: ${needs.join(', ')}. ${origin}/${kind}/${entry.slug}.md`
+      docs: script
+        ? `Paste ${entry.slug}.html into a page and start it with mount() from ${entry.slug}/${script}. It uses: ${needs.join(', ')}. ${origin}/${kind}/${entry.slug}.md`
         : `Markup to paste into a page or a component. It uses: ${needs.join(', ')}. Variants: ${origin}/${kind}/${entry.slug}.md`,
-      meta: { tier: kind === 'blocks' ? 'block' : 'page', components: needs, ...(working ? { script: 'required' } : {}) },
+      meta: { tier: kind === 'blocks' ? 'block' : 'page', components: needs, ...(script ? { script: 'required' } : {}) },
     })
   }
 }
@@ -370,5 +337,5 @@ write('r/registry.json', `${JSON.stringify({
   items: items.map(({ files, $schema, ...entry }) => ({ ...entry, files: files.map(({ content, ...rest }: any) => rest) })),
 }, null, 2)}\n`)
 
-const markdownCount = [pages, ...Object.values(translatedPages)].reduce((count, edition) => count + Object.values(edition).flat().length, 0)
+const markdownCount = documents.size
 console.log(`Generated llms.txt, ${markdownCount} Markdown pages, contracts.json, theme.json, standalone.css and a registry of ${items.length} items`)

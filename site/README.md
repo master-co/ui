@@ -51,6 +51,14 @@ Start with `bootstrap`: the delivery is verified on its immutable `pages.dev` de
 
 Rerun the failed `deploy-site` job to retry: an existing manifest with the same bytes and a `pages-stable` that already points at the commit are verified, not written again. Never force-push or move `pages-stable` by hand, never replace a manifest, and never move a version tag to get a site deployed.
 
+## Crawling and portable documentation
+
+The HTML canonical URLs are listed in `/sitemap.xml`. Each page identifies its language’s `llms.txt` with `rel="describedby"`. Documents also advertise the matching Markdown edition with `rel="alternate" type="text/markdown"`. The root index links to all language editions and to the contracts, schema, tokens and registry. An article link opens the HTML section when that section is only available in the web edition.
+
+Clients fetching these resources from Cloudflare Pages should identify their application in the HTTP `User-Agent` header, for example `Master-UI-Docs-Audit/1.0`. Python urllib’s default identifier returned HTTP 403 with Cloudflare error 1010 on the production domain. Both curl and a named application received HTTP 200. [Cloudflare documents the Pages browser integrity check](https://developers.cloudflare.com/support/troubleshooting/http-status-codes/cloudflare-1xxx-errors/error-1010/).
+
+Run `bun run test:site-hosting` against the production build to verify canonical routes, locale alternates, structured data, portable links, response types and uncompressed HTML sizes. After release, Search Console’s sitemap and URL Inspection reports show Google’s crawl and indexing decisions.
+
 ## Documentation regressions
 
 The removed `/r/layout-arrangements.json` registry item returns `410 Gone` with `no-store`. A site-only Pages worker handles exactly that path before static asset lookup, preventing a stale registry item from surviving its removal. `_routes.json` leaves every other path on ordinary static serving, including the nine valid registry redirects. Run `bun run test:site-hosting` after building to verify the actual Pages dispatcher against a deliberately stale asset, GET/HEAD responses, redirects and static content.

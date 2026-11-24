@@ -77,6 +77,18 @@ test('actual Pages dispatch retires a stale asset while preserving static redire
         }
         assert.equal((await fetch(origin + '/r/layout-does-not-exist.json', { redirect: 'manual' })).status, 404)
         assert.equal(await (await fetch(origin + '/guide/design.md')).text(), await readFile(path.join(output, 'guide/design.md'), 'utf8'))
+        for (const [pathname, type] of [
+            ['/robots.txt', 'text/plain'], ['/sitemap.xml', 'application/xml'],
+            ['/llms.txt', 'text/plain'], ['/tw/llms.txt', 'text/plain'], ['/tw/components/button.md', 'text/markdown']
+        ]) {
+            for (const method of ['GET', 'HEAD']) {
+                const response = await fetch(origin + pathname, { method, redirect: 'manual' })
+                assert.equal(response.status, 200, pathname)
+                assert.equal(response.headers.get('content-type')?.split(';')[0], type, pathname)
+                if (pathname.endsWith('.md') || pathname.endsWith('llms.txt')) assert.equal(response.headers.get('access-control-allow-origin'), '*', pathname)
+                if (method === 'GET') assert.equal(await response.text(), await readFile(path.join(output, pathname), 'utf8'))
+            }
+        }
         const guide = await fetch(origin + '/tw/guide', { redirect: 'manual' })
         assert.equal(guide.status, 302)
         assert.equal(new URL(guide.headers.get('location'), origin).pathname, '/tw/guide/introduction')
