@@ -38,3 +38,5 @@ Generated (sharp + SVG: the forms and light are computed per pixel, the grain is
 - `wallpaper-window-light-*` — light, a window's sunlight with a branch's shadow on a warm wall
 - `wallpaper-dusk-folds-*` — dark, graphite folds with a warm rim light
 - `wallpaper-night-tide-*` — dark, slate folds with a cool rim light
+
+The portrait crop in `media/armchair-portrait.webp` uses the same Kari Shea photograph as `scenes/interior-linen-armchair-*`.
