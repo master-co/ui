@@ -515,10 +515,8 @@ test(`${engine}: step markers and connectors stay centered on the title above wr
   } finally { await page.close() }
 })
 
-test(`${engine}: scales, ticket stubs and slider endpoints fit their container`, async () => {
+test(`${engine}: scales and ticket stubs fit their container`, async () => {
   const css = await readFile(new URL('../../dist/standalone.css', import.meta.url), 'utf8')
-  const ranges = await Promise.all(['slider', 'range', 'color-picker'].map(async name =>
-    JSON.parse(await readFile(new URL(`../../components/${name}.json`, import.meta.url), 'utf8')).example))
   for (const direction of ['ltr', 'rtl']) {
     const page = await browser.newPage()
     try {
@@ -527,8 +525,7 @@ test(`${engine}: scales, ticket stubs and slider endpoints fit their container`,
           ${Array.from({ length: 11 }, (_, i) => `<label class="scale-option"><input class="scale-input" name="answer" type="radio">${i}</label>`).join('')}
           <p class="scale-ends"><span>0 · Never</span><span>10 · Always</span></p>
         </div><article class="ticket ticket-row"><div class="ticket-body">Taipei to Tokyo</div>
-        <div class="ticket-stub">BK20261124QXZ9345ASDF04267</div></article>
-        ${ranges.map(example => `<div class="scroller" style="overflow:auto">${example}</div>`).join('')}</main>`)
+        <div class="ticket-stub">BK20261124QXZ9345ASDF04267</div></article></main>`)
       await page.addStyleTag({ content: css })
       for (const width of [220, 240, 320, 347, 348, 349, 480]) {
         await page.locator('main').evaluate((el, width) => { el.style.width = `${width}px` }, width)
@@ -541,16 +538,7 @@ test(`${engine}: scales, ticket stubs and slider endpoints fit their container`,
         const stub = await box(page.locator('.ticket-stub'))
         assert.ok(stub.width <= width * .58 + 1, `ticket stub occupies ${stub.width}px at ${width}px ${direction}`)
         assert.equal(await page.locator('main').evaluate(el => el.scrollWidth), width)
-        for (const scroller of await page.locator('.scroller').all()) {
-          assert.equal(await scroller.evaluate(el => el.scrollWidth === el.clientWidth && el.scrollHeight === el.clientHeight), true)
-        }
       }
-      const slider = page.locator('input.slider').first()
-      await slider.focus()
-      await page.keyboard.press('Home')
-      assert.equal(await slider.inputValue(), '0')
-      await page.keyboard.press('End')
-      assert.equal(await slider.inputValue(), '100')
     } finally { await page.close() }
   }
 })

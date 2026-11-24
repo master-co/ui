@@ -262,7 +262,7 @@ Numbered bullet lists use the native list ordinal, including `start`, `reversed`
 
 Horizontal steps align the marker and connector with the title’s first line. A description on the final step shares the available width with the preceding steps.
 
-Sliders include focus-ring space inside their width. An eleven-point scale at 20rem wraps into rows of six and five. On a horizontal ticket, long booking references wrap within the stub so the destination stays readable.
+An eleven-point scale at 20rem wraps into rows of six and five. On a horizontal ticket, long booking references wrap within the stub so the destination stays readable.
 
 Use `aria-orientation="vertical"` to arrange a tablist beside its panels. Tabs resolve their panels inside the same document or shadow root and select a neighboring tab when the current one is removed.
 
