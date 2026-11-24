@@ -204,6 +204,7 @@ export const blocks = [
   { slug: 'careers', name: 'Careers', category: 'Marketing blocks', description: 'Open roles with their team, place and terms, and the way to apply.' },
   { slug: 'integrations', name: 'Integrations', category: 'Marketing blocks', description: 'The services a product works with, to explore or as a list of connections and their state.' },
   { slug: 'changelog', name: 'Changelog', category: 'Marketing blocks', description: 'What shipped and when, newest first, as a timeline or one release.' },
+  { slug: 'how-it-works', name: 'How it works', category: 'Marketing blocks', description: 'What a visitor will do, in order, with what each step leaves behind.' },
   { slug: 'page-header', name: 'Page header', category: 'Application blocks', description: 'The top of an app page: where you are, what it is and what you can do.' },
   { slug: 'sidebar', name: 'Sidebar', category: 'Application blocks', description: 'An app sidebar: the workspace, the navigation and the account.' },
   { slug: 'sign-in', name: 'Sign in', category: 'Application blocks', description: 'Sign in and sign up cards with providers, fields and a way back.' },
@@ -218,18 +219,7 @@ export const blocks = [
   { slug: 'password-reset', name: 'Password reset', category: 'Application blocks', description: 'Asking for a reset link and choosing a new password, each with its result.' },
   { slug: 'billing-summary', name: 'Billing summary', category: 'Application blocks', description: 'The plan, its seats and usage, the renewal date and the latest invoices.' },
   { slug: 'notification-inbox', name: 'Notification inbox', category: 'Application blocks', description: 'Notifications in a page: all or unread, read one by one or all at once.' },
-  { slug: 'settings-save', name: 'Save settings', category: 'Application blocks', description: 'Save or discard a settings draft and recover from a failed save.' },
-  { slug: 'draft-conflicts', name: 'Resolve draft conflicts', category: 'Application blocks', description: 'Choose which version of each changed field to keep.' },
-  { slug: 'media-library', name: 'Choose from a media library', category: 'Application blocks', description: 'Find existing artwork and add a selection to a collection.' },
-  { slug: 'album-editor', name: 'Edit an album', category: 'Application blocks', description: 'Reorder photographs, edit their alternative text and remove individual items.' },
-  { slug: 'line-items', name: 'Edit line items', category: 'Application blocks', description: 'Edit quantities, reorder items and check the amount on each line.' },
-  { slug: 'member-invitations', name: 'Invite members', category: 'Application blocks', description: 'Invite a member with a role and manage pending invitations.' },
-  { slug: 'role-permissions', name: 'Role permissions', category: 'Application blocks', description: 'Compare which actions each role is allowed to take.' },
-  { slug: 'service-process', name: 'Service process', category: 'Marketing blocks', description: 'Explain each service stage, its deliverable and its fee before booking.' },
-  { slug: 'featured-work', name: 'Featured work', category: 'Marketing blocks', description: 'Browse selected projects with their original proportions, captions and categories.' },
-  { slug: 'source-and-output', name: 'Source and output', category: 'Application blocks', description: 'Read and copy an input and its corresponding output separately.' },
-  { slug: 'report-directory', name: 'Report directory', category: 'Application blocks', description: 'Find a report by the question it answers, including reports that have no data yet.' },
-  { slug: 'help-search', name: 'Help search', category: 'Application blocks', description: 'Search help articles and jump directly to matching sections.' },
+  { slug: 'members', name: 'Members', category: 'Application blocks', description: 'Who is in a workspace and as what: roles to change, invitations to send and the ones not answered yet.' },
 ] as const
 
 /** The sections by the first segment of their URL. */

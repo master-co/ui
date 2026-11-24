@@ -76,6 +76,95 @@ Blocks are markup to copy. They take the page's own text color and size; the pre
 
 Order the plans cheapest first. If one plan fits nearly everyone, say so in its description instead of adding a fourth.
 
+## Monthly or yearly \{#billing-period\}
+
+When a plan costs less paid by the year, one choice over the plans sets the period for all of them. It is a [segmented control](/components/segmented), two native radios, and every plan whose price depends on the period holds both prices, one of them `hidden`. The script only moves that attribute.
+
+<PagePreview name="billing-period" touchHeight={{ desktop: 928, tablet: 1640, phone: 1640 }} title="Monthly or yearly" height={912} tabletHeight={1592} phoneHeight={1616} bodyClass="p(0) bg-surface-base fg-text-body text-sm" html={`<section class="container-inline px-lg py-4xl" aria-labelledby="pricing-period-title">
+  <div class="flex flex-col gap-2xl max-w(1040) mx-auto">
+    <header class="flex flex-col items-center gap-sm text-center">
+      <p class="eyebrow">Pricing</p>
+      <h2 class="heading heading-2xl" id="pricing-period-title">Free to start. Fair when you grow.</h2>
+      <p class="lead max-w(480)">Every plan deploys the same way. You pay for the team, not for the traffic.</p>
+      <div class="flex flex-col items-center gap-xs mt-md">
+        <div class="segmented" role="radiogroup" aria-label="Billing period" id="pricing-period">
+          <label class="segmented-item"><input type="radio" class="segmented-input" name="pricing-period" value="monthly" checked>Monthly</label>
+          <label class="segmented-item"><input type="radio" class="segmented-input" name="pricing-period" value="yearly">Yearly</label>
+        </div>
+        <p class="m(0) text-xs fg-text-muted">Paid by the year, Pro is 20% less.</p>
+      </div>
+    </header>
+    <div class="grid gap-md items-start grid-cols(3)@container(--4xl)">
+      <article class="sheet sheet-raised flex flex-col gap-lg p-lg">
+        <header class="flex flex-col gap-xs">
+          <h3 class="heading heading-sm">Hobby</h3>
+          <p class="price"><span class="price-currency">$</span><span class="price-amount">0</span><span class="price-period">forever</span></p>
+          <p class="m(0) leading-md">For side projects and trying things out.</p>
+        </header>
+        <a class="btn" href="#">Start for free</a>
+        <ul class="bullets bullets-check">
+          <li class="bullets-item">One project</li>
+          <li class="bullets-item">Previews for every branch</li>
+          <li class="bullets-item">Community support</li>
+        </ul>
+      </article>
+      <article class="sheet flex flex-col gap-lg p-lg">
+        <header class="flex flex-col gap-xs">
+          <div class="flex items-center justify-between gap-sm">
+            <h3 class="heading heading-sm">Pro</h3>
+            <span class="badge badge-ink badge-pill">Most popular</span>
+          </div>
+          <p class="price" data-pricing-period="monthly"><span class="price-currency">$</span><span class="price-amount">20</span><span class="price-period">per member a month</span></p>
+          <p class="price" data-pricing-period="yearly" hidden><s class="price-was"><span class="sr-only">Was </span>$20</s><span class="sr-only">now </span><span class="price-currency">$</span><span class="price-amount">16</span><span class="price-period">per member a month</span></p>
+          <p class="m(0) text-xs fg-text-muted" data-pricing-period="monthly">Billed every month.</p>
+          <p class="m(0) text-xs fg-text-muted" data-pricing-period="yearly" hidden>$192 a member, billed once a year.</p>
+          <p class="m(0) leading-md">For teams that ship to real visitors.</p>
+        </header>
+        <a class="btn btn-brand" href="#">Start a trial</a>
+        <ul class="bullets bullets-check">
+          <li class="bullets-item">Unlimited projects</li>
+          <li class="bullets-item">Fourteen regions</li>
+          <li class="bullets-item">Analytics and firewall</li>
+          <li class="bullets-item">Email support, next day</li>
+        </ul>
+      </article>
+      <article class="sheet sheet-raised flex flex-col gap-lg p-lg">
+        <header class="flex flex-col gap-xs">
+          <h3 class="heading heading-sm">Enterprise</h3>
+          <p class="price"><span class="price-amount">Custom</span></p>
+          <p class="m(0) leading-md">For organizations with their own rules.</p>
+        </header>
+        <a class="btn" href="#">Talk to sales</a>
+        <ul class="bullets bullets-check">
+          <li class="bullets-item">Single sign-on and audit log</li>
+          <li class="bullets-item">A 99.99% uptime agreement</li>
+          <li class="bullets-item">A named engineer</li>
+          <li class="bullets-item">Invoices and purchase orders</li>
+        </ul>
+      </article>
+    </div>
+    <p class="m(0) text-center text-xs fg-text-muted">Prices are in US dollars and exclude tax. Cancel any time.</p>
+    <p class="sr-only" role="status" id="pricing-period-status"></p>
+  </div>
+</section>
+<script>
+document.getElementById('pricing-period').addEventListener('change', function (event) {
+  var period = event.target.value
+  document.querySelectorAll('[data-pricing-period]').forEach(function (price) {
+    price.hidden = price.getAttribute('data-pricing-period') !== period
+  })
+  document.getElementById('pricing-period-status').textContent = period === 'yearly' ? 'Showing prices billed yearly.' : 'Showing prices billed monthly.'
+})
+</script>`} />
+
+- **The choice stands over the plans it changes**, under the block's lead, and applies to all of them at once. A switch in each card would let two cards disagree.
+- **Monthly is checked.** The lower figure is the yearly one, and a page that opens on it shows a price nobody pays in the first month. Say what the year saves in a line of words beside the control, where it is read before the choice is made.
+- **The yearly price says both figures a buyer needs:** what a month comes to, in the [price](/components/price), and what is charged at once, in the line under it. `price-was` keeps the monthly price in view, struck through, so the saving is a comparison and not a claim. The monthly price has a line there too, so the card is as tall either way and nothing moves when the period changes.
+- **A plan that does not depend on the period has one price.** Hobby is free either way and Enterprise is quoted, so neither changes, and neither gets a second price to hide.
+- **Without the script the block is the monthly pricing.** The radios still move, and nothing else does. When the plans are rendered on a server, render the period from the URL instead and make the two choices links.
+
+Carry the period into what the buttons lead to: a visitor who chose yearly and pressed "Start a trial" should not be asked again.
+
 ## A comparison \{#comparison\}
 
 Under the plans, a [table](/components/table) answers the questions the cards cannot: a row per feature, a column per plan. On a narrow screen it scrolls sideways in a [scroll area](/components/scroll-area) inside its sheet, which fades the edge where columns continue.
@@ -145,14 +234,6 @@ Under the plans, a [table](/components/table) answers the questions the cards ca
 </section>`} />
 
 A check and a dash are not words: each is hidden from assistive technology and carries visually hidden text, "Included" or "Not included". The scroll area has `tabindex="0"` and takes the heading's name, so the keyboard can scroll it.
-
-## Switch the billing period \{#plan-cycle\}
-
-One radio group changes every plan. Compare the amount actually charged, its period and the destination of the plan link. The recommended plan follows the same selected cycle.
-
-The links open a [sample plan review](/demo/plan-quote.html?plan=studio&cycle=annual). When copying the block, replace `/demo/plan-quote.html` with your own review route and read the selected `plan` and `cycle` there.
-
-<PagePreview name="plan-cycle" title="Switch the billing period" example="plan-cycle" />
 
 ## Accessibility \{#accessibility\}
 

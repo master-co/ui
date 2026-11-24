@@ -69,21 +69,110 @@ import PagePreview from '~/site/components/PagePreview.astro'
   </div>
 </section>`} />
 
-區塊提供可直接複製的標記，並沿用所在頁面的文字顏色和大小。預覽在 body 上套用 `fg-text-body text-sm`。每個區塊都是尺寸容器，會依自身寬度重新排列。
+區塊提供可直接複製的標記，沿用頁面的文字顏色和字級。預覽在 body 上設定 `fg-text-body text-sm`。每個區塊都是尺寸容器，會依自身寬度重新排列。
 
 ## 組成 \{#anatomy\}
 
 - **將三張[面板](/components/surface#sheet)排成網格。** 區塊寬度未達 56rem 時排成一欄，達到後用 `grid-cols(3)@container(--4xl)` 排成三欄。`items-start` 讓各方案的高度隨自己的清單長度調整。
-- **用陰影層級突顯推薦方案。** 在使用 `sheet-raised` 的其他方案之間，推薦方案採用預設陰影層級的 `sheet`，再搭配 `badge-ink` 和頁面上唯一的 `btn-brand`。以陰影層級、文字和唯一的品牌色按鈕低調提示，邊框不另加強調色。
+- **推薦方案靠浮起突顯，不靠上色。** 在使用 `sheet-raised` 的其他方案之間，推薦方案採用預設陰影層級的 `sheet`，再搭配 `badge-ink` 和頁面上唯一的 `btn-brand`。深度、一個詞和唯一帶色相的按鈕：三個低調的訊號，沒有彩色邊框。
 - **價格使用[價格元件](/components/price)**：金額用大字，貨幣符號縮小並靠齊數字上緣，計費週期則用較淡的文字色放在一旁，與金額共用基線。
 - **按鈕放在清單前。** 已經做出決定的訪客可以直接操作，無須先滑過功能清單。
 - **方案包含的項目用[條列清單](/components/bullets)搭配 `bullets-check`**：每行前方以高對比文字色呈現的勾號只作裝飾，文字本身就能讀懂。
 
 按價格從低到高排列方案。若某個方案適合幾乎所有人，直接在該方案的說明中寫明，無須新增第四個方案。
 
+## 月繳或年繳 \{#billing-period\}
+
+如果方案年繳比較便宜，就在各方案上方放一個選擇，一次設定所有方案的計費週期。它是[分段控制項](/components/segmented)，由兩個原生單選按鈕組成；價格會隨週期改變的方案都同時放入兩個價格，其中一個設為 `hidden`。腳本只負責移動這個屬性。
+
+<PagePreview name="billing-period" touchHeight={{ desktop: 928, tablet: 1640, phone: 1640 }} title="月繳或年繳" height={912} tabletHeight={1592} phoneHeight={1616} bodyClass="p(0) bg-surface-base fg-text-body text-sm" html={`<section class="container-inline px-lg py-4xl" aria-labelledby="pricing-period-title">
+  <div class="flex flex-col gap-2xl max-w(1040) mx-auto">
+    <header class="flex flex-col items-center gap-sm text-center">
+      <p class="eyebrow">Pricing</p>
+      <h2 class="heading heading-2xl" id="pricing-period-title">Free to start. Fair when you grow.</h2>
+      <p class="lead max-w(480)">Every plan deploys the same way. You pay for the team, not for the traffic.</p>
+      <div class="flex flex-col items-center gap-xs mt-md">
+        <div class="segmented" role="radiogroup" aria-label="Billing period" id="pricing-period">
+          <label class="segmented-item"><input type="radio" class="segmented-input" name="pricing-period" value="monthly" checked>Monthly</label>
+          <label class="segmented-item"><input type="radio" class="segmented-input" name="pricing-period" value="yearly">Yearly</label>
+        </div>
+        <p class="m(0) text-xs fg-text-muted">Paid by the year, Pro is 20% less.</p>
+      </div>
+    </header>
+    <div class="grid gap-md items-start grid-cols(3)@container(--4xl)">
+      <article class="sheet sheet-raised flex flex-col gap-lg p-lg">
+        <header class="flex flex-col gap-xs">
+          <h3 class="heading heading-sm">Hobby</h3>
+          <p class="price"><span class="price-currency">$</span><span class="price-amount">0</span><span class="price-period">forever</span></p>
+          <p class="m(0) leading-md">For side projects and trying things out.</p>
+        </header>
+        <a class="btn" href="#">Start for free</a>
+        <ul class="bullets bullets-check">
+          <li class="bullets-item">One project</li>
+          <li class="bullets-item">Previews for every branch</li>
+          <li class="bullets-item">Community support</li>
+        </ul>
+      </article>
+      <article class="sheet flex flex-col gap-lg p-lg">
+        <header class="flex flex-col gap-xs">
+          <div class="flex items-center justify-between gap-sm">
+            <h3 class="heading heading-sm">Pro</h3>
+            <span class="badge badge-ink badge-pill">Most popular</span>
+          </div>
+          <p class="price" data-pricing-period="monthly"><span class="price-currency">$</span><span class="price-amount">20</span><span class="price-period">per member a month</span></p>
+          <p class="price" data-pricing-period="yearly" hidden><s class="price-was"><span class="sr-only">Was </span>$20</s><span class="sr-only">now </span><span class="price-currency">$</span><span class="price-amount">16</span><span class="price-period">per member a month</span></p>
+          <p class="m(0) text-xs fg-text-muted" data-pricing-period="monthly">Billed every month.</p>
+          <p class="m(0) text-xs fg-text-muted" data-pricing-period="yearly" hidden>$192 a member, billed once a year.</p>
+          <p class="m(0) leading-md">For teams that ship to real visitors.</p>
+        </header>
+        <a class="btn btn-brand" href="#">Start a trial</a>
+        <ul class="bullets bullets-check">
+          <li class="bullets-item">Unlimited projects</li>
+          <li class="bullets-item">Fourteen regions</li>
+          <li class="bullets-item">Analytics and firewall</li>
+          <li class="bullets-item">Email support, next day</li>
+        </ul>
+      </article>
+      <article class="sheet sheet-raised flex flex-col gap-lg p-lg">
+        <header class="flex flex-col gap-xs">
+          <h3 class="heading heading-sm">Enterprise</h3>
+          <p class="price"><span class="price-amount">Custom</span></p>
+          <p class="m(0) leading-md">For organizations with their own rules.</p>
+        </header>
+        <a class="btn" href="#">Talk to sales</a>
+        <ul class="bullets bullets-check">
+          <li class="bullets-item">Single sign-on and audit log</li>
+          <li class="bullets-item">A 99.99% uptime agreement</li>
+          <li class="bullets-item">A named engineer</li>
+          <li class="bullets-item">Invoices and purchase orders</li>
+        </ul>
+      </article>
+    </div>
+    <p class="m(0) text-center text-xs fg-text-muted">Prices are in US dollars and exclude tax. Cancel any time.</p>
+    <p class="sr-only" role="status" id="pricing-period-status"></p>
+  </div>
+</section>
+<script>
+document.getElementById('pricing-period').addEventListener('change', function (event) {
+  var period = event.target.value
+  document.querySelectorAll('[data-pricing-period]').forEach(function (price) {
+    price.hidden = price.getAttribute('data-pricing-period') !== period
+  })
+  document.getElementById('pricing-period-status').textContent = period === 'yearly' ? 'Showing prices billed yearly.' : 'Showing prices billed monthly.'
+})
+</script>`} />
+
+- **選擇放在它所改變的方案上方**，位於區塊的引言之下，並一次套用到所有方案。若每張卡片各放一個開關，兩張卡片就可能彼此不一致。
+- **預設選取月繳。** 年繳的數字比較低，頁面一開啟就顯示年繳價格，等於顯示一個第一個月沒有人會付的金額。請在控制項旁用一行文字說明年繳省下多少，讓訪客在做選擇前就能讀到。
+- **年繳價格寫出買家需要的兩個數字：**換算後每月多少，寫在[價格](/components/price)中；一次收取多少，寫在下方的那一行。`price-was` 以刪除線保留月繳價格，讓節省的金額是一項比較，而不只是一句宣稱。月繳價格在同一位置也有一行，所以卡片在兩種週期下一樣高，切換週期時不會有任何東西移動。
+- **不受週期影響的方案只有一個價格。** Hobby 不論哪種週期都免費，Enterprise 則另行報價，所以兩者都不會改變，也不需要另一個要隱藏的價格。
+- **沒有腳本時，區塊就是月繳定價。** 單選按鈕仍可切換，其他內容則不會變動。若方案由伺服器渲染，請改為依網址渲染計費週期，並把兩個選項做成連結。
+
+請把計費週期帶到按鈕通往的頁面：選了年繳並按下「Start a trial」（開始試用）的訪客，不應該再被問一次。
+
 ## 方案比較 \{#comparison\}
 
-在方案下方放一張[表格](/components/table)，補充卡片難以回答的比較問題。每項功能占一列，每個方案占一欄。在窄螢幕上，表格可在面板內的[捲動區域](/components/scroll-area)橫向捲動，有更多欄位的一側會以漸淡邊緣提示。
+在方案下方，一張[表格](/components/table)回答卡片答不了的問題：每項功能占一列，每個方案占一欄。在窄螢幕上，表格可在面板內的[捲動區域](/components/scroll-area)橫向捲動，有更多欄位的一側會以漸淡邊緣提示。
 
 <PagePreview name="compare" touchHeight={{ desktop: 648, tablet: 632 }} title="方案比較" height={624} phoneHeight={696} bodyClass="p(0) bg-surface-base fg-text-body text-sm" html={`<section class="container-inline px-lg py-4xl" aria-labelledby="pricing-compare-title">
   <div class="flex flex-col gap-xl max-w(880) mx-auto">
@@ -149,22 +238,14 @@ import PagePreview from '~/site/components/PagePreview.astro'
   </div>
 </section>`} />
 
-將勾號和短橫線對輔助技術隱藏，分別提供視覺隱藏的文字「包含」和「未包含」。捲動區域設有 `tabindex="0"`，並以標題作為名稱，讓使用者能用鍵盤捲動。
-
-## 切換計費週期 \{#plan-cycle\}
-
-用同一組單選按鈕切換所有方案，核對實際扣款額、扣款週期和方案連結目的地。推薦方案也會使用目前選取的週期。
-
-方案連結會開啟[審閱範例頁](/demo/plan-quote.html?plan=studio&cycle=annual)。複製區塊時，請將 `/demo/plan-quote.html` 換成自己的審閱路由，在該頁讀取選取的 `plan` 和 `cycle`。
-
-<PagePreview name="plan-cycle" title="切換計費週期" example="plan-cycle" />
+勾號和短橫線不是文字：兩者都對輔助技術隱藏，並各帶一段視覺上隱藏的文字「Included」（包含）或「Not included」（未包含）。捲動區域設有 `tabindex="0"`，並以標題作為名稱，讓使用者能用鍵盤捲動。
 
 ## 無障礙 \{#accessibility\}
 
 - 每個方案都是一個 `<article>`，方案名稱使用隸屬於區塊 `<h2>` 的 `<h3>`。
-- 徽章以「最受歡迎」標示推薦方案，避免只靠位置或陰影層級傳達。
+- 徽章是文字「Most popular」（最受歡迎），因此推薦不是只靠位置或深度傳達。
 - 表格每列的第一格都是 `<th scope="row">`，讓輔助技術讀出儲存格內容時，也能讀出對應的功能和方案。
-- 在價格中寫明計費週期。只寫「$20」，價格資訊仍不完整。
+- 在價格中寫明計費週期。單獨的「$20」不算價格。
 
 ## 相關內容 \{#related\}
 
