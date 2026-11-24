@@ -96,6 +96,38 @@
     }
   }
 
+  /* A vertical tablist reads down one edge, including when the page reads from the right. */
+  .tabs[aria-orientation="vertical"] {
+    --tabs-edge: 1px;
+    flex-direction: column;
+    overflow: hidden auto;
+    overscroll-behavior: auto contain;
+    box-shadow: inset var(--tabs-edge) 0 0 var(--color-line-divider);
+
+    &:dir(rtl) {
+      --tabs-edge: -1px;
+    }
+
+    .tabs-item {
+      padding-inline: .75rem;
+      text-align: start;
+    }
+
+    .tabs-item[aria-selected="true"] {
+      box-shadow: inset calc(2 * var(--tabs-edge)) 0 0 var(--color-text-strong);
+    }
+
+    @media (forced-colors: active) {
+      border-bottom: 0;
+      border-inline-start: 1px solid CanvasText;
+
+      .tabs-item[aria-selected="true"] {
+        border-bottom: 0;
+        border-inline-start: 2px solid Highlight;
+      }
+    }
+  }
+
   /*
    * The gliding underline. The current tab names itself as an anchor; the row scopes that name and draws one
    * mark between the anchor's edges, with a softened top so the ink does not end in a hard corner.
@@ -119,6 +151,20 @@
         transition-property: right, left;
         transition-duration: var(--duration-base);
         transition-timing-function: var(--easing-glide);
+      }
+
+      &[aria-orientation="vertical"]:has(.tabs-item[aria-selected="true"])::after {
+        top: anchor(top);
+        bottom: anchor(bottom);
+        inset-inline: 0 auto;
+        width: 2px;
+        height: auto;
+        border-radius: 0;
+        transition-property: top, bottom;
+      }
+
+      &[aria-orientation="vertical"] .tabs-item[aria-selected="true"] {
+        box-shadow: none;
       }
 
       /* As heavy as the rule that glides, or the glide outweighs it. */

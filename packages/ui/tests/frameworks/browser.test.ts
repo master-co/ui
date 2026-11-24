@@ -229,6 +229,47 @@ test(`${engine}: Editable keeps a restored draft and follows native submission a
   } finally { await page.close() }
 })
 
+test(`${engine}: vertical tabs in a shadow root own their panels and recover focus on removal`, async () => {
+  const page = await browser.newPage()
+  try {
+    await page.setContent('<button id="outside">Outside</button><div id="two" hidden>Outside panel</div><div id="host"></div>')
+    const css = await readFile(new URL('../../dist/standalone.css', import.meta.url), 'utf8')
+    await page.evaluate(styles => {
+      const shadow = document.querySelector('#host')!.attachShadow({ mode: 'open' })
+      shadow.innerHTML = `<style>${styles}</style><div class="tabs" role="tablist" aria-orientation="vertical">
+        <button role="tab" class="tabs-item" aria-controls="one">One</button>
+        <button role="tab" class="tabs-item" aria-controls="two">Two</button>
+        <button role="tab" class="tabs-item" aria-controls="three">Three</button>
+      </div><div role="tabpanel" id="one">First panel</div><div role="tabpanel" id="two" hidden>Second panel</div><div role="tabpanel" id="three" hidden>Third panel</div>`
+    }, css)
+    const source = await readFile(new URL('../../behaviors/tabs.js', import.meta.url), 'utf8')
+    await page.addScriptTag({ content: `${source.replace('export function tabs', 'function tabs')}
+      tabs(document.querySelector('#host').shadowRoot.querySelector('.tabs'))` })
+    const list = page.getByRole('tablist')
+    const tabs = list.getByRole('tab')
+    assert.ok((await box(tabs.nth(1))).y >= (await box(tabs.first())).y + (await box(tabs.first())).height)
+    await tabs.first().focus()
+    await page.keyboard.press('ArrowDown')
+    assert.equal(await page.getByRole('tabpanel').textContent(), 'Second panel')
+    assert.equal(await page.locator('body > #two').isVisible(), false)
+    await tabs.nth(1).evaluate(tab => {
+      const tree = tab.getRootNode() as ShadowRoot
+      tab.remove()
+      tree.getElementById('two')!.remove()
+    })
+    assert.equal(await tabs.last().getAttribute('aria-selected'), 'true')
+    assert.equal(await tabs.last().evaluate(tab => (tab.getRootNode() as ShadowRoot).activeElement === tab), true)
+    await page.locator('#outside').focus()
+    await tabs.last().evaluate(tab => {
+      const tree = tab.getRootNode() as ShadowRoot
+      tab.remove()
+      tree.getElementById('three')!.remove()
+    })
+    assert.equal(await page.getByRole('tabpanel').textContent(), 'First panel')
+    assert.equal(await page.locator('#outside').evaluate(el => el === document.activeElement), true)
+  } finally { await page.close() }
+})
+
 test(`${engine}: toolbar arrows respect a disabled fieldset and its first legend`, async () => {
   const page = await browser.newPage()
   try {

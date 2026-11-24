@@ -32,6 +32,8 @@ export function tabs(root, { searchable = false } = {}) {
   const { signal } = controller
   attached.set(root, controller)
   const document = root.ownerDocument
+  const tree = root.getRootNode()
+  const scope = /** @type {Document | ShadowRoot} */ ('getElementById' in tree ? tree : document)
   const findable = searchable && 'onbeforematch' in document.documentElement
 
   /** The tabs of this tablist, not those of a tablist inside one of its panels. */
@@ -46,13 +48,17 @@ export function tabs(root, { searchable = false } = {}) {
   /** @param {Element} tab */
   const panel = (tab) => {
     const id = tab.getAttribute('aria-controls')
-    return id ? document.getElementById(id) : null
+    return id ? scope.getElementById(id) : null
   }
 
   /** @type {Map<HTMLElement, string | null>} Each tab's `tabindex` before the script wrote one. */
   const original = new Map()
   /** @type {Map<HTMLElement, string | null>} A browser can still expose the empty box of an until-found panel. */
   const panelVisibility = new Map()
+  /** @type {HTMLElement[]} The last order, so removal has a next or previous neighbour. */
+  let order = []
+  /** @type {HTMLElement | undefined} */
+  let current
 
   /** @param {HTMLElement} shown @param {boolean} hide */
   function hideFromAssistiveTechnology(shown, hide) {
@@ -73,7 +79,9 @@ export function tabs(root, { searchable = false } = {}) {
    * @param {EventTarget | null} [revealing] The panel a native beforematch is about to reveal.
    */
   function mark(chosen, revealing) {
-    for (const tab of all()) {
+    current = chosen
+    order = all()
+    for (const tab of order) {
       if (!original.has(tab)) original.set(tab, tab.getAttribute('tabindex'))
       const on = tab === chosen
       if (tab.getAttribute('aria-selected') !== String(on)) tab.setAttribute('aria-selected', String(on))
@@ -91,11 +99,17 @@ export function tabs(root, { searchable = false } = {}) {
     }
   }
 
+  /** @param {HTMLElement | undefined} tab */
+  function announce(tab) {
+    const detail = { value: tab ? valueOf(tab) : null, tab: tab ?? null }
+    for (const type of ['input', 'change']) root.dispatchEvent(new CustomEvent(type, { bubbles: true, detail }))
+  }
+
   /** @param {HTMLElement} tab @param {EventTarget | null} [revealing] */
   function select(tab, revealing) {
     if (tab.getAttribute('aria-selected') === 'true') return
     mark(tab, revealing)
-    for (const type of ['input', 'change']) root.dispatchEvent(new CustomEvent(type, { bubbles: true, detail: { value: valueOf(tab), tab } }))
+    announce(tab)
   }
 
   const detach = /** @type {(() => void) & { value: string | null }} */ (Object.defineProperty(() => controller.abort(), 'value', {
@@ -140,9 +154,54 @@ export function tabs(root, { searchable = false } = {}) {
     if (tab && all().includes(tab) && enabled(tab)) select(tab)
   }, { signal })
 
+  /** @type {HTMLElement | undefined} The focused tab before removal, which can return focus to the body. */
+  let focused
+  root.addEventListener('focusin', (event) => {
+    const tab = /** @type {HTMLElement} */ (event.target)
+    if (all().includes(tab)) focused = tab
+  }, { signal })
+  root.addEventListener('focusout', (event) => {
+    const tab = focused
+    if (event.relatedTarget) focused = undefined
+    else queueMicrotask(() => {
+      if (focused === tab && tab?.isConnected && scope.activeElement !== tab) focused = undefined
+    })
+  }, { signal })
+
+  if (typeof MutationObserver === 'function') {
+    const observer = new MutationObserver(() => {
+      const list = all()
+      if (list.length === order.length && list.every((tab, index) => tab === order[index])) return
+      const removed = current && !list.includes(current)
+      const previousValue = current ? valueOf(current) : null
+      const restore = removed && focused === current && (!scope.activeElement || scope.activeElement === document.body)
+      const index = current ? order.indexOf(current) : -1
+      const neighbours = [...order.slice(index + 1), ...order.slice(0, index).reverse()]
+      const next = current && !removed ? current : selected() ?? list.find(tab => valueOf(tab) === previousValue && enabled(tab))
+        ?? neighbours.find(tab => list.includes(tab) && enabled(tab)) ?? list.find(enabled)
+      for (const tab of order) {
+        if (list.includes(tab)) continue
+        const originalIndex = original.get(tab)
+        if (originalIndex == null) tab.removeAttribute('tabindex')
+        else tab.setAttribute('tabindex', originalIndex)
+        original.delete(tab)
+        const orphan = panel(tab)
+        if (orphan && !list.some(other => panel(other) === orphan)) {
+          hideFromAssistiveTechnology(orphan, false)
+          orphan.hidden = true
+        }
+      }
+      mark(next)
+      if (restore) next?.focus()
+      if (removed && previousValue !== (next ? valueOf(next) : null)) announce(next)
+    })
+    observer.observe(root, { childList: true, subtree: true })
+    signal.addEventListener('abort', () => observer.disconnect())
+  }
+
   if (findable) {
     // The panels usually follow the tablist as siblings, so hear their native reveals on the document.
-    document.addEventListener('beforematch', (event) => {
+    scope.addEventListener('beforematch', (event) => {
       const target = /** @type {HTMLElement} */ (event.target)
       const tab = all().find((each) => panel(each) === target)
       if (!tab) return
@@ -162,7 +221,7 @@ export function tabs(root, { searchable = false } = {}) {
       let id = document.defaultView?.location.hash.slice(1)
       if (!id) return
       try { id = decodeURIComponent(id) } catch { /* Try the literal fragment when it is malformed. */ }
-      const target = document.getElementById(id)
+      const target = scope.getElementById(id)
       if (!target) return
       const tab = all().find((each) => available(each) && panel(each)?.contains(target))
       if (tab && tab !== selected()) {
