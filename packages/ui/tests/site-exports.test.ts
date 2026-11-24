@@ -76,9 +76,9 @@ test('heading examples inside fenced code are preserved literally', () => {
 })
 
 test('demo links stay reachable in downloaded guides while fenced examples keep their local URLs', () => {
-  const link = '[Read](/demo/navigation/field-notes.html#wind-screen)'
+  const link = '[Read](/demo/notes.html#wind-screen)'
   const fenced = ['~~~~md', link, '~~~~'].join('\n')
-  assert.equal(anchorMarkdown(link + '\n' + fenced, 'https://ui.master.co'), '[Read](https://ui.master.co/demo/navigation/field-notes.html#wind-screen)\n' + fenced)
+  assert.equal(anchorMarkdown(link + '\n' + fenced, 'https://ui.master.co'), '[Read](https://ui.master.co/demo/notes.html#wind-screen)\n' + fenced)
 })
 
 // These identifiers are public links from the retired Design /master-ui chapter.

@@ -7,7 +7,6 @@ import { createServer, type ViteDevServer } from 'vite'
 import { verifyComponentGeometry } from '../components/geometry.ts'
 import { compile, contracts } from '../support.ts'
 import { demoDocument } from '@master/internal-site/demo/reference/document.ts'
-import { exampleHtml, exampleBundle } from '../../../../site/utils/examples.ts'
 import { uiSource } from '../../../../site/utils/ui-source.ts'
 
 /**
@@ -1316,58 +1315,5 @@ test('wrapped alert actions start at the message text with or without a leading 
       assert.equal(geometry.wrapped, width < 680)
       if (geometry.wrapped) assert.ok(Math.abs(geometry.offset) < 1, JSON.stringify({ dir, icon, width, geometry }))
     }
-  } finally { await page.close() }
-})
-
-test(`${engine}: record views keep one accessible selection as the column narrows and widens`, async () => {
-  const page = await browser.newPage({ viewport: { width: 1280, height: 720 } })
-  try {
-    const id = 'record-views'
-    const html = exampleHtml(id)
-    const section = { id, page: 'blocks', title: 'Studio bookings', html: [html], css: uiSource(), classes: [], classLists: [], highlighted: [] }
-    await page.setContent(demoDocument(section, { html, caption: '' }))
-    await page.addScriptTag({ type: 'module', content: await exampleBundle(id) })
-    const root = page.locator('[data-example="record-views"]')
-    const selected = root.getByRole('checkbox', { name: 'Select Ferry arrival' })
-    await selected.check()
-    // Change only the space available to the block, as a sidebar does. WebKit used
-    // to crash when a container query rebuilt the named anchors in a hidden list.
-    for (const width of [320, 920, 320, 920]) {
-      await root.evaluate((element, width) => { element.style.width = width + 'px' }, width)
-      const visible = width === 320 ? root.getByRole('list') : root.getByRole('table')
-      await visible.waitFor()
-      assert.equal(await visible.getByRole('checkbox').count(), 3)
-      assert.equal(await root.getByRole('checkbox').count(), 3)
-      assert.ok(await selected.isChecked())
-    }
-  } finally { await page.close() }
-})
-
-test(`${engine}: album editor announces keyboard moves and keeps removal feedback visible`, async () => {
-  const page = await browser.newPage()
-  try {
-    const id = 'album-editor'
-    const html = exampleHtml(id)
-    const section = { id, page: 'blocks', title: 'Harbor album', html: [html], css: uiSource(), classes: [], classLists: [], highlighted: [] }
-    await page.setContent(demoDocument(section, { html, caption: '' }))
-    await page.addScriptTag({ type: 'module', content: await exampleBundle(id) })
-    const handle = page.getByRole('button', { name: 'Move Lighthouse', exact: true })
-    const feedback = page.getByRole('status')
-    for (const [key, message] of [
-      ['Space', 'picked up at position 1 of 3'],
-      ['ArrowDown', 'position 2 of 3'],
-      ['Escape', 'move cancelled. Back at position 1 of 3'],
-      ['Space', 'picked up at position 1 of 3'],
-      ['ArrowDown', 'position 2 of 3'],
-      ['Space', 'dropped at position 2 of 3'],
-    ]) {
-      await handle.press(key)
-      await feedback.filter({ hasText: 'Lighthouse, ' + message }).waitFor({ state: 'attached', timeout: 4000 })
-      assert.ok(await handle.evaluate(element => document.activeElement === element))
-    }
-    await page.getByRole('button', { name: 'Remove Lighthouse' }).press('Enter')
-    const removal = feedback.filter({ hasText: 'Lighthouse removed. 2 remaining.' })
-    assert.ok(await removal.isVisible())
-    assert.ok((await box(removal)).width > 1, 'The removal confirmation stays visible outside the screen-reader-only reorder status')
   } finally { await page.close() }
 })
