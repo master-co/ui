@@ -1,0 +1,309 @@
+---
+title: "폼 값 수집"
+description: "키보드 입력부터 기본 폼 제출까지 식별자, 선택값, 초안 동작의 의미를 유지합니다."
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+
+앱이 받아야 할 값을 기준으로 컨트롤을 고릅니다. 예시 값을 입력하고 제출한 뒤 필드 이름, 값, 제출을 실행한 버튼을 확인합니다.
+
+## 식별자 앞의 0 \{#leading-zeros\}
+
+식별자는 텍스트 필드로 받습니다. 숫자 키보드와 다섯 자리 패턴으로 입력을 돕고 제출 문자열에는 다섯 글자를 모두 유지합니다.
+
+<ComponentPreview name="leading-zeros" title="식별자 앞의 0" height={130} narrowHeight={160} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<form id="member-form">
+  <label class="field">Member number (5 digits)
+    <input class="input" name="member" type="text" inputmode="numeric" pattern="[0-9]{5}" value="00126" required>
+  </label>
+  <button class="btn btn-sm" type="submit">Check number</button> <output></output>
+</form>
+<script>
+const form = document.getElementById('member-form')
+form.addEventListener('submit', event => {
+  event.preventDefault()
+  form.querySelector('output').textContent = new FormData(form).get('member')
+})
+</script>`} />
+
+## 한 폼의 두 주소 \{#address-sections\}
+
+주소마다 범례와 별도의 필드 이름을 둡니다. `section-*` 접두어와 주소 유형으로 자동 완성 그룹을 구분합니다.
+
+```html
+<form>
+  <fieldset class="fieldset"><legend class="fieldset-legend">Billing address</legend>
+    <label class="field">Street <input class="input" name="billingStreet" autocomplete="section-bill billing street-address"></label>
+    <label class="field">Postal code <input class="input" name="billingPost" autocomplete="section-bill billing postal-code"></label>
+  </fieldset>
+  <fieldset class="fieldset"><legend class="fieldset-legend">Shipping address</legend>
+    <label class="field">Street <input class="input" name="shippingStreet" autocomplete="section-ship shipping street-address"></label>
+    <label class="field">Postal code <input class="input" name="shippingPost" autocomplete="section-ship shipping postal-code"></label>
+  </fieldset>
+</form>
+```
+
+## 복사하고 제출할 참조 번호 \{#readonly-id\}
+
+이름이 있는 읽기 전용 필드도 폼에 포함되어 제출됩니다. 포커스를 두고 텍스트를 선택하면 전체 번호를 복사할 수 있습니다.
+
+```html
+<form id="receipt">
+  <label class="field">Receipt number <input class="input" name="receipt" readonly value="RC-00126"></label>
+</form>
+<script>
+const receipt = new FormData(document.getElementById('receipt')).get('receipt')
+// receipt === 'RC-00126'
+</script>
+```
+
+## 범례에서 그룹 활성화 \{#enabled-legend\}
+
+비활성 fieldset의 첫 legend 안에 전환 컨트롤을 둡니다. 나머지 필드가 조작과 제출에서 제외되어도 이 컨트롤은 사용할 수 있습니다.
+
+<ComponentPreview name="enabled-legend" title="범례에서 그룹 활성화" height={179} narrowHeight={210} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<form id="limits-form">
+<fieldset class="fieldset" id="custom-limit" disabled>
+  <legend class="fieldset-legend"><label class="check"><input type="checkbox" class="checkbox"> Custom limit</label></legend>
+  <label class="field">Maximum entries <input class="input" type="number" name="limit" min="1" value="25"></label>
+</fieldset>
+<button class="btn btn-sm" type="submit">Check submitted limit</button> <output></output>
+</form>
+<script>
+const group = document.getElementById('custom-limit')
+const toggle = group.querySelector('input[type="checkbox"]')
+toggle.addEventListener('change', () => { group.disabled = !toggle.checked })
+const form = document.getElementById('limits-form')
+form.addEventListener('submit', event => {
+  event.preventDefault()
+  const value = new FormData(form).get('limit')
+  form.querySelector('output').textContent = value === null ? 'Limit omitted' : 'limit=' + value
+})
+</script>`} />
+
+## 초안 저장과 게시 \{#draft-or-publish\}
+
+제출 버튼이 의도한 작업을 전달합니다. 초안은 유효성 검사를 건너뛰고 게시는 같은 폼에서 필수 제목을 검사합니다. 서버에서도 선택한 작업을 검증합니다.
+
+<ComponentPreview name="draft-or-publish" title="초안 저장과 게시" height={180} narrowHeight={215} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<form id="article-form">
+  <label class="field">Article title <input class="input" name="title" required></label>
+  <div class="flex flex-wrap gap(8)">
+    <button class="btn" name="action" value="draft" formnovalidate>Save draft</button>
+    <button class="btn btn-primary" name="action" value="publish">Publish</button>
+  </div>
+  <output></output>
+</form>
+<script>
+const article = document.getElementById('article-form')
+article.addEventListener('submit', event => {
+  event.preventDefault()
+  const data = new FormData(article, event.submitter)
+  article.querySelector('output').textContent = 'Submitted action: ' + data.get('action')
+})
+</script>`} />
+
+## 대화 상자 바닥글의 제출 버튼 \{#dialog-footer\}
+
+바닥글 버튼을 ID로 폼과 연결합니다. Enter와 저장 버튼은 모두 기본 유효성 검사를 실행합니다. 검사에 통과하면 대화 상자가 닫히고 주소가 유효하지 않으면 수정할 수 있도록 열린 상태로 남습니다.
+
+<ComponentPreview name="dialog-footer" title="대화 상자 바닥글의 제출 버튼" height={210} narrowHeight={250} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<button class="btn" type="button" command="show-modal" commandfor="contact-dialog">Set contact</button>
+<dialog class="dialog" id="contact-dialog" aria-labelledby="contact-title">
+  <header class="dialog-header"><h2 class="heading" id="contact-title">Contact address</h2></header>
+  <form class="dialog-body" id="contact-form" method="dialog">
+    <label class="field">Email <input class="input" type="email" name="email" required></label>
+  </form>
+  <footer class="dialog-footer">
+    <button class="btn" type="button" command="close" commandfor="contact-dialog">Cancel</button>
+    <button class="btn btn-primary" type="submit" form="contact-form" value="save">Save</button>
+  </footer>
+</dialog>`} />
+
+## 동의와 약관 링크 \{#terms-link\}
+
+링크는 체크박스 레이블 옆에 둡니다. 별도로 키보드 포커스를 받을 수 있고 약관을 열어도 선택 상태가 유지됩니다.
+
+```html
+<div class="flex items-baseline flex-wrap gap(8)">
+  <label class="check"><input class="checkbox" type="checkbox" name="terms" required> I agree to the terms</label>
+  <a class="link" href="#license-terms">Read the terms</a>
+</div>
+<section id="license-terms"><h2 class="heading">License terms</h2><p>Keep the recording credits with each download.</p></section>
+```
+
+## 추천 목록에 없는 값 입력 \{#open-ended-options\}
+
+입력에 datalist를 연결합니다. 비어 있지 않은 새로운 관측소 이름도 같은 필드명으로 제출할 수 있습니다.
+
+```html
+<form method="get">
+  <label class="field">Station
+    <input class="input" name="station" list="known-stations" required>
+  </label>
+  <datalist id="known-stations"><option value="East Pier"></option><option value="West Pier"></option></datalist>
+  <button class="btn" type="submit">Continue</button>
+</form>
+```
+
+## 같은 이름의 지역 옵션 \{#duplicate-option-names\}
+
+각 옵션 레이블에도 지역을 넣습니다. 목록을 닫으면 브라우저가 선택된 옵션만 표시할 수 있습니다.
+
+```html
+<label class="field">Collection point
+  <select class="select" name="branch">
+    <optgroup label="North"><option value="north-central">Central · North</option></optgroup>
+    <optgroup label="South"><option value="south-central">Central · South</option></optgroup>
+  </select>
+</label>
+```
+
+## URL로 공유하는 필터 \{#shareable-filters\}
+
+체크박스에 같은 이름과 서로 다른 값을 지정합니다. 처음 열거나 기록에서 복귀할 때 URL의 모든 값을 읽고 선택이 없는 상태도 복원합니다.
+
+```html
+<form method="get" id="station-filter">
+  <fieldset class="fieldset"><legend class="fieldset-legend">Habitats</legend>
+    <label class="check"><input class="checkbox" type="checkbox" name="habitat" value="coast"> Coast</label>
+    <label class="check"><input class="checkbox" type="checkbox" name="habitat" value="forest"> Forest</label>
+  </fieldset>
+  <button class="btn">Apply filters</button>
+</form>
+<script>
+const filters = document.getElementById('station-filter')
+function restore() {
+  const selected = new Set(new URLSearchParams(location.search).getAll('habitat'))
+  for (const box of filters.querySelectorAll('[name="habitat"]')) box.checked = selected.has(box.value)
+}
+restore()
+window.addEventListener('pageshow', restore)
+</script>
+```
+
+## 미응답과 미정 \{#undecided\}
+
+선택 사항으로 둡니다. 미선택이면 FormData에 항목이 없고 미정을 고르면 별도의 값이 제출됩니다.
+
+```html
+<form method="get">
+  <fieldset class="fieldset"><legend class="fieldset-legend">Will you attend?</legend>
+    <label class="check"><input class="radio" type="radio" name="attendance" value="yes"> Yes</label>
+    <label class="check"><input class="radio" type="radio" name="attendance" value="no"> No</label>
+    <label class="check"><input class="radio" type="radio" name="attendance" value="undecided"> Undecided</label>
+  </fieldset>
+  <button class="btn" type="submit">Continue</button>
+</form>
+```
+
+## 행 순서를 바꾼 후의 오류 \{#errors-after-reordering\}
+
+필드 이름, 레이블 대상, 오류 ID에 레코드 키를 사용합니다. 행 전체를 옮기면 값과 설명도 함께 이동합니다.
+
+<ComponentPreview name="errors-after-reordering" title="행 순서를 바꾼 후의 오류" height={192} narrowHeight={225} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<form id="sample-rows">
+  <div class="field"><label for="label-a17">East sample</label>
+    <input class="input" id="label-a17" name="label[a17]" aria-invalid="true" aria-describedby="error-a17" required>
+    <p id="error-a17">Enter the sample label.</p>
+  </div>
+  <label class="field">West sample <input class="input" name="label[b24]" value="W-24"></label>
+</form>
+<button type="button" class="btn btn-sm" id="move-sample">Move last sample to first</button>
+<script>
+const rows = document.getElementById('sample-rows')
+document.getElementById('move-sample').addEventListener('click', () => {
+  rows.prepend(rows.lastElementChild)
+})
+const east = document.getElementById('label-a17')
+east.addEventListener('input', () => {
+  const valid = east.validity.valid
+  east.setAttribute('aria-invalid', String(!valid))
+  document.getElementById('error-a17').hidden = valid
+})
+</script>`} />
+
+## 0.25 단위 입력 \{#quarter-steps\}
+
+허용할 첫 값과 간격을 함께 지정합니다. 0에서 시작하면 1.25는 유효하고 1.20은 간격 오류가 됩니다.
+
+```html
+<label class="field">Hours worked (quarter hours)
+  <input class="input" type="number" name="hours" min="0" step="0.25" value="1.25">
+</label>
+```
+
+## 빈 입력란에도 보이는 단위 \{#persistent-unit\}
+
+단위는 값 바깥에 두고 전체 명칭을 설명으로 연결합니다. 입력을 지워도 단위 표시와 의미가 유지됩니다.
+
+```html
+<div class="field">
+  <label for="length">Cable length</label>
+  <div class="flex items-baseline gap(8)">
+    <input class="input" type="number" min="0" step="any" id="length" name="lengthM" aria-describedby="length-unit">
+    <span id="length-unit">metres</span>
+  </div>
+</div>
+```
+
+## 행 이름을 포함한 수량 조절 \{#named-quantities\}
+
+수량 필드와 증감 버튼 이름에 행 이름을 포함합니다. 입력 필드에서 방향키를 사용할 수 있게 하고 각 그룹에 [스테퍼](/components/stepper) 동작을 연결합니다.
+
+```html
+<table class="table"><caption>Subscription seats</caption><tbody>
+  <tr><th id="design-seats" scope="row">Design seats</th><td>
+    <div class="input-group stepper">
+      <button type="button" class="btn btn-square" value="-1" tabindex="-1" aria-labelledby="design-less design-seats"><span id="design-less" class="sr-only">Decrease</span>−</button>
+      <input class="input stepper-field" type="number" min="0" value="2" aria-labelledby="design-seats" name="design">
+      <button type="button" class="btn btn-square" value="1" tabindex="-1" aria-labelledby="design-more design-seats"><span id="design-more" class="sr-only">Increase</span>+</button>
+    </div>
+  </td></tr>
+  <tr><th id="review-seats" scope="row">Review seats</th><td>
+    <div class="input-group stepper">
+      <button type="button" class="btn btn-square" value="-1" tabindex="-1" aria-labelledby="review-less review-seats"><span id="review-less" class="sr-only">Decrease</span>−</button>
+      <input class="input stepper-field" type="number" min="0" value="1" aria-labelledby="review-seats" name="review">
+      <button type="button" class="btn btn-square" value="1" tabindex="-1" aria-labelledby="review-more review-seats"><span id="review-more" class="sr-only">Increase</span>+</button>
+    </div>
+  </td></tr>
+</tbody></table>
+<script type="module">
+import { stepper } from '@master/ui/behaviors/stepper.js'
+document.querySelectorAll('.stepper').forEach(group => stepper(group))
+</script>
+```
+
+## 길이 제한과 현재 길이 \{#text-length\}
+
+HTML의 `minlength`와 `maxlength`는 UTF-16 코드 단위를 사용합니다. 붙여넣거나 입력기로 조합한 뒤에도 카운터는 같은 단위로 셉니다.
+
+<ComponentPreview name="text-length" title="길이 제한과 현재 길이" height={146} narrowHeight={170} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<div class="field">
+  <label for="sample-code">Sample code</label>
+  <input class="input" id="sample-code" name="code" minlength="3" maxlength="12" required aria-describedby="code-rule">
+  <p class="field-hint" id="code-rule">3–12 UTF-16 units. <span id="code-count">0 of 12</span></p>
+</div>
+<script>
+const field = document.getElementById('sample-code')
+const count = document.getElementById('code-count')
+function showCount() { count.textContent = field.value.length + ' of ' + field.maxLength }
+field.addEventListener('input', showCount)
+window.addEventListener('pageshow', showCount)
+showCount()
+</script>`} />
+
+## 기간으로 계산한 날짜 표시 \{#derived-date\}
+
+출력에 이름을 지정하고 `for`로 원본 입력을 가리킵니다. 이 예시는 UTC 기준 12월 28일부터 달력 날짜를 세며 일수가 유효하지 않으면 출력을 비웁니다.
+
+<ComponentPreview name="derived-date" title="기간으로 계산한 날짜 표시" height={134} narrowHeight={165} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<label class="field" for="loan-days">Days after 28 Dec 2026
+  <input class="input" type="number" id="loan-days" min="1" max="90" value="7" required>
+</label>
+<p><label for="loan-due">Due date</label> <output id="loan-due" name="due" for="loan-days">2027-01-04</output></p>
+<script>
+const days = document.getElementById('loan-days')
+const due = document.getElementById('loan-due')
+function updateDue() {
+  const date = new Date(Date.UTC(2026, 11, 28))
+  if (!days.validity.valid) { due.value = ''; return }
+  date.setUTCDate(date.getUTCDate() + days.valueAsNumber)
+  due.value = date.toISOString().slice(0, 10)
+}
+days.addEventListener('input', updateDue)
+updateDue()
+</script>`} />

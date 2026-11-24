@@ -1,0 +1,304 @@
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+
+Choose a control from the value the application should receive. Try entering and submitting the sample value, then inspect the field name, value and submitter.
+
+## Leading zeros in an identifier \{#leading-zeros\}
+
+Use a text input for an identifier. A numeric keyboard and a five-digit pattern help entry while preserving all five characters in the submitted string.
+
+<ComponentPreview name="leading-zeros" title="Leading zeros in an identifier" height={130} narrowHeight={160} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<form id="member-form">
+  <label class="field">Member number (5 digits)
+    <input class="input" name="member" type="text" inputmode="numeric" pattern="[0-9]{5}" value="00126" required>
+  </label>
+  <button class="btn btn-sm" type="submit">Check number</button> <output></output>
+</form>
+<script>
+const form = document.getElementById('member-form')
+form.addEventListener('submit', event => {
+  event.preventDefault()
+  form.querySelector('output').textContent = new FormData(form).get('member')
+})
+</script>`} />
+
+## Two addresses in one form \{#address-sections\}
+
+Give each address a legend and independent names. The `section-*` prefix and address type distinguish the autocomplete groups.
+
+```html
+<form>
+  <fieldset class="fieldset"><legend class="fieldset-legend">Billing address</legend>
+    <label class="field">Street <input class="input" name="billingStreet" autocomplete="section-bill billing street-address"></label>
+    <label class="field">Postal code <input class="input" name="billingPost" autocomplete="section-bill billing postal-code"></label>
+  </fieldset>
+  <fieldset class="fieldset"><legend class="fieldset-legend">Shipping address</legend>
+    <label class="field">Street <input class="input" name="shippingStreet" autocomplete="section-ship shipping street-address"></label>
+    <label class="field">Postal code <input class="input" name="shippingPost" autocomplete="section-ship shipping postal-code"></label>
+  </fieldset>
+</form>
+```
+
+## A reference to copy and submit \{#readonly-id\}
+
+The named readonly field still participates in the form. Focus it and select its contents to copy the complete reference.
+
+```html
+<form id="receipt">
+  <label class="field">Receipt number <input class="input" name="receipt" readonly value="RC-00126"></label>
+</form>
+<script>
+const receipt = new FormData(document.getElementById('receipt')).get('receipt')
+// receipt === 'RC-00126'
+</script>
+```
+
+## Enable a group from its legend \{#enabled-legend\}
+
+Place the switch in the first legend of the disabled fieldset. It stays operable while the other fields are unavailable and omitted from submission.
+
+<ComponentPreview name="enabled-legend" title="Enable a group from its legend" height={179} narrowHeight={210} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<form id="limits-form">
+<fieldset class="fieldset" id="custom-limit" disabled>
+  <legend class="fieldset-legend"><label class="check"><input type="checkbox" class="checkbox"> Custom limit</label></legend>
+  <label class="field">Maximum entries <input class="input" type="number" name="limit" min="1" value="25"></label>
+</fieldset>
+<button class="btn btn-sm" type="submit">Check submitted limit</button> <output></output>
+</form>
+<script>
+const group = document.getElementById('custom-limit')
+const toggle = group.querySelector('input[type="checkbox"]')
+toggle.addEventListener('change', () => { group.disabled = !toggle.checked })
+const form = document.getElementById('limits-form')
+form.addEventListener('submit', event => {
+  event.preventDefault()
+  const value = new FormData(form).get('limit')
+  form.querySelector('output').textContent = value === null ? 'Limit omitted' : 'limit=' + value
+})
+</script>`} />
+
+## Save a draft or publish \{#draft-or-publish\}
+
+The submitter carries the intended action. Draft skips validation. Publish uses the required title and the same form. Validate the chosen action on the server as well.
+
+<ComponentPreview name="draft-or-publish" title="Save a draft or publish" height={180} narrowHeight={215} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<form id="article-form">
+  <label class="field">Article title <input class="input" name="title" required></label>
+  <div class="flex flex-wrap gap(8)">
+    <button class="btn" name="action" value="draft" formnovalidate>Save draft</button>
+    <button class="btn btn-primary" name="action" value="publish">Publish</button>
+  </div>
+  <output></output>
+</form>
+<script>
+const article = document.getElementById('article-form')
+article.addEventListener('submit', event => {
+  event.preventDefault()
+  const data = new FormData(article, event.submitter)
+  article.querySelector('output').textContent = 'Submitted action: ' + data.get('action')
+})
+</script>`} />
+
+## A submit button in the dialog footer \{#dialog-footer\}
+
+Associate the footer button with the form by ID. Enter and Save run native validation. A valid submission closes the dialog. An invalid address keeps it open for correction.
+
+<ComponentPreview name="dialog-footer" title="A submit button in the dialog footer" height={210} narrowHeight={250} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<button class="btn" type="button" command="show-modal" commandfor="contact-dialog">Set contact</button>
+<dialog class="dialog" id="contact-dialog" aria-labelledby="contact-title">
+  <header class="dialog-header"><h2 class="heading" id="contact-title">Contact address</h2></header>
+  <form class="dialog-body" id="contact-form" method="dialog">
+    <label class="field">Email <input class="input" type="email" name="email" required></label>
+  </form>
+  <footer class="dialog-footer">
+    <button class="btn" type="button" command="close" commandfor="contact-dialog">Cancel</button>
+    <button class="btn btn-primary" type="submit" form="contact-form" value="save">Save</button>
+  </footer>
+</dialog>`} />
+
+## Consent and a link to the terms \{#terms-link\}
+
+Keep the link beside the checkbox label. It gets its own keyboard stop and opening the terms leaves the checked state alone.
+
+```html
+<div class="flex items-baseline flex-wrap gap(8)">
+  <label class="check"><input class="checkbox" type="checkbox" name="terms" required> I agree to the terms</label>
+  <a class="link" href="#license-terms">Read the terms</a>
+</div>
+<section id="license-terms"><h2 class="heading">License terms</h2><p>Keep the recording credits with each download.</p></section>
+```
+
+## Suggestions with room for a new value \{#open-ended-options\}
+
+Connect the input to a datalist. A new nonempty station name is valid and submitted under the same field name.
+
+```html
+<form method="get">
+  <label class="field">Station
+    <input class="input" name="station" list="known-stations" required>
+  </label>
+  <datalist id="known-stations"><option value="East Pier"></option><option value="West Pier"></option></datalist>
+  <button class="btn" type="submit">Continue</button>
+</form>
+```
+
+## Two options with the same local name \{#duplicate-option-names\}
+
+Keep the region in each option label. Browsers may show only the selected option after the list closes.
+
+```html
+<label class="field">Collection point
+  <select class="select" name="branch">
+    <optgroup label="North"><option value="north-central">Central · North</option></optgroup>
+    <optgroup label="South"><option value="south-central">Central · South</option></optgroup>
+  </select>
+</label>
+```
+
+## Filters that survive a shared URL \{#shareable-filters\}
+
+Give each checkbox the same name and a distinct value. Read all occurrences from the URL on initial load and on history restoration, including a return to no checked values.
+
+```html
+<form method="get" id="station-filter">
+  <fieldset class="fieldset"><legend class="fieldset-legend">Habitats</legend>
+    <label class="check"><input class="checkbox" type="checkbox" name="habitat" value="coast"> Coast</label>
+    <label class="check"><input class="checkbox" type="checkbox" name="habitat" value="forest"> Forest</label>
+  </fieldset>
+  <button class="btn">Apply filters</button>
+</form>
+<script>
+const filters = document.getElementById('station-filter')
+function restore() {
+  const selected = new Set(new URLSearchParams(location.search).getAll('habitat'))
+  for (const box of filters.querySelectorAll('[name="habitat"]')) box.checked = selected.has(box.value)
+}
+restore()
+window.addEventListener('pageshow', restore)
+</script>
+```
+
+## Unanswered and undecided \{#undecided\}
+
+Leave the group optional. No selection omits the entry from FormData. Choosing Undecided submits its own value.
+
+```html
+<form method="get">
+  <fieldset class="fieldset"><legend class="fieldset-legend">Will you attend?</legend>
+    <label class="check"><input class="radio" type="radio" name="attendance" value="yes"> Yes</label>
+    <label class="check"><input class="radio" type="radio" name="attendance" value="no"> No</label>
+    <label class="check"><input class="radio" type="radio" name="attendance" value="undecided"> Undecided</label>
+  </fieldset>
+  <button class="btn" type="submit">Continue</button>
+</form>
+```
+
+## Errors after reordering rows \{#errors-after-reordering\}
+
+Use the record key in field names, label targets and error IDs. Move the whole row so its value and description travel together.
+
+<ComponentPreview name="errors-after-reordering" title="Errors after reordering rows" height={192} narrowHeight={225} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<form id="sample-rows">
+  <div class="field"><label for="label-a17">East sample</label>
+    <input class="input" id="label-a17" name="label[a17]" aria-invalid="true" aria-describedby="error-a17" required>
+    <p id="error-a17">Enter the sample label.</p>
+  </div>
+  <label class="field">West sample <input class="input" name="label[b24]" value="W-24"></label>
+</form>
+<button type="button" class="btn btn-sm" id="move-sample">Move last sample to first</button>
+<script>
+const rows = document.getElementById('sample-rows')
+document.getElementById('move-sample').addEventListener('click', () => {
+  rows.prepend(rows.lastElementChild)
+})
+const east = document.getElementById('label-a17')
+east.addEventListener('input', () => {
+  const valid = east.validity.valid
+  east.setAttribute('aria-invalid', String(!valid))
+  document.getElementById('error-a17').hidden = valid
+})
+</script>`} />
+
+## Quarter-unit increments \{#quarter-steps\}
+
+Set both the first allowed value and the step. Starting at zero admits 1.25 and flags 1.20 as a step mismatch.
+
+```html
+<label class="field">Hours worked (quarter hours)
+  <input class="input" type="number" name="hours" min="0" step="0.25" value="1.25">
+</label>
+```
+
+## A unit beside an empty field \{#persistent-unit\}
+
+Place the unit outside the value and connect its full name as a description. Clearing the input preserves both the visible suffix and its meaning.
+
+```html
+<div class="field">
+  <label for="length">Cable length</label>
+  <div class="flex items-baseline gap(8)">
+    <input class="input" type="number" min="0" step="any" id="length" name="lengthM" aria-describedby="length-unit">
+    <span id="length-unit">metres</span>
+  </div>
+</div>
+```
+
+## Quantity controls named by row \{#named-quantities\}
+
+Include the row name in each stepper’s field and action names. Keep the input available to the arrow keys. Attach the [stepper](/components/stepper) behavior to each group.
+
+```html
+<table class="table"><caption>Subscription seats</caption><tbody>
+  <tr><th id="design-seats" scope="row">Design seats</th><td>
+    <div class="input-group stepper">
+      <button type="button" class="btn btn-square" value="-1" tabindex="-1" aria-labelledby="design-less design-seats"><span id="design-less" class="sr-only">Decrease</span>−</button>
+      <input class="input stepper-field" type="number" min="0" value="2" aria-labelledby="design-seats" name="design">
+      <button type="button" class="btn btn-square" value="1" tabindex="-1" aria-labelledby="design-more design-seats"><span id="design-more" class="sr-only">Increase</span>+</button>
+    </div>
+  </td></tr>
+  <tr><th id="review-seats" scope="row">Review seats</th><td>
+    <div class="input-group stepper">
+      <button type="button" class="btn btn-square" value="-1" tabindex="-1" aria-labelledby="review-less review-seats"><span id="review-less" class="sr-only">Decrease</span>−</button>
+      <input class="input stepper-field" type="number" min="0" value="1" aria-labelledby="review-seats" name="review">
+      <button type="button" class="btn btn-square" value="1" tabindex="-1" aria-labelledby="review-more review-seats"><span id="review-more" class="sr-only">Increase</span>+</button>
+    </div>
+  </td></tr>
+</tbody></table>
+<script type="module">
+import { stepper } from '@master/ui/behaviors/stepper.js'
+document.querySelectorAll('.stepper').forEach(group => stepper(group))
+</script>
+```
+
+## A length limit and a live count \{#text-length\}
+
+HTML measures `minlength` and `maxlength` in UTF-16 code units. Use the same units for the counter, including after pasting or composing text.
+
+<ComponentPreview name="text-length" title="A length limit and a live count" height={146} narrowHeight={170} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<div class="field">
+  <label for="sample-code">Sample code</label>
+  <input class="input" id="sample-code" name="code" minlength="3" maxlength="12" required aria-describedby="code-rule">
+  <p class="field-hint" id="code-rule">3–12 UTF-16 units. <span id="code-count">0 of 12</span></p>
+</div>
+<script>
+const field = document.getElementById('sample-code')
+const count = document.getElementById('code-count')
+function showCount() { count.textContent = field.value.length + ' of ' + field.maxLength }
+field.addEventListener('input', showCount)
+window.addEventListener('pageshow', showCount)
+showCount()
+</script>`} />
+
+## Show the date derived from a duration \{#derived-date\}
+
+Name the output and identify its source with `for`. This example counts calendar days from 28 December in UTC and clears the output while the duration is invalid.
+
+<ComponentPreview name="derived-date" title="Show the date derived from a duration" height={134} narrowHeight={165} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<label class="field" for="loan-days">Days after 28 Dec 2026
+  <input class="input" type="number" id="loan-days" min="1" max="90" value="7" required>
+</label>
+<p><label for="loan-due">Due date</label> <output id="loan-due" name="due" for="loan-days">2027-01-04</output></p>
+<script>
+const days = document.getElementById('loan-days')
+const due = document.getElementById('loan-due')
+function updateDue() {
+  const date = new Date(Date.UTC(2026, 11, 28))
+  if (!days.validity.valid) { due.value = ''; return }
+  date.setUTCDate(date.getUTCDate() + days.valueAsNumber)
+  due.value = date.toISOString().slice(0, 10)
+}
+days.addEventListener('input', updateDue)
+updateDue()
+</script>`} />
