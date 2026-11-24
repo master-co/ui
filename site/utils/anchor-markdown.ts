@@ -1,5 +1,5 @@
 /** Keep authored heading links usable when MDX is exported as portable Markdown. */
-export function anchorMarkdown(source: string): string {
+export function anchorMarkdown(source: string, origin?: string): string {
   let fence: { marker: string, length: number } | undefined
   return source.split('\n').map(line => {
     const marker = /^ {0,3}(`{3,}|~{3,})(.*)$/.exec(line)
@@ -9,6 +9,8 @@ export function anchorMarkdown(source: string): string {
       return line
     }
     if (fence) return line
+    // Shared demo documents have live destinations even when the article is downloaded.
+    if (origin) line = line.replace(/\]\((\/demo\/[^)\s]+)\)/g, (_, path) => `](${origin}${path})`)
     return line.replace(/^(#{1,6}[ \t]+.+?) \\\{#([\w-]+)\\\}[ \t]*$/, '<a id="$2"></a>\n\n$1')
   }).join('\n')
 }

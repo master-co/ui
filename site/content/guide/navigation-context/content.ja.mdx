@@ -1,0 +1,183 @@
+---
+title: "リンクと読み進めた位置"
+description: "文書、検索結果、パネルを行き来するときに、URL、絞り込み条件、読み進めた位置を保ちます。"
+---
+
+import ComponentPreview from '~/site/components/ComponentPreview.astro'
+
+まず移動先を決めてから、コントロールの外観を選びます。別の文書、文書内の節、同じ画面内のパネルでは、それぞれ元の位置への戻り方が異なります。
+
+## 別のページへの移動とパネルの切り替え \{#pages-and-panels\}
+
+上段のリンクは URL を共有できる文書を開きます。下段は同じラベルでページ内の二つの抜粋を切り替えます。最初のタブにフォーカスして右矢印キーを押すと、パネルだけが変わります。パネルの例をコピーする場合は[タブのビヘイビア](/components/tabs)を適用します。
+
+<ComponentPreview name="pages-and-panels" title="別のページへの移動とパネルの切り替え" height={240} narrowHeight={290} behaviors background="plain" bodyClass="flex flex-col justify-center p-md" html={`<nav class="tabs" aria-label="Guide documents">
+  <a target="_top" class="tabs-item" href="/guide/installation">Installation</a>
+  <a target="_top" class="tabs-item" href="/guide/customization">Customization</a>
+</nav>
+<p class="text-sm">Guide excerpts</p>
+<div class="tabs" role="tablist" aria-label="Guide excerpts">
+  <button class="tabs-item" type="button" role="tab" id="install-tab" aria-controls="install-text" aria-selected="true">Installation</button>
+  <button class="tabs-item" type="button" role="tab" id="custom-tab" aria-controls="custom-text" aria-selected="false" tabindex="-1">Customization</button>
+</div>
+<p role="tabpanel" id="install-text" aria-labelledby="install-tab" tabindex="0">Load the stylesheet and render a native element.</p>
+<p role="tabpanel" id="custom-text" aria-labelledby="custom-tab" tabindex="0" hidden>Choose the smallest layer that owns the change.</p>`} />
+
+## 5 桁のページ番号 \{#wide-page-numbers\}
+
+長い番号に合わせてボタンの幅を広げます。3 ページの抜粋から選ぶと、そのページを特定できる URL が開きます。正方形のボタンはラベルが収まる場合に使います。
+
+<ComponentPreview name="wide-page-numbers" title="5 桁のページ番号" height={98} narrowHeight={108} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<nav class="flex flex-wrap gap-xs" aria-label="Archive folios">
+  <a target="_top" class="btn btn-quiet btn-sm" href="/demo/navigation/index.html?folio=12344" aria-label="Folio 12344">12344</a>
+  <a target="_top" class="btn btn-quiet btn-sm" href="/demo/navigation/index.html?folio=12345" aria-label="Folio 12345">12345</a>
+  <a target="_top" class="btn btn-quiet btn-sm" href="/demo/navigation/index.html?folio=12346" aria-label="Folio 12346">12346</a>
+</nav>`} />
+
+## バッジに収まらない件数 \{#exact-count\}
+
+リンクには短い件数を表示し、説明に正確な件数を書きます。確定した 0 件と読み込み中では文言を分けます。
+
+<ComponentPreview name="exact-count" title="バッジに収まらない件数" height={150} narrowHeight={195} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<ul>
+  <li><a target="_top" href="/components" aria-describedby="all-count">Components <span class="badge" aria-hidden="true">99+</span></a> <small id="all-count">129 component contracts in this edition</small></li>
+  <li>Bookmarked components <span class="badge">0</span></li>
+  <li>Team bookmarks <span>Loading count…</span></li>
+</ul>`} />
+
+## 現在のページと現在の節 \{#current-in-two-lists\}
+
+ナビゲーションごとに名前を付け、それぞれ一つのリンクを現在地として示します。ページとそのページ内の節は同時に現在地になります。
+
+```html
+<nav aria-label="Guides"><a href="/guide/installation" aria-current="page">Installation</a>
+  <a href="/guide/customization">Customization</a></nav>
+<nav aria-label="Installation sections"><a href="/guide/installation#without-master-css" aria-current="location">Without Master CSS</a>
+  <a href="/guide/installation#set-the-viewport">Viewport</a></nav>
+```
+
+## 作業領域にスキップする \{#skip-to-results\}
+
+[フィールドノート](/demo/navigation/field-notes.html)で最初のリンクに Tab で移動して実行し、もう一度 Tab を押すと対象の節にある録音索引のリンクに進みます。長いナビゲーションの前にスキップリンクを置きます。macOS の Safari で Tab がリンクを飛ばす場合は Option-Tab を使います。
+
+```html
+<a class="skip" href="#recordings">Skip to recording notes</a>
+<nav aria-label="Notebook"><a href="#mount">Microphone mount</a></nav>
+<h2 id="recordings" tabindex="-1">Recordings</h2>
+<a href="/demo/navigation/index.html?q=coast&amp;collection=shore">Open the recording index</a>
+<h2 id="mount">Microphone mount</h2>
+```
+
+## 同じ記事で言語を切り替える \{#same-translation\}
+
+各言語の名称はその言語で表示します。ラベルの言語とリンク先の言語には別々の属性を指定します。各翻訳版が同じ節 ID を持つ場合は、その ID も引き継ぎます。
+
+```html
+<nav aria-label="Installation guide language">
+  <a lang="en" hreflang="en" href="/guide/installation#set-the-viewport">English</a>
+  <a lang="zh-Hant" hreflang="zh-Hant" href="/tw/guide/installation#set-the-viewport">繁體中文</a>
+  <a lang="ja" hreflang="ja" href="/ja/guide/installation#set-the-viewport">日本語</a>
+</nav>
+```
+
+## ノートの表題に戻る \{#back-to-heading\}
+
+表題に固定の ID を付け、フラグメントへの移動でフォーカスできるようにします。[ノート](/demo/navigation/field-notes.html#mount)末尾のリンクで戻ると、次の Tab で表題の後の最初のリンクに進みます。
+
+```html
+<h1 id="notebook-title" tabindex="-1">Harbor microphone notes</h1>
+<!-- Notebook sections -->
+<a href="#notebook-title">Back to the notebook title</a>
+```
+
+## 同名の二つのファイル \{#names-in-link-list\}
+
+各リンクの名前には共通の表題と、それぞれのページ番号を含めます。リンク一覧だけを読む人も目的の録音記録を選べます。
+
+<ComponentPreview name="names-in-link-list" title="同名の二つのファイル" height={140} narrowHeight={175} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<ul>
+  <li><a target="_top" href="/demo/navigation/index.html?folio=12344">Harbor log <small>· Folio 12344</small></a></li>
+  <li><a target="_top" href="/demo/navigation/index.html?folio=12345">Harbor log <small>· Folio 12345</small></a></li>
+</ul>`} />
+
+## 選択状態のないディレクトリ \{#static-directory\}
+
+リストを入れ子にしてフォルダーの階層を表します。フォルダー名はテキストで示し、Tab では開けるファイルだけに移動します。
+
+```html
+<ul><li>Harbor
+  <ul><li>Microphones
+    <ul><li><a href="/demo/navigation/field-notes.html">Field notes</a></li>
+      <li><a href="/demo/navigation/index.html?folio=12345">Recording log</a></li></ul>
+  </li></ul>
+</li></ul>
+```
+
+## 検索条件を保ったまま並べ替える \{#sort-and-filter\}
+
+[録音の 2 組目](/demo/navigation/index.html?q=coast&collection=shore&sort=name&after=gulls)で新しい順を選びます。URL には検索語とコレクションを残し、以前のカーソルを削除します。同じ並び順で行と列見出しを更新します。
+
+```js
+function newestFirst(address) {
+  const next = new URL(address)
+  next.searchParams.set('sort', 'recent')
+  next.searchParams.delete('after')
+  return next.href
+}
+
+const link = document.createElement('a')
+link.textContent = 'Newest first'
+link.href = newestFirst(location.href)
+document.querySelector('nav[aria-label="Sort recordings"]').append(link)
+```
+
+## 折りたたんだ内容にリンクする \{#link-into-details\}
+
+[風防のメモ](/demo/navigation/field-notes.html#wind-screen)を新しいタブで開くと、ブラウザーが外側の details を展開して対象を表示します。ID は共有したい内容に付けます。
+
+```html
+<details>
+  <summary>Field setup notes</summary>
+  <h3 id="wind-screen" tabindex="-1">Wind screen</h3>
+  <p>Fit the outer cover before mounting the bar.</p>
+</details>
+```
+
+## 固定ナビゲーションの下に見出しを収める \{#header-clearance\}
+
+[ノート](/demo/navigation/field-notes.html#mount)ではヘッダーに専用のグリッド行を与え、記事はその下でスクロールさせます。文字を拡大してナビゲーションが折り返しても行が広がり、リンク先の見出しの先頭行が見えます。
+
+```css
+.notebook {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  block-size: 100dvh;
+}
+.notebook-article {
+  overflow: auto;
+  scroll-padding-block-start: 1rem;
+}
+```
+
+## 文中の検索一致箇所 \{#highlight-matches\}
+
+一致したテキストノードだけを囲みます。隣り合う一致箇所、句読点、CJK の語順を保てます。要約を生成するときは検索語をテキストとして挿入します。
+
+<ComponentPreview name="highlight-matches" title="文中の検索一致箇所" height={118} narrowHeight={144} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<p lang="zh-Hant">在<mark>港口</mark><mark>錄音</mark>時，將 <mark>A&amp;B</mark> 軌道分開。</p>
+<p>Search excerpt: “The <mark>coast</mark> survey includes <mark>A&amp;B</mark> channels.”</p>`} />
+
+## 録音ごとの説明 \{#popover-per-record\}
+
+録音固有の ID でボタンと説明を結び付けます。2 件目の説明を開いて Escape で閉じると、その録音のボタンにフォーカスが戻ります。
+
+<ComponentPreview name="popover-per-record" title="録音ごとの説明" height={200} narrowHeight={230} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<ul>
+  <li>Drift <button class="btn btn-sm" type="button" popovertarget="note-drift" aria-label="Notes for Drift">Notes</button>
+    <p class="popover" popover id="note-drift">Recorded at low tide.</p></li>
+  <li>Ferry <button class="btn btn-sm" type="button" popovertarget="note-ferry" aria-label="Notes for Ferry">Notes</button>
+    <p class="popover" popover id="note-ferry">The horn starts at 00:21.</p></li>
+</ul>`} />
+
+## 総数を知らずに前後の組を開く \{#cursor-batches\}
+
+途中の組から次の録音へ進み、最後の項目を確認します。判明した範囲を示し、データ元が次のカーソルを返した場合だけ次へのリンクを出します。ブラウザーで戻ると同じ組に戻れます。
+
+<ComponentPreview name="cursor-batches" title="総数を知らずに前後の組を開く" height={120} narrowHeight={150} background="plain" bodyClass="flex flex-col justify-center p-md" html={`<nav aria-label="Recording batches">
+  <a target="_top" class="btn btn-sm" href="/demo/navigation/index.html?q=coast&amp;collection=shore&amp;sort=name&amp;after=gulls">Open recordings 3–4</a>
+</nav>`} />

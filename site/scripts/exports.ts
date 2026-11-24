@@ -167,7 +167,7 @@ function mdxMarkdown(source: string, title: string, description: string, locale 
     .replace(/\]\(\/(guide|components|charts|blocks|pages)\/([\w-]+)(#[\w-]+)?\)/g, (_, section, slug, hash = '') => `](${link(section, slug, hash)})`)
     .replace(/\n{3,}/g, '\n\n')
     .trim()
-  return `# ${title}\n\n${description}\n\n${anchorMarkdown(body)}\n`
+  return `# ${title}\n\n${description}\n\n${anchorMarkdown(body, origin)}\n`
 }
 
 const metadataOf = (file: string) => {
