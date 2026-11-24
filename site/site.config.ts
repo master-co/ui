@@ -19,7 +19,7 @@ export default defineSite({
   origin: process.env.PUBLIC_URL || 'https://ui.master.co',
   content: new URL('./content/', import.meta.url),
   app: new URL('./app-config.ts', import.meta.url),
-  highlighter: new URL('./utils/highlight.ts', import.meta.url),
+  highlighter: new URL(import.meta.resolve('@master/internal-site/css/highlight.ts')),
   // English is the source. A translated edition is a sibling `content.<locale>.mdx` with an independent review in
   // `i18n/reviews.json`; `i18n/resources.ts` lists everything the production gate holds to those reviews.
   i18n: {
