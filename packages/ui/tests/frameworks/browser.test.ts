@@ -428,6 +428,61 @@ test(`${engine}: hidden parts leave the layout and focus order`, async () => {
   } finally { await page.close() }
 })
 
+test(`${engine}: step markers and connectors stay centered on the title above wrapped notes`, async () => {
+  const page = await browser.newPage({ viewport: { width: 800, height: 640 } })
+  try {
+    await page.setContent(`<ol class="steps" style="width:640px">
+      <li class="steps-item"><span class="steps-title">Collect</span></li>
+      <li class="steps-item" aria-current="step"><span class="steps-body"><span class="steps-title">Review</span>
+        <span class="steps-description">Review the audio recordings submitted by every participating station.</span></span></li>
+      <li class="steps-item"><span class="steps-body"><span class="steps-title">Publish</span>
+        <span class="steps-description">Publish a complete copy of the recordings and their credits to the shared research directory.</span></span></li>
+    </ol>`)
+    await page.addStyleTag({ content: await readFile(new URL('../../dist/standalone.css', import.meta.url), 'utf8') })
+    // Paint each pseudo-element a known color so we measure its actual position.
+    await page.addStyleTag({ content: '.steps-item::before {background:red;color:transparent;box-shadow:none;mask:none} .steps-item:not(:last-child)::after {background:blue}' })
+    const list = page.locator('.steps')
+    for (const dir of ['ltr', 'rtl']) for (const size of [16, 24, 36]) {
+      await list.evaluate((el, { dir, size }) => { el.dir = dir; el.style.setProperty('--steps-marker', size + 'px') }, { dir, size })
+      const pixels = (await list.screenshot()).toString('base64')
+      const offsets = await list.evaluate(async (el, pixels) => {
+        const picture = new Image()
+        picture.src = 'data:image/png;base64,' + pixels
+        await picture.decode()
+        const canvas = document.createElement('canvas')
+        canvas.width = picture.width
+        canvas.height = picture.height
+        const context = canvas.getContext('2d')!
+        context.drawImage(picture, 0, 0)
+        const { data } = context.getImageData(0, 0, canvas.width, canvas.height)
+        const bounds = el.getBoundingClientRect()
+        return Array.from(el.querySelectorAll('.steps-item'), (step, index) => {
+          const box = step.getBoundingClientRect()
+          const title = step.querySelector('.steps-title')!.getBoundingClientRect()
+          const mid = title.top + title.height / 2 - bounds.top
+          const rows = [new Set<number>(), new Set<number>()]
+          for (let y = 0; y < canvas.height; y++) for (let x = Math.ceil(box.left - bounds.left); x < box.right - bounds.left; x++) {
+            const at = (y * canvas.width + x) * 4
+            if (data[at] > 190 && data[at + 1] < 90 && data[at + 2] < 90) rows[0].add(y)
+            if (data[at + 2] > 190 && data[at] < 90 && data[at + 1] < 90) rows[1].add(y)
+          }
+          if (index === el.children.length - 1) rows.pop()
+          return { titleWidth: title.width, distances: rows.map(ys => (Math.min(...ys) + Math.max(...ys) + 1) / 2 - mid) }
+        })
+      }, pixels)
+      for (const step of offsets) {
+        assert.ok(step.titleWidth > 27, 'the long last description leaves space for every preceding title')
+        assert.ok(step.distances.every(value => Math.abs(value) <= 1), JSON.stringify({ dir, size, step }))
+      }
+    }
+    await list.evaluate(el => {
+      el.style.width = '320px'
+      el.innerHTML = '<li class="steps-item"><span class="steps-title">One step with room for its whole title</span></li>'
+    })
+    assert.equal((await box(list.locator('li'))).width, 320, 'a solitary step can use the entire list')
+  } finally { await page.close() }
+})
+
 test(`${engine}: scales, ticket stubs and slider endpoints fit their container`, async () => {
   const css = await readFile(new URL('../../dist/standalone.css', import.meta.url), 'utf8')
   const ranges = await Promise.all(['slider', 'range', 'color-picker'].map(async name =>

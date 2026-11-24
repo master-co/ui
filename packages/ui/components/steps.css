@@ -40,14 +40,6 @@
     min-width: 0;
     counter-increment: steps;
 
-    /*
-     * The last step has nothing to lead to, so it takes only the room it needs; where there is less, it still
-     * shrinks, so its title is cut like the others' instead of running out of the list.
-     */
-    &:last-child {
-      flex: 0 1 auto;
-    }
-
     /* The marker: a number in a well while the step waits. */
     &::before {
       content: counter(steps);
@@ -154,6 +146,37 @@
     font-weight: 400;
     text-wrap: pretty;
     overflow-wrap: anywhere;
+  }
+
+  /* Put the marker, title and connector on the same row. A description uses its own row
+   * so its wrapped lines cannot change the height against which the three are centered. */
+  .steps:where(:not(.steps-vertical)) .steps-item {
+    display: grid;
+    grid-template-columns: var(--steps-marker) minmax(0, auto) minmax(1rem, 1fr);
+    align-content: start;
+    row-gap: 0;
+
+    &::before { grid-area: 1 / 1; }
+    &::after { grid-area: 1 / 3; }
+
+    .steps-body:not([hidden]) { display: contents; }
+    .steps-title { grid-area: 1 / 2; }
+    .steps-description {
+      grid-area: 2 / 2 / auto / -1;
+      margin-block-start: .0625rem;
+    }
+
+    &:last-child {
+      grid-template-columns: var(--steps-marker) minmax(0, auto);
+    }
+
+    /* Without a connector, a short last title can finish flush with the list.
+     * A long note shares the width equally with the other steps. */
+    &:last-child:where(:not(:only-child, :has(.steps-description))) {
+      flex: 0 1 auto;
+      max-inline-size: 50%;
+    }
+
   }
 
   /* Vertical: the marker stands on a column and the line runs down from it to the next marker. */
