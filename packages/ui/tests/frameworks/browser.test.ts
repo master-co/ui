@@ -5,6 +5,7 @@ import { readFile } from 'node:fs/promises'
 import { chromium, firefox, webkit, type Browser, type Locator, type Page } from 'playwright'
 import { createServer, type ViteDevServer } from 'vite'
 import { verifyComponentGeometry } from '../components/geometry.ts'
+import { compile, contracts } from '../support.ts'
 
 /**
  * The framework components in a real browser. The scenarios run in happy-dom, which has no layout, no top
@@ -381,6 +382,49 @@ test(`${engine}: a Wheel starts on the authored selection before the behavior at
     } else {
       assert.equal(await column.evaluate(element => element.scrollTop), 0)
     }
+  } finally { await page.close() }
+})
+
+test(`${engine}: hidden parts leave the layout and focus order`, async () => {
+  const page = await browser.newPage()
+  try {
+    const examples = contracts().map(contract => `<section>${contract.example}</section>`)
+    await page.setContent(examples.join(''))
+    await page.addStyleTag({ content: await readFile(new URL('../../dist/standalone.css', import.meta.url), 'utf8') })
+    const leaks = await page.evaluate(() => {
+      const failures = new Set<string>()
+      for (const part of document.querySelectorAll<HTMLElement>('[class]')) {
+        if (!(part instanceof HTMLElement) || part.hasAttribute('hidden') || !part.getClientRects().length) continue
+        part.hidden = true
+        const style = getComputedStyle(part)
+        // The editable preview keeps the size of the text while its field is showing.
+        if (part.classList.contains('editable-preview') ? style.visibility !== 'hidden' : style.display !== 'none') {
+          failures.add(part.className)
+        }
+        if (part.matches('button, input, select, textarea, summary, a[href], [tabindex]')) {
+          part.focus()
+          if (document.activeElement === part) failures.add(`focus: ${part.className}`)
+        }
+        part.hidden = false
+      }
+      return [...failures].sort()
+    })
+    assert.deepEqual(leaks, [])
+
+    // An app that owns just the buttons gets the same behavior without importing the bundle.
+    await page.setContent(`<button class="btn" hidden>Cancel upload</button>
+      <input aria-label="Reference"><a href="#arrival">Find arrival</a><div hidden="until-found" class="btn-group"><span id="arrival">Arrival</span></div>`)
+    await page.addStyleTag({ content: compile(['theme.css', 'components/button.css']).css })
+    const cancel = page.getByText('Cancel upload')
+    assert.equal(await cancel.isVisible(), false)
+    await page.keyboard.press('Tab')
+    assert.equal(await page.getByRole('textbox').evaluate(field => field === document.activeElement), true)
+    if (await page.evaluate(() => 'onbeforematch' in document.documentElement)) {
+      await page.locator('a').click()
+      await until(() => page.locator('.btn-group').getAttribute('hidden'), mark => mark === null, 'the fragment reveals the group')
+    }
+    await cancel.evaluate(button => { button.removeAttribute('hidden'); button.focus() })
+    assert.equal(await cancel.evaluate(button => document.activeElement === button), true)
   } finally { await page.close() }
 })
 
