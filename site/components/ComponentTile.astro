@@ -4,6 +4,11 @@ import { library, type LibraryKind } from '~/site/components/catalog'
 import { siteOf } from '@master/internal-site/astro/site-context'
 import { localizePathname } from '@master/internal-site/utils/i18n-pathname'
 import editions from 'virtual:master-site/localized-metadata'
+import NewBadge from '@master/internal-site/components/NewBadge.svelte'
+
+/** The day each page was added, from the sidebars `scripts/prepare.ts` writes out of every `metadata.ts`. */
+const addedOn = new Map(Object.values(import.meta.glob<{ pages: { pathname: string, added?: string }[] }[]>('../.categories/*.json', { eager: true, import: 'default' }))
+  .flatMap(categories => categories.flatMap(category => category.pages.flatMap(page => page.added ? [[page.pathname, page.added] as const] : []))))
 
 interface Props {
   /** A slug in the catalog; the tile links to its page. */
@@ -32,7 +37,7 @@ const href = metadata ? localizePathname(pathname, { ...i18n, locale }) : pathna
 <a class:list={['component-tile', className]} href={href} rel={rel}>
   <Cover slug={slug} kind={kind} />
   {label && <span class="component-tile-label">{label}</span>}
-  <span class="component-tile-name">{t(name ?? metadata?.title ?? component?.name ?? slug)}</span>
+  <span class="component-tile-name">{t(name ?? metadata?.title ?? component?.name ?? slug)}<NewBadge added={addedOn.get(pathname)} /></span>
   {description && component && <span class="component-tile-description">{t(metadata?.description ?? component.description)}</span>}
 </a>
 

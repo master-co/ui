@@ -9,6 +9,7 @@ import ComponentPager from '~/site/components/ComponentPager.astro'
 import Cover from '~/site/components/cover/Cover.astro'
 import { kindOf } from '~/site/components/catalog'
 import { footerProps } from '~/site/navigation'
+import { withAddedSections } from '@master/internal-site/utils/new-content'
 
 interface Props {
   params: { locale: string, [key: string]: any }
@@ -31,15 +32,15 @@ const { locale } = params
 const [, kind, slug] = kindOf(metadata.pathname ?? '') ?? []
 // A block or a page is shown as a page: it has no sidebar and no contents rail, so its previews can leave the column.
 const showcase = kind === 'blocks' || kind === 'pages'
-const pageContent = !showcase && Array.isArray(toc) && toc.length > 0 ? toc : null
+const pageContent = !showcase && Array.isArray(toc) && toc.length > 0 ? withAddedSections(toc, metadata) : null
 const Pager = slug ? ComponentPager : PageNavs
 ---
 
 <DocMain class:list={[props.class, showcase && 'showcase-page']} footerProps={footerProps}>
   {/* Stream the rail before the article so both columns are present when its title first paints. */}
-  {pageContent && <PageContent client:load items={pageContent.map(({ id, title, level }) => ({ id, title, level }))} metadata={{ sourcePath: metadata.sourcePath, title: metadata.title }} />}
+  {pageContent && <PageContent client:load items={pageContent.map(({ id, title, level, added }) => ({ id, title, level, added }))} metadata={{ sourcePath: metadata.sourcePath, title: metadata.title }} />}
   <DocArticle aside={Boolean(pageContent)} class={slug && 'component-page'}>
-    <ArticleHeader {...props} categoryLink={showcase ? `/${kind}` : props.categoryLink} end={slug ? <Cover slug={slug} kind={kind} class="component-page-cover" /> : props.end} locale={locale} metadata={metadata} dictionaries={dictionaries} toc={pageContent} />
+    <ArticleHeader {...props} categoryLink={showcase ? `/${kind}` : props.categoryLink} end={slug ? <Cover slug={slug} kind={kind} class="component-page-cover" /> : props.end} locale={locale} metadata={metadata} dictionaries={dictionaries} toc={pageContent} headings={toc} />
     <slot />
     <Pager locale={locale} metadata={metadata} pageCategories={pageCategories} dictionaries={dictionaries} />
   </DocArticle>

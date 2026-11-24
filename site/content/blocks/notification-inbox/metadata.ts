@@ -5,5 +5,6 @@ export default define({
   description: 'Notifications in a page: all or unread, read one by one or all at once.',
   category: 'Application blocks',
   order: 14,
+  addedSections: { bell: '2026-11-25' },
   fileURL: import.meta.url
 })
