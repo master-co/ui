@@ -1,7 +1,7 @@
 import { sortable } from '@master/ui/behaviors/sortable.js'
 export function mount(root) {
   const list = root.querySelector('ol')
-  const status = root.querySelector('[role="status"]')
+  const status = root.querySelector('[data-removal-status]')
   const controller = new AbortController()
   const { signal } = controller
   const detach = sortable(list)

@@ -1354,3 +1354,32 @@ test(`${engine}: record views keep one accessible selection as the column narrow
     }
   } finally { await page.close() }
 })
+
+test(`${engine}: album editor announces keyboard moves and keeps removal feedback visible`, async () => {
+  const page = await browser.newPage()
+  try {
+    const id = 'album-editor'
+    const html = exampleHtml(id)
+    const section = { id, page: 'blocks', title: 'Harbor album', html: [html], css: uiSource(), classes: [], classLists: [], highlighted: [] }
+    await page.setContent(demoDocument(section, { html, caption: '' }))
+    await page.addScriptTag({ type: 'module', content: await exampleBundle(id) })
+    const handle = page.getByRole('button', { name: 'Move Lighthouse', exact: true })
+    const feedback = page.getByRole('status')
+    for (const [key, message] of [
+      ['Space', 'picked up at position 1 of 3'],
+      ['ArrowDown', 'position 2 of 3'],
+      ['Escape', 'move cancelled. Back at position 1 of 3'],
+      ['Space', 'picked up at position 1 of 3'],
+      ['ArrowDown', 'position 2 of 3'],
+      ['Space', 'dropped at position 2 of 3'],
+    ]) {
+      await handle.press(key)
+      await feedback.filter({ hasText: 'Lighthouse, ' + message }).waitFor({ state: 'attached', timeout: 4000 })
+      assert.ok(await handle.evaluate(element => document.activeElement === element))
+    }
+    await page.getByRole('button', { name: 'Remove Lighthouse' }).press('Enter')
+    const removal = feedback.filter({ hasText: 'Lighthouse removed. 2 remaining.' })
+    assert.ok(await removal.isVisible())
+    assert.ok((await box(removal)).width > 1, 'The removal confirmation stays visible outside the screen-reader-only reorder status')
+  } finally { await page.close() }
+})
