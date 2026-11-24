@@ -1,6 +1,6 @@
 # Third-party notices
 
-The icons drawn in this package's components, framework components, contract examples and masks are drawings of [Master Icons](https://icons.master.co) 1.0.3, copied into the source. This file is written by `scripts/icons.ts` from that release's catalog.
+The icons drawn in this package's components, framework components, contract examples and masks are drawings of [Master Icons](https://icons.master.co) 1.0.5, copied into the source. This file is written by `scripts/icons.ts` from that release's catalog.
 
 ## Master Icons — MIT
 
