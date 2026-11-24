@@ -180,6 +180,55 @@ test(`${engine}: searchable tabs honor an initial fragment after the behavior at
   } finally { await page.close() }
 })
 
+test(`${engine}: Editable keeps a restored draft and follows native submission and reset`, async () => {
+  const page = await browser.newPage()
+  try {
+    const contract = JSON.parse(await readFile(new URL('../../components/editable.json', import.meta.url), 'utf8'))
+    const url = new URL('editable-form-test', origin).href
+    await page.route(url, route => route.fulfill({
+      contentType: 'text/html',
+      body: `<form>${contract.example}<button>Submit</button><button type="reset">Reset</button></form><output></output>`,
+    }))
+    await page.goto(url)
+    await page.addStyleTag({ content: await readFile(new URL('../../dist/standalone.css', import.meta.url), 'utf8') })
+    const field = page.locator('.editable-field')
+    const preview = page.locator('.editable-preview')
+    const behavior = fileURLToPath(new URL('../../behaviors/editable.js', import.meta.url))
+    const handle = await page.evaluateHandle(async path => {
+      const { editable } = await import(path)
+      const form = document.querySelector('form')!
+      form.addEventListener('submit', event => {
+        event.preventDefault()
+        document.querySelector('output')!.value = String(new FormData(form).get('title'))
+      })
+      form.querySelector('input')!.value = 'Restored draft'
+      return editable(form.querySelector('.editable'))
+    }, `/@fs${behavior}`)
+    assert.equal(await preview.textContent(), 'Restored draft')
+    await preview.click()
+    assert.equal(await field.inputValue(), 'Restored draft')
+    await field.fill('Renamed')
+    await field.press('Enter')
+    const reset = page.getByRole('button', { name: 'Reset' })
+    await page.locator('form').evaluate(form => form.addEventListener('reset', event => event.preventDefault(), { once: true }))
+    await reset.click()
+    await page.getByRole('button', { name: 'Submit' }).click()
+    assert.equal(await page.locator('output').textContent(), 'Renamed')
+    await reset.click()
+    await until(() => preview.textContent(), value => value === 'Quarterly report', 'the preview follows the native reset')
+    assert.equal(await handle.evaluate(controller => controller.value), 'Quarterly report')
+    await page.getByRole('button', { name: 'Submit' }).click()
+    assert.equal(await page.locator('output').textContent(), 'Quarterly report')
+    await handle.evaluate(controller => { controller.value = '' })
+    await page.getByRole('button', { name: 'Submit' }).click()
+    assert.equal(await field.evaluate(element => document.activeElement === element), true)
+    await field.fill('Corrected')
+    await field.press('Enter')
+    await page.getByRole('button', { name: 'Submit' }).click()
+    assert.equal(await page.locator('output').textContent(), 'Corrected')
+  } finally { await page.close() }
+})
+
 test(`${engine}: a Wheel starts on the authored selection before the behavior attaches`, async () => {
   const page = await browser.newPage()
   try {

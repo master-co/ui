@@ -38,7 +38,7 @@ export function editable(root, { blur = 'save' } = {}) {
 
   const preview = /** @type {HTMLButtonElement | null} */ (root.querySelector('.editable-preview'))
   const field = /** @type {HTMLInputElement | HTMLTextAreaElement | null} */ (root.querySelector('.editable-field'))
-  let saved = field?.defaultValue ?? field?.value ?? preview?.textContent ?? ''
+  let saved = field?.value ?? preview?.textContent ?? ''
 
   /** Write a value into the preview, or the field's placeholder when it is empty. The pencil the preview holds stays after it. */
   const show = (/** @type {string} */ value) => {
@@ -125,6 +125,28 @@ export function editable(root, { blur = 'save' } = {}) {
   ))
   detach.edit = edit
   if (!field || !preview) return detach
+
+  // Autofill or a restored draft can already have changed the value before attachment.
+  if (saved !== field.defaultValue) show(saved)
+
+  field.form?.addEventListener('reset', (event) => {
+    // A later listener can cancel the reset. Read the field after its native default action.
+    setTimeout(() => {
+      if (signal.aborted || event.defaultPrevented) return
+      saved = field.value
+      show(saved)
+      field.removeAttribute('aria-invalid')
+      if (editing()) close()
+    })
+  }, { signal })
+
+  // An invalid field must be visible when the browser chooses the first control to focus.
+  // Several fields can be invalid together, so let the browser make that choice.
+  field.addEventListener('invalid', () => {
+    if (!field.hidden) return
+    field.hidden = false
+    preview.hidden = true
+  }, { signal })
 
   preview.addEventListener('click', edit, { signal })
   // Enter held down opens or saves once. Its repeats would press the preview again as it takes focus back, and
