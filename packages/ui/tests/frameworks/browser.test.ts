@@ -229,6 +229,27 @@ test(`${engine}: Editable keeps a restored draft and follows native submission a
   } finally { await page.close() }
 })
 
+test(`${engine}: toolbar arrows respect a disabled fieldset and its first legend`, async () => {
+  const page = await browser.newPage()
+  try {
+    await page.setContent(`<div class="toolbar" role="toolbar" aria-label="Settings">
+      <button>Start</button><fieldset disabled><legend><button>Enable</button></legend>
+      <button>Unavailable</button></fieldset><div inert><button>Inactive</button></div><button>End</button>
+    </div>`)
+    const source = await readFile(new URL('../../behaviors/toolbar.js', import.meta.url), 'utf8')
+    await page.addScriptTag({ content: `${source.replace('export function toolbar', 'function toolbar')}
+      toolbar(document.querySelector('.toolbar'))` })
+    await page.getByRole('button', { name: 'Start' }).focus()
+    await page.keyboard.press('ArrowRight')
+    assert.equal(await focused(page), 'Enable')
+    await page.keyboard.press('ArrowRight')
+    assert.equal(await focused(page), 'End')
+    await page.locator('fieldset').evaluate(fieldset => { fieldset.disabled = false })
+    await page.keyboard.press('ArrowLeft')
+    assert.equal(await focused(page), 'Unavailable')
+  } finally { await page.close() }
+})
+
 test(`${engine}: a Wheel starts on the authored selection before the behavior attaches`, async () => {
   const page = await browser.newPage()
   try {

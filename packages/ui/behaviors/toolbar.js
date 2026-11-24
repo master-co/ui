@@ -25,7 +25,15 @@ const attached = new WeakMap()
 const controls = 'button, select, input, textarea, a[href], [tabindex]'
 
 /** What holds controls of its own inside a toolbar: they are not the toolbar's to walk. */
-const nested = '[popover], dialog, [role="menu"], [role="listbox"]'
+const nested = '[popover], dialog, [role="menu"], [role="listbox"], [role="toolbar"], .toolbar'
+
+/** Two native radios form a group when their nonempty names and their form owners match in the same tree.
+ * @param {HTMLElement} a @param {HTMLElement} b */
+function sameGroup(a, b) {
+  const first = /** @type {HTMLInputElement} */ (a)
+  const second = /** @type {HTMLInputElement} */ (b)
+  return first.type === 'radio' && second.type === 'radio' && !!first.name && first.name === second.name && first.form === second.form
+}
 
 /**
  * @param {HTMLElement} root The element with the `toolbar` class and `role="toolbar"`.
@@ -38,9 +46,15 @@ export function toolbar(root) {
   attached.set(root, controller)
   const detach = () => controller.abort()
 
+  /** @param {Element} element @param {string} selector */
+  const within = (element, selector) => {
+    const found = element.closest(selector)
+    return Boolean(found && found !== root && root.contains(found))
+  }
+
   root.addEventListener('click', (event) => {
     const button = /** @type {Element} */ (event.target).closest('button, [role="button"]')
-    if (!button || !root.contains(button)) return
+    if (!button || !root.contains(button) || within(button, nested)) return
     if (button.getAttribute('aria-disabled') === 'true') {
       event.preventDefault()
       event.stopImmediatePropagation()
@@ -54,31 +68,22 @@ export function toolbar(root) {
   // The browser's focusgroup moves focus by itself; a second roving tabindex would fight it.
   if ('focusGroup' in HTMLElement.prototype && root.hasAttribute('focusgroup')) return detach
 
-  /**
-   * Whether an element stands in something the toolbar holds that matches: asked inside the toolbar only, so a
-   * toolbar in a dialog, a popover, a panel or a hidden tab panel still has its controls.
-   * @param {Element} element @param {string} selector
-   */
-  const within = (element, selector) => {
-    const found = element.closest(selector)
-    return Boolean(found && found !== root && root.contains(found))
-  }
+  /** @param {HTMLElement} element */
+  const available = (element) => !within(element, `[hidden], [inert], ${nested}`) && !element.matches(':disabled, input[type="hidden"]')
 
   /** The controls the keys land on, in the order of the document: one per radio group. */
   const items = () => {
     /** @type {HTMLElement[]} */
     const found = []
-    const groups = new Set()
     for (const element of /** @type {NodeListOf<HTMLElement>} */ (root.querySelectorAll(controls))) {
-      if (within(element, `[hidden], ${nested}`) || /** @type {HTMLButtonElement} */ (element).disabled) continue
-      if (element.matches('input[type="hidden"]')) continue
+      if (!available(element)) continue
       const radio = /** @type {HTMLInputElement} */ (element)
       if (radio.type === 'radio' && radio.name) {
-        if (groups.has(radio.name)) continue
-        groups.add(radio.name)
-        const all = /** @type {HTMLInputElement[]} */ ([...root.querySelectorAll(`input[type="radio"]`)]).filter((each) => each.name === radio.name && !each.disabled)
-        found.push(all.find((each) => each.checked) ?? all[0] ?? radio)
-        continue
+        const group = found.findIndex((item) => sameGroup(item, radio))
+        if (group !== -1) {
+          if (radio.checked) found[group] = radio
+          continue
+        }
       }
       found.push(element)
     }
@@ -109,9 +114,8 @@ export function toolbar(root) {
     current = stop
     for (const item of list) {
       if (item.matches('input[type="radio"]')) {
-        const name = /** @type {HTMLInputElement} */ (item).name
         for (const radio of /** @type {NodeListOf<HTMLInputElement>} */ (root.querySelectorAll('input[type="radio"]'))) {
-          if (radio.name === name) index(radio, item === stop)
+          if ((radio === item || sameGroup(radio, item)) && available(radio)) index(radio, item === stop)
         }
       } else index(item, item === stop)
     }
@@ -122,7 +126,7 @@ export function toolbar(root) {
     const list = items()
     const radio = /** @type {HTMLInputElement} */ (element)
     // A radio with no name is a group of one: an empty name would match the first button, whose name is empty too.
-    if (radio.matches?.('input[type="radio"]') && radio.name) return list.find((item) => /** @type {HTMLInputElement} */ (item).name === radio.name)
+    if (radio.matches?.('input[type="radio"]') && radio.name && available(radio)) return list.find((item) => sameGroup(item, radio))
     return list.find((item) => item === element)
   }
 
@@ -162,7 +166,7 @@ export function toolbar(root) {
   // A control that turns disabled or hidden, or leaves, takes the stop with it unless another control takes it over.
   if (typeof MutationObserver === 'function') {
     const observer = new MutationObserver(() => rove(current && itemOf(current)))
-    observer.observe(root, { subtree: true, childList: true, attributes: true, attributeFilter: ['disabled', 'hidden'] })
+    observer.observe(root, { subtree: true, childList: true, attributes: true, attributeFilter: ['disabled', 'hidden', 'inert', 'name', 'form'] })
     signal.addEventListener('abort', () => observer.disconnect())
   }
   return detach

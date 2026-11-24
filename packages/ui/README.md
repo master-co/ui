@@ -258,6 +258,8 @@ const diagnostics = check(html, createIndex(contracts.contracts))
 
 Opt in to searchable [tab panels](https://ui.master.co/components/tabs#searchable-panels) with `tabs(tablist, { searchable: true })` or the framework component’s `searchable` prop. Browsers with `beforematch` can select a panel through Find in Page or a fragment link. [Wheel](https://ui.master.co/components/wheel) uses `scroll-initial-target` to center the initial selection where supported. The wheel behavior still aligns and tracks the selection in other browsers.
 
+A nested [toolbar](https://ui.master.co/components/toolbar#keys) owns its toggles and keyboard stops. Its arrow-key fallback follows native radio groups and skips inert and disabled controls.
+
 An [editable field](https://ui.master.co/components/editable) submits its named input or textarea with its form. Resetting the form restores the preview, and a collapsed invalid field opens for the browser's validation message.
 
 A few patterns have no native element. Their stylesheets draw every state from ARIA; a behavior is the reference script that moves those attributes and nothing else.

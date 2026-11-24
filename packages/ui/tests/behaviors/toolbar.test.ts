@@ -98,6 +98,43 @@ test('toolbar: a toggle button presses on a click; aria-disabled stops the click
   assert.equal(heard, 0)
 })
 
+test('toolbar: a nested toolbar handles its own toggles, focus and arrows', () => {
+  const { root, one, click, key, focused } = setup(`<div class="toolbar" role="toolbar">
+    <button id="before">Before</button>
+    <div class="toolbar" role="toolbar" id="inner"><button id="toggle" aria-pressed="false">Bold</button></div>
+    <button id="after">After</button></div>`)
+  toolbar(root)
+  toolbar(one('#inner'))
+  click(one('#toggle'))
+  assert.equal(one('#toggle').getAttribute('aria-pressed'), 'true')
+  one('#before').focus()
+  key(one('#before'), 'ArrowRight')
+  assert.equal(focused(), 'after')
+  one('#toggle').focus()
+  assert.equal(one('#after').tabIndex, 0, 'focusing the inner toolbar preserves the outer stop')
+})
+
+test('toolbar: same-name radios in separate forms are independent stops', () => {
+  const { root, one, focused, key } = setup(`<div class="toolbar" role="toolbar">
+    <form><input type="radio" name="view" checked id="first"></form>
+    <form><input type="radio" name="view" checked id="second"></form><button>Save</button></div>`)
+  toolbar(root)
+  assert.equal(one('#second').tabIndex, -1)
+  one('#first').focus()
+  key(one('#first'), 'ArrowRight')
+  assert.equal(focused(), 'second')
+  assert.equal(one('#first').tabIndex, -1)
+})
+
+test('toolbar: arrows pass over an inert subtree', () => {
+  const { root, one, focused, key } = setup(`<div class="toolbar"><button id="start">Start</button>
+    <div inert><button>Unavailable</button></div><button id="end">End</button></div>`)
+  toolbar(root)
+  one('#start').focus()
+  key(one('#start'), 'ArrowRight')
+  assert.equal(focused(), 'end')
+})
+
 test('toolbar: where the browser has focusgroup, the keys are its own', () => {
   const { root, one, key, stops, window } = setup(markup.replace('aria-label="Formatting"', 'aria-label="Formatting" focusgroup="toolbar wrap"'))
   ;(window.HTMLElement.prototype as any).focusGroup = ''
