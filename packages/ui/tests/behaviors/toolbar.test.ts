@@ -204,3 +204,19 @@ test('toolbar: a key a control inside has taken, such as a slider\'s arrow, stay
   key(level, 'Home')
   assert.equal(focused(), 'bold', 'a key it leaves is still the toolbar\'s')
 })
+
+test('toolbar: a toggle inside a popover the toolbar holds still presses, and aria-disabled there still stops the click', () => {
+  const { root, one, click } = setup(`<div class="toolbar" role="toolbar">
+    <button id="more" popovertarget="more-tools">More</button>
+    <div id="more-tools" popover>
+      <button id="strike" aria-pressed="false">Strikethrough</button>
+      <button id="locked" aria-disabled="true">Locked</button>
+    </div></div>`)
+  toolbar(root)
+  let heard = 0
+  one('#locked').addEventListener('click', () => heard++)
+  click(one('#strike'))
+  assert.equal(one('#strike').getAttribute('aria-pressed'), 'true')
+  click(one('#locked'))
+  assert.equal(heard, 0)
+})

@@ -54,7 +54,9 @@ export function toolbar(root) {
 
   root.addEventListener('click', (event) => {
     const button = /** @type {Element} */ (event.target).closest('button, [role="button"]')
-    if (!button || !root.contains(button) || within(button, nested)) return
+    // Only a toolbar inside this one answers for its own buttons. A button in a popover, a dialog or a menu the
+    // toolbar holds is still this toolbar's to press and to stop.
+    if (!button || !root.contains(button) || within(button, '[role="toolbar"], .toolbar')) return
     if (button.getAttribute('aria-disabled') === 'true') {
       event.preventDefault()
       event.stopImmediatePropagation()
