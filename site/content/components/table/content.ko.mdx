@@ -88,7 +88,59 @@ import ContractTable from '~/site/components/ContractTable.astro'
 
 `table-compact`는 행 높이를 줄여 긴 목록을 빠르게 훑어볼 수 있게 합니다.
 
+### 정렬 컨트롤 \{#sort-control\}
+
 별도의 셀렉트나 링크로 행을 정렬할 때는 그 컨트롤로 정렬할 수 있는 모든 열 제목에 `table-heading-sortable`을 지정합니다. `aria-sort`는 현재 정렬 기준인 열 제목에만 둡니다. 텍스트 열은 레이블 뒤, 숫자 열은 레이블 앞에 공간을 남겨 화살표가 나타나거나 사라져도 열 너비가 바뀌지 않습니다. [테이블 뷰](/blocks/table-view)에서 정렬을 바꿔 보세요.
+
+<ComponentPreview name="sort-control" height={232} title="정렬 컨트롤" bodyClass="p-lg" html={`<div class="sheet overflow-hidden max-w(420) mx-auto">
+  <div class="flex items-center justify-end gap-sm px(12) pt(12)">
+    <label class="text-sm fg-text-muted" for="member-order">Order</label>
+    <select class="select select-sm" id="member-order">
+      <option class="select-option" value="name ascending">Name</option>
+      <option class="select-option" value="deployments descending" selected>Most deployments</option>
+      <option class="select-option" value="deployments ascending">Fewest deployments</option>
+    </select>
+  </div>
+  <table class="table table-compact" id="member-table">
+    <thead>
+      <tr class="table-row">
+        <th class="table-heading table-heading-sortable" scope="col" data-sort="name">Name</th>
+        <th class="table-heading table-heading-sortable table-numeric" scope="col" data-sort="deployments" aria-sort="descending">Deployments</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="table-row" data-name="Grace Hopper" data-deployments="1204">
+        <td class="table-cell table-primary">Grace Hopper</td>
+        <td class="table-cell table-numeric">1,204</td>
+      </tr>
+      <tr class="table-row" data-name="Ada Lovelace" data-deployments="412">
+        <td class="table-cell table-primary">Ada Lovelace</td>
+        <td class="table-cell table-numeric">412</td>
+      </tr>
+      <tr class="table-row" data-name="Alan Turing" data-deployments="96">
+        <td class="table-cell table-primary">Alan Turing</td>
+        <td class="table-cell table-numeric">96</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+<script>
+document.getElementById('member-order').addEventListener('change', function (event) {
+  var order = event.target.value.split(' ')
+  var table = document.getElementById('member-table')
+  table.querySelectorAll('[data-sort]').forEach(function (heading) {
+    if (heading.dataset.sort === order[0]) heading.setAttribute('aria-sort', order[1])
+    else heading.removeAttribute('aria-sort')
+  })
+  var body = table.tBodies[0]
+  Array.from(body.rows).sort(function (a, b) {
+    var x = a.dataset[order[0]]
+    var y = b.dataset[order[0]]
+    var by = order[0] === 'name' ? x.localeCompare(y) : x - y
+    return order[1] === 'ascending' ? by : -by
+  }).forEach(function (row) { body.append(row) })
+})
+</script>`} caption="정렬을 바꾸면 화살표가 열 제목 사이를 옮겨 다니지만 어느 열의 너비도 바뀌지 않습니다." />
 
 ## 행 선택과 열기 \{#selection\}
 
@@ -212,6 +264,64 @@ import ContractTable from '~/site/components/ContractTable.astro'
     </table>
   </div>
 </div>`} caption="미리보기의 너비를 줄여 보세요. 표는 시트 안에서 스크롤되고 끝 쪽 가장자리는 흐려집니다." />
+
+### 고정된 열 제목 \{#sticky-headings\}
+
+`table-sticky`에는 블록 축을 따라 행을 스크롤하며 자체 높이를 가진 영역이 필요합니다. 이 예에서는 시트 자체에 `overflow-y-auto`와 `h(…)`를 지정했습니다. 열 제목은 주변 표면과 같은 색으로 영역의 위쪽에 머무르므로, 아래로 지나가는 행이 비쳐 보이지 않습니다.
+
+<ComponentPreview name="sticky" height={248} title="고정된 열 제목" bodyClass="p-lg" html={`<div class="sheet h(200) overflow-y-auto" tabindex="0" role="region" aria-label="Deployments this week">
+  <table class="table table-compact table-sticky">
+    <thead>
+      <tr class="table-row">
+        <th class="table-heading" scope="col">Commit</th>
+        <th class="table-heading" scope="col">Branch</th>
+        <th class="table-heading table-numeric" scope="col">Duration</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="table-row">
+        <td class="table-cell table-primary">9f2c1a</td>
+        <td class="table-cell">main</td>
+        <td class="table-cell table-numeric">48s</td>
+      </tr>
+      <tr class="table-row">
+        <td class="table-cell table-primary">71be0d</td>
+        <td class="table-cell">feature/anchors</td>
+        <td class="table-cell table-numeric">1m 02s</td>
+      </tr>
+      <tr class="table-row">
+        <td class="table-cell table-primary">c40e9b</td>
+        <td class="table-cell">main</td>
+        <td class="table-cell table-numeric">51s</td>
+      </tr>
+      <tr class="table-row">
+        <td class="table-cell table-primary">2d8f17</td>
+        <td class="table-cell">fix/focus-ring</td>
+        <td class="table-cell table-numeric">39s</td>
+      </tr>
+      <tr class="table-row">
+        <td class="table-cell table-primary">e5a3c0</td>
+        <td class="table-cell">main</td>
+        <td class="table-cell table-numeric">47s</td>
+      </tr>
+      <tr class="table-row">
+        <td class="table-cell table-primary">8b61f4</td>
+        <td class="table-cell">feature/paper</td>
+        <td class="table-cell table-numeric">1m 15s</td>
+      </tr>
+      <tr class="table-row">
+        <td class="table-cell table-primary">0fd27a</td>
+        <td class="table-cell">main</td>
+        <td class="table-cell table-numeric">44s</td>
+      </tr>
+      <tr class="table-row">
+        <td class="table-cell table-primary">63c9e8</td>
+        <td class="table-cell">fix/forced-colors</td>
+        <td class="table-cell table-numeric">36s</td>
+      </tr>
+    </tbody>
+  </table>
+</div>`} caption="행을 스크롤해도 열 제목은 영역의 위쪽에 머무릅니다." />
 
 ## 접근성 \{#accessibility\}
 

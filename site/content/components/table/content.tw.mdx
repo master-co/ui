@@ -88,7 +88,59 @@ import ContractTable from '~/site/components/ContractTable.astro'
 
 `table-compact` 縮減列高，適合需要快速掃讀的長清單。
 
+### 排序控制項 \{#sort-control\}
+
 如果由獨立的下拉選單或連結排序資料列，請在它能排序的每個欄標題加上 `table-heading-sortable`，並只在目前排序的欄標題上保留 `aria-sort`。文字欄在標籤後方預留空間，數字欄則在前方，讓箭頭出現或消失時都不會改變欄寬。可以在[表格檢視](/blocks/table-view)試用排序控制項。
+
+<ComponentPreview name="sort-control" height={232} title="排序控制項" bodyClass="p-lg" html={`<div class="sheet overflow-hidden max-w(420) mx-auto">
+  <div class="flex items-center justify-end gap-sm px(12) pt(12)">
+    <label class="text-sm fg-text-muted" for="member-order">Order</label>
+    <select class="select select-sm" id="member-order">
+      <option class="select-option" value="name ascending">Name</option>
+      <option class="select-option" value="deployments descending" selected>Most deployments</option>
+      <option class="select-option" value="deployments ascending">Fewest deployments</option>
+    </select>
+  </div>
+  <table class="table table-compact" id="member-table">
+    <thead>
+      <tr class="table-row">
+        <th class="table-heading table-heading-sortable" scope="col" data-sort="name">Name</th>
+        <th class="table-heading table-heading-sortable table-numeric" scope="col" data-sort="deployments" aria-sort="descending">Deployments</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="table-row" data-name="Grace Hopper" data-deployments="1204">
+        <td class="table-cell table-primary">Grace Hopper</td>
+        <td class="table-cell table-numeric">1,204</td>
+      </tr>
+      <tr class="table-row" data-name="Ada Lovelace" data-deployments="412">
+        <td class="table-cell table-primary">Ada Lovelace</td>
+        <td class="table-cell table-numeric">412</td>
+      </tr>
+      <tr class="table-row" data-name="Alan Turing" data-deployments="96">
+        <td class="table-cell table-primary">Alan Turing</td>
+        <td class="table-cell table-numeric">96</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+<script>
+document.getElementById('member-order').addEventListener('change', function (event) {
+  var order = event.target.value.split(' ')
+  var table = document.getElementById('member-table')
+  table.querySelectorAll('[data-sort]').forEach(function (heading) {
+    if (heading.dataset.sort === order[0]) heading.setAttribute('aria-sort', order[1])
+    else heading.removeAttribute('aria-sort')
+  })
+  var body = table.tBodies[0]
+  Array.from(body.rows).sort(function (a, b) {
+    var x = a.dataset[order[0]]
+    var y = b.dataset[order[0]]
+    var by = order[0] === 'name' ? x.localeCompare(y) : x - y
+    return order[1] === 'ascending' ? by : -by
+  }).forEach(function (row) { body.append(row) })
+})
+</script>`} caption="切換排序：箭頭會在欄標題之間移動，但每一欄的寬度都不會改變。" />
 
 ## 選取與可開啟的資料列 \{#selection\}
 
@@ -212,6 +264,64 @@ import ContractTable from '~/site/components/ContractTable.astro'
     </table>
   </div>
 </div>`} caption="縮窄預覽，表格會在面板內捲動，末端邊緣會淡出。" />
+
+### 固定的欄標題 \{#sticky-headings\}
+
+`table-sticky` 需要一個沿區塊軸捲動資料列、本身有固定高度的區域：這裡就是面板本身，加上 `overflow-y-auto` 和 `h(…)`。欄標題停在區域頂端，底色與周圍的表面相同，資料列從下方捲過時不會透出來。
+
+<ComponentPreview name="sticky" height={248} title="固定的欄標題" bodyClass="p-lg" html={`<div class="sheet h(200) overflow-y-auto" tabindex="0" role="region" aria-label="Deployments this week">
+  <table class="table table-compact table-sticky">
+    <thead>
+      <tr class="table-row">
+        <th class="table-heading" scope="col">Commit</th>
+        <th class="table-heading" scope="col">Branch</th>
+        <th class="table-heading table-numeric" scope="col">Duration</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="table-row">
+        <td class="table-cell table-primary">9f2c1a</td>
+        <td class="table-cell">main</td>
+        <td class="table-cell table-numeric">48s</td>
+      </tr>
+      <tr class="table-row">
+        <td class="table-cell table-primary">71be0d</td>
+        <td class="table-cell">feature/anchors</td>
+        <td class="table-cell table-numeric">1m 02s</td>
+      </tr>
+      <tr class="table-row">
+        <td class="table-cell table-primary">c40e9b</td>
+        <td class="table-cell">main</td>
+        <td class="table-cell table-numeric">51s</td>
+      </tr>
+      <tr class="table-row">
+        <td class="table-cell table-primary">2d8f17</td>
+        <td class="table-cell">fix/focus-ring</td>
+        <td class="table-cell table-numeric">39s</td>
+      </tr>
+      <tr class="table-row">
+        <td class="table-cell table-primary">e5a3c0</td>
+        <td class="table-cell">main</td>
+        <td class="table-cell table-numeric">47s</td>
+      </tr>
+      <tr class="table-row">
+        <td class="table-cell table-primary">8b61f4</td>
+        <td class="table-cell">feature/paper</td>
+        <td class="table-cell table-numeric">1m 15s</td>
+      </tr>
+      <tr class="table-row">
+        <td class="table-cell table-primary">0fd27a</td>
+        <td class="table-cell">main</td>
+        <td class="table-cell table-numeric">44s</td>
+      </tr>
+      <tr class="table-row">
+        <td class="table-cell table-primary">63c9e8</td>
+        <td class="table-cell">fix/forced-colors</td>
+        <td class="table-cell table-numeric">36s</td>
+      </tr>
+    </tbody>
+  </table>
+</div>`} caption="捲動資料列：欄標題會一直停在區域頂端。" />
 
 ## 無障礙 \{#accessibility\}
 

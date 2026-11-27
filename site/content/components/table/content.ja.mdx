@@ -87,7 +87,59 @@ import ContractTable from '~/site/components/ContractTable.astro'
 
 `table-compact` は行を詰めて表示します。長い一覧にざっと目を通すときに適しています。
 
+### 並べ替えコントロール \{#sort-control\}
+
 別の選択欄やリンクで行を並べ替える場合、対象になる列見出しすべてに `table-heading-sortable` を付けます。`aria-sort` は並べ替えに使っている見出しだけに指定します。ラベルの後ろ、数値列なら前に余白を確保するので、矢印の表示と非表示を切り替えても列幅は変わりません。並べ替えのコントロールは[テーブルビュー](/blocks/table-view)で試せます。
+
+<ComponentPreview name="sort-control" height={232} title="並べ替えコントロール" bodyClass="p-lg" html={`<div class="sheet overflow-hidden max-w(420) mx-auto">
+  <div class="flex items-center justify-end gap-sm px(12) pt(12)">
+    <label class="text-sm fg-text-muted" for="member-order">Order</label>
+    <select class="select select-sm" id="member-order">
+      <option class="select-option" value="name ascending">Name</option>
+      <option class="select-option" value="deployments descending" selected>Most deployments</option>
+      <option class="select-option" value="deployments ascending">Fewest deployments</option>
+    </select>
+  </div>
+  <table class="table table-compact" id="member-table">
+    <thead>
+      <tr class="table-row">
+        <th class="table-heading table-heading-sortable" scope="col" data-sort="name">Name</th>
+        <th class="table-heading table-heading-sortable table-numeric" scope="col" data-sort="deployments" aria-sort="descending">Deployments</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="table-row" data-name="Grace Hopper" data-deployments="1204">
+        <td class="table-cell table-primary">Grace Hopper</td>
+        <td class="table-cell table-numeric">1,204</td>
+      </tr>
+      <tr class="table-row" data-name="Ada Lovelace" data-deployments="412">
+        <td class="table-cell table-primary">Ada Lovelace</td>
+        <td class="table-cell table-numeric">412</td>
+      </tr>
+      <tr class="table-row" data-name="Alan Turing" data-deployments="96">
+        <td class="table-cell table-primary">Alan Turing</td>
+        <td class="table-cell table-numeric">96</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+<script>
+document.getElementById('member-order').addEventListener('change', function (event) {
+  var order = event.target.value.split(' ')
+  var table = document.getElementById('member-table')
+  table.querySelectorAll('[data-sort]').forEach(function (heading) {
+    if (heading.dataset.sort === order[0]) heading.setAttribute('aria-sort', order[1])
+    else heading.removeAttribute('aria-sort')
+  })
+  var body = table.tBodies[0]
+  Array.from(body.rows).sort(function (a, b) {
+    var x = a.dataset[order[0]]
+    var y = b.dataset[order[0]]
+    var by = order[0] === 'name' ? x.localeCompare(y) : x - y
+    return order[1] === 'ascending' ? by : -by
+  }).forEach(function (row) { body.append(row) })
+})
+</script>`} caption="並べ替えを切り替えると、シェブロンは見出しの間を移動しますが、どの列の幅も変わりません。" />
 
 ## 行の選択と、開ける行 \{#selection\}
 
@@ -211,6 +263,64 @@ import ContractTable from '~/site/components/ContractTable.astro'
     </table>
   </div>
 </div>`} caption="プレビューの幅を狭めると、テーブルはシート内でスクロールできるようになり、末尾側の端がフェードします。" />
+
+### 固定される列見出し \{#sticky-headings\}
+
+`table-sticky` には、行をブロック軸方向にスクロールさせる、それ自体の高さを持つ領域が必要です。この例ではシート自体に `overflow-y-auto` と `h(…)` を指定しています。列見出しは周囲の面と同じ色でその上端にとどまるので、下を通り過ぎる行は透けて見えません。
+
+<ComponentPreview name="sticky" height={248} title="固定される列見出し" bodyClass="p-lg" html={`<div class="sheet h(200) overflow-y-auto" tabindex="0" role="region" aria-label="Deployments this week">
+  <table class="table table-compact table-sticky">
+    <thead>
+      <tr class="table-row">
+        <th class="table-heading" scope="col">Commit</th>
+        <th class="table-heading" scope="col">Branch</th>
+        <th class="table-heading table-numeric" scope="col">Duration</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="table-row">
+        <td class="table-cell table-primary">9f2c1a</td>
+        <td class="table-cell">main</td>
+        <td class="table-cell table-numeric">48s</td>
+      </tr>
+      <tr class="table-row">
+        <td class="table-cell table-primary">71be0d</td>
+        <td class="table-cell">feature/anchors</td>
+        <td class="table-cell table-numeric">1m 02s</td>
+      </tr>
+      <tr class="table-row">
+        <td class="table-cell table-primary">c40e9b</td>
+        <td class="table-cell">main</td>
+        <td class="table-cell table-numeric">51s</td>
+      </tr>
+      <tr class="table-row">
+        <td class="table-cell table-primary">2d8f17</td>
+        <td class="table-cell">fix/focus-ring</td>
+        <td class="table-cell table-numeric">39s</td>
+      </tr>
+      <tr class="table-row">
+        <td class="table-cell table-primary">e5a3c0</td>
+        <td class="table-cell">main</td>
+        <td class="table-cell table-numeric">47s</td>
+      </tr>
+      <tr class="table-row">
+        <td class="table-cell table-primary">8b61f4</td>
+        <td class="table-cell">feature/paper</td>
+        <td class="table-cell table-numeric">1m 15s</td>
+      </tr>
+      <tr class="table-row">
+        <td class="table-cell table-primary">0fd27a</td>
+        <td class="table-cell">main</td>
+        <td class="table-cell table-numeric">44s</td>
+      </tr>
+      <tr class="table-row">
+        <td class="table-cell table-primary">63c9e8</td>
+        <td class="table-cell">fix/forced-colors</td>
+        <td class="table-cell table-numeric">36s</td>
+      </tr>
+    </tbody>
+  </table>
+</div>`} caption="行をスクロールしても、列見出しは領域の上端にとどまります。" />
 
 ## アクセシビリティ \{#accessibility\}
 
