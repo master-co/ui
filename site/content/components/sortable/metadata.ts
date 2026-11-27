@@ -4,5 +4,6 @@ export default define({
   title: 'Sortable',
   description: 'A list whose items are put in order by dragging a handle or with the keys.',
   category: 'Structure',
+  addedSections: { across: '2026-11-28' },
   fileURL: import.meta.url
 })
