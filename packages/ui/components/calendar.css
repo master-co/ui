@@ -45,6 +45,28 @@
     & .calendar-day-outside {
       visibility: hidden;
     }
+
+    /*
+     * So a range's band stops where the month does, not at a blank cell: it is rounded at the month's last day and
+     * at its first, as where a week ends, and an ink end there keeps its half of the band to itself.
+     */
+    & .calendar-day-range:not(.calendar-day-outside):has(+ .calendar-day-outside) {
+      border-start-end-radius: calc(var(--calendar-day-radius) * var(--corner-scale));
+      border-end-end-radius: calc(var(--calendar-day-radius) * var(--corner-scale));
+    }
+
+    & .calendar-day-outside + .calendar-day-range:not(.calendar-day-outside) {
+      border-start-start-radius: calc(var(--calendar-day-radius) * var(--corner-scale));
+      border-end-start-radius: calc(var(--calendar-day-radius) * var(--corner-scale));
+    }
+
+    & .calendar-day-range-start:not(.calendar-day-outside):has(+ .calendar-day-outside) {
+      background-image: none;
+    }
+
+    & .calendar-day-outside + .calendar-day-range-end:not(.calendar-day-outside) {
+      background-image: none;
+    }
   }
 
   /* Previous, the month, next. */
@@ -108,9 +130,16 @@
       @apply --focus-ring;
     }
 
-    /* At the decade there is nowhere further to go: it reads as the title it is. */
+    /*
+     * At the decade there is nowhere further to go: it reads as the title it is. Forced colors would grey it as a
+     * disabled control; it keeps the title's ink there too.
+     */
     &:disabled {
       cursor: default;
+
+      @media (forced-colors: active) {
+        color: CanvasText;
+      }
     }
 
     /* On touch the target reaches 44px around the title, which keeps its height. */
@@ -271,9 +300,12 @@
       }
     }
 
-    /* A range of one day has no band, and a range that ends a week does not run past it. */
+    /*
+     * A range of one day has no band, and a range that ends a week does not run past it. Only the band's image goes:
+     * in forced colors the day's fill is Highlight, which a background reset outweighed, leaving its number unseen.
+     */
     &.calendar-day-range-start:is(.calendar-day-range-end, :last-child), &.calendar-day-range-end:first-child {
-      background: none;
+      background-image: none;
     }
 
     &:focus-visible {
