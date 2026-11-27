@@ -32,7 +32,8 @@
  *
  * Without a drag or the keys: a button in an item whose `popovertarget` (or `commandfor`) is the popover that
  * holds the form `kanban-mover` opens it for that item. The behavior writes the columns into the form's select
- * named `column` and the places into its select named `position`; submitting the form commits.
+ * named `column` and the places into its select named `position`; submitting the form commits. The button that
+ * opened it has `aria-expanded="true"` while it is open, so it stays in sight under the mover.
  *
  * Every commit takes one path, `move(item, column, index)` on the function this returns, where `index` is the
  * place among the column's other items. A commit that changes the arrangement moves the item node itself, with
@@ -793,6 +794,10 @@ export function kanban(root, { messages = {}, arrange } = {}) {
 
   /** The value of the item the mover is open for. */
   let chosen = ''
+  /** The button that opened the mover last: it says it is expanded while the mover is open, and stays in sight. */
+  /** @type {Element | null} */
+  let opener = null
+  const expand = (/** @type {Element | null} */ button, /** @type {boolean} */ open) => button?.setAttribute('aria-expanded', String(open))
 
   /** Write a select's options: rows of data, in the select's own class where it has one. */
   const fill = (/** @type {HTMLSelectElement} */ select, /** @type {[value: string, text: string][]} */ rows, /** @type {string} */ value) => {
@@ -831,6 +836,9 @@ export function kanban(root, { messages = {}, arrange } = {}) {
     }
     if ((trigger.getAttribute('popovertarget') ?? trigger.getAttribute('commandfor')) !== sheet.id) return
     chosen = valueOf(item)
+    if (opener !== trigger) expand(opener, false)
+    opener = trigger
+    expand(trigger, true)
     // One form serves every item: it takes the name of the button that opened it, "Move Draft the launch post".
     const named = trigger.getAttribute('aria-label')
     if (named) form.setAttribute('aria-label', named)
@@ -839,6 +847,14 @@ export function kanban(root, { messages = {}, arrange } = {}) {
     if (column && own) fill(column, open().map((each) => [valueOf(each), titleOf(each)]), valueOf(own))
     places(form)
   }, { signal })
+
+  // The mover opens and closes by the platform (its button, Escape, a click outside, a submit): its opener follows.
+  // A toggle event does not bubble, so it is heard on the way down.
+  root.addEventListener('toggle', (event) => {
+    const sheet = mover()?.closest('[popover]')
+    if (!sheet || event.target !== sheet) return
+    expand(opener, /** @type {ToggleEvent} */ (event).newState === 'open')
+  }, { signal, capture: true })
 
   root.addEventListener('change', (event) => {
     const form = mover()
@@ -876,6 +892,7 @@ export function kanban(root, { messages = {}, arrange } = {}) {
     held?.handle.setAttribute('aria-pressed', 'false')
     settle()
     hide()
+    expand(opener, false)
   })
 
   const detach = valued(

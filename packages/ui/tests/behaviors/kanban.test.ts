@@ -824,6 +824,27 @@ test('kanban: the mover takes the name of the button that opened it', () => {
   assert.equal(one('.kanban-mover').getAttribute('aria-label'), 'Move Site', 'one form serves every item')
 })
 
+test('kanban: the button that opened the mover is expanded while it is open, and only that one', () => {
+  const { root, one, click } = setup()
+  const detach = kanban(root)
+  const copy = one('.kanban-item[data-value="copy"] [popovertarget]')
+  const site = one('.kanban-item[data-value="site"] [popovertarget]')
+  const sheet = one('#mover')
+  const toggle = (newState: 'open' | 'closed') => sheet.dispatchEvent(Object.assign(new Event('toggle'), { newState }))
+  click(copy, { detail: 1 })
+  toggle('open')
+  assert.equal(copy.getAttribute('aria-expanded'), 'true')
+  click(site, { detail: 1 })
+  toggle('open')
+  assert.equal(copy.getAttribute('aria-expanded'), 'false', 'the mover left the first item')
+  assert.equal(site.getAttribute('aria-expanded'), 'true')
+  toggle('closed')
+  assert.equal(site.getAttribute('aria-expanded'), 'false', 'closed by Escape, a click outside or a submit')
+  click(site, { detail: 1 })
+  detach()
+  assert.equal(site.getAttribute('aria-expanded'), 'false', 'detaching leaves no button expanded')
+})
+
 test('kanban: a press whose release never came is not a drag once no button is down', () => {
   const { root, down, pressed, isOpen, preview, document, window } = setup()
   const board = kanban(root)
