@@ -99,9 +99,12 @@ export function paginate(rows, page, size) {
   return { rows: rows.slice(start, start + size), page: current, pages, from: rows.length ? start + 1 : 0, to: Math.min(start + size, rows.length), total: rows.length }
 }
 
-const dates = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })
-/** A date as a reader reads it: `Nov 13, 2026`. */
-export const formatDate = (value) => dates.format(new Date(`${value}T00:00:00Z`))
+const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+/** A date as a reader reads it, day first: `13 Nov 2026`. */
+export const formatDate = (value) => {
+  const [year, month, day] = value.split('-')
+  return `${Number(day)} ${months[Number(month) - 1]} ${year}`
+}
 
 /** A condition in words, for its chip: `Status is Ready`. */
 export function describe(given, field) {
