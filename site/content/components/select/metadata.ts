@@ -4,5 +4,6 @@ export default define({
   title: 'Select',
   description: 'A native select whose option list is drawn in the same material.',
   category: 'Forms',
+  addedSections: { invalid: '2026-11-28' },
   fileURL: import.meta.url
 })
