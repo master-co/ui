@@ -4,5 +4,6 @@ export default define({
   title: 'Input',
   description: 'Text fields cut into the surface, with labels, hints, errors and groups.',
   category: 'Forms',
+  addedSections: { help: '2026-11-28' },
   fileURL: import.meta.url
 })
