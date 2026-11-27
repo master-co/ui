@@ -1227,7 +1227,7 @@ test(`${engine}: a kanban keeps its marks in forced colors and holds still with 
     await page.keyboard.press('Escape')
     assert.equal(await pressed(), 0)
 
-    // With reduced motion the sheet does not glide to its place: the release ends everything at once.
+    // With reduced motion nothing glides: the release ends everything at once.
     const at = await box(handle)
     const site = await box(root.locator('.kanban-item[data-value="site"]'))
     await page.mouse.move(at.x + at.width / 2, at.y + at.height / 2)
@@ -1237,9 +1237,48 @@ test(`${engine}: a kanban keeps its marks in forced colors and holds still with 
     assert.equal(await outline(root.locator('.kanban-preview')), 'solid', 'the carried sheet is outlined')
     await page.mouse.up()
     await until(() => root.locator('.kanban-column[data-value="doing"] .kanban-item').count(), value => value === 2, 'the item is moved')
-    assert.equal(await root.locator('.kanban-preview').evaluate(element => element.classList.contains('kanban-preview-landing')), false)
+    assert.equal(await root.locator('.kanban-preview').evaluate(element => element.matches(':popover-open')), false, 'the sheet has left')
     await until(pressed, value => value === 0, 'and the handle lets go at once')
   } finally { await context.close() }
+})
+
+test(`${engine}: a kanban's release leaves one picture of the item: the sheet leaves where it is, and the item moves`, async () => {
+  const page = await browser.newPage({ viewport: { width: 900, height: 700 } })
+  try {
+    await page.goto(`${origin}?only=svelte`)
+    const root = page.locator('[data-example="kanban"] .kanban')
+    await root.waitFor()
+    await root.scrollIntoViewIfNeeded()
+    const item = root.locator('.kanban-item[data-value="brief"]')
+    const sheet = root.locator('.kanban-preview')
+    const at = await box(item.locator('.kanban-handle'))
+    const site = await box(root.locator('.kanban-item[data-value="site"]'))
+    await page.mouse.move(at.x + at.width / 2, at.y + at.height / 2)
+    await page.mouse.down()
+    await page.mouse.move(site.x + 30, site.y + site.height + 10, { steps: 6 })
+    assert.equal(await sheet.evaluate(element => element.matches(':popover-open')), true)
+    const held = await sheet.evaluate(element => getComputedStyle(element).translate)
+    // Every frame after the release: where the sheet is, whether it is still shown, and how the item is drawn.
+    // A string, not a function: the compiler would wrap a named helper in one the page does not have.
+    await page.evaluate(`(() => {
+      const frames = (window.recorded = [])
+      const sheet = document.querySelector('[data-example="kanban"] .kanban-preview')
+      const record = () => {
+        const item = document.querySelector('[data-example="kanban"] .kanban-item[data-value="brief"]')
+        frames.push({ open: sheet.matches(':popover-open'), translate: getComputedStyle(sheet).translate, pressed: item?.querySelector('.kanban-handle')?.getAttribute('aria-pressed') ?? null })
+        if (frames.length < 30) requestAnimationFrame(record)
+      }
+      document.addEventListener('pointerup', () => requestAnimationFrame(record), { once: true, capture: true })
+    })()`)
+    await page.mouse.up()
+    await until(() => page.evaluate(() => (window as any).recorded.length), value => value >= 30, 'thirty frames after the release')
+    const frames = await page.evaluate(() => (window as any).recorded as { open: boolean, translate: string, pressed: string | null }[])
+    assert.ok(frames.every(frame => !frame.open), 'the sheet is gone from the first frame after the release')
+    assert.ok(frames.every(frame => frame.translate === held), `and never travels toward the item: ${[...new Set(frames.map(frame => frame.translate))].join(' | ')}`)
+    assert.ok(frames.every(frame => frame.pressed === 'false'), 'the handle lets go on the release, so the item is drawn whole while it moves')
+    await until(() => item.evaluate(element => getComputedStyle(element).opacity), value => value === '1', 'the item is whole in its new place')
+    assert.equal(await root.locator('.kanban-column[data-value="doing"] .kanban-item[data-value="brief"]').count(), 1, 'and it is there')
+  } finally { await page.close() }
 })
 
 /** The rows of a sortable table: a grip in a cell of its own, then the item and its figures. */

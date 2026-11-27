@@ -20,8 +20,9 @@
  * pointer; the items do not move, so their boxes are true at every step. The board is scrolled across and the
  * column's list along while the pointer is near their ends. The release commits; a release where it was picked
  * up or outside the board, Escape, a cancelled pointer and a capture lost leave it where it was. Only the
- * pointer that started the drag moves it. After the release the sheet glides to the place the item took,
- * `kanban-preview-landing`, and leaves. Without the popover API nothing follows the pointer.
+ * pointer that started the drag moves it. The release lets go of the handle and the sheet leaves where it is, at
+ * once, `kanban-preview-landing` while it does: from there the item itself is what moves, and the sheet, which
+ * holds only its name, never slides over it. Without the popover API nothing follows the pointer.
  *
  * With the keys: Enter or Space on a handle picks the item up, as a press that does not move does. The up and
  * down arrows choose a place in the column, the left and right arrows the column beside it as it is seen,
@@ -426,10 +427,11 @@ export function kanban(root, { messages = {}, arrange } = {}) {
     }
   }
 
-  const hide = () => {
+  /** @param {boolean} [now] Whether a leaving the sheet is doing ends at once too. */
+  const hide = (now = true) => {
     const sheet = preview()
     if (!sheet) return
-    sheet.classList.remove('kanban-preview-landing')
+    if (now) sheet.classList.remove('kanban-preview-landing')
     try {
       if (sheet.matches(':popover-open')) sheet.hidePopover()
     } catch {
@@ -445,36 +447,32 @@ export function kanban(root, { messages = {}, arrange } = {}) {
   }
 
   /**
-   * The sheet glides to where an item stands, then leaves, and the handle lets go once it has.
-   * @param {HTMLElement} item
-   * @param {HTMLElement} handle
+   * The release: the sheet leaves where it is, at once, `kanban-preview-landing` while it does. It stood for the
+   * item only while the pointer carried it, and holds only its name: sent on to the item's place it was a second,
+   * smaller picture of the item sliding over the item itself. From the release the item is the one that moves.
    */
-  const land = (item, handle) => {
+  const leave = () => {
     const sheet = preview()
-    const done = () => {
-      settle = () => {}
-      hide()
-      handle.setAttribute('aria-pressed', 'false')
-    }
     let shown = false
     try {
       shown = !!sheet?.matches(':popover-open')
     } catch {
       shown = false
     }
-    if (!sheet || !shown || !motion() || !item.isConnected) return done()
-    const box = item.getBoundingClientRect()
+    if (!sheet || !shown) return
+    settle()
     sheet.classList.add('kanban-preview-landing')
-    follow(box.left, box.top)
+    hide(false)
     const ending = new AbortController()
-    const wait = setTimeout(() => settle(), 480)
+    const wait = setTimeout(() => settle(), 240)
     settle = () => {
+      settle = () => {}
       clearTimeout(wait)
       ending.abort()
-      done()
+      sheet.classList.remove('kanban-preview-landing')
     }
     sheet.addEventListener('transitionend', (event) => {
-      if (event.target === sheet && /** @type {TransitionEvent} */ (event).propertyName === 'translate') settle()
+      if (event.target === sheet && /** @type {TransitionEvent} */ (event).propertyName === 'opacity') settle()
     }, { signal: ending.signal })
   }
 
@@ -527,7 +525,7 @@ export function kanban(root, { messages = {}, arrange } = {}) {
       return
     }
     if (carry) commit(false, false)
-    // A landing still under way lets go of this handle when it ends: it ends now, before the item is held again.
+    // A sheet still leaving is gone before the item is held again.
     settle()
     pick(item, handle)
     // The handle takes focus, so the arrows and Escape work from here and a press elsewhere drops the item.
@@ -686,22 +684,21 @@ export function kanban(root, { messages = {}, arrange } = {}) {
     released = true
     const held = release()
     const to = keep && held?.target && !same(held.target, held.origin) ? held.target : null
+    // The sheet leaves and the handle lets go: the item is drawn whole again, before the move, so the move
+    // carries the item as it is and nothing else travels with it.
+    leave()
+    handle.setAttribute('aria-pressed', 'false')
     if (!to) {
       // Left where it was: only a drop on its own place is not a cancelled move.
       if (told && item.isConnected && !(keep && held?.target)) announce(say.cancel(...spoken(item, placeOf(item))))
-      land(item, handle)
       return
     }
     Promise.resolve(shift(item, to, 'pointer')).then((now) => {
       const moved = find(valueOf(item)) ?? item
-      if (moved !== item) handle.setAttribute('aria-pressed', 'false')
-      const grip = handleOf(moved) ?? handle
-      grip.setAttribute('aria-pressed', 'true')
-      land(moved, grip)
+      handleOf(moved)?.setAttribute('aria-pressed', 'false')
       if (now && moved.isConnected) announce(say.drop(...spoken(moved, placeOf(moved))))
     }, () => {
-      hide()
-      handle.setAttribute('aria-pressed', 'false')
+      // The owner did not take the arrangement: the item stays where it was, already let go.
     })
   }
 

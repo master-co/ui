@@ -111,12 +111,13 @@ function setup(html = markup) {
   const move = (x: number, y: number, id = 1) => send('pointermove', x, y, id)
   const up = (x: number, y: number, id = 1) => send('pointerup', x, y, id)
   /** The sheet's glide to its place is over: the browser says so with a transitionend. */
-  const landed = () => {
+  /** The sheet has faded out where it was released: its leaving is over. */
+  const gone = () => {
     const event = new page.window.Event('transitionend', { bubbles: true }) as any
-    event.propertyName = 'translate'
+    event.propertyName = 'opacity'
     preview.dispatchEvent(event)
   }
-  return { ...page, root, heard, handle, pressed, said, press, key, marked, layout, down, move, up, landed, preview }
+  return { ...page, root, heard, handle, pressed, said, press, key, marked, layout, down, move, up, gone, preview }
 }
 
 /* The value. */
@@ -434,7 +435,7 @@ test('kanban: messages say it in the page\'s language', async () => {
 /* The pointer. */
 
 test('kanban: a drag marks the place under the pointer and moves the item once, on the release', async () => {
-  const { root, handle, down, move, up, landed, pressed, marked, heard, preview, isOpen, document, said } = setup()
+  const { root, handle, down, move, up, gone, pressed, marked, heard, preview, isOpen, document, said } = setup()
   const board = kanban(root)
   // Brief stands at 40 to 84; the pointer takes hold of it 14px in and 20px down.
   down('brief', 1, 20, 60)
@@ -461,17 +462,17 @@ test('kanban: a drag marks the place under the pointer and moves the item once, 
   assert.deepEqual(marked(), [])
   assert.deepEqual(heard, ['input', 'change'])
   assert.equal(document.activeElement, handle('brief'), 'focus goes to the handle of the item that moved')
-  assert.equal(preview.classList.contains('kanban-preview-landing'), true, 'the sheet glides to the place the item took')
-  assert.equal(preview.style.getPropertyValue('--kanban-y'), '140px')
-  landed()
-  assert.equal(isOpen(preview), false)
+  assert.deepEqual(pressed(), [], 'the handle lets go on the release: the item is whole again, and it is what moves')
+  assert.equal(isOpen(preview), false, 'the sheet leaves at once')
+  assert.equal(preview.classList.contains('kanban-preview-landing'), true, 'in the time of a press')
+  assert.equal(preview.style.getPropertyValue('--kanban-y'), '280px', 'where it was released: it never slides over the item it stood for')
+  gone()
   assert.equal(preview.classList.contains('kanban-preview-landing'), false)
-  assert.deepEqual(pressed(), [], 'and the handle lets go once it has landed')
   assert.equal(await said(), 'Brief, dropped in To do, position 3 of 3.')
 })
 
 test('kanban: a drag across columns lands before the item under the pointer, at an end, or in an empty column', async () => {
-  const { root, down, move, up, landed, marked } = setup()
+  const { root, down, move, up, gone, marked } = setup()
   const board = kanban(root)
   down('brief', 1, 20, 60)
   move(260, 50)
@@ -488,20 +489,20 @@ test('kanban: a drag across columns lands before the item under the pointer, at 
   assert.deepEqual(marked(), ['end of review'], 'anywhere under an empty column is its one place')
   up(480, 380)
   await settle()
-  landed()
+  gone()
   assert.deepEqual(board.value[0].items, ['copy', 'press'])
   assert.deepEqual(board.value[2].items, ['brief'])
 })
 
 test('kanban: a release where the item was picked up changes and dispatches nothing', async () => {
-  const { root, down, move, up, landed, pressed, heard, said } = setup()
+  const { root, down, move, up, gone, pressed, heard, said } = setup()
   const board = kanban(root)
   down('copy', 1, 20, 110)
   move(40, 150)
   move(20, 112)
   up(20, 112)
   await settle()
-  landed()
+  gone()
   assert.deepEqual(board.value, start)
   assert.deepEqual(heard, [])
   assert.deepEqual(pressed(), [])
@@ -509,7 +510,7 @@ test('kanban: a release where the item was picked up changes and dispatches noth
 })
 
 test('kanban: a release outside the board cancels', async () => {
-  const { root, down, move, up, landed, marked, pressed, heard, said } = setup()
+  const { root, down, move, up, gone, marked, pressed, heard, said } = setup()
   const board = kanban(root)
   down('brief', 1, 20, 60)
   move(260, 100)
@@ -518,7 +519,7 @@ test('kanban: a release outside the board cancels', async () => {
   assert.deepEqual(marked(), [], 'off the board there is no place')
   up(260, 460)
   await settle()
-  landed()
+  gone()
   assert.deepEqual(board.value, start)
   assert.deepEqual(pressed(), [])
   assert.deepEqual(heard, [])
@@ -527,7 +528,7 @@ test('kanban: a release outside the board cancels', async () => {
 
 test('kanban: Escape during a drag, a cancelled pointer and a capture lost each leave the item where it was', async () => {
   for (const cancel of ['Escape', 'pointercancel', 'lostpointercapture']) {
-    const { root, handle, down, move, landed, marked, pressed, heard, preview, isOpen, pointer, document, window } = setup()
+    const { root, handle, down, move, gone, marked, pressed, heard, preview, isOpen, pointer, document, window } = setup()
     const board = kanban(root)
     down('site', 1, 220, 60)
     move(30, 100)
@@ -536,7 +537,7 @@ test('kanban: Escape during a drag, a cancelled pointer and a capture lost each 
     else if (cancel === 'pointercancel') document.dispatchEvent(new window.PointerEvent('pointercancel', { bubbles: true, pointerId: 1 }) as any)
     else pointer(handle('site'), 'lostpointercapture', { pointerId: 1 })
     await settle()
-    landed()
+    gone()
     assert.deepEqual(board.value, start, cancel)
     assert.deepEqual(marked(), [], cancel)
     assert.deepEqual(pressed(), [], cancel)
@@ -546,7 +547,7 @@ test('kanban: Escape during a drag, a cancelled pointer and a capture lost each 
 })
 
 test('kanban: only the pointer that started the drag moves it, and a second press starts nothing', async () => {
-  const { root, down, move, up, landed, marked, pressed } = setup()
+  const { root, down, move, up, gone, marked, pressed } = setup()
   const board = kanban(root)
   down('brief', 1, 20, 60)
   move(30, 130)
@@ -559,7 +560,7 @@ test('kanban: only the pointer that started the drag moves it, and a second pres
   assert.deepEqual(pressed(), ['brief'], 'nor end the drag')
   up(30, 130)
   await settle()
-  landed()
+  gone()
   assert.deepEqual(board.value[0].items, ['copy', 'brief', 'press'])
 })
 
@@ -582,7 +583,7 @@ test('kanban: a pointer resting on the line between two places does not trade th
 })
 
 test('kanban: near an end of the board or of a list the drag scrolls it, and stops with the drag', async () => {
-  const { root, one, down, move, up, landed, marked } = setup()
+  const { root, one, down, move, up, gone, marked } = setup()
   kanban(root)
   const frames: ((time: number) => void)[] = []
   const cancelled: number[] = []
@@ -609,7 +610,7 @@ test('kanban: near an end of the board or of a list the drag scrolls it, and sto
   assert.equal(list.scrollTop, down1, 'and the list it has left stays')
   up(790, 200)
   await settle()
-  landed()
+  gone()
   assert.equal(cancelled.length > 0, true, 'the release cancels the frame')
   const across = root.scrollLeft
   frame(64)
@@ -617,13 +618,13 @@ test('kanban: near an end of the board or of a list the drag scrolls it, and sto
 })
 
 test('kanban: the click a drag\'s release makes picks nothing up', async () => {
-  const { root, handle, click, down, move, up, landed, pressed } = setup()
+  const { root, handle, click, down, move, up, gone, pressed } = setup()
   kanban(root)
   down('brief', 1, 20, 60)
   move(30, 130)
   up(30, 130)
   await settle()
-  landed()
+  gone()
   click(handle('brief'), { detail: 1 })
   await settle()
   assert.deepEqual(pressed(), [])
@@ -643,7 +644,7 @@ test('kanban: without the popover API nothing follows the pointer, and the drag 
   assert.deepEqual(pressed(), [], 'with no sheet to land, the handle lets go at once')
 })
 
-test('kanban: with reduced motion the sheet does not glide: it leaves at once', async () => {
+test('kanban: with reduced motion nothing glides, and the sheet leaves at once as it always does', async () => {
   const { root, down, move, up, pressed, preview, isOpen, window } = setup()
   ;(window as any).matchMedia = (query: string) => ({ matches: query.includes('reduce') })
   kanban(root)
@@ -652,8 +653,10 @@ test('kanban: with reduced motion the sheet does not glide: it leaves at once', 
   up(260, 100)
   await settle()
   assert.equal(isOpen(preview), false)
-  assert.equal(preview.classList.contains('kanban-preview-landing'), false)
   assert.deepEqual(pressed(), [])
+  // A sheet that never fires transitionend, as where nothing fades, is done leaving all the same.
+  await new Promise(resolve => setTimeout(resolve, 260))
+  assert.equal(preview.classList.contains('kanban-preview-landing'), false)
 })
 
 /* The mover. */
@@ -728,7 +731,7 @@ test('kanban: setting value during a move cancels the move first, and the arrang
 })
 
 test('kanban: something else rearranging the board during a drag cancels the drag', async () => {
-  const { root, one, down, move, up, landed, pressed, marked, heard } = setup()
+  const { root, one, down, move, up, gone, pressed, marked, heard } = setup()
   const board = kanban(root)
   down('brief', 1, 20, 60)
   move(260, 100)
@@ -736,7 +739,7 @@ test('kanban: something else rearranging the board during a drag cancels the dra
   // A renderer moves Name into To do under the drag.
   one('.kanban-column[data-value="todo"] .kanban-items').append(one('.kanban-item[data-value="name"]'))
   await settle()
-  landed()
+  gone()
   assert.deepEqual(pressed(), [])
   assert.deepEqual(marked(), [])
   up(260, 100)

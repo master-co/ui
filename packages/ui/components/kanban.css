@@ -10,7 +10,9 @@
  * would land in, kanban-item-target before an item or kanban-items-target at the end of a list, and a small
  * sheet with the item's name follows the pointer in the top layer, clear of every column's clipping, placed
  * by --kanban-x and --kanban-y at the width --kanban-width. Those three are the only things the behavior
- * measures and writes. On the release the sheet glides into the place the item took and leaves.
+ * measures and writes. On the release the sheet leaves where it is, at once, and the item, whole again, is what
+ * moves: the sheet holds only the item's name, and sent on to the item's place it slid, a second and smaller
+ * picture of the item, over the item itself.
  * Without the popover API there is no sheet: the faded item and the line still say what is carried and where.
  */
 @layer components.ui {
@@ -186,8 +188,9 @@
    * each item is named by its own node, and every item glides from where it stood to where it stands. A list is
    * named too and holds its items' pictures, clipped as the list clips them: an item past the foot of a long
    * column, or scrolled under its head, stays out of sight on the way. An item that changes column is drawn by
-   * the list it arrives in, so it comes in from that list's edge while the carried sheet crosses the gap. The
-   * names stay inside the board, so a page's own transitions take the board as one picture.
+   * the list it arrives in, so it comes in from that list's edge; the carried sheet has left at the release, so
+   * this is the one picture of it that moves. The names stay inside the board, so a page's own transitions take
+   * the board as one picture.
    */
   @supports (view-transition-scope: all) {
     .kanban {
@@ -410,7 +413,7 @@
   /*
    * The carried item's name on a small raised sheet, in the top layer, where no column clips it. It is a manual
    * popover the behavior shows; it stands at the viewport's corner and --kanban-x and --kanban-y carry it to the
-   * pointer, with no easing between the two. Landing, it glides to the place the item took, then leaves.
+   * pointer, with no easing between the two. On the release it leaves where it is, in the time of a press.
    */
   .kanban-preview {
     display: none;
@@ -461,15 +464,9 @@
       }
     }
 
+    /* Released: it leaves in the time of a press, so the item that now moves is never seen twice. */
     &.kanban-preview-landing {
-      transition-property: translate, opacity, overlay, display;
-      transition-duration: var(--duration-base), var(--duration-quick), var(--duration-quick), var(--duration-quick);
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      &.kanban-preview-landing {
-        transition-property: opacity, overlay, display;
-      }
+      transition-duration: var(--duration-press);
     }
 
     @media (forced-colors: active) {
