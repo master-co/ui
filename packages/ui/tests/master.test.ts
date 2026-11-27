@@ -57,9 +57,9 @@ test('the compiled library keeps its rules in components.ui and puts none in com
 
 /**
  * A pseudo-element inside :is(), :where(), :not() or :has() is invalid, and a browser drops the whole rule without a
- * word. The compiler writes a mixin applied to a selector list as one rule on :is(<the list>), so a list whose
- * selectors end in ::after lost the vote's touch target, and one ending in ::before the sortable's sheet, while every
- * other test passed. Write one selector with the pseudo-element outside, `:is(.a, .b)::after`, instead.
+ * word while every other test passes. Before Master CSS 2.1.9 the compiler wrote a mixin applied to a selector list as
+ * one rule on :is(<the list>), which lost the vote's touch target and the sortable's sheet that way; a selector written
+ * by hand can still do it.
  */
 test('no compiled selector puts a pseudo-element inside :is(), :where(), :not() or :has()', () => {
   const { css } = compile(imports)

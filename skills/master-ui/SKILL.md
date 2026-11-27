@@ -5,7 +5,7 @@ license: MIT
 metadata:
   author: master-co
   version: "1.1"
-  compatibility: "@master/ui with contracts (contract.schema.json); Master CSS 2.1 or later, or the standalone stylesheet."
+  compatibility: "@master/ui with contracts (contract.schema.json); Master CSS 2.1.9 or later, or the standalone stylesheet."
 ---
 
 # Master UI
