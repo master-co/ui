@@ -146,7 +146,7 @@ Do not add a dependency or a script for placement, focus trapping, dismissal, au
 - Two `margin-inline-start: auto` items in one flex row share the free space, so the first floats in the middle. When a row can hold both something at its end and a generated mark, only the first is pushed (`:has(.listbox-end)::after { margin-inline-start: 0 }`).
 - A column of shortcuts stays a column only if every row keeps the same room after it: in a menu with checkable items, plain rows get an empty mark of the same width.
 - A rule written after another for the same pseudo-element wins property by property. Search the file for an older rule before adding one for a native part (`::-webkit-calendar-picker-indicator`).
-- Audit a stylesheet for what cannot be seen in a screenshot: `overflow-wrap` on every block of free text, a disabled state on every part that can be pressed, `(hover: hover)` around every `:hover`, a 44px target under `(pointer: coarse)` that changes nothing drawn, `overscroll-behavior` on every scroller that floats over the page.
+- Audit a stylesheet for what cannot be seen in a screenshot: `overflow-wrap` on every block of free text and a `text-wrap` chosen by how it is read, a disabled state on every part that can be pressed, `(hover: hover)` around every `:hover`, a 44px target under `(pointer: coarse)` that changes nothing drawn, `overscroll-behavior` on every scroller that floats over the page.
 
 ## Checking support
 
