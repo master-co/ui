@@ -227,14 +227,37 @@ Delete only working and base files that no other owned or added component still 
 
 Consider owning more source when maintaining a consistent implementation across the project is easier than coordinating local copies with package styles. The number of copied components alone is not a reason to take on the rest. The tokens, contracts, checker and [skill](/guide/ai#the-skill) still apply; [Owning the source](/guide/registry) compares the package and registry workflows.
 
+## A material of your own \{#material\}
+
+A project with a material of its own, such as a paper, a brand's surfaces or its own type, designs each component for it once: the first time the project uses it. Name the material in `master-ui.json`:
+
+```json name=master-ui.json
+{
+  "material": {
+    "stylesheets": ["src/styles/tokens.css", "src/styles/materials.css"],
+    "samples": ["src/components/Samples.astro"],
+    "adopted": ["button", "input", "segmented"]
+  }
+}
+```
+
+- **`stylesheets`** are where components get the project's face, through [tokens](#token), [public properties](#property) and a [theme](#theme).
+- **`samples`** are the files that show each adopted component in its states. A sample may render the project's own components: the markup they import counts.
+- **`adopted`** lists the components designed for the material.
+
+`npx master-ui check` then reports markup that uses a component not yet adopted (`first-use`) and an adopted component no sample shows (`unsampled`), both as errors. A rule that [redraws a component](#what-is-not) stays a warning, so a project can name its material while it clears the rules it already has; once they are cleared, `npx master-ui check --strict` holds them. To adopt a component, read its contract, give it the project's face at rest and in every state its contract lists, show it in the samples in light and dark, and add its name. When part of that face cannot be reached through tokens and public properties, own the component or keep the library's face for that part; do not redraw it from outside. Layouts own no material and are never adopted, and a component you wrote with a [contract of your own](/guide/contracts#your-own) is adopted by being written.
+
 ## What is not a customization \{#what-is-not\}
 
 These overrides can change the result, but they bypass the supported customization points and leave you responsible for tracking the implementation they replace:
 
-- **A rule that selects a library class and redeclares its face, edge or shadow.** Use a token, a property, or own the component.
+- **A rule that selects a library class and redeclares its face, edge, shadow, corners, type or padding.** Use a token, a property, or own the component.
 - **An undocumented component property.** Use the properties listed in its contract or the separately documented theme tokens. Internal component properties can change without notice.
 - **A new class that restyles a library component from outside**, such as `.my-btn.btn` with material declarations. A project class may set public properties and layout. A new material is a new component or an owned one.
 - **Winning by force.** Never raise specificity or use `!important` to beat a component. A utility already wins by its layer, and so does a rule of yours in `@layer components`; an override that needs more than that is a reason to own the component.
+- **A surface painted by hand.** A box with the theme's surface tokens and an edge or a corner of its own is a sheet, a tray or a well without a contract. Use the component, or write one with a contract.
+
+`npx master-ui check` reports the first three as `material-override`, a warning unless `--strict` is passed, and a surface painted by hand as `hand-made-material`, a warning. A project rule may still set a component's tokens, public properties and where it stands: margin, position, size, and the grid or flex it sits in.
 
 ```css name=app.css
 /* Not a customization: it redraws what button.css draws, and will not follow it. */

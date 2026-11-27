@@ -173,7 +173,7 @@ combobox(document.querySelector('.combobox'))
 接著就能用同一套工具處理專案的元件：
 
 - `npx master-ui list` 會列出這個元件，`npx master-ui contract price-tag` 會印出它的契約。先讀取契約再撰寫標記的代理程式，也會用同樣的方式找到它。
-- `npx master-ui check` 會依照契約檢查標記。在這個範例中，`npx master-ui check cart.html` 回報了三個錯誤：
+- `npx master-ui check` 會依照契約檢查標記。在這個範例中，`npx master-ui check cart.html` 回報了三處誤用：
 
 ```html name=cart.html
 <p class="price-tag-sale">$24</p>
@@ -197,7 +197,7 @@ cart.html:3:1 warning unknown-class "price-tag-large" is not a class of price-ta
 
 ## 診斷 \{#diagnostics\}
 
-`master-ui check` 會為每筆結果輸出一行，列出檔案、行號、欄號、嚴重程度、診斷代碼和訊息。除 `unknown-class` 預設為警告、`repeated-import` 一律為警告外，其餘代碼都是錯誤。加上 `--strict` 後，`unknown-class` 也會視為錯誤。最後三個代碼檢查的是專案[載入函式庫樣式表的方式](/guide/installation#one-route)，而不是標記。
+`master-ui check` 會為每筆結果輸出一行，列出檔案、行號、欄號、嚴重程度、診斷代碼和訊息。除了以下代碼，其餘代碼都是錯誤：`unknown-class` 預設為警告，加上 `--strict` 後會視為錯誤；`repeated-import` 和 `hand-made-material` 一律為警告；`material-override` 預設為警告，加上 `--strict` 後會視為錯誤。`stylesheet-import`、`mixed-imports` 和 `repeated-import` 檢查的是專案[載入函式庫樣式表的方式](/guide/installation#one-route)。`material-override` 和 `hand-made-material` 檢查的是專案自己的樣式表，以及其範本中的 `<style>`。`first-use` 和 `unsampled` 只適用於有[專屬材質](/guide/customization#material)的專案。
 
 | 代碼 | 含義 | 修正方式 |
 | --- | --- | --- |
@@ -211,5 +211,9 @@ cart.html:3:1 warning unknown-class "price-tag-large" is not a class of price-ta
 | `stylesheet-import` | 樣式表或 `<style>` 區塊以 CSS `@import` 匯入單一元件的樣式表；每個這樣寫的地方都會再包含它一次 | 改由算繪該元件的模組匯入：`import '@master/ui/components/button.css'` |
 | `mixed-imports` | 專案已完整匯入函式庫，卻又有模組匯入單一樣式表，使該樣式表輸出兩次 | 只保留一種方式：完整匯入，或每份樣式表各用一個模組匯入 |
 | `repeated-import` | 完整函式庫在不只一處被匯入 | 只從一份樣式表匯入。若兩處匯入永遠不會出現在同一頁，例如同一個儲存庫中的兩個應用程式，則可保留 |
+| `material-override` | 專案規則透過元件的某個類別，或同一元素上的專案自訂類別為元件設定樣式，並重新宣告元件樣式表在該處繪製的部分：表面、邊緣、陰影、圓角、字體或內距。對元件套用函式庫的 mixin，或設定元件的內部自訂屬性，也算在內 | 改為設定 token 或公開屬性、在該元素上加上 utility，或[接管元件](/guide/customization#own-a-component)。外距、定位、尺寸，以及元件所在的 grid 或 flex 版面配置，仍由你決定 |
+| `hand-made-material` | 某個元素以主題的表面 token 或 mixin 繪製，並另外加上自己的邊緣或圓角 | 改用具備該材質的元件，例如 `sheet`、`tray`、`well` 或 `card`，或撰寫附有契約的元件 |
+| `first-use` | 標記使用了不在 `material.adopted` 中的元件 | 為該材質設計這個元件一次：以 token 和公開屬性賦予它專案的外觀，在範例中呈現它的每種狀態，再將它加入 `material.adopted` |
+| `unsampled` | 已採用的名稱沒有對應的契約，或沒有任何範例呈現它的類別 | 在 `material.samples` 指定的其中一個檔案中呈現該元件，或修正名稱 |
 
 檢查器直接讀取原始碼，無須算繪頁面。它可以檢查運算式中的字面類別名稱，但無法解析動態計算的類別名稱、確認框架元件會在哪裡算繪子元素，或檢查其他檔案中的根元素。遇到無法確定的情況時，檢查器會略過。即使沒有診斷訊息，也無法據此確認焦點順序、對比度、瀏覽器支援情況，或選用的元件是否適合該用途。

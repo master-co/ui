@@ -173,7 +173,7 @@ combobox(document.querySelector('.combobox'))
 随后便可用同一套工具处理项目中的组件：
 
 - `npx master-ui list` 将该组件列入清单，`npx master-ui contract price-tag` 输出其契约。先读契约再写标记的智能体也以同样的方式找到它。
-- `npx master-ui check` 根据该契约检查标记。这里的 `npx master-ui check cart.html` 报告了三处错误：
+- `npx master-ui check` 根据该契约检查标记。这里的 `npx master-ui check cart.html` 报告了三处误用：
 
 ```html name=cart.html
 <p class="price-tag-sale">$24</p>
@@ -197,7 +197,7 @@ cart.html:3:1 warning unknown-class "price-tag-large" is not a class of price-ta
 
 ## 诊断 \{#diagnostics\}
 
-`master-ui check` 为每条诊断输出一行，包含文件、行号、列号、严重级别、代码和消息。`unknown-class` 默认是警告，传入 `--strict` 后按错误处理；`repeated-import` 始终是警告。其余代码均为错误。最后三个代码检查的是项目[加载库样式表的方式](/guide/installation#one-route)，而不是标记。
+`master-ui check` 为每条诊断输出一行，包含文件、行号、列号、严重级别、代码和消息。`unknown-class` 默认是警告，传入 `--strict` 后按错误处理；`repeated-import` 和 `hand-made-material` 始终是警告；`material-override` 默认是警告，传入 `--strict` 后按错误处理。其余代码均为错误。`stylesheet-import`、`mixed-imports` 和 `repeated-import` 检查的是项目[加载库样式表的方式](/guide/installation#one-route)。`material-override` 和 `hand-made-material` 检查的是项目自己的样式表及其模板中的 `<style>`。`first-use` 和 `unsampled` 只适用于有[自有材质](/guide/customization#material)的项目。
 
 | 代码 | 含义 | 修复方法 |
 | --- | --- | --- |
@@ -211,5 +211,9 @@ cart.html:3:1 warning unknown-class "price-tag-large" is not a class of price-ta
 | `stylesheet-import` | 样式表或 `<style>` 块用 CSS `@import` 导入单个组件的样式表；每个这样写的地方都会再包含它一次 | 改为从渲染该组件的模块导入：`import '@master/ui/components/button.css'` |
 | `mixed-imports` | 项目已完整导入库，又有模块导入单个样式表，导致该样式表输出两次 | 只保留一种方式：完整导入，或每个样式表使用一个模块导入 |
 | `repeated-import` | 完整的库在不止一处被导入 | 只从一个样式表导入。如果两处导入永远不会出现在同一页面，例如同一仓库中的两个应用，则可以保留 |
+| `material-override` | 项目规则通过组件的某个类或同一元素上的项目类为组件设置样式，并重新声明组件样式表在该处绘制的内容：表面、边缘、阴影、圆角、字体排印或内边距。对组件应用库的混入，或设置组件的内部自定义属性，同样算在内 | 改为设置令牌或公开属性，在该元素上使用工具类，或[自行维护该组件](/guide/customization#own-a-component)。外边距、定位、尺寸以及组件所在的网格或弹性布局仍由你决定 |
+| `hand-made-material` | 某个元素用主题的表面令牌或混入绘制，又自行设置了边缘或圆角 | 改用具备该材质的组件，例如 `sheet`、`tray`、`well` 或 `card`，或编写一个带契约的组件 |
+| `first-use` | 标记使用了不在 `material.adopted` 中的组件 | 为该材质设计一次组件：用令牌和公开属性赋予它项目的外观，在样例中展示它的每个状态，再将它添加到 `material.adopted` |
+| `unsampled` | 已采用的某个名称不对应任何契约，或没有样例展示它的任何类 | 在 `material.samples` 指定的某个文件中展示该组件，或更正名称 |
 
 检查器直接读取源码，无需渲染页面。它能检查表达式中直接写出的类名，但无法解析动态计算的类名、确认框架组件在何处渲染子元素，或检查另一个文件中的根元素。遇到无法确定的情况，检查器会跳过。即使检查通过，仍需确认焦点顺序、对比度、浏览器支持以及所选组件是否适合当前任务。

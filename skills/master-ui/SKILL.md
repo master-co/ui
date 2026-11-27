@@ -1,10 +1,10 @@
 ---
 name: master-ui
-description: Build, edit, review and customize interfaces with Master UI, the native HTML and CSS component library for Master CSS. Use in a project that imports @master/ui or links its stylesheet, when choosing a component, writing its markup, theming, deciding whether to override or own a component, or adding a component the library does not have. Do not introduce Master UI into a project that uses another component library without a request.
+description: Build, edit, review and customize interfaces with Master UI, the native HTML and CSS component library for Master CSS. Use in a project that imports @master/ui or links its stylesheet, when choosing a component, writing its markup, theming, giving a component a project's own material the first time it is used, deciding whether to override or own a component, or adding a component the library does not have. Do not introduce Master UI into a project that uses another component library without a request.
 license: MIT
 metadata:
   author: master-co
-  version: "1.0"
+  version: "1.1"
   compatibility: "@master/ui with contracts (contract.schema.json); Master CSS 2.1 or later, or the standalone stylesheet."
 ---
 
@@ -17,6 +17,7 @@ Master UI is a contract and a default implementation of it. The contract of a co
 - How the library arrives, which is one route and never two (see [Load the stylesheets one way](#load-the-stylesheets-one-way)): all of it from one stylesheet, `@import '@master/ui'` after `@import '@master/css'` or the project's own entry `ui/index.css` (written by `master-ui init`) in its place; one module import per stylesheet, `import '@master/ui/components/<name>.css'`; or the compiled `standalone.css` in a project without Master CSS. With the compiled file there are no utilities: lay out with the project's own CSS.
 - What the project owns: `master-ui.json` lists the owned components (`owned`) and the framework components it added (`components`); their source and contracts are in its `directory` (`ui/` by default), and `contracts` may name more of the project's own contracts. An owned contract replaces the library's. Read it before using that component.
 - The theme: a file imported after the library, or `@theme` overrides in the app stylesheet. Read it before choosing a token.
+- The material: `material` in `master-ui.json` says the project has a material of its own (a paper, a brand's surfaces, its own type) and names where it is: `stylesheets`, the files that give components the project's face; `samples`, the page or the files that show each component in it; `adopted`, the components already designed for it. Read the stylesheets and the samples before writing any component's markup, and follow [First use in a project's material](#first-use-in-a-projects-material) for every component not in `adopted`. A project whose instructions describe a material of its own but whose `master-ui.json` names none should get one: ask before adding it.
 - The viewport: fields keep their 14px type on touch screens, so the page caps its scale on iOS, where a reader can still pinch to zoom, to stop iOS zooming onto a focused field. If the head lacks the short script of `https://ui.master.co/guide/installation#set-the-viewport`, add it after the viewport tag. Do not raise a field's type to 16px instead.
 - The project's own instructions and nearby components come first. Match what is already there.
 - The version: Master UI follows semantic versioning, so only a major release renames or removes a class, a token or an export, and a minor or patch release can still retune how a component looks. Read contracts from the installed package (`npx master-ui contract` does), not from memory. After an upgrade run `npx master-ui check` and `npx master-ui status`, and fix what they report.
@@ -63,6 +64,26 @@ Read [frameworks](references/frameworks.md) before writing a component in one of
 - Thirty-seven patterns hold state and have a component to copy: avatar, calendar, carousel, chart, color-picker, combobox, command, compare, cropper, dial, dialog, editable, field, gantt, gradient, kanban, listbox, log, menu, otp, panel, player, popover, schedule, signature, sortable, splitter, stepper, tabs, tags, toast, toolbar, tooltip, tour, transcript, tree, wheel. `npx master-ui add <name>` copies it into `ui/`; `npx master-ui add` lists them. Look in `ui/` first: the project may already have it, edited.
 - Never write the keys, the focus or the state attributes of one of those patterns in a component. They are in `@master/ui/behaviors`; the component gives the behavior a root and passes the value.
 
+## Build a screen from the library
+
+Before writing a new screen, a tool or a large part of one, list its parts: each thing the reader reads or operates, such as a result figure, a list the reader orders, a set of options, a file picker, a section that opens, a message. Give each part a contract: `npx master-ui list`, [choosing](references/choosing.md) and the project's own components that are written on a contract. Write the list where the work is planned, one line a part, and keep it to the end.
+
+- A part with no contract says why: no component does that job, and it is an arrangement of components and utilities, or a component the project writes (see [Add what the library does not have](#add-what-the-library-does-not-have)).
+- Reuse a component of the project's own only when it renders a contract. One that redoes a pattern the library has (moving an item up and down instead of `sortable`, a box painted as a tray instead of `tray`, a result figure instead of `stat`) is a defect to report, not a precedent to copy: build the new part on the contract and say which component should move to it.
+- A part whose contract the project has not adopted is designed first, as below, before the screen uses it.
+
+## First use in a project's material
+
+A project with a material of its own designs each component once, the first time it uses it, and then uses it like any other. This is the step that makes a component look as if the project drew it. It applies when `master-ui.json` has `material`; `npx master-ui check` then reports a component used before it was adopted (`first-use`) and an adopted one no sample shows (`unsampled`), and both are errors. A project that has cleared its rules that redraw components runs `npx master-ui check --strict`, so a new one fails too.
+
+1. Read the contract (`npx master-ui contract <name>`): its parts, its states, its public custom properties, and the stylesheet's own rules for what it draws in each state.
+2. Decide its face in the project's terms: which of the project's surfaces, inks, radii, type and spacing it takes, at rest and in every state the contract lists. Write it with the lower steps of [customizing](references/customizing.md): a token set in a scope, a public property on the component's class or a class of the project's own beside it, a theme recipe. Put it in the files `material.stylesheets` names.
+3. When a part of that face cannot be reached through tokens and public properties, stop and choose: own the component (`npx master-ui own <name>`) and change its copy, or keep the library's face for that part and report the token or property Master UI lacks. Never redraw it from outside.
+4. Show it in the samples (`material.samples`) with the project's real implementation: every state its contract lists, in light and dark, at a narrow width.
+5. Add its name to `material.adopted`, then use it in the screen.
+
+Later uses read the samples and use the component as it is; the face is already there. Layouts own no material and are never adopted. A component the project wrote with a contract of its own is its material already.
+
 ## Choose the component
 
 Read [choosing](references/choosing.md) when more than one component could do the job: an overlay, a message, a choice among options, a number, navigation, a set of records. Each contract's `use` and `instead` say the same for one component.
@@ -83,17 +104,17 @@ Read [customizing](references/customizing.md) before overriding anything. In sho
 
 Color has four jobs, and chrome is neutral by default. A status (done, failing) is a tone such as `badge-success`, always with words. A category of data (a project, a calendar, a label) is a `category-<name>` class on the row, card or event, read only by `badge-category`, `chip-category`, `schedule-event-category`, `icon-frame-category` and the marks of a `chart`, and always beside the category's name. A color that is the data itself goes in a `swatch`. The brand color stays on `btn-brand`, once per view. Never tint a button, a field or a dialog with a category, and never use `category-red` for a danger.
 
-A project rule may select a library class only to set its public custom properties. Never write one that redeclares or undoes what the stylesheet declares, never raise specificity or use `!important` to win (a rule in `@layer components` already wins over the library's `components.ui`, and an `!important` there loses to one in the inner layer), and never restyle a component by its private custom properties.
+A project rule may select a library class only to set its public custom properties, tokens, and where the component stands. Never write one that redeclares or undoes what the stylesheet declares, never raise specificity or use `!important` to win (a rule in `@layer components` already wins over the library's `components.ui`, and an `!important` there loses to one in the inner layer), and never restyle a component by its private custom properties. A class of the project's own on the component's element counts as the component's class. `npx master-ui check` reports such a rule (`material-override`), and a box painted with the theme's surface tokens and an edge or a corner of its own (`hand-made-material`), which is a sheet, a tray, a well or a card made by hand.
 
 ## Add what the library does not have
 
-First check that it is not there under another name: `master-ui list`. Then decide what it is. Something with a material, a state, a platform behavior or a geometry its pieces share is a component: write one stylesheet in `@layer components` with class selectors only, tokens only, states from attributes, and write its contract beside it in the project's `ui/` directory so the checker and the next agent know it. Anything else is an arrangement: write it with utilities and existing components, and add no class.
+First check that it is not there under another name: `master-ui list`. Then decide what it is. Something with a material, a state, a platform behavior or a geometry its pieces share is a component: write one stylesheet in `@layer components` with class selectors only, tokens only, states from attributes, and write its contract beside it in the project's `ui/` directory so the checker and the next agent know it. A component written this way is the project's: its rules may draw it anywhere, and in a project's material it is adopted by being written. Anything else is an arrangement: write it with utilities and existing components, and add no class.
 
 Use the `master-design` skill, when it is installed, for design judgment. [Master UI’s design guide](https://ui.master.co/guide/design) explains the default design choices; the installed UI contracts and theme remain the source for exact classes, behavior and token values.
 
 ## Verify
 
-- `npx master-ui check` reports markup that breaks a contract: a modifier without its base, a part outside its root, two classes of one group on an element (two sizes), a class on the wrong element, a missing attribute or name, a class that looks like one of the library's but is in no contract. It also reads the project's stylesheets and modules for how they load the library: a CSS `@import` of one component (`stylesheet-import`), the whole library beside a module import of one stylesheet (`mixed-imports`), and the whole library imported in two places (`repeated-import`, a warning: two imports that never reach the same page are fine). Fix every error; read each warning.
+- `npx master-ui check` reports markup that breaks a contract: a modifier without its base, a part outside its root, two classes of one group on an element (two sizes), a class on the wrong element, a missing attribute or name, a class that looks like one of the library's but is in no contract. It also reads the project's stylesheets and modules for how they load the library: a CSS `@import` of one component (`stylesheet-import`), the whole library beside a module import of one stylesheet (`mixed-imports`), and the whole library imported in two places (`repeated-import`, a warning: two imports that never reach the same page are fine). It reads the project's stylesheets and the `<style>` of its templates for a rule that redraws a component (`material-override`, a warning, an error with `--strict`) and a surface painted by hand (`hand-made-material`, a warning). With a material, it reports a component used before it was adopted (`first-use`) and an adopted one no sample shows (`unsampled`). Fix every error; read each warning.
 - Run the project's Master CSS lint for utilities.
 - In a browser, check each state the change touches (rest, hover, focus-visible, pressed, disabled, invalid, open), in light and dark, at a narrow width, and with the keyboard alone for anything interactive.
 - Report what was checked and what was not.

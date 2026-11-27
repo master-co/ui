@@ -192,7 +192,7 @@ Three details:
 
 ## Diagnostics \{#diagnostics\}
 
-`master-ui check` prints one line per finding: the file, line and column, the severity, a code and a message. Every code is an error, except `unknown-class`, which is a warning unless `--strict` is passed, and `repeated-import`, which is always a warning. The last three codes are about how the project [loads the library's stylesheets](/guide/installation#one-route), not about markup.
+`master-ui check` prints one line per finding: the file, line and column, the severity, a code and a message. Every code is an error, except `unknown-class`, which is a warning unless `--strict` is passed; `repeated-import` and `hand-made-material`, which are always warnings; and `material-override`, which is a warning unless `--strict` is passed. `stylesheet-import`, `mixed-imports` and `repeated-import` are about how the project [loads the library's stylesheets](/guide/installation#one-route). `material-override` and `hand-made-material` are about the project's own stylesheets and the `<style>` of its templates. `first-use` and `unsampled` apply only to a project with a [material of its own](/guide/customization#material).
 
 | Code | What it means | How to fix it |
 | --- | --- | --- |
@@ -206,5 +206,9 @@ Three details:
 | `stylesheet-import` | A stylesheet or a `<style>` block imports one component's stylesheet with a CSS `@import`, which includes it again wherever it is written | Import it from the module that renders the component: `import '@master/ui/components/button.css'` |
 | `mixed-imports` | A module imports one stylesheet while the project also imports the full library, so that stylesheet is delivered twice | Keep one route: the full import, or one module import per stylesheet |
 | `repeated-import` | The full library is imported in more than one place | Import it from one stylesheet. Two imports that never reach the same page, such as two apps in one repository, can stay |
+| `material-override` | A project rule styles a component, by one of its classes or a project class on the same element, and redeclares what the component's stylesheet draws there: its face, edge, shadow, corners, type or padding. Applying a library mixin to it or setting one of its internal custom properties counts too | Set a token or a public property instead, put a utility on the one element, or [own the component](/guide/customization#own-a-component). Margin, position, size and the grid or flex it sits in stay yours |
+| `hand-made-material` | A box is painted with the theme's surface tokens or mixins and given an edge or a corner of its own | Use the component that has that material, such as `sheet`, `tray`, `well` or `card`, or write a component with a contract |
+| `first-use` | Markup uses a component that is not in `material.adopted` | Design it for the material once: give it the project's face with tokens and public properties, show it in the samples in each state, then add it to `material.adopted` |
+| `unsampled` | An adopted name is no contract, or no sample shows a class of it | Show the component in one of the files `material.samples` names, or correct the name |
 
 The checker reads source rather than rendering a page. It can inspect literal classes inside expressions, but cannot resolve computed class names, prove where a framework component renders its children or inspect a root in another file. It leaves uncertain cases alone. A clean result does not verify focus order, contrast, browser support or whether the chosen component fits the task.

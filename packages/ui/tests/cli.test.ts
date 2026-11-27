@@ -92,6 +92,49 @@ test('check leaves alone the entry init writes, and reports a module import besi
   } finally { remove() }
 })
 
+test('check reports a project rule that redraws a component, and a surface painted by hand', () => {
+  const { cwd, run, write, remove } = project()
+  try {
+    write('page.html', '<button type="button" class="btn action-outline">Save</button>')
+    write('site.css', '.action-outline { background: none; margin-inline: auto; }\n.btn { --btn-height: 2rem; }\n.panel-box { background: var(--color-surface-tray); border-radius: 1rem; }')
+    const loose = run('check', '--json')
+    assert.equal(loose.status, 0, 'both are warnings without a material')
+    assert.deepEqual(JSON.parse(loose.out).results.flatMap((result: { file: string, diagnostics: { code: string, line: number }[] }) => result.diagnostics.map(diagnostic => `${result.file}:${diagnostic.line} ${diagnostic.code}`)), ['site.css:1 material-override', 'site.css:3 hand-made-material'])
+    assert.equal(run('check', '--strict').status, 1, '--strict makes a redrawn component an error')
+    // A component's own stylesheet beside its contract draws it; the project rule above still may not.
+    mkdirSync(join(cwd, 'ui'))
+    write('ui/badge.json', JSON.stringify({ name: 'badge', title: 'Badge', tier: 'component', category: 'Display', description: 'A badge.', use: 'A badge.', script: 'none', classes: [{ name: 'badge', kind: 'root', description: 'A badge' }], example: '<span class="badge">1</span>' }))
+    write('ui/badge.css', '.badge { background: red; }')
+    assert.doesNotMatch(run('check').out, /ui\/badge\.css/)
+  } finally { remove() }
+})
+
+test('a material of the project\'s own: a component is adopted and shown before a page uses it', () => {
+  const { cwd, run, write, remove } = project()
+  try {
+    write('master-ui.json', JSON.stringify({ material: { stylesheets: ['src/materials.css'], samples: ['src/Samples.astro'], adopted: ['button'] } }, null, 2))
+    mkdirSync(join(cwd, 'src'))
+    write('src/Samples.astro', '---\nimport Badge from \'./Badge.svelte\'\n---\n<button type="button" class="btn btn-primary">Save</button>\n<span class="badge">new</span>')
+    write('src/Badge.svelte', '<span class="badge"><slot /></span>')
+    write('src/Page.svelte', '<button type="button" class="btn">Go</button>\n<span class="badge">2</span>')
+    const first = run('check', '--json')
+    assert.equal(first.status, 1)
+    const found = JSON.parse(first.out).results.flatMap((result: { file: string, diagnostics: { code: string, contract: string }[] }) => result.diagnostics.map(diagnostic => `${result.file} ${diagnostic.code} ${diagnostic.contract}`))
+    assert.deepEqual(found, ['src/Badge.svelte first-use badge', 'src/Page.svelte first-use badge'], 'the samples themselves are where a component is first used')
+    assert.match(run('check').out, /src\/materials\.css.*src\/Samples\.astro/)
+
+    write('master-ui.json', JSON.stringify({ material: { stylesheets: ['src/materials.css'], samples: ['src/Samples.astro'], adopted: ['button', 'badge', 'toast'] } }, null, 2))
+    const unsampled = run('check', '--json')
+    assert.deepEqual(JSON.parse(unsampled.out).results.flatMap((result: { file: string, diagnostics: { code: string, contract: string, line: number }[] }) => result.diagnostics.map(diagnostic => `${result.file}:${diagnostic.line} ${diagnostic.code} ${diagnostic.contract}`)), ['master-ui.json:12 unsampled toast'])
+
+    write('master-ui.json', JSON.stringify({ material: { samples: ['src/Samples.astro'], adopted: ['button', 'badge'] } }, null, 2))
+    assert.equal(run('check').status, 0)
+    write('src/materials.css', '.btn { box-shadow: none; }')
+    assert.match(run('check').out, /src\/materials\.css:1:8 warning material-override/, 'a material does not make a redrawn component an error by itself')
+    assert.equal(run('check', '--strict').status, 1, 'a project that has cleared its overrides holds them with --strict')
+  } finally { remove() }
+})
+
 test('a project contract is read, and one with a library name replaces it', () => {
   const { run, write, remove } = project()
   try {

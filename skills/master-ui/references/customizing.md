@@ -60,3 +60,6 @@ npx master-ui own menu  # copies ui/menu.css, ui/menu.json and its behavior; rep
 - A rule in the project's CSS that selects `.btn` (or any library class) and declares anything but its public custom properties: a face, an edge, a shadow, a padding. That is an untracked fork: use a token, a property, or own the component.
 - Setting an undocumented component property. Use its contract's properties or separately documented public theme tokens; internal properties can change without notice.
 - A new class that restyles a library component from outside (`.my-btn.btn { … }` with material declarations). A project modifier may set public properties and layout; a new material is a new component or an owned one.
+- A box painted by hand with the theme's surface tokens and an edge or a corner of its own: a sheet, a tray or a well that has lost its contract. Use the component, or write one with a contract.
+
+`npx master-ui check` reports the first three as `material-override`: a warning, and an error with `--strict`. It reports the last as `hand-made-material`, a warning. A rule may still set a component's public properties, tokens and where it stands: margin, position, size, the grid or flex it sits in.

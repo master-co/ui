@@ -133,7 +133,7 @@ import GuideFigure from '../../../components/GuideFigure.astro'
 
 第 5 層適用於無法透過設定值來表達的變更，例如修改結構、部件、狀態或行為。將元件原始碼複製到專案內，再就地編輯。
 
-符合以下任一條件時，就接管元件。其餘情況可使用第 1 到第 4 層。
+符合以下任一條件時，就接管元件。在此之前，請停留在第 1 到第 4 層。
 
 - 變更需要樣式表目前沒有的選擇器，例如要選取不同的部件、巢狀結構或元素。
 - 想要的狀態呈現無法透過主題 token 或元件的公開屬性來表達。
@@ -147,7 +147,7 @@ npx master-ui init      # once: writes ui/index.css with one @import per stylesh
 npx master-ui own menu  # copies ui/menu.css, ui/menu.json and its behavior; repoints the import
 ```
 
-`init` 會寫入 `ui/index.css` 和 `master-ui.json`。在匯入預設設定後匯入 `ui/index.css`，取代 `@import '@master/ui'`：
+`init` 會寫入 `ui/index.css` 和 `master-ui.json`。在匯入預設集後匯入 `ui/index.css`，取代 `@import '@master/ui'`：
 
 ```css name=app.css
 @import '@master/css';
@@ -232,14 +232,37 @@ menu  upstream changed: menu.css (master-ui diff menu); edited here: menu.css
 
 如果在專案內統一維護實作，比協調本機副本與套件樣式更容易，就可以考慮接管更多原始碼。是否接管其餘元件，還要看維護需求，不能只看已複製的元件數量。Token、契約、檢查工具和[技能](/guide/ai#the-skill)仍然適用。[接管原始碼](/guide/registry)比較了套件與登錄庫的工作流程。
 
+## 專案專屬的材質 \{#material\}
+
+若專案有專屬的材質，例如紙張質感、品牌自己的表面或字體，就要為這個材質設計每個元件一次，時機是專案第一次使用該元件時。請在 `master-ui.json` 中指定材質：
+
+```json name=master-ui.json
+{
+  "material": {
+    "stylesheets": ["src/styles/tokens.css", "src/styles/materials.css"],
+    "samples": ["src/components/Samples.astro"],
+    "adopted": ["button", "input", "segmented"]
+  }
+}
+```
+
+- **`stylesheets`** 是元件取得專案外觀的樣式表，外觀透過 [token](#token)、[公開屬性](#property)和[主題](#theme)設定。
+- **`samples`** 是呈現每個已採用元件各種狀態的檔案。範例可以算繪專案自己的元件，這些元件匯入的標記也算在內。
+- **`adopted`** 列出已為該材質設計的元件。
+
+之後，`npx master-ui check` 會將使用了尚未採用元件的標記（`first-use`），以及沒有任何範例呈現的已採用元件（`unsampled`），都回報為錯誤。[重繪元件](#what-is-not)的規則仍是警告，因此專案可以先指定材質，再逐步清除既有的這類規則；清除之後，就以 `npx master-ui check --strict` 確保它們不再出現。要採用一個元件，請先閱讀它的契約，為它的靜止狀態和契約列出的每種狀態賦予專案的外觀，在範例中以淺色與深色外觀呈現，再加入它的名稱。如果外觀的某部分無法透過 token 和公開屬性達成，請接管該元件，或在該部分保留函式庫的外觀；不要從外部重繪。版面配置沒有自己的材質，因此不會被採用；以[自己撰寫的契約](/guide/contracts#your-own)建立的元件，寫好時就已採用。
+
 ## 超出支援範圍的覆寫 \{#what-is-not\}
 
 以下覆寫雖然能改變呈現結果，但會繞過支援的自訂方式。你需要自行追蹤被覆寫的實作。
 
-- **以規則選取函式庫類別，重新宣告其表面、邊緣或陰影樣式。** 請使用 token、公開屬性，或接管元件。
+- **以規則選取函式庫類別，重新宣告其表面、邊緣、陰影、圓角、字體或內距樣式。** 請使用 token、公開屬性，或接管元件。
 - **使用文件未記載的元件屬性。** 請使用元件契約列出的屬性，或另有文件說明的主題 token。元件內部屬性可能在未事先通知的情況下變更。
 - **從外部新增類別來重設函式庫元件的樣式**，例如在 `.my-btn.btn` 中加入材質宣告。專案自訂類別可設定公開屬性及版面配置。要使用新材質，請建立新元件或接管既有元件。
 - **強行提高套用優先順序。** 請勿提高選擇器權重或使用 `!important` 來壓過元件樣式。Utility 所在的層本來就有較高優先順序，你寫在 `@layer components` 的規則也是如此。如果覆寫仍需要更高的優先順序，就該接管元件。
+- **手工繪製的表面。** 使用主題的表面 token，又自行加上邊緣或圓角的元素，等於沒有契約的面板、托盤或凹槽。請改用元件，或撰寫附有契約的元件。
+
+`npx master-ui check` 會將前三項回報為 `material-override`，預設為警告，加上 `--strict` 時則為錯誤；手工繪製的表面則回報為 `hand-made-material`，屬於警告。專案規則仍可設定元件的 token、公開屬性及其擺放方式：外距、定位、尺寸，以及元件所在的 grid 或 flex 版面配置。
 
 ```css name=app.css
 /* Not a customization: it redraws what button.css draws, and will not follow it. */

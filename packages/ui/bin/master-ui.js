@@ -5,9 +5,11 @@
  *   master-ui list [--json]             every contract, one line each
  *   master-ui contract <name…>          one contract as JSON: classes, states, properties, example; a class
  *                                       name finds the contract it belongs to
- *   master-ui check [paths…]            report markup that breaks a contract, and a stylesheet of the library that
- *                                       is loaded twice; accepts files, directories and globs (--strict: a
- *                                       class that only looks like one is an error, --json)
+ *   master-ui check [paths…]            report markup that breaks a contract, a stylesheet of the library that
+ *                                       is loaded twice, and a project rule that redraws a component; with a
+ *                                       material in master-ui.json, a component used before it was adopted;
+ *                                       accepts files, directories and globs (--strict: a class that only looks
+ *                                       like one and a redrawn component are errors, --json)
  *   master-ui init                      write ui/index.css, one @import per stylesheet (--directory=src/ui for
  *                                       another place than ui/, --force to write it again)
  *   master-ui own <name…>               copy a component's stylesheet, contract and behavior into the project
@@ -20,14 +22,16 @@
  *   master-ui diff <name…>              what changed upstream in an owned or added component
  *   master-ui accept <name…>            record that upstream's current version has been merged
  *
- * It has no dependency. Where the project keeps its copies, which components it owns or added and where its own
- * contracts are (`contracts`, globs beside ui/*.json) are read from master-ui.json.
+ * It has no dependency. Where the project keeps its copies, which components it owns or added, where its own
+ * contracts are (`contracts`, globs beside ui/*.json) and its material (`material`: the stylesheets that give
+ * components the project's face, the samples that show them and the components it adopted) are read from
+ * master-ui.json.
  */
 import { createHash } from 'node:crypto'
 import { existsSync, globSync, mkdirSync, readFileSync, readdirSync, realpathSync, statSync, writeFileSync } from 'node:fs'
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { check, checkImports, createIndex, format, imports as importsOf } from '../check/index.js'
+import { beside, check, checkImports, checkMaterial, checkStyles, createIndex, declared, format, imports as importsOf, parse, styles as stylesOf } from '../check/index.js'
 
 const pkgRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const pkg = JSON.parse(readFileSync(join(pkgRoot, 'package.json'), 'utf8'))
@@ -43,7 +47,9 @@ const fail = (/** @type {string} */ message) => { console.error(message); proces
 
 /**
  * @typedef {{ version: string | null, files: Record<string, string> }} Taken What was copied, and a hash of each file as it was.
- * @returns {{ directory: string, entry: string, contracts?: string[], framework?: string, owned: Record<string, Taken>, components: Record<string, Taken & { framework: string }> }}
+ * @typedef {{ stylesheets?: string[], samples?: string[], adopted?: string[] }} Material A material of the project's own:
+ *   the stylesheets that give components its face, the samples that show each one, and the components adopted.
+ * @returns {{ directory: string, entry: string, contracts?: string[], framework?: string, material?: Material, owned: Record<string, Taken>, components: Record<string, Taken & { framework: string }> }}
  */
 function config() {
   const defaults = { directory: 'ui', entry: 'ui/index.css', owned: {}, components: {} }
@@ -54,6 +60,43 @@ const save = (/** @type {ReturnType<typeof config>} */ value) => writeFileSync(c
 /** The stylesheets of the library in the order master.css imports them. */
 const imports = [...read(join(pkgRoot, 'master.css')).matchAll(/@import\s+['"]\.\/([^'"]+)['"]/g)].map(match => match[1])
 const stylesheetOf = (/** @type {string} */ name) => imports.find(file => file.endsWith(`/${name}.css`))
+
+/**
+ * The custom properties the library keeps to itself: every one its stylesheets declare or read that is neither a
+ * token of the theme nor a property a contract lists. A project rule that sets one restyles by an internal name.
+ */
+function internals(/** @type {any[]} */ all) {
+  const strip = (/** @type {string} */ text) => text.replace(/\/\*[\s\S]*?\*\//g, '')
+  const theme = strip(read(join(pkgRoot, 'theme.css')))
+  const tokens = new Set([...theme.matchAll(/(--[a-z][\w-]*)\s*:/g)].map(match => match[1]))
+  const listed = new Set(all.flatMap(contract => (contract.properties ?? []).map((/** @type {{ name: string }} */ property) => property.name)))
+  const used = new Set(imports.flatMap(file => [...strip(read(join(pkgRoot, file))).matchAll(/--[a-z][\w-]*/g)].map(match => match[0])))
+  return new Set([...used].filter(name => !tokens.has(name) && !listed.has(name)))
+}
+
+/** The files a glob or a list of globs names, relative to the project. */
+const matching = (/** @type {string[] | string | undefined} */ patterns) => [...new Set([patterns ?? []].flat().flatMap(pattern => globSync(pattern, { cwd })))].map(file => file.replaceAll('\\', '/')).sort()
+
+/** Markup files a sample imports, and theirs: a sample shows what the components it renders render. */
+function reach(/** @type {string[]} */ files) {
+  const markup = ['.astro', '.svelte', '.vue', '.jsx', '.tsx', '.html']
+  const seen = new Set(files)
+  const pending = [...files]
+  while (pending.length) {
+    const file = /** @type {string} */ (pending.pop())
+    const source = read(join(cwd, file)).replace(/\/\*[\s\S]*?\*\//g, '')
+    for (const match of source.matchAll(/\b(?:import|from)\s*(?:[^'"\n;]*?\bfrom\s*)?['"](\.{1,2}\/[^'"?]+)['"]/g)) {
+      const base = join(dirname(join(cwd, file)), match[1])
+      const found = [base, ...markup.map(extension => `${base}${extension}`)].find(candidate => markup.some(extension => candidate.endsWith(extension)) && existsSync(candidate))
+      if (!found) continue
+      const path = relative(cwd, found).replaceAll('\\', '/')
+      if (path.startsWith('..') || seen.has(path)) continue
+      seen.add(path)
+      pending.push(path)
+    }
+  }
+  return [...seen]
+}
 
 /**
  * Every contract that applies to this project: the library's, then the project's own. A project contract
@@ -203,10 +246,12 @@ const commands = {
   },
 
   async check() {
-    // Markup is checked against the contracts; stylesheets and modules are read for how they import the library.
+    // Markup is checked against the contracts; stylesheets and modules are read for how they import the library,
+    // and stylesheets and the <style> of templates for what they redraw.
     const markup = 'html,htm,astro,svelte,vue,jsx,tsx,mdx,erb,php,njk,liquid,hbs'
     const sources = `${markup},css,scss,sass,less,pcss,postcss,js,mjs,cjs,ts,mts,cts`
     const isMarkup = (/** @type {string} */ file) => !/\.(?:css|scss|sass|less|pcss|postcss|[cm]?[jt]s)$/.test(file)
+    const settings = config()
     const patterns = names.length ? names : [`**/*.{${sources}}`]
     const found = [...new Set(patterns.flatMap(pattern => {
       const path = resolve(cwd, pattern)
@@ -225,21 +270,57 @@ const commands = {
       return path.replaceAll('\\', '/')
     }))]
     const files = found.filter(isMarkup)
-    const index = createIndex(contracts())
+    const all = contracts()
+    const index = createIndex(all)
     const knows = await utilities()
+    const strict = flags.has('--strict')
     /** @type {Map<string, import('../check/index.js').Diagnostic[]>} */
-    const byFile = new Map(files.map(file => [file, check(read(resolve(cwd, file)), index, { knows, strict: flags.has('--strict') })]))
+    const byFile = new Map(files.map(file => [file, check(read(resolve(cwd, file)), index, { knows, strict })]))
+    const add = (/** @type {{ file: string, diagnostics: import('../check/index.js').Diagnostic[] }[]} */ results) => {
+      for (const { file, diagnostics } of results) byFile.set(file, [...byFile.get(file) ?? [], ...diagnostics])
+    }
     const loaded = found.map(file => ({ file, imports: importsOf(read(resolve(cwd, file)), file) })).filter(item => item.imports.length)
-    for (const { file, diagnostics } of checkImports(loaded, { entry: config().entry })) byFile.set(file, [...byFile.get(file) ?? [], ...diagnostics])
-    const results = [...byFile].map(([file, diagnostics]) => ({ file, diagnostics })).filter(result => result.diagnostics.length)
-    const all = results.flatMap(result => result.diagnostics)
+    add(checkImports(loaded, { entry: settings.entry }))
+
+    // What the project's own rules redraw. A component's own stylesheet, the project's copy of one or one it
+    // wrote beside its contract, is where that component is drawn, so it is not read, nor the bases kept to merge.
+    const library = new Set(imports.map(file => file.replace(/^.*\//, '').replace(/\.css$/, '')))
+    const ownSheets = new Set(all.filter(contract => !String(contract.source).startsWith('@master/ui/')).map(contract => String(contract.source).replace(/\.json$/, '.css')))
+    const documents = new Map(files.map(file => [file, parse(read(resolve(cwd, file)))]))
+    const styled = found.filter(file => /\.(?:css|scss|less|pcss|postcss|html?|astro|svelte|vue)$/i.test(file) && !ownSheets.has(file) && !file.startsWith(`${settings.directory}/.base/`))
+      .map(file => {
+        const source = read(resolve(cwd, file))
+        // Svelte and Astro scope a component's <style> to its own markup, and Vue does with `scoped`.
+        const scoped = /\.(?:svelte|astro)$/i.test(file) ? !/<style\b[^>]*\bis:global\b/i.test(source) : /\.vue$/i.test(file) && /<style\b[^>]*\bscoped\b/i.test(source)
+        return { file, styles: stylesOf(source, file), beside: scoped ? beside([documents.get(file) ?? []], index) : undefined }
+      })
+      .filter(item => item.styles.rules.length || item.styles.mixins.size)
+    const theme = stylesOf(read(join(pkgRoot, 'theme.css')), 'theme.css')
+    const drawnHere = declared(imports.filter(file => file !== 'theme.css').map(file => stylesOf(read(join(pkgRoot, file)), file)), theme.mixins)
+    add(checkStyles(styled, index, { beside: beside([...documents.values()], index), declared: drawnHere, internal: internals(all), mixins: theme.mixins.keys(), own: all.filter(contract => !library.has(contract.name)).map(contract => contract.name), strict }))
+
+    // A material of the project's own: each component is adopted once, and shown, before a page uses it.
+    if (settings.material) {
+      const samples = matching(settings.material.samples)
+      const shown = reach(samples).map(file => ({ file, elements: documents.get(file) ?? parse(read(join(cwd, file))) }))
+      add(checkMaterial(files.filter(file => !samples.includes(file)).map(file => ({ file, elements: /** @type {any} */ (documents.get(file)) })), index, {
+        adopted: settings.material.adopted ?? [],
+        own: all.filter(contract => !library.has(contract.name)).map(contract => contract.name),
+        samples: shown,
+        stylesheets: [settings.material.stylesheets ?? []].flat(),
+        config: { file: 'master-ui.json', source: read(configFile) },
+      }))
+    }
+
+    const results = [...byFile].map(([file, diagnostics]) => ({ file, diagnostics: diagnostics.sort((a, b) => a.line - b.line || a.column - b.column) })).filter(result => result.diagnostics.length)
+    const reported = results.flatMap(result => result.diagnostics)
     if (flags.has('--json')) console.log(JSON.stringify({ files: found.length, results }, null, 2))
     else {
       for (const { file, diagnostics } of results) console.log(format(diagnostics, file))
-      const errors = all.filter(diagnostic => diagnostic.severity === 'error').length
-      console.log(`${results.length ? '\n' : ''}${found.length} files checked: ${errors} errors, ${all.length - errors} warnings.`)
+      const errors = reported.filter(diagnostic => diagnostic.severity === 'error').length
+      console.log(`${results.length ? '\n' : ''}${found.length} files checked: ${errors} errors, ${reported.length - errors} warnings.`)
     }
-    if (all.some(diagnostic => diagnostic.severity === 'error')) process.exitCode = 1
+    if (reported.some(diagnostic => diagnostic.severity === 'error')) process.exitCode = 1
   },
 
   init() {

@@ -236,7 +236,7 @@ Pick the drawing by the size the component gives the icon: 16 up to 17px, 20 for
 ```sh
 npx master-ui list                # every contract, one line each
 npx master-ui contract dialog     # one contract as JSON; a class name works too
-npx master-ui check               # report markup that breaks a contract
+npx master-ui check               # report markup that breaks a contract, and a rule that redraws a component
 npx master-ui init                # write ui/index.css, one @import per stylesheet
 npx master-ui own menu            # copy a component's stylesheet, contract and behavior into ui/
 npx master-ui add combobox        # copy a React, Svelte or Vue component into ui/ (--framework=react)
@@ -246,6 +246,22 @@ npx master-ui accept menu         # record that the change has been merged
 ```
 
 `check` reads HTML and templates that look like it (JSX, Svelte, Vue, Astro). It reports a modifier without its base, a part outside its root, two exclusive modifiers together, a class on the wrong element, a missing attribute or accessible name, and a class that looks like one of the library's but is in no contract, which is a warning unless `--strict` makes it an error. It also reads stylesheets and modules for how they load the library: a CSS `@import` of one component (`stylesheet-import`), the full library beside a module import of one stylesheet (`mixed-imports`), and the full library imported in more than one place (`repeated-import`, a warning). `--json` prints the diagnostics for a program. A project's own contracts are read too, from `ui/*.json` and the globs `contracts` lists in `master-ui.json`, and one with the name of a library contract replaces it.
+
+It also reads the project's stylesheets and the `<style>` of its templates. A rule whose element is a component, by one of its classes or a class of the project's own beside it in markup, may set the component's public custom properties, tokens and where it stands; one that redeclares what the component's stylesheet draws there (its face, edge, shadow, corners, type or padding), applies a library mixin to it or sets a custom property the library keeps internal is reported as `material-override`, a warning that `--strict` makes an error. A box painted with the theme's surface tokens and an edge or a corner of its own is reported as `hand-made-material`, a warning: it is a sheet, a tray, a well or a card made by hand. A component's own stylesheet, the project's copy of one or a component it wrote beside its contract, is where that component is drawn and is not read.
+
+A project with a material of its own (a paper, a brand's surfaces, its own type) names it in `master-ui.json`, and each component is then designed for it once, the first time it is used:
+
+```json
+{
+  "material": {
+    "stylesheets": ["src/styles/tokens.css", "src/styles/materials.css"],
+    "samples": ["src/components/Samples.astro"],
+    "adopted": ["button", "input", "segmented"]
+  }
+}
+```
+
+`stylesheets` are where components get the project's face, through tokens and public properties; `samples` are the files that show each adopted component in its states, with the components they import; `adopted` are the components designed for the material. With a material, `check` reports markup that uses a component that is not adopted (`first-use`) and an adopted name that is no contract or that no sample shows (`unsampled`), both errors. Layouts own no material and are never adopted, and a component the project wrote with a contract of its own is adopted by being written. A material does not make `material-override` an error by itself, so a project can adopt one while it clears the rules it already has; once they are cleared, `--strict` holds them.
 
 ```js
 import { check, createIndex } from '@master/ui/check'
