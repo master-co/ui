@@ -5,12 +5,28 @@ A change belongs on the lowest step that can express it. Each step up costs more
 | Step | Do this | For | Still follows upstream |
 | --- | --- | --- | --- |
 | 1. Utility | Add a utility to the element: `class="btn w-full"` | One instance | Everything |
-| 2. Token | Override a theme token in `@theme`, or on an element for its subtree | Brand color, radius, density, focus, travel, a tone of a surface | Everything |
+| 2. Token | Override a theme token in `@theme`, or on an element for its subtree | Brand color, radius, density, focus, travel, a tone of a surface, the type sizes, the face of figures | Everything |
 | 3. Property | Set a public custom property of the component on the element that has the class: a class of the project's own beside it (`class="btn compact-control"`), or a scoped rule that sets only public properties, `.toolbar .btn { --btn-height: 2rem }` | One component's size or spacing, everywhere or in a scope | Everything |
 | 4. Theme | Write a theme file: tokens, and a mixin where a recipe needs it | Another material: flat, bordered, tinted | Every component |
 | 5. Own | `npx master-ui own <name>`: the stylesheet, the contract and the behavior are copied into `ui/` and the import points at the copy | Structure, parts, states, behavior | The other components; this one on request |
 
 A property the contract gives a default is declared on the component's own class, so a value set on an ancestor does not reach it. Set it on the element itself, as in step 3.
+
+## A project's own material
+
+These are the needs a project with its own material (a paper, a brand's surfaces, its own type) meets most often, and the step for each. Read the installed contract for the exact properties: a version older than these hooks does not have them.
+
+| The project needs | Do this |
+| --- | --- |
+| Its own type sizes, such as 13px for small CJK text | Set the size tokens in the theme: `--font-size-micro`, `-label`, `-caption`, `-meta`, `-secondary`, `-control`, `-body`, `-title`. Every component sets its text in one of these roles |
+| Figures that line up in a font with no tabular figures (DM Sans) | Set `--font-family-figures` in the theme to a face that has them, such as an `@font-face` holding only the digits of another font. Every part that lines up figures takes it; the rest of the text keeps its font |
+| A larger result figure | `--stat-size` on the stat, or `--price-size`, `--countdown-size` |
+| The current option of a segmented control in another face, such as ink | On the track, set the tokens the thumb is drawn from (`--color-surface-raised`, `--color-surface-raised-low`, `--shadow-raised`) and `--segmented-current-color` for its label; `--segmented-inset`, `--segmented-item-radius`, `--segmented-item-height` and `--segmented-font-size` set its geometry. The thumb keeps gliding |
+| A dropzone that answers a file dragged over it | No attribute of the platform says so, so the project marks it (`data-over` from `dragenter` and `dragleave`) and a rule on that mark sets `--dropzone-contour` and `--dropzone-background` |
+| A placeholder in the shape of what it stands for | `--skeleton-radius` on the skeleton; its color is the `--color-surface-chip` token, set on the element |
+| The hover of `btn-brand` in an exact hue | A theme recipe: redefine `@mixin --control-tone-hover`, mixing from `--tone`, so a destructive confirmation (`btn-primary btn-danger`) follows too |
+| A board, a stage or a result area inside a tray | The tray's 4px inset is the gap around the sheets it holds, and its corner is theirs plus that inset. Room for content that is not a sheet goes on a wrapper inside the tray, never on the tray's padding |
+| A toggle that turns the brand color when it is on, or a button drawn as a line | Not in the library's language: a state is depth (an on toggle is `btn-quiet` with `aria-pressed="true"`, sunk), the brand is one moment per view, and an edge is soft. Use the pressed quiet button, or own the button if the material needs another |
 
 ## Where a project rule stands
 

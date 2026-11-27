@@ -24,13 +24,15 @@ export interface SortableProps<T extends SortableItem> extends Omit<ComponentPro
   handleLabel?: (item: T) => string
   /** What the status region says, in the page's language. */
   messages?: SortableMessages
+  /** Every handle off: the items stay where they are, as while the page works on them. */
+  disabled?: boolean
 }
 
 /**
  * A list the reader puts in order. React writes the items in the order it holds; the behavior carries them
  * with the pointer and the keys, and asks React to move one when it is dropped.
  */
-export function Sortable<T extends SortableItem>({ items, value, defaultValue, onValueChange, children, itemClassName, handleLabel = item => `Move ${item.label}`, messages, className, ...root }: SortableProps<T>) {
+export function Sortable<T extends SortableItem>({ items, value, defaultValue, onValueChange, children, itemClassName, handleLabel = item => `Move ${item.label}`, messages, disabled = false, className, ...root }: SortableProps<T>) {
   const [kept, setKept] = useState(() => value ?? defaultValue ?? items.map(item => item.value))
   const order = value ?? kept
   const shown = [...items].sort((a, b) => rank(order, a.value) - rank(order, b.value))
@@ -57,7 +59,7 @@ export function Sortable<T extends SortableItem>({ items, value, defaultValue, o
       <ol className={className ? `sortable ${className}` : 'sortable'} ref={ref} {...root}>
         {shown.map(item => (
           <li className={itemClassName ? `sortable-item ${itemClassName}` : 'sortable-item'} data-value={item.value} key={item.value}>
-            <button type="button" className="sortable-handle" aria-pressed="false" aria-label={handleLabel(item)}><svg className="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="6" cy="4" r="1" fill="currentColor" stroke="none" /><circle cx="10" cy="4" r="1" fill="currentColor" stroke="none" /><circle cx="6" cy="8" r="1" fill="currentColor" stroke="none" /><circle cx="10" cy="8" r="1" fill="currentColor" stroke="none" /><circle cx="6" cy="12" r="1" fill="currentColor" stroke="none" /><circle cx="10" cy="12" r="1" fill="currentColor" stroke="none" /></svg></button>
+            <button type="button" className="sortable-handle" aria-pressed="false" aria-label={handleLabel(item)} disabled={disabled}><svg className="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="6" cy="4" r="1" fill="currentColor" stroke="none" /><circle cx="10" cy="4" r="1" fill="currentColor" stroke="none" /><circle cx="6" cy="8" r="1" fill="currentColor" stroke="none" /><circle cx="10" cy="8" r="1" fill="currentColor" stroke="none" /><circle cx="6" cy="12" r="1" fill="currentColor" stroke="none" /><circle cx="10" cy="12" r="1" fill="currentColor" stroke="none" /></svg></button>
             {children(item)}
           </li>
         ))}

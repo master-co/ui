@@ -5,7 +5,7 @@ import { useBehavior } from './use-behavior'
 
 defineOptions({ inheritAttrs: false })
 
-const { items, itemClass, handleLabel = (item: T) => `Move ${item.label}`, messages } = defineProps<{
+const { items, itemClass, handleLabel = (item: T) => `Move ${item.label}`, messages, disabled = false } = defineProps<{
   /** Each with the value it stands for in the order and the label its handle and the status say. */
   items: T[]
   /** Classes of each item, such as `list-row` in a `list`. */
@@ -14,6 +14,8 @@ const { items, itemClass, handleLabel = (item: T) => `Move ${item.label}`, messa
   handleLabel?: (item: T) => string
   /** What the status region says, in the page's language. */
   messages?: SortableMessages
+  /** Every handle off: the items stay where they are, as while the page works on them. */
+  disabled?: boolean
 }>()
 /** The order, as the items' values: `v-model`. The order of `items` by default. */
 const model = defineModel<string[]>()
@@ -50,7 +52,7 @@ useBehavior(root, sortable, () => ({ messages, move }))
 <template>
   <ol class="sortable" ref="root" v-bind="$attrs">
     <li v-for="item in shown" :key="item.value" class="sortable-item" :class="itemClass" :data-value="item.value">
-      <button type="button" class="sortable-handle" aria-pressed="false" :aria-label="handleLabel(item)"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="4" r="1" fill="currentColor" stroke="none" /><circle cx="10" cy="4" r="1" fill="currentColor" stroke="none" /><circle cx="6" cy="8" r="1" fill="currentColor" stroke="none" /><circle cx="10" cy="8" r="1" fill="currentColor" stroke="none" /><circle cx="6" cy="12" r="1" fill="currentColor" stroke="none" /><circle cx="10" cy="12" r="1" fill="currentColor" stroke="none" /></svg></button>
+      <button type="button" class="sortable-handle" aria-pressed="false" :aria-label="handleLabel(item)" :disabled="disabled"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="4" r="1" fill="currentColor" stroke="none" /><circle cx="10" cy="4" r="1" fill="currentColor" stroke="none" /><circle cx="6" cy="8" r="1" fill="currentColor" stroke="none" /><circle cx="10" cy="8" r="1" fill="currentColor" stroke="none" /><circle cx="6" cy="12" r="1" fill="currentColor" stroke="none" /><circle cx="10" cy="12" r="1" fill="currentColor" stroke="none" /></svg></button>
       <slot :item="item" />
     </li>
   </ol>

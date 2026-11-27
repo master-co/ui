@@ -1408,6 +1408,10 @@ export const scenarios: Record<string, Scenario> = {
 
     await driver.act(() => mounted.set({ value: ['search', 'billing', 'onboarding'] }))
     assert.deepEqual(order(), ['search', 'billing', 'onboarding'], 'an order set by the owner is written')
+    await driver.act(() => mounted.set({ disabled: true }))
+    assert.ok(page.all<HTMLButtonElement>('.sortable-handle').every(button => button.disabled), 'disabled turns every handle off')
+    await driver.act(() => mounted.set({ disabled: false }))
+    assert.ok(page.all<HTMLButtonElement>('.sortable-handle').every(button => !button.disabled))
     conforms(page)
     await driver.act(() => mounted.unmount())
     assert.equal(page.all('.sortable').length, 0)

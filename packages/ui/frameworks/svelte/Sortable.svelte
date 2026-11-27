@@ -23,6 +23,8 @@
     handleLabel?: (item: T) => string
     /** What the status region says, in the page's language. */
     messages?: SortableMessages
+    /** Every handle off: the items stay where they are, as while the page works on them. */
+    disabled?: boolean
   }
 </script>
 
@@ -31,7 +33,7 @@
   import { sortable } from '@master/ui/behaviors/sortable.js'
   import { behavior } from './behavior.svelte.js'
 
-  let { items, value = $bindable(), onValueChange, children, itemClass, handleLabel = (item: T) => `Move ${item.label}`, messages, class: className, ...root }: SortableProps<T> = $props()
+  let { items, value = $bindable(), onValueChange, children, itemClass, handleLabel = (item: T) => `Move ${item.label}`, messages, disabled = false, class: className, ...root }: SortableProps<T> = $props()
   let kept = $state(untrack(() => value) ?? untrack(() => items.map(item => item.value)))
   const order = $derived(value ?? kept)
   const rank = (value: string) => {
@@ -61,7 +63,7 @@
 <ol class={['sortable', className]} {@attach attach} {...root}>
   {#each shown as item (item.value)}
     <li class={['sortable-item', itemClass]} data-value={item.value}>
-      <button type="button" class="sortable-handle" aria-pressed="false" aria-label={handleLabel(item)}><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="4" r="1" fill="currentColor" stroke="none" /><circle cx="10" cy="4" r="1" fill="currentColor" stroke="none" /><circle cx="6" cy="8" r="1" fill="currentColor" stroke="none" /><circle cx="10" cy="8" r="1" fill="currentColor" stroke="none" /><circle cx="6" cy="12" r="1" fill="currentColor" stroke="none" /><circle cx="10" cy="12" r="1" fill="currentColor" stroke="none" /></svg></button>
+      <button type="button" class="sortable-handle" aria-pressed="false" aria-label={handleLabel(item)} {disabled}><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="4" r="1" fill="currentColor" stroke="none" /><circle cx="10" cy="4" r="1" fill="currentColor" stroke="none" /><circle cx="6" cy="8" r="1" fill="currentColor" stroke="none" /><circle cx="10" cy="8" r="1" fill="currentColor" stroke="none" /><circle cx="6" cy="12" r="1" fill="currentColor" stroke="none" /><circle cx="10" cy="12" r="1" fill="currentColor" stroke="none" /></svg></button>
       {@render children(item)}
     </li>
   {/each}
