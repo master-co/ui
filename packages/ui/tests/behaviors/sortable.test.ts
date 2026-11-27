@@ -382,3 +382,69 @@ test('sortable: detaching lets go of an item that is picked up or carried', asyn
   assert.deepEqual(pressed(), [], 'and so does the one a pointer carried')
   assert.equal((root as HTMLElement).style.getPropertyValue('--sortable-size'), '', 'with the room it had measured')
 })
+
+const row = (value: string, name: string) => `<tr class="table-row sortable-item" data-value="${value}">
+      <td class="table-cell"><button type="button" class="sortable-handle" aria-pressed="false" aria-label="Move ${name}"><svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><circle cx="6" cy="4" r="1" fill="currentColor"/></svg></button></td>
+      <td class="table-cell table-primary">${name}</td>
+    </tr>`
+
+const table = `<table class="table">
+  <thead><tr class="table-row"><th class="table-heading"><span class="sr-only">Order</span></th><th class="table-heading">Item</th></tr></thead>
+  <tbody class="sortable" id="design">${row('brief', 'Brief')}${row('sketch', 'Sketch')}${row('review', 'Review')}</tbody>
+  <tbody class="sortable" id="build">${row('scaffold', 'Scaffold')}${row('ship', 'Ship')}</tbody>
+</table>
+<p class="sortable-status" role="status"></p>`
+
+test('sortable: the bodies of a table are lists of their own, and the status after the table says their moves', async () => {
+  const { one, all, document } = setup(table)
+  const design = one<HTMLElement>('#design')
+  const build = one<HTMLElement>('#build')
+  const first = sortable(design)
+  const second = sortable(build)
+  const order = (body: HTMLElement) => [...body.querySelectorAll('.sortable-item')].map(each => each.getAttribute('data-value'))
+  const grip = (value: string) => one<HTMLButtonElement>(`[data-value="${value}"] .sortable-handle`)
+  grip('sketch').focus()
+  grip('sketch').dispatchEvent(new document.defaultView!.MouseEvent('click', { bubbles: true, detail: 0 }) as any)
+  assert.deepEqual(all('.sortable-handle[aria-pressed="true"]').map(each => each.closest('.sortable-item')!.getAttribute('data-value')), ['sketch'])
+  const key = (name: string) => grip('sketch').dispatchEvent(new document.defaultView!.KeyboardEvent('keydown', { key: name, bubbles: true, cancelable: true }) as any)
+  key('End')
+  await settle()
+  assert.deepEqual(order(design), ['brief', 'review', 'sketch'], 'End is the end of its own body')
+  assert.deepEqual(order(build), ['scaffold', 'ship'], 'the other body keeps its order')
+  await new Promise(resolve => setTimeout(resolve, 450))
+  assert.equal(one('.sortable-status').textContent, 'Sketch, position 3 of 3.', 'a body cannot hold the status, so it stands after the table')
+  key('Escape')
+  await settle()
+  assert.deepEqual(order(design), ['brief', 'sketch', 'review'])
+  assert.deepEqual(first.value, ['brief', 'sketch', 'review'])
+  assert.deepEqual(second.value, ['scaffold', 'ship'])
+  first()
+  second()
+})
+
+test('sortable: a page that scrolls under a pointer holding still keeps the carried item under it', () => {
+  const { root, handle, pointer, all, document, window } = setup()
+  // The page scrolls by moving every box up; the list's own box goes with them.
+  let scrolled = 0
+  root.getBoundingClientRect = () => ({ top: -scrolled, bottom: 160 - scrolled, left: 0, right: 200, width: 200, height: 160 } as DOMRect)
+  all<HTMLElement>('.sortable-item').forEach((each, index) => {
+    each.getBoundingClientRect = () => ({ top: index * 40 - scrolled, bottom: index * 40 + 40 - scrolled, left: 0, right: 200, width: 200, height: 40 } as DOMRect)
+  })
+  const detach = sortable(root)
+  const carried = handle('onboarding').closest<HTMLElement>('.sortable-item')!
+  const back = () => all('.sortable-item-back').map(each => each.getAttribute('data-value'))
+  try {
+    pointer(handle('onboarding'), 'pointerdown', { button: 0, isPrimary: true, pointerId: 6, clientY: 20 })
+    document.dispatchEvent(new window.PointerEvent('pointermove', { bubbles: true, pointerId: 6, clientY: 30 }) as any)
+    assert.equal(carried.style.getPropertyValue('--sortable-offset'), '10px')
+    assert.deepEqual(back(), [])
+    // The wheel scrolls the page 60px while the pointer holds still: the item is carried 60px further down the list.
+    scrolled = 60
+    document.dispatchEvent(new window.Event('scroll') as any)
+    assert.equal(carried.style.getPropertyValue('--sortable-offset'), '70px')
+    assert.deepEqual(back(), ['billing'], 'and the place it would land in follows')
+  } finally {
+    // Its frame would keep the runner alive.
+    detach()
+  }
+})

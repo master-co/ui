@@ -2,7 +2,8 @@
  * Sortable: a list whose items are put in order by dragging a handle or with the keys.
  *
  * The root, the element with the `sortable` class, holds the items, `sortable-item`, each with a button,
- * `sortable-handle`, named with what it moves. The list runs down the page, or across it with `sortable-row`.
+ * `sortable-handle`, named with what it moves: a list and its rows, a stack of cards, or the body of a table and
+ * its rows. The list runs down the page, or across it with `sortable-row`.
  *
  * With the pointer: a press on a handle that moves more than a few pixels picks the item up. The handle says
  * `aria-pressed="true"` while it is carried and the item follows the pointer through `--sortable-offset`.
@@ -12,14 +13,15 @@
  * item is picked up, so an item still gliding aside never moves the place it is aimed at, and the place
  * changes only once the carried item's middle is a few pixels past a neighbor's: a pointer that rests on the
  * line between two places does not make them trade back and forth. No node moves until the release, which
- * moves the item once, while the root says `aria-busy="true"`. Escape puts it back. A list that scrolls is
- * scrolled while the pointer is near its ends.
+ * moves the item once, while the root says `aria-busy="true"`. Escape puts it back. While the pointer is near
+ * an end of what scrolls the list, the list itself, the box it stands in or the page, that is scrolled, and the
+ * item stays under the pointer however the page moves beneath it.
  *
  * With the keys: Enter or Space on a handle picks the item up, the arrow keys along the list move it one
  * place at a time, Enter or Space drops it and Escape puts it back where it was picked up. Leaving the handle
  * drops it too. Each step is said in the `sortable-status` region, a `role="status"` inside the root or
- * right after it: picked up, moved, dropped or put back, with the place it is in. An item is called by its
- * `aria-label`, or by the first words it holds.
+ * right after it, or right after the table when the root is a table's body: picked up, moved, dropped or put
+ * back, with the place it is in. An item is called by its `aria-label`, or by the first words it holds.
  *
  * Without a drag: a press on a handle that does not move, a click or a tap, picks the item up as Enter does
  * and gives its handle focus. A press on another item's handle then moves it to that place and drops it, and a
@@ -95,7 +97,16 @@ export function sortable(root, { messages = {}, move } = {}) {
     return label(item)
   }
   const row = () => root.classList.contains('sortable-row')
-  const status = () => /** @type {HTMLElement | null} */ (root.querySelector('.sortable-status') ?? (root.nextElementSibling?.matches('.sortable-status') ? root.nextElementSibling : null))
+  /**
+   * The status region: inside the root, right after it, or, for the body of a table, which holds only rows and
+   * stands among the table's own parts, right after the table.
+   */
+  const status = () => {
+    const after = [root, root.matches('tbody, thead, tfoot') ? root.closest('table') : null]
+      .map((each) => each?.nextElementSibling)
+      .find((each) => each?.matches('.sortable-status'))
+    return /** @type {HTMLElement | null} */ (root.querySelector('.sortable-status') ?? after ?? null)
+  }
 
   /**
    * Put a node at a place among the items, the node itself, so what it holds keeps its state.
@@ -150,8 +161,8 @@ export function sortable(root, { messages = {}, move } = {}) {
 
   const motion = () => !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
   /**
-   * Run a change inside a view transition where there is one: scoped to the list where the browser can,
-   * otherwise of the document. Resolves once the change is made.
+   * Run a change inside a view transition where there is one: scoped to the list where the browser can, or to
+   * the table that holds a table's body, otherwise of the document. Resolves once the change is made.
    * @param {() => unknown} update
    * @returns {Promise<unknown> & { made: Promise<unknown> }} When the transition, or the change without one, is
    *   over; its `made` is when the change itself has been made, before the items have finished gliding.
@@ -165,14 +176,17 @@ export function sortable(root, { messages = {}, move } = {}) {
       return update()
     }
     const done = () => root.removeAttribute('aria-busy')
-    const scoped = /** @type {any} */ (root).startViewTransition
     const whole = /** @type {any} */ (document).startViewTransition
     const named = typeof CSS !== 'undefined' && CSS.supports?.('view-transition-name', 'match-element')
+    // A part of a table, such as its body, cannot hold a transition of its own (the browser aborts it for its
+    // layout, and the items only jump), so the table that holds it does.
+    const scope = /** @type {any} */ (String(getComputedStyle(root).display).startsWith('table-') ? root.closest('table, .table') ?? root : root)
+    const scoped = scope.startViewTransition
     if (!named || !motion() || (!scoped && !whole)) {
       const made = Promise.resolve(change())
       return Object.assign(made.finally(done), { made })
     }
-    const running = scoped ? scoped.call(root, change) : whole.call(document, change)
+    const running = scoped ? scoped.call(scope, change) : whole.call(document, change)
     const made = /** @type {Promise<unknown>} */ (running.updateCallbackDone)
     // Whoever waits for the change hears of its failure; nobody has to.
     made.catch(() => {})
@@ -275,8 +289,9 @@ export function sortable(root, { messages = {}, move } = {}) {
     if (!grabbed) {
       pick(item, true)
       // The handle takes focus, as a key's pick has it: the arrows and Escape work from here, and a press
-      // elsewhere on the page drops the item where it is.
-      handle.focus({ preventScroll: true })
+      // elsewhere on the page drops the item where it is. The pointer asked for it, so no ring is drawn: the
+      // grip in its well and the raised item already say which one is picked up.
+      handle.focus(/** @type {FocusOptions} */ ({ preventScroll: true, focusVisible: false }))
       return
     }
     if (grabbed.item === item) {
@@ -344,8 +359,10 @@ export function sortable(root, { messages = {}, move } = {}) {
 
   /**
    * A drag in progress. `others` are the items it passes and `middles` where their middles stand in the root's
-   * scrolled content, and `middle` the carried item's own, all measured once as it is picked up.
-   * @type {{ item: HTMLElement, handle: HTMLElement, id: number, start: number, scroll: number, last: number, dragging: boolean, from: number, to: number, frame: number, others: HTMLElement[], middles: number[], middle: number, rtl: boolean } | null}
+   * scrolled content, and `middle` the carried item's own, all measured once as it is picked up. `origin` and
+   * `scroll` are where the root stood on the screen and how far it was scrolled at the press, and `area` is what
+   * scrolls the list while the pointer is near one of its ends, `carry` the part of a pixel it has yet to scroll.
+   * @type {{ item: HTMLElement, handle: HTMLElement, id: number, start: number, origin: number, scroll: number, last: number, dragging: boolean, from: number, to: number, frame: number, others: HTMLElement[], middles: number[], middle: number, rtl: boolean, area: Element | null, carry: number } | null}
    */
   let drag = null
   const axis = (/** @type {PointerEvent | MouseEvent} */ event) => (row() ? event.clientX : event.clientY)
@@ -360,6 +377,28 @@ export function sortable(root, { messages = {}, move } = {}) {
   const originOf = () => {
     const box = root.getBoundingClientRect()
     return row() ? box.left : box.top
+  }
+
+  /**
+   * How far the list's content has moved under the pointer since the press, without the pointer moving: the root
+   * scrolled, or the page or a box around the root did and carried the root with it.
+   */
+  const drift = () => (drag ? drag.origin - originOf() + scrollOf() - drag.scroll : 0)
+
+  /**
+   * What scrolls the list along its length: the root, when it scrolls, or the nearest box around it that does, or
+   * the page. The body of a table never scrolls itself; the box the table stands in does.
+   * @returns {Element | null}
+   */
+  const scrollerOf = () => {
+    const across = row()
+    const page = document.scrollingElement ?? document.documentElement
+    for (let at = /** @type {Element | null} */ (root); at && at !== page && at !== document.body; at = at.parentElement) {
+      const style = getComputedStyle(at)
+      const length = across ? at.scrollWidth - at.clientWidth : at.scrollHeight - at.clientHeight
+      if (length > 0 && /auto|scroll|overlay/.test(across ? style.overflowX : style.overflowY)) return at
+    }
+    return (across ? page.scrollWidth - page.clientWidth : page.scrollHeight - page.clientHeight) > 0 ? page : null
   }
 
   /**
@@ -407,8 +446,8 @@ export function sortable(root, { messages = {}, move } = {}) {
   const aim = () => {
     if (!drag) return
     const { from, others, middles, rtl } = drag
-    // Both sides are read in the root's content, so a scroll of the root or of the page moves neither.
-    const carried = drag.middle + drag.last - drag.start + scrollOf() - drag.scroll
+    // Both sides are read in the root's content, so a scroll of the root, of a box around it or of the page moves neither.
+    const carried = drag.middle + drag.last - drag.start + drift()
     // Along the list: right to left, a place further on is further left.
     const along = (/** @type {number} */ middle) => (rtl ? -middle : middle)
     const current = drag.to
@@ -424,25 +463,34 @@ export function sortable(root, { messages = {}, move } = {}) {
 
   const follow = () => {
     if (!drag) return
-    drag.item.style.setProperty('--sortable-offset', `${drag.last - drag.start + scrollOf() - drag.scroll}px`)
+    drag.item.style.setProperty('--sortable-offset', `${drag.last - drag.start + drift()}px`)
   }
 
-  /** While the pointer is near an end of a list that scrolls, scroll it, faster the further in it is. */
+  /**
+   * While the pointer is near an end of what scrolls the list, the list itself, a box around it or the page,
+   * scroll it, faster the further in it is. An end the window cuts off is the window's edge.
+   */
   const scroll = (/** @type {number} */ time, /** @type {number} */ before = time) => {
     if (!drag?.dragging) return
-    const box = root.getBoundingClientRect()
-    const length = row() ? root.scrollWidth - root.clientWidth : root.scrollHeight - root.clientHeight
-    if (length > 0) {
-      const start = row() ? box.left : box.top
-      const end = row() ? box.right : box.bottom
+    const area = drag.area
+    if (area?.isConnected) {
+      const page = area === (document.scrollingElement ?? document.documentElement)
+      const box = page ? null : area.getBoundingClientRect()
+      const window = document.defaultView ?? globalThis
+      const view = row() ? window.innerWidth : window.innerHeight
+      const start = Math.max(0, box ? (row() ? box.left : box.top) : 0)
+      const end = Math.min(view, box ? (row() ? box.right : box.bottom) : view)
       const size = row() ? drag.item.offsetWidth : drag.item.offsetHeight
       const zone = Math.min(size, (end - start) / 3)
       const into = drag.last < start + zone ? drag.last - (start + zone) : drag.last > end - zone ? drag.last - (end - zone) : 0
-      if (into) {
+      if (into && zone > 0) {
         const speed = Math.max(-2, Math.min(2, into / zone)) * 0.6
-        const by = speed * (time - before)
-        if (row()) root.scrollLeft += by
-        else root.scrollTop += by
+        // An engine keeps a scroll offset in whole pixels: a slow frame's part of one is kept until it adds up.
+        drag.carry += speed * (time - before)
+        const by = Math.trunc(drag.carry)
+        drag.carry -= by
+        if (row()) area.scrollLeft += by
+        else area.scrollTop += by
         follow()
         aim()
       }
@@ -529,7 +577,7 @@ export function sortable(root, { messages = {}, move } = {}) {
       // A pointer the browser no longer knows cannot be captured; the document still hears it.
     }
     const at = items().indexOf(item)
-    drag = { item, handle, id: event.pointerId, start: axis(event), scroll: scrollOf(), last: axis(event), dragging: false, from: at, to: at, frame: 0, others: [], middles: [], middle: 0, rtl: false }
+    drag = { item, handle, id: event.pointerId, start: axis(event), origin: originOf(), scroll: scrollOf(), last: axis(event), dragging: false, from: at, to: at, frame: 0, others: [], middles: [], middle: 0, rtl: false, area: null, carry: 0 }
   }, { signal })
 
   document.addEventListener('pointermove', (event) => {
@@ -545,6 +593,7 @@ export function sortable(root, { messages = {}, move } = {}) {
       drag.dragging = true
       // Measured before anything is carried or makes room.
       measure()
+      drag.area = scrollerOf()
       root.style.setProperty('--sortable-size', `${room(drag.item)}px`)
       drag.handle.setAttribute('aria-pressed', 'true')
       drag.frame = requestAnimationFrame((time) => scroll(time))
@@ -552,6 +601,14 @@ export function sortable(root, { messages = {}, move } = {}) {
     follow()
     aim()
   }, { signal })
+
+  // The page or a box around the list scrolled under a pointer that holds still, by the wheel or by the keys: the
+  // item stays under the pointer, and the place it would land in follows.
+  document.addEventListener('scroll', () => {
+    if (!drag?.dragging) return
+    follow()
+    aim()
+  }, { capture: true, passive: true, signal })
 
   document.addEventListener('pointerup', (event) => {
     if (drag && event.pointerId === drag.id) end(true)

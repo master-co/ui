@@ -112,6 +112,7 @@ Read the row that matches the job, then the contract of the component it names.
 | Points on a picture, explained one by one | `hotspot` |
 | A row with one or two actions behind it, on touch | `swipe` |
 | One list the reader puts in order | `sortable` |
+| Rows of a table the reader puts in order: the lines of a quote, a ranking | `sortable` on the `<tbody>`, `sortable-item` on each `table-row`, the handle in a cell of its own |
 | Items that move between named columns as well as within one: stages of work, a pipeline | `kanban`; the whole screen around it is the board page, `/pages/board.md` |
 | A block that arrives as it scrolls into view | `reveal` |
 

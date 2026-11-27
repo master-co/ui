@@ -1242,6 +1242,147 @@ test(`${engine}: a kanban keeps its marks in forced colors and holds still with 
   } finally { await context.close() }
 })
 
+/** The rows of a sortable table: a grip in a cell of its own, then the item and its figures. */
+const sortableRows = (names: string[]) => names.map((name, index) => `<tr class="table-row sortable-item" data-value="${name.toLowerCase()}">
+  <td class="table-cell"><button type="button" class="sortable-handle" aria-pressed="false" aria-label="Move ${name}"><svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><circle cx="6" cy="4" r="1" fill="currentColor"/><circle cx="10" cy="12" r="1" fill="currentColor"/></svg></button></td>
+  <td class="table-cell table-primary">${name}</td><td class="table-cell table-numeric">${index + 1}</td><td class="table-cell"></td>
+</tr>`).join('')
+
+test(`${engine}: a sortable table's row is carried as it is drawn, and no cell of the table moves`, async (t) => {
+  const css = await readFile(new URL('../../dist/standalone.css', import.meta.url), 'utf8')
+  const behavior = `/@fs${fileURLToPath(new URL('../../behaviors/sortable.js', import.meta.url))}`
+  for (const layout of ['fixed', 'auto']) for (const columns of [true, false]) {
+    await t.test(`table-layout: ${layout}${columns ? ', with a colgroup' : ''}`, async () => {
+      const page = await browser.newPage({ viewport: { width: 800, height: 600 } })
+      try {
+        const url = new URL(`sortable-table-${layout}-${columns}`, origin).href
+        await page.route(url, route => route.fulfill({ contentType: 'text/html', body: `<!doctype html><html><head><style>${css}</style></head><body style="margin:40px">
+          <table class="table table-interactive" style="table-layout:${layout};width:640px">
+            ${columns ? '<colgroup><col style="width:40px"><col><col style="width:80px"><col style="width:44px"></colgroup>' : ''}
+            <thead><tr class="table-row"><th class="table-heading"><span class="sr-only">Order</span></th><th class="table-heading">Item</th><th class="table-heading table-numeric">Qty</th><th class="table-heading"></th></tr></thead>
+            <tbody class="sortable">${sortableRows(['Alpha', 'Bravo', 'Charlie', 'Delta'])}</tbody>
+          </table>
+          <p class="sortable-status" role="status"></p></body></html>` }))
+        await page.goto(url)
+        const order = await page.evaluateHandle(async path => {
+          const { sortable } = await import(path)
+          return sortable(document.querySelector('.sortable'))
+        }, behavior)
+        const cells = () => page.evaluate(() => [...document.querySelectorAll('.table-heading, .table-cell')].map((cell) => {
+          const { left, width } = cell.getBoundingClientRect()
+          return [Math.round(left * 2) / 2, Math.round(width * 2) / 2]
+        }))
+        const resting = await cells()
+        const bravo = page.locator('[data-value="bravo"]')
+        const size = await bravo.evaluate(row => [row.getBoundingClientRect().width, row.getBoundingClientRect().height])
+
+        // Picked up by the keys: every cell, the headings' too, stays where it was, and the row keeps its size.
+        await bravo.locator('.sortable-handle').focus()
+        await page.keyboard.press('Space')
+        assert.equal(await bravo.locator('.sortable-handle').getAttribute('aria-pressed'), 'true')
+        assert.deepEqual(await cells(), resting, 'no cell moves when a row is picked up')
+        assert.deepEqual(await bravo.evaluate(row => [row.getBoundingClientRect().width, row.getBoundingClientRect().height]), size, 'the carried row keeps its size')
+        assert.equal(await bravo.evaluate(row => (row as HTMLTableRowElement).cells.length), 4)
+        const sheet = await bravo.locator('.table-cell').first().evaluate((cell) => {
+          const style = getComputedStyle(cell, '::before')
+          return { content: style.content, position: style.position, inset: [style.top, style.left].join(' '), rule: getComputedStyle(cell).borderBlockEndColor }
+        })
+        assert.notEqual(sheet.content, 'none', 'the cell that holds the handle draws the sheet')
+        assert.equal(sheet.position, 'absolute')
+        assert.equal(sheet.inset, '0px 0px', 'the sheet is the row: it reaches no further')
+        assert.match(sheet.rule, /rgba\(0, 0, 0, 0\)|transparent/, 'the rule under the carried row stays out of the sheet')
+        assert.equal(await bravo.evaluate(row => getComputedStyle(row, '::before').content), 'none', 'the row generates no box of its own')
+        await page.keyboard.press('ArrowDown')
+        await until(() => order.evaluate(controller => controller.value.join()), value => value === 'alpha,charlie,bravo,delta', 'the arrow moves the row')
+        await until(() => page.locator('.sortable-status').textContent(), value => value === 'Bravo, position 3 of 4.', 'the status after the table says so')
+        await page.keyboard.press('Escape')
+        await until(() => order.evaluate(controller => controller.value.join()), value => value === 'alpha,bravo,charlie,delta', 'Escape puts it back')
+        await until(() => page.locator('.sortable-handle[aria-pressed="true"]').count(), value => value === 0, 'and lets go')
+
+        // Dragged: the row follows the pointer down past the next, and every column stays where it is.
+        // Each view transition the drop starts is recorded: one a table's body held was aborted for its layout.
+        const transitions = await page.evaluate(() => {
+          const outcomes: string[] = ((window as any).transitions = [])
+          for (const owner of [Document.prototype, Element.prototype] as any[]) {
+            const start = owner.startViewTransition
+            if (start) owner.startViewTransition = function (this: unknown, ...args: unknown[]) {
+              const running = start.apply(this, args)
+              running.ready.then(() => outcomes.push('ready'), (error: Error) => outcomes.push(error.message))
+              return running
+            }
+          }
+          return CSS.supports('view-transition-name', 'match-element') && 'startViewTransition' in document
+        })
+        const grip = (await box(bravo.locator('.sortable-handle')))
+        const height = size[1]
+        await page.mouse.move(grip.x + grip.width / 2, grip.y + grip.height / 2)
+        await page.mouse.down()
+        await page.mouse.move(grip.x + grip.width / 2, grip.y + grip.height / 2 + height * 1.3, { steps: 8 })
+        assert.deepEqual(await cells(), resting, 'no column moves while a row is dragged')
+        assert.deepEqual(await bravo.evaluate(row => [getComputedStyle(row).backgroundImage, getComputedStyle(row).backgroundColor]), ['none', 'rgba(0, 0, 0, 0)'], 'the tone of the row the pointer holds, square at its corners, gives way to the sheet')
+        assert.equal(await page.locator('.sortable-item-back').count(), 1, 'the row it passes makes room')
+        await page.mouse.up()
+        await until(() => order.evaluate(controller => controller.value.join()), value => value === 'alpha,charlie,bravo,delta', 'the release moves the row')
+        await until(() => page.locator('.sortable[aria-busy="true"]').count(), value => value === 0, 'the move ends')
+        if (transitions) assert.deepEqual(await page.evaluate(() => (window as any).transitions), ['ready'], 'the drop glides in a view transition the browser runs')
+        assert.deepEqual(await cells(), resting, 'and the table is as it was')
+      } finally { await page.close() }
+    })
+  }
+})
+
+test(`${engine}: a sortable item is carried at its own size, and the box a table stands in scrolls near its end`, async () => {
+  const css = await readFile(new URL('../../dist/standalone.css', import.meta.url), 'utf8')
+  const contract = JSON.parse(await readFile(new URL('../../components/sortable.json', import.meta.url), 'utf8'))
+  const page = await browser.newPage({ viewport: { width: 800, height: 700 } })
+  try {
+    const url = new URL('sortable-scroll', origin).href
+    await page.route(url, route => route.fulfill({ contentType: 'text/html', body: `<!doctype html><html><head><style>${css}</style></head><body style="margin:40px">
+      <div style="width:420px">${contract.example}</div>
+      <div id="area" style="height:180px;overflow:auto;width:520px;margin-top:24px">
+        <table class="table"><tbody class="sortable">${sortableRows(['One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight'])}</tbody></table>
+      </div>
+      <p class="sortable-status" role="status"></p></body></html>` }))
+    await page.goto(url)
+    const [list, rows] = await page.evaluateHandle(async path => {
+      const { sortable } = await import(path)
+      return [...document.querySelectorAll<HTMLElement>('.sortable')].map(root => sortable(root))
+    }, `/@fs${fileURLToPath(new URL('../../behaviors/sortable.js', import.meta.url))}`).then(async handle => [await handle.evaluateHandle(all => all[0]), await handle.evaluateHandle(all => all[1])])
+
+    // A list's row: picked up, it keeps the size it has at rest, and so do its words.
+    const item = page.locator('.list .sortable-item').first()
+    const measure = () => item.evaluate(row => {
+      const own = row.getBoundingClientRect()
+      const title = row.querySelector('.list-title')!.getBoundingClientRect()
+      return [own.width, own.height, title.left, title.width]
+    })
+    const resting = await measure()
+    await item.locator('.sortable-handle').focus()
+    await page.keyboard.press('Space')
+    await page.waitForTimeout(400)
+    assert.deepEqual(await measure(), resting, 'the carried item is drawn 1:1')
+    await page.keyboard.press('Escape')
+    assert.equal(await list.evaluate(controller => controller.value.join()), 'onboarding,billing')
+    // Where a view transition is the document's, the page takes no pointer until it is over; the handle lets go after it.
+    await until(() => item.locator('.sortable-handle').getAttribute('aria-pressed'), value => value === 'false', 'the item is put back')
+
+    // A table's body never scrolls: the box it stands in does, while the pointer is near its foot.
+    const area = page.locator('#area')
+    assert.ok(await area.evaluate(element => element.scrollHeight > element.clientHeight), 'the box has somewhere to scroll')
+    const grip = await box(page.locator('[data-value="one"] .sortable-handle'))
+    const foot = (await box(area)).y + (await box(area)).height - 6
+    await page.mouse.move(grip.x + grip.width / 2, grip.y + grip.height / 2)
+    await page.mouse.down()
+    await page.mouse.move(grip.x + grip.width / 2, foot, { steps: 8 })
+    await until(() => area.evaluate(element => element.scrollTop), value => value > 60, 'held near the foot, the box scrolls')
+    // The grip stands in the middle of its row: the row's middle stays with the pointer while the box scrolls under it.
+    const drawn = await box(page.locator('[data-value="one"]'))
+    assert.ok(Math.abs(drawn.y + drawn.height / 2 - foot) < 4, `the row stays under the pointer as the box scrolls: its middle at ${drawn.y + drawn.height / 2}, the pointer at ${foot}`)
+    await page.mouse.up()
+    await until(() => rows.evaluate(controller => controller.value.indexOf('one')), value => value >= 3, 'it lands past the rows the box first showed')
+  } finally { await page.close() }
+})
+
 test(`${engine}: segmented selection honors a changed reduced-motion preference`, async () => {
   const page = await browser.newPage({ reducedMotion: 'no-preference' })
   try {

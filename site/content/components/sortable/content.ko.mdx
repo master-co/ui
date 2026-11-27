@@ -9,7 +9,7 @@ import ComponentLinks from '~/site/components/ComponentLinks.astro'
 import ContractTable from '~/site/components/ContractTable.astro'
 import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
-정렬 가능 목록은 핸들을 드래그하거나 키보드로 항목의 순서를 정하는 목록입니다. 자체 행은 제공하지 않습니다. [목록](/components/list), 카드 스택 등 항목을 담는 요소라면 어디에나 적용하고, 각 항목에 핸들을 하나씩 두세요. 핸들은 무엇을 옮기는지 이름으로 밝힌 버튼입니다. `sortable` [동작](/guide/behaviors)은 다른 항목이 자리를 비켜 주는 동안 항목을 옮기고, 항목을 놓을 때 노드를 한 번만 이동합니다.
+정렬 가능 목록은 핸들을 드래그하거나 키보드로 항목의 순서를 정하는 목록입니다. 자체 행은 제공하지 않습니다. [목록](/components/list), 카드 스택, [표](/components/table)의 `<tbody>` 등 항목을 담는 요소라면 어디에나 적용하고, 각 항목에 핸들을 하나씩 두세요. 핸들은 무엇을 옮기는지 이름으로 밝힌 버튼입니다. `sortable` [동작](/guide/behaviors)은 다른 항목이 자리를 비켜 주는 동안 항목을 옮기고, 항목을 놓을 때 노드를 한 번만 이동합니다.
 
 <ComponentPreview name="default" height={296} title="정렬 가능 목록" background="plain" bodyClass="content-start p-lg" behaviors html={`<div class="max-w(420) mx-auto">
   <ol class="list sortable" aria-label="Priorities this quarter">
@@ -40,18 +40,18 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
 ## 스타일시트가 그리는 요소 \{#what-the-stylesheet-draws\}
 
 - **핸들.** 손잡이 아이콘을 담은 버튼으로, 포인터나 키보드 포커스가 닿기 전까지는 눈에 띄지 않으며 커서는 주먹 쥔 손 모양입니다. 크기는 24×28px이고, 터치 화면에서는 손잡이 위치는 그대로 둔 채 조작 영역이 44px로 커집니다. `touch-action: none`이 적용되어 있으므로 핸들에서 시작한 드래그는 페이지를 스크롤하지 않으며, 항목의 나머지 부분에서는 여전히 스크롤할 수 있습니다.
-- **옮기는 항목**은 위로 들어 올려집니다. 솟은 표면이 항목 가장자리보다 조금 더 바깥으로 커지므로 항목의 내용은 움직이지 않으며, 떠오른 그림자가 생기고 1.5% 커집니다. 항목은 동작이 작성하는 `--sortable-offset`을 통해 포인터를 따라가며, 포인터와 항목 사이에 이징은 없습니다. 목록의 가는 구분선처럼 행이 자기 아래에 그리는 선은 옮기는 항목을 따라가지 않고, 그 선이 구분하던 행 쪽에 남습니다.
+- **옮기는 항목**은 멈춰 있을 때 그려진 모습을 그대로 유지합니다. 크기도 같고 글자도 제자리에 있으며, 위로 떠오르기만 합니다. 떠 있는 그림자가 있는 솟은 표면 위에 놓이며, 동작이 작성하는 `--sortable-offset`을 통해 포인터를 따라갑니다. 포인터와 항목 사이에 이징은 없습니다. 표면은 항목의 양옆으로 `--sortable-inset`(8px)만큼, 위아래로 그 절반만큼 더 나가므로, 목록의 행처럼 글자가 가장자리에 붙어 있는 행도 표면 위에서 여백을 가집니다. 목록의 가는 구분선처럼 행이 자기 아래에 그리는 선은 항목과 함께 움직이지 않습니다.
 - **자리 비켜 주기.** 옮기는 항목의 원래 자리와 놓일 자리 사이에 있는 항목들이 `--sortable-size`만큼 옆으로 부드럽게 비켜납니다. `sortable-item-back`은 시작 쪽으로, `sortable-item-forward`는 끝 쪽으로 이동합니다. `--sortable-size`는 항목을 집어 들 때 측정한, 옮기는 항목의 크기와 그 뒤 간격을 더한 값입니다. 이렇게 생긴 빈자리가 항목이 놓일 곳입니다. 항목의 원래 자리는 비어 있으므로 사용자는 항목이 어디서 왔는지 알 수 있습니다.
 - **놓기.** 자리를 비켜 준 항목들은 이미 최종 위치에 있으므로, 이동은 비켜 준 공간을 없애고 노드를 빈자리에 넣는 작업을 한 번의 변경으로 처리합니다. 뷰 트랜지션(view transition) 안에서는 `view-transition-name: match-element`로 각 항목이 개별 스냅샷이 되며, 옮기는 항목만 손을 놓은 위치에서 새 자리로 이동합니다. 이 동안 루트 요소에는 `aria-busy="true"`가 설정되며, 다른 요소는 움직이지 않습니다.
 
-뷰 트랜지션을 지원하지 않는 브라우저에서는 옮기는 항목이 바로 새 자리에 놓입니다. 다른 항목은 이미 제자리에 있습니다. 동작 줄이기 설정이 켜져 있으면 커지는 효과, 비켜나는 움직임, 트랜지션이 모두 생략됩니다.
+뷰 트랜지션을 지원하지 않는 브라우저에서는 옮기는 항목이 바로 새 자리에 놓입니다. 다른 항목은 이미 제자리에 있습니다. 동작 줄이기 설정이 켜져 있으면 비켜나는 움직임과 트랜지션이 모두 생략됩니다.
 
 ## 카드 \{#cards\}
 
-항목을 담는 요소라면 무엇이든 정렬할 수 있습니다. 이 예시에서는 각 항목이 간격을 둔 스택 안의 [카드](/components/card)이며, 카드가 비켜 주는 공간에는 이 간격도 포함됩니다. 옮기는 카드를 들어 올리는 표면은 `--sortable-radius`를 통해 카드의 모서리 반경을 따릅니다.
+항목을 담는 요소라면 무엇이든 정렬할 수 있습니다. 이 예시에서는 각 항목이 간격을 둔 스택 안의 [카드](/components/card)이며, 카드가 비켜 주는 공간에는 이 간격도 포함됩니다. 카드에는 자체 표면이 있으므로 `--sortable-inset: 0`으로 표면을 카드 가장자리에 맞추고, `--sortable-radius`로 카드의 모서리 반경을 따릅니다. 옮기는 카드는 원래 카드가 그대로 떠오른 모습입니다.
 
 <ComponentPreview name="cards" height={344} title="카드" bodyClass="content-start p-lg" behaviors html={`<div class="max-w(360) mx-auto">
-<ol class="list sortable gap-xs" aria-label="Release checklist" style="--sortable-radius: var(--radius-surface)">
+<ol class="list sortable gap-xs" aria-label="Release checklist" style="--sortable-radius: var(--radius-surface); --sortable-inset: 0">
   <li class="card sortable-item flex items-center gap-sm p-sm" data-value="freeze">
     <button type="button" class="sortable-handle" aria-pressed="false" aria-label="Move Freeze the branch"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="4" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="4" r="1" fill="currentColor" stroke="none"/><circle cx="6" cy="8" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="8" r="1" fill="currentColor" stroke="none"/><circle cx="6" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="12" r="1" fill="currentColor" stroke="none"/></svg></button>
     <span class="text-sm fg-text-strong">Freeze the branch</span>
@@ -72,6 +72,49 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
 <p class="sortable-status" role="status"></p>
 </div>`} />
 
+## 표 안에서 \{#table\}
+
+[표](/components/table)의 `<tbody>`는 행으로 이루어진 목록입니다. `<tbody>`에 `sortable`을, 각 `table-row`에 `sortable-item`을 지정하세요. 핸들은 행의 시작 부분에 핸들만을 위한 셀을 두어 담고, 그 열에는 스크린 리더가 읽을 수 있는 제목을 붙이세요. `<tbody>`가 여러 개인 표는 각각을 하나의 목록으로 따로 정렬합니다.
+
+<ComponentPreview name="table" height={298} narrowHeight={350} title="표 안에서" bodyClass="content-start p-lg" behaviors html={`<div class="sheet">
+  <table class="table">
+    <thead>
+      <tr class="table-row">
+        <th class="table-heading" scope="col"><span class="sr-only">Order</span></th>
+        <th class="table-heading w-full" scope="col">Item</th>
+        <th class="table-heading table-numeric" scope="col">Amount</th>
+      </tr>
+    </thead>
+    <tbody class="sortable">
+      <tr class="table-row sortable-item" data-value="discovery">
+        <td class="table-cell"><button type="button" class="sortable-handle" aria-pressed="false" aria-label="Move Discovery workshop"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="4" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="4" r="1" fill="currentColor" stroke="none"/><circle cx="6" cy="8" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="8" r="1" fill="currentColor" stroke="none"/><circle cx="6" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="12" r="1" fill="currentColor" stroke="none"/></svg></button></td>
+        <td class="table-cell table-primary">Discovery workshop</td>
+        <td class="table-cell table-numeric">2,400</td>
+      </tr>
+      <tr class="table-row sortable-item" data-value="design">
+        <td class="table-cell"><button type="button" class="sortable-handle" aria-pressed="false" aria-label="Move Interface design"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="4" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="4" r="1" fill="currentColor" stroke="none"/><circle cx="6" cy="8" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="8" r="1" fill="currentColor" stroke="none"/><circle cx="6" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="12" r="1" fill="currentColor" stroke="none"/></svg></button></td>
+        <td class="table-cell table-primary">Interface design</td>
+        <td class="table-cell table-numeric">7,200</td>
+      </tr>
+      <tr class="table-row sortable-item" data-value="build">
+        <td class="table-cell"><button type="button" class="sortable-handle" aria-pressed="false" aria-label="Move Front-end build"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="4" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="4" r="1" fill="currentColor" stroke="none"/><circle cx="6" cy="8" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="8" r="1" fill="currentColor" stroke="none"/><circle cx="6" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="12" r="1" fill="currentColor" stroke="none"/></svg></button></td>
+        <td class="table-cell table-primary">Front-end build</td>
+        <td class="table-cell table-numeric">12,500</td>
+      </tr>
+      <tr class="table-row sortable-item" data-value="launch">
+        <td class="table-cell"><button type="button" class="sortable-handle" aria-pressed="false" aria-label="Move Launch support"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="4" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="4" r="1" fill="currentColor" stroke="none"/><circle cx="6" cy="8" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="8" r="1" fill="currentColor" stroke="none"/><circle cx="6" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="12" r="1" fill="currentColor" stroke="none"/></svg></button></td>
+        <td class="table-cell table-primary">Launch support</td>
+        <td class="table-cell table-numeric">1,800</td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="sortable-status" role="status"></p>
+</div>`} caption="견적서의 항목을 고객이 읽는 순서로 배치합니다." />
+
+- **행은 있는 그대로 그려집니다.** 표는 행이 만드는 모든 상자에, 흐름에서 벗어난 상자라도 열을 하나씩 배정하고 그 뒤의 모든 셀을 밀어냅니다. 그래서 옮기는 행은 자기 상자를 만들지 않습니다. 대신 핸들을 담은 셀이 표면을 그리며, 행을 기준으로 배치해 행과 같은 크기로 만듭니다. 행의 셀에는 이미 자체 안쪽 여백이 있기 때문입니다. 표의 레이아웃과 관계없이 어떤 셀도 움직이지 않으며, `--sortable-inset`은 적용되지 않습니다. 각 셀 아래의 구분선은 표면 위에 그려지지 않습니다.
+- **상태 영역**은 행만 담을 수 있는 `<tbody>` 안이나 표를 구성하는 요소 사이에 둘 수 없습니다. 동작이 찾는 위치인 `<table>` 바로 뒤에 두세요.
+- **스크롤되는 상자 안에서.** 배치된 너비보다 넓은 표는 가로로 스크롤되는 상자에 넣습니다. 옮기는 행의 표면은 행 자체이므로 상자 안에 머물고, 상자는 가장자리에서 그림자만 잘라 냅니다. `<tbody>`는 스스로 스크롤하지 않습니다. 표가 놓인 상자나 페이지의 한쪽 끝 가까이에 포인터가 있으면 동작이 그것을 스크롤합니다.
+
 ## 동작 \{#behavior\}
 
 `sortable` 동작은 `sortable` 클래스가 있는 루트 요소를 받아, 연결한 동작을 해제하는 함수를 반환합니다.
@@ -84,10 +127,10 @@ const priorities = sortable(document.querySelector('.sortable'))
 priorities.value // ['onboarding', 'billing', 'search', 'exports']
 ```
 
-- **포인터.** 핸들을 누른 채 4px 넘게 움직이면 항목을 집어 들고, 그보다 적게 움직이면 일반 누르기로 처리합니다. 항목을 옮기는 동안 핸들에는 `aria-pressed="true"`가 설정되고, 항목은 포인터를 따라가며, 항목이 지나치는 다른 항목은 자리를 비켜 줍니다. 놓일 자리는 비켜 주는 중인 위치가 아니라 레이아웃상 항목들의 원래 위치를 기준으로 판단하므로, 다른 항목이 자리를 비켜 주는 움직임 때문에 놓일 위치가 달라지지 않습니다. 포인터를 놓으면 항목이 이동하고, <kbd class="kbd">Escape</kbd> 키를 누르면 다른 항목이 제자리로 부드럽게 돌아가는 동안 항목이 원래 자리로 돌아갑니다. 스크롤되는 목록에서는 포인터가 목록의 한쪽 끝 가까이에 있는 동안 목록을 스크롤하며, 끝 쪽으로 더 들어갈수록 더 빠르게 스크롤합니다. 드래그를 시작한 포인터만 항목을 옮길 수 있습니다.
+- **포인터.** 핸들을 누른 채 4px 넘게 움직이면 항목을 집어 들고, 그보다 적게 움직이면 일반 누르기로 처리합니다. 항목을 옮기는 동안 핸들에는 `aria-pressed="true"`가 설정되고, 항목은 포인터를 따라가며, 항목이 지나치는 다른 항목은 자리를 비켜 줍니다. 놓일 자리는 비켜 주는 중인 위치가 아니라 레이아웃상 항목들의 원래 위치를 기준으로 판단하므로, 다른 항목이 자리를 비켜 주는 움직임 때문에 놓일 위치가 달라지지 않습니다. 포인터를 놓으면 항목이 이동하고, <kbd class="kbd">Escape</kbd> 키를 누르면 다른 항목이 제자리로 부드럽게 돌아가는 동안 항목이 원래 자리로 돌아갑니다. 목록을 스크롤하는 요소(목록 자체, 목록이 놓인 상자, 또는 페이지)의 한쪽 끝 가까이에 포인터가 있는 동안 그 요소를 스크롤하며, 끝 쪽으로 더 들어갈수록 더 빠르게 스크롤합니다. 휠 스크롤을 포함해 포인터 아래에서 페이지가 움직여도 항목은 포인터 아래에 머뭅니다. 드래그를 시작한 포인터만 항목을 옮길 수 있습니다.
 - **드래그 없이.** 핸들을 움직이지 않고 누르면, 즉 클릭하거나 탭하면 <kbd class="kbd">Enter</kbd> 키처럼 항목을 집어 들고 그 핸들에 포커스를 둡니다. 이어서 다른 항목의 핸들을 누르면 항목을 그 자리로 옮겨 놓고, 자기 핸들을 다시 누르면 제자리에 놓습니다. 드래그할 수 없는 포인터나 스크린 리더의 두 번 탭으로도 이렇게 목록을 정렬할 수 있습니다.
 - **키보드.** 핸들에서 <kbd class="kbd">Enter</kbd> 또는 <kbd class="kbd">Space</kbd> 키를 누르면 항목을 집어 듭니다. 목록 방향의 방향키를 누르면 한 칸씩 이동합니다. 항목을 집어 들기 전에는 방향키가 아무 동작도 하지 않으므로, 스크린 리더 자체의 방향키 조작은 그대로 작동합니다. <kbd class="kbd">Enter</kbd> 또는 <kbd class="kbd">Space</kbd> 키를 누르면 항목을 놓고, <kbd class="kbd">Escape</kbd> 키를 누르면 집어 든 자리로 되돌립니다. 핸들에서 포커스가 벗어나도 항목을 놓습니다.
-- **안내 메시지.** 집어 들기, 이동, 놓기, 취소는 각각 `sortable-status` 영역에서 항목의 이름과 위치와 함께 안내합니다(예: "청구, 4개 중 3번째."). 이 영역은 루트 요소 안이나 바로 뒤에 두는 `role="status"` 요소입니다. 페이지 언어로 안내하려면 `messages`를 전달하세요.
+- **안내 메시지.** 집어 들기, 이동, 놓기, 취소는 각각 `sortable-status` 영역에서 항목의 이름과 위치와 함께 안내합니다(예: "청구, 4개 중 3번째."). 이 영역은 루트 요소 안이나 바로 뒤에 두는 `role="status"` 요소이며, 루트 요소가 표의 `<tbody>`이면 표 바로 뒤에 둡니다. 페이지 언어로 안내하려면 `messages`를 전달하세요.
 - **이동**은 항목 노드 자체를 옮기는 것입니다. 브라우저가 지원하면 `moveBefore()`를 사용하므로, 필드의 텍스트, 재생 중인 동영상, 포커스처럼 항목 안의 상태가 유지됩니다. 그 밖의 브라우저에서는 항목을 다시 삽입하고 핸들에 포커스를 다시 맞춥니다.
 - **이벤트.** 놓기로 순서가 바뀌면 루트 요소에서 `input`과 `change` 이벤트를 발생시킵니다. 반환된 함수에는 항목의 순서인 `value`가 있으며, 각 항목은 `data-value` 값이나 텍스트로 나타냅니다. 이 속성에 값을 설정하면 항목이 그 순서로 정렬되며, 이때는 이벤트가 발생하지 않습니다.
 
@@ -109,7 +152,7 @@ priorities.value // ['onboarding', 'billing', 'search', 'exports']
 
 ## React, Svelte, Vue \{#frameworks\}
 
-`sortable` 컴포넌트는 자신이 가진 순서대로 항목을 작성하고 동작을 연결하며, 동작이 요청하면 자체 목록에서 항목을 옮깁니다. 따라서 프레임워크가 관리하는 행과 페이지의 순서가 항상 일치합니다. `npx master-ui add sortable` 명령을 실행해 프로젝트에 복사하세요. 컴포넌트의 구성과 사용 방법은 [React, Svelte, Vue](/guide/frameworks)에서 확인할 수 있습니다.
+`sortable` 컴포넌트는 자신이 가진 순서대로 항목을 작성하고 동작을 연결하며, 동작이 요청하면 자체 목록에서 항목을 옮깁니다. 따라서 프레임워크가 관리하는 행과 페이지의 순서가 항상 일치합니다. `npx master-ui add sortable` 명령을 실행해 프로젝트에 복사하세요. 컴포넌트의 구성과 사용 방법은 [React, Svelte, Vue](/guide/frameworks)에서 확인할 수 있습니다. 이 컴포넌트는 목록을 작성합니다. 표의 행을 정렬하려면 프레임워크에서 표를 렌더링하고, `move`와 함께 동작을 `<tbody>`에 연결하세요. `move`는 컴포넌트가 하는 것처럼 각 이동을 프레임워크의 행에 맡깁니다.
 
 <FrameworkSource name="sortable" />
 
@@ -123,7 +166,7 @@ priorities.value // ['onboarding', 'billing', 'search', 'exports']
 
 ## 관련 항목 \{#related\}
 
-<ComponentLinks slugs={['list', 'card', 'swipe', 'kanban']} />
+<ComponentLinks slugs={['list', 'card', 'table', 'swipe', 'kanban']} />
 
 ## 소스 \{#source\}
 

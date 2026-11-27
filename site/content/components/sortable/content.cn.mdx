@@ -9,7 +9,7 @@ import ComponentLinks from '~/site/components/ComponentLinks.astro'
 import ContractTable from '~/site/components/ContractTable.astro'
 import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
-可排序列表是可以拖动手柄或用键盘调整项目顺序的列表。它没有自己的行样式：可以用在[列表](/components/list)、一叠卡片或任何容纳项目的元素上，并为每个项目提供一个手柄，即一个以所移动内容命名的按钮。`sortable` [行为脚本](/guide/behaviors)在拖动某个项目时让其他项目为它让出空间，并在放下时只移动一次该项目的节点。
+可排序列表是可以拖动手柄或用键盘调整项目顺序的列表。它没有自己的行样式：可以用在[列表](/components/list)、一叠卡片、[表格](/components/table)的 `<tbody>` 或任何容纳项目的元素上，并为每个项目提供一个手柄，即一个以所移动内容命名的按钮。`sortable` [行为脚本](/guide/behaviors)在拖动某个项目时让其他项目为它让出空间，并在放下时只移动一次该项目的节点。
 
 <ComponentPreview name="default" height={296} title="可排序列表" background="plain" bodyClass="content-start p-lg" behaviors html={`<div class="max-w(420) mx-auto">
   <ol class="list sortable" aria-label="Priorities this quarter">
@@ -40,18 +40,18 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
 ## 样式表绘制的内容 \{#what-the-stylesheet-draws\}
 
 - **手柄。** 内含握把图标的按钮，指针或键盘到达前保持低调，光标为握拳的手形。手柄大小为 24 × 28px，在触屏上，手柄的触控区域扩展到 44px，握把位置不变。手柄设置了 `touch-action: none`，因此从手柄开始的拖动不会滚动页面，而从项目其余部分开始的手势仍可滚动页面。
-- **被拖动的项目**会抬起：周围出现一块略超出项目边缘的凸起面板，因此项目内容不会移动，同时带有抬起阴影并放大 1.5%。项目通过行为脚本写入的 `--sortable-offset` 跟随指针，指针和项目之间没有缓动。行在自身下方绘制的线条（例如列表的分隔细线）会留在被它分开的那一行上。
+- **被拖动的项目**保持静止时的样子，尺寸不变，文字也留在原处，只是浮起：它位于一块带浮动阴影的凸起面板上，并通过行为脚本写入的 `--sortable-offset` 跟随指针，指针和项目之间没有缓动。面板在项目左右两侧超出 `--sortable-inset`（8px），上下超出一半，因此文字贴着边缘的行（例如列表的行）在面板上也有留白。行在自身下方绘制的线条（例如列表的分隔细线）不会随之移动。
 - **让出空间。** 位于被拖动项目原位置和其落点之间的项目会平滑移开，`sortable-item-back` 移向开头，`sortable-item-forward` 移向末尾，移动距离为 `--sortable-size`，即拿起项目时测得的项目尺寸加上其后的间距。腾出的空隙就是落点。项目原来的位置保持空白，读者可以看出它来自哪里。
 - **放下。** 让出空间的项目已经位于各自的落点，因此移动操作只需一次变更：撤销让出的空间，并将节点放入空隙。在视图过渡中，每个项目通过 `view-transition-name: match-element` 各自成为一幅画面，只有被拖动的项目会从松开的位置移到它的新位置。这期间根元素带有 `aria-busy="true"`，其他内容都不会滑动。
 
-浏览器不支持视图过渡时，被拖动的项目会立即就位，其他项目则已在各自的位置上。启用减少动态效果时，没有放大、滑动和过渡。
+浏览器不支持视图过渡时，被拖动的项目会立即就位，其他项目则已在各自的位置上。启用减少动态效果时，没有滑动和过渡。
 
 ## 卡片 \{#cards\}
 
-任何容纳项目的元素都可以排序。下面每个项目都是一叠带间距的[卡片](/components/card)中的一张，卡片让出的空间也包含这段间距；被拖动卡片下方抬起的面板通过 `--sortable-radius` 沿用卡片的圆角。
+任何容纳项目的元素都可以排序。下面每个项目都是一叠带间距的[卡片](/components/card)中的一张，卡片让出的空间也包含这段间距。卡片有自己的表面，因此用 `--sortable-inset: 0` 让面板贴合卡片边缘，并通过 `--sortable-radius` 沿用卡片的圆角：被拖动的卡片就是原来的卡片，只是浮了起来。
 
 <ComponentPreview name="cards" height={344} title="卡片" bodyClass="content-start p-lg" behaviors html={`<div class="max-w(360) mx-auto">
-<ol class="list sortable gap-xs" aria-label="Release checklist" style="--sortable-radius: var(--radius-surface)">
+<ol class="list sortable gap-xs" aria-label="Release checklist" style="--sortable-radius: var(--radius-surface); --sortable-inset: 0">
   <li class="card sortable-item flex items-center gap-sm p-sm" data-value="freeze">
     <button type="button" class="sortable-handle" aria-pressed="false" aria-label="Move Freeze the branch"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="4" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="4" r="1" fill="currentColor" stroke="none"/><circle cx="6" cy="8" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="8" r="1" fill="currentColor" stroke="none"/><circle cx="6" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="12" r="1" fill="currentColor" stroke="none"/></svg></button>
     <span class="text-sm fg-text-strong">Freeze the branch</span>
@@ -72,6 +72,49 @@ import FrameworkSource from '~/site/components/FrameworkSource.astro'
 <p class="sortable-status" role="status"></p>
 </div>`} />
 
+## 在表格中 \{#table\}
+
+[表格](/components/table)的 `<tbody>` 就是由行组成的列表。在 `<tbody>` 上添加 `sortable`，在每个 `table-row` 上添加 `sortable-item`，并在每行开头为手柄单独留出一个单元格，同时为这一列提供屏幕阅读器可以读出的标题。有多个 `<tbody>` 的表格会分别排序，每个 `<tbody>` 都是一个列表。
+
+<ComponentPreview name="table" height={298} narrowHeight={350} title="在表格中" bodyClass="content-start p-lg" behaviors html={`<div class="sheet">
+  <table class="table">
+    <thead>
+      <tr class="table-row">
+        <th class="table-heading" scope="col"><span class="sr-only">Order</span></th>
+        <th class="table-heading w-full" scope="col">Item</th>
+        <th class="table-heading table-numeric" scope="col">Amount</th>
+      </tr>
+    </thead>
+    <tbody class="sortable">
+      <tr class="table-row sortable-item" data-value="discovery">
+        <td class="table-cell"><button type="button" class="sortable-handle" aria-pressed="false" aria-label="Move Discovery workshop"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="4" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="4" r="1" fill="currentColor" stroke="none"/><circle cx="6" cy="8" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="8" r="1" fill="currentColor" stroke="none"/><circle cx="6" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="12" r="1" fill="currentColor" stroke="none"/></svg></button></td>
+        <td class="table-cell table-primary">Discovery workshop</td>
+        <td class="table-cell table-numeric">2,400</td>
+      </tr>
+      <tr class="table-row sortable-item" data-value="design">
+        <td class="table-cell"><button type="button" class="sortable-handle" aria-pressed="false" aria-label="Move Interface design"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="4" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="4" r="1" fill="currentColor" stroke="none"/><circle cx="6" cy="8" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="8" r="1" fill="currentColor" stroke="none"/><circle cx="6" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="12" r="1" fill="currentColor" stroke="none"/></svg></button></td>
+        <td class="table-cell table-primary">Interface design</td>
+        <td class="table-cell table-numeric">7,200</td>
+      </tr>
+      <tr class="table-row sortable-item" data-value="build">
+        <td class="table-cell"><button type="button" class="sortable-handle" aria-pressed="false" aria-label="Move Front-end build"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="4" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="4" r="1" fill="currentColor" stroke="none"/><circle cx="6" cy="8" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="8" r="1" fill="currentColor" stroke="none"/><circle cx="6" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="12" r="1" fill="currentColor" stroke="none"/></svg></button></td>
+        <td class="table-cell table-primary">Front-end build</td>
+        <td class="table-cell table-numeric">12,500</td>
+      </tr>
+      <tr class="table-row sortable-item" data-value="launch">
+        <td class="table-cell"><button type="button" class="sortable-handle" aria-pressed="false" aria-label="Move Launch support"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="4" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="4" r="1" fill="currentColor" stroke="none"/><circle cx="6" cy="8" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="8" r="1" fill="currentColor" stroke="none"/><circle cx="6" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="12" r="1" fill="currentColor" stroke="none"/></svg></button></td>
+        <td class="table-cell table-primary">Launch support</td>
+        <td class="table-cell table-numeric">1,800</td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="sortable-status" role="status"></p>
+</div>`} caption="报价单的明细，按客户阅读的顺序排列。" />
+
+- **行保持原样绘制。** 表格会为行生成的每个盒子（即使已脱离常规流）分配一列，并把其后的所有单元格往后推，因此被拖动的行自身不生成任何盒子：改由放置手柄的单元格绘制面板，以整行为基准定位，大小与整行相同，因为行中的单元格本身已有内边距。无论表格采用哪种布局，都不会有单元格移动，`--sortable-inset` 也不适用。各单元格下方的分隔线不会绘制在面板上。
+- **状态区域**不能放在只能容纳行的 `<tbody>` 中，也不能放在表格的各个组成部分之间。请把它紧跟在 `<table>` 之后，行为脚本会在那里查找它。
+- **在可滚动的容器中。** 比所在栏更宽的表格会放在可横向滚动的容器中。被拖动行的面板就是行本身，因此会留在容器内，容器只会在边缘裁掉阴影。`<tbody>` 自身不会滚动：指针靠近表格所在容器或页面的任一端时，行为脚本会滚动该容器或页面。
+
 ## 行为脚本 \{#behavior\}
 
 `sortable` 接收根元素，即带有 `sortable` 类的元素，并返回一个用于解除绑定的函数。
@@ -84,10 +127,10 @@ const priorities = sortable(document.querySelector('.sortable'))
 priorities.value // ['onboarding', 'billing', 'search', 'exports']
 ```
 
-- **指针。** 在手柄上按下并移动超过 4px 时，会拿起项目；移动不足 4px 则视为一次按下。项目被拖动期间，手柄带有 `aria-pressed="true"`，项目跟随指针，经过的项目会让出空间。落点根据各项目在布局中的实际位置判断，而不是根据它们让出空间后的位置，因此落点不会追着自己跑。松开指针即完成移动，按 <kbd class="kbd">Esc</kbd> 则会放回项目，其他项目也会滑回原位。列表可以滚动时，指针靠近列表任一端会滚动列表，越靠近末端滚动越快。只有开始拖动的那个指针能移动项目。
+- **指针。** 在手柄上按下并移动超过 4px 时，会拿起项目；移动不足 4px 则视为一次按下。项目被拖动期间，手柄带有 `aria-pressed="true"`，项目跟随指针，经过的项目会让出空间。落点根据各项目在布局中的实际位置判断，而不是根据它们让出空间后的位置，因此落点不会追着自己跑。松开指针即完成移动，按 <kbd class="kbd">Esc</kbd> 则会放回项目，其他项目也会滑回原位。指针靠近负责滚动列表的元素（列表本身、列表所在的容器或页面）任一端时，会滚动该元素，越靠近末端滚动越快；页面在指针下方移动时（包括滚轮滚动），项目仍停留在指针下。只有开始拖动的那个指针能移动项目。
 - **不拖动。** 在手柄上按下但不移动，即单击或轻点，会像按 <kbd class="kbd">Enter</kbd> 一样拿起项目，并让它的手柄获得焦点。随后按另一个项目的手柄，会把项目移到那个位置并放下；再按它自己的手柄，则在原处放下。无法拖动的指针以及屏幕阅读器的双击，都可以用这种方式为列表排序。
 - **键盘。** 在手柄上按 <kbd class="kbd">Enter</kbd> 或 <kbd class="kbd">空格键</kbd> 会拿起项目。沿列表方向的方向键每次将项目移动一个位置；拿起项目之前，这些方向键不起作用，因此屏幕阅读器自身的方向键操作仍然可用。按 <kbd class="kbd">Enter</kbd> 或 <kbd class="kbd">空格键</kbd> 放下项目，按 <kbd class="kbd">Esc</kbd> 将其放回拿起时的位置，焦点离开手柄也会放下项目。
-- **播报。** 每次拿起、移动、放下和取消都会在 `sortable-status` 区域中播报，内容包括项目名称和位置，例如“Billing, position 3 of 4.”。该区域是位于根元素内部或紧随其后的 `role="status"`。传入 `messages` 可使用页面的语言播报。
+- **播报。** 每次拿起、移动、放下和取消都会在 `sortable-status` 区域中播报，内容包括项目名称和位置，例如“Billing, position 3 of 4.”。该区域是位于根元素内部或紧随其后的 `role="status"`；根元素是表格的 `<tbody>` 时，则紧随表格之后。传入 `messages` 可使用页面的语言播报。
 - **移动**的是项目节点本身；浏览器支持 `moveBefore()` 时使用该方法，因此项目内的内容会保留状态，例如输入框中的文字、正在播放的视频和焦点。不支持时，节点会被重新插入，手柄也会重新获得焦点。
 - **事件。** 放下项目后，如果顺序发生了变化，根元素会派发 `input` 和 `change`。返回的函数带有 `value`，即项目的顺序，每项取其 `data-value`，未设置时取其文本。为它赋值可将项目按该顺序排列，但不会派发任何事件。
 
@@ -95,7 +138,7 @@ priorities.value // ['onboarding', 'billing', 'search', 'exports']
 
 没有行为脚本时，列表保持原有顺序，内容仍然可读。
 
-可排序列表只有一个列表。如果项目还会在多个列表之间移动，例如看板的各个阶段，请使用[看板](/components/kanban)。
+可排序列表只处理单个列表。如果项目还会在多个列表之间移动，例如看板的各个阶段，请使用[看板](/components/kanban)。
 
 ## 键盘操作 \{#keyboard\}
 
@@ -109,7 +152,7 @@ priorities.value // ['onboarding', 'billing', 'search', 'exports']
 
 ## React、Svelte 和 Vue \{#frameworks\}
 
-`sortable` 组件按其持有的顺序写入项目，绑定行为脚本，并在行为脚本请求时移动自身列表中的项目，使框架渲染的行与页面保持一致。使用 `npx master-ui add sortable` 将组件复制到项目中。有关这些组件的实现和用法，请参阅 [React、Svelte 和 Vue](/guide/frameworks)。
+`sortable` 组件按其持有的顺序写入项目，绑定行为脚本，并在行为脚本请求时移动自身列表中的项目，使框架渲染的行与页面保持一致。使用 `npx master-ui add sortable` 将组件复制到项目中。有关这些组件的实现和用法，请参阅 [React、Svelte 和 Vue](/guide/frameworks)。该组件渲染的是列表。要对表格的行排序，请在框架中渲染表格，并使用 `move` 将行为脚本绑定到 `<tbody>`，`move` 会像组件一样，把每次移动交给框架自身的行。
 
 <FrameworkSource name="sortable" />
 
@@ -123,7 +166,7 @@ priorities.value // ['onboarding', 'billing', 'search', 'exports']
 
 ## 相关内容 \{#related\}
 
-<ComponentLinks slugs={['list', 'card', 'swipe', 'kanban']} />
+<ComponentLinks slugs={['list', 'card', 'table', 'swipe', 'kanban']} />
 
 ## 源码 \{#source\}
 

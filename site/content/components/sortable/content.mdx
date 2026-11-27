@@ -4,7 +4,7 @@ import ComponentLinks from '~/site/components/ComponentLinks.astro'
 import ContractTable from '~/site/components/ContractTable.astro'
 import FrameworkSource from '~/site/components/FrameworkSource.astro'
 
-A sortable is a list whose items are put in order by dragging a handle or with the keys. It has no row of its own: put it on a [list](/components/list), a stack of cards or anything that holds items, and give each item a handle, a button named with what it moves. The `sortable` [behavior](/guide/behaviors) carries an item while the others make room for it, and moves its node once, when it is dropped.
+A sortable is a list whose items are put in order by dragging a handle or with the keys. It has no row of its own: put it on a [list](/components/list), a stack of cards, the body of a [table](/components/table) or anything that holds items, and give each item a handle, a button named with what it moves. The `sortable` [behavior](/guide/behaviors) carries an item while the others make room for it, and moves its node once, when it is dropped.
 
 <ComponentPreview name="default" height={296} title="Sortable" background="plain" bodyClass="content-start p-lg" behaviors html={`<div class="max-w(420) mx-auto">
   <ol class="list sortable" aria-label="Priorities this quarter">
@@ -35,18 +35,18 @@ A sortable is a list whose items are put in order by dragging a handle or with t
 ## What the stylesheet draws \{#what-the-stylesheet-draws\}
 
 - **The handle.** A button that holds a grip icon, quiet until the pointer or the keys reach it, with a closed-hand cursor. It is 24 by 28px and reaches 44px on a touch screen without moving the grip. It takes `touch-action: none`, so a drag that starts on it never scrolls the page, and the rest of the item still does.
-- **The carried item** lifts: a raised sheet grows around it a little past its edges, so its content does not move, with the lifted shadow and a 1.5% swell. It follows the pointer through `--sortable-offset`, which the behavior writes, with no easing between the pointer and the item. A rule the row draws under itself, such as a list's hairline, stays with the row it parted.
+- **The carried item** stays as it is drawn at rest, the same size, with its words where they were, and rises: it stands on a raised sheet with the floating shadow and follows the pointer through `--sortable-offset`, which the behavior writes, with no easing between the pointer and the item. The sheet reaches past the item's sides by `--sortable-inset`, 8px, and past its top and bottom by half as much, so a row whose words stand on its edges, such as a list's, has room on it. A rule the row draws under itself, such as a list's hairline, does not travel with it.
 - **Making room.** The items between the carried one's place and where it would land glide aside, `sortable-item-back` toward the start and `sortable-item-forward` toward the end, by `--sortable-size`: the carried item's size with the gap after it, measured as it is picked up. The gap that opens is where it lands. Its own place stays empty, so the reader sees where it came from.
 - **The drop.** The items that made room already stand where they land, so the move takes the room away and puts the node in the gap in one change. Inside a view transition, each item its own picture through `view-transition-name: match-element`, only the carried item travels, from where it was released to its place. The root says `aria-busy="true"` while that happens, and nothing else glides.
 
-Without view transitions the carried item takes its place at once; the others are already there. With reduced motion there is no swell, no glide and no transition.
+Without view transitions the carried item takes its place at once; the others are already there. With reduced motion nothing glides and there is no transition.
 
 ## Cards \{#cards\}
 
-Anything that holds items can be sorted. Here each item is a [card](/components/card) in a stack with a gap, which the room the cards make includes; the sheet a carried card lifts on takes the card's corner through `--sortable-radius`.
+Anything that holds items can be sorted. Here each item is a [card](/components/card) in a stack with a gap, which the room the cards make includes. A card has a face of its own, so the sheet keeps to its edges with `--sortable-inset: 0` and takes its corner through `--sortable-radius`: the carried card is the card as it was, risen.
 
 <ComponentPreview name="cards" height={344} title="Cards" bodyClass="content-start p-lg" behaviors html={`<div class="max-w(360) mx-auto">
-<ol class="list sortable gap-xs" aria-label="Release checklist" style="--sortable-radius: var(--radius-surface)">
+<ol class="list sortable gap-xs" aria-label="Release checklist" style="--sortable-radius: var(--radius-surface); --sortable-inset: 0">
   <li class="card sortable-item flex items-center gap-sm p-sm" data-value="freeze">
     <button type="button" class="sortable-handle" aria-pressed="false" aria-label="Move Freeze the branch"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="4" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="4" r="1" fill="currentColor" stroke="none"/><circle cx="6" cy="8" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="8" r="1" fill="currentColor" stroke="none"/><circle cx="6" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="12" r="1" fill="currentColor" stroke="none"/></svg></button>
     <span class="text-sm fg-text-strong">Freeze the branch</span>
@@ -67,6 +67,49 @@ Anything that holds items can be sorted. Here each item is a [card](/components/
 <p class="sortable-status" role="status"></p>
 </div>`} />
 
+## In a table \{#table\}
+
+The body of a [table](/components/table) is a list of rows. Put `sortable` on the `<tbody>` and `sortable-item` on each `table-row`, and give the handle a cell of its own at the start of the row, under a heading a screen reader can name. A table with several bodies sorts each on its own: each is a list.
+
+<ComponentPreview name="table" height={298} narrowHeight={350} title="In a table" bodyClass="content-start p-lg" behaviors html={`<div class="sheet">
+  <table class="table">
+    <thead>
+      <tr class="table-row">
+        <th class="table-heading" scope="col"><span class="sr-only">Order</span></th>
+        <th class="table-heading w-full" scope="col">Item</th>
+        <th class="table-heading table-numeric" scope="col">Amount</th>
+      </tr>
+    </thead>
+    <tbody class="sortable">
+      <tr class="table-row sortable-item" data-value="discovery">
+        <td class="table-cell"><button type="button" class="sortable-handle" aria-pressed="false" aria-label="Move Discovery workshop"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="4" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="4" r="1" fill="currentColor" stroke="none"/><circle cx="6" cy="8" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="8" r="1" fill="currentColor" stroke="none"/><circle cx="6" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="12" r="1" fill="currentColor" stroke="none"/></svg></button></td>
+        <td class="table-cell table-primary">Discovery workshop</td>
+        <td class="table-cell table-numeric">2,400</td>
+      </tr>
+      <tr class="table-row sortable-item" data-value="design">
+        <td class="table-cell"><button type="button" class="sortable-handle" aria-pressed="false" aria-label="Move Interface design"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="4" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="4" r="1" fill="currentColor" stroke="none"/><circle cx="6" cy="8" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="8" r="1" fill="currentColor" stroke="none"/><circle cx="6" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="12" r="1" fill="currentColor" stroke="none"/></svg></button></td>
+        <td class="table-cell table-primary">Interface design</td>
+        <td class="table-cell table-numeric">7,200</td>
+      </tr>
+      <tr class="table-row sortable-item" data-value="build">
+        <td class="table-cell"><button type="button" class="sortable-handle" aria-pressed="false" aria-label="Move Front-end build"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="4" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="4" r="1" fill="currentColor" stroke="none"/><circle cx="6" cy="8" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="8" r="1" fill="currentColor" stroke="none"/><circle cx="6" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="12" r="1" fill="currentColor" stroke="none"/></svg></button></td>
+        <td class="table-cell table-primary">Front-end build</td>
+        <td class="table-cell table-numeric">12,500</td>
+      </tr>
+      <tr class="table-row sortable-item" data-value="launch">
+        <td class="table-cell"><button type="button" class="sortable-handle" aria-pressed="false" aria-label="Move Launch support"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="4" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="4" r="1" fill="currentColor" stroke="none"/><circle cx="6" cy="8" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="8" r="1" fill="currentColor" stroke="none"/><circle cx="6" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="12" r="1" fill="currentColor" stroke="none"/></svg></button></td>
+        <td class="table-cell table-primary">Launch support</td>
+        <td class="table-cell table-numeric">1,800</td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="sortable-status" role="status"></p>
+</div>`} caption="The lines of a quote, in the order the client reads them." />
+
+- **The row is drawn as it is.** A table gives a column to every box a row generates, even one out of flow, and moves every cell after it, so the carried row draws nothing of its own: the cell that holds the handle draws its sheet, placed against the row and as large as it, since the row's cells have padding of their own. No cell moves, whatever the table's layout, and `--sortable-inset` does not apply. The rule under each of its cells stays out of the sheet.
+- **The status region** cannot stand in the body, which holds only rows, nor between the table's parts. Put it right after the `<table>`, where the behavior looks for it.
+- **In a box that scrolls.** A table wider than its column stands in a box that scrolls across. The carried row's sheet is the row, so it stays inside the box, which only cuts the shadow at its edges. A body never scrolls itself: while the pointer is near an end of the box the table stands in, or of the page, the behavior scrolls that.
+
 ## The behavior \{#behavior\}
 
 `sortable` takes the root, the element with the `sortable` class, and returns the function that detaches it.
@@ -79,10 +122,10 @@ const priorities = sortable(document.querySelector('.sortable'))
 priorities.value // ['onboarding', 'billing', 'search', 'exports']
 ```
 
-- **The pointer.** A press on a handle that moves more than 4px picks the item up; less is a press. The handle says `aria-pressed="true"` while it is carried, the item follows the pointer and the items it passes make room. Where it would land is read from where the items stand in the layout, not from the room they are making, so the place never chases itself. The release moves it, and <kbd class="kbd">Escape</kbd> puts it back while the others glide home. A list that scrolls is scrolled while the pointer is near one of its ends, faster the further in it is. Only the pointer that started the drag moves it.
+- **The pointer.** A press on a handle that moves more than 4px picks the item up; less is a press. The handle says `aria-pressed="true"` while it is carried, the item follows the pointer and the items it passes make room. Where it would land is read from where the items stand in the layout, not from the room they are making, so the place never chases itself. The release moves it, and <kbd class="kbd">Escape</kbd> puts it back while the others glide home. While the pointer is near an end of what scrolls the list, the list itself, the box it stands in or the page, that is scrolled, faster the further in it is, and the item stays under the pointer however the page moves beneath it, the wheel's scrolling included. Only the pointer that started the drag moves it.
 - **Without a drag.** A press on a handle that does not move, a click or a tap, picks the item up as <kbd class="kbd">Enter</kbd> does and focuses its handle. A press on another item's handle moves it to that place and drops it; a press on its own handle drops it where it is. A pointer that cannot drag, and a screen reader's double tap, sort the list this way.
 - **The keys.** <kbd class="kbd">Enter</kbd> or <kbd class="kbd">Space</kbd> on a handle picks the item up. The arrow keys along the list move it one place at a time; they do nothing until an item is picked up, so a screen reader's own arrow keys keep working. <kbd class="kbd">Enter</kbd> or <kbd class="kbd">Space</kbd> drops it, <kbd class="kbd">Escape</kbd> puts it back where it was picked up, and leaving the handle drops it.
-- **What it says.** Each pick, move, drop and cancel is said in the `sortable-status` region, a `role="status"` inside the root or right after it, with the item's name and its place: "Billing, position 3 of 4." Pass `messages` to say it in the page's language.
+- **What it says.** Each pick, move, drop and cancel is said in the `sortable-status` region, a `role="status"` inside the root or right after it, or right after the table when the root is a table's body, with the item's name and its place: "Billing, position 3 of 4." Pass `messages` to say it in the page's language.
 - **The move** is the item node itself moving, with `moveBefore()` where the browser has it, so what the item holds keeps its state: a field's text, a playing video, focus. Elsewhere it is inserted again and its handle is focused again.
 - **Events.** The root dispatches `input` and `change` after a drop that changed the order. The function it returns has a `value`, the order of the items, each one's `data-value` or its text. Set it to put them in that order; that dispatches nothing.
 
@@ -104,7 +147,7 @@ A sortable is one list. Where an item also moves between lists, such as the stag
 
 ## React, Svelte and Vue \{#frameworks\}
 
-The `sortable` component writes the items in the order it holds, attaches the behavior, and moves an item in its own list when the behavior asks, so the framework's rows and the page agree. Copy it into the project with `npx master-ui add sortable`; [React, Svelte and Vue](/guide/frameworks) says how the components are built and used.
+The `sortable` component writes the items in the order it holds, attaches the behavior, and moves an item in its own list when the behavior asks, so the framework's rows and the page agree. Copy it into the project with `npx master-ui add sortable`; [React, Svelte and Vue](/guide/frameworks) says how the components are built and used. It writes a list. For the rows of a table, render the table in the framework and attach the behavior to its body with `move`, which hands each move to the framework's own rows, as the component does.
 
 <FrameworkSource name="sortable" />
 
@@ -118,7 +161,7 @@ The `sortable` component writes the items in the order it holds, attaches the be
 
 ## Related \{#related\}
 
-<ComponentLinks slugs={['list', 'card', 'swipe', 'kanban']} />
+<ComponentLinks slugs={['list', 'card', 'table', 'swipe', 'kanban']} />
 
 ## Source \{#source\}
 

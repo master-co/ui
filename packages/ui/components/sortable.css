@@ -1,17 +1,23 @@
 /*
  * Sortable: a list whose items are put in order by dragging a handle or with the keys.
- * It has no row of its own: it is put on a list, a stack of cards or anything that holds items, and adds
- * three things. The handle, a quiet grip that says the item can be carried. The carried item, which lifts:
- * a raised sheet grows around it a little past its edges, so its content does not move, with the lifted
- * shadow and a slight swell, and it follows the pointer through --sortable-offset. And the room it would land
- * in: the items between its place and that one glide aside by --sortable-size, so the gap is where it goes,
- * and nothing under the pointer answers it while they do.
+ * It has no row of its own: it is put on a list, a stack of cards, the body of a table or anything that holds
+ * items, and adds three things. The handle, a quiet grip that says the item can be carried. The carried item,
+ * which keeps the size and the drawing it has at rest, so nothing in it moves or blurs, and rises: it stands
+ * on a raised sheet with the floating shadow and follows the pointer through --sortable-offset. The sheet
+ * reaches past an item whose words stand on its edges, such as a list's row, by --sortable-inset; an item with
+ * a face of its own, a card, sets it to 0, and a table's row, whose cells have padding, is its own sheet. And
+ * the room it would land in: the items between its place and that one glide aside by --sortable-size, so the
+ * gap is where it goes, and nothing under the pointer answers it while they do.
+ * A table's row generates no box of its own: one generated on a row, even out of flow, is a cell to the table,
+ * which gives it a column and moves every cell after it. So the cell that holds the handle draws the row's
+ * sheet, placed against the row, and the rules the cells draw are what part the rows.
  * The behavior moves the node once, on the drop, inside a view transition where there is one; the items that
  * made room are already where they land, so only the carried one travels.
  */
 @layer components.ui {
   .sortable {
     --sortable-radius: var(--radius-control);
+    --sortable-inset: .5rem;
 
     /*
      * While an item is carried, the cursor is a closed hand wherever the pointer goes, and the items it passes
@@ -49,7 +55,7 @@
   .sortable-item {
     position: relative;
     scroll-margin: .5rem;
-    transition-property: translate, scale;
+    transition-property: translate;
     transition-duration: var(--duration-base);
     transition-timing-function: var(--easing-glide);
 
@@ -62,27 +68,17 @@
       translate: 0 var(--sortable-size, 0px);
     }
 
-    /* Carried: above the others, a little larger, on a raised sheet, and under the pointer. */
+    /*
+     * Carried: above the others and under the pointer, at the size it has at rest. The pointer moves it: no
+     * easing between the pointer and the item.
+     */
     &:has(.sortable-handle[aria-pressed="true"]) {
       z-index: 2;
-      scale: 1.015;
       translate: 0 var(--sortable-offset, 0px);
       pointer-events: none;
-      /* The pointer moves it: no easing between the pointer and the item. */
-      transition-property: scale;
+      transition-property: none;
 
-      &::before {
-        content: '';
-        position: absolute;
-        inset: -.25rem -.5rem;
-        z-index: -1;
-        border-radius: calc(var(--sortable-radius) * var(--corner-scale));
-        corner-shape: var(--corner-shape);
-        @apply --surface-sheet;
-        box-shadow: var(--shadow-lifted);
-      }
-
-      /* A rule the row draws under itself, such as a list's hairline, stays with the row it parted. */
+      /* A rule the row draws under itself, such as a list's hairline, does not travel with it. */
       &::after {
         opacity: 0;
       }
@@ -90,17 +86,51 @@
 
     @media (prefers-reduced-motion: reduce) {
       transition-property: none;
-
-      &:has(.sortable-handle[aria-pressed="true"]) {
-        scale: 1;
-      }
     }
+  }
+
+  /*
+   * The sheet a carried item stands on, under what it holds: past its sides by --sortable-inset and past its top
+   * and bottom by half as much. In a table's row the cell that holds the handle draws it, against the row.
+   * One selector, not a list: a mixin applied to a list puts the list in :is(), where a pseudo-element is invalid
+   * and the whole rule is dropped.
+   */
+  :is(.sortable-item:not(.table-row):has(.sortable-handle[aria-pressed="true"]), .sortable-item.table-row:has(.sortable-handle[aria-pressed="true"]) .table-cell:has(.sortable-handle))::before {
+    content: '';
+    position: absolute;
+    inset: calc(var(--sortable-inset) * -.5) calc(var(--sortable-inset) * -1);
+    z-index: -1;
+    border-radius: calc(var(--sortable-radius) * var(--corner-scale));
+    corner-shape: var(--corner-shape);
+    @apply --surface-sheet;
+    box-shadow: var(--shadow-floating);
+    pointer-events: none;
 
     @media (forced-colors: active) {
-      &:has(.sortable-handle[aria-pressed="true"])::before {
-        outline: 2px solid Highlight;
-      }
+      outline: 2px solid Highlight;
     }
+  }
+
+  /*
+   * A table's row, carried: the sheet is the row, as wide and as tall as it, and no rule a cell draws under itself
+   * travels with it. The row's own tone and shadow, a selected row's, square at their corners, give way to the sheet.
+   */
+  .sortable-item.table-row:has(.sortable-handle[aria-pressed="true"]) {
+    background: none;
+    box-shadow: none;
+
+    .table-cell {
+      border-block-end-color: transparent;
+    }
+
+    .table-cell:has(.sortable-handle)::before {
+      inset: 0;
+    }
+  }
+
+  /* The handle holds the pointer, so the row stays under it: an interactive table's tone gives way too. */
+  .table-interactive .sortable-item.table-row:has(.sortable-handle[aria-pressed="true"]):is(:hover, :active) {
+    background: none;
   }
 
   /* Across: the items run along the line, and both the offset and the room are horizontal. */
