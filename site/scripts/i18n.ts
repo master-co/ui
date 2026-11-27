@@ -4,13 +4,18 @@
  *   node --import tsx scripts/i18n.ts audit                     every problem the production gate would report
  *   node --import tsx scripts/i18n.ts keys                      the interface keys, and the ones each language lacks
  *   node --import tsx scripts/i18n.ts review <locale> <id>...   record an independent review of those editions
+ *   node --import tsx scripts/i18n.ts rehash                    move unchanged reviews to the current source fingerprint
  *
  * A review records the hashes of the English source and of the translation as they stand. Run it only after a
  * reviewer other than the translator has compared the whole edition with its source and read it rendered.
  * Preparation and builds never call it.
+ *
+ * A source fingerprint leaves out an imported component's own <style> block. Reviews recorded before that stay valid
+ * while nothing they cover changes; rehash moves each one whose source and translation are exactly as reviewed to the
+ * current fingerprint, so a later style change leaves it valid too. It extends no review to content nobody read.
  */
 import { readFile, writeFile } from 'node:fs/promises'
-import { auditTranslations, reviewTranslation, type TranslationReviews } from '@master/internal-site/build/localization.ts'
+import { auditTranslations, rehashTranslationReviews, reviewTranslation, type TranslationReviews } from '@master/internal-site/build/localization.ts'
 import translationResources, { missingUIKeys, productUIKeys, translatedLocales } from '../i18n/resources.ts'
 
 const reviewsFile = new URL('../i18n/reviews.json', import.meta.url)
@@ -31,6 +36,10 @@ if (command === 'keys') {
   }
   reviews.resources = Object.fromEntries(Object.entries(reviews.resources).sort(([a], [b]) => a.localeCompare(b)))
   await writeFile(reviewsFile, JSON.stringify(reviews, null, 2) + '\n')
+} else if (command === 'rehash') {
+  const { reviews: moved, moved: count } = rehashTranslationReviews(await translationResources(), reviews)
+  await writeFile(reviewsFile, JSON.stringify(moved, null, 2) + '\n')
+  console.log(`Moved ${count} unchanged reviews to the current source fingerprint.`)
 } else if (command === 'audit' || !command) {
   const resources = await translationResources()
   const diagnostics = auditTranslations(resources, reviews)
