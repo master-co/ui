@@ -2,11 +2,21 @@
  * Choice: an option large enough to explain itself: a plan, a method, a setting with a sentence under it.
  * It is a <label> around a native radio or checkbox, so the whole face is the target and the input keeps the
  * state and the keys. At rest it is a flat face on one contour; chosen, it rises and its contour turns to ink.
+ * The input, a picture and the title stand on the title's first line, and what stands at the end shares its baseline.
  */
+
+/* The height of the choice's line, computed where the choice declares it, for the parts that center on it. */
+@property --choice-line {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0px;
+}
+
 @layer components.ui {
   .choice {
     --choice-padding: .875rem;
     --choice-radius: var(--radius-control-lg);
+    --choice-line: 1lh;
     position: relative;
     display: flex;
     align-items: flex-start;
@@ -132,6 +142,17 @@
     overflow-wrap: anywhere;
   }
 
+  /*
+   * A picture before the words: an avatar, an icon frame, a logo. It keeps its own size and is centered on the
+   * title's first line, as the input is, so the three read as one line and the description runs on under the title.
+   * A picture taller than the line reaches above and below it without moving the words.
+   */
+  .choice-media {
+    flex: none;
+    align-self: flex-start;
+    translate: 0 calc(var(--choice-line) / 2 - 50%);
+  }
+
   /* A price, a badge or a figure at the end of the first line. */
   .choice-end {
     flex: none;
@@ -146,33 +167,51 @@
    */
   .choice:has(.choice-end:not([hidden])) {
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-columns: [input] auto [words] minmax(0, 1fr) [end] auto;
     align-items: start;
     /* Stretched by a row of taller neighbors, the rows stay at the top, as the flex choice's words do. */
     align-content: start;
     gap: .125rem .75rem;
 
+    &:has(.choice-media:not([hidden])) {
+      grid-template-columns: [input] auto [media] auto [words] minmax(0, 1fr) [end] auto;
+    }
+
     .choice-body:not([hidden]) {
       display: contents;
     }
 
+    /* The picture spans both rows, so a picture taller than the title's line does not push the description down. */
+    .choice-media {
+      grid-row: 1 / span 2;
+      grid-column: media;
+    }
+
+    /*
+     * The title and the end share a baseline: a price set larger than the title sits on the title's line. The end
+     * gives back a line of its height above, so however large it is set, it never pushes the title, and the input
+     * and the picture beside the title, down.
+     */
     .choice-title {
       grid-row: 1;
-      grid-column: 2;
+      grid-column: words;
+      align-self: baseline;
     }
 
     .choice-description {
       grid-row: 2;
-      grid-column: 2 / -1;
+      grid-column: words / -1;
     }
 
     .choice-end {
       grid-row: 1;
-      grid-column: 3;
+      grid-column: end;
+      align-self: baseline;
+      margin-block-start: -1lh;
     }
   }
 
-  :is(.choice, .choice-body)[hidden]:not([hidden="until-found" i]) {
+  :is(.choice, .choice-body, .choice-media)[hidden]:not([hidden="until-found" i]) {
     display: none;
   }
 }
