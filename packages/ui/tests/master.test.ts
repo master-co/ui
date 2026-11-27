@@ -56,6 +56,29 @@ test('the compiled library keeps its rules in components.ui and puts none in com
 })
 
 /**
+ * A pseudo-element inside :is(), :where(), :not() or :has() is invalid, and a browser drops the whole rule without a
+ * word. The compiler writes a mixin applied to a selector list as one rule on :is(<the list>), so a list whose
+ * selectors end in ::after lost the vote's touch target, and one ending in ::before the sortable's sheet, while every
+ * other test passed. Write one selector with the pseudo-element outside, `:is(.a, .b)::after`, instead.
+ */
+test('no compiled selector puts a pseudo-element inside :is(), :where(), :not() or :has()', () => {
+  const { css } = compile(imports)
+  const pseudoElement = /::?(?:before|after|marker|placeholder|backdrop|selection|first-line|first-letter|file-selector-button)\b|::[\w-]+/
+  const dropped = new Set<string>()
+  for (const match of css.matchAll(/:(?:is|where|not|has)\(/g)) {
+    let at = match.index + match[0].length
+    for (let depth = 1; at < css.length && depth; at++) {
+      if (css[at] === '(') depth++
+      else if (css[at] === ')') depth--
+    }
+    if (pseudoElement.test(css.slice(match.index + match[0].length, at - 1))) {
+      dropped.add(css.slice(css.lastIndexOf('}', match.index) + 1, css.indexOf('{', at)).trim())
+    }
+  }
+  assert.deepEqual([...dropped], [], 'these rules are invalid in every browser')
+})
+
+/**
  * A component class that is also a preset utility is painted twice, and the utility wins. `list-item` would
  * turn a flex row into `display: list-item`. The table parts are the exception on purpose: their utilities
  * set the display those parts have, so the same classes lay out a table built from roles.

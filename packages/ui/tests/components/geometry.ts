@@ -24,6 +24,7 @@ export const geometryMarkup = `
   <div class="input-group" data-trailing-popover><input class="input-group-field" aria-label="Starts" value="2026-11-04" readonly><button class="btn btn-quiet btn-square" type="button" popovertarget="geometry-picker" aria-label="Choose a date">D</button><div id="geometry-picker" class="popover" popover>Calendar</div></div>
   <div class="btn-group" data-split><button class="btn" type="button">Save</button><button class="btn btn-square" type="button" popovertarget="geometry-split" aria-label="More save options">V</button><div id="geometry-split" class="menu" popover><button type="button" class="menu-item">Save as</button></div></div>
   <div class="segmented"><button type="button" class="segmented-item" aria-pressed="true">Preview</button><button type="button" class="segmented-item" aria-pressed="false">Code</button><button type="button" class="segmented-item" disabled>Unavailable</button></div>
+  <fieldset class="vote" aria-label="Vote on this answer" style="--votes: 41"><input type="radio" class="vote-up" name="geometry-vote" value="up" aria-label="Upvote"><output class="vote-score"></output><input type="radio" class="vote-down" name="geometry-vote" value="down" aria-label="Downvote"></fieldset>
   <div class="tabs"><button type="button" class="tabs-item" role="tab" aria-selected="true">Overview</button><button type="button" class="tabs-item" role="tab" aria-selected="false">Usage</button><button type="button" class="tabs-item" role="tab" disabled>Unavailable</button></div>
   <button type="button" class="btn" popovertarget="geometry-menu">Actions</button>
   <div id="geometry-menu" class="menu" popover><button type="button" class="menu-item">Rename</button><button type="button" class="menu-item" disabled>Unavailable</button><button type="button" class="menu-item" aria-disabled="true">Unavailable action</button><label class="menu-item menu-item-danger"><input class="menu-input" type="checkbox" disabled>Unavailable choice</label></div>
@@ -78,8 +79,9 @@ export async function verifyComponentGeometry(browser: Browser, { theme, scheme,
         childCode: { radius: read.radius('.code-panel .code-block'), shadow: read.style('.code-panel .code-block').boxShadow, background: read.style('.code-panel .code-block').backgroundColor },
         controlHeights: [...document.querySelectorAll('[data-control]')].map(element => element.getBoundingClientRect().height),
         fieldFonts: [...document.querySelectorAll('input[data-control], select[data-control], .input-group')].map(element => getComputedStyle(element).fontSize),
-        // Where a finger lands: the point 3px past the top edge of a button and a segment, and what takes it there.
-        reach: ['.btn[data-control]', '.segmented-item'].map(selector => {
+        // Where a finger lands: the point 3px past the top edge of a button, a segment and a vote's arrow, and what
+        // takes it there.
+        reach: ['.btn[data-control]', '.segmented-item', '.vote-up'].map(selector => {
           const element = document.querySelector(selector)!, box = element.getBoundingClientRect()
           const above = document.elementFromPoint(box.left + box.width / 2, box.top - 3)
           return { selector, height: box.height, taken: above === element || element.contains(above) }
