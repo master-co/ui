@@ -148,10 +148,10 @@ const timed = (each: ShownToast) => each.status !== 'pending' && each.duration !
         <p v-if="each.description !== undefined" class="toast-description" :id="each.title === undefined ? `toast-${each.id}` : undefined">{{ each.description }}</p>
       </div>
       <form v-if="each.action" method="dialog" class="toast-action">
-        <button class="btn btn-sm" @click="each.action.onClick">{{ each.action.label }}</button>
+        <button class="btn btn-xs" @click="each.action.onClick">{{ each.action.label }}</button>
       </form>
       <form method="dialog" class="toast-close">
-        <button class="btn btn-quiet btn-square btn-sm" :aria-label="dismissLabel">
+        <button class="btn btn-quiet btn-square btn-xs" :aria-label="dismissLabel">
           <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4L12 12" /><path d="M4 12L12 4" /></svg>
         </button>
       </form>

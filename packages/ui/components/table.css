@@ -79,6 +79,8 @@
     content: '';
     display: inline-block;
     flex: none;
+    /* Centered on the words, and out of the baseline, so the button lends its row the words' baseline. */
+    align-self: center;
     width: .75rem;
     height: .75rem;
     visibility: hidden;
@@ -126,12 +128,14 @@
 
   /*
    * A button in a heading that changes the order: the heading's own words, which sit on a chip under the pointer.
-   * It reaches 4px and 6px past its words, so they stay where a heading without one has them.
+   * It reaches 4px and 6px past its words, so they stay where a heading without one has them. Its words stand
+   * on the baseline: a chevron that leads them, on a numeric column, has none, and would hand the heading's row
+   * its own foot and lift the words above the other headings'.
    */
   .table-sort {
     position: relative;
     display: inline-flex;
-    align-items: center;
+    align-items: baseline;
     margin: -.25rem -.375rem;
     padding: .25rem .375rem;
     border: 0;
@@ -242,12 +246,12 @@
     }
 
     /*
-     * A selected row rises one step as a sheet, so it reads apart from the pointer's tone. The row paints it,
-     * not its cells, so no seam shows where two cells meet. Say it with aria-selected as well as with its checkbox.
+     * A selected row is a sheet in an ink hairline, so it reads apart from the pointer's tone and from the sheet
+     * a table stands in, whose face is the same. The row paints the face, not its cells, so no seam shows where
+     * two cells meet. Say it with aria-selected as well as with its checkbox.
      */
     &[aria-selected="true"] {
       @apply --surface-sheet;
-      box-shadow: var(--shadow-raised);
 
       /* Forced colors take the tone away; an outline inside the row keeps it chosen. */
       @media (forced-colors: active) {
@@ -255,6 +259,42 @@
         outline-offset: -2px;
       }
     }
+  }
+
+  /*
+   * A row paints no shadow, so its cells draw the hairline: a line along the top and the foot of each, and the
+   * end cells close it with a side and a corner. The rules above and under the row give way to it.
+   */
+  .table-row[aria-selected="true"] .table-cell {
+    border-block-end-color: transparent;
+    box-shadow: inset 0 .5px 0 var(--color-text-strong), inset 0 -.5px 0 var(--color-text-strong);
+
+    &:nth-child(1 of :not([hidden])) {
+      border-start-start-radius: calc(var(--radius-control-sm) * var(--corner-scale));
+      border-end-start-radius: calc(var(--radius-control-sm) * var(--corner-scale));
+      corner-shape: var(--corner-shape);
+      box-shadow: inset .5px 0 0 var(--color-text-strong), inset 0 .5px 0 var(--color-text-strong), inset 0 -.5px 0 var(--color-text-strong);
+    }
+
+    &:nth-last-child(1 of :not([hidden])) {
+      border-start-end-radius: calc(var(--radius-control-sm) * var(--corner-scale));
+      border-end-end-radius: calc(var(--radius-control-sm) * var(--corner-scale));
+      corner-shape: var(--corner-shape);
+      box-shadow: inset -.5px 0 0 var(--color-text-strong), inset 0 .5px 0 var(--color-text-strong), inset 0 -.5px 0 var(--color-text-strong);
+    }
+
+    /* Right to left the end cells trade sides: the start cell's line is on its right. */
+    &:dir(rtl):nth-child(1 of :not([hidden])) {
+      box-shadow: inset -.5px 0 0 var(--color-text-strong), inset 0 .5px 0 var(--color-text-strong), inset 0 -.5px 0 var(--color-text-strong);
+    }
+
+    &:dir(rtl):nth-last-child(1 of :not([hidden])) {
+      box-shadow: inset .5px 0 0 var(--color-text-strong), inset 0 .5px 0 var(--color-text-strong), inset 0 -.5px 0 var(--color-text-strong);
+    }
+  }
+
+  .table-row:has(+ .table-row[aria-selected="true"]) .table-cell {
+    border-block-end-color: transparent;
   }
 
   /* Rows that can be opened or selected answer the pointer at once, like rows in a menu. */

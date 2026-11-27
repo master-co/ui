@@ -106,7 +106,7 @@ Pick the drawing by the size the component gives the icon: 16 up to 17px, 20 for
 | Reveal | `reveal` |
 | Icon | `icon` |
 | Icon frame | `icon-frame`, `icon-frame-xs`, `icon-frame-sm`, `icon-frame-lg`, `icon-frame-raised`, `icon-frame-info`, `icon-frame-success`, `icon-frame-warning`, `icon-frame-danger`, `icon-frame-category` |
-| Button | `btn`, `btn-primary`, `btn-quiet`, `btn-brand`, `btn-danger`, `btn-sm`, `btn-lg`, `btn-square`, `btn-pill`, `btn-hang-start`, `btn-hang-end`, `btn-group` |
+| Button | `btn`, `btn-primary`, `btn-quiet`, `btn-brand`, `btn-danger`, `btn-xs`, `btn-sm`, `btn-lg`, `btn-square`, `btn-pill`, `btn-hang-start`, `btn-hang-end`, `btn-group` |
 | Toolbar | `toolbar`, `toolbar-floating`, `toolbar-separator` |
 | Link | `link`, `link-quiet` |
 | Skip link | `skip` |

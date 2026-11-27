@@ -179,6 +179,62 @@
 
   }
 
+  /*
+   * Narrow: a row under 30rem has no room for every title (three short ones need about 19rem, four about 26rem),
+   * and squeezed equally they all ended in an ellipsis of a letter or two, a link's among them. There only the
+   * current step keeps its words. Every other step is its marker and its line, and its title stands on the
+   * marker with its words out of sight: still what assistive technology reads, and still the link a complete
+   * step's title is, its focus ring round the marker.
+   */
+  .steps:where(:not(.steps-vertical)) {
+    container: steps / inline-size;
+  }
+
+  @container steps (inline-size < 30rem) {
+    .steps:where(:not(.steps-vertical)) {
+      .steps-item:not([aria-current="step"]) {
+        /* All four lines: for a positioned item an auto end line is the item's edge, not the marker's. */
+        .steps-title {
+          position: absolute;
+          inset: 0;
+          grid-area: 1 / 1 / 2 / 2;
+          border-radius: 999px;
+          corner-shape: round;
+          color: transparent;
+        }
+
+        .steps-description {
+          position: absolute;
+          width: 1px;
+          height: 1px;
+          overflow: hidden;
+          clip-path: inset(50%);
+          white-space: nowrap;
+        }
+
+        /* The line keeps the row's gap on both sides, from this marker and to the next. */
+        &:not(:last-child) {
+          grid-template-columns: var(--steps-marker) minmax(.5rem, 1fr);
+          column-gap: var(--steps-gap);
+
+          &::after {
+            grid-area: 1 / 2;
+            min-width: .5rem;
+          }
+        }
+      }
+
+      /* The current step takes the room its words need, and gives it up to an ellipsis only past the row. */
+      .steps-item[aria-current="step"] {
+        flex: 0 1 auto;
+
+        &:not(:last-child)::after {
+          min-width: .5rem;
+        }
+      }
+    }
+  }
+
   /* Vertical: the marker stands on a column and the line runs down from it to the next marker. */
   .steps-vertical .steps-item {
     flex: none;

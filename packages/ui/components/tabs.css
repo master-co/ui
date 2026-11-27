@@ -2,6 +2,9 @@
  * Tabs: words on one hairline; the current one is underlined in ink.
  * The current tab keeps its weight so the row never shifts between states.
  * With anchor positioning the underline is one mark that glides to the current tab.
+ * Each tab reaches 6px past its words, so the focus ring drawn inside it stands clear of them, and the row
+ * hangs out by as much at both ends: the first word stays on the edge the content under it starts on, the
+ * hairline and the underline keep to the words, and the scroller does not cut the ring of a tab at an end.
  */
 @layer components.ui {
   .tabs {
@@ -10,10 +13,11 @@
     --tabs-font-size: var(--font-size-body);
     --icon-size: 1rem;
     display: flex;
-    gap: 0 var(--tabs-gap);
+    gap: 0 max(0px, var(--tabs-gap) - .75rem);
+    margin-inline: -.375rem;
     overflow-x: auto;
     overscroll-behavior-x: contain;
-    box-shadow: inset 0 -1px 0 var(--color-line-divider);
+    background: linear-gradient(var(--color-line-divider), var(--color-line-divider)) 50% 100% / calc(100% - .75rem) 1px no-repeat;
     scrollbar-width: none;
     /* The script listens on the whole row: a tap in the space between tabs must not flash it grey on iOS. */
     -webkit-tap-highlight-color: transparent;
@@ -25,7 +29,9 @@
       --icon-size: .875rem;
     }
 
+    /* The drawn hairline gives way to a rule in the system's color, under the words as the hairline is. */
     @media (forced-colors: active) {
+      background: none;
       border-bottom: 1px solid CanvasText;
     }
   }
@@ -38,7 +44,7 @@
     gap: .375rem;
     min-height: var(--tabs-item-height);
     margin: 0;
-    padding: 0;
+    padding: 0 .375rem;
     border: 0;
     border-radius: 0;
     background: none;
@@ -51,7 +57,7 @@
     -webkit-tap-highlight-color: transparent;
     cursor: pointer;
     touch-action: manipulation;
-    transition-property: color, box-shadow;
+    transition-property: color;
     transition-duration: var(--duration-quick);
     transition-timing-function: var(--easing-glide);
     user-select: none;
@@ -68,9 +74,10 @@
       color: var(--color-text-strong);
     }
 
+    /* The underline keeps to the words, inside the reach on either side. */
     &:is([aria-current="page"], [aria-selected="true"]) {
+      background: linear-gradient(var(--color-text-strong), var(--color-text-strong)) 50% 100% / calc(100% - .75rem) 2px no-repeat;
       color: var(--color-text-strong);
-      box-shadow: inset 0 -2px 0 var(--color-text-strong);
     }
 
     &:focus-visible {
@@ -91,6 +98,7 @@
 
     @media (forced-colors: active) {
       &:is([aria-current="page"], [aria-selected="true"]) {
+        background: none;
         border-bottom: 2px solid Highlight;
       }
     }
@@ -100,8 +108,10 @@
   .tabs[aria-orientation="vertical"] {
     --tabs-edge: 1px;
     flex-direction: column;
+    margin-inline: 0;
     overflow: hidden auto;
     overscroll-behavior: auto contain;
+    background: none;
     box-shadow: inset var(--tabs-edge) 0 0 var(--color-line-divider);
 
     &:dir(rtl) {
@@ -114,6 +124,7 @@
     }
 
     .tabs-item[aria-selected="true"] {
+      background: none;
       box-shadow: inset calc(2 * var(--tabs-edge)) 0 0 var(--color-text-strong);
     }
 
@@ -141,9 +152,9 @@
         content: '';
         position: absolute;
         position-anchor: --tabs-mark;
-        right: anchor(right);
+        right: calc(anchor(right) + .375rem);
         bottom: 0;
-        left: anchor(left);
+        left: calc(anchor(left) + .375rem);
         height: 2px;
         border-radius: 2px 2px 0 0;
         background: var(--color-text-strong);
@@ -155,7 +166,9 @@
 
       &[aria-orientation="vertical"]:has(.tabs-item[aria-selected="true"])::after {
         top: anchor(top);
+        right: auto;
         bottom: anchor(bottom);
+        left: auto;
         inset-inline: 0 auto;
         width: 2px;
         height: auto;
@@ -164,6 +177,7 @@
       }
 
       &[aria-orientation="vertical"] .tabs-item[aria-selected="true"] {
+        background: none;
         box-shadow: none;
       }
 
@@ -183,7 +197,7 @@
 
     .tabs-item:is([aria-current="page"], [aria-selected="true"]) {
       anchor-name: --tabs-mark;
-      box-shadow: none;
+      background: none;
     }
   }
 

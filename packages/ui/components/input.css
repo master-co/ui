@@ -137,6 +137,14 @@
       mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.25' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='8' cy='8' r='6'/%3E%3Cpath d='M8 4.3333L8 7.8892A0.2 0.2 0 0 0 8.094 8.0588L10.6667 9.6667'/%3E%3C/svg%3E");
     }
 
+    /*
+     * Chromium draws the same part at the end of a field with suggestions (a list attribute naming a datalist):
+     * there it opens the suggestions, so it is the select's chevron, not a calendar.
+     */
+    &[list]:not([type="date"], [type="month"], [type="week"], [type="datetime-local"], [type="time"])::-webkit-calendar-picker-indicator {
+      mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.25' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 3.5L10.3586 7.8586A0.2 0.2 0 0 1 10.3586 8.1414L6 12.5' transform='rotate(90 8 8)'/%3E%3C/svg%3E");
+    }
+
     /* The upper half of the mark steps up and the lower half steps down, as the browser's own does. */
     &::-webkit-inner-spin-button {
       width: 1rem;
@@ -486,8 +494,12 @@
         min-height: calc(var(--input-height) - var(--input-inset) * 2);
       }
 
+      /*
+       * The words typed after the chips start as far in as a chip's words do, so a field that wraps to a line
+       * of its own keeps the edge of the chips' words above it.
+       */
       .chip + .input-group-field {
-        margin-inline-start: .25rem;
+        margin-inline-start: .5rem;
       }
     }
 
@@ -608,6 +620,14 @@
       mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.25' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='8' cy='8' r='6'/%3E%3Cpath d='M8 4.3333L8 7.8892A0.2 0.2 0 0 0 8.094 8.0588L10.6667 9.6667'/%3E%3C/svg%3E");
     }
 
+    /*
+     * Chromium draws the same part at the end of a field with suggestions (a list attribute naming a datalist):
+     * there it opens the suggestions, so it is the select's chevron, not a calendar.
+     */
+    &[list]:not([type="date"], [type="month"], [type="week"], [type="datetime-local"], [type="time"])::-webkit-calendar-picker-indicator {
+      mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.25' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 3.5L10.3586 7.8586A0.2 0.2 0 0 1 10.3586 8.1414L6 12.5' transform='rotate(90 8 8)'/%3E%3C/svg%3E");
+    }
+
     /* The upper half of the mark steps up and the lower half steps down, as the browser's own does. */
     &::-webkit-inner-spin-button {
       width: 1rem;
@@ -714,6 +734,18 @@
   }
 
   /*
+   * A field whose control cannot be used steps its label back with it, as a disabled group's legend does. The
+   * guidance keeps its own ink: it may say why the control is unavailable.
+   */
+  .field:has(:is(.input, .select, .input-group-field):disabled) {
+    color: var(--color-text-disabled);
+
+    @media (forced-colors: active) {
+      color: GrayText;
+    }
+  }
+
+  /*
    * Guidance sits closer to its control than the label does: 6px below against 8px above. An error often quotes
    * what was typed, an address or a link, so it breaks anywhere rather than widen the form.
    */
@@ -772,9 +804,14 @@
       @apply --focus-ring;
     }
 
+    /*
+     * On touch the target reaches 44px, except toward the control under the label: there it stops halfway down
+     * the field's gap, so a tap on the top of the control focuses the control instead of opening the help.
+     */
     @media (pointer: coarse) {
       &::after {
         @apply --touch-target;
+        inset-block-end: -.25rem;
       }
     }
 

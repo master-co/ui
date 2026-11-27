@@ -44,12 +44,18 @@
     }
   }
 
-  /* A step: a link, or the current page with aria-current="page". Long names end in an ellipsis. */
+  /*
+   * A step: a link, or the current page with aria-current="page". Long names end in an ellipsis. The clip lets a
+   * margin of the link's own through, where its touch target reaches; the ellipsis is still cut at its edge.
+   */
   .breadcrumb-link {
+    position: relative;
     max-width: 16rem;
     border-radius: calc((var(--radius-chip) - 2px) * var(--corner-scale));
     corner-shape: var(--corner-shape);
     overflow: hidden;
+    overflow: clip;
+    overflow-clip-margin: .875rem;
     color: inherit;
     text-decoration: none;
     text-overflow: ellipsis;
@@ -76,6 +82,23 @@
     &:focus-visible {
       @apply --focus-ring;
     }
+
+    /* On touch a step is 44px tall where a finger lands; its words keep their line. */
+    @media (pointer: coarse) {
+      &::after {
+        @apply --touch-target-block;
+      }
+    }
+  }
+
+  /*
+   * A button that stands for folded steps (an ellipsis that opens a menu) draws only its glyph at rest, so it
+   * keeps the line's height and stands as near its separators as a word does: it reaches above and below the
+   * line, and into the gaps beside it, by its own padding, short of the separators.
+   */
+  .breadcrumb-item .btn {
+    margin-block: calc((var(--font-size-secondary) * 1.4 - var(--btn-height)) / 2);
+    margin-inline: calc((var(--icon-size) - var(--btn-height)) / 2 + .25rem);
   }
 
   :is(.breadcrumb, .breadcrumb-item)[hidden]:not([hidden="until-found" i]) {

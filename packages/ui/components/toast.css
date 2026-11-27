@@ -233,6 +233,14 @@
     }
   }
 
+  /*
+   * A picture at the start, where the status icon would stand, centers on the first line as the icon does. The
+   * avatar sets its own type, so the toast's line is written out: its size times its line height.
+   */
+  .toast .avatar {
+    margin-block: calc((var(--font-size-control) * 1.5 - var(--avatar-size)) / 2);
+  }
+
   .toast-body {
     display: grid;
     flex: 1 1 0;
@@ -257,27 +265,39 @@
 
   /*
    * The action: one button that does what the toast offers (Undo, View) and dismisses it. It sits after the
-   * words, on the first line, and takes no more height than the dismiss button beside it. Both are small
-   * 32px buttons pulled 6px into the padding above and below, which centers them on the 20px first line and
-   * keeps them as clear of the top as of the foot of a toast of one line.
+   * words, on the first line, and the button that dismisses the toast sits at the end. Each is a part, or a
+   * form that is the part around its button.
    */
-  .toast-action {
+  .toast-action, .toast-close {
+    /* A form around its button lays it out as an item, not on a line of text, so its margins place it exactly. */
+    display: flex;
     flex: none;
-    margin-block: -.375rem;
   }
 
-  /* The form or button that dismisses the toast sits at the end, pulled into the padding. */
   /*
-   * The close button stands as far in from the toast's end as from its top, 6px each way, so its chip keeps the
-   * concentric corner: the inline padding is .125rem deeper than the block, so it reaches .125rem farther.
+   * Both buttons center on the 20px first line, reaching as far above and below it as they are taller, so a
+   * toast of one line is no taller for them. An extra small button (btn-xs, 28px), the size a toast holds, then
+   * stands 8px from the top. The line is the toast's own, its control size at 1.5, which a button cannot read as 1lh.
    */
-  .toast-close {
-    flex: none;
-    margin-block: -.375rem;
-    margin-inline: 0 -.5rem;
+  :is(.toast-action, .toast-close):is(.btn), :is(.toast-action, .toast-close) .btn {
+    margin-block: calc((var(--font-size-control) * 1.5 - var(--btn-height)) / 2);
   }
 
-  :is(.toast-region, .toast, .toast-body)[hidden]:not([hidden="until-found" i]) {
+  /*
+   * A toast that ends with one of them gives its end padding to the same 8px, so the last button stands as far
+   * from the end as from the top, whether it is the part or a form around it; and that button's corner is the
+   * toast's less the inset, so its chip, or the action's face, is concentric with the toast.
+   */
+  .toast:has(.toast-action, .toast-close) {
+    padding-inline-end: calc(.75rem + (var(--font-size-control) * 1.5 - 1.75rem) / 2);
+  }
+
+  :is(.toast-action, .toast-close):nth-last-child(1 of .toast-action, .toast-close) .btn,
+  :is(.toast-action, .toast-close):nth-last-child(1 of .toast-action, .toast-close):is(.btn) {
+    --btn-radius: calc(var(--radius-control-lg) - (.75rem + (var(--font-size-control) * 1.5 - var(--btn-height)) / 2) / var(--corner-scale));
+  }
+
+  :is(.toast-region, .toast, .toast-body, .toast-action, .toast-close)[hidden]:not([hidden="until-found" i]) {
     display: none;
     transition-property: none;
   }
