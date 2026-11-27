@@ -5,5 +5,6 @@ export default define({
   description: 'A line with a wash of its color under it, alone or stacked into a total.',
   category: 'Change over time',
   order: 2,
+  addedSections: { percent: '2026-11-28' },
   fileURL: import.meta.url
 })
