@@ -58,6 +58,8 @@ function form({ config, layout, shown, format, nameAxis, scale, round, percent, 
     const end = points[points.length - 1]
     if (start.step === 0) first.push({ y: start.y, text: format(start.number) })
     if (end.step === count - 1) last.push({ y: end.y, text: `${format(end.number)}  ${series.name}` })
+    // A line a missing value ends early is named after its last point, so no series is left unnamed.
+    else layout.values.push({ text: `${format(end.number)}  ${series.name}`, classes: 'chart-value chart-value-across', x: percent(end.x), y: percent(end.y) })
     layout.points.push({
       index,
       label: series.name,

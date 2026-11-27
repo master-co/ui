@@ -542,6 +542,10 @@ export function chartLayout(config = {}) {
     const count = labels.length
     const every = options.across ? 1 : Math.ceil(count / 12)
     const kept = Math.ceil(count / every)
+    // Every other name gives way in a narrow plot when there are many, or when they are too long to stand side by
+    // side in the plot a phone's card gives, about 36 digits wide with a digit's room between two names.
+    const widest = Math.max(0, ...labels.filter((_, index) => !(index % every)).map((text) => width(text ?? '')))
+    const crowded = kept > 7 || kept * (widest + 1) > 36
     for (let index = 0; index < count; index++) {
       const text = labels[index] ?? ''
       if (!text || index % every) continue
@@ -549,7 +553,7 @@ export function chartLayout(config = {}) {
       if (options.across) layout.ticks.push({ text: [...text].length > 18 ? `${[...text].slice(0, 17).join('')}…` : text, classes: 'chart-tick chart-tick-y', x: '0', y: percent(middle(index)), at: null })
       else {
         const edge = options.edges ? (index === 0 ? ' chart-tick-start' : index === count - 1 ? ' chart-tick-end' : '') : ''
-        const minor = kept > 7 && (index / every) % 2 === 1 ? ' chart-tick-minor' : ''
+        const minor = crowded && (index / every) % 2 === 1 ? ' chart-tick-minor' : ''
         layout.ticks.push({ text, classes: `chart-tick chart-tick-x${edge}${minor}`, x: percent(middle(index)), y: '100%', at: null })
       }
     }
@@ -783,11 +787,15 @@ export function chartCore(root, options = {}) {
     if (!point || event.altKey || event.ctrlKey || event.metaKey) return
     const all = points()
     const index = all.indexOf(/** @type {SVGElement} */ (point))
-    const next = event.key === 'ArrowRight' || event.key === 'ArrowDown' ? all[index + 1]
-      : event.key === 'ArrowLeft' || event.key === 'ArrowUp' ? all[index - 1]
-        : event.key === 'Home' ? all[0]
-          : event.key === 'End' ? all[all.length - 1]
-            : null
+    const column = (/** @type {Element} */ each) => Number(/** @type {SVGElement} */ (each).style.getPropertyValue('--chart-x'))
+    // In a grid of cells, a heatmap's, up and down go to the cell above or below in the same column, as in a table.
+    const grid = (event.key === 'ArrowDown' || event.key === 'ArrowUp') && !!point.querySelector('.chart-cell')
+    const next = grid ? (event.key === 'ArrowDown' ? all.slice(index + 1) : all.slice(0, index).reverse()).find((each) => column(each) === column(point))
+      : event.key === 'ArrowRight' || event.key === 'ArrowDown' ? all[index + 1]
+        : event.key === 'ArrowLeft' || event.key === 'ArrowUp' ? all[index - 1]
+          : event.key === 'Home' ? all[0]
+            : event.key === 'End' ? all[all.length - 1]
+              : null
     if (event.key === 'Escape' && tip() && !/** @type {HTMLElement} */ (tip()).hidden) {
       event.preventDefault()
       return hide()

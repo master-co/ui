@@ -41,8 +41,10 @@ function form({ config, layout, shown, format, nameAxis, round, percent, real, w
       { kind: 'path', classes: 'chart-line', category: series.category, d },
       ...points.map((point) => /** @type {ChartMark} */ ({ kind: 'path', classes: 'chart-knot', category: series.category, name: labels[point.step] ?? '', value: `${point.rank} (${format(/** @type {number} */ (series.values?.[point.step]))})`, d: `M${round(point.x)} ${round(point.y)}h0` })),
     ]
+    // Its name stands after its last rank: beside the plot, or after the line where a missing value ends it early,
+    // so a series is never left unnamed.
     const end = points[points.length - 1]
-    if (end.step === count - 1) layout.values.push({ text: series.name, classes: 'chart-value chart-value-across', x: '100%', y: percent(end.y / 100) })
+    layout.values.push({ text: series.name, classes: 'chart-value chart-value-across', x: percent(end.x / 100), y: percent(end.y / 100) })
     layout.tail = Math.max(layout.tail, width(series.name))
     layout.points.push({
       index,

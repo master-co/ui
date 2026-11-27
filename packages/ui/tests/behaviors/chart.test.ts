@@ -290,6 +290,11 @@ test('chartLayout: a box plot is five figures, with a reading far from the other
   const marks = layout.points[0].marks
   assert.deepEqual(marks.filter(mark => mark.name).map(mark => [mark.name, mark.value]), [['Max', '9'], ['Q3', '7.75'], ['Middle', '5.5'], ['Q1', '3.25'], ['Min', '1']], 'the readout lists them from the top')
   assert.deepEqual(marks.filter(mark => mark.classes.includes('chart-dot-outlier')).length, 1)
+  const whiskers = marks.filter(mark => mark.classes === 'chart-whisker' && mark.y1 !== mark.y2).map(mark => [mark.y1, mark.y2])
+  const box = marks.find(mark => mark.classes === 'chart-box')!
+  assert.equal(whiskers.length, 2, 'a whisker on either side of the box')
+  assert.equal(whiskers[0][0], box.y, 'the upper whisker begins at the box\'s top')
+  assert.ok(Math.abs(parseFloat(whiskers[1][1]!) - parseFloat(box.y!) - parseFloat(box.height!)) < 0.01, 'and the lower one ends at its foot, so neither shows through the box when it steps back')
   assert.deepEqual(layout.ticks.filter(tick => tick.classes.includes('chart-tick-x')).map(tick => tick.text), ['Tokyo'])
   assert.equal(layout.legend.length, 0)
 })
@@ -400,6 +405,56 @@ test('chartMarkup: every chart satisfies the contract, and words are escaped', (
   assert.match(markup, /data-name="x &amp; y"/)
 })
 
+test('chartLayout: names too long to stand side by side in a phone\'s plot thin out, and short ones stay', () => {
+  const minor = (layout: ReturnType<typeof chartLayout>) => layout.ticks.filter(tick => tick.classes.includes('chart-tick-minor')).map(tick => tick.text)
+  const months = ['January', 'Sales', 'Refunds', 'Payroll', 'Grants', 'Rent']
+  assert.deepEqual(minor(chartLayout({ type: 'waterfall', total: 'June', labels: months, series: [{ name: 'Cash', values: [420, 310, -64, -280, 90, -110] }] })), ['Sales', 'Payroll', 'Rent'], 'seven names of seven letters would meet under a phone\'s plot')
+  assert.deepEqual(minor(chartLayout({ type: 'bar', labels: week, series: [regions[0]] })), [], 'seven days of three letters all stand')
+  assert.deepEqual(minor(chartLayout({ type: 'bar', labels: ['Control', 'A', 'B', 'C'], series: [{ name: 'Score', values: [52, 61, 58, 70] }] })), [])
+})
+
+test('chartLayout: a histogram\'s scale counts whole readings', () => {
+  const few = chartLayout({ type: 'histogram', series: [{ name: 'Readings', values: [3, 7, 12, 14, 18, 22, 26] }] })
+  assert.deepEqual(few.ticks.filter(tick => tick.classes.includes('chart-tick-y')).map(tick => tick.text), ['0', '1', '2'], 'no tick at half a reading')
+  const more = chartLayout({ type: 'histogram', bins: 2, series: [{ name: 'Readings', values: [1, 2, 3, 4, 5, 6, 11] }] })
+  assert.ok(more.ticks.filter(tick => tick.classes.includes('chart-tick-y')).every(tick => Number.isInteger(Number(tick.text))), 'every tick is a whole count')
+})
+
+test('chartLayout: a marimekko\'s name wider than its column is held to the plot\'s edge and gives way in a narrow plot', () => {
+  const layout = chartLayout({ type: 'marimekko', labels: ['Americas', 'Europe', 'Other'], series: [{ name: 'Hardware', values: [400, 200, 10] }, { name: 'Software', values: [300, 300, 10] }] })
+  const names = layout.ticks.filter(tick => tick.classes.includes('chart-tick-x'))
+  assert.deepEqual(names.map(tick => [tick.text, tick.classes.includes('chart-tick-end') ? tick.x : 'middle']), [['Americas', 'middle'], ['Europe', 'middle'], ['Other', '100%']])
+  assert.deepEqual(names.filter(tick => tick.classes.includes('chart-tick-minor')).map(tick => tick.text), ['Other'], 'and, wider than its column, it gives way in a narrow plot')
+})
+
+test('chartLayout: a waterfall\'s missing step draws nothing and a step of nothing is not a status', () => {
+  const layout = chartLayout({ type: 'waterfall', total: 'Close', values: true, labels: ['Open', 'A', 'B', 'C'], series: [{ name: 'Cash', values: [100, 40, null, 0] }] })
+  assert.deepEqual(layout.points.map(point => point.text), ['Open: 100', 'A: +40 (140)', 'B', 'C: 0 (140)', 'Close: 140'], 'a missing step says only its name')
+  assert.equal(layout.points[2].marks.length, 0)
+  assert.equal(layout.points[3].marks[0].classes, 'chart-bar', 'a step of nothing is ink, not the success ink')
+  assert.deepEqual(layout.values.map(value => value.text), ['100', '+40', '0', '140'])
+  assert.equal(layout.paths[0].d.match(/M/g)?.length, 3, 'the hairline runs across the missing step')
+})
+
+test('chartLayout: a series a missing value ends early is still named', () => {
+  const bump = chartLayout({ type: 'bump', labels: ['2022', '2023', '2024'], series: [{ name: 'Atlas', values: [1, 2, 3] }, { name: 'Beacon', values: [3, 2, null] }] })
+  assert.deepEqual(bump.values.map(value => [value.text, value.x]), [['Atlas', '100%'], ['Beacon', '50%']])
+  const slope = chartLayout({ type: 'slope', labels: ['2019', '2022', '2024'], series: [{ name: 'Chrome', values: [50, 55, 60] }, { name: 'Edge', values: [10, 12, null] }] })
+  assert.deepEqual(slope.values.filter(value => value.classes.includes('chart-value-across')).map(value => [value.text, value.x]), [['12  Edge', '50%'], ['60  Chrome', '100%']])
+})
+
+test('chartLayout: a radar\'s missing value parts its outline instead of standing at the middle', () => {
+  const whole = chartLayout({ type: 'radar', max: 100, labels: ['A', 'B', 'C', 'D', 'E'], series: [{ name: 'One', values: [80, 70, 50, 60, 90] }] })
+  assert.match(whole.paths[1].d, /Z$/)
+  const parted = chartLayout({ type: 'radar', max: 100, labels: ['A', 'B', 'C', 'D', 'E'], series: [{ name: 'One', values: [80, 70, null, 60, 90] }] })
+  const d = parted.paths[1].d
+  assert.doesNotMatch(d, /Z/, 'the outline is not closed across the gap')
+  assert.equal(d.match(/M/g)?.length, 1, 'one run, from the spoke after the gap round to the one before it')
+  assert.equal(d.split('L').length, 4, 'four of the five spokes')
+  assert.doesNotMatch(d, /(^|[ML])0 0(L|$)/, 'no vertex stands at the middle')
+  assert.equal(parted.points[2].marks.length, 0)
+})
+
 function setup(options: Parameters<typeof chart>[1] = { type: 'line', label: 'Latency', labels: week, series: regions }) {
   const page = dom('<figure class="chart"></figure>')
   const root = page.one<HTMLElement>('.chart')
@@ -466,6 +521,23 @@ test('chart: the arrow keys, Home and End move between points, and Escape hides 
   assert.equal(one<HTMLElement>('.chart-tip').hidden, true)
   assert.equal(document.activeElement, points[0], 'Escape keeps the focus')
   assert.equal(key(points[0], 'a'), false, 'another key is left alone')
+  assert.deepEqual(errors, [])
+})
+
+test('chart: in a heatmap the up and down keys go to the cell above or below', () => {
+  const { all, key, document, errors } = setup({ type: 'heatmap', label: 'Commits', labels: ['09', '12', '15'], series: [{ name: 'Mon', values: [1, 2, 3] }, { name: 'Tue', values: [4, null, 6] }, { name: 'Wed', values: [7, 8, 9] }] })
+  const points = all<HTMLElement>('.chart-point')
+  assert.equal(points.length, 8)
+  points[1].focus()
+  key(points[1], 'ArrowDown')
+  assert.equal(points.indexOf(document.activeElement as HTMLElement), 6, 'a missing cell is passed over to the next in the column')
+  assert.equal(points[6].getAttribute('aria-label'), 'Wed, 12: 8')
+  key(points[6], 'ArrowUp')
+  assert.equal(document.activeElement, points[1])
+  assert.equal(key(points[1], 'ArrowUp'), true, 'the key is handled at the top, and the focus stays')
+  assert.equal(document.activeElement, points[1])
+  key(points[1], 'ArrowRight')
+  assert.equal(document.activeElement, points[2], 'across, the arrows still go cell by cell')
   assert.deepEqual(errors, [])
 })
 

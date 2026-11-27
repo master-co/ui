@@ -79,6 +79,12 @@
 
     /* Quiet: bars are a tint, and the point marked aria-current is the ink. For a period in which one day matters. */
     &.chart-quiet {
+      /*
+       * A bar that steps back keeps the quiet tint: stepping back to the louder tint of other charts would darken
+       * every bar but the one under the pointer, which would then hardly stand out.
+       */
+      --chart-bar-back: 16%;
+
       .chart-point:not([aria-current='true']) .chart-bar {
         fill: color-mix(in oklab, var(--chart-bar-color) 16%, var(--chart-surface));
       }
@@ -132,6 +138,11 @@
       margin-top: 0;
     }
 
+    /* Over a lollipop's dot the value stands higher, clear of the dot, and needs that much more. */
+    &:has(.chart-stem):has(.chart-value):not(:has(.chart-value-across)) {
+      margin-top: calc(1rem + var(--chart-dot) + 2px);
+    }
+
     /* A pie, a donut and rings: a square, as wide as --chart-size and no wider than its room. */
     &:has(.chart-plot-radial) {
       container-type: normal;
@@ -172,14 +183,17 @@
       touch-action: auto;
     }
 
-    /* Under the pointer or with the focus, the bars and slices of the other points step back to a tint, at once. */
+    /*
+     * Under the pointer or with the focus, the bars and slices of the other points step back to a tint, at once.
+     * A box steps back with its whiskers and the readings far from it, so no whisker shows through a faded box.
+     */
     @media (hover: hover) {
       &:has(.chart-point:hover) .chart-point:not(:hover) {
         .chart-bar {
-          fill: color-mix(in oklab, var(--chart-bar-color) 30%, var(--chart-surface));
+          fill: color-mix(in oklab, var(--chart-bar-color) var(--chart-bar-back, 30%), var(--chart-surface));
         }
 
-        .chart-slice, .chart-arc, .chart-line, .chart-knot, .chart-unit, .chart-stage, .chart-box, .chart-stem {
+        .chart-slice, .chart-arc, .chart-line, .chart-knot, .chart-unit, .chart-stage, .chart-box, .chart-stem, .chart-whisker, .chart-dot-outlier {
           opacity: .32;
         }
       }
@@ -187,10 +201,10 @@
 
     &:has(.chart-point:focus) .chart-point:not(:focus) {
       .chart-bar {
-        fill: color-mix(in oklab, var(--chart-bar-color) 30%, var(--chart-surface));
+        fill: color-mix(in oklab, var(--chart-bar-color) var(--chart-bar-back, 30%), var(--chart-surface));
       }
 
-      .chart-slice, .chart-arc, .chart-line, .chart-knot, .chart-unit, .chart-stage, .chart-box, .chart-stem {
+      .chart-slice, .chart-arc, .chart-line, .chart-knot, .chart-unit, .chart-stage, .chart-box, .chart-stem, .chart-whisker, .chart-dot-outlier {
         opacity: .32;
       }
     }
@@ -597,6 +611,17 @@
     }
   }
 
+  /* At a lollipop's end the value clears the dot and its ring, as it clears a bar's end, instead of touching it. */
+  .chart-body:has(.chart-stem) {
+    .chart-value {
+      transform: translate(0, calc(-.4375rem - var(--chart-dot) - 2px));
+    }
+
+    .chart-value-across {
+      transform: translate(calc(.5rem + var(--chart-dot) + 2px), 0);
+    }
+  }
+
   /* A slice of a pie or a donut. It opens from the center when it first appears. */
   .chart-slice {
     /* A slice of an outer ring takes a share of its part's color, --chart-tone. */
@@ -662,6 +687,8 @@
     fill: color-mix(in oklab, var(--category-mark, var(--chart-color)) 14%, transparent);
     stroke: var(--category-mark, var(--chart-color));
     stroke-width: var(--chart-stroke);
+    /* Where a missing value parts the outline, its ends are round, as a line's are. */
+    stroke-linecap: round;
     stroke-linejoin: round;
     vector-effect: non-scaling-stroke;
     transition: opacity 480ms var(--easing-glide), scale 720ms var(--easing-glide);
@@ -878,6 +905,15 @@
     transition-duration: var(--duration-quick);
     transition-timing-function: var(--easing-glide);
     transition-behavior: allow-discrete;
+
+    /*
+     * A readout wider than the room on its side would leave the plot, and in a narrow card the card: it is held
+     * between the plot's two edges, the body's width read as 100cqi, and covers the point's marks before it leaves.
+     */
+    @supports (width: 1cqi) {
+      --chart-tip-at: calc((var(--chart-x, 0) + var(--chart-reach, 0) * (1 - 2 * var(--chart-tip-side))) * 100cqi);
+      translate: clamp(-1 * var(--chart-tip-at), var(--chart-tip-side) * (-100% - 2 * var(--chart-tip-gap)) + var(--chart-tip-gap), 100cqi - 100% - var(--chart-tip-at)) calc(var(--chart-y, 0) * -100%);
+    }
 
     @starting-style {
       opacity: 0;

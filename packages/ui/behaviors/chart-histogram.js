@@ -21,7 +21,9 @@ function form({ config, layout, shown, format, tickFormat, valueAxis, scale, per
     if (bin === -1 && reading === edges[edges.length - 1]) bin = counts.length - 1
     if (bin !== -1) counts[bin]++
   }
-  const axis = scale(0, Math.max(1, ...counts), config.ticks ?? 4, 0, config.max)
+  // A count is a whole number: the scale is never marked in steps finer than one reading, as 0.5 or 1.5.
+  const most = Math.max(1, ...counts)
+  const axis = scale(0, most, Math.min(config.ticks ?? 4, most), 0, config.max)
   const at = (/** @type {number} */ number) => clamp(axis.at(number), 0, 1)
   const write = tickFormat(edges, config.xFormat)
   valueAxis(axis)

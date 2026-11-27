@@ -9,7 +9,7 @@
 const tau = Math.PI * 2
 
 /** @param {ChartKit} kit */
-function form({ config, layout, shown, format, tickFormat, legend, scale, pen, round, clamp, real }) {
+function form({ config, layout, shown, format, tickFormat, legend, scale, runs, pen, round, clamp, real }) {
   // A square in the middle of a plot of full width, so the names around it have room beside it.
   layout.classes = 'chart-plot chart-plot-radar'
   layout.radial = true
@@ -38,9 +38,19 @@ function form({ config, layout, shown, format, tickFormat, legend, scale, pen, r
     const side = Math.cos(angle(index))
     layout.ticks.push({ text: labels[index] ?? '', classes: `chart-tick chart-tick-around${side > 0.2 ? ' chart-tick-start' : side < -0.2 ? ' chart-tick-end' : ''}`, x: '50%', y: '50%', at: [round(0.5 + x / 100, 4), round(0.5 + y / 100, 4)] })
   }
+  const vertex = (/** @type {number[]} */ point) => point.map((number) => round(number)).join(' ')
   for (const series of shown) {
-    const points = Array.from({ length: count }, (_, index) => place(index, clamp(axis.at(real(series.values?.[index]) ? /** @type {number} */ (series.values?.[index]) : axis.start), 0, 1)))
-    layout.paths.push({ kind: 'shape', classes: 'chart-shape', d: `M${points.map((point) => point.map((number) => round(number)).join(' ')).join('L')}Z`, category: series.category })
+    const points = Array.from({ length: count }, (_, index) => {
+      const number = series.values?.[index]
+      return real(number) ? place(index, clamp(axis.at(number), 0, 1)) : null
+    })
+    // A missing value parts the outline, as a null parts a line, instead of standing at the middle as the lowest
+    // reading would. The runs are read round from the spoke after the first gap, so a run may pass the first spoke.
+    const gap = points.indexOf(null)
+    const d = gap === -1
+      ? `M${points.map((point) => vertex(/** @type {number[]} */ (point))).join('L')}Z`
+      : runs([...points.slice(gap + 1), ...points.slice(0, gap + 1)]).map((run) => `M${run.map(vertex).join('L')}${run.length === 1 ? 'h0' : ''}`).join('')
+    layout.paths.push({ kind: 'shape', classes: 'chart-shape', d, category: series.category })
   }
   const half = Math.PI / count
   for (let index = 0; index < count; index++) {

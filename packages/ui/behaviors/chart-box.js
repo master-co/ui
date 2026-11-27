@@ -47,15 +47,16 @@ function form({ config, layout, shown, format, valueAxis, nameAxis, scale, perce
     /** @type {ChartMark[]} */
     const marks = []
     if (group.sorted.length) {
+      // The whiskers stop at the box, so neither shows through it when the box steps back under the pointer.
       marks.push(
-        { ...line('chart-whisker', group.low, group.high, 0), name: words.max, value: format(group.high) },
+        { ...line('chart-whisker', group.q3, group.high, 0), name: words.max, value: format(group.high) },
         across
           ? { kind: 'bar', classes: 'chart-box', category: series.category, name: words.q3, value: format(group.q3), x: percent(at(group.q1)), y: percent(center - thick / 2), width: percent(Math.max(at(group.q3) - at(group.q1), 0.004)), height: percent(thick) }
           : { kind: 'bar', classes: 'chart-box', category: series.category, name: words.q3, value: format(group.q3), x: percent(center - thick / 2), y: percent(1 - at(group.q3)), width: percent(thick), height: percent(Math.max(at(group.q3) - at(group.q1), 0.004)) },
         { ...line('chart-median', group.median, group.median, thick / 2), name: words.median, value: format(group.median) },
-        // The two lower figures have no mark of their own: the box's foot and the whisker's end say them.
+        // The first quartile has no mark of its own: the box's foot says it. The lower whisker says the lowest.
         { kind: 'line', classes: 'chart-whisker', x1: '0', y1: '0', x2: '0', y2: '0', name: words.q1, value: format(group.q1) },
-        { kind: 'line', classes: 'chart-whisker', x1: '0', y1: '0', x2: '0', y2: '0', name: words.min, value: format(group.low) },
+        { ...line('chart-whisker', group.low, group.q1, 0), name: words.min, value: format(group.low) },
         ...group.outliers.map((reading) => /** @type {ChartMark} */ ({ kind: 'dot', classes: 'chart-dot chart-dot-outlier', category: series.category, cx: percent(across ? at(reading) : center), cy: percent(across ? center : 1 - at(reading)), r: 2.5 })),
       )
     }

@@ -8,7 +8,7 @@
 /** @typedef {import('./chart-core.js').ChartMark} ChartMark */
 
 /** @param {ChartKit} kit */
-function form({ config, layout, shown, format, legend, valueAxis, nameAxis, scale, percent, real, numbers }) {
+function form({ config, layout, shown, format, legend, valueAxis, nameAxis, scale, percent, real, width, numbers }) {
   const labels = config.labels ?? []
   const count = Math.max(labels.length, ...shown.map((series) => series.values?.length ?? 0), 0)
   const value = (/** @type {typeof shown[number]} */ series, /** @type {number} */ index) => {
@@ -35,7 +35,20 @@ function form({ config, layout, shown, format, legend, valueAxis, nameAxis, scal
     widths.push(width)
     cursor += width + gap
   })
+  const before = layout.ticks.length
   nameAxis(Array.from({ length: count }, (_, index) => labels[index] ?? ''), (index) => starts[index] + widths[index] / 2)
+  // A name wider than its column, in a plot 20rem wide, the least a card gives it, gives way when the plot is
+  // narrow, as every other name does under bars. At either end it is held to the plot's edge, so it never runs
+  // past the plot where it stays.
+  for (const tick of layout.ticks.slice(before)) {
+    const index = starts.findIndex((start, at) => tick.x === percent(start + widths[at] / 2) && tick.text === labels[at])
+    if (index === -1 || widths[index] * 320 >= width(tick.text) * 7) continue
+    if (!tick.classes.includes('chart-tick-minor')) tick.classes += ' chart-tick-minor'
+    if (index === 0 || index === count - 1) {
+      tick.x = index ? '100%' : '0%'
+      tick.classes += index ? ' chart-tick-end' : ' chart-tick-start'
+    }
+  }
 
   for (let index = 0; index < count; index++) {
     /** @type {ChartMark[]} */

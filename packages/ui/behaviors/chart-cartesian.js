@@ -195,8 +195,9 @@ function form({ type, config, layout, shown, format, legend, valueAxis, nameAxis
       far = across ? Math.max(far, end) : Math.min(far, 1 - end)
       if (config.values && !stacked) {
         const written = format(number)
+        // After a lollipop's dot the value stands a dot further out, which takes a digit more room.
         layout.values.push(across
-          ? ((layout.tail = Math.max(layout.tail, width(written))), { text: written, classes: 'chart-value chart-value-across', x: percent(end), y: percent(mid) })
+          ? ((layout.tail = Math.max(layout.tail, width(written) + (lollipop ? 1 : 0))), { text: written, classes: 'chart-value chart-value-across', x: percent(end), y: percent(mid) })
           : { text: written, classes: 'chart-value', x: percent(mid), y: percent(1 - end) })
       }
     })
