@@ -19,12 +19,15 @@ import ContractTable from '~/site/components/ContractTable.astro'
 </article>
 <script>
   var card = document.getElementById('revenue')
-  document.getElementById('revenue-refresh').addEventListener('click', function () {
+  var refresh = document.getElementById('revenue-refresh')
+  refresh.addEventListener('click', function () {
     card.setAttribute('aria-busy', 'true')
     card.inert = true
     setTimeout(function () {
       card.removeAttribute('aria-busy')
       card.inert = false
+      // inert took focus from the button that started the work: give it back, unless the reader has moved on.
+      if (document.activeElement === document.body) refresh.focus()
     }, 1800)
   })
 </script>`} caption="「更新」を押すと、カードが 2 秒間、処理中になります。" />
@@ -49,7 +52,7 @@ import ContractTable from '~/site/components/ContractTable.astro'
 
 オーバーレイの色は、[シート](/components/surface)、カード、ダイアログが公開する `--surface-color` をもとに合成します。カードにはグレーをかぶせず、カード自体の背景色を使ってコントラストを抑えます。独自の背景面を持たない領域では、ページのキャンバス色を使います。角の丸みは領域に揃え、スピナーの背後は不透明にして周囲を透かすため、リングに文字が重なって見えることはありません。
 
-オーバーレイは下にある要素へのポインター操作を遮ります。キーボード操作も無効にするには、最初の例のように、処理中は `inert` 属性を追加し、処理が終わったら削除します。
+オーバーレイは下にある要素へのポインター操作を遮ります。キーボード操作も無効にするには、最初の例のように、処理中は `inert` 属性を追加し、処理が終わったら削除します。処理を始めた操作要素が領域の中にある場合、`inert` はその要素のフォーカスも外します。例のように、処理が終わったらフォーカスをその要素に戻し、キーボードで操作する読者が元の位置を見失わないようにします。
 
 `--busy-size` はスピナーの直径を指定します。既定は 20px です。
 
