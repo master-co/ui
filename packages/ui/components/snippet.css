@@ -194,28 +194,34 @@
     color: inherit;
     font: inherit;
     white-space: pre;
+    /*
+     * A command reads left to right in any language: on a right-to-left page the bidi algorithm would carry the
+     * punctuation at its ends to the other side (./install.sh). It still stands at the line's start, against its
+     * prompt, and a long one scrolls the way it reads.
+     */
+    direction: ltr;
+    unicode-bidi: isolate;
     outline: none;
     scrollbar-width: none;
     overscroll-behavior-inline: contain;
+
+    &:dir(rtl) {
+      text-align: right;
+    }
 
     &::-webkit-scrollbar {
       display: none;
     }
 
     @supports (animation-timeline: scroll()) {
-      /* From the start edge to the end edge: right to left, the start edge is on the right. */
-      --snippet-run: to right;
-      mask-image: linear-gradient(var(--snippet-run), transparent, black var(--snippet-fade-start), black calc(100% - var(--snippet-fade-end)), transparent);
+      /* The command scrolls left to right on every page, so its edges fade in that order. */
+      mask-image: linear-gradient(to right, transparent, black var(--snippet-fade-start), black calc(100% - var(--snippet-fade-end)), transparent);
       /* Longhands: tools that fold the timeline into the shorthand write a value no browser reads. */
       animation-name: snippet-fade-start, snippet-fade-end;
       animation-timing-function: linear;
       animation-fill-mode: both;
       animation-timeline: scroll(self inline), scroll(self inline);
       animation-range: 0 var(--snippet-fade), calc(100% - var(--snippet-fade)) 100%;
-
-      &:dir(rtl) {
-        --snippet-run: to left;
-      }
     }
 
     @media (forced-colors: active) {
