@@ -4,11 +4,12 @@
 
 | Size | Height | Inline padding | Label | Icon | Radius |
 | --- | --- | --- | --- | --- | --- |
+| `btn-xs` | 28px | 10px | 12px | 14px | 7px (`--radius-control-sm` − 1) |
 | `-sm` | 32px | 12px | 12.5px | 14px | 8px (`--radius-control-sm`) |
 | default | 38px | 16px | 13.5px | 16px | 10px (`--radius-control`) |
 | `-lg` | 44px | 20px | 15px | 18px | 12px (`--radius-control-lg`) |
 
-Everything that can stand beside a button is on this scale: a text field, an input group and what is built on one (a stepper, a combobox, a date field), a select in either material, and a segmented control's track. They are equal by their own height, not by flex stretch, so a row with `align-items: center` is level too. A 14px field line is 20.3px, so its block padding is 8px: 9px would carry the field to 38.3px.
+`btn-xs` is a button only, for an action inside a compact holder (a toast, an alert, a row of a table or a list). Such a holder has 12px of padding around a 20px first line, so a 28px face centered on that line stands 8px from the top, and the holder pulls it to 8px from its end with the corner the holder's less 8px: one even inset, concentric. A 32px face there stood 6px from the top and 14px from the end. No field is 28px, so an extra small button never stands in a row of controls. Everything that can stand beside a button is on this scale: a text field, an input group and what is built on one (a stepper, a combobox, a date field), a select in either material, and a segmented control's track. They are equal by their own height, not by flex stretch, so a row with `align-items: center` is level too. A 14px field line is 20.3px, so its block padding is 8px: 9px would carry the field to 38.3px.
 
 A segmented control's track is exactly a button's height: item height plus twice the inset (26 + 2×3, 30 + 2×4, 36 + 2×4). What stands inside a well follows the same sum: a button in an input group is the well minus 8px (24 / 30 / 36), a chip in a wrapping field the well minus 12px.
 
@@ -22,7 +23,7 @@ Height is decided by what a component is, and only the first kind has to match i
 | Row | 28 / 32 / 36 / 44px | One of a list, or a row of navigation on its own line: tree 28, menu item, option, nav item and a trace's step 32, wheel row and small tab 36, tab 44 |
 | Bar | 40 / 48 / 56px | A band across its container: toolbar, banner, code panel header and window bar 40 (a 32px control plus 4px over and under), accordion row 48, navbar 56 / 48, tab bar 56 |
 
-A component outside these keeps a scale of its own and says so in its header: a chip is 28px, a badge and a keycap 22px, a switch 22px, a checkbox 18px, an OTP cell 40 × 44px, a command palette's search row 52px. A drawing is sized by one property and derives the rest from it: a gauge is 120px across (88 / 160) with a stroke of a fifteenth, a device is 280px wide with a corner of 14% and a bezel of 3%. A keypad's key is 52px, a thumb's target; a hotspot's pin is a 24px disc in a 44px target on touch; a gantt's bar is 28px and an uptime's row 32px (16 small). Before giving a new component a height, name its kind; a new control that is not 32, 38 or 44px is a mistake.
+A component outside these keeps a scale of its own and says so in its header: a chip is 28px, a badge and a keycap 22px, a switch 22px, a checkbox 18px, an OTP cell 40 × 44px, a command palette's search row 52px. A drawing is sized by one property and derives the rest from it: a gauge is 120px across (88 / 160) with a stroke of a fifteenth, a device is 280px wide with a corner of 14% and a bezel of 3%. A keypad's key is 52px, a thumb's target; a hotspot's pin is a 24px disc in a 44px target on touch; a gantt's bar is 28px and an uptime's row 32px (16 small). Before giving a new component a height, name its kind; a new control that is not 32, 38 or 44px is a mistake (the extra small button, an action in a compact holder, is the one 28px control).
 
 ### Touch
 
