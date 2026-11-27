@@ -1041,12 +1041,14 @@ for (const framework of ['react', 'svelte', 'vue']) {
       await until(board, value => value[1] === 'site,brief', 'the release moves it')
       assert.deepEqual(await board(), ['copy', 'site,brief', '', 'name'])
       await until(() => example('kanban').locator('output').innerText(), value => value.startsWith('onValueChange: [{"value":"todo","items":["copy"]},{"value":"doing","items":["site","brief"]}'), 'the arrangement comes out')
-      await until(() => open(sheet), value => !value, 'the sheet lands and leaves')
+      await until(() => open(sheet), value => !value, 'the sheet leaves')
       await until(pressed, value => value === 0, 'and the handle lets go')
       assert.equal(await marks(), 0)
       assert.equal(await active(), 'Drag Brief', 'focus is on the handle of the item that moved')
 
-      // Escape during a drag leaves the board as it was.
+      // Escape during a drag leaves the board as it was. The handle lets go on the release, while the item still glides
+      // to its place, and the board takes no press until it is there.
+      await page.waitForFunction(() => !document.getAnimations().some(animation => (animation.effect as KeyframeEffect | null)?.pseudoElement?.startsWith('::view-transition')))
       const again = await middle(handle('brief'))
       await page.mouse.move(again.x, again.y)
       await page.mouse.down()
