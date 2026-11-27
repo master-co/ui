@@ -22,6 +22,11 @@
     --gantt-now: 0;
     --gantt-gap: .375rem;
     --gantt-color: var(--color-surface-inverse);
+    /*
+     * The surface the chart stands on, which a card or a sheet publishes. A bar's tint is mixed with it, so the
+     * hairlines of the scale and the line of now pass under a bar instead of showing through it and its words.
+     */
+    --gantt-surface: var(--surface-color, var(--color-surface-base));
     --gantt-span: calc(var(--gantt-to) - var(--gantt-from));
     container-type: inline-size;
     display: grid;
@@ -70,8 +75,8 @@
     @media (hover: hover) {
       .gantt-row:not([aria-current="true"]):hover {
         .gantt-bar {
-          --gantt-tint: color-mix(in oklab, var(--gantt-color) 16%, transparent);
-          --gantt-done: color-mix(in oklab, var(--gantt-color) 30%, transparent);
+          --gantt-tint: color-mix(in oklab, var(--gantt-color) 16%, var(--gantt-surface));
+          --gantt-done: color-mix(in oklab, var(--gantt-color) 30%, var(--gantt-surface));
         }
 
         .gantt-label {
@@ -106,6 +111,7 @@
 
     @media (forced-colors: active) {
       --gantt-color: CanvasText;
+      --gantt-surface: Canvas;
 
       /* The line of now is a fill, which forced colors would otherwise paint as the canvas. */
       &.gantt-now .gantt-row:not(.gantt-scale)::after {
@@ -196,8 +202,8 @@
 
   /* The bar: from --from to --to of the scale, filled as far as --progress percent. Its text is what it says. */
   .gantt-bar {
-    --gantt-tint: color-mix(in oklab, var(--gantt-color) 10%, transparent);
-    --gantt-done: color-mix(in oklab, var(--gantt-color) 22%, transparent);
+    --gantt-tint: color-mix(in oklab, var(--gantt-color) 10%, var(--gantt-surface));
+    --gantt-done: color-mix(in oklab, var(--gantt-color) 22%, var(--gantt-surface));
     z-index: 1;
     grid-area: 1 / 2;
     box-sizing: border-box;
@@ -283,8 +289,8 @@
 
       /* Held: it lifts above the rows on a firmer tint, and follows the pointer with no easing. */
       &[aria-busy="true"] {
-        --gantt-tint: color-mix(in oklab, var(--gantt-color) 16%, transparent);
-        --gantt-done: color-mix(in oklab, var(--gantt-color) 30%, transparent);
+        --gantt-tint: color-mix(in oklab, var(--gantt-color) 16%, var(--gantt-surface));
+        --gantt-done: color-mix(in oklab, var(--gantt-color) 30%, var(--gantt-surface));
         z-index: 3;
         box-shadow: var(--shadow-lifted);
         cursor: grabbing;
@@ -308,6 +314,11 @@
         &::before, &::after {
           width: min(.75rem, 30%);
           opacity: .45;
+        }
+
+        /* The words step in with the wider grips, so a grip's line keeps clear of the first letter and the last. */
+        &:not(.gantt-milestone) {
+          padding-inline: .75rem;
         }
       }
 
