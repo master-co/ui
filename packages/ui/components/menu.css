@@ -43,7 +43,9 @@
 
     /*
      * Beside its item: a submenu, opened by an item inside another menu. It lines up with the item's top,
-     * 4px up so its first row meets the item, and flips to the other side when there is no room.
+     * 4px up so its first row meets the item, and flips to the other side when there is no room. With room on
+     * neither side, as in a menu on a phone, it drops below the item or rises above it, over the rows around
+     * the item and never over the item that opened it, where the browser would otherwise push it.
      */
     &.menu-sub {
       --anchored-block: span-block-end;
@@ -57,6 +59,7 @@
 
       @supports (position-area: block-end) {
         margin: calc(-1 * var(--menu-inset)) 2px;
+        position-try-fallbacks: flip-block, flip-inline, flip-block flip-inline, --menu-sub-below, --menu-sub-above;
       }
     }
 
@@ -157,6 +160,11 @@
 
       &:focus-visible {
         background: color-mix(in oklab, var(--color-danger) 9%, transparent);
+      }
+
+      /* Pressed: a step deeper in the same tint. Written after the tint under the pointer, which outweighs the plain row's press. */
+      &:active {
+        background: color-mix(in oklab, var(--color-danger) 15%, transparent);
       }
     }
 
@@ -338,6 +346,20 @@
   right: calc(100% - var(--menu-x, 0px));
   bottom: calc(100% - var(--menu-y, 0px));
   left: auto;
+}
+
+/*
+ * A submenu with no room beside its menu: under its item or over it, lined up with the item's start edge and 2px
+ * clear of it.
+ */
+@position-try --menu-sub-below {
+  position-area: block-end span-inline-end;
+  margin: 2px 0 0;
+}
+
+@position-try --menu-sub-above {
+  position-area: block-start span-inline-end;
+  margin: 0 0 2px;
 }
 
 /* From right to left the menu opens to the left of the point, so it turns back to the right. */

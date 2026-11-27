@@ -5,8 +5,8 @@
  * it, Tab moves through the items and Esc returns focus to the button. `menu(root)` adds the keys of a
  * menu. When the menu opens, focus moves to its first item; the arrow keys, Home, End and typed letters
  * move focus through the items, skipping hidden and disabled ones; Tab closes the menu. An item with a
- * submenu opens it with the arrow that points into it, and the opposite arrow closes the submenu. A submenu
- * is a menu: attach the behavior to it too.
+ * submenu opens it with the arrow that points into it, and the opposite arrow or Escape closes the submenu
+ * and returns to that item. A submenu is a menu: attach the behavior to it too.
  *
  * Items stay native. A button, a link, and the checkbox or radio of a label item run with Enter and Space
  * as they always do, so the script sets no state. It adds no roles either: `role="menu"` and
@@ -73,6 +73,17 @@ export function menu(root) {
       return
     }
     if (event.ctrlKey || event.metaKey || event.altKey) return
+    // Escape in a submenu closes that level and returns to the item that opened it. Left to the browser, the
+    // submenu closed but focus fell to the page, out of the menu still open: the next key went nowhere. A
+    // deeper submenu that closed itself has prevented the key, so one press closes one level.
+    if (event.key === 'Escape') {
+      if (event.defaultPrevented || !root.matches('.menu-sub') || !isOpen(root)) return
+      event.preventDefault()
+      const opener = root.previousElementSibling
+      root.hidePopover()
+      if (opener?.matches('.menu-item')) control(opener).focus()
+      return
+    }
     const current = /** @type {Element} */ (event.target).closest('.menu-item')
     if (current?.closest('.menu') !== root) return
 

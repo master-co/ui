@@ -184,6 +184,41 @@ test('menu: the arrow into a submenu opens it from its invoker and focuses the f
   assert.equal(isOpen(root), true, 'the parent menu stays open')
 })
 
+test('menu: Escape in a submenu closes that level only and returns focus to its item', () => {
+  const { root, sub, one, focused, press, isOpen } = setup()
+  menu(root)
+  menu(sub)
+  root.showPopover()
+  one('#recent').focus()
+  press('ArrowRight')
+  assert.equal(focused(), 'atlas')
+  assert.equal(press('Escape'), true, 'prevented, so the browser does not close it a second time and drop focus')
+  assert.equal(isOpen(sub), false)
+  assert.equal(isOpen(root), true, 'the parent menu stays open')
+  assert.equal(focused(), 'recent')
+  assert.equal(press('Escape'), false, 'in the menu itself Escape is the browser\'s, which returns focus to the button')
+})
+
+test('menu: Escape in a submenu inside a submenu closes one level per press', () => {
+  const html = markup().replace('<button type="button" class="menu-item" id="borealis">borealis</button>', `<button type="button" class="menu-item" id="borealis" popovertarget="deep-menu" aria-haspopup="menu">borealis</button>
+    <div id="deep-menu" popover class="menu menu-sub"><button type="button" class="menu-item" id="deep">deep</button></div>`)
+  const { root, sub, one, focused, press, isOpen } = setup(html)
+  const deep = one('#deep-menu')
+  menu(root)
+  menu(sub)
+  menu(deep)
+  root.showPopover()
+  one('#recent').focus()
+  press('ArrowRight')
+  press('ArrowDown')
+  press('ArrowRight')
+  assert.equal(focused(), 'deep')
+  assert.equal(press('Escape'), true)
+  assert.equal(isOpen(deep), false)
+  assert.equal(isOpen(sub), true, 'the submenu around it hears the same key and stays open')
+  assert.equal(focused(), 'borealis')
+})
+
 test('menu: the arrow into a submenu that is open already moves focus into it', () => {
   const { root, sub, one, focused, press, isOpen } = setup()
   menu(root)
