@@ -14,15 +14,17 @@
     --splitter-track: clamp(var(--splitter-min), var(--splitter-size), calc(100% - var(--splitter-min) - 1px));
     /* The handle stands over the panes inside the splitter, not over a sticky header that scrolls past it. */
     isolation: isolate;
+    /*
+     * Both axes carry the same three tracks, and the panes and the handle say which one they stand along, by the
+     * orientation of the handle between them. The splitter does not ask whether it holds a horizontal handle: a
+     * splitter in one of its panes holds one too, and a side-by-side splitter that asked stacked its own panes.
+     * Along the other axis everything spans the three tracks, and the first one may give way to nothing.
+     */
     display: grid;
-    grid-template-columns: var(--splitter-track) auto minmax(0, 1fr);
+    grid-template-columns: minmax(0, var(--splitter-track)) auto minmax(0, 1fr);
+    grid-template-rows: minmax(0, var(--splitter-track)) auto minmax(0, 1fr);
     min-width: 0;
     min-height: 0;
-
-    &:has(.splitter-handle[aria-orientation="horizontal"]) {
-      grid-template-rows: var(--splitter-track) auto minmax(0, 1fr);
-      grid-template-columns: none;
-    }
 
     /* While the handle is held, nothing in the panes is selected by the drag. */
     &:has(.splitter-handle:active) {
@@ -31,13 +33,25 @@
     }
   }
 
-  /* A pane scrolls by itself, so a long one never moves its neighbor. */
+  /* A pane scrolls by itself, so a long one never moves its neighbor. Side by side, it runs the whole height. */
   .splitter-pane {
+    grid-row: 1 / -1;
     min-width: 0;
     min-height: 0;
     overflow: auto;
     scrollbar-width: thin;
     scrollbar-color: var(--color-line-strong) transparent;
+  }
+
+  /* Stacked: the pane before a horizontal handle is the first row, the one after it the last, each the whole width. */
+  .splitter-pane:has(+ .splitter-handle[aria-orientation="horizontal"]) {
+    grid-row: 1;
+    grid-column: 1 / -1;
+  }
+
+  .splitter-handle[aria-orientation="horizontal"] + .splitter-pane {
+    grid-row: 3;
+    grid-column: 1 / -1;
   }
 
   /*
@@ -47,6 +61,7 @@
   .splitter-handle {
     position: relative;
     z-index: 1;
+    grid-row: 1 / -1;
     width: 1px;
     margin: 0;
     padding: 0;
@@ -108,6 +123,8 @@
     }
 
     &[aria-orientation="horizontal"] {
+      grid-row: 2;
+      grid-column: 1 / -1;
       width: auto;
       height: 1px;
       cursor: row-resize;
